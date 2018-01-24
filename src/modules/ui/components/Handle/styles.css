@@ -1,0 +1,25 @@
+.handle {
+    fill: rgba(91, 96, 192, 1); /*cornflowerblue;*/
+    fill-opacity: .9;
+    stroke: ghostwhite;
+    stroke-width: 1px;
+    cursor: crosshair;
+}
+
+/*[ auto | crosshair | default | pointer | move | e-resize | ne-resize | nw-resize | n-resize | se-resize | sw-resize | s-resize | w-resize| text | wait | help ]] */
+
+.top.center, .bottom.center {
+    cursor: ns-resize
+}
+
+.left.center, .right.center {
+    cursor: ew-resize
+}
+
+.top.left, .bottom.right {
+    cursor: nwse-resize;
+}
+
+.top.right, .bottom.left {
+    cursor: nesw-resize;
+}

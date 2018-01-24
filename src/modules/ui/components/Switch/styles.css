@@ -1,0 +1,63 @@
+.switch {
+    display: flex;
+    height: 16px;
+    left: 400px;
+    max-width: 250px;
+    position: absolute;
+    top: 300px;
+    width: 16px;
+}
+
+.switch input[type=checkbox] {
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    user-select: none;
+    width: 100%;
+}
+
+.switch input[type=checkbox] {
+    outline: none;
+}
+
+.switch label {
+    cursor: pointer;
+    font-size: 16px;
+    left: 24px;
+    line-height: 16px;
+    margin: 0;
+    position: relative;
+}
+
+.track {
+    background: rgba(0, 0, 0, .26);
+    border-radius: 16px;
+    cursor: pointer;
+    height: 16px;
+    position: absolute;
+    top: -1px;
+    width: 36px;
+}
+
+.selected .track {
+    background: rgba(63, 81, 181, .5);
+}
+
+.thumb {
+    background-color: #fafafa;
+    border-radius: 14px;
+    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, .14), 0 3px 1px -2px rgba(0, 0, 0, .2), 0 1px 5px 0 rgba(0, 0, 0, .12);
+    cursor: pointer;
+    height: 14px;
+    left: 1px;
+    position: absolute;
+    top: 1px;
+    transition: transform .18s cubic-bezier(.4, 0, .2, 1), left .28s cubic-bezier(.4, 0, .2, 1), box-shadow .18s cubic-bezier(.4, 0, .2, 1), background .28s cubic-bezier(.4, 0, .2, 1);
+    width: 14px;
+}
+
+.selected .thumb {
+    background-color: #3f51b5;
+    box-shadow: 0 3px 4px 0 rgba(0, 0, 0, .14), 0 3px 3px -2px rgba(0, 0, 0, .2), 0 1px 8px 0 rgba(0, 0, 0, .12);
+    left: 21px;
+}

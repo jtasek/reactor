@@ -1,0 +1,53 @@
+.navBar {
+  padding: 10px;
+  filter: url(#blur);
+}
+
+.navBar li li {
+  cursor: pointer;
+  list-style: none;
+  padding-left: 10px;
+  position: relative;
+}
+
+.navBar li.selected:before {
+  background-color: mediumpurple;
+  border-radius: 50%;
+  content: '';
+  height: 4px;
+  left: 0px;
+  position: absolute;
+  top: 40%;
+  width: 4px;
+}
+
+.navBar li.active:before {
+  background-color: deepskyblue;
+  border-radius: 50%;
+  content: '';
+  height: 4px;
+  left: 0px;
+  position: absolute;
+  top: 40%;
+  width: 4px;
+}
+
+.navBar li.new:before {
+  background-color: deeppink;
+  border-radius: 50%;
+  content: '';
+  height: 4px;
+  left: 0px;
+  position: absolute;
+  top: 40%;
+  width: 4px;
+}
+
+.navBar a {
+  color: rgba(255, 255, 255, .7);
+  text-decoration: none;
+}
+
+.navBar a:hover {
+  color: #fff;
+}

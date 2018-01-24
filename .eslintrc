@@ -1,0 +1,43 @@
+{
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "parser": "babel-eslint",
+  "parserOptions": {
+      "ecmaVersion": 6,
+      "sourceType": "module",
+      "ecmaFeatures": {
+          "jsx": true
+      }
+  },
+  "rules": {
+    "no-invalid-this": 0,
+    "no-magic-numbers": 0,
+    "prefer-const": 0,
+    "quotes": [
+      2,
+      "single"
+    ],
+    "react/jsx-uses-react": 2,
+    "react/jsx-uses-vars": 2,
+    "react/react-in-jsx-scope": 2,
+    "react/sort-comp": 0,
+    "semi": [
+      2,
+      "never"
+    ],
+    "strict": [
+      2,
+      "never"
+    ]
+  },
+  "extends": [
+    "plugin:flowtype/recommended"
+  ],
+  "plugins": [
+    "babel",
+    "react",
+    "flowtype"
+  ]
+}

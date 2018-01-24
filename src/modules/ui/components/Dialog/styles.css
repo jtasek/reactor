@@ -1,0 +1,74 @@
+.dialog {
+  background-color: white;
+  border-radius: 3px;
+  /*border: 2px solid #f06;*/
+  box-shadow: 0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 2px rgba(0, 0, 0, 0.12), 0 5px 5px -3px rgba(0, 0, 0, 0.2);
+  color: black;
+  display: flex;
+  flex-direction: column;
+  font-size: 18px;
+  height: 500px;
+  left: 50%;
+  margin: auto;
+  padding: 10px;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 500px;
+  z-index: 999999;
+}
+
+.dialog .close {
+  border: 2px solid #f06;
+  fill: none;
+  position: relative;
+  align-self: right;
+  stroke: rgba(117, 117, 117, .5);
+  top: 5px;
+  width: 100%;
+}
+
+.dialog .actions {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: space;
+}
+
+.dialog .actions button {}
+
+.actions .default {
+  border: 2px solid #f06;
+}
+
+.action .primary {
+  background-color: #f06;
+}
+
+.action .disabled {
+  background-color: #ccc;
+}
+
+
+/* Animation */
+
+.modal-enter {
+  opacity: 0.00;
+  transform: scale(0.7);
+  transition: all 0.2s;
+}
+
+.modal-enter.modal-enter-active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.modal-leave {
+  opacity: 1;
+  transform: scale(1);
+  transition: all 0.2s;
+}
+
+.modal-leave.modal-leave-active {
+  opacity: 0.00;
+  transform: scale(0.7);
+}

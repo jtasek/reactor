@@ -1,0 +1,95 @@
+#smallGrid {
+	fill: none;
+	stroke-width: 0.5;
+	stroke: gray;
+}
+
+#grid {
+	fill: none;
+	stroke-width: 1;
+	stroke: gray;
+}
+
+
+/*Light Theme */
+
+
+/*
+	.grid-lines-small {
+	    fill: none;
+	    opacity: .1675;
+	    stroke-width: .5;
+	    stroke: #000;
+	}
+
+	.grid-lines-large {
+	    fill: none;
+	    opacity: .125625;
+	    stroke-width: 1;
+	    stroke: #000;
+	}
+
+	.background {
+		background-color: rgb(250,250,250);
+		height: 100%;
+		margin: auto 0;
+		overflow: hidden;
+	}
+    */
+
+
+/* Blueprint Theme */
+
+.grid-lines-small {
+	fill: none;
+	opacity: .3;
+	stroke-width: .5;
+	stroke: #fff;
+}
+
+.grid-lines-large {
+	fill: none;
+	opacity: .3;
+	stroke-width: 1;
+	stroke: #fff;
+}
+
+.background {
+	/*background-color: #104891;*/
+	background-color: #4078c0;
+	height: 100%;
+	margin: auto 0;
+	overflow: hidden;
+}
+
+
+/* Dark Theme 
+	.grid-lines-small {
+	    fill: none;
+	    opacity: .1675;
+	    stroke-width: .5;
+	    stroke: #fff;
+	}
+
+	.grid-lines-large {
+	    fill: none;
+	    opacity: .125625;
+	    stroke-width: 1;
+	    stroke: #fff;
+	}
+
+	.background {
+		background-color: rgb(51,51,51);
+		height: 100%;
+		margin: auto;
+		overflow: hidden;
+	}
+    #statusbar{
+        background:purple;
+        bottom: 0;
+        color:white;
+        font-family: sans-serif;   
+        height: 22px;
+        position: fixed;
+        width: 100%;
+    }	*/

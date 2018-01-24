@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Flaticon WebFont</title>
+    <link rel="stylesheet" type="text/css" href="flaticon.css">
+    <meta charset="UTF-8">
+    <style>
+    body {
+        font-family: sans-serif;
+        line-height: 1.5;
+        font-size: 16px;
+        padding: 20px;
+        color:#333;
+    }
+    * {
+        -moz-box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    [class^="flaticon-"]:before, [class*=" flaticon-"]:before, [class^="flaticon-"]:after, [class*=" flaticon-"]:after {
+        font-family: Flaticon;
+        font-size: 30px;
+        font-style: normal;
+        margin-left: 20px;
+        color: #333;
+    }
+    .image p {
+		font-size: 12px;
+		margin: 0px;
+		clear: none;
+		width: 300px;
+		line-height: 40px;
+	}
+    .text {
+        float: left;
+        font-size:14px;
+        margin-top: 15px;
+    }
+    .text ul {
+        margin-left:0px;
+        color:#111;
+        margin-bottom:20px;
+    }
+    .text .ex {
+        font-size:12px;
+        color:#666;
+        margin-left:35px;
+        display:block;
+    }
+    .text ul li {
+        margin-top:10px;
+        list-style:none;
+    }
+    .num {
+        background:#66A523;
+        color:#fff;
+        border-radius:20px;
+        padding:1px;
+        display:inline-block;
+        width:22px;
+        height:22px;
+        text-align:center;
+        margin-right: 5px;
+    }
+    .text ul strong {
+        font-weight:normal;
+        color:#000;
+    }
+    .image {
+        width: 280px;
+        float: left;
+        margin-bottom: 15px;
+        margin-right: 30px;
+    }
+    #glyphs {
+        clear: both;
+    }
+    .image p:nth-child(even) i {
+        clear: none;
+    }
+    .glyph {
+        display: inline-block;
+        width: 120px;
+        margin: 10px;
+        text-align: center;
+        vertical-align: top;
+        background: #FFF;
+    }
+    .glyph .glyph-icon {
+        padding: 10px;
+        display: block;
+        font-family:"Flaticon";
+        font-size: 64px;
+        line-height: 1;
+    }
+    .glyph .glyph-icon:before {
+        font-size: 64px;
+        color: #666;
+        margin-left: 0;
+    }
+    .class-name {
+        font-size: 12px;
+    }
+    .author-name {
+		font-size: 10px;
+	}
+	a{
+		color: #66A523;
+	}
+    .instructions {
+        font-style:italic;
+        font-size:22px;
+        margin-bottom:10px;
+    }
+    .iconsuse {
+        font-size:22px;
+        font-style:italic;
+        padding-top:20px;
+        margin-top:20px;
+        border-top:1px solid #bbb;
+    }
+    .usetitle {
+        margin-bottom: 10px;
+        font-size: 20px;
+        font-style: italic;
+    }
+    .class-name:last-child {
+        font-size: 10px;
+        color:#888;
+    }
+    .class-name:last-child a {
+        font-size: 10px;
+        color:#555;
+    }
+    .class-name:last-child a:hover {
+        color:#66A523;
+    }
+    .glyph > input {
+        display: block;
+        width: 100px;
+        margin: 5px auto;
+        text-align: center;
+        font-size: 12px;
+        cursor: text;
+    }
+    .glyph > input.icon-input {
+        font-family:"Flaticon";
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+    h1.logo {
+        font-size: 40px;
+        letter-spacing: -1px;
+        margin-top: -16px;
+        text-transform: lowercase;
+        border-bottom:1px solid #bbb;
+    }
+    h1.logo strong {
+        font-size: 16px;
+        font-family:sans-serif;
+        font-weight:normal;
+        color:#333;
+    }
+    h1.logo a {
+        color:#34302d;
+        text-decoration: none;
+    }
+    h1.logo a span {
+        color:#66A523;
+    }
+    #footer {
+        padding-top:40px;
+        clear:both;
+        text-align:center;
+    }
+    #footer a {
+        color:#66A523;
+    }
+    textarea {
+		margin: 0px;
+		width: 800px;
+		height: 150px;
+		border: 1px solid #CCC;
+		resize: none;
+		background: #EEE;
+    }
+    .author-link, .attrDiv a{
+    	font-size: 12px;
+    	color: #333;
+    	text-decoration: none;
+    }
+    .external {
+    	display: block;
+    }
+    .attrDiv {
+		font-size: 12px;
+	}
+    .attribution {
+        border-top: 1px solid #AAA;
+        margin: 10px 0;
+        padding-top: 15px;
+    }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1 class="logo">
+            <a href="http://www.flaticon.com">
+                <span>FLAT</span>ICON</a>
+            <strong>Font Demo</strong>
+        </h1>
+    </header>
+
+    <section class="demo">
+        <div class="text">
+
+            <div class="instructions">Instructions:</div>
+
+            <ul>
+                <li>
+                    <p>
+                        <span class="num">1</span>Copy the "Fonts" files and CSS files to your website CSS folder.
+                </li>
+                <li>
+                    <p>
+                        <span class="num">2</span>Add the CSS link to your website source code on header.
+                        <br />
+                        <span class="ex">&lt;head&gt;
+                            <br/>...
+                            <br/>&lt;link rel="stylesheet" type="text/css" href="your_website_domain/css_root/flaticon.css"&gt;
+                            <br/>...
+                            <br/>&lt;/head&gt;</span>
+                </li>
+
+                <li>
+                    <p>
+                        <span class="num">3</span>Use the icon class on "display:inline" elements:
+                        <br />
+                        <span class="ex">Use example: &lt;i class=&quot;flaticon-airplane49&quot;&gt;&lt;/i&gt; or &lt;span class=&quot;flaticon-airplane49&quot;&gt;&lt;/span&gt;</span>
+                </li>
+            </ul>
+        </div>
+
+    </section>
+
+    <section id="glyphs"><div class="glyph">
+		<div class="glyph-icon flaticon-abacus2"></div>
+		<div class="class-name">.flaticon-abacus2</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/abacus-hand-drawn-tool_35649">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-add77"></div>
+		<div class="class-name">.flaticon-add77</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/add-suitcase-hand-drawn-symbol_35529">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-add78"></div>
+		<div class="class-name">.flaticon-add78</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/add-to-list-hand-drawn-interface-symbol_35640">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-add79"></div>
+		<div class="class-name">.flaticon-add79</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/add-hand-drawn-button-outline_35679">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-add80"></div>
+		<div class="class-name">.flaticon-add80</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/add-text-interface-hand-drawn-symbol-outline_35697">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-add81"></div>
+		<div class="class-name">.flaticon-add81</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/add-folder-hand-drawn-interface-symbol_35790">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-add82"></div>
+		<div class="class-name">.flaticon-add82</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/add-user-hand-drawn-outline_35851">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-address18"></div>
+		<div class="class-name">.flaticon-address18</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/address-book-hand-drawn-outline_35849">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-agenda"></div>
+		<div class="class-name">.flaticon-agenda</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/agenda-hand-drawn-tool-outline_35570">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-alert4"></div>
+		<div class="class-name">.flaticon-alert4</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/alert-hand-drawn-sign_35485">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-alert5"></div>
+		<div class="class-name">.flaticon-alert5</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/alert-hand-drawn-symbol_35720">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-alien2"></div>
+		<div class="class-name">.flaticon-alien2</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/alien-hand-drawn-head-outline_35701">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-american11"></div>
+		<div class="class-name">.flaticon-american11</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/american-football-ball-hand-drawn-outline_35672">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-analytics4"></div>
+		<div class="class-name">.flaticon-analytics4</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/analytics-hand-drawn-lines_35819">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-anchor23"></div>
+		<div class="class-name">.flaticon-anchor23</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/anchor-hand-drawn-tool_35551">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-android5"></div>
+		<div class="class-name">.flaticon-android5</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/android-hand-drawn-logo-outline_35596">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-apple41"></div>
+		<div class="class-name">.flaticon-apple41</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/apple-hand-drawn-fruit-outline_35436">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-apple43"></div>
+		<div class="class-name">.flaticon-apple43</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/apple-brand-hand-drawn-logo-outline_35772">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-arch2"></div>
+		<div class="class-name">.flaticon-arch2</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/arch-with-arrow-hand-drawn-tool_35769">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-archive16"></div>
+		<div class="class-name">.flaticon-archive16</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/archive-hand-drawn-box-symbol_35439">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-arroba6"></div>
+		<div class="class-name">.flaticon-arroba6</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/arroba-hand-drawn-symbol_35507">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-arrow550"></div>
+		<div class="class-name">.flaticon-arrow550</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/arrow-pointing-to-right-hand-drawn-symbol_35416">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-arrow551"></div>
+		<div class="class-name">.flaticon-arrow551</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/arrow-point-hand-drawn-outline-pointing-to-right-direction_35483">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-arrow552"></div>
+		<div class="class-name">.flaticon-arrow552</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/arrow-pointing-up-hand-drawn-symbol_35525">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-arrow553"></div>
+		<div class="class-name">.flaticon-arrow553</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/arrow-pointing-to-left-hand-drawn-outline_35576">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-arrows71"></div>
+		<div class="class-name">.flaticon-arrows71</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/arrows-hand-drawn-interface-symbol-outlines_35774">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-atom9"></div>
+		<div class="class-name">.flaticon-atom9</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/atom-hand-drawn-symbol_35471">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-attention"></div>
+		<div class="class-name">.flaticon-attention</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/attention-hand-drawn-symbol-of-an-exclamation-sign-inside-bald-head-from-side-view_35634">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-back15"></div>
+		<div class="class-name">.flaticon-back15</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/back-hand-drawn-arrow_35586">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-back16"></div>
+		<div class="class-name">.flaticon-back16</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/back-hand-drawn-arrow-outline_35724">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-back17"></div>
+		<div class="class-name">.flaticon-back17</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/back-arrow-hand-drawn-sign_35802">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-back18"></div>
+		<div class="class-name">.flaticon-back18</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/back-arrow-pointing-left-hand-drawn-symbol_35827">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-baggage17"></div>
+		<div class="class-name">.flaticon-baggage17</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/baggage-suitcase-hand-drawn-outline-from-side-view_35843">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-balance4"></div>
+		<div class="class-name">.flaticon-balance4</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/balance-scale-hand-drawn-symbol_35629">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-balloon4"></div>
+		<div class="class-name">.flaticon-balloon4</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/balloon-hand-drawn-outline_35780">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-bars22"></div>
+		<div class="class-name">.flaticon-bars22</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/bars-graphic-hand-drawn-outlines_35607">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-bars23"></div>
+		<div class="class-name">.flaticon-bars23</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/bars-graphic-up-hand-drawn-symbol_35758">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-battery90"></div>
+		<div class="class-name">.flaticon-battery90</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/battery-two-thirds-status-hand-drawn-outline_35813">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-beer13"></div>
+		<div class="class-name">.flaticon-beer13</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/beer-jar-hand-drawn-outline_35848">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-behance3"></div>
+		<div class="class-name">.flaticon-behance3</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/behance-hand-drawn-symbol_35450">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-bell20"></div>
+		<div class="class-name">.flaticon-bell20</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/bell-hand-drawn-interface-symbol_35699">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-bike11"></div>
+		<div class="class-name">.flaticon-bike11</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/bike-hand-drawn-transport_35768">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-bird31"></div>
+		<div class="class-name">.flaticon-bird31</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/bird-part-meat-hand-drawn-outline_35625">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-bomb5"></div>
+		<div class="class-name">.flaticon-bomb5</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/bomb-hand-drawn-interface-symbol-outline_35681">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-book126"></div>
+		<div class="class-name">.flaticon-book126</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/book-hand-drawn-open-pages_35781">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-bookmark12"></div>
+		<div class="class-name">.flaticon-bookmark12</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/bookmark-hand-drawn-outline_35675">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-bookmarks1"></div>
+		<div class="class-name">.flaticon-bookmarks1</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/bookmarks-hand-drawn-outline_35477">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-box42"></div>
+		<div class="class-name">.flaticon-box42</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/box-with-an-arrow-sign-pointing-down-hand-drawn-symbol_35452">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-box43"></div>
+		<div class="class-name">.flaticon-box43</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/box-package-with-an-up-arrow-hand-drawn-symbol_35747">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-boy15"></div>
+		<div class="class-name">.flaticon-boy15</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/boy-hand-drawn-face_35553">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-bright2"></div>
+		<div class="class-name">.flaticon-bright2</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/bright-hand-drawn-button-sign_35817">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-bright3"></div>
+		<div class="class-name">.flaticon-bright3</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/bright-hand-drawn-interface-symbol-outline_35831">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-bug10"></div>
+		<div class="class-name">.flaticon-bug10</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/bug-hand-drawn-symbol_35614">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-business66"></div>
+		<div class="class-name">.flaticon-business66</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/business-man-hand-drawn-outline_35503">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-business67"></div>
+		<div class="class-name">.flaticon-business67</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/business-graphic-down-hand-drawn-symbol_35579">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-business68"></div>
+		<div class="class-name">.flaticon-business68</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/business-report-graphic-with-descendant-line-hand-drawn-symbol_35610">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-calculator36"></div>
+		<div class="class-name">.flaticon-calculator36</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/calculator-hand-drawn-tool_35807">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-calendar71"></div>
+		<div class="class-name">.flaticon-calendar71</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/calendar-hand-drawn-tool_35617">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-cancel11"></div>
+		<div class="class-name">.flaticon-cancel11</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/cancel-suitcase-hand-drawn-interface-symbol_35754">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-cancel12"></div>
+		<div class="class-name">.flaticon-cancel12</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/cancel-hand-drawn-cross-in-square-button-outline_35755">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-cancel13"></div>
+		<div class="class-name">.flaticon-cancel13</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/cancel-circular-button-with-a-cross-inside-hand-drawn-outlines_35765">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-cancer"></div>
+		<div class="class-name">.flaticon-cancer</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/cancer-ribbon-hand-drawn-outline_35854">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-chat34"></div>
+		<div class="class-name">.flaticon-chat34</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/chat-bubble-hand-drawn-outline_35531">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-chat35"></div>
+		<div class="class-name">.flaticon-chat35</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/chat-bubbles-couple-hand-drawn-outlines_35821">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-checkmark4"></div>
+		<div class="class-name">.flaticon-checkmark4</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/checkmark-hand-drawn-outline_35734">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-chemical1"></div>
+		<div class="class-name">.flaticon-chemical1</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/chemical-hand-drawn-container_35722">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-chicken7"></div>
+		<div class="class-name">.flaticon-chicken7</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/chicken-hand-drawn-outline_35630">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-clip9"></div>
+		<div class="class-name">.flaticon-clip9</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/clip-hand-drawn-shape_35650">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-clipboard47"></div>
+		<div class="class-name">.flaticon-clipboard47</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/clipboard-hand-drawn-symbol_35539">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-clipboard48"></div>
+		<div class="class-name">.flaticon-clipboard48</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/clipboard-hand-drawn-interface-symbol_35741">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-clipboard49"></div>
+		<div class="class-name">.flaticon-clipboard49</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/clipboard-with-checkmark-hand-drawn-symbol_35797">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-closed44"></div>
+		<div class="class-name">.flaticon-closed44</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/closed-tag-hand-drawn-signs_35566">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-cloud162"></div>
+		<div class="class-name">.flaticon-cloud162</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/cloud-hand-drawn-outline_35449">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-codebar"></div>
+		<div class="class-name">.flaticon-codebar</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/codebar-hand-drawn-lines-and-numbers_35717">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-coffee29"></div>
+		<div class="class-name">.flaticon-coffee29</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/coffee-glass-hand-drawn-outline_35475">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-coffee30"></div>
+		<div class="class-name">.flaticon-coffee30</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/coffee-hot-mug-hand-drawn-outline_35608">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-cogwheel13"></div>
+		<div class="class-name">.flaticon-cogwheel13</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/cogwheel-hand-drawn-outline_35500">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-coins18"></div>
+		<div class="class-name">.flaticon-coins18</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/coins-stacks-of-dollars-hand-drawn-commercial-symbol_35718">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-compass51"></div>
+		<div class="class-name">.flaticon-compass51</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/compass-hand-drawn-circular-tool-outline_35746">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-completed"></div>
+		<div class="class-name">.flaticon-completed</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/completed-tasks-hand-drawn-clipboard-sign-with-verification-mark_35613">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-cone5"></div>
+		<div class="class-name">.flaticon-cone5</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/cone-for-traffic-hand-drawn-tool_35481">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-configuration7"></div>
+		<div class="class-name">.flaticon-configuration7</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/configuration-hand-drawn-couple-of-cogwheels-outlines_35611">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-configuration8"></div>
+		<div class="class-name">.flaticon-configuration8</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/configuration-hand-drawn-interface-symbol-of-tools-a-pencil-and-a-wrench-cross_35666">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-connection13"></div>
+		<div class="class-name">.flaticon-connection13</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/connection-hand-drawn-symbol_35419">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-connection14"></div>
+		<div class="class-name">.flaticon-connection14</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/connection-hand-drawn-symbol_35618">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-contacts5"></div>
+		<div class="class-name">.flaticon-contacts5</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/contacts-book-hand-drawn_35447">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-crane3"></div>
+		<div class="class-name">.flaticon-crane3</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/crane-hand-drawn-bones-outline_35828">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-crown29"></div>
+		<div class="class-name">.flaticon-crown29</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/crown-hand-drawn-outline_35750">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-css7"></div>
+		<div class="class-name">.flaticon-css7</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/css-file-hand-drawn-outline_35542">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-cupcake5"></div>
+		<div class="class-name">.flaticon-cupcake5</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/cupcake-hand-drawn-dessert_35727">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-cutlery"></div>
+		<div class="class-name">.flaticon-cutlery</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/cutlery_35552">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-cycle6"></div>
+		<div class="class-name">.flaticon-cycle6</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/cycle-couple-of-arrows-hand-drawn-lines_35735">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-dashboard3"></div>
+		<div class="class-name">.flaticon-dashboard3</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/dashboard-hand-drawn-tool_35644">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-database34"></div>
+		<div class="class-name">.flaticon-database34</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/database-hand-drawn-interface-symbol-outline_35760">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-delete34"></div>
+		<div class="class-name">.flaticon-delete34</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/delete-user-hand-drawn-symbol_35445">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-delete35"></div>
+		<div class="class-name">.flaticon-delete35</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/delete-page-hand-drawn-symbol_35592">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-delete36"></div>
+		<div class="class-name">.flaticon-delete36</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/delete-folder-hand-drawn-symbol-outline-with-minus-sign_35601">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-delete37"></div>
+		<div class="class-name">.flaticon-delete37</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/delete-folder-hand-drawn-outline_35731">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-delete38"></div>
+		<div class="class-name">.flaticon-delete38</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/delete-hand-drawn-cross-symbol-outline_35795">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-delete39"></div>
+		<div class="class-name">.flaticon-delete39</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/delete-cloud-file-hand-drawn-interface-symbol_35814">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-delicious6"></div>
+		<div class="class-name">.flaticon-delicious6</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/delicious-hand-drawn-logo_35504">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-descending2"></div>
+		<div class="class-name">.flaticon-descending2</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/descending-graphic-hand-drawn-outline_35715">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-diamond26"></div>
+		<div class="class-name">.flaticon-diamond26</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/diamond-hand-drawn-outline-side-view_35833">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-directional9"></div>
+		<div class="class-name">.flaticon-directional9</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/directional-arrows-signal-hand-drawn-symbol-pointing-left-and-right-opposite-directions_35659">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-directions"></div>
+		<div class="class-name">.flaticon-directions</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/directions-of-winds-star-hand-drawn-symbol_35418">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-dna8"></div>
+		<div class="class-name">.flaticon-dna8</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/dna-hand-drawn-symbol_35748">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-document87"></div>
+		<div class="class-name">.flaticon-document87</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/document-hand-drawn-outline_35688">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-document88"></div>
+		<div class="class-name">.flaticon-document88</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/document-file-hand-drawn-symbol_35825">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-dont2"></div>
+		<div class="class-name">.flaticon-dont2</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/dont-like-symbol_35739">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-down17"></div>
+		<div class="class-name">.flaticon-down17</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/down-arrow-hand-drawn-outline_35442">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-down18"></div>
+		<div class="class-name">.flaticon-down18</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/down-arrow-hand-drawn-triangle_35647">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-down19"></div>
+		<div class="class-name">.flaticon-down19</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/down-button-hand-drawn-arrow-and-squares-outlines_35711">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-down20"></div>
+		<div class="class-name">.flaticon-down20</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/down-page-hand-drawn-symbol_35779">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-down25"></div>
+		<div class="class-name">.flaticon-down25</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/down-arrow-hand-drawn-sign_37050">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-download69"></div>
+		<div class="class-name">.flaticon-download69</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/download-hand-drawn-interface-symbol-of-a-tray-with-a-descending-arrow-on-it_35738">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-drawers"></div>
+		<div class="class-name">.flaticon-drawers</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/drawers-hand-drawn-tool-outline_35729">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-dribbble7"></div>
+		<div class="class-name">.flaticon-dribbble7</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/dribbble-hand-drawn-logo_35468">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-dropper8"></div>
+		<div class="class-name">.flaticon-dropper8</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/dropper-hand-drawn-outline_35448">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-edit27"></div>
+		<div class="class-name">.flaticon-edit27</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/edit-hand-drawn-interface-symbol_35575">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-edit28"></div>
+		<div class="class-name">.flaticon-edit28</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/edit-note-hand-drawn-interface-symbol_35631">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-eject16"></div>
+		<div class="class-name">.flaticon-eject16</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/eject-hand-drawn-symbol_35622">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-empty22"></div>
+		<div class="class-name">.flaticon-empty22</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/empty-battery-hand-drawn-interface-symbol_35561">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-eps6"></div>
+		<div class="class-name">.flaticon-eps6</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/eps-vector-file-hand-drawn-symbol_35509">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-euro32"></div>
+		<div class="class-name">.flaticon-euro32</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/euro-hand-drawn-currency-symbol_35759">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-exit10"></div>
+		<div class="class-name">.flaticon-exit10</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/exit-hand-drawn-interface-symbol_35805">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-exit9"></div>
+		<div class="class-name">.flaticon-exit9</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/exit-hand-drawn-interface-symbol-variant_35702">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-expand17"></div>
+		<div class="class-name">.flaticon-expand17</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/expand-hand-drawn-interface-arrows-symbol-outline_35674">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-expand18"></div>
+		<div class="class-name">.flaticon-expand18</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/expand-hand-drawn-interface-symbol-of-two-opposite-arrows-outlines_35806">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-export5"></div>
+		<div class="class-name">.flaticon-export5</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/export-hand-drawn-symbol_35632">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-eye74"></div>
+		<div class="class-name">.flaticon-eye74</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/eye-hand-drawn-variant_35581">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-facebook32"></div>
+		<div class="class-name">.flaticon-facebook32</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/facebook-letter-logo-in-a-square-hand-drawn-outline_35804">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-factory9"></div>
+		<div class="class-name">.flaticon-factory9</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/factory-hand-drawn-building-outline_35810">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-favorite9"></div>
+		<div class="class-name">.flaticon-favorite9</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/favorite-user-hand-drawn-interface-symbol_35609">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-feather11"></div>
+		<div class="class-name">.flaticon-feather11</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/feather-hand-drawn-outline_35785">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-female130"></div>
+		<div class="class-name">.flaticon-female130</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/female-hand-drawn-symbol-outline_35662">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-fire23"></div>
+		<div class="class-name">.flaticon-fire23</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/fire-hand-drawn-flames-outlines_35743">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-flag33"></div>
+		<div class="class-name">.flaticon-flag33</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/flag-hand-drawn-outline_35669">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-fonts"></div>
+		<div class="class-name">.flaticon-fonts</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/fonts-hand-drawn-symbol-outline_35540">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-forward12"></div>
+		<div class="class-name">.flaticon-forward12</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/forward-hand-drawn-arrow-pointing-to-right_35556">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-forward13"></div>
+		<div class="class-name">.flaticon-forward13</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/forward-arrow-hand-drawn-button_35782">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-foursquare7"></div>
+		<div class="class-name">.flaticon-foursquare7</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/foursquare-hand-drawn-logo-outline_35839">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-free1"></div>
+		<div class="class-name">.flaticon-free1</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/free-tag-hand-drawn-sign_35499">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-full25"></div>
+		<div class="class-name">.flaticon-full25</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/full-battery-symbol-hand-drawn-outline_35541">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-funnel9"></div>
+		<div class="class-name">.flaticon-funnel9</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/funnel-hand-drawn-symbol_35451">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-gallery"></div>
+		<div class="class-name">.flaticon-gallery</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/gallery-hand-drawn-interface-symbol-of-irregular-squares-outlines_35789">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-game21"></div>
+		<div class="class-name">.flaticon-game21</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/game-controller-hand-drawn-tool_35501">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-gif6"></div>
+		<div class="class-name">.flaticon-gif6</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/gif-image-file-hand-drawn-outline_35808">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-gift52"></div>
+		<div class="class-name">.flaticon-gift52</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/gift-box-hand-drawn-outline_35787">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-glass18"></div>
+		<div class="class-name">.flaticon-glass18</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/glass-hand-drawn-outline_35584">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-go9"></div>
+		<div class="class-name">.flaticon-go9</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/go-to-the-top-hand-drawn-interface-symbol-with-an-arrow-pointing-up-to-a-thin-rectangle_35844">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-graduate7"></div>
+		<div class="class-name">.flaticon-graduate7</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/graduate-hand-drawn-hat-outline_35558">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-gym8"></div>
+		<div class="class-name">.flaticon-gym8</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/gym-dumbbell-hand-drawn-tool_35812">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-hand131"></div>
+		<div class="class-name">.flaticon-hand131</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/hand-drawn-google-plus-logo_48784">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-hdd2"></div>
+		<div class="class-name">.flaticon-hdd2</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/hdd-hand-drawn-symbol-outline_35667">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-headphones18"></div>
+		<div class="class-name">.flaticon-headphones18</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/headphones-hand-drawn-tool_35469">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-heart212"></div>
+		<div class="class-name">.flaticon-heart212</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/heart-with-cupid-arrow-hand-drawn-symbol_35482">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-heart213"></div>
+		<div class="class-name">.flaticon-heart213</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/heart-hand-drawn-symbol-outline_35713">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-horseshoe6"></div>
+		<div class="class-name">.flaticon-horseshoe6</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/horseshoe-with-holes-hand-drawn-outline_35437">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-hot49"></div>
+		<div class="class-name">.flaticon-hot49</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/hot-dog-hand-drawn-food-outline_35573">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-house80"></div>
+		<div class="class-name">.flaticon-house80</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/house-hand-drawn-outline_35745">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-html12"></div>
+		<div class="class-name">.flaticon-html12</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/html-file-hand-drawn-symbol_35606">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-ice45"></div>
+		<div class="class-name">.flaticon-ice45</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/ice-cream-on-a-cone-hand-drawn-dessert_35732">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-id5"></div>
+		<div class="class-name">.flaticon-id5</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/id-hand-drawn-symbol_35641">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-idea11"></div>
+		<div class="class-name">.flaticon-idea11</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/idea-hand-drawn-symbol-of-a-side-head-with-a-lightbulb-inside_35497">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-illustrator"></div>
+		<div class="class-name">.flaticon-illustrator</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/illustrator-file-hand-drawn-interface-symbol_35783">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-inbox20"></div>
+		<div class="class-name">.flaticon-inbox20</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/inbox-hand-drawn-tray-symbol-with-an-arrow_35656">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-inbox21"></div>
+		<div class="class-name">.flaticon-inbox21</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/inbox-hand-drawn-tray-with-arrow_35723">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-incomplete"></div>
+		<div class="class-name">.flaticon-incomplete</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/incomplete-hand-drawn-symbol_35840">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-increase3"></div>
+		<div class="class-name">.flaticon-increase3</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/increase-zoom-hand-drawn-symbol_35635">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-infinite1"></div>
+		<div class="class-name">.flaticon-infinite1</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/infinite-hand-drawn-sign_35638">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-information41"></div>
+		<div class="class-name">.flaticon-information41</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/information-hand-drawn-irregular-button_35578">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-information42"></div>
+		<div class="class-name">.flaticon-information42</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/information-hand-drawn-circular-button_35615">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-instagram6"></div>
+		<div class="class-name">.flaticon-instagram6</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/instagram-hand-drawn-logo_35589">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-java2"></div>
+		<div class="class-name">.flaticon-java2</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/java-script-hand-drawn-file_35446">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-join"></div>
+		<div class="class-name">.flaticon-join</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/join-of-four-arrows-hand-drawn-outlines_35528">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-jpg4"></div>
+		<div class="class-name">.flaticon-jpg4</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/jpg-hand-drawn-file-symbol_35478">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-jump5"></div>
+		<div class="class-name">.flaticon-jump5</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/jump-hand-drawn-arrow_35680">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-key65"></div>
+		<div class="class-name">.flaticon-key65</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/key-hand-drawn-outline_35595">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-keyboard40"></div>
+		<div class="class-name">.flaticon-keyboard40</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/keyboard-hand-drawn-irregular-tool-shape-outline_35506">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-kilometers"></div>
+		<div class="class-name">.flaticon-kilometers</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/kilometers-route-signal-hand-drawn-outline_35730">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-lantern15"></div>
+		<div class="class-name">.flaticon-lantern15</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/lantern-on-hand-drawn-tool-outline_35658">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-leaf37"></div>
+		<div class="class-name">.flaticon-leaf37</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/leaf-hand-drawn-shape_35624">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-left42"></div>
+		<div class="class-name">.flaticon-left42</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/left-button-with-an-arrow-hand-drawn-symbol_35438">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-left43"></div>
+		<div class="class-name">.flaticon-left43</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/left-arrow-hand-drawn-outline_35545">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-left44"></div>
+		<div class="class-name">.flaticon-left44</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/left-arrow-hand-drawn-triangle_35565">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-left45"></div>
+		<div class="class-name">.flaticon-left45</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/left-arrow-hand-drawn-triangular-shape_35612">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-less1"></div>
+		<div class="class-name">.flaticon-less1</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/less-zoom-hand-drawn-symbol_35546">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-life4"></div>
+		<div class="class-name">.flaticon-life4</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/life-guard-hand-drawn-tool_35571">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-lifeline6"></div>
+		<div class="class-name">.flaticon-lifeline6</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/lifeline-hand-drawn-status-line_35767">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-lightbulb16"></div>
+		<div class="class-name">.flaticon-lightbulb16</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/lightbulb-hand-drawn-symbol_35580">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-like29"></div>
+		<div class="class-name">.flaticon-like29</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/like-thumb-up-hand-drawn-symbol-outline_35433">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-link24"></div>
+		<div class="class-name">.flaticon-link24</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/link-hand-drawn-symbol_35496">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-link25"></div>
+		<div class="class-name">.flaticon-link25</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/link-hand-drawn-interface-symbol_35598">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-linkedin13"></div>
+		<div class="class-name">.flaticon-linkedin13</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/linkedin-logo-hand-drawn-outline_35716">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-list37"></div>
+		<div class="class-name">.flaticon-list37</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/list-items-hand-drawn-symbol-outlines_35585">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-list38"></div>
+		<div class="class-name">.flaticon-list38</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/list-menu-hand-drawn-symbol-of-three-thin-rectangles-outlines_35740">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-list39"></div>
+		<div class="class-name">.flaticon-list39</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/list-paper-hand-drawn-symbol_35771">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-location31"></div>
+		<div class="class-name">.flaticon-location31</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/location-pin-hand-drawn-sign_35535">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-lock29"></div>
+		<div class="class-name">.flaticon-lock29</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/lock-hand-drawn-padlock-symbol_35562">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-love22"></div>
+		<div class="class-name">.flaticon-love22</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/love-hand-drawn-heart-symbol-outline_35538">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-love23"></div>
+		<div class="class-name">.flaticon-love23</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/love-hand-drawn-couple-of-hearts_35687">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-low23"></div>
+		<div class="class-name">.flaticon-low23</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/low-battery-hand-drawn-interface-symbol_35476">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-magic10"></div>
+		<div class="class-name">.flaticon-magic10</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/magic-wand-hand-drawn-tool_35587">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-magnet4"></div>
+		<div class="class-name">.flaticon-magnet4</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/magnet-hand-drawn-tool-outline_35593">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-magnifying41"></div>
+		<div class="class-name">.flaticon-magnifying41</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/magnifying-glass-hand-drawn-tool_35664">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-mail62"></div>
+		<div class="class-name">.flaticon-mail62</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/mail-envelope-back-hand-drawn-outline_35655">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-male164"></div>
+		<div class="class-name">.flaticon-male164</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/male-hand-drawn-symbol-outline_35832">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-map62"></div>
+		<div class="class-name">.flaticon-map62</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/map-location-hand-drawn-interface-symbol_35692">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-map63"></div>
+		<div class="class-name">.flaticon-map63</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/map-hand-drawn-paper_35744">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-megaphone4"></div>
+		<div class="class-name">.flaticon-megaphone4</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/megaphone-hand-drawn-tool-outline_35822">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-menu22"></div>
+		<div class="class-name">.flaticon-menu22</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/menu-hand-drawn-lines-outlines_35712">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-menu23"></div>
+		<div class="class-name">.flaticon-menu23</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/menu-curve-lines-variant-hand-drawn-outlines_35811">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-microphone53"></div>
+		<div class="class-name">.flaticon-microphone53</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/microphone-hand-drawn-voice-interface-symbol-outline_35841">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-microscope5"></div>
+		<div class="class-name">.flaticon-microscope5</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/microscope-hand-drawn-tool-outline_35756">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-minus26"></div>
+		<div class="class-name">.flaticon-minus26</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/minus-sign-inside-a-square-hand-drawn-symbol_35652">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-minus27"></div>
+		<div class="class-name">.flaticon-minus27</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/minus-sign-in-a-circle-hand-drawn-outlines_35793">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-money42"></div>
+		<div class="class-name">.flaticon-money42</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/money-paper-of-dollars-hand-drawn-symbol_35627">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-money43"></div>
+		<div class="class-name">.flaticon-money43</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/money-bag-hand-drawn-variant_35710">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-money44"></div>
+		<div class="class-name">.flaticon-money44</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/money-symbol-hand-drawn-outline_35714">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-money45"></div>
+		<div class="class-name">.flaticon-money45</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/money-stack-hand-drawn-outline_35766">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-monitoring3"></div>
+		<div class="class-name">.flaticon-monitoring3</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/monitoring-graphic-hand-drawn-symbol_35557">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-moon22"></div>
+		<div class="class-name">.flaticon-moon22</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/moon-hand-drawn-circle_35691">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-moon23"></div>
+		<div class="class-name">.flaticon-moon23</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/moon-phase-hand-drawn-outline_35778">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-mosaic1"></div>
+		<div class="class-name">.flaticon-mosaic1</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/mosaic-of-four-hand-drawn-squares-tiles_35563">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-mosaic"></div>
+		<div class="class-name">.flaticon-mosaic</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/mosaic-of-nine-square-tiles-hand-drawn-symbol_35524">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-mouse29"></div>
+		<div class="class-name">.flaticon-mouse29</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/mouse-hand-drawn-tool_35661">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-mug4"></div>
+		<div class="class-name">.flaticon-mug4</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/mug-coffee-hand-drawn-symbol_35554">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-musical65"></div>
+		<div class="class-name">.flaticon-musical65</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/musical-note-hand-drawn-outline_35564">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-musical66"></div>
+		<div class="class-name">.flaticon-musical66</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/musical-symbol-hand-drawn-outline_35757">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-mustache6"></div>
+		<div class="class-name">.flaticon-mustache6</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/mustache-and-glasses-hand-drawn-outlines_35492">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-new28"></div>
+		<div class="class-name">.flaticon-new28</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/new-tag-hand-drawn-outline_35603">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-next11"></div>
+		<div class="class-name">.flaticon-next11</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/next-page-hand-drawn-symbol_35480">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-next12"></div>
+		<div class="class-name">.flaticon-next12</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/next-hand-drawn-arrow-pointing-to-right_35605">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-next13"></div>
+		<div class="class-name">.flaticon-next13</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/next-user-hand-drawn-interface-symbol_35685">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-no50"></div>
+		<div class="class-name">.flaticon-no50</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/no-sound-hand-drawn-symbol-of-a-speaker-outline-with-a-cross_35498">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-octocat"></div>
+		<div class="class-name">.flaticon-octocat</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/octocat-hand-drawn-logo-outline_35847">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-old38"></div>
+		<div class="class-name">.flaticon-old38</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/old-man-hand-drawn-face_35794">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-open138"></div>
+		<div class="class-name">.flaticon-open138</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/open-commercial-signal-hand-drawn-outline_35694">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-outbox2"></div>
+		<div class="class-name">.flaticon-outbox2</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/outbox-hand-drawn-symbol_35487">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-pages5"></div>
+		<div class="class-name">.flaticon-pages5</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/pages-hand-drawn-interface-symbol_35670">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-paint52"></div>
+		<div class="class-name">.flaticon-paint52</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/paint-brush-hand-drawn-tool_35637">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-painting32"></div>
+		<div class="class-name">.flaticon-painting32</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/painting-palette-hand-drawn-tool_35489">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-palm10"></div>
+		<div class="class-name">.flaticon-palm10</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/palm-hand-drawn-tree_35495">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-paper89"></div>
+		<div class="class-name">.flaticon-paper89</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/paper-file-hand-drawn-symbol_35560">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-paper90"></div>
+		<div class="class-name">.flaticon-paper90</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/paper-list-hand-drawn-symbol_35620">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-paper91"></div>
+		<div class="class-name">.flaticon-paper91</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/paper-hand-drawn-symbol_35636">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-paper92"></div>
+		<div class="class-name">.flaticon-paper92</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/paper-plane-hand-drawn-outline_35673">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-paper93"></div>
+		<div class="class-name">.flaticon-paper93</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/paper-sheet-hand-drawn-interface-file-symbol_35703">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-paper94"></div>
+		<div class="class-name">.flaticon-paper94</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/paper-tray-hand-drawn-outline_35834">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-pause19"></div>
+		<div class="class-name">.flaticon-pause19</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/pause-hand-drawn-symbol_35700">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-pdf20"></div>
+		<div class="class-name">.flaticon-pdf20</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/pdf-file-hand-drawn-symbol_35653">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-pen35"></div>
+		<div class="class-name">.flaticon-pen35</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/pen-hand-drawn-tool-outline_35818">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-pencil46"></div>
+		<div class="class-name">.flaticon-pencil46</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/pencil-hand-drawn-tool-outline_35764">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-phone82"></div>
+		<div class="class-name">.flaticon-phone82</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/phone-hand-drawn-outline_35588">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-php1"></div>
+		<div class="class-name">.flaticon-php1</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/php-file-hand-drawn-interface-symbol_35842">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-picture14"></div>
+		<div class="class-name">.flaticon-picture14</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/picture-hanging-in-a-frame-hand-drawn-symbol_35583">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-picture15"></div>
+		<div class="class-name">.flaticon-picture15</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/picture-of-a-landscape-hand-drawn-symbol_35604">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-pie33"></div>
+		<div class="class-name">.flaticon-pie33</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/pie-graphic-hand-drawn-business-symbol_35602">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-pin29"></div>
+		<div class="class-name">.flaticon-pin29</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/pin-hand-drawn-irregular-outline_35544">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-pine4"></div>
+		<div class="class-name">.flaticon-pine4</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/pine-hand-drawn-tree-outline_35494">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-pinterest15"></div>
+		<div class="class-name">.flaticon-pinterest15</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/pinterest-hand-drawn-logo_35491">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-pipe2"></div>
+		<div class="class-name">.flaticon-pipe2</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/pipe-hand-drawn-tool_35623">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-pi"></div>
+		<div class="class-name">.flaticon-pi</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/pi-hand-drawn-symbol_35651">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-plug16"></div>
+		<div class="class-name">.flaticon-plug16</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/plug-hand-drawn-tool_35493">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-plus34"></div>
+		<div class="class-name">.flaticon-plus34</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/plus-hand-drawn-sign_35569">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-plus35"></div>
+		<div class="class-name">.flaticon-plus35</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/plus-sign-button-hand-drawn-circle-and-cross-outlines_35689">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-png5"></div>
+		<div class="class-name">.flaticon-png5</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/png-file-hand-drawn-interface-symbol_35776">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-podium"></div>
+		<div class="class-name">.flaticon-podium</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/podium-hand-drawn-outline_35572">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-port1"></div>
+		<div class="class-name">.flaticon-port1</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/port-hand-drawn-symbol_35646">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-pound14"></div>
+		<div class="class-name">.flaticon-pound14</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/pound-hand-drawn-currency-symbol-outline_35676">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-power53"></div>
+		<div class="class-name">.flaticon-power53</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/power-symbol-variant-hand-drawn-outline_35761">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-previous8"></div>
+		<div class="class-name">.flaticon-previous8</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/previous-button-hand-drawn-outline_35853">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-price4"></div>
+		<div class="class-name">.flaticon-price4</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/price-tag-hand-drawn-outline_35820">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-private5"></div>
+		<div class="class-name">.flaticon-private5</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/private-folder-hand-drawn-outline_35788">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-prohibition8"></div>
+		<div class="class-name">.flaticon-prohibition8</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/prohibition-hand-drawn-symbol-outline_35707">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-psd4"></div>
+		<div class="class-name">.flaticon-psd4</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/psd-photoshop-file-hand-drawn-symbol_35815">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-question27"></div>
+		<div class="class-name">.flaticon-question27</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/question-mark-outline-in-a-circle-hand-drawn-button_35704">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-question28"></div>
+		<div class="class-name">.flaticon-question28</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/question-mark-inside-a-bald-male-side-head-outline_35803">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-question29"></div>
+		<div class="class-name">.flaticon-question29</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/question-sign-hand-drawn-outline_35816">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-quote3"></div>
+		<div class="class-name">.flaticon-quote3</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/quote-hand-drawn-symbol_35619">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-radiation3"></div>
+		<div class="class-name">.flaticon-radiation3</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/radiation-hand-drawn-symbol_35709">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-radio38"></div>
+		<div class="class-name">.flaticon-radio38</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/radio-flat-hand-drawn-tool-with-an-antenna_35705">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-rain19"></div>
+		<div class="class-name">.flaticon-rain19</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/rain-weather-hand-drawn-symbol_35453">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-record4"></div>
+		<div class="class-name">.flaticon-record4</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/record-hand-drawn-symbol_35751">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-refresh41"></div>
+		<div class="class-name">.flaticon-refresh41</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/refresh-circular-arrow-hand-drawn-symbol_35826">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-reload5"></div>
+		<div class="class-name">.flaticon-reload5</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/reload-hand-drawn-arrow_35773">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-repeat1"></div>
+		<div class="class-name">.flaticon-repeat1</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/repeat-hand-drawn-circular-arrow-symbol_35671">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-rest1"></div>
+		<div class="class-name">.flaticon-rest1</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/rest-hand-drawn-minus-sign-outline_35845">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-revert1"></div>
+		<div class="class-name">.flaticon-revert1</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/revert-hand-drawn-arrows_35660">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-right41"></div>
+		<div class="class-name">.flaticon-right41</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/right-button-hand-drawn-outline_35574">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-right42"></div>
+		<div class="class-name">.flaticon-right42</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/right-arrow-hand-drawn-outline_35836">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-robot7"></div>
+		<div class="class-name">.flaticon-robot7</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/robot-hand-drawn-outline_35486">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-rocket21"></div>
+		<div class="class-name">.flaticon-rocket21</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/rocket-hand-drawn-outline_35798">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-rss35"></div>
+		<div class="class-name">.flaticon-rss35</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/rss-feed-hand-drawn-symbol_35643">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-sad11"></div>
+		<div class="class-name">.flaticon-sad11</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/sad-hand-drawn-face_35527">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-sale6"></div>
+		<div class="class-name">.flaticon-sale6</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/sale-tag-hand-drawn-symbol_35559">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-sale7"></div>
+		<div class="class-name">.flaticon-sale7</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/sale-tag-hand-drawn-commercial-element_35736">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-sand7"></div>
+		<div class="class-name">.flaticon-sand7</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/sand-clock-hand-drawn-tool-outline_35508">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-save9"></div>
+		<div class="class-name">.flaticon-save9</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/save-hand-drawn-interface-floppy-disc-symbol_35728">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-scissors18"></div>
+		<div class="class-name">.flaticon-scissors18</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/scissors-hand-drawn-tool_35621">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-screen21"></div>
+		<div class="class-name">.flaticon-screen21</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/screen-hand-drawn-tool_35733">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-screwdriver17"></div>
+		<div class="class-name">.flaticon-screwdriver17</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/screwdriver-hand-drawn-tool-outline_35742">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-settings23"></div>
+		<div class="class-name">.flaticon-settings23</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/settings-hand-drawn-symbol_35648">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-settings24"></div>
+		<div class="class-name">.flaticon-settings24</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/settings-console-hand-drawn-symbol_35695">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-share17"></div>
+		<div class="class-name">.flaticon-share17</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/share-hand-drawn-symbol_35479">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-shopping131"></div>
+		<div class="class-name">.flaticon-shopping131</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/shopping-cart-hand-drawn-tool_35633">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-shopping132"></div>
+		<div class="class-name">.flaticon-shopping132</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/shopping-bag-hand-drawn-outline-variant_35850">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-shuffle11"></div>
+		<div class="class-name">.flaticon-shuffle11</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/shuffle-arrows-hand-drawn-symbol_35737">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-signal38"></div>
+		<div class="class-name">.flaticon-signal38</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/signal-symbol-hand-drawn-outline_35829">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-skype13"></div>
+		<div class="class-name">.flaticon-skype13</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/skype-hand-drawn-logo-outline_35791">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-smile4"></div>
+		<div class="class-name">.flaticon-smile4</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/smile-hand-drawn-emoticon_35777">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-snowflakes12"></div>
+		<div class="class-name">.flaticon-snowflakes12</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/snowflakes-couple-hand-drawn-outlines_35749">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-soccer21"></div>
+		<div class="class-name">.flaticon-soccer21</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/soccer-ball-hand-drawn-outline_35775">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-soda4"></div>
+		<div class="class-name">.flaticon-soda4</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/soda-glass-with-a-straw-hand-drawn-symbol_35657">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-sound22"></div>
+		<div class="class-name">.flaticon-sound22</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/sound-hand-drawn-interface-symbol_35434">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-sound23"></div>
+		<div class="class-name">.flaticon-sound23</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/sound-hand-drawn-symbol_35441">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-sound24"></div>
+		<div class="class-name">.flaticon-sound24</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/sound-hand-drawn-interface-symbol-of-a-speaker_35577">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-sound25"></div>
+		<div class="class-name">.flaticon-sound25</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/sound-hand-drawn-speaker-interface-symbol_35642">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-speedometer9"></div>
+		<div class="class-name">.flaticon-speedometer9</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/speedometer-hand-drawn-tool_35645">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-squad1"></div>
+		<div class="class-name">.flaticon-squad1</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/squad-hand-drawn-tool_35534">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-square82"></div>
+		<div class="class-name">.flaticon-square82</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/square-hand-drawn-shape-outline_35472">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-star104"></div>
+		<div class="class-name">.flaticon-star104</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/star-outline-with-black-smaller-star-inside_35484">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-star105"></div>
+		<div class="class-name">.flaticon-star105</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/star-hand-drawn-symbol-outline_35590">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-star106"></div>
+		<div class="class-name">.flaticon-star106</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/star-of-six-points-variant-hand-drawn-symbol_35693">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-star107"></div>
+		<div class="class-name">.flaticon-star107</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/star-badge-hand-drawn-outline_35726">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-stereo3"></div>
+		<div class="class-name">.flaticon-stereo3</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/stereo-hand-drawn-audio-tool_35597">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-suitcase31"></div>
+		<div class="class-name">.flaticon-suitcase31</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/suitcase-hand-drawn-symbol_35549">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-sun41"></div>
+		<div class="class-name">.flaticon-sun41</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/sun-hand-drawn-day-symbol_35690">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-sun42"></div>
+		<div class="class-name">.flaticon-sun42</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/sun-hand-drawn-symbol_35824">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-synchronize3"></div>
+		<div class="class-name">.flaticon-synchronize3</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/synchronize-sign-of-a-cloud-with-two-arrows-in-circle-hand-drawn-symbol_35530">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-syringe15"></div>
+		<div class="class-name">.flaticon-syringe15</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/syringe-hand-drawn-tool_35505">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-tablet56"></div>
+		<div class="class-name">.flaticon-tablet56</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/tablet-hand-drawn-tool-outline_35809">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-tag35"></div>
+		<div class="class-name">.flaticon-tag35</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/tag-hand-drawn-symbol_35792">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-target23"></div>
+		<div class="class-name">.flaticon-target23</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/target-hand-drawn-circle_35801">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-telephone85"></div>
+		<div class="class-name">.flaticon-telephone85</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/telephone-auricular-hand-drawn-outline_35786">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-tennis14"></div>
+		<div class="class-name">.flaticon-tennis14</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/tennis-shoe-hand-drawn-outline_35852">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-terminal9"></div>
+		<div class="class-name">.flaticon-terminal9</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/terminal-hand-drawn-symbol_35616">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-text74"></div>
+		<div class="class-name">.flaticon-text74</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/text-document-hand-drawn-symbol_35719">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-thermometer29"></div>
+		<div class="class-name">.flaticon-thermometer29</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/thermometer-hand-drawn-tool_35626">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-thunder1"></div>
+		<div class="class-name">.flaticon-thunder1</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/thunder-bolt-hand-drawn-outline_35753">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-thunder2"></div>
+		<div class="class-name">.flaticon-thunder2</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/thunder-bolt-hand-drawn-shape-outline_35837">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-thunderstorm"></div>
+		<div class="class-name">.flaticon-thunderstorm</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/thunderstorm-hand-drawn-weather-symbol_35490">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-ticket9"></div>
+		<div class="class-name">.flaticon-ticket9</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/ticket-hand-drawn-outline_35838">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-time10"></div>
+		<div class="class-name">.flaticon-time10</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/time-hand-drawn-interface-symbol_35835">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-tools7"></div>
+		<div class="class-name">.flaticon-tools7</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/tools-hand-drawn-outlines-of-configuration-interface-symbol_35696">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-trash33"></div>
+		<div class="class-name">.flaticon-trash33</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/trash-can-hand-drawn-symbol_35444">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-tray11"></div>
+		<div class="class-name">.flaticon-tray11</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/tray-hand-drawn-outline_35543">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-tree45"></div>
+		<div class="class-name">.flaticon-tree45</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/tree-hand-drawn-rounded-foliage-shape_35684">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-triangle24"></div>
+		<div class="class-name">.flaticon-triangle24</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/triangle-hand-drawn-shape-outline_35474">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-trophy8"></div>
+		<div class="class-name">.flaticon-trophy8</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/trophy-hand-drawn-sportive-cup_35488">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-truck23"></div>
+		<div class="class-name">.flaticon-truck23</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/truck-hand-drawn-transport_35523">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-trumpet11"></div>
+		<div class="class-name">.flaticon-trumpet11</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/trumpet-hand-drawn-musical-instrument_35582">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-tv15"></div>
+		<div class="class-name">.flaticon-tv15</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/tv-hand-drawn-outline_35770">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-twitter22"></div>
+		<div class="class-name">.flaticon-twitter22</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/twitter-hand-drawn-logo_35639">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-umbrella21"></div>
+		<div class="class-name">.flaticon-umbrella21</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/umbrella-hand-drawn-opened-outline_35799">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-undo15"></div>
+		<div class="class-name">.flaticon-undo15</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/undo-arrow-hand-drawn-symbol-outline-with-a-cross_35600">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-union"></div>
+		<div class="class-name">.flaticon-union</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/union-hand-drawn-symbol-of-a-line-between-two-circles_35686">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-unlock6"></div>
+		<div class="class-name">.flaticon-unlock6</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/unlock-hand-drawn-padlock-symbol_35599">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-up31"></div>
+		<div class="class-name">.flaticon-up31</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/up-button-hand-drawn-symbol_35547">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-up32"></div>
+		<div class="class-name">.flaticon-up32</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/up-and-down-hand-drawn-arrows-couple_35665">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-up33"></div>
+		<div class="class-name">.flaticon-up33</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/up-arrow-hand-drawn-outline_35721">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-up34"></div>
+		<div class="class-name">.flaticon-up34</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/up-page-hand-drawn-interface-symbol_35725">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-up35"></div>
+		<div class="class-name">.flaticon-up35</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/up-and-down-arrows-hand-drawn-triangles-couple-outline_35762">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-up36"></div>
+		<div class="class-name">.flaticon-up36</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/up-arrow-hand-drawn-outline_35830">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-up37"></div>
+		<div class="class-name">.flaticon-up37</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/up-arrow-triangle-hand-drawn-outline_35846">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-upload43"></div>
+		<div class="class-name">.flaticon-upload43</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/upload-file-hand-drawn-interface-symbol_35682">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-upload44"></div>
+		<div class="class-name">.flaticon-upload44</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/upload-hand-drawn-interface-symbol-of-an-up-arrow-in-a-cloud_35698">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-usb23"></div>
+		<div class="class-name">.flaticon-usb23</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/usb-hand-drawn-symbol_35532">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-user94"></div>
+		<div class="class-name">.flaticon-user94</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/user-head-side-hand-drawn-outline_35555">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-user95"></div>
+		<div class="class-name">.flaticon-user95</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/user-hand-drawn-outline-in-a-rectangle_35677">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-user96"></div>
+		<div class="class-name">.flaticon-user96</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/user-list-hand-drawn-interface-symbol-outline_35708">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-user97"></div>
+		<div class="class-name">.flaticon-user97</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/user-book-hand-drawn-symbol_35784">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-users11"></div>
+		<div class="class-name">.flaticon-users11</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/users-couple-hand-drawn-outlines_35502">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-vector20"></div>
+		<div class="class-name">.flaticon-vector20</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/vector-lines-hand-drawn-symbol_35654">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-video114"></div>
+		<div class="class-name">.flaticon-video114</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/video-hand-drawn-symbol_35533">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-video115"></div>
+		<div class="class-name">.flaticon-video115</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/video-film-hand-drawn-symbol_35591">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-video116"></div>
+		<div class="class-name">.flaticon-video116</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/video-camera-hand-drawn-interface-symbol-outline_35706">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-vimeo13"></div>
+		<div class="class-name">.flaticon-vimeo13</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/vimeo-hand-drawn-logo-outline_35568">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-water34"></div>
+		<div class="class-name">.flaticon-water34</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/water-drop-hand-drawn-outline_35470">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-water35"></div>
+		<div class="class-name">.flaticon-water35</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/water-drops-hand-drawn-outlines_35800">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-webcam2"></div>
+		<div class="class-name">.flaticon-webcam2</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/webcam-hand-drawn-symbol_35417">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-wifi51"></div>
+		<div class="class-name">.flaticon-wifi51</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/wifi-signal-hand-drawn-symbols_35440">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-wifi52"></div>
+		<div class="class-name">.flaticon-wifi52</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/wifi-hand-drawn-symbol_35763">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-window34"></div>
+		<div class="class-name">.flaticon-window34</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/window-hand-drawn-symbol_35526">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-window35"></div>
+		<div class="class-name">.flaticon-window35</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/window-hand-drawn-symbol-for-interface_35537">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-windows27"></div>
+		<div class="class-name">.flaticon-windows27</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/windows-hand-drawn-logo-outline_35823">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-wine35"></div>
+		<div class="class-name">.flaticon-wine35</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/wine-glass-hand-drawn-outline_35536">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-woman56"></div>
+		<div class="class-name">.flaticon-woman56</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/woman-young-head-hand-drawn-outline_35594">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-world32"></div>
+		<div class="class-name">.flaticon-world32</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/world-grid-hand-drawn-symbol_35550">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-wrench45"></div>
+		<div class="class-name">.flaticon-wrench45</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/wrench-hand-drawn-double-tool-outline_35752">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-xls3"></div>
+		<div class="class-name">.flaticon-xls3</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/xls-excel-file-hand-drawn-interface-symbol_35796">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-yen21"></div>
+		<div class="class-name">.flaticon-yen21</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/yen-hand-drawn-currency-symbol-outline_35473">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-yin5"></div>
+		<div class="class-name">.flaticon-yin5</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/yin-yang-hand-drawn-symbol_35678">Freepik</a></div></div><div class="glyph">
+		<div class="glyph-icon flaticon-zip9"></div>
+		<div class="class-name">.flaticon-zip9</div><div class="author-name">Author: <a href="http://www.flaticon.com/free-icon/zip-file-hand-drawn-interface-symbol_35683">Freepik</a></div></div></section>
+
+<section class="attribution">
+
+	<div class="usetitle">License and attribution:</div><div class="attrDiv">Font generated by <a href="http://www.flaticon.com">flaticon.com</a>
+ under <a href="http://creativecommons.org/licenses/by/3.0/">CC BY</a>. The authors are: <a href="http://www.freepik.com">Freepik</a>.</div><div class="usetitle">Copy the Attribution License:</div>
+
+<textarea onclick="this.focus();this.select();">Font generated by &lt;a href=&quot;http://www.flaticon.com&quot;&gt;flaticon.com&lt;/a&gt;
+ under &lt;a href=&quot;http://creativecommons.org/licenses/by/3.0/&quot;&gt;CC BY&lt;/a&gt;. The authors are: &lt;a href=&quot;http://www.freepik.com&quot;&gt;Freepik&lt;/a&gt;.</textarea>
+
+</section>
+
+<section class="iconsuse">
+    	<div class="usetitle">Examples:</div>
+		<div class="image"><p>&lt;i class=&quot;flaticon-abacus2&quot;&gt;&lt;/i&gt; <i class="flaticon-abacus2"></i></p><p>&lt;i class=&quot;flaticon-add77&quot;&gt;&lt;/i&gt; <i class="flaticon-add77"></i></p><p>&lt;i class=&quot;flaticon-add78&quot;&gt;&lt;/i&gt; <i class="flaticon-add78"></i></p><p>&lt;i class=&quot;flaticon-add79&quot;&gt;&lt;/i&gt; <i class="flaticon-add79"></i></p><p>&lt;i class=&quot;flaticon-add80&quot;&gt;&lt;/i&gt; <i class="flaticon-add80"></i></p></div><div class="image"><p>&lt;span class=&quot;flaticon-add81&quot;&gt;&lt;/span&gt; <span class="flaticon-add81"></span></p><p>&lt;span class=&quot;flaticon-add82&quot;&gt;&lt;/span&gt; <span class="flaticon-add82"></span></p><p>&lt;span class=&quot;flaticon-address18&quot;&gt;&lt;/span&gt; <span class="flaticon-address18"></span></p><p>&lt;span class=&quot;flaticon-agenda&quot;&gt;&lt;/span&gt; <span class="flaticon-agenda"></span></p><p>&lt;span class=&quot;flaticon-alert4&quot;&gt;&lt;/span&gt; <span class="flaticon-alert4"></span></p></div><div class="image"><p>&lt;span class=&quot;flaticon-alert5&quot;&gt;&lt;/span&gt; <span class="flaticon-alert5"></span></p><p>&lt;i class=&quot;flaticon-alien2&quot;&gt;&lt;/i&gt; <i class="flaticon-alien2"></i></p><p>&lt;i class=&quot;flaticon-american11&quot;&gt;&lt;/i&gt; <i class="flaticon-american11"></i></p><p>&lt;i class=&quot;flaticon-analytics4&quot;&gt;&lt;/i&gt; <i class="flaticon-analytics4"></i></p><p>&lt;i class=&quot;flaticon-anchor23&quot;&gt;&lt;/i&gt; <i class="flaticon-anchor23"></i></p></div><div class="image"><p>&lt;span class=&quot;flaticon-android5&quot;&gt;&lt;/span&gt; <span class="flaticon-android5"></span></p><p>&lt;span class=&quot;flaticon-apple41&quot;&gt;&lt;/span&gt; <span class="flaticon-apple41"></span></p><p>&lt;span class=&quot;flaticon-apple43&quot;&gt;&lt;/span&gt; <span class="flaticon-apple43"></span></p><p>&lt;span class=&quot;flaticon-arch2&quot;&gt;&lt;/span&gt; <span class="flaticon-arch2"></span></p><p>&lt;span class=&quot;flaticon-archive16&quot;&gt;&lt;/span&gt; <span class="flaticon-archive16"></span></p></div><div class="image"></div>
+</section>
+<div id="footer">
+    <div>Generated by <a href="http://www.flaticon.com">flaticon.com</a>
+    </div>
+</div>
+	</body>
+</html>

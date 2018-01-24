@@ -1,0 +1,22 @@
+.groupPanel {
+  background-color: rgba(0, 0, 0, .7);
+  border-radius: 5px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .1);
+  color: #fff;
+  display: block;
+  left: 900px;
+  padding: 10px;
+  position: absolute;
+  top: 60px;
+  transition: all .2s ease-in-out;
+  z-index: 100;
+}
+
+.groupPanel:hover {
+  box-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.14), 0 1px 10px 0 rgba(0, 0, 0, 0.12), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+.groupPanel input {
+  vertical-align: middle;
+  margin-right: 10px;
+}

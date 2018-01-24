@@ -1,0 +1,6 @@
+.layout {
+  display: flex;
+  filter: url(#filter);
+  flex-direction: column;
+  height: 100%;
+}
