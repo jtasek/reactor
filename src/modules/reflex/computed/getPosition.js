@@ -1,8 +1,8 @@
 /* @flow */
-import { compute } from 'cerebral'
+import { Compute } from 'cerebral'
 import { state } from 'cerebral/tags'
 
-export default compute(
+export default Compute(
     state`reflex.monitor.position`,
     state`workspace.camera.scale`,
     (current, scale) => ({

@@ -23,28 +23,28 @@ import distructionFreeModeToggled from './signals/distructionFreeModeToggled'
 import scaleChanged from './signals/scaleChanged'
 
 export default Module({
-    state: config,
-    modules: {
-        reflex,
-        tools,
-        ui,
-        router: Router({
-            onlyHash: true, // Use hash urls
-            routes
-        })
-    },
-    providers: [FormsProvider()],
-    signals: {
-        applicationStarted,
-        commandExecuted,
-        distructionFreeModeToggled,
-        scaleChanged,
-        search: [...debounce(300), [search]]
-        // scaleUp,
-        // scaleDown
-        //
-    }
-    // services: {
-    //     executeCommand
-    // }
+  state: config,
+  modules: {
+    reflex,
+    tools,
+    ui,
+    router: Router({
+      onlyHash: true, // Use hash urls
+      routes
+    })
+  },
+  providers: [FormsProvider()],
+  signals: {
+    applicationStarted,
+    commandExecuted,
+    distructionFreeModeToggled,
+    scaleChanged,
+    search: [...debounce(300), [search]]
+    // scaleUp,
+    // scaleDown
+    //
+  }
+  // services: {
+  //     executeCommand
+  // }
 })

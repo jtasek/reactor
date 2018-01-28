@@ -1,12 +1,15 @@
-import contextMenuDisplayed from '../core/signals/contextMenuDisplayed'
-import controlVisibilityChanged from '../core/signals/controlVisibilityChanged'
-import displayStatusMessage from '../core/signals/displayStatusMessage'
-import groupVisibilityChanged from '../core/signals/groupVisibilityChanged'
-import layerVisibilityChanged from '../core/signals/layerVisibilityChanged'
-import shapeSelectionChanged from '../core/signals/shapeSelectionChanged'
+// @flow
+import { Module } from 'cerebral'
+
+import contextMenuDisplayed from '../app/signals/contextMenuDisplayed'
+import controlVisibilityChanged from '../app/signals/controlVisibilityChanged'
+import displayStatusMessage from '../app/signals/displayStatusMessage'
+import groupVisibilityChanged from '../app/signals/groupVisibilityChanged'
+import layerVisibilityChanged from '../app/signals/layerVisibilityChanged'
+import shapeSelectionChanged from '../app/signals/shapeSelectionChanged'
 import state from './state'
 
-export default {
+export default Module({
   state: state,
 
   // Add signals
@@ -25,4 +28,4 @@ export default {
       console.log('hello from service')
     }
   }
-}
+})

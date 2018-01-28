@@ -1,10 +1,10 @@
 /* @flow */
-import { compute } from 'cerebral'
+import { Compute } from 'cerebral'
 import { state } from 'cerebral/tags'
-import { Point } from '../../core/types'
+import { Point } from '../../app/types'
 
-export default compute(
-    state`reflex.monitor.path`,
-    state`workspace.camera.scale`,
-    (path, scale) => path.map(point => `${point.x / scale}, ${point.y / scale}`)
+export default Compute(
+  state`reflex.monitor.path`,
+  state`workspace.camera.scale`,
+  (path, scale) => path.map(point => `${point.x / scale}, ${point.y / scale}`)
 )

@@ -1,19 +1,21 @@
-/* @flow */
+// @flow
+import { Module } from 'cerebral'
+
 import dragging from './signals/dragging'
 import endDragging from './signals/endDragging'
 import startDragging from './signals/startDragging'
 import state from './state'
 
-export default {
-    signals: {
-        startDragging,
-        dragging,
-        endDragging
-    },
-    state: state,
-    services: {
-        hello() {
-            console.log('hello from service')
-        }
+export default Module({
+  signals: {
+    startDragging,
+    dragging,
+    endDragging
+  },
+  state: state,
+  providers: {
+    hello() {
+      console.log('hello from service')
     }
-}
+  }
+})

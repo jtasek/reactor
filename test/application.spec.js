@@ -1,11 +1,11 @@
-import {Application, IApplication} from '../src/modules/core/core'
+import { Application, IApplication } from '../src/modules/app/'
 
 let app = null
 
 describe('Application', () => {
   before(() => {
     // runs before all tests in this block
-    app = new Application('picaaaa')
+    app = new Application('test')
   })
 
   after(() => {

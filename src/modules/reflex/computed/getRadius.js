@@ -1,9 +1,9 @@
 /* @flow */
-import { compute } from 'cerebral'
+import { Compute } from 'cerebral'
 import getCentre from './getCentre'
 import getInitialPosition from './getInitialPosition'
 
-export default compute({
+export default Compute({
     centre: getCentre,
     initial: getInitialPosition
 }, (centre, initial) => {
