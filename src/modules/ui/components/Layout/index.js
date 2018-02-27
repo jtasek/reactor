@@ -44,7 +44,7 @@ export default () => (
     </SideBar>
     <Surface key="surface" />
     <ContextMenu id="contextMenu" />
-    <MinimapPanel id="minimapPanel" />
+    <MinimapPanel id="minimapPanel" visible="true" />
     <DataView id="dataview" />
     <WorkspaceInfo id="workspaceInfo" />
     <ControlPanel id="controlPanel" />

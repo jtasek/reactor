@@ -56,6 +56,9 @@ module.exports = {
     ]
   },
   plugins: [
+    // eslint-loader seem to try to access this.options which was removed.
+    // As workaround use
+    new webpack.LoaderOptionsPlugin({ options: {} }),
     // enable HMR globally
     new webpack.HotModuleReplacementPlugin(),
     // prints more readable module names in the browser console on HMR updates

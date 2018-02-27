@@ -35,7 +35,7 @@ class Slider extends Component {
           step={step}
           value={value}
           onChange={this.onChange}
-          //onChange={this.onChange}
+          s
         />
         <div className={styles.track}>
           <div

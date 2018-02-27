@@ -15,5 +15,5 @@ export default [
     // set(state`ui.controls.statusbar.visible`, false),
     // set(state`ui.controls.toolbar.visible`, false),
     // set(state`ui.controls.workspace.visible`, false),
-    toggle(state`core.distructionFreeMode`)
+    toggle(state`distructionFreeMode`)
 ]

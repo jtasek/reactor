@@ -14,7 +14,7 @@ const Slot = ({ name, text, style, children }) =>
 const ZoomSlider = connect(
   {
     scale: state`workspace.camera.scale`,
-    scaleChanged: signal`core.scaleChanged`
+    scaleChanged: signal`scaleChanged`
   },
   ({ scale, scaleChanged }) =>
     <Slider

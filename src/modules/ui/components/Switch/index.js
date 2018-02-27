@@ -13,6 +13,6 @@ const Switch = ({ visible, onChangeHandler }) => (
 )
 
 export default connect({
-    visible: state`core.distractionFreeMode`,
-    onChangeHandler: signal`core.distructionFreeModeToggled`
+    visible: state`distractionFreeMode`,
+    onChangeHandler: signal`distructionFreeModeToggled`
 }, Switch)

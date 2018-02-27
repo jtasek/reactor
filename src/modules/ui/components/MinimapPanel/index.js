@@ -44,17 +44,18 @@ const Rulers = connect(
   {
     rulers: state`workspace.rulers`
   },
-  ({ rulers }) =>
+  ({ rulers }) => (
     <g id="rulers">
       {/*{rulers.map(ruler => <Ruler key={ruler.id} {...ruler} scale={1} />)}*/}
     </g>
+  )
 )
 
 const Shapes = connect(
   {
     shapes: shapes
   },
-  ({ shapes }) =>
+  ({ shapes }) => (
     <g id="shapes">
       {shapes.map(shape =>
         React.createElement(
@@ -67,9 +68,10 @@ const Shapes = connect(
         )
       )}
     </g>
+  )
 )
 
-export const MinimapPanel = ({ visible }) =>
+export const MinimapPanel = ({ visible }) => (
   <svg
     className={styles.minimapPanel}
     width="200"
@@ -82,6 +84,7 @@ export const MinimapPanel = ({ visible }) =>
     <Shapes />
     {/* <Stack /> */}
   </svg>
+)
 
 export default connect(
   {

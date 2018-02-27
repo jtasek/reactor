@@ -10,7 +10,7 @@ const CommandLine = ({ visible, commandHandler }) => (
 )
 
 export default connect({
-    command: state`core.activeCommand`,
+    command: state`activeCommand`,
     visible: state`ui.controls.commandline.visible`,
-    commandHandler: signal`core.commandExecuted`
+    commandHandler: signal`commandExecuted`
 }, CommandLine)
