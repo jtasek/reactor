@@ -1,4 +1,4 @@
-import { IWorkspace, IRenderer } from '../app'
+import { IWorkspace, IRenderer } from '../index'
 
 export class HtmlRenderer implements IRenderer {
     Workspace: IWorkspace
