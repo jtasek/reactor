@@ -6,7 +6,7 @@ import Router from '@cerebral/router'
 import FormsProvider from '@cerebral/forms'
 // application modules
 import commands from '../tools/commands'
-import reflex from '../modules/reflex'
+import reflex from '../reflex'
 import tools from '../tools'
 import ui from '../ui'
 // actions
