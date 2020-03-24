@@ -2,8 +2,8 @@
 import React, { Component } from 'react'
 import { connect } from '@cerebral/react'
 import { props, sequences, state } from 'cerebral'
-import selectedShapes from '../../../../app/computed/selectedShapes'
-import { getPropValue } from '../../../../app/utils'
+import selectedShapes from '../../../app/computed/selectedShapes'
+import { getPropValue } from '../../../app/utils'
 import styles from './styles.css'
 
 function intersect(arrays: Array<Array<string>>) {

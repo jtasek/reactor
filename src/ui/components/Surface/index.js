@@ -8,12 +8,12 @@ import { sequences, state } from 'cerebral'
 //import {DropTarget} from 'react-dnd'
 import { findDOMNode } from 'react-dom'
 import styles from './styles.css'
-import { getRandomColor } from '../../../../app/utils'
-import rulers from '../../../../app/computed/filteredRulers'
-import shapes from '../../../../app/computed/shapesWithType'
-import Overlay from '../../../ui/components/Overlay'
-import Stack from '../../../tools/components/Stack'
-import EventLayer from '../../../reflex/EventLayer'
+import { getRandomColor } from '../../../app/utils'
+import rulers from '../../../app/computed/filteredRulers'
+import shapes from '../../../app/computed/shapesWithType'
+import Overlay from '../Overlay'
+import Stack from '../../../modules/tools/components/Stack'
+import EventLayer from '../../../modules/reflex/EventLayer'
 //import surfaceTarget from './surfaceTarget'
 //import collect from './collect'
 import {
@@ -27,7 +27,7 @@ import {
   Select as select,
   Text as text,
   Zoom as zoom
-} from '../../../tools/index.js'
+} from '../../../modules/tools'
 
 const components = {
   circle,

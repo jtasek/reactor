@@ -8,7 +8,7 @@ import FormsProvider from '@cerebral/forms'
 import commands from '../modules/tools/commands'
 import reflex from '../modules/reflex'
 import tools from '../modules/tools'
-import ui from '../modules/ui'
+import ui from '../ui'
 // actions
 import search from './actions/search'
 // configuration

@@ -1,8 +1,8 @@
 import React, { Component } from 'react'
 import { connect } from '@cerebral/react'
 import { props, sequences, state } from 'cerebral'
-import selectedShapeCount from '../../../../app/computed/selectedShapeCount'
-import getOffset from '../../../reflex/computed/getOffset'
+import selectedShapeCount from '../../../app/computed/selectedShapeCount'
+import getOffset from '../../../modules/reflex/computed/getOffset'
 import styles from './styles.css'
 import Slider from '../Slider'
 

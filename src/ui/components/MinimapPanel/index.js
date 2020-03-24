@@ -5,8 +5,8 @@ import Grid from '../Grid'
 import Ruler from '../Ruler'
 import { connect } from '@cerebral/react'
 import { props, state } from 'cerebral'
-import Stack from '../../../tools/components/Stack'
-import shapes from '../../../../app/computed/shapesWithType'
+import Stack from '../../../modules/tools/components/Stack'
+import shapes from '../../../app/computed/shapesWithType'
 import styles from './styles.css'
 
 //import collect from './collect'
@@ -21,7 +21,7 @@ import {
   Select as select,
   Text as text,
   Zoom as zoom
-} from '../../../tools/index.js'
+} from '../../../modules/tools'
 
 const components = {
   circle,
