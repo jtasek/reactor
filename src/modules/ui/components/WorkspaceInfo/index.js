@@ -2,7 +2,7 @@
 import React, { Component } from 'react'
 import { connect } from '@cerebral/react'
 import { props, state } from 'cerebral'
-import { getPropValue } from '../../../app/utils'
+import { getPropValue } from '../../../../app/utils'
 import styles from './styles.css'
 
 const WorkspaceInfoItem = ({ name, value }) => (

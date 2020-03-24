@@ -1,4 +1,4 @@
-import { Application, IApplication } from '../src/modules/app/'
+import { Application, IApplication } from '../src/app/'
 
 let app = null
 

@@ -5,10 +5,10 @@ import { state } from 'cerebral'
 import Router from '@cerebral/router'
 import FormsProvider from '@cerebral/forms'
 // application modules
-import commands from '../tools/commands'
-import reflex from '../reflex'
-import tools from '../tools'
-import ui from '../ui'
+import commands from '../modules/tools/commands'
+import reflex from '../modules/reflex'
+import tools from '../modules/tools'
+import ui from '../modules/ui'
 // actions
 import search from './actions/search'
 // configuration

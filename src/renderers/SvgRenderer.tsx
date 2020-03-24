@@ -1,5 +1,5 @@
 import React from 'react';
-import {IWorkspace, IRenderer} from '../modules/app';
+import {IWorkspace, IRenderer} from '../app';
 
 const Group = (props) => <g>{props.children}</g>
 

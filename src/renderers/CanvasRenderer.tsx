@@ -1,4 +1,4 @@
-import { Workspace, IRenderer } from '../modules/app/types'
+import { Workspace, IRenderer } from '../app/types'
 
 export class CanvasRenderer implements IRenderer {
     Workspace: Workspace

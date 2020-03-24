@@ -6,7 +6,7 @@ import Ruler from '../Ruler'
 import { connect } from '@cerebral/react'
 import { props, state } from 'cerebral'
 import Stack from '../../../tools/components/Stack'
-import shapes from '../../../app/computed/shapesWithType'
+import shapes from '../../../../app/computed/shapesWithType'
 import styles from './styles.css'
 
 //import collect from './collect'
