@@ -1,18 +1,18 @@
 /* @flow */
-import { createShape } from '../../../app/factories'
+import { createShape } from '../../app/factories'
 // import getPosition from '../computed/getPosition'
 // import getSize from '../computed/getSize'
 
 // Component factories
-import { createCircle as circle } from '../../../tools/components/Circle'
+import { createCircle as circle } from '../../tools/components/Circle'
 //import {clone} from '../../tools/components/Clone'
 //import {image} from '../../tools/components/Image'
-import { createLine as line } from '../../../tools/components/Line'
+import { createLine as line } from '../../tools/components/Line'
 //import {move} from '../../tools/components/Move'
-import { createPen as pen } from '../../../tools/components/Pen'
-import { createRectangle as rect } from '../../../tools/components/Rectangle'
+import { createPen as pen } from '../../tools/components/Pen'
+import { createRectangle as rect } from '../../tools/components/Rectangle'
 //import {select} from '../../tools/components/Select'
-import { text } from '../../../tools/components/Text'
+import { text } from '../../tools/components/Text'
 //import {zoom} from '../../tools/components/Zoom'
 
 const factories = {
