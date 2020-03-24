@@ -1,7 +1,7 @@
 import React from 'react'
 import { connect } from '@cerebral/react'
 import { props, state } from 'cerebral'
-import getPath from '../../../reflex/computed/getPath'
+import getPath from '../../../events/computed/getPath'
 import styles from '../../styles.css'
 
 /** 

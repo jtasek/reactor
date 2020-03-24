@@ -2,7 +2,7 @@ import React from 'react'
 import { connect } from '@cerebral/react'
 import { props, state } from 'cerebral'
 import styles from '../../styles.css'
-import currentPosition from '../../../reflex/computed/getPosition'
+import currentPosition from '../../../events/computed/getPosition'
 
 /**
  * Draws a text in current position

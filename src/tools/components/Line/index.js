@@ -1,8 +1,8 @@
 import React from 'react'
 import { connect } from '@cerebral/react'
 import { props, state } from 'cerebral'
-import currentPosition from '../../../reflex/computed/getPosition'
-import startPosition from '../../../reflex/computed/getInitialPosition'
+import currentPosition from '../../../events/computed/getPosition'
+import startPosition from '../../../events/computed/getInitialPosition'
 import styles from '../../styles.css'
 
 /**

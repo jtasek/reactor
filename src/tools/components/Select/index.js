@@ -1,7 +1,7 @@
 import React from 'react'
 import {connect} from '@cerebral/react'
-import getSize from '../../../reflex/computed/getSize'
-import getStart from '../../../reflex/computed/getStart'
+import getSize from '../../../events/computed/getSize'
+import getStart from '../../../events/computed/getStart'
 import inlineStyles from './inlineStyles'
 
 /**
