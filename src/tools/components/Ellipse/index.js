@@ -1,8 +1,8 @@
 import React from 'react'
 import { connect } from '@cerebral/react'
 import { props, state } from 'cerebral'
-import getCentre from '../../../reflex/computed/getCentre'
-import getSize from '../../../reflex/computed/getSize'
+import getCentre from '../../../modules/reflex/computed/getCentre'
+import getSize from '../../../modules/reflex/computed/getSize'
 import styles from '../../styles.css'
 
 /**

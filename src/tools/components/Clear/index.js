@@ -1,7 +1,7 @@
 import React from 'react'
 import { connect } from '@cerebral/react'
-import getCentre from '../../../reflex/computed/getCentre'
-import getRadius from '../../../reflex/computed/getRadius'
+import getCentre from '../../../modules/reflex/computed/getCentre'
+import getRadius from '../../../modules/reflex/computed/getRadius'
 import inlineStyles from '../../inlineStyles'
 
 /**

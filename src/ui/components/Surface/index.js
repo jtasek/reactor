@@ -12,7 +12,7 @@ import { getRandomColor } from '../../../app/utils'
 import rulers from '../../../app/computed/filteredRulers'
 import shapes from '../../../app/computed/shapesWithType'
 import Overlay from '../Overlay'
-import Stack from '../../../modules/tools/components/Stack'
+import Stack from '../../../tools/components/Stack'
 import EventLayer from '../../../modules/reflex/EventLayer'
 //import surfaceTarget from './surfaceTarget'
 //import collect from './collect'
@@ -27,7 +27,7 @@ import {
   Select as select,
   Text as text,
   Zoom as zoom
-} from '../../../modules/tools'
+} from '../../../tools'
 
 const components = {
   circle,
