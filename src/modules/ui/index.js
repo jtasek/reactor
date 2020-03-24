@@ -1,6 +1,4 @@
 // @flow
-import { Module } from 'cerebral'
-
 import contextMenuDisplayed from '../app/signals/contextMenuDisplayed'
 import controlVisibilityChanged from '../app/signals/controlVisibilityChanged'
 import displayStatusMessage from '../app/signals/displayStatusMessage'
@@ -9,7 +7,7 @@ import layerVisibilityChanged from '../app/signals/layerVisibilityChanged'
 import shapeSelectionChanged from '../app/signals/shapeSelectionChanged'
 import state from './state'
 
-export default Module({
+export default {
   state: state,
 
   // Add signals
@@ -28,4 +26,4 @@ export default Module({
       console.log('hello from service')
     }
   }
-})
+}

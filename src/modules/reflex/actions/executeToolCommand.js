@@ -43,26 +43,27 @@ export default ({ props, state }) => {
       width: Math.abs(position.x - initialPosition.x),
       height: Math.abs(position.y - initialPosition.y)
     }
-debugger
+
     // Get factory for the specific shape type
     const keys = Object.keys(factories).filter(type => type === tool.type)
 
     if (typeof keys === 'undefined' || keys.length === 0)
       throw new Exception(`Type '${tool.type}' is not supported.`)
 
-    keys.map(key => factories[key]).forEach(factory => {
-      debugger
-      // Create new shape
-      const options = factory()
+    keys
+      .map(key => factories[key])
+      .forEach(factory => {
+        // Create new shape
+        const options = factory()
 
-      // Create shape object
-      const shape = createShape(options)
+        // Create shape object
+        const shape = createShape(options)
 
-      // Debug
-      console.dir(shape)
+        // Debug
+        console.dir(shape)
 
-      // Insert new shape into store
-      state.set(`workspace.shapes.${shape.id}`, shape)
-    })
+        // Insert new shape into store
+        state.set(`workspace.shapes.${shape.id}`, shape)
+      })
   }
 }

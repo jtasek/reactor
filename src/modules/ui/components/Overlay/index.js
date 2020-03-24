@@ -1,7 +1,7 @@
 // @flow
 import React from 'react'
 import { connect } from '@cerebral/react'
-import { props, state } from 'cerebral/tags'
+import { props, state } from 'cerebral'
 import styles from './styles.css'
 
 const Overlay = ({ visible }) => (
@@ -22,7 +22,7 @@ const Overlay = ({ visible }) => (
       />
       <feImage
         id="feimage"
-        xlinkHref="data:image/svg+xml;charset=utf-8,<svg version=&quot;1.1&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot; xmlns:xlink=&quot;http://www.w3.org/1999/xlink&quot;  width=&quot;100&quot; height=&quot;100&quot;><rect width=&quot;100%&quot; height=&quot;100%&quot; fill=&quot;black&quot;/></svg>"
+        xlinkHref='data:image/svg+xml;charset=utf-8,<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  width="100" height="100"><rect width="100%" height="100%" fill="black"/></svg>'
         x="0"
         y="0"
         width="100%"

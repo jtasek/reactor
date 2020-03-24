@@ -3,7 +3,7 @@ import React, { Component } from 'react'
 import Rx from 'rx-lite'
 import { findDOMNode } from 'react-dom'
 import { connect } from '@cerebral/react'
-import { signal } from 'cerebral/tags'
+import { sequences } from 'cerebral'
 import { MouseButton } from '../app/types'
 
 // High order function to decorate component with event layer container
@@ -13,9 +13,9 @@ export default function EventLayer(DecoratedComponent) {
 
   return connect(
     {
-      startDragging: signal`reflex.startDragging`,
-      dragging: signal`reflex.dragging`,
-      endDragging: signal`reflex.endDragging`
+      startDragging: sequences`reflex.startDragging`,
+      dragging: sequences`reflex.dragging`,
+      endDragging: sequences`reflex.endDragging`
     },
     class extends Component {
       constructor(props) {
@@ -28,17 +28,17 @@ export default function EventLayer(DecoratedComponent) {
         const node = findDOMNode(this.refs.child)
 
         // Get the three major events
-        const mouseup$ = Rx.Observable
-          .fromEvent(node, 'mouseup')
-          .filter(e => e.button === MouseButton.left)
+        const mouseup$ = Rx.Observable.fromEvent(node, 'mouseup').filter(
+          e => e.button === MouseButton.left
+        )
 
-        const mousemove$ = Rx.Observable
-          .fromEvent(node, 'mousemove')
-          .filter(e => e.button === MouseButton.left)
+        const mousemove$ = Rx.Observable.fromEvent(node, 'mousemove').filter(
+          e => e.button === MouseButton.left
+        )
 
-        const mousedown$ = Rx.Observable
-          .fromEvent(node, 'mousedown')
-          .filter(e => e.button === MouseButton.left)
+        const mousedown$ = Rx.Observable.fromEvent(node, 'mousedown').filter(
+          e => e.button === MouseButton.left
+        )
 
         const mousedrag$ = mousedown$.flatMap(e => {
           // Calculate offsets when mouse down

@@ -1,6 +1,4 @@
 // @flow
-import { Module } from 'cerebral'
-
 import lineAdded from './signals/lineAdded'
 import toolActivated from './signals/toolActivated'
 import state from './state'
@@ -18,7 +16,7 @@ import { Zoom } from './components/Zoom'
 
 export { Circle, Clone, Image, Line, Move, Pen, Rectangle, Select, Text, Zoom }
 
-export default Module({
+export default {
   state: state,
 
   // Add signals
@@ -33,4 +31,4 @@ export default Module({
       console.log('hello from tool service')
     }
   }
-})
+}

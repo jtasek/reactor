@@ -1,6 +1,4 @@
 // @flow
-import { Module } from 'cerebral'
-
 import dragging from './signals/dragging'
 import endDragging from './signals/endDragging'
 import startDragging from './signals/startDragging'

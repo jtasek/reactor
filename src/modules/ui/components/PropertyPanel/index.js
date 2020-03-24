@@ -1,7 +1,7 @@
 // @flow
 import React, { Component } from 'react'
 import { connect } from '@cerebral/react'
-import { props, signal, state } from 'cerebral/tags'
+import { props, sequences, state } from 'cerebral'
 import selectedShapes from '../../../app/computed/selectedShapes'
 import { getPropValue } from '../../../app/utils'
 import styles from './styles.css'
@@ -71,7 +71,7 @@ export default connect(
   {
     visible: state`ui.controls.propertypanel.visible`,
     shapes: selectedShapes,
-    controlVisibilityChanged: signal`ui.controlVisibilityChanged`
+    controlVisibilityChanged: sequences`ui.controlVisibilityChanged`
   },
   PropertyPanel
 )

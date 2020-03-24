@@ -1,6 +1,6 @@
 import React from 'react'
 import { connect } from '@cerebral/react'
-import { props, state } from 'cerebral/tags'
+import { props, state } from 'cerebral'
 import styles from '../../styles.css'
 import currentPosition from '../../../reflex/computed/getPosition'
 
@@ -23,13 +23,21 @@ export const Text = ({ position }) => (
   <g>
     <foreignObject width="100%" height="100%" x={position.x} y={position.y}>
       <form>
-        <input type="text" className="text-layer-input" placeholder="Type something..." value="Tohle je test string" />
+        <input
+          type="text"
+          className="text-layer-input"
+          placeholder="Type something..."
+          value="Tohle je test string"
+        />
       </form>
     </foreignObject>
   </g>
 )
 
-export default connect({
-  position: currentPosition,
-  shape: state`workspace.shapes.${props`id`}`
-}, Text)
+export default connect(
+  {
+    position: currentPosition,
+    shape: state`workspace.shapes.${props`id`}`
+  },
+  Text
+)

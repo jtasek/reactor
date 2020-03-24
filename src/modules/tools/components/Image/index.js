@@ -1,6 +1,6 @@
 import React from 'react'
 import { connect } from '@cerebral/react'
-import { props, state } from 'cerebral/tags'
+import { props, state } from 'cerebral'
 import getPosition from '../../../reflex/computed/getPosition'
 import getSize from '../../../reflex/computed/getSize'
 import styles from '../../styles.css'
@@ -19,11 +19,22 @@ import styles from '../../styles.css'
  
  **/
 export const Image = ({ position, size, imagePath }) => (
-  <image key="image" style={inlineStyles} x={position.x} y={position.y} width={size.width} height={size.height} xlinkHref={imagePath} />
+  <image
+    key="image"
+    style={inlineStyles}
+    x={position.x}
+    y={position.y}
+    width={size.width}
+    height={size.height}
+    xlinkHref={imagePath}
+  />
 )
 
-export default connect({
-  position: getPosition,
-  size: getSize,
-  shape: state`workspace.shapes.${props`id`}`
-}, Image)
+export default connect(
+  {
+    position: getPosition,
+    size: getSize,
+    shape: state`workspace.shapes.${props`id`}`
+  },
+  Image
+)

@@ -1,6 +1,6 @@
 /* @flow */
 import { set } from 'cerebral/operators'
-import { props, state } from 'cerebral/tags'
+import { props, state } from 'cerebral'
 
 import resetState from '../actions/resetState'
 import setPosition from '../actions/setPosition'

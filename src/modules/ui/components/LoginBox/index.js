@@ -1,18 +1,21 @@
 import React from 'react'
 import { connect } from '@cerebral/react'
-import { props, signal, state } from 'cerebral/tags'
+import { props, sequences, state } from 'cerebral'
 
 const LoginBox = ({ name, email, onLogin, onLogout, onSignup, onError }) => (
-    <form>
-        <input name="name" type="text" />
-        <input name="email" type="email" />
-    </form>
+  <form>
+    <input name="name" type="text" />
+    <input name="email" type="email" />
+  </form>
 )
 
-export default connect({
+export default connect(
+  {
     user: state`user`,
-    onLogin: signal`userLoggedIn`,
-    onLogout: signal`userLoggedOut`,
-    onSignup: signal`userSignedUp`,
+    onLogin: sequences`userLoggedIn`,
+    onLogout: sequences`userLoggedOut`,
+    onSignup: sequences`userSignedUp`,
     onError: signlas`userError`
-}, LoginBox)
+  },
+  LoginBox
+)

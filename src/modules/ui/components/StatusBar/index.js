@@ -1,22 +1,23 @@
 import React, { Component } from 'react'
 import { connect } from '@cerebral/react'
-import { props, signal, state } from 'cerebral/tags'
+import { props, sequences, state } from 'cerebral'
 import selectedShapeCount from '../../../app/computed/selectedShapeCount'
 import getOffset from '../../../reflex/computed/getOffset'
 import styles from './styles.css'
 import Slider from '../Slider'
 
-const Slot = ({ name, text, style, children }) =>
+const Slot = ({ name, text, style, children }) => (
   <span id={name} style={style}>
     {children}
   </span>
+)
 
 const ZoomSlider = connect(
   {
     scale: state`workspace.camera.scale`,
-    scaleChanged: signal`scaleChanged`
+    scaleChanged: sequences`scaleChanged`
   },
-  ({ scale, scaleChanged }) =>
+  ({ scale, scaleChanged }) => (
     <Slider
       min={0.1}
       max={5.0}
@@ -25,11 +26,18 @@ const ZoomSlider = connect(
       value={scale}
       onChange={value => scaleChanged({ scale: value })}
     />
+  )
 )
 
 class StatusBar extends Component {
   render() {
-    const { selectedShapeCount, visible, position, status, offset } = this.props
+    const {
+      selectedShapeCount,
+      visible,
+      position,
+      status,
+      offset
+    } = this.props
 
     return (
       <div

@@ -1,7 +1,6 @@
 // @flow
-import { Module } from 'cerebral'
 import { set, debounce } from 'cerebral/operators'
-import { state } from 'cerebral/tags'
+import { state } from 'cerebral'
 // system modules
 import Router from '@cerebral/router'
 import FormsProvider from '@cerebral/forms'
@@ -22,7 +21,7 @@ import executeCommand from './services/executeCommand'
 import distructionFreeModeToggled from './signals/distructionFreeModeToggled'
 import scaleChanged from './signals/scaleChanged'
 
-export default Module({
+export default {
   state: config,
   modules: {
     reflex,
@@ -47,4 +46,4 @@ export default Module({
   // services: {
   //     executeCommand
   // }
-})
+}

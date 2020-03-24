@@ -1,13 +1,9 @@
 // @flow
-import { Controller } from 'cerebral'
-import { set, debounce } from 'cerebral/operators'
-import { state } from 'cerebral/tags'
+import App from 'cerebral'
 // system modules
 import Devtools from 'cerebral/devtools'
-// application modules
-import app from './modules/app'
 
-const controller = Controller(app, {
+const app = App(app, {
   devtools:
     process.env.NODE_ENV === 'production'
       ? null
@@ -17,4 +13,4 @@ const controller = Controller(app, {
         })
 })
 
-export default controller
+export default app

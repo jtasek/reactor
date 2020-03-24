@@ -4,7 +4,7 @@ import Grid from '../Grid'
 import Ruler from '../Ruler'
 import Handle from '../Handle'
 import { connect } from '@cerebral/react'
-import { signal, state } from 'cerebral/tags'
+import { sequences, state } from 'cerebral'
 //import {DropTarget} from 'react-dnd'
 import { findDOMNode } from 'react-dom'
 import styles from './styles.css'
@@ -73,7 +73,9 @@ const Rulers = connect(
   },
   ({ rulers, scale }) => (
     <g id="rulers">
-      {rulers.map(ruler => <Ruler key={ruler} id={ruler} scale={scale} />)}
+      {rulers.map(ruler => (
+        <Ruler key={ruler} id={ruler} scale={scale} />
+      ))}
     </g>
   )
 )
@@ -84,7 +86,9 @@ const Camera = connect(
   },
   ({ camera, children }) => {
     return (
-      <g transform={`translate(${camera.position.x},${camera.position.y}) scale(${camera.scale})`}>
+      <g
+        transform={`translate(${camera.position.x},${camera.position.y}) scale(${camera.scale})`}
+      >
         {children}
       </g>
     )
@@ -94,13 +98,13 @@ const Camera = connect(
 //DropTarget('shape', surfaceTarget, collect)(
 // connect({
 //   tools: state`tools`,
-//     contextMenuDisplayed: signal`ui.contextMenuDisplayed`
+//     contextMenuDisplayed: sequences`ui.contextMenuDisplayed`
 //   },
 
 export default EventLayer(
   connect(
     {
-      contextMenuDisplayed: signal`ui.contextMenuDisplayed`
+      contextMenuDisplayed: sequences`ui.contextMenuDisplayed`
     },
     class Surface extends Component {
       render() {

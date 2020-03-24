@@ -1,6 +1,6 @@
 import React from 'react'
 import { connect } from '@cerebral/react'
-import { props, state } from 'cerebral/tags'
+import { props, state } from 'cerebral'
 import getCentre from '../../../reflex/computed/getCentre'
 import getSize from '../../../reflex/computed/getSize'
 import styles from '../../styles.css'
@@ -17,13 +17,27 @@ import styles from '../../styles.css'
 **/
 
 export const Ellipse = ({ centre, size, selected }) => {
-  let className = selected ? styles.shape + ' ' + styles.selected : styles.shape
+  let className = selected
+    ? styles.shape + ' ' + styles.selected
+    : styles.shape
 
-  return <ellipse key="circle" className={className} cx={centre.x} cy={centre.y} rx={size.width} ry={size.height} />
+  return (
+    <ellipse
+      key="circle"
+      className={className}
+      cx={centre.x}
+      cy={centre.y}
+      rx={size.width}
+      ry={size.height}
+    />
+  )
 }
 
-export default connect({
-  centre: getCentre(),
-  size: getSize(),
-  shape: state`workspace.shapes.${props`id`}`
-}, Ellipse)
+export default connect(
+  {
+    centre: getCentre(),
+    size: getSize(),
+    shape: state`workspace.shapes.${props`id`}`
+  },
+  Ellipse
+)

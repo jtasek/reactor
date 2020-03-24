@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { connect } from '@cerebral/react'
-import { state } from 'cerebral/tags'
+import { state } from 'cerebral'
 import Icon from '../Icon'
 import styles from './styles.css'
 
@@ -34,7 +34,7 @@ const licons = {
   }
 }
 
-const LayerPanelItem = ({ layer, onChangeHandler }) =>
+const LayerPanelItem = ({ layer, onChangeHandler }) => (
   <li className={styles.layerItem}>
     <label>
       <input
@@ -48,6 +48,7 @@ const LayerPanelItem = ({ layer, onChangeHandler }) =>
     <Icon {...vicons[layer.visible]} key="visible" />
     <Icon {...licons[layer.locked]} key="locked" />
   </li>
+)
 
 export class LayerPanel extends Component {
   render() {

@@ -5,9 +5,4 @@ import React, { Component } from 'react'
 import Layout from '../../modules/ui/components/Layout'
 
 //export default DragDropContext(HTML5Backend)(
-export default class App extends Component {
-  render() {
-    return <Layout />
-  }
-}
-//)
+export const App = () => <Layout />

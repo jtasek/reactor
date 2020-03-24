@@ -1,6 +1,6 @@
 //@flow
-const path = require('path')
-const webpack = require('webpack')
+const path = require('path');
+const webpack = require('webpack');
 
 module.exports = {
   devtool: 'source-map',
@@ -8,7 +8,6 @@ module.exports = {
     // activate HMR for React
     'react-hot-loader/patch',
     'webpack-hot-middleware/client',
-    'babel-polyfill',
     'eventsource-polyfill',
     path.join(__dirname, './src/main.js')
   ],
@@ -17,6 +16,7 @@ module.exports = {
     path: path.join(__dirname, 'dist'),
     publicPath: '/'
   },
+  mode: 'development',
   module: {
     rules: [
       {
@@ -34,8 +34,9 @@ module.exports = {
           {
             loader: 'css-loader',
             options: {
-              modules: true,
-              localIdentName: '[name]-[local]-[hash:base64:5]'
+              modules: {
+                localIdentName: '[name]-[local]-[hash:base64:5]'
+              }
             }
           },
           {
@@ -69,4 +70,4 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.jsx']
   }
-}
+};

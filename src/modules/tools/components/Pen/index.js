@@ -1,6 +1,6 @@
 import React from 'react'
 import { connect } from '@cerebral/react'
-import { props, state } from 'cerebral/tags'
+import { props, state } from 'cerebral'
 import getPath from '../../../reflex/computed/getPath'
 import styles from '../../styles.css'
 
@@ -32,7 +32,9 @@ export function createPen() {
 
 // Pure component
 export const Pen = ({ path, selected }) => {
-  let className = selected ? styles.shape + ' ' + styles.selected : styles.shape
+  let className = selected
+    ? styles.shape + ' ' + styles.selected
+    : styles.shape
 
   return <polyline key="line" className={className} points={path} />
 }
