@@ -5,7 +5,7 @@ import { Container } from '@cerebral/react'
 import ReactDOM from 'react-dom'
 
 const init = () => {
-  const { App } = require('./components/App')
+  const { App } = require('./app/components/App')
   ReactDOM.render(
     <AppContainer>
       <Container app={app}>

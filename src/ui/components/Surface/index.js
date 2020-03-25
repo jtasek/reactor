@@ -13,7 +13,7 @@ import rulers from '../../../app/computed/filteredRulers'
 import shapes from '../../../app/computed/shapesWithType'
 import Overlay from '../Overlay'
 import Stack from '../../../tools/components/Stack'
-import EventLayer from '../../../events/EventLayer'
+import EventLayer from '../../../events/components/EventLayer'
 //import surfaceTarget from './surfaceTarget'
 //import collect from './collect'
 import {
