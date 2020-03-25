@@ -76,12 +76,7 @@
     "webpack-hot-middleware": "^2.25.0"
   },
   "dependencies": {
-    "@cerebral/forms": "^3.2.2",
-    "@cerebral/react": "^4.2.1",
-    "@cerebral/router": "^3.2.2",
-    "@cerebral/shortcuts": "^3.2.2",
     "babel-preset-react": "^6.24.1",
-    "cerebral": "^5.2.1",
     "core-js": "^3.6.4",
     "eventsource-polyfill": "^0.9.6",
     "express": "^4.17.1",
