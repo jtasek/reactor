@@ -1,4 +1,4 @@
-/* @flow */
+
 import React, { Component } from 'react'
 import Rx from 'rx-lite'
 import { findDOMNode } from 'react-dom'

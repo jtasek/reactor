@@ -1,4 +1,4 @@
-//@flow
+
 export default ({ props, state}) => {
     state.unset('workspace.shapes')
     state.unset('workspace.groups')

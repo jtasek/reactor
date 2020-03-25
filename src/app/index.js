@@ -1,4 +1,4 @@
-// @flow
+
 import { set, debounce } from 'cerebral/operators'
 import { state } from 'cerebral'
 // system modules

@@ -1,4 +1,4 @@
-/* @flow */
+
 import resetstate from '../state'
 
 export default ({ state }) => {

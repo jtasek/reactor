@@ -1,4 +1,4 @@
-// @flow
+
 import contextMenuDisplayed from '../app/signals/contextMenuDisplayed'
 import controlVisibilityChanged from '../app/signals/controlVisibilityChanged'
 import displayStatusMessage from '../app/signals/displayStatusMessage'

@@ -1,4 +1,4 @@
-// @flow
+
 
 export type Alignment = 'bottom' | 'left' | 'right' | 'top'
 

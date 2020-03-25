@@ -1,4 +1,4 @@
-// @flow
+
 import App from 'cerebral'
 // system modules
 import Devtools from 'cerebral/devtools'

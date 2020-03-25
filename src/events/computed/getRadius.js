@@ -1,4 +1,4 @@
-/* @flow */
+
 import { Compute } from 'cerebral'
 import getCentre from './getCentre'
 import getInitialPosition from './getInitialPosition'

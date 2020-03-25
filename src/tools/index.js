@@ -1,4 +1,4 @@
-// @flow
+
 import lineAdded from './signals/lineAdded'
 import toolActivated from './signals/toolActivated'
 import state from './state'

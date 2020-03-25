@@ -1,4 +1,4 @@
-/* @flow */
+
 import { createShape } from '../../app/factories'
 // import getPosition from '../computed/getPosition'
 // import getSize from '../computed/getSize'

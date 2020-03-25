@@ -1,4 +1,4 @@
-/* @flow */
+
 import { Compute } from 'cerebral'
 import { state } from 'cerebral'
 import { Point } from '../../app/types'

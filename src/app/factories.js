@@ -1,4 +1,4 @@
-// @flow
+
 import {v4} from 'uuid'
 import type {Command, Shape, Link, Ruler, Group, Layer, Workspace, Application} from './types'
 

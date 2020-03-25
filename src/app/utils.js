@@ -1,4 +1,4 @@
-// @flow
+
 import type {Point, Rectangle, Vector} from './types'
 
 export function getRandomNumber(max: number): number {

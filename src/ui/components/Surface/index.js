@@ -1,4 +1,4 @@
-// @flow
+
 import React, { Component, PropTypes } from 'react'
 import Grid from '../Grid'
 import Ruler from '../Ruler'
