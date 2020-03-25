@@ -86,6 +86,8 @@
     "eventsource-polyfill": "^0.9.6",
     "express": "^4.17.1",
     "global": "^4.4.0",
+    "overmind": "^23.0.1",
+    "overmind-react": "^24.0.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "rx-lite": "^4.0.8",
