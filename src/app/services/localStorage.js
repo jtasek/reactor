@@ -1,23 +1,20 @@
-export const loadState = () => {
+export const loadState = (key) => {
     try {
-        const serializedState = localStorage.getItem('state')
-        if (serializedState === null) {
-            return undefined
-        }
+        const serializedState = localStorage.getItem(key)
+
         return JSON.parse(serializedState)
     }
     catch (error) {
-        return undefined
+        console.error('Failed to load application state', error)
     }
-
 }
 
-export const saveState = (state) => {
+export const saveState = (key, state) => {
     try {
         const serializedState = JSON.stringify(state)
-        localStorage.setItem('state', serializedState)
 
+        localStorage.setItem(key, serializedState)
     } catch (error) {
-        // ignore write errors
+        console.error('Failed to save application state', error)
     }
 }
