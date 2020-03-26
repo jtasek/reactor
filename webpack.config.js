@@ -14,7 +14,7 @@ module.exports = {
     'react-hot-loader/patch',
     'webpack-hot-middleware/client',
     'eventsource-polyfill',
-    './src/index.ts'
+    './src/index.tsx'
   ],
   externals: [ nodeExternals() ],
   output: {
