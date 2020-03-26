@@ -5,9 +5,12 @@ import webpackMiddleware from 'webpack-dev-middleware'
 import webpackHotMiddleware from 'webpack-hot-middleware'
 import config from './webpack.config.js'
 
+const {
+  PORT = 4000,
+} = process.env
+
 const app = express()
 const compiler = webpack(config)
-const port = process.env.PORT || 4000
 
 app.use(webpackMiddleware(compiler, {
   publicPath: config.output.publicPath,
@@ -39,10 +42,10 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, './src/index.html'))
 })
 
-app.listen(port, 'localhost', (err) => {
+app.listen(PORT, 'localhost', (err) => {
   if (err) {
     return console.log(err)
   }
 
-  console.log(`Listening at http://localhost:${port}`)
+  console.log(`Listening at http://localhost:${PORT}`)
 })

@@ -2,6 +2,11 @@
 const path = require('path');
 const webpack = require('webpack');
 
+const {
+  NODE_ENV = 'development',
+} = process.env;
+const nodeExternals = require('webpack-node-externals');
+
 module.exports = {
   devtool: 'source-map',
   entry: [
@@ -9,26 +14,25 @@ module.exports = {
     'react-hot-loader/patch',
     'webpack-hot-middleware/client',
     'eventsource-polyfill',
-    path.join(__dirname, './src/main.js')
+    './src/index.ts'
   ],
+  externals: [ nodeExternals() ],
   output: {
     filename: 'bundle.js',
     path: path.join(__dirname, 'dist'),
     publicPath: '/'
   },
-  mode: 'development',
+  mode: NODE_ENV,
   module: {
     rules: [
       {
-        test: /\.jsx?$/,
+        test: /\.[js|ts].x?$/,
         exclude: /node_modules/,
-        include: path.join(__dirname, './src'),
-        use: ['babel-loader', 'eslint-loader']
+        use: [ 'eslint-loader', 'ts-loader']
       },
       {
         test: /\.css$/,
         exclude: /node_modules/,
-        include: path.join(__dirname, './src'),
         use: [
           'style-loader',
           {
@@ -37,6 +41,13 @@ module.exports = {
               modules: {
                 localIdentName: '[name]-[local]-[hash:base64:5]'
               }
+            }
+          },
+          {
+            loader: 'typings-for-css-modules-loader',
+            options: {
+              modules: true,
+              namedExport: true
             }
           },
           {
@@ -68,6 +79,6 @@ module.exports = {
     new webpack.NoEmitOnErrorsPlugin()
   ],
   resolve: {
-    extensions: ['.js', '.jsx']
+    extensions: ['.js', '.jsx', '.ts', '.tsx', '.css']
   }
 };

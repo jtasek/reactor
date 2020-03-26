@@ -1,7 +1,7 @@
 {
   "name": "reactor",
   "version": "0.0.2",
-  "main": "main.js",
+  "main": "index.js",
   "author": "Jakub Tašek",
   "bugs": {
     "url": "https://github.com/jtasek/reactor/issues"
@@ -45,9 +45,13 @@
     "@babel/plugin-transform-block-scoping": "^7.8.3",
     "@babel/plugin-transform-flow-strip-types": "^7.9.0",
     "@babel/preset-env": "^7.9.0",
-    "@babel/preset-flow": "^7.9.0",
     "@babel/preset-react": "^7.9.4",
     "@babel/preset-typescript": "^7.9.0",
+    "@types/jest": "^25.1.4",
+    "@types/node": "^12.12.31",
+    "@types/react": "^16.9.25",
+    "@types/react-dom": "^16.9.5",
+    "@types/uuid": "^7.0.2",
     "autoprefixer": "^9.7.5",
     "babel-eslint": "^10.1.0",
     "babel-jest": "^25.1.0",
@@ -58,7 +62,6 @@
     "eslint": "^6.8.0",
     "eslint-loader": "^3.0.3",
     "eslint-plugin-babel": "^5.3.0",
-    "eslint-plugin-flowtype": "^4.7.0",
     "eslint-plugin-react": "^7.19.0",
     "file-loader": "^6.0.0",
     "jest": "^25.1.0",
@@ -72,20 +75,27 @@
     "rimraf": "^3.0.2",
     "style-loader": "^1.1.3",
     "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11",
     "webpack-dev-middleware": "^3.7.2",
-    "webpack-hot-middleware": "^2.25.0"
+    "webpack-hot-middleware": "^2.25.0",
+    "webpack-node-externals": "^1.7.2"
   },
   "dependencies": {
-    "babel-preset-react": "^6.24.1",
+    "@types/express": "^4.17.3",
     "core-js": "^3.6.4",
     "eventsource-polyfill": "^0.9.6",
     "express": "^4.17.1",
     "global": "^4.4.0",
     "overmind": "^23.0.1",
     "overmind-react": "^24.0.1",
+    "page": "^1.11.5",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "rx-lite": "^4.0.8",
+    "ts-jest": "^25.2.1",
+    "ts-loader": "^6.2.2",
+    "typescript": "^3.8.3",
+    "typings-for-css-modules-loader": "^1.7.0",
     "uuid": "^7.0.2"
   },
   "scripts": {
@@ -96,8 +106,9 @@
     "lint": "eslint src --fix",
     "postinstall": "node-prune",
     "rebuild": "npm run build:webpack",
-    "start": "babel-node server & open http://localhost:4000",
+    "start": "babel-node server && open http://localhost:4000",
     "test": "jest",
+    "tsc": "tsc --noEmit",
     "webpack": "babel-node ./node_modules/webpack/bin/webpack"
   }
 }

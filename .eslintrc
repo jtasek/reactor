@@ -32,12 +32,8 @@
       "never"
     ]
   },
-  "extends": [
-    "plugin:flowtype/recommended"
-  ],
   "plugins": [
     "babel",
     "react",
-    "flowtype"
   ]
 }
