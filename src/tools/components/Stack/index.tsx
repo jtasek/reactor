@@ -1,6 +1,4 @@
-
 import React from 'react'
-import { connect } from '@cerebral/react'
 import activeTools from '../../computed/activeTools'
 
 // Connected components

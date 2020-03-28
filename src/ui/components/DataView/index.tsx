@@ -1,7 +1,4 @@
-
 import React, { Component } from 'react'
-import { connect } from '@cerebral/react'
-import { props, state } from 'cerebral'
 //import styles from './styles.css'
 
 /*

@@ -1,6 +1,3 @@
-import { set, toggle } from 'cerebral/operators'
-import { props, state } from 'cerebral'
-
 export default [
   // set(state`ui.controls.commandline.visible`, false),
   // set(state`ui.controls.contextmenu.visible`, false),

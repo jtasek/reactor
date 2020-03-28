@@ -1,6 +1,3 @@
-import { set, copy } from 'cerebral/operators'
-import { state } from 'cerebral'
-
 const openUserModal = [
   copy(props`userId`, 'userModal.userId'),
   userDataExists,

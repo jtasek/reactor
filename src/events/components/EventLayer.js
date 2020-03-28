@@ -1,9 +1,6 @@
-
 import React, { Component } from 'react'
 import Rx from 'rx-lite'
 import { findDOMNode } from 'react-dom'
-import { connect } from '@cerebral/react'
-import { sequences } from 'cerebral'
 import { MouseButton } from '../../app/types'
 
 // High order function to decorate component with event layer container
