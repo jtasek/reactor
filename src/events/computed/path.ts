@@ -1,10 +1,9 @@
+import { Application, Point } from '../../app/types';
+import { Events } from '../types';
 
-import { Compute } from 'cerebral'
-import { state } from 'cerebral'
-import { Point } from '../../app/types'
+export const path = ({ pointer }: Events, { currentDocument }: Application) => {
+  const { path } = pointer;
+  const { scale } = currentDocument?.scale || 1;
 
-export default Compute(
-  state`reflex.monitor.path`,
-  state`workspace.camera.scale`,
-  (path, scale) => path.map(point => `${point.x / scale}, ${point.y / scale}`)
-)
+  return path.map((point: Point) => `${point.x / scale}, ${point.y / scale}`);
+};

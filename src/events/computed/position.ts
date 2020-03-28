@@ -1,12 +1,9 @@
+export const position = ({ pointer }, { currenDocument }) => {
+  const { current } = pointer;
+  const { scale } = currenDocument.camera;
 
-import { Compute } from 'cerebral'
-import { state } from 'cerebral'
-
-export default Compute(
-  state`reflex.monitor.position`,
-  state`workspace.camera.scale`,
-  (current, scale) => ({
+  return {
     x: current.x / scale,
     y: current.y / scale
-  })
-)
+  };
+};

@@ -1,13 +1,9 @@
+export const offset = ({ pointer }, { currenDocument }) => {
+  const { initialPosition } = pointer;
+  const { scale } = currenDocument.camera;
 
-import { Compute } from 'cerebral'
-import { state } from 'cerebral'
-
-export default Compute(
-  state`reflex.monitor.position`,
-  state`reflex.monitor.initialPosition`,
-  state`workspace.camera.scale`,
-  (position, initialPosition, scale) => ({
+  return {
     x: (position.x - initialPosition.x) / scale,
     y: (position.y - initialPosition.y) / scale
-  })
-)
+  };
+};

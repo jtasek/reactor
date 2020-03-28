@@ -1,13 +1,9 @@
+export const size = ({ pointer }, { currenDocument }) => {
+  const { initialPosition } = pointer;
+  const { scale } = currenDocument.camera;
 
-import { Compute } from 'cerebral'
-import { state } from 'cerebral'
-
-export default Compute(
-  state`reflex.monitor.position`,
-  state`reflex.monitor.initialPosition`,
-  state`workspace.camera.scale`,
-  (position, initialPosition, scale) => ({
+  return {
     width: Math.abs(position.x - initialPosition.x) / scale,
     height: Math.abs(position.y - initialPosition.y) / scale
-  })
-)
+  };
+};
