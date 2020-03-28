@@ -1,131 +1,209 @@
+import { position } from '../events/computed/position';
+import { Derive } from 'overmind';
 
+export enum Alignment {
+  bottom = 'bottom',
+  left = 'left',
+  right = 'right',
+  top = 'top'
+}
 
-export type Alignment = 'bottom' | 'left' | 'right' | 'top'
+export enum Orientation {
+  horizontal = 'horizontal',
+  vertical = 'vertical'
+}
 
-export type Orientation = 'horizontal' | 'vertical'
+export enum Spacing {
+  sameHorizontal = 'sameHorizontal',
+  sameVertical = 'sameVertical'
+}
 
-export type Spacing = 'sameHorizontal' | 'sameVertical'
+export enum Sizing {
+  sameHeight = 'sameHeight',
+  sameSize = 'sameSize',
+  sameWidth = 'sameWidth'
+}
 
-export type Sizing = 'sameHeight' | 'sameSize' | 'sameWidth'
+export enum LinkType {
+  aggregate = 'aggregate',
+  compose = 'compose',
+  inherit = 'inherit',
+  refer = 'refer'
+}
 
-export type LinkType = 'aggregate' | 'compose' | 'inherit' | 'refer'
-
-export const MouseButton = { left: 0, middle: 1, right: 2 }
+export enum MouseButton {
+  left = 0,
+  middle = 1,
+  right = 2
+}
 
 export type Position = {
-  x: number,
-  y: number
-}
+  x: number;
+  y: number;
+};
 
 export type Point = {
-  x: number,
-  y: number
-}
+  x: number;
+  y: number;
+};
 
 export type Vector = {
-  x: number,
-  y: number
-}
+  x: number;
+  y: number;
+};
 
 export type Rectangle = {
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number
-}
+  p: Point;
+  size: Size;
+};
 
 export type Size = {
-  height: number,
-  width: number
+  height: number;
+  width: number;
+};
+
+export interface HashTable<T> {
+  [key: string]: T;
 }
 
-export type Ruler = {
-  orientation: Orientation,
-  position: Position
+export interface Ruler {
+  id: string;
+  name: string;
+  orientation: Orientation;
+  position: Position;
 }
 
-export type Grid = {
-  width: number,
-  visible: boolean,
-  factor: number,
-  height: number
+export interface Grid {
+  width: number;
+  visible: boolean;
+  factor: number;
+  height: number;
 }
 
-export type Shape = {
-  id: string,
-  code: string,
-  name: string,
-  description: string,
-  position: Position,
-  size: Size,
-  locked: boolean,
-  visible: boolean,
-  created: Date,
-  createdBy: string,
-  modified: Date,
-  modifiedBy: string
+export interface Shape {
+  id: string;
+  children?: Shape[];
+  created: Date;
+  createdBy: string;
+  description?: string;
+  locked: boolean;
+  modified: Date;
+  modifiedBy: string;
+  name: string;
+  position?: Position;
+  selected: boolean;
+  size?: Size;
+  type: string;
+  visible: boolean;
 }
 
-export type Link = {
-  name: string,
-  source: number,
-  target: number,
-  type: LinkType
+export interface Link {
+  id: string;
+  name: string;
+  source?: string;
+  target?: string;
 }
 
-export type Group = {
-  locked: boolean,
-  selected: boolean,
-  visible: boolean,
-  name: string,
-  shapes: number[]
+export interface Group {
+  id: string;
+  locked: boolean;
+  name: string;
+  selected: boolean;
+  shapes: string[];
+  visible: boolean;
 }
 
-export type Layer = {
-  locked: boolean,
-  selected: boolean,
-  visible: boolean,
-  name: string,
-  shapes: number[]
+export interface Layer {
+  id: string;
+  locked: boolean;
+  name: string;
+  selected: boolean;
+  shapes: string[];
+  visible: boolean;
 }
 
-export type Workspace = {
-  author: string,
-  grid: Grid,
-  groups: Group[],
-  layers: Layer[],
-  links: Link[],
-  rulers: Ruler[],
-  shapes: Shape[]
+export type Action = (state: Document) => void;
+
+export interface Camera {
+  scale: number;
+  position: Position;
 }
 
-export type Command = {
-  category: string,
-  description: string,
-  name: string,
-  shortCut: string,
-  signal: string,
-  canExecute(): boolean,
-  execute(): void
+export interface Document {
+  id: string;
+  author: string;
+  created: Date;
+  description?: string;
+  grid: Grid;
+  groups: HashTable<Group>;
+  history: Action[];
+  layers: HashTable<Layer>;
+  links: HashTable<Link>;
+  modified: Date;
+  name: string;
+  rulers: HashTable<Ruler>;
+  scale: number;
+  selection: string[];
+  shapes: HashTable<Shape>;
 }
 
-export type User = {
-  avatar: string,
-  email: string,
-  isAuthenticated: boolean,
-  lastLoggedIn: Date,
-  loggedIn: Date,
-  name: string
+export interface Command {
+  id: string;
+  category?: string;
+  description?: string;
+  name: string;
+  shortCut?: string;
+  action: Action;
 }
 
-export type Application = {
-  name: string,
-  started: Date,
-  user: User,
-  stats: Object,
-  workspaces: Workspace[]
+export interface User {
+  id: string;
+  avatar?: string;
+  email?: string;
+  isAuthenticated: boolean;
+  lastLoggedIn: Date;
+  loggedIn: Date;
+  name?: string;
 }
 
-export interface IRenderer {
-  render(workspace: Workspace): void;
+export interface Event {
+  action: string;
+  category: string;
+  data: any;
+  occured: Date;
+  user: string;
+}
+
+export type Device = Shape;
+
+export interface Provider {
+  id: string;
+  name: string;
+  description?: string;
+  data?: any;
+}
+
+export interface OnlineProvider extends Provider {
+  url: string;
+}
+
+export interface Configuration {}
+
+export interface Application {
+  id: string;
+  commands: HashTable<Command>;
+  components: HashTable<Shape>;
+  config: Configuration;
+  currentDocumentId?: string;
+  currentDocument?: (state: Application) => Document;
+  devices: HashTable<Device>;
+  documents: HashTable<Document>;
+  events: Event[];
+  providers: HashTable<Provider>;
+  started: Date;
+  user: User;
+}
+
+export interface Renderer {
+  render(document: Document): void;
 }
