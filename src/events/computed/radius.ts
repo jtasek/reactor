@@ -1,7 +1,7 @@
 
 import { Compute } from 'cerebral'
-import getCentre from './getCentre'
-import getInitialPosition from './getInitialPosition'
+import getCentre from './centre'
+import getInitialPosition from './initialPosition'
 
 export default Compute({
     centre: getCentre,
