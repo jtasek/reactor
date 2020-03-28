@@ -1,6 +1,6 @@
-import { IWorkspace, IRenderer } from '../index'
+import { Document, Renderer } from '../types';
 
-export class TextRenderer implements IRenderer {
-    Workspace: IWorkspace
-    Render(): void {}
+export class TextRenderer implements Renderer {
+  document: Document;
+  render(): void {}
 }

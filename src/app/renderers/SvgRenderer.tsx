@@ -1,8 +1,13 @@
-import React from 'react';
-import {IWorkspace, IRenderer} from '../index';
+import React from './react';
+import { Document, Renderer } from '../types';
 
-const Group = (props) => <g>{props.children}</g>
+class SvgRenderer implements Renderer {
+  document: Document;
+  render(): void {}
+}
 
+const Group = props => <g>{props.children}</g>;
+/*
 const Line = () => <line 
     x1="the x start point of the line"
     y1="the y start point of the line"
@@ -33,10 +38,10 @@ const Image = () => <image
     y="the y-axis top-left corner of the image"
     width="the width of the image. Required."
     height="the height of the image. Required."
-    xlink:href="the path to the image. Required." />
+    xlinkHref="the path to the image. Required." />
 
 const Pattern = () => <pattern 
-    id="the unique id used to reference this pattern." Required. 
+    id="the unique id used to reference this pattern. Required. "
     patternUnits="'userSpaceOnUse' or 'objectBoundingBox'. The second value makes units of x, y, width, height a fraction (or %) of the object bounding box which uses the pattern."
     patternContentUnits="'userSpaceOnUse' or 'objectBoundingBox'"
     patternTransform="allows the whole pattern to be transformed"
@@ -45,4 +50,5 @@ const Pattern = () => <pattern
     width="the width of the pattern tile (default 100%)" 
     height="the height of the pattern tile (default 100%)"
     viewBox="the points "seen" in this SVG drawing area. 4 values separated by white space or commas. (min x, min y, width, height)" 
-    xlink:href="reference to another pattern whose attribute values are used as defaults and any children are inherited. Recursive" />
+    xlinkHref="reference to another pattern whose attribute values are used as defaults and any children are inherited. Recursive" />
+*/

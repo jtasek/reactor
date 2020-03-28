@@ -1,6 +1,6 @@
-import { Workspace, IRenderer } from '../types'
+import { Document, Renderer } from '../types';
 
-export class CanvasRenderer implements IRenderer {
-    Workspace: Workspace
-    Render(): void {}
+export class CanvasRenderer implements Renderer {
+  document: Document;
+  render(): void {}
 }

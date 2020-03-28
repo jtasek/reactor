@@ -1,12 +1,12 @@
-import { IWorkspace, IRenderer } from '../index'
+import { Document, Renderer } from '../types';
 
-export class HtmlRenderer implements IRenderer {
-    Workspace: IWorkspace
-    Render(): void {
-        console.log(this.Workspace.toString())
+export class HtmlRenderer implements Renderer {
+  document: Document;
+  render() {
+    console.log(this.document.toString());
 
-        this.Workspace.Shapes.forEach(function(value, index) {
-            console.log(value.Name)
-        })
-    }
+    this.document.shapes.forEach(function(value, index) {
+      console.log(value.Name);
+    });
+  }
 }
