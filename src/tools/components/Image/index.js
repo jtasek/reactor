@@ -1,9 +1,7 @@
-import React from 'react'
-import { connect } from '@cerebral/react'
-import { props, state } from 'cerebral'
-import getPosition from '../../../events/computed/position'
-import getSize from '../../../events/computed/size'
-import styles from '../../styles.css'
+import React from 'react';
+import getPosition from '../../../reflex/computed/getPosition';
+import getSize from '../../../reflex/computed/getSize';
+import styles from '../../styles.css';
 
 /**
  * Insert image based on current coords
@@ -28,7 +26,7 @@ export const Image = ({ position, size, imagePath }) => (
     height={size.height}
     xlinkHref={imagePath}
   />
-)
+);
 
 export default connect(
   {
@@ -37,4 +35,4 @@ export default connect(
     shape: state`workspace.shapes.${props`id`}`
   },
   Image
-)
+);

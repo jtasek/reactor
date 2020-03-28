@@ -1,9 +1,7 @@
-import React from 'react'
-import { connect } from '@cerebral/react'
-import { props, state } from 'cerebral'
-import getCentre from '../../../events/computed/centre'
-import getSize from '../../../events/computed/size'
-import styles from '../../styles.css'
+import React from 'react';
+import getCentre from '../../../reflex/computed/getCentre';
+import getSize from '../../../reflex/computed/getSize';
+import styles from '../../styles.css';
 
 /**
  * Draws an ellipse based on input coords and size
@@ -19,7 +17,7 @@ import styles from '../../styles.css'
 export const Ellipse = ({ centre, size, selected }) => {
   let className = selected
     ? styles.shape + ' ' + styles.selected
-    : styles.shape
+    : styles.shape;
 
   return (
     <ellipse
@@ -30,8 +28,8 @@ export const Ellipse = ({ centre, size, selected }) => {
       rx={size.width}
       ry={size.height}
     />
-  )
-}
+  );
+};
 
 export default connect(
   {
@@ -40,4 +38,4 @@ export default connect(
     shape: state`workspace.shapes.${props`id`}`
   },
   Ellipse
-)
+);

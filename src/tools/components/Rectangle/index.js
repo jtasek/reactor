@@ -1,9 +1,8 @@
-import React from 'react'
-import { connect } from '@cerebral/react'
-import { props, state } from 'cerebral'
-import getSize from '../../../events/computed/size'
-import getStart from '../../../events/computed/start'
-import styles from '../../styles.css'
+import React from 'react';
+
+import getSize from '../../../events/computed/size';
+import getStart from '../../../events/computed/start';
+import styles from '../../styles.css';
 
 /**
  * Draws a rectange based on position and size
@@ -27,7 +26,7 @@ export function rectangle({ position, size, radius = 0 }) {
     size: size,
     selected: true,
     type: 'rect'
-  }
+  };
 }
 
 // Command
@@ -35,16 +34,16 @@ export function createRectangle() {
   const options = {
     position: getStart(),
     size: getSize()
-  }
+  };
 
-  return rectangle(options)
+  return rectangle(options);
 }
 
 // Pure component
 const Rect = ({ shape }) => {
   let className = shape.selected
     ? styles.shape + ' ' + styles.selected
-    : styles.shape
+    : styles.shape;
 
   return (
     <rect
@@ -56,8 +55,8 @@ const Rect = ({ shape }) => {
       rx={shape.radius}
       ry={shape.radius}
     />
-  )
-}
+  );
+};
 
 // Connected component design mode
 export const DynamicRectangle = connect(
@@ -66,13 +65,13 @@ export const DynamicRectangle = connect(
     size: getSize
   },
   props => {
-    const shape = rectangle(props)
+    const shape = rectangle(props);
 
-    return <Rect key="rect-design" shape={shape} />
+    return <Rect key="rect-design" shape={shape} />;
   }
-)
+);
 
-export default DynamicRectangle
+export default DynamicRectangle;
 
 // Connected component static
 export const Rectangle = connect(
@@ -80,4 +79,4 @@ export const Rectangle = connect(
     shape: state`workspace.shapes.${props`id`}`
   },
   ({ shape }) => <Rect key={shape.id} shape={shape} />
-)
+);

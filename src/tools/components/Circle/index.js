@@ -1,9 +1,8 @@
-import React from 'react'
-import { connect } from '@cerebral/react'
-import { props, state } from 'cerebral'
-import getCentre from '../../../events/computed/centre'
-import getRadius from '../../../events/computed/radius'
-import styles from '../../styles.css'
+import React from 'react';
+import getCentre from '../../../events/computed/centre';
+import getRadius from '../../../events/computed/radius';
+import styles from '../../styles.css';
+import { useApp } from './src/app';
 
 /**
  * Draws a circle based on input coords and radius
@@ -23,7 +22,7 @@ export function circle({ centre, radius, selected }) {
     radius: radius,
     selected: true,
     type: 'circle'
-  }
+  };
 }
 
 // Factory function
@@ -31,16 +30,16 @@ export function createCircle() {
   const options = {
     centre: getCentre(),
     radius: getRadius()
-  }
+  };
 
-  return circle(options)
+  return circle(options);
 }
 
 // Pure component
 export const Circle = ({ centre, radius, selected }) => {
   let className = selected
     ? styles.shape + ' ' + styles.selected
-    : styles.shape
+    : styles.shape;
 
   return (
     <circle
@@ -50,8 +49,8 @@ export const Circle = ({ centre, radius, selected }) => {
       cy={centre.y}
       r={radius}
     />
-  )
-}
+  );
+};
 
 // Connected component
 export default connect(
@@ -61,4 +60,4 @@ export default connect(
     shape: state`workspace.shapes.${props`id`}`
   },
   Circle
-)
+);

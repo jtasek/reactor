@@ -1,8 +1,7 @@
-import React from 'react'
-import { connect } from '@cerebral/react'
-import { props, state } from 'cerebral'
-import styles from '../../styles.css'
-import currentPosition from '../../../events/computed/position'
+import React from 'react';
+
+import styles from '../../styles.css';
+import currentPosition from '../../../reflex/computed/getPosition';
 
 /**
  * Draws a text in current position
@@ -32,7 +31,7 @@ export const Text = ({ position }) => (
       </form>
     </foreignObject>
   </g>
-)
+);
 
 export default connect(
   {
@@ -40,4 +39,4 @@ export default connect(
     shape: state`workspace.shapes.${props`id`}`
   },
   Text
-)
+);

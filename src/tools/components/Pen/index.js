@@ -1,8 +1,7 @@
-import React from 'react'
-import { connect } from '@cerebral/react'
-import { props, state } from 'cerebral'
-import getPath from '../../../events/computed/path'
-import styles from '../../styles.css'
+import React from 'react';
+
+import getPath from '../../../events/computed/path';
+import styles from '../../styles.css';
 
 /** 
  * Draws a line based on path
@@ -18,26 +17,26 @@ export function pen({ path }) {
     path: path,
     selected: true,
     type: 'pen'
-  }
+  };
 }
 
 // Factory function
 export function createPen() {
   const options = {
     path: getPath()
-  }
+  };
 
-  return pen(options)
+  return pen(options);
 }
 
 // Pure component
 export const Pen = ({ path, selected }) => {
   let className = selected
     ? styles.shape + ' ' + styles.selected
-    : styles.shape
+    : styles.shape;
 
-  return <polyline key="line" className={className} points={path} />
-}
+  return <polyline key="line" className={className} points={path} />;
+};
 
 // Connected component
 export default connect(
@@ -46,4 +45,4 @@ export default connect(
     shape: state`workspace.shapes.${props`id`}`
   },
   Pen
-)
+);

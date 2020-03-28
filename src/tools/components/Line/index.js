@@ -1,9 +1,7 @@
-import React from 'react'
-import { connect } from '@cerebral/react'
-import { props, state } from 'cerebral'
-import currentPosition from '../../../events/computed/position'
-import startPosition from '../../../events/computed/initialPosition'
-import styles from '../../styles.css'
+import React from 'react';
+import currentPosition from '../../../events/computed/position';
+import startPosition from '../../../events/computed/getInitialPosition';
+import styles from '../../styles.css';
 
 /**
  * Draws a line from point start to end
@@ -17,7 +15,7 @@ export function line({ start, end }) {
     end: end,
     selected: true,
     type: 'line'
-  }
+  };
 }
 
 // Factory function
@@ -25,16 +23,16 @@ export function createLine() {
   const options = {
     start: startPosition().get(),
     end: currentPosition().get()
-  }
+  };
 
-  return line(options)
+  return line(options);
 }
 
 // Pure component
 export const Line = ({ start, end, selected }) => {
   let className = selected
     ? styles.shape + ' ' + styles.selected
-    : styles.shape
+    : styles.shape;
 
   return (
     <line
@@ -45,8 +43,8 @@ export const Line = ({ start, end, selected }) => {
       x2={end.x}
       y2={end.y}
     />
-  )
-}
+  );
+};
 
 // Connected component
 export default connect(
@@ -56,4 +54,4 @@ export default connect(
     shape: state`workspace.shapes.${props`id`}`
   },
   Line
-)
+);
