@@ -1,11 +1,9 @@
 // Change cursor style
-import React from 'react'
-import { connect } from '@cerebral/react'
-import { props, state } from 'cerebral'
+import React from 'react';
 
 export default connect(
   {
-    position: state`reflex.monitor.position`
+    position: state.events.pointer.position
   },
   ({ position }) => (
     <div
@@ -19,4 +17,4 @@ export default connect(
       x: {position.x}, y: {position.y}
     </div>
   )
-)
+);

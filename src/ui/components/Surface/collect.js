@@ -11,5 +11,5 @@ export default function collect(connect, monitor) {
         isOverCurrent: monitor.isOver({ shallow: true }),
         canDrop: monitor.canDrop(),
         itemType: monitor.getItemType()
-    }
+    };
 }

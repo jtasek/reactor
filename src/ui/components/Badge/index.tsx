@@ -1,5 +1,25 @@
-import React from 'react'
+import React from 'react';
 
-export default ({text, color, size}) => (
-    <span style={{borderRadius: '50%', position: 'absolute', top: 0, right: 0, color: color, width: size, height: size}}>{text}</span>
-)
+import { Size } from '../../../app/types';
+
+interface Props {
+  text: string;
+  color: string;
+  size: Size;
+}
+
+export const Badge = () => ({ text, color, size }: Props) => (
+  <span
+    style={{
+      borderRadius: '50%',
+      color: color,
+      height: size.height,
+      position: 'absolute',
+      right: 0,
+      top: 0,
+      width: size.width
+    }}
+  >
+    {text}
+  </span>
+);

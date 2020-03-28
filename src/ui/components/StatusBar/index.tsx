@@ -1,21 +1,20 @@
-import React, { Component } from 'react'
-import { connect } from '@cerebral/react'
-import { props, sequences, state } from 'cerebral'
-import selectedShapeCount from '../../../app/computed/selectedShapeCount'
-import getOffset from '../../../events/computed/offset'
-import styles from './styles.css'
-import Slider from '../Slider'
+import React, { Component } from 'react';
+
+import selectedShapeCount from '../../../app/computed/selectedShapeCount';
+import getOffset from '../../../reflex/computed/getOffset';
+import styles from './styles.css';
+import Slider from '../Slider';
 
 const Slot = ({ name, text, style, children }) => (
   <span id={name} style={style}>
     {children}
   </span>
-)
+);
 
 const ZoomSlider = connect(
   {
     scale: state`workspace.camera.scale`,
-    scaleChanged: sequences`scaleChanged`
+    scaleChanged: signal`scaleChanged`
   },
   ({ scale, scaleChanged }) => (
     <Slider
@@ -27,7 +26,7 @@ const ZoomSlider = connect(
       onChange={value => scaleChanged({ scale: value })}
     />
   )
-)
+);
 
 class StatusBar extends Component {
   render() {
@@ -37,7 +36,7 @@ class StatusBar extends Component {
       position,
       status,
       offset
-    } = this.props
+    } = this.props;
 
     return (
       <div
@@ -66,17 +65,17 @@ class StatusBar extends Component {
           <ZoomSlider />
         </Slot>
       </div>
-    )
+    );
   }
 }
 
 export default connect(
   {
-    position: state`reflex.monitor.position`,
+    position: state.events.pointer.position,
     offset: getOffset,
     selectedShapeCount: selectedShapeCount,
     visible: state`ui.controls.statusbar.visible`,
     status: state`workspace.status`
   },
   StatusBar
-)
+);

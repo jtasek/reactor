@@ -1,19 +1,16 @@
-
-import React, { Component, PropTypes } from 'react'
-import Grid from '../Grid'
-import Ruler from '../Ruler'
-import Handle from '../Handle'
-import { connect } from '@cerebral/react'
-import { sequences, state } from 'cerebral'
+import React, { Component, PropTypes } from 'react';
+import Grid from '../Grid';
+import Ruler from '../Ruler';
+import Handle from '../Handle';
 //import {DropTarget} from 'react-dnd'
-import { findDOMNode } from 'react-dom'
-import styles from './styles.css'
-import { getRandomColor } from '../../../app/utils'
-import rulers from '../../../app/computed/filteredRulers'
-import shapes from '../../../app/computed/shapesWithType'
-import Overlay from '../Overlay'
-import Stack from '../../../tools/components/Stack'
-import EventLayer from '../../../events/components/EventLayer'
+import { findDOMNode } from 'react-dom';
+import styles from './styles.css';
+import { getRandomColor } from '../../../app/utils';
+import rulers from '../../../app/computed/filteredRulers';
+import shapes from '../../../app/computed/shapesWithType';
+import Overlay from '../../../ui/components/Overlay';
+import Stack from '../../../tools/components/Stack';
+import EventLayer from '../../../reflex/components/EventLayer';
 //import surfaceTarget from './surfaceTarget'
 //import collect from './collect'
 import {
@@ -27,7 +24,7 @@ import {
   Select as select,
   Text as text,
   Zoom as zoom
-} from '../../../tools'
+} from '../../../tools/index.js';
 
 const components = {
   circle,
@@ -40,10 +37,10 @@ const components = {
   select,
   text,
   zoom
-}
+};
 
-function getComponentByType(type: string) {
-  return components[type]
+function getComponentByType(type) {
+  return components[type];
 }
 
 const Shapes = connect(
@@ -64,7 +61,7 @@ const Shapes = connect(
       )}
     </g>
   )
-)
+);
 
 const Rulers = connect(
   {
@@ -78,7 +75,7 @@ const Rulers = connect(
       ))}
     </g>
   )
-)
+);
 
 const Camera = connect(
   {
@@ -91,25 +88,25 @@ const Camera = connect(
       >
         {children}
       </g>
-    )
+    );
   }
-)
+);
 
 //DropTarget('shape', surfaceTarget, collect)(
 // connect({
 //   tools: state`tools`,
-//     contextMenuDisplayed: sequences`ui.contextMenuDisplayed`
+//     contextMenuDisplayed: signal`ui.contextMenuDisplayed`
 //   },
 
 export default EventLayer(
   connect(
     {
-      contextMenuDisplayed: sequences`ui.contextMenuDisplayed`
+      contextMenuDisplayed: signal`ui.contextMenuDisplayed`
     },
     class Surface extends Component {
       render() {
         // Your component receives its own props as usual
-        const { contextMenuDisplayed } = this.props
+        const { contextMenuDisplayed } = this.props;
         // These props are injected by React DnD,
         // as defined by your `collect` function above:
         //const { isOver, canDrop, connectDropTarget } = this.props;
@@ -119,11 +116,11 @@ export default EventLayer(
           <svg
             className={styles.surface}
             onContextMenu={e => {
-              e.preventDefault()
-              contextMenuDisplayed({ x: e.clientX, y: e.clientY })
+              e.preventDefault();
+              contextMenuDisplayed({ x: e.clientX, y: e.clientY });
             }}
           >
-            <Overlay />
+            <Overlay visible={false} />
             <Grid />
             {/* <Rulers /> */}
             <Camera>
@@ -134,8 +131,8 @@ export default EventLayer(
               <Stack />
             </Camera>
           </svg>
-        )
+        );
       }
     }
   )
-)
+);

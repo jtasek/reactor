@@ -5,8 +5,8 @@
 export default surfaceTarget = {
   canDrop(props, monitor) {
     // You can disallow drop based on props or item
-    const item = monitor.getItem()
-    return canMakeChessMove(item.fromPosition, props.position)
+    const item = monitor.getItem();
+    return canMakeChessMove(item.fromPosition, props.position);
   },
 
   hover(props, monitor, component) {
@@ -16,25 +16,25 @@ export default surfaceTarget = {
     // can just use componentWillReceiveProps() to handle enter/leave.
 
     // You can access the coordinates if you need them
-    const clientOffset = monitor.getClientOffset()
-    const componentRect = findDOMNode(component).getBoundingClientRect()
+    const clientOffset = monitor.getClientOffset();
+    const componentRect = findDOMNode(component).getBoundingClientRect();
 
     // You can check whether we're over a nested drop target
-    const isJustOverThisOne = monitor.isOver({ shallow: true })
+    const isJustOverThisOne = monitor.isOver({ shallow: true });
 
     // You will receive hover() even for items for which canDrop() is false
-    const canDrop = monitor.canDrop()
+    const canDrop = monitor.canDrop();
   },
 
   drop(props, monitor, component) {
     if (monitor.didDrop()) {
       // If you want, you can check whether some nested
       // target already handled drop
-      return
+      return;
     }
 
     // Obtain the dragged item
-    const item = monitor.getItem()
+    const item = monitor.getItem();
 
     // You can do something with it
     //ChessActions.movePiece(item.fromPosition, props.position)
@@ -42,6 +42,6 @@ export default surfaceTarget = {
     // You can also do nothing and return a drop result,
     // which will be available as monitor.getDropResult()
     // in the drag source's endDrag() method
-    return { moved: true }
+    return { moved: true };
   }
-}
+};

@@ -8,5 +8,5 @@ export default function collect(connect, monitor) {
         connectDragSource: connect.dragSource(),
         // You can ask the monitor about the current drag state:
         isDragging: monitor.isDragging()
-    }
+    };
 }

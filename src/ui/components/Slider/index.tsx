@@ -1,18 +1,18 @@
-import React, { Component } from 'react'
-import styles from './styles.css'
+import React, { Component } from 'react';
+import styles from './styles.css';
 
 class Slider extends Component {
   constructor(props) {
-    super(props)
+    super(props);
     // this.state = {}
-    this.onChange = this.onChange.bind(this)
+    this.onChange = this.onChange.bind(this);
   }
 
   onChange(e) {
-    e.preventDefault()
-    const value = parseFloat(e.target.value)
+    e.preventDefault();
+    const value = parseFloat(e.target.value);
     if (this.props.value !== value) {
-      this.props.onChange(value)
+      this.props.onChange(value);
     } //this.setState({ value })
   }
 
@@ -24,7 +24,7 @@ class Slider extends Component {
   //   }
 
   render() {
-    const { min, max, step, start, value, onChange } = this.props
+    const { min, max, step, start, value, onChange } = this.props;
 
     return (
       <div className={styles.slider}>
@@ -48,8 +48,8 @@ class Slider extends Component {
           />
         </div>
       </div>
-    )
+    );
   }
 }
 
-export default Slider
+export default Slider;

@@ -1,7 +1,5 @@
-import React, { Component } from 'react'
-import styles from './styles.css'
-import { connect } from '@cerebral/react'
-import { props, state } from 'cerebral'
+import React, { Component } from 'react';
+import styles from './styles.css';
 
 const Ruler = connect(
   {
@@ -21,6 +19,6 @@ const Ruler = connect(
       stroke="red"
     />
   )
-)
+);
 
-export default Ruler
+export default Ruler;

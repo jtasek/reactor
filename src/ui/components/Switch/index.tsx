@@ -1,7 +1,5 @@
-import React from 'react'
-import styles from './styles.css'
-import { connect } from '@cerebral/react'
-import { props, sequences, state } from 'cerebral'
+import React from 'react';
+import styles from './styles.css';
 
 const Switch = ({ visible, onChangeHandler }) => (
   <label className={styles.switch + (visible ? ' ' + styles.selected : '')}>
@@ -10,20 +8,20 @@ const Switch = ({ visible, onChangeHandler }) => (
       name="distructionfreemode"
       checked={visible}
       onChange={function(e) {
-        e.preventDefault()
-        onChangeHandler()
+        e.preventDefault();
+        onChangeHandler();
       }}
     />
     <div className={styles.track}>
       <div className={styles.thumb} />
     </div>
   </label>
-)
+);
 
 export default connect(
   {
     visible: state`distractionFreeMode`,
-    onChangeHandler: sequences`distructionFreeModeToggled`
+    onChangeHandler: signal`distructionFreeModeToggled`
   },
   Switch
-)
+);

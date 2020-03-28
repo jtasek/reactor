@@ -1,8 +1,7 @@
-import React, { Component } from 'react'
-import { connect } from '@cerebral/react'
-import { props, sequences, state } from 'cerebral'
-import Icon from '../Icon'
-import styles from './styles.css'
+import React, { Component } from 'react';
+
+import Icon from '../Icon';
+import styles from './styles';
 
 const vicons = {
   true: {
@@ -17,7 +16,7 @@ const vicons = {
     color: 'rgba(255,255,255)',
     size: 16
   }
-}
+};
 
 const ControlPanelItem = ({ control, onChangeHandler }) => (
   <li className={styles.controlItem}>
@@ -32,30 +31,33 @@ const ControlPanelItem = ({ control, onChangeHandler }) => (
       <Icon {...vicons[control.visible]} key="visible" />
     </label>
   </li>
-)
+);
 
-const ControlPanel = ({ visible, controls, controlVisibilityChanged }) => (
-  <ul
-    className={styles.controlPanel}
-    style={!visible ? { display: 'none' } : { display: 'block' }}
-  >
-    {Object.keys(controls).map((name, index) => (
-      <ControlPanelItem
-        key={index}
-        control={controls[name]}
-        onChangeHandler={e =>
-          controlVisibilityChanged({ id: index, name: name })
-        }
-      />
-    ))}
-  </ul>
-)
+const ControlPanel = ({ visible, controls, controlVisibilityChanged }) => {
+  if (!visible) {
+    return null;
+  }
+
+  return (
+    <ul className={styles.controlPanel}>
+      {Object.keys(controls).map((name, index) => (
+        <ControlPanelItem
+          key={index}
+          control={controls[name]}
+          onChangeHandler={e =>
+            controlVisibilityChanged({ id: index, name: name })
+          }
+        />
+      ))}
+    </ul>
+  );
+};
 
 export default connect(
   {
     visible: state`ui.controls.controlpanel.visible`,
     controls: state`ui.controls`,
-    controlVisibilityChanged: sequences`ui.controlVisibilityChanged`
+    controlVisibilityChanged: signal`ui.controlVisibilityChanged`
   },
   ControlPanel
-)
+);

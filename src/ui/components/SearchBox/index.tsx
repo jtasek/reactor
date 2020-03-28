@@ -1,7 +1,6 @@
-import React, { Component } from 'react'
-import { connect } from '@cerebral/react'
-import { props, sequences, state } from 'cerebral'
-import styles from './styles.css'
+import React, { Component } from 'react';
+
+import styles from './styles.css';
 
 const SearchBox = ({ filter, searchHandler }) => (
   <div className={styles.searchBox}>
@@ -19,12 +18,12 @@ const SearchBox = ({ filter, searchHandler }) => (
       </button>
     </span>
   </div>
-)
+);
 
 export default connect(
   {
     filter: state`workspace.filter`,
-    searchHandler: sequences`search`
+    searchHandler: signal`search`
   },
   SearchBox
-)
+);

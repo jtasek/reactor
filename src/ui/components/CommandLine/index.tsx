@@ -1,9 +1,15 @@
-import React from 'react'
-import { connect } from '@cerebral/react'
-import { props, sequences, state } from 'cerebral'
-import styles from './styles.css'
+import React from 'react';
 
-const CommandLine = ({ visible, commandHandler }) => (
+import styles from './styles.css';
+import { Action } from '../../../app/types';
+import { useApp } from '../../../app';
+
+interface Props {
+  action: Action;
+  visible: boolean;
+}
+
+export const CommandLine = ({ visible, action }: Props) => (
   <div
     className={styles.commandline}
     style={!visible ? { display: 'none' } : { display: 'inline-block' }}
@@ -11,16 +17,16 @@ const CommandLine = ({ visible, commandHandler }) => (
     <input
       type="search"
       placeholder="type command..."
-      onChange={e => commandHandler({ command: e.target.value })}
+      onChange={e => action({ command: e.target.value })}
     />
   </div>
-)
+);
 
-export default connect(
-  {
-    command: state`activeCommand`,
-    visible: state`ui.controls.commandline.visible`,
-    commandHandler: sequences`commandExecuted`
-  },
-  CommandLine
-)
+export const CommandLine2 = () => {
+  const {
+    state: { ui },
+    actions
+  } = useApp();
+
+  <CommandLine visible={ui.controls.commandLine.visible} action={actions.} />
+};

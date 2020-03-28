@@ -1,10 +1,7 @@
+import React from 'react';
+import styles from './styles.css';
 
-import React from 'react'
-import { connect } from '@cerebral/react'
-import { props, state } from 'cerebral'
-import styles from './styles.css'
-
-const Overlay = ({ visible }) => (
+const Overlay = ({ visible }: { visible: boolean }) => (
   <defs>
     <filter id="neco">
       <feColorMatrix
@@ -37,6 +34,6 @@ const Overlay = ({ visible }) => (
       </feMerge>
     </filter>
   </defs>
-)
+);
 
-export default Overlay
+export default Overlay;

@@ -1,8 +1,6 @@
-import React from 'react'
-import styles from './styles.css'
-import Icon from '../Icon'
-import { connect } from '@cerebral/react'
-import { props, sequences, state } from 'cerebral'
+import React from 'react';
+import styles from './styles.css';
+import Icon from '../Icon';
 
 const ToolBarButton = ({ tool, onClickHandler }) => (
   <li
@@ -13,7 +11,7 @@ const ToolBarButton = ({ tool, onClickHandler }) => (
       <Icon {...tool.icon} />
     </a>
   </li>
-)
+);
 
 const ToolBar = ({ visible, tools, toolActivated }) => (
   <ul
@@ -28,13 +26,13 @@ const ToolBar = ({ visible, tools, toolActivated }) => (
       />
     ))}
   </ul>
-)
+);
 
 export default connect(
   {
     visible: state`ui.controls.toolbar.visible`,
     tools: state`tools`,
-    toolActivated: sequences`tools.toolActivated`
+    toolActivated: signal`tools.toolActivated`
   },
   ToolBar
-)
+);
