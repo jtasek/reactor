@@ -1,5 +1,5 @@
-import addLine from '../actions/addLine'
+import addLine from '../actions/addLine';
 
 export default [
     addLine
-]
+];
