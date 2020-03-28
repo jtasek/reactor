@@ -1,49 +1,23 @@
+import { createHook } from 'overmind-react';
+import { merge, namespaced } from 'overmind/config';
 
-import { set, debounce } from 'cerebral/operators'
-import { state } from 'cerebral'
-// system modules
-import Router from '@cerebral/router'
-import FormsProvider from '@cerebral/forms'
-// application modules
-import commands from '../tools/commands'
-import reflex from '../events'
-import tools from '../tools'
-import ui from '../ui'
-// actions
-import search from './actions/search'
-// configuration
-import config from './config'
-import routes from './routes'
-// signals
-import applicationStarted from './signals/applicationStarted'
-import commandExecuted from './signals/commandExecuted'
-import executeCommand from './services/executeCommand'
-import distructionFreeModeToggled from './signals/distructionFreeModeToggled'
-import scaleChanged from './signals/scaleChanged'
+import commands from '../tools/commands';
+import * as events from '../events';
+import * as tools from '../tools';
+import * as ui from '../ui';
+import * as actions from './actions';
+import { state } from './state';
 
-export default {
-  state: config,
-  modules: {
-    reflex,
-    tools,
-    ui,
-    router: Router({
-      onlyHash: true, // Use hash urls
-      routes
+export const config = merge(
+    {
+      state,
+      actions
+    },
+    namespaced({
+      events,
+      tools,
+      ui
     })
-  },
-  providers: [FormsProvider()],
-  signals: {
-    applicationStarted,
-    commandExecuted,
-    distructionFreeModeToggled,
-    scaleChanged,
-    search: [...debounce(300), [search]]
-    // scaleUp,
-    // scaleDown
-    //
-  }
-  // services: {
-  //     executeCommand
-  // }
-}
+);
+
+export const useApp = createHook<typeof config>();
