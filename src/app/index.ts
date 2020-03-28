@@ -7,17 +7,19 @@ import * as tools from '../tools';
 import * as ui from '../ui';
 import * as actions from './actions';
 import { state } from './state';
+import { onInitialize } from './onInitialize';
 
 export const config = merge(
-    {
-      state,
-      actions
-    },
-    namespaced({
-      events,
-      tools,
-      ui
-    })
+  {
+    onInitialize,
+    state,
+    actions
+  },
+  namespaced({
+    events,
+    tools,
+    ui
+  })
 );
 
 export const useApp = createHook<typeof config>();
