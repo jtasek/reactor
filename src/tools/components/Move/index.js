@@ -1,7 +1,7 @@
 import React from 'react'
 import { connect } from '@cerebral/react'
-import currentPosition from '../../../events/computed/getPosition'
-import startPosition from '../../../events/computed/getInitialPosition'
+import currentPosition from '../../../events/computed/position'
+import startPosition from '../../../events/computed/initialPosition'
 import styles from '../../styles.css'
 
 /** 
