@@ -5,34 +5,35 @@ import webpackMiddleware from 'webpack-dev-middleware'
 import webpackHotMiddleware from 'webpack-hot-middleware'
 import config from './webpack.config.js'
 
-const {
-  PORT = 4000,
-} = process.env
-
 const app = express()
 const compiler = webpack(config)
+const { PORT = 4000 } = process.env
 
-app.use(webpackMiddleware(compiler, {
-  publicPath: config.output.publicPath,
-  noInfo: true,
-  hot: true,
-  stats: {
-     colors: true
-  }
-  // contentBase: 'src',
-  // stats: {
-  //   colors: true,
-  //   hash: false,
-  //   timings: true,
-  //   chunks: true,
-  //   chunkModules: false,
-  //   modules: false
-  // }
-}))
+app.use(
+  webpackMiddleware(compiler, {
+    publicPath: config.output.publicPath,
+    noInfo: true,
+    hot: true,
+    stats: {
+      colors: true
+    }
+    // contentBase: 'src',
+    // stats: {
+    //   colors: true,
+    //   hash: false,
+    //   timings: true,
+    //   chunks: true,
+    //   chunkModules: false,
+    //   modules: false
+    // }
+  })
+)
 
-app.use(webpackHotMiddleware(compiler, {
+app.use(
+  webpackHotMiddleware(compiler, {
     reload: true // reload page when webpack gets stuck
-}))
+  })
+)
 
 app.use('/icons', express.static(__dirname + '/static/icons/'))
 app.use('/images', express.static(__dirname + '/static/images/'))
@@ -42,7 +43,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, './src/index.html'))
 })
 
-app.listen(PORT, 'localhost', (err) => {
+app.listen(PORT, 'localhost', err => {
   if (err) {
     return console.log(err)
   }
