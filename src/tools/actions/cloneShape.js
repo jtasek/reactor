@@ -1,11 +1,11 @@
-import { v4 } from 'uuid'
+import { v4 } from 'uuid';
 
 export default ({ props, state }) => {
-  const ref = v4()
+  const ref = v4();
 
-  const shape = state.get(`workspace.shapes.${props.id}`)
+  const shape = state.get(`workspace.shapes.${props.id}`);
 
-  state.push(`workspace.shapes.${ref}`, shape)
+  state.push(`workspace.shapes.${ref}`, shape);
 
-  return { ref }
-}
+  return { ref };
+};
