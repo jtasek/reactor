@@ -1,12 +1,7 @@
-import { Compute } from 'cerebral'
-import { state } from 'cerebral'
+export const filteredLinks = ({ currentDocument: { filter }, links }) => {
+  return Object.keys(links).filter(key => {
+    const link = links[key];
 
-export default Compute(
-  state`workspace.filter`,
-  state`workspace.links`,
-  (filter, links) =>
-    Object.keys(links).filter(key => {
-      const link = links[key]
-      return link && link.name && link.name.includes(filter)
-    })
-)
+    return link.name?.includes(filter);
+  });
+};

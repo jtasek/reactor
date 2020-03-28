@@ -1,12 +1,7 @@
-import { Compute } from 'cerebral'
-import { state } from 'cerebral'
+export const filteredGroups = ({ currentDocument: { filter }, groups }) => {
+  return Object.keys(groups).filter(key => {
+    const group = groups[key];
 
-export default Compute(
-  state`workspace.filter`,
-  state`workspace.groups`,
-  (filter, groups) =>
-    Object.keys(groups).filter(key => {
-      const group = groups[key]
-      return group && group.name && group.name.includes(filter)
-    })
-)
+    return group.name?.includes(filter);
+  });
+};

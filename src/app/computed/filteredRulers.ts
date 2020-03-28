@@ -1,12 +1,7 @@
-import { Compute } from 'cerebral'
-import { state } from 'cerebral'
+export const filteredRulers = ({ currentDocument: { filter }, rulers }) => {
+  return Object.keys(rulers).filter(key => {
+    const ruler = rulers[key];
 
-export default Compute(
-  state`workspace.filter`,
-  state`workspace.rulers`,
-  (filter, rulers) =>
-    Object.keys(rulers).filter(key => {
-      const ruler = rulers[key]
-      return ruler && ruler.name && ruler.name.includes(filter)
-    })
-)
+    return ruler && ruler.name && ruler.name.includes(filter);
+  });
+};

@@ -1,12 +1,7 @@
-import { Compute } from 'cerebral'
-import { state } from 'cerebral'
+export const filteredLayers = ({ currentDocument: { filter }, layers }) => {
+  return Object.keys(layers).filter(key => {
+    const layer = layers[key];
 
-export default Compute(
-  state`workspace.filter`,
-  state`workspace.layers`,
-  (filter, layers) =>
-    Object.keys(layers).filter(key => {
-      const layer = layers[key]
-      return layer && layer.name && layer.name.includes(filter)
-    })
-)
+    return layer.name?.includes(filter);
+  });
+};
