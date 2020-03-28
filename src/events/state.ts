@@ -1,6 +1,7 @@
+import { Events } from './types';
 
-export default {
-    monitor: {
+export const state = {
+    pointer: {
         position: {
             x: 0,
             y: 0
@@ -12,4 +13,4 @@ export default {
         dragging: false,
         path: []
     }
-}
+} as Events;
