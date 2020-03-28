@@ -1,39 +1,47 @@
 // Commands
-import {IApplicationState, ICommand} from './app'
+import { Application, Command } from '../types';
 
-export class UndoCommand implements ICommand {
+export class UndoCommand implements Command {
+    id = 'undo';
     name = 'Undo';
-    canExecute(app: IApplicationState): boolean {
-        return app.history.any()
+    action = () => console.log('NOT IMPLEMENTED');
+
+    canExecute(state: Application): boolean {
+        return false;
+        //  return state.openDocument.history.any();
     }
-    execute(app: IApplicationState): void {
-        app.future = app.future.push(app)
-        app.state = app.history.peek()
-        app.history = app.history.pop()
+
+    execute(state: Application): void {
+        // state.future = state.future.push(state);
+        // state.state = state.history.peek();
+        // state.history = state.history.pop();
     }
 }
 
-export class RedoCommand implements ICommand {
+export class RedoCommand implements Command {
+    id = 'Redo';
     name = 'Redo';
-    canExecute(app: IApplicationState): boolean {
-        return app.future.any()
+    action = () => console.log('NOT IMPLEMENTED');
+    canExecute(app: Application): boolean {
+        return false;
+        //return app.future.any();
     }
-    execute(app: IApplicationState): void {
-        app.history = app.history.push(app)
-        app.state = app.future.peek()
-        app.future = app.future.pop()
+    execute(app: Application): void {
+        // app.history = app.history.push(app);
+        // app.state = app.future.peek();
+        // app.future = app.future.pop();
     }
 }
 
-export class AlignLeft implements ICommand {
-    name = 'Align Left';
-    canExecute(app: IApplicationState): boolean {
-        return app.Selection.any()
+export class AlignLeft implements Command {
+    id = 'align.left';
+    name = 'Align left';
+    action = () => console.log('NOT IMPLEMENTED');
+    canExecute(app: Application): boolean {
+        return false;
+        // return app.Selection.any();
     }
-    execute(app: IApplicationState) {
-        var left = getLeftCoordinate(app.workspace.seletection)
-        for (var item in this.Application.Selection) {
-            item.Left = left
-        }
+    execute(app: Application) {
+        //app.openDocument.selection.forEach(shape => (shape.left = left));
     }
 }
