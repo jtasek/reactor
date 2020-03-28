@@ -21,9 +21,6 @@ import {
   sequence
 } from '../factories';
 
-import { Application } from '../types';
-import { DESTRUCTION } from 'dns';
-
 describe('factories', () => {
   describe('sequence()', () => {
     const generator = sequence();
