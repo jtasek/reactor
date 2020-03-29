@@ -8,35 +8,35 @@ const setLayer = (state, layer) =>
 const deleteLayer = (state, layerId) =>
   delete state.currentDocument.layers[layerId];
 
-export const addlayer = ({ state }, options) => {
+export const addLayer = ({ state }, options) => {
   const layer = createLayer(options);
 
   setLayer(state, layer);
 };
 
-export const clonelayer = ({ state }, layerId) => {
+export const cloneLayer = ({ state }, layerId) => {
   const layer = getLayer(state, layerId);
 
   setLayer(state, { ...layer, id: newId() });
 };
 
-export const removelayer = ({ state }, layerId) => {
+export const removeLayer = ({ state }, layerId) => {
   deleteLayer(state, layerId);
 };
 
-export const selectlayer = ({ state }, layerId) => {
+export const selectLayer = ({ state }, layerId) => {
   const layer = getLayer(state, layerId);
 
   layer.selected = true;
 };
 
-export const unselectlayer = ({ state }, layerId) => {
+export const unselectLayer = ({ state }, layerId) => {
   const layer = getLayer(state, layerId);
 
   layer.selected = false;
 };
 
-export const locklayer = ({ state }, layerId) => {
+export const lockLayer = ({ state }, layerId) => {
   const layer = getLayer(state, layerId);
 
   layer.locked = true;
@@ -48,19 +48,19 @@ export const unlocklayer = ({ state }, layerId) => {
   layer.locked = false;
 };
 
-export const showlayer = ({ state }, layerId) => {
+export const showLayer = ({ state }, layerId) => {
   const layer = getLayer(state, layerId);
 
   layer.visible = true;
 };
 
-export const hidelayer = ({ state }, layerId) => {
+export const hideLayer = ({ state }, layerId) => {
   const layer = getLayer(state, layerId);
 
   layer.visible = false;
 };
 
-export const updatelayer = ({ state }, options) => {
+export const updateLayer = ({ state }, options) => {
   const layer = getLayer(state, options.id);
 
   setLayer(state, { ...layer, options });

@@ -8,59 +8,59 @@ const setShape = (state, shape) =>
 const deleteShape = (state, shapeId) =>
   delete state.currentDocument.shapes[shapeId];
 
-export const addshape = ({ state }, options) => {
+export const addShape = ({ state }, options) => {
   const shape = createShape(options);
 
   setShape(state, shape);
 };
 
-export const cloneshape = ({ state }, shapeId) => {
+export const cloneShape = ({ state }, shapeId) => {
   const shape = getShape(state, shapeId);
 
   setShape(state, { ...shape, id: newId() });
 };
 
-export const removeshape = ({ state }, shapeId) => {
+export const removeShape = ({ state }, shapeId) => {
   deleteShape(state, shapeId);
 };
 
-export const selectshape = ({ state }, shapeId) => {
+export const selectShape = ({ state }, shapeId) => {
   const shape = getShape(state, shapeId);
 
   shape.selected = true;
 };
 
-export const unselectshape = ({ state }, shapeId) => {
+export const unselectShape = ({ state }, shapeId) => {
   const shape = getShape(state, shapeId);
 
   shape.selected = false;
 };
 
-export const lockshape = ({ state }, shapeId) => {
+export const lockShape = ({ state }, shapeId) => {
   const shape = getShape(state, shapeId);
 
   shape.locked = true;
 };
 
-export const unlockshape = ({ state }, shapeId) => {
+export const unlockShape = ({ state }, shapeId) => {
   const shape = getShape(state, shapeId);
 
   shape.locked = false;
 };
 
-export const showshape = ({ state }, shapeId) => {
+export const showShape = ({ state }, shapeId) => {
   const shape = getShape(state, shapeId);
 
   shape.visible = true;
 };
 
-export const hideshape = ({ state }, shapeId) => {
+export const hideShape = ({ state }, shapeId) => {
   const shape = getShape(state, shapeId);
 
   shape.visible = false;
 };
 
-export const updateshape = ({ state }, options) => {
+export const updateShape = ({ state }, options) => {
   const shape = getShape(state, options.id);
 
   setShape(state, { ...shape, options });

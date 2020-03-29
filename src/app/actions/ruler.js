@@ -8,59 +8,59 @@ const setRuler = (state, ruler) =>
 const deleteRuler = (state, rulerId) =>
   delete state.currentDocument.rulers[rulerId];
 
-export const addruler = ({ state }, options) => {
+export const addRuler = ({ state }, options) => {
   const ruler = createRuler(options);
 
   setRuler(state, ruler);
 };
 
-export const cloneruler = ({ state }, rulerId) => {
+export const cloneRuler = ({ state }, rulerId) => {
   const ruler = getRuler(state, rulerId);
 
   setRuler(state, { ...ruler, id: newId() });
 };
 
-export const removeruler = ({ state }, rulerId) => {
+export const removeRuler = ({ state }, rulerId) => {
   deleteRuler(state, rulerId);
 };
 
-export const selectruler = ({ state }, rulerId) => {
+export const selectRuler = ({ state }, rulerId) => {
   const ruler = getRuler(state, rulerId);
 
   ruler.selected = true;
 };
 
-export const unselectruler = ({ state }, rulerId) => {
+export const unselectRuler = ({ state }, rulerId) => {
   const ruler = getRuler(state, rulerId);
 
   ruler.selected = false;
 };
 
-export const lockruler = ({ state }, rulerId) => {
+export const lockRuler = ({ state }, rulerId) => {
   const ruler = getRuler(state, rulerId);
 
   ruler.locked = true;
 };
 
-export const unlockruler = ({ state }, rulerId) => {
+export const unlockRuler = ({ state }, rulerId) => {
   const ruler = getRuler(state, rulerId);
 
   ruler.locked = false;
 };
 
-export const showruler = ({ state }, rulerId) => {
+export const showRuler = ({ state }, rulerId) => {
   const ruler = getRuler(state, rulerId);
 
   ruler.visible = true;
 };
 
-export const hideruler = ({ state }, rulerId) => {
+export const hideRuler = ({ state }, rulerId) => {
   const ruler = getRuler(state, rulerId);
 
   ruler.visible = false;
 };
 
-export const updateruler = ({ state }, options) => {
+export const updateRuler = ({ state }, options) => {
   const ruler = getRuler(state, options.id);
 
   setRuler(state, { ...ruler, options });
