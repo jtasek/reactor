@@ -1,13 +1,12 @@
 import { createDocument, newId } from '../factories';
 
-const getDocument = (state, documentId) =>
-  state.currentDocument.documents[documentId];
+const getDocument = (state, documentId) => state.documents[documentId];
 
 const setDocument = (state, document) =>
-  (state.currentDocument.documents[document.id] = document);
+  (state.documents[document.id] = document);
 
 const deleteDocument = (state, documentId) =>
-  delete state.currentDocument.documents[documentId];
+  delete state.documents[documentId];
 
 export const addDocument = ({ state }, options) => {
   const document = createDocument(options);
@@ -26,7 +25,9 @@ export const removeDocument = ({ state }, documentId) => {
 };
 
 export const selectDocument = ({ state }, documentId) => {
-  state.currentDocumentId = documentId;
+  const document = getDocument(state, documentId);
+
+  document.selected = true;
 };
 
 export const unselectDocument = ({ state }, documentId) => {
@@ -45,18 +46,6 @@ export const unlockDocument = ({ state }, documentId) => {
   const document = getDocument(state, documentId);
 
   document.locked = false;
-};
-
-export const showDocument = ({ state }, documentId) => {
-  const document = getDocument(state, documentId);
-
-  document.visible = true;
-};
-
-export const hideDocument = ({ state }, documentId) => {
-  const document = getDocument(state, documentId);
-
-  document.visible = false;
 };
 
 export const updateDocument = ({ state }, options) => {
