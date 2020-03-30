@@ -1,4 +1,3 @@
-export default ({props, state, services}) => {
-    //console.log(services)
-    services.core.executeCommand(props.command)
-}
+export const executeCommand = ({ state, effects }, command) => {
+  // executeCommand(command)
+};
