@@ -1,4 +1,4 @@
-import { createGroup, newId } from '../factories';
+import { createGroup } from '../factories';
 
 const getGroup = (state, groupId) => state.currentDocument.groups[groupId];
 
@@ -14,10 +14,10 @@ export const addGroup = ({ state }, options) => {
   setGroup(state, group);
 };
 
-export const cloneGroup = ({ state }, groupId) => {
+export const cloneGroup = ({ state, effects }, groupId) => {
   const group = getGroup(state, groupId);
 
-  setGroup(state, { ...group, id: newId() });
+  setGroup(state, { ...group, id: effects.newId() });
 };
 
 export const removeGroup = ({ state }, groupId) => {

@@ -1,4 +1,4 @@
-import { createShape, newId } from '../factories';
+import { createShape } from '../factories';
 
 const getShape = (state, shapeId) => state.currentDocument.shapes[shapeId];
 
@@ -14,10 +14,10 @@ export const addShape = ({ state }, options) => {
   setShape(state, shape);
 };
 
-export const cloneShape = ({ state }, shapeId) => {
+export const cloneShape = ({ state, effects}, shapeId) => {
   const shape = getShape(state, shapeId);
 
-  setShape(state, { ...shape, id: newId() });
+  setShape(state, { ...shape, id: effects.newId() });
 };
 
 export const removeShape = ({ state }, shapeId) => {

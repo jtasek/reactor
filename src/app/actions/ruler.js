@@ -1,4 +1,4 @@
-import { createRuler, newId } from '../factories';
+import { createRuler } from '../factories';
 
 const getRuler = (state, rulerId) => state.currentDocument.rulers[rulerId];
 
@@ -14,10 +14,10 @@ export const addRuler = ({ state }, options) => {
   setRuler(state, ruler);
 };
 
-export const cloneRuler = ({ state }, rulerId) => {
+export const cloneRuler = ({ state, effects }, rulerId) => {
   const ruler = getRuler(state, rulerId);
 
-  setRuler(state, { ...ruler, id: newId() });
+  setRuler(state, { ...ruler, id: effects.newId() });
 };
 
 export const removeRuler = ({ state }, rulerId) => {

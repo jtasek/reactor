@@ -1,4 +1,4 @@
-import { createDocument, newId } from '../factories';
+import { createDocument } from '../factories';
 
 const getDocument = (state, documentId) => state.documents[documentId];
 
@@ -14,10 +14,10 @@ export const addDocument = ({ state }, options) => {
   setDocument(state, document);
 };
 
-export const cloneDocument = ({ state }, documentId) => {
+export const cloneDocument = ({ state, effects }, documentId) => {
   const document = getDocument(state, documentId);
 
-  setDocument(state, { ...document, id: newId() });
+  setDocument(state, { ...document, id: effects.newId() });
 };
 
 export const removeDocument = ({ state }, documentId) => {

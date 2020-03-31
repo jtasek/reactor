@@ -1,4 +1,4 @@
-import { createLayer, newId } from '../factories';
+import { createLayer } from '../factories';
 
 const getLayer = (state, layerId) => state.currentDocument.layers[layerId];
 
@@ -14,10 +14,10 @@ export const addLayer = ({ state }, options) => {
   setLayer(state, layer);
 };
 
-export const cloneLayer = ({ state }, layerId) => {
+export const cloneLayer = ({ state, effects }, layerId) => {
   const layer = getLayer(state, layerId);
 
-  setLayer(state, { ...layer, id: newId() });
+  setLayer(state, { ...layer, id: effects.newId() });
 };
 
 export const removeLayer = ({ state }, layerId) => {
@@ -42,7 +42,7 @@ export const lockLayer = ({ state }, layerId) => {
   layer.locked = true;
 };
 
-export const unlocklayer = ({ state }, layerId) => {
+export const unlockLayer = ({ state }, layerId) => {
   const layer = getLayer(state, layerId);
 
   layer.locked = false;

@@ -1,4 +1,4 @@
-import { createLink, newId } from '../factories';
+import { createLink } from '../factories';
 
 const getLink = (state, linkId) => state.currentDocument.links[linkId];
 
@@ -7,59 +7,59 @@ const setLink = (state, link) => (state.currentDocument.links[link.id] = link);
 const deleteLink = (state, linkId) =>
   delete state.currentDocument.links[linkId];
 
-export const addlink = ({ state }, options) => {
+export const addLink = ({ state }, options) => {
   const link = createLink(options);
 
   setLink(state, link);
 };
 
-export const clonelink = ({ state }, linkId) => {
+export const cloneLink = ({ state, effects }, linkId) => {
   const link = getLink(state, linkId);
 
-  setLink(state, { ...link, id: newId() });
+  setLink(state, { ...link, id: effects.newId() });
 };
 
 export const removelink = ({ state }, linkId) => {
   deleteLink(state, linkId);
 };
 
-export const selectlink = ({ state }, linkId) => {
+export const selectLink = ({ state }, linkId) => {
   const link = getLink(state, linkId);
 
   link.selected = true;
 };
 
-export const unselectlink = ({ state }, linkId) => {
+export const unselectLink = ({ state }, linkId) => {
   const link = getLink(state, linkId);
 
   link.selected = false;
 };
 
-export const locklink = ({ state }, linkId) => {
+export const lockLink = ({ state }, linkId) => {
   const link = getLink(state, linkId);
 
   link.locked = true;
 };
 
-export const unlocklink = ({ state }, linkId) => {
+export const unlockLink = ({ state }, linkId) => {
   const link = getLink(state, linkId);
 
   link.locked = false;
 };
 
-export const showlink = ({ state }, linkId) => {
+export const showLink = ({ state }, linkId) => {
   const link = getLink(state, linkId);
 
   link.visible = true;
 };
 
-export const hidelink = ({ state }, linkId) => {
+export const hideLink = ({ state }, linkId) => {
   const link = getLink(state, linkId);
 
   link.visible = false;
 };
 
-export const updatelink = ({ state }, options) => {
+export const updateLink = ({ state }, options) => {
   const link = getLink(state, options.id);
 
   setLink(state, { ...link, options });
