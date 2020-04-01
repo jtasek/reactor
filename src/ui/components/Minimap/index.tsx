@@ -38,54 +38,52 @@ function getComponentByType(type: string) {
 }
 
 const Rulers = connect(
-    {
-      rulers: state`workspace.rulers`
-    },
-    ({ rulers }) => (
-        <g id="rulers">
-          {/*{rulers.map(ruler => <Ruler key={ruler.id} {...ruler} scale={1} />)}*/}
-        </g>
-    )
+  {
+    rulers: state`workspace.rulers`
+  },
+  ({ rulers }) => (
+    <g id="rulers">{/*{rulers.map(ruler => <Ruler key={ruler.id} {...ruler} scale={1} />)}*/}</g>
+  )
 );
 
 const Shapes = connect(
-    {
-      shapes: shapes
-    },
-    ({ shapes }) => (
-        <g id="shapes">
-          {shapes.map(shape =>
-              React.createElement(
-                  getComponentByType(shape.type),
-                  Object.assign({
-                    key: shape.id,
-                    id: shape.id,
-                    color: 'rgba(255,255,255,.5)'
-                  })
-              )
-          )}
-        </g>
-    )
+  {
+    shapes: shapes
+  },
+  ({ shapes }) => (
+    <g id="shapes">
+      {shapes.map((shape) =>
+        React.createElement(
+          getComponentByType(shape.type),
+          Object.assign({
+            key: shape.id,
+            id: shape.id,
+            color: 'rgba(255,255,255,.5)'
+          })
+        )
+      )}
+    </g>
+  )
 );
 
 export const Minimap = ({ visible }: { visible: boolean }) => (
-    <svg
-        className={styles.minimapPanel}
-        width="200"
-        height="200"
-        viewBox="0 0 1000 1000"
-        style={!visible ? { display: 'none' } : { display: 'block' }}
-    >
-      <Grid key="map-grid" />
-      {/* <Rulers /> */}
-      <Shapes />
-      {/* <Stack /> */}
-    </svg>
+  <svg
+    className={styles.minimap}
+    width="200"
+    height="200"
+    viewBox="0 0 1000 1000"
+    style={!visible ? { display: 'none' } : { display: 'block' }}
+  >
+    <Grid key="map-grid" />
+    {/* <Rulers /> */}
+    <Shapes />
+    {/* <Stack /> */}
+  </svg>
 );
 
 export default connect(
-    {
-      visible: state`ui.controls.minimappanel.visible`
-    },
-    Minimap
+  {
+    visible: state`ui.controls.minimap.visible`
+  },
+  Minimap
 );

@@ -1,29 +1,29 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
 
-import CommandLine from '../CommandLine'
-import ContextMenu from '../ContextMenu'
-import ControlPanel from '../ControlPanel'
-import Cursor from '../Cursor'
-import Dialog from '../Dialog'
-import DataView from '../DataView'
-import Explorer from '../Explorer'
-import GroupPanel from '../GroupPanel'
-import LayerPanel from '../LayerPanel'
-import MenuBar from '../MenuBar'
-import MinimapPanel from '../Minimap'
-import NavBar from '../NavBar'
-import Overlay from '../Overlay'
-import PropertyPanel from '../PropertyPanel'
-import SearchBox from '../SearchBox'
-import SideBar from '../SideBar'
-import StatusBar from '../StatusBar'
-import Surface from '../Surface'
-import Switch from '../Switch'
-import ToolBar from '../ToolBar'
-import WorkspaceInfo from '../DocumentInfo'
-import styles from './styles.css'
+import CommandLine from '../CommandLine';
+import ContextMenu from '../ContextMenu';
+import ControlPanel from '../ControlPanel';
+import Cursor from '../Cursor';
+import Dialog from '../Dialog';
+import DataView from '../DataView';
+import Explorer from '../Explorer';
+import GroupPanel from '../GroupPanel';
+import LayerPanel from '../LayerPanel';
+import MenuBar from '../MenuBar';
+import Minimap from '../Minimap';
+import NavBar from '../NavBar';
+import Overlay from '../Overlay';
+import PropertyPanel from '../PropertyPanel';
+import SearchBox from '../SearchBox';
+import SideBar from '../SideBar';
+import StatusBar from '../StatusBar';
+import Surface from '../Surface';
+import Switch from '../Switch';
+import ToolBar from '../ToolBar';
+import WorkspaceInfo from '../DocumentInfo';
+import styles from './styles.css';
 
-export default () => (
+export const Layout = () => (
   <div className={styles.layout}>
     <MenuBar
       id="menubar"
@@ -44,7 +44,7 @@ export default () => (
     </SideBar>
     <Surface key="surface" />
     <ContextMenu id="contextMenu" />
-    <MinimapPanel id="minimapPanel" visible="true" />
+    <Minimap id="minimap" visible="true" />
     <DataView id="dataview" />
     <WorkspaceInfo id="workspaceInfo" />
     <ControlPanel id="controlPanel" />
@@ -63,4 +63,4 @@ export default () => (
     /> */}
     <StatusBar id="statusbar" />
   </div>
-)
+);

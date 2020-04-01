@@ -5,7 +5,7 @@ export default [
   // set(state`ui.controls.grouppanel.visible`, false),
   // set(state`ui.controls.layerpanel.visible`, false),
   // set(state`ui.controls.menubar.visible`, false),
-  // set(state`ui.controls.minimappanel.visible`, false),
+  // set(state`ui.controls.minimap.visible`, false),
   // set(state`ui.controls.navbar.visible`, false),
   // set(state`ui.controls.propertypanel.visible`, false),
   // set(state`ui.controls.sidebar.visible`, false),
@@ -13,4 +13,4 @@ export default [
   // set(state`ui.controls.toolbar.visible`, false),
   // set(state`ui.controls.workspace.visible`, false),
   toggle(state`distructionFreeMode`)
-]
+];
