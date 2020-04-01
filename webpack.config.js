@@ -1,10 +1,7 @@
-
 const path = require('path');
 const webpack = require('webpack');
 
-const {
-  NODE_ENV = 'development',
-} = process.env;
+const { NODE_ENV = 'development' } = process.env;
 const nodeExternals = require('webpack-node-externals');
 
 module.exports = {
@@ -16,7 +13,7 @@ module.exports = {
     'eventsource-polyfill',
     './src/index.tsx'
   ],
-  externals: [ nodeExternals() ],
+  externals: [nodeExternals()],
   output: {
     filename: 'bundle.js',
     path: path.join(__dirname, 'dist'),
@@ -28,7 +25,7 @@ module.exports = {
       {
         test: /\.[js|ts].x?$/,
         exclude: /node_modules/,
-        use: [ 'eslint-loader', 'ts-loader']
+        use: ['eslint-loader', 'ts-loader']
       },
       {
         test: /\.css$/,
