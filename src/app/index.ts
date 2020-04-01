@@ -1,13 +1,14 @@
 import { createHook } from 'overmind-react';
+import { IConfig } from 'overmind';
 import { merge, namespaced } from 'overmind/config';
 
-import commands from '../tools/commands';
+import * as actions from './actions';
 import * as events from '../events';
 import * as tools from '../tools';
 import * as ui from '../ui';
-import * as actions from './actions';
-import { state } from './state';
+import { Application } from './types';
 import { onInitialize } from './onInitialize';
+import { state } from './state';
 
 export const config = merge(
   {
@@ -21,5 +22,10 @@ export const config = merge(
     ui
   })
 );
+
+declare module 'overmind' {
+  // tslint:disable:interface-name
+  interface Config extends IConfig<typeof config> {}
+}
 
 export const useApp = createHook<typeof config>();
