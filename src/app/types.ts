@@ -122,8 +122,6 @@ export interface Layer {
   visible: boolean;
 }
 
-export type Action = (state: Document) => void;
-
 export interface Camera {
   scale: number;
   position: Position;
@@ -134,6 +132,7 @@ export interface Document {
   author: string;
   created: Date;
   description?: string;
+  filter: string;
   grid: Grid;
   groups: HashTable<Group>;
   history: Action[];
@@ -189,20 +188,20 @@ export interface OnlineProvider extends Provider {
 
 export interface Configuration {}
 
-export interface Application {
+export type Application = {
   id: string;
   commands: HashTable<Command>;
   components: HashTable<Shape>;
   config: Configuration;
   currentDocumentId?: string;
-  currentDocument?: (state: Application) => Document;
+  currentDocument?: Derive<Application, Document>;
   devices: HashTable<Device>;
   documents: HashTable<Document>;
   events: Event[];
   providers: HashTable<Provider>;
   started: Date;
   user: User;
-}
+};
 
 export interface Renderer {
   render(document: Document): void;
