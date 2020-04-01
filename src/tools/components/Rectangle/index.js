@@ -41,9 +41,7 @@ export function createRectangle() {
 
 // Pure component
 const Rect = ({ shape }) => {
-  let className = shape.selected
-    ? styles.shape + ' ' + styles.selected
-    : styles.shape;
+  const className = shape.selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
   return (
     <rect
@@ -64,7 +62,7 @@ export const DynamicRectangle = connect(
     position: getStart,
     size: getSize
   },
-  props => {
+  (props) => {
     const shape = rectangle(props);
 
     return <Rect key="rect-design" shape={shape} />;

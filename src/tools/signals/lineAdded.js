@@ -1,5 +1,3 @@
 import addLine from '../actions/addLine';
 
-export default [
-    addLine
-];
+export default [addLine];

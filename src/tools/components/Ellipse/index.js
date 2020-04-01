@@ -15,9 +15,7 @@ import styles from '../../styles.css';
 **/
 
 export const Ellipse = ({ centre, size, selected }) => {
-  let className = selected
-    ? styles.shape + ' ' + styles.selected
-    : styles.shape;
+  const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
   return (
     <ellipse

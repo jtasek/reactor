@@ -31,20 +31,9 @@ export function createLine() {
 
 // Pure component
 export const Line = ({ start, end, selected }) => {
-  let className = selected
-    ? styles.shape + ' ' + styles.selected
-    : styles.shape;
+  const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
-  return (
-    <line
-      key="line"
-      className={className}
-      x1={start.x}
-      y1={start.y}
-      x2={end.x}
-      y2={end.y}
-    />
-  );
+  return <line key="line" className={className} x1={start.x} y1={start.y} x2={end.x} y2={end.y} />;
 };
 
 // Connected component

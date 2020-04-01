@@ -26,10 +26,8 @@ number screenY
 boolean shiftKey
 */
 
-
 /* events 
 onWheel */
-
 
 /* properties:
 number deltaMode

@@ -1,7 +1,7 @@
-import resetState from '../actions/resetState'
-import setPosition from '../actions/setPosition'
-import setInitialPosition from '../actions/setInitialPosition'
-import updatePath from '../actions/updatePath'
+import resetState from '../actions/resetState';
+import setPosition from '../actions/setPosition';
+import setInitialPosition from '../actions/setInitialPosition';
+import updatePath from '../actions/updatePath';
 
 export default [
   resetState,
@@ -9,4 +9,4 @@ export default [
   setInitialPosition,
   setPosition,
   updatePath
-]
+];

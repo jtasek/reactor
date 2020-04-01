@@ -37,19 +37,9 @@ export function createCircle() {
 
 // Pure component
 export const Circle = ({ centre, radius, selected }) => {
-  let className = selected
-    ? styles.shape + ' ' + styles.selected
-    : styles.shape;
+  const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
-  return (
-    <circle
-      key="circle"
-      className={className}
-      cx={centre.x}
-      cy={centre.y}
-      r={radius}
-    />
-  );
+  return <circle key="circle" className={className} cx={centre.x} cy={centre.y} r={radius} />;
 };
 
 // Connected component

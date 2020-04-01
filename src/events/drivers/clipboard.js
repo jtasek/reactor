@@ -1,4 +1,4 @@
-// Event names: 
-    // onCopy onCut onPaste
+// Event names:
+// onCopy onCut onPaste
 // Properties:
-    // DOMDataTransfer clipboardData
+// DOMDataTransfer clipboardData

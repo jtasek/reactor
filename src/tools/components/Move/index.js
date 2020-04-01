@@ -7,14 +7,7 @@ import styles from '../../styles.css';
  * Move selected object to new coords
  **/
 export const Move = ({ start, end }) => (
-  <line
-    key="line"
-    style={inlineStyles}
-    x1={start.x}
-    y1={start.y}
-    x2={end.x}
-    y2={end.y}
-  />
+  <line key="line" style={inlineStyles} x1={start.x} y1={start.y} x2={end.x} y2={end.y} />
 );
 
 export default connect(

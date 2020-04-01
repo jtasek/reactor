@@ -9,13 +9,7 @@ import inlineStyles from '../../inlineStyles';
 // Clone current selection
 // Clone shape or shapes
 export const Clone = ({ centre, radius }) => (
-  <circle
-    key="circle"
-    style={inlineStyles}
-    cx={centre.x}
-    cy={centre.y}
-    r={radius}
-  />
+  <circle key="circle" style={inlineStyles} cx={centre.x} cy={centre.y} r={radius} />
 );
 
 export default connect(

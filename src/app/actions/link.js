@@ -4,8 +4,7 @@ const getLink = (state, linkId) => state.currentDocument.links[linkId];
 
 const setLink = (state, link) => (state.currentDocument.links[link.id] = link);
 
-const deleteLink = (state, linkId) =>
-  delete state.currentDocument.links[linkId];
+const deleteLink = (state, linkId) => delete state.currentDocument.links[linkId];
 
 export const addLink = ({ state }, options) => {
   const link = createLink(options);

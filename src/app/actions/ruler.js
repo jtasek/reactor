@@ -2,11 +2,9 @@ import { createRuler } from '../factories';
 
 const getRuler = (state, rulerId) => state.currentDocument.rulers[rulerId];
 
-const setRuler = (state, ruler) =>
-  (state.currentDocument.rulers[ruler.id] = ruler);
+const setRuler = (state, ruler) => (state.currentDocument.rulers[ruler.id] = ruler);
 
-const deleteRuler = (state, rulerId) =>
-  delete state.currentDocument.rulers[rulerId];
+const deleteRuler = (state, rulerId) => delete state.currentDocument.rulers[rulerId];
 
 export const addRuler = ({ state }, options) => {
   const ruler = createRuler(options);

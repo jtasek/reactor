@@ -53,9 +53,9 @@ export const state: UI = {
       name: 'Menu Bar',
       visible: true
     },
-    minimappanel: {
-      id: 'minimappanel',
-      name: 'Minimap Panel',
+    minimap: {
+      id: 'minimap',
+      name: 'Minimap',
       visible: true
     },
     navbar: {

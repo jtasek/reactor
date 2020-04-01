@@ -2,11 +2,9 @@ import { createGroup } from '../factories';
 
 const getGroup = (state, groupId) => state.currentDocument.groups[groupId];
 
-const setGroup = (state, group) =>
-  (state.currentDocument.groups[group.id] = group);
+const setGroup = (state, group) => (state.currentDocument.groups[group.id] = group);
 
-const deleteGroup = (state, groupId) =>
-  delete state.currentDocument.groups[groupId];
+const deleteGroup = (state, groupId) => delete state.currentDocument.groups[groupId];
 
 export const addGroup = ({ state }, options) => {
   const group = createGroup(options);

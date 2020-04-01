@@ -2,11 +2,9 @@ import { createLayer } from '../factories';
 
 const getLayer = (state, layerId) => state.currentDocument.layers[layerId];
 
-const setLayer = (state, layer) =>
-  (state.currentDocument.layers[layer.id] = layer);
+const setLayer = (state, layer) => (state.currentDocument.layers[layer.id] = layer);
 
-const deleteLayer = (state, layerId) =>
-  delete state.currentDocument.layers[layerId];
+const deleteLayer = (state, layerId) => delete state.currentDocument.layers[layerId];
 
 export const addLayer = ({ state }, options) => {
   const layer = createLayer(options);

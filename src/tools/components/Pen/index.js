@@ -31,9 +31,7 @@ export function createPen() {
 
 // Pure component
 export const Pen = ({ path, selected }) => {
-  let className = selected
-    ? styles.shape + ' ' + styles.selected
-    : styles.shape;
+  const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
   return <polyline key="line" className={className} points={path} />;
 };

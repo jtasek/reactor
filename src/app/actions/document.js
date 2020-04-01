@@ -2,11 +2,9 @@ import { createDocument } from '../factories';
 
 const getDocument = (state, documentId) => state.documents[documentId];
 
-const setDocument = (state, document) =>
-  (state.documents[document.id] = document);
+const setDocument = (state, document) => (state.documents[document.id] = document);
 
-const deleteDocument = (state, documentId) =>
-  delete state.documents[documentId];
+const deleteDocument = (state, documentId) => delete state.documents[documentId];
 
 export const addDocument = ({ state }, options) => {
   const document = createDocument(options);
