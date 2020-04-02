@@ -1,6 +1,8 @@
 import { position } from '../events/computed/position';
 import { Derive } from 'overmind';
 
+export type Action<T> = (value: T) => void;
+
 export enum Alignment {
   bottom = 'bottom',
   left = 'left',
