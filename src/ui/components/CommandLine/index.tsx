@@ -1,32 +1,28 @@
-import React from 'react';
+import React, {FC} from 'react';
 
 import styles from './styles.css';
 import { Action } from '../../../app/types';
 import { useApp } from '../../../app';
+import { executeCommand } from '../../../app/actions';
 
 interface Props {
   action: Action;
-  visible: boolean;
 }
 
-export const CommandLine = ({ visible, action }: Props) => (
+export const CommandLine: FC<Props> = (action) => (
   <div
     className={styles.commandline}
-    style={!visible ? { display: 'none' } : { display: 'inline-block' }}
   >
     <input
       type="search"
       placeholder="type command..."
-      onChange={e => action({ command: e.target.value })}
+      onChange={action}
     />
   </div>
 );
 
-export const CommandLine2 = () => {
-  const {
-    state: { ui },
-    actions
-  } = useApp();
+export default () => {
+  const {, {executeCommand}  } = useApp();
 
-  <CommandLine visible={ui.controls.commandLine.visible} action={actions.} />
+  <CommandLine action={executeCommand} />
 };
