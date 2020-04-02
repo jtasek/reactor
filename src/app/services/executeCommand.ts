@@ -1,5 +1,3 @@
-
-export default (command: string, args: args) => {
-    //const signals = controller.getSignals()
-    console.log(`Execute command from service ${command}`)//signals[command]()
-}
+export default (command: string, ...args: any[]) => {
+  console.log(`Execute command${command}(${args.join(', ')})`);
+};
