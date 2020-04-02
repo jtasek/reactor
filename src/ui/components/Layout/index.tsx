@@ -20,7 +20,7 @@ import StatusBar from '../StatusBar';
 import Surface from '../Surface';
 import Switch from '../Switch';
 import ToolBar from '../ToolBar';
-import WorkspaceInfo from '../DocumentInfo';
+import DocumentInfo from '../DocumentInfo';
 import styles from './styles.css';
 
 export const Layout = () => (
@@ -46,7 +46,7 @@ export const Layout = () => (
     <ContextMenu id="contextMenu" />
     <Minimap id="minimap" visible="true" />
     <DataView id="dataview" />
-    <WorkspaceInfo id="workspaceInfo" />
+    <DocumentInfo id="documentInfo" />
     <ControlPanel id="controlPanel" />
     <PropertyPanel id="propertyPanel" />
     <LayerPanel id="layerPanel" />
