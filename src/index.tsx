@@ -1,10 +1,11 @@
 import React from 'react';
+import { render } from 'react-dom';
 // import { AppContainer } from 'react-hot-loader';
 import { createOvermind } from 'overmind';
 import { Provider } from 'overmind-react';
-import { render } from 'react-dom';
-import { Layout } from './ui/components/Layout';
+
 import { config } from './app';
+import { Layout } from './ui/components/Layout';
 
 const app = createOvermind(config, {
   devtools: true
