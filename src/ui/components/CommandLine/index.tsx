@@ -1,4 +1,4 @@
-import React, {FC} from 'react';
+import React, { FC } from 'react';
 
 import styles from './styles.css';
 import { Action } from '../../../app/types';
@@ -6,23 +6,17 @@ import { useApp } from '../../../app';
 import { executeCommand } from '../../../app/actions';
 
 interface Props {
-  action: Action;
+  action: Action<any>;
 }
 
-export const CommandLine: FC<Props> = (action) => (
-  <div
-    className={styles.commandline}
-  >
-    <input
-      type="search"
-      placeholder="type command..."
-      onChange={action}
-    />
+export const CommandLine: FC<Props> = ({ action }) => (
+  <div className={styles.commandline}>
+    <input type="search" placeholder="type command..." onChange={(e) => action(e.target.value)} />
   </div>
 );
 
 export default () => {
-  const {, {executeCommand}  } = useApp();
+  const { actions = { executeCommand } } = useApp();
 
-  <CommandLine action={executeCommand} />
+  <CommandLine action={executeCommand} />;
 };
