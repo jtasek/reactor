@@ -18,7 +18,7 @@ export const cloneLink = ({ state, effects }, linkId) => {
   setLink(state, { ...link, id: effects.newId() });
 };
 
-export const removelink = ({ state }, linkId) => {
+export const removeLink = ({ state }, linkId) => {
   deleteLink(state, linkId);
 };
 
