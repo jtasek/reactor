@@ -2,12 +2,12 @@ import { UI } from './types';
 
 export const state: UI = {
   controls: {
-    commandline: {
+    commandLine: {
       id: 'commandline',
       name: 'Command Line',
       visible: true
     },
-    contextmenu: {
+    contextMenu: {
       id: 'contextmenu',
       name: 'Context Menu',
       position: {
@@ -16,7 +16,7 @@ export const state: UI = {
       },
       visible: false
     },
-    controlpanel: {
+    controlPanel: {
       id: 'controlpanel',
       name: 'Control Panel',
       visible: true
@@ -38,17 +38,17 @@ export const state: UI = {
       visible: true,
       width: 10
     },
-    grouppanel: {
+    groupPanel: {
       id: 'grouppanel',
       name: 'Group Panel',
       visible: true
     },
-    layerpanel: {
+    layerPanel: {
       id: 'layerpanel',
       name: 'Layer Panel',
       visible: true
     },
-    menubar: {
+    menuBar: {
       id: 'menubar',
       name: 'Menu Bar',
       visible: true
@@ -58,7 +58,7 @@ export const state: UI = {
       name: 'Minimap',
       visible: true
     },
-    navbar: {
+    navBar: {
       id: 'navbar',
       name: 'Navigation Bar',
       visible: true
@@ -68,12 +68,12 @@ export const state: UI = {
       name: 'Overlay',
       visible: false
     },
-    propertypanel: {
+    propertyPanel: {
       id: 'propertypanel',
       name: 'Property Panel',
       visible: true
     },
-    sidebar: {
+    sideBar: {
       id: 'sidebar',
       name: 'Side Bar',
       visible: true
@@ -83,12 +83,12 @@ export const state: UI = {
       name: 'Surface',
       visible: true
     },
-    statusbar: {
+    statusBar: {
       id: 'statusbar',
       name: 'Status Bar',
       visible: true
     },
-    toolbar: {
+    toolBar: {
       id: 'toolbar',
       name: 'Tool Bar',
       visible: true
