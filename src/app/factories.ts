@@ -1,4 +1,5 @@
-import { v4 as newId } from 'uuid';
+import { newId } from './effects';
+
 import {
   Application,
   Command,
@@ -22,8 +23,7 @@ const rulerSequence = sequence();
 const shapeSequence = sequence();
 
 export const newApplicationName = () => `reactor-${Date.now()}`;
-export const newDocumentName = () =>
-  `Document_${documentSequence.next().value}`;
+export const newDocumentName = () => `Document_${documentSequence.next().value}`;
 export const newGroupName = () => `Group_${groupSequence.next().value}`;
 export const newLayerName = () => `Layer_${layerSequence.next().value}`;
 export const newLinkName = () => `Link_${linkSequence.next().value}`;
@@ -60,7 +60,7 @@ export function createCommand(options: Partial<Command> = {}): Command {
     id: newId(),
     category: 'test',
     name: 'Print document name',
-    action: document => console.log(document.name),
+    action: (document) => console.log(document.name),
     ...options
   };
 }
@@ -133,6 +133,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
     author: getCurrentUserName(),
     created: new Date(),
     description: '',
+    filter: '',
     grid: { width: 10, visible: true, factor: 10, height: 10 },
     groups: {},
     history: [],
@@ -148,9 +149,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
   };
 }
 
-export function createApplication(
-  options: Partial<Application> = {}
-): Partial<Application> {
+export function createApplication(options: Partial<Application> = {}): Partial<Application> {
   return {
     id: newApplicationName(),
     started: new Date(),

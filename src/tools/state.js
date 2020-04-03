@@ -2,7 +2,6 @@ import { activeTool } from './computed/activeTools';
 
 export const state = {
   activeTools: [],
-  activeTool,
   clone: {
     name: 'Clone',
     description: 'Clones selected shape or group',

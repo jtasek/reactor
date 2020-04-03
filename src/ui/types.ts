@@ -28,8 +28,11 @@ export interface UI {
     };
     grid: {
       id: string;
+      factor: number;
+      height: number;
       name: string;
       visible: boolean;
+      width: number;
     };
     groupPanel: {
       id: string;

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, {FC } from 'react';
 import styles from './styles.css';
 import Icon from '../Icon';
+import { useApp } from '../../../app';
 
 const ToolBarButton = ({ tool, onClickHandler }) => (
   <li
@@ -13,26 +14,20 @@ const ToolBarButton = ({ tool, onClickHandler }) => (
   </li>
 );
 
-const ToolBar = ({ visible, tools, toolActivated }) => (
-  <ul
-    className={styles.toolBar}
-    style={!visible ? { display: 'none' } : { display: 'flex' }}
-  >
+const ToolBar = ({ tools, action }) => (
+  <ul    className={styles.toolBar}  >
     {Object.keys(tools).map((name, index) => (
       <ToolBarButton
         key={index}
         tool={tools[name]}
-        onClickHandler={() => toolActivated({ name: name })}
+        onClickHandler={() => action({ name: name })}
       />
     ))}
   </ul>
 );
 
-export default connect(
-  {
-    visible: state`ui.controls.toolbar.visible`,
-    tools: state`tools`,
-    toolActivated: signal`tools.toolActivated`
-  },
-  ToolBar
+export default () => {
+  const {actions = {activateTool},state = {tools}} = useApp();
+
+  return  <ToolBar action={activateTool} tools={tools} />
 );
