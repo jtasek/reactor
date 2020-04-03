@@ -1,12 +1,12 @@
-import { createHook } from 'overmind-react';
 import { IConfig } from 'overmind';
+import { createHook } from 'overmind-react';
 import { merge, namespaced } from 'overmind/config';
 
 import * as actions from './actions';
+import * as effects from './effects';
 import * as events from '../events';
 import * as tools from '../tools';
 import * as ui from '../ui';
-import { Application } from './types';
 import { onInitialize } from './onInitialize';
 import { state } from './state';
 
@@ -14,7 +14,8 @@ export const config = merge(
   {
     onInitialize,
     state,
-    actions
+    actions,
+    effects
   },
   namespaced({
     events,
