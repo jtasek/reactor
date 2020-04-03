@@ -2,10 +2,10 @@ import React from 'react';
 import { render } from 'react-dom';
 // import { AppContainer } from 'react-hot-loader';
 import { createOvermind } from 'overmind';
-import { Provider } from 'overmind-react';
+import { Provider, createHook } from 'overmind-react';
 
 import { config } from './app';
-import { Layout } from './ui/components/Layout';
+import { App } from './app/components/App';
 
 const app = createOvermind(config, {
   devtools: true
@@ -13,7 +13,7 @@ const app = createOvermind(config, {
 
 render(
   <Provider value={app}>
-    <Layout />
+    <App />
   </Provider>,
   document.getElementById('app')
 );
