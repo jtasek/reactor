@@ -140,11 +140,13 @@ export interface Document {
   history: Action[];
   layers: HashTable<Layer>;
   links: HashTable<Link>;
+  locked: boolean;
   modified: Date;
   name: string;
   rulers: HashTable<Ruler>;
   scale: number;
   selection: string[];
+  selected: boolean;
   shapes: HashTable<Shape>;
 }
 
