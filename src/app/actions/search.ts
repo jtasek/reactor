@@ -1,3 +1,4 @@
-export const search = ({ state }, value) => {
-  state.currentDocument.filter = value;
-};
+import { Action } from 'overmind';
+
+export const search: Action<string> = ({ state }, filter) => {
+  state.currentDocument?.filter = filter;
