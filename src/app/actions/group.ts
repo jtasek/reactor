@@ -1,5 +1,5 @@
 import { Action } from 'overmind';
-import { Application, Group, HashTable } from '../types';
+import { Application, Group } from '../types';
 import { createGroup } from '../factories';
 
 const getGroup = (state: Application, groupId: string) => state.currentDocument?.groups[groupId];

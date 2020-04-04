@@ -1,5 +1,5 @@
 import { Action } from 'overmind';
-import { Application, Layer, HashTable } from '../types';
+import { Application, Layer } from '../types';
 import { createLayer } from '../factories';
 
 const getLayer = (state: Application, layerId: string) => state.currentDocument?.layers[layerId];
