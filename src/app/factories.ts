@@ -139,11 +139,13 @@ export function createDocument(options: Partial<Document> = {}): Document {
     history: [],
     layers: {},
     links: {},
+    locked: false,
     modified: new Date(),
     name: newDocumentName(),
     rulers: {},
     scale: 1,
     selection: [],
+    selected: false,
     shapes: {},
     ...options
   };
