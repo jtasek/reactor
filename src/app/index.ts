@@ -12,10 +12,10 @@ import { state } from './state';
 
 export const config = merge(
   {
-    onInitialize,
-    state,
     actions,
-    effects
+    effects,
+    onInitialize,
+    state
   },
   namespaced({
     events,
