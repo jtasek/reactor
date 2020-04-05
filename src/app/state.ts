@@ -1,5 +1,6 @@
 import { Application } from './types';
 import { createApplication } from './factories';
+import { currentDocument } from './computed/currentDocument';
 
 export const state = {
   ...createApplication(),
@@ -7,7 +8,7 @@ export const state = {
   components: {},
   config: {},
   currentDocumentId: 'workspace-1',
-  currentDocument: ({ state }) => state.documents[state.currentDocumentId],
+  currentDocument,
   devices: {},
   events: [],
   notifications: [],
