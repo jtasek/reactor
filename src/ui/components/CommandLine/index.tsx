@@ -3,7 +3,7 @@ import React, { FC } from 'react';
 import styles from './styles.css';
 import { Action } from '../../../app/types';
 import { useApp } from '../../../app';
-import { executeCommand } from '../../../app/actions';
+import { action } from 'overmind';
 
 interface Props {
   action: Action<any>;
@@ -16,7 +16,9 @@ export const CommandLine: FC<Props> = ({ action }) => (
 );
 
 export default () => {
-  const { actions = { executeCommand } } = useApp();
+  const {
+    actions: { executeCommand }
+  } = useApp();
 
   <CommandLine action={executeCommand} />;
 };
