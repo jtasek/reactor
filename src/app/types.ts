@@ -132,6 +132,7 @@ export interface Camera {
 export interface Document {
   id: string;
   author: string;
+  camera: Camera;
   created: Date;
   description?: string;
   filter: string;
@@ -144,7 +145,6 @@ export interface Document {
   modified: Date;
   name: string;
   rulers: HashTable<Ruler>;
-  scale: number;
   selection: string[];
   selected: boolean;
   shapes: HashTable<Shape>;
