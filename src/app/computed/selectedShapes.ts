@@ -1,3 +1,11 @@
-export default Compute(state`workspace.shapes`, shapes =>
-  Object.keys(shapes).filter(key => shapes[key].selected)
-)
+import { Application } from '../types';
+
+export const selectedShapes = ({ currentDocument }: Application): string[] => {
+  if (!currentDocument) {
+    return [];
+  }
+
+  return Object.keys(currentDocument?.shapes).filter(
+    (key) => currentDocument?.shapes[key].selected
+  );
+};
