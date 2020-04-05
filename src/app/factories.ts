@@ -143,7 +143,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
     modified: new Date(),
     name: newDocumentName(),
     rulers: {},
-    scale: 1,
+    camera: { scale: 1, position: { x: 0, y: 0 } },
     selection: [],
     selected: false,
     shapes: {},
