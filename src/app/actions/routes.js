@@ -4,6 +4,7 @@ export default [
     signal: 'applicationStarted'
   }
   // '/login': '',
+  // '/reset':
   // '/signup': '',
   // '/logout': '',
   // '/terms': '',
