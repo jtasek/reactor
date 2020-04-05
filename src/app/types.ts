@@ -192,6 +192,12 @@ export interface OnlineProvider extends Provider {
 
 export interface Configuration {}
 
+export interface Message {
+  title: string;
+  description: string;
+  category: string;
+}
+
 export type Application = {
   id: string;
   commands: HashTable<Command>;
@@ -202,6 +208,7 @@ export type Application = {
   devices: HashTable<Device>;
   documents: HashTable<Document>;
   events: Event[];
+  notifications: Message[];
   providers: HashTable<Provider>;
   started: Date;
   user: User;
