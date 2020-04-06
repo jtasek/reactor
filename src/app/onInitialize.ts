@@ -1,5 +1,4 @@
 export const onInitialize = ({ state, actions, effects }, instance) => {
-  // Register controls
   // Register commands
 
   // Load data from storage
@@ -11,9 +10,5 @@ export const onInitialize = ({ state, actions, effects }, instance) => {
     { nested: true }
   );
   // Activate routing
-  effects.router.initialize({
-    '/': () => actions.changeFilter('all'),
-    '/active': () => actions.changeFilter('active'),
-    '/completed': () => actions.changeFilter('completed')
-  });
+  actions.registerRouters();
 };
