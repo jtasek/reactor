@@ -3,7 +3,7 @@ import styles from './styles.css';
 import Icon from '../Icon';
 import { useApp } from '../../../app';
 
-const ToolBarButton = ({ tool, onClickHandler }) => (
+const ToolBarButton: FC = ({ tool, onClickHandler }) => (
   <li
     className={styles.toolBarButton}
     style={tool.active ? { opacity: '1' } : {}}
