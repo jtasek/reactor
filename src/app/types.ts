@@ -192,10 +192,17 @@ export interface OnlineProvider extends Provider {
 
 export interface Configuration {}
 
-export interface Message {
-  title: string;
-  description: string;
-  category: string;
+export enum NotificationType {
+  Info = 'Info',
+  Warn = 'Warn',
+  Error = 'Error'
+}
+export interface Notification {
+  id: string;
+  created: Date;
+  scope?: string;
+  message: string;
+  type: NotificationType;
 }
 
 export type Application = {
@@ -208,7 +215,7 @@ export type Application = {
   devices: HashTable<Device>;
   documents: HashTable<Document>;
   events: Event[];
-  notifications: Message[];
+  notifications: Notification[];
   providers: HashTable<Provider>;
   started: Date;
   user: User;

@@ -7,6 +7,8 @@ import {
   Group,
   Layer,
   Link,
+  Notification,
+  NotificationType,
   Orientation,
   Ruler,
   Shape,
@@ -61,6 +63,16 @@ export function createCommand(options: Partial<Command> = {}): Command {
     category: 'test',
     name: 'Print document name',
     action: (document) => console.log(document.name),
+    ...options
+  };
+}
+
+export function createNotification(
+  options: Partial<Notification> & { message: string; type: NotificationType }
+): Notification {
+  return {
+    id: newId(),
+    created: new Date(),
     ...options
   };
 }
