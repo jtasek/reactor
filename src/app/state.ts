@@ -2,15 +2,14 @@ import { Application } from './types';
 import { createApplication } from './factories';
 import { currentDocument } from './computed/currentDocument';
 
-export const state = {
+export const state: Application = {
   ...createApplication(),
   commands: {},
   components: {},
   config: {},
   currentDocumentId: 'workspace-1',
-  currentDocument,
+  currentDocument: currentDocument,
   devices: {},
-  events: [],
   notifications: [],
   providers: {},
   documents: {
@@ -263,4 +262,4 @@ export const state = {
       }
     }
   }
-} as Application;
+};

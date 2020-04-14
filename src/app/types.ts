@@ -211,10 +211,9 @@ export type Application = {
   components: HashTable<Shape>;
   config: Configuration;
   currentDocumentId?: string;
-  currentDocument?: Derive<Application, Document>;
+  currentDocument: Derive<Application, Document>;
   devices: HashTable<Device>;
   documents: HashTable<Document>;
-  events: Event[];
   notifications: Notification[];
   providers: HashTable<Provider>;
   started: Date;
@@ -222,5 +221,6 @@ export type Application = {
 };
 
 export interface Renderer {
+  document: Document;
   render(document: Document): void;
 }
