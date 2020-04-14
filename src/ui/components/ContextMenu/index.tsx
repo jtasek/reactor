@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { FC } from 'react';
 import Icon from '../Icon';
 import styles from './styles.css';
 import { useApp } from '../../../app';
@@ -10,8 +10,7 @@ function getInlineStyle(size: number, angle: number, active: boolean) {
     // Rotate the axis
     // Move the item from the center
     // Rotate the item back to its default position
-    transform: `rotate(${angle}deg) translate(${size /
-      2.5}em) rotate(-${angle}deg)`
+    transform: `rotate(${angle}deg) translate(${size / 2.5}em) rotate(-${angle}deg)`
   };
 }
 
@@ -26,7 +25,7 @@ function* angles(count: number) {
   }
 }
 
-function renderButtons(tools, onClickHandler) {
+const Buttons = ({ tools, selectTool }) => {
   const count = Object.keys(tools).length;
   const anglegen = angles(count);
 
@@ -40,17 +39,17 @@ function renderButtons(tools, onClickHandler) {
         key={index}
         tool={tool}
         inlineStyles={style}
-        onClickHandler={() => onClickHandler({ name: name })}
+        onClickHandler={() => selectTool({ name: name })}
       />
     );
   });
-}
+};
 
 const ContextMenuButton = ({ tool, inlineStyles, onClickHandler }) => (
   <li className={styles.contextMenuButton} style={inlineStyles}>
     <a
       href="#"
-      onClick={e => {
+      onClick={(e) => {
         e.preventDefault();
         onClickHandler();
       }}
@@ -61,21 +60,15 @@ const ContextMenuButton = ({ tool, inlineStyles, onClickHandler }) => (
   </li>
 );
 
-const ContextMenu = ({ visible, position, tools, selectTool }) => (
+const ContextMenu = ({ position, tools, selectTool }) => (
   <ul
     className={styles.contextMenu}
-    style={
-      !visible
-        ? { display: 'none' }
-        : {
-            display: 'block',
-            position: 'absolute',
-            top: position.y,
-            left: position.x
-          }
-    }
+    style={{
+      top: position.y,
+      left: position.x
+    }}
   >
-    {renderButtons(tools, selectTool)}
+    <Buttons tools={tools} selectTool={selectTool} />
   </ul>
 );
 
@@ -83,11 +76,12 @@ export const ContextMenuContainer = () => {
   const { state, actions } = useApp();
 
   return (
-    <ContextMenu
-      position={state.ui.controls.contextMenu.position}
-      selectTool={actions.selectTool}
-      tools={state.tools}
-      visible={state.ui.controls.contextMenu.visible}
-    />
+    state.ui.controls.contextMenu.visible && (
+      <ContextMenu
+        position={state.ui.controls.contextMenu.position}
+        selectTool={actions.selectTool}
+        tools={state.tools}
+      />
+    )
   );
 };
