@@ -3,7 +3,7 @@ import { Application } from '../types';
 
 export const filteredGroups: Derive<Application, string[]> = ({ currentDocument }) => {
   if (!currentDocument) {
-    return;
+    return [];
   }
 
   const { filter, groups } = currentDocument;

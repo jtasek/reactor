@@ -1,6 +1,7 @@
+import { Derive } from 'overmind';
 import { Application } from '../types';
 
-export const filteresShapes = ({ currentDocument }: Application): string[] => {
+export const filteresShapes: Derive<Application, string[]> = ({ currentDocument }) => {
   if (!currentDocument) {
     return [];
   }

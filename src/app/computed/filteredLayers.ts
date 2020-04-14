@@ -3,7 +3,7 @@ import { Application } from '../types';
 
 export const filteredLayers: Derive<Application, string[]> = ({ currentDocument }) => {
   if (!currentDocument) {
-    return;
+    return [];
   }
 
   const { filter, layers } = currentDocument;

@@ -3,7 +3,7 @@ import { Application } from '../types';
 
 export const filteredRulers: Derive<Application, string[]> = ({ currentDocument }) => {
   if (!currentDocument) {
-    return;
+    return [];
   }
 
   const { filter, rulers } = currentDocument;
