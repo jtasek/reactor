@@ -1,12 +1,6 @@
-import resetState from '../actions/resetState';
-import setPosition from '../actions/setPosition';
-import setInitialPosition from '../actions/setInitialPosition';
-import updatePath from '../actions/updatePath';
-
-export default [
-  resetState,
-  set(state`reflex.monitor.dragging`, true),
-  setInitialPosition,
-  setPosition,
-  updatePath
-];
+export const startDragging = ({ actions, state }, args) => {
+  state.events.pointer.dragging = true;
+  actions.setInitialPosition(args.coords);
+  actions.setPosition(args.coords);
+  actions.updatePath(args.coords);
+};

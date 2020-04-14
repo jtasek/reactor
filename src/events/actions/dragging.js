@@ -1,5 +1,4 @@
-import setPosition from '../actions/setPosition';
-import updatePath from '../actions/updatePath';
-import executeToolCommand from '../actions/executeToolCommand';
-
-export default [setPosition, updatePath];
+export const drag = ({ actions }, args) => {
+  actions.setPosition(args.coords);
+  actions.updatePath(args.coords);
+};

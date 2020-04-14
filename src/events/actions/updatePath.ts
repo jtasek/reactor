@@ -1,4 +1,3 @@
-
-export default ({props, state}) => {
-    state.push('reflex.monitor.path', { x: props.x, y: props.y })
-}
+export const updatePath = ({ state }, args) => {
+  state.events.pointer.path.push(args.coords);
+};

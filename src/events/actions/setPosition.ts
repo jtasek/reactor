@@ -1,4 +1,3 @@
-
-export default ({ props, state }) => {
-  state.set('reflex.monitor.position', props)
-}
+export const setPosition = ({ state }, args) => {
+  state.events.pointer.position = args.coords;
+};
