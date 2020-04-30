@@ -24,28 +24,42 @@ function* angles(count: number) {
     yield (rotation += angle);
   }
 }
+interface ButtonsProps {
+  tools: any;
+  selectTool: any;
+}
 
-const Buttons = ({ tools, selectTool }) => {
+const Buttons: FC<ButtonsProps> = ({ tools, selectTool }) => {
   const count = Object.keys(tools).length;
   const anglegen = angles(count);
 
-  return Object.keys(tools).map((name, index) => {
-    let angle = anglegen.next().value;
-    let tool = tools[name];
-    let style = getInlineStyle(15, angle, tool.active);
+  return (
+    <>
+      {Object.keys(tools).map((name, index) => {
+        let angle = anglegen.next().value;
+        let tool = tools[name];
+        let style = getInlineStyle(15, angle, tool.active);
 
-    return (
-      <ContextMenuButton
-        key={index}
-        tool={tool}
-        inlineStyles={style}
-        onClickHandler={() => selectTool({ name: name })}
-      />
-    );
-  });
+        return (
+          <ContextMenuButton
+            key={index}
+            tool={tool}
+            inlineStyles={style}
+            onClickHandler={() => selectTool({ name: name })}
+          />
+        );
+      })}
+    </>
+  );
 };
 
-const ContextMenuButton = ({ tool, inlineStyles, onClickHandler }) => (
+interface ButtonProps {
+  tool: any;
+  inlineStyles: any;
+  onClickHandler: any;
+}
+
+const ContextMenuButton: FC<ButtonProps> = ({ tool, inlineStyles, onClickHandler }) => (
   <li className={styles.contextMenuButton} style={inlineStyles}>
     <a
       href="#"
@@ -60,7 +74,13 @@ const ContextMenuButton = ({ tool, inlineStyles, onClickHandler }) => (
   </li>
 );
 
-const ContextMenu = ({ position, tools, selectTool }) => (
+interface MenuProps {
+  position: any;
+  tools: any;
+  selectTool: any;
+}
+
+const ContextMenu: FC<MenuProps> = ({ position, tools, selectTool }) => (
   <ul
     className={styles.contextMenu}
     style={{
@@ -72,7 +92,7 @@ const ContextMenu = ({ position, tools, selectTool }) => (
   </ul>
 );
 
-export const ContextMenuContainer = () => {
+export default () => {
   const { state, actions } = useApp();
 
   return (

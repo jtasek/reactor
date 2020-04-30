@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { FC } from 'react';
 
 import { Size } from '../../../app/types';
 
@@ -8,7 +8,7 @@ interface Props {
   size: Size;
 }
 
-export const Badge = () => ({ text, color, size }: Props) => (
+export const Badge: FC<Props> = ({ text, color, size }) => (
   <span
     style={{
       borderRadius: '50%',

@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 
 import CommandLine from '../CommandLine';
 import ContextMenu from '../ContextMenu';
@@ -26,31 +26,30 @@ import styles from './styles.css';
 export const Layout = () => (
   <div className={styles.layout}>
     <MenuBar
-      id="menubar"
       actions={[
         { id: 1, name: 'Home' },
         { id: 2, name: 'About' },
         { id: 4, name: 'Contact' }
       ]}
     />
-    <CommandLine id="commandline" />
+    <CommandLine />
     <Switch value={true} />
-    <SideBar id="sidebar">
-      <ToolBar id="toolbar" />
+    <SideBar>
+      <ToolBar />
       <Explorer>
         <SearchBox />
         <NavBar />
       </Explorer>
     </SideBar>
-    <Surface key="surface" />
-    <ContextMenu id="contextMenu" />
-    <Minimap id="minimap" visible="true" />
-    <DataView id="dataview" />
-    <DocumentInfo id="documentInfo" />
-    <ControlPanel id="controlPanel" />
-    <PropertyPanel id="propertyPanel" />
-    <LayerPanel id="layerPanel" />
-    <GroupPanel id="groupPanel" />
+    <Surface />
+    <ContextMenu />
+    <Minimap visible />
+    <DataView />
+    <DocumentInfo />
+    <ControlPanel />
+    <PropertyPanel />
+    <LayerPanel />
+    <GroupPanel />
 
     {/* <Cursor /> */}
     {/* <Dialog
@@ -61,6 +60,6 @@ export const Layout = () => (
       onCancel={() => alert('cancel')}
       onSubmit={() => alert('submit')}
     /> */}
-    <StatusBar id="statusbar" />
+    <StatusBar />
   </div>
 );
