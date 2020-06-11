@@ -35,9 +35,9 @@ app.use(
   })
 );
 
-app.use('/icons', express.static(__dirname + '/static/icons/'));
-app.use('/images', express.static(__dirname + '/static/images/'));
-app.use('/styles', express.static(__dirname + '/static/styles/'));
+app.use('/icons', express.static(`${__dirname}/static/icons/`));
+app.use('/images', express.static(`${__dirname}/static/images/`));
+app.use('/styles', express.static(`${__dirname}/static/styles/`));
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, './src/index.html'));
