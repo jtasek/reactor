@@ -6,7 +6,7 @@ export const registerRoutes: Action = ({ actions, effects }) => {
     '/login': () => actions.login(),
     '/reset': () => actions.reset(),
     '/signup': () => actions.singup(),
-    '/logout': () => actions.logour(),
+    '/logout': () => actions.logout(),
     '/terms': () => actions.terms(),
     '/privacy': () => actions.privacy(),
     '/export': () => actions.export(),
