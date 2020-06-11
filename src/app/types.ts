@@ -1,42 +1,41 @@
-import { position } from '../events/computed/position';
 import { Derive } from 'overmind';
 
 export type Action<T> = (value: T) => void;
 
 export enum Alignment {
-  bottom = 'bottom',
-  left = 'left',
-  right = 'right',
-  top = 'top'
+  Bottom = 'bottom',
+  Left = 'left',
+  Right = 'right',
+  Top = 'top'
 }
 
 export enum Orientation {
-  horizontal = 'horizontal',
-  vertical = 'vertical'
+  Horizontal = 'horizontal',
+  Vertical = 'vertical'
 }
 
 export enum Spacing {
-  sameHorizontal = 'sameHorizontal',
-  sameVertical = 'sameVertical'
+  SameHorizontal = 'sameHorizontal',
+  SameVertical = 'sameVertical'
 }
 
 export enum Sizing {
-  sameHeight = 'sameHeight',
-  sameSize = 'sameSize',
-  sameWidth = 'sameWidth'
+  SameHeight = 'sameHeight',
+  SameSize = 'sameSize',
+  SameWidth = 'sameWidth'
 }
 
 export enum LinkType {
-  aggregate = 'aggregate',
-  compose = 'compose',
-  inherit = 'inherit',
-  refer = 'refer'
+  Aggregate = 'aggregate',
+  Compose = 'compose',
+  Inherit = 'inherit',
+  Refer = 'refer'
 }
 
 export enum MouseButton {
-  left = 0,
-  middle = 1,
-  right = 2
+  Left = 0,
+  Middle = 1,
+  Right = 2
 }
 
 export type Position = {
@@ -138,7 +137,7 @@ export interface Document {
   filter: string;
   grid: Grid;
   groups: HashTable<Group>;
-  history: Action[];
+  history: Action<any>[];
   layers: HashTable<Layer>;
   links: HashTable<Link>;
   locked: boolean;
@@ -156,7 +155,7 @@ export interface Command {
   description?: string;
   name: string;
   shortCut?: string;
-  action: Action;
+  action: Action<any>;
 }
 
 export interface User {
@@ -173,7 +172,7 @@ export interface Event {
   action: string;
   category: string;
   data: any;
-  occured: Date;
+  occurred: Date;
   user: string;
 }
 
@@ -197,6 +196,7 @@ export enum NotificationType {
   Warn = 'Warn',
   Error = 'Error'
 }
+
 export interface Notification {
   id: string;
   created: Date;
