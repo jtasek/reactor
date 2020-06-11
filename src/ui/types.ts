@@ -16,6 +16,11 @@ export interface UI {
       name: string;
       visible: boolean;
     };
+    dataView: {
+      id: string;
+      name: string;
+      visible: boolean;
+    };
     documentInfo: {
       id: string;
       name: string;
@@ -49,7 +54,7 @@ export interface UI {
       name: string;
       visible: boolean;
     };
-    minimap: {
+    miniMap: {
       id: string;
       name: string;
       visible: boolean;

@@ -21,6 +21,11 @@ export const state: UI = {
       name: 'Control Panel',
       visible: true
     },
+    dataView: {
+      id: 'dataView',
+      name: 'Data View',
+      visible: true
+    },
     dodumentInfo: {
       id: 'documentInfo',
       name: 'Document Info'
@@ -53,7 +58,7 @@ export const state: UI = {
       name: 'Menu Bar',
       visible: true
     },
-    minimap: {
+    miniMap: {
       id: 'minimap',
       name: 'Minimap',
       visible: true
