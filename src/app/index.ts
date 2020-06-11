@@ -1,5 +1,11 @@
 import { IConfig } from 'overmind';
-import { createHook } from 'overmind-react';
+import {
+  createActionsHook,
+  createEffectsHook,
+  createHook,
+  createReactionHook,
+  createStateHook
+} from 'overmind-react';
 import { merge, namespaced } from 'overmind/config';
 
 import * as actions from './actions';
@@ -30,3 +36,7 @@ declare module 'overmind' {
 }
 
 export const useApp = createHook<typeof config>();
+export const useState = createStateHook<typeof config>();
+export const useActions = createActionsHook<typeof config>();
+export const useEffects = createEffectsHook<typeof config>();
+export const useReaction = createReactionHook<typeof config>();
