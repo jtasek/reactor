@@ -25,7 +25,7 @@ describe('factories', () => {
   describe('sequence()', () => {
     const generator = sequence();
 
-    it('returns numbers incrementaly', () => {
+    it('returns incremental numbers ', () => {
       const actual = [generator.next().value, generator.next().value, generator.next().value];
 
       expect(actual).toEqual([1, 2, 3]);
