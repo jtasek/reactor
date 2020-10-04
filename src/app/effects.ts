@@ -10,7 +10,7 @@ export const router = {
     });
     page.start();
   },
-  goTo(url) {
+  goTo(url: string) {
     page.show(url);
   }
 };
