@@ -1,14 +1,14 @@
 module.exports = {
+  root: true,
   env: {
     browser: true,
-    es6: true
+    jest: true
   },
   extends: [
-    'airbnb',
-    'prettier',
-    'prettier/react',
-    'plugin:jest/recommended',
+    'eslint:recommended',
     'plugin:react/recommended',
+    'plugin:jest/recommended',
+    'plugin:@typescript-eslint/eslint-recommended',
     'plugin:@typescript-eslint/recommended',
     'prettier/@typescript-eslint',
     'plugin:prettier/recommended'
@@ -24,6 +24,7 @@ module.exports = {
   },
   plugins: [
     '@typescript-eslint',
+    'dom',
     'babel',
     'import',
     'jest',
@@ -31,7 +32,9 @@ module.exports = {
     'node',
     'prettier',
     'react',
-    'react-hooks'
+    'react-hooks',
+    'security',
+    'xss'
   ],
   rules: {
     curly: 'warn',
@@ -84,8 +87,10 @@ module.exports = {
       version: 'detect'
     },
     'import/resolver': {
-      webpack: {},
-      typescript: {}
+      node: {
+        extensions: ['.js', '.jsx', '.ts', '.tsx'],
+        paths: ['./src']
+      }
     }
   }
 };
