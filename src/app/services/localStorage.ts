@@ -1,6 +1,6 @@
 import { Application } from '../types';
 
-export const loadState = (key: string) => {
+export const loadState = (key: string): Application | null => {
   try {
     const serializedState = localStorage.getItem(key);
 
@@ -10,11 +10,11 @@ export const loadState = (key: string) => {
 
     return JSON.parse(serializedState);
   } catch (error) {
-    console.error('Failed to load application state', error);
+    throw new Error(`Failed to load application state: ${error}`);
   }
 };
 
-export const saveState = (key: string, state: Application) => {
+export const saveState = (key: string, state: Application): void => {
   try {
     const serializedState = JSON.stringify(state);
 
