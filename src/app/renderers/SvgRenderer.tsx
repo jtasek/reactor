@@ -1,12 +1,11 @@
-import React from './react';
+import React from 'react';
 import { Document, Renderer } from '../types';
 
 class SvgRenderer implements Renderer {
-  document: Document;
-  render(): void {}
+  render(document: Document): void {
+    throw new Error('Render not implemented');
+  }
 }
-
-const Group = props => <g>{props.children}</g>;
 /*
 const Line = () => <line 
     x1="the x start point of the line"

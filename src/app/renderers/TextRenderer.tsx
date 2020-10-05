@@ -1,6 +1,7 @@
 import { Document, Renderer } from '../types';
 
 export class TextRenderer implements Renderer {
-  document: Document;
-  render(): void {}
+  render(document: Document): void {
+    throw new Error('Render not implemented');
+  }
 }
