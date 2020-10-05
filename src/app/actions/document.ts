@@ -2,7 +2,15 @@ import { Action } from 'overmind';
 import { Application, Document } from '../types';
 import { createDocument } from '../factories';
 
-const getDocument = ({ documents }: Application, documentId: string) => documents[documentId];
+const getDocument = ({ documents }: Application, documentId: string) => {
+  const document = documents[documentId];
+
+  if (!document) {
+    throw new Error(`Document ${documentId} not found`);
+  }
+
+  return document;
+};
 
 const setDocument = ({ documents }: Application, document: Document) =>
   (documents[document.id] = document);

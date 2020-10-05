@@ -2,12 +2,24 @@ import { Action } from 'overmind';
 import { Application, Link } from '../types';
 import { createLink } from '../factories';
 
-const getLink = (state: Application, linkId: string) => state.currentDocument?.links[linkId];
+const getLink = ({ currentDocument }: Application, linkId: string) => {
+  const link = currentDocument?.links[linkId];
 
-const setLink = (state: Application, link: Link) => (state.currentDocument?.links[link.id] = link);
+  if (!link) {
+    throw new Error(`Link ${linkId} not found`);
+  }
 
-const deleteLink = (state: Application, linkId: string) =>
-  delete state.currentDocument?.links[linkId];
+  return link;
+};
+
+const setLink = ({ currentDocument }: Application, link: Link) => {
+  if (currentDocument) {
+    currentDocument.links[link.id] = link;
+  }
+};
+
+const deleteLink = ({ currentDocument }: Application, linkId: string) =>
+  delete currentDocument?.links[linkId];
 
 export const addLink: Action<Partial<Link>> = ({ state }, options) => {
   const link = createLink(options);

@@ -2,13 +2,24 @@ import { Action } from 'overmind';
 import { Application, Shape } from '../types';
 import { createShape } from '../factories';
 
-const getShape = (state: Application, shapeId: string) => state.currentDocument.shapes[shapeId];
+const getShape = ({ currentDocument }: Application, shapeId: string) => {
+  const shape = currentDocument?.shapes[shapeId];
 
-const setShape = (state: Application, shape: Shape) =>
-  (state.currentDocument?.shapes[shape.id] = shape);
+  if (!shape) {
+    throw new Error(`Shape ${shapeId} not found`);
+  }
 
-const deleteShape = (state: Application, shapeId: string) =>
-  delete state.currentDocument?.shapes[shapeId];
+  return shape;
+};
+
+const setShape = ({ currentDocument }: Application, shape: Shape) => {
+  if (currentDocument) {
+    currentDocument.shapes[shape.id] = shape;
+  }
+};
+
+const deleteShape = ({ currentDocument }: Application, shapeId: string) =>
+  delete currentDocument?.shapes[shapeId];
 
 export const addShape: Action<Partial<Shape>> = ({ state }, options) => {
   const shape = createShape(options);

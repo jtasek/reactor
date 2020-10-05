@@ -2,13 +2,24 @@ import { Action } from 'overmind';
 import { Application, Layer } from '../types';
 import { createLayer } from '../factories';
 
-const getLayer = (state: Application, layerId: string) => state.currentDocument?.layers[layerId];
+const getLayer = ({ currentDocument }: Application, layerId: string) => {
+  const layer = currentDocument?.layers[layerId];
 
-const setLayer = (state: Application, layer: Layer) =>
-  (state.currentDocument?.layers[layer.id] = layer);
+  if (!layer) {
+    throw new Error(`Layer ${layerId} not found`);
+  }
 
-const deleteLayer = (state: Application, layerId: string) =>
-  delete state.currentDocument?.layers[layerId];
+  return layer;
+};
+
+const setLayer = ({ currentDocument }: Application, layer: Layer) => {
+  if (currentDocument) {
+    currentDocument.layers[layer.id] = layer;
+  }
+};
+
+const deleteLayer = ({ currentDocument }: Application, layerId: string) =>
+  delete currentDocument?.layers[layerId];
 
 export const addLayer: Action<Partial<Layer>> = ({ state }, options) => {
   const layer = createLayer(options);

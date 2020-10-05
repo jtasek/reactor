@@ -2,13 +2,24 @@ import { Action } from 'overmind';
 import { Application, Group } from '../types';
 import { createGroup } from '../factories';
 
-const getGroup = (state: Application, groupId: string) => state.currentDocument?.groups[groupId];
+const getGroup = ({ currentDocument }: Application, groupId: string) => {
+  const group = currentDocument?.groups[groupId];
 
-const setGroup = (state: Application, group: Group) =>
-  (state.currentDocument?.groups[group.id] = group);
+  if (!group) {
+    throw new Error(`Group ${groupId} not found`);
+  }
 
-const deleteGroup = (state: Application, groupId: string) =>
-  delete state.currentDocument?.groups[groupId];
+  return group;
+};
+
+const setGroup = ({ currentDocument }: Application, group: Group) => {
+  if (currentDocument) {
+    currentDocument.groups[group.id] = group;
+  }
+};
+
+const deleteGroup = ({ currentDocument }: Application, groupId: string) =>
+  delete currentDocument?.groups[groupId];
 
 export const addGroup: Action<Partial<Group>> = ({ state }, options) => {
   const group = createGroup(options);

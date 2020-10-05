@@ -2,7 +2,7 @@ import { Action } from 'overmind';
 import { NotificationType } from '../types';
 import { createNotification } from '../factories';
 
-export const displayMessage: Action<string> = ({ state }, message) => {
+export const displayInfo: Action<string> = ({ state }, message) => {
   const notification = createNotification({ message, type: NotificationType.Info });
 
   state.notifications.push(notification);

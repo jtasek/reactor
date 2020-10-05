@@ -2,13 +2,24 @@ import { Action } from 'overmind';
 import { Application, Ruler } from '../types';
 import { createRuler } from '../factories';
 
-const getRuler = (state: Application, rulerId: string) => state.currentDocument?.rulers[rulerId];
+const getRuler = ({ currentDocument }: Application, rulerId: string) => {
+  const ruler = currentDocument?.rulers[rulerId];
 
-const setRuler = (state: Application, ruler: Ruler) =>
-  (state.currentDocument?.rulers[ruler.id] = ruler);
+  if (!ruler) {
+    throw new Error(`Ruler ${rulerId} not found`);
+  }
 
-const deleteRuler = (state: Application, rulerId: string) =>
-  delete state.currentDocument?.rulers[rulerId];
+  return ruler;
+};
+
+const setRuler = ({ currentDocument }: Application, ruler: Ruler) => {
+  if (currentDocument) {
+    currentDocument.rulers[ruler.id] = ruler;
+  }
+};
+
+const deleteRuler = ({ currentDocument }: Application, rulerId: string) =>
+  delete currentDocument?.rulers[rulerId];
 
 export const addRuler: Action<Partial<Ruler>> = ({ state }, options) => {
   const ruler = createRuler(options);
