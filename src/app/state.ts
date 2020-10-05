@@ -1,4 +1,4 @@
-import { Application } from './types';
+import { Application, Orientation } from './types';
 import { createApplication } from './factories';
 import { currentDocument } from './computed/currentDocument';
 
@@ -88,21 +88,30 @@ export const state: Application = {
           name: 'Link one',
           source: '1',
           target: '2',
-          type: 'composition'
+          type: 'composition',
+          locked: false,
+          selected: false,
+          visible: true
         },
         '2': {
           id: '2',
           name: 'Link two',
           source: '2',
           target: '3',
-          type: 'aggregation'
+          type: 'aggregation',
+          locked: false,
+          selected: false,
+          visible: true
         },
         '3': {
           id: '3',
           name: 'Link three',
           source: '3',
           target: '4',
-          type: 'reference'
+          type: 'reference',
+          locked: false,
+          selected: false,
+          visible: true
         }
       },
       rulers: {
@@ -113,7 +122,9 @@ export const state: Application = {
             x: 0,
             y: 200
           },
-          orientation: 'horizontal',
+          orientation: Orientation.Horizontal,
+          locked: false,
+          selected: false,
           visible: true
         },
         '2': {
@@ -123,7 +134,9 @@ export const state: Application = {
             x: 200,
             y: 0
           },
-          orientation: 'vertical',
+          orientation: Orientation.Vertical,
+          locked: false,
+          selected: false,
           visible: true
         },
         '3': {
@@ -133,7 +146,9 @@ export const state: Application = {
             x: 0,
             y: 500
           },
-          orientation: 'horizontal',
+          orientation: Orientation.Horizontal,
+          locked: false,
+          selected: false,
           visible: true
         },
         '4': {
@@ -143,7 +158,9 @@ export const state: Application = {
             x: 500,
             y: 0
           },
-          orientation: 'vertical',
+          orientation: Orientation.Vertical,
+          locked: false,
+          selected: false,
           visible: true
         }
       },
