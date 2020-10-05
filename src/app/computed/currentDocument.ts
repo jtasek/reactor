@@ -1,13 +1,10 @@
-import { Derive } from 'overmind';
-import { Application, Document } from '../types';
+import { derived } from 'overmind';
+import { Application } from '../types';
 
-export const currentDocument: Derive<Application, Document | null> = ({
-  currentDocumentId,
-  documents
-}) => {
+export const currentDocument = derived(({ currentDocumentId, documents }: Application) => {
   if (!currentDocumentId) {
     return null;
   }
 
   return documents[currentDocumentId];
-};
+});

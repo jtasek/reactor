@@ -1,5 +1,6 @@
-import { Derive } from 'overmind';
+import { derived } from 'overmind';
 import { Application } from '../types';
 
-export const shapes: Derive<Application, string[]> = ({ currentDocument: { shapes } }) =>
-  Object.keys(shapes);
+export const shapeIds = derived(({ currentDocument }: Application) =>
+  Object.keys(currentDocument?.shapes || [])
+);

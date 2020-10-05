@@ -1,7 +1,7 @@
-import { Derive } from 'overmind';
+import { derived } from 'overmind';
 import { Application } from '../types';
 
-export const filteredLinks: Derive<Application, string[]> = ({ currentDocument }) => {
+export const filteredLinks = derived(({ currentDocument }: Application) => {
   if (!currentDocument) {
     return [];
   }
@@ -13,4 +13,4 @@ export const filteredLinks: Derive<Application, string[]> = ({ currentDocument }
 
     return link.name?.includes(filter);
   });
-};
+});

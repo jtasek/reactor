@@ -1,7 +1,7 @@
-import { Derive } from 'overmind';
+import { derived } from 'overmind';
 import { Application } from '../types';
 
-export const filteredLayers: Derive<Application, string[]> = ({ currentDocument }) => {
+export const filteredLayers = derived(({ currentDocument }: Application) => {
   if (!currentDocument) {
     return [];
   }
@@ -13,4 +13,4 @@ export const filteredLayers: Derive<Application, string[]> = ({ currentDocument 
 
     return layer.name?.includes(filter);
   });
-};
+});

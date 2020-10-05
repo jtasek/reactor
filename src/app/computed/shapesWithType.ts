@@ -1,15 +1,9 @@
-import { Derive } from 'overmind';
+import { derived } from 'overmind';
 import { Application } from '../types';
 
-export const shapesWithTypes: Derive<Application, { id: string; type: string }[]> = ({
-  currentDocument: { shapes }
-}) => {
-  return Object.keys(shapes).map((key) => {
-    const shape = shapes[key];
-
-    return {
-      id: shape.id,
-      type: shape.type
-    };
-  });
-};
+export const shapesWithTypes = derived(({ currentDocument }: Application) => {
+  return Object.values(currentDocument?.shapes || []).map((item) => ({
+    id: item.id,
+    type: item.type
+  }));
+});

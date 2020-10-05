@@ -1,7 +1,7 @@
-import { Derive } from 'overmind';
+import { derived } from 'overmind';
 import { Application } from '../types';
 
-export const filteresShapes: Derive<Application, string[]> = ({ currentDocument }) => {
+export const filteredShapes = derived(({ currentDocument }: Application) => {
   if (!currentDocument) {
     return [];
   }
@@ -13,4 +13,4 @@ export const filteresShapes: Derive<Application, string[]> = ({ currentDocument 
 
     return shape.name?.includes(filter);
   });
-};
+});

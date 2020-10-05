@@ -1,7 +1,7 @@
-import { Derive } from 'overmind';
+import { derived } from 'overmind';
 import { Application } from '../types';
 
-export const filteredGroups: Derive<Application, string[]> = ({ currentDocument }) => {
+export const filteredGroups = derived(({ currentDocument }: Application) => {
   if (!currentDocument) {
     return [];
   }
@@ -13,4 +13,4 @@ export const filteredGroups: Derive<Application, string[]> = ({ currentDocument 
 
     return group.name?.includes(filter);
   });
-};
+});
