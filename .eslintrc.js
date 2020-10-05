@@ -24,7 +24,6 @@ module.exports = {
   },
   plugins: [
     '@typescript-eslint',
-    'dom',
     'babel',
     'import',
     'jest',
