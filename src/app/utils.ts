@@ -5,12 +5,10 @@ export function getRandomNumber(max: number): number {
 }
 
 export function getRandomColor(): string {
-  return `rgb(${getRandomNumber(255)}, ${getRandomNumber(
-    255
-  )}, ${getRandomNumber(255)})`;
+  return `rgb(${getRandomNumber(255)}, ${getRandomNumber(255)}, ${getRandomNumber(255)})`;
 }
 
-export function getDistance(p1: Point, p2: Point) {
+export function getDistance(p1: Point, p2: Point): number {
   return Math.hypot(Math.abs(p2.x - p1.x), Math.abs(p2.y - p1.y));
 }
 
@@ -21,7 +19,7 @@ export function pointInRectangle(p: Point, rect: Rectangle): boolean {
   return horizontalFit && verticalFit;
 }
 
-export function getPropValue(prop: any) {
+export function getPropValue(prop: any): unknown {
   // console.log(typeof prop)
   if (typeof prop === 'object') {
     if (prop instanceof Array) {
@@ -34,13 +32,13 @@ export function getPropValue(prop: any) {
   return prop.toString();
 }
 
-function vector(p1: Point, p2: Point): Vector {
+export function vector(p1: Point, p2: Point): Vector {
   return {
     x: p2.x - p1.x,
     y: p2.y - p1.y
   };
 }
 
-function dot(u: Point, v: Point): number {
+export function dot(u: Point, v: Point): number {
   return u.x * v.x + u.y * v.y;
 }
