@@ -1,5 +1,3 @@
-import { Derive } from 'overmind';
-
 export type Action<T> = (value: T) => void;
 
 export enum Alignment {
@@ -69,9 +67,12 @@ export interface HashTable<T> {
 
 export interface Ruler {
   id: string;
+  locked: boolean;
   name: string;
   orientation: Orientation;
   position: Position;
+  selected: boolean;
+  visible: boolean;
 }
 
 export interface Grid {
@@ -83,6 +84,7 @@ export interface Grid {
 
 export interface Shape {
   id: string;
+  code: string;
   children?: Shape[];
   created: Date;
   createdBy: string;
@@ -100,9 +102,13 @@ export interface Shape {
 
 export interface Link {
   id: string;
+  locked: boolean;
   name: string;
+  selected: boolean;
   source?: string;
   target?: string;
+  visible: boolean;
+  type: string;
 }
 
 export interface Group {
@@ -144,8 +150,9 @@ export interface Document {
   modified: Date;
   name: string;
   rulers: HashTable<Ruler>;
-  selection: string[];
   selected: boolean;
+  selectedShapes: string[];
+  selection: string[];
   shapes: HashTable<Shape>;
 }
 
@@ -211,7 +218,8 @@ export type Application = {
   components: HashTable<Shape>;
   config: Configuration;
   currentDocumentId?: string;
-  currentDocument: Derive<Application, Document>;
+  currentDocument?: Document;
+  currentPage: string;
   devices: HashTable<Device>;
   documents: HashTable<Document>;
   notifications: Notification[];
@@ -221,6 +229,5 @@ export type Application = {
 };
 
 export interface Renderer {
-  document: Document;
   render(document: Document): void;
 }
