@@ -15,7 +15,7 @@ import {
   User
 } from './types';
 
-export const getDefaultName = (type: string) => 'Rect';
+export const getDefaultName = (type: string): string => 'Rect';
 
 const documentSequence = sequence();
 const groupSequence = sequence();
@@ -24,13 +24,13 @@ const linkSequence = sequence();
 const rulerSequence = sequence();
 const shapeSequence = sequence();
 
-export const newApplicationName = () => `reactor-${Date.now()}`;
-export const newDocumentName = () => `Document_${documentSequence.next().value}`;
-export const newGroupName = () => `Group_${groupSequence.next().value}`;
-export const newLayerName = () => `Layer_${layerSequence.next().value}`;
-export const newLinkName = () => `Link_${linkSequence.next().value}`;
-export const newRulerName = () => `Ruler_${rulerSequence.next().value}`;
-export const newShapeName = () => `Shape_${shapeSequence.next().value}`;
+export const newApplicationName = (): string => `reactor-${Date.now()}`;
+export const newDocumentName = (): string => `Document-${documentSequence.next().value}`;
+export const newGroupName = (): string => `Group-${groupSequence.next().value}`;
+export const newLayerName = (): string => `Layer-${layerSequence.next().value}`;
+export const newLinkName = (): string => `Link-${linkSequence.next().value}`;
+export const newRulerName = (): string => `Ruler-${rulerSequence.next().value}`;
+export const newShapeName = (): string => `Shape-${shapeSequence.next().value}`;
 
 export function* sequence() {
   let i = 1;
@@ -49,30 +49,30 @@ export const getAnonymousUser = (): User => {
   };
 };
 
-export function getCurrentUserName() {
+export function getCurrentUserName(): string {
   return 'anonymous';
 }
 
-export function getDefaultType() {
+export function getDefaultType(): string {
   return 'rect';
 }
 
 export function createCommand(options: Partial<Command> = {}): Command {
   return {
     id: newId(),
+    action: (document) => console.log(document.name),
     category: 'test',
     name: 'Print document name',
-    action: (document) => console.log(document.name),
     ...options
   };
 }
 
-export function createNotification(
-  options: Partial<Notification> & { message: string; type: NotificationType }
-): Notification {
+export function createNotification(options: Partial<Notification> = {}): Notification {
   return {
     id: newId(),
     created: new Date(),
+    message: 'Empty message',
+    type: NotificationType.Info,
     ...options
   };
 }
@@ -83,6 +83,7 @@ export function createShape(options: Partial<Shape> = {}): Shape {
 
   return {
     id,
+    code: `${type}-${id}`,
     children: [],
     created: new Date(),
     createdBy: getCurrentUserName(),
@@ -91,7 +92,7 @@ export function createShape(options: Partial<Shape> = {}): Shape {
     modifiedBy: getCurrentUserName(),
     name: newShapeName(),
     selected: true,
-    type: getDefaultType(),
+    type,
     visible: true,
     ...options
   };
@@ -100,7 +101,11 @@ export function createShape(options: Partial<Shape> = {}): Shape {
 export function createLink(options: Partial<Link> = {}): Link {
   return {
     id: newId(),
+    locked: false,
     name: newLinkName(),
+    selected: false,
+    visible: true,
+    type: 'arrow',
     ...options
   };
 }
@@ -108,9 +113,12 @@ export function createLink(options: Partial<Link> = {}): Link {
 export function createRuler(options: Partial<Ruler> = {}): Ruler {
   return {
     id: newId(),
+    locked: false,
     name: newRulerName(),
-    orientation: Orientation.horizontal,
+    orientation: Orientation.Horizontal,
     position: { x: 0, y: 0 },
+    selected: false,
+    visible: true,
     ...options
   };
 }
@@ -143,6 +151,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
   return {
     id: newId(),
     author: getCurrentUserName(),
+    camera: { scale: 1, position: { x: 0, y: 0 } },
     created: new Date(),
     description: '',
     filter: '',
@@ -155,9 +164,9 @@ export function createDocument(options: Partial<Document> = {}): Document {
     modified: new Date(),
     name: newDocumentName(),
     rulers: {},
-    camera: { scale: 1, position: { x: 0, y: 0 } },
-    selection: [],
     selected: false,
+    selectedShapes: [],
+    selection: [],
     shapes: {},
     ...options
   };
