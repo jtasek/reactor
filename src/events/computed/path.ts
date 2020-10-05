@@ -3,7 +3,7 @@ import { Events } from '../types';
 
 export const path = ({ pointer }: Events, { currentDocument }: Application) => {
   const { path } = pointer;
-  const { scale } = currentDocument?.scale || 1;
+  const scale = currentDocument?.camera.scale || 1;
 
   return path.map((point: Point) => `${point.x / scale}, ${point.y / scale}`);
 };
