@@ -76,6 +76,7 @@ module.exports = {
     ],
     'react/jsx-uses-react': 2,
     'react/jsx-uses-vars': 2,
+    'react/prop-types': 'off',
     'react/react-in-jsx-scope': 2,
     'react/sort-comp': 0,
     semi: [2, 'always'],
