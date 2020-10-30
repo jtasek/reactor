@@ -1,6 +1,7 @@
 import { Application, Orientation } from './types';
 import { createApplication } from './factories';
 import { currentDocument } from './computed/currentDocument';
+import { selectedShapes } from './computed/selectedShapes';
 
 export const state: Application = {
   ...createApplication(),
@@ -8,7 +9,7 @@ export const state: Application = {
   components: {},
   config: {},
   currentDocumentId: 'workspace-1',
-  currentDocument: currentDocument,
+  currentDocument,
   devices: {},
   notifications: [],
   providers: {},
@@ -26,10 +27,9 @@ export const state: Application = {
       modifiedBy: 'tasek',
       grid: { width: 10, factor: 5, visible: true, height: 10 },
       history: [],
-      selection: [],
       selected: false,
+      selectedShapes,
       filter: '',
-      scale: 1,
       groups: {
         '1': {
           id: '1',
@@ -174,7 +174,6 @@ export const state: Application = {
             x: 100,
             y: 100
           },
-          radius: 20,
           size: {
             height: 50,
             width: 50
