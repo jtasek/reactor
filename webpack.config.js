@@ -17,7 +17,8 @@ module.exports = {
   output: {
     filename: 'bundle.js',
     path: path.join(__dirname, 'dist'),
-    publicPath: '/'
+    publicPath: '/',
+    context: 'src'
   },
   mode: NODE_ENV,
   module: {
@@ -65,17 +66,17 @@ module.exports = {
     ]
   },
   plugins: [
-    // eslint-loader seem to try to access this.options which was removed.
-    // As workaround use
-    new webpack.LoaderOptionsPlugin({ options: {} }),
     // enable HMR globally
-    new webpack.HotModuleReplacementPlugin(),
-    // prints more readable module names in the browser console on HMR updates
-    new webpack.NamedModulesPlugin(),
-    // do not emit compiled assets that include errors
-    new webpack.NoEmitOnErrorsPlugin()
+    new webpack.HotModuleReplacementPlugin()
   ],
+  optimization: {
+    // prints more readable module names in the browser console on HMR updates
+    moduleIds: 'named',
+    // do not emit compiled assets that include errors
+    noEmitOnErrors: true
+  },
   resolve: {
+    modules: [path.join(__dirname, 'src'), 'node_modules'],
     extensions: ['.js', '.jsx', '.ts', '.tsx', '.css']
   }
 };
