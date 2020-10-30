@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
 
-import { Layout } from '../../../ui/components/Layout';
+import { LayoutContainer } from '../../../ui/components/Layout';
 
-export const App: FC = () => <Layout />;
+export const App: FC = () => <LayoutContainer />;
