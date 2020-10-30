@@ -2,10 +2,6 @@ import { derived } from 'overmind';
 import { Application } from '../types';
 
 export const filteredGroups = derived(({ currentDocument }: Application) => {
-  if (!currentDocument) {
-    return [];
-  }
-
   const { filter, groups } = currentDocument;
 
   return Object.keys(groups).filter((key) => {

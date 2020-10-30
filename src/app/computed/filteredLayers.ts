@@ -2,10 +2,6 @@ import { derived } from 'overmind';
 import { Application } from '../types';
 
 export const filteredLayers = derived(({ currentDocument }: Application) => {
-  if (!currentDocument) {
-    return [];
-  }
-
   const { filter, layers } = currentDocument;
 
   return Object.keys(layers).filter((key) => {
