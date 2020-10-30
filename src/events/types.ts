@@ -2,12 +2,14 @@ import { Position, Size } from '../app/types';
 
 export interface Pointer {
   centre: Position;
-  currentPosition: Position;
   dragging: boolean;
+  offset: Position;
   path: Position[];
+  position: Position;
   radius: number;
   scaledCentre: Position;
   scaledCurrentPosition: Position;
+  scaledOffset: Position;
   scaledPath: Position[];
   scaledRadius: number;
   scaledSize: Size;
@@ -16,6 +18,7 @@ export interface Pointer {
   size: Size;
   startPosition: Position;
   topLeftPosition: Position;
+  bottomRightPosition: Position;
 }
 
 export interface Keyboard {
