@@ -2,8 +2,10 @@ import { newId } from './effects';
 
 import {
   Application,
+  Camera,
   Command,
   Document,
+  Grid,
   Group,
   Layer,
   Link,
@@ -79,7 +81,7 @@ export function createNotification(options: Partial<Notification> = {}): Notific
 
 export function createShape(options: Partial<Shape> = {}): Shape {
   const id = newId();
-  const type = getDefaultType();
+  const type = options.type ?? getDefaultType();
 
   return {
     id,
@@ -151,25 +153,34 @@ export function createDocument(options: Partial<Document> = {}): Document {
   return {
     id: newId(),
     author: getCurrentUserName(),
-    camera: { scale: 1, position: { x: 0, y: 0 } },
+    camera: createCamera(),
     created: new Date(),
+    createdBy: getCurrentUserName(),
     description: '',
     filter: '',
-    grid: { width: 10, visible: true, factor: 10, height: 10 },
+    grid: createGrid(),
     groups: {},
     history: [],
     layers: {},
     links: {},
     locked: false,
     modified: new Date(),
+    modifiedBy: getCurrentUserName(),
     name: newDocumentName(),
     rulers: {},
     selected: false,
     selectedShapes: [],
-    selection: [],
     shapes: {},
     ...options
   };
+}
+
+export function createCamera(): Camera {
+  return { scale: 1, position: { x: 0, y: 0 } };
+}
+
+export function createGrid(): Grid {
+  return { width: 10, visible: true, factor: 10, height: 10 };
 }
 
 export function createApplication(options: Partial<Application> = {}): Partial<Application> {
