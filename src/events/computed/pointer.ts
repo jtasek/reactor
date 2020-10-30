@@ -3,18 +3,18 @@ import { Application, Position, Size } from 'src/app/types';
 import { Events } from '../types';
 
 export const centre = derived<Events, Application, Position>(({ pointer }) => {
-  const { currentPosition, startPosition } = pointer;
+  const { position, startPosition } = pointer;
 
   return {
-    x: startPosition.x + (currentPosition.x - startPosition.x) / 2,
-    y: startPosition.y + (currentPosition.y - startPosition.y) / 2
+    x: startPosition.x + (position.x - startPosition.x) / 2,
+    y: startPosition.y + (position.y - startPosition.y) / 2
   };
 });
 
 export const scaledCentre = derived<Events, Application, Position>(
   ({ pointer }, { currentDocument }) => {
     const { centre } = pointer;
-    const scale = currentDocument?.camera.scale ?? 1;
+    const scale = currentDocument.camera.scale ?? 1;
 
     return {
       x: centre.x / scale,
@@ -25,29 +25,29 @@ export const scaledCentre = derived<Events, Application, Position>(
 
 export const scaledCurrentPosition = derived<Events, Application, Position>(
   ({ pointer }, { currentDocument }) => {
-    const { currentPosition } = pointer;
-    const scale = currentDocument?.camera.scale ?? 1;
+    const { position } = pointer;
+    const scale = currentDocument.camera.scale ?? 1;
 
     return {
-      x: currentPosition.x / scale,
-      y: currentPosition.y / scale
+      x: position.x / scale,
+      y: position.y / scale
     };
   }
 );
 
 export const offset = derived<Events, Application, Position>(({ pointer }) => {
-  const { currentPosition, startPosition } = pointer;
+  const { position: position, startPosition } = pointer;
 
   return {
-    x: currentPosition.x - startPosition.x,
-    y: currentPosition.y - startPosition.y
+    x: position.x - startPosition.x,
+    y: position.y - startPosition.y
   };
 });
 
 export const scaledOffset = derived<Events, Application, Position>(
   ({ pointer }, { currentDocument }) => {
     const { offset } = pointer;
-    const scale = currentDocument?.camera.scale ?? 1;
+    const scale = currentDocument.camera.scale ?? 1;
 
     return {
       x: offset.x / scale,
@@ -56,14 +56,10 @@ export const scaledOffset = derived<Events, Application, Position>(
   }
 );
 
-export const stringifyPath = (path: Position[]): string[] => {
-  return path.map((point: Position) => `${point.x}, ${point.y}`);
-};
-
 export const scaledPath = derived<Events, Application, Position[]>(
   ({ pointer }, { currentDocument }) => {
     const { path } = pointer;
-    const scale = currentDocument?.camera.scale ?? 1;
+    const scale = currentDocument.camera.scale ?? 1;
 
     return path.map((point: Position) => ({ x: point.x / scale, y: point.y / scale }));
   }
@@ -81,24 +77,24 @@ export const radius = derived<Events, Application, number>(({ pointer }) => {
 export const scaledRadius = derived<Events, Application, number>(
   ({ pointer }, { currentDocument }) => {
     const { radius } = pointer;
-    const scale = currentDocument?.camera.scale ?? 1;
+    const scale = currentDocument.camera.scale ?? 1;
 
     return radius / scale;
   }
 );
 
 export const size = derived<Events, Application, Size>(({ pointer }) => {
-  const { currentPosition, startPosition } = pointer;
+  const { position: position, startPosition } = pointer;
 
   return {
-    width: Math.abs(currentPosition.x - startPosition.x),
-    height: Math.abs(currentPosition.y - startPosition.y)
+    width: Math.abs(position.x - startPosition.x),
+    height: Math.abs(position.y - startPosition.y)
   };
 });
 
 export const scaledSize = derived<Events, Application, Size>(({ pointer }, { currentDocument }) => {
   const { size } = pointer;
-  const scale = currentDocument?.camera.scale ?? 1;
+  const scale = currentDocument.camera.scale ?? 1;
 
   return {
     width: size.width / scale,
@@ -106,19 +102,28 @@ export const scaledSize = derived<Events, Application, Size>(({ pointer }, { cur
   };
 });
 
-export const topLeftPosition = derived<Events, Application, Position>(({ pointer }) => {
-  const { currentPosition, startPosition } = pointer;
+export const bottomRightPosition = derived<Events, Application, Position>(({ pointer }) => {
+  const { position: position, startPosition } = pointer;
 
   return {
-    x: startPosition.x > currentPosition.x ? currentPosition.x : startPosition.x,
-    y: startPosition.y > currentPosition.y ? currentPosition.y : startPosition.y
+    x: startPosition.x > position.x ? startPosition.x : position.x,
+    y: startPosition.y > position.y ? startPosition.y : position.y
+  };
+});
+
+export const topLeftPosition = derived<Events, Application, Position>(({ pointer }) => {
+  const { position: position, startPosition } = pointer;
+
+  return {
+    x: startPosition.x > position.x ? position.x : startPosition.x,
+    y: startPosition.y > position.y ? position.y : startPosition.y
   };
 });
 
 export const scaledTopLeftPosition = derived<Events, Application, Position>(
   ({ pointer }, { currentDocument }) => {
     const { topLeftPosition } = pointer;
-    const scale = currentDocument?.camera.scale ?? 1;
+    const scale = currentDocument.camera.scale ?? 1;
 
     return {
       x: topLeftPosition.x / scale,
@@ -130,7 +135,7 @@ export const scaledTopLeftPosition = derived<Events, Application, Position>(
 export const scaledStartPosition = derived<Events, Application, Position>(
   ({ pointer }, { currentDocument }) => {
     const { startPosition } = pointer;
-    const scale = currentDocument?.camera.scale ?? 1;
+    const scale = currentDocument.camera.scale ?? 1;
 
     return {
       x: startPosition.x / scale,
