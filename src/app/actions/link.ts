@@ -3,7 +3,7 @@ import { Application, Link } from '../types';
 import { createLink } from '../factories';
 
 const getLink = ({ currentDocument }: Application, linkId: string) => {
-  const link = currentDocument?.links[linkId];
+  const link = currentDocument.links[linkId];
 
   if (!link) {
     throw new Error(`Link ${linkId} not found`);
@@ -19,7 +19,7 @@ const setLink = ({ currentDocument }: Application, link: Link) => {
 };
 
 const deleteLink = ({ currentDocument }: Application, linkId: string) =>
-  delete currentDocument?.links[linkId];
+  delete currentDocument.links[linkId];
 
 export const addLink: Action<Partial<Link>> = ({ state }, options) => {
   const link = createLink(options);

@@ -3,7 +3,7 @@ import { Application, Shape } from '../types';
 import { createShape } from '../factories';
 
 const getShape = ({ currentDocument }: Application, shapeId: string) => {
-  const shape = currentDocument?.shapes[shapeId];
+  const shape = currentDocument.shapes[shapeId];
 
   if (!shape) {
     throw new Error(`Shape ${shapeId} not found`);
@@ -19,7 +19,7 @@ const setShape = ({ currentDocument }: Application, shape: Shape) => {
 };
 
 const deleteShape = ({ currentDocument }: Application, shapeId: string) =>
-  delete currentDocument?.shapes[shapeId];
+  delete currentDocument.shapes[shapeId];
 
 export const addShape: Action<Partial<Shape>> = ({ state }, options) => {
   const shape = createShape(options);

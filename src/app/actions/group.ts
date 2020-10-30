@@ -3,7 +3,7 @@ import { Application, Group } from '../types';
 import { createGroup } from '../factories';
 
 const getGroup = ({ currentDocument }: Application, groupId: string) => {
-  const group = currentDocument?.groups[groupId];
+  const group = currentDocument.groups[groupId];
 
   if (!group) {
     throw new Error(`Group ${groupId} not found`);
@@ -19,7 +19,7 @@ const setGroup = ({ currentDocument }: Application, group: Group) => {
 };
 
 const deleteGroup = ({ currentDocument }: Application, groupId: string) =>
-  delete currentDocument?.groups[groupId];
+  delete currentDocument.groups[groupId];
 
 export const addGroup: Action<Partial<Group>> = ({ state }, options) => {
   const group = createGroup(options);

@@ -3,7 +3,7 @@ import { Application, Ruler } from '../types';
 import { createRuler } from '../factories';
 
 const getRuler = ({ currentDocument }: Application, rulerId: string) => {
-  const ruler = currentDocument?.rulers[rulerId];
+  const ruler = currentDocument.rulers[rulerId];
 
   if (!ruler) {
     throw new Error(`Ruler ${rulerId} not found`);
@@ -19,7 +19,7 @@ const setRuler = ({ currentDocument }: Application, ruler: Ruler) => {
 };
 
 const deleteRuler = ({ currentDocument }: Application, rulerId: string) =>
-  delete currentDocument?.rulers[rulerId];
+  delete currentDocument.rulers[rulerId];
 
 export const addRuler: Action<Partial<Ruler>> = ({ state }, options) => {
   const ruler = createRuler(options);
