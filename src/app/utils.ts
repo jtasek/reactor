@@ -1,5 +1,9 @@
 import { Point, Rectangle, Vector } from './types';
 
+export const stringifyPath = (path: Point[]): string => {
+  return path.map((point: Point) => `${point.x}, ${point.y}`).join(' ');
+};
+
 export function getRandomNumber(max: number): number {
   return Math.floor(Math.random() * max);
 }
