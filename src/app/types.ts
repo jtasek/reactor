@@ -84,8 +84,9 @@ export interface Grid {
 
 export interface Shape {
   id: string;
-  code: string;
+  centre?: Point;
   children?: Shape[];
+  code: string;
   created: Date;
   createdBy: string;
   description?: string;
@@ -94,6 +95,7 @@ export interface Shape {
   modifiedBy: string;
   name: string;
   position?: Position;
+  radius?: number;
   selected: boolean;
   size?: Size;
   type: string;
@@ -139,6 +141,7 @@ export interface Document {
   author: string;
   camera: Camera;
   created: Date;
+  createdBy: string;
   description?: string;
   filter: string;
   grid: Grid;
@@ -148,11 +151,11 @@ export interface Document {
   links: HashTable<Link>;
   locked: boolean;
   modified: Date;
+  modifiedBy: string;
   name: string;
   rulers: HashTable<Ruler>;
   selected: boolean;
-  selectedShapes: string[];
-  selection: string[];
+  selectedShapes: Shape[];
   shapes: HashTable<Shape>;
 }
 
@@ -217,8 +220,8 @@ export type Application = {
   commands: HashTable<Command>;
   components: HashTable<Shape>;
   config: Configuration;
-  currentDocumentId?: string;
-  currentDocument?: Document;
+  currentDocumentId: string;
+  currentDocument: Document;
   currentPage: string;
   devices: HashTable<Device>;
   documents: HashTable<Document>;
