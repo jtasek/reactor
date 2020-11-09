@@ -1,20 +1,9 @@
-// Change cursor style
-import React from 'react';
+import React, { FC } from 'react';
+import { useState } from 'src/app/hooks';
+import { Cursor } from './Cursor';
 
-export default connect(
-  {
-    position: state.events.pointer.position
-  },
-  ({ position }) => (
-    <div
-      style={{
-        color: 'black',
-        position: 'absolute',
-        left: `${position.x}px`,
-        top: `${position.y}px`
-      }}
-    >
-      x: {position.x}, y: {position.y}
-    </div>
-  )
-);
+export const ConnectedCursor: FC = () => {
+  const { position: position } = useState().events.pointer;
+
+  return <Cursor position={position} />;
+};
