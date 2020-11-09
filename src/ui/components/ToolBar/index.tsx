@@ -1,33 +1,13 @@
-import React, {FC } from 'react';
-import styles from './styles.css';
-import Icon from '../Icon';
-import { useApp } from '../../../app';
+import React, { FC } from 'react';
+import { useApp } from 'src/app/hooks';
+import { ToolBar } from './ToolBar';
 
-const ToolBarButton: FC = ({ tool, onClickHandler }) => (
-  <li
-    className={styles.toolBarButton}
-    style={tool.active ? { opacity: '1' } : {}}
-  >
-    <a href="#" onClick={e => onClickHandler()} title={tool.description}>
-      <Icon {...tool.icon} />
-    </a>
-  </li>
-);
+export const ToolBarContainer: FC = () => {
+  const { actions, state } = useApp();
 
-const ToolBar = ({ tools, action }) => (
-  <ul    className={styles.toolBar}  >
-    {Object.keys(tools).map((name, index) => (
-      <ToolBarButton
-        key={index}
-        tool={tools[name]}
-        onClickHandler={() => action({ name: name })}
-      />
-    ))}
-  </ul>
-);
+  if (!state.ui.toolBar.visible) {
+    return null;
+  }
 
-export default () => {
-  const {actions = {activateTool},state = {tools}} = useApp();
-
-  return  <ToolBar action={activateTool} tools={tools} />
-);
+  return <ToolBar tools={[]} onClick={actions.tools.activateTool} />;
+};
