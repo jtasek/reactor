@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { FC, useState } from 'react';
+import { Pointer } from 'src/events/types';
+import { useState as useAppState } from 'src/app/hooks';
 
 import styles from '../../styles.css';
-import currentPosition from '../../../reflex/computed/getPosition';
 
 /**
  * Draws a text in current position
@@ -17,26 +18,52 @@ import currentPosition from '../../../reflex/computed/getPosition';
 />
 
 **/
-export const Text = ({ position }) => (
+
+interface Props {
+  name: string;
+  x: number;
+  y: number;
+  value: string;
+  selected: boolean;
+  type: string;
+  onChange: (value: string) => void;
+}
+
+export const createText = ({ position }: Pointer): Props => {
+  return {
+    x: position.x,
+    y: position.y,
+    name: 'Text x',
+    selected: true,
+    type: 'text',
+    value: '',
+    onChange: () => {
+      console.log('not implemented');
+    }
+  };
+};
+
+export const Text: FC<Props> = ({ name, x, y, value, onChange }) => (
   /*<text key="text" style={inlineStyles} x={position.x} y={position.y}>Tohle je test string</text>*/
   <g>
-    <foreignObject width="100%" height="100%" x={position.x} y={position.y}>
+    <foreignObject width="100%" height="100%" x={x} y={y}>
       <form>
         <input
           type="text"
+          data-cy={name}
           className="text-layer-input"
           placeholder="Type something..."
-          value="Tohle je test string"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
         />
       </form>
     </foreignObject>
   </g>
 );
 
-export default connect(
-  {
-    position: currentPosition,
-    shape: state`workspace.shapes.${props`id`}`
-  },
-  Text
-);
+export const DesignText: FC = () => {
+  const { pointer } = useAppState().events;
+  const [value, setValue] = useState<string>('');
+
+  return <Text {...createText(pointer)} value={value} onChange={(value) => setValue(value)} />;
+};
