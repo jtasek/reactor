@@ -1,4 +1,6 @@
-export type Action<T> = (value: T) => void;
+import { IAction, IConfig, IOnInitialize, IOperator } from 'overmind';
+
+import { config } from './';
 
 export enum Alignment {
   Bottom = 'bottom',
@@ -199,8 +201,6 @@ export interface OnlineProvider extends Provider {
   url: string;
 }
 
-export interface Configuration {}
-
 export enum NotificationType {
   Info = 'Info',
   Warn = 'Warn',
@@ -214,6 +214,10 @@ export interface Notification {
   message: string;
   type: NotificationType;
 }
+
+export type Configuration = {
+  version: string;
+};
 
 export type Application = {
   id: string;
@@ -234,3 +238,22 @@ export type Application = {
 export interface Renderer {
   render(document: Document): void;
 }
+
+// Due to circular typing we have to define an
+// explicit typing of state, actions and effects since
+// TS 3.9
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface Config
+  extends IConfig<{
+    state: typeof config.state;
+    actions: typeof config.actions;
+    effects: typeof config.effects;
+  }> {}
+
+export type OnInitialize = IOnInitialize<Config>;
+
+export type Action<Input = void, Output = void> = IAction<Config, Input, Output>;
+
+export type AsyncAction<Input = void, Output = void> = IAction<Config, Input, Promise<Output>>;
+
+export type Operator<Input = void, Output = Input> = IOperator<Config, Input, Output>;
