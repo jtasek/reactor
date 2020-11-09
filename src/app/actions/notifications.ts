@@ -1,5 +1,4 @@
-import { Action } from 'overmind';
-import { NotificationType } from '../types';
+import { Action, NotificationType } from '../types';
 import { createNotification } from '../factories';
 
 export const displayInfo: Action<string> = ({ state }, message) => {

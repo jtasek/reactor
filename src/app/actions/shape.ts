@@ -1,5 +1,4 @@
-import { Action } from 'overmind';
-import { Application, Shape } from '../types';
+import { Application, Action, Shape } from '../types';
 import { createShape } from '../factories';
 
 const getShape = ({ currentDocument }: Application, shapeId: string) => {

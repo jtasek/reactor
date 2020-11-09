@@ -1,5 +1,4 @@
-import { Action } from 'overmind';
-import { Application, Layer } from '../types';
+import { Action, Application, Layer } from '../types';
 import { createLayer } from '../factories';
 
 const getLayer = ({ currentDocument }: Application, layerId: string) => {

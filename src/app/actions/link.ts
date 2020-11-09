@@ -1,5 +1,4 @@
-import { Action } from 'overmind';
-import { Application, Link } from '../types';
+import { Action, Application, Link } from '../types';
 import { createLink } from '../factories';
 
 const getLink = ({ currentDocument }: Application, linkId: string) => {

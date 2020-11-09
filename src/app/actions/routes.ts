@@ -1,4 +1,4 @@
-import { Action, AsyncAction } from 'overmind';
+import { Action, AsyncAction } from 'src/app/types';
 
 export const showHomePage: Action = ({ state }) => {
   state.currentPage = 'home';
@@ -11,21 +11,21 @@ export const showResetPage: Action = ({ state }) => {
   state.currentPage = 'reset';
 };
 
-export const showSingupPage: AsyncAction = async ({ state, effects }) => {
+export const showSingupPage: AsyncAction = async ({ state }) => {
   state.currentPage = 'signup';
 };
 
-export const showLogoutPage: AsyncAction = async ({ state, effects }) => {
+export const showLogoutPage: AsyncAction = async ({ state }) => {
   state.currentPage = 'logout';
 };
 
-export const showTermsPage: AsyncAction = async ({ state, effects }) => {
+export const showTermsPage: AsyncAction = async ({ state }) => {
   state.currentPage = 'terms';
 };
-export const privacyPage: AsyncAction = async ({ state, effects }) => {
+export const privacyPage: AsyncAction = async ({ state }) => {
   state.currentPage = 'privacy';
 };
-export const exportPage: AsyncAction = async ({ state, effects }) => {
+export const exportPage: AsyncAction = async ({ state }) => {
   state.currentPage = 'export';
 };
 

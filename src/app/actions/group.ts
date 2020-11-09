@@ -1,5 +1,4 @@
-import { Action } from 'overmind';
-import { Application, Group } from '../types';
+import { Action, Application, Group } from '../types';
 import { createGroup } from '../factories';
 
 const getGroup = ({ currentDocument }: Application, groupId: string) => {

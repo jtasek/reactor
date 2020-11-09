@@ -1,5 +1,4 @@
-import { Action } from 'overmind';
-import { Application, Document } from '../types';
+import { Action, Application, Document } from '../types';
 import { createDocument } from '../factories';
 
 const getDocument = ({ documents }: Application, documentId: string) => {

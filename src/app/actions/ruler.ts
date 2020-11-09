@@ -1,5 +1,4 @@
-import { Action } from 'overmind';
-import { Application, Ruler } from '../types';
+import { Action, Application, Ruler } from '../types';
 import { createRuler } from '../factories';
 
 const getRuler = ({ currentDocument }: Application, rulerId: string) => {
