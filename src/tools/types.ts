@@ -1,10 +1,12 @@
-import { Action } from '../app/types';
+import { Pointer } from 'src/events/types';
+import { Action, Shape } from '../app/types';
 
 export interface Tool {
   id: string;
   active: boolean;
   code: string;
   description?: string;
+  factory: (pointer: Pointer) => Shape;
   handler: Action<string>;
   icon: Icon;
 }
@@ -17,6 +19,6 @@ export interface Icon {
 }
 
 export interface Tools {
-  activeToolsIds: string[];
   activeTools: Tool[];
+  activeToolsIds: string[];
 }
