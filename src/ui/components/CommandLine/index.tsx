@@ -1,24 +1,16 @@
 import React, { FC } from 'react';
 
-import styles from './styles.css';
-import { Action } from '../../../app/types';
-import { useApp } from '../../../app';
-import { action } from 'overmind';
+import { useApp } from 'src/app/hooks';
+import { CommandLine } from './CommandLine';
 
-interface Props {
-  action: Action<any>;
-}
+export const ConnectedCommandLine: FC = () => {
+  const { actions, state } = useApp();
 
-export const CommandLine: FC<Props> = ({ action }) => (
-  <div className={styles.commandline}>
-    <input type="search" placeholder="type command..." onChange={(e) => action(e.target.value)} />
-  </div>
-);
+  if (!state.ui.commandLine.visible) {
+    return null;
+  }
 
-export default () => {
-  const {
-    actions: { executeCommand }
-  } = useApp();
-
-  <CommandLine action={executeCommand} />;
+  return <CommandLine onChange={actions.executeCommand} />;
 };
+
+export default ConnectedCommandLine;
