@@ -1,29 +1,19 @@
-import React, { Component } from 'react';
+import React, { FC } from 'react';
 
-import styles from './styles.css';
+import { useApp } from 'src/app/hooks';
+import { SearchBox } from './SearchBox';
 
-const SearchBox = ({ filter, searchHandler }) => (
-  <div className={styles.searchBox}>
-    <input
-      id="q"
-      name="q"
-      type="search"
-      placeholder="Search ..."
-      value={filter}
-      onChange={e => searchHandler({ value: e.target.value })}
+export const SearchBoxContainer: FC = () => {
+  const { actions, state } = useApp();
+
+  if (!state.ui.searchBox.visible) {
+    return null;
+  }
+
+  return (
+    <SearchBox
+      filter={state.currentDocument.filter}
+      onSearch={(value: string) => actions.search(value)}
     />
-    <span className="input-group-btn">
-      <button className="btn btn-default" type="submit">
-        <span className="glyphicon glyphicon-search"></span>
-      </button>
-    </span>
-  </div>
-);
-
-export default connect(
-  {
-    filter: state`workspace.filter`,
-    searchHandler: signal`search`
-  },
-  SearchBox
-);
+  );
+};
