@@ -62,7 +62,7 @@ export function getDefaultType(): string {
 export function createCommand(options: Partial<Command> = {}): Command {
   return {
     id: newId(),
-    action: (document) => console.log(document.name),
+    action: () => console.log('not implemented'),
     category: 'test',
     name: 'Print document name',
     ...options
@@ -183,7 +183,9 @@ export function createGrid(): Grid {
   return { width: 10, visible: true, factor: 10, height: 10 };
 }
 
-export function createApplication(options: Partial<Application> = {}): Partial<Application> {
+export function createApplication(
+  options: Partial<Application> = {}
+): Partial<Application> & { id: string; started: Date; user: User } {
   return {
     id: newApplicationName(),
     started: new Date(),
