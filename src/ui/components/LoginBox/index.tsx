@@ -1,19 +1,8 @@
-import React from 'react';
+import React, { FC } from 'react';
 
-const LoginBox = ({ name, email, onLogin, onLogout, onSignup, onError }) => (
-    <form>
-        <input name="name" type="text" />
-        <input name="email" type="email" />
-    </form>
-);
-
-export default connect(
-    {
-        user: state`user`,
-        onLogin: signal`userLoggedIn`,
-        onLogout: signal`userLoggedOut`,
-        onSignup: signal`userSignedUp`,
-        onError: signlas`userError`
-    },
-    LoginBox
+export const LoginBox: FC = () => (
+  <form>
+    <input name="name" type="text" />
+    <input name="email" type="email" />
+  </form>
 );
