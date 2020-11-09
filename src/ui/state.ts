@@ -2,12 +2,12 @@ import { UI } from './types';
 
 export const state: UI = {
   commandLine: {
-    id: 'commandline',
+    id: 'commandLine',
     name: 'Command Line',
     visible: true
   },
   contextMenu: {
-    id: 'contextmenu',
+    id: 'contextMenu',
     name: 'Context Menu',
     position: {
       x: 0,
@@ -16,7 +16,7 @@ export const state: UI = {
     visible: false
   },
   controlPanel: {
-    id: 'controlpanel',
+    id: 'controlPanel',
     name: 'Control Panel',
     visible: true
   },
@@ -44,27 +44,27 @@ export const state: UI = {
     width: 10
   },
   groupPanel: {
-    id: 'grouppanel',
+    id: 'groupPanel',
     name: 'Group Panel',
     visible: true
   },
   layerPanel: {
-    id: 'layerpanel',
+    id: 'layerPanel',
     name: 'Layer Panel',
     visible: true
   },
   menuBar: {
-    id: 'menubar',
+    id: 'menuBar',
     name: 'Menu Bar',
     visible: true
   },
   miniMap: {
-    id: 'minimap',
+    id: 'miniMap',
     name: 'Minimap',
     visible: true
   },
   navBar: {
-    id: 'navbar',
+    id: 'navBar',
     name: 'Navigation Bar',
     visible: true
   },
@@ -74,7 +74,7 @@ export const state: UI = {
     visible: false
   },
   propertyPanel: {
-    id: 'propertypanel',
+    id: 'propertyPanel',
     name: 'Property Panel',
     visible: true
   },
@@ -84,7 +84,7 @@ export const state: UI = {
     visible: true
   },
   sideBar: {
-    id: 'sidebar',
+    id: 'sideBar',
     name: 'Side Bar',
     visible: true
   },
@@ -94,12 +94,12 @@ export const state: UI = {
     visible: true
   },
   statusBar: {
-    id: 'statusbar',
+    id: 'statusBar',
     name: 'Status Bar',
     visible: true
   },
   toolBar: {
-    id: 'toolbar',
+    id: 'toolBar',
     name: 'Tool Bar',
     visible: true
   }
