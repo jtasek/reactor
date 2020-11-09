@@ -1,4 +1,4 @@
-import { OnInitialize } from 'overmind';
+import { OnInitialize } from 'src/app/types';
 
 export const onInitialize: OnInitialize = ({ state, actions, effects }, instance) => {
   // Register commands
