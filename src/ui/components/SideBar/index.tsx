@@ -1,22 +1,14 @@
-import React, { Component } from 'react';
-import styles from './styles.css';
+import React, { FC } from 'react';
 
-export default connect(
-  {
-    visible: state`ui.controls.sidebar.visible`
-  },
-  class SideBar extends Component {
-    render() {
-      return (
-        <div
-          className={styles.sidebar}
-          style={
-            !this.props.visible ? { display: 'none' } : { display: 'flex' }
-          }
-        >
-          {this.props.children}
-        </div>
-      );
-    }
+import { SideBar } from './SideBar';
+import { useState } from 'src/app/hooks';
+
+export const SideBarContainer: FC = ({ children }) => {
+  const { ui } = useState();
+
+  if (!ui.sideBar.visible) {
+    return null;
   }
-);
+
+  return <SideBar>{children}</SideBar>;
+};
