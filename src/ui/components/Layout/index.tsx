@@ -1,58 +1,53 @@
-import React from 'react';
+import React, { FC } from 'react';
 
-import CommandLine from '../CommandLine';
-import ContextMenu from '../ContextMenu';
-import ControlPanel from '../ControlPanel';
-import Cursor from '../Cursor';
-import Dialog from '../Dialog';
-import DataView from '../DataView';
-import Explorer from '../Explorer';
-import GroupPanel from '../GroupPanel';
-import LayerPanel from '../LayerPanel';
-import MenuBar from '../MenuBar';
-import Minimap from '../Minimap';
-import NavBar from '../NavBar';
-import Overlay from '../Overlay';
-import PropertyPanel from '../PropertyPanel';
-import SearchBox from '../SearchBox';
-import SideBar from '../SideBar';
-import StatusBar from '../StatusBar';
-import Surface from '../Surface';
-import Switch from '../Switch';
-import ToolBar from '../ToolBar';
-import DocumentInfo from '../DocumentInfo';
-import styles from './styles.css';
+import { ConnectedCommandLine as CommandLine } from '../CommandLine';
+import { ConnectedContextMenu as ContextMenu } from '../ContextMenu';
+import { ConnectedControlPanel as ControlPanel } from '../ControlPanel';
+import { ConnectedCursor as Cursor } from '../Cursor';
+import { ConnectedDataView as DataView } from '../DataView';
+// import { Dialog } from '../Dialog';
+import { ConnectedDocumentInfo as DocumentInfo } from '../DocumentInfo';
+import { ConnectedExplorer as Explorer } from '../Explorer';
+import { GroupPanelContainer as GroupPanel } from '../GroupPanel';
+import { LayerPanelContainer as LayerPanel } from '../LayerPanel';
+import { MenuBarContainer as MenuBar } from '../MenuBar';
+import { MiniMapContainer as Minimap } from '../MiniMap';
+import { NavBarContainer as NavBar } from '../NavBar';
+// import { Overlay } from '../Overlay';
+import { PropertyPanelContainer as PropertyPanel } from '../PropertyPanel';
+import { SearchBoxContainer as SearchBox } from '../SearchBox';
+import { SideBarContainer as SideBar } from '../SideBar';
+import { StatusBarContainer as StatusBar } from '../StatusBar';
+import { SurfaceContainer as Surface } from '../Surface';
+import { Switch } from '../Switch';
+import { ToolBarContainer as ToolBar } from '../ToolBar';
+import { Layout } from './Layout';
 
-export const Layout = () => (
-  <div className={styles.layout}>
-    <MenuBar
-      actions={[
-        { id: 1, name: 'Home' },
-        { id: 2, name: 'About' },
-        { id: 4, name: 'Contact' }
-      ]}
-    />
-    <CommandLine />
-    <Switch value={true} />
-    <SideBar>
-      <ToolBar />
-      <Explorer>
-        <SearchBox />
-        <NavBar />
-      </Explorer>
-    </SideBar>
-    <Surface />
-    <ContextMenu />
-    <Minimap visible />
-    <DataView />
-    <DocumentInfo />
-    <ControlPanel />
-    <PropertyPanel />
-    <LayerPanel />
-    <GroupPanel />
+export const LayoutContainer: FC = () => {
+  return (
+    <Layout>
+      <MenuBar />
+      <CommandLine />
+      <Switch value={true} onChange={() => console.log('Testing switch')} />
+      <SideBar>
+        <ToolBar />
+        <Explorer>
+          <SearchBox />
+          <NavBar />
+        </Explorer>
+      </SideBar>
+      <Surface />
+      <ContextMenu />
+      <Minimap />
+      <DataView />
+      <DocumentInfo />
+      <ControlPanel />
+      <PropertyPanel />
+      <LayerPanel />
+      <GroupPanel />
 
-    {/* <Cursor /> */}
-    {/* <Dialog
+      {/* <Cursor /> */}
+      {/* <Dialog
       id="modalDialog"
       visible={true}
       title={'Tohle je modalni dialog'}
@@ -60,6 +55,7 @@ export const Layout = () => (
       onCancel={() => alert('cancel')}
       onSubmit={() => alert('submit')}
     /> */}
-    <StatusBar />
-  </div>
-);
+      <StatusBar />
+    </Layout>
+  );
+};
