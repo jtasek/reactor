@@ -1,33 +1,14 @@
 import React, { FC } from 'react';
 
-import { getPropValue } from '../../../app/utils';
-import styles from './styles.css';
+import { useState } from 'src/app/hooks';
+import { DocumentInfo } from './DocumentInfo';
 
-interface Props {
-  name: string;
-  value: any;
-}
+export const ConnectedDocumentInfo: FC = () => {
+  const state = useState();
 
-const DocumentField: FC<Props> = ({ name, value }) => (
-  <tr>
-    <td>{name}: </td>
-    <td>{value}</td>
-  </tr>
-);
+  if (!state.ui.documentInfo.visible) {
+    return null;
+  }
 
-const DocumentInfo: FC<{ document: Document }> = ({ document }) => (
-  <table className={styles.workspaceInfo}>
-    <tbody>
-      {Object.keys(document).map((name, index) => (
-        <DocumentField key={index} name={name} value={getPropValue(workspace[name])} />
-      ))}
-    </tbody>
-  </table>
-);
-
-export default 
-    visible: state`'ui.controls.workspace.visible`,
-    workspace: state`workspace`
-  },
-  DocumentInfo
-);
+  return <DocumentInfo document={state.currentDocument} />;
+};
