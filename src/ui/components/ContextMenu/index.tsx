@@ -1,107 +1,16 @@
 import React, { FC } from 'react';
-import Icon from '../Icon';
-import styles from './styles.css';
-import { useApp } from '../../../app';
 
-function getInlineStyle(size: number, angle: number, active: boolean) {
-  return {
-    backgroundColor: `rgba(0, 0, 0, ${active ? 0.7 : 0.5})`,
-    color: `hsl(${angle}, 100%, ${active ? '75%' : '100%'})`,
-    // Rotate the axis
-    // Move the item from the center
-    // Rotate the item back to its default position
-    transform: `rotate(${angle}deg) translate(${size / 2.5}em) rotate(-${angle}deg)`
-  };
-}
+import { useState } from 'src/app/hooks';
+import { ContextMenu } from './ContextMenu';
 
-function* angles(count: number) {
-  let index = 0;
-  let rotation = 0;
-  const angle = 360 / count;
+export const ConnectedContextMenu: FC = () => {
+  const { ui } = useState();
 
-  while (index < count) {
-    index++;
-    yield (rotation += angle);
+  if (!ui.contextMenu.visible) {
+    return null;
   }
-}
-interface ButtonsProps {
-  tools: any;
-  selectTool: any;
-}
 
-const Buttons: FC<ButtonsProps> = ({ tools, selectTool }) => {
-  const count = Object.keys(tools).length;
-  const anglegen = angles(count);
-
-  return (
-    <>
-      {Object.keys(tools).map((name, index) => {
-        let angle = anglegen.next().value;
-        let tool = tools[name];
-        let style = getInlineStyle(15, angle, tool.active);
-
-        return (
-          <ContextMenuButton
-            key={index}
-            tool={tool}
-            inlineStyles={style}
-            onClickHandler={() => selectTool({ name: name })}
-          />
-        );
-      })}
-    </>
-  );
+  return <ContextMenu position={ui.contextMenu.position} />;
 };
 
-interface ButtonProps {
-  tool: any;
-  inlineStyles: any;
-  onClickHandler: any;
-}
-
-const ContextMenuButton: FC<ButtonProps> = ({ tool, inlineStyles, onClickHandler }) => (
-  <li className={styles.contextMenuButton} style={inlineStyles}>
-    <a
-      href="#"
-      onClick={(e) => {
-        e.preventDefault();
-        onClickHandler();
-      }}
-      title={tool.description}
-    >
-      <Icon {...tool.icon} />
-    </a>
-  </li>
-);
-
-interface MenuProps {
-  position: any;
-  tools: any;
-  selectTool: any;
-}
-
-const ContextMenu: FC<MenuProps> = ({ position, tools, selectTool }) => (
-  <ul
-    className={styles.contextMenu}
-    style={{
-      top: position.y,
-      left: position.x
-    }}
-  >
-    <Buttons tools={tools} selectTool={selectTool} />
-  </ul>
-);
-
-export default () => {
-  const { state, actions } = useApp();
-
-  return (
-    state.ui.controls.contextMenu.visible && (
-      <ContextMenu
-        position={state.ui.controls.contextMenu.position}
-        selectTool={actions.selectTool}
-        tools={state.tools}
-      />
-    )
-  );
-};
+export default ConnectedContextMenu;
