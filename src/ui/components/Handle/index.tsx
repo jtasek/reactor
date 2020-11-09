@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { FC } from 'react';
 import styles from './styles.css';
+import type { Position } from '../../../app/types';
 
-const Handle = ({x, y, size}) => (
-    <circle className={styles.handle} cx={x} cy={y} r={size} />
+export interface Props {
+  position: Position;
+  size: number;
+}
+
+export const Handle: FC<Props> = ({ position, size }) => (
+  <circle className={styles.handle} cx={position.x} cy={position.y} r={size} />
 );
-
-export default Handle;
