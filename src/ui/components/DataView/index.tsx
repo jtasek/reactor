@@ -1,22 +1,13 @@
-import React, { Component } from 'react'
-//import styles from './styles.css'
+import React, { FC } from 'react';
+import { useState } from 'src/app/hooks';
+import { DataView } from './DataView';
 
-/*
- * Displays component data
- */
-export const DataView = ({ visible }) => (
-  <div
-    width="200"
-    height="200"
-    style={!visible ? { display: 'none' } : { display: 'block' }}
-  >
-    sdfg sdfg sdfg sdfg sdfg
-  </div>
-)
+export const ConnectedDataView: FC = () => {
+  const { visible } = useState().ui.dataView;
 
-export default connect(
-  {
-    visible: state`ui.controls.dataview.visible`
-  },
-  DataView
-)
+  if (!visible) {
+    return null;
+  }
+
+  return <DataView sources={['source 1', 'source 2']} />;
+};
