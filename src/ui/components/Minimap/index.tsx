@@ -1,89 +1,20 @@
-import React, { Component } from 'react';
-//import Shape from '../Shape'
-import Grid from '../Grid';
-import Ruler from '../Ruler';
-import Stack from '../../../tools/components/Stack';
-import shapes from '../../../app/computed/shapesWithType';
-import styles from './styles.css';
+import React, { FC } from 'react';
+import { useState } from 'src/app/hooks';
+import { Rulers } from '../Surface/Rulers';
+import { Shapes } from '../Surface/Shapes';
+import { MiniMap } from './MiniMap';
 
-//import collect from './collect'
-import {
-  Circle as circle,
-  Clone as clone,
-  //   Image as image,
-  Line as line,
-  Move as move,
-  Pen as pen,
-  Rectangle as rect,
-  Select as select,
-  Text as text,
-  Zoom as zoom
-} from '../../../tools/index.js';
+export const MiniMapContainer: FC = () => {
+  const { ui } = useState();
 
-const components = {
-  circle,
-  clone,
-  //    image,
-  line,
-  move,
-  pen,
-  rect,
-  select,
-  text,
-  zoom
+  if (!ui.miniMap.visible) {
+    return null;
+  }
+
+  return (
+    <MiniMap size={{ width: 200, height: 200 }}>
+      <Rulers />
+      <Shapes />
+    </MiniMap>
+  );
 };
-
-function getComponentByType(type: string) {
-  return components[type];
-}
-
-const Rulers = connect(
-  {
-    rulers: state`workspace.rulers`
-  },
-  ({ rulers }) => (
-    <g id="rulers">{/*{rulers.map(ruler => <Ruler key={ruler.id} {...ruler} scale={1} />)}*/}</g>
-  )
-);
-
-const Shapes = connect(
-  {
-    shapes: shapes
-  },
-  ({ shapes }) => (
-    <g id="shapes">
-      {shapes.map((shape) =>
-        React.createElement(
-          getComponentByType(shape.type),
-          Object.assign({
-            key: shape.id,
-            id: shape.id,
-            color: 'rgba(255,255,255,.5)'
-          })
-        )
-      )}
-    </g>
-  )
-);
-
-export const Minimap = ({ visible }: { visible: boolean }) => (
-  <svg
-    className={styles.minimap}
-    width="200"
-    height="200"
-    viewBox="0 0 1000 1000"
-    style={!visible ? { display: 'none' } : { display: 'block' }}
-  >
-    <Grid key="map-grid" />
-    {/* <Rulers /> */}
-    <Shapes />
-    {/* <Stack /> */}
-  </svg>
-);
-
-export default connect(
-  {
-    visible: state`ui.controls.minimap.visible`
-  },
-  Minimap
-);
