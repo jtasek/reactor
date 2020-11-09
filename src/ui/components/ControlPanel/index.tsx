@@ -1,63 +1,19 @@
-import React, { Component } from 'react';
+import React, { FC } from 'react';
 
-import Icon from '../Icon';
-import styles from './styles';
+import { ControlPanel } from './ControlPanel';
+import { useApp } from 'src/app/hooks';
 
-const vicons = {
-  true: {
-    group: 'action',
-    name: 'visibility',
-    color: 'rgba(255,255,255)',
-    size: 16
-  },
-  false: {
-    group: 'action',
-    name: 'visibility_off',
-    color: 'rgba(255,255,255)',
-    size: 16
-  }
-};
+export const ConnectedControlPanel: FC = () => {
+  const { state, actions } = useApp();
 
-const ControlPanelItem = ({ control, onChangeHandler }) => (
-  <li className={styles.controlItem}>
-    <label>
-      <input
-        type="checkbox"
-        value={control.name}
-        checked={control.visible}
-        onChange={onChangeHandler}
-      />
-      {control.name}
-      <Icon {...vicons[control.visible]} key="visible" />
-    </label>
-  </li>
-);
-
-const ControlPanel = ({ visible, controls, controlVisibilityChanged }) => {
-  if (!visible) {
+  if (!state.ui.controlPanel.visible) {
     return null;
   }
 
   return (
-    <ul className={styles.controlPanel}>
-      {Object.keys(controls).map((name, index) => (
-        <ControlPanelItem
-          key={index}
-          control={controls[name]}
-          onChangeHandler={e =>
-            controlVisibilityChanged({ id: index, name: name })
-          }
-        />
-      ))}
-    </ul>
+    <ControlPanel
+      controls={Object.values(state.ui)}
+      onChange={actions.ui.toggleControlVisibility}
+    />
   );
 };
-
-export default connect(
-  {
-    visible: state`ui.controls.controlpanel.visible`,
-    controls: state`ui.controls`,
-    controlVisibilityChanged: signal`ui.controlVisibilityChanged`
-  },
-  ControlPanel
-);
