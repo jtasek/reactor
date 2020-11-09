@@ -1,5 +1,4 @@
-import { Action } from 'overmind';
-import { Position } from '../../app/types';
+import { Action, Position } from '../../app/types';
 
 export const setStartPosition: Action<Position> = ({ state }, coords) => {
   state.events.pointer.startPosition = coords;
