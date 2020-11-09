@@ -1,51 +1,41 @@
-import React from 'react'
-import activeTools from '../../computed/activeTools'
+import React, { FC } from 'react';
+import { Tool } from 'src/tools/types';
+import { useState } from 'src/app/hooks';
 
-// Connected components
-import Circle from '../Circle'
-import Clone from '../Clone'
-import Image from '../Image'
-import Line from '../Line'
-import Move from '../Move'
-import Pen from '../Pen'
-import Rectangle from '../Rectangle'
-import Select from '../Select'
-import Text from '../Text'
-import Zoom from '../Zoom'
+import { DesignCircle as Circle } from '../Circle';
+import { DesignImage as Image } from '../Image';
+import { DesignLine as Line } from '../Line';
+import { DesignPen as Pen } from '../Pen';
+import { DesignRect as Rect } from '../Rect';
+import { DesignSelect as Select } from '../Select';
+import { DesignText as Text } from '../Text';
 
 const components = {
-  Circle,
-  Clone,
-  Image,
-  Line,
-  Move,
-  Pen,
-  Rectangle,
-  Select,
-  Text,
-  Zoom
+  circle: Circle,
+  image: Image,
+  line: Line,
+  pen: Pen,
+  rect: Rect,
+  select: Select,
+  text: Text
+};
+
+function getComponentByType(type: string): FC {
+  return components[type];
 }
 
-const renderTools = tools => {
-  tools.map(tool => components[tool])
+interface Props {
+  tools: Tool[];
 }
 
-function getComponentByType(type: string) {
-  return components[type]
-}
-
-const Stack = ({ tools }) => {
-console.dir(tools)
-return (
+export const Stack: FC<Props> = ({ tools }) => (
   <g id="tools">
-    {tools.map(tool => React.createElement(getComponentByType(tool), { key: tool }))}
+    {Object.values(tools).map((tool) => React.createElement(getComponentByType(tool.code)))}
   </g>
-)
-}
+);
 
-export default connect(
-  {
-    tools: activeTools
-  },
-  Stack
-)
+export const DynamicStack: FC = () => {
+  const { activeTools } = useState().tools;
+
+  return <Stack tools={activeTools} />;
+};
