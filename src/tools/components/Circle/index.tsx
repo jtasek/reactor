@@ -1,6 +1,8 @@
 import React, { FC } from 'react';
 import { useState } from 'src/app/hooks';
-import { Point } from '../../../app/types';
+import type { Pointer } from 'src/events/types';
+import type { Tool } from 'src/tools/types';
+import type { Point } from '../../../app/types';
 import styles from '../../styles.css';
 
 /**
@@ -14,6 +16,7 @@ import styles from '../../styles.css';
 **/
 
 interface Props {
+  code: string;
   name: string;
   cx: number;
   cy: number;
@@ -22,8 +25,9 @@ interface Props {
   type: string;
 }
 
-export const createCircleProps = ({ centre, radius }: { centre: Point; radius: number }): Props => {
+export const createCircle = ({ centre, radius }: Pointer): Props => {
   return {
+    code: 'circle',
     cx: centre.x,
     cy: centre.y,
     r: radius,
@@ -33,14 +37,44 @@ export const createCircleProps = ({ centre, radius }: { centre: Point; radius: n
   };
 };
 
-export const Circle: FC<Props> = ({ name, cx, cy, r, selected }) => {
+export const Circle: FC<Props> = ({ code, cx, cy, r, selected }) => {
   const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
-  return <circle key="circle" data-cy={name} className={className} cx={cx} cy={cy} r={r} />;
+  return (
+    <circle
+      fill="none"
+      stroke="grey"
+      strokeWidth={2}
+      key="circle"
+      data-cy={code}
+      className={className}
+      cx={cx}
+      cy={cy}
+      r={r}
+    />
+  );
 };
 
-export const DesignCircle: FC = () => {
+export const CircleTool: FC = () => {
   const { pointer } = useState().events;
 
-  return <Circle {...createCircleProps(pointer)} />;
+  return <Circle key="circle" {...createCircle(pointer)} />;
 };
+
+export default {
+  code: 'circle',
+  name: 'Circle',
+  description: 'Draws circle',
+  factory: createCircle,
+  tool: CircleTool,
+  component: Circle,
+  icon: {
+    group: 'image',
+    name: 'panorama_fish_eye',
+    color: 'rgb(144, 254, 214)',
+    size: 24
+  },
+  regex: /(?<toolCode>circle)\((?<cx>\d+),(?<cy>\d+),(?<radius>\d+)\)/,
+  shortcut: 'ctrl+c',
+  type: 'circle'
+} as Tool;

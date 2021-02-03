@@ -1,14 +1,17 @@
-import { Pointer } from 'src/events/types';
+import { FC } from 'react';
+import { Keyboard, Pointer } from 'src/events/types';
 import { Action, Shape } from '../app/types';
 
 export interface Tool {
-  id: string;
-  active: boolean;
   code: string;
+  component: FC<any>;
   description?: string;
-  factory: (pointer: Pointer) => Shape;
-  handler: Action<string>;
-  icon: Icon;
+  factory?: (pointer: Pointer, keyboard: Keyboard) => any;
+  handler?: Action<string>;
+  icon?: Icon;
+  regex: RegExp;
+  shortcut: string;
+  tool: FC<any>;
 }
 
 export interface Icon {

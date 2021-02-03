@@ -1,18 +1,20 @@
 import { Action } from 'src/app/types';
+import { getToolByType } from './components';
 
-export const activateTool: Action<string> = ({ state: { tools } }, toolId) => {
-  tools.activeToolsIds.push(toolId);
+export const activateTool: Action<string> = ({ state: { tools }, actions }, toolId) => {
+  tools.activeToolsIds = [toolId];
+  actions.ui.hideContextMenu();
 };
 
 export const deactivateTool: Action<string> = ({ state: { tools } }, toolId) => {
   const index = tools.activeToolsIds.indexOf(toolId);
   if (index > -1) {
-    tools.activeTools.splice(index, 1);
+    tools.activeToolsIds.splice(index, 1);
   }
 };
 
 export const resetTools: Action = ({ state: { tools } }) => {
-  tools.activeTools.length = 0;
+  tools.activeToolsIds = [];
 };
 
 export const zoomIn: Action<number> = ({ state: { currentDocument } }, step = 1) => {
@@ -29,4 +31,20 @@ export const zoomReset: Action<number> = ({ state: { currentDocument } }) => {
 
 export const zoom: Action<number> = ({ state: { currentDocument } }, scale = 1) => {
   currentDocument.camera.scale = scale;
+};
+
+export const executeToolCommand: Action = ({ state, actions }) => {
+  const { activeToolsIds } = state.tools;
+  // Get tool command
+  for (const toolId of activeToolsIds) {
+    const tool = getToolByType(toolId);
+    console.log(`Execute command: ${toolId}`);
+
+    if (tool?.factory) {
+      // Create new shape
+      const options = tool.factory(state.events.pointer, state.events.keyboard);
+      // Insert new shape into store
+      actions.addShape({ ...options, selected: false });
+    }
+  }
 };

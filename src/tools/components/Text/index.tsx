@@ -1,8 +1,10 @@
-import React, { FC, useState } from 'react';
-import { Pointer } from 'src/events/types';
-import { useState as useAppState } from 'src/app/hooks';
+import React, { FC, useEffect, useRef } from 'react';
+import { Position } from 'src/app/types';
 
-import styles from '../../styles.css';
+import { useActions, useState as useAppState } from 'src/app/hooks';
+
+import styles from './styles.css';
+import { Keyboard, Pointer } from 'src/events/types';
 
 /**
  * Draws a text in current position
@@ -26,44 +28,98 @@ interface Props {
   value: string;
   selected: boolean;
   type: string;
-  onChange: (value: string) => void;
+  onStartTyping: () => void;
+  onTyping: (value: string) => void;
+  onEndTyping: () => void;
 }
 
-export const createText = ({ position }: Pointer): Props => {
+export function createText(
+  { position }: Pointer,
+  { text }: Keyboard
+): Pick<Props, 'name' | 'x' | 'y' | 'value' | 'selected' | 'type'> {
   return {
     x: position.x,
     y: position.y,
     name: 'Text x',
     selected: true,
     type: 'text',
-    value: '',
-    onChange: () => {
-      console.log('not implemented');
-    }
+    value: text
   };
+}
+
+export const Text: FC<Props> = ({
+  name,
+  x,
+  y,
+  value,
+  selected,
+  onStartTyping,
+  onTyping,
+  onEndTyping
+}) => {
+  if (!selected) {
+    const lineHeight = 22;
+    return (
+      <text key={name} className={styles.input} x={x} y={y + lineHeight}>
+        {value}
+      </text>
+    );
+  }
+
+  return (
+    <g>
+      <foreignObject width="100%" height="100%" x={x} y={y}>
+        <form>
+          <input
+            autoFocus
+            type="text"
+            data-cy={name}
+            className={styles.input}
+            placeholder="Type something..."
+            value={value}
+            onFocus={(e) => onStartTyping()}
+            onBlur={(e) => onEndTyping()}
+            onChange={(e) => onTyping(e.currentTarget.value)}
+          />
+        </form>
+      </foreignObject>
+    </g>
+  );
 };
 
-export const Text: FC<Props> = ({ name, x, y, value, onChange }) => (
-  /*<text key="text" style={inlineStyles} x={position.x} y={position.y}>Tohle je test string</text>*/
-  <g>
-    <foreignObject width="100%" height="100%" x={x} y={y}>
-      <form>
-        <input
-          type="text"
-          data-cy={name}
-          className="text-layer-input"
-          placeholder="Type something..."
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      </form>
-    </foreignObject>
-  </g>
-);
+export const TextTool: FC = () => {
+  const { pointer, keyboard } = useAppState().events;
+  const { startTyping, typing, endTyping } = useActions().events;
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    inputRef?.current?.focus();
+  });
 
-export const DesignText: FC = () => {
-  const { pointer } = useAppState().events;
-  const [value, setValue] = useState<string>('');
+  return (
+    <Text
+      {...createText(pointer, keyboard)}
+      value={keyboard.text}
+      onStartTyping={startTyping}
+      onTyping={typing}
+      onEndTyping={endTyping}
+    />
+  );
+};
 
-  return <Text {...createText(pointer)} value={value} onChange={(value) => setValue(value)} />;
+export default {
+  code: 'text',
+  name: 'Text',
+  description: 'Types a text',
+  factory: createText,
+  tool: TextTool,
+  component: Text,
+  icon: {
+    group: 'editor',
+    name: 'title',
+    color: 'rgba(255,255,255)',
+    size: 24
+  },
+  regex: /(?<toolCode>text)\((?<x>[\d]+),(?<y>[\d]+),'(?<text>[\w]+)'\)/,
+  shortcut: 't',
+  type: 'text'
 };

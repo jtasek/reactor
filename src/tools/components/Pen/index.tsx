@@ -1,9 +1,10 @@
 import React, { FC } from 'react';
-import { Point } from 'src/app/types';
+import type { Point } from 'src/app/types';
 import { stringifyPath } from 'src/app/utils';
-import { Pointer } from 'src/events/types';
+import type { Pointer } from 'src/events/types';
 import { useState } from 'src/app/hooks';
 import styles from '../../styles.css';
+import type { Tool } from 'src/tools/types';
 
 /** 
  * Draws a line based on path
@@ -34,8 +35,26 @@ export const Pen: FC<Props> = ({ points, selected }) => {
   return <polyline key="line" className={className} points={stringifyPath(points)} />;
 };
 
-export const DesignPen: FC = () => {
+export const PenTool: FC = () => {
   const { pointer } = useState().events;
 
   return <Pen {...createPen(pointer)} selected={true} />;
 };
+
+export default {
+  code: 'pen',
+  name: 'Pen',
+  description: 'Draws a curve line',
+  factory: createPen,
+  tool: PenTool,
+  component: Pen,
+  icon: {
+    group: 'content',
+    name: 'create',
+    color: 'rgba(255,255,255)',
+    size: 24
+  },
+  regex: /(?<toolCode>pen)\((?<path>[\d, ]+)\)/,
+  shortcut: 'p',
+  type: 'pen'
+} as Tool;

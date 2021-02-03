@@ -1,7 +1,9 @@
 import React, { FC } from 'react';
-import { Size } from 'src/app/types';
-import { Pointer } from 'src/events/types';
+import type { Position, Size } from 'src/app/types';
+import type { Pointer } from 'src/events/types';
 import { useState } from 'src/app/hooks';
+import type { Tool } from 'src/tools/types';
+import styles from '../../styles.css';
 
 /**
  * Draws a rectange based on position and size
@@ -19,41 +21,56 @@ import { useState } from 'src/app/hooks';
 interface Props {
   name: string;
   position: Position;
-  radius: number;
   size: Size;
   selected: boolean;
   type: 'rect';
 }
 
-export function createRect({ position, size, radius }): Props {
+export function createRect({ topLeftPosition, size }: Pointer): Props {
   return {
     name: 'Rectangle x',
-    position,
-    radius,
-    size,
+    position: topLeftPosition,
     selected: true,
+    size,
     type: 'rect'
   };
 }
 
-export const Rect: FC<Partial<Pointer>> = ({ position, size, radius }) => {
-  //const className = shape.selected ? `${styles.shape} ${styles.selected}` : styles.shape;
+export const Rect: FC<Props> = ({ position, size, selected }) => {
+  const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
   return (
     <rect
-      //className={className}
+      fill="none"
+      className={className}
       x={position?.x}
       y={position?.y}
       width={size?.width}
       height={size?.height}
-      rx={radius}
-      ry={radius}
     />
   );
 };
 
-export const DesignRect: FC = () => {
+export const RectTool: FC = () => {
   const { pointer } = useState().events;
 
-  return <Rect key="rect-design" {...pointer} />;
+  return <Rect {...createRect(pointer)} />;
 };
+
+export default {
+  code: 'rect',
+  name: 'Rectangle',
+  description: 'Draws a rectangle or square',
+  factory: createRect,
+  tool: RectTool,
+  component: Rect,
+  icon: {
+    group: 'image',
+    name: 'crop_square',
+    color: 'rgba(255,255,255)',
+    size: 24
+  },
+  regex: /(?<toolCode>rect)\((?<x1>[\d]+),(?<y1>[\d]+),(?<x2>[\d]+),(?<y2>[\d]+)\)/,
+  shortcut: 'r',
+  type: 'rect'
+} as Tool;

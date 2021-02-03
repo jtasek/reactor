@@ -1,7 +1,8 @@
 import React, { FC } from 'react';
 import { useState } from 'src/app/hooks';
-import { Point, Size } from 'src/app/types';
-import { Pointer } from 'src/events/types';
+import type { Point, Size } from 'src/app/types';
+import type { Pointer } from 'src/events/types';
+import type { Tool } from 'src/tools/types';
 import styles from '../../styles.css';
 
 /**
@@ -45,8 +46,26 @@ export const Ellipse: FC<Props> = ({ name, cx, cy, rx, ry, selected }) => {
   );
 };
 
-export const DynamicEllipse: FC = () => {
+export const EllipseTool: FC = () => {
   const { pointer } = useState().events;
 
   return <Ellipse {...createEllipse(pointer)} />;
 };
+
+export default {
+  code: 'ellipse',
+  name: 'Ellipse',
+  description: 'Draws ellipse',
+  //factory: createEllipse,
+  tool: EllipseTool,
+  component: Ellipse,
+  icon: {
+    group: 'image',
+    name: 'panorama_fish_eye',
+    color: 'rgb(144, 254, 214)',
+    size: 24
+  },
+  regex: /(?<toolCode>ellipse)\((?<cx>\d+),(?<cy>\d+),(?<radius>\d+)\)/,
+  shortcut: 'ctrl+e',
+  type: 'ellipse'
+} as Tool;
