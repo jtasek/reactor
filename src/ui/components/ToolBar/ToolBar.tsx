@@ -1,17 +1,27 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
 import { ToolBarButton } from './ToolBarButton';
-import { Tool } from 'src/tools/types';
+import { useState } from 'src/app/hooks';
+import { useTools } from '../../../tools/components';
 
 export interface Props {
-  tools: Tool[];
   onClick: (toolId: string) => void;
 }
 
-export const ToolBar: FC<Props> = ({ tools, onClick }) => (
-  <ul className={styles.toolBar}>
-    {Object.entries(tools).map(([name, tool]) => (
-      <ToolBarButton key={name} tool={tool} onClick={onClick} />
-    ))}
-  </ul>
-);
+export const ToolBar: FC<Props> = ({ onClick }) => {
+  const { tools } = useState();
+  const registeredTools = useTools();
+
+  return (
+    <ul className={styles.toolBar}>
+      {registeredTools.map((item) => (
+        <ToolBarButton
+          key={item.code}
+          tool={item}
+          active={tools.activeToolsIds.includes(item.code)}
+          onClick={onClick}
+        />
+      ))}
+    </ul>
+  );
+};

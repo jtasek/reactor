@@ -1,5 +1,6 @@
 import React, { FC } from 'react';
-import { useState } from 'src/app/hooks';
+import { useActions, useState } from 'src/app/hooks';
+import { useTools } from 'src/tools/components';
 import { Tool } from 'src/tools/types';
 
 import { ContextMenuItem } from './ContextMenuItem';
@@ -27,26 +28,25 @@ function* angles(count: number): Generator<number> {
 }
 
 interface Props {
-  tools: Tool[];
+  items: Tool[];
 }
 
-export const ContextMenuItems: FC<Props> = ({ tools }) => {
-  const count = Object.keys(tools).length;
-  const anglegen = angles(count);
+export const ContextMenuItems: FC<Props> = ({ items }) => {
+  const { tools } = useActions();
+  const anglegen = angles(items.length);
 
   return (
     <>
-      {Object.keys(tools).map((name, index) => {
+      {Object.values(items).map((item) => {
         const angle = anglegen.next().value;
-        const tool = tools[name];
-        const style = getInlineStyle(15, angle, tool.active);
+        const style = getInlineStyle(12, angle, false);
 
         return (
           <ContextMenuItem
-            key={index}
-            tool={tool}
+            key={item.code}
+            tool={item}
             inlineStyles={style}
-            onClick={() => console.log('not implemented')}
+            onClick={() => tools.activateTool(item.code)}
           />
         );
       })}
@@ -55,7 +55,7 @@ export const ContextMenuItems: FC<Props> = ({ tools }) => {
 };
 
 export const ConnectedContextMenuItems: FC = () => {
-  // const { commands } = useState().tools;
+  const tools = useTools();
 
-  return <ContextMenuItems tools={[]} />;
+  return <ContextMenuItems items={tools} />;
 };

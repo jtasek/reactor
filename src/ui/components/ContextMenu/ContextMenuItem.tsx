@@ -19,7 +19,7 @@ export const ContextMenuItem: FC<Props> = ({ tool, inlineStyles, onClick }) => (
       }}
       title={tool.description}
     >
-      <Icon {...tool.icon} />
+      <Icon icon={tool.icon} />
     </a>
   </li>
 );

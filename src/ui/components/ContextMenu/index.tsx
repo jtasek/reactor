@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 
 import { useState } from 'src/app/hooks';
-import { ContextMenu } from './ContextMenu';
+import { ConnectedContextMenu as ContextMenu } from './ContextMenu';
 
 export const ConnectedContextMenu: FC = () => {
   const { ui } = useState();
@@ -10,7 +10,7 @@ export const ConnectedContextMenu: FC = () => {
     return null;
   }
 
-  return <ContextMenu position={ui.contextMenu.position} />;
+  return <ContextMenu />;
 };
 
 export default ConnectedContextMenu;

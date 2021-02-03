@@ -9,7 +9,6 @@ export interface Props {
 
 export const MenuBar: FC<Props> = ({ actions }) => (
   <ul className={styles.menuBar}>
-    Menu:
     {actions.map((action) => (
       <MenuBarItem key={action.label} label={action.label} url={action.url} />
     ))}

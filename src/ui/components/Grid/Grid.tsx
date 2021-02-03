@@ -1,6 +1,7 @@
 import React, { FC } from 'react';
-import styles from './styles.css';
 import { Camera, Grid as GridType } from 'src/app/types';
+
+import styles from './styles.css';
 
 function getGridPath(width: number, height: number, scale: number) {
   return `M ${width * scale} 0 L 0 0 0 ${height * scale}`;
@@ -21,7 +22,7 @@ export const Grid: FC<Props> = ({ grid, camera }) => {
   const transform = `translate(${camera.position.x}, ${camera.position.y})`;
 
   return (
-    <g width="100%" height="100%">
+    <g>
       <defs>
         <pattern
           id="smallGrid"
@@ -29,7 +30,7 @@ export const Grid: FC<Props> = ({ grid, camera }) => {
           height={smallGridHeight}
           patternUnits="userSpaceOnUse"
         >
-          <path d={smallGridPath} stroke="gray" strokeWidth="0.5" fill="none" />
+          <path d={smallGridPath} className={styles['grid-lines-small']} />
         </pattern>
         <pattern
           id="grid"
@@ -39,10 +40,10 @@ export const Grid: FC<Props> = ({ grid, camera }) => {
           patternTransform={transform}
         >
           <rect width={gridWidth} height={gridHeight} fill="url(#smallGrid)" />
-          <path d={gridPath} stroke="gray" strokeWidth="1" fill="none" />
+          <path d={gridPath} className={styles['grid-lines-large']} />
         </pattern>
       </defs>
-      <rect width="100%" height="100%" fill="url(#grid)" />
+      <rect className={styles.grid} fill="url(#grid)" />
     </g>
   );
 };

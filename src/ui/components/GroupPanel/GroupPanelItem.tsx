@@ -39,10 +39,8 @@ export const GroupPanelItem: FC<Props> = ({ group }) => (
     <label>
       <input type="checkbox" value={group.name} checked={group.visible} />
       {group.name}
-      {group.visible && <Icon {...visibleIcon} />}
-      {!group.visible && <Icon {...hiddenIcon} />}
-      {group.locked && <Icon {...lockedIcon} />}
-      {!group.visible && <Icon {...openIcon} />}
+      <Icon icon={group.visible ? visibleIcon : hiddenIcon} />
+      <Icon icon={group.locked ? lockedIcon : openIcon} />
     </label>
   </li>
 );

@@ -41,7 +41,7 @@ export const LayerPanelItem: FC<Props> = ({ layer }) => (
       <input type="checkbox" value={layer.name} checked={layer.visible} />
       {layer.name}
     </label>
-    {layer.visible ? <Icon {...visibleIcon} /> : <Icon {...hiddenIcon} />}
-    {layer.locked ? <Icon {...lockedIcon} /> : <Icon {...openIcon} />}
+    <Icon icon={layer.visible ? visibleIcon : hiddenIcon} />
+    <Icon icon={layer.locked ? lockedIcon : openIcon} />
   </li>
 );

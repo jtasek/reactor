@@ -1,36 +1,38 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
-// import { Overlay } from '../Overlay';
+import { Overlay } from '../Overlay/Overlay';
 
 import { Icon } from '../Icon';
 
 const closeIcon = { group: 'content', name: 'clear', color: 'none', size: 18 };
 
-export const CloseButton: FC = () => <Icon {...closeIcon} />;
+export const CloseButton: FC = () => <Icon icon={closeIcon} />;
 
 export interface Props {
+  title: string;
+  description: string;
   visible: boolean;
-  stateChart: any;
+  stateChart?: any;
 }
 
-export const Dialog: FC<Props> = ({ visible, stateChart }) => {
+export const Dialog: FC<Props> = ({ title, description, visible, stateChart, children }) => {
   if (!visible) {
     return null;
   }
 
-  if (!stateChart) {
+  /*  if (!stateChart) {
     throw Error('Please provide a state chart');
   }
-
+*/
   return (
     <div style={{ width: '100%', height: '100%', position: 'absolute' }}>
-      {/* <Overlay /> */}
+      <Overlay />
       <div className={styles.dialog}>
         <CloseButton />
-        <h4>props.title</h4>
-        <p>props.description</p>
+        <h4>{title}</h4>
+        <p>{description}</p>
         <form>
-          <fieldset>props.children</fieldset>
+          <fieldset>{children}</fieldset>
         </form>
         <div className={styles.actions}>
           <button data-action="close">Close</button>

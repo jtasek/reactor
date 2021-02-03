@@ -1,18 +1,21 @@
-#smallGrid {
-	fill: none;
-	stroke-width: 0.5;
-	stroke: gray;
+.grid {
+  height: 100%;
+  width: 100%;
 }
 
-#grid {
-	fill: none;
-	stroke-width: 1;
-	stroke: gray;
+.grid-lines-small {
+  fill: none;
+  stroke-width: 0.5;
+  stroke: gray;
 }
 
+.grid-lines-large {
+  fill: none;
+  stroke-width: 1;
+  stroke: gray;
+}
 
 /*Light Theme */
-
 
 /*
 	.grid-lines-small {
@@ -37,31 +40,27 @@
 	}
     */
 
-
 /* Blueprint Theme */
-
+/*
 .grid-lines-small {
-	fill: none;
-	opacity: .3;
-	stroke-width: .5;
-	stroke: #fff;
+  fill: none;
+  stroke-width: 0.5;
+  stroke: #fff;
 }
 
 .grid-lines-large {
-	fill: none;
-	opacity: .3;
-	stroke-width: 1;
-	stroke: #fff;
+  fill: none;
+  stroke-width: 1;
+  stroke: #fff;
 }
 
 .background {
-	/*background-color: #104891;*/
-	background-color: #4078c0;
-	height: 100%;
-	margin: auto 0;
-	overflow: hidden;
+  background-color: #4078c0;
+  height: 100%;
+  margin: auto 0;
+  overflow: hidden;
 }
-
+*/
 
 /* Dark Theme 
 	.grid-lines-small {

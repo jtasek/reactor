@@ -11,5 +11,13 @@ export const MenuBarContainer: FC = () => {
     return null;
   }
 
-  return <MenuBar actions={[]} />;
+  return (
+    <MenuBar
+      actions={[
+        { label: 'Documents', url: 'documents' },
+        { label: 'About', url: 'about' },
+        { label: 'Profile', url: 'profile' }
+      ]}
+    />
+  );
 };

@@ -2,8 +2,12 @@ import { Action } from 'src/app/types';
 
 import { Position } from '../app/types';
 
-export const displayContextMenu: Action<Position> = ({ state }, position) => {
+export const displayContextMenu: Action<Position> = ({ state }) => {
   state.ui.contextMenu.visible = true;
+};
+
+export const hideContextMenu: Action = ({ state }) => {
+  state.ui.contextMenu.visible = false;
 };
 
 export const showControl: Action<string> = ({ state }, controlId: string) => {

@@ -2,5 +2,6 @@
   display: flex;
   filter: url(#filter);
   flex-direction: column;
-  height: 100%;
+  min-height: 100%;
+  min-width: 100%;
 }

@@ -9,5 +9,5 @@ export const ToolBarContainer: FC = () => {
     return null;
   }
 
-  return <ToolBar tools={[]} onClick={actions.tools.activateTool} />;
+  return <ToolBar onClick={actions.tools.activateTool} />;
 };

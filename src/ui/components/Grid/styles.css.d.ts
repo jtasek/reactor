@@ -1,8 +1,8 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
-    camera: string;
-    surface: string;
-    'surface-black': string;
+    grid: string;
+    'grid-lines-large': string;
+    'grid-lines-small': string;
   }
 }
 

@@ -13,7 +13,7 @@ export const ZoomSlider: FC = () => {
     <Slider
       min={0.1}
       max={5.0}
-      step={0.1}
+      step={0.05}
       value={scale}
       onChange={(value: number) => actions.tools.zoom(value)}
     />

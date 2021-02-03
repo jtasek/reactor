@@ -5,7 +5,7 @@ import { ConnectedContextMenu as ContextMenu } from '../ContextMenu';
 import { ConnectedControlPanel as ControlPanel } from '../ControlPanel';
 import { ConnectedCursor as Cursor } from '../Cursor';
 import { ConnectedDataView as DataView } from '../DataView';
-// import { Dialog } from '../Dialog';
+import { Dialog } from '../Dialog';
 import { ConnectedDocumentInfo as DocumentInfo } from '../DocumentInfo';
 import { ConnectedExplorer as Explorer } from '../Explorer';
 import { GroupPanelContainer as GroupPanel } from '../GroupPanel';
@@ -48,13 +48,14 @@ export const LayoutContainer: FC = () => {
 
       {/* <Cursor /> */}
       {/* <Dialog
-      id="modalDialog"
-      visible={true}
-      title={'Tohle je modalni dialog'}
-      content={'Nejake kecicky....'}
-      onCancel={() => alert('cancel')}
-      onSubmit={() => alert('submit')}
-    /> */}
+        description="Description"
+        visible={true}
+        title={'Tohle je modalni dialog'}
+        // onCancel={() => alert('cancel')}
+        //  onSubmit={() => alert('submit')}
+      >
+        <p>Nejake kecicky....</p>
+      </Dialog> */}
       <StatusBar />
     </Layout>
   );

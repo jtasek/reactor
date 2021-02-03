@@ -24,7 +24,7 @@ export const StatusBarContainer: FC = () => {
       <StatusBarSlot name="message">{documentName}</StatusBarSlot>
       <StatusBarSlot name="selection">{`selection: ${selectedShapeCount}`}</StatusBarSlot>
       <StatusBarSlot name="position">{`position: [${position.x}, ${position.y}]`}</StatusBarSlot>
-      <StatusBarSlot name="offset">{`size: [${offset.x}, ${offset.y}]`}</StatusBarSlot>
+      <StatusBarSlot name="offset">{`offset: [${offset.x}, ${offset.y}]`}</StatusBarSlot>
       <StatusBarSlot name="tools">
         <ZoomSlider />
       </StatusBarSlot>

@@ -13,8 +13,10 @@ const Template: Story<Props> = (args) => <Icon {...args} />;
 
 export const Default = Template.bind({});
 Default.args = {
-  group: 'action',
-  name: 'visibility',
-  color: 'rgba(255,255,255)',
-  size: 16
+  icon: {
+    group: 'action',
+    name: 'visibility',
+    color: 'rgba(255,255,255)',
+    size: 16
+  }
 };

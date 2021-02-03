@@ -3,17 +3,18 @@ import React, { FC } from 'react';
 import styles from './styles.css';
 
 import { Icon } from '../Icon';
-import { Tool } from '../../../tools/types';
+import type { Tool } from '../../../tools/types';
 
 interface Props {
   tool: Tool;
+  active: boolean;
   onClick: (toolId: string) => void;
 }
 
-export const ToolBarButton: FC<Props> = ({ tool, onClick }) => (
-  <li className={styles.toolBarButton} style={tool.active ? { opacity: '1' } : {}}>
+export const ToolBarButton: FC<Props> = ({ tool, active, onClick }) => (
+  <li className={styles.toolBarButton} style={active ? { opacity: '1' } : {}}>
     <a href="#" onClick={() => onClick(tool.code)} title={tool.description}>
-      <Icon {...tool.icon} />
+      <Icon icon={tool.icon} />
     </a>
   </li>
 );
