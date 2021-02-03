@@ -37,7 +37,6 @@ number deltaX
 number deltaY
 number deltaZ */
 const log = (e) => {
-  debugger;
   console.log(`clientX: ${e.target.clientX}, clientY: ${e.target.clientY}`);
 };
 

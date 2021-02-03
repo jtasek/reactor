@@ -9,7 +9,6 @@ export interface Props {
 }
 
 export const PropertyPanel: FC<Props> = ({ shapes }) => {
-  debugger;
   if (!shapes) {
     return null;
   }

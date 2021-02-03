@@ -1,7 +1,6 @@
 import { Shape } from '../../../app/types';
 
 export function getCommonProperties(shapes: Shape[]): [string, any][] {
-  debugger;
   if (!shapes || shapes.length == 0) {
     return [];
   }
