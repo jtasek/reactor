@@ -1,60 +1,44 @@
-const path = require('path');
 const webpack = require('webpack');
+const path = require('path');
+const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
 const { NODE_ENV = 'development' } = process.env;
-const nodeExternals = require('webpack-node-externals');
 
 module.exports = {
   devtool: 'source-map',
   entry: [
     // activate HMR for React
-    'react-hot-loader/patch',
-    'webpack-hot-middleware/client',
-    'eventsource-polyfill',
+    // 'react-hot-loader/patch',
+    // 'webpack-hot-middleware/client',
+    // 'eventsource-polyfill',
     './src/index.tsx'
   ],
-  externals: [nodeExternals()],
   output: {
     filename: 'bundle.js',
-    path: path.join(__dirname, 'dist'),
-    publicPath: '/',
-    context: 'src'
+    path: path.join(__dirname, 'dist')
+    // publicPath: '/'
   },
   mode: NODE_ENV,
   module: {
     rules: [
       {
-        test: /\.[js|ts].x?$/,
+        test: /\.tsx?$/,
+        use: 'ts-loader',
         exclude: /node_modules/,
-        use: ['eslint-loader', 'ts-loader']
+        include: [path.resolve(__dirname, 'src')]
       },
       {
         test: /\.css$/,
         exclude: /node_modules/,
+        include: [path.resolve(__dirname, 'src')],
         use: [
           'style-loader',
+          '@teamsupercell/typings-for-css-modules-loader',
           {
             loader: 'css-loader',
-            options: {
-              modules: {
-                localIdentName: '[name]-[local]-[hash:base64:5]'
-              }
-            }
+            options: { modules: true }
           },
-          {
-            loader: 'typings-for-css-modules-loader',
-            options: {
-              modules: true,
-              namedExport: true
-            }
-          },
-          {
-            loader: 'postcss-loader',
-            options: {
-              ident: 'postcss',
-              plugins: () => [require('autoprefixer')]
-            }
-          }
+          'postcss-loader'
         ]
       },
       {
@@ -67,7 +51,7 @@ module.exports = {
   },
   plugins: [
     // enable HMR globally
-    new webpack.HotModuleReplacementPlugin()
+    // new webpack.HotModuleReplacementPlugin()
   ],
   optimization: {
     // prints more readable module names in the browser console on HMR updates
@@ -76,7 +60,17 @@ module.exports = {
     noEmitOnErrors: true
   },
   resolve: {
-    modules: [path.join(__dirname, 'src'), 'node_modules'],
-    extensions: ['.js', '.jsx', '.ts', '.tsx', '.css']
+    // alias: {
+    //   src: path.join(__dirname, 'src/')
+    // },
+    // modules: [path.join(__dirname, 'src')],
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.css'],
+    // To sync path aliases between tsconfig and webpack
+    plugins: [
+      new TsconfigPathsPlugin({
+        configFile: 'tsconfig.json',
+        extensions: ['.ts', '.tsx', '.js', '.jsx']
+      })
+    ]
   }
 };
