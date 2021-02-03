@@ -1,11 +1,31 @@
-html, body {
+html,
+body {
   color: #fff;
   margin: 0;
   padding: 0;
 }
 
-html, body, #app, #app > div {
+html,
+body,
+#app,
+#app > div {
   height: 100%;
   overflow: hidden;
   width: 100%;
+}
+
+:root {
+  --text-color: rgba(0, 0, 0, 0.8);
+  --backdrop-filter: blur(5px);
+  --border-radius: 10px;
+  --box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --box-shadow-hover: 0 4px 5px 0 rgba(0, 0, 0, 0.14), 0 1px 10px 0 rgba(0, 0, 0, 0.12),
+    0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+.control {
+  backdrop-filter: var(--backdrop-filter);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  color: var(--text-color);
 }
