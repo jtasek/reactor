@@ -36,7 +36,7 @@ export const scaledCurrentPosition = derived<Pointer, Application, Position>(
 );
 
 export const offset = derived<Pointer, Application, Position>((pointer) => {
-  const { position: position, startPosition } = pointer;
+  const { position, startPosition } = pointer;
 
   return {
     x: position.x - startPosition.x,
@@ -84,7 +84,7 @@ export const scaledRadius = derived<Pointer, Application, number>(
 );
 
 export const size = derived<Pointer, Application, Size>((pointer) => {
-  const { position: position, startPosition } = pointer;
+  const { position, startPosition } = pointer;
 
   return {
     width: Math.abs(position.x - startPosition.x),
@@ -103,7 +103,7 @@ export const scaledSize = derived<Pointer, Application, Size>((pointer, { curren
 });
 
 export const bottomRightPosition = derived<Pointer, Application, Position>((pointer) => {
-  const { position: position, startPosition } = pointer;
+  const { position, startPosition } = pointer;
 
   return {
     x: startPosition.x > position.x ? startPosition.x : position.x,
@@ -112,7 +112,7 @@ export const bottomRightPosition = derived<Pointer, Application, Position>((poin
 });
 
 export const topLeftPosition = derived<Pointer, Application, Position>((pointer) => {
-  const { position: position, startPosition } = pointer;
+  const { position, startPosition } = pointer;
 
   return {
     x: startPosition.x > position.x ? position.x : startPosition.x,

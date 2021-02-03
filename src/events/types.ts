@@ -23,6 +23,7 @@ export interface Pointer {
 
 export interface Keyboard {
   typing: boolean;
+  text: string;
 }
 
 export interface Events {

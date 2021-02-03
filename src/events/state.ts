@@ -38,6 +38,7 @@ export const state: Events = {
     topLeftPosition
   },
   keyboard: {
-    typing: false
+    typing: false,
+    text: ''
   }
 };
