@@ -1,4 +1,5 @@
 import React, { FC } from 'react';
+import styles from './styles.css';
 import { Icon } from '../Icon';
 import { Group } from '../../../app/types';
 
@@ -35,12 +36,14 @@ interface Props {
 }
 
 export const GroupPanelItem: FC<Props> = ({ group }) => (
-  <li>
-    <label>
+  <li className={styles.groupItem}>
+    <label className={styles.groupLabel}>
       <input type="checkbox" value={group.name} checked={group.visible} />
       {group.name}
+    </label>
+    <div className={styles.icons}>
       <Icon icon={group.visible ? visibleIcon : hiddenIcon} />
       <Icon icon={group.locked ? lockedIcon : openIcon} />
-    </label>
+    </div>
   </li>
 );

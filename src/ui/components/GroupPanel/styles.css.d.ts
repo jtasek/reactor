@@ -1,6 +1,9 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
+    groupItem: string;
+    groupLabel: string;
     groupPanel: string;
+    icons: string;
   }
 }
 

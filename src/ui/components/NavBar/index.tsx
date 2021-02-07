@@ -13,29 +13,30 @@ export const NavBarContainer: FC = () => {
 
   return (
     <NavBar>
+      {currentDocument.shapes.length}
       <NavBarList
         name="shapes"
-        items={currentDocument.shapes}
+        items={Object.values(currentDocument.shapes)}
         onClick={() => console.log('Not implemented')}
       />
       <NavBarList
         name="groups"
-        items={currentDocument.groups}
+        items={Object.values(currentDocument.groups)}
         onClick={() => console.log('Not implemented')}
       />
       <NavBarList
         name="layers"
-        items={currentDocument.layers}
+        items={Object.values(currentDocument.layers)}
         onClick={() => console.log('Not implemented')}
       />
       <NavBarList
         name="links"
-        items={currentDocument.links}
+        items={Object.values(currentDocument.links)}
         onClick={() => console.log('Not implemented')}
       />
       <NavBarList
         name="rulers"
-        items={currentDocument.rulers}
+        items={Object.values(currentDocument.rulers)}
         onClick={() => console.log('Not implemented')}
       />
     </NavBar>

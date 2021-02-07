@@ -1,5 +1,6 @@
 import React, { FC } from 'react';
 import { Control } from 'src/ui/types';
+import styles from './styles.css';
 
 import { Icon } from '../Icon';
 
@@ -23,7 +24,7 @@ interface Props {
 }
 
 export const ControlPanelItem: FC<Props> = ({ control, onChange }) => (
-  <li>
+  <li className={styles.controlItem}>
     <label>
       <input
         type="checkbox"
@@ -32,7 +33,7 @@ export const ControlPanelItem: FC<Props> = ({ control, onChange }) => (
         onChange={(e) => onChange(control.id, Boolean(e.target.value))}
       />
       {control.name}
-      {control.visible ? <Icon {...visible} key="visible" /> : <Icon {...hidden} key="hidden" />}
     </label>
+    {control.visible ? <Icon {...visible} key="visible" /> : <Icon {...hidden} key="hidden" />}
   </li>
 );

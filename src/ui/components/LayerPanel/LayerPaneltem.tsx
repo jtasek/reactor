@@ -37,11 +37,13 @@ interface Props {
 
 export const LayerPanelItem: FC<Props> = ({ layer }) => (
   <li className={styles.layerItem}>
-    <label>
+    <label className={styles.layerLabel}>
       <input type="checkbox" value={layer.name} checked={layer.visible} />
       {layer.name}
     </label>
-    <Icon icon={layer.visible ? visibleIcon : hiddenIcon} />
-    <Icon icon={layer.locked ? lockedIcon : openIcon} />
+    <div className={styles.icons}>
+      <Icon icon={layer.visible ? visibleIcon : hiddenIcon} />
+      <Icon icon={layer.locked ? lockedIcon : openIcon} />
+    </div>
   </li>
 );

@@ -1,6 +1,6 @@
 .navBar {
   padding: 10px;
-  filter: url(#blur);
+  /* backdrop-filter: var(--backdrop-filter); */
 }
 
 .navBar li li {
@@ -44,10 +44,10 @@
 }
 
 .navBar a {
-  color: rgba(255, 255, 255, .7);
+  color: var(--text-color);
   text-decoration: none;
 }
 
 .navBar a:hover {
-  color: #fff;
+  color: var(--text-color-hover);
 }

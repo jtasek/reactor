@@ -1,20 +1,11 @@
 .sidebar {
-  /*border: 1px solid darkblue;*/
-  /*background-color: rgba(0, 0, 0, .7);*/
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+  backdrop-filter: var(--backdrop-filter);
+  box-shadow: var(--box-shadow);
+  color: var(--text-color);
   display: flex;
   flex-direction: row;
   height: 100%;
   position: absolute;
   transition: all 0.5s ease-in-out;
   z-index: 100;
-}
-
-.sidebar::before{
- content: ' ';
- position: absolute;
- top: 0;
- left: 0;
- right: 0;
- bottom: 0;
 }

@@ -1,6 +1,7 @@
 .explorer {
-  background-color: rgba(0, 0, 0, 0.7);
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--box-shadow);
+  backdrop-filter: var(--backdrop-filter);
+  color: var(--text-color);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -8,14 +9,4 @@
   transition: all 0.5s ease-in-out;
   width: 250px;
   z-index: 100;
-}
-
-.explorer::before {
-  bottom: 0;
-  content: ' ';
-  backdrop-filter: blur(10px);
-  left: 0;
-  position: absolute;
-  right: 0;
-  top: 0;
 }

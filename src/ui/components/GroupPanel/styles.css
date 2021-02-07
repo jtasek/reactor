@@ -21,3 +21,21 @@
   vertical-align: middle;
   margin-right: 10px;
 }
+
+.groupItem {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.groupLabel {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-right: 10px;
+}
+
+.icons {
+  display: inline-flex;
+}

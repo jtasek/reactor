@@ -1,6 +1,8 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
+    icons: string;
     layerItem: string;
+    layerLabel: string;
     layerPanel: string;
   }
 }

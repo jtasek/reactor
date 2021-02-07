@@ -1,7 +1,7 @@
 .toolBar {
-  /*border: 1px solid yellow;*/
-  background-color: rgba(0, 0, 0, 0.7);
-  box-shadow: 0 0 5px rgba(0, 0, 0, .5);
+  backdrop-filter: var(--backdrop-filter);
+  box-shadow: var(--box-shadow);
+  color: var(--text-color);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -13,7 +13,7 @@
 .toolBarButton {
   display: block;
   height: 50px;
-  opacity: .5;
+  opacity: 0.5;
   padding: 10px;
   transition: opacity 0.3s ease-in-out;
   width: 50px;
