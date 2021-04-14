@@ -11,6 +11,7 @@ export const SearchBox: FC<Props> = ({ filter, onSearch }) => (
     <input
       id="q"
       name="q"
+      autoComplete="off"
       type="search"
       placeholder="Search ..."
       value={filter}
