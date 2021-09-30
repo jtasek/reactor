@@ -15,7 +15,10 @@ export const SearchBox: FC<Props> = ({ filter, onSearch }) => (
       type="search"
       placeholder="Search ..."
       value={filter}
-      onChange={(e) => onSearch(e.target.value)}
+      onChange={(e) => {
+        e.preventDefault();
+        onSearch(e.target.value);
+      }}
     />
     <span className="input-group-btn">
       <button className="btn btn-default" type="submit">
