@@ -79,7 +79,16 @@ export const Text: FC<Props> = ({
             value={value}
             onFocus={(e) => onStartTyping()}
             onBlur={(e) => onEndTyping()}
-            onChange={(e) => onTyping(e.currentTarget.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                onEndTyping();
+              }
+            }}
+            onChange={(e) => {
+              e.preventDefault();
+              onTyping(e.currentTarget.value);
+            }}
           />
         </form>
       </foreignObject>
