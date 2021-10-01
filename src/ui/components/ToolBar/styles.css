@@ -1,4 +1,5 @@
 .toolBar {
+  background-color: var(--control-background);
   backdrop-filter: var(--backdrop-filter);
   box-shadow: var(--box-shadow);
   color: var(--text-color);

@@ -1,5 +1,5 @@
 .propertyPanel {
-  /* background-color: rgba(0, 0, 0, 0.7); */
+  background-color: var(--control-background);
   backdrop-filter: var(--backdrop-filter);
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);

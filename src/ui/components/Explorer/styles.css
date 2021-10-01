@@ -1,4 +1,5 @@
 .explorer {
+  background-color: var(--control-background);
   box-shadow: var(--box-shadow);
   backdrop-filter: var(--backdrop-filter);
   color: var(--text-color);
