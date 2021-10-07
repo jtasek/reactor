@@ -40,7 +40,9 @@ const log = (e) => {
   console.log(`clientX: ${e.target.clientX}, clientY: ${e.target.clientY}`);
 };
 
-export const withMouse = <P extends object>(Component: ComponentType<P>): FC<P> => (props: P) => (
+export const withMouse = <P extends Record<string, unknown>>(
+  Component: ComponentType<P>
+): FC<P> => (props: P) => (
   <Component
     {...props}
     displayName="withMouse"
