@@ -33,6 +33,14 @@ export const zoom: Action<number> = ({ state: { currentDocument } }, scale = 1) 
   currentDocument.camera.scale = scale;
 };
 
+export const moveCamera: Action<{ deltaX: number; deltaY: number; deltaZ: number }> = (
+  { state: { currentDocument } },
+  delta: { deltaX: number; deltaY: number; deltaZ: number }
+) => {
+  currentDocument.camera.position.x -= delta.deltaX;
+  currentDocument.camera.position.y -= delta.deltaY;
+};
+
 export const executeToolCommand: Action = ({ state, actions }) => {
   const { activeToolsIds } = state.tools;
   // Get tool command
