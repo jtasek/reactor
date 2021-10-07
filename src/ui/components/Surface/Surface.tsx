@@ -27,6 +27,11 @@ export const Surface: FC = ({ children }) => {
     actions.events.startDragging({ x: event.clientX, y: event.clientY });
   };
 
+  const handleMouseWheel = (event) => {
+    event.preventDefault();
+    actions.tools.moveCamera({ deltaX: event.deltaX, deltaY: event.deltaY, deltaZ: event.deltaZ });
+  };
+
   const handleContextMenu = (event) => {
     event.preventDefault();
     actions.ui.displayContextMenu({ x: event.clientX, y: event.clientY });
@@ -41,6 +46,7 @@ export const Surface: FC = ({ children }) => {
       onMouseLeave={handleMouseUp}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
+      onWheel={handleMouseWheel}
     >
       {children}
     </svg>
