@@ -1,6 +1,4 @@
 .menuBar {
-  backdrop-filter: var(--backdrop-filter);
-  border-radius: 10px;
   color: var(--text-color);
   display: flex;
   flex-direction: row;
