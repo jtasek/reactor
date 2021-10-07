@@ -8,7 +8,7 @@ export interface Props {
 }
 
 export const GroupPanel: FC<Props> = ({ groups }) => (
-  <ul className={styles.groupPanel}>
+  <ul data-cy="group-panel" className={styles.groupPanel}>
     {groups.map((group) => (
       <GroupPanelItem key={group.id} group={group} />
     ))}
