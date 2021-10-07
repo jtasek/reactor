@@ -5,12 +5,12 @@ import { useState } from 'src/app/hooks';
 export const Rulers: FC = () => {
   const { currentDocument } = useState();
 
-  const { scale } = currentDocument.camera;
+  const { position, scale } = currentDocument.camera;
 
   return (
     <g id="rulers">
       {Object.values(currentDocument.rulers).map((ruler) => (
-        <Ruler key={ruler.id} ruler={ruler} scale={scale} />
+        <Ruler key={ruler.id} ruler={ruler} position={position} scale={scale} />
       ))}
     </g>
   );
