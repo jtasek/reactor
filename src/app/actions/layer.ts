@@ -72,6 +72,12 @@ export const hideLayer: Action<string> = ({ state }, layerId) => {
   layer.visible = false;
 };
 
+export const toggleLayerVisible: Action<string> = ({ state }, layerId) => {
+  const layer = getLayer(state, layerId);
+
+  layer.visible = !layer.visible;
+};
+
 export const updateLayer: Action<Partial<Layer> & { id: string }> = ({ state }, options) => {
   const layer = getLayer(state, options.id);
 

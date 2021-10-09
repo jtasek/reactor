@@ -33,12 +33,18 @@ const openIcon = {
 
 interface Props {
   layer: Layer;
+  onChange: (layerId: string, visible: boolean) => void;
 }
 
-export const LayerPanelItem: FC<Props> = ({ layer }) => (
+export const LayerPanelItem: FC<Props> = ({ layer, onChange }) => (
   <li className={styles.layerItem}>
     <label className={styles.layerLabel}>
-      <input type="checkbox" value={layer.name} checked={layer.visible} />
+      <input
+        type="checkbox"
+        value={layer.name}
+        checked={layer.visible}
+        onChange={(e) => onChange(layer.id, Boolean(e.target.value))}
+      />
       {layer.name}
     </label>
     <div className={styles.icons}>
