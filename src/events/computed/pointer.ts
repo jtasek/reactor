@@ -1,5 +1,6 @@
 import { derived } from 'overmind';
 import { Application, Position, Size } from 'src/app/types';
+import { positional } from 'yargs';
 import { Pointer } from '../types';
 
 const DEFAULT_CAMERA_SCALE = 1;
@@ -15,24 +16,22 @@ export const centre = derived<Pointer, Application, Position>((pointer) => {
 
 export const scaledCentre = derived<Pointer, Application, Position>(
   (pointer, { currentDocument }) => {
-    const { centre } = pointer;
-    const scale = currentDocument.camera.scale ?? DEFAULT_CAMERA_SCALE;
+    const { position, scale = DEFAULT_CAMERA_SCALE } = currentDocument.camera;
 
     return {
-      x: centre.x / scale,
-      y: centre.y / scale
+      x: (pointer.centre.x - position.x) / scale,
+      y: (pointer.centre.y - position.y) / scale
     };
   }
 );
 
-export const scaledCurrentPosition = derived<Pointer, Application, Position>(
+export const scaledPosition = derived<Pointer, Application, Position>(
   (pointer, { currentDocument }) => {
-    const { position } = pointer;
-    const scale = currentDocument.camera.scale ?? DEFAULT_CAMERA_SCALE;
+    const { position, scale = DEFAULT_CAMERA_SCALE } = currentDocument.camera;
 
     return {
-      x: position.x / scale,
-      y: position.y / scale
+      x: (pointer.position.x - position.x) / scale,
+      y: (pointer.position.y - position.y) / scale
     };
   }
 );
@@ -48,22 +47,23 @@ export const offset = derived<Pointer, Application, Position>((pointer) => {
 
 export const scaledOffset = derived<Pointer, Application, Position>(
   (pointer, { currentDocument }) => {
-    const { offset } = pointer;
-    const scale = currentDocument.camera.scale ?? DEFAULT_CAMERA_SCALE;
+    const { position, scale = DEFAULT_CAMERA_SCALE } = currentDocument.camera;
 
     return {
-      x: offset.x / scale,
-      y: offset.y / scale
+      x: (pointer.offset.x - position.x) / scale,
+      y: (pointer.offset.y - position.y) / scale
     };
   }
 );
 
 export const scaledPath = derived<Pointer, Application, Position[]>(
   (pointer, { currentDocument }) => {
-    const { path } = pointer;
-    const scale = currentDocument.camera.scale ?? DEFAULT_CAMERA_SCALE;
+    const { position, scale = DEFAULT_CAMERA_SCALE } = currentDocument.camera;
 
-    return path.map((point: Position) => ({ x: point.x / scale, y: point.y / scale }));
+    return pointer.path.map((point: Position) => ({
+      x: (point.x - position.x) / scale,
+      y: (point.y - position.y) / scale
+    }));
   }
 );
 
@@ -78,10 +78,13 @@ export const radius = derived<Pointer, Application, number>((pointer) => {
 
 export const scaledRadius = derived<Pointer, Application, number>(
   (pointer, { currentDocument }) => {
-    const { radius } = pointer;
-    const scale = currentDocument.camera.scale ?? DEFAULT_CAMERA_SCALE;
+    const { scaledCentre, scaledStartPosition } = pointer;
+    const { position, scale = DEFAULT_CAMERA_SCALE } = currentDocument.camera;
 
-    return radius / scale;
+    const x = scaledCentre.x - scaledStartPosition.x;
+    const y = scaledCentre.y - scaledStartPosition.y;
+
+    return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
   }
 );
 
@@ -95,12 +98,11 @@ export const size = derived<Pointer, Application, Size>((pointer) => {
 });
 
 export const scaledSize = derived<Pointer, Application, Size>((pointer, { currentDocument }) => {
-  const { size } = pointer;
-  const scale = currentDocument.camera.scale ?? DEFAULT_CAMERA_SCALE;
+  const { position, scale = DEFAULT_CAMERA_SCALE } = currentDocument.camera;
 
   return {
-    width: size.width / scale,
-    height: size.height / scale
+    width: pointer.size.width / scale,
+    height: pointer.size.height / scale
   };
 });
 
@@ -113,6 +115,17 @@ export const bottomRightPosition = derived<Pointer, Application, Position>((poin
   };
 });
 
+export const scaledBottomRightPosition = derived<Pointer, Application, Position>(
+  (pointer, { currentDocument }) => {
+    const { position, scale = DEFAULT_CAMERA_SCALE } = currentDocument.camera;
+
+    return {
+      x: (pointer.bottomRightPosition.x - position.x) / scale,
+      y: (pointer.bottomRightPosition.y - position.y) / scale
+    };
+  }
+);
+
 export const topLeftPosition = derived<Pointer, Application, Position>((pointer) => {
   const { position, startPosition } = pointer;
 
@@ -124,24 +137,22 @@ export const topLeftPosition = derived<Pointer, Application, Position>((pointer)
 
 export const scaledTopLeftPosition = derived<Pointer, Application, Position>(
   (pointer, { currentDocument }) => {
-    const { topLeftPosition } = pointer;
-    const scale = currentDocument.camera.scale ?? DEFAULT_CAMERA_SCALE;
+    const { position, scale = DEFAULT_CAMERA_SCALE } = currentDocument.camera;
 
     return {
-      x: topLeftPosition.x / scale,
-      y: topLeftPosition.y / scale
+      x: (pointer.topLeftPosition.x - position.x) / scale,
+      y: (pointer.topLeftPosition.y - position.y) / scale
     };
   }
 );
 
 export const scaledStartPosition = derived<Pointer, Application, Position>(
   (pointer, { currentDocument }) => {
-    const { startPosition } = pointer;
-    const scale = currentDocument.camera.scale ?? DEFAULT_CAMERA_SCALE;
+    const { position, scale = DEFAULT_CAMERA_SCALE } = currentDocument.camera;
 
     return {
-      x: startPosition.x / scale,
-      y: startPosition.y / scale
+      x: (pointer.startPosition.x - position.x) / scale,
+      y: (pointer.startPosition.y - position.y) / scale
     };
   }
 );

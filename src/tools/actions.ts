@@ -49,8 +49,21 @@ export const executeToolCommand: Action = ({ state, actions }) => {
     console.log(`Execute command: ${toolId}`);
 
     if (tool?.factory) {
+      // Rescale pointer
+      const pointer = {
+        ...state.events.pointer,
+        centre: state.events.pointer.scaledCentre,
+        position: state.events.pointer.scaledPosition,
+        offset: state.events.pointer.scaledOffset,
+        path: state.events.pointer.scaledPath,
+        radius: state.events.pointer.scaledRadius,
+        size: state.events.pointer.scaledSize,
+        startPosition: state.events.pointer.scaledStartPosition,
+        topLeftPosition: state.events.pointer.scaledTopLeftPosition,
+        bottomRightPosition: state.events.pointer.scaledBottomRightPosition
+      };
       // Create new shape
-      const options = tool.factory(state.events.pointer, state.events.keyboard);
+      const options = tool.factory(pointer, state.events.keyboard);
       // Insert new shape into store
       actions.addShape({ ...options, selected: false });
     }
