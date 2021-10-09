@@ -17,6 +17,7 @@ import styles from '../../styles.css';
 **/
 
 interface Props {
+  code: string;
   name: string;
   cx: number;
   cy: number;
@@ -28,13 +29,14 @@ interface Props {
 
 export const createEllipse = ({ centre, size }: Pointer): Props => {
   return {
+    code: 'ellipse',
     cx: centre.x,
     cy: centre.y,
     rx: size.width,
     ry: size.height,
-    name: 'Circle x',
+    name: 'Ellipse x',
     selected: true,
-    type: 'circle'
+    type: 'ellipse'
   };
 };
 
@@ -42,21 +44,21 @@ export const Ellipse: FC<Props> = ({ name, cx, cy, rx, ry, selected }) => {
   const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
   return (
-    <ellipse key="circle" data-cy={name} className={className} cx={cx} cy={cy} rx={rx} ry={ry} />
+    <ellipse key="ellipse" data-cy={name} className={className} cx={cx} cy={cy} rx={rx} ry={ry} />
   );
 };
 
 export const EllipseTool: FC = () => {
   const { pointer } = useState().events;
 
-  return <Ellipse {...createEllipse(pointer)} />;
+  return <Ellipse key="ellipse" {...createEllipse(pointer)} />;
 };
 
 export default {
   code: 'ellipse',
   name: 'Ellipse',
   description: 'Draws ellipse',
-  //factory: createEllipse,
+  factory: createEllipse,
   tool: EllipseTool,
   component: Ellipse,
   icon: {

@@ -42,10 +42,10 @@ export const Circle: FC<Props> = ({ code, cx, cy, r, selected }) => {
 
   return (
     <circle
+      key="circle"
       fill="none"
       stroke="grey"
       strokeWidth={2}
-      key="circle"
       data-cy={code}
       className={className}
       cx={cx}
