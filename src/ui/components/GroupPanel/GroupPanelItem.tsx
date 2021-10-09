@@ -33,12 +33,18 @@ const openIcon = {
 
 interface Props {
   group: Group;
+  onChange: (groupId: string, visible: boolean) => void;
 }
 
-export const GroupPanelItem: FC<Props> = ({ group }) => (
+export const GroupPanelItem: FC<Props> = ({ group, onChange }) => (
   <li className={styles.groupItem}>
     <label className={styles.groupLabel}>
-      <input type="checkbox" value={group.name} checked={group.visible} />
+      <input
+        type="checkbox"
+        value={group.name}
+        checked={group.visible}
+        onChange={(e) => onChange(group.id, Boolean(e.target.value))}
+      />
       {group.name}
     </label>
     <div className={styles.icons}>

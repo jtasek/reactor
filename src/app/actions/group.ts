@@ -72,6 +72,12 @@ export const hideGroup: Action<string> = ({ state }, groupId) => {
   group.visible = false;
 };
 
+export const toggleGroupVisible: Action<string> = ({ state }, groupId) => {
+  const group = getGroup(state, groupId);
+
+  group.visible = !group.visible;
+};
+
 export const updateGroup: Action<Partial<Group> & { id: string }> = ({ state }, options) => {
   const group = getGroup(state, options.id);
 
