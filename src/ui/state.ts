@@ -78,6 +78,11 @@ export const state: UI = {
     name: 'Property Panel',
     visible: true
   },
+  rulers: {
+    id: 'rulers',
+    name: 'Rulers',
+    visible: true
+  },
   searchBox: {
     id: 'searchBox',
     name: 'Search Box',

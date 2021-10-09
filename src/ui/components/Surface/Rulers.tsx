@@ -1,11 +1,23 @@
 import React, { FC } from 'react';
 import { Ruler } from '../Ruler';
 import { useState } from 'src/app/hooks';
+import { Camera } from 'src/app/types';
 
-export const Rulers: FC = () => {
-  const { currentDocument } = useState();
+interface Props {
+  camera?: Camera;
+}
 
-  const { position, scale } = currentDocument.camera;
+export const Rulers: FC<Props> = ({ camera }) => {
+  const {
+    currentDocument,
+    ui: { rulers }
+  } = useState();
+
+  if (!rulers.visible) {
+    return null;
+  }
+
+  const { position, scale } = camera ?? currentDocument.camera;
 
   return (
     <g id="rulers">
