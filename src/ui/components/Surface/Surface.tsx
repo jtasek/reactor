@@ -28,7 +28,6 @@ export const Surface: FC = ({ children }) => {
   };
 
   const handleMouseWheel = (event) => {
-    event.preventDefault();
     actions.tools.moveCamera({ deltaX: event.deltaX, deltaY: event.deltaY, deltaZ: event.deltaZ });
   };
 
