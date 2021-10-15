@@ -1,19 +1,13 @@
-// keyboard driver
+import { useEffect } from 'react';
+import { useActions } from 'src/app/hooks';
 
-// register all commands from tools with shortcuts
+export const useKeyboard = () => {
+  const actions = useActions();
+  useEffect(() => {
+    const listener = window.addEventListener('keydown', (event) => {
+      actions.events.keyPressed(event);
+    });
 
-// events: [onKeyDown onKeyPress onKeyUp]
-/* properties:
-
-boolean altKey
-number charCode
-boolean ctrlKey
-boolean getModifierState(key)
-string key
-number keyCode
-string locale
-number location
-boolean metaKey
-boolean repeat
-boolean shiftKey
-number which*/
+    return () => window.removeEventListener(listener);
+  }, []);
+};

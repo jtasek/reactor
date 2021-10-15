@@ -1,3 +1,4 @@
+import { string } from 'yargs';
 import {
   bottomRightPosition,
   centre,
@@ -40,7 +41,12 @@ export const state: Events = {
     topLeftPosition
   },
   keyboard: {
-    typing: false,
-    text: ''
+    altKey: false,
+    ctrlKey: false,
+    key: '',
+    metaKey: false,
+    shiftKey: false,
+    text: '',
+    typing: false
   }
 };

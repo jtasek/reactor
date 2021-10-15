@@ -1,36 +1,37 @@
-// mouse driver
+import { useState } from 'react';
+import { useActions } from 'src/app/hooks';
 
-// register shortcuts
+export const useMouse = () => {
+  const [dragging, setDragging] = useState(false);
+  const actions = useActions();
 
-// register all commands from tools
+  const handleMouseMove = (event) => {
+    if (dragging) {
+      actions.events.dragging({ x: event.clientX, y: event.clientY });
+    }
+  };
 
-/* events:
-onClick onContextMenu onDoubleClick onDrag onDragEnd onDragEnter onDragExit
-onDragLeave onDragOver onDragStart onDrop onMouseDown onMouseEnter onMouseLeave
-onMouseMove onMouseOut onMouseOver onMouseUp */
+  const handleMouseUp = (event) => {
+    if (dragging) {
+      setDragging(false);
+      actions.tools.executeToolCommand();
+      actions.events.endDragging();
+    }
+  };
 
-/* properties: 
-boolean altKey
-number button
-number buttons
-number clientX
-number clientY
-boolean ctrlKey
-boolean getModifierState(key)
-boolean metaKey
-number pageX
-number pageY
-DOMEventTarget relatedTarget
-number screenX
-number screenY
-boolean shiftKey
-*/
+  const handleMouseDown = (event) => {
+    setDragging(true);
+    actions.events.startDragging({ x: event.clientX, y: event.clientY });
+  };
 
-/* events 
-onWheel */
+  const handleMouseWheel = (event) => {
+    actions.tools.moveCamera({ deltaX: event.deltaX, deltaY: event.deltaY, deltaZ: event.deltaZ });
+  };
 
-/* properties:
-number deltaMode
-number deltaX
-number deltaY
-number deltaZ */
+  const handleContextMenu = (event) => {
+    event.preventDefault();
+    actions.ui.displayContextMenu({ x: event.clientX, y: event.clientY });
+  };
+
+  return { handleMouseMove, handleMouseUp, handleMouseDown, handleMouseWheel, handleContextMenu };
+};

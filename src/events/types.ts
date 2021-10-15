@@ -23,8 +23,13 @@ export interface Pointer {
 }
 
 export interface Keyboard {
-  typing: boolean;
+  altKey: boolean;
+  ctrlKey: boolean;
+  key: string;
+  metaKey: boolean;
+  shiftKey: boolean;
   text: string;
+  typing: boolean;
 }
 
 export interface Events {
