@@ -1,13 +1,12 @@
 import React, { FC } from 'react';
 
-import { useApp } from 'src/app/hooks';
+import { useActions, useState} from 'src/app/hooks';
 
 import { Slider } from '../Slider';
 
 export const ZoomSlider: FC = () => {
-  const { actions, state } = useApp();
-
-  const { scale } = state.currentDocument.camera;
+  const { scale } = useState(state => state.currentDocument.camera);
+  const actions= useActions();
 
   return (
     <Slider

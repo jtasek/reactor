@@ -1,12 +1,13 @@
 import React, { FC } from 'react';
 
-import { useApp } from 'src/app/hooks';
+import { useActions, useState } from 'src/app/hooks';
 import { CommandLine } from './CommandLine';
 
 export const ConnectedCommandLine: FC = () => {
-  const { actions, state } = useApp();
+  const { commandLine} = useState(state => state.ui);
+  const actions = useActions();
 
-  if (!state.ui.commandLine.visible) {
+  if (!commandLine.visible) {
     return null;
   }
 

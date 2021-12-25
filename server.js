@@ -3,7 +3,12 @@ import express from 'express';
 import webpack from 'webpack';
 import webpackMiddleware from 'webpack-dev-middleware';
 import webpackHotMiddleware from 'webpack-hot-middleware';
-import config from './webpack.config';
+import { config } from './webpack.config.mjs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const compiler = webpack(config);
@@ -12,8 +17,8 @@ const { PORT = 4000 } = process.env;
 app.use(
   webpackMiddleware(compiler, {
     publicPath: config.output.publicPath,
-    noInfo: true,
-    hot: true,
+    // noInfo: true,
+    // hot: true,
     stats: {
       colors: true
     }
