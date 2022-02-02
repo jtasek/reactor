@@ -1,10 +1,11 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
-import { useState } from 'src/app/hooks';
+
 import { Explorer } from './Explorer';
+import { useExplorer } from 'src/app/hooks';
 
 export const ConnectedExplorer: FC = ({ children }) => {
-  const { visible } = useState().ui.explorer;
+  const { visible } = useExplorer();
 
   if (!visible) {
     return null;
@@ -12,3 +13,4 @@ export const ConnectedExplorer: FC = ({ children }) => {
 
   return <Explorer>{children}</Explorer>;
 };
+

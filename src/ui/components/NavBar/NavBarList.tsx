@@ -4,7 +4,7 @@ import styles from './styles.css';
 
 interface Props {
   name: string;
-  items?: { id: string; name: string }[];
+  items?: { id: string; name: string, selected: boolean }[];
   onClick: (id: string) => void;
 }
 
@@ -14,7 +14,7 @@ export const NavBarList: FC<Props> = ({ name, items, onClick }) => (
     {items && items.length > 0 && (
       <ul>
         {items.map((item) => (
-          <NavBarListItem key={item.id} item={item} onClick={onClick} />
+          <NavBarListItem key={item.id} item={item} onClick={() => onClick(item.id)} />
         ))}
       </ul>
     )}

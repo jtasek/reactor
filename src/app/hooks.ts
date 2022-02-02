@@ -16,6 +16,10 @@ export const useControls = () => {
   return useState().ui;
 }
 
+export const useExplorer = () => {
+  return useControls().explorer;
+}
+
 export const useNavBar = () => {
   return useControls().navBar;
 }

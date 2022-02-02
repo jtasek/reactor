@@ -39,7 +39,7 @@ export const removeShape: Action<string> = ({ state }, shapeId) => {
 export const selectShape: Action<string> = ({ state }, shapeId) => {
   const shape = getShape(state, shapeId);
 
-  shape.selected = true;
+  shape.selected = !shape.selected;
 };
 
 export const unselectShape: Action<string> = ({ state }, shapeId) => {

@@ -2,43 +2,31 @@ import React, { FC } from 'react';
 import styles from './styles.css';
 import { NavBar } from './NavBar';
 import { NavBarList } from './NavBarList';
-import { useState } from 'src/app/hooks';
+import { useActions, useCurrentDocument, useNavBar } from 'src/app/hooks';
+import { selectGroup, selectLayer, selectLink, selectRuler, selectShape } from 'src/app/actions';
 
 export const NavBarContainer: FC = () => {
-  const { currentDocument, ui } = useState();
+  const document = useCurrentDocument();
+  const { 
+    selectGroup,
+    selectLayer, 
+    selectLink, 
+    selectRuler, 
+    selectShape, 
+  } = useActions();
+  const { visible } = useNavBar();
 
-  if (!ui.navBar.visible) {
+  if (!visible) {
     return null;
   }
 
   return (
     <NavBar>
-      {currentDocument.shapes.length}
-      <NavBarList
-        name="shapes"
-        items={Object.values(currentDocument.shapes)}
-        onClick={() => console.log('Not implemented')}
-      />
-      <NavBarList
-        name="groups"
-        items={Object.values(currentDocument.groups)}
-        onClick={() => console.log('Not implemented')}
-      />
-      <NavBarList
-        name="layers"
-        items={Object.values(currentDocument.layers)}
-        onClick={() => console.log('Not implemented')}
-      />
-      <NavBarList
-        name="links"
-        items={Object.values(currentDocument.links)}
-        onClick={() => console.log('Not implemented')}
-      />
-      <NavBarList
-        name="rulers"
-        items={Object.values(currentDocument.rulers)}
-        onClick={() => console.log('Not implemented')}
-      />
+      <NavBarList name="Shapes" items={Object.values(document.shapes)} onClick={selectShape} />
+      <NavBarList name="Groups" items={Object.values(document.groups)} onClick={selectGroup} />
+      <NavBarList name="Layers" items={Object.values(document.layers)} onClick={selectLayer} />
+      <NavBarList name="Links" items={Object.values(document.links)} onClick={selectLink} />
+      <NavBarList name="Rulers" items={Object.values(document.rulers)} onClick={selectRuler} />
     </NavBar>
   );
 };
