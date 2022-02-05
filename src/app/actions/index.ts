@@ -7,3 +7,4 @@ export * from './routes';
 export * from './ruler';
 export * from './search';
 export * from './shape';
+export * from './startup';
