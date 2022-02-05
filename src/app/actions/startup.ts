@@ -13,7 +13,7 @@ function loadLocalData(effects, state) {
 
 function activateAutosave(instance, effects) {
   instance.reaction(
-    (state) => state,
+    (state) => state.currentDocument,
     (state) => effects.saveState('reactor', state),
     { nested: true }
   );
@@ -30,5 +30,5 @@ export const onInitializeOvermind: OnInitialize = ({ state, actions, effects }, 
   // registerCommands();
   registerRoutes(effects, actions);
   // loadLocalData(effects, state);
-  // activateAutosave(state, effects);
+  activateAutosave(instance, effects);
 };

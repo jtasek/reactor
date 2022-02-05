@@ -19,6 +19,8 @@ export const saveState = (key: string, state: Application): void => {
     const serializedState = JSON.stringify(state);
 
     localStorage.setItem(key, serializedState);
+
+    console.log('Application state saved');
   } catch (error) {
     console.error('Failed to save application state', error);
   }
