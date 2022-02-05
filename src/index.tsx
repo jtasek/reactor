@@ -2,7 +2,7 @@ import React from 'react';
 import { render } from 'react-dom';
 import { createOvermind } from 'overmind';
 import { Provider } from 'overmind-react';
-import { App } from './app/components/App'
+import { Shell } from './app/Shell';
 import { config } from './app';
 
 const overmind = createOvermind(config, {
@@ -11,7 +11,7 @@ const overmind = createOvermind(config, {
 
 render(
   <Provider value={overmind}>
-    <App />
+    <Shell />
   </Provider>,
   document.getElementById('app')
 );

@@ -10,7 +10,7 @@ export const state: Application = {
   config: { version: '1.0' },
   currentDocumentId: 'document-1',
   currentDocument,
-  currentPage: '/',
+  currentPage: 'designer',
   devices: {},
   notifications: [],
   providers: {},
