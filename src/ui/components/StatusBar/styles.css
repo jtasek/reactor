@@ -8,7 +8,6 @@
   color: var(--text-color);
   display: flex;
   flex-direction: row;
-  font-size: 14px;
   height: 25px;
   justify-content: space-between;
   line-height: 25px;
