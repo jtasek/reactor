@@ -33,5 +33,11 @@ export const useMouse = () => {
     actions.ui.displayContextMenu({ x: event.clientX, y: event.clientY });
   };
 
-  return { handleMouseMove, handleMouseUp, handleMouseDown, handleMouseWheel, handleContextMenu };
+  return {
+    handleContextMenu,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handleMouseWheel
+  };
 };
