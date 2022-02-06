@@ -1,3 +1,4 @@
+import { IContext } from 'overmind'
 import {
    createActionsHook,
    createEffectsHook,
@@ -7,10 +8,12 @@ import {
 
 import { config } from '.';
 
-export const useState = createStateHook<typeof config>();
-export const useActions = createActionsHook<typeof config>();
-export const useEffects = createEffectsHook<typeof config>();
-export const useReaction = createReactionHook<typeof config>();
+export type Context = IContext<typeof config>
+
+export const useActions = createActionsHook<Context>();
+export const useEffects = createEffectsHook<Context>();
+export const useReaction = createReactionHook<Context>();
+export const useState = createStateHook<Context>();
 
 export const useControls = () => {
   return useState().ui;

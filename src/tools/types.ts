@@ -22,6 +22,5 @@ export interface Icon {
 }
 
 export interface Tools {
-  activeTools: Tool[];
   activeToolsIds: string[];
 }

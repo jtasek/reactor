@@ -1,7 +1,15 @@
 import { Application, Orientation } from './types';
 import { createApplication } from './factories';
 import { currentDocument } from './computed/currentDocument';
-import { selectedShapes } from './computed/selectedShapes';
+import {
+  componentsIds,
+  groupsIds,
+  layersIds,
+  selectedShapes,
+  selectedShapesIds,
+  shapesIds
+} from './computed/shapes';
+import { documentsIds } from './computed/documents';
 
 export const state: Application = {
   ...createApplication(),
@@ -14,6 +22,7 @@ export const state: Application = {
   devices: {},
   notifications: [],
   providers: {},
+  documentsIds,
   documents: {
     'document-1': {
       id: '1',
@@ -30,7 +39,11 @@ export const state: Application = {
       history: [],
       selected: false,
       selectedShapes,
+      selectedShapesIds,
       filter: '',
+      componentsIds,
+      components: {},
+      groupsIds,
       groups: {
         '1': {
           id: '1',
@@ -57,6 +70,7 @@ export const state: Application = {
           shapes: ['4']
         }
       },
+      layersIds,
       layers: {
         '1': {
           id: '1',
@@ -165,6 +179,7 @@ export const state: Application = {
           visible: true
         }
       },
+      shapesIds,
       shapes: {
         '1': {
           id: '1',
@@ -276,7 +291,8 @@ export const state: Application = {
           modifiedBy: 'tasek',
           type: 'rect'
         }
-      }
+      },
+      tags: ['new']
     }
   }
 };

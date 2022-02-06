@@ -1,4 +1,4 @@
-import { IAction, IConfig, IOnInitialize, IOperator } from 'overmind';
+import { IAction, IConfiguration, IContext, IOperator } from 'overmind';
 
 import { config } from './';
 
@@ -147,9 +147,13 @@ export interface Document {
   description?: string;
   filter: string;
   grid: Grid;
+  componentsIds: string[];
+  components: HashTable<Group>;
+  groupsIds: string[];
   groups: HashTable<Group>;
   history: Action<any>[];
   layers: HashTable<Layer>;
+  layersIds: string[];
   links: HashTable<Link>;
   locked: boolean;
   modified: Date;
@@ -158,7 +162,10 @@ export interface Document {
   rulers: HashTable<Ruler>;
   selected: boolean;
   selectedShapes: Shape[];
+  selectedShapesIds: string[];
   shapes: HashTable<Shape>;
+  shapesIds: string[];
+  tags: string[];
 }
 
 export interface Command {
@@ -229,6 +236,7 @@ export type Application = {
   currentPage: string;
   devices: HashTable<Device>;
   documents: HashTable<Document>;
+  documentsIds: string[];
   notifications: Notification[];
   providers: HashTable<Provider>;
   started: Date;
@@ -238,22 +246,3 @@ export type Application = {
 export interface Renderer {
   render(document: Document): void;
 }
-
-// Due to circular typing we have to define an
-// explicit typing of state, actions and effects since
-// TS 3.9
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface Config
-  extends IConfig<{
-    state: typeof config.state;
-    actions: typeof config.actions;
-    effects: typeof config.effects;
-  }> {}
-
-export type OnInitialize = IOnInitialize<Config>;
-
-export type Action<Input = void, Output = void> = IAction<Config, Input, Output>;
-
-export type AsyncAction<Input = void, Output = void> = IAction<Config, Input, Promise<Output>>;
-
-export type Operator<Input = void, Output = Input> = IOperator<Config, Input, Output>;
