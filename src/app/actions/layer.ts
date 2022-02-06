@@ -48,6 +48,12 @@ export const unselectLayer: Action<string> = ({ state }, layerId) => {
   layer.selected = false;
 };
 
+export const toggleLayerLocked: Action<string> = ({ state }, layerId) => {
+  const layer = getLayer(state, layerId);
+
+  layer.locked = !layer.locked;
+};
+
 export const lockLayer: Action<string> = ({ state }, layerId) => {
   const layer = getLayer(state, layerId);
 
