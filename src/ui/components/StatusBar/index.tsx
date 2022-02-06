@@ -1,13 +1,13 @@
 import React, { FC } from 'react';
 
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 
 import { ZoomSlider } from './ZoomSlider';
 import { StatusBarSlot } from './StatusBarSlot';
 import { StatusBar } from './StatusBar';
 
 export const KeyboardInfo: FC = () => {
-  const { keyboard } = useState().events;
+  const { keyboard } = useAppState().events;
 
   const result: string[] = [];
   result.push('keyboard: [');
@@ -27,7 +27,7 @@ export const KeyboardInfo: FC = () => {
 };
 
 export const StatusBarContainer: FC = () => {
-  const { currentDocument, ui, events } = useState();
+  const { currentDocument, ui, events } = useAppState();
 
   const visible = ui.statusBar.visible;
   if (!visible) {
@@ -36,7 +36,7 @@ export const StatusBarContainer: FC = () => {
 
   const position = events.pointer.position;
   const offset = events.pointer.offset;
-  const selectedShapeCount = currentDocument.selectedShapes?.length;
+  const selectedShapeCount = currentDocument.selectedShapesIds?.length;
   const documentName = currentDocument.name;
 
   return (
