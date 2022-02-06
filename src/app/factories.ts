@@ -13,6 +13,7 @@ import {
   Application,
   Camera,
   Command,
+  Component,
   Document,
   Grid,
   Group,
@@ -28,6 +29,7 @@ import {
 
 export const getDefaultName = (type: string): string => 'Rect';
 
+const componentSequence = sequence();
 const documentSequence = sequence();
 const groupSequence = sequence();
 const layerSequence = sequence();
@@ -36,6 +38,7 @@ const rulerSequence = sequence();
 const shapeSequence = sequence();
 
 export const newApplicationName = (): string => `reactor-${Date.now()}`;
+export const newComponentName = (): string => `Component-${componentSequence.next().value}`;
 export const newDocumentName = (): string => `Document-${documentSequence.next().value}`;
 export const newGroupName = (): string => `Group-${groupSequence.next().value}`;
 export const newLayerName = (): string => `Layer-${layerSequence.next().value}`;
@@ -140,7 +143,7 @@ export function createGroup(options: Partial<Group> = {}): Group {
     locked: false,
     name: newGroupName(),
     selected: false,
-    shapes: [],
+    shapesIds: [],
     visible: false,
     ...options
   };
@@ -152,7 +155,7 @@ export function createLayer(options: Partial<Layer> = {}): Layer {
     locked: false,
     name: newLayerName(),
     selected: false,
-    shapes: [],
+    shapesIds: [],
     visible: false,
     ...options
   };
@@ -169,6 +172,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
     filter: '',
     grid: createGrid(),
     componentsIds,
+    components: {},
     groupsIds,
     groups: {},
     history: [],
@@ -188,6 +192,18 @@ export function createDocument(options: Partial<Document> = {}): Document {
     shapesIds,
     shapes: {},
     tags: [],
+    ...options
+  };
+}
+
+export function createComponent(options: Partial<Component> = {}): Component {
+  return {
+    id: newId(),
+    locked: false,
+    name: newComponentName(),
+    selected: false,
+    shapesIds: [],
+    visible: false,
     ...options
   };
 }
