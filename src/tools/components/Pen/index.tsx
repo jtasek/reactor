@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 import type { Point } from 'src/app/types';
 import { stringifyPath } from 'src/app/utils';
 import type { Pointer } from 'src/events/types';
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 import styles from '../../styles.css';
 import type { Tool } from 'src/tools/types';
 
@@ -36,7 +36,7 @@ export const Pen: FC<Props> = ({ points, selected }) => {
 };
 
 export const PenTool: FC = () => {
-  const { pointer } = useState().events;
+  const { pointer } = useAppState().events;
 
   return <Pen {...createPen(pointer)} selected={true} />;
 };

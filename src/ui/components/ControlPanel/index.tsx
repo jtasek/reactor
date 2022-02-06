@@ -1,10 +1,10 @@
 import React, { FC } from 'react';
 
 import { ControlPanel } from './ControlPanel';
-import { useActions, useState} from 'src/app/hooks';
+import { useActions, useAppState} from 'src/app/hooks';
 
 export const ConnectedControlPanel: FC = () => {
-  const state = useState();
+  const state = useAppState();
   const actions= useActions();
 
   if (!state.ui.controlPanel.visible) {

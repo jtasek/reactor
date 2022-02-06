@@ -1,10 +1,10 @@
 import React, { FC } from 'react';
 
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 import { ConnectedContextMenu as ContextMenu } from './ContextMenu';
 
 export const ConnectedContextMenu: FC = () => {
-  const { ui } = useState();
+  const { ui } = useAppState();
 
   if (!ui.contextMenu.visible) {
     return null;

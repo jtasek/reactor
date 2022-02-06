@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 import type { Position, Size } from 'src/app/types';
 import type { Pointer } from 'src/events/types';
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 import type { Tool } from 'src/tools/types';
 import styles from '../../styles.css';
 
@@ -52,7 +52,7 @@ export const Rect: FC<Props> = ({ position, size, selected }) => {
 };
 
 export const RectTool: FC = () => {
-  const { pointer } = useState().events;
+  const { pointer } = useAppState().events;
 
   return <Rect {...createRect(pointer)} />;
 };

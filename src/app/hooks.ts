@@ -1,54 +1,42 @@
-import { IContext } from 'overmind'
+import { IContext } from 'overmind';
 import {
-   createActionsHook,
-   createEffectsHook,
-   createReactionHook,
-   createStateHook
+  createActionsHook,
+  createEffectsHook,
+  createReactionHook,
+  createStateHook
 } from 'overmind-react';
 
 import { config } from '.';
 
-export type Context = IContext<typeof config>
+export type Context = IContext<typeof config>;
 
 export const useActions = createActionsHook<Context>();
 export const useEffects = createEffectsHook<Context>();
 export const useReaction = createReactionHook<Context>();
-export const useState = createStateHook<Context>();
-
-export const useControls = () => {
-  return useState().ui;
-}
-
-export const useExplorer = () => {
-  return useControls().explorer;
-}
-
-export const useNavBar = () => {
-  return useControls().navBar;
-}
+export const useAppState = createStateHook<Context>();
 
 export const useEvents = () => {
-  return useState().events;
-}
+  return useAppState((state) => state.events);
+};
 
 export const useKeyboardState = () => {
-  return useState().events.keyboard;
+  return useAppState(state => state.events.keyboard);
 };
 
 export const usePointerState = () => {
-  return useState().events.pointer;
+  return useAppState(state => state.events.pointer);
 };
 
 export const useCurrentDocument = () => {
-  return useState().currentDocument;
+  return useAppState(state => state.currentDocument);
 };
 
 export const useDocument = (id: string) => {
-  return useState().documents[id];
+  return useAppState(state => state.documents[id]);
 };
 
 export const useDocuments = () => {
-  return useState().documents ?? [];
+  return useAppState(state => state.documents)  ?? [];
 };
 
 export const useShape = (id: string) => {

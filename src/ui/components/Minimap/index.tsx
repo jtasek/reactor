@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 import { Grid } from '../Grid/Grid';
 import { Rulers } from '../Surface/Rulers';
 import { Shapes } from '../Surface/Shapes';
@@ -8,7 +8,7 @@ import { MiniMap } from './MiniMap';
 const STATIC_CAMERA = { position: { x: 0, y: 0 }, scale: 1 };
 
 export const MiniMapContainer: FC = () => {
-  const { ui } = useState();
+  const { ui } = useAppState();
 
   if (!ui.miniMap.visible) {
     return null;

@@ -1,10 +1,10 @@
 import React, { FC } from 'react';
 
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 import { DocumentInfo } from './DocumentInfo';
 
 export const ConnectedDocumentInfo: FC = () => {
-  const state = useState();
+  const state = useAppState();
 
   if (!state.ui.documentInfo.visible) {
     return null;

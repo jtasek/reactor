@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 import styles from '../../styles.css';
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
 
@@ -37,7 +37,7 @@ export const Line: FC<Props> = ({ x1, y1, x2, y2, selected }) => {
 };
 
 export const LineTool: FC = () => {
-  const { pointer } = useState().events;
+  const { pointer } = useAppState().events;
 
   return <Line {...createLine(pointer)} />;
 };

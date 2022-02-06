@@ -1,10 +1,10 @@
 import React, { FC } from 'react';
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 import type { Tool } from 'src/tools/types';
 import { Zoom } from './Zoom';
 
 export const ZoomTool: FC = () => {
-  const { pointer } = useState().events;
+  const { pointer } = useAppState().events;
 
   return <Zoom {...pointer} />;
 };

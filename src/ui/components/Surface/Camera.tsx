@@ -1,10 +1,10 @@
 import React, { FC } from 'react';
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 
 import styles from './styles.css';
 
 export const Camera: FC = ({ children }) => {
-  const { currentDocument } = useState();
+  const { currentDocument } = useAppState();
 
   const { scale, position } = currentDocument.camera;
 

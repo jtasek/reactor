@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
 import { ToolBarButton } from './ToolBarButton';
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 import { useTools } from '../../../tools/components';
 
 export interface Props {
@@ -9,7 +9,7 @@ export interface Props {
 }
 
 export const ToolBar: FC<Props> = ({ onClick }) => {
-  const { tools } = useState();
+  const { tools } = useAppState();
   const registeredTools = useTools();
 
   return (

@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 import { Position } from 'src/app/types';
 
 import styles from './styles.css';
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 import { ConnectedContextMenuItems } from './ContextMenuItems';
 
 export interface Props {
@@ -23,7 +23,7 @@ export const ContextMenu: FC<Props> = ({ position, children }) => (
 );
 
 export const ConnectedContextMenu: FC = () => {
-  const { events } = useState();
+  const { events } = useAppState();
 
   return (
     <ContextMenu position={events.pointer.position}>

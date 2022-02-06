@@ -1,12 +1,12 @@
 import React, { FC } from 'react';
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 import { Grid } from './Grid';
 
 export const GridContainer: FC = () => {
   const {
     currentDocument: { camera },
     ui: { grid }
-  } = useState();
+  } = useAppState();
 
   if (!grid.visible) {
     return null;

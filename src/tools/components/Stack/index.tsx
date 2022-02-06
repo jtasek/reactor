@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 import { getToolByType } from '..';
 
 interface Props {
@@ -20,7 +20,7 @@ export const Stack: FC<Props> = ({ tools }) => (
 );
 
 export const DesignStack: FC = () => {
-  const { activeToolsIds } = useState().tools;
+  const { activeToolsIds } = useAppState().tools;
 
   return <Stack tools={activeToolsIds} />;
 };

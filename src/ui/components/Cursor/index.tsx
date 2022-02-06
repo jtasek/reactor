@@ -1,9 +1,9 @@
 import React, { FC } from 'react';
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 import { Cursor } from './Cursor';
 
 export const ConnectedCursor: FC = () => {
-  const { position: position } = useState().events.pointer;
+  const { position: position } = useAppState().events.pointer;
 
   return <Cursor position={position} />;
 };

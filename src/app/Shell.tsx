@@ -1,12 +1,12 @@
 import React, { FC } from 'react';
-import { useState } from './hooks';
+import { useAppState } from './hooks';
 import { useKeyboard } from 'src/events/drivers/keyboard';
 
 import { Designer, Documents } from '../pages';
 
 export const Shell: FC = () => {
   useKeyboard();
-  const { currentPage } = useState();
+  const { currentPage } = useAppState();
 
   return (
     <>

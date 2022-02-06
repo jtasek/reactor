@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 import { Point } from 'src/app/types';
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 
 import inlineStyles from '../../inlineStyles';
 

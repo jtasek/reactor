@@ -1,10 +1,10 @@
 import React, { FC } from 'react';
 
-import { useActions, useState} from 'src/app/hooks';
+import { useActions, useAppState} from 'src/app/hooks';
 import { SearchBox } from './SearchBox';
 
 export const SearchBoxContainer: FC = () => {
-  const state = useState();
+  const state = useAppState();
   const actions= useActions();
 
   if (!state.ui.searchBox.visible) {

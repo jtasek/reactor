@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useRef } from 'react';
 import { Position } from 'src/app/types';
 
-import { useActions, useState as useAppState } from 'src/app/hooks';
+import { useActions, useAppState as useAppState } from 'src/app/hooks';
 
 import styles from './styles.css';
 import { Keyboard, Pointer } from 'src/events/types';

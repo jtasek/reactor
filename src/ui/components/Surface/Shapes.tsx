@@ -1,10 +1,10 @@
 import React, { FC } from 'react';
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 
 import { getComponentByType } from '../../../tools/components';
 
 export const Shapes: FC = () => {
-  const { currentDocument } = useState();
+  const { currentDocument } = useAppState();
 
   return (
     <g id="shapes">

@@ -1,11 +1,11 @@
 import React, { FC } from 'react';
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 import { MenuBar } from './MenuBar';
 
 import styles from './styles.css';
 
 export const MenuBarContainer: FC = () => {
-  const { visible } = useState().ui.menuBar;
+  const { visible } = useAppState().ui.menuBar;
 
   if (!visible) {
     return null;

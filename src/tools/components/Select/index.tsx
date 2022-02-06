@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 import inlineStyles from './inlineStyles';
 import type { Point, Size } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 
 /**
  * Selects highlighted shapes
@@ -26,7 +26,7 @@ export const Select: FC<Props> = ({ topLeftPosition, size }) => (
 );
 
 export const SelectTool: FC = () => {
-  const { pointer } = useState().events;
+  const { pointer } = useAppState().events;
 
   return <Select {...pointer} />;
 };

@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 import { Ruler } from '../Ruler';
-import { useState } from 'src/app/hooks';
+import { useAppState } from 'src/app/hooks';
 import { Camera } from 'src/app/types';
 
 interface Props {
@@ -11,7 +11,7 @@ export const Rulers: FC<Props> = ({ camera }) => {
   const {
     currentDocument,
     ui: { rulers }
-  } = useState();
+  } = useAppState();
 
   if (!rulers.visible) {
     return null;
