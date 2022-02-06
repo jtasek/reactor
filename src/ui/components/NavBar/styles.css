@@ -3,6 +3,10 @@
   /* backdrop-filter: var(--backdrop-filter); */
 }
 
+.navBar li h3{
+  margin-top:5px;
+}
+
 .navBar li li {
   cursor: pointer;
   list-style: none;
