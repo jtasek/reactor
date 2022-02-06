@@ -1,6 +1,28 @@
 import { derived } from 'overmind';
-import { Application } from '../types';
+import { Document } from '../types';
 
-export const shapeIds = derived(({ currentDocument }: Application) =>
-  Object.keys(currentDocument.shapes || [])
-);
+export const componentsIds = derived((currentDocument: Document) => {
+  return Object.keys(currentDocument.components);
+});
+
+export const groupsIds = derived((currentDocument: Document) => {
+  return Object.keys(currentDocument.groups);
+});
+
+export const layersIds = derived((currentDocument: Document) => {
+  return Object.keys(currentDocument.layers);
+});
+
+export const shapesIds = derived((currentDocument: Document) => {
+  return Object.keys(currentDocument.shapes);
+});
+
+export const selectedShapes = derived((currentDocument: Document) => {
+  return Object.values(currentDocument.shapes).filter((shape) => shape.selected);
+});
+
+export const selectedShapesIds = derived((currentDocument: Document) => {
+  return Object.values(currentDocument.shapes)
+    .filter((shape) => shape.selected)
+    .map((shape) => shape.id);
+})

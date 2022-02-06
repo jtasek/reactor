@@ -1,3 +1,4 @@
+import { groupsIds, layersIds, selectedShapesIds, shapesIds } from './computed/shapes';
 import { newId } from './effects';
 
 import {
@@ -159,8 +160,10 @@ export function createDocument(options: Partial<Document> = {}): Document {
     description: '',
     filter: '',
     grid: createGrid(),
+    groupsIds,
     groups: {},
     history: [],
+    layersIds,
     layers: {},
     links: {},
     locked: false,
@@ -169,8 +172,11 @@ export function createDocument(options: Partial<Document> = {}): Document {
     name: newDocumentName(),
     rulers: {},
     selected: false,
+    selectedShapesIds,
     selectedShapes: [],
+    shapesIds,
     shapes: {},
+    tags: [],
     ...options
   };
 }
