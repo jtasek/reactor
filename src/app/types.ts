@@ -120,7 +120,7 @@ export interface Group {
   locked: boolean;
   name: string;
   selected: boolean;
-  shapes: string[];
+  shapesIds: string[];
   visible: boolean;
 }
 
@@ -129,7 +129,16 @@ export interface Layer {
   locked: boolean;
   name: string;
   selected: boolean;
-  shapes: string[];
+  shapesIds: string[];
+  visible: boolean;
+}
+
+export interface Component {
+  id: string;
+  locked: boolean;
+  name: string;
+  selected: boolean;
+  shapesIds: string[];
   visible: boolean;
 }
 
