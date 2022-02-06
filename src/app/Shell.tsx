@@ -10,10 +10,6 @@ export const Shell: FC = () => {
 
   return (
     <>
-      <nav>
-        <a href="/">Designer</a>
-        <a href="documents">Documents</a>
-      </nav>
       {currentPage === 'designer' && <Designer />}
       {currentPage === 'documents' && <Documents />}
     </>
