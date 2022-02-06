@@ -1,6 +1,7 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
 import { NavBar } from './NavBar';
+import { ComponentsList } from './ComponentsList';
 import { GroupsList } from './GroupsList';
 import { LayersList } from './LayersList';
 import { LinksList } from './LinksList';
@@ -17,6 +18,7 @@ export const NavBarContainer: FC = () => {
 
   return (
     <NavBar>
+      <ComponentsList />
       <ShapesList />
       <GroupsList />
       <LayersList />
