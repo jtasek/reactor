@@ -1,21 +1,16 @@
 import React, { FC } from 'react';
-import { useActions, useState } from 'src/app/hooks';
+import {useCurrentDocument, useAppState } from 'src/app/hooks';
 
 import { LayerPanel } from './LayerPanel';
 import styles from './styles.css';
 
 export const LayerPanelContainer: FC = () => {
-  const actions = useActions();
-  const { currentDocument, ui } = useState();
+  const { layersIds } = useCurrentDocument();
+  const { visible } = useAppState((state) => state.ui.layerPanel);
 
-  if (!ui.layerPanel.visible) {
+  if (!visible) {
     return null;
   }
 
-  return (
-    <LayerPanel
-      layers={Object.values(currentDocument.layers)}
-      onChange={actions.toggleLayerVisible}
-    />
-  );
+  return <LayerPanel layersIds={layersIds} />;
 };

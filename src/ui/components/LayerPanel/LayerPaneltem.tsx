@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
+import styles from './styles.css'
 import { Icon } from '../Icon';
-import styles from './styles.css';
-import { Layer } from '../../../app/types';
+import { useActions, useLayer } from 'src/app/hooks';
 
 const visibleIcon = {
   group: 'action',
@@ -32,24 +32,28 @@ const openIcon = {
 };
 
 interface Props {
-  layer: Layer;
-  onChange: (layerId: string, visible: boolean) => void;
+  layerId: string;
 }
 
-export const LayerPanelItem: FC<Props> = ({ layer, onChange }) => (
-  <li className={styles.layerItem}>
-    <label className={styles.layerLabel}>
-      <input
-        type="checkbox"
-        value={layer.name}
-        checked={layer.visible}
-        onChange={(e) => onChange(layer.id, Boolean(e.target.value))}
-      />
-      {layer.name}
-    </label>
-    <div className={styles.icons}>
-      <Icon icon={layer.visible ? visibleIcon : hiddenIcon} />
-      <Icon icon={layer.locked ? lockedIcon : openIcon} />
-    </div>
-  </li>
-);
+export const LayerPanelItem: FC<Props> = ({ layerId }) => {
+  const { name, visible, locked } = useLayer(layerId);
+  const { toggleLayerVisible } = useActions();
+
+  return (
+    <li className={styles.layerItem}>
+      <label className={styles.layerLabel}>
+        <input
+          type="checkbox"
+          value={name}
+          checked={visible}
+          onChange={(e) => toggleLayerVisible(layerId)}
+        />
+        {name}
+      </label>
+      <div className={styles.icons}>
+        <Icon icon={visible ? visibleIcon : hiddenIcon} />
+        <Icon icon={locked ? lockedIcon : openIcon} />
+      </div>
+    </li>
+  );
+};
