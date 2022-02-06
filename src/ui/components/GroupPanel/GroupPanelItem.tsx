@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
 import { Icon } from '../Icon';
-import { Group } from '../../../app/types';
+import { useActions, useGroup } from 'src/app/hooks';
 
 const visibleIcon = {
   group: 'action',
@@ -32,24 +32,28 @@ const openIcon = {
 };
 
 interface Props {
-  group: Group;
-  onChange: (groupId: string, visible: boolean) => void;
+  groupId: string;
 }
 
-export const GroupPanelItem: FC<Props> = ({ group, onChange }) => (
-  <li className={styles.groupItem}>
-    <label className={styles.groupLabel}>
-      <input
-        type="checkbox"
-        value={group.name}
-        checked={group.visible}
-        onChange={(e) => onChange(group.id, Boolean(e.target.value))}
-      />
-      {group.name}
-    </label>
-    <div className={styles.icons}>
-      <Icon icon={group.visible ? visibleIcon : hiddenIcon} />
-      <Icon icon={group.locked ? lockedIcon : openIcon} />
-    </div>
-  </li>
-);
+export const GroupPanelItem: FC<Props> = ({ groupId }) => {
+  const { name, visible, locked } = useGroup(groupId);
+  const { toggleGroupVisible } = useActions();
+
+  return (
+    <li className={styles.groupItem}>
+      <label className={styles.groupLabel}>
+        <input
+          type="checkbox"
+          value={name}
+          checked={visible}
+          onChange={(e) => toggleGroupVisible(groupId)}
+        />
+        {name}
+      </label>
+      <div className={styles.icons}>
+        <Icon icon={visible ? visibleIcon : hiddenIcon} />
+        <Icon icon={locked ? lockedIcon : openIcon} />
+      </div>
+    </li>
+  );
+};

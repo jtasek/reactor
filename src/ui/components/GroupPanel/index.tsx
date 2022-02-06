@@ -1,20 +1,15 @@
 import React, { FC } from 'react';
-import { useActions, useState } from 'src/app/hooks';
+import { useCurrentDocument, useAppState } from 'src/app/hooks';
 
 import { GroupPanel } from './GroupPanel';
 
 export const GroupPanelContainer: FC = () => {
-  const actions = useActions();
-  const { currentDocument, ui } = useState();
+  const { groupsIds } = useCurrentDocument();
+  const { visible } = useAppState((state) => state.ui.groupPanel);
 
-  if (!ui.groupPanel.visible) {
+  if (!visible) {
     return null;
   }
 
-  return (
-    <GroupPanel
-      groups={Object.values(currentDocument.groups)}
-      onChange={actions.toggleGroupVisible}
-    />
-  );
+  return <GroupPanel groupsIds={groupsIds} />;
 };
