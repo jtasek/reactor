@@ -36,7 +36,7 @@ export const removeShape: Action<string> = ({ state }, shapeId) => {
   deleteShape(state, shapeId);
 };
 
-export const selectShape: Action<string> = ({ state }, shapeId) => {
+export const toggleShapeSelected: Action<string> = ({ state }, shapeId) => {
   const shape = getShape(state, shapeId);
 
   shape.selected = !shape.selected;

@@ -1,20 +1,15 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
 import { NavBar } from './NavBar';
-import { NavBarList } from './NavBarList';
-import { useActions, useCurrentDocument, useNavBar } from 'src/app/hooks';
-import { selectGroup, selectLayer, selectLink, selectRuler, selectShape } from 'src/app/actions';
+import { GroupsList } from './GroupsList';
+import { LayersList } from './LayersList';
+import { LinksList } from './LinksList';
+import { RulersList } from './RulersList';
+import { ShapesList } from './ShapesList';
+import { useAppState } from 'src/app/hooks';
 
 export const NavBarContainer: FC = () => {
-  const document = useCurrentDocument();
-  const { 
-    selectGroup,
-    selectLayer, 
-    selectLink, 
-    selectRuler, 
-    selectShape, 
-  } = useActions();
-  const { visible } = useNavBar();
+  const { visible } = useAppState((state) => state.ui.navBar);
 
   if (!visible) {
     return null;
@@ -22,11 +17,11 @@ export const NavBarContainer: FC = () => {
 
   return (
     <NavBar>
-      <NavBarList name="Shapes" items={Object.values(document.shapes)} onClick={selectShape} />
-      <NavBarList name="Groups" items={Object.values(document.groups)} onClick={selectGroup} />
-      <NavBarList name="Layers" items={Object.values(document.layers)} onClick={selectLayer} />
-      <NavBarList name="Links" items={Object.values(document.links)} onClick={selectLink} />
-      <NavBarList name="Rulers" items={Object.values(document.rulers)} onClick={selectRuler} />
+      <ShapesList />
+      <GroupsList />
+      <LayersList />
+      <LinksList />
+      <RulersList />
     </NavBar>
   );
 };

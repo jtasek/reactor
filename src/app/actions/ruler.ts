@@ -36,10 +36,10 @@ export const removeRuler: Action<string> = ({ state }, rulerId) => {
   deleteRuler(state, rulerId);
 };
 
-export const selectRuler: Action<string> = ({ state }, rulerId) => {
+export const toggleRulerSelected: Action<string> = ({ state }, rulerId) => {
   const ruler = getRuler(state, rulerId);
 
-  ruler.selected = true;
+  ruler.selected = !ruler.selected;
 };
 
 export const unselectRuler: Action<string> = ({ state }, rulerId) => {

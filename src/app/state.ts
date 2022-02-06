@@ -5,6 +5,8 @@ import {
   componentsIds,
   groupsIds,
   layersIds,
+  linksIds,
+  rulersIds,
   selectedShapes,
   selectedShapesIds,
   shapesIds
@@ -97,6 +99,7 @@ export const state: Application = {
           shapes: ['4']
         }
       },
+      linksIds,
       links: {
         '1': {
           id: '1',
@@ -129,6 +132,7 @@ export const state: Application = {
           visible: true
         }
       },
+      rulersIds,
       rulers: {
         '1': {
           id: '1',

@@ -155,11 +155,13 @@ export interface Document {
   layers: HashTable<Layer>;
   layersIds: string[];
   links: HashTable<Link>;
+  linksIds: string[];
   locked: boolean;
   modified: Date;
   modifiedBy: string;
   name: string;
   rulers: HashTable<Ruler>;
+  rulersIds: string[];
   selected: boolean;
   selectedShapes: Shape[];
   selectedShapesIds: string[];

@@ -36,10 +36,10 @@ export const removeLayer: Action<string> = ({ state }, layerId) => {
   deleteLayer(state, layerId);
 };
 
-export const selectLayer: Action<string> = ({ state }, layerId) => {
+export const toggleLayerSelected: Action<string> = ({ state }, layerId) => {
   const layer = getLayer(state, layerId);
 
-  layer.selected = true;
+  layer.selected = !layer.selected;
 };
 
 export const unselectLayer: Action<string> = ({ state }, layerId) => {

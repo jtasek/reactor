@@ -13,6 +13,14 @@ export const layersIds = derived((currentDocument: Document) => {
   return Object.keys(currentDocument.layers);
 });
 
+export const linksIds = derived((currentDocument: Document) => {
+  return Object.keys(currentDocument.links);
+});
+
+export const rulersIds = derived((currentDocument: Document) => {
+  return Object.keys(currentDocument.rulers);
+});
+
 export const shapesIds = derived((currentDocument: Document) => {
   return Object.keys(currentDocument.shapes);
 });

@@ -63,6 +63,14 @@ export const useGroups = () => {
   return useCurrentDocument()?.groups ?? [];
 };
 
+export const useLink = (id: string) => {
+  return useCurrentDocument()?.links[id];
+};
+
+export const useLinks = () => {
+  return useCurrentDocument()?.links ?? [];
+};
+
 export const useLayer = (id: string) => {
   return useCurrentDocument()?.layers[id];
 };

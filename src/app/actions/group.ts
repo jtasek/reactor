@@ -36,10 +36,10 @@ export const removeGroup: Action<string> = ({ state }, groupId) => {
   deleteGroup(state, groupId);
 };
 
-export const selectGroup: Action<string> = ({ state }, groupId) => {
+export const toggleGroupSelected: Action<string> = ({ state }, groupId) => {
   const group = getGroup(state, groupId);
 
-  group.selected = true;
+  group.selected = !group.selected;
 };
 
 export const unselectGroup: Action<string> = ({ state }, groupId) => {

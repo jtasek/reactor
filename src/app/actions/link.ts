@@ -36,10 +36,10 @@ export const removeLink: Action<string> = ({ state }, linkId) => {
   deleteLink(state, linkId);
 };
 
-export const selectLink: Action<string> = ({ state }, linkId) => {
+export const toggleLinkSelected: Action<string> = ({ state }, linkId) => {
   const link = getLink(state, linkId);
 
-  link.selected = true;
+  link.selected = !link.selected;
 };
 
 export const unselectLink: Action<string> = ({ state }, linkId) => {
