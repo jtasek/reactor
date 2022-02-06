@@ -6,7 +6,7 @@ interface Props {
 
 export const NavBarList: FC<Props> = ({ name, children }) => (
   <li>
-    {name}
+    <h3>{name}</h3>
     <ul>{children}</ul>
   </li>
 );
