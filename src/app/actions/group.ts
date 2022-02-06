@@ -48,6 +48,12 @@ export const unselectGroup: Action<string> = ({ state }, groupId) => {
   group.selected = false;
 };
 
+export const toggleGroupLocked: Action<string> = ({ state }, groupId) => {
+  const group = getGroup(state, groupId);
+
+  group.locked = !group.locked;
+};
+
 export const lockGroup: Action<string> = ({ state }, groupId) => {
   const group = getGroup(state, groupId);
 
