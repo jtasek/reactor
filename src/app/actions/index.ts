@@ -1,4 +1,5 @@
 export * from './command';
+export * from './components';
 export * from './document';
 export * from './group';
 export * from './layer';
