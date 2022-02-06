@@ -13,6 +13,10 @@ export const PropertyPanel: FC<Props> = ({ shapes }) => {
     return null;
   }
 
+  if (shapes.length === 0) {
+    return <div className={styles.propertyPanel}>No shapes selected</div>;
+  }
+
   return (
     <table className={styles.propertyPanel}>
       <thead>
