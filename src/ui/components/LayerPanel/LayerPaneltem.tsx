@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import styles from './styles.css'
+import styles from './styles.css';
 import { Icon } from '../Icon';
 import { useActions, useLayer } from 'src/app/hooks';
 
@@ -36,8 +36,8 @@ interface Props {
 }
 
 export const LayerPanelItem: FC<Props> = ({ layerId }) => {
-  const { name, visible, locked } = useLayer(layerId);
-  const { toggleLayerVisible } = useActions();
+  const { name, locked, selected, visible } = useLayer(layerId);
+  const { toggleLayerLocked, toggleLayerSelected, toggleLayerVisible } = useActions();
 
   return (
     <li className={styles.layerItem}>
@@ -45,15 +45,22 @@ export const LayerPanelItem: FC<Props> = ({ layerId }) => {
         <input
           type="checkbox"
           value={name}
-          checked={visible}
-          onChange={(e) => toggleLayerVisible(layerId)}
+          checked={selected}
+          onChange={() => toggleLayerSelected(layerId)}
         />
         {name}
       </label>
-      <div className={styles.icons}>
-        <Icon icon={visible ? visibleIcon : hiddenIcon} />
-        <Icon icon={locked ? lockedIcon : openIcon} />
-      </div>
+      <ul
+        className={styles.icons}
+        style={{ display: 'flex', justifyItems: 'center', alignItems: 'center' }}
+      >
+        <li onClick={() => toggleLayerVisible(layerId)}>
+          <Icon icon={visible ? visibleIcon : hiddenIcon} />
+        </li>
+        <li onClick={() => toggleLayerLocked(layerId)}>
+          <Icon icon={locked ? lockedIcon : openIcon} />
+        </li>
+      </ul>
     </li>
   );
 };
