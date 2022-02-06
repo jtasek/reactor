@@ -1,6 +1,4 @@
-import { IAction, IConfiguration, IContext, IOperator } from 'overmind';
-
-import { config } from './';
+// export { IAction, IConfiguration, IContext, IOperator } from 'overmind';
 
 export enum Alignment {
   Bottom = 'bottom',
@@ -86,6 +84,7 @@ export interface Grid {
 
 export interface Shape {
   id: string;
+  parentShapeId?: string;
   centre?: Point;
   children?: Shape[];
   code: string;
@@ -135,6 +134,7 @@ export interface Layer {
 
 export interface Component {
   id: string;
+  parentComponentId?: string;
   locked: boolean;
   name: string;
   selected: boolean;
@@ -157,7 +157,7 @@ export interface Document {
   filter: string;
   grid: Grid;
   componentsIds: string[];
-  components: HashTable<Group>;
+  components: HashTable<Component>;
   groupsIds: string[];
   groups: HashTable<Group>;
   history: Action<any>[];
@@ -181,11 +181,18 @@ export interface Document {
 
 export interface Command {
   id: string;
+  icon: {
+    group: string;
+    name: string;
+    color: string;
+    size: number;
+  };
   category?: string;
   description?: string;
   name: string;
   shortCut?: string;
-  action: Action<any>;
+  canExecute: boolean;
+  execute: () => void;
 }
 
 export interface User {
@@ -240,7 +247,7 @@ export type Configuration = {
 export type Application = {
   id: string;
   commands: HashTable<Command>;
-  components: HashTable<Shape>;
+  commandsIds: string[];
   config: Configuration;
   currentDocumentId: string;
   currentDocument: Document;

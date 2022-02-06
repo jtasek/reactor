@@ -1,4 +1,4 @@
-export * from './command';
+export * from './commands';
 export * from './components';
 export * from './document';
 export * from './group';

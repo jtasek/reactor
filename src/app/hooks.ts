@@ -5,6 +5,7 @@ import {
   createReactionHook,
   createStateHook
 } from 'overmind-react';
+import { ConnectedExplorer } from 'src/ui/components/Explorer';
 
 import { config } from '.';
 
@@ -14,6 +15,22 @@ export const useActions = createActionsHook<Context>();
 export const useEffects = createEffectsHook<Context>();
 export const useReaction = createReactionHook<Context>();
 export const useAppState = createStateHook<Context>();
+
+export const useCommand = (code: string) => {
+  return useAppState(state => state.commands[code]);
+}
+
+export const useCommands = () => {
+  return useAppState(state => state.commands);
+}
+
+export const useComponent = (id: string) => {
+  return useCurrentDocument()?.components[id];
+};
+
+export const useComponents = () => {
+  return useCurrentDocument()?.components;
+}
 
 export const useEvents = () => {
   return useAppState((state) => state.events);

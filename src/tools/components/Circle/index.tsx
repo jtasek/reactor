@@ -48,6 +48,7 @@ export const Circle: FC<Props> = ({ code, cx, cy, r, selected }) => {
       strokeWidth={2}
       data-cy={code}
       className={className}
+      onClick={() => alert('CIRCLE')}
       cx={cx}
       cy={cy}
       r={r}

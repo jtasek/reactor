@@ -1,6 +1,7 @@
 import React, { FC } from 'react';
 
 import {
+  CommandBar,
   CommandLine,
   ContextMenu,
   ControlPanel,
@@ -26,6 +27,7 @@ import {
 
 export const Designer: FC = () => (
   <Layout>
+    <CommandBar />
     <MenuBar />
     <CommandLine />
     <Switch value={true} onChange={() => console.log('Testing switch')} />
@@ -45,7 +47,6 @@ export const Designer: FC = () => (
     <PropertyPanel />
     <LayerPanel />
     <GroupPanel />
-
     {/* <Cursor /> */}
     {/* <Dialog
         description="Description"

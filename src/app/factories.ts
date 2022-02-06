@@ -1,9 +1,13 @@
+import { currentDocument } from './computed/currentDocument';
+import { documentsIds } from './computed/documents';
 import {
+  commandsIds,
   componentsIds,
   groupsIds,
   layersIds,
   linksIds,
   rulersIds,
+  selectedShapes,
   selectedShapesIds,
   shapesIds
 } from './computed/shapes';
@@ -188,7 +192,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
     rulers: {},
     selected: false,
     selectedShapesIds,
-    selectedShapes: [],
+    selectedShapes,
     shapesIds,
     shapes: {},
     tags: [],
@@ -216,13 +220,22 @@ export function createGrid(): Grid {
   return { width: 10, visible: true, factor: 10, height: 10 };
 }
 
-export function createApplication(
-  options: Partial<Application> = {}
-): Partial<Application> & { id: string; started: Date; user: User } {
+export function createApplication(options: Partial<Application> = {}): Application {
   return {
     id: newApplicationName(),
     started: new Date(),
     user: getAnonymousUser(),
+    commands: {},
+    commandsIds,
+    config: { version: '1.0' },
+    currentDocumentId: 'document-1',
+    currentDocument,
+    currentPage: 'designer',
+    devices: {},
+    notifications: [],
+    providers: {},
+    documentsIds,
+    documents: { 'document-1': createDocument() },
     ...options
   };
 }

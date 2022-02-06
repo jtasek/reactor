@@ -1,5 +1,9 @@
 import { derived } from 'overmind';
-import { Document } from '../types';
+import { Application, Document } from '../types';
+
+export const commandsIds = derived(({ commands }: Application) => {
+  return Object.keys(commands);
+});
 
 export const componentsIds = derived((currentDocument: Document) => {
   return Object.keys(currentDocument.components);
@@ -33,4 +37,4 @@ export const selectedShapesIds = derived((currentDocument: Document) => {
   return Object.values(currentDocument.shapes)
     .filter((shape) => shape.selected)
     .map((shape) => shape.id);
-})
+});
