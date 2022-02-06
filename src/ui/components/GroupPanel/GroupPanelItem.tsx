@@ -36,8 +36,8 @@ interface Props {
 }
 
 export const GroupPanelItem: FC<Props> = ({ groupId }) => {
-  const { name, visible, locked } = useGroup(groupId);
-  const { toggleGroupVisible } = useActions();
+  const { name, locked, selected, visible } = useGroup(groupId);
+  const { toggleGroupLocked, toggleGroupSelected, toggleGroupVisible } = useActions();
 
   return (
     <li className={styles.groupItem}>
@@ -45,15 +45,19 @@ export const GroupPanelItem: FC<Props> = ({ groupId }) => {
         <input
           type="checkbox"
           value={name}
-          checked={visible}
-          onChange={(e) => toggleGroupVisible(groupId)}
+          checked={selected}
+          onChange={(e) => toggleGroupSelected(groupId)}
         />
         {name}
       </label>
-      <div className={styles.icons}>
-        <Icon icon={visible ? visibleIcon : hiddenIcon} />
-        <Icon icon={locked ? lockedIcon : openIcon} />
-      </div>
+      <ul className={styles.icons}>
+        <li onClick={() => toggleGroupVisible(groupId)}>
+          <Icon icon={visible ? visibleIcon : hiddenIcon} />
+        </li>
+        <li onClick={() => toggleGroupLocked(groupId)}>
+          <Icon icon={locked ? lockedIcon : openIcon} />
+        </li>
+      </ul>
     </li>
   );
 };
