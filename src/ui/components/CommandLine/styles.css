@@ -1,15 +1,30 @@
 .commandLine {
-  border: 1px solid mediumpurple;
-  display: inline-block;
-  width: 250px;
+  /* backdrop-filter: var(--backdrop- filter); */
+  /* background-color: var(--control-background); */
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow-hover);
+  border: 2px solid;
+  border-color: var(--border-color);
+  color: var(--text-color);
+  display: flex;
+
+  left: 550px;
+
+  position: absolute;
+  top: 20%;
+  transition: all 0.2s ease-in-out;
+  z-index: 100;
 }
 
 .commandLine input {
-  background-color: rgba(255, 255.255, 1);
-  border-radius: 2px;
-  border: 0;
-  height: 24px;
-  line-height: 24px;
+  /* background-color: var(--control-background);  */
+  /* backdrop-filter: var(--backdrop-filter); */
+
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  height: 2.5rem;
+  line-height: 2.5rem;
+  min-width: 350px;
+  outline: none;
   padding: 4px 10px;
-  width: 100%;
 }
