@@ -1,4 +1,5 @@
-import { getDistance, pointInRectangle } from '../utils';
+import { Box, Point, Rectangle, Shape } from '../types';
+import { getDistance, overlaps, pointInRectangle } from '../utils';
 
 describe('utils', () => {
   describe('getDistance()', () => {
@@ -26,6 +27,32 @@ describe('utils', () => {
         { x: 1, y: 1 },
         { p: { x: 50, y: 50 }, size: { width: 100, height: 100 } }
       );
+
+      expect(actual).toBe(false);
+    });
+  });
+
+  describe('overlap()', () => {
+    it('returns false when source is on the left from target', () => {
+      const source: Box = { topLeft: { x: 100, y: 100 }, bottomRight: { x: 200, y: 200 } };
+      const target: Box = { topLeft: { x: 200, y: 100 }, bottomRight: { x: 300, y: 200300 } };
+
+      const actual = overlaps(source, target);
+
+      expect(actual).toBeFalsy();
+    });
+  });
+
+  describe('pointInRect()', () => {
+    it('returns true when point is withing the box boundaries', () => {
+      const point: Point = { x: 100, y: 100 };
+
+      const shape: Partial<Shape> = {
+        position: { x: 200, y: 300 },
+        size: { height: 100, width: 100 }
+      };
+
+      const actual = pointInRectangle(point, shape);
 
       expect(actual).toBe(false);
     });
