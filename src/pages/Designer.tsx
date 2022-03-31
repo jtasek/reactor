@@ -28,8 +28,8 @@ import {
 export const Designer: FC = () => (
   <Layout>
     <CommandBar />
-    <MenuBar />
     <CommandLine />
+    <MenuBar />
     <Switch value={true} onChange={() => console.log('Testing switch')} />
     <SideBar>
       <ToolBar />
