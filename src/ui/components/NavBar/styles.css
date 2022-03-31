@@ -1,5 +1,6 @@
 .navBar {
   padding: 10px;
+  overflow: auto;
   /* backdrop-filter: var(--backdrop-filter); */
 }
 
