@@ -4,7 +4,7 @@ export const state: UI = {
   commandLine: {
     id: 'commandLine',
     name: 'Command Line',
-    visible: true
+    visible: false
   },
   contextMenu: {
     id: 'contextMenu',
@@ -23,17 +23,17 @@ export const state: UI = {
   dataView: {
     id: 'dataView',
     name: 'Data View',
-    visible: true
+    visible: false
   },
   documentInfo: {
     id: 'documentInfo',
     name: 'Document Info',
-    visible: true
+    visible: false
   },
   explorer: {
     id: 'explorer',
     name: 'Explorer',
-    visible: true
+    visible: false
   },
   grid: {
     id: 'grid',
@@ -46,27 +46,27 @@ export const state: UI = {
   groupPanel: {
     id: 'groupPanel',
     name: 'Group Panel',
-    visible: true
+    visible: false
   },
   layerPanel: {
     id: 'layerPanel',
     name: 'Layer Panel',
-    visible: true
+    visible: false
   },
   menuBar: {
     id: 'menuBar',
     name: 'Menu Bar',
-    visible: true
+    visible: false
   },
   miniMap: {
     id: 'miniMap',
     name: 'Minimap',
-    visible: true
+    visible: false
   },
   navBar: {
     id: 'navBar',
     name: 'Navigation Bar',
-    visible: true
+    visible: false
   },
   overlay: {
     id: 'overlay',
@@ -76,22 +76,22 @@ export const state: UI = {
   propertyPanel: {
     id: 'propertyPanel',
     name: 'Property Panel',
-    visible: true
+    visible: false
   },
   rulers: {
     id: 'rulers',
     name: 'Rulers',
-    visible: true
+    visible: false
   },
   searchBox: {
     id: 'searchBox',
     name: 'Search Box',
-    visible: true
+    visible: false
   },
   sideBar: {
     id: 'sideBar',
     name: 'Side Bar',
-    visible: true
+    visible: false
   },
   surface: {
     id: 'surface',
@@ -106,6 +106,6 @@ export const state: UI = {
   toolBar: {
     id: 'toolBar',
     name: 'Tool Bar',
-    visible: true
+    visible: false
   }
 };
