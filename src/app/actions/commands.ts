@@ -1,9 +1,11 @@
-import { Command } from '../types';
+import { Action, ActionGuard } from '../types';
+import { Context } from '../hooks';
 
-export const registerCommand: Action<Command> = (state, command) => {
-  state.commands[command.id] = command;
+export const canExecuteCommand = (context: Context, actionGuard: ActionGuard) => {
+  return actionGuard(context);
 };
 
-export const executeCommand: Action<string> = ({ effects }, command) => {
-  effects.execute(command);
+
+export const executeCommand = (context: Context, action: Action) => {
+  action(context);
 };
