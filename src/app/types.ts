@@ -1,5 +1,7 @@
 // export { IAction, IConfiguration, IContext, IOperator } from 'overmind';
 
+import { Context } from './hooks';
+
 export enum Alignment {
   Bottom = 'bottom',
   Left = 'left',
@@ -54,6 +56,11 @@ export type Vector = {
 export type Rectangle = {
   p: Point;
   size: Size;
+};
+
+export type Box = {
+  topLeft: Point;
+  bottomRight: Point;
 };
 
 export type Size = {
@@ -134,7 +141,7 @@ export interface Layer {
 
 export interface Component {
   id: string;
-  parentComponentId?: string;
+  parentId?: string;
   locked: boolean;
   name: string;
   selected: boolean;
@@ -159,8 +166,10 @@ export interface Document {
   componentsIds: string[];
   components: HashTable<Component>;
   groupsIds: string[];
+  selectedGroupsIds: string[];
   groups: HashTable<Group>;
-  history: Action<any>[];
+  //history: Action[];
+  selectedLayersIds: string[];
   layers: HashTable<Layer>;
   layersIds: string[];
   links: HashTable<Link>;
@@ -179,20 +188,26 @@ export interface Document {
   tags: string[];
 }
 
+export interface Icon {
+  group: string;
+  name: string;
+  color?: string;
+  size: number;
+}
+
+export type ActionGuard = (context: Context, args?: Record<string, unknown>) => boolean;
+export type Action = (context: Context, args?: Record<string, unknown>) => void;
+
 export interface Command {
   id: string;
-  icon: {
-    group: string;
-    name: string;
-    color: string;
-    size: number;
-  };
+  icon: Icon;
   category?: string;
   description?: string;
+  regex: RegExp;
   name: string;
-  shortCut?: string;
-  canExecute: boolean;
-  execute: () => void;
+  shortcut?: string;
+  canExecute: ActionGuard;
+  execute: Action;
 }
 
 export interface User {
@@ -242,6 +257,7 @@ export interface Notification {
 
 export type Configuration = {
   version: string;
+  autoSave: boolean;
 };
 
 export type Application = {
