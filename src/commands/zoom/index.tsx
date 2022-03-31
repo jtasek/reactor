@@ -1,0 +1,48 @@
+import { Command } from 'src/app/types';
+import { Context } from 'src/app/hooks';
+import { zoomIn, zoomOut, zoomReset } from './actions';
+
+export const ZoomInCommand: Command = {
+  id: 'zoom-in',
+  name: 'Zoom in',
+  description: 'Zoom in',
+  icon: {
+    group: 'action',
+    name: 'zoom_in',
+    size: 24
+  },
+  regex: /(?<toolCode>zoomin)\((?<factor>[\d]+)\)/,
+  shortcut: 'z',
+  canExecute: (context: Context) => true,
+  execute: zoomIn
+};
+
+export const ZoomOutCommand: Command = {
+  id: 'zoom-out',
+  name: 'Zoom out',
+  description: 'Zoom out',
+  icon: {
+    group: 'action',
+    name: 'zoom_out',
+    size: 24
+  },
+  regex: /(?<toolCode>zoomout)\((?<factor>[\d]+)\)/,
+  shortcut: 'z',
+  canExecute: (context: Context) => true,
+  execute: zoomOut
+};
+
+export const ZoomResetCommand: Command = {
+  id: 'zoom-reset',
+  name: 'Zoom reset',
+  description: 'Zoom reset',
+  icon: {
+    group: 'action',
+    name: 'youtube_searched_for',
+    size: 24
+  },
+  regex: /(?<toolCode>zoomreset)\((?<factor>[\d]+)\)/,
+  shortcut: 'z',
+  canExecute: (context: Context) => true,
+  execute: zoomReset
+};
