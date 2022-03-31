@@ -43,10 +43,10 @@ export const ContextMenuItems: FC<Props> = ({ items }) => {
 
         return (
           <ContextMenuItem
-            key={item.code}
+            key={item.id}
             tool={item}
             inlineStyles={style}
-            onClick={() => tools.activateTool(item.code)}
+            onClick={() => tools.activateTool(item.id)}
           />
         );
       })}

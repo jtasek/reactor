@@ -15,7 +15,7 @@ export const ContextMenuItem: FC<Props> = ({ tool, inlineStyles, onClick }) => (
       href="#"
       onClick={(e) => {
         e.preventDefault();
-        onClick(tool.code);
+        onClick(tool.id);
       }}
       title={tool.description}
     >
