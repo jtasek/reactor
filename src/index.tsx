@@ -2,7 +2,7 @@ import React from 'react';
 import { render } from 'react-dom';
 import { createOvermind } from 'overmind';
 import { Provider } from 'overmind-react';
-import { Shell } from './app/Shell';
+import { Shell } from './app/components/Shell';
 import { config } from './app';
 
 const overmind = createOvermind(config, {
