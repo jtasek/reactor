@@ -1,8 +1,8 @@
 import React, { FC } from 'react';
-import { useAppState } from './hooks';
+import { useAppState } from '../hooks';
 import { useKeyboard } from 'src/events/drivers/keyboard';
 
-import { Designer, Documents } from '../pages';
+import { Designer, Documents } from '../../pages';
 
 export const Shell: FC = () => {
   useKeyboard();
