@@ -12,8 +12,8 @@ interface Props {
 }
 
 export const ToolBarButton: FC<Props> = ({ tool, active, onClick }) => (
-  <li className={styles.toolBarButton} style={active ? { opacity: '1' } : {}}>
-    <a href="#" onClick={() => onClick(tool.code)} title={tool.description}>
+  <li className={styles.toolBarButton} data-active={active}>
+    <a href="#" onClick={() => onClick(tool.id)} title={tool.description}>
       <Icon icon={tool.icon} />
     </a>
   </li>

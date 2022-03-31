@@ -16,9 +16,9 @@ export const ToolBar: FC<Props> = ({ onClick }) => {
     <ul className={styles.toolBar}>
       {registeredTools.map((item) => (
         <ToolBarButton
-          key={item.code}
+          key={item.id}
           tool={item}
-          active={tools.activeToolsIds.includes(item.code)}
+          active={tools.activeToolsIds.includes(item.id)}
           onClick={onClick}
         />
       ))}
