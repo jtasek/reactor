@@ -3,6 +3,7 @@ import { createApplication } from './factories';
 import {
   componentsIds,
   groupsIds,
+  selectedGroupsIds,
   layersIds,
   linksIds,
   rulersIds,
@@ -45,6 +46,7 @@ const documents = {
       }
     },
     groupsIds,
+    selectedGroupIds: selectedGroupsIds,
     groups: {
       '1': {
         id: '1',
