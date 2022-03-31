@@ -8,6 +8,7 @@
 //   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node']
 // };
 module.exports = {
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   transform: {
     '^.+\\.(t|j)sx?$': '@swc/jest'
   }
