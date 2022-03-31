@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { Icon as IconType } from 'src/tools/types';
+import { Icon as IconType } from 'src/app/types';
 
 export interface Props {
   icon?: IconType;
