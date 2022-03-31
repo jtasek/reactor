@@ -3,7 +3,9 @@ import { documentsIds } from './computed/documents';
 import {
   commandsIds,
   componentsIds,
+  selectedGroupsIds,
   groupsIds,
+  selectedLayersIds,
   layersIds,
   linksIds,
   rulersIds,
@@ -33,6 +35,13 @@ import {
 
 export const getDefaultName = (type: string): string => 'Rect';
 
+export function* sequence() {
+  let i = 1;
+  while (true) {
+    yield i++;
+  }
+}
+
 const componentSequence = sequence();
 const documentSequence = sequence();
 const groupSequence = sequence();
@@ -49,13 +58,6 @@ export const newLayerName = (): string => `Layer-${layerSequence.next().value}`;
 export const newLinkName = (): string => `Link-${linkSequence.next().value}`;
 export const newRulerName = (): string => `Ruler-${rulerSequence.next().value}`;
 export const newShapeName = (): string => `Shape-${shapeSequence.next().value}`;
-
-export function* sequence() {
-  let i = 1;
-  while (true) {
-    yield i++;
-  }
-}
 
 export const getAnonymousUser = (): User => {
   return {
@@ -78,7 +80,7 @@ export function getDefaultType(): string {
 export function createCommand(options: Partial<Command> = {}): Command {
   return {
     id: newId(),
-    action: () => console.log('not implemented'),
+    execute: () => console.log('not implemented'),
     category: 'test',
     name: 'Print document name',
     ...options
@@ -100,8 +102,6 @@ export function createShape(options: Partial<Shape> = {}): Shape {
   const type = options.type ?? getDefaultType();
 
   return {
-    id,
-    code: `${type}-${id}`,
     children: [],
     created: new Date(),
     createdBy: getCurrentUserName(),
@@ -112,7 +112,9 @@ export function createShape(options: Partial<Shape> = {}): Shape {
     selected: true,
     type,
     visible: true,
-    ...options
+    ...options,
+    id,
+    code: `${type}-${id}`
   };
 }
 
@@ -177,9 +179,11 @@ export function createDocument(options: Partial<Document> = {}): Document {
     grid: createGrid(),
     componentsIds,
     components: {},
+    selectedGroupsIds,
     groupsIds,
     groups: {},
-    history: [],
+    //history: [],
+    selectedLayersIds,
     layersIds,
     layers: {},
     linksIds,
@@ -227,7 +231,10 @@ export function createApplication(options: Partial<Application> = {}): Applicati
     user: getAnonymousUser(),
     commands: {},
     commandsIds,
-    config: { version: '1.0' },
+    config: {
+      version: '1.0',
+      autoSave: false
+    },
     currentDocumentId: 'document-1',
     currentDocument,
     currentPage: 'designer',
