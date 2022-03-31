@@ -1,27 +1,28 @@
 import React, { FC } from 'react';
 import { Icon } from '../Icon';
-import { useCommand } from 'src/app/hooks';
 import styles from './styles.css';
+import { Command } from 'src/app/types';
+import { useActions } from 'src/app/hooks';
 
 export interface Props {
-  commandId: string;
+  command: Command;
 }
 
-export const CommandBarButton: FC<Props> = ({ commandId }) => {
-  const command = useCommand(commandId);
-
+export const CommandBarButton: FC<Props> = ({ command }) => {
+  const { canExecuteCommand, executeCommand } = useActions();
+  
   return (
     <li className={styles.commandBarButton}>
       <a
         href="#"
         onClick={(e) => {
           e.preventDefault();
-          alert(command.id);
+          executeCommand(command.execute)
         }}
         title={command.description}
       >
         <Icon icon={command.icon} />
-        {command.canExecute ? '' : '*'}
+        {canExecuteCommand(command.canExecute) ? '' : '*'}
         {command.name}
       </a>
     </li>
