@@ -1,4 +1,3 @@
-import { derived } from 'overmind';
 import { Command } from 'src/app/types';
 import * as commands from 'src/commands';
 
