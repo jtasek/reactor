@@ -1,5 +1,6 @@
 import { Action } from 'src/app/types';
-import { getToolByType } from './components';
+import { Pointer } from 'src/events/types';
+import { getTool } from './components';
 
 export const activateTool: Action<string> = ({ state: { tools }, actions }, toolId) => {
   tools.activeToolsIds = [toolId];
@@ -41,30 +42,36 @@ export const moveCamera: Action<{ deltaX: number; deltaY: number; deltaZ: number
   currentDocument.camera.position.y -= delta.deltaY;
 };
 
+function rescalePointer(pointer: Pointer) {
+  return {
+    ...pointer,
+    centre: pointer.scaledCentre,
+    position: pointer.scaledPosition,
+    offset: pointer.scaledOffset,
+    path: pointer.scaledPath,
+    radius: pointer.scaledRadius,
+    size: pointer.scaledSize,
+    startPosition: pointer.scaledStartPosition,
+    topLeftPosition: pointer.scaledTopLeftPosition,
+    bottomRightPosition: pointer.scaledBottomRightPosition
+  };
+}
+
 export const executeToolCommand: Action = ({ state, actions }) => {
   const { activeToolsIds } = state.tools;
-  // Get tool command
+
   for (const toolId of activeToolsIds) {
-    const tool = getToolByType(toolId);
+    const tool = getTool(toolId);
     console.log(`Execute command: ${toolId}`);
 
     if (tool?.factory) {
-      // Rescale pointer
-      const pointer = {
-        ...state.events.pointer,
-        centre: state.events.pointer.scaledCentre,
-        position: state.events.pointer.scaledPosition,
-        offset: state.events.pointer.scaledOffset,
-        path: state.events.pointer.scaledPath,
-        radius: state.events.pointer.scaledRadius,
-        size: state.events.pointer.scaledSize,
-        startPosition: state.events.pointer.scaledStartPosition,
-        topLeftPosition: state.events.pointer.scaledTopLeftPosition,
-        bottomRightPosition: state.events.pointer.scaledBottomRightPosition
-      };
+      // Rescale pointer accorrding to the current zoom
+      const pointer = rescalePointer(state.events.pointer);
+
       // Create new shape
       const options = tool.factory(pointer, state.events.keyboard);
-      // Insert new shape into store
+
+      // Insert new shape into the store
       actions.addShape({ ...options, selected: false });
     }
   }
