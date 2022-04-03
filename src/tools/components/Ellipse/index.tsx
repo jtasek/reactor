@@ -54,20 +54,19 @@ export const EllipseTool: FC = () => {
   return <Ellipse key="ellipse" {...createEllipse(pointer)} />;
 };
 
-export default {
-  code: 'ellipse',
+export const EllipseCommand: Tool = {
+  id: 'ellipse',
   name: 'Ellipse',
-  description: 'Draws ellipse',
+  description: 'Draw an ellipse',
   factory: createEllipse,
   tool: EllipseTool,
   component: Ellipse,
   icon: {
     group: 'image',
     name: 'panorama_fish_eye',
-    color: 'rgb(144, 254, 214)',
+    // color: 'rgb(144, 254, 214)',
     size: 24
   },
   regex: /(?<toolCode>ellipse)\((?<cx>\d+),(?<cy>\d+),(?<radius>\d+)\)/,
-  shortcut: 'ctrl+e',
-  type: 'ellipse'
-} as Tool;
+  shortcut: 'ctrl+e'
+};
