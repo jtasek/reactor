@@ -1,25 +1,34 @@
 import { FC } from 'react';
 import { Tool } from '../types';
 
-import Circle from './Circle';
-import Ellipse from './Ellipse';
-import Image from './Image';
-import Line from './Line';
-import Pen from './Pen';
-import Rect from './Rect';
-import Select from './Select';
-import Text from './Text';
+import { CircleCommand } from './Circle';
+import { EllipseCommand } from './Ellipse';
+import { ImageCommand } from './Image';
+import { LineCommand } from './Line';
+import { PenCommand } from './Pen';
+import { RectCommand } from './Rect';
+import { SelectCommand } from './Select';
+import { TextCommand } from './Text';
 
-const library = [Circle, Ellipse, Image, Line, Pen, Rect, Select, Text];
+const library = [
+  CircleCommand,
+  EllipseCommand,
+  ImageCommand,
+  LineCommand,
+  PenCommand,
+  RectCommand,
+  SelectCommand,
+  TextCommand
+];
 
-export function getToolByType(type: string): Tool | undefined {
-  const result = library.find((item) => item.code === type);
+export function getTool(toolId: string): Tool | undefined {
+  const result = library.find((item) => item.id === toolId);
 
   return result;
 }
 
 export function getComponentByType(type: string): FC<any> | undefined {
-  const result = library.find((item) => item.code === type);
+  const result = library.find((item) => item.id === type);
 
   return result?.component;
 }
