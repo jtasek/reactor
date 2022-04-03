@@ -62,20 +62,19 @@ export const CircleTool: FC = () => {
   return <Circle key="circle" {...createCircle(pointer)} />;
 };
 
-export default {
-  code: 'circle',
+export const CircleCommand: Tool = {
+  id: 'circle',
   name: 'Circle',
-  description: 'Draws circle',
+  description: 'Draw a circle',
   factory: createCircle,
   tool: CircleTool,
   component: Circle,
   icon: {
     group: 'image',
     name: 'panorama_fish_eye',
-    color: 'rgb(144, 254, 214)',
+    // color: 'rgb(144, 254, 214)',
     size: 24
   },
   regex: /(?<toolCode>circle)\((?<cx>\d+),(?<cy>\d+),(?<radius>\d+)\)/,
   shortcut: 'ctrl+c',
-  type: 'circle'
-} as Tool;
+};
