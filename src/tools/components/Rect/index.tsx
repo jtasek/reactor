@@ -57,10 +57,10 @@ export const RectTool: FC = () => {
   return <Rect {...createRect(pointer)} />;
 };
 
-export default {
-  code: 'rect',
+export const RectCommand: Tool = {
+  id: 'rect',
   name: 'Rectangle',
-  description: 'Draws a rectangle or square',
+  description: 'Draw a rectangle or square',
   factory: createRect,
   tool: RectTool,
   component: Rect,
@@ -71,6 +71,5 @@ export default {
     size: 24
   },
   regex: /(?<toolCode>rect)\((?<x1>[\d]+),(?<y1>[\d]+),(?<x2>[\d]+),(?<y2>[\d]+)\)/,
-  shortcut: 'r',
-  type: 'rect'
-} as Tool;
+  shortcut: 'r'
+};
