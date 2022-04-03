@@ -49,25 +49,24 @@ export const Image: FC<Props> = ({ x, y, width, height, href }) => (
 );
 
 export const ImageTool: FC = () => {
-  const { pointer } = useAppState().events;
+  const { pointer } = useAppState(state => state.events);
 
   return <Image {...createImage(pointer)} />;
 };
 
-export default {
-  code: 'image',
+export const ImageCommand: Tool = {
+  id: 'image',
   name: 'Image',
-  description: 'Insert image',
-  //factory: createImage,
+  description: 'Insert an image',
+  factory: createImage,
   tool: ImageTool,
   component: Image,
   icon: {
     group: 'image',
     name: 'image',
-    color: 'rgb(234, 2, 130)',
+    // color: 'rgb(234, 2, 130)',
     size: 24
   },
   regex: /(?<toolCode>image)\('(?<protocol>www|http|https):\/\/(?<url>[^\s]+[\w])'\)/,
-  shortcut: 'ctrl+i',
-  type: 'image'
-} as Tool;
+  shortcut: 'ctrl+i'
+};
