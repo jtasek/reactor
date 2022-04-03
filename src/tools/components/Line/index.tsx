@@ -42,20 +42,19 @@ export const LineTool: FC = () => {
   return <Line {...createLine(pointer)} />;
 };
 
-export default {
-  code: 'line',
+export const LineCommand: Tool = {
+  id: 'line',
   name: 'Line',
-  description: 'Draws a line',
+  description: 'Draw a line',
   factory: createLine,
   tool: LineTool,
   component: Line,
   icon: {
     group: 'action',
     name: 'timeline',
-    color: 'rgb(95, 216, 240)',
+    // color: 'rgb(95, 216, 240)',
     size: 24
   },
   regex: /(?<toolCode>line)\((?<x1>\d+),(?<y1>\d+),(?<x2>\d+),(?<y2>\d+)\)/,
-  shortcut: 'ctrl+l',
-  type: 'line'
-} as Tool;
+  shortcut: 'ctrl+l'
+};
