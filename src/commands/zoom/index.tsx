@@ -5,6 +5,7 @@ import { zoomIn, zoomOut, zoomReset } from './actions';
 export const ZoomInCommand: Command = {
   id: 'zoom-in',
   name: 'Zoom in',
+  category: 'surface',
   description: 'Zoom in',
   icon: {
     group: 'action',
@@ -20,6 +21,7 @@ export const ZoomInCommand: Command = {
 export const ZoomOutCommand: Command = {
   id: 'zoom-out',
   name: 'Zoom out',
+  category: 'surface',
   description: 'Zoom out',
   icon: {
     group: 'action',
@@ -35,6 +37,7 @@ export const ZoomOutCommand: Command = {
 export const ZoomResetCommand: Command = {
   id: 'zoom-reset',
   name: 'Zoom reset',
+  category: 'surface',
   description: 'Zoom reset',
   icon: {
     group: 'action',

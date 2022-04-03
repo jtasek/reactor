@@ -24,6 +24,7 @@ export const cloneSelection = ({ state }: Context) => {
 export const CloneCommand: Command = {
   id: 'clone',
   name: 'Clone',
+  category: 'shapes',
   description: 'Clone current selection',
   icon: {
     group: 'content',

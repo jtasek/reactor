@@ -13,6 +13,7 @@ export const groupSelection = (context: Context) => {
 export const GroupCommand: Command = {
   id: 'group',
   name: 'Group',
+  category: 'groups',
   description: 'Group current selection',
   icon: {
     group: 'av',

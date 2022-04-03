@@ -8,6 +8,7 @@ export const moveSelection = (Context: Context, arg?: Record<string, unknown>) =
 export const MoveCommand: Command = {
   id: 'move',
   name: 'Move',
+  category: 'shapes',
   description: 'Move current selection',
   icon: {
     group: 'action',

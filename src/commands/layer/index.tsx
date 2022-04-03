@@ -13,6 +13,7 @@ export const layerSelection = (context: Context) => {
 export const LayerCommand: Command = {
   id: 'layer',
   name: 'Layer',
+  category: 'layers',
   description: 'Layer current selection',
   icon: {
     group: 'action',

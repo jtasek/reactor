@@ -12,6 +12,7 @@ export const selectShape = ({ state }: Context) => {
 export const SelectCommand: Command = {
   id: 'select',
   name: 'Select',
+  category: 'shapes',
   description: 'Select shapes and groups ',
   icon: {
     group: 'action',
