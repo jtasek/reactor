@@ -5,6 +5,7 @@ import { useActions, useAppState as useAppState } from 'src/app/hooks';
 
 import styles from './styles.css';
 import { Keyboard, Pointer } from 'src/events/types';
+import { Tool } from 'src/tools/types';
 
 /**
  * Draws a text in current position
@@ -115,10 +116,10 @@ export const TextTool: FC = () => {
   );
 };
 
-export default {
-  code: 'text',
+export const TextCommand: Tool = {
+  id: 'text',
   name: 'Text',
-  description: 'Types a text',
+  description: 'Type a text',
   factory: createText,
   tool: TextTool,
   component: Text,
@@ -129,6 +130,5 @@ export default {
     size: 24
   },
   regex: /(?<toolCode>text)\((?<x>[\d]+),(?<y>[\d]+),'(?<text>[\w]+)'\)/,
-  shortcut: 't',
-  type: 'text'
+  shortcut: 't'
 };
