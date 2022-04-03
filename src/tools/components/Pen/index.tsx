@@ -41,10 +41,10 @@ export const PenTool: FC = () => {
   return <Pen {...createPen(pointer)} selected={true} />;
 };
 
-export default {
-  code: 'pen',
+export const PenCommand: Tool = {
+  id: 'pen',
   name: 'Pen',
-  description: 'Draws a curve line',
+  description: 'Draw a curve line',
   factory: createPen,
   tool: PenTool,
   component: Pen,
@@ -55,6 +55,5 @@ export default {
     size: 24
   },
   regex: /(?<toolCode>pen)\((?<path>[\d, ]+)\)/,
-  shortcut: 'p',
-  type: 'pen'
-} as Tool;
+  shortcut: 'p'
+};
