@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 import inlineStyles from './inlineStyles';
-import type { Point, Size } from 'src/app/types';
+import type { Command, Point, Size } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
 import { useAppState } from 'src/app/hooks';
 
@@ -26,27 +26,26 @@ export const Select: FC<Props> = ({ topLeftPosition, size }) => (
 );
 
 export const SelectTool: FC = () => {
-  const { pointer } = useAppState().events;
+  const { pointer } = useAppState((state) => state.events);
 
   return <Select {...pointer} />;
 };
 
-export default {
-  code: 'select',
+export const SelectCommand: Tool = {
+  id: 'select',
   name: 'Select',
   description: 'Select a shape or group',
-  // factory: (): Shape => {
-  //   throw new Error('Factory not implemented');
-  // },
+  factory: (): Shape => {
+    throw new Error('Factory not implemented');
+  },
   tool: SelectTool,
   component: Select,
   icon: {
     group: 'action',
     name: 'pan_tool',
-    color: 'rgba(255,255,255)',
+    // color: 'rgba(255,255,255)',
     size: 24
   },
   regex: /(?<toolCode>select)\((?<x1>[\d]+),(?<y1>[\d]+),(?<x2>[\d]+),(?<y2>[\d]+)\)/,
-  shortcut: 's',
-  type: 'select'
-} as Tool;
+  shortcut: 's'
+};
