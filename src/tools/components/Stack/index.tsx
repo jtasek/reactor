@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 import { useAppState } from 'src/app/hooks';
-import { getToolByType } from '..';
+import { getTool } from '..';
 
 interface Props {
   tools: string[];
@@ -9,7 +9,7 @@ interface Props {
 export const Stack: FC<Props> = ({ tools }) => (
   <g id="tools">
     {Object.values(tools).map((item) => {
-      const tool = getToolByType(item);
+      const tool = getTool(item);
       if (!tool) {
         return null;
       }
