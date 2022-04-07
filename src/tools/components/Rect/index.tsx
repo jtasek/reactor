@@ -4,6 +4,7 @@ import type { Pointer } from 'src/events/types';
 import { useAppState } from 'src/app/hooks';
 import type { Tool } from 'src/tools/types';
 import styles from '../../styles.css';
+import { toggleShapeSelected } from 'src/app/actions';
 
 /**
  * Draws a rectange based on position and size

@@ -17,7 +17,7 @@ export function getDistance(p1: Point, p2: Point): number {
 }
 
 export function getBBox(shape: Partial<Shape>) {
-  return { point: shape.position, size: { height: 100, width: 100 } };
+  return { point: shape.position, size: shape.size };
 }
 
 export function pointInRectangle(p: Point, shape: Partial<Shape>): boolean {

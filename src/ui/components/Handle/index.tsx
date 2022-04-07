@@ -4,9 +4,9 @@ import type { Position } from '../../../app/types';
 
 export interface Props {
   position: Position;
-  size: number;
+  size?: number;
 }
 
-export const Handle: FC<Props> = ({ position, size }) => (
+export const Handle: FC<Props> = ({ position, size = 5 }) => (
   <circle className={styles.handle} cx={position.x} cy={position.y} r={size} />
 );
