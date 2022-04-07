@@ -4,10 +4,12 @@ import { useActions } from 'src/app/hooks';
 export const useKeyboard = () => {
   const actions = useActions();
   useEffect(() => {
-    const listener = window.addEventListener('keydown', (event) => {
-      actions.events.keyPressed(event);
-    });
+    const keyDownListener = window.addEventListener('keydown', actions.events.keyDown);
+    const keyupListener = window.addEventListener('keyup', actions.events.keyUp);
 
-    return () => window.removeEventListener(listener);
+    return () => {
+      window.removeEventListener(keyDownListener);
+      window.removeEventListener(keyupListener);
+    };
   }, []);
 };
