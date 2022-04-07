@@ -35,6 +35,7 @@ export const deleteSelectedLayers = ({ state }: Context) => {
 export const UnlayerCommand: Command = {
   id: 'unlayer',
   name: 'Unlayer',
+  category: 'layers',
   description: 'Delete selected layer',
   icon: {
     group: 'action',

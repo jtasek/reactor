@@ -35,6 +35,7 @@ export const deleteSelectedGroups = ({ state }: Context) => {
 export const UngroupCommand: Command = {
   id: 'ungroup',
   name: 'Ungroup',
+  category: 'groups',
   description: 'Delete selected group',
   icon: {
     group: 'av',
