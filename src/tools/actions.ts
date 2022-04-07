@@ -1,41 +1,43 @@
-import { Action } from 'src/app/types';
+import { Context } from 'src/app/hooks';
 import { Pointer } from 'src/events/types';
 import { getTool } from './components';
 
-export const activateTool: Action<string> = ({ state: { tools }, actions }, toolId) => {
+export const activateTool = ({ state: { tools }, actions }: Context, toolId: string) => {
   tools.activeToolsIds = [toolId];
   actions.ui.hideContextMenu();
 };
 
-export const deactivateTool: Action<string> = ({ state: { tools } }, toolId) => {
+export const deactivateTool = ({ state: { tools } }: Context, toolId: string) => {
   const index = tools.activeToolsIds.indexOf(toolId);
   if (index > -1) {
     tools.activeToolsIds.splice(index, 1);
   }
 };
 
-export const resetTools: Action = ({ state: { tools } }) => {
-  tools.activeToolsIds = [];
+export const resetTools = ({ state: { events, tools } }: Context) => {
+  if (!events.keyboard.shiftKey) {
+    tools.activeToolsIds = [];
+  }
 };
 
-export const zoomIn: Action<number> = ({ state: { currentDocument } }, step = 1) => {
+export const zoomIn = ({ state: { currentDocument } }: Context, step = 1) => {
   currentDocument.camera.scale += step;
 };
 
-export const zoomOut: Action<number> = ({ state: { currentDocument } }, step = 1) => {
+export const zoomOut = ({ state: { currentDocument } }: Context, step = 1) => {
   currentDocument.camera.scale -= step;
 };
 
-export const zoomReset: Action<number> = ({ state: { currentDocument } }) => {
+export const zoomReset = ({ state: { currentDocument } }: Context) => {
   currentDocument.camera.scale = 1;
 };
 
-export const zoom: Action<number> = ({ state: { currentDocument } }, scale = 1) => {
+export const zoom = ({ state: { currentDocument } }: Context, scale = 1) => {
   currentDocument.camera.scale = scale;
 };
 
-export const moveCamera: Action<{ deltaX: number; deltaY: number; deltaZ: number }> = (
-  { state: { currentDocument } },
+export const moveCamera = (
+  { state: { currentDocument } }: Context,
   delta: { deltaX: number; deltaY: number; deltaZ: number }
 ) => {
   currentDocument.camera.position.x -= delta.deltaX;
@@ -57,7 +59,7 @@ function rescalePointer(pointer: Pointer) {
   };
 }
 
-export const executeToolCommand: Action = ({ state, actions }) => {
+export const executeToolCommand = ({ state, actions }: Context) => {
   const { activeToolsIds } = state.tools;
 
   for (const toolId of activeToolsIds) {
