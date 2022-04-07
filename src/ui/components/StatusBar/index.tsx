@@ -7,20 +7,22 @@ import { StatusBarSlot } from './StatusBarSlot';
 import { StatusBar } from './StatusBar';
 
 export const KeyboardInfo: FC = () => {
-  const { keyboard } = useAppState().events;
+  const { keyboard } = useAppState((state) => state.events);
 
   const result: string[] = [];
   result.push('keyboard: [');
-  result.push(keyboard.key);
+
   if (keyboard.altKey) {
-    result.push('+ ALT');
+    result.push('ALT +');
   }
   if (keyboard.ctrlKey) {
-    result.push('+ CTRL');
+    result.push('CTRL + ');
   }
   if (keyboard.shiftKey) {
-    result.push('+ SHIFT');
+    result.push('SHIFT + ');
   }
+
+  result.push(keyboard.key);
   result.push(']');
 
   return <span>{result.join(' ')}</span>;
