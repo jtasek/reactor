@@ -15,6 +15,7 @@ export const useMouse = () => {
     if (dragging) {
       setDragging(false);
       actions.tools.executeToolCommand();
+      actions.tools.resetTools();
       actions.events.endDragging();
     }
   };
