@@ -35,7 +35,22 @@ export const endTyping: Action = ({
   actions.tools.resetTools();
 };
 
-export const keyPressed: Action = (
+export const keyDown: Action = (
+  {
+    state: {
+      events: { keyboard }
+    }
+  },
+  event: any
+) => {
+  keyboard.altKey = event.altKey;
+  keyboard.ctrlKey = event.ctrlKey;
+  keyboard.key = event.key;
+  keyboard.metaKey = event.metaKey;
+  keyboard.shiftKey = event.shiftKey;
+};
+
+export const keyUp: Action = (
   {
     state: {
       events: { keyboard }
