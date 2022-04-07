@@ -1,5 +1,5 @@
 import { Command } from 'src/app/types';
-import * as commands from 'src/commands';
+import { commands } from 'src/commands';
 
 export function registerCommand(command: Command) {
   if (!commands[command.id]) {
