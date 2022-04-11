@@ -18,11 +18,11 @@ export const useAppState = createStateHook<Context>();
 
 export const useCommand = (commandId: string) => {
   return getCommand(commandId);
-}
+};
 
 export const useCommands = () => {
   return getCommands();
-}
+};
 
 export const useComponent = (id: string) => {
   return useCurrentDocument()?.components[id];
@@ -30,30 +30,30 @@ export const useComponent = (id: string) => {
 
 export const useComponents = () => {
   return useCurrentDocument()?.components;
-}
+};
 
 export const useEvents = () => {
   return useAppState((state) => state.events);
 };
 
 export const useKeyboardState = () => {
-  return useAppState(state => state.events.keyboard);
+  return useAppState((state) => state.events.keyboard);
 };
 
 export const usePointerState = () => {
-  return useAppState(state => state.events.pointer);
+  return useAppState((state) => state.events.pointer);
 };
 
 export const useCurrentDocument = () => {
-  return useAppState(state => state.currentDocument);
+  return useAppState((state) => state.currentDocument);
 };
 
 export const useDocument = (id: string) => {
-  return useAppState(state => state.documents[id]);
+  return useAppState((state) => state.documents[id]);
 };
 
 export const useDocuments = () => {
-  return useAppState(state => state.documents)  ?? [];
+  return useAppState((state) => state.documents) ?? [];
 };
 
 export const useShape = (id: string) => {
