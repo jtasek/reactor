@@ -35,7 +35,7 @@ export const CommandBar: FC = () => {
     <ul className={styles.commandBar}>
       {Object.entries(groups).map(([key, value]) => (
         <>
-          <CommandBarDelimiter />
+          <CommandBarDelimiter key="delimiter" />
           <CommandBarGroup key={key} commands={value} />
         </>
       ))}
