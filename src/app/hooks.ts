@@ -36,16 +36,28 @@ export const useEvents = () => {
   return useAppState((state) => state.events);
 };
 
-export const useKeyboardState = () => {
+export const useKeyboard = () => {
   return useAppState((state) => state.events.keyboard);
 };
 
-export const usePointerState = () => {
+export const usePointer = () => {
   return useAppState((state) => state.events.pointer);
+};
+
+export const useTools = () => {
+  return useAppState((state) => state.tools);
+};
+
+export const useControls = () => {
+  return useAppState((state) => state.ui);
 };
 
 export const useCurrentDocument = () => {
   return useAppState((state) => state.currentDocument);
+};
+
+export const useCamera = () => {
+  return useAppState((state) => state.currentDocument.camera);
 };
 
 export const useDocument = (id: string) => {
