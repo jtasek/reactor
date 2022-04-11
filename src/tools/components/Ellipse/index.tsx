@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
-import { useAppState, useEvents } from 'src/app/hooks';
-import type { Point, Size } from 'src/app/types';
+
+import { usePointer } from 'src/app/hooks';
 import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
 import styles from '../../styles.css';
@@ -49,7 +49,7 @@ export const Ellipse: FC<Props> = ({ name, cx, cy, rx, ry, selected }) => {
 };
 
 export const EllipseTool: FC = () => {
-  const { pointer } = useEvents();
+  const pointer = usePointer();
 
   return <Ellipse key="ellipse" {...createEllipse(pointer)} />;
 };

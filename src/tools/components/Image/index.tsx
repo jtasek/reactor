@@ -1,8 +1,7 @@
 import React, { FC } from 'react';
-import type { Point, Size } from 'src/app/types';
+
 import type { Pointer } from 'src/events/types';
-import { string } from 'yargs';
-import { useAppState } from 'src/app/hooks';
+import { usePointer } from 'src/app/hooks';
 import styles from '../../styles.css';
 import type { Tool } from 'src/tools/types';
 
@@ -49,7 +48,7 @@ export const Image: FC<Props> = ({ x, y, width, height, href }) => (
 );
 
 export const ImageTool: FC = () => {
-  const { pointer } = useAppState(state => state.events);
+  const pointer = usePointer();
 
   return <Image {...createImage(pointer)} />;
 };

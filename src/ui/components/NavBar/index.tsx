@@ -1,4 +1,5 @@
 import React, { FC } from 'react';
+
 import styles from './styles.css';
 import { NavBar } from './NavBar';
 import { ComponentsList } from './ComponentsList';
@@ -7,12 +8,12 @@ import { LayersList } from './LayersList';
 import { LinksList } from './LinksList';
 import { RulersList } from './RulersList';
 import { ShapesList } from './ShapesList';
-import { useAppState } from 'src/app/hooks';
+import { useControls } from 'src/app/hooks';
 
 export const NavBarContainer: FC = () => {
-  const { visible } = useAppState((state) => state.ui.navBar);
+  const { navBar } = useControls();
 
-  if (!visible) {
+  if (!navBar.visible) {
     return null;
   }
 

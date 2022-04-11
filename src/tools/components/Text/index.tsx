@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useRef } from 'react';
 
-import { useActions, useEvents } from 'src/app/hooks';
+import { useActions, useEvents, useKeyboard, usePointer } from 'src/app/hooks';
 import styles from './styles.css';
 import { Keyboard, Pointer } from 'src/events/types';
 import { Tool } from 'src/tools/types';
@@ -96,7 +96,9 @@ export const Text: FC<Props> = ({
 };
 
 export const TextTool: FC = () => {
-  const { pointer, keyboard } = useEvents();
+  const pointer = usePointer();
+  const keyboard = useKeyboard();
+
   const { startTyping, typing, endTyping } = useActions().events;
   const inputRef = useRef<HTMLInputElement | null>(null);
   useEffect(() => {

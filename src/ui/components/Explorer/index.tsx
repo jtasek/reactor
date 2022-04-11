@@ -1,13 +1,14 @@
-import React, { FC} from 'react';
+import React, { FC } from 'react';
+
 import styles from './styles.css';
 
 import { Explorer } from './Explorer';
-import { useAppState } from 'src/app/hooks';
+import { useControls } from 'src/app/hooks';
 
 export const ConnectedExplorer: FC = ({ children }) => {
-  const { visible } = useAppState((state) => state.ui.explorer);
+  const { explorer } = useControls();
 
-  if (!visible) {
+  if (!explorer.visible) {
     return null;
   }
 

@@ -1,9 +1,10 @@
 import React, { FC } from 'react';
-import { useActions, useAppState } from 'src/app/hooks';
+
+import { useActions, useControls } from 'src/app/hooks';
 import { ToolBar } from './ToolBar';
 
 export const ToolBarContainer: FC = () => {
-  const { toolBar } = useAppState(state => state.ui);
+  const { toolBar } = useControls();
   const actions = useActions();
 
   if (!toolBar.visible) {

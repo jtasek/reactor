@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
-import { useActions, useAppState } from 'src/app/hooks';
-import { useTools } from 'src/tools/components';
+import { useActions } from 'src/app/hooks';
+import { useRegisteredTools } from 'src/tools/components';
 import { Tool } from 'src/tools/types';
 
 import { ContextMenuItem } from './ContextMenuItem';
@@ -55,7 +55,7 @@ export const ContextMenuItems: FC<Props> = ({ items }) => {
 };
 
 export const ConnectedContextMenuItems: FC = () => {
-  const tools = useTools();
+  const tools = useRegisteredTools();
 
   return <ContextMenuItems items={tools} />;
 };

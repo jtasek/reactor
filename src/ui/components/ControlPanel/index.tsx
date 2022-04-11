@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 
 import { ControlPanel } from './ControlPanel';
-import { useActions, useAppState, useControls } from 'src/app/hooks';
+import { useActions, useControls } from 'src/app/hooks';
 
 export const ConnectedControlPanel: FC = () => {
   const controls = useControls();

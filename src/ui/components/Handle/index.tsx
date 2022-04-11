@@ -1,7 +1,8 @@
 import React, { FC, useEffect, useState } from 'react';
+
 import styles from './styles.css';
 import type { Position } from '../../../app/types';
-import { useActions, useEvents } from 'src/app/hooks';
+import { useActions, usePointer } from 'src/app/hooks';
 
 export interface Props {
   shapeId: string;
@@ -20,7 +21,7 @@ export interface Props {
 
 export const Handle: FC<Props> = ({ shapeId, position, type, size = 5 }) => {
   const { resizeShape } = useActions();
-  const { pointer } = useEvents();
+  const pointer = usePointer();
   const [active, setActive] = useState(false);
 
   useEffect(() => {
