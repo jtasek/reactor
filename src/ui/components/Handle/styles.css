@@ -1,25 +1,30 @@
 .handle {
-    fill: rgba(91, 96, 192, 1); /*cornflowerblue;*/
-    fill-opacity: .9;
-    stroke: ghostwhite;
-    stroke-width: 1px;
-    cursor: crosshair;
+  /* cornflowerblue; */
+  fill: rgba(91, 96, 192, 1);
+  fill-opacity: 0.9;
+  stroke: ghostwhite;
+  stroke-width: 1px;
+  cursor: e-resize;
 }
 
 /*[ auto | crosshair | default | pointer | move | e-resize | ne-resize | nw-resize | n-resize | se-resize | sw-resize | s-resize | w-resize| text | wait | help ]] */
 
-.top.center, .bottom.center {
-    cursor: ns-resize
+.topRight,
+.bottomLeft {
+  cursor: nesw-resize;
 }
 
-.left.center, .right.center {
-    cursor: ew-resize
+.topLeft,
+.bottomRight {
+  cursor: nwse-resize;
 }
 
-.top.left, .bottom.right {
-    cursor: nwse-resize;
+.middleLeft,
+.middleRight {
+  cursor: ew-resize;
 }
 
-.top.right, .bottom.left {
-    cursor: nesw-resize;
+.middleTop,
+.middleBottom {
+  cursor: ns-resize;
 }

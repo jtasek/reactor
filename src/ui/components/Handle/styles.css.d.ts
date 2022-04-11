@@ -1,11 +1,14 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
-    bottom: string;
-    center: string;
+    bottomLeft: string;
+    bottomRight: string;
     handle: string;
-    left: string;
-    right: string;
-    top: string;
+    middleBottom: string;
+    middleLeft: string;
+    middleRight: string;
+    middleTop: string;
+    topLeft: string;
+    topRight: string;
   }
 }
 
