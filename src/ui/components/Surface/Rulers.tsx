@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 import { Ruler } from '../Ruler';
-import { useAppState } from 'src/app/hooks';
+import { useCamera, useControls, useRulers } from 'src/app/hooks';
 import { Camera } from 'src/app/types';
 
 interface Props {
@@ -8,20 +8,19 @@ interface Props {
 }
 
 export const Rulers: FC<Props> = ({ camera }) => {
-  const {
-    currentDocument,
-    ui: { rulers }
-  } = useAppState();
+  const { rulers: control } = useControls();
+  const rulers = useRulers();
+  const defaultCamera = useCamera();
 
-  if (!rulers.visible) {
+  if (!control.visible) {
     return null;
   }
 
-  const { position, scale } = camera ?? currentDocument.camera;
+  const { position, scale } = camera ?? defaultCamera;
 
   return (
     <g id="rulers">
-      {Object.values(currentDocument.rulers).map((ruler) => (
+      {Object.values(rulers).map((ruler) => (
         <Ruler key={ruler.id} ruler={ruler} position={position} scale={scale} />
       ))}
     </g>

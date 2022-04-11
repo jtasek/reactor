@@ -1,20 +1,16 @@
 import React, { FC } from 'react';
 
-import { useActions, useAppState} from 'src/app/hooks';
+import { useActions, useControls, useCurrentDocument } from 'src/app/hooks';
 import { SearchBox } from './SearchBox';
 
 export const SearchBoxContainer: FC = () => {
-  const state = useAppState();
-  const actions= useActions();
+  const { searchBox } = useControls();
+  const { filter } = useCurrentDocument();
+  const actions = useActions();
 
-  if (!state.ui.searchBox.visible) {
+  if (!searchBox.visible) {
     return null;
   }
 
-  return (
-    <SearchBox
-      filter={state.currentDocument.filter}
-      onSearch={(value: string) => actions.search(value)}
-    />
-  );
+  return <SearchBox filter={filter} onSearch={(value: string) => actions.search(value)} />;
 };

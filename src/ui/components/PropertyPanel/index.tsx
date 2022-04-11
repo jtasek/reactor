@@ -1,14 +1,15 @@
 import React, { FC } from 'react';
 
 import { PropertyPanel } from './PropertyPanel';
-import { useAppState } from 'src/app/hooks';
+import { useControls, useCurrentDocument } from 'src/app/hooks';
 
 export const PropertyPanelContainer: FC = () => {
-  const { currentDocument, ui } = useAppState();
+  const { selectedShapes } = useCurrentDocument();
+  const { propertyPanel } = useControls();
 
-  if (!ui.propertyPanel.visible) {
+  if (!propertyPanel.visible) {
     return null;
   }
 
-  return <PropertyPanel shapes={currentDocument.selectedShapes} />;
+  return <PropertyPanel shapes={selectedShapes} />;
 };

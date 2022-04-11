@@ -1,8 +1,7 @@
 import React, { FC } from 'react';
-import { useAppState } from 'src/app/hooks';
+import { usePointer } from 'src/app/hooks';
 import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
-import type { Point } from '../../../app/types';
 import styles from '../../styles.css';
 
 /**
@@ -57,7 +56,7 @@ export const Circle: FC<Props> = ({ code, cx, cy, r, selected }) => {
 };
 
 export const CircleTool: FC = () => {
-  const { pointer } = useAppState().events;
+  const pointer = usePointer();
 
   return <Circle key="circle" {...createCircle(pointer)} />;
 };
@@ -76,5 +75,5 @@ export const CircleCommand: Tool = {
     size: 24
   },
   regex: /(?<toolCode>circle)\((?<cx>\d+),(?<cy>\d+),(?<radius>\d+)\)/,
-  shortcut: 'ctrl+c',
+  shortcut: 'ctrl+c'
 };

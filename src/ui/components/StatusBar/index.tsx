@@ -1,13 +1,13 @@
 import React, { FC } from 'react';
 
-import { useAppState } from 'src/app/hooks';
+import { useControls, useCurrentDocument, useKeyboard, usePointer } from 'src/app/hooks';
 
 import { ZoomSlider } from './ZoomSlider';
 import { StatusBarSlot } from './StatusBarSlot';
 import { StatusBar } from './StatusBar';
 
 export const KeyboardInfo: FC = () => {
-  const { keyboard } = useAppState((state) => state.events);
+  const keyboard = useKeyboard();
 
   const result: string[] = [];
   result.push('keyboard: [');
@@ -29,21 +29,19 @@ export const KeyboardInfo: FC = () => {
 };
 
 export const StatusBarContainer: FC = () => {
-  const { currentDocument, ui, events } = useAppState();
+  const { name, selectedShapesIds } = useCurrentDocument();
+  const { statusBar } = useControls();
+  const { position, offset } = usePointer();
 
-  const visible = ui.statusBar.visible;
-  if (!visible) {
+  if (!statusBar.visible) {
     return null;
   }
 
-  const position = events.pointer.position;
-  const offset = events.pointer.offset;
-  const selectedShapeCount = currentDocument.selectedShapesIds?.length;
-  const documentName = currentDocument.name;
+  const selectedShapeCount = selectedShapesIds?.length;
 
   return (
     <StatusBar>
-      <StatusBarSlot name="message">{documentName}</StatusBarSlot>
+      <StatusBarSlot name="message">{name}</StatusBarSlot>
       <StatusBarSlot name="selection">{`selection: [${selectedShapeCount}]`}</StatusBarSlot>
       <StatusBarSlot name="keyboard">
         <KeyboardInfo />

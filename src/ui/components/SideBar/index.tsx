@@ -1,12 +1,12 @@
 import React, { FC } from 'react';
 
 import { SideBar } from './SideBar';
-import { useAppState } from 'src/app/hooks';
+import { useControls } from 'src/app/hooks';
 
 export const SideBarContainer: FC = ({ children }) => {
-  const { ui } = useAppState();
+  const { sideBar } = useControls();
 
-  if (!ui.sideBar.visible) {
+  if (!sideBar.visible) {
     return null;
   }
 

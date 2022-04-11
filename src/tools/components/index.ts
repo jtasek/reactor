@@ -33,6 +33,6 @@ export function getComponentByType(type: string): FC<any> | undefined {
   return result?.component;
 }
 
-export function useTools(): Tool[] {
+export function useRegisteredTools(): Tool[] {
   return Object.values(library).map((item) => item);
 }

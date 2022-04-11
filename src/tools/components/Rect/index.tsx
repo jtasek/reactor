@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 import type { Position, Size } from 'src/app/types';
 import type { Pointer } from 'src/events/types';
-import { useAppState } from 'src/app/hooks';
+import { usePointer } from 'src/app/hooks';
 import type { Tool } from 'src/tools/types';
 import styles from '../../styles.css';
 import { toggleShapeSelected } from 'src/app/actions';
@@ -53,7 +53,7 @@ export const Rect: FC<Props> = ({ position, size, selected }) => {
 };
 
 export const RectTool: FC = () => {
-  const { pointer } = useAppState().events;
+  const pointer = usePointer();
 
   return <Rect {...createRect(pointer)} />;
 };

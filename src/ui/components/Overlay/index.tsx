@@ -1,11 +1,12 @@
 import React, { FC } from 'react';
-import { useAppState } from 'src/app/hooks';
+
+import { useControls } from 'src/app/hooks';
 import { Overlay } from './Overlay';
 
 export const ConnectedOverlay: FC = () => {
-  const { visible } = useAppState().ui.overlay;
+  const { overlay } = useControls();
 
-  if (!visible) {
+  if (!overlay.visible) {
     return null;
   }
 
