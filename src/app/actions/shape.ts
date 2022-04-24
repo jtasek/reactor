@@ -2,6 +2,7 @@ import { Application, Shape } from '../types';
 import { createShape } from '../factories';
 import { Context } from '../hooks';
 import { Pointer } from 'src/events/types';
+import { getBBox, overlaps, pointInRectangle } from '../utils';
 
 const getShape = ({ currentDocument }: Application, shapeId: string) => {
   const shape = currentDocument.shapes[shapeId];
@@ -48,6 +49,31 @@ export const selectShape = ({ state }: Context, shapeId: string) => {
   const shape = getShape(state, shapeId);
 
   shape.selected = true;
+};
+
+export const selectShapeByPoint = ({ state }: Context) => {
+  const { position } = state.events.pointer;
+
+  const shapes = Object.values(state.currentDocument.shapes);
+  shapes.forEach((shape) => {
+    if (pointInRectangle(position, shape)) {
+      shape.selected = true;
+    }
+  });
+};
+
+export const selectShapes = ({ state }: Context) => {
+  debugger;
+  const { topLeftPosition, bottomRightPosition } = state.events.pointer;
+
+  const source = { topLeft: topLeftPosition, bottomRight: bottomRightPosition };
+
+  const shapes = Object.values(state.currentDocument.shapes);
+  shapes.forEach((shape) => {
+    if (overlaps(source, getBBox(shape))) {
+      shape.selected = true;
+    }
+  });
 };
 
 export const unselectShape = ({ state }: Context, shapeId: string) => {
