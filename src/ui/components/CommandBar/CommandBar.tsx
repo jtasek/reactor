@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 
 import { useCommands } from 'src/app/hooks';
-import { Command } from 'src/app/types';
+import { Command, Group } from 'src/app/types';
 
 import { CommandBarDelimiter } from './CommandBarDelimiter';
 import { CommandBarGroup } from './CommandBarGroup';
@@ -29,16 +29,22 @@ export const CommandBar: FC = () => {
     return null;
   }
 
-  const groups = groupCommands(commands);
+  const groups: [string, Command[]][] = Object.entries(groupCommands(commands));
+  const last = groups.pop();
+
+  if (!last || !groups) {
+    return null;
+  }
 
   return (
     <ul className={styles.commandBar}>
-      {Object.entries(groups).map(([key, value]) => (
+      {groups.map(([key, value]) => (
         <>
-          <CommandBarDelimiter key="delimiter" />
-          <CommandBarGroup key={key} commands={value} />
+          <CommandBarGroup commands={value} />
+          <CommandBarDelimiter />
         </>
       ))}
+      <CommandBarGroup commands={last[1]} />
     </ul>
   );
 };

@@ -40,3 +40,10 @@
 .commandBarButton svg {
   /* display: block; */
 }
+
+
+.delimiter {
+  margin: 10px 5px 10px 5px;
+  border: 1px dashed;
+  border-color: var(--control-delimiter)
+}

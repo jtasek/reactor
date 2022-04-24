@@ -2,6 +2,7 @@ declare namespace StylesCssNamespace {
   export interface IStylesCss {
     commandBar: string;
     commandBarButton: string;
+    delimiter: string;
   }
 }
 
