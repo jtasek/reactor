@@ -59,12 +59,15 @@ function rescalePointer(pointer: Pointer) {
   };
 }
 
-export const executeToolCommand = ({ state, actions }: Context) => {
+export const executeToolCommands = (context: Context) => {
+  const { state, actions } = context;
   const { activeToolsIds } = state.tools;
 
   for (const toolId of activeToolsIds) {
     const tool = getTool(toolId);
     console.log(`Execute command: ${toolId}`);
+
+    tool?.handler?.(context);
 
     if (tool?.factory) {
       // Rescale pointer accorrding to the current zoom

@@ -27,7 +27,7 @@ export const endTyping: Action = ({
   },
   actions
 }) => {
-  actions.tools.executeToolCommand();
+  actions.tools.executeToolCommands();
 
   keyboard.typing = false;
   keyboard.text = '';
