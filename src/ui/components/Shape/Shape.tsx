@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 import { useShape } from 'src/app/hooks';
 import { getComponentByType } from 'src/tools/components';
-import { Selectable } from '../Selectable/Selectable';
+import { Resizable, Selectable } from '../Selectable/Selectable';
 
 interface Props {
   shapeId: string;
@@ -17,7 +17,20 @@ export const Shape: FC<Props> = ({ shapeId }) => {
     return null;
   }
 
-  console.log('rendering shape..');
+  if (shape.selected) {
+    return React.createElement(
+      Resizable,
+      {
+        shape: shape,
+        key: `selectable-${shape.id}`
+      },
+      React.createElement(component, {
+        key: `${shape.type}-${shape.id}`,
+        ...shape
+      })
+    );
+  }
+
   return React.createElement(
     Selectable,
     {
