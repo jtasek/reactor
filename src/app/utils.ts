@@ -16,23 +16,47 @@ export function getDistance(p1: Point, p2: Point): number {
   return Math.hypot(Math.abs(p2.x - p1.x), Math.abs(p2.y - p1.y));
 }
 
-export function getBBox(shape: Partial<Shape>) {
-  return { point: shape.position, size: shape.size };
+export function getBBox(shape: Partial<Shape>): Box | undefined {
+  if (!shape) {
+    return undefined;
+  }
+
+  return {
+    topLeft: shape.position!,
+    bottomRight: {
+      x: shape.position!.x + shape.size!.width,
+      y: shape.position!.y + shape.size!.height
+    }
+  };
 }
 
 export function pointInRectangle(p: Point, shape: Partial<Shape>): boolean {
-  const { point, size } = getBBox(shape);
+  const box = getBBox(shape);
 
-  const horizontalFit = point!.x <= p.x && p.x <= point!.x + size.width;
-  const verticalFit = point!.y <= p.y && p.y <= point!.y + size.height;
+  if (!box) {
+    return false;
+  }
+
+  const horizontalFit = box.topLeft!.x <= p.x && p.x <= box.bottomRight.x;
+  const verticalFit = box.topLeft!.y <= p.y && p.y <= box.bottomRight.y;
 
   return horizontalFit && verticalFit;
 }
 
-export function overlaps(source: Box, target: Box) {
+export function overlaps(source?: Box, target?: Box) {
+  if (!source || !target) {
+    return false;
+  }
+
   if (source.bottomRight.x < target.topLeft.x || source.bottomRight.y < target.topLeft.y) {
     return false;
   }
+
+  if (target.bottomRight.x < source.topLeft.x || target.bottomRight.y < source.topLeft.y) {
+    return false;
+  }
+
+  return true;
 }
 
 export function getPropValue(prop: any): unknown {
