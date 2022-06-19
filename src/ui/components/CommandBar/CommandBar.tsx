@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 
 import { useCommands } from 'src/app/hooks';
-import { Command, Group } from 'src/app/types';
+import { Command } from 'src/app/types';
 
 import { CommandBarDelimiter } from './CommandBarDelimiter';
 import { CommandBarGroup } from './CommandBarGroup';
