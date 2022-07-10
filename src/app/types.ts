@@ -203,8 +203,9 @@ export interface Command {
   icon: Icon;
   category?: string;
   description?: string;
-  regex: RegExp;
+  factory: (context: Context) => Record<string, unknown>;
   name: string;
+  regex: RegExp;
   shortcut?: string;
   canExecute: ActionGuard;
   execute: Action;
