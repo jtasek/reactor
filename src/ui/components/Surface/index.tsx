@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { DesignStack as Stack } from 'src/tools/components/Stack';
+import { Stack } from 'src/tools/components/Stack';
 import { GridContainer as Grid } from '../Grid';
 import { ConnectedOverlay as Overlay } from '../Overlay';
 import { Camera } from './Camera';
