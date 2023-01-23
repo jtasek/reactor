@@ -1,6 +1,6 @@
 import { Context } from 'src/app/hooks';
 import { Pointer } from 'src/events/types';
-import { getTool } from './components';
+import { getToolById } from './components';
 
 export const activateTool = ({ state: { tools }, actions }: Context, toolId: string) => {
   tools.activeToolsIds = [toolId];
@@ -64,17 +64,17 @@ export const executeToolCommands = (context: Context) => {
   const { activeToolsIds } = state.tools;
 
   for (const toolId of activeToolsIds) {
-    const tool = getTool(toolId);
-    console.log(`Execute command: ${toolId}`);
+    const tool = getToolById(toolId);
+    console.log(`Execute tool command: ${toolId}`);
 
-    tool?.handler?.(context);
+    tool?.command.execute(context);
 
-    if (tool?.factory) {
+    if (tool?.command.factory) {
       // Rescale pointer accorrding to the current zoom
       const pointer = rescalePointer(state.events.pointer);
 
       // Create new shape
-      const options = tool.factory(pointer, state.events.keyboard);
+      const options = tool.command.factory(context);
 
       // Insert new shape into the store
       actions.addShape({ ...options, selected: false });
