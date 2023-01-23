@@ -1,26 +1,24 @@
 import React, { FC } from 'react';
-import { useTools } from 'src/app/hooks';
-import { getTool } from '..';
+import { useActions, useAppState, useEffects, useTools } from 'src/app/hooks';
+import { getToolById } from '..';
 
-interface Props {
-  tools: string[];
-}
-
-export const Stack: FC<Props> = ({ tools }) => (
-  <g id="tools">
-    {Object.values(tools).map((item) => {
-      const tool = getTool(item);
-      if (!tool) {
-        return null;
-      }
-
-      return React.createElement(tool.tool, { key: item });
-    })}
-  </g>
-);
-
-export const DesignStack: FC = () => {
+export const Stack: FC = () => {
   const { activeToolsIds } = useTools();
+  const actions = useActions();
+  const state = useAppState();
+  const effects = useEffects();
 
-  return <Stack tools={activeToolsIds} />;
+  return (
+    <g id="tools">
+      {activeToolsIds.map((toolId) => {
+        const tool = getToolById(toolId);
+
+        if (!tool) {
+          throw new Error(`Tool ${toolId} not found`);
+        }
+
+        return tool.command.execute({ state, effects, actions });
+      })}
+    </g>
+  );
 };
