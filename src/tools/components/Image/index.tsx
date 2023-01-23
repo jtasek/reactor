@@ -1,9 +1,9 @@
 import React, { FC } from 'react';
 
-import type { Pointer } from 'src/events/types';
-import { usePointer } from 'src/app/hooks';
 import styles from '../../styles.css';
 import type { Tool } from 'src/tools/types';
+import { Command } from 'src/app/types';
+import { Context } from 'src/app/hooks';
 
 /**
  * Insert image based on current coords
@@ -20,6 +20,7 @@ import type { Tool } from 'src/tools/types';
  **/
 
 interface Props {
+  code: string;
   name: string;
   x: number;
   y: number;
@@ -30,12 +31,15 @@ interface Props {
   type: string;
 }
 
-export const createImage = ({ topLeftPosition, size }: Pointer): Props => {
+export const createImageProps = ({ state }: Context, designMode = false) => {
+  const { startPosition, scaledStartPosition, size, scaledSize } = state.events.pointer;
+
   return {
-    x: topLeftPosition.x,
-    y: topLeftPosition.y,
-    width: size.width,
-    height: size.height,
+    code: 'image-x',
+    x: designMode ? scaledStartPosition.x : startPosition.x,
+    y: designMode ? scaledStartPosition.y : startPosition.y,
+    width: designMode ? scaledSize.width : size.width,
+    height: designMode ? scaledSize.height : size.height,
     href: '/images/avatar.jpg',
     name: 'Image x',
     selected: true,
@@ -43,29 +47,70 @@ export const createImage = ({ topLeftPosition, size }: Pointer): Props => {
   };
 };
 
-export const Image: FC<Props> = ({ x, y, width, height, href }) => (
-  <image key="image" x={x} y={y} width={width} xlinkHref={href} />
-);
+export const Image: FC<Props> = ({ name, x, y, width, height, href, selected }) => {
+  const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
-export const ImageTool: FC = () => {
-  const pointer = usePointer();
-
-  return <Image {...createImage(pointer)} />;
+  return (
+    <image
+      key="image"
+      className={className}
+      data-cy={name}
+      x={x}
+      y={y}
+      height={height}
+      //width={width}
+      xlinkHref={href}
+    />
+  );
 };
 
-export const ImageCommand: Tool = {
+export const DesignImage: FC<Props> = ({
+  code,
+  x,
+  y,
+  width,
+  height,
+  href,
+  name,
+  selected,
+  type
+}) => {
+  return (
+    <Image
+      code={code}
+      key="image"
+      x={x}
+      y={y}
+      height={height}
+      width={width}
+      href={href}
+      selected={selected}
+      name={name}
+      type={type}
+    />
+  );
+};
+
+export const ImageCommand: Command = {
+  id: 'image',
+  name: 'Image',
+  regex: /(?<toolCode>image)\('(?<protocol>www|http|https):\/\/(?<url>[^\s]+[\w])'\)/,
+  shortcut: 'ctrl+i',
+  canExecute: (context, args?) => true,
+  execute: (context, args?) => React.createElement(Image, createImageProps(context), null),
+  factory: (context: Context) => createImageProps(context, true)
+};
+
+export const ImageTool: Tool = {
   id: 'image',
   name: 'Image',
   description: 'Insert an image',
-  factory: createImage,
-  tool: ImageTool,
+  command: ImageCommand,
   component: Image,
   icon: {
     group: 'image',
     name: 'image',
-    // color: 'rgb(234, 2, 130)',
+    color: 'rgb(234, 2, 130)',
     size: 24
-  },
-  regex: /(?<toolCode>image)\('(?<protocol>www|http|https):\/\/(?<url>[^\s]+[\w])'\)/,
-  shortcut: 'ctrl+i'
+  }
 };
