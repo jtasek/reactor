@@ -21,14 +21,18 @@ const tools = [
   TextTool
 ];
 
-export function getTool(toolId: string): Tool | undefined {
+export function getToolById(toolId: string): Tool | undefined {
   return tools.find((item) => item.id === toolId);
 }
 
 export function getComponentByType(type: string): FC<any> | undefined {
   const result = tools.find((item) => item.id === type);
 
-  return result?.component;
+  if (!result?.component) {
+    throw new Error(`${type} type doesn't have component defined`);
+  }
+
+  return result.component;
 }
 
 export function useRegisteredTools(): Tool[] {
