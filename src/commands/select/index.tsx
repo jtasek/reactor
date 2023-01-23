@@ -21,6 +21,7 @@ export const SelectCommand: Command = {
   },
   regex: /(?<toolCode>select)\((?<x1>[\d]+),(?<y1>[\d]+),(?<x2>[\d]+),(?<y2>[\d]+)\)/,
   shortcut: 's',
-  canExecute: (context: Context) => true,
-  execute: selectShape
+  canExecute: (context: Context, args) => true,
+  execute: selectShape,
+  factory: (context: Context) => createSelectProps(context, true)
 };
