@@ -1,9 +1,9 @@
 import React, { FC } from 'react';
 
-import { usePointer } from 'src/app/hooks';
-import type { Pointer } from 'src/events/types';
-import type { Tool } from 'src/tools/types';
 import styles from '../../styles.css';
+import type { Tool } from 'src/tools/types';
+import { Command } from 'src/app/types';
+import { Context } from 'src/app/hooks';
 
 /**
  * Draws an ellipse based on input coords and size
@@ -27,14 +27,16 @@ interface Props {
   type: string;
 }
 
-export const createEllipse = ({ centre, size }: Pointer): Props => {
+export const createEllipseProps = ({ state }: Context, designMode = false) => {
+  const { centre, scaledCentre, size, scaledSize } = state.events.pointer;
+
   return {
-    code: 'ellipse',
-    cx: centre.x,
-    cy: centre.y,
-    rx: size.width,
-    ry: size.height,
+    code: 'ellipse-x',
+    cx: designMode ? scaledCentre.x : centre.x,
+    cy: designMode ? scaledCentre.y : centre.y,
     name: 'Ellipse x',
+    rx: designMode ? scaledSize.width : size.width,
+    ry: designMode ? scaledSize.height : size.height,
     selected: true,
     type: 'ellipse'
   };
@@ -48,25 +50,27 @@ export const Ellipse: FC<Props> = ({ name, cx, cy, rx, ry, selected }) => {
   );
 };
 
-export const EllipseTool: FC = () => {
-  const pointer = usePointer();
-
-  return <Ellipse key="ellipse" {...createEllipse(pointer)} />;
+export const EllipseCommand: Command = {
+  id: 'ellipse',
+  name: 'Ellipse',
+  category: 'shapes',
+  regex: /(?<toolCode>ellipse)\((?<cx>\d+),(?<cy>\d+),(?<rx>\d+),(?<ry>\d+)\)/,
+  shortcut: 'ctrl+e',
+  canExecute: (context, args?) => true,
+  execute: (context, args) => React.createElement(Ellipse, createEllipseProps(context), null),
+  factory: (context: Context) => createEllipseProps(context, true)
 };
 
-export const EllipseCommand: Tool = {
+export const EllipseTool: Tool = {
   id: 'ellipse',
   name: 'Ellipse',
   description: 'Draw an ellipse',
-  factory: createEllipse,
-  tool: EllipseTool,
+  command: EllipseCommand,
   component: Ellipse,
   icon: {
     group: 'image',
     name: 'panorama_fish_eye',
-    // color: 'rgb(144, 254, 214)',
+    color: 'rgb(144, 254, 214)',
     size: 24
-  },
-  regex: /(?<toolCode>ellipse)\((?<cx>\d+),(?<cy>\d+),(?<radius>\d+)\)/,
-  shortcut: 'ctrl+e'
+  }
 };
