@@ -21,13 +21,15 @@ export const startTyping: Action = ({
   keyboard.typing = true;
 };
 
-export const endTyping: Action = ({
-  state: {
-    events: { keyboard }
-  },
-  actions
-}) => {
-  actions.tools.executeToolCommands();
+export const endTyping: Action = (context) => {
+  const {
+    state: {
+      events: { keyboard }
+    },
+    actions
+  } = context;
+
+  actions.tools.executeToolCommands(context);
 
   keyboard.typing = false;
   keyboard.text = '';
