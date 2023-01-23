@@ -1,10 +1,9 @@
-import React, { FC } from 'react';
-import type { Position, Size } from 'src/app/types';
-import type { Pointer } from 'src/events/types';
-import { usePointer } from 'src/app/hooks';
-import type { Tool } from 'src/tools/types';
+import React, { FC, useRef } from 'react';
+
 import styles from '../../styles.css';
-import { toggleShapeSelected } from 'src/app/actions';
+import type { Command, Position, Size } from 'src/app/types';
+import type { Tool } from 'src/tools/types';
+import { Context } from 'src/app/hooks';
 
 /**
  * Draws a rectange based on position and size
@@ -20,6 +19,7 @@ import { toggleShapeSelected } from 'src/app/actions';
 **/
 
 interface Props {
+  code: string;
   name: string;
   position: Position;
   size: Size;
@@ -27,50 +27,62 @@ interface Props {
   type: 'rect';
 }
 
-export function createRect({ topLeftPosition, size }: Pointer): Props {
+export function createRectProps({ state }: Context, designMode = false) {
+  const { topLeftPosition, scaledTopLeftPosition, size, scaledSize } = state.events.pointer;
+
   return {
+    code: 'rect-x',
     name: 'Rectangle x',
-    position: topLeftPosition,
+    position: designMode ? scaledTopLeftPosition : topLeftPosition,
     selected: true,
-    size,
+    size: designMode ? scaledSize : size,
     type: 'rect'
   };
 }
 
-export const Rect: FC<Props> = ({ position, size, selected }) => {
+export const Rect: FC<Props> = ({ name, type, position, size, selected }) => {
+  const shape = useRef(null);
   const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
   return (
     <rect
+      data-cy={name}
+      ref={shape}
       fill="none"
       className={className}
       x={position?.x}
       y={position?.y}
       width={size?.width}
       height={size?.height}
+      onClick={() => {
+        //console.log('rect bbox', shape.current?.getBBox());
+      }}
     />
   );
 };
 
-export const RectTool: FC = () => {
-  const pointer = usePointer();
-
-  return <Rect {...createRect(pointer)} />;
+export const RectCommand: Command = {
+  id: 'rect',
+  name: 'Rectangle',
+  category: 'shapes',
+  description: 'Draw a rectangle or square',
+  regex: /(?<toolCode>rect)\((?<x1>[\d]+),(?<y1>[\d]+),(?<x2>[\d]+),(?<y2>[\d]+)\)/,
+  shortcut: 'r',
+  canExecute: (context, args) => true,
+  execute: (context, args) => React.createElement(Rect, createRectProps(context) as Props, null),
+  factory: (context: Context) => createRectProps(context, true)
 };
 
-export const RectCommand: Tool = {
+export const RectTool: Tool = {
   id: 'rect',
   name: 'Rectangle',
   description: 'Draw a rectangle or square',
-  factory: createRect,
-  tool: RectTool,
+  command: RectCommand,
   component: Rect,
   icon: {
     group: 'image',
     name: 'crop_square',
     color: 'rgba(255,255,255)',
     size: 24
-  },
-  regex: /(?<toolCode>rect)\((?<x1>[\d]+),(?<y1>[\d]+),(?<x2>[\d]+),(?<y2>[\d]+)\)/,
-  shortcut: 'r'
+  }
 };
