@@ -1,10 +1,10 @@
 import React, { FC } from 'react';
-import type { Point } from 'src/app/types';
-import { stringifyPath } from 'src/app/utils';
-import type { Pointer } from 'src/events/types';
-import { usePointer } from 'src/app/hooks';
+
 import styles from '../../styles.css';
+import type { Command, Point } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
+import { Context } from 'src/app/hooks';
+import { stringifyPath } from 'src/app/utils';
 
 /** 
  * Draws a line based on path
@@ -14,46 +14,54 @@ import type { Tool } from 'src/tools/types';
 **/
 
 interface Props {
+  code: string;
   name: string;
   points: Point[];
   selected: true;
   type: string;
 }
 
-export function createPen({ path }: Pointer): Props {
+export function createPenProps({ state }: Context, designMode = false) {
+  const { path, scaledPath } = state.events.pointer;
+
   return {
+    code: 'pen-x',
     name: 'Pen x',
-    points: path,
+    points: designMode ? scaledPath : path,
     selected: true,
     type: 'pen'
   };
 }
 
-export const Pen: FC<Props> = ({ points, selected }) => {
+export const Pen: FC<Props> = ({ name, points, selected }) => {
   const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
-  return <polyline key="line" className={className} points={stringifyPath(points)} />;
+  return (
+    <polyline key="pen" data-name={name} className={className} points={stringifyPath(points)} />
+  );
 };
 
-export const PenTool: FC = () => {
-  const pointer = usePointer();
-
-  return <Pen {...createPen(pointer)} selected={true} />;
+export const PenCommand: Command = {
+  id: 'pen',
+  name: 'Pen',
+  category: 'shapes',
+  regex: /(?<toolCode>pen)\((?<path>[\d, ]+)\)/,
+  shortcut: 'ctrl+p',
+  canExecute: (context, args?) => true,
+  execute: (context, args?) => React.createElement(Pen, createPenProps(context) as Props, null),
+  factory: (context: Context) => createPenProps(context, true)
 };
 
-export const PenCommand: Tool = {
+export const PenTool: Tool = {
   id: 'pen',
   name: 'Pen',
   description: 'Draw a curve line',
-  factory: createPen,
-  tool: PenTool,
+  command: PenCommand,
   component: Pen,
   icon: {
     group: 'content',
     name: 'create',
     color: 'rgba(255,255,255)',
     size: 24
-  },
-  regex: /(?<toolCode>pen)\((?<path>[\d, ]+)\)/,
-  shortcut: 'p'
+  }
 };
