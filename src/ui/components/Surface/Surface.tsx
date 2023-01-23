@@ -1,17 +1,17 @@
 import React, { FC } from 'react';
 
-import { useMouse } from 'src/events/drivers/mouse';
+import { usePointer } from 'src/events/drivers/usePointer';
 
 import styles from './styles.css';
 
 export const Surface: FC = ({ children }) => {
   const {
     handleContextMenu,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
     handleMouseWheel
-  } = useMouse();
+  } = usePointer();
 
   return (
     <svg
@@ -19,11 +19,11 @@ export const Surface: FC = ({ children }) => {
       preserveAspectRatio="none"
       // mouse
       onContextMenu={handleContextMenu}
-      onMouseDown={handleMouseDown}
-      onMouseLeave={handleMouseUp}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
       onWheel={handleMouseWheel}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerUp}
     >
       {children}
     </svg>
