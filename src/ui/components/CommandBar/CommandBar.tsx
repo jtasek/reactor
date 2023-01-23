@@ -40,8 +40,8 @@ export const CommandBar: FC = () => {
     <ul className={styles.commandBar}>
       {groups.map(([key, value]) => (
         <>
-          <CommandBarGroup commands={value} />
-          <CommandBarDelimiter />
+          <CommandBarGroup key={`item-${key}`} commands={value} />
+          <CommandBarDelimiter key={`delimiter-${key}`} />
         </>
       ))}
       <CommandBarGroup commands={last[1]} />
