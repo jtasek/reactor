@@ -21,11 +21,16 @@ export function getBBox(shape: Partial<Shape>): Box | undefined {
     return undefined;
   }
 
+  if (shape.type === 'line') {
+    //@ts-ignore
+    return { topLeft: { x: shape.x1, y: shape.y1 }, bottomRight: { x: shape.x2, y: shape.y2 } };
+  }
+
   return {
-    topLeft: shape.position!,
+    topLeft: shape.position as Point,
     bottomRight: {
-      x: shape.position!.x + shape.size!.width,
-      y: shape.position!.y + shape.size!.height
+      x: (shape.position as Point).x + (shape as Point).size.width,
+      y: (shape.position as Point).y + (shape as Point).size.height
     }
   };
 }
