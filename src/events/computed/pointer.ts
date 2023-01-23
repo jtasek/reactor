@@ -1,6 +1,5 @@
 import { derived } from 'overmind';
 import { Application, Position, Size } from 'src/app/types';
-import { positional } from 'yargs';
 import { Pointer } from '../types';
 
 const DEFAULT_CAMERA_SCALE = 1;
