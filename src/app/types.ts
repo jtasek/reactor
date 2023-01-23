@@ -200,10 +200,10 @@ export type Action = (context: Context, args?: Record<string, unknown>) => void;
 
 export interface Command {
   id: string;
-  icon: Icon;
   category?: string;
   description?: string;
-  factory: (context: Context) => Record<string, unknown>;
+  factory: ({ state }: Context) => Record<string, unknown>;
+  icon?: Icon;
   name: string;
   regex: RegExp;
   shortcut?: string;
