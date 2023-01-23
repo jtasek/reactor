@@ -10,6 +10,9 @@ export const MoveCommand: Command = {
   name: 'Move',
   category: 'shapes',
   description: 'Move current selection',
+  factory: ({ state }: Context) => {
+    return {};
+  },
   icon: {
     group: 'action',
     name: 'open_with',
