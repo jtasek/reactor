@@ -1,11 +1,11 @@
 import React, { FC } from 'react';
 import { useAppState } from '../hooks';
-import { useKeyboardDriver } from 'src/events/drivers/keyboardDriver';
+import { useKeyboard } from 'src/events/drivers/useKeyboard';
 
 import { Designer, Documents } from '../../pages';
 
 export const Shell: FC = () => {
-  useKeyboardDriver();
+  useKeyboard();
   const currentPage = useAppState((state) => state.currentPage);
 
   return (
