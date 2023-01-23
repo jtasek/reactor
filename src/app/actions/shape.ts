@@ -45,8 +45,8 @@ export const toggleShapeSelected = ({ state }: Context, shapeId: string) => {
   shape.selected = !shape.selected;
 };
 
-export const selectShape = ({ state }: Context, shapeId: string) => {
-  const shape = getShape(state, shapeId);
+export const selectShape = ({ state }: Context, args: { shapeId: string }) => {
+  const shape = getShape(state, args.shapeId);
 
   shape.selected = true;
 };
@@ -63,7 +63,6 @@ export const selectShapeByPoint = ({ state }: Context) => {
 };
 
 export const selectShapes = ({ state }: Context) => {
-  debugger;
   const { topLeftPosition, bottomRightPosition } = state.events.pointer;
 
   const source = { topLeft: topLeftPosition, bottomRight: bottomRightPosition };
