@@ -13,10 +13,11 @@ export const SelectCommand: Command = {
   id: 'select',
   name: 'Select',
   category: 'shapes',
-  description: 'Select shapes and groups ',
+  description: 'Selects shapes and groups ',
   icon: {
     group: 'action',
-    name: 'touch_app',
+    name: 'pan_tool',
+    color: 'rgba(255,255,255)',
     size: 24
   },
   regex: /(?<toolCode>select)\((?<x1>[\d]+),(?<y1>[\d]+),(?<x2>[\d]+),(?<y2>[\d]+)\)/,
