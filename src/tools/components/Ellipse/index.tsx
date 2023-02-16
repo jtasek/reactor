@@ -54,6 +54,13 @@ export const EllipseCommand: Command = {
   id: 'ellipse',
   name: 'Ellipse',
   category: 'shapes',
+  description: 'Draws and elliptic shape',
+  icon: {
+    group: 'image',
+    name: 'panorama_fish_eye',
+    color: 'rgb(144, 254, 214)',
+    size: 24
+  },
   regex: /(?<toolCode>ellipse)\((?<cx>\d+),(?<cy>\d+),(?<rx>\d+),(?<ry>\d+)\)/,
   shortcut: 'ctrl+e',
   canExecute: (context, args?) => true,
@@ -66,11 +73,5 @@ export const EllipseTool: Tool = {
   name: 'Ellipse',
   description: 'Draw an ellipse',
   command: EllipseCommand,
-  component: Ellipse,
-  icon: {
-    group: 'image',
-    name: 'panorama_fish_eye',
-    color: 'rgb(144, 254, 214)',
-    size: 24
-  }
+  component: Ellipse
 };
