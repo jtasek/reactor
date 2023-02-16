@@ -44,6 +44,12 @@ export const LineCommand: Command = {
   name: 'Line',
   category: 'shapes',
   description: 'Draw a line',
+  icon: {
+    group: 'action',
+    name: 'timeline',
+    color: 'rgb(95, 216, 240)',
+    size: 24
+  },
   regex: /(?<toolCode>line)\((?<x1>\d+),(?<y1>\d+),(?<x2>\d+),(?<y2>\d+)\)/,
   shortcut: 'ctrl+l',
   canExecute: (context, args?) => true,
@@ -56,11 +62,5 @@ export const LineTool: Tool = {
   name: 'Line',
   description: 'Draw a line',
   command: LineCommand,
-  component: Line,
-  icon: {
-    group: 'action',
-    name: 'timeline',
-    color: 'rgb(95, 216, 240)',
-    size: 24
-  }
+  component: Line
 };
