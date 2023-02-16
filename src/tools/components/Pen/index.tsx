@@ -45,6 +45,13 @@ export const PenCommand: Command = {
   id: 'pen',
   name: 'Pen',
   category: 'shapes',
+  description: 'Draws a line',
+  icon: {
+    group: 'content',
+    name: 'create',
+    color: 'rgba(255,255,255)',
+    size: 24
+  },
   regex: /(?<toolCode>pen)\((?<path>[\d, ]+)\)/,
   shortcut: 'ctrl+p',
   canExecute: (context, args?) => true,
@@ -57,11 +64,5 @@ export const PenTool: Tool = {
   name: 'Pen',
   description: 'Draw a curve line',
   command: PenCommand,
-  component: Pen,
-  icon: {
-    group: 'content',
-    name: 'create',
-    color: 'rgba(255,255,255)',
-    size: 24
-  }
+  component: Pen
 };
