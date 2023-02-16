@@ -26,11 +26,21 @@ export function getBBox(shape: Partial<Shape>): Box | undefined {
     return { topLeft: { x: shape.x1, y: shape.y1 }, bottomRight: { x: shape.x2, y: shape.y2 } };
   }
 
+  if (shape.type === 'circle') {
+    return {
+      topLeft: { x: shape.cx! - shape.r!, y: shape.cy! - shape.r! },
+      bottomRight: {
+        x: shape.cx + shape.r!,
+        y: shape.cy + shape.r!
+      }
+    };
+  }
+
   return {
     topLeft: shape.position as Point,
     bottomRight: {
-      x: (shape.position as Point).x + (shape as Point).size.width,
-      y: (shape.position as Point).y + (shape as Point).size.height
+      x: (shape.position as Point).x + (shape as Point).size!.width,
+      y: (shape.position as Point).y + (shape as Point).size!.height
     }
   };
 }
