@@ -65,7 +65,13 @@ export const RectCommand: Command = {
   id: 'rect',
   name: 'Rectangle',
   category: 'shapes',
-  description: 'Draw a rectangle or square',
+  description: 'Draws a rectangle or square',
+  icon: {
+    group: 'image',
+    name: 'crop_square',
+    color: 'rgba(255,255,255)',
+    size: 24
+  },
   regex: /(?<toolCode>rect)\((?<x1>[\d]+),(?<y1>[\d]+),(?<x2>[\d]+),(?<y2>[\d]+)\)/,
   shortcut: 'r',
   canExecute: (context, args) => true,
@@ -78,11 +84,5 @@ export const RectTool: Tool = {
   name: 'Rectangle',
   description: 'Draw a rectangle or square',
   command: RectCommand,
-  component: Rect,
-  icon: {
-    group: 'image',
-    name: 'crop_square',
-    color: 'rgba(255,255,255)',
-    size: 24
-  }
+  component: Rect
 };
