@@ -31,11 +31,5 @@ export const SelectTool: Tool = {
   name: 'Select',
   description: 'Select a shape or group',
   command: SelectCommand,
-  component: Select,
-  icon: {
-    group: 'action',
-    name: 'pan_tool',
-    color: 'rgba(255,255,255)',
-    size: 24
-  }
+  component: Select
 };
