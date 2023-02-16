@@ -1,14 +1,14 @@
 import React, { FC } from 'react';
 
 import { useActions } from 'src/app/hooks';
-import { Position, Shape, Size } from 'src/app/types';
+import { Box, Position, Shape, Size } from 'src/app/types';
 import { getBBox } from 'src/app/utils';
 import { Handle } from '../Handle';
 
 export const Resizable: FC<{ shape: Shape }> = ({ shape, children }) => {
-  const bbox = getBBox(shape);
+  const box = getBBox(shape);
 
-  if (!bbox.point || !bbox.size) {
+  if (!box?.topLeft || !box.bottomRight) {
     return children;
   }
 
@@ -21,7 +21,7 @@ export const Resizable: FC<{ shape: Shape }> = ({ shape, children }) => {
     middleRight,
     middleTop,
     middleBottom
-  } = calcBoundingPoints(bbox);
+  } = calcBoundingPoints(box);
 
   return (
     <>
@@ -44,22 +44,18 @@ export const Selectable: FC<{ shape: Shape }> = ({ shape, children }) => {
   return <g onClick={() => toggleShapeSelected(shape.id)}>{children}</g>;
 };
 
-function calcBoundingPoints(bbox: { point: Position; size: Size }) {
-  const topLeft = { x: bbox.point!.x, y: bbox.point!.y };
-  const topRight = { x: bbox.point!.x + bbox.size.width, y: bbox.point!.y };
-  const bottomLeft = { x: bbox.point!.x, y: bbox.point!.y + bbox.size.height };
-  const bottomRight = { x: bbox.point!.x + bbox.size.width, y: bbox.point!.y + bbox.size.height };
+function calcBoundingPoints(box: Box) {
+  const topLeft = box.topLeft;
+  const topRight = { x: box.bottomRight.x, y: box.topLeft.y };
+  const bottomLeft = { x: box.topLeft.x, y: box.bottomRight.y };
+  const bottomRight = box.bottomRight;
+  const height = bottomLeft.y - topLeft.y;
+  const width = bottomRight.x - topLeft.x;
 
-  const middleLeft = { x: bbox.point!.x, y: bbox.point!.y + bbox.size?.height / 2 };
-  const middleRight = {
-    x: bbox.point!.x + bbox.size.width,
-    y: bbox.point!.y + bbox.size?.height / 2
-  };
-  const middleTop = { x: bbox.point!.x + bbox.size?.width / 2, y: bbox.point!.y };
-  const middleBottom = {
-    x: bbox.point!.x + bbox.size?.width / 2,
-    y: bbox.point!.y + bbox.size.height
-  };
+  const middleLeft = { x: topLeft.x, y: topLeft.y + height / 2 };
+  const middleRight = { x: bottomRight.x, y: topRight.y + height / 2 };
+  const middleTop = { x: topLeft.x + width / 2, y: topLeft.y };
+  const middleBottom = { x: bottomLeft.x + width / 2, y: bottomRight.y };
 
   return {
     topLeft,
