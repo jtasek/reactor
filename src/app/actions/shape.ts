@@ -122,6 +122,14 @@ export const resizeShape = (
   const { shapeId, type, pointer } = payload;
   const shape = getShape(state, shapeId);
 
+  if (shape.type === 'circle') {
+    const diffx = pointer.position.x - shape.cx!;
+    const diffy = pointer.position.y - shape.cy!;
+
+    shape.r = Math.max(diffx, diffy);
+    return;
+  }
+
   const diffx = pointer.position.x - shape.position!.x;
   const diffy = pointer.position.y - shape.position!.y;
 
