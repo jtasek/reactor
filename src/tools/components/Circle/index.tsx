@@ -68,6 +68,13 @@ export const CircleCommand: Command = {
   id: 'circle',
   name: 'Circle',
   category: 'shapes',
+  description: 'Draws a circle shape',
+  icon: {
+    group: 'image',
+    name: 'panorama_fish_eye',
+    color: 'rgb(144, 254, 214)',
+    size: 24
+  },
   regex: /(?<toolCode>circle)\((?<cx>\d+),(?<cy>\d+),(?<radius>\d+)\)/,
   shortcut: 'ctrl+c',
   canExecute: (context, args?) => true,
@@ -82,11 +89,5 @@ export const CircleTool: Tool = {
   name: 'Circle',
   description: 'Draw a circle',
   command: CircleCommand,
-  component: Circle,
-  icon: {
-    group: 'image',
-    name: 'panorama_fish_eye',
-    color: 'rgb(144, 254, 214)',
-    size: 24
-  }
+  component: Circle
 };
