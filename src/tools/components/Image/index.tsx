@@ -94,6 +94,14 @@ export const DesignImage: FC<Props> = ({
 export const ImageCommand: Command = {
   id: 'image',
   name: 'Image',
+  category: 'shapes',
+  description: 'Draws an image shape',
+  icon: {
+    group: 'image',
+    name: 'image',
+    color: 'rgb(234, 2, 130)',
+    size: 24
+  },
   regex: /(?<toolCode>image)\('(?<protocol>www|http|https):\/\/(?<url>[^\s]+[\w])'\)/,
   shortcut: 'ctrl+i',
   canExecute: (context, args?) => true,
@@ -106,11 +114,5 @@ export const ImageTool: Tool = {
   name: 'Image',
   description: 'Insert an image',
   command: ImageCommand,
-  component: Image,
-  icon: {
-    group: 'image',
-    name: 'image',
-    color: 'rgb(234, 2, 130)',
-    size: 24
-  }
+  component: Image
 };
