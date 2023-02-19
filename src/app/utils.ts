@@ -16,26 +16,25 @@ export function getDistance(p1: Point, p2: Point): number {
   return Math.hypot(Math.abs(p2.x - p1.x), Math.abs(p2.y - p1.y));
 }
 
-function getBoundingBoxForRectangle(rectangle: Box): Box {
+export function getBoundingBoxForRectangle(rectangle: Box): Box {
   return rectangle;
 }
 
-function getBoundingBoxForCircle(circle: Circle): Box {
-  debugger;
+export function getBoundingBoxForCircle(circle: Circle): Box {
   return {
     topLeft: { x: circle.center.x - circle.radius, y: circle.center.y - circle.radius },
     bottomRight: { x: circle.center.x + circle.radius, y: circle.center.y + circle.radius }
   };
 }
 
-function getBoundingBoxForEllipse(ellipse: Ellipse): Box {
+export function getBoundingBoxForEllipse(ellipse: Ellipse): Box {
   return {
     topLeft: { x: ellipse.center.x - ellipse.radiusX, y: ellipse.center.y - ellipse.radiusY },
     bottomRight: { x: ellipse.center.x + ellipse.radiusX, y: ellipse.center.y + ellipse.radiusY }
   };
 }
 
-function getBoundingBoxForLine(line: Line): Box {
+export function getBoundingBoxForLine(line: Line): Box {
   return { topLeft: line.start, bottomRight: line.end };
 }
 
