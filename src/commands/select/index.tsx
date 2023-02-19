@@ -1,11 +1,11 @@
 import { Command } from 'src/app/types';
 import { Context } from 'src/app/hooks';
-import { pointInRectangle } from 'src/app/utils';
+import { isPointInBox } from 'src/app/utils';
 
 export const selectShape = ({ state }: Context) => {
   const { events, currentDocument } = state;
   Object.values(currentDocument.shapes).forEach((shape) =>
-    pointInRectangle(events.pointer.position, shape)
+    isPointInBox(events.pointer.position, shape)
   );
 };
 
@@ -24,5 +24,8 @@ export const SelectCommand: Command = {
   shortcut: 's',
   canExecute: (context: Context, args) => true,
   execute: selectShape,
-  factory: (context: Context) => createSelectProps(context, true)
+  // factory: (context: Context) => createSelectProps(context, true)
+  factory: function ({ state }: Context): Record<string, unknown> {
+    throw new Error('Function not implemented.');
+  }
 };
