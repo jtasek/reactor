@@ -4,9 +4,10 @@ import styles from '../../styles.css';
 import type { Tool } from 'src/tools/types';
 import { Command } from 'src/app/types';
 import { Context } from 'src/app/hooks';
+import { scaledCenter } from 'src/events/computed/pointer';
 
 /**
- * Draws a circle based on input centre point and radius
+ * Draws a circle based on input center point and radius
 
 <circle 
     cx="the x-axis center of the circle" 
@@ -26,12 +27,12 @@ interface Props {
 }
 
 export const createCircleProps = ({ state }: Context, designMode = false) => {
-  const { centre, scaledCentre, radius, scaledRadius } = state.events.pointer;
+  const { center, scaledCenter, radius, scaledRadius } = state.events.pointer;
 
   return {
     code: 'circle-x',
-    cx: designMode ? scaledCentre.x : centre.x,
-    cy: designMode ? scaledCentre.y : centre.y,
+    cx: designMode ? scaledCenter.x : center.x,
+    cy: designMode ? scaledCenter.y : center.y,
     r: designMode ? scaledRadius : radius,
     name: 'Circle x',
     selected: true,
