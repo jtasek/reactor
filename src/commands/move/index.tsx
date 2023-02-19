@@ -10,13 +10,13 @@ export const MoveCommand: Command = {
   name: 'Move',
   category: 'shapes',
   description: 'Move current selection',
-  factory: ({ state }: Context) => {
-    return {};
-  },
   icon: {
     group: 'action',
     name: 'open_with',
     size: 24
+  },
+  factory: ({ state }: Context) => {
+    return {};
   },
   regex: /(?<toolCode>move)\('(?<shapeName>\w+)',(?<x>\d+),(?<y>\d+)\)/,
   shortcut: 'm',
