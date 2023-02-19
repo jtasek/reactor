@@ -53,11 +53,6 @@ export type Vector = {
   y: number;
 };
 
-export type Rectangle = {
-  p: Point;
-  size: Size;
-};
-
 export type Box = {
   topLeft: Point;
   bottomRight: Point;
@@ -92,7 +87,7 @@ export interface Grid {
 export interface Shape {
   id: string;
   parentShapeId?: string;
-  centre?: Point;
+  center?: Point;
   children?: Shape[];
   code: string;
   created: Date;
@@ -103,11 +98,41 @@ export interface Shape {
   modifiedBy: string;
   name: string;
   position?: Position;
-  radius?: number;
   selected: boolean;
   size?: Size;
   type: string;
   visible: boolean;
+}
+
+export interface Circle extends Shape {
+  type: 'circle';
+  center: Point;
+  radius: number;
+}
+
+export interface Ellipse extends Shape {
+  type: 'ellipse';
+  center: Point;
+  radiusX: number;
+  radiusY: number;
+}
+
+export interface Text extends Shape {
+  type: 'text';
+  position: Point;
+  text: string;
+}
+
+export interface Rectangle extends Shape {
+  type: 'rectangle';
+  topLeft: Point;
+  bottomRight: Point;
+}
+
+export interface Line extends Shape {
+  type: 'line';
+  start: Point;
+  end: Point;
 }
 
 export interface Link {
@@ -242,11 +267,7 @@ export interface OnlineProvider extends Provider {
   url: string;
 }
 
-export enum NotificationType {
-  Info = 'Info',
-  Warn = 'Warn',
-  Error = 'Error'
-}
+export type NotificationType = 'info' | 'warn' | 'error';
 
 export interface Notification {
   id: string;
