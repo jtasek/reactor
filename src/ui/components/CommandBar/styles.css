@@ -15,7 +15,7 @@
 }
 
 .commandBarButton {
-  align-items: centre;
+  align-items: center;
   border-radius: 5px;
   display: flex;
   flex-direction: column;
@@ -41,9 +41,8 @@
   /* display: block; */
 }
 
-
 .delimiter {
   margin: 10px 5px 10px 5px;
   border: 1px dashed;
-  border-color: var(--control-delimiter)
+  border-color: var(--control-delimiter);
 }
