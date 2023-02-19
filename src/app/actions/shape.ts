@@ -2,7 +2,7 @@ import { Application, Shape } from '../types';
 import { createShape } from '../factories';
 import { Context } from '../hooks';
 import { Pointer } from 'src/events/types';
-import { getBBox, overlaps, pointInRectangle } from '../utils';
+import { getBoundingBox, overlaps, isPointInBox } from '../utils';
 
 const getShape = ({ currentDocument }: Application, shapeId: string) => {
   const shape = currentDocument.shapes[shapeId];
@@ -56,7 +56,7 @@ export const selectShapeByPoint = ({ state }: Context) => {
 
   const shapes = Object.values(state.currentDocument.shapes);
   shapes.forEach((shape) => {
-    if (pointInRectangle(position, shape)) {
+    if (isPointInBox(position, shape)) {
       shape.selected = true;
     }
   });
@@ -69,7 +69,7 @@ export const selectShapes = ({ state }: Context) => {
 
   const shapes = Object.values(state.currentDocument.shapes);
   shapes.forEach((shape) => {
-    if (overlaps(source, getBBox(shape))) {
+    if (overlaps(source, getBoundingBox(shape))) {
       shape.selected = true;
     }
   });
