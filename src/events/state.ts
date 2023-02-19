@@ -1,10 +1,10 @@
 import { string } from 'yargs';
 import {
   bottomRightPosition,
-  centre,
+  center,
   offset,
   radius,
-  scaledCentre,
+  scaledCenter,
   scaledPosition,
   scaledOffset,
   scaledPath,
@@ -21,13 +21,13 @@ import { Events } from './types';
 export const state: Events = {
   pointer: {
     bottomRightPosition,
-    centre,
+    center,
     dragging: false,
     offset,
     path: [],
     position: { x: 0, y: 0 },
     radius,
-    scaledCentre,
+    scaledCenter,
     scaledOffset,
     scaledPath,
     scaledPosition,
