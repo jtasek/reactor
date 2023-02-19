@@ -2,11 +2,11 @@ import React, { FC } from 'react';
 
 import { useActions } from 'src/app/hooks';
 import { Box, Position, Shape, Size } from 'src/app/types';
-import { getBBox } from 'src/app/utils';
+import { getBoundingBox } from 'src/app/utils';
 import { Handle } from '../Handle';
 
 export const Resizable: FC<{ shape: Shape }> = ({ shape, children }) => {
-  const box = getBBox(shape);
+  const box = getBoundingBox(shape);
 
   if (!box?.topLeft || !box.bottomRight) {
     return children;
