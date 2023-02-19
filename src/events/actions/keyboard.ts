@@ -43,7 +43,7 @@ export const keyDown: Action = (
       events: { keyboard }
     }
   },
-  event: any
+  event: KeyboardEvent
 ) => {
   keyboard.altKey = event.altKey;
   keyboard.ctrlKey = event.ctrlKey;
