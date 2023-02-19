@@ -77,22 +77,12 @@ export function getDefaultType(): string {
   return 'rect';
 }
 
-export function createCommand(options: Partial<Command> = {}): Command {
-  return {
-    id: newId(),
-    execute: () => console.log('not implemented'),
-    category: 'test',
-    name: 'Print document name',
-    ...options
-  };
-}
-
 export function createNotification(options: Partial<Notification> = {}): Notification {
   return {
     id: newId(),
     created: new Date(),
     message: 'Empty message',
-    type: NotificationType.Info,
+    type: 'info',
     ...options
   };
 }
