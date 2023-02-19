@@ -4,7 +4,7 @@ import { Pointer } from '../types';
 
 const DEFAULT_CAMERA_SCALE = 1;
 
-export const centre = derived<Pointer, Application, Position>((pointer) => {
+export const center = derived<Pointer, Application, Position>((pointer) => {
   const { position, startPosition } = pointer;
 
   return {
@@ -13,13 +13,13 @@ export const centre = derived<Pointer, Application, Position>((pointer) => {
   };
 });
 
-export const scaledCentre = derived<Pointer, Application, Position>(
+export const scaledCenter = derived<Pointer, Application, Position>(
   (pointer, { currentDocument }) => {
     const { position, scale = DEFAULT_CAMERA_SCALE } = currentDocument.camera;
 
     return {
-      x: (pointer.centre.x - position.x) / scale,
-      y: (pointer.centre.y - position.y) / scale
+      x: (pointer.center.x - position.x) / scale,
+      y: (pointer.center.y - position.y) / scale
     };
   }
 );
@@ -67,21 +67,21 @@ export const scaledPath = derived<Pointer, Application, Position[]>(
 );
 
 export const radius = derived<Pointer, Application, number>((pointer) => {
-  const { centre, startPosition } = pointer;
+  const { center, startPosition } = pointer;
 
-  const a = centre.x - startPosition.x;
-  const b = centre.y - startPosition.y;
+  const a = center.x - startPosition.x;
+  const b = center.y - startPosition.y;
 
   return Math.sqrt(a * a + b * b);
 });
 
 export const scaledRadius = derived<Pointer, Application, number>(
   (pointer, { currentDocument }) => {
-    const { scaledCentre, scaledStartPosition } = pointer;
+    const { scaledCenter, scaledStartPosition } = pointer;
     const { position, scale = DEFAULT_CAMERA_SCALE } = currentDocument.camera;
 
-    const x = scaledCentre.x - scaledStartPosition.x;
-    const y = scaledCentre.y - scaledStartPosition.y;
+    const x = scaledCenter.x - scaledStartPosition.x;
+    const y = scaledCenter.y - scaledStartPosition.y;
 
     return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
   }
