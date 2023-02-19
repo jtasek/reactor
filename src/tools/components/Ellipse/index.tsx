@@ -28,12 +28,12 @@ interface Props {
 }
 
 export const createEllipseProps = ({ state }: Context, designMode = false) => {
-  const { centre, scaledCentre, size, scaledSize } = state.events.pointer;
+  const { center, scaledCenter, size, scaledSize } = state.events.pointer;
 
   return {
     code: 'ellipse-x',
-    cx: designMode ? scaledCentre.x : centre.x,
-    cy: designMode ? scaledCentre.y : centre.y,
+    cx: designMode ? scaledCenter.x : center.x,
+    cy: designMode ? scaledCenter.y : center.y,
     name: 'Ellipse x',
     rx: designMode ? scaledSize.width : size.width,
     ry: designMode ? scaledSize.height : size.height,
