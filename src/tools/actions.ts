@@ -47,7 +47,7 @@ export const moveCamera = (
 function rescalePointer(pointer: Pointer) {
   return {
     ...pointer,
-    centre: pointer.scaledCentre,
+    center: pointer.scaledCenter,
     position: pointer.scaledPosition,
     offset: pointer.scaledOffset,
     path: pointer.scaledPath,
