@@ -5,6 +5,7 @@ import type { Tool } from 'src/tools/types';
 import { Command } from 'src/app/types';
 import { Context } from 'src/app/hooks';
 import { scaledCenter } from 'src/events/computed/pointer';
+import { getBoundingBoxForCircle } from 'src/app/utils';
 
 /**
  * Draws a circle based on input center point and radius
@@ -17,7 +18,7 @@ import { scaledCenter } from 'src/events/computed/pointer';
 **/
 
 interface Props {
-  code: string;
+  key: string;
   name: string;
   cx: number;
   cy: number;
@@ -30,7 +31,7 @@ export const createCircleProps = ({ state }: Context, designMode = false) => {
   const { center, scaledCenter, radius, scaledRadius } = state.events.pointer;
 
   return {
-    code: 'circle-x',
+    key: 'circle-x',
     cx: designMode ? scaledCenter.x : center.x,
     cy: designMode ? scaledCenter.y : center.y,
     r: designMode ? scaledRadius : radius,
@@ -41,12 +42,12 @@ export const createCircleProps = ({ state }: Context, designMode = false) => {
 };
 
 export const Circle: FC<Props> = ({ code, cx, cy, r, selected }) => {
-  // const shape = useRef();
+  const shape = useRef(null);
   const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
   return (
     <circle
-      //   ref={shape}
+      ref={shape}
       key="circle"
       fill="none"
       stroke="grey"
@@ -55,8 +56,11 @@ export const Circle: FC<Props> = ({ code, cx, cy, r, selected }) => {
       data-name={name}
       className={className}
       onClick={() => {
-        // console.log('circle bbox', shape.current.getBBox());
-        //  console.log(`x: ${shape.current?.x}, y: ${shape.current?.y}`);
+        console.log('circle native bbox', shape.current.getBBox());
+        console.log(
+          'circle cacl bbox',
+          getBoundingBoxForCircle({ center: { x: cx, y: cy }, radius: r })
+        );
       }}
       cx={cx}
       cy={cy}

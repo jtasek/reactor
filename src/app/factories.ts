@@ -104,7 +104,7 @@ export function createShape(options: Partial<Shape> = {}): Shape {
     visible: true,
     ...options,
     id,
-    code: `${type}-${id}`
+    key: `${type}-${id}`
   };
 }
 

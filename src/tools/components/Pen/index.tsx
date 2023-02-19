@@ -14,7 +14,7 @@ import { stringifyPath } from 'src/app/utils';
 **/
 
 interface Props {
-  code: string;
+  key: string;
   name: string;
   points: Point[];
   selected: true;
@@ -25,7 +25,7 @@ export function createPenProps({ state }: Context, designMode = false) {
   const { path, scaledPath } = state.events.pointer;
 
   return {
-    code: 'pen-x',
+    key: 'pen-x',
     name: 'Pen x',
     points: designMode ? scaledPath : path,
     selected: true,

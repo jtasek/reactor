@@ -188,7 +188,7 @@ const documents = {
     shapes: {
       '1': {
         id: '1',
-        code: 'shape-1',
+        key: 'shape-1',
         name: 'Shape 1',
         description: 'This is shape no 1',
         position: {
@@ -210,7 +210,7 @@ const documents = {
       },
       '2': {
         id: '2',
-        code: 'shape-2',
+        key: 'shape-2',
         name: 'Shape 2',
         description: 'This is shape no 2',
         position: {
@@ -232,7 +232,7 @@ const documents = {
       },
       '3': {
         id: '3',
-        code: 'shape-3',
+        key: 'shape-3',
         name: 'Shape 3',
         description: 'This is shape no 3',
         position: {
@@ -254,7 +254,7 @@ const documents = {
       },
       '4': {
         id: '4',
-        code: 'shape-4',
+        key: 'shape-4',
         name: 'Shape 4',
         description: 'This is shape no 4',
         position: {
@@ -276,7 +276,7 @@ const documents = {
       },
       '5': {
         id: '5',
-        code: 'shape-5',
+        key: 'shape-5',
         name: 'Shape 5',
         description: 'This is shape no 5',
         position: {

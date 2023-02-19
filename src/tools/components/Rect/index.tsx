@@ -19,7 +19,7 @@ import { Context } from 'src/app/hooks';
 **/
 
 interface Props {
-  code: string;
+  key: string;
   name: string;
   position: Position;
   size: Size;
@@ -31,7 +31,7 @@ export function createRectProps({ state }: Context, designMode = false) {
   const { topLeftPosition, scaledTopLeftPosition, size, scaledSize } = state.events.pointer;
 
   return {
-    code: 'rect-x',
+    key: 'rect-x',
     name: 'Rectangle x',
     position: designMode ? scaledTopLeftPosition : topLeftPosition,
     selected: true,
@@ -55,7 +55,8 @@ export const Rect: FC<Props> = ({ name, type, position, size, selected }) => {
       width={size?.width}
       height={size?.height}
       onClick={() => {
-        //console.log('rect bbox', shape.current?.getBBox());
+        console.log('rect native bbox', shape.current?.getBBox());
+        console.log('rect', { position, size });
       }}
     />
   );

@@ -20,7 +20,7 @@ import { Context } from 'src/app/hooks';
  **/
 
 interface Props {
-  code: string;
+  key: string;
   name: string;
   x: number;
   y: number;
@@ -35,7 +35,7 @@ export const createImageProps = ({ state }: Context, designMode = false) => {
   const { startPosition, scaledStartPosition, size, scaledSize } = state.events.pointer;
 
   return {
-    code: 'image-x',
+    key: 'image-x',
     x: designMode ? scaledStartPosition.x : startPosition.x,
     y: designMode ? scaledStartPosition.y : startPosition.y,
     width: designMode ? scaledSize.width : size.width,

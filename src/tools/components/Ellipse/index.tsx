@@ -17,7 +17,7 @@ import { Context } from 'src/app/hooks';
 **/
 
 interface Props {
-  code: string;
+  key: string;
   name: string;
   cx: number;
   cy: number;
@@ -31,7 +31,7 @@ export const createEllipseProps = ({ state }: Context, designMode = false) => {
   const { center, scaledCenter, size, scaledSize } = state.events.pointer;
 
   return {
-    code: 'ellipse-x',
+    key: 'ellipse-x',
     cx: designMode ? scaledCenter.x : center.x,
     cy: designMode ? scaledCenter.y : center.y,
     name: 'Ellipse x',

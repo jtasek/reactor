@@ -89,7 +89,7 @@ export interface Shape {
   parentShapeId?: string;
   center?: Point;
   children?: Shape[];
-  code: string;
+  key: string;
   created: Date;
   createdBy: string;
   description?: string;
