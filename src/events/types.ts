@@ -2,14 +2,14 @@ import { Position, Size } from '../app/types';
 
 export interface Pointer {
   bottomRightPosition: Position;
-  centre: Position;
+  center: Position;
   dragging: boolean;
   offset: Position;
   path: Position[];
   position: Position;
   radius: number;
   scaledBottomRightPosition: Position;
-  scaledCentre: Position;
+  scaledCenter: Position;
   scaledOffset: Position;
   scaledPath: Position[];
   scaledPosition: Position;
