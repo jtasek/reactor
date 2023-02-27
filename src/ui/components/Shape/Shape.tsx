@@ -22,12 +22,9 @@ export const Shape: FC<Props> = ({ shapeId }) => {
       Resizable,
       {
         shape: shape,
-        key: `selectable-${shape.id}`
+        key: `${shape.type}-${shape.id}`
       },
-      React.createElement(component, {
-        key: `${shape.type}-${shape.id}`,
-        ...shape
-      })
+      React.createElement(component, shape)
     );
   }
 
@@ -35,11 +32,8 @@ export const Shape: FC<Props> = ({ shapeId }) => {
     Selectable,
     {
       shape: shape,
-      key: `selectable-${shape.id}`
+      key: `${shape.type}-${shape.id}`
     },
-    React.createElement(component, {
-      key: `${shape.type}-${shape.id}`,
-      ...shape
-    })
+    React.createElement(component, shape)
   );
 };
