@@ -227,13 +227,13 @@ export interface Command {
   id: string;
   category?: string;
   description?: string;
-  factory: ({ state }: Context) => Record<string, unknown>;
   icon?: Icon;
   name: string;
   regex: RegExp;
   shortcut?: string;
   canExecute: ActionGuard;
   execute: Action;
+  factory: ({ state }: Context) => Record<string, unknown>;
 }
 
 export interface User {
