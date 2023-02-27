@@ -3,7 +3,6 @@ import { CloneCommand } from './clone';
 import { MoveCommand } from './move';
 import { GroupCommand, UngroupCommand } from './group';
 import { LayerCommand, UnlayerCommand } from './layer';
-import { SelectCommand } from './select';
 import { ZoomInCommand, ZoomOutCommand, ZoomResetCommand } from './zoom';
 
 export const commands = [
@@ -14,7 +13,6 @@ export const commands = [
   UngroupCommand,
   LayerCommand,
   UnlayerCommand,
-  SelectCommand,
   ZoomInCommand,
   ZoomOutCommand,
   ZoomResetCommand
