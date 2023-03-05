@@ -12,17 +12,19 @@ import {
   Explorer,
   GroupPanel,
   LayerPanel,
+  Layout,
   MenuBar,
   Minimap,
   NavBar,
   PropertyPanel,
   SearchBox,
   SideBar,
+  Stack,
   StatusBar,
+  Stats,
   Surface,
   Switch,
-  ToolBar,
-  Layout
+  ToolBar
 } from 'src/ui/components';
 
 export const Designer: FC = () => (
@@ -38,6 +40,8 @@ export const Designer: FC = () => (
         <NavBar />
       </Explorer>
     </SideBar>
+    <Stack />
+    <Stats />
     <Surface />
     <ContextMenu />
     <Minimap />
