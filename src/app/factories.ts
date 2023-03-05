@@ -14,6 +14,7 @@ import {
   shapesIds
 } from './computed/shapes';
 import { newId } from './effects';
+import { Sequence } from './sequence';
 
 import {
   Application,
@@ -35,29 +36,22 @@ import {
 
 export const getDefaultName = (type: string): string => 'Rect';
 
-export function* sequence() {
-  let i = 1;
-  while (true) {
-    yield i++;
-  }
-}
-
-const componentSequence = sequence();
-const documentSequence = sequence();
-const groupSequence = sequence();
-const layerSequence = sequence();
-const linkSequence = sequence();
-const rulerSequence = sequence();
-const shapeSequence = sequence();
+const componentSequence = new Sequence();
+const documentSequence = new Sequence();
+const groupSequence = new Sequence();
+const layerSequence = new Sequence();
+const linkSequence = new Sequence();
+const rulerSequence = new Sequence();
+const shapeSequence = new Sequence();
 
 export const newApplicationName = (): string => `reactor-${Date.now()}`;
-export const newComponentName = (): string => `Component-${componentSequence.next().value}`;
-export const newDocumentName = (): string => `Document-${documentSequence.next().value}`;
-export const newGroupName = (): string => `Group-${groupSequence.next().value}`;
-export const newLayerName = (): string => `Layer-${layerSequence.next().value}`;
-export const newLinkName = (): string => `Link-${linkSequence.next().value}`;
-export const newRulerName = (): string => `Ruler-${rulerSequence.next().value}`;
-export const newShapeName = (): string => `Shape-${shapeSequence.next().value}`;
+export const newComponentName = (): string => `component-${componentSequence.next()}`;
+export const newDocumentName = (): string => `document-${documentSequence.next()}`;
+export const newGroupName = (): string => `group-${groupSequence.next()}`;
+export const newLayerName = (): string => `layer-${layerSequence.next()}`;
+export const newLinkName = (): string => `link-${linkSequence.next()}`;
+export const newRulerName = (): string => `ruler-${rulerSequence.next()}`;
+export const newShapeName = (): string => `shape-${shapeSequence.next()}`;
 
 export const getAnonymousUser = (): User => {
   return {
