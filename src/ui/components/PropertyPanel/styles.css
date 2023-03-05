@@ -1,6 +1,6 @@
 .propertyPanel {
-  background-color: var(--control-background);
   backdrop-filter: var(--backdrop-filter);
+  background-color: var(--control-background);
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
   color: var(--text-color);
