@@ -1,0 +1,12 @@
+.stats {
+  backdrop-filter: var(--backdrop-filter);
+  background-color: var(--control-background);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  color: var(--text-color);
+  right: 120px;
+  padding: 10px;
+  position: fixed;
+  bottom: 100px;
+  z-index: 100;
+}
