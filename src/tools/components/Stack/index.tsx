@@ -4,9 +4,7 @@ import { getToolById } from '..';
 
 export const Stack: FC = () => {
   const { activeToolsIds } = useTools();
-  const actions = useActions();
-  const state = useAppState();
-  const effects = useEffects();
+  console.log('stack render');
 
   return (
     <g id="tools">
@@ -17,7 +15,7 @@ export const Stack: FC = () => {
           throw new Error(`Tool ${toolId} not found`);
         }
 
-        return tool.command.execute({ state, effects, actions });
+        return React.createElement(tool.component, { key: `design-${toolId}` }, null);
       })}
     </g>
   );
