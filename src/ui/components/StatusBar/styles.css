@@ -16,3 +16,9 @@
   width: 100%;
   z-index: 100;
 }
+
+.statusBarSlot {
+  text-align: right;
+  width: calc(100% / 6);
+}
+

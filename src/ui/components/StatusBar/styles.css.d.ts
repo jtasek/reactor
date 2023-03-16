@@ -1,6 +1,7 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
     statusBar: string;
+    statusBarSlot: string;
   }
 }
 
