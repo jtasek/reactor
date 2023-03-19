@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, KeyboardEvent } from 'react';
 import { useActions } from 'src/app/hooks';
 
-export const useKeyboard = () => {
+export const useKeyboardDriver = () => {
   const { keyDown, keyUp } = useActions().events;
 
   const handleKeyDown = (event: KeyboardEvent) => {
