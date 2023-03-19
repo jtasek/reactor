@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 
-import { usePointer } from 'src/events/drivers/usePointer';
+import { usePointerDriver } from 'src/events/drivers/usePointerDriver';
 
 import styles from './styles.css';
 
@@ -11,7 +11,7 @@ export const Surface: FC = ({ children }) => {
     handlePointerMove,
     handlePointerUp,
     handleMouseWheel
-  } = usePointer();
+  } = usePointerDriver();
 
   return (
     <svg
@@ -23,7 +23,7 @@ export const Surface: FC = ({ children }) => {
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       onPointerMove={handlePointerMove}
-      onPointerLeave={handlePointerUp}
+      // onPointerLeave={handlePointerUp}
     >
       {children}
     </svg>
