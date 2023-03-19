@@ -1,6 +1,6 @@
 import { useActions } from 'src/app/hooks';
 
-export const useKeyboard = () => {
+export const useKeyboardDriver = () => {
   const actions = useActions();
 
   const handleCopy = (event) => {};
