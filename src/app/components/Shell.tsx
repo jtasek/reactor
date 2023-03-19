@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 import { useAppState } from '../hooks';
-import { useKeyboardDriver } from 'src/events/drivers/useKeyboard';
+import { useKeyboardDriver } from 'src/events/drivers/useKeyboardDriver';
 
 import { Designer, Documents } from '../../pages';
 
