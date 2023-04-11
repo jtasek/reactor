@@ -56,6 +56,10 @@ export const useCurrentDocument = () => {
   return useAppState((state) => state.currentDocument);
 };
 
+export const useCurrentPage = () => {
+  return useAppState((state) => state.currentPage);
+};
+
 export const useCamera = () => {
   return useAppState((state) => state.currentDocument.camera);
 };
