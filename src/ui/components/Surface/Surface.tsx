@@ -7,10 +7,13 @@ import styles from './styles.css';
 export const Surface: FC = ({ children }) => {
   const {
     handleContextMenu,
+    handleMouseWheel,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
-    handleMouseWheel
+    handleTouchEnd,
+    handleTouchMove,
+    handleTouchStart
   } = usePointerDriver();
 
   return (
@@ -19,11 +22,15 @@ export const Surface: FC = ({ children }) => {
       preserveAspectRatio="none"
       // mouse
       onContextMenu={handleContextMenu}
-      onWheel={handleMouseWheel}
       onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
+      onPointerEnter={handlePointerDown}
+      onPointerLeave={handlePointerUp}
       onPointerMove={handlePointerMove}
-      // onPointerLeave={handlePointerUp}
+      onPointerUp={handlePointerUp}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
+      onTouchStart={handleTouchStart}
+      onWheel={handleMouseWheel}
     >
       {children}
     </svg>
