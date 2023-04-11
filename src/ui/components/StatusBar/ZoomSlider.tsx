@@ -4,17 +4,21 @@ import { useActions, useCamera } from 'src/app/hooks';
 
 import { Slider } from '../Slider';
 
+const MAX_SCALE = 10;
+const MIN_SCALE = 0.1;
+const ZOOM_STEP = 0.1;
+
 export const ZoomSlider: FC = () => {
   const { scale } = useCamera();
-  const actions = useActions();
+  const { tools } = useActions();
 
   return (
     <Slider
-      min={0.1}
-      max={5.0}
-      step={0.05}
+      min={MIN_SCALE}
+      max={MAX_SCALE}
+      step={ZOOM_STEP}
       value={scale}
-      onChange={(value: number) => actions.tools.zoom(value)}
+      onChange={(value: number) => tools.zoom(value)}
     />
   );
 };
