@@ -9,7 +9,6 @@ interface Props {
 
 export const Shape: FC<Props> = ({ shapeId }) => {
   const shape = useShape(shapeId);
-
   const component = getComponentByType(shape.type);
 
   if (!component) {
