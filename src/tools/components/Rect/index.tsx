@@ -3,7 +3,9 @@ import React, { FC, useRef } from 'react';
 import styles from '../../styles.css';
 import type { Command, Position, Size } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
-import { Context } from 'src/app/hooks';
+import { Context, usePointer } from 'src/app/hooks';
+import { Pointer } from 'src/events/types';
+import { newShapeName } from 'src/app/factories';
 
 /**
  * Draws a rectange based on position and size
@@ -24,15 +26,21 @@ interface Props {
   position: Position;
   size: Size;
   selected: boolean;
-  type: 'rect';
+  type?: 'rect';
 }
 
-export function createRectProps({ state }: Context, designMode = false) {
-  const { topLeftPosition, scaledTopLeftPosition, size, scaledSize } = state.events.pointer;
+export function createRectProps(pointer: Pointer, designMode = false) {
+  const { topLeftPosition, scaledTopLeftPosition, size, scaledSize } = pointer;
+
+  const name = designMode ? 'Rectangle x' : newShapeName();
+  const key = name.toLowerCase();
+  console.log(
+    `scaledTopLeftPosition: [${scaledTopLeftPosition.x},${scaledTopLeftPosition.y}], topLeftPosition: [${topLeftPosition.x}, ${topLeftPosition.y}]`
+  );
 
   return {
-    key: 'rect-x',
-    name: 'Rectangle x',
+    key,
+    name,
     position: designMode ? scaledTopLeftPosition : topLeftPosition,
     selected: true,
     size: designMode ? scaledSize : size,
@@ -40,10 +48,10 @@ export function createRectProps({ state }: Context, designMode = false) {
   };
 }
 
-export const Rect: FC<Props> = ({ name, type, position, size, selected }) => {
+export const Rect: FC<Props> = ({ name, position, size, selected }) => {
   const shape = useRef(null);
   const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
-
+  console.log('rendering rect');
   return (
     <rect
       data-cy={name}
@@ -62,6 +70,14 @@ export const Rect: FC<Props> = ({ name, type, position, size, selected }) => {
   );
 };
 
+export const DesignRect: FC<Props> = () => {
+  const pointer = usePointer();
+
+  const { key, name, position, size } = createRectProps(pointer, true);
+
+  return <Rect key={key} name={name} position={position} size={size} selected />;
+};
+
 export const RectCommand: Command = {
   id: 'rect',
   name: 'Rectangle',
@@ -76,8 +92,9 @@ export const RectCommand: Command = {
   regex: /(?<toolCode>rect)\((?<x1>[\d]+),(?<y1>[\d]+),(?<x2>[\d]+),(?<y2>[\d]+)\)/,
   shortcut: 'r',
   canExecute: (context, args) => true,
-  execute: (context, args) => React.createElement(Rect, createRectProps(context) as Props, null),
-  factory: (context: Context) => createRectProps(context, true)
+  execute: (context, args) =>
+    React.createElement(Rect, createRectProps(context.state.events.pointer, false) as Props, null),
+  factory: (context: Context) => createRectProps(context.state.events.pointer, true)
 };
 
 export const RectTool: Tool = {
@@ -85,5 +102,5 @@ export const RectTool: Tool = {
   name: 'Rectangle',
   description: 'Draw a rectangle or square',
   command: RectCommand,
-  component: Rect
+  component: DesignRect
 };
