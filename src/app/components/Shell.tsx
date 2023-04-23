@@ -1,12 +1,15 @@
 import React, { FC } from 'react';
-import { useAppState } from '../hooks';
+import { useCurrentPage } from '../hooks';
 import { useKeyboardDriver } from 'src/events/drivers/useKeyboardDriver';
 
 import { Designer, Documents } from '../../pages';
+import { usePreventNativePinchZoom } from './usePreventNativePinchZoom';
 
 export const Shell: FC = () => {
   useKeyboardDriver();
-  const currentPage = useAppState((state) => state.currentPage);
+  usePreventNativePinchZoom();
+
+  const currentPage = useCurrentPage();
 
   return (
     <>
