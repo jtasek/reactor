@@ -2,8 +2,16 @@ import { Context } from 'src/app/hooks';
 import { Pointer } from 'src/events/types';
 import { getToolById } from './components';
 
+const DEFAULT_SCALE = 1;
+const MAX_SCALE = 10;
+const MIN_SCALE = 0.1;
+const ZOOM_STEP = 0.1;
+
+const limitScale = (scale: number) =>
+  parseFloat(Math.min(Math.max(scale, MIN_SCALE), MAX_SCALE).toFixed(1));
+
 export const activateTool = ({ state: { tools }, actions }: Context, toolId: string) => {
-  tools.activeToolsIds = [toolId];
+  tools.activeToolsIds.push(toolId);
   actions.ui.hideContextMenu();
 };
 
@@ -20,20 +28,27 @@ export const resetTools = ({ state: { events, tools } }: Context) => {
   }
 };
 
-export const zoomIn = ({ state: { currentDocument } }: Context, step = 1) => {
-  currentDocument.camera.scale += step;
+export const zoomIn = ({ state: { currentDocument } }: Context, step = ZOOM_STEP) => {
+  if (currentDocument.camera.scale >= MAX_SCALE) return;
+  const scale = currentDocument.camera.scale + step;
+
+  currentDocument.camera.scale = parseFloat(scale.toFixed(1));
 };
 
-export const zoomOut = ({ state: { currentDocument } }: Context, step = 1) => {
-  currentDocument.camera.scale -= step;
+export const zoomOut = ({ state: { currentDocument } }: Context, step = ZOOM_STEP) => {
+  if (currentDocument.camera.scale <= MIN_SCALE) return;
+
+  const scale = currentDocument.camera.scale - step;
+
+  currentDocument.camera.scale = parseFloat(scale.toFixed(1));
 };
 
 export const zoomReset = ({ state: { currentDocument } }: Context) => {
-  currentDocument.camera.scale = 1;
+  currentDocument.camera.scale = DEFAULT_SCALE;
 };
 
-export const zoom = ({ state: { currentDocument } }: Context, scale = 1) => {
-  currentDocument.camera.scale = scale;
+export const zoom = ({ state: { currentDocument } }: Context, scale = DEFAULT_SCALE) => {
+  currentDocument.camera.scale = limitScale(scale);
 };
 
 export const moveCamera = (
@@ -68,16 +83,15 @@ export const executeToolCommands = (context: Context) => {
     console.log(`Execute tool command: ${toolId}`);
 
     tool?.command.execute(context);
-
+    debugger;
     if (tool?.command.factory) {
-      // Rescale pointer accorrding to the current zoom
-      const pointer = rescalePointer(state.events.pointer);
-
       // Create new shape
       const options = tool.command.factory(context);
 
       // Insert new shape into the store
       actions.addShape({ ...options, selected: false });
     }
+
+    actions.tools.resetTools();
   }
 };
