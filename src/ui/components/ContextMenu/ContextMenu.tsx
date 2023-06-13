@@ -23,10 +23,10 @@ export const ContextMenu: FC<Props> = ({ position, children }) => (
 );
 
 export const ConnectedContextMenu: FC = () => {
-  const { position } = usePointer();
+  const { startPosition } = usePointer();
 
   return (
-    <ContextMenu position={position}>
+    <ContextMenu position={startPosition}>
       <ConnectedContextMenuItems />
     </ContextMenu>
   );
