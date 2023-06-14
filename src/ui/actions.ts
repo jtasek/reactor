@@ -2,7 +2,7 @@ import { Action } from 'src/app/types';
 
 import { Position } from '../app/types';
 
-export const displayContextMenu: Action<Position> = ({ state }) => {
+export const displayContextMenu: Action = ({ state }) => {
   state.ui.contextMenu.visible = true;
 };
 
@@ -10,7 +10,7 @@ export const hideContextMenu: Action = ({ state }) => {
   state.ui.contextMenu.visible = false;
 };
 
-export const showControl: Action<string> = ({ state }, controlId: string) => {
+export const showControl: Action = ({ state }, controlId: string) => {
   state.ui[controlId].visible = true;
 };
 
@@ -18,7 +18,7 @@ export const hideControl: Action<string> = ({ state }, controlId: string) => {
   state.ui[controlId].visible = false;
 };
 
-export const toggleControlVisibility: Action<string> = ({ state }, controlId: string) => {
+export const toggleControlVisibility: Action = ({ state }, controlId: string) => {
   state.ui[controlId].visible = !state.ui[controlId].visible;
 };
 
