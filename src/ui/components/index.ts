@@ -13,6 +13,7 @@ export { MenuBarContainer as MenuBar } from './MenuBar';
 export { MiniMapContainer as Minimap } from './MiniMap';
 export { NavBarContainer as NavBar } from './NavBar';
 //export { Overlay } from './Overlay';
+
 export { Layout } from './Layout';
 export { PropertyPanelContainer as PropertyPanel } from './PropertyPanel';
 export { SearchBoxContainer as SearchBox } from './SearchBox';
