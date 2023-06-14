@@ -1,12 +1,14 @@
 import React, { FC } from 'react';
 import { useCurrentPage } from '../hooks';
 import { useKeyboardDriver } from 'src/events/drivers/useKeyboardDriver';
+import { usePreventNativePinchZoom } from './usePreventNativePinchZoom';
+import { useTouchDriver } from 'src/events/drivers/useTouchDriver';
 
 import { Designer, Documents } from '../../pages';
-import { usePreventNativePinchZoom } from './usePreventNativePinchZoom';
 
 export const Shell: FC = () => {
   useKeyboardDriver();
+  // useTouchDriver();
   usePreventNativePinchZoom();
 
   const currentPage = useCurrentPage();
