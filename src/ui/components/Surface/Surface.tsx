@@ -23,8 +23,8 @@ export const Surface: FC = ({ children }) => {
       // mouse
       onContextMenu={handleContextMenu}
       onPointerDown={handlePointerDown}
-      onPointerEnter={handlePointerDown}
-      onPointerLeave={handlePointerUp}
+      // onPointerEnter={handlePointerDown}
+      // onPointerLeave={handlePointerUp}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onTouchEnd={handleTouchEnd}
