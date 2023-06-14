@@ -4,9 +4,9 @@
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
   color: var(--text-color);
-  right: 120px;
+  left: 50px;
   padding: 10px;
   position: fixed;
-  bottom: 100px;
+  top: 100px;
   z-index: 100;
 }
