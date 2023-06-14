@@ -1,24 +1,18 @@
 import { useState, PointerEvent, WheelEvent, MouseEvent } from 'react';
-import { useActions } from 'src/app/hooks';
+import { useActions, useControls } from 'src/app/hooks';
 
 const ZERO_DISTANCE = 0;
 
 export const usePointerDriver = () => {
-  const [dragging, setDragging] = useState(false);
+  console.log('usePointerDriver');
+  let dragging = false;
   const [lastDistance, setLastDistance] = useState(ZERO_DISTANCE);
 
   const actions = useActions();
-
-  const handlePointerMove = (event: PointerEvent) => {
-    console.log('pointer move');
-
-    if (dragging) {
-      actions.events.dragging({ x: event.clientX, y: event.clientY });
-    }
-  };
+  const contextMenu = useControls().contextMenu;
 
   const handleTouchStart = (event: any) => {
-    console.log('touch start');
+    console.log('handleTouchStart');
 
     if (event.touches.length === 2) {
       const touch1 = event.touches[0];
@@ -33,7 +27,7 @@ export const usePointerDriver = () => {
   };
 
   const handleTouchMove = (event: any) => {
-    console.log('touch move');
+    console.log('handleTouchMove');
     event.stopProgration();
     event.preventDefault();
 
@@ -57,27 +51,39 @@ export const usePointerDriver = () => {
   };
 
   const handleTouchEnd = (event: any) => {
-    console.log('touch end');
+    console.log('handleTouchEnd');
 
     setLastDistance(ZERO_DISTANCE);
   };
 
-  const handlePointerUp = (event: PointerEvent) => {
-    if (dragging) {
-      setDragging(false);
-      actions.events.endDragging({ x: event.clientX, y: event.clientY });
-      actions.tools.executeToolCommands();
-      setLastDistance(ZERO_DISTANCE);
-      // actions.tools.resetTools();
-    }
-  };
-
   const handlePointerDown = (event: PointerEvent) => {
-    setDragging(true);
+    console.log('handlePointerDown', dragging);
+
+    dragging = true;
     actions.events.startDragging({ x: event.clientX, y: event.clientY });
   };
 
+  const handlePointerMove = (event: PointerEvent) => {
+    console.log('handlePointerMove', dragging);
+
+    if (dragging) {
+      actions.events.dragging({ x: event.clientX, y: event.clientY });
+    }
+  };
+
+  const handlePointerUp = (event: PointerEvent) => {
+    console.log('handlePointerUp', dragging);
+    if (dragging) {
+      dragging = false;
+      actions.events.endDragging({ x: event.clientX, y: event.clientY });
+      actions.tools.executeToolCommands();
+      setLastDistance(ZERO_DISTANCE);
+      actions.tools.resetTools();
+    }
+  };
+
   const handleMouseWheel = (event: WheelEvent) => {
+    console.log('handleMouseWheel');
     event.preventDefault();
 
     if (event.ctrlKey) {
@@ -94,7 +100,11 @@ export const usePointerDriver = () => {
   };
 
   const handleContextMenu = (event: MouseEvent) => {
+    console.log('handleContextMenu');
+
     event.preventDefault();
+    if (contextMenu.visible) return;
+
     actions.ui.displayContextMenu({ x: event.clientX, y: event.clientY });
   };
 
