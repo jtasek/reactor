@@ -29,11 +29,13 @@ interface Props {
   type?: 'rect';
 }
 
-export function createRectProps(pointer: Pointer, designMode = false) {
-  const { topLeftPosition, scaledTopLeftPosition, size, scaledSize } = pointer;
-
+export const createRectProps = (
+  { topLeftPosition, scaledTopLeftPosition, size, scaledSize }: Pointer,
+  designMode = false
+) => {
   const name = designMode ? 'Rectangle x' : newShapeName();
   const key = name.toLowerCase();
+
   console.log(
     `scaledTopLeftPosition: [${scaledTopLeftPosition.x},${scaledTopLeftPosition.y}], topLeftPosition: [${topLeftPosition.x}, ${topLeftPosition.y}]`
   );
@@ -46,25 +48,27 @@ export function createRectProps(pointer: Pointer, designMode = false) {
     size: designMode ? scaledSize : size,
     type: 'rect'
   };
-}
+};
 
 export const Rect: FC<Props> = ({ name, position, size, selected }) => {
   const shape = useRef(null);
   const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
-  console.log('rendering rect');
+  console.log('rendering Rect');
+
   return (
     <rect
-      data-cy={name}
-      ref={shape}
-      fill="none"
       className={className}
+      //data-cy={code}
+      data-name={name}
+      fill="none"
+      height={size?.height}
+      ref={shape}
+      width={size?.width}
       x={position?.x}
       y={position?.y}
-      width={size?.width}
-      height={size?.height}
       onClick={() => {
-        console.log('rect native bbox', shape.current?.getBBox());
-        console.log('rect', { position, size });
+        // console.log('rect native bbox', shape.current?.getBBox());
+        // console.log('rect', { position, size });
       }}
     />
   );
@@ -92,9 +96,9 @@ export const RectCommand: Command = {
   regex: /(?<toolCode>rect)\((?<x1>[\d]+),(?<y1>[\d]+),(?<x2>[\d]+),(?<y2>[\d]+)\)/,
   shortcut: 'r',
   canExecute: (context, args) => true,
-  execute: (context, args) =>
-    React.createElement(Rect, createRectProps(context.state.events.pointer, false) as Props, null),
-  factory: (context: Context) => createRectProps(context.state.events.pointer, true)
+  execute: ({ state }: Context, args) =>
+    React.createElement(Rect, createRectProps(state.events.pointer, false), null),
+  factory: ({ state }: Context) => createRectProps(state.events.pointer, true)
 };
 
 export const RectTool: Tool = {
@@ -102,5 +106,5 @@ export const RectTool: Tool = {
   name: 'Rectangle',
   description: 'Draw a rectangle or square',
   command: RectCommand,
-  component: DesignRect
+  component: Rect
 };
