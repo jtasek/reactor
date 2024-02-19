@@ -6,6 +6,7 @@ import { Command } from 'src/app/types';
 import { Context } from 'src/app/hooks';
 import { scaledCenter } from 'src/events/computed/pointer';
 import { getBoundingBoxForCircle } from 'src/app/utils';
+import { newShapeName } from 'src/app/factories';
 
 /**
  * Draws a circle based on input center point and radius
@@ -30,41 +31,45 @@ interface Props {
 export const createCircleProps = ({ state }: Context, designMode = false) => {
   const { center, scaledCenter, radius, scaledRadius } = state.events.pointer;
 
+  const name = designMode ? 'Circle x' : newShapeName();
+  const key = name.toLowerCase();
+
   return {
-    key: 'circle-x',
     cx: designMode ? scaledCenter.x : center.x,
     cy: designMode ? scaledCenter.y : center.y,
+    key,
+    name,
     r: designMode ? scaledRadius : radius,
-    name: 'Circle x',
     selected: true,
     type: 'circle'
   };
 };
 
-export const Circle: FC<Props> = ({ code, cx, cy, r, selected }) => {
+export const Circle: FC<Props> = ({ name, cx, cy, r, selected }) => {
   const shape = useRef(null);
   const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
+  console.log('rendering Circle');
 
   return (
     <circle
-      ref={shape}
-      key="circle"
-      fill="none"
-      stroke="grey"
-      strokeWidth={2}
-      data-cy={code}
-      data-name={name}
       className={className}
-      onClick={() => {
-        console.log('circle native bbox', shape.current.getBBox());
-        console.log(
-          'circle cacl bbox',
-          getBoundingBoxForCircle({ center: { x: cx, y: cy }, radius: r })
-        );
-      }}
       cx={cx}
       cy={cy}
+      //data-cy={code}
+      data-name={name}
+      fill="none"
+      key="circle"
       r={r}
+      ref={shape}
+      stroke="grey"
+      strokeWidth={2}
+      onClick={() => {
+        // console.log('circle native bbox', shape.current.getBBox());
+        // console.log(
+        //   'circle cacl bbox',
+        //   getBoundingBoxForCircle({ center: { x: cx, y: cy }, radius: r })
+        // );
+      }}
     />
   );
 };
@@ -88,7 +93,6 @@ export const CircleCommand: Command = {
   factory: (context: Context) => createCircleProps(context, true)
 };
 
-// Tool is visual command that is used to draw a shape
 export const CircleTool: Tool = {
   id: 'circle',
   name: 'Circle',
