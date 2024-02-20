@@ -1,6 +1,7 @@
 import webpack from 'webpack';
 import path, { dirname } from 'path';
 import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
+import ESLintWebpackPlugin from 'eslint-webpack-plugin'
 
 import { fileURLToPath } from 'url';
 
@@ -70,7 +71,8 @@ export const config = {
     // enable HMR globally
     new webpack.HotModuleReplacementPlugin(),
     new webpack.NoEmitOnErrorsPlugin(),
-    new ReactRefreshWebpackPlugin()
+    new ReactRefreshWebpackPlugin(),
+    new ESLintWebpackPlugin(),
   ],
   optimization: {
     // prints more readable module names in the browser console on HMR updates
