@@ -1,4 +1,4 @@
-export default {
+module.exports =  {
   root: true,
   env: {
     browser: true,
@@ -16,7 +16,7 @@ export default {
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    ecmaVersion: 2020,
+    ecmaVersion: 2021,
     sourceType: 'module',
     ecmaFeatures: {
       modules: true,
@@ -94,4 +94,4 @@ export default {
       }
     }
   }
-};
+}
