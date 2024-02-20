@@ -2,7 +2,7 @@ declare namespace StylesCssNamespace {
   export interface IStylesCss {
     camera: string;
     surface: string;
-    'surface-black': string;
+    "surface-black": string;
   }
 }
 
