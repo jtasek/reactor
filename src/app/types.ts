@@ -97,7 +97,7 @@ export interface Shape {
   modified: Date;
   modifiedBy: string;
   name: string;
-  position?: Position;
+  position: Position;
   selected: boolean;
   size?: Size;
   type: string;
@@ -222,6 +222,7 @@ export interface Icon {
 
 export type ActionGuard = (context: Context) => boolean;
 export type Action<T> = (context: Context, arg1: T) => void;
+export type ExecuteAction = (context: Context) => void;
 
 export interface Command {
   id: string;
@@ -232,8 +233,8 @@ export interface Command {
   regex: RegExp;
   shortcut?: string;
   canExecute: ActionGuard;
-  execute: Action;
-  factory: ({ state }: Context) => Record<string, unknown>;
+  execute: ExecuteAction;
+  factory?: ({ state }: Context) => Record<string, unknown>;
 }
 
 export interface User {
