@@ -6,10 +6,10 @@ declare namespace StylesCssNamespace {
     default: string;
     dialog: string;
     disabled: string;
-    'modal-enter': string;
-    'modal-enter-active': string;
-    'modal-leave': string;
-    'modal-leave-active': string;
+    "modal-enter": string;
+    "modal-enter-active": string;
+    "modal-leave": string;
+    "modal-leave-active": string;
     primary: string;
   }
 }
