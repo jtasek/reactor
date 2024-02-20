@@ -1,8 +1,8 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
     grid: string;
-    'grid-lines-large': string;
-    'grid-lines-small': string;
+    "grid-lines-large": string;
+    "grid-lines-small": string;
   }
 }
 
