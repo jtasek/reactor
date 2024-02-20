@@ -220,8 +220,8 @@ export interface Icon {
   size: number;
 }
 
-export type ActionGuard = (context: Context, args?: Record<string, unknown>) => boolean;
-export type Action = (context: Context, args?: Record<string, unknown>) => void;
+export type ActionGuard = (context: Context) => boolean;
+export type Action<T> = (context: Context, arg1: T) => void;
 
 export interface Command {
   id: string;
