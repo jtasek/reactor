@@ -54,7 +54,7 @@ export const PenCommand: Command = {
   },
   regex: /(?<toolCode>pen)\((?<path>[\d, ]+)\)/,
   shortcut: 'ctrl+p',
-  canExecute: (context, args?) => true,
+  canExecute: (context) => true,
   execute: (context, args?) => React.createElement(Pen, createPenProps(context) as Props, null),
   factory: (context: Context) => createPenProps(context, true)
 };

@@ -132,8 +132,8 @@ export const TextCommand: Command = {
   },
   regex: /(?<toolCode>text)\((?<x>[\d]+),(?<y>[\d]+),'(?<text>[\w]+)'\)/,
   shortcut: 't',
-  canExecute: (context, args?) => true,
-  execute: (context, args?) =>
+  canExecute: (context, ) => true,
+  execute: (context) =>
     React.createElement(Text, { ...createTextProps(context), designMode: false } as Props, null),
   factory: (context: Context) => createTextProps(context, true)
 };

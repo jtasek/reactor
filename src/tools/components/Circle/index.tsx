@@ -87,8 +87,8 @@ export const CircleCommand: Command = {
   },
   regex: /(?<toolCode>circle)\((?<cx>\d+),(?<cy>\d+),(?<radius>\d+)\)/,
   shortcut: 'ctrl+c',
-  canExecute: (context, args?) => true,
-  execute: (context: Context, args?) =>
+  canExecute: (context) => true,
+  execute: (context: Context) =>
     React.createElement(Circle, createCircleProps(context), null),
   factory: (context: Context) => createCircleProps(context, true)
 };

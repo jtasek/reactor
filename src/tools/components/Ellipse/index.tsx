@@ -63,7 +63,7 @@ export const EllipseCommand: Command = {
   },
   regex: /(?<toolCode>ellipse)\((?<cx>\d+),(?<cy>\d+),(?<rx>\d+),(?<ry>\d+)\)/,
   shortcut: 'ctrl+e',
-  canExecute: (context, args?) => true,
+  canExecute: (context) => true,
   execute: (context, args) => React.createElement(Ellipse, createEllipseProps(context), null),
   factory: (context: Context) => createEllipseProps(context, true)
 };

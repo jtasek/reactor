@@ -52,7 +52,7 @@ export const LineCommand: Command = {
   },
   regex: /(?<toolCode>line)\((?<x1>\d+),(?<y1>\d+),(?<x2>\d+),(?<y2>\d+)\)/,
   shortcut: 'ctrl+l',
-  canExecute: (context, args?) => true,
+  canExecute: (context) => true,
   execute: (context, args?) => React.createElement(Line, createLineProps(context), null),
   factory: (context: Context) => createLineProps(context)
 };

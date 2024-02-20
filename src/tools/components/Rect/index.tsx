@@ -95,7 +95,7 @@ export const RectCommand: Command = {
   },
   regex: /(?<toolCode>rect)\((?<x1>[\d]+),(?<y1>[\d]+),(?<x2>[\d]+),(?<y2>[\d]+)\)/,
   shortcut: 'r',
-  canExecute: (context, args) => true,
+  canExecute: (context) => true,
   execute: ({ state }: Context, args) =>
     React.createElement(Rect, createRectProps(state.events.pointer, false), null),
   factory: ({ state }: Context) => createRectProps(state.events.pointer, true)
