@@ -32,7 +32,6 @@ export const Designer: FC = () => (
     <CommandBar />
     <CommandLine />
     <MenuBar />
-    <Switch value={true} onChange={() => console.log('Testing switch')} />
     <SideBar>
       <ToolBar />
       <Explorer>
