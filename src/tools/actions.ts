@@ -83,7 +83,7 @@ export const executeToolCommands = (context: Context) => {
     console.log(`Execute tool command: ${toolId}`);
 
     tool?.command.execute(context);
-    debugger;
+
     if (tool?.command.factory) {
       // Create new shape
       const options = tool.command.factory(context);
