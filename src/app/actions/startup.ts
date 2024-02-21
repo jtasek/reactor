@@ -1,4 +1,6 @@
 import { Command } from 'src/app/types';
+import { Context } from '../hooks';
+import { Overmind } from 'overmind';
 import { commands } from 'src/commands';
 
 export function registerCommand(command: Command) {
@@ -43,10 +45,10 @@ function registerRoutes(effects, actions) {
   });
 }
 
-export const onInitializeOvermind: OnInitialize = ({ state, actions, effects }, instance) => {
+export const onInitialize = ({ state, effects, actions} : Context, instance: Overmind<Context>) => {
   registerCommands(state, instance);
   registerRoutes(effects, actions);
-  // loadLocalData(effects, state);
+  loadLocalData(effects, state);
   if (state.config.autoSave) {
     activateAutosave(instance, effects);
   }
