@@ -1,5 +1,6 @@
 import { Command } from 'src/app/types';
-import { Context } from 'src/app/hooks';
+
+import { Context } from '../../app';
 
 export const deleteSelectedShapes = ({ state }: Context) => {
   const { selectedShapesIds } = state.currentDocument;

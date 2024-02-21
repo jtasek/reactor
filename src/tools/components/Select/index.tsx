@@ -3,9 +3,9 @@ import inlineStyles from './inlineStyles';
 import type { Point, Size } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
 import { Command } from 'src/app/types';
-import { Context } from 'src/app/hooks';
 import { isPointInBox } from 'src/app/utils';
 import { log } from 'console';
+import { Context } from '../../../app';
 
 /**
  * Selects highlighted shapes

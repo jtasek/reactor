@@ -3,8 +3,8 @@ import React, { FC } from 'react';
 import styles from '../../styles.css';
 import type { Command, Point } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
-import { Context } from 'src/app/hooks';
 import { stringifyPath } from 'src/app/utils';
+import { Context } from '../../../app';
 
 /** 
  * Draws a line based on path

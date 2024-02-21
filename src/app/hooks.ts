@@ -1,15 +1,6 @@
-import { IContext } from 'overmind';
-import {
-  createActionsHook,
-  createEffectsHook,
-  createReactionHook,
-  createStateHook
-} from 'overmind-react';
-
-import { config } from '.';
+import { createActionsHook, createEffectsHook, createReactionHook, createStateHook } from 'overmind-react';
 import { getCommand, getCommands } from './actions';
-
-export type Context = IContext<typeof config>;
+import { Context } from '.';
 
 export const useActions = createActionsHook<Context>();
 export const useEffects = createEffectsHook<Context>();

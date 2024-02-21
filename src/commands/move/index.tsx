@@ -1,5 +1,6 @@
 import { Command } from 'src/app/types';
-import { Context } from 'src/app/hooks';
+
+import { Context } from '../../app';
 
 export const moveSelection = (Context: Context, arg?: Record<string, unknown>) => {
   console.log('TODO: Implement moveSelection');

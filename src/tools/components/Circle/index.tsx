@@ -3,10 +3,10 @@ import React, { FC, useRef } from 'react';
 import styles from '../../styles.css';
 import type { Tool } from 'src/tools/types';
 import { Command } from 'src/app/types';
-import { Context } from 'src/app/hooks';
 import { scaledCenter } from 'src/events/computed/pointer';
 import { getBoundingBoxForCircle } from 'src/app/utils';
 import { newShapeName } from 'src/app/factories';
+import { Context } from '../../../app';
 
 /**
  * Draws a circle based on input center point and radius

@@ -1,7 +1,7 @@
 import { Command } from 'src/app/types';
-import { Context } from '../hooks';
 import { Overmind } from 'overmind';
 import { commands } from 'src/commands';
+import { Context } from '../index';
 
 export function registerCommand(command: Command) {
   if (!commands[command.id]) {
@@ -45,7 +45,8 @@ function registerRoutes(effects, actions) {
   });
 }
 
-export const onInitialize = ({ state, effects, actions} : Context, instance: Overmind<Context>) => {
+// Do not rename, it's a fixed name
+export const onInitializeOvermind = ({ state, effects, actions}: Context, instance: Overmind<Context>) => {
   registerCommands(state, instance);
   registerRoutes(effects, actions);
   loadLocalData(effects, state);

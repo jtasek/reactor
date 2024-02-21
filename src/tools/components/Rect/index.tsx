@@ -3,9 +3,10 @@ import React, { FC, useRef } from 'react';
 import styles from '../../styles.css';
 import type { Command, Position, Size } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
-import { Context, usePointer } from 'src/app/hooks';
+import { usePointer } from 'src/app/hooks';
 import { Pointer } from 'src/events/types';
 import { newShapeName } from 'src/app/factories';
+import { Context } from '../../../app';
 
 /**
  * Draws a rectange based on position and size

@@ -1,6 +1,6 @@
 import { Command } from 'src/app/types';
-import { Context } from 'src/app/hooks';
 import { createShape } from 'src/app/factories';
+import { Context } from '../../app';
 
 const POSITION_SHIFT_STEP = 10;
 

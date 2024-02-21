@@ -1,4 +1,4 @@
-import { Context } from 'src/app/hooks';
+import { Context } from '../../app';
 
 const DEFAULT_STEP = 0.1;
 const DEFAULT_SCALE = 1;

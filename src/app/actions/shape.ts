@@ -1,8 +1,8 @@
 import { Application, Circle, Shape } from '../types';
 import { createShape } from '../factories';
-import { Context } from '../hooks';
 import { Pointer } from 'src/events/types';
 import { getBoundingBox, overlaps, isPointInBox } from '../utils';
+import { Context } from '../index';
 
 const getShape = ({ currentDocument }: Application, shapeId: string) => {
   const shape = currentDocument.shapes[shapeId];

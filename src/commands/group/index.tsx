@@ -1,6 +1,6 @@
 import { Command } from 'src/app/types';
-import { Context } from 'src/app/hooks';
 import { createGroup } from 'src/app/factories';
+import { Context } from '../../app';
 
 export const groupSelection = (context: Context) => {
   const { state } = context;

@@ -2,9 +2,10 @@ import React, { FC, useEffect, useRef } from 'react';
 
 import styles from './styles.css';
 import { Command } from 'src/app/types';
-import { Context, useActions, useKeyboard, usePointer } from 'src/app/hooks';
+import { useActions, useKeyboard, usePointer } from 'src/app/hooks';
 import { Tool } from 'src/tools/types';
 import { Handle } from 'src/ui/components/Handle';
+import { Context } from '../../../app';
 
 /**
  * Draws a text in current position

@@ -3,7 +3,8 @@ import React, { FC } from 'react';
 import styles from '../../styles.css';
 import type { Tool } from 'src/tools/types';
 import { Command } from 'src/app/types';
-import { Context } from 'src/app/hooks';
+
+import { Context } from '../../../app';
 
 /**
  * Draws an ellipse based on input coords and size

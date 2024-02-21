@@ -1,6 +1,6 @@
 import { Command } from 'src/app/types';
-import { Context } from 'src/app/hooks';
 import { zoomIn, zoomOut, zoomReset } from './actions';
+import { Context } from '../../app';
 
 export const ZoomInCommand: Command = {
   id: 'zoom-in',

@@ -1,7 +1,7 @@
 // export { IAction, IConfiguration, IContext, IOperator } from 'overmind';
 
-import { Context } from './hooks';
 import sideBarStories from '../ui/components/SideBar/SideBar.stories';
+import { Context } from './index';
 
 export enum Alignment {
   Bottom = 'bottom',

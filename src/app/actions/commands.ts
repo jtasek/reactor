@@ -1,5 +1,6 @@
 import { ExecuteAction, ActionGuard } from '../types';
-import { Context } from '../hooks';
+
+import { Context } from '../index';
 
 export const canExecuteCommand = (context: Context, actionGuard: ActionGuard) => {
   return actionGuard(context);

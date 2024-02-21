@@ -1,6 +1,6 @@
-import { Context } from 'src/app/hooks';
 import { Pointer } from 'src/events/types';
 import { getToolById } from './components';
+import { Context } from '../app';
 
 const DEFAULT_SCALE = 1;
 const MAX_SCALE = 10;
