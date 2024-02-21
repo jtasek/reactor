@@ -1,22 +1,14 @@
 import React, { FC, useEffect, useState } from 'react';
 
 import styles from './styles.css';
-import type { Position } from '../../../app/types';
+import { Position, ResizeHandlerType } from '../../../app/types';
 import { useActions, usePointer } from 'src/app/hooks';
 
 export interface Props {
   shapeId: string;
   position: Position;
   size?: number;
-  type:
-    | 'bottomLeft'
-    | 'bottomRight'
-    | 'middleBottom'
-    | 'middleLeft'
-    | 'middleRight'
-    | 'middleTop'
-    | 'topLeft'
-    | 'topRight';
+  type: ResizeHandlerType;
 }
 
 export const Handle: FC<Props> = ({ shapeId, position, type, size = 5 }) => {
@@ -30,11 +22,11 @@ export const Handle: FC<Props> = ({ shapeId, position, type, size = 5 }) => {
     }
   }, [pointer.position]);
 
-  const handleMouseDown = (e) => {
+  const handleMouseDown = () => {
     setActive(true);
   };
 
-  const handleMouseUp = (e) => {
+  const handleMouseUp = () => {
     setActive(false);
   };
 

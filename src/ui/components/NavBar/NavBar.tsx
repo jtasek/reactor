@@ -1,4 +1,8 @@
-import React, { FC } from 'react';
+import React, { FC, ReactNode } from 'react';
 import styles from './styles.css';
 
-export const NavBar: FC = ({ children }) => <ul className={styles.navBar}>{children}</ul>;
+interface Props {
+  children?: ReactNode;
+}
+
+export const NavBar: FC<Props> = ({ children }) => <ul className={styles.navBar}>{children}</ul>;

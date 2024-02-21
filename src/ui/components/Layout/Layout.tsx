@@ -1,4 +1,9 @@
-import React, { FC } from 'react';
+import React, { FC, ReactNode } from 'react';
 import styles from './styles.css';
 
-export const Layout: FC = ({ children }) => <div className={styles.layout}>{children}</div>;
+interface Props
+{
+  children?: ReactNode;
+}
+
+export const Layout: FC<Props> = ({ children }) => <div className={styles.layout}>{children}</div>;

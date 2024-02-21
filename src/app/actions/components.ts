@@ -1,4 +1,4 @@
-import { Application, Component } from '../types';
+import { Action, Application, Component } from '../types';
 import { createComponent } from '../factories';
 
 const getComponent = ({ currentDocument }: Application, componentId: string) => {

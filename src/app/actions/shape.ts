@@ -1,4 +1,4 @@
-import { Application, Shape } from '../types';
+import { Application, Circle, Shape } from '../types';
 import { createShape } from '../factories';
 import { Context } from '../hooks';
 import { Pointer } from 'src/events/types';
@@ -122,16 +122,13 @@ export const resizeShape = (
   const { shapeId, type, pointer } = payload;
   const shape = getShape(state, shapeId);
 
-  if (shape.type === 'circle') {
-    const diffx = pointer.position.x - shape.cx!;
-    const diffy = pointer.position.y - shape.cy!;
+  const diffx = pointer.position.x - shape.position.x;
+  const diffy = pointer.position.y - shape.position.y;
 
-    shape.r = Math.max(diffx, diffy);
+  if (shape.type === 'circle') {
+    (shape as Circle).radius = Math.max(diffx, diffy);
     return;
   }
-
-  const diffx = pointer.position.x - shape.position!.x;
-  const diffy = pointer.position.y - shape.position!.y;
 
   const topLeft = shape.position;
   const bottomRight = { x: topLeft!.x + shape.size!.width, y: topLeft!.y + shape.size!.height };

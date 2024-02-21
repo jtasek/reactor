@@ -1,4 +1,8 @@
-import React, { FC } from 'react';
+import React, { FC, ReactNode } from 'react';
 import styles from './styles.css';
 
-export const SideBar: FC = ({ children }) => <div className={styles.sidebar}>{children}</div>;
+interface Props {
+  children?: ReactNode;
+}
+
+export const SideBar: FC<Props> = ({ children }) => <div className={styles.sidebar}>{children}</div>;

@@ -1,8 +1,9 @@
-import React, { FC } from 'react';
+import React, { FC, ReactNode } from 'react';
 import styles from './styles.css';
 
 interface Props {
   name: string;
+  children?: ReactNode;
 }
 
 export const StatusBarSlot: FC<Props> = ({ name, children }) => (

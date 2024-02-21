@@ -1,9 +1,13 @@
-import React, { FC } from 'react';
+import React, { FC, ReactNode } from 'react';
 import { useCamera } from 'src/app/hooks';
 
 import styles from './styles.css';
 
-export const Camera: FC = ({ children }) => {
+interface Props {
+  children?: ReactNode;
+}
+
+export const Camera: FC<Props> = ({ children }) => {
   const { scale, position } = useCamera();
 
   return (

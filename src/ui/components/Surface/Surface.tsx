@@ -1,10 +1,13 @@
-import React, { FC } from 'react';
+import React, { FC, ReactNode } from 'react';
 
 import { usePointerDriver } from 'src/events/drivers/usePointerDriver';
 
 import styles from './styles.css';
 
-export const Surface: FC = ({ children }) => {
+interface Props{
+  children?: ReactNode;
+}
+export const Surface: FC<Props> = ({ children }) => {
   const {
     handleContextMenu,
     handleMouseWheel,

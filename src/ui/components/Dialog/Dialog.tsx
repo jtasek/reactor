@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, ReactNode } from 'react';
 import styles from './styles.css';
 import { Overlay } from '../Overlay/Overlay';
 
@@ -13,6 +13,7 @@ export interface Props {
   description: string;
   visible: boolean;
   stateChart?: any;
+  children?: ReactNode;
 }
 
 export const Dialog: FC<Props> = ({ title, description, visible, stateChart, children }) => {

@@ -1,11 +1,16 @@
-import React, { FC } from 'react';
+import React, { FC, ReactNode } from 'react';
 
 import { useActions } from 'src/app/hooks';
-import { Box, Position, Shape, Size } from 'src/app/types';
+import { Box, Shape } from 'src/app/types';
 import { getBoundingBox } from 'src/app/utils';
 import { Handle } from '../Handle';
 
-export const Resizable: FC<{ shape: Shape }> = ({ shape, children }) => {
+export interface Props {
+  shape: Shape
+  children?: ReactNode;
+}
+
+export const Resizable: FC<Props> = ({ shape, children }) => {
   const box = getBoundingBox(shape);
 
   if (!box?.topLeft || !box.bottomRight) {
@@ -38,7 +43,7 @@ export const Resizable: FC<{ shape: Shape }> = ({ shape, children }) => {
   );
 };
 
-export const Selectable: FC<{ shape: Shape }> = ({ shape, children }) => {
+export const Selectable: FC<Props> = ({ shape, children }) => {
   const { toggleShapeSelected } = useActions();
 
   return <g onClick={() => toggleShapeSelected(shape.id)}>{children}</g>;

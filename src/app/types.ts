@@ -1,6 +1,7 @@
 // export { IAction, IConfiguration, IContext, IOperator } from 'overmind';
 
 import { Context } from './hooks';
+import sideBarStories from '../ui/components/SideBar/SideBar.stories';
 
 export enum Alignment {
   Bottom = 'bottom',
@@ -57,6 +58,20 @@ export type Box = {
   topLeft: Point;
   bottomRight: Point;
 };
+
+export enum Side { 'left' , 'right' , 'bottom' , 'top'}
+
+export const bottomLeft = Side.right + Side.left
+
+export type ResizeHandlerType =
+  | 'bottomLeft'
+  | 'bottomRight'
+  | 'middleBottom'
+  | 'middleLeft'
+  | 'middleRight'
+  | 'middleTop'
+  | 'topLeft'
+  | 'topRight';
 
 export type Size = {
   height: number;

@@ -1,4 +1,7 @@
-import React, { FC } from 'react';
+import React, { FC, ReactNode } from 'react';
 import styles from './styles.css';
 
-export const StatusBar: FC = ({ children }) => <div className={styles.statusBar}>{children}</div>;
+interface Props {
+  children?: ReactNode;}
+
+export const StatusBar: FC<Props> = ({ children }) => <div className={styles.statusBar}>{children}</div>;

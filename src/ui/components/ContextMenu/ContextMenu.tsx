@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, ReactNode } from 'react';
 import { Position } from 'src/app/types';
 
 import styles from './styles.css';
@@ -7,6 +7,7 @@ import { ConnectedContextMenuItems } from './ContextMenuItems';
 
 export interface Props {
   position: Position;
+  children?: ReactNode;
 }
 
 export const ContextMenu: FC<Props> = ({ position, children }) => (

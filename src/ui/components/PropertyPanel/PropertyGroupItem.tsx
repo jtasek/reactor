@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { FC, ReactNode } from 'react';
 
-export const PropertyGroupItem = ({ name, children }) => (
+interface Props {
+  name:string;
+  children?: ReactNode;
+}
+export const PropertyGroupItem: FC<Props> = ({ name, children }) => (
   <tr>
     <td>{name}</td>
     <td>

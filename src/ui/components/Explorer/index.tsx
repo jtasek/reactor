@@ -1,11 +1,15 @@
-import React, { FC } from 'react';
+import React, { FC, ReactNode } from 'react';
 
 import styles from './styles.css';
 
 import { Explorer } from './Explorer';
 import { useControls } from 'src/app/hooks';
 
-export const ConnectedExplorer: FC = ({ children }) => {
+interface Props {
+  children?: ReactNode;
+}
+
+export const ConnectedExplorer: FC<Props> = ({ children }) => {
   const { explorer } = useControls();
 
   if (!explorer.visible) {

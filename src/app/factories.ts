@@ -93,6 +93,7 @@ export function createShape(options: Partial<Shape> = {}): Shape {
     modified: new Date(),
     modifiedBy: getCurrentUserName(),
     name: newShapeName(),
+    position: { x: 0, y: 0 },
     selected: true,
     type,
     visible: true,

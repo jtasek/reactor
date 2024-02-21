@@ -1,11 +1,11 @@
-import { Action, AsyncAction } from 'src/app/types';
+import { ExecuteAction } from 'src/app/types';
 
-export const showDesigner: Action = ({ state }) => {
+export const showDesigner: ExecuteAction = ({ state }) => {
   console.log('showDesigner');
   state.currentPage = 'designer';
 };
 
-export const showDocuments: Action = ({ state }) => {
+export const showDocuments: ExecuteAction = ({ state }) => {
   console.log('showDocuments');
   state.currentPage = 'documents';
 };

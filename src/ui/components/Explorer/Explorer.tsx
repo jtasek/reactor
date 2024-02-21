@@ -1,4 +1,7 @@
-import React, { FC } from 'react';
+import React, { FC, ReactNode } from 'react';
 import styles from './styles.css';
 
-export const Explorer: FC = ({ children }) => <div className={styles.explorer}>{children}</div>;
+interface Props {
+  children?: ReactNode;
+}
+export const Explorer: FC<Props> = ({ children }) => <div className={styles.explorer}>{children}</div>;
