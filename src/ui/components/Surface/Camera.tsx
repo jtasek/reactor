@@ -8,7 +8,7 @@ interface Props {
 }
 
 export const Camera: FC<Props> = ({ children }) => {
-  const { scale, position } = useCamera();
+  const { position, scale } = useCamera();
 
   return (
     <g
