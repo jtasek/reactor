@@ -1,16 +1,14 @@
-import { Action } from 'src/app/types';
+import { Action, ExecuteAction } from 'src/app/types';
 
-import { Position } from '../app/types';
-
-export const displayContextMenu: Action = ({ state }) => {
+export const displayContextMenu: ExecuteAction = ({ state }) => {
   state.ui.contextMenu.visible = true;
 };
 
-export const hideContextMenu: Action = ({ state }) => {
+export const hideContextMenu: ExecuteAction = ({ state }) => {
   state.ui.contextMenu.visible = false;
 };
 
-export const showControl: Action = ({ state }, controlId: string) => {
+export const showControl: Action<string> = ({ state }, controlId: string) => {
   state.ui[controlId].visible = true;
 };
 
@@ -18,11 +16,11 @@ export const hideControl: Action<string> = ({ state }, controlId: string) => {
   state.ui[controlId].visible = false;
 };
 
-export const toggleControlVisibility: Action = ({ state }, controlId: string) => {
+export const toggleControlVisibility: Action<string> = ({ state }, controlId: string) => {
   state.ui[controlId].visible = !state.ui[controlId].visible;
 };
 
-export const distractionFreeMode: Action = ({ state }) => {
+export const distractionFreeMode: ExecuteAction= ({ state }) => {
   state.ui.commandLine.visible = false;
   state.ui.contextMenu.visible = false;
   state.ui.controlPanel.visible = false;
