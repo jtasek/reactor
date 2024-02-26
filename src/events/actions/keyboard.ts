@@ -1,4 +1,4 @@
-import { Action } from 'src/app/types';
+import { Action, ExecuteAction } from 'src/app/types';
 
 export const typing: Action<string> = (
   {
@@ -12,38 +12,39 @@ export const typing: Action<string> = (
   keyboard.text = text;
 };
 
-export const startTyping: Action = ({
-  state: {
-    events: { keyboard }
-  }
-}) => {
-  keyboard.text = '';
+const EMPTY_STRING = '';
+export const startTyping: ExecuteAction = (
+  {
+    state: {
+      events: { keyboard }
+    }
+  }) => {
+  keyboard.text = EMPTY_STRING;
   keyboard.typing = true;
 };
 
-export const endTyping: Action = (context) => {
-  const {
+export const endTyping: ExecuteAction = (
+  {
     state: {
       events: { keyboard }
     },
     actions
-  } = context;
-
-  actions.tools.executeToolCommands(context);
+  }) => {
+  actions.tools.executeToolCommands();
 
   keyboard.typing = false;
-  keyboard.text = '';
+  keyboard.text = EMPTY_STRING;
 
   actions.tools.resetTools();
 };
 
-export const keyDown: Action = (
+export const keyDown: Action<KeyboardEvent> = (
   {
     state: {
       events: { keyboard }
     }
   },
-  event: KeyboardEvent
+  event
 ) => {
   keyboard.altKey = event.altKey;
   keyboard.ctrlKey = event.ctrlKey;
@@ -52,13 +53,13 @@ export const keyDown: Action = (
   keyboard.shiftKey = event.shiftKey;
 };
 
-export const keyUp: Action = (
+export const keyUp: Action<KeyboardEvent> = (
   {
     state: {
       events: { keyboard }
     }
   },
-  event: any
+  event
 ) => {
   keyboard.altKey = event.altKey;
   keyboard.ctrlKey = event.ctrlKey;
