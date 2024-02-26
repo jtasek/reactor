@@ -4,7 +4,7 @@ export const loadState = (key: string): Application | null => {
   try {
     const serializedState = localStorage.getItem(key);
 
-    if (!serializedState || serializedState === 'undefined') {
+    if (!serializedState) {
       return null;
     }
 
