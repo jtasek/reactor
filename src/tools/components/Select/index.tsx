@@ -4,7 +4,6 @@ import type { Point, Size } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
 import { Command } from 'src/app/types';
 import { isPointInBox } from 'src/app/utils';
-import { log } from 'console';
 import { Context } from '../../../app';
 
 /**
