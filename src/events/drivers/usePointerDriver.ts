@@ -77,8 +77,8 @@ export const usePointerDriver = () => {
       dragging = false;
       actions.events.endDragging({ x: event.clientX, y: event.clientY });
       actions.tools.executeToolCommands();
-      setLastDistance(ZERO_DISTANCE);
       actions.tools.resetTools();
+      setLastDistance(ZERO_DISTANCE);
     }
   };
 
@@ -105,7 +105,7 @@ export const usePointerDriver = () => {
     event.preventDefault();
     if (contextMenu.visible) return;
 
-    actions.ui.displayContextMenu({ x: event.clientX, y: event.clientY });
+    actions.ui.displayContextMenu();
   };
 
   return {
