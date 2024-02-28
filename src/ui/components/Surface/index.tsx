@@ -13,7 +13,7 @@ export const Canvas: FC = () => (
     <Grid />
     <Rulers />
     <Camera>
-      <ErrorBoundary fallback={<p>Something went wrong</p>}>
+      <ErrorBoundary fallback={<h1>Something went wrong while rendering shapes</h1>}>
         <Shapes />
         <Stack />
       </ErrorBoundary>
