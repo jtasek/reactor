@@ -22,7 +22,7 @@ import {
   Stack,
   StatusBar,
   Stats,
-  Surface,
+  Canvas,
   Switch,
   ToolBar
 } from 'src/ui/components';
@@ -41,7 +41,7 @@ export const Designer: FC = () => (
     </SideBar>
     <Stack />
     <Stats />
-    <Surface />
+    <Canvas />
     <ContextMenu />
     <Minimap />
     <DataView />

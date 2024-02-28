@@ -8,16 +8,16 @@ import { Shapes } from './Shapes';
 import { Stack } from 'src/tools/components/Stack';
 import { Surface } from './Surface';
 
-export const SurfaceContainer: FC = () => (
+export const Canvas: FC = () => (
   <Surface>
     <Grid />
     <Rulers />
     <Camera>
-      <Shapes />
+      <ErrorBoundary fallback={<p>Something went wrong</p>}>
+        <Shapes />
+        <Stack />
+      </ErrorBoundary>
     </Camera>
-    <ErrorBoundary fallback={<p>Something went wrong</p>}>
-      <Stack />
-    </ErrorBoundary>
     <Overlay />
   </Surface>
 );

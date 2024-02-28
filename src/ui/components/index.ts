@@ -14,6 +14,7 @@ export { MiniMapContainer as Minimap } from './MiniMap';
 export { NavBarContainer as NavBar } from './NavBar';
 //export { Overlay } from './Overlay';
 
+export { Canvas } from './Surface';
 export { Layout } from './Layout';
 export { PropertyPanelContainer as PropertyPanel } from './PropertyPanel';
 export { SearchBoxContainer as SearchBox } from './SearchBox';
@@ -21,6 +22,5 @@ export { SideBarContainer as SideBar } from './SideBar';
 export { Stack } from './Stack/Stack';
 export { Stats } from './Stats/Stats';
 export { StatusBarContainer as StatusBar } from './StatusBar';
-export { SurfaceContainer as Surface } from './Surface';
 export { Switch } from './Switch';
 export { ToolBarContainer as ToolBar } from './ToolBar';
