@@ -82,16 +82,8 @@ export const executeToolCommands = (context: Context) => {
     const tool = getToolById(toolId);
     console.log(`Execute tool command: ${toolId}`);
 
-    tool?.command.execute(context);
-
-    if (tool?.command.factory) {
-      // Create new shape
-      const options = tool.command.factory(context);
-
-      // Insert new shape into the store
-      actions.addShape({ ...options, selected: false });
+    if (tool?.command.canExecute(context)) {
+      tool.command.execute(context);
     }
-
-    actions.tools.resetTools();
   }
 };
