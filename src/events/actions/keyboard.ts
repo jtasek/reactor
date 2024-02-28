@@ -1,6 +1,6 @@
-import { Action, ExecuteAction } from 'src/app/types';
+import { ActionWithParam, ExecuteAction } from 'src/app/types';
 
-export const typing: Action<string> = (
+export const typing: ActionWithParam<string> = (
   {
     state: {
       events: { keyboard }
@@ -38,7 +38,7 @@ export const endTyping: ExecuteAction = (
   actions.tools.resetTools();
 };
 
-export const keyDown: Action<KeyboardEvent> = (
+export const keyDown: ActionWithParam<KeyboardEvent> = (
   {
     state: {
       events: { keyboard }
@@ -53,7 +53,7 @@ export const keyDown: Action<KeyboardEvent> = (
   keyboard.shiftKey = event.shiftKey;
 };
 
-export const keyUp: Action<KeyboardEvent> = (
+export const keyUp: ActionWithParam<KeyboardEvent> = (
   {
     state: {
       events: { keyboard }

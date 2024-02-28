@@ -236,7 +236,7 @@ export interface Icon {
 }
 
 export type ActionGuard = (context: Context) => boolean;
-export type Action<T> = (context: Context, arg1: T) => void;
+export type ActionWithParam<T> = (context: Context, param: T) => void;
 export type ExecuteAction = (context: Context) => void;
 
 export interface Command {
@@ -249,7 +249,6 @@ export interface Command {
   shortcut?: string;
   canExecute: ActionGuard;
   execute: ExecuteAction;
-  factory?: ({ state }: Context) => Record<string, unknown>;
 }
 
 export interface User {

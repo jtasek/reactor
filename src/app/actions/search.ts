@@ -1,6 +1,6 @@
-import { Action } from '../types';
+import { ActionWithParam } from '../types';
 
-export const search: Action<string> = ({ state }, filter) => {
+export const search: ActionWithParam<string> = ({ state }, filter) => {
   if (state.currentDocument) {
     state.currentDocument.filter = filter;
   }

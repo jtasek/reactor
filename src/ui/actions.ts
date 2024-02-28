@@ -1,4 +1,4 @@
-import { Action, ExecuteAction } from 'src/app/types';
+import { ActionWithParam, ExecuteAction } from 'src/app/types';
 
 export const displayContextMenu: ExecuteAction = ({ state }) => {
   state.ui.contextMenu.visible = true;
@@ -8,15 +8,15 @@ export const hideContextMenu: ExecuteAction = ({ state }) => {
   state.ui.contextMenu.visible = false;
 };
 
-export const showControl: Action<string> = ({ state }, controlId: string) => {
+export const showControl: ActionWithParam<string> = ({ state }, controlId: string) => {
   state.ui[controlId].visible = true;
 };
 
-export const hideControl: Action<string> = ({ state }, controlId: string) => {
+export const hideControl: ActionWithParam<string> = ({ state }, controlId: string) => {
   state.ui[controlId].visible = false;
 };
 
-export const toggleControlVisibility: Action<string> = ({ state }, controlId: string) => {
+export const toggleControlVisibility: ActionWithParam<string> = ({ state }, controlId: string) => {
   state.ui[controlId].visible = !state.ui[controlId].visible;
 };
 

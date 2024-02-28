@@ -1,18 +1,18 @@
-import { Action, Position } from '../../app/types';
+import { ActionWithParam, Position } from '../../app/types';
 
-export const setStartPosition: Action<Position> =  ({ state }, position) => {
+export const setStartPosition: ActionWithParam<Position> =  ({ state }, position) => {
   state.events.pointer.startPosition = position;
 };
 
-export const setCurrentPosition: Action<Position> = ({ state }, position) => {
+export const setCurrentPosition: ActionWithParam<Position> = ({ state }, position) => {
   state.events.pointer.position = position;
 };
 
-export const updatePath: Action<Position> = ({ state }, position) => {
+export const updatePath: ActionWithParam<Position> = ({ state }, position) => {
   state.events.pointer.path.push(position);
 };
 
-export const startDragging: Action<Position> = ({ state }, position) => {
+export const startDragging: ActionWithParam<Position> = ({ state }, position) => {
   const pointer = state.events.pointer;
   pointer.dragging = true;
   pointer.startPosition = position;
@@ -20,17 +20,17 @@ export const startDragging: Action<Position> = ({ state }, position) => {
   pointer.path = [position];
 };
 
-export const dragging: Action<Position>  = ({ state }, position) => {
+export const dragging: ActionWithParam<Position>  = ({ state }, position) => {
   const pointer = state.events.pointer;
   pointer.position = position;
   pointer.path.push(position);
 };
 
-export const endDragging: Action<Position>  = ({ state }) => {
+export const endDragging: ActionWithParam<Position>  = ({ state }) => {
   state.events.pointer.dragging = false;
 };
 
-export const resetDragging: Action<Position> = ({ state }) => {
+export const resetDragging: ActionWithParam<Position> = ({ state }) => {
   const pointer = state.events.pointer;
   pointer.dragging = false;
   pointer.startPosition = { x: 0, y: 0 };

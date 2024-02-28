@@ -1,4 +1,4 @@
-import { Action, Application, Layer } from '../types';
+import { ActionWithParam, Application, Layer } from '../types';
 import { createLayer } from '../factories';
 
 const getLayer = ({ currentDocument }: Application, layerId: string) => {
@@ -20,71 +20,71 @@ const setLayer = ({ currentDocument }: Application, layer: Layer) => {
 const deleteLayer = ({ currentDocument }: Application, layerId: string) =>
   delete currentDocument.layers[layerId];
 
-export const addLayer: Action<Partial<Layer>> = ({ state }, options) => {
+export const addLayer: ActionWithParam<Partial<Layer>> = ({ state }, options) => {
   const layer = createLayer(options);
 
   setLayer(state, layer);
 };
 
-export const cloneLayer: Action<string> = ({ state, effects }, layerId) => {
+export const cloneLayer: ActionWithParam<string> = ({ state, effects }, layerId) => {
   const layer = getLayer(state, layerId);
 
   setLayer(state, { ...layer, id: effects.newId() });
 };
 
-export const removeLayer: Action<string> = ({ state }, layerId) => {
+export const removeLayer: ActionWithParam<string> = ({ state }, layerId) => {
   deleteLayer(state, layerId);
 };
 
-export const toggleLayerSelected: Action<string> = ({ state }, layerId) => {
+export const toggleLayerSelected: ActionWithParam<string> = ({ state }, layerId) => {
   const layer = getLayer(state, layerId);
 
   layer.selected = !layer.selected;
 };
 
-export const unselectLayer: Action<string> = ({ state }, layerId) => {
+export const unselectLayer: ActionWithParam<string> = ({ state }, layerId) => {
   const layer = getLayer(state, layerId);
 
   layer.selected = false;
 };
 
-export const toggleLayerLocked: Action<string> = ({ state }, layerId) => {
+export const toggleLayerLocked: ActionWithParam<string> = ({ state }, layerId) => {
   const layer = getLayer(state, layerId);
 
   layer.locked = !layer.locked;
 };
 
-export const lockLayer: Action<string> = ({ state }, layerId) => {
+export const lockLayer: ActionWithParam<string> = ({ state }, layerId) => {
   const layer = getLayer(state, layerId);
 
   layer.locked = true;
 };
 
-export const unlockLayer: Action<string> = ({ state }, layerId) => {
+export const unlockLayer: ActionWithParam<string> = ({ state }, layerId) => {
   const layer = getLayer(state, layerId);
 
   layer.locked = false;
 };
 
-export const showLayer: Action<string> = ({ state }, layerId) => {
+export const showLayer: ActionWithParam<string> = ({ state }, layerId) => {
   const layer = getLayer(state, layerId);
 
   layer.visible = true;
 };
 
-export const hideLayer: Action<string> = ({ state }, layerId) => {
+export const hideLayer: ActionWithParam<string> = ({ state }, layerId) => {
   const layer = getLayer(state, layerId);
 
   layer.visible = false;
 };
 
-export const toggleLayerVisible: Action<string> = ({ state }, layerId) => {
+export const toggleLayerVisible: ActionWithParam<string> = ({ state }, layerId) => {
   const layer = getLayer(state, layerId);
 
   layer.visible = !layer.visible;
 };
 
-export const updateLayer: Action<Partial<Layer> & { id: string }> = ({ state }, options) => {
+export const updateLayer: ActionWithParam<Partial<Layer> & { id: string }> = ({ state }, options) => {
   const layer = getLayer(state, options.id);
 
   setLayer(state, { ...layer, ...options });
