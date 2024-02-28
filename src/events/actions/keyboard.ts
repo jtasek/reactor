@@ -1,4 +1,4 @@
-import { ActionWithParam, ExecuteAction } from 'src/app/types';
+import { ActionWithParam, Action } from 'src/app/types';
 
 export const typing: ActionWithParam<string> = (
   {
@@ -13,7 +13,7 @@ export const typing: ActionWithParam<string> = (
 };
 
 const EMPTY_STRING = '';
-export const startTyping: ExecuteAction = (
+export const startTyping: Action = (
   {
     state: {
       events: { keyboard }
@@ -23,7 +23,7 @@ export const startTyping: ExecuteAction = (
   keyboard.typing = true;
 };
 
-export const endTyping: ExecuteAction = (
+export const endTyping: Action = (
   {
     state: {
       events: { keyboard }

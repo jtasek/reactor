@@ -1,4 +1,4 @@
-import { ExecuteAction, ActionGuard } from '../types';
+import { Action, ActionGuard } from '../types';
 
 import { Context } from '../index';
 
@@ -7,6 +7,6 @@ export const canExecuteCommand = (context: Context, actionGuard: ActionGuard) =>
 };
 
 
-export const executeCommand = (context: Context, action: ExecuteAction) => {
+export const executeCommand = (context: Context, action: Action) => {
   action(context);
 };

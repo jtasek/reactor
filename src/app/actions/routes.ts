@@ -1,11 +1,11 @@
-import { ExecuteAction } from 'src/app/types';
+import { Action } from 'src/app/types';
 
-export const showDesigner: ExecuteAction = ({ state }) => {
+export const showDesigner: Action = ({ state }) => {
   console.log('showDesigner');
   state.currentPage = 'designer';
 };
 
-export const showDocuments: ExecuteAction = ({ state }) => {
+export const showDocuments: Action = ({ state }) => {
   console.log('showDocuments');
   state.currentPage = 'documents';
 };

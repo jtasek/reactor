@@ -1,10 +1,10 @@
-import { ActionWithParam, ExecuteAction } from 'src/app/types';
+import { ActionWithParam, Action } from 'src/app/types';
 
-export const displayContextMenu: ExecuteAction = ({ state }) => {
+export const displayContextMenu: Action = ({ state }) => {
   state.ui.contextMenu.visible = true;
 };
 
-export const hideContextMenu: ExecuteAction = ({ state }) => {
+export const hideContextMenu: Action = ({ state }) => {
   state.ui.contextMenu.visible = false;
 };
 
@@ -20,7 +20,7 @@ export const toggleControlVisibility: ActionWithParam<string> = ({ state }, cont
   state.ui[controlId].visible = !state.ui[controlId].visible;
 };
 
-export const distractionFreeMode: ExecuteAction= ({ state }) => {
+export const distractionFreeMode: Action= ({ state }) => {
   state.ui.commandLine.visible = false;
   state.ui.contextMenu.visible = false;
   state.ui.controlPanel.visible = false;

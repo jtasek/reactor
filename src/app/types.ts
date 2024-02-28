@@ -237,7 +237,7 @@ export interface Icon {
 
 export type ActionGuard = (context: Context) => boolean;
 export type ActionWithParam<T> = (context: Context, param: T) => void;
-export type ExecuteAction = (context: Context) => void;
+export type Action = (context: Context) => void;
 
 export interface Command {
   id: string;
@@ -248,7 +248,7 @@ export interface Command {
   regex: RegExp;
   shortcut?: string;
   canExecute: ActionGuard;
-  execute: ExecuteAction;
+  execute: Action;
 }
 
 export interface User {
