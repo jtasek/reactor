@@ -47,9 +47,7 @@ function isEllipseInBox(shape: Shape, box: Box): boolean {
 
 function isTextInBox(shape: Shape, box: Box): boolean {
     // Assume text is contained if its top-left corner is in the box
-    const text = shape as unknown as Text;
-
-    return isRectangleInBox(text.position, box);
+    return isPointInBox(shape.position, box);
 }
 
 function isRectangleInBox(shape: Shape, box: Box): boolean {
