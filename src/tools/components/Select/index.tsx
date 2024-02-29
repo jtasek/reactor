@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 
 import inlineStyles from './inlineStyles';
-import type { Position, Size } from 'src/app/types';
+import type { Point, Size } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
 import { Command } from 'src/app/types';
 import { Pointer } from '../../../events/types';
@@ -15,7 +15,7 @@ import { usePointer } from '../../../app/hooks';
 interface Props {
     key: string;
     name: string;
-    position: Position;
+    position: Point;
     size: Size;
     type: string;
 }

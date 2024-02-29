@@ -1,7 +1,7 @@
 import React, { FC, useRef } from 'react';
 
 import styles from '../../styles.css';
-import type { Command, Position, Size } from 'src/app/types';
+import type { Command, Point, Size } from 'src/app/types';
 import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
 import { newShapeName } from 'src/app/factories';
@@ -24,7 +24,7 @@ interface Props {
     id?: string;
     key: string;
     name: string;
-    position: Position;
+    position: Point;
     selected: boolean;
     size: Size;
     type: string;

@@ -1,25 +1,25 @@
-import { Position, Size } from '../app/types';
+import { Point, Size } from '../app/types';
 
 export interface Pointer {
-    bottomRight: Position;
-    center: Position;
-    current: Position;
+    bottomRight: Point;
+    center: Point;
+    current: Point;
     dragging: boolean;
-    offset: Position;
-    path: Position[];
+    offset: Point;
+    path: Point[];
     radius: number;
-    scaledBottomRight: Position;
-    scaledCenter: Position;
-    scaledCurrent: Position;
-    scaledOffset: Position;
-    scaledPath: Position[];
+    scaledBottomRight: Point;
+    scaledCenter: Point;
+    scaledCurrent: Point;
+    scaledOffset: Point;
+    scaledPath: Point[];
     scaledRadius: number;
     scaledSize: Size;
-    scaledStart: Position;
-    scaledTopLeft: Position;
+    scaledStart: Point;
+    scaledTopLeft: Point;
     size: Size;
-    start: Position;
-    topLeft: Position;
+    start: Point;
+    topLeft: Point;
 }
 
 export interface Keyboard {

@@ -1,6 +1,3 @@
-// export { IAction, IConfiguration, IContext, IOperator } from 'overmind';
-
-import sideBarStories from '../ui/components/SideBar/SideBar.stories';
 import { Context } from './index';
 
 export enum Alignment {
@@ -38,11 +35,6 @@ export enum MouseButton {
     Middle = 1,
     Right = 2
 }
-
-export type Position = {
-    x: number;
-    y: number;
-};
 
 export type Point = {
     x: number;
@@ -92,7 +84,7 @@ export interface Ruler {
     locked: boolean;
     name: string;
     orientation: Orientation;
-    position: Position;
+    position: Point;
     selected: boolean;
     visible: boolean;
 }
@@ -117,7 +109,7 @@ export interface Shape {
     modified: Date;
     modifiedBy: string;
     name: string;
-    position: Position;
+    position: Point;
     selected: boolean;
     size?: Size;
     type: string;
@@ -195,7 +187,7 @@ export interface Component {
 
 export interface Camera {
     scale: number;
-    position: Position;
+    position: Point;
 }
 
 export interface Document {

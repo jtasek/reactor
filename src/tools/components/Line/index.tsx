@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 
 import styles from '../../styles.css';
-import type { Command, Position } from 'src/app/types';
+import type { Command, Point } from 'src/app/types';
 import type { Pointer } from '../../../events/types';
 import type { Tool } from 'src/tools/types';
 import { newShapeName } from '../../../app/factories';
@@ -12,11 +12,11 @@ import { usePointer } from '../../../app/hooks';
  **/
 
 interface Props {
-    end: Position;
+    end: Point;
     key: string;
     name: string;
     selected: boolean;
-    start: Position;
+    start: Point;
     type: string;
 }
 

@@ -1,12 +1,12 @@
 import React, { FC, useEffect, useState } from 'react';
 
 import styles from './styles.css';
-import { Position, ResizeHandlerType } from '../../../app/types';
+import { Point, ResizeHandlerType } from '../../../app/types';
 import { useActions, usePointer } from 'src/app/hooks';
 
 export interface Props {
     shapeId: string;
-    position: Position;
+    position: Point;
     size?: number;
     type: ResizeHandlerType;
 }

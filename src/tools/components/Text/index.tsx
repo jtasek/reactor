@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useRef } from 'react';
 
 import styles from './styles.css';
-import type { Command, Position } from 'src/app/types';
+import type { Command, Point } from 'src/app/types';
 import type { Keyboard, Pointer } from '../../../events/types';
 import type { Tool } from 'src/tools/types';
 import { createEllipseProps } from '../Ellipse';
@@ -26,7 +26,7 @@ import { useActions, useKeyboard, usePointer } from 'src/app/hooks';
 interface Props {
     key: string;
     name: string;
-    position: Position;
+    position: Point;
     selected: boolean;
     type: string;
     value: string;

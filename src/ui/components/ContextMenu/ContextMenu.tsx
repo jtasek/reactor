@@ -1,12 +1,12 @@
 import React, { FC, ReactNode } from 'react';
-import { Position } from 'src/app/types';
+import { Point } from 'src/app/types';
 
 import styles from './styles.css';
 import { usePointer } from 'src/app/hooks';
 import { ConnectedContextMenuItems } from './ContextMenuItems';
 
 export interface Props {
-    position: Position;
+    position: Point;
     children?: ReactNode;
 }
 

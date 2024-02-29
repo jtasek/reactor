@@ -1,7 +1,7 @@
 import React, { FC, useRef } from 'react';
 
 import styles from '../../styles.css';
-import type { Command, Position } from 'src/app/types';
+import type { Command, Point } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
 import { Pointer } from '../../../events/types';
 import { newShapeName } from 'src/app/factories';
@@ -20,7 +20,7 @@ import { usePointer } from '../../../app/hooks';
 interface Props {
     key: string;
     name: string;
-    position: Position;
+    position: Point;
     radius: number;
     selected: boolean;
     type: string;
