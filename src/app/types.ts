@@ -97,18 +97,18 @@ export interface Grid {
 }
 
 export interface Shape {
-    id: string;
-    parentShapeId?: string;
     center?: Point;
     children?: Shape[];
-    key: string;
     created: Date;
     createdBy: string;
     description?: string;
+    id: string;
+    key: string;
     locked: boolean;
     modified: Date;
     modifiedBy: string;
     name: string;
+    parentShapeId?: string;
     position: Point;
     selected: boolean;
     size?: Size;
@@ -117,33 +117,33 @@ export interface Shape {
 }
 
 export interface Circle extends Shape {
-    type: 'circle';
     position: Point;
     radius: number;
+    type: 'circle';
 }
 
 export interface Ellipse extends Shape {
-    type: 'ellipse';
     position: Point;
     radius: Point;
+    type: 'ellipse';
 }
 
 export interface Text extends Shape {
-    type: 'text';
     position: Point;
     text: string;
+    type: 'text';
 }
 
 export interface Rectangle extends Shape {
+    position: Point;
+    size: Size;
     type: 'rectangle';
-    topLeft: Point;
-    bottomRight: Point;
 }
 
 export interface Line extends Shape {
-    type: 'line';
-    start: Point;
     end: Point;
+    start: Point;
+    type: 'line';
 }
 
 export interface Link {
@@ -153,8 +153,8 @@ export interface Link {
     selected: boolean;
     source?: string;
     target?: string;
-    visible: boolean;
     type: string;
+    visible: boolean;
 }
 
 export interface Group {
@@ -186,8 +186,8 @@ export interface Component {
 }
 
 export interface Camera {
-    scale: number;
     position: Point;
+    scale: number;
 }
 
 export interface Document {
@@ -225,9 +225,9 @@ export interface Document {
 }
 
 export interface Icon {
+    color?: string;
     group: string;
     name: string;
-    color?: string;
     size: number;
 }
 
