@@ -1,5 +1,5 @@
 import type { Pointer } from 'src/events/types';
-import { Application, Circle, Shape } from '../types';
+import { Action, ActionWithParam, Application, Circle, Shape } from '../types';
 import { Context } from '../index';
 import { createShape } from '../factories';
 import { getBoundingBox, overlaps, isPointInBox } from '../utils';
@@ -23,49 +23,49 @@ const setShape = ({ currentDocument }: Application, shape: Shape) => {
 const deleteShape = ({ currentDocument }: Application, shapeId: string) =>
     delete currentDocument.shapes[shapeId];
 
-export const addShape = ({ state }: Context, options: Partial<Shape>) => {
+export const addShape: ActionWithParam<Partial<Shape>> = ({ state }, options) => {
     const shape = createShape(options);
 
     setShape(state, shape);
 };
 
-export const cloneShape = ({ state, effects }: Context, shapeId: string) => {
+export const cloneShape: ActionWithParam<string> = ({ state, effects }, shapeId) => {
     const shape = getShape(state, shapeId);
 
     setShape(state, { ...shape, id: effects.newId() });
 };
 
-export const removeShape = ({ state }: Context, shapeId: string) => {
+export const removeShape: ActionWithParam<string> = ({ state }, shapeId) => {
     deleteShape(state, shapeId);
 };
 
-export const toggleShapeSelected = ({ state }: Context, shapeId: string) => {
+export const toggleShapeSelected: ActionWithParam<string> = ({ state }, shapeId) => {
     const shape = getShape(state, shapeId);
 
     shape.selected = !shape.selected;
 };
 
-export const selectShape = ({ state }: Context, args: { shapeId: string }) => {
-    const shape = getShape(state, args.shapeId);
+export const selectShape: ActionWithParam<string> = ({ state }, shapeId) => {
+    const shape = getShape(state, shapeId);
 
     shape.selected = true;
 };
 
-export const selectShapeByPoint = ({ state }: Context) => {
-    const { position } = state.events.pointer;
+export const selectShapeByPoint: Action = ({ state }) => {
+    const { current } = state.events.pointer;
 
     const shapes = Object.values(state.currentDocument.shapes);
     shapes.forEach((shape) => {
-        if (isPointInBox(position, shape)) {
+        if (isPointInBox(current, shape)) {
             shape.selected = true;
         }
     });
 };
 
-export const selectShapes = ({ state }: Context) => {
-    const { topLeftPosition, bottomRightPosition } = state.events.pointer;
+export const selectShapes: Action = ({ state }) => {
+    const { topLeft, bottomRight } = state.events.pointer;
 
-    const source = { topLeft: topLeftPosition, bottomRight: bottomRightPosition };
+    const source = { topLeft, bottomRight };
 
     const shapes = Object.values(state.currentDocument.shapes);
     shapes.forEach((shape) => {
@@ -75,25 +75,25 @@ export const selectShapes = ({ state }: Context) => {
     });
 };
 
-export const unselectShape = ({ state }: Context, shapeId: string) => {
+export const unselectShape: ActionWithParam<string> = ({ state }, shapeId) => {
     const shape = getShape(state, shapeId);
 
     shape.selected = false;
 };
 
-export const lockShape = ({ state }: Context, shapeId: string) => {
+export const lockShape: ActionWithParam<string> = ({ state }, shapeId) => {
     const shape = getShape(state, shapeId);
 
     shape.locked = true;
 };
 
-export const unlockShape = ({ state }: Context, shapeId: string) => {
+export const unlockShape: ActionWithParam<string> = ({ state }, shapeId) => {
     const shape = getShape(state, shapeId);
 
     shape.locked = false;
 };
 
-export const showShape = ({ state }: Context, shapeId: string) => {
+export const showShape: ActionWithParam<string> = ({ state }, shapeId) => {
     const shape = getShape(state, shapeId);
 
     shape.visible = true;
@@ -122,8 +122,8 @@ export const resizeShape = (
     const { shapeId, type, pointer } = payload;
     const shape = getShape(state, shapeId);
 
-    const diffx = pointer.position.x - shape.position.x;
-    const diffy = pointer.position.y - shape.position.y;
+    const diffx = pointer.current.x - shape.position.x;
+    const diffy = pointer.current.y - shape.position.y;
 
     if (shape.type === 'circle') {
         (shape as Circle).radius = Math.max(diffx, diffy);
@@ -135,60 +135,60 @@ export const resizeShape = (
 
     switch (type) {
         case 'topLeft':
-            if (pointer.position.y < bottomRight.y) {
-                shape.position!.y = pointer.position.y;
+            if (pointer.current.y < bottomRight.y) {
+                shape.position!.y = pointer.current.y;
                 shape.size!.height -= diffy;
             }
-            if (pointer.position.x < bottomRight.x) {
-                shape.position!.x = pointer.position.x;
+            if (pointer.current.x < bottomRight.x) {
+                shape.position!.x = pointer.current.x;
                 shape.size!.width = shape.size!.width - diffx;
             }
             break;
         case 'middleTop':
-            if (pointer.position.y < bottomRight.y) {
-                shape.position!.y = pointer.position.y;
+            if (pointer.current.y < bottomRight.y) {
+                shape.position!.y = pointer.current.y;
                 shape.size!.height -= diffy;
             }
             break;
         case 'topRight':
-            if (pointer.position.x > topLeft!.x) {
+            if (pointer.current.x > topLeft!.x) {
                 shape.size!.width = diffx;
             }
-            if (pointer.position.y < bottomRight!.y) {
-                shape.position!.y = pointer.position.y;
+            if (pointer.current.y < bottomRight!.y) {
+                shape.position!.y = pointer.current.y;
                 shape.size!.height -= diffy;
             }
             break;
         case 'middleRight':
-            if (pointer.position.x > shape.position!.x) {
+            if (pointer.current.x > shape.position!.x) {
                 shape.size!.width = diffx;
             }
             break;
         case 'bottomRight':
-            if (pointer.position.x > shape.position!.x) {
+            if (pointer.current.x > shape.position!.x) {
                 shape.size!.width = diffx;
             }
-            if (pointer.position.y > shape.position!.y) {
+            if (pointer.current.y > shape.position!.y) {
                 shape.size!.height = diffy;
             }
             break;
         case 'middleBottom':
-            if (pointer.position.y > shape.position!.y) {
+            if (pointer.current.y > shape.position!.y) {
                 shape.size!.height = diffy;
             }
             break;
         case 'bottomLeft':
-            if (pointer.position.x < bottomRight!.x) {
-                shape.position!.x = pointer.position.x;
+            if (pointer.current.x < bottomRight!.x) {
+                shape.position!.x = pointer.current.x;
                 shape.size!.width = shape.size!.width - diffx;
             }
-            if (pointer.position.y > topLeft!.y) {
+            if (pointer.current.y > topLeft!.y) {
                 shape.size!.height = diffy;
             }
             break;
         case 'middleLeft':
-            if (pointer.position.x < bottomRight!.x) {
-                shape.position!.x = pointer.position.x;
+            if (pointer.current.x < bottomRight!.x) {
+                shape.position!.x = pointer.current.x;
                 shape.size!.width = shape.size!.width - diffx;
             }
             break;
