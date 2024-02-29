@@ -1,10 +1,11 @@
 import React, { FC } from 'react';
 
 import styles from '../../styles.css';
+import type { Command, Position } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
-import { Command } from 'src/app/types';
-
-import { Context } from '../../../app';
+import { Pointer } from '../../../events/types';
+import { newShapeName } from '../../../app/factories';
+import { usePointer } from '../../../app/hooks';
 
 /**
  * Draws an ellipse based on input coords and size
@@ -18,61 +19,86 @@ import { Context } from '../../../app';
 **/
 
 interface Props {
-  key: string;
-  name: string;
-  cx: number;
-  cy: number;
-  rx: number;
-  ry: number;
-  selected: boolean;
-  type: string;
+    key: string;
+    name: string;
+    position: Position;
+    radius: Position;
+    selected: boolean;
+    type: string;
 }
 
-export const createEllipseProps = ({ state }: Context, designMode = false) => {
-  const { center, scaledCenter, size, scaledSize } = state.events.pointer;
+export const createEllipseProps = (
+    { center, scaledCenter, size, scaledSize }: Pointer,
+    designMode = false
+): Props => {
+    const name = designMode ? 'Circle x' : newShapeName();
+    const key = name.toLowerCase();
 
-  return {
-    key: 'ellipse-x',
-    cx: designMode ? scaledCenter.x : center.x,
-    cy: designMode ? scaledCenter.y : center.y,
-    name: 'Ellipse x',
-    rx: designMode ? scaledSize.width : size.width,
-    ry: designMode ? scaledSize.height : size.height,
-    selected: true,
-    type: 'ellipse'
-  };
+    return {
+        key,
+        position: designMode ? scaledCenter : center,
+        radius: designMode
+            ? { x: scaledSize.width, y: scaledSize.height }
+            : { x: size.width, y: size.height },
+        name,
+        selected: true,
+        type: 'ellipse'
+    };
 };
 
-export const Ellipse: FC<Props> = ({ name, cx, cy, rx, ry, selected }) => {
-  const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
+export const DesignEllipse: FC = () => {
+    const pointer = usePointer();
 
-  return (
-    <ellipse key="ellipse" data-cy={name} className={className} cx={cx} cy={cy} rx={rx} ry={ry} />
-  );
+    const props = createEllipseProps(pointer, true);
+
+    return <Ellipse {...props} />;
+};
+
+export const Ellipse: FC<Props> = ({ key, name, position, radius, selected }) => {
+    const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
+    console.log('rendering Ellipse');
+
+    return (
+        <ellipse
+            className={className}
+            cx={position.x}
+            cy={position.y}
+            data-cy={name}
+            key={key}
+            rx={radius.x}
+            ry={radius.y}
+        />
+    );
 };
 
 export const EllipseCommand: Command = {
-  id: 'ellipse',
-  name: 'Ellipse',
-  category: 'shapes',
-  description: 'Draws and elliptic shape',
-  icon: {
-    group: 'image',
-    name: 'panorama_fish_eye',
-    color: 'rgb(144, 254, 214)',
-    size: 24
-  },
-  regex: /(?<toolCode>ellipse)\((?<cx>\d+),(?<cy>\d+),(?<rx>\d+),(?<ry>\d+)\)/,
-  shortcut: 'ctrl+e',
-  canExecute: (context) => true,
-  execute: (context, args) => React.createElement(Ellipse, createEllipseProps(context), null),
-  factory: (context: Context) => createEllipseProps(context, true)
+    id: 'ellipse',
+    name: 'Ellipse',
+    category: 'shapes',
+    description: 'Draws and elliptic shape',
+    icon: {
+        group: 'image',
+        name: 'panorama_fish_eye',
+        color: 'rgb(144, 254, 214)',
+        size: 24
+    },
+    regex: /(?<toolCode>ellipse)\((?<cx>\d+),(?<cy>\d+),(?<rx>\d+),(?<ry>\d+)\)/,
+    shortcut: 'ctrl+e',
+    canExecute: (context) => true,
+    execute: ({ actions, state }) => {
+        console.log('EllipseCommand:execute');
+
+        const shape = createEllipseProps(state.events.pointer, true);
+
+        actions.addShape(shape);
+    }
 };
 
 export const EllipseTool: Tool = {
-  id: 'ellipse',
-  name: 'Ellipse',
-  description: 'Draw an ellipse',
-  command: EllipseCommand,
-  component: Ellipse
+    id: 'ellipse',
+    name: 'Ellipse',
+    description: 'Draw an ellipse',
+    command: EllipseCommand,
+    component: Ellipse,
+    designComponent: DesignEllipse
 };
