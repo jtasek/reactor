@@ -2,9 +2,11 @@ import React, { FC } from 'react';
 
 import styles from '../../styles.css';
 import type { Command, Point } from 'src/app/types';
+import type { Pointer } from '../../../events/types';
 import type { Tool } from 'src/tools/types';
+import { newShapeName } from '../../../app/factories';
 import { stringifyPath } from 'src/app/utils';
-import { Context } from '../../../app';
+import { usePointer } from '../../../app/hooks';
 
 /** 
  * Draws a line based on path
@@ -14,55 +16,71 @@ import { Context } from '../../../app';
 **/
 
 interface Props {
-  key: string;
-  name: string;
-  points: Point[];
-  selected: true;
-  type: string;
+    key: string;
+    name: string;
+    points: Point[];
+    selected: true;
+    type: string;
 }
 
-export function createPenProps({ state }: Context, designMode = false) {
-  const { path, scaledPath } = state.events.pointer;
+export const createPenProps = ({ path, scaledPath }: Pointer, designMode = false): Props => {
+    const name = designMode ? 'Pen x' : newShapeName();
+    const key = name.toLowerCase();
 
-  return {
-    key: 'pen-x',
-    name: 'Pen x',
-    points: designMode ? scaledPath : path,
-    selected: true,
-    type: 'pen'
-  };
-}
+    return {
+        key,
+        name,
+        points: designMode ? scaledPath : path,
+        selected: true,
+        type: 'pen'
+    };
+};
 
-export const Pen: FC<Props> = ({ name, points, selected }) => {
-  const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
+export const Pen: FC<Props> = ({ key, name, points, selected }) => {
+    const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
+    console.log('rendering Pen');
 
-  return (
-    <polyline key="pen" data-name={name} className={className} points={stringifyPath(points)} />
-  );
+    return (
+        <polyline className={className} data-cy={name} key={key} points={stringifyPath(points)} />
+    );
+};
+
+export const DesignPen: FC = () => {
+    const pointer = usePointer();
+
+    const props = createPenProps(pointer, true);
+
+    return <Pen {...props} />;
 };
 
 export const PenCommand: Command = {
-  id: 'pen',
-  name: 'Pen',
-  category: 'shapes',
-  description: 'Draws a line',
-  icon: {
-    group: 'content',
-    name: 'create',
-    color: 'rgba(255,255,255)',
-    size: 24
-  },
-  regex: /(?<toolCode>pen)\((?<path>[\d, ]+)\)/,
-  shortcut: 'ctrl+p',
-  canExecute: (context) => true,
-  execute: (context, args?) => React.createElement(Pen, createPenProps(context) as Props, null),
-  factory: (context: Context) => createPenProps(context, true)
+    id: 'pen',
+    name: 'Pen',
+    category: 'shapes',
+    description: 'Draws a line',
+    icon: {
+        group: 'content',
+        name: 'create',
+        color: 'rgba(255,255,255)',
+        size: 24
+    },
+    regex: /(?<toolCode>pen)\((?<x1>\d+),(?<y1>\d+),(?<x2>\d+),(?<y2>\d+)\)/,
+    shortcut: 'ctrl+p',
+    canExecute: (context) => true,
+    execute: ({ actions, state }) => {
+        console.log('PenCommand:execute');
+
+        const shape = createPenProps(state.events.pointer, true);
+
+        actions.addShape(shape);
+    }
 };
 
 export const PenTool: Tool = {
-  id: 'pen',
-  name: 'Pen',
-  description: 'Draw a curve line',
-  command: PenCommand,
-  component: Pen
+    id: 'pen',
+    name: 'Pen',
+    description: 'Draw a curve line',
+    command: PenCommand,
+    component: Pen,
+    designComponent: DesignPen
 };
