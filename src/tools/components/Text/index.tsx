@@ -33,7 +33,7 @@ interface Props {
 }
 
 export function createTextProps(
-    { position, scaledPosition }: Pointer,
+    { current, scaledCurrent }: Pointer,
     { text }: Keyboard,
     designMode = false
 ) {
@@ -43,7 +43,7 @@ export function createTextProps(
     return {
         key,
         name,
-        position: designMode ? scaledPosition : position,
+        position: designMode ? scaledCurrent : current,
         selected: true,
         type: 'text',
         value: text
