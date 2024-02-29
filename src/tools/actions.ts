@@ -63,14 +63,14 @@ function rescalePointer(pointer: Pointer) {
     return {
         ...pointer,
         center: pointer.scaledCenter,
-        position: pointer.scaledPosition,
+        position: pointer.scaledCurrent,
         offset: pointer.scaledOffset,
         path: pointer.scaledPath,
         radius: pointer.scaledRadius,
         size: pointer.scaledSize,
-        startPosition: pointer.scaledStartPosition,
-        topLeftPosition: pointer.scaledTopLeftPosition,
-        bottomRightPosition: pointer.scaledBottomRightPosition
+        startPosition: pointer.scaledStart,
+        topLeftPosition: pointer.scaledTopLeft,
+        bottomRightPosition: pointer.scaledBottomRight
     };
 }
 
