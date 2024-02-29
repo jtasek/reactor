@@ -21,13 +21,13 @@ interface Props {
 }
 
 export function createSelectProps(
-    { topLeftPosition, scaledTopLeftPosition, size, scaledSize }: Pointer,
+    { topLeft, scaledTopLeft, size, scaledSize }: Pointer,
     designMode = false
 ): Props {
     return {
         key: 'selection',
         name: 'selection',
-        position: designMode ? scaledTopLeftPosition : topLeftPosition,
+        position: designMode ? scaledTopLeft : topLeft,
         size: designMode ? scaledSize : size,
         type: 'select'
     };
@@ -74,13 +74,7 @@ export const SelectCommand: Command = {
     canExecute: (context) => true,
     execute: ({ actions, state: { events, currentDocument } }) => {
         console.log('SelectCommand:execute');
-        const currentPointer = events.pointer.position;
-
-        Object.values(currentDocument.shapes).forEach((shape) => {
-            if (isPointInBox(currentPointer, shape)) {
-                shape.selected = true;
-            }
-        });
+        actions.selectShapes();
     }
 };
 
