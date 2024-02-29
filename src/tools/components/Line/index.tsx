@@ -20,19 +20,16 @@ interface Props {
     type: string;
 }
 
-export const createLineProps = (
-    { startPosition, position }: Pointer,
-    designMode = false
-): Props => {
+export const createLineProps = ({ start, current }: Pointer, designMode = false): Props => {
     const name = designMode ? 'Line x' : newShapeName();
     const key = name.toLowerCase();
 
     return {
-        end: position,
+        end: current,
         key,
         name,
         selected: true,
-        start: startPosition,
+        start,
         type: 'line'
     };
 };
