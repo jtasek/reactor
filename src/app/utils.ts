@@ -1,4 +1,4 @@
-import { Box, Circle, Line, Point, Shape, Vector } from './types';
+import { Box, Circle, Line, Point, Rectangle, Shape, Vector } from './types';
 
 export function stringifyPath(path: Point[]): string {
     return path.map((point: Point) => `${point.x}, ${point.y}`).join(' ');
@@ -16,8 +16,14 @@ export function getDistance(p1: Point, p2: Point): number {
     return Math.hypot(Math.abs(p2.x - p1.x), Math.abs(p2.y - p1.y));
 }
 
-export function getBoundingBoxForRectangle(rectangle: Box): Box {
-    return rectangle;
+export function getBoundingBoxForRectangle(rectangle: Rectangle): Box {
+    return {
+        topLeft: rectangle.position,
+        bottomRight: {
+            x: rectangle.position.x + rectangle.size.width,
+            y: rectangle.position.y + rectangle.size.height
+        }
+    };
 }
 
 export function getBoundingBoxForCircle(circle: Circle): Box {
@@ -62,7 +68,7 @@ export function getBoundingBox(shape: Partial<Shape>): Box | undefined {
     }
 
     // image, rect, text
-    return getBoundingBoxForRectangle(shape as Box);
+    return getBoundingBoxForRectangle(shape as Rectangle);
 }
 
 export function isPointInBox(p: Point, shape: Partial<Shape>): boolean {
