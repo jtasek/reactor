@@ -1,11 +1,12 @@
 import React, { FC, useEffect, useRef } from 'react';
 
 import styles from './styles.css';
-import { Command } from 'src/app/types';
+import type { Command, Position } from 'src/app/types';
+import type { Keyboard, Pointer } from '../../../events/types';
+import type { Tool } from 'src/tools/types';
+import { createEllipseProps } from '../Ellipse';
+import { newShapeName } from '../../../app/factories';
 import { useActions, useKeyboard, usePointer } from 'src/app/hooks';
-import { Tool } from 'src/tools/types';
-import { Handle } from 'src/ui/components/Handle';
-import { Context } from '../../../app';
 
 /**
  * Draws a text in current position
@@ -23,126 +24,124 @@ import { Context } from '../../../app';
 **/
 
 interface Props {
-  name: string;
-  x: number;
-  y: number;
-  value: string;
-  selected: boolean;
-  type: string;
-  onStartTyping: () => void;
-  onTyping: (value: string) => void;
-  onEndTyping: () => void;
+    key: string;
+    name: string;
+    position: Position;
+    selected: boolean;
+    type: string;
+    value: string;
 }
 
-export function createTextProps({ state }: Context, designMode = false) {
-  const { position, scaledPosition } = state.events.pointer;
-  const { text } = state.events.keyboard;
+export function createTextProps(
+    { position, scaledPosition }: Pointer,
+    { text }: Keyboard,
+    designMode = false
+) {
+    const name = designMode ? 'Text x' : newShapeName();
+    const key = name.toLowerCase();
 
-  return {
-    name: 'Text x',
-    selected: true,
-    type: 'text',
-    value: text,
-    x: designMode ? scaledPosition.x : position.x,
-    y: designMode ? scaledPosition.y : position.y
-  };
+    return {
+        key,
+        name,
+        position: designMode ? scaledPosition : position,
+        selected: true,
+        type: 'text',
+        value: text
+    };
 }
 
-export const Text: FC<Props> = ({ name, x, y, value, selected, designMode }) => {
-  const shape = useRef<HTMLInputElement | null>(null);
-  const {
-    startTyping: handleStartTyping,
-    typing: handleTyping,
-    endTyping: handleEndTyping
-  } = useActions().events;
-
-  if (designMode) {
+export const Text: FC<Props> = ({ key, name, position, value, selected }) => {
     const lineHeight = 22;
-    return (
-      <text key={name} className={styles.input} x={x} y={y + lineHeight}>
-        {value}hjoiljk
-      </text>
-    );
-  }
 
-  return (
-    <g>
-      <foreignObject width="100%" height="100%" x={x} y={y}>
-        <form>
-          <input
-            ref={shape}
-            autoFocus
-            type="text"
-            data-cy={name}
+    return (
+        <text
             className={styles.input}
-            placeholder="Type something..."
-            value={value}
-            onFocus={() => handleStartTyping}
-            onBlur={() => handleEndTyping}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleEndTyping();
-              }
-            }}
-            onChange={(e) => {
-              e.preventDefault();
-              // console.log('text bbox', shape.current?.getBBox());
-              handleTyping();
-              e.currentTarget.value;
-            }}
-          />
-        </form>
-      </foreignObject>
-    </g>
-  );
+            data-cy={name}
+            key={key}
+            x={position.x}
+            y={position.y + lineHeight}
+        >
+            {value}
+        </text>
+    );
 };
 
-// export const DesignText: FC = () => {
-//   const pointer = usePointer();
-//   const keyboard = useKeyboard();
+export const DesignText: FC = () => {
+    const shape = useRef<HTMLInputElement>(null);
+    const pointer = usePointer();
+    const keyboard = useKeyboard();
+    const {
+        events: { startTyping, typing, endTyping }
+    } = useActions();
 
-//   const { startTyping, typing, endTyping } = useActions().events;
+    const inputRef = useRef<HTMLInputElement | null>(null);
 
-//   const inputRef = useRef<HTMLInputElement | null>(null);
-//   useEffect(() => {
-//     inputRef?.current?.focus();
-//   });
+    useEffect(() => {
+        shape?.current?.focus();
+    }, []);
 
-//   return (
-//     <Text
-//       {...createTextProps(pointer, keyboard)}
-//       value={keyboard.text}
-//       onStartTyping={startTyping}
-//       onTyping={typing}
-//       onEndTyping={endTyping}
-//     />
-//   );
-// };
+    const { key, name, position, value, type } = createTextProps(pointer, keyboard);
+
+    return (
+        <g>
+            <foreignObject width="100%" height="100%" x={position.x} y={position.y}>
+                <form>
+                    <input
+                        autoFocus
+                        className={styles.input}
+                        data-cy={name}
+                        key={key}
+                        placeholder="Type something..."
+                        ref={shape}
+                        type={type}
+                        value={value}
+                        onBlur={endTyping}
+                        onFocus={startTyping}
+                        onKeyUp={(event) => {
+                            if (event.key === 'Enter') {
+                                event.preventDefault();
+                                endTyping();
+                            }
+                        }}
+                        onChange={(event) => {
+                            event.preventDefault();
+                            typing(event.currentTarget.value);
+                        }}
+                    />
+                </form>
+            </foreignObject>
+        </g>
+    );
+};
 
 export const TextCommand: Command = {
-  id: 'text',
-  name: 'Text',
-  category: 'shapes',
-  description: 'Type a text',
-  icon: {
-    group: 'editor',
-    name: 'title',
-    color: 'rgba(255,255,255)',
-    size: 24
-  },
-  regex: /(?<toolCode>text)\((?<x>[\d]+),(?<y>[\d]+),'(?<text>[\w]+)'\)/,
-  shortcut: 't',
-  canExecute: (context, ) => true,
-  execute: (context) =>
-    React.createElement(Text, { ...createTextProps(context), designMode: false } as Props, null),
-  factory: (context: Context) => createTextProps(context, true)
+    id: 'text',
+    name: 'Text',
+    category: 'shapes',
+    description: 'Type a text',
+    icon: {
+        group: 'editor',
+        name: 'title',
+        color: 'rgba(255,255,255)',
+        size: 24
+    },
+    regex: /(?<toolCode>text)\((?<x>[\d]+),(?<y>[\d]+),'(?<text>[\w]+)'\)/,
+    shortcut: 't',
+    canExecute: (context) => true,
+    execute: ({ actions, state }) => {
+        console.log('TextCommand:execute');
+
+        const shape = createEllipseProps(state.events.pointer, true);
+
+        actions.addShape(shape);
+    }
 };
 
 export const TextTool: Tool = {
-  id: 'text',
-  name: 'Text',
-  description: 'Type a text',
-  command: TextCommand,
-  component: Text
+    id: 'text',
+    name: 'Text',
+    description: 'Type a text',
+    command: TextCommand,
+    component: Text,
+    designComponent: DesignText
 };
