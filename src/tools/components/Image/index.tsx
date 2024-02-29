@@ -35,7 +35,7 @@ interface Props {
 }
 
 export const createImageProps = (
-    { startPosition, scaledStartPosition, size, scaledSize }: Pointer,
+    { start, scaledStart, size, scaledSize }: Pointer,
     designMode = false
 ): Props => {
     const name = designMode ? 'Image x' : newShapeName();
@@ -44,7 +44,7 @@ export const createImageProps = (
     return {
         key,
         name,
-        position: designMode ? scaledStartPosition : startPosition,
+        position: designMode ? scaledStart : start,
         selected: true,
         size: designMode ? scaledSize : size,
         source: DEFAULT_IMAGE,
