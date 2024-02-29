@@ -31,7 +31,7 @@ interface Props {
 }
 
 export const createRectProps = (
-    { topLeftPosition, scaledTopLeftPosition, size, scaledSize }: Pointer,
+    { topLeft, scaledTopLeft, size, scaledSize }: Pointer,
     designMode = false
 ): Props => {
     const name = designMode ? 'Rectangle x' : newShapeName();
@@ -40,7 +40,7 @@ export const createRectProps = (
     return {
         key,
         name,
-        position: designMode ? scaledTopLeftPosition : topLeftPosition,
+        position: designMode ? scaledTopLeft : topLeft,
         selected: true,
         size: designMode ? scaledSize : size,
         type: 'rect'
