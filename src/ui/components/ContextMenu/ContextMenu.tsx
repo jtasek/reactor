@@ -6,29 +6,29 @@ import { usePointer } from 'src/app/hooks';
 import { ConnectedContextMenuItems } from './ContextMenuItems';
 
 export interface Props {
-  position: Position;
-  children?: ReactNode;
+    position: Position;
+    children?: ReactNode;
 }
 
 export const ContextMenu: FC<Props> = ({ position, children }) => (
-  <ul
-    className={styles.contextMenu}
-    style={{
-      position: 'absolute',
-      top: position.y,
-      left: position.x
-    }}
-  >
-    {children}
-  </ul>
+    <ul
+        className={styles.contextMenu}
+        style={{
+            position: 'absolute',
+            top: position.y,
+            left: position.x
+        }}
+    >
+        {children}
+    </ul>
 );
 
 export const ConnectedContextMenu: FC = () => {
-  const { startPosition } = usePointer();
+    const { start } = usePointer();
 
-  return (
-    <ContextMenu position={startPosition}>
-      <ConnectedContextMenuItems />
-    </ContextMenu>
-  );
+    return (
+        <ContextMenu position={start}>
+            <ConnectedContextMenuItems />
+        </ContextMenu>
+    );
 };
