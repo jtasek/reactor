@@ -3,7 +3,7 @@ import { usePointer } from 'src/app/hooks';
 import { Cursor } from './Cursor';
 
 export const ConnectedCursor: FC = () => {
-  const { position } = usePointer();
+    const { current } = usePointer();
 
-  return <Cursor position={position} />;
+    return <Cursor position={current} />;
 };
