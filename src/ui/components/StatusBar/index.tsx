@@ -47,8 +47,8 @@ export const StatusBarContainer: FC = () => {
             <StatusBarSlot name="keyboard">
                 <KeyboardInfo />
             </StatusBarSlot>
-            <StatusBarSlot name="mouse">{`mouse: [${current.x}, ${current.y}]`}</StatusBarSlot>
-            <StatusBarSlot name="camera">{`camera: [${offset.x}, ${offset.y}, ${scale}]`}</StatusBarSlot>
+            <StatusBarSlot name="mouse">{`mouse: [${Math.round(current.x)}, ${Math.round(current.y)}]`}</StatusBarSlot>
+            <StatusBarSlot name="camera">{`camera: [${Math.round(offset.x)}, ${Math.round(offset.y)}, ${scale}]`}</StatusBarSlot>
             <StatusBarSlot name="tools">
                 <ZoomSlider />
             </StatusBarSlot>
