@@ -75,6 +75,12 @@ export const selectShapes: Action = ({ state }) => {
     });
 };
 
+export const unselectShapes: Action = ({ state }) => {
+    const shapes = Object.values(state.currentDocument.shapes);
+    console.log('unselectShapes()');
+    shapes.forEach((shape) => (shape.selected = false));
+};
+
 export const unselectShape: ActionWithParam<string> = ({ state }, shapeId) => {
     const shape = getShape(state, shapeId);
 
