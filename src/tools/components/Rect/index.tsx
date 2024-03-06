@@ -64,10 +64,6 @@ export const Rect: FC<Props> = ({ key, name, position, size, selected, id }) => 
             width={size?.width}
             x={position?.x}
             y={position?.y}
-            onClick={() => {
-                // console.log('rect native bbox', shape.current?.getBBox());
-                actions.toggleShapeSelected(id!);
-            }}
         />
     );
 };
