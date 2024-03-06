@@ -5,7 +5,6 @@ import type { Point, Size } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
 import { Command } from 'src/app/types';
 import { Pointer } from '../../../events/types';
-import { isPointInBox } from 'src/app/utils';
 import { usePointer } from '../../../app/hooks';
 
 /**
@@ -72,7 +71,7 @@ export const SelectCommand: Command = {
     regex: /(?<toolCode>select)\((?<x1>[\d]+),(?<y1>[\d]+),(?<x2>[\d]+),(?<y2>[\d]+)\)/,
     shortcut: 's',
     canExecute: (context) => true,
-    execute: ({ actions, state: { events, currentDocument } }) => {
+    execute: ({ actions }) => {
         console.log('SelectCommand:execute');
         actions.selectShapes();
     }
