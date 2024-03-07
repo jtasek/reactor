@@ -1,4 +1,4 @@
-import { ActionWithParam, Point } from '../../app/types';
+import { Action, ActionWithParam, Point } from '../../app/types';
 
 export const setStartPosition: ActionWithParam<Point> = ({ state }, position) => {
     state.events.pointer.start = position;
@@ -12,18 +12,13 @@ export const updatePath: ActionWithParam<Point> = ({ state }, position) => {
     state.events.pointer.path.push(position);
 };
 
-export const startDragging: ActionWithParam<Point> = ({ state }, position) => {
-    const pointer = state.events.pointer;
-    pointer.dragging = true;
-    pointer.start = position;
-    pointer.current = position;
-    pointer.path = [position];
+export const startDragging: Action = ({ state }) => {
+    state.events.pointer.dragging = true;
 };
 
-export const dragging: ActionWithParam<Point> = ({ state }, position) => {
-    const pointer = state.events.pointer;
-    pointer.current = position;
-    pointer.path.push(position);
+export const updateCurrentPosition: ActionWithParam<Point> = (context, position) => {
+    setCurrentPosition(context, position);
+    updatePath(context, position);
 };
 
 export const endDragging: ActionWithParam<Point> = ({ state }) => {
