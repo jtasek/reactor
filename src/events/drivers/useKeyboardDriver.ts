@@ -1,24 +1,24 @@
-import { useEffect, KeyboardEvent } from 'react';
+import { useEffect } from 'react';
 import { useActions } from 'src/app/hooks';
 
 export const useKeyboardDriver = () => {
-  const { keyDown, keyUp } = useActions().events;
+    const { keyDown, keyUp } = useActions().events;
 
-  const handleKeyDown = (event: KeyboardEvent) => {
-    keyDown(event);
-  };
-
-  const handleKeyUp = (event: KeyboardEvent) => {
-    keyUp(event);
-  };
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
+    const handleKeyDown = (event: KeyboardEvent) => {
+        keyDown(event);
     };
-  }, []);
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+        keyUp(event);
+    };
+
+    useEffect(() => {
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, []);
 };
