@@ -289,8 +289,9 @@ export interface Notification {
 }
 
 export type Configuration = {
-    version: string;
     autoSave: boolean;
+    debugMode: boolean;
+    version: string;
 };
 
 export type Application = {
