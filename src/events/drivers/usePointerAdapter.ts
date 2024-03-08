@@ -1,4 +1,4 @@
-import { useState, PointerEvent, WheelEvent, MouseEvent, useEffect } from 'react';
+import { useState, MouseEvent } from 'react';
 import { useActions, useControls, useLog } from 'src/app/hooks';
 
 const ZERO_DISTANCE = 0;
@@ -10,6 +10,7 @@ export const usePointerAdapter = () => {
     const log = useLog();
 
     log('usePointerDriver()');
+
     let pointerDown = false;
     let isDragging = false;
     const [lastDistance, setLastDistance] = useState(ZERO_DISTANCE);
@@ -17,7 +18,7 @@ export const usePointerAdapter = () => {
     const actions = useActions();
     const contextMenu = useControls().contextMenu;
 
-    const handleTouchStart = (event: any) => {
+    const handleTouchStart = (event) => {
         log('handleTouchStart');
 
         if (event.touches.length === 2) {
@@ -33,7 +34,7 @@ export const usePointerAdapter = () => {
         }
     };
 
-    const handleTouchMove = (event: any) => {
+    const handleTouchMove = (event) => {
         log('handleTouchMove');
         event.preventDefault();
 
@@ -57,7 +58,7 @@ export const usePointerAdapter = () => {
         }
     };
 
-    const handleTouchEnd = (event: any) => {
+    const handleTouchEnd = (event) => {
         log('handleTouchEnd');
 
         setLastDistance(ZERO_DISTANCE);
@@ -117,7 +118,7 @@ export const usePointerAdapter = () => {
         }
     };
 
-    const handleMouseWheel = (event: WheelEvent) => {
+    const handleMouseWheel = (event) => {
         log('handleMouseWheel', event.deltaX, event.deltaY);
 
         if (event.ctrlKey) {
@@ -137,7 +138,7 @@ export const usePointerAdapter = () => {
         });
     };
 
-    const handleContextMenu = (event: MouseEvent) => {
+    const handleContextMenu = (event) => {
         log('handleContextMenu');
 
         event.preventDefault();
