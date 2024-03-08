@@ -1,18 +1,24 @@
-import { useState, PointerEvent, WheelEvent, MouseEvent } from 'react';
-import { useActions, useControls } from 'src/app/hooks';
+import { useState, PointerEvent, WheelEvent, MouseEvent, useEffect } from 'react';
+import { useActions, useControls, useLog } from 'src/app/hooks';
 
 const ZERO_DISTANCE = 0;
+const LEFT_BUTTON = 1;
+const RIGHT_BUTTON = 2;
+const LEFT_AND_RIGHT_BUTTON = 3;
 
-export const usePointerDriver = () => {
-    console.log('usePointerDriver');
-    let dragging = false;
+export const usePointerAdapter = () => {
+    const log = useLog();
+
+    log('usePointerDriver()');
+    let pointerDown = false;
+    let isDragging = false;
     const [lastDistance, setLastDistance] = useState(ZERO_DISTANCE);
 
     const actions = useActions();
     const contextMenu = useControls().contextMenu;
 
     const handleTouchStart = (event: any) => {
-        console.log('handleTouchStart');
+        log('handleTouchStart');
 
         if (event.touches.length === 2) {
             const touch1 = event.touches[0];
@@ -28,12 +34,11 @@ export const usePointerDriver = () => {
     };
 
     const handleTouchMove = (event: any) => {
-        console.log('handleTouchMove');
-        event.stopProgration();
+        log('handleTouchMove');
         event.preventDefault();
 
         if (event.touches.length === 2) {
-            console.log(event.touches.length);
+            log(event.touches.length);
             const touch1 = event.touches[0];
             const touch2 = event.touches[1];
 
@@ -53,35 +58,59 @@ export const usePointerDriver = () => {
     };
 
     const handleTouchEnd = (event: any) => {
-        console.log('handleTouchEnd');
+        log('handleTouchEnd');
 
         setLastDistance(ZERO_DISTANCE);
     };
 
-    const handlePointerDown = (event: PointerEvent) => {
-        console.log('handlePointerDown', dragging);
+    const handlePointerDown = (event) => {
+        log('handlePointerDown', {
+            button: event.button,
+            buttons: event.buttons,
+            x: event.clientX,
+            y: event.clientY
+        });
 
-        dragging = true;
-        actions.events.startDragging({ x: event.clientX, y: event.clientY });
+        pointerDown = true;
+        actions.events.setStartPosition({ x: event.clientX, y: event.clientY });
+        actions.events.setCurrentPosition({ x: event.clientX, y: event.clientY });
     };
 
-    const handlePointerMove = (event: PointerEvent) => {
-        console.log('handlePointerMove', dragging);
+    const handlePointerMove = (event) => {
+        log('handlePointerMove', {
+            button: event.button,
+            buttons: event.buttons,
+            x: event.clientX,
+            y: event.clientY
+        });
 
-        if (dragging) {
-            console.log('{ x: event.clientX, y: event.clientY ', {
-                x: event.clientX,
-                y: event.clientY
-            });
-            actions.events.dragging({ x: event.clientX, y: event.clientY });
+        if (pointerDown && !isDragging) {
+            isDragging = true;
+            actions.events.startDragging();
+        }
+
+        if (isDragging) {
+            actions.events.updateCurrentPosition({ x: event.clientX, y: event.clientY });
         }
     };
 
-    const handlePointerUp = (event: PointerEvent) => {
-        console.log('handlePointerUp', dragging);
-        if (dragging) {
-            dragging = false;
+    const handlePointerUp = (event) => {
+        log('handlePointerUp', {
+            button: event.button,
+            buttons: event.buttons,
+            x: event.clientX,
+            y: event.clientY
+        });
+
+        if (isDragging) {
+            isDragging = false;
             actions.events.endDragging({ x: event.clientX, y: event.clientY });
+        } else {
+            actions.unselectShapes();
+        }
+
+        if (pointerDown) {
+            pointerDown = false;
             actions.tools.executeToolCommands();
             actions.tools.resetTools();
             setLastDistance(ZERO_DISTANCE);
@@ -89,8 +118,7 @@ export const usePointerDriver = () => {
     };
 
     const handleMouseWheel = (event: WheelEvent) => {
-        console.log('handleMouseWheel');
-        event.preventDefault();
+        log('handleMouseWheel', event.deltaX, event.deltaY);
 
         if (event.ctrlKey) {
             if (Math.max(event.deltaX, event.deltaY) > 0) {
@@ -110,7 +138,7 @@ export const usePointerDriver = () => {
     };
 
     const handleContextMenu = (event: MouseEvent) => {
-        console.log('handleContextMenu');
+        log('handleContextMenu');
 
         event.preventDefault();
         if (contextMenu.visible) return;

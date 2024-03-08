@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { usePointerDriver } from './usePointerDriver';
+import { usePointerAdapter } from './usePointerAdapter';
 
 export const useTouchDriver = () => {
     const {
@@ -11,7 +11,7 @@ export const useTouchDriver = () => {
         handleTouchEnd,
         handleTouchMove,
         handleTouchStart
-    } = usePointerDriver();
+    } = usePointerAdapter();
 
     useEffect(() => {
         window.addEventListener('contextmenu', handleContextMenu);
