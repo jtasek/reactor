@@ -29,7 +29,7 @@
     "@storybook/addon-links": "^7.6.17",
     "@storybook/react": "^7.6.17",
     "@swc/cli": "^0.3.10",
-    "@swc/core": "^1.4.5",
+    "@swc/core": "^1.4.6",
     "@swc/jest": "^0.2.36",
     "@teamsupercell/typings-for-css-modules-loader": "^2.5.2",
     "@testing-library/react": "^14.2.1",
