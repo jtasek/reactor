@@ -3,7 +3,8 @@ import { Point } from 'src/app/types';
 
 import styles from './styles.css';
 import { usePointer } from 'src/app/hooks';
-import { ConnectedContextMenuItems } from './ContextMenuItems';
+import { ContextMenuItems } from './ContextMenuItems';
+import { useRegisteredTools } from '../../../tools/components';
 
 export interface Props {
     position: Point;
@@ -25,10 +26,11 @@ export const ContextMenu: FC<Props> = ({ position, children }) => (
 
 export const ConnectedContextMenu: FC = () => {
     const { start } = usePointer();
+    const tools = useRegisteredTools();
 
     return (
         <ContextMenu position={start}>
-            <ConnectedContextMenuItems />
+            <ContextMenuItems items={tools} />
         </ContextMenu>
     );
 };
