@@ -2,8 +2,8 @@ import React, { FC, ReactNode } from 'react';
 import { Point } from 'src/app/types';
 
 import styles from './styles.css';
-import { usePointer } from 'src/app/hooks';
 import { ContextMenuItems } from './ContextMenuItems';
+import { usePointer } from 'src/app/hooks';
 import { useRegisteredTools } from '../../../tools/components';
 
 export interface Props {
