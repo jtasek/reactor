@@ -16,7 +16,7 @@ export const usePointerAdapter = () => {
     const [lastDistance, setLastDistance] = useState(ZERO_DISTANCE);
 
     const actions = useActions();
-    const contextMenu = useControls().contextMenu;
+    const { contextMenu } = useControls();
 
     const handleTouchStart = (event) => {
         log('handleTouchStart');
@@ -65,6 +65,8 @@ export const usePointerAdapter = () => {
     };
 
     const handlePointerDown = (event) => {
+        if (contextMenu.visible) return;
+
         log('handlePointerDown', {
             button: event.button,
             buttons: event.buttons,
