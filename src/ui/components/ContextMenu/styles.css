@@ -7,6 +7,7 @@
     margin: 1.75em auto 0;
     padding: 2.8em;  /*2.8em = 2em*1.4 (2em = half the width of a link with img, 1.4 = sqrt(2))*/
     position: relative;
+    user-select: none;
     width: 24em;
 }
 

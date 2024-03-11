@@ -35,4 +35,5 @@ body,
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
   color: var(--text-color);
+  user-select: none;
 }

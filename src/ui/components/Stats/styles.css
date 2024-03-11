@@ -2,11 +2,12 @@
   backdrop-filter: var(--backdrop-filter);
   background-color: var(--control-background);
   border-radius: var(--border-radius);
+  bottom: 30px;
   box-shadow: var(--box-shadow);
   color: var(--text-color);
-  right: 0;
   padding: 10px;
   position: fixed;
-  bottom: 30px;
+  right: 0;
+  user-select: none;
   z-index: 100;
 }

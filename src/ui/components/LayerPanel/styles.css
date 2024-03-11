@@ -10,6 +10,7 @@
   position: absolute;
   top: 60px;
   transition: all 0.2s ease-in-out;
+  user-select: none;
   width: var(--control-width);
   z-index: 100;
 }

@@ -10,6 +10,7 @@
   position: absolute;
   right: 50px;
   transition: all 0.2s ease-in-out;
+  user-select: none;
   z-index: 100;
 }
 

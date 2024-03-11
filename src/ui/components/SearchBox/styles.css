@@ -2,6 +2,7 @@
   /* position: sticky; */
   border-radius: 3px;
   border: 1px solid mediumpurple;
+  user-select: none;
   width: 100%;
 }
 
