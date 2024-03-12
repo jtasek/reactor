@@ -5,23 +5,23 @@ import { useTools } from 'src/app/hooks';
 import { useRegisteredTools } from '../../../tools/components';
 
 export interface Props {
-  onClick: (toolId: string) => void;
+    onClick: (toolId: string) => void;
 }
 
 export const ToolBar: FC<Props> = ({ onClick }) => {
-  const tools = useTools();
-  const registeredTools = useRegisteredTools();
+    const { activeToolsIds } = useTools();
+    const registeredTools = useRegisteredTools();
 
-  return (
-    <ul className={styles.toolBar}>
-      {registeredTools.map((item) => (
-        <ToolBarButton
-          key={item.id}
-          tool={item}
-          active={tools.activeToolsIds.includes(item.id)}
-          onClick={onClick}
-        />
-      ))}
-    </ul>
-  );
+    return (
+        <ul className={styles.toolBar}>
+            {registeredTools.map((item) => (
+                <ToolBarButton
+                    key={item.id}
+                    tool={item}
+                    active={activeToolsIds.includes(item.id)}
+                    onClick={onClick}
+                />
+            ))}
+        </ul>
+    );
 };
