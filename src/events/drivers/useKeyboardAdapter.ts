@@ -4,8 +4,6 @@ export const useKeyboardAdapter = () => {
     const { keyDown, keyUp } = useActions().events;
     const log = useLog();
 
-    log('useKeyboardDriver()');
-
     const handleKeyDown = (event: KeyboardEvent) => {
         log('keyDown', {
             altKey: event.altKey,
