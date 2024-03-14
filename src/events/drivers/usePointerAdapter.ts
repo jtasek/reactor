@@ -9,8 +9,6 @@ const LEFT_AND_RIGHT_BUTTON = 3;
 export const usePointerAdapter = () => {
     const log = useLog();
 
-    log('usePointerDriver()');
-
     let pointerDown = false;
     let isDragging = false;
     const [lastDistance, setLastDistance] = useState(ZERO_DISTANCE);
@@ -65,7 +63,9 @@ export const usePointerAdapter = () => {
     };
 
     const handlePointerDown = (event) => {
-        if (contextMenu.visible) return;
+        if (contextMenu.visible) {
+            return;
+        }
 
         log('handlePointerDown', {
             button: event.button,
@@ -115,7 +115,6 @@ export const usePointerAdapter = () => {
         if (pointerDown) {
             pointerDown = false;
             actions.tools.executeToolCommands();
-            actions.tools.resetTools();
             setLastDistance(ZERO_DISTANCE);
         }
     };
