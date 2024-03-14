@@ -60,7 +60,7 @@ export const DesignSelect: FC = () => {
 export const SelectCommand: Command = {
     id: 'select',
     name: 'Select',
-    category: 'shapes',
+    category: 'tools',
     description: 'Selects shapes and groups ',
     icon: {
         group: 'action',
