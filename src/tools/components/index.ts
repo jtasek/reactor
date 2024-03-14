@@ -1,4 +1,3 @@
-import { FC } from 'react';
 import { Tool } from '../types';
 
 import { CircleTool } from './Circle';
