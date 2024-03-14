@@ -237,7 +237,7 @@ export type Action = (context: Context) => void;
 
 export interface Command {
     id: string;
-    category?: string;
+    category: string;
     description?: string;
     icon?: Icon;
     name: string;
