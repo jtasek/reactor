@@ -1,7 +1,10 @@
 import { useEffect } from 'react';
 import { usePointerAdapter } from './usePointerAdapter';
+import { useLog } from '../../app/hooks';
 
 export const usePointerDriver = () => {
+    const log = useLog();
+
     const {
         handleContextMenu,
         handleMouseWheel,
@@ -24,6 +27,8 @@ export const usePointerDriver = () => {
         window.addEventListener('touchstart', handleTouchStart);
         window.addEventListener('wheel', handleMouseWheel);
 
+        log('Pointer driver installed.');
+
         return () => {
             window.removeEventListener('contextmenu', handleContextMenu);
             window.removeEventListener('pointerdown', handlePointerDown);
@@ -34,6 +39,8 @@ export const usePointerDriver = () => {
             window.removeEventListener('touchmove', handleTouchMove);
             window.removeEventListener('touchstart', handleTouchStart);
             window.removeEventListener('wheel', handleMouseWheel);
+
+            log('Pointer driver removed.');
         };
     }, []);
 };
