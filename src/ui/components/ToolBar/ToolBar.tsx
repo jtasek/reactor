@@ -16,10 +16,10 @@ export const ToolBar: FC<Props> = ({ onClick }) => {
         <ul className={styles.toolBar}>
             {registeredTools.map((item) => (
                 <ToolBarButton
-                    key={item.id}
-                    tool={item}
                     active={activeToolsIds.includes(item.id)}
+                    key={item.id}
                     onClick={onClick}
+                    tool={item}
                 />
             ))}
         </ul>
