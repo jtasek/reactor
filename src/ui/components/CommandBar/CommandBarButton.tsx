@@ -15,7 +15,7 @@ export const CommandBarButton: FC<Props> = ({ active, command, onClick }) => {
     const enabled = canExecuteCommand(command.canExecute);
 
     return (
-        <li className={styles.commandBarButton} aria-disabled={!enabled}>
+        <li className={styles.commandBarButton} aria-disabled={!enabled} aria-current={active}>
             {enabled && (
                 <a
                     href="#"
