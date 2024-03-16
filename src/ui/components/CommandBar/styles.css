@@ -28,18 +28,13 @@
 }
 
 .commandBarButton:hover {
-    background-color: var(--control-background);
+    background-color: var(--control-background-active);
 }
 
-.commandBarButton a {
+.commandBarButton a, div {
     align-items: center;
     display: flex;
     flex-direction: column;
-    justify-content: baseline;
-}
-
-.commandBarButton svg {
-    /* display: block; */
 }
 
 .delimiter {
