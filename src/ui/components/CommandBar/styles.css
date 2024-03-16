@@ -1,49 +1,60 @@
 .commandBar {
-  backdrop-filter: var(--backdrop-filter);
-  background-color: var(--control-background);
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow);
-  color: var(--text-color);
-  display: flex;
-  font-size: 0.75rem;
-  left: 450px;
-  padding: 2px;
-  position: absolute;
-  top: 10px;
-  transition: all 0.2s ease-in-out;
-  user-select: none;
-  z-index: 100;
+    backdrop-filter: var(--backdrop-filter);
+    background-color: var(--control-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    color: var(--text-color);
+    display: flex;
+    font-size: 0.75rem;
+    left: 50px;
+    padding: 2px;
+    position: absolute;
+    top: 10px;
+    transition: all 0.2s ease-in-out;
+    user-select: none;
+    z-index: 100;
 }
 
 .commandBarButton {
-  align-items: center;
-  border-radius: 5px;
-  display: flex;
-  flex-direction: column;
-  justify-items: center;
-  margin: 5px;
-  min-width: 50px;
-  padding: 2px;
-  transition: opacity 0.5s ease-in-out;
+    align-items: center;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-items: center;
+    margin: 5px;
+    min-width: 50px;
+    padding: 2px;
+    transition: opacity 0.5s ease-in-out;
 }
 
 .commandBarButton:hover {
-  background-color: var(--control-background);
+    background-color: var(--control-background);
 }
 
 .commandBarButton a {
-  display: flex;
-  flex-direction: column;
-  justify-content: baseline;
-  align-items: center;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: baseline;
 }
 
 .commandBarButton svg {
-  /* display: block; */
+    /* display: block; */
 }
 
 .delimiter {
-  margin: 10px 5px 10px 5px;
-  border: 1px dashed;
-  border-color: var(--control-delimiter);
+    border-color: var(--control-delimiter);
+    border: 1px dashed;
+    margin: 10px 5px 10px 5px;
+}
+
+.commandBarButton[aria-current="true"] {
+    background-color: var(--control-background-active);
+}
+
+.commandBarButton[aria-disabled="true"] {
+    background-color: var(--control-background-disabled);
+    cursor: default;
+    pointer-events: none;
+    text-decoration: none;
 }
