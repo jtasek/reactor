@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
-import { Icon } from '../Icon';
 import styles from './styles.css';
 import { Command } from 'src/app/types';
+import { Icon } from '../Icon';
 import { useActions } from 'src/app/hooks';
 
 export interface Props {
@@ -31,10 +31,10 @@ export const CommandBarButton: FC<Props> = ({ active, command, onClick }) => {
                 </a>
             )}
             {!enabled && (
-                <div>
+                <>
                     <Icon icon={command.icon} />
                     {command.name}
-                </div>
+                </>
             )}
         </li>
     );
