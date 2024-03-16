@@ -4,15 +4,15 @@ export { ConnectedContextMenu as ContextMenu } from './ContextMenu';
 export { ConnectedControlPanel as ControlPanel } from './ControlPanel';
 export { ConnectedCursor as Cursor } from './Cursor';
 export { ConnectedDataView as DataView } from './DataView';
-export { Dialog } from './Dialog';
 export { ConnectedDocumentInfo as DocumentInfo } from './DocumentInfo';
 export { ConnectedExplorer as Explorer } from './Explorer';
+export { ConnectedOverlay as Overlay } from './Overlay';
+export { Dialog } from './Dialog';
 export { GroupPanelContainer as GroupPanel } from './GroupPanel';
 export { LayerPanelContainer as LayerPanel } from './LayerPanel';
 export { MenuBarContainer as MenuBar } from './MenuBar';
 export { MiniMapContainer as Minimap } from './MiniMap';
 export { NavBarContainer as NavBar } from './NavBar';
-//export { Overlay } from './Overlay';
 
 export { Canvas } from './Surface';
 export { Layout } from './Layout';
