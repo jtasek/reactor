@@ -231,9 +231,9 @@ export interface Icon {
     size: number;
 }
 
+export type Action = (context: Context) => void;
 export type ActionGuard = (context: Context) => boolean;
 export type ActionWithParam<T> = (context: Context, param: T) => void;
-export type Action = (context: Context) => void;
 
 export interface Command {
     id: string;
