@@ -1,4 +1,5 @@
-import { Command } from 'src/app/types';
+import type { Command } from 'src/app/types';
+import type { Context } from '../index';
 import { Overmind } from 'overmind';
 import {
     DeleteCommand,
@@ -12,12 +13,23 @@ import {
     ZoomOutCommand,
     ZoomResetCommand
 } from 'src/commands';
-import { Context } from '../index';
 
-const commands = new Map<string, Command>();
+import {
+    CircleCommand,
+    EllipseCommand,
+    ImageCommand,
+    LineCommand,
+    PenCommand,
+    RectCommand,
+    SelectCommand,
+    TextCommand
+} from 'src/tools';
 
+const commands: Record<string, Command> = {};
 export function registerCommand(command: Command) {
-    commands.set(command.id, command);
+    if (!commands[command.id]) {
+        commands[command.id] = command;
+    }
 }
 
 export function getCommands() {
@@ -30,6 +42,15 @@ export function getCommand(commandId: string) {
 
 function registerCommands(state, instance) {
     console.log('register commands');
+
+    registerCommand(CircleCommand);
+    registerCommand(EllipseCommand);
+    registerCommand(ImageCommand);
+    registerCommand(LineCommand);
+    registerCommand(PenCommand);
+    registerCommand(RectCommand);
+    registerCommand(SelectCommand);
+    registerCommand(TextCommand);
 
     registerCommand(DeleteCommand);
     registerCommand(CloneCommand);
