@@ -75,7 +75,7 @@ export const EllipseCommand: Command = {
     id: 'ellipse',
     name: 'Ellipse',
     category: 'shapes',
-    description: 'Draws and elliptic shape',
+    description: 'Draws an elliptic shape',
     icon: {
         group: 'image',
         name: 'panorama_fish_eye',
@@ -95,9 +95,6 @@ export const EllipseCommand: Command = {
 };
 
 export const EllipseTool: Tool = {
-    id: 'ellipse',
-    name: 'Ellipse',
-    description: 'Draw an ellipse',
     command: EllipseCommand,
     component: Ellipse,
     designComponent: DesignEllipse

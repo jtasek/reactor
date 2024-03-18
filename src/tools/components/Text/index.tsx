@@ -138,9 +138,6 @@ export const TextCommand: Command = {
 };
 
 export const TextTool: Tool = {
-    id: 'text',
-    name: 'Text',
-    description: 'Type a text',
     command: TextCommand,
     component: Text,
     designComponent: DesignText

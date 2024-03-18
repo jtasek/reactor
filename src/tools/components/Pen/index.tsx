@@ -77,9 +77,6 @@ export const PenCommand: Command = {
 };
 
 export const PenTool: Tool = {
-    id: 'pen',
-    name: 'Pen',
-    description: 'Draw a curve line',
     command: PenCommand,
     component: Pen,
     designComponent: DesignPen

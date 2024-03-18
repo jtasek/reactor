@@ -106,9 +106,6 @@ export const ImageCommand: Command = {
 };
 
 export const ImageTool: Tool = {
-    id: 'image',
-    name: 'Image',
-    description: 'Insert an image',
     command: ImageCommand,
     component: Image,
     designComponent: DesignImage

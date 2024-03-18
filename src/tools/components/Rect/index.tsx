@@ -100,9 +100,6 @@ export const RectCommand: Command = {
 };
 
 export const RectTool: Tool = {
-    id: 'rect',
-    name: 'Rectangle',
-    description: 'Draw a rectangle or square',
     command: RectCommand,
     component: Rect,
     designComponent: DesignRect

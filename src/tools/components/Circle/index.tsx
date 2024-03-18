@@ -104,9 +104,6 @@ export const CircleCommand: Command = {
 };
 
 export const CircleTool: Tool = {
-    id: 'circle',
-    name: 'Circle',
-    description: 'Draw a circle',
     command: CircleCommand,
     component: Circle,
     designComponent: DesignCircle

@@ -83,9 +83,6 @@ export const LineCommand: Command = {
 };
 
 export const LineTool: Tool = {
-    id: 'line',
-    name: 'Line',
-    description: 'Draw a line',
     command: LineCommand,
     component: Line,
     designComponent: DesignLine

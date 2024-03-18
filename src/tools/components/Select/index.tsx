@@ -78,9 +78,6 @@ export const SelectCommand: Command = {
 };
 
 export const SelectTool: Tool = {
-    id: 'select',
-    name: 'Select',
-    description: 'Select a shape or group',
     command: SelectCommand,
     designComponent: DesignSelect
 };
