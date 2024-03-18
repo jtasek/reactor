@@ -1,24 +1,21 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
 import { ToolBarButton } from './ToolBarButton';
-import { useTools } from 'src/app/hooks';
+import { useActions, useTools } from 'src/app/hooks';
 import { useRegisteredTools } from '../../../tools/components';
 
-export interface Props {
-    onClick: (toolId: string) => void;
-}
-
-export const ToolBar: FC<Props> = ({ onClick }) => {
+export const ToolBar: FC = () => {
+    const actions = useActions();
     const { activeToolsIds } = useTools();
-    const registeredTools = useRegisteredTools();
+    const tools = useRegisteredTools();
 
     return (
         <ul className={styles.toolBar}>
-            {registeredTools.map((item) => (
+            {tools.map((item) => (
                 <ToolBarButton
                     active={activeToolsIds.includes(item.id)}
                     key={item.id}
-                    onClick={onClick}
+                    onClick={() => actions.tools.activateTool(item.id)}
                     tool={item}
                 />
             ))}
