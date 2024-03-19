@@ -2,12 +2,12 @@ import type { Command } from 'src/app/types';
 import type { Context } from '../index';
 import { Overmind } from 'overmind';
 import {
-    DeleteCommand,
     CloneCommand,
-    MoveCommand,
+    DeleteCommand,
     GroupCommand,
-    UngroupCommand,
     LayerCommand,
+    MoveCommand,
+    UngroupCommand,
     UnlayerCommand,
     ZoomInCommand,
     ZoomOutCommand,
@@ -15,42 +15,51 @@ import {
 } from 'src/commands';
 
 import {
-    CircleCommand,
-    EllipseCommand,
-    ImageCommand,
-    LineCommand,
-    PenCommand,
-    RectCommand,
-    SelectCommand,
-    TextCommand
+    CircleTool,
+    EllipseTool,
+    ImageTool,
+    LineTool,
+    PenTool,
+    RectTool,
+    SelectTool,
+    TextTool
 } from 'src/tools';
 
+import { Tool } from '../../tools/types';
+
 const commands: Record<string, Command> = {};
+const tools: Record<string, Tool> = {};
+
 export function registerCommand(command: Command) {
     if (!commands[command.id]) {
         commands[command.id] = command;
     }
 }
 
-export function getCommands() {
-    return commands;
+export function getCommands(): Command[] {
+    return Object.values(commands);
 }
 
 export function getCommand(commandId: string) {
     return commands[commandId];
 }
 
+export function registerTool(tool: Tool) {
+    if (!tools[tool.id]) {
+        tools[tool.id] = tool;
+    }
+}
+
+export function getTools(): Tool[] {
+    return Object.values(tools);
+}
+
+export function getTool(toolId: string) {
+    return tools[toolId];
+}
+
 function registerCommands(state, instance) {
     console.log('register commands');
-
-    registerCommand(CircleCommand);
-    registerCommand(EllipseCommand);
-    registerCommand(ImageCommand);
-    registerCommand(LineCommand);
-    registerCommand(PenCommand);
-    registerCommand(RectCommand);
-    registerCommand(SelectCommand);
-    registerCommand(TextCommand);
 
     registerCommand(DeleteCommand);
     registerCommand(CloneCommand);
@@ -62,6 +71,19 @@ function registerCommands(state, instance) {
     registerCommand(ZoomInCommand);
     registerCommand(ZoomOutCommand);
     registerCommand(ZoomResetCommand);
+}
+
+function registerTools(state, instance) {
+    console.log('register tools');
+
+    registerTool(CircleTool);
+    registerTool(EllipseTool);
+    registerTool(ImageTool);
+    registerTool(LineTool);
+    registerTool(PenTool);
+    registerTool(RectTool);
+    registerTool(SelectTool);
+    registerTool(TextTool);
 }
 
 function loadLocalData(effects, state) {
@@ -94,8 +116,11 @@ export const onInitializeOvermind = (
     instance: Overmind<Context>
 ) => {
     registerCommands(state, instance);
+    registerTools(state, instance);
     registerRoutes(effects, actions);
+
     loadLocalData(effects, state);
+
     if (state.config.autoSave) {
         activateAutosave(instance, effects);
     }
