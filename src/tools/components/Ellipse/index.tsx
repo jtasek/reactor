@@ -95,7 +95,7 @@ export const EllipseCommand: Command = {
 };
 
 export const EllipseTool: Tool = {
-    command: EllipseCommand,
+    ...EllipseCommand,
     component: Ellipse,
     designComponent: DesignEllipse
 };
