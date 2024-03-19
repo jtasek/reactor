@@ -83,7 +83,7 @@ export const LineCommand: Command = {
 };
 
 export const LineTool: Tool = {
-    command: LineCommand,
+    ...LineCommand,
     component: Line,
     designComponent: DesignLine
 };
