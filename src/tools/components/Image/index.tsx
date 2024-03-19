@@ -106,7 +106,7 @@ export const ImageCommand: Command = {
 };
 
 export const ImageTool: Tool = {
-    command: ImageCommand,
+    ...ImageCommand,
     component: Image,
     designComponent: DesignImage
 };
