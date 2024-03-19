@@ -82,8 +82,8 @@ export const executeToolCommands = (context: Context) => {
         const tool = getToolById(toolId);
         console.log(`Execute tool command: ${toolId}`);
 
-        if (tool?.command.canExecute(context)) {
-            tool.command.execute(context);
+        if (tool?.canExecute(context)) {
+            tool.execute(context);
         }
     }
 };
