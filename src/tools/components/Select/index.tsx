@@ -78,6 +78,7 @@ export const SelectCommand: Command = {
 };
 
 export const SelectTool: Tool = {
-    command: SelectCommand,
+    ...SelectCommand,
+    component: Select,
     designComponent: DesignSelect
 };
