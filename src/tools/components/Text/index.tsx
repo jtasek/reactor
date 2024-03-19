@@ -138,7 +138,7 @@ export const TextCommand: Command = {
 };
 
 export const TextTool: Tool = {
-    command: TextCommand,
+    ...TextCommand,
     component: Text,
     designComponent: DesignText
 };
