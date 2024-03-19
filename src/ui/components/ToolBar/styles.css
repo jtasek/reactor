@@ -8,8 +8,10 @@
   height: 100%;
   justify-content: flex-start;
   list-style: none;
+  transition: all 0.2s ease-in-out;
   user-select: none;
   width: 50px;
+  z-index: var(--control-zindex);
 }
 
 .toolBarButton {
