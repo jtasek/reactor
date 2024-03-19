@@ -28,7 +28,8 @@ body,
   --control-background-active: rgba(255, 255, 255, 1);
   --control-background-disabled: rgba(255, 255, 255, .3);
   --control-width: 200px;
-  --control-delimiter: rgba(0, 0, 0, .5);
+  --control-delimiter: rgba(0, 0, 0, .25);
+  --control-zindex: 100;
 }
 
 .control {
