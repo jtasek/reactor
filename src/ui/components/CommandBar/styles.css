@@ -6,7 +6,7 @@
     color: var(--text-color);
     display: flex;
     font-size: 0.75rem;
-    left: 50px;
+    left: 350px;
     padding: 2px;
     position: absolute;
     top: 10px;
@@ -38,8 +38,7 @@
 }
 
 .delimiter {
-    border-color: var(--control-delimiter);
-    border: 1px dashed;
+    border: 1px dashed var(--control-delimiter);
     margin: 10px 5px 10px 5px;
 }
 
