@@ -104,7 +104,7 @@ export const CircleCommand: Command = {
 };
 
 export const CircleTool: Tool = {
-    command: CircleCommand,
+    ...CircleCommand,
     component: Circle,
     designComponent: DesignCircle
 };
