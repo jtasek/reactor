@@ -8,11 +8,11 @@ import { newShapeName } from '../../../app/factories';
 import { stringifyPath } from 'src/app/utils';
 import { usePointer } from '../../../app/hooks';
 
-/** 
+/**
  * Draws a line based on path
- 
+
  <polyline points="the points on the polyline. Required." />
-  
+
 **/
 
 interface Props {
@@ -77,7 +77,7 @@ export const PenCommand: Command = {
 };
 
 export const PenTool: Tool = {
-    command: PenCommand,
+    ...PenCommand,
     component: Pen,
     designComponent: DesignPen
 };
