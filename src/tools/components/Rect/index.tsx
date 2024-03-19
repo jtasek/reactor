@@ -100,7 +100,7 @@ export const RectCommand: Command = {
 };
 
 export const RectTool: Tool = {
-    command: RectCommand,
+    ...RectCommand,
     component: Rect,
     designComponent: DesignRect
 };
