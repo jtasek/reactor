@@ -1,0 +1,5 @@
+.selectable {
+    fill: rgba(71, 74, 81, .3);
+    stroke: #0f7595;
+    stroke-width: 2;
+}
