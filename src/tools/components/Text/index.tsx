@@ -28,7 +28,7 @@ interface Props {
     name: string;
     position: Point;
     selected: boolean;
-    type: string;
+    type: 'text';
     value: string;
 }
 
