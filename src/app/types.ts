@@ -47,8 +47,10 @@ export type Vector = {
 };
 
 export type Box = {
-    topLeft: Point;
     bottomRight: Point;
+    height: number;
+    topLeft: Point;
+    width: number;
 };
 
 export enum Side {
@@ -112,7 +114,7 @@ export interface Shape {
     position: Point;
     selected: boolean;
     size?: Size;
-    type: string;
+    type: 'circle' | 'ellipse' | 'image' | 'line' | 'path' | 'pen' | 'rectangle' | 'text';
     visible: boolean;
 }
 
@@ -144,6 +146,16 @@ export interface Line extends Shape {
     end: Point;
     start: Point;
     type: 'line';
+}
+
+export interface Image extends Shape {
+    position: Point;
+    size: Size;
+    type: 'image';
+}
+
+export interface Pen extends Shape {
+    points: Point[];
 }
 
 export interface Link {
