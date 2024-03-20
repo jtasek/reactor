@@ -31,7 +31,7 @@ interface Props {
     selected: boolean;
     size: Size;
     source: string;
-    type: string;
+    type: 'image';
 }
 
 export const createImageProps = (
