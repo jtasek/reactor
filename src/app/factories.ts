@@ -34,7 +34,7 @@ import {
     User
 } from './types';
 
-export const getDefaultName = (type: string): string => 'Rect';
+export const getDefaultName = (type: string): string => 'rectangle';
 
 const componentSequence = new Sequence();
 const documentSequence = new Sequence();
@@ -68,7 +68,7 @@ export function getCurrentUserName(): string {
 }
 
 export function getDefaultType(): string {
-    return 'rect';
+    return 'rectangle';
 }
 
 export function createNotification(options: Partial<Notification> = {}): Notification {
