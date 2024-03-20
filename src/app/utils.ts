@@ -123,11 +123,7 @@ export function getPathBoundingBox({ points }: Pen) {
     };
 }
 
-export function getBoundingBox(shape: Partial<Shape>): Box | undefined {
-    if (!shape) {
-        return undefined;
-    }
-
+export function getBoundingBox(shape: Partial<Shape>): Box {
     if (shape.type === 'line') {
         return getLineBoundingBox(shape as Line);
     }
