@@ -27,7 +27,7 @@ interface Props {
     position: Point;
     selected: boolean;
     size: Size;
-    type: string;
+    type: 'rectangle';
 }
 
 export const createRectProps = (
@@ -43,7 +43,7 @@ export const createRectProps = (
         position: designMode ? scaledTopLeft : topLeft,
         selected: true,
         size: designMode ? scaledSize : size,
-        type: 'rect'
+        type: 'rectangle'
     };
 };
 
@@ -77,7 +77,7 @@ export const DesignRect: FC = () => {
 };
 
 export const RectCommand: Command = {
-    id: 'rect',
+    id: 'rectangle',
     name: 'Rectangle',
     category: 'shapes',
     description: 'Draws a rectangle or square',
