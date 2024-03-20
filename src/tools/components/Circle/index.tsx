@@ -23,7 +23,7 @@ interface Props {
     position: Point;
     radius: number;
     selected: boolean;
-    type: string;
+    type: 'circle';
 }
 
 export const createCircleProps = (
