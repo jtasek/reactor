@@ -24,7 +24,7 @@ interface Props {
     position: Point;
     radius: Point;
     selected: boolean;
-    type: string;
+    type: 'ellipse';
 }
 
 export const createEllipseProps = (
