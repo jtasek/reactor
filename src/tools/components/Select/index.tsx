@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 
-import inlineStyles from './inlineStyles';
+import styles from './styles.css';
 import type { Point, Size } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
 import { Command } from 'src/app/types';
@@ -41,7 +41,7 @@ export const Select: FC<Props> = ({ key, name, position, size }) => {
             height={size.height}
             key={key}
             strokeDasharray="5, 5"
-            style={inlineStyles}
+            className={styles.selectable}
             width={size.width}
             x={position.x}
             y={position.y}
