@@ -1,4 +1,4 @@
-import { Box, Circle, Line, Point, Rectangle, Shape, Vector } from './types';
+import { Box, Circle, Ellipse, Line, Pen, Point, Rectangle, Shape, Vector } from './types';
 
 export function stringifyPath(path: Point[]): string {
     return path.map((point: Point) => `${point.x}, ${point.y}`).join(' ');
@@ -16,38 +16,111 @@ export function getDistance(p1: Point, p2: Point): number {
     return Math.hypot(Math.abs(p2.x - p1.x), Math.abs(p2.y - p1.y));
 }
 
-export function getBoundingBoxForRectangle(rectangle: Rectangle): Box {
+export function getRectBoundingBox(rectangle: Rectangle): Box {
+    const topLeft = rectangle.position;
+    const bottomRight = {
+        x: rectangle.position.x + rectangle.size.width,
+        y: rectangle.position.y + rectangle.size.height
+    };
+
     return {
-        topLeft: rectangle.position,
-        bottomRight: {
-            x: rectangle.position.x + rectangle.size.width,
-            y: rectangle.position.y + rectangle.size.height
+        topLeft,
+        bottomRight,
+        width: rectangle.size.width,
+        height: rectangle.size.height
+    };
+}
+
+export function getCircleBoundingBox(circle: Circle): Box {
+    const topLeft = {
+        x: circle.position.x - circle.radius,
+        y: circle.position.y - circle.radius
+    };
+    const bottomRight = {
+        x: circle.position.x + circle.radius,
+        y: circle.position.y + circle.radius
+    };
+    const diameter = circle.radius * 2;
+
+    return {
+        topLeft,
+        bottomRight,
+        width: diameter,
+        height: diameter
+    };
+}
+
+export function getEllipseBoundingBox(ellipse: Ellipse): Box {
+    const topLeft = {
+        x: ellipse.position.x - ellipse.radius.x,
+        y: ellipse.position.y - ellipse.radius.y
+    };
+    const bottomRight = {
+        x: ellipse.position.x + ellipse.radius.x,
+        y: ellipse.position.y + ellipse.radius.y
+    };
+    const width = ellipse.radius.x * 2;
+    const height = ellipse.radius.y * 2;
+
+    return {
+        topLeft,
+        bottomRight,
+        width,
+        height
+    };
+}
+
+export function getLineBoundingBox(line: Line): Box {
+    const topLeft = {
+        x: Math.min(line.start.x, line.end.x),
+        y: Math.min(line.start.y, line.end.y)
+    };
+    const bottomRight = {
+        x: Math.max(line.start.x, line.end.x),
+        y: Math.max(line.start.y, line.end.y)
+    };
+    const width = Math.abs(line.end.x - line.start.x);
+    const height = Math.abs(line.end.y - line.start.y);
+
+    return { topLeft, bottomRight, height, width };
+}
+
+export function getPathBoundingBox({ points }: Pen) {
+    if (points.length === 0) {
+        return {
+            topLeft: { x: 0, y: 0 },
+            bottomRight: { x: 0, y: 0 },
+            width: 0,
+            height: 0
+        };
+    }
+
+    const { minX, minY, maxX, maxY } = points.reduce(
+        (acc, { x, y }) => ({
+            minX: Math.min(acc.minX, x),
+            minY: Math.min(acc.minY, y),
+            maxX: Math.max(acc.maxX, x),
+            maxY: Math.max(acc.maxY, y)
+        }),
+        {
+            minX: points[0].x,
+            minY: points[0].y,
+            maxX: points[0].x,
+            maxY: points[0].y
         }
-    };
-}
+    );
 
-export function getBoundingBoxForCircle(circle: Circle): Box {
+    const topLeft = { x: minX, y: minY };
+    const bottomRight = { x: maxX, y: maxY };
+    const width = maxX - minX;
+    const height = maxY - minY;
+
     return {
-        topLeft: { x: circle.position.x - circle.radius, y: circle.position.y - circle.radius },
-        bottomRight: { x: circle.position.x + circle.radius, y: circle.position.y + circle.radius }
+        topLeft,
+        bottomRight,
+        width,
+        height
     };
-}
-
-export function getBoundingBoxForEllipse(ellipse: Ellipse): Box {
-    return {
-        topLeft: {
-            x: ellipse.position.x - ellipse.radius.x,
-            y: ellipse.position.y - ellipse.radius.y
-        },
-        bottomRight: {
-            x: ellipse.position.x + ellipse.radius.x,
-            y: ellipse.position.y + ellipse.radius.y
-        }
-    };
-}
-
-export function getBoundingBoxForLine(line: Line): Box {
-    return { topLeft: line.start, bottomRight: line.end };
 }
 
 export function getBoundingBox(shape: Partial<Shape>): Box | undefined {
@@ -56,19 +129,23 @@ export function getBoundingBox(shape: Partial<Shape>): Box | undefined {
     }
 
     if (shape.type === 'line') {
-        return getBoundingBoxForLine(shape as Line);
+        return getLineBoundingBox(shape as Line);
     }
 
     if (shape.type === 'circle') {
-        return getBoundingBoxForCircle(shape as Circle);
+        return getCircleBoundingBox(shape as Circle);
     }
 
     if (shape.type === 'ellipse') {
-        return getBoundingBoxForEllipse(shape as Ellipse);
+        return getEllipseBoundingBox(shape as Ellipse);
+    }
+
+    if (shape.type === 'pen') {
+        return getPathBoundingBox(shape as Pen);
     }
 
     // image, rect, text
-    return getBoundingBoxForRectangle(shape as Rectangle);
+    return getRectBoundingBox(shape as Rectangle);
 }
 
 export function isPointInBox(p: Point, shape: Partial<Shape>): boolean {
@@ -128,11 +205,6 @@ export function isRectangleInBox(box1: Box, box2: Box): boolean {
         box1.topLeft.y >= box2.topLeft.y &&
         box1.bottomRight.y <= box2.bottomRight.y
     );
-}
-
-export interface Ellipse {
-    position: Point;
-    radius: Point;
 }
 
 export function isEllipseInBox(ellipse: Ellipse, box: Box): boolean {
