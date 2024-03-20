@@ -132,7 +132,8 @@ export const resizeShape = (
     const diffy = pointer.current.y - shape.position.y;
 
     if (shape.type === 'circle') {
-        (shape as Circle).radius = Math.max(diffx, diffy);
+        const radiusChange = Math.sqrt(Math.pow(diffx, 2) + Math.pow(diffy, 2));
+        (shape as Circle).radius = (shape as Circle).radius + radiusChange;
         return;
     }
 
