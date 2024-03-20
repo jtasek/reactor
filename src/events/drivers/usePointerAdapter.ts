@@ -115,6 +115,7 @@ export const usePointerAdapter = () => {
         if (pointerDown) {
             pointerDown = false;
             actions.tools.executeToolCommands();
+            actions.tools.resetTools();
             setLastDistance(ZERO_DISTANCE);
         }
     };
