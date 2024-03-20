@@ -20,7 +20,7 @@ interface Props {
     name: string;
     points: Point[];
     selected: true;
-    type: string;
+    type: 'pen';
 }
 
 export const createPenProps = ({ path, scaledPath }: Pointer, designMode = false): Props => {
