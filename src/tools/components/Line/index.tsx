@@ -17,7 +17,7 @@ interface Props {
     name: string;
     selected: boolean;
     start: Point;
-    type: string;
+    type: 'line';
 }
 
 export const createLineProps = ({ start, current }: Pointer, designMode = false): Props => {
