@@ -1,7 +1,8 @@
-import { createElement, FC, ReactNode } from 'react';
+import React, { FC } from 'react';
 import { useShape } from 'src/app/hooks';
-import { getComponentByType, getToolById } from 'src/tools/components';
-import { Resizable, Selectable } from '../Selectable/Selectable';
+import { getComponentByType } from 'src/tools/components';
+import { Selectable } from '../Selectable/Selectable';
+import { Resizable } from '../Selectable/Resizable';
 
 interface Props {
     shapeId: string;
@@ -9,30 +10,18 @@ interface Props {
 
 export const Shape: FC<Props> = ({ shapeId }) => {
     const shape = useShape(shapeId);
-    const component = getComponentByType(shape.type);
+    const Component = getComponentByType(shape.type);
 
-    if (!component) {
+    if (!Component) {
         console.error(`Component ${shape.type} not found`);
         return null;
     }
 
-    if (shape.selected) {
-        return createElement(
-            Resizable,
-            {
-                shape: shape,
-                key: `${shape.type}-${shape.id}`
-            },
-            createElement(component, shape)
-        );
-    }
-
-    return createElement(
-        Selectable,
-        {
-            shape: shape,
-            key: `${shape.type}-${shape.id}`
-        },
-        createElement(component, shape)
+    return (
+        <>
+            <Component {...shape} />
+            <Selectable key={`selectable-${shape.type}-${shape.id}`} shape={shape} />
+            <Resizable key={`resizable-${shape.type}-${shape.id}`} shape={shape} />
+        </>
     );
 };
