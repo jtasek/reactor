@@ -107,7 +107,7 @@ export const usePointerAdapter = () => {
 
         if (isDragging) {
             isDragging = false;
-            actions.events.endDragging({ x: event.clientX, y: event.clientY });
+            actions.events.endDragging();
         } else {
             actions.unselectShapes();
         }
