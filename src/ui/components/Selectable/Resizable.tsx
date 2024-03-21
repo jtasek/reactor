@@ -53,29 +53,44 @@ export const Resizable: FC<Props> = ({ shape }) => {
 
     return (
         <>
-            <Handle key="topLeft" position={topLeft} type="topLeft" shapeId={shape.id} />
-            <Handle key="middleTop" position={middleTop} type="middleTop" shapeId={shape.id} />
-            <Handle key="topRight" position={topRight} type="topRight" shapeId={shape.id} />
+            <Handle key="topLeft" position={topLeft} handlerType="topLeft" shapeId={shape.id} />
+            <Handle
+                key="middleTop"
+                position={middleTop}
+                handlerType="middleTop"
+                shapeId={shape.id}
+            />
+            <Handle key="topRight" position={topRight} handlerType="topRight" shapeId={shape.id} />
             <Handle
                 key="middleRight"
                 position={middleRight}
-                type="middleRight"
+                handlerType="middleRight"
                 shapeId={shape.id}
             />
             <Handle
                 key="bottomRight"
                 position={bottomRight}
-                type="bottomRight"
+                handlerType="bottomRight"
                 shapeId={shape.id}
             />
             <Handle
                 key="middleBottom"
                 position={middleBottom}
-                type="middleBottom"
+                handlerType="middleBottom"
                 shapeId={shape.id}
             />
-            <Handle key="bottomLeft" position={bottomLeft} type="bottomLeft" shapeId={shape.id} />
-            <Handle key="middleLeft" position={middleLeft} type="middleLeft" shapeId={shape.id} />
+            <Handle
+                key="bottomLeft"
+                position={bottomLeft}
+                handlerType="bottomLeft"
+                shapeId={shape.id}
+            />
+            <Handle
+                key="middleLeft"
+                position={middleLeft}
+                handlerType="middleLeft"
+                shapeId={shape.id}
+            />
         </>
     );
 };
