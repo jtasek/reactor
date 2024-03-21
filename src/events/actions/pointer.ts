@@ -21,14 +21,15 @@ export const updateCurrentPosition: ActionWithParam<Point> = (context, position)
     updatePath(context, position);
 };
 
-export const endDragging: ActionWithParam<Point> = ({ state }) => {
+export const endDragging: Action = ({ state }) => {
     state.events.pointer.dragging = false;
 };
 
-export const resetDragging: ActionWithParam<Point> = ({ state }) => {
+export const resetDragging: Action = ({ state }) => {
     const pointer = state.events.pointer;
-    pointer.dragging = false;
     pointer.start = { x: 0, y: 0 };
     pointer.current = { x: 0, y: 0 };
-    pointer.path.length = 0;
+    pointer.path = [];
+
+    console.log('pointer', pointer);
 };
