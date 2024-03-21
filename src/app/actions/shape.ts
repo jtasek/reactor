@@ -1,5 +1,5 @@
 import type { Pointer } from 'src/events/types';
-import { Action, ActionWithParam, Application, Circle, Shape } from '../types';
+import { Action, ActionWithParam, Application, Circle, Point, Shape } from '../types';
 import { Context } from '../index';
 import { createShape } from '../factories';
 import { getBoundingBox, overlaps, isPointInBox } from '../utils';
@@ -121,81 +121,81 @@ export const resizeShape = (
     { state }: Context,
     payload: {
         shapeId: string;
-        type: string;
-        pointer: Pointer;
+        handlerType: string;
+        position: Point;
     }
 ) => {
-    const { shapeId, type, pointer } = payload;
+    const { shapeId, handlerType, position } = payload;
     const shape = getShape(state, shapeId);
 
-    const diffx = pointer.current.x - shape.position.x;
-    const diffy = pointer.current.y - shape.position.y;
+    const diffx = position.x - shape.position.x;
+    const diffy = position.y - shape.position.y;
 
     if (shape.type === 'circle') {
         const radiusChange = Math.sqrt(Math.pow(diffx, 2) + Math.pow(diffy, 2));
-        (shape as Circle).radius = (shape as Circle).radius + radiusChange;
+        (shape as Circle).radius = radiusChange;
         return;
     }
 
     const topLeft = shape.position;
     const bottomRight = { x: topLeft!.x + shape.size!.width, y: topLeft!.y + shape.size!.height };
 
-    switch (type) {
+    switch (handlerType) {
         case 'topLeft':
-            if (pointer.current.y < bottomRight.y) {
-                shape.position!.y = pointer.current.y;
+            if (position.y < bottomRight.y) {
+                shape.position!.y = position.y;
                 shape.size!.height -= diffy;
             }
-            if (pointer.current.x < bottomRight.x) {
-                shape.position!.x = pointer.current.x;
+            if (position.x < bottomRight.x) {
+                shape.position!.x = position.x;
                 shape.size!.width = shape.size!.width - diffx;
             }
             break;
         case 'middleTop':
-            if (pointer.current.y < bottomRight.y) {
-                shape.position!.y = pointer.current.y;
+            if (position.y < bottomRight.y) {
+                shape.position!.y = position.y;
                 shape.size!.height -= diffy;
             }
             break;
         case 'topRight':
-            if (pointer.current.x > topLeft!.x) {
+            if (position.x > topLeft!.x) {
                 shape.size!.width = diffx;
             }
-            if (pointer.current.y < bottomRight!.y) {
-                shape.position!.y = pointer.current.y;
+            if (position.y < bottomRight!.y) {
+                shape.position!.y = position.y;
                 shape.size!.height -= diffy;
             }
             break;
         case 'middleRight':
-            if (pointer.current.x > shape.position!.x) {
+            if (position.x > shape.position!.x) {
                 shape.size!.width = diffx;
             }
             break;
         case 'bottomRight':
-            if (pointer.current.x > shape.position!.x) {
+            if (position.x > shape.position!.x) {
                 shape.size!.width = diffx;
             }
-            if (pointer.current.y > shape.position!.y) {
+            if (position.y > shape.position!.y) {
                 shape.size!.height = diffy;
             }
             break;
         case 'middleBottom':
-            if (pointer.current.y > shape.position!.y) {
+            if (position.y > shape.position!.y) {
                 shape.size!.height = diffy;
             }
             break;
         case 'bottomLeft':
-            if (pointer.current.x < bottomRight!.x) {
-                shape.position!.x = pointer.current.x;
+            if (position.x < bottomRight!.x) {
+                shape.position!.x = position.x;
                 shape.size!.width = shape.size!.width - diffx;
             }
-            if (pointer.current.y > topLeft!.y) {
+            if (position.y > topLeft!.y) {
                 shape.size!.height = diffy;
             }
             break;
         case 'middleLeft':
-            if (pointer.current.x < bottomRight!.x) {
-                shape.position!.x = pointer.current.x;
+            if (position.x < bottomRight!.x) {
+                shape.position!.x = position.x;
                 shape.size!.width = shape.size!.width - diffx;
             }
             break;
