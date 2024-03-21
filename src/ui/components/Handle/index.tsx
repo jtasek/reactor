@@ -8,17 +8,17 @@ export interface Props {
     shapeId: string;
     position: Point;
     size?: number;
-    type: ResizeHandlerType;
+    handlerType: ResizeHandlerType;
 }
 
-export const Handle: FC<Props> = ({ shapeId, position, type, size = 5 }) => {
+export const Handle: FC<Props> = ({ shapeId, position, handlerType, size = 5 }) => {
     const { resizeShape } = useActions();
     const pointer = usePointer();
     const [active, setActive] = useState(false);
 
     useEffect(() => {
         if (active) {
-            resizeShape({ shapeId, type, pointer });
+            resizeShape({ shapeId, handlerType, position: pointer.current });
         }
     }, [pointer.current]);
 
@@ -30,7 +30,7 @@ export const Handle: FC<Props> = ({ shapeId, position, type, size = 5 }) => {
         setActive(false);
     };
 
-    const classes = [styles.handle, styles[type]];
+    const classes = [styles.handle, styles[handlerType]];
 
     return (
         <circle
@@ -38,7 +38,7 @@ export const Handle: FC<Props> = ({ shapeId, position, type, size = 5 }) => {
             cx={position.x}
             cy={position.y}
             r={size}
-            data-type={type}
+            data-type={handlerType}
             fill={active ? 'red' : 'blue'}
             onMouseDown={handleMouseDown}
             onMouseUp={handleMouseUp}
