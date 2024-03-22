@@ -1,5 +1,6 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
+    active: string;
     bottomLeft: string;
     bottomRight: string;
     handle: string;
