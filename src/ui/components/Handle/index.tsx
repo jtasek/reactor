@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useCallback, useEffect, useState } from 'react';
 
 import styles from './styles.css';
 import { Point, ResizeHandlerType } from '../../../app/types';
@@ -9,39 +9,44 @@ export interface Props {
     position: Point;
     size?: number;
     handlerType: ResizeHandlerType;
+    active: boolean;
+    onActivate: (handlerType: ResizeHandlerType) => void;
 }
 
-export const Handle: FC<Props> = ({ shapeId, position, handlerType, size = 5 }) => {
+export const Handle: FC<Props> = ({
+    shapeId,
+    position,
+    handlerType,
+    onActivate,
+    size = 5,
+    active = false
+}) => {
     const { resizeShape } = useActions();
-    const pointer = usePointer();
-    const [active, setActive] = useState(false);
+    const { current, dragging } = usePointer();
+
+    const handleResize = () => {
+        if (active && dragging) {
+            console.log('resize', { active, shapeId, handlerType, position: { ...position } });
+
+            resizeShape({ shapeId, handlerType, position: current });
+        }
+    };
 
     useEffect(() => {
-        if (active) {
-            resizeShape({ shapeId, handlerType, position: pointer.current });
-        }
-    }, [pointer.current]);
+        handleResize();
+    }, [current, dragging]);
 
-    const handleMouseDown = () => {
-        setActive(true);
-    };
-
-    const handleMouseUp = () => {
-        setActive(false);
-    };
-
-    const classes = [styles.handle, styles[handlerType]];
+    const classes = [styles.handle, styles[handlerType], active ? styles.active : undefined];
 
     return (
         <circle
+            key={handlerType}
             className={classes.join(' ')}
             cx={position.x}
             cy={position.y}
             r={size}
             data-type={handlerType}
-            fill={active ? 'red' : 'blue'}
-            onMouseDown={handleMouseDown}
-            onMouseUp={handleMouseUp}
+            onPointerDown={() => onActivate(handlerType)}
         />
     );
 };
