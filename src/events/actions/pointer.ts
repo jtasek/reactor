@@ -29,7 +29,7 @@ export const resetDragging: Action = ({ state }) => {
     const pointer = state.events.pointer;
     pointer.start = { x: 0, y: 0 };
     pointer.current = { x: 0, y: 0 };
-    pointer.path = [];
+    pointer.path.length = 0;
 
     console.log('pointer', pointer);
 };
