@@ -1,10 +1,12 @@
 .handle {
-  /* cornflowerblue; */
-  fill: rgba(91, 96, 192, 1);
   fill-opacity: 0.9;
-  stroke: ghostwhite;
+  fill: cornflowerblue;
   stroke-width: 1px;
-  cursor: e-resize;
+  stroke: ghostwhite;
+}
+
+.active {
+  fill: lightcoral;
 }
 
 /*[ auto | crosshair | default | pointer | move | e-resize | ne-resize | nw-resize | n-resize | se-resize | sw-resize | s-resize | w-resize| text | wait | help ]] */
