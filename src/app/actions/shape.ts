@@ -126,8 +126,8 @@ export const resizeShape = (
     }
 ) => {
     const { shapeId, handlerType, position } = payload;
-    const shape = getShape(state, shapeId);
 
+    const shape = getShape(state, shapeId);
     const diffx = position.x - shape.position.x;
     const diffy = position.y - shape.position.y;
 
