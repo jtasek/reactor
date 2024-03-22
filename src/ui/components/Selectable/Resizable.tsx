@@ -1,8 +1,8 @@
-import React, { FC } from 'react';
-import { getBoundingBox } from '../../../app/utils';
+import React, { FC, useState } from 'react';
+import { Box, ResizeHandlerType } from '../../../app/types';
 import { Handle } from '../Handle';
-import { Box } from '../../../app/types';
 import { Props } from './Selectable';
+import { getBoundingBox } from '../../../app/utils';
 
 function calcBoundingPoints(box: Box) {
     const topLeft = box.topLeft;
@@ -30,6 +30,8 @@ function calcBoundingPoints(box: Box) {
 }
 
 export const Resizable: FC<Props> = ({ shape }) => {
+    const [activeHandle, setActiveHandle] = useState<ResizeHandlerType>();
+
     if (!shape.selected) {
         return null;
     }
@@ -51,45 +53,76 @@ export const Resizable: FC<Props> = ({ shape }) => {
         middleBottom
     } = calcBoundingPoints(box);
 
+    const handlePointerDown = (handlerType: ResizeHandlerType) => {
+        console.log('handlePointerDown', handlerType);
+        setActiveHandle(handlerType);
+    };
+
     return (
         <>
-            <Handle key="topLeft" position={topLeft} handlerType="topLeft" shapeId={shape.id} />
             <Handle
-                key="middleTop"
+                key={`topLeft + ${shape.id}`}
+                active={activeHandle === 'topLeft'}
+                position={topLeft}
+                handlerType="topLeft"
+                shapeId={shape.id}
+                onActivate={handlePointerDown}
+            />
+            <Handle
+                key={`middleTop + ${shape.id}`}
+                active={activeHandle === 'middleTop'}
                 position={middleTop}
                 handlerType="middleTop"
                 shapeId={shape.id}
+                onActivate={handlePointerDown}
             />
-            <Handle key="topRight" position={topRight} handlerType="topRight" shapeId={shape.id} />
             <Handle
-                key="middleRight"
+                key="topRight"
+                active={activeHandle === 'topRight'}
+                position={topRight}
+                handlerType="topRight"
+                shapeId={shape.id}
+                onActivate={handlePointerDown}
+            />
+            <Handle
+                key={`middleRight + ${shape.id}`}
+                active={activeHandle === 'middleRight'}
                 position={middleRight}
                 handlerType="middleRight"
                 shapeId={shape.id}
+                onActivate={handlePointerDown}
             />
             <Handle
-                key="bottomRight"
+                key={`bottomRight + ${shape.id}`}
+                active={activeHandle === 'bottomRight'}
                 position={bottomRight}
                 handlerType="bottomRight"
                 shapeId={shape.id}
+                onActivate={handlePointerDown}
             />
             <Handle
-                key="middleBottom"
+                key={`middleBottom + ${shape.id}`}
+                active={activeHandle === 'middleBottom'}
                 position={middleBottom}
                 handlerType="middleBottom"
                 shapeId={shape.id}
+                onActivate={handlePointerDown}
             />
             <Handle
-                key="bottomLeft"
+                key={`bottomLeft + ${shape.id}`}
+                active={activeHandle === 'bottomLeft'}
                 position={bottomLeft}
                 handlerType="bottomLeft"
                 shapeId={shape.id}
+                onActivate={handlePointerDown}
             />
             <Handle
-                key="middleLeft"
+                key={`middleLeft + ${shape.id}`}
+                active={activeHandle === 'middleLeft'}
                 position={middleLeft}
                 handlerType="middleLeft"
                 shapeId={shape.id}
+                onActivate={handlePointerDown}
             />
         </>
     );
