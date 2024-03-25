@@ -64,7 +64,6 @@ export const selectShapeByPoint: Action = ({ state }) => {
 
 export const selectShapes: Action = ({ state }) => {
     const { topLeft, bottomRight } = state.events.pointer;
-
     const source = { topLeft, bottomRight };
 
     const shapes = Object.values(state.currentDocument.shapes);
