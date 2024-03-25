@@ -225,7 +225,10 @@ export function isEllipseInBox(ellipse: Ellipse, box: Box): boolean {
     );
 }
 
-export function overlaps(source?: Box, target?: Box) {
+export function overlaps(
+    source?: Pick<Box, 'topLeft' | 'bottomRight'>,
+    target?: Pick<Box, 'topLeft' | 'bottomRight'>
+) {
     if (!source || !target) {
         return false;
     }
