@@ -1,11 +1,11 @@
-import React, { FC } from 'react';
+import React, { FC, useEffect } from 'react';
 
 import styles from './styles.css';
 import type { Point, Size } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
 import { Command } from 'src/app/types';
 import { Pointer } from '../../../events/types';
-import { usePointer } from '../../../app/hooks';
+import { useActions, usePointer } from '../../../app/hooks';
 
 /**
  * Selects highlighted shapes
@@ -51,6 +51,11 @@ export const Select: FC<Props> = ({ key, name, position, size }) => {
 
 export const DesignSelect: FC = () => {
     const pointer = usePointer();
+    const { selectShapes } = useActions();
+
+    useEffect(() => {
+        selectShapes();
+    }, [pointer]);
 
     const { key, name, position, size, type } = createSelectProps(pointer, true);
 
