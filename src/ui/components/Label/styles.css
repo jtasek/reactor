@@ -1,0 +1,5 @@
+.label {
+    border-radius: var(--border-radius);
+    fill: cornflowerblue;
+    font-weight: bold;
+}
