@@ -1,8 +1,9 @@
 import React, { FC } from 'react';
-import { useShape } from 'src/app/hooks';
-import { getComponentByType } from 'src/tools/components';
-import { Selectable } from '../Selectable/Selectable';
+import { Label } from '../Label';
 import { Resizable } from '../Selectable/Resizable';
+import { Selectable } from '../Selectable/Selectable';
+import { getComponentByType } from 'src/tools/components';
+import { useShape } from 'src/app/hooks';
 
 interface Props {
     shapeId: string;
@@ -22,6 +23,7 @@ export const Shape: FC<Props> = ({ shapeId }) => {
             <Component {...shape} />
             <Selectable key={`selectable-${shape.type}-${shape.id}`} shape={shape} />
             <Resizable key={`resizable-${shape.type}-${shape.id}`} shape={shape} />
+            <Label key={`label-${shape.type}-${shape.id}`} shape={shape} />
         </>
     );
 };
