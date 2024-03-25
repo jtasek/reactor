@@ -53,7 +53,7 @@ export const Resizable: FC<Props> = ({ shape }) => {
         middleBottom
     } = calcBoundingPoints(box);
 
-    const handlePointerDown = (handlerType: ResizeHandlerType) => {
+    const handlePointerDown = (handlerType?: ResizeHandlerType) => {
         console.log('handlePointerDown', handlerType);
         setActiveHandle(handlerType);
     };
