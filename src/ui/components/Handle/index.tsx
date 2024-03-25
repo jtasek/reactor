@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useEffect, useState } from 'react';
+import React, { FC, useEffect } from 'react';
 
 import styles from './styles.css';
 import { Point, ResizeHandlerType } from '../../../app/types';
@@ -10,7 +10,7 @@ export interface Props {
     size?: number;
     handlerType: ResizeHandlerType;
     active: boolean;
-    onActivate: (handlerType: ResizeHandlerType) => void;
+    onActivate: (handlerType?: ResizeHandlerType) => void;
 }
 
 export const Handle: FC<Props> = ({
@@ -46,7 +46,14 @@ export const Handle: FC<Props> = ({
             cy={position.y}
             r={size}
             data-type={handlerType}
-            onPointerDown={() => onActivate(handlerType)}
+            onPointerDown={(e) => {
+                e.preventDefault();
+                onActivate(handlerType);
+            }}
+            onPointerUp={(e) => {
+                e.preventDefault();
+                onActivate(undefined);
+            }}
         />
     );
 };
