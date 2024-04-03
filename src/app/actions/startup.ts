@@ -7,6 +7,7 @@ import {
     GroupCommand,
     LayerCommand,
     MoveCommand,
+    PanCommand,
     UngroupCommand,
     UnlayerCommand,
     ZoomInCommand,
@@ -64,6 +65,7 @@ function registerCommands(state, instance) {
     registerCommand(DeleteCommand);
     registerCommand(CloneCommand);
     registerCommand(MoveCommand);
+    registerCommand(PanCommand);
     registerCommand(GroupCommand);
     registerCommand(UngroupCommand);
     registerCommand(LayerCommand);
