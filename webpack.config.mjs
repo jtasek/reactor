@@ -50,7 +50,7 @@ export const config = {
           '@teamsupercell/typings-for-css-modules-loader',
           {
             loader: 'css-loader',
-            options: { modules: true }
+            options: { modules: { namedExport: false, exportLocalsConvention: 'as-is' } }
           },
           'postcss-loader'
         ]
