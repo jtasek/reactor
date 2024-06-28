@@ -1,36 +1,24 @@
-import React, { useEffect } from 'react';
-import { render } from 'react-dom';
+import React, { FC } from 'react';
 import { Provider } from 'overmind-react';
 import { Shell } from './app/components/Shell';
 import { config } from './app';
 import { createOvermind } from 'overmind';
+import { createRoot } from 'react-dom/client';
 
 const overmind = createOvermind(config, {
   devtools: true
 });
 
-const App = () => (
+const App: FC = () => (
   <Provider value={overmind}>
     <Shell />
   </Provider>
 );
 
-render(<App />, document.getElementById('app'));
+const container = document.getElementById('app');
+const root = createRoot(container!);
+root.render(<App />);
 
-// export async function init(): Promise<void> {
-//   const { App } = await import('./app/components/App');
-//   render(
-//     // <AppContainer>
-//     <Provider value={overmind}>
-//       <App />
-//     </Provider>,
-//     // </AppContainer>,
-//     document.getElementById('app')
-//   );
-// }
-
-// init();
-
-// if (module.hot) {
-//   module.hot.accept('./app/components/App', () => init());
-// }
+if (module.hot) {
+  module.hot.accept()
+};
