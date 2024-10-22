@@ -52,6 +52,8 @@ export function createTextProps(
 
 export const Text: FC<Props> = ({ key, name, position, value, selected }) => {
     const lineHeight = 22;
+    // const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
+    console.log('rendering Pen');
 
     return (
         <text
