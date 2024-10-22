@@ -2,11 +2,11 @@ import React, { FC } from 'react';
 
 import styles from '../../styles.css';
 import type { Command, Point } from 'src/app/types';
-import type { Pointer } from '../../../events/types';
+import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
-import { newShapeName } from '../../../app/factories';
+import { newShapeName } from 'src/app/factories';
 import { stringifyPath } from 'src/app/utils';
-import { usePointer } from '../../../app/hooks';
+import { usePointer } from 'src/app/hooks';
 
 /**
  * Draws a line based on path
@@ -19,7 +19,7 @@ interface Props {
     key: string;
     name: string;
     points: Point[];
-    selected: true;
+    selected: boolean;
     type: 'pen';
 }
 
@@ -48,9 +48,9 @@ export const Pen: FC<Props> = ({ key, name, points, selected }) => {
 export const DesignPen: FC = () => {
     const pointer = usePointer();
 
-    const props = createPenProps(pointer, true);
+    const { key, name, points, selected, type } = createPenProps(pointer, true);
 
-    return <Pen {...props} />;
+    return <Pen key={key} name={name} points={points} selected={selected} type={type} />;
 };
 
 export const PenCommand: Command = {
