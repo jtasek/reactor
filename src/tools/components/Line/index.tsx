@@ -2,10 +2,10 @@ import React, { FC } from 'react';
 
 import styles from '../../styles.css';
 import type { Command, Point } from 'src/app/types';
-import type { Pointer } from '../../../events/types';
+import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
-import { newShapeName } from '../../../app/factories';
-import { usePointer } from '../../../app/hooks';
+import { newShapeName } from 'src/app/factories';
+import { usePointer } from 'src/app/hooks';
 
 /**
  * Draws a line from the start point to the end point
@@ -20,16 +20,16 @@ interface Props {
     type: 'line';
 }
 
-export const createLineProps = ({ start, current }: Pointer, designMode = false): Props => {
+export const createLineProps = ({ start, scaledStart, current, scaledCurrent }: Pointer, designMode = false): Props => {
     const name = designMode ? 'Line x' : newShapeName();
     const key = name.toLowerCase();
 
     return {
-        end: current,
+        end: designMode ? scaledCurrent : current,
         key,
         name,
         selected: true,
-        start,
+        start: designMode ? scaledStart : start,
         type: 'line'
     };
 };
@@ -54,16 +54,16 @@ export const Line: FC<Props> = ({ key, name, start, end, selected }) => {
 export const DesignLine: FC = () => {
     const pointer = usePointer();
 
-    const props = createLineProps(pointer, true);
+    const { key, name, start, end, selected, type } = createLineProps(pointer, true);
 
-    return <Line {...props} />;
+    return <Line key={key} name={name} start={start} end={end} selected={selected} type={type} />;
 };
 
 export const LineCommand: Command = {
     id: 'line',
     name: 'Line',
     category: 'shapes',
-    description: 'Draw a line',
+    description: 'Draw a straight line',
     icon: {
         group: 'action',
         name: 'timeline',
