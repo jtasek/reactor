@@ -21,7 +21,7 @@ import { useActions, usePointer } from 'src/app/hooks';
  **/
 
 interface Props {
-    id?: string;
+  
     key: string;
     name: string;
     position: Point;
@@ -47,7 +47,7 @@ export const createRectProps = (
     };
 };
 
-export const Rect: FC<Props> = ({ key, name, position, size, selected, id }) => {
+export const Rect: FC<Props> = ({ key, name, position, size, selected }) => {
     const actions = useActions();
     const shape = useRef(null);
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
@@ -71,9 +71,9 @@ export const Rect: FC<Props> = ({ key, name, position, size, selected, id }) => 
 export const DesignRect: FC = () => {
     const pointer = usePointer();
 
-    const { key, name, position, size, type } = createRectProps(pointer, true);
+    const { key, name, position, selected, size, type } = createRectProps(pointer, true);
 
-    return <Rect key={key} name={name} position={position} size={size} type={type} selected />;
+    return <Rect key={key} name={name} position={position} size={size} selected={selected} type={type} />;
 };
 
 export const RectCommand: Command = {
