@@ -2,10 +2,10 @@ import React, { FC, useEffect, useRef } from 'react';
 
 import styles from './styles.css';
 import type { Command, Point } from 'src/app/types';
-import type { Keyboard, Pointer } from '../../../events/types';
+import type { Keyboard, Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
 import { createEllipseProps } from '../Ellipse';
-import { newShapeName } from '../../../app/factories';
+import { newShapeName } from 'src/app/factories';
 import { useActions, useKeyboard, usePointer } from 'src/app/hooks';
 
 /**
@@ -32,11 +32,11 @@ interface Props {
     value: string;
 }
 
-export function createTextProps(
+export const createTextProps = (
     { current, scaledCurrent }: Pointer,
     { text }: Keyboard,
     designMode = false
-) {
+): Props => {
     const name = designMode ? 'Text x' : newShapeName();
     const key = name.toLowerCase();
 
@@ -52,12 +52,12 @@ export function createTextProps(
 
 export const Text: FC<Props> = ({ key, name, position, value, selected }) => {
     const lineHeight = 22;
-    // const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
-    console.log('rendering Pen');
+    const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
+    console.log('rendering Text');
 
     return (
         <text
-            className={styles.input}
+            className={className}
             data-cy={name}
             key={key}
             x={position.x}
@@ -69,17 +69,15 @@ export const Text: FC<Props> = ({ key, name, position, value, selected }) => {
 };
 
 export const DesignText: FC = () => {
-    const shape = useRef<HTMLInputElement>(null);
+    const shapeRef = useRef<HTMLInputElement>(null);
     const pointer = usePointer();
     const keyboard = useKeyboard();
     const {
         events: { startTyping, typing, endTyping }
     } = useActions();
 
-    const inputRef = useRef<HTMLInputElement | null>(null);
-
     useEffect(() => {
-        shape?.current?.focus();
+        shapeRef?.current?.focus();
     }, []);
 
     const { key, name, position, value, type } = createTextProps(pointer, keyboard);
@@ -94,7 +92,7 @@ export const DesignText: FC = () => {
                         data-cy={name}
                         key={key}
                         placeholder="Type something..."
-                        ref={shape}
+                        ref={shapeRef}
                         type={type}
                         value={value}
                         onBlur={endTyping}
@@ -133,7 +131,7 @@ export const TextCommand: Command = {
     execute: ({ actions, state }) => {
         console.log('TextCommand:execute');
 
-        const shape = createEllipseProps(state.events.pointer, true);
+        const shape = createTextProps(state.events.pointer, state.events.keyboard, true);
 
         actions.addShape(shape);
     }
