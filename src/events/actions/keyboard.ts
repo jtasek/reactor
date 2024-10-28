@@ -1,49 +1,26 @@
 import { ActionWithParam, Action } from 'src/app/types';
 
-export const typing: ActionWithParam<string> = (
-    {
-        state: {
-            events: { keyboard }
-        }
-    },
-    text
-) => {
-    keyboard.typing = true;
-    keyboard.text = text;
+export const typing: ActionWithParam<string> = ({ state: { events: { keyboard } } }, text) => {
+    if (keyboard.typing) {
+        keyboard.text = text;
+    }
 };
 
 const EMPTY_STRING = '';
-export const startTyping: Action = ({
-    state: {
-        events: { keyboard }
-    }
-}) => {
-    keyboard.text = EMPTY_STRING;
+
+export const startTyping: Action = ({ state: { events: { keyboard } } }) => {
     keyboard.typing = true;
 };
 
-export const endTyping: Action = ({
-    state: {
-        events: { keyboard }
-    },
-    actions
-}) => {
+export const endTyping: Action = ({ state: { events: { keyboard } }, actions }) => {
     actions.tools.executeToolCommands();
 
     keyboard.typing = false;
     keyboard.text = EMPTY_STRING;
-
     actions.tools.resetTools();
 };
 
-export const keyDown: ActionWithParam<KeyboardEvent> = (
-    {
-        state: {
-            events: { keyboard }
-        }
-    },
-    event
-) => {
+export const keyDown: ActionWithParam<KeyboardEvent> = ({ state: { events: { keyboard } } }, event) => {
     keyboard.altKey = event.altKey;
     keyboard.ctrlKey = event.ctrlKey;
     keyboard.key = event.key;
@@ -51,14 +28,7 @@ export const keyDown: ActionWithParam<KeyboardEvent> = (
     keyboard.shiftKey = event.shiftKey;
 };
 
-export const keyUp: ActionWithParam<KeyboardEvent> = (
-    {
-        state: {
-            events: { keyboard }
-        }
-    },
-    event
-) => {
+export const keyUp: ActionWithParam<KeyboardEvent> = ({ state: { events: { keyboard } } }, event) => {
     keyboard.altKey = event.altKey;
     keyboard.ctrlKey = event.ctrlKey;
     keyboard.key = event.key;
