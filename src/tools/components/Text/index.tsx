@@ -1,10 +1,9 @@
-import React, { FC, useEffect, useRef } from 'react';
+import React, { FC, useEffect, useRef, useState } from 'react';
 
 import styles from './styles.css';
 import type { Command, Point } from 'src/app/types';
 import type { Keyboard, Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
-import { createEllipseProps } from '../Ellipse';
 import { newShapeName } from 'src/app/factories';
 import { useActions, useKeyboard, usePointer } from 'src/app/hooks';
 
@@ -46,7 +45,7 @@ export const createTextProps = (
         position: designMode ? scaledCurrent : current,
         selected: true,
         type: 'text',
-        value: text
+        value: text,
     };
 }
 
@@ -77,36 +76,50 @@ export const DesignText: FC = () => {
     } = useActions();
 
     useEffect(() => {
-        shapeRef?.current?.focus();
+        //shapeRef?.current?.focus();
+        startTyping();
     }, []);
 
     const { key, name, position, value, type } = createTextProps(pointer, keyboard);
 
+    const handleBlur = (event) => {
+        event.preventDefault();
+        endTyping();
+    }
+
+    const handleChange = (event) => {
+        event.preventDefault();
+        typing(event.currentTarget.value);
+    }
+
+    const handleKeyUp = (event) => {
+        event.preventDefault();
+        if (event.key === 'Enter') {
+            endTyping();
+        }
+    }
+
+    const handleSubmit = (event) => {
+        event?.preventDefault();
+        return false;
+    }
+
     return (
         <g>
             <foreignObject width="100%" height="100%" x={position.x} y={position.y}>
-                <form>
+                <form onSubmit={handleSubmit}>
                     <input
                         autoFocus
-                        className={styles.input}
+                        className={styles.shape}
                         data-cy={name}
                         key={key}
                         placeholder="Type something..."
                         ref={shapeRef}
                         type={type}
                         value={value}
-                        onBlur={endTyping}
-                        onFocus={startTyping}
-                        onKeyUp={(event) => {
-                            if (event.key === 'Enter') {
-                                event.preventDefault();
-                                endTyping();
-                            }
-                        }}
-                        onChange={(event) => {
-                            event.preventDefault();
-                            typing(event.currentTarget.value);
-                        }}
+                        onBlur={handleBlur}
+                        onKeyUp={handleKeyUp}
+                        onChange={handleChange}
                     />
                 </form>
             </foreignObject>
