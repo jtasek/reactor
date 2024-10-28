@@ -1,4 +1,4 @@
-import { Box, Circle, Ellipse, Line, Pen, Point, Rectangle, Shape, Vector } from './types';
+import { Box, Circle, Ellipse, Line, Pen, Point, Rectangle, Shape, Text, Vector } from './types';
 
 export function stringifyPath(path: Point[]): string {
     return path.map((point: Point) => `${point.x}, ${point.y}`).join(' ');
@@ -123,6 +123,21 @@ export function getPathBoundingBox({ points }: Pen) {
     };
 }
 
+export function getTextBoundingBox(text: Text): Box {
+    const topLeft = text.position;
+    const bottomRight = {
+        x: text.position.x + 200,
+        y: text.position.y + 100
+    };
+
+    return {
+        topLeft,
+        bottomRight,
+        width: 200,
+        height: 100
+    };
+}
+
 export function getBoundingBox(shape: Partial<Shape>): Box {
     if (shape.type === 'line') {
         return getLineBoundingBox(shape as Line);
@@ -140,7 +155,11 @@ export function getBoundingBox(shape: Partial<Shape>): Box {
         return getPathBoundingBox(shape as Pen);
     }
 
-    // image, rect, text
+    if (shape.type === 'text') {
+        return getTextBoundingBox(shape as Text);
+    }
+
+    // image, rect
     return getRectBoundingBox(shape as Rectangle);
 }
 
