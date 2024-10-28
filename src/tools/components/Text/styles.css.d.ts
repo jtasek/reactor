@@ -1,6 +1,7 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
-    input: string;
+    selected: string;
+    shape: string;
   }
 }
 
