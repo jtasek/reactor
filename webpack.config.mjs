@@ -1,6 +1,6 @@
 import webpack from 'webpack';
 import path, { dirname } from 'path';
-import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
+import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
 import ESLintWebpackPlugin from 'eslint-webpack-plugin'
 
 import { fileURLToPath } from 'url';
@@ -12,16 +12,14 @@ const __dirname = dirname(__filename);
 export const config = {
   devtool: 'source-map',
   entry: [
-    // activate HMR for React
-    // 'react-hot-loader/patch',
     'webpack-hot-middleware/client',
-    // 'eventsource-polyfill',
+    'eventsource-polyfill',
     './src/index.tsx'
   ],
   output: {
     filename: 'bundle.js',
-    path: path.join(__dirname, 'dist')
-    // publicPath: '/'
+    path: path.join(__dirname, 'dist'),
+    publicPath: '/'
   },
   mode: NODE_ENV,
   module: {
@@ -35,7 +33,13 @@ export const config = {
           options: {
             jsc: {
               parser: {
-                syntax: 'typescript'
+                syntax: 'typescript',
+                tsx: true,
+              },
+              transform: {
+                react: {
+                  runtime: 'automatic'
+                }
               }
             }
           }
@@ -71,7 +75,6 @@ export const config = {
     // enable HMR globally
     new webpack.HotModuleReplacementPlugin(),
     new webpack.NoEmitOnErrorsPlugin(),
-    new ReactRefreshWebpackPlugin(),
     new ESLintWebpackPlugin(),
   ],
   optimization: {
@@ -85,13 +88,13 @@ export const config = {
       src: path.join(__dirname, 'src')
     },
     modules: [path.join(__dirname, 'src'), '.', 'node_modules'],
-    extensions: ['.ts', '.tsx', '.js', '.jsx', '.css']
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.css'],
     // To sync path aliases between tsconfig and webpack
-    // plugins: [
-    //   new TsconfigPathsPlugin({
-    //     configFile: 'tsconfig.json',
-    //     extensions: ['.ts', '.tsx', '.js', '.jsx']
-    //   })
-    // ]
+    plugins: [
+      new TsconfigPathsPlugin({
+        configFile: 'tsconfig.json',
+        extensions: ['.ts', '.tsx', '.js', '.jsx']
+      })
+    ]
   }
 };

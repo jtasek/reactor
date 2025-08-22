@@ -9,23 +9,35 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "jsx": "react",
     "module": "esnext",
     "moduleResolution": "node",
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "resolveJsonModule": true,
     "noEmit": false,
-    // "outDir": "./dist/",
-    // "paths": {
-    //   "src/*": ["./src/*"]
-    // },
+    "outDir": "./dist",
+    "paths": {
+      "src/*": [
+        "./src/*"
+      ]
+    },
     "rootDir": "./",
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
-    "target": "es5"
+    "target": "es2017"
   },
-  "exclude": ["dist", "node_modules", "**/*.test.ts"],
-  "include": ["src"]
+  "exclude": [
+    "dist",
+    "node_modules",
+    "**/*.test.ts"
+  ],
+  "include": [
+    "src"
+  ]
 }
