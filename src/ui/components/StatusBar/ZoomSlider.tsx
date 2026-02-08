@@ -18,7 +18,7 @@ export const ZoomSlider: FC = () => {
       max={MAX_SCALE}
       step={ZOOM_STEP}
       value={scale}
-      onChange={(value: number) => tools.zoom(value)}
+      onChange={(value: number) => tools.zoom({ scale: value, delta: { deltaX: ZOOM_STEP, deltaY: ZOOM_STEP, deltaZ: 0 } })}
     />
   );
 };
