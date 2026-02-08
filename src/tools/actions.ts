@@ -1,4 +1,3 @@
-import type { Pointer } from 'src/events/types';
 import { Context } from '../app';
 import { getToolById } from './components';
 
@@ -6,6 +5,9 @@ const DEFAULT_SCALE = 1;
 const MAX_SCALE = 10;
 const MIN_SCALE = 0.1;
 const ZOOM_STEP = 0.1;
+
+type Delta = { deltaX: number; deltaY: number; deltaZ: number };
+type ZoomOptions = { scale: number; delta?: Delta };
 
 export const limitScale = (scale: number) =>
     parseFloat(Math.min(Math.max(scale, MIN_SCALE), MAX_SCALE).toFixed(1));
@@ -50,7 +52,7 @@ export const zoomReset = ({ state: { currentDocument } }: Context) => {
     currentDocument.camera.scale = DEFAULT_SCALE;
 };
 
-export const zoom = ({ state: { currentDocument } }: Context, options: { scale: number, delta?: { deltaX: number; deltaY: number; deltaZ: number } }) => {
+export const zoom = ({ state: { currentDocument } }: Context, options: ZoomOptions) => {
     currentDocument.camera.scale = limitScale(options.scale);
     if (options.delta) {
         currentDocument.camera.position.x = options.delta.deltaX;
@@ -66,23 +68,8 @@ export const moveCamera = (
     currentDocument.camera.position.y -= delta.deltaY;
 };
 
-function rescalePointer(pointer: Pointer) {
-    return {
-        ...pointer,
-        center: pointer.scaledCenter,
-        position: pointer.scaledCurrent,
-        offset: pointer.scaledOffset,
-        path: pointer.scaledPath,
-        radius: pointer.scaledRadius,
-        size: pointer.scaledSize,
-        startPosition: pointer.scaledStart,
-        topLeftPosition: pointer.scaledTopLeft,
-        bottomRightPosition: pointer.scaledBottomRight
-    };
-}
-
 export const executeToolCommands = (context: Context) => {
-    const { state, actions } = context;
+    const { state } = context;
     const { activeToolsIds } = state.tools;
 
     for (const toolId of activeToolsIds) {
