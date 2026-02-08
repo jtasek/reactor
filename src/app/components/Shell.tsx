@@ -5,8 +5,8 @@ import { useKeyboardDriver } from 'src/events/drivers/useKeyboardDriver';
 import { usePreventNativePinchZoom } from './usePreventNativePinchZoom';
 
 export const Shell: FC = () => {
-    usePreventNativePinchZoom();
     useKeyboardDriver();
+    usePreventNativePinchZoom();
 
     const currentPage = useCurrentPage();
 
