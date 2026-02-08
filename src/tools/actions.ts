@@ -7,8 +7,11 @@ const MAX_SCALE = 10;
 const MIN_SCALE = 0.1;
 const ZOOM_STEP = 0.1;
 
-const limitScale = (scale: number) =>
+export const limitScale = (scale: number) =>
     parseFloat(Math.min(Math.max(scale, MIN_SCALE), MAX_SCALE).toFixed(1));
+
+export const scaleUp = (scale: number) => limitScale(scale + ZOOM_STEP);
+export const scaleDown = (scale: number) => limitScale(scale - ZOOM_STEP);
 
 export const activateTool = ({ state: { tools }, actions }: Context, toolId: string) => {
     tools.activeToolsIds.push(toolId);
@@ -47,8 +50,12 @@ export const zoomReset = ({ state: { currentDocument } }: Context) => {
     currentDocument.camera.scale = DEFAULT_SCALE;
 };
 
-export const zoom = ({ state: { currentDocument } }: Context, scale = DEFAULT_SCALE) => {
-    currentDocument.camera.scale = limitScale(scale);
+export const zoom = ({ state: { currentDocument } }: Context, options: { scale: number, delta?: { deltaX: number; deltaY: number; deltaZ: number } }) => {
+    currentDocument.camera.scale = limitScale(options.scale);
+    if (options.delta) {
+        currentDocument.camera.position.x = options.delta.deltaX;
+        currentDocument.camera.position.y = options.delta.deltaY;
+    }
 };
 
 export const moveCamera = (
