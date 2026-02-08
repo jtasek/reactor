@@ -9,15 +9,15 @@ import { Stack } from 'src/tools/components/Stack';
 import { Surface } from './Surface';
 
 export const Canvas: FC = () => (
-  <Surface>
-    <Grid />
-    <Rulers />
-    <Camera>
-      <ErrorBoundary fallback={<h1>Something went wrong while rendering shapes</h1>}>
-        <Shapes />
-        <Stack />
-      </ErrorBoundary>
-    </Camera>
-    <Overlay />
-  </Surface>
+    <Surface>
+        <Grid />
+        <Rulers />
+        <Camera>
+            <ErrorBoundary fallback={<h1>Something went wrong while rendering shapes</h1>}>
+                <Shapes />
+                <Stack />
+            </ErrorBoundary>
+        </Camera>
+        <Overlay />
+    </Surface>
 );
