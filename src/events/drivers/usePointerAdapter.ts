@@ -1,127 +1,38 @@
-import React, { useRef, PointerEventHandler, RefObject, useCallback } from 'react';
-import { useActions, useCamera, useControls, useLog } from 'src/app/hooks';
-import { limitScale, scaleDown, scaleUp } from 'src/tools/actions';
-import { dist, midpoint, screenToCanvas } from './helpers';
+import { useCallback } from 'react';
+import type {
+    MouseEvent,
+    PointerEvent as ReactPointerEvent,
+    PointerEventHandler,
+    RefObject,
+    SyntheticEvent,
+    WheelEvent
+} from 'react';
+import { scaleDown, scaleUp } from 'src/tools/actions';
+import { screenToCanvas } from './helpers';
+import { useActions, useCamera, useControls, useEvents, useLog } from 'src/app/hooks';
 import { zoomAt } from './cameraMath';
 
 export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | undefined) => {
     const log = useLog();
-
-    const pointerDown = useRef(false);
-    const isDragging = useRef(false);
-    const pointers = useRef<Map<number, PointerEvent>>(new Map());
-    const pinchState = useRef<{
-        startDist: number;
-        startScale: number;
-        center: { x: number; y: number };
-    } | null>(null);
-
     const actions = useActions();
     const { contextMenu } = useControls();
+    const { pointer } = useEvents();
     const { scale, position } = useCamera();
 
-    const handlePointerDown: PointerEventHandler<SVGSVGElement> = (event) => {
-        log('handlePointerDown', {
-            button: event.button,
-            buttons: event.buttons,
-            x: event.clientX,
-            y: event.clientY
-        });
-
-        if (contextMenu.visible) {
-            return;
-        }
-
-        if (!svgRef?.current) {
-            return;
-        }
-
-        const offset = { x: position.x, y: position.y };
-
-        try {
-            svgRef.current.setPointerCapture(event.pointerId);
-        } catch {
-            // ignore if capture not available
-        }
-
-        pointers.current.set(event.pointerId, event.nativeEvent);
-
-        if (pointers.current.size === 2) {
-            const [a, b] = Array.from(pointers.current.values());
-            pinchState.current = {
-                startDist: dist(a, b),
-                startScale: scale,
-                center: midpoint(a, b)
-            };
-        }
-
-        const currentPosition = screenToCanvas(event.nativeEvent, svgRef.current, scale, offset);
-
-        pointerDown.current = true;
-        actions.events.setStartPosition(currentPosition);
-        actions.events.setCurrentPosition(currentPosition);
-    };
-
-    const handlePointerMove: PointerEventHandler<SVGSVGElement> = useCallback(
-        (event) => {
-            log('handlePointerMove', {
-                button: event.button,
-                buttons: event.buttons,
-                x: event.clientX,
-                y: event.clientY
-            });
-
-            if (!svgRef?.current) {
-                return;
-            }
-
-            // update stored pointer for this id so pinch calculations use latest positions
-            pointers.current.set(event.pointerId, event.nativeEvent);
-
-            const offset = { x: position.x, y: position.y };
-
-            if (pinchState.current && pointers.current.size === 2) {
-                const [a, b] = Array.from(pointers.current.values());
-                const currentDist = dist(a, b);
-                if (pinchState.current.startDist > 0) {
-                    const newScale = limitScale(
-                        pinchState.current.startScale * (currentDist / pinchState.current.startDist)
-                    );
-
-                    const svgEl = svgRef.current;
-                    const rect = svgEl.getBoundingClientRect();
-                    const center = midpoint(a, b);
-                    const screenPoint = { x: center.x - rect.left, y: center.y - rect.top };
-                    const camera = zoomAt({ position, scale }, newScale, screenPoint);
-
-                    actions.tools.zoom({
-                        scale: camera.scale,
-                        delta: { deltaX: camera.position.x, deltaY: camera.position.y, deltaZ: 0 }
-                    });
-                }
-                return;
-            }
-
-            if (pointerDown.current && !isDragging.current) {
-                isDragging.current = true;
-                actions.events.startDragging();
-            }
-
-            if (isDragging.current) {
-                const currentPosition = screenToCanvas(
-                    event.nativeEvent,
-                    svgRef.current,
-                    scale,
-                    offset
-                );
-                actions.events.updateCurrentPosition(currentPosition);
-            }
-        },
-        [log, actions, svgRef, scale, position]
+    const getSvgElement = useCallback(
+        (event: SyntheticEvent<SVGSVGElement>) =>
+            svgRef?.current ?? (event.currentTarget as SVGSVGElement | null),
+        [svgRef]
     );
 
-    const handlePointerUp: PointerEventHandler<SVGSVGElement> = useCallback(
-        (event) => {
+    const toCanvas = useCallback(
+        (event: ReactPointerEvent<SVGSVGElement>, svgEl: SVGSVGElement) =>
+            screenToCanvas(event.nativeEvent, svgEl, scale, position),
+        [scale, position]
+    );
+
+    const completePointerInteraction = useCallback(
+        (event: ReactPointerEvent<SVGSVGElement>) => {
             log('handlePointerUp', {
                 button: event.button,
                 buttons: event.buttons,
@@ -135,41 +46,95 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
                 // ignore if release not available
             }
 
-            pointers.current.delete(event.pointerId);
-            if (pointers.current.size < 2) {
-                pinchState.current = null;
-            }
-
-            if (isDragging.current) {
-                isDragging.current = false;
+            if (pointer.dragging) {
                 actions.events.endDragging();
-            } else {
+                actions.tools.executeToolCommands();
+                actions.tools.resetTools();
                 actions.unselectShapes();
-            }
-
-            if (pointerDown.current) {
-                pointerDown.current = false;
-
-                // only finish tool action when there are no more pointers down (so a 2-finger pan won't
-                // trigger tool execution when one finger is lifted)
-                if (pointers.current.size === 0) {
-                    actions.tools.executeToolCommands();
-                    actions.tools.resetTools();
-                }
             }
         },
         [log, actions, svgRef]
     );
 
+    const handlePointerDown: PointerEventHandler<SVGSVGElement> = (event) => {
+        log('handlePointerDown', {
+            button: event.button,
+            buttons: event.buttons,
+            x: event.clientX,
+            y: event.clientY
+        });
+
+        if (contextMenu.visible) {
+            return;
+        }
+
+        if (event.buttons !== 1) {
+            return;
+        }
+
+        const svgEl = getSvgElement(event);
+        if (!svgEl) {
+            return;
+        }
+
+        try {
+            svgEl.setPointerCapture(event.pointerId);
+        } catch {
+            // ignore if capture not available
+        }
+
+        if (!pointer.dragging) {
+            actions.events.startDragging();
+        }
+
+        const currentPosition = toCanvas(event, svgEl);
+
+        actions.events.resetDragging();
+        actions.events.setStartPosition(currentPosition);
+        actions.events.setCurrentPosition(currentPosition);
+    };
+
+    const handlePointerMove: PointerEventHandler<SVGSVGElement> = (event) => {
+        log('handlePointerMove', {
+            button: event.button,
+            buttons: event.buttons,
+            x: event.clientX,
+            y: event.clientY
+        });
+
+        if (contextMenu.visible) {
+            return;
+        }
+
+        const svgEl = getSvgElement(event);
+        if (!svgEl) {
+            return;
+        }
+
+        const currentPosition = toCanvas(event, svgEl);
+
+        actions.events.updateCurrentPosition(currentPosition);
+    };
+
+    const handlePointerEnd: PointerEventHandler<SVGSVGElement> = useCallback(
+        (event) => {
+            if (contextMenu.visible) {
+                return;
+            }
+            completePointerInteraction(event);
+        },
+        [contextMenu.visible, completePointerInteraction]
+    );
+
     const handleMouseWheel = useCallback(
-        (event: React.WheelEvent<SVGSVGElement>) => {
+        (event: WheelEvent<SVGSVGElement>) => {
             log('handleMouseWheel', event.deltaX, event.deltaY);
 
             if (contextMenu.visible) {
                 return;
             }
 
-            const svgEl = svgRef?.current ?? (event.currentTarget as SVGSVGElement);
+            const svgEl = getSvgElement(event);
             if (!svgEl) return;
 
             if (event.ctrlKey) {
@@ -191,23 +156,28 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
 
             actions.tools.moveCamera({ deltaX: event.deltaX, deltaY: event.deltaY, deltaZ: 0 });
         },
-        [log, actions, scale, position, contextMenu, svgRef]
+        [log, actions, scale, position, contextMenu.visible, getSvgElement]
     );
 
-    const handleContextMenu = (event: React.MouseEvent<SVGSVGElement>) => {
-        log('handleContextMenu');
+    const handleContextMenu = useCallback(
+        (event: MouseEvent<SVGSVGElement>) => {
+            event.preventDefault();
 
-        event.preventDefault();
-        if (contextMenu.visible) return;
+            if (pointer.dragging) {
+                actions.events.endDragging();
+            }
 
-        actions.ui.displayContextMenu();
-    };
+            actions.ui.displayContextMenu({ x: event.clientX, y: event.clientY });
+        },
+        [actions, pointer.dragging]
+    );
 
     return {
         handleContextMenu,
         handleMouseWheel,
+        handlePointerCancel: handlePointerEnd,
         handlePointerDown,
         handlePointerMove,
-        handlePointerUp
+        handlePointerUp: handlePointerEnd
     };
 };
