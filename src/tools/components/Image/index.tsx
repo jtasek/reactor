@@ -34,19 +34,16 @@ interface Props {
     type: 'image';
 }
 
-export const createImageProps = (
-    { start, scaledStart, size, scaledSize }: Pointer,
-    designMode = false
-): Props => {
+export const createImageProps = ({ start, size }: Pointer, designMode = false): Props => {
     const name = designMode ? 'Image x' : newShapeName();
     const key = name.toLowerCase();
 
     return {
         key,
         name,
-        position: designMode ? scaledStart : start,
+        position: start,
         selected: true,
-        size: designMode ? scaledSize : size,
+        size: size,
         source: DEFAULT_IMAGE,
         type: 'image'
     };
@@ -76,6 +73,9 @@ export const Image: FC<Props> = ({ key, name, position, size, source, selected, 
 
 export const DesignImage: FC = () => {
     const pointer = usePointer();
+    if (!pointer.dragging) {
+        return null;
+    }
 
     const props = createImageProps(pointer, true);
 
