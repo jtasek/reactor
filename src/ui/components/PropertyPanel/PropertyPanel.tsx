@@ -5,35 +5,35 @@ import { PropertyList } from './PropertyList';
 import { Shape } from 'src/app/types';
 
 export interface Props {
-  shapes?: Shape[];
+    shapes?: Shape[];
 }
 
 export const PropertyPanel: FC<Props> = ({ shapes }) => {
-  if (!shapes) {
-    return null;
-  }
+    if (!shapes) {
+        return null;
+    }
 
-  if (shapes.length === 0) {
-    return <div className={styles.propertyPanel}>No shapes selected</div>;
-  }
+    if (shapes.length === 0) {
+        return <div className={styles.propertyPanel}>No shapes selected</div>;
+    }
 
-  return (
-    <table className={styles.propertyPanel}>
-      <thead>
-        <tr>
-          <td>field</td>
-          <td>value</td>
-        </tr>
-      </thead>
-      <tbody>
-        <PropertyList key="properties" items={getCommonProperties(shapes)} />
-      </tbody>
-      <tfoot>
-        <tr>
-          <td>Selected: </td>
-          <td>{shapes.length}</td>
-        </tr>
-      </tfoot>
-    </table>
-  );
+    return (
+        <table className={styles.propertyPanel}>
+            <thead>
+                <tr>
+                    <td>field</td>
+                    <td>value</td>
+                </tr>
+            </thead>
+            <tbody>
+                <PropertyList key="properties" items={getCommonProperties(shapes)} />
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>Selected: </td>
+                    <td>{shapes.length}</td>
+                </tr>
+            </tfoot>
+        </table>
+    );
 };
