@@ -5,7 +5,7 @@ import type { Command, Point, Size } from 'src/app/types';
 import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
 import { newShapeName } from 'src/app/factories';
-import { useActions, usePointer } from 'src/app/hooks';
+import { usePointer } from 'src/app/hooks';
 
 /**
  * Draws a rectangle based on position and size
@@ -21,7 +21,6 @@ import { useActions, usePointer } from 'src/app/hooks';
  **/
 
 interface Props {
-  
     key: string;
     name: string;
     position: Point;
@@ -30,25 +29,21 @@ interface Props {
     type: 'rectangle';
 }
 
-export const createRectProps = (
-    { start, scaledStart, size, scaledSize }: Pointer,
-    designMode = false
-): Props => {
+export const createRectProps = ({ size, topLeft }: Pointer, designMode = false): Props => {
     const name = designMode ? 'Rectangle x' : newShapeName();
     const key = name.toLowerCase();
 
     return {
         key,
         name,
-        position: designMode ? scaledStart : start,
+        position: topLeft,
         selected: true,
-        size: designMode ? scaledSize : size,
+        size: size,
         type: 'rectangle'
     };
 };
 
 export const Rect: FC<Props> = ({ key, name, position, size, selected }) => {
-    const actions = useActions();
     const shape = useRef(null);
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
     console.log('rendering Rect');
@@ -70,10 +65,22 @@ export const Rect: FC<Props> = ({ key, name, position, size, selected }) => {
 
 export const DesignRect: FC = () => {
     const pointer = usePointer();
+    if (!pointer.dragging) {
+        return null;
+    }
 
     const { key, name, position, selected, size, type } = createRectProps(pointer, true);
 
-    return <Rect key={key} name={name} position={position} size={size} selected={selected} type={type} />;
+    return (
+        <Rect
+            key={key}
+            name={name}
+            position={position}
+            size={size}
+            selected={selected}
+            type={type}
+        />
+    );
 };
 
 export const RectCommand: Command = {
@@ -88,7 +95,7 @@ export const RectCommand: Command = {
         size: 24
     },
     regex: /(?<toolCode>rect)\((?<x1>[\d]+),(?<y1>[\d]+),(?<x2>[\d]+),(?<y2>[\d]+)\)/,
-    shortcut: 'r',
+    shortcut: 'ctrl+r',
     canExecute: (context) => true,
     execute: ({ actions, state }) => {
         console.log('RectCommand:execute');
