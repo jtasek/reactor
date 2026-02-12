@@ -20,16 +20,16 @@ interface Props {
     type: 'line';
 }
 
-export const createLineProps = ({ start, scaledStart, current, scaledCurrent }: Pointer, designMode = false): Props => {
+export const createLineProps = ({ start, current }: Pointer, designMode = false): Props => {
     const name = designMode ? 'Line x' : newShapeName();
     const key = name.toLowerCase();
 
     return {
-        end: designMode ? scaledCurrent : current,
+        end: current,
         key,
         name,
         selected: true,
-        start: designMode ? scaledStart : start,
+        start: start,
         type: 'line'
     };
 };
@@ -53,6 +53,9 @@ export const Line: FC<Props> = ({ key, name, start, end, selected }) => {
 
 export const DesignLine: FC = () => {
     const pointer = usePointer();
+    if (!pointer.dragging) {
+        return null;
+    }
 
     const { key, name, start, end, selected, type } = createLineProps(pointer, true);
 
