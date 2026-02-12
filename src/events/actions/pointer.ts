@@ -18,7 +18,9 @@ export const startDragging: Action = ({ state }) => {
 
 export const updateCurrentPosition: ActionWithParam<Point> = (context, position) => {
     setCurrentPosition(context, position);
-    updatePath(context, position);
+    if (context.state.events.pointer.dragging) {
+        updatePath(context, position);
+    }
 };
 
 export const endDragging: Action = ({ state }) => {
@@ -27,8 +29,7 @@ export const endDragging: Action = ({ state }) => {
 
 export const resetDragging: Action = ({ state }) => {
     const pointer = state.events.pointer;
-    pointer.start = { x: 0, y: 0 };
-    pointer.current = { x: 0, y: 0 };
+
     pointer.path.length = 0;
 
     console.log('pointer', pointer);
