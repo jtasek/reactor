@@ -27,19 +27,14 @@ interface Props {
     type: 'ellipse';
 }
 
-export const createEllipseProps = (
-    { center, scaledCenter, size, scaledSize }: Pointer,
-    designMode = false
-): Props => {
-    const name = designMode ? 'Circle x' : newShapeName();
+export const createEllipseProps = ({ center, size }: Pointer, designMode = false): Props => {
+    const name = designMode ? 'Ellipse x' : newShapeName();
     const key = name.toLowerCase();
 
     return {
         key,
-        position: designMode ? scaledCenter : center,
-        radius: designMode
-            ? { x: scaledSize.width, y: scaledSize.height }
-            : { x: size.width, y: size.height },
+        position: center,
+        radius: { x: size.width, y: size.height },
         name,
         selected: true,
         type: 'ellipse'
@@ -48,6 +43,9 @@ export const createEllipseProps = (
 
 export const DesignEllipse: FC = () => {
     const pointer = usePointer();
+    if (!pointer.dragging) {
+        return null;
+    }
 
     const props = createEllipseProps(pointer, true);
 
