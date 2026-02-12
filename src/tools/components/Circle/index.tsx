@@ -74,6 +74,9 @@ export const Circle: FC<Props> = ({ key, name, position, radius, selected }) => 
 
 export const DesignCircle: FC = () => {
     const pointer = usePointer();
+    if (!pointer.dragging) {
+        return null;
+    }
 
     const props = createCircleProps(pointer, true);
 
