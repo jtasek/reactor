@@ -26,18 +26,15 @@ interface Props {
     type: 'circle';
 }
 
-export const createCircleProps = (
-    { center, scaledCenter, radius, scaledRadius }: Pointer,
-    designMode = false
-): Props => {
+export const createCircleProps = ({ center, radius }: Pointer, designMode = false): Props => {
     const name = designMode ? 'Circle x' : newShapeName();
     const key = name.toLowerCase();
 
     return {
         key,
         name,
-        position: designMode ? scaledCenter : center,
-        radius: designMode ? scaledRadius : radius,
+        position: center,
+        radius: radius,
         selected: true,
         type: 'circle'
     };
