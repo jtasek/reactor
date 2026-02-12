@@ -23,14 +23,14 @@ interface Props {
     type: 'pen';
 }
 
-export const createPenProps = ({ path, scaledPath }: Pointer, designMode = false): Props => {
+export const createPenProps = ({ path }: Pointer, designMode = false): Props => {
     const name = designMode ? 'Pen x' : newShapeName();
     const key = name.toLowerCase();
 
     return {
         key,
         name,
-        points: designMode ? scaledPath : path,
+        points: path,
         selected: true,
         type: 'pen'
     };
@@ -47,6 +47,9 @@ export const Pen: FC<Props> = ({ key, name, points, selected }) => {
 
 export const DesignPen: FC = () => {
     const pointer = usePointer();
+    if (!pointer.dragging) {
+        return null;
+    }
 
     const { key, name, points, selected, type } = createPenProps(pointer, true);
 
