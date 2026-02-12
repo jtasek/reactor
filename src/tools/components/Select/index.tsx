@@ -19,15 +19,12 @@ interface Props {
     type: string;
 }
 
-export function createSelectProps(
-    { topLeft, scaledTopLeft, size, scaledSize }: Pointer,
-    designMode = false
-): Props {
+export function createSelectProps({ topLeft, size }: Pointer): Props {
     return {
         key: 'selection',
         name: 'selection',
-        position: designMode ? scaledTopLeft : topLeft,
-        size: designMode ? scaledSize : size,
+        position: topLeft,
+        size: size,
         type: 'select'
     };
 }
