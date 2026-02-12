@@ -42,12 +42,12 @@ export const createTextProps = (
     return {
         key,
         name,
-        position: designMode ? scaledCurrent : current,
+        position: current,
         selected: true,
         type: 'text',
-        value: text,
+        value: text
     };
-}
+};
 
 export const Text: FC<Props> = ({ key, name, position, value, selected }) => {
     const lineHeight = 22;
@@ -85,24 +85,24 @@ export const DesignText: FC = () => {
     const handleBlur = (event) => {
         event.preventDefault();
         endTyping();
-    }
+    };
 
     const handleChange = (event) => {
         event.preventDefault();
         typing(event.currentTarget.value);
-    }
+    };
 
     const handleKeyUp = (event) => {
         event.preventDefault();
         if (event.key === 'Enter') {
             endTyping();
         }
-    }
+    };
 
     const handleSubmit = (event) => {
         event?.preventDefault();
         return false;
-    }
+    };
 
     return (
         <g>
