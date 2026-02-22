@@ -79,7 +79,7 @@ export const LineCommand: Command = {
     execute: ({ actions, state }) => {
         console.log('LineCommand:execute');
 
-        const shape = createLineProps(state.events.pointer, true);
+        const shape = createLineProps(state.events.pointer);
 
         actions.addShape(shape);
     }

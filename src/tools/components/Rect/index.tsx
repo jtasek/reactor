@@ -100,7 +100,7 @@ export const RectCommand: Command = {
     execute: ({ actions, state }) => {
         console.log('RectCommand:execute');
 
-        const shape = createRectProps(state.events.pointer, true);
+        const shape = createRectProps(state.events.pointer);
 
         actions.addShape(shape);
     }

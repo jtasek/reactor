@@ -26,11 +26,12 @@ interface Props {
 export const createPenProps = ({ path }: Pointer, designMode = false): Props => {
     const name = designMode ? 'Pen x' : newShapeName();
     const key = name.toLowerCase();
+    const points = path.map(({ x, y }) => ({ x, y }));
 
     return {
         key,
         name,
-        points: path,
+        points,
         selected: true,
         type: 'pen'
     };
@@ -73,7 +74,7 @@ export const PenCommand: Command = {
     execute: ({ actions, state }) => {
         console.log('PenCommand:execute');
 
-        const shape = createPenProps(state.events.pointer, true);
+        const shape = createPenProps(state.events.pointer);
 
         actions.addShape(shape);
     }

@@ -144,7 +144,7 @@ export const TextCommand: Command = {
     execute: ({ actions, state }) => {
         console.log('TextCommand:execute');
 
-        const shape = createTextProps(state.events.pointer, state.events.keyboard, true);
+        const shape = createTextProps(state.events.pointer, state.events.keyboard);
 
         actions.addShape(shape);
     }

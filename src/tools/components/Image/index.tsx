@@ -34,14 +34,14 @@ interface Props {
     type: 'image';
 }
 
-export const createImageProps = ({ start, size }: Pointer, designMode = false): Props => {
+export const createImageProps = ({ topLeft, size }: Pointer, designMode = false): Props => {
     const name = designMode ? 'Image x' : newShapeName();
     const key = name.toLowerCase();
 
     return {
         key,
         name,
-        position: start,
+        position: topLeft,
         selected: true,
         size: size,
         source: DEFAULT_IMAGE,
@@ -61,6 +61,7 @@ export const Image: FC<Props> = ({ key, name, position, size, source, selected, 
             data-cy={name}
             height={size.height}
             key={key}
+            width={size.width}
             x={position.x}
             xlinkHref={source}
             y={position.y}
@@ -99,7 +100,7 @@ export const ImageCommand: Command = {
     execute: ({ actions, state }) => {
         console.log('ImageCommand:execute');
 
-        const shape = createImageProps(state.events.pointer, true);
+        const shape = createImageProps(state.events.pointer);
 
         actions.addShape(shape);
     }

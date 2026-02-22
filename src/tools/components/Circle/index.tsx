@@ -97,7 +97,7 @@ export const CircleCommand: Command = {
     execute: ({ actions, state }) => {
         console.log('CircleCommand:execute');
 
-        const shape = createCircleProps(state.events.pointer, true);
+        const shape = createCircleProps(state.events.pointer);
 
         actions.addShape(shape);
     }

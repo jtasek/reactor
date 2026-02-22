@@ -34,7 +34,7 @@ export const createEllipseProps = ({ center, size }: Pointer, designMode = false
     return {
         key,
         position: center,
-        radius: { x: size.width, y: size.height },
+        radius: { x: size.width / 2, y: size.height / 2 },
         name,
         selected: true,
         type: 'ellipse'
@@ -86,7 +86,7 @@ export const EllipseCommand: Command = {
     execute: ({ actions, state }) => {
         console.log('EllipseCommand:execute');
 
-        const shape = createEllipseProps(state.events.pointer, true);
+        const shape = createEllipseProps(state.events.pointer);
 
         actions.addShape(shape);
     }
