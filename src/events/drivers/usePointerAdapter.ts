@@ -11,6 +11,7 @@ import { scaleDown, scaleUp } from 'src/tools/actions';
 import { screenToCanvas } from './helpers';
 import { useActions, useCamera, useControls, useEvents, useLog } from 'src/app/hooks';
 import { zoomAt } from './cameraMath';
+import { trySetPointerCapture, tryReleasePointerCapture } from './pointerCapture';
 
 export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | undefined) => {
     const log = useLog();
@@ -40,11 +41,7 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
                 y: event.clientY
             });
 
-            try {
-                svgRef?.current?.releasePointerCapture(event.pointerId);
-            } catch {
-                // ignore if release not available
-            }
+            tryReleasePointerCapture(svgRef, event.pointerId);
 
             if (pointer.dragging) {
                 actions.events.endDragging();
@@ -77,11 +74,7 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
             return;
         }
 
-        try {
-            svgEl.setPointerCapture(event.pointerId);
-        } catch {
-            // ignore if capture not available
-        }
+        trySetPointerCapture(svgEl, event.pointerId);
 
         if (!pointer.dragging) {
             actions.events.startDragging();
