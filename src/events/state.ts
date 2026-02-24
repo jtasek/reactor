@@ -1,20 +1,4 @@
-import {
-    bottomRight,
-    center,
-    offset,
-    radius,
-    scaledCenter,
-    scaledCurrent,
-    scaledOffset,
-    scaledPath,
-    scaledRadius,
-    scaledSize,
-    scaledBottomRight,
-    scaledStart,
-    scaledTopLeft,
-    size,
-    topLeft
-} from './computed/pointer';
+import { bottomRight, center, offset, radius, size, topLeft } from './computed/pointer';
 import { Events } from './types';
 
 export const state: Events = {
@@ -26,15 +10,6 @@ export const state: Events = {
         offset,
         path: [],
         radius,
-        scaledBottomRight,
-        scaledCenter,
-        scaledCurrent,
-        scaledOffset,
-        scaledPath,
-        scaledRadius,
-        scaledSize,
-        scaledStart,
-        scaledTopLeft,
         size,
         start: { x: 0, y: 0 },
         topLeft
