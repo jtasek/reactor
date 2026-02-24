@@ -8,15 +8,6 @@ export interface Pointer {
     offset: Point;
     path: Point[];
     radius: number;
-    scaledBottomRight: Point;
-    scaledCenter: Point;
-    scaledCurrent: Point;
-    scaledOffset: Point;
-    scaledPath: Point[];
-    scaledRadius: number;
-    scaledSize: Size;
-    scaledStart: Point;
-    scaledTopLeft: Point;
     size: Size;
     start: Point;
     topLeft: Point;
