@@ -5,8 +5,8 @@ import { Story, Meta } from '@storybook/react/types-6-0';
 import { Explorer } from './Explorer';
 
 export default {
-  title: 'Example/Explorer',
-  component: Explorer
+    title: 'Example/Explorer',
+    component: Explorer
 } as Meta;
 
 const Template: Story = (args) => <Explorer {...args} />;

@@ -7,18 +7,18 @@ import { Orientation } from 'src/app/types';
 import { createRuler } from 'src/app/factories';
 
 export default {
-  title: 'Example/Ruler',
-  component: Ruler
+    title: 'Example/Ruler',
+    component: Ruler
 } as Meta;
 
 const Template: Story<Props> = (args) => <Ruler {...args} />;
 
 export const Horizontal = Template.bind({});
 Horizontal.args = {
-  ruler: createRuler({ orientation: Orientation.Horizontal })
+    ruler: createRuler({ orientation: Orientation.Horizontal })
 };
 
 export const Vertical = Template.bind({});
 Vertical.args = {
-  ruler: createRuler({ orientation: Orientation.Vertical })
+    ruler: createRuler({ orientation: Orientation.Vertical })
 };

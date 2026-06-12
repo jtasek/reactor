@@ -2,8 +2,8 @@ import React, { FC } from 'react';
 
 import styles from '../../styles.css';
 import type { Command, Point, Size } from 'src/app/types';
+import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
-import { Pointer } from '../../../events/types';
 import { newShapeName } from '../../../app/factories';
 import { useActions, usePointer } from '../../../app/hooks';
 
@@ -22,6 +22,7 @@ import { useActions, usePointer } from '../../../app/hooks';
  **/
 
 const DEFAULT_IMAGE = '/images/avatar.jpg';
+const DEFAULT_IMAGE_RATIO = 1;
 
 interface Props {
     id?: string;
@@ -34,16 +35,54 @@ interface Props {
     type: 'image';
 }
 
-export const createImageProps = ({ topLeft, size }: Pointer, designMode = false): Props => {
+const getImageBounds = (
+    pointer: Pick<Pointer, 'start' | 'current'>,
+    ratio = DEFAULT_IMAGE_RATIO
+): { position: Point; size: Size } => {
+    const { start, current } = pointer;
+    const deltaX = current.x - start.x;
+    const deltaY = current.y - start.y;
+
+    const dragByWidth = Math.abs(deltaX) >= Math.abs(deltaY);
+
+    let width = 0;
+    let height = 0;
+
+    if (dragByWidth) {
+        width = Math.abs(deltaX);
+        height = width / ratio;
+    } else {
+        height = Math.abs(deltaY);
+        width = height * ratio;
+    }
+
+    let x = deltaX < 0 ? start.x - width : start.x;
+    let y = deltaY < 0 ? start.y - height : start.y;
+
+    // Special case requested: dragging left while cursor is below start
+    // keeps the start point as the image bottom-left corner.
+    if (deltaX < 0 && deltaY > 0) {
+        x = start.x - width;
+        y = start.y - height;
+    }
+
+    return {
+        position: { x, y },
+        size: { width, height }
+    };
+};
+
+export const createImageProps = (pointer: Pointer, designMode = false): Props => {
     const name = designMode ? 'Image x' : newShapeName();
     const key = name.toLowerCase();
+    const { position, size } = getImageBounds(pointer);
 
     return {
         key,
         name,
-        position: topLeft,
+        position,
         selected: true,
-        size: size,
+        size,
         source: DEFAULT_IMAGE,
         type: 'image'
     };
@@ -56,11 +95,11 @@ export const Image: FC<Props> = ({ key, name, position, size, source, selected, 
 
     return (
         <image
-            //width={width} - to maintain aspect ratio
             className={className}
             data-cy={name}
             height={size.height}
             key={key}
+            preserveAspectRatio="xMidYMid meet"
             width={size.width}
             x={position.x}
             xlinkHref={source}
@@ -96,7 +135,8 @@ export const ImageCommand: Command = {
     },
     regex: /(?<toolCode>image)\('(?<protocol>www|http|https):\/\/(?<url>[^\s]+[\w])'\)/,
     shortcut: 'ctrl+i',
-    canExecute: (context) => true,
+    canExecute: ({ state }) =>
+        state.events.pointer.size.width > 0 || state.events.pointer.size.height > 0,
     execute: ({ actions, state }) => {
         console.log('ImageCommand:execute');
 

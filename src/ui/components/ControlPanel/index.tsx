@@ -4,17 +4,17 @@ import { ControlPanel } from './ControlPanel';
 import { useActions, useControls } from 'src/app/hooks';
 
 export const ConnectedControlPanel: FC = () => {
-  const controls = useControls();
-  const actions = useActions();
+    const controls = useControls();
+    const actions = useActions();
 
-  if (!controls.controlPanel.visible) {
-    return null;
-  }
+    if (!controls.controlPanel.visible) {
+        return null;
+    }
 
-  return (
-    <ControlPanel
-      controls={Object.values(controls)}
-      onChange={actions.ui.toggleControlVisibility}
-    />
-  );
+    return (
+        <ControlPanel
+            controls={Object.values(controls)}
+            onChange={actions.ui.toggleControlVisibility}
+        />
+    );
 };

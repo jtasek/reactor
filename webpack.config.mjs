@@ -13,7 +13,6 @@ export const config = {
   devtool: 'source-map',
   entry: [
     'webpack-hot-middleware/client',
-    'eventsource-polyfill',
     './src/index.tsx'
   ],
   output: {
@@ -55,8 +54,7 @@ export const config = {
           {
             loader: 'css-loader',
             options: { modules: { namedExport: false, exportLocalsConvention: 'as-is' } }
-          },
-          'postcss-loader'
+          }
         ]
       },
       {

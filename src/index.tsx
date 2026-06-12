@@ -6,13 +6,13 @@ import { createOvermind } from 'overmind';
 import { createRoot } from 'react-dom/client';
 
 const overmind = createOvermind(config, {
-  devtools: true
+    devtools: true
 });
 
 const App: FC = () => (
-  <Provider value={overmind}>
-    <Shell />
-  </Provider>
+    <Provider value={overmind}>
+        <Shell />
+    </Provider>
 );
 
 const container = document.getElementById('app');
@@ -20,5 +20,5 @@ const root = createRoot(container!);
 root.render(<App />);
 
 if (module.hot) {
-  module.hot.accept()
-};
+    module.hot.accept();
+}

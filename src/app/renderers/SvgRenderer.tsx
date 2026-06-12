@@ -2,9 +2,9 @@ import React from 'react';
 import { Document, Renderer } from '../types';
 
 class SvgRenderer implements Renderer {
-  render(document: Document): void {
-    throw new Error('Render not implemented');
-  }
+    render(document: Document): void {
+        throw new Error('Render not implemented');
+    }
 }
 /*
 const Line = () => <line 

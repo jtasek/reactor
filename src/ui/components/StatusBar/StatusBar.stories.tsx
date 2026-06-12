@@ -6,15 +6,15 @@ import { StatusBar } from './StatusBar';
 import { StatusBarSlot } from './StatusBarSlot';
 
 export default {
-  title: 'Example/StatusBar',
-  component: StatusBar
+    title: 'Example/StatusBar',
+    component: StatusBar
 } as Meta;
 
 const Template: Story = () => (
-  <StatusBar>
-    <StatusBarSlot name="Document Name">Test document</StatusBarSlot>
-    <StatusBarSlot name="Current Action">Test action</StatusBarSlot>
-  </StatusBar>
+    <StatusBar>
+        <StatusBarSlot name="Document Name">Test document</StatusBarSlot>
+        <StatusBarSlot name="Current Action">Test action</StatusBarSlot>
+    </StatusBar>
 );
 
 export const Default = Template.bind({});

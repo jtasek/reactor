@@ -5,8 +5,8 @@ import { Story, Meta } from '@storybook/react/types-6-0';
 import { PropertyPanel, Props } from './PropertyPanel';
 
 export default {
-  title: 'Example/PropertyPanel',
-  component: PropertyPanel
+    title: 'Example/PropertyPanel',
+    component: PropertyPanel
 } as Meta;
 
 const Template: Story<Props> = (args) => <PropertyPanel {...args} />;

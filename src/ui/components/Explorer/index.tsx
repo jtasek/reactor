@@ -6,15 +6,15 @@ import { Explorer } from './Explorer';
 import { useControls } from 'src/app/hooks';
 
 interface Props {
-  children?: ReactNode;
+    children?: ReactNode;
 }
 
 export const ConnectedExplorer: FC<Props> = ({ children }) => {
-  const { explorer } = useControls();
+    const { explorer } = useControls();
 
-  if (!explorer.visible) {
-    return null;
-  }
+    if (!explorer.visible) {
+        return null;
+    }
 
-  return <Explorer>{children}</Explorer>;
+    return <Explorer>{children}</Explorer>;
 };

@@ -6,13 +6,13 @@ import { GroupPanel, Props } from './GroupPanel';
 import { createGroup } from 'src/app/factories';
 
 export default {
-  title: 'Example/GroupPanel',
-  component: GroupPanel
+    title: 'Example/GroupPanel',
+    component: GroupPanel
 } as Meta;
 
 const Template: Story<Props> = (args) => <GroupPanel {...args} />;
 
 export const Default = Template.bind({});
 Default.args = {
-  groups: [createGroup(), createGroup(), createGroup()]
+    groups: [createGroup(), createGroup(), createGroup()]
 };

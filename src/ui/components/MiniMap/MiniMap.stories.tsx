@@ -5,8 +5,8 @@ import { Story, Meta } from '@storybook/react/types-6-0';
 import { MiniMap, Props } from './MiniMap';
 
 export default {
-  title: 'Example/MiniMap',
-  component: MiniMap
+    title: 'Example/MiniMap',
+    component: MiniMap
 } as Meta;
 
 const Template: Story<Props> = (args) => <MiniMap {...args} />;

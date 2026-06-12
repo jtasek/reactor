@@ -4,11 +4,11 @@ import { useControls } from 'src/app/hooks';
 import { Overlay } from './Overlay';
 
 export const ConnectedOverlay: FC = () => {
-  const { overlay } = useControls();
+    const { overlay } = useControls();
 
-  if (!overlay.visible) {
-    return null;
-  }
+    if (!overlay.visible) {
+        return null;
+    }
 
-  return <Overlay />;
+    return <Overlay />;
 };

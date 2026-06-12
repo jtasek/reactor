@@ -5,8 +5,8 @@ import { Story, Meta } from '@storybook/react/types-6-0';
 import { CommandLine, Props } from './CommandLine';
 
 export default {
-  title: 'Example/CommandLine',
-  component: CommandLine
+    title: 'Example/CommandLine',
+    component: CommandLine
 } as Meta;
 
 const Template: Story<Props> = (args) => <CommandLine {...args} />;

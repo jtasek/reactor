@@ -5,14 +5,14 @@ import { Story, Meta } from '@storybook/react/types-6-0';
 import { Handle, Props } from '.';
 
 export default {
-  title: 'Example/Handle',
-  component: Handle
+    title: 'Example/Handle',
+    component: Handle
 } as Meta;
 
 const Template: Story<Props> = (args) => <Handle {...args} />;
 
 export const Default = Template.bind({});
 Default.args = {
-  position: { x: 10, y: 10 },
-  size: 5
+    position: { x: 10, y: 10 },
+    size: 5
 };

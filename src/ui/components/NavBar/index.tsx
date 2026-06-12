@@ -11,20 +11,20 @@ import { ShapesList } from './ShapesList';
 import { useControls } from 'src/app/hooks';
 
 export const NavBarContainer: FC = () => {
-  const { navBar } = useControls();
+    const { navBar } = useControls();
 
-  if (!navBar.visible) {
-    return null;
-  }
+    if (!navBar.visible) {
+        return null;
+    }
 
-  return (
-    <NavBar>
-      <ComponentsList />
-      <ShapesList />
-      <GroupsList />
-      <LayersList />
-      <LinksList />
-      <RulersList />
-    </NavBar>
-  );
+    return (
+        <NavBar>
+            <ComponentsList />
+            <ShapesList />
+            <GroupsList />
+            <LayersList />
+            <LinksList />
+            <RulersList />
+        </NavBar>
+    );
 };

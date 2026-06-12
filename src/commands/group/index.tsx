@@ -3,47 +3,47 @@ import { createGroup } from 'src/app/factories';
 import { Context } from '../../app';
 
 export const groupSelection = (context: Context) => {
-  const { state } = context;
+    const { state } = context;
 
-  const group = createGroup({ shapesIds: state.currentDocument?.selectedShapesIds });
+    const group = createGroup({ shapesIds: state.currentDocument?.selectedShapesIds });
 
-  state.currentDocument.groups[group.id] = group;
+    state.currentDocument.groups[group.id] = group;
 };
 
 export const GroupCommand: Command = {
-  id: 'group',
-  name: 'Group',
-  category: 'groups',
-  description: 'Group current selection',
-  icon: {
-    group: 'av',
-    name: 'library_add',
-    size: 24
-  },
-  regex: /(?<toolCode>group)\('(?<shapeName>\w+)',(?<x>\d+),(?<y>\d+)\)/,
-  shortcut: 'm',
-  canExecute: ({ state }: Context) => state.currentDocument?.selectedShapes.length > 0,
-  execute: groupSelection
+    id: 'group',
+    name: 'Group',
+    category: 'groups',
+    description: 'Group current selection',
+    icon: {
+        group: 'av',
+        name: 'library_add',
+        size: 24
+    },
+    regex: /(?<toolCode>group)\('(?<shapeName>\w+)',(?<x>\d+),(?<y>\d+)\)/,
+    shortcut: 'm',
+    canExecute: ({ state }: Context) => state.currentDocument?.selectedShapes.length > 0,
+    execute: groupSelection
 };
 
 export const deleteSelectedGroups = ({ state }: Context) => {
-  const { selectedGroupsIds } = state.currentDocument;
+    const { selectedGroupsIds } = state.currentDocument;
 
-  selectedGroupsIds?.forEach((groupId) => delete state.currentDocument.groups[groupId]);
+    selectedGroupsIds?.forEach((groupId) => delete state.currentDocument.groups[groupId]);
 };
 
 export const UngroupCommand: Command = {
-  id: 'ungroup',
-  name: 'Ungroup',
-  category: 'groups',
-  description: 'Delete selected group',
-  icon: {
-    group: 'av',
-    name: 'library_books',
-    size: 24
-  },
-  regex: /(?<toolCode>group)\('(?<shapeName>\w+)',(?<x>\d+),(?<y>\d+)\)/,
-  shortcut: 'm',
-  canExecute: ({ state }: Context) => state.currentDocument.selectedGroupsIds.length > 0,
-  execute: deleteSelectedGroups
+    id: 'ungroup',
+    name: 'Ungroup',
+    category: 'groups',
+    description: 'Delete selected group',
+    icon: {
+        group: 'av',
+        name: 'library_books',
+        size: 24
+    },
+    regex: /(?<toolCode>group)\('(?<shapeName>\w+)',(?<x>\d+),(?<y>\d+)\)/,
+    shortcut: 'm',
+    canExecute: ({ state }: Context) => state.currentDocument.selectedGroupsIds.length > 0,
+    execute: deleteSelectedGroups
 };

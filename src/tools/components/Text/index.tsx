@@ -32,7 +32,7 @@ interface Props {
 }
 
 export const createTextProps = (
-    { current, scaledCurrent }: Pointer,
+    { start }: Pointer,
     { text }: Keyboard,
     designMode = false
 ): Props => {
@@ -42,7 +42,7 @@ export const createTextProps = (
     return {
         key,
         name,
-        position: current,
+        position: start,
         selected: true,
         type: 'text',
         value: text
@@ -50,18 +50,11 @@ export const createTextProps = (
 };
 
 export const Text: FC<Props> = ({ key, name, position, value, selected }) => {
-    const lineHeight = 22;
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
     console.log('rendering Text');
 
     return (
-        <text
-            className={className}
-            data-cy={name}
-            key={key}
-            x={position.x}
-            y={position.y + lineHeight}
-        >
+        <text className={className} data-cy={name} key={key} x={position.x} y={position.y}>
             {value}
         </text>
     );
@@ -69,16 +62,19 @@ export const Text: FC<Props> = ({ key, name, position, value, selected }) => {
 
 export const DesignText: FC = () => {
     const shapeRef = useRef<HTMLInputElement>(null);
-    const pointer = usePointer();
+
     const keyboard = useKeyboard();
     const {
         events: { startTyping, typing, endTyping }
     } = useActions();
+    const pointer = usePointer();
 
     useEffect(() => {
         //shapeRef?.current?.focus();
-        startTyping();
-    }, []);
+        if (pointer.dragging) {
+            startTyping();
+        }
+    }, [pointer.dragging, startTyping]);
 
     const { key, name, position, value, type } = createTextProps(pointer, keyboard);
 
@@ -140,13 +136,27 @@ export const TextCommand: Command = {
     },
     regex: /(?<toolCode>text)\((?<x>[\d]+),(?<y>[\d]+),'(?<text>[\w]+)'\)/,
     shortcut: 't',
-    canExecute: (context) => true,
+    canExecute: ({
+        state: {
+            events: { keyboard }
+        }
+    }) => {
+        return keyboard.typing && keyboard.text.length > 0;
+    },
     execute: ({ actions, state }) => {
         console.log('TextCommand:execute');
 
         const shape = createTextProps(state.events.pointer, state.events.keyboard);
 
         actions.addShape(shape);
+    },
+    shouldDeactivate: ({
+        state: {
+            events: { keyboard }
+        }
+    }) => {
+        debugger;
+        return keyboard.typing;
     }
 };
 

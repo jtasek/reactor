@@ -8,14 +8,17 @@ import { CommandBarGroup } from './CommandBarGroup';
 import styles from './styles.css';
 
 function groupCommands(commands: Command[]): Record<string, Command[]> {
-    return commands.reduce((result, command) => {
-        if (result[command.category]) {
-            result[command.category].push(command);
-        } else {
-            result[command.category] = [command];
-        }
-        return result;
-    }, {});
+    return commands.reduce(
+        (result, command) => {
+            if (result[command.category]) {
+                result[command.category].push(command);
+            } else {
+                result[command.category] = [command];
+            }
+            return result;
+        },
+        {} as Record<string, Command[]>
+    );
 }
 
 export const CommandBar: FC = () => {

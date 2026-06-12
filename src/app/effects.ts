@@ -5,12 +5,12 @@ export { execute } from './services/commandInterpreter';
 export { loadState, saveState } from './services/localStorage';
 
 export const initializeRoutes = (routes) => {
-  Object.keys(routes).forEach((url) => {
-    page(url, ({ params }) => routes[url](params));
-  });
-  page.start();
+    Object.keys(routes).forEach((url) => {
+        page(url, ({ params }) => routes[url](params));
+    });
+    page.start();
 };
 
 export const navigate = (url: string) => {
-  page.show(url);
+    page.show(url);
 };

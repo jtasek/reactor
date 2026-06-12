@@ -5,16 +5,16 @@ import { Story, Meta } from '@storybook/react/types-6-0';
 import { SearchBox, Props } from './SearchBox';
 
 export default {
-  title: 'Example/SearchBox',
-  component: SearchBox,
-  argTypes: {
-    backgroundColor: { control: 'color' }
-  }
+    title: 'Example/SearchBox',
+    component: SearchBox,
+    argTypes: {
+        backgroundColor: { control: 'color' }
+    }
 } as Meta;
 
 const Template: Story<Props> = (args) => <SearchBox {...args} />;
 
 export const Default = Template.bind({});
 Default.args = {
-  filter: 'Searched text'
+    filter: 'Searched text'
 };

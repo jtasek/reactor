@@ -6,13 +6,13 @@ import { DocumentInfo, Props } from './DocumentInfo';
 import { createDocument } from 'src/app/factories';
 
 export default {
-  title: 'Example/DocumentInfo',
-  component: DocumentInfo
+    title: 'Example/DocumentInfo',
+    component: DocumentInfo
 } as Meta;
 
 const Template: Story<Props> = (args) => <DocumentInfo {...args} />;
 
 export const Default = Template.bind({});
 Default.args = {
-  document: createDocument()
+    document: createDocument()
 };

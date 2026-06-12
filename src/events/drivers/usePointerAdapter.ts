@@ -41,7 +41,7 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
                 y: event.clientY
             });
 
-            tryReleasePointerCapture(svgRef, event.pointerId);
+            tryReleasePointerCapture(svgRef?.current, event.pointerId);
 
             if (pointer.dragging) {
                 actions.events.endDragging();

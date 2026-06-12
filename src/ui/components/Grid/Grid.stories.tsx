@@ -6,14 +6,14 @@ import { Grid, Props } from './Grid';
 import { createCamera, createGrid } from 'src/app/factories';
 
 export default {
-  title: 'Example/Grid',
-  component: Grid
+    title: 'Example/Grid',
+    component: Grid
 } as Meta;
 
 const Template: Story<Props> = (args) => <Grid {...args} />;
 
 export const Default = Template.bind({});
 Default.args = {
-  camera: createCamera(),
-  grid: createGrid()
+    camera: createCamera(),
+    grid: createGrid()
 };

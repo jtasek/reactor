@@ -20,16 +20,24 @@ export const activateTool = ({ state: { tools }, actions }: Context, toolId: str
     actions.ui.hideContextMenu();
 };
 
-export const deactivateTool = ({ state: { tools } }: Context, toolId: string) => {
+const deactivateTool = ({ state: { tools } }: Context, toolId: string) => {
     const index = tools.activeToolsIds.indexOf(toolId);
     if (index > -1) {
         tools.activeToolsIds.splice(index, 1);
     }
 };
 
-export const resetTools = ({ state: { events, tools } }: Context) => {
-    if (!events.keyboard.shiftKey) {
-        tools.activeToolsIds = [];
+export const resetTools = (context: Context) => {
+    const {
+        state: { tools }
+    } = context;
+
+    for (const toolId of tools.activeToolsIds) {
+        const tool = getToolById(toolId);
+
+        if (!tool?.shouldDeactivate || tool.shouldDeactivate(context)) {
+            deactivateTool(context, toolId);
+        }
     }
 };
 

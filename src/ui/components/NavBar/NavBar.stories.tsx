@@ -5,8 +5,8 @@ import { Story, Meta } from '@storybook/react/types-6-0';
 import { NavBar } from './NavBar';
 
 export default {
-  title: 'Example/NavBar',
-  component: NavBar
+    title: 'Example/NavBar',
+    component: NavBar
 } as Meta;
 
 const Template: Story = (args) => <NavBar {...args} />;

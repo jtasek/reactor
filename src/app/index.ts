@@ -9,16 +9,16 @@ import { IContext } from 'overmind';
 import { state } from './state';
 
 export const config = merge(
-  {
-    actions,
-    effects,
-    state
-  },
-  namespaced({
-    events,
-    tools,
-    ui
-  })
+    {
+        actions,
+        effects,
+        state
+    },
+    namespaced({
+        events,
+        tools,
+        ui
+    })
 );
 
 export type Context = IContext<typeof config>;

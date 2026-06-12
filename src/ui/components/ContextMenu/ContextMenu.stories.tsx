@@ -5,13 +5,13 @@ import { Story, Meta } from '@storybook/react/types-6-0';
 import { ContextMenu, Props } from './ContextMenu';
 
 export default {
-  title: 'Example/ContextMenu',
-  component: ContextMenu
+    title: 'Example/ContextMenu',
+    component: ContextMenu
 } as Meta;
 
 const Template: Story<Props> = (args) => <ContextMenu {...args} />;
 
 export const Default = Template.bind({});
 Default.args = {
-  position: { x: 10, y: 10 }
+    position: { x: 10, y: 10 }
 };

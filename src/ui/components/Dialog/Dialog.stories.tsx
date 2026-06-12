@@ -5,8 +5,8 @@ import { Story, Meta } from '@storybook/react/types-6-0';
 import { Dialog, Props } from './Dialog';
 
 export default {
-  title: 'Example/Dialog',
-  component: Dialog
+    title: 'Example/Dialog',
+    component: Dialog
 } as Meta;
 
 const Template: Story<Props> = (args) => <Dialog {...args} />;

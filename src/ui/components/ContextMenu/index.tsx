@@ -4,13 +4,13 @@ import { useControls } from 'src/app/hooks';
 import { ConnectedContextMenu as ContextMenu } from './ContextMenu';
 
 export const ConnectedContextMenu: FC = () => {
-  const { contextMenu } = useControls();
+    const { contextMenu } = useControls();
 
-  if (!contextMenu.visible) {
-    return null;
-  }
+    if (!contextMenu.visible) {
+        return null;
+    }
 
-  return <ContextMenu />;
+    return <ContextMenu />;
 };
 
 export default ConnectedContextMenu;

@@ -5,7 +5,7 @@ import styles from './styles.css';
 const printObject = (value) => {
     if (typeof value === 'object') {
         return Object.entries(value)
-            .map(([key, val]) => key + ': ' + printObject(val))
+            .map(([key, val]) => `${key}: ${printObject(val)}`)
             .join(', ');
     }
 

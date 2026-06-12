@@ -5,8 +5,8 @@ import { Story, Meta } from '@storybook/react/types-6-0';
 import { Overlay } from './Overlay';
 
 export default {
-  title: 'Example/Overlay',
-  component: Overlay
+    title: 'Example/Overlay',
+    component: Overlay
 } as Meta;
 
 const Template: Story = (args) => <Overlay {...args} />;

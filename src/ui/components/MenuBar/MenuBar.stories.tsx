@@ -5,8 +5,8 @@ import { Story, Meta } from '@storybook/react/types-6-0';
 import { MenuBar, Props } from './MenuBar';
 
 export default {
-  title: 'Example/MenuBar',
-  component: MenuBar
+    title: 'Example/MenuBar',
+    component: MenuBar
 } as Meta;
 
 const Template: Story<Props> = (args) => <MenuBar {...args} />;

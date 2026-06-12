@@ -5,8 +5,8 @@ import { Story, Meta } from '@storybook/react/types-6-0';
 import { LayerPanel, Props } from './LayerPanel';
 
 export default {
-  title: 'Example/LauyerPanel',
-  component: LayerPanel
+    title: 'Example/LauyerPanel',
+    component: LayerPanel
 } as Meta;
 
 const Template: Story<Props> = (args) => <LayerPanel {...args} />;

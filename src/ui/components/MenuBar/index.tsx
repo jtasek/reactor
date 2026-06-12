@@ -6,19 +6,19 @@ import { MenuBar } from './MenuBar';
 import styles from './styles.css';
 
 export const MenuBarContainer: FC = () => {
-  const { menuBar } = useControls();
+    const { menuBar } = useControls();
 
-  if (!menuBar.visible) {
-    return null;
-  }
+    if (!menuBar.visible) {
+        return null;
+    }
 
-  return (
-    <MenuBar
-      actions={[
-        { label: 'Documents', url: 'documents' },
-        { label: 'About', url: 'about' },
-        { label: 'Profile', url: 'profile' }
-      ]}
-    />
-  );
+    return (
+        <MenuBar
+            actions={[
+                { label: 'Documents', url: 'documents' },
+                { label: 'About', url: 'about' },
+                { label: 'Profile', url: 'profile' }
+            ]}
+        />
+    );
 };

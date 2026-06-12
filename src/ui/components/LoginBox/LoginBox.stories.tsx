@@ -5,11 +5,11 @@ import { Story, Meta } from '@storybook/react/types-6-0';
 import { LoginBox } from '.';
 
 export default {
-  title: 'Example/LoginBox',
-  component: LoginBox,
-  argTypes: {
-    backgroundColor: { control: 'color' }
-  }
+    title: 'Example/LoginBox',
+    component: LoginBox,
+    argTypes: {
+        backgroundColor: { control: 'color' }
+    }
 } as Meta;
 
 const Template: Story = (args) => <LoginBox {...args} />;

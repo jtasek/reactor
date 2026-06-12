@@ -4,12 +4,12 @@ import { PropertyPanel } from './PropertyPanel';
 import { useControls, useCurrentDocument } from 'src/app/hooks';
 
 export const PropertyPanelContainer: FC = () => {
-  const { selectedShapes } = useCurrentDocument();
-  const { propertyPanel } = useControls();
+    const { selectedShapes } = useCurrentDocument();
+    const { propertyPanel } = useControls();
 
-  if (!propertyPanel.visible) {
-    return null;
-  }
+    if (!propertyPanel.visible) {
+        return null;
+    }
 
-  return <PropertyPanel shapes={selectedShapes} />;
+    return <PropertyPanel shapes={selectedShapes} />;
 };

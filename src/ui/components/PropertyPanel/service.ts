@@ -1,19 +1,19 @@
 import { Shape } from '../../../app/types';
 
 export function getCommonProperties(shapes: Shape[]): [string, any][] {
-  if (!shapes || shapes.length == 0) {
-    return [];
-  }
+    if (!shapes || shapes.length == 0) {
+        return [];
+    }
 
-  if (shapes.length === 1) {
-    return Object.entries(shapes[0]);
-  }
+    if (shapes.length === 1) {
+        return Object.entries(shapes[0]);
+    }
 
-  const properties = Object.entries(shapes[0]);
+    const properties = Object.entries(shapes[0]);
 
-  // TODO: Implement algo
+    // TODO: Implement algo
 
-  return properties;
+    return properties;
 }
 
 // export function intersect(arrays: Array<Array<string>>): any[] {

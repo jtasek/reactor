@@ -5,8 +5,8 @@ import { Story, Meta } from '@storybook/react/types-6-0';
 import { ToolBar, Props } from './ToolBar';
 
 export default {
-  title: 'Example/ToolBar',
-  component: ToolBar
+    title: 'Example/ToolBar',
+    component: ToolBar
 } as Meta;
 
 const Template: Story<Props> = (args) => <ToolBar {...args} />;

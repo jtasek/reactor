@@ -4,15 +4,15 @@ import { SideBar } from './SideBar';
 import { useControls } from 'src/app/hooks';
 
 interface Props {
-  children?: ReactNode;
+    children?: ReactNode;
 }
 
 export const SideBarContainer: FC<Props> = ({ children }) => {
-  const { sideBar } = useControls();
+    const { sideBar } = useControls();
 
-  if (!sideBar.visible) {
-    return null;
-  }
+    if (!sideBar.visible) {
+        return null;
+    }
 
-  return <SideBar>{children}</SideBar>;
+    return <SideBar>{children}</SideBar>;
 };
