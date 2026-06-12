@@ -22,7 +22,22 @@ import { useActions, usePointer } from '../../../app/hooks';
  **/
 
 const DEFAULT_IMAGE = '/images/avatar.jpg';
-const DEFAULT_IMAGE_RATIO = 1;
+
+// Intrinsic aspect ratio (width / height) of the source image, measured from the
+// image itself so the drawn bounds match it exactly and the picture is never
+// distorted or letterboxed. Null until the image has loaded and reported its
+// natural dimensions.
+let imageRatio: number | null = null;
+
+if (typeof window !== 'undefined' && typeof window.Image !== 'undefined') {
+    const probe = new window.Image();
+    probe.onload = () => {
+        if (probe.naturalWidth > 0 && probe.naturalHeight > 0) {
+            imageRatio = probe.naturalWidth / probe.naturalHeight;
+        }
+    };
+    probe.src = DEFAULT_IMAGE;
+}
 
 interface Props {
     id?: string;
@@ -37,39 +52,36 @@ interface Props {
 
 const getImageBounds = (
     pointer: Pick<Pointer, 'start' | 'current'>,
-    ratio = DEFAULT_IMAGE_RATIO
+    ratio = imageRatio
 ): { position: Point; size: Size } => {
     const { start, current } = pointer;
     const deltaX = current.x - start.x;
     const deltaY = current.y - start.y;
 
-    const dragByWidth = Math.abs(deltaX) >= Math.abs(deltaY);
-
-    let width = 0;
-    let height = 0;
-
-    if (dragByWidth) {
-        width = Math.abs(deltaX);
-        height = width / ratio;
-    } else {
-        height = Math.abs(deltaY);
-        width = height * ratio;
-    }
-
-    let x = deltaX < 0 ? start.x - width : start.x;
-    let y = deltaY < 0 ? start.y - height : start.y;
-
-    // Special case requested: dragging left while cursor is below start
-    // keeps the start point as the image bottom-left corner.
-    if (deltaX < 0 && deltaY > 0) {
-        x = start.x - width;
-        y = start.y - height;
-    }
-
-    return {
-        position: { x, y },
+    // Anchor the box at the drag start and grow toward the cursor — the same
+    // normalized convention the rectangle tool uses (topLeft + size).
+    const toBounds = (width: number, height: number): { position: Point; size: Size } => ({
+        position: {
+            x: deltaX < 0 ? start.x - width : start.x,
+            y: deltaY < 0 ? start.y - height : start.y
+        },
         size: { width, height }
-    };
+    });
+
+    // Intrinsic ratio not known yet — fall back to free-form bounds (rect tool).
+    if (!ratio || ratio <= 0) {
+        return toBounds(Math.abs(deltaX), Math.abs(deltaY));
+    }
+
+    // Lock the drag box to the image aspect ratio using the dominant drag axis,
+    // so the box reaches the cursor without distorting the image.
+    if (Math.abs(deltaX) >= Math.abs(deltaY) * ratio) {
+        const width = Math.abs(deltaX);
+        return toBounds(width, width / ratio);
+    }
+
+    const height = Math.abs(deltaY);
+    return toBounds(height * ratio, height);
 };
 
 export const createImageProps = (pointer: Pointer, designMode = false): Props => {
@@ -91,7 +103,6 @@ export const createImageProps = (pointer: Pointer, designMode = false): Props =>
 export const Image: FC<Props> = ({ key, name, position, size, source, selected, id }) => {
     const actions = useActions();
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
-    console.log('rendering Image');
 
     return (
         <image
@@ -138,8 +149,6 @@ export const ImageCommand: Command = {
     canExecute: ({ state }) =>
         state.events.pointer.size.width > 0 || state.events.pointer.size.height > 0,
     execute: ({ actions, state }) => {
-        console.log('ImageCommand:execute');
-
         const shape = createImageProps(state.events.pointer);
 
         actions.addShape(shape);
