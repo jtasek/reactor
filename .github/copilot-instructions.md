@@ -14,11 +14,22 @@ The repo uses **pnpm** (see `pnpm-lock.yaml`). Use `pnpm` for installs.
   - By name: `pnpm test -- -t "name of test"`
 - Type-check: `pnpm tsc` (`tsc --noEmit`). Build does emit; this script does not.
 - Lint: `pnpm lint` (`eslint src --fix`).
-- Production build: `pnpm build`.
+- Production build: `pnpm build` — `NODE_ENV=production` webpack via `webpack.config.mjs`.
+  Emits content-hashed JS/CSS, extracted CSS (`mini-css-extract-plugin`), and a generated
+  `dist/index.html` (`html-webpack-plugin`, template `src/template.html`). Overmind devtools
+  and source maps are disabled in this mode.
+- Production server: `pnpm serve` — runs the hardened static server `server.prod.js`
+  (helmet/CSP, compression, immutable caching for hashed assets, SPA fallback, `/healthz`,
+  graceful shutdown). Serves `dist/` + `static/`; never ship the dev `server.js`.
+- Container: `Dockerfile` (multi-stage, non-root `node` user) builds and runs `server.prod.js`.
 
-Note: some scripts in `package.json` are stale (e.g. `build:webpack` references a
-non-existent `webpack.config.js`; the real config is `webpack.config.mjs`). The dev
-server and tests are the reliable workflows.
+## Build vs serve
+
+`webpack.config.mjs` branches on `NODE_ENV`: dev keeps HMR + React Fast Refresh + `style-loader`;
+prod adds contenthash filenames, `MiniCssExtractPlugin`, `HtmlWebpackPlugin`, code-split vendor
+chunk, and disables source maps. The dev server (`server.js`) and prod server (`server.prod.js`)
+are separate; the prod server only serves prebuilt files and has no webpack/dev dependencies.
+
 
 ## Architecture
 
