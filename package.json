@@ -25,10 +25,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@storybook/addon-actions": "^9.0.8",
-    "@storybook/addon-essentials": "^8.6.14",
-    "@storybook/addon-links": "^9.1.20",
-    "@storybook/react": "^9.1.20",
     "@swc/core": "^1.15.41",
     "@swc/jest": "^0.2.39",
     "@teamsupercell/typings-for-css-modules-loader": "^2.5.2",
@@ -86,8 +82,6 @@
     "start": "node server && open http://localhost:4000",
     "test": "jest",
     "tsc": "tsc --noEmit",
-    "webpack": "node ./node_modules/webpack/bin/webpack",
-    "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook"
+    "webpack": "node ./node_modules/webpack/bin/webpack"
   }
 }

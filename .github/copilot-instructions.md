@@ -14,7 +14,6 @@ The repo uses **pnpm** (see `pnpm-lock.yaml`). Use `pnpm` for installs.
   - By name: `pnpm test -- -t "name of test"`
 - Type-check: `pnpm tsc` (`tsc --noEmit`). Build does emit; this script does not.
 - Lint: `pnpm lint` (`eslint src --fix`).
-- Storybook: `pnpm storybook`.
 - Production build: `pnpm build`.
 
 Note: some scripts in `package.json` are stale (e.g. `build:webpack` references a
