@@ -78,7 +78,7 @@
     "copy": "cp -a src/index.html dist/index.html",
     "lint": "eslint src --fix",
     "rebuild": "pnpm run build:webpack",
-    "start": "node server && open http://localhost:4000",
+    "start": "node server",
     "test": "vitest run",
     "test:watch": "vitest",
     "tsc": "tsc --noEmit",

@@ -1,57 +1,54 @@
- import path from 'path';
+import path, { dirname } from 'path';
 import express from 'express';
 import webpack from 'webpack';
 import webpackMiddleware from 'webpack-dev-middleware';
 import webpackHotMiddleware from 'webpack-hot-middleware';
 import { config } from './webpack.config.mjs';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+const { PORT = 4000, HOST = 'localhost' } = process.env;
+const indexHtml = path.join(__dirname, 'src', 'index.html');
+
 const app = express();
 const compiler = webpack(config);
-const { PORT = 4000 } = process.env;
 
 app.use(
-  webpackMiddleware(compiler, {
-    publicPath: config.output.publicPath,
-    // noInfo: true,
-    // hot: true,
-    stats: {
-      colors: true
+    webpackMiddleware(compiler, {
+        publicPath: config.output.publicPath,
+        stats: { colors: true }
+    })
+);
+
+app.use(
+    webpackHotMiddleware(compiler, {
+        reload: true // reload page when webpack gets stuck
+    })
+);
+
+app.use('/icons', express.static(path.join(__dirname, 'static', 'icons')));
+app.use('/images', express.static(path.join(__dirname, 'static', 'images')));
+app.use('/styles', express.static(path.join(__dirname, 'static', 'styles')));
+
+// SPA fallback: serve index.html for client-side routes (e.g. /documents)
+app.use((req, res, next) => {
+    if (req.method !== 'GET') {
+        return next();
     }
-    // contentBase: 'src',
-    // stats: {
-    //   colors: true,
-    //   hash: false,
-    //   timings: true,
-    //   chunks: true,
-    //   chunkModules: false,
-    //   modules: false
-    // }
-  })
-);
-
-app.use(
-  webpackHotMiddleware(compiler, {
-    reload: true // reload page when webpack gets stuck
-  })
-);
-
-app.use('/icons', express.static(`${__dirname}/static/icons/`));
-app.use('/images', express.static(`${__dirname}/static/images/`));
-app.use('/styles', express.static(`${__dirname}/static/styles/`));
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, './src/index.html'));
+    res.sendFile(indexHtml);
 });
 
-app.listen(PORT, 'localhost', (err) => {
-  if (err) {
-    return console.log(err);
-  }
-
-  console.log(`Listening at http://localhost:${PORT}`);
+const server = app.listen(Number(PORT), HOST, () => {
+    console.log(`Listening at http://${HOST}:${PORT}`);
 });
+
+server.on('error', (err) => {
+    console.error(err);
+    process.exit(1);
+});
+
+const shutdown = () => server.close(() => process.exit(0));
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
