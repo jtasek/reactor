@@ -18,7 +18,3 @@ const App: FC = () => (
 const container = document.getElementById('app');
 const root = createRoot(container!);
 root.render(<App />);
-
-if (module.hot) {
-    module.hot.accept();
-}

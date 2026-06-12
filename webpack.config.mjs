@@ -2,10 +2,12 @@ import webpack from 'webpack';
 import path, { dirname } from 'path';
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
 import ESLintWebpackPlugin from 'eslint-webpack-plugin'
+import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
 
 import { fileURLToPath } from 'url';
 
 const { NODE_ENV = 'development' } = process.env;
+const isDev = NODE_ENV === 'development';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -37,7 +39,9 @@ export const config = {
               },
               transform: {
                 react: {
-                  runtime: 'automatic'
+                  runtime: 'automatic',
+                  development: isDev,
+                  refresh: isDev
                 }
               }
             }
@@ -74,6 +78,8 @@ export const config = {
     new webpack.HotModuleReplacementPlugin(),
     new webpack.NoEmitOnErrorsPlugin(),
     new ESLintWebpackPlugin(),
+    // React Fast Refresh (dev only) — preserves component state on edits
+    ...(isDev ? [new ReactRefreshWebpackPlugin({ overlay: { sockIntegration: 'whm' } })] : [])
   ],
   optimization: {
     // prints more readable module names in the browser console on HMR updates
