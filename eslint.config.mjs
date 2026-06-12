@@ -6,7 +6,7 @@ import reactPlugin from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import importPlugin from 'eslint-plugin-import';
-import jestPlugin from 'eslint-plugin-jest';
+import vitestPlugin from '@vitest/eslint-plugin';
 import security from 'eslint-plugin-security';
 import prettierRecommended from 'eslint-plugin-prettier/recommended';
 
@@ -75,13 +75,13 @@ export default [
         }
     },
     {
-        files: ['src/**/__tests__/**', 'src/**/*.test.{ts,tsx}'],
-        plugins: { jest: jestPlugin },
+        files: ['src/**/__tests__/**', 'src/**/*.{test,spec}.{ts,tsx}'],
+        plugins: { vitest: vitestPlugin },
         languageOptions: {
-            globals: { ...globals.jest }
+            globals: { ...vitestPlugin.environments.env.globals }
         },
         rules: {
-            ...jestPlugin.configs.recommended.rules
+            ...vitestPlugin.configs.recommended.rules
         }
     },
     prettierRecommended

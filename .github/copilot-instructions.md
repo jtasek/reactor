@@ -9,7 +9,7 @@ state lives in a single [Overmind](https://overmindjs.org) store.
 The repo uses **pnpm** (see `pnpm-lock.yaml`). Use `pnpm` for installs.
 
 - Dev server: `pnpm start` — runs `node server.js` (Express + webpack-dev-middleware + HMR) on http://localhost:4000.
-- Tests: `pnpm test` (Jest, transformed via `@swc/jest`).
+- Tests: `pnpm test` (Vitest, `vitest run`; esbuild handles TS/TSX). `pnpm test:watch` for watch mode.
   - Single file: `pnpm test src/app/__tests__/utils.test.ts`
   - By name: `pnpm test -- -t "name of test"`
 - Type-check: `pnpm tsc` (`tsc --noEmit`). Build does emit; this script does not.
@@ -76,7 +76,8 @@ Overmind re-renders. Components never mutate state directly.
   (typings-for-css-modules-loader). Don't hand-edit the `.d.ts` files.
 - **Style** (Prettier `.prettierrc`): 4-space indent, single quotes, semicolons,
   `printWidth` 100, no trailing commas. ESLint enforces these plus `prettier/prettier: error`.
-- **Tests** live in `__tests__/` folders next to the code they cover and use `@swc/jest`
-  (TS/TSX transformed, no ts-jest). `*.test.ts` files are excluded from `tsc`.
+- **Tests** live in `__tests__/` folders next to the code they cover and run on Vitest
+  with `globals: true` (no need to import `describe`/`it`/`expect`/`vi`). `*.test.ts`
+  files are excluded from `tsc`.
 - TypeScript is `strict`; avoid `any`. `console.log` triggers a lint warning
   (only `warn`/`error`/`info` are allowed) — prefer the `useLog` hook for debug output.

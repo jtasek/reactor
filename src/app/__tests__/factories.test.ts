@@ -175,12 +175,12 @@ describe('factories', () => {
 
     describe('createApplication()', () => {
         it('creates new application object with default values', () => {
-            Date.now = jest.fn(() => 1);
+            const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(1);
             const actual = createApplication();
 
             expect(actual).toHaveProperty('id', 'reactor-1');
 
-            (Date.now as jest.Mock).mockRestore();
+            nowSpy.mockRestore();
         });
     });
 });
