@@ -2,7 +2,7 @@ import React, { FC, useState } from 'react';
 import { Box, ResizeHandlerType } from '../../../app/types';
 import { Handle } from '../Handle';
 import { Props } from './Selectable';
-import { getBoundingBox } from '../../../app/utils';
+import { getShapeBounds } from '../../../app/utils';
 
 function calcBoundingPoints(box: Box) {
     const topLeft = box.topLeft;
@@ -36,7 +36,7 @@ export const Resizable: FC<Props> = ({ shape }) => {
         return null;
     }
 
-    const box = getBoundingBox(shape);
+    const box = getShapeBounds(shape);
 
     if (!box?.topLeft || !box?.bottomRight) {
         return null;

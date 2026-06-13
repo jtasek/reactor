@@ -99,6 +99,7 @@ export interface Grid {
 }
 
 export interface Shape {
+    bounds?: Box;
     center?: Point;
     children?: Shape[];
     created: Date;

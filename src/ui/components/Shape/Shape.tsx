@@ -1,9 +1,10 @@
-import React, { FC } from 'react';
+import React, { FC, useLayoutEffect, useRef } from 'react';
 import { Label } from '../Label';
 import { Resizable } from '../Selectable/Resizable';
 import { Selectable } from '../Selectable/Selectable';
 import { getComponentByType } from 'src/tools/components';
-import { useShape } from 'src/app/hooks';
+import { rectToBox } from 'src/app/utils';
+import { useActions, useShape } from 'src/app/hooks';
 
 interface Props {
     shapeId: string;
@@ -11,7 +12,27 @@ interface Props {
 
 export const Shape: FC<Props> = ({ shapeId }) => {
     const shape = useShape(shapeId);
+    const { setShapeBounds } = useActions();
+    const groupRef = useRef<SVGGElement>(null);
     const Component = getComponentByType(shape.type);
+
+    // Measure the actual rendered geometry so the selection box, handles and
+    // label match exactly. getBBox returns local (canvas) coordinates, so it is
+    // unaffected by the camera pan/zoom transform on ancestor groups.
+    useLayoutEffect(() => {
+        const node = groupRef.current;
+
+        if (!node) {
+            return;
+        }
+
+        try {
+            const bounds = rectToBox(node.getBBox());
+            setShapeBounds({ id: shapeId, bounds });
+        } catch {
+            // getBBox throws for elements that are not yet renderable; ignore.
+        }
+    });
 
     if (!Component) {
         console.error(`Component ${shape.type} not found`);
@@ -20,7 +41,9 @@ export const Shape: FC<Props> = ({ shapeId }) => {
 
     return (
         <>
-            <Component {...shape} />
+            <g ref={groupRef}>
+                <Component {...shape} />
+            </g>
             <Selectable key={`selectable-${shape.type}-${shape.id}`} shape={shape} />
             <Resizable key={`resizable-${shape.type}-${shape.id}`} shape={shape} />
             <Label key={`label-${shape.type}-${shape.id}`} shape={shape} />

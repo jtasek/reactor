@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 
 import styles from './styles.css';
 import { Shape } from '../../../app/types';
-import { getBoundingBox } from '../../../app/utils';
+import { getShapeBounds } from '../../../app/utils';
 
 const LABEL_OFFSET = 20;
 
@@ -14,7 +14,7 @@ export const Label: FC<Props> = ({ shape }) => {
         return null;
     }
 
-    const box = getBoundingBox(shape);
+    const box = getShapeBounds(shape);
 
     const middleBottom = {
         x: box.bottomRight.x - box.width / 2,

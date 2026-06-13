@@ -177,8 +177,35 @@ export function getBoundingBox(shape: Partial<Shape>): Box {
     return getRectBoundingBox(shape as Rectangle);
 }
 
+/**
+ * Returns the exact bounds measured from the rendered SVG element when available
+ * (see getBBox measurement in the Shape component), falling back to the analytic
+ * box for shapes that have not been measured yet.
+ */
+export function getShapeBounds(shape: Partial<Shape>): Box {
+    return shape.bounds ?? getBoundingBox(shape);
+}
+
+export function rectToBox(rect: { x: number; y: number; width: number; height: number }): Box {
+    return {
+        topLeft: { x: rect.x, y: rect.y },
+        bottomRight: { x: rect.x + rect.width, y: rect.y + rect.height },
+        width: rect.width,
+        height: rect.height
+    };
+}
+
+export function boxesEqual(a: Box, b: Box, epsilon = 0.5): boolean {
+    return (
+        Math.abs(a.topLeft.x - b.topLeft.x) < epsilon &&
+        Math.abs(a.topLeft.y - b.topLeft.y) < epsilon &&
+        Math.abs(a.width - b.width) < epsilon &&
+        Math.abs(a.height - b.height) < epsilon
+    );
+}
+
 export function isPointInBox(p: Point, shape: Partial<Shape>): boolean {
-    const box = getBoundingBox(shape);
+    const box = getShapeBounds(shape);
 
     if (!box) {
         return false;

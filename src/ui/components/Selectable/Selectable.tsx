@@ -2,7 +2,7 @@ import React, { FC, ReactNode } from 'react';
 
 import styles from './styles.css';
 import { Shape } from 'src/app/types';
-import { getBoundingBox } from '../../../app/utils';
+import { getShapeBounds } from '../../../app/utils';
 import { useActions } from 'src/app/hooks';
 
 export interface Props {
@@ -19,7 +19,7 @@ export const Selectable: FC<Props> = ({ shape }) => {
         return null;
     }
 
-    const box = getBoundingBox(shape);
+    const box = getShapeBounds(shape);
 
     const x = box.topLeft.x - SELECTABLE_OFFSET;
     const y = box.topLeft.y - SELECTABLE_OFFSET;

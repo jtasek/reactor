@@ -1,7 +1,7 @@
-import { Action, ActionWithParam, Application, Circle, Point, Shape } from '../types';
+import { Action, ActionWithParam, Application, Box, Circle, Point, Shape } from '../types';
 import { Context } from '../index';
 import { createShape } from '../factories';
-import { getBoundingBox, overlaps, isPointInBox } from '../utils';
+import { boxesEqual, getShapeBounds, overlaps, isPointInBox } from '../utils';
 
 const getShape = ({ currentDocument }: Application, shapeId: string) => {
     const shape = currentDocument.shapes[shapeId];
@@ -67,8 +67,27 @@ export const selectShapes: Action = ({ state }) => {
 
     const shapes = Object.values(state.currentDocument.shapes);
     shapes.forEach((shape) => {
-        shape.selected = overlaps(source, getBoundingBox(shape));
+        shape.selected = overlaps(source, getShapeBounds(shape));
     });
+};
+
+export const setShapeBounds: ActionWithParam<{ id: string; bounds: Box }> = (
+    { state },
+    { id, bounds }
+) => {
+    const shape = state.currentDocument.shapes[id];
+
+    if (!shape) {
+        return;
+    }
+
+    // Idempotent: skip the write when the measured box is unchanged so the
+    // measurement effect cannot trigger a render loop.
+    if (shape.bounds && boxesEqual(shape.bounds, bounds)) {
+        return;
+    }
+
+    shape.bounds = bounds;
 };
 
 export const unselectShapes: Action = ({ state }) => {
