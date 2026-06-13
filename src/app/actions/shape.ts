@@ -163,8 +163,67 @@ const centerOf = (box: Box): Point => ({
     y: box.topLeft.y + box.height / 2
 });
 
+/** Computes a circle's new center+radius from a handle drag, anchoring the opposite side. */
+const resizeCircle = (oldBox: Box, handlerType: ResizeHandlerType, pointer: Point, min = 1) => {
+    const left = oldBox.topLeft.x;
+    const top = oldBox.topLeft.y;
+    const right = oldBox.bottomRight.x;
+    const bottom = oldBox.bottomRight.y;
+
+    let diameter = oldBox.width;
+    let cx = left + oldBox.width / 2;
+    let cy = top + oldBox.height / 2;
+
+    switch (handlerType) {
+        case 'middleRight':
+            diameter = Math.max(pointer.x - left, min);
+            cx = left + diameter / 2;
+            break;
+        case 'middleLeft':
+            diameter = Math.max(right - pointer.x, min);
+            cx = right - diameter / 2;
+            break;
+        case 'middleBottom':
+            diameter = Math.max(pointer.y - top, min);
+            cy = top + diameter / 2;
+            break;
+        case 'middleTop':
+            diameter = Math.max(bottom - pointer.y, min);
+            cy = bottom - diameter / 2;
+            break;
+        case 'bottomRight':
+            diameter = Math.max(pointer.x - left, pointer.y - top, min);
+            cx = left + diameter / 2;
+            cy = top + diameter / 2;
+            break;
+        case 'topLeft':
+            diameter = Math.max(right - pointer.x, bottom - pointer.y, min);
+            cx = right - diameter / 2;
+            cy = bottom - diameter / 2;
+            break;
+        case 'topRight':
+            diameter = Math.max(pointer.x - left, bottom - pointer.y, min);
+            cx = left + diameter / 2;
+            cy = bottom - diameter / 2;
+            break;
+        case 'bottomLeft':
+            diameter = Math.max(right - pointer.x, pointer.y - top, min);
+            cx = right - diameter / 2;
+            cy = top + diameter / 2;
+            break;
+    }
+
+    return { center: { x: cx, y: cy }, radius: diameter / 2 };
+};
+
 /** Maps a resized bounding box back onto a shape's native geometry. */
-const applyBoxToShape = (shape: Shape, oldBox: Box, newBox: Box) => {
+const applyBoxToShape = (
+    shape: Shape,
+    oldBox: Box,
+    newBox: Box,
+    handlerType: ResizeHandlerType,
+    pointer: Point
+) => {
     if (shape.size) {
         // rectangle / image
         shape.position = { x: newBox.topLeft.x, y: newBox.topLeft.y };
@@ -173,9 +232,9 @@ const applyBoxToShape = (shape: Shape, oldBox: Box, newBox: Box) => {
     }
 
     if (shape.type === 'circle') {
-        const center = centerOf(newBox);
+        const { center, radius } = resizeCircle(oldBox, handlerType, pointer);
         shape.position = center;
-        (shape as Circle).radius = Math.max(newBox.width, newBox.height) / 2;
+        (shape as Circle).radius = radius;
         return;
     }
 
@@ -231,5 +290,5 @@ export const resizeShape = (
     const oldBox = getShapeBounds(shape);
     const newBox = resizeBox(oldBox, handlerType, position);
 
-    applyBoxToShape(shape, oldBox, newBox);
+    applyBoxToShape(shape, oldBox, newBox, handlerType, position);
 };
