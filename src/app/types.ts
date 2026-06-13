@@ -131,6 +131,7 @@ export interface Ellipse extends Shape {
 }
 
 export interface Text extends Shape {
+    fontSize?: number;
     position: Point;
     text: string;
     type: 'text';

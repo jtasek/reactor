@@ -5,6 +5,7 @@ import type { Command, Point } from 'src/app/types';
 import type { Keyboard, Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
 import { newShapeName } from 'src/app/factories';
+import { DEFAULT_TEXT_FONT_SIZE } from 'src/app/utils';
 import { useActions, useKeyboard, usePointer } from 'src/app/hooks';
 
 /**
@@ -23,6 +24,7 @@ import { useActions, useKeyboard, usePointer } from 'src/app/hooks';
 **/
 
 interface Props {
+    fontSize: number;
     key: string;
     name: string;
     position: Point;
@@ -40,6 +42,7 @@ export const createTextProps = (
     const key = name.toLowerCase();
 
     return {
+        fontSize: DEFAULT_TEXT_FONT_SIZE,
         key,
         name,
         position: start,
@@ -49,11 +52,18 @@ export const createTextProps = (
     };
 };
 
-export const Text: FC<Props> = ({ key, name, position, value, selected }) => {
+export const Text: FC<Props> = ({ fontSize, key, name, position, value, selected }) => {
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
     return (
-        <text className={className} data-cy={name} key={key} x={position.x} y={position.y}>
+        <text
+            className={className}
+            data-cy={name}
+            key={key}
+            style={{ fontSize }}
+            x={position.x}
+            y={position.y}
+        >
             {value}
         </text>
     );
@@ -66,7 +76,7 @@ export const DesignText: FC = () => {
     const pointer = usePointer();
     const actions = useActions();
 
-    const { name, position, value } = createTextProps(pointer, keyboard, true);
+    const { fontSize, name, position, value } = createTextProps(pointer, keyboard, true);
 
     // Focus the input once the location has been set (typing mode is started by the
     // placement click) and whenever it is repositioned.
@@ -111,13 +121,14 @@ export const DesignText: FC = () => {
     }
 
     return (
-        <foreignObject x={position.x} y={position.y} width={300} height={40}>
+        <foreignObject x={position.x} y={position.y - fontSize} width={300} height={fontSize * 2}>
             <form onSubmit={handleSubmit}>
                 <input
                     ref={inputRef}
                     className={styles.shape}
                     data-cy={name}
                     placeholder="Type something..."
+                    style={{ fontSize }}
                     type="text"
                     value={value}
                     onChange={handleChange}
