@@ -30,8 +30,6 @@ export function createSelectProps({ topLeft, size }: Pointer): Props {
 }
 
 export const Select: FC<Props> = ({ key, name, position, size }) => {
-    console.log('rendering Select');
-
     return (
         <rect
             data-cy={name}
@@ -50,11 +48,20 @@ export const DesignSelect: FC = () => {
     const pointer = usePointer();
     const { selectShapes } = useActions();
 
-    useEffect(() => {
-        selectShapes();
-    }, [pointer]);
+    const { current, dragging } = pointer;
 
-    const { key, name, position, size, type } = createSelectProps(pointer, true);
+    // While the marquee is being dragged, keep the selection in sync with the box.
+    useEffect(() => {
+        if (dragging) {
+            selectShapes();
+        }
+    }, [dragging, current.x, current.y, selectShapes]);
+
+    if (!dragging) {
+        return null;
+    }
+
+    const { key, name, position, size, type } = createSelectProps(pointer);
 
     return <Select key={key} name={name} position={position} size={size} type={type} />;
 };
@@ -72,9 +79,8 @@ export const SelectCommand: Command = {
     },
     regex: /(?<toolCode>select)\((?<x1>[\d]+),(?<y1>[\d]+),(?<x2>[\d]+),(?<y2>[\d]+)\)/,
     shortcut: 's',
-    canExecute: (context) => true,
+    canExecute: () => true,
     execute: ({ actions }) => {
-        console.log('SelectCommand:execute');
         actions.selectShapes();
     }
 };

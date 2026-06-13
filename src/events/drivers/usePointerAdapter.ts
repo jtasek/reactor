@@ -47,7 +47,6 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
                 actions.events.endDragging();
                 actions.tools.executeToolCommands();
                 actions.tools.resetTools();
-                actions.unselectShapes();
             }
         },
         [log, actions, svgRef]

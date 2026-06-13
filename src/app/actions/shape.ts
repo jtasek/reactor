@@ -1,4 +1,3 @@
-import type { Pointer } from 'src/events/types';
 import { Action, ActionWithParam, Application, Circle, Point, Shape } from '../types';
 import { Context } from '../index';
 import { createShape } from '../factories';
@@ -68,15 +67,12 @@ export const selectShapes: Action = ({ state }) => {
 
     const shapes = Object.values(state.currentDocument.shapes);
     shapes.forEach((shape) => {
-        if (overlaps(source, getBoundingBox(shape))) {
-            shape.selected = true;
-        }
+        shape.selected = overlaps(source, getBoundingBox(shape));
     });
 };
 
 export const unselectShapes: Action = ({ state }) => {
     const shapes = Object.values(state.currentDocument.shapes);
-    console.log('unselectShapes()');
     shapes.forEach((shape) => (shape.selected = false));
 };
 
