@@ -24,17 +24,11 @@ export const Handle: FC<Props> = ({
     const { resizeShape } = useActions();
     const { current, dragging } = usePointer();
 
-    const handleResize = () => {
+    useEffect(() => {
         if (active && dragging) {
-            console.log('resize', { active, shapeId, handlerType, position: { ...position } });
-
             resizeShape({ shapeId, handlerType, position: current });
         }
-    };
-
-    useEffect(() => {
-        handleResize();
-    }, [current, dragging]);
+    }, [active, dragging, current, shapeId, handlerType, resizeShape]);
 
     const classes = [styles.handle, styles[handlerType], active ? styles.active : undefined];
 

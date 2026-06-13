@@ -1,8 +1,9 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { Box, ResizeHandlerType } from '../../../app/types';
 import { Handle } from '../Handle';
 import { Props } from './Selectable';
 import { getShapeBounds } from '../../../app/utils';
+import { usePointer } from 'src/app/hooks';
 
 function calcBoundingPoints(box: Box) {
     const topLeft = box.topLeft;
@@ -30,7 +31,14 @@ function calcBoundingPoints(box: Box) {
 }
 
 export const Resizable: FC<Props> = ({ shape }) => {
+    const { dragging } = usePointer();
     const [activeHandle, setActiveHandle] = useState<ResizeHandlerType>();
+
+    useEffect(() => {
+        if (!dragging) {
+            setActiveHandle(undefined);
+        }
+    }, [dragging]);
 
     if (!shape.selected) {
         return null;
@@ -54,7 +62,6 @@ export const Resizable: FC<Props> = ({ shape }) => {
     } = calcBoundingPoints(box);
 
     const handlePointerDown = (handlerType?: ResizeHandlerType) => {
-        console.log('handlePointerDown', handlerType);
         setActiveHandle(handlerType);
     };
 

@@ -1,4 +1,16 @@
-import { Box, Circle, Ellipse, Line, Pen, Point, Rectangle, Shape, Text, Vector } from './types';
+import {
+    Box,
+    Circle,
+    Ellipse,
+    Line,
+    Pen,
+    Point,
+    Rectangle,
+    ResizeHandlerType,
+    Shape,
+    Text,
+    Vector
+} from './types';
 
 export function stringifyPath(path: Point[]): string {
     return path.map((point: Point) => `${point.x}, ${point.y}`).join(' ');
@@ -237,6 +249,62 @@ export function shapeGeometryKey(shape: Shape): string {
         text: g.text,
         fontSize: g.fontSize
     });
+}
+
+/**
+ * Returns a new box after dragging a resize handle to `pointer`. The edges the
+ * handle controls follow the pointer; the opposite edges stay fixed and the box
+ * is clamped so it never collapses past `min`.
+ */
+export function resizeBox(box: Box, handlerType: ResizeHandlerType, pointer: Point, min = 1): Box {
+    let left = box.topLeft.x;
+    let top = box.topLeft.y;
+    let right = box.bottomRight.x;
+    let bottom = box.bottomRight.y;
+
+    const movesLeft =
+        handlerType === 'topLeft' || handlerType === 'middleLeft' || handlerType === 'bottomLeft';
+    const movesRight =
+        handlerType === 'topRight' ||
+        handlerType === 'middleRight' ||
+        handlerType === 'bottomRight';
+    const movesTop =
+        handlerType === 'topLeft' || handlerType === 'middleTop' || handlerType === 'topRight';
+    const movesBottom =
+        handlerType === 'bottomLeft' ||
+        handlerType === 'middleBottom' ||
+        handlerType === 'bottomRight';
+
+    if (movesLeft) {
+        left = Math.min(pointer.x, right - min);
+    }
+    if (movesRight) {
+        right = Math.max(pointer.x, left + min);
+    }
+    if (movesTop) {
+        top = Math.min(pointer.y, bottom - min);
+    }
+    if (movesBottom) {
+        bottom = Math.max(pointer.y, top + min);
+    }
+
+    return {
+        topLeft: { x: left, y: top },
+        bottomRight: { x: right, y: bottom },
+        width: right - left,
+        height: bottom - top
+    };
+}
+
+/** Maps a point from one box's local space into another box (proportional scale). */
+export function mapPointBetweenBoxes(point: Point, from: Box, to: Box): Point {
+    const fx = from.width > 0 ? (point.x - from.topLeft.x) / from.width : 0;
+    const fy = from.height > 0 ? (point.y - from.topLeft.y) / from.height : 0;
+
+    return {
+        x: to.topLeft.x + fx * to.width,
+        y: to.topLeft.y + fy * to.height
+    };
 }
 
 export function isPointInBox(p: Point, shape: Partial<Shape>): boolean {

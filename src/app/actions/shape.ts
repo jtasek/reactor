@@ -1,7 +1,28 @@
-import { Action, ActionWithParam, Application, Box, Circle, Point, Shape } from '../types';
+import {
+    Action,
+    ActionWithParam,
+    Application,
+    Box,
+    Circle,
+    Ellipse,
+    Line,
+    Pen,
+    Point,
+    ResizeHandlerType,
+    Shape,
+    Text
+} from '../types';
 import { Context } from '../index';
 import { createShape } from '../factories';
-import { boxesEqual, getShapeBounds, overlaps, isPointInBox } from '../utils';
+import {
+    DEFAULT_TEXT_FONT_SIZE,
+    boxesEqual,
+    getShapeBounds,
+    mapPointBetweenBoxes,
+    overlaps,
+    isPointInBox,
+    resizeBox
+} from '../utils';
 
 const getShape = ({ currentDocument }: Application, shapeId: string) => {
     const shape = currentDocument.shapes[shapeId];
@@ -137,87 +158,78 @@ export const updateShape = ({ state }: Context, options: Partial<Shape> & { id: 
     setShape(state, { ...shape, ...options });
 };
 
+const centerOf = (box: Box): Point => ({
+    x: box.topLeft.x + box.width / 2,
+    y: box.topLeft.y + box.height / 2
+});
+
+/** Maps a resized bounding box back onto a shape's native geometry. */
+const applyBoxToShape = (shape: Shape, oldBox: Box, newBox: Box) => {
+    if (shape.size) {
+        // rectangle / image
+        shape.position = { x: newBox.topLeft.x, y: newBox.topLeft.y };
+        shape.size = { width: newBox.width, height: newBox.height };
+        return;
+    }
+
+    if (shape.type === 'circle') {
+        const center = centerOf(newBox);
+        shape.position = center;
+        (shape as Circle).radius = Math.max(newBox.width, newBox.height) / 2;
+        return;
+    }
+
+    if (shape.type === 'ellipse') {
+        const center = centerOf(newBox);
+        shape.position = center;
+        (shape as Ellipse).radius = { x: newBox.width / 2, y: newBox.height / 2 };
+        return;
+    }
+
+    const line = shape as Line;
+    if (line.start && line.end) {
+        line.start = mapPointBetweenBoxes(line.start, oldBox, newBox);
+        line.end = mapPointBetweenBoxes(line.end, oldBox, newBox);
+        return;
+    }
+
+    const pen = shape as Pen;
+    if (Array.isArray(pen.points)) {
+        pen.points = pen.points.map((point) => mapPointBetweenBoxes(point, oldBox, newBox));
+        return;
+    }
+
+    if (shape.type === 'text') {
+        const text = shape as Text;
+        const ratio = oldBox.height > 0 ? newBox.height / oldBox.height : 1;
+
+        text.fontSize = Math.max(1, (text.fontSize ?? DEFAULT_TEXT_FONT_SIZE) * ratio);
+        // Keep the top-left edge following the handle (text anchors at its baseline).
+        shape.position = {
+            x: newBox.topLeft.x,
+            y: (shape.position?.y ?? newBox.topLeft.y) + (newBox.topLeft.y - oldBox.topLeft.y)
+        };
+    }
+};
+
 export const resizeShape = (
     { state }: Context,
     payload: {
         shapeId: string;
-        handlerType: string;
+        handlerType: ResizeHandlerType;
         position: Point;
     }
 ) => {
     const { shapeId, handlerType, position } = payload;
 
-    const shape = getShape(state, shapeId);
-    const diffx = position.x - shape.position.x;
-    const diffy = position.y - shape.position.y;
+    const shape = state.currentDocument?.shapes[shapeId];
 
-    if (shape.type === 'circle') {
-        const radiusChange = Math.sqrt(Math.pow(diffx, 2) + Math.pow(diffy, 2));
-        (shape as Circle).radius = radiusChange;
+    if (!shape) {
         return;
     }
 
-    const topLeft = shape.position;
-    const bottomRight = { x: topLeft!.x + shape.size!.width, y: topLeft!.y + shape.size!.height };
+    const oldBox = getShapeBounds(shape);
+    const newBox = resizeBox(oldBox, handlerType, position);
 
-    switch (handlerType) {
-        case 'topLeft':
-            if (position.y < bottomRight.y) {
-                shape.position!.y = position.y;
-                shape.size!.height -= diffy;
-            }
-            if (position.x < bottomRight.x) {
-                shape.position!.x = position.x;
-                shape.size!.width = shape.size!.width - diffx;
-            }
-            break;
-        case 'middleTop':
-            if (position.y < bottomRight.y) {
-                shape.position!.y = position.y;
-                shape.size!.height -= diffy;
-            }
-            break;
-        case 'topRight':
-            if (position.x > topLeft!.x) {
-                shape.size!.width = diffx;
-            }
-            if (position.y < bottomRight!.y) {
-                shape.position!.y = position.y;
-                shape.size!.height -= diffy;
-            }
-            break;
-        case 'middleRight':
-            if (position.x > shape.position!.x) {
-                shape.size!.width = diffx;
-            }
-            break;
-        case 'bottomRight':
-            if (position.x > shape.position!.x) {
-                shape.size!.width = diffx;
-            }
-            if (position.y > shape.position!.y) {
-                shape.size!.height = diffy;
-            }
-            break;
-        case 'middleBottom':
-            if (position.y > shape.position!.y) {
-                shape.size!.height = diffy;
-            }
-            break;
-        case 'bottomLeft':
-            if (position.x < bottomRight!.x) {
-                shape.position!.x = position.x;
-                shape.size!.width = shape.size!.width - diffx;
-            }
-            if (position.y > topLeft!.y) {
-                shape.size!.height = diffy;
-            }
-            break;
-        case 'middleLeft':
-            if (position.x < bottomRight!.x) {
-                shape.position!.x = position.x;
-                shape.size!.width = shape.size!.width - diffx;
-            }
-            break;
-    }
+    applyBoxToShape(shape, oldBox, newBox);
 };
