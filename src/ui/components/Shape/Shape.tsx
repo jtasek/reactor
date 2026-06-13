@@ -3,7 +3,7 @@ import { Label } from '../Label';
 import { Resizable } from '../Selectable/Resizable';
 import { Selectable } from '../Selectable/Selectable';
 import { getComponentByType } from 'src/tools/components';
-import { rectToBox } from 'src/app/utils';
+import { rectToBox, shapeGeometryKey } from 'src/app/utils';
 import { useActions, useShape } from 'src/app/hooks';
 
 interface Props {
@@ -15,10 +15,13 @@ export const Shape: FC<Props> = ({ shapeId }) => {
     const { setShapeBounds } = useActions();
     const groupRef = useRef<SVGGElement>(null);
     const Component = getComponentByType(shape.type);
+    const geometryKey = shapeGeometryKey(shape);
 
     // Measure the actual rendered geometry so the selection box, handles and
     // label match exactly. getBBox returns local (canvas) coordinates, so it is
-    // unaffected by the camera pan/zoom transform on ancestor groups.
+    // unaffected by the camera pan/zoom transform on ancestor groups. Keyed on
+    // the geometry only, so toggling `selected` during a marquee drag does not
+    // trigger a costly reflow.
     useLayoutEffect(() => {
         const node = groupRef.current;
 
@@ -32,7 +35,7 @@ export const Shape: FC<Props> = ({ shapeId }) => {
         } catch {
             // getBBox throws for elements that are not yet renderable; ignore.
         }
-    });
+    }, [geometryKey, shapeId, setShapeBounds]);
 
     if (!Component) {
         console.error(`Component ${shape.type} not found`);

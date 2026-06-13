@@ -204,6 +204,41 @@ export function boxesEqual(a: Box, b: Box, epsilon = 0.5): boolean {
     );
 }
 
+type GeometryView = {
+    type: string;
+    position?: Point;
+    size?: { width: number; height: number };
+    radius?: number | Point;
+    start?: Point;
+    end?: Point;
+    points?: Point[];
+    value?: string;
+    text?: string;
+    fontSize?: number;
+};
+
+/**
+ * A stable string describing only the geometry-relevant fields of a shape. Used
+ * to decide when a shape must be re-measured, so toggling unrelated state such as
+ * `selected` does not force an expensive getBBox reflow.
+ */
+export function shapeGeometryKey(shape: Shape): string {
+    const g = shape as unknown as GeometryView;
+
+    return JSON.stringify({
+        type: g.type,
+        position: g.position,
+        size: g.size,
+        radius: g.radius,
+        start: g.start,
+        end: g.end,
+        points: g.points,
+        value: g.value,
+        text: g.text,
+        fontSize: g.fontSize
+    });
+}
+
 export function isPointInBox(p: Point, shape: Partial<Shape>): boolean {
     const box = getShapeBounds(shape);
 

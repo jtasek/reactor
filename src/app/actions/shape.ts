@@ -65,9 +65,15 @@ export const selectShapes: Action = ({ state }) => {
     const { topLeft, bottomRight } = state.events.pointer;
     const source = { topLeft, bottomRight };
 
-    const shapes = Object.values(state.currentDocument.shapes);
+    const shapes = Object.values(state.currentDocument.shapes) as Shape[];
     shapes.forEach((shape) => {
-        shape.selected = overlaps(source, getShapeBounds(shape));
+        const selected = overlaps(source, getShapeBounds(shape));
+
+        // Only write when the value actually changes so shapes that stay
+        // outside (or inside) the marquee don't re-render every pointer move.
+        if (shape.selected !== selected) {
+            shape.selected = selected;
+        }
     });
 };
 
