@@ -68,6 +68,11 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+---
+
+# Project guide
+
 Guidance for Claude when working in this repository.
 
 ## What this is
@@ -136,8 +141,8 @@ re-renders.** Components never mutate state directly.
 - **Effects** (`src/app/effects.ts`): impure helpers (`newId`, localStorage, routing). Call
   them from actions (`effects.newId()`); don't import those libs directly in actions.
 - **Events** (`src/events/`): pointer/keyboard/clipboard input. `drivers/` are React hooks
-  (e.g. `useKeyboardDriver`, `usePointerAdapter`) mounted in `Shell` that translate DOM
-  events into store actions.
+  that translate DOM events into store actions — `useKeyboardDriver` is mounted in `Shell`
+  and `usePointerAdapter` in the canvas `Surface` (`src/ui/components/Surface/Surface.tsx`).
 - **Tools** (`src/tools/`): drawing/selection tools; tool state lives in the `tools` namespace.
 - **Renderers** (`src/app/renderers/`): pluggable output renderers (Svg/Canvas/Html/Pdf).
 - Entry: `src/index.tsx` creates the Overmind instance and wraps `<Shell>` in the
