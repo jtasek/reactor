@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useRef, useState } from 'react';
+import React, { ChangeEvent, FC, FormEvent, KeyboardEvent, useEffect, useRef } from 'react';
 
 import styles from './styles.css';
 import type { Command, Point } from 'src/app/types';
@@ -51,7 +51,6 @@ export const createTextProps = (
 
 export const Text: FC<Props> = ({ key, name, position, value, selected }) => {
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
-    console.log('rendering Text');
 
     return (
         <text className={className} data-cy={name} key={key} x={position.x} y={position.y}>
@@ -61,65 +60,71 @@ export const Text: FC<Props> = ({ key, name, position, value, selected }) => {
 };
 
 export const DesignText: FC = () => {
-    const shapeRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     const keyboard = useKeyboard();
-    const {
-        events: { startTyping, typing, endTyping }
-    } = useActions();
     const pointer = usePointer();
+    const actions = useActions();
 
+    const { name, position, value } = createTextProps(pointer, keyboard, true);
+
+    // Focus the input once the location has been set (typing mode is started by the
+    // placement click) and whenever it is repositioned.
     useEffect(() => {
-        //shapeRef?.current?.focus();
-        if (pointer.dragging) {
-            startTyping();
+        if (keyboard.typing) {
+            inputRef.current?.focus();
         }
-    }, [pointer.dragging, startTyping]);
+    }, [keyboard.typing, position.x, position.y]);
 
-    const { key, name, position, value, type } = createTextProps(pointer, keyboard);
-
-    const handleBlur = (event) => {
-        event.preventDefault();
-        endTyping();
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+        actions.events.typing(event.currentTarget.value);
     };
 
-    const handleChange = (event) => {
-        event.preventDefault();
-        typing(event.currentTarget.value);
+    const commit = () => {
+        // Persist the text shape (no-op for empty text), then leave typing mode and
+        // let resetTools deactivate the tool.
+        actions.tools.executeToolCommands();
+        actions.events.endTyping();
+        actions.tools.resetTools();
     };
 
-    const handleKeyUp = (event) => {
+    const cancel = () => {
+        actions.events.endTyping();
+        actions.tools.resetTools();
+    };
+
+    const handleSubmit = (event: FormEvent) => {
         event.preventDefault();
-        if (event.key === 'Enter') {
-            endTyping();
+        commit();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            cancel();
         }
     };
 
-    const handleSubmit = (event) => {
-        event?.preventDefault();
-        return false;
-    };
+    // The input appears only after the user clicks the canvas to set the location.
+    if (!keyboard.typing) {
+        return null;
+    }
 
     return (
-        <g>
-            <foreignObject width="100%" height="100%" x={position.x} y={position.y}>
-                <form onSubmit={handleSubmit}>
-                    <input
-                        autoFocus
-                        className={styles.shape}
-                        data-cy={name}
-                        key={key}
-                        placeholder="Type something..."
-                        ref={shapeRef}
-                        type={type}
-                        value={value}
-                        onBlur={handleBlur}
-                        onKeyUp={handleKeyUp}
-                        onChange={handleChange}
-                    />
-                </form>
-            </foreignObject>
-        </g>
+        <foreignObject x={position.x} y={position.y} width={300} height={40}>
+            <form onSubmit={handleSubmit}>
+                <input
+                    ref={inputRef}
+                    className={styles.shape}
+                    data-cy={name}
+                    placeholder="Type something..."
+                    type="text"
+                    value={value}
+                    onChange={handleChange}
+                    onKeyDown={handleKeyDown}
+                />
+            </form>
+        </foreignObject>
     );
 };
 
@@ -136,27 +141,29 @@ export const TextCommand: Command = {
     },
     regex: /(?<toolCode>text)\((?<x>[\d]+),(?<y>[\d]+),'(?<text>[\w]+)'\)/,
     shortcut: 't',
-    canExecute: ({
-        state: {
-            events: { keyboard }
-        }
-    }) => {
-        return keyboard.typing && keyboard.text.length > 0;
-    },
+    canExecute: () => true,
     execute: ({ actions, state }) => {
-        console.log('TextCommand:execute');
+        const { keyboard, pointer } = state.events;
 
-        const shape = createTextProps(state.events.pointer, state.events.keyboard);
+        // First canvas click only sets the location and enters typing mode — it does
+        // not yet create a shape.
+        if (!keyboard.typing) {
+            actions.events.startTyping();
+            return;
+        }
 
-        actions.addShape(shape);
+        // Commit (Enter) persists the typed text at the chosen location.
+        if (keyboard.text.length > 0) {
+            actions.addShape(createTextProps(pointer, keyboard));
+        }
     },
     shouldDeactivate: ({
         state: {
             events: { keyboard }
         }
     }) => {
-        debugger;
-        return keyboard.typing;
+        // Stay active while typing; deactivate once typing has ended.
+        return !keyboard.typing;
     }
 };
 
