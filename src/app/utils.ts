@@ -123,18 +123,31 @@ export function getPathBoundingBox({ points }: Pen) {
     };
 }
 
+const TEXT_FONT_SIZE = 24; // matches .shape font-size: 1.5rem
+const TEXT_CHAR_WIDTH_RATIO = 0.6;
+const TEXT_ASCENT_RATIO = 0.8;
+
 export function getTextBoundingBox(text: Text): Box {
-    const topLeft = text.position;
+    const value = (text as { value?: string }).value ?? text.text ?? '';
+
+    const width = value.length * TEXT_FONT_SIZE * TEXT_CHAR_WIDTH_RATIO;
+    const height = TEXT_FONT_SIZE;
+
+    // SVG <text> anchors at the left baseline, so the glyphs sit above the y point.
+    const topLeft = {
+        x: text.position.x,
+        y: text.position.y - TEXT_FONT_SIZE * TEXT_ASCENT_RATIO
+    };
     const bottomRight = {
-        x: text.position.x + 200,
-        y: text.position.y + 100
+        x: topLeft.x + width,
+        y: topLeft.y + height
     };
 
     return {
         topLeft,
         bottomRight,
-        width: 200,
-        height: 100
+        width,
+        height
     };
 }
 
