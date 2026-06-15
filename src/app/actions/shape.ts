@@ -163,57 +163,77 @@ const centerOf = (box: Box): Point => ({
     y: box.topLeft.y + box.height / 2
 });
 
-/** Computes a circle's new center+radius from a handle drag, anchoring the opposite side. */
-const resizeCircle = (oldBox: Box, handlerType: ResizeHandlerType, pointer: Point, min = 1) => {
+/**
+ * Resizes a box from a handle drag while locking it to `ratio` (width / height).
+ * Corner handles keep the dominant axis and anchor the opposite corner; middle
+ * handles drive their own axis, derive the other from the ratio, and stay
+ * centred on the perpendicular axis.
+ */
+const resizeAspectBox = (
+    oldBox: Box,
+    handlerType: ResizeHandlerType,
+    pointer: Point,
+    ratio: number,
+    min = 1
+): Box => {
+    const free = resizeBox(oldBox, handlerType, pointer, min);
+
     const left = oldBox.topLeft.x;
     const top = oldBox.topLeft.y;
     const right = oldBox.bottomRight.x;
     const bottom = oldBox.bottomRight.y;
+    const centerX = left + oldBox.width / 2;
+    const centerY = top + oldBox.height / 2;
 
-    let diameter = oldBox.width;
-    let cx = left + oldBox.width / 2;
-    let cy = top + oldBox.height / 2;
+    const isHorizontalMiddle = handlerType === 'middleLeft' || handlerType === 'middleRight';
+    const isVerticalMiddle = handlerType === 'middleTop' || handlerType === 'middleBottom';
 
-    switch (handlerType) {
-        case 'middleRight':
-            diameter = Math.max(pointer.x - left, min);
-            cx = left + diameter / 2;
-            break;
-        case 'middleLeft':
-            diameter = Math.max(right - pointer.x, min);
-            cx = right - diameter / 2;
-            break;
-        case 'middleBottom':
-            diameter = Math.max(pointer.y - top, min);
-            cy = top + diameter / 2;
-            break;
-        case 'middleTop':
-            diameter = Math.max(bottom - pointer.y, min);
-            cy = bottom - diameter / 2;
-            break;
-        case 'bottomRight':
-            diameter = Math.max(pointer.x - left, pointer.y - top, min);
-            cx = left + diameter / 2;
-            cy = top + diameter / 2;
-            break;
-        case 'topLeft':
-            diameter = Math.max(right - pointer.x, bottom - pointer.y, min);
-            cx = right - diameter / 2;
-            cy = bottom - diameter / 2;
-            break;
-        case 'topRight':
-            diameter = Math.max(pointer.x - left, bottom - pointer.y, min);
-            cx = left + diameter / 2;
-            cy = bottom - diameter / 2;
-            break;
-        case 'bottomLeft':
-            diameter = Math.max(right - pointer.x, pointer.y - top, min);
-            cx = right - diameter / 2;
-            cy = top + diameter / 2;
-            break;
+    let width = free.width;
+    let height = free.height;
+
+    if (isHorizontalMiddle) {
+        height = width / ratio;
+    } else if (isVerticalMiddle) {
+        width = height * ratio;
+    } else if (width / ratio >= height) {
+        height = width / ratio;
+    } else {
+        width = height * ratio;
     }
 
-    return { center: { x: cx, y: cy }, radius: diameter / 2 };
+    const movesLeft =
+        handlerType === 'topLeft' || handlerType === 'middleLeft' || handlerType === 'bottomLeft';
+    const movesRight =
+        handlerType === 'topRight' ||
+        handlerType === 'middleRight' ||
+        handlerType === 'bottomRight';
+    const movesTop =
+        handlerType === 'topLeft' || handlerType === 'middleTop' || handlerType === 'topRight';
+    const movesBottom =
+        handlerType === 'bottomLeft' ||
+        handlerType === 'middleBottom' ||
+        handlerType === 'bottomRight';
+
+    let x = centerX - width / 2;
+    if (movesLeft) {
+        x = right - width;
+    } else if (movesRight) {
+        x = left;
+    }
+
+    let y = centerY - height / 2;
+    if (movesTop) {
+        y = bottom - height;
+    } else if (movesBottom) {
+        y = top;
+    }
+
+    return {
+        topLeft: { x, y },
+        bottomRight: { x: x + width, y: y + height },
+        width,
+        height
+    };
 };
 
 /** Maps a resized bounding box back onto a shape's native geometry. */
@@ -224,17 +244,28 @@ const applyBoxToShape = (
     handlerType: ResizeHandlerType,
     pointer: Point
 ) => {
+    if (shape.type === 'image') {
+        // Lock to the image's aspect ratio so it never letterboxes inside its
+        // box (which would leave the selection border outside the picture).
+        const ratio = oldBox.height > 0 ? oldBox.width / oldBox.height : 1;
+        const box = resizeAspectBox(oldBox, handlerType, pointer, ratio);
+
+        shape.position = { x: box.topLeft.x, y: box.topLeft.y };
+        shape.size = { width: box.width, height: box.height };
+        return;
+    }
+
     if (shape.size) {
-        // rectangle / image
+        // rectangle
         shape.position = { x: newBox.topLeft.x, y: newBox.topLeft.y };
         shape.size = { width: newBox.width, height: newBox.height };
         return;
     }
 
     if (shape.type === 'circle') {
-        const { center, radius } = resizeCircle(oldBox, handlerType, pointer);
-        shape.position = center;
-        (shape as Circle).radius = radius;
+        const box = resizeAspectBox(oldBox, handlerType, pointer, 1);
+        shape.position = centerOf(box);
+        (shape as Circle).radius = box.width / 2;
         return;
     }
 
