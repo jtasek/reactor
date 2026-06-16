@@ -49,16 +49,18 @@ export const DesignSelect: FC = () => {
     const pointer = usePointer();
     const { selectShapes } = useActions();
 
-    const { current, dragging } = pointer;
+    const { current, dragging, background } = pointer;
 
     // While the marquee is being dragged, keep the selection in sync with the box.
     useEffect(() => {
-        if (dragging) {
+        if (dragging && background) {
             selectShapes();
         }
-    }, [dragging, current.x, current.y, selectShapes]);
+    }, [dragging, background, current.x, current.y, selectShapes]);
 
-    if (!dragging) {
+    // The marquee only appears for drags that begin on empty canvas — never for
+    // shape interactions such as resizing a handle.
+    if (!dragging || !background) {
         return null;
     }
 
@@ -80,7 +82,7 @@ export const SelectCommand: Command = {
     },
     regex: /(?<toolCode>select)\((?<x1>[\d]+),(?<y1>[\d]+),(?<x2>[\d]+),(?<y2>[\d]+)\)/,
     shortcut: 's',
-    canExecute: () => true,
+    canExecute: ({ state }) => state.events.pointer.background,
     execute: ({ actions }) => {
         actions.selectShapes();
     },

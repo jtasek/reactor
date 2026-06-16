@@ -75,10 +75,15 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
 
         trySetPointerCapture(svgEl, event.pointerId);
 
-        // Clicking empty canvas (not a shape, its selection box or a resize
-        // handle — all of which live under #shapes) clears the current selection.
+        // Did the drag start on empty canvas, or on a shape / its selection box /
+        // a resize handle (all of which live under #shapes)? This distinguishes a
+        // marquee-select or background click from a shape interaction (e.g. resize).
         const target = event.target as Element | null;
-        if (!target?.closest?.('#shapes')) {
+        const onBackground = !target?.closest?.('#shapes');
+
+        actions.events.setBackground(onBackground);
+
+        if (onBackground) {
             actions.unselectShapes();
         }
 

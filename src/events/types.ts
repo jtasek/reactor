@@ -1,6 +1,7 @@
 import { Point, Size } from '../app/types';
 
 export interface Pointer {
+    background: boolean;
     bottomRight: Point;
     center: Point;
     current: Point;

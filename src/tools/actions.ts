@@ -1,5 +1,6 @@
 import { Context } from '../app';
 import { getToolById } from './components';
+import { DEFAULT_TOOL_ID } from './state';
 
 const DEFAULT_SCALE = 1;
 const MAX_SCALE = 10;
@@ -16,13 +17,11 @@ export const scaleUp = (scale: number) => limitScale(scale + ZOOM_STEP);
 export const scaleDown = (scale: number) => limitScale(scale - ZOOM_STEP);
 
 export const activateTool = ({ state: { tools }, actions }: Context, toolId: string) => {
-    // Tools are mutually exclusive modes: selecting one replaces any other, and
-    // clicking the active tool again toggles it off. Enforcing a single active
-    // tool prevents duplicate React keys and a single drag executing several
-    // tools at once (e.g. drawing a rectangle *and* a circle).
-    const isActive = tools.activeToolsIds.includes(toolId);
-
-    tools.activeToolsIds = isActive ? [] : [toolId];
+    // Tools are mutually exclusive modes: selecting one replaces any other.
+    // Enforcing a single active tool prevents duplicate React keys and a single
+    // drag executing several tools at once (e.g. drawing a rectangle *and* a
+    // circle).
+    tools.activeToolsIds = [toolId];
     actions.ui.hideContextMenu();
 };
 
@@ -45,6 +44,12 @@ export const resetTools = (context: Context) => {
         if (!tool?.shouldDeactivate || tool.shouldDeactivate(context)) {
             deactivateTool(context, toolId);
         }
+    }
+
+    // Fall back to the default select tool so the canvas is never left without
+    // an active mode (e.g. after finishing a drawing or clicking empty canvas).
+    if (tools.activeToolsIds.length === 0) {
+        tools.activeToolsIds = [DEFAULT_TOOL_ID];
     }
 };
 

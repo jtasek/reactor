@@ -3,6 +3,7 @@ import { Events } from './types';
 
 export const state: Events = {
     pointer: {
+        background: false,
         bottomRight,
         center,
         current: { x: 0, y: 0 },

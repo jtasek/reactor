@@ -8,6 +8,10 @@ export const setCurrentPosition: ActionWithParam<Point> = ({ state }, position) 
     state.events.pointer.current = position;
 };
 
+export const setBackground: ActionWithParam<boolean> = ({ state }, value) => {
+    state.events.pointer.background = value;
+};
+
 export const updatePath: ActionWithParam<Point> = ({ state }, position) => {
     state.events.pointer.path.push(position);
 };
