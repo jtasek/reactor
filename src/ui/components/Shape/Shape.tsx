@@ -4,7 +4,7 @@ import { Resizable } from '../Selectable/Resizable';
 import { Selectable } from '../Selectable/Selectable';
 import { getComponentByType } from 'src/tools/components';
 import { rectToBox, shapeGeometryKey } from 'src/app/utils';
-import { useActions, useShape } from 'src/app/hooks';
+import { useActions, useAppState, useShape } from 'src/app/hooks';
 
 interface Props {
     shapeId: string;
@@ -13,6 +13,13 @@ interface Props {
 export const Shape: FC<Props> = ({ shapeId }) => {
     const shape = useShape(shapeId);
     const { setShapeBounds } = useActions();
+    // A move is a pure translation: `moveSelectedShapes` already shifts the
+    // cached bounds analytically, so re-measuring via getBBox every frame is
+    // wasted work that forces a synchronous layout reflow. Skip measurement
+    // while the Move tool is dragging; the effect re-runs once the drag ends.
+    const measuring = useAppState(
+        (state) => !(state.tools.activeToolsIds[0] === 'move' && state.events.pointer.dragging)
+    );
     const groupRef = useRef<SVGGElement>(null);
     const Component = getComponentByType(shape.type);
     const geometryKey = shapeGeometryKey(shape);
@@ -23,6 +30,10 @@ export const Shape: FC<Props> = ({ shapeId }) => {
     // the geometry only, so toggling `selected` during a marquee drag does not
     // trigger a costly reflow.
     useLayoutEffect(() => {
+        if (!measuring) {
+            return;
+        }
+
         const node = groupRef.current;
 
         if (!node) {
@@ -35,7 +46,7 @@ export const Shape: FC<Props> = ({ shapeId }) => {
         } catch {
             // getBBox throws for elements that are not yet renderable; ignore.
         }
-    }, [geometryKey, shapeId, setShapeBounds]);
+    }, [geometryKey, shapeId, setShapeBounds, measuring]);
 
     if (!Component) {
         console.error(`Component ${shape.type} not found`);
