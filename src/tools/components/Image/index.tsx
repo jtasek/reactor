@@ -6,6 +6,7 @@ import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
 import { newShapeName } from '../../../app/factories';
 import { useActions, usePointer } from '../../../app/hooks';
+import { Context } from 'src/app';
 
 /**
  * Insert image based on current coords
@@ -152,6 +153,9 @@ export const ImageCommand: Command = {
         const shape = createImageProps(state.events.pointer);
 
         actions.addShape(shape);
+    },
+    shouldDeactivate: function (context: Context): boolean {
+        return !context.state.events.pointer.dragging;
     }
 };
 

@@ -28,9 +28,5 @@ export const endDragging: Action = ({ state }) => {
 };
 
 export const resetDragging: Action = ({ state }) => {
-    const pointer = state.events.pointer;
-
-    pointer.path.length = 0;
-
-    console.log('pointer', pointer);
+    state.events.pointer.path.length = 0;
 };

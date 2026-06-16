@@ -6,6 +6,7 @@ import type { Tool } from 'src/tools/types';
 import { Pointer } from '../../../events/types';
 import { newShapeName } from '../../../app/factories';
 import { usePointer } from '../../../app/hooks';
+import { Context } from 'src/app';
 
 /**
  * Draws an ellipse based on input coords and size
@@ -54,7 +55,6 @@ export const DesignEllipse: FC = () => {
 
 export const Ellipse: FC<Props> = ({ key, name, position, radius, selected }) => {
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
-    console.log('rendering Ellipse');
 
     return (
         <ellipse
@@ -82,13 +82,15 @@ export const EllipseCommand: Command = {
     },
     regex: /(?<toolCode>ellipse)\((?<cx>\d+),(?<cy>\d+),(?<rx>\d+),(?<ry>\d+)\)/,
     shortcut: 'ctrl+e',
-    canExecute: (context) => true,
+    canExecute: ({ state }) =>
+        state.events.pointer.size.width > 0 || state.events.pointer.size.height > 0,
     execute: ({ actions, state }) => {
-        console.log('EllipseCommand:execute');
-
         const shape = createEllipseProps(state.events.pointer);
 
         actions.addShape(shape);
+    },
+    shouldDeactivate: function (context: Context): boolean {
+        return !context.state.events.pointer.dragging;
     }
 };
 

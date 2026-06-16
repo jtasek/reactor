@@ -16,7 +16,13 @@ export const scaleUp = (scale: number) => limitScale(scale + ZOOM_STEP);
 export const scaleDown = (scale: number) => limitScale(scale - ZOOM_STEP);
 
 export const activateTool = ({ state: { tools }, actions }: Context, toolId: string) => {
-    tools.activeToolsIds.push(toolId);
+    // Tools are mutually exclusive modes: selecting one replaces any other, and
+    // clicking the active tool again toggles it off. Enforcing a single active
+    // tool prevents duplicate React keys and a single drag executing several
+    // tools at once (e.g. drawing a rectangle *and* a circle).
+    const isActive = tools.activeToolsIds.includes(toolId);
+
+    tools.activeToolsIds = isActive ? [] : [toolId];
     actions.ui.hideContextMenu();
 };
 
@@ -32,7 +38,8 @@ export const resetTools = (context: Context) => {
         state: { tools }
     } = context;
 
-    for (const toolId of tools.activeToolsIds) {
+    // Iterate a snapshot — deactivateTool mutates activeToolsIds in place.
+    for (const toolId of [...tools.activeToolsIds]) {
         const tool = getToolById(toolId);
 
         if (!tool?.shouldDeactivate || tool.shouldDeactivate(context)) {
@@ -77,12 +84,10 @@ export const moveCamera = (
 };
 
 export const executeToolCommands = (context: Context) => {
-    const { state } = context;
-    const { activeToolsIds } = state.tools;
+    const { activeToolsIds } = context.state.tools;
 
     for (const toolId of activeToolsIds) {
         const tool = getToolById(toolId);
-        console.log(`Execute tool command: ${toolId}`);
 
         if (tool?.canExecute(context)) {
             tool.execute(context);

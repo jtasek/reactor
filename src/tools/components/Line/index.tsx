@@ -6,6 +6,7 @@ import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
 import { newShapeName } from 'src/app/factories';
 import { usePointer } from 'src/app/hooks';
+import { Context } from 'src/app';
 
 /**
  * Draws a line from the start point to the end point
@@ -36,7 +37,6 @@ export const createLineProps = ({ start, current }: Pointer, designMode = false)
 
 export const Line: FC<Props> = ({ key, name, start, end, selected }) => {
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
-    console.log('rendering Line');
 
     return (
         <line
@@ -75,13 +75,15 @@ export const LineCommand: Command = {
     },
     regex: /(?<toolCode>line)\((?<x1>\d+),(?<y1>\d+),(?<x2>\d+),(?<y2>\d+)\)/,
     shortcut: 'ctrl+l',
-    canExecute: (context) => true,
+    canExecute: ({ state }) =>
+        state.events.pointer.size.width > 0 || state.events.pointer.size.height > 0,
     execute: ({ actions, state }) => {
-        console.log('LineCommand:execute');
-
         const shape = createLineProps(state.events.pointer);
 
         actions.addShape(shape);
+    },
+    shouldDeactivate: function (context: Context): boolean {
+        return !context.state.events.pointer.dragging;
     }
 };
 

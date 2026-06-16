@@ -4,7 +4,6 @@ import { Tool } from './Tool';
 
 export const Stack: FC = () => {
     const { activeToolsIds } = useTools();
-    console.log('stack render', activeToolsIds);
 
     return (
         <g id="tools">

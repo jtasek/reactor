@@ -6,6 +6,7 @@ import type { Tool } from 'src/tools/types';
 import { Command } from 'src/app/types';
 import { Pointer } from '../../../events/types';
 import { useActions, usePointer } from '../../../app/hooks';
+import { Context } from 'src/app';
 
 /**
  * Selects highlighted shapes
@@ -82,6 +83,9 @@ export const SelectCommand: Command = {
     canExecute: () => true,
     execute: ({ actions }) => {
         actions.selectShapes();
+    },
+    shouldDeactivate: function (context: Context): boolean {
+        return !context.state.events.pointer.dragging;
     }
 };
 

@@ -6,6 +6,7 @@ import type { Tool } from 'src/tools/types';
 import { Pointer } from '../../../events/types';
 import { newShapeName } from 'src/app/factories';
 import { usePointer } from '../../../app/hooks';
+import { Context } from 'src/app';
 
 /**
  * Draws a circle based on input center point and radius
@@ -40,10 +41,9 @@ export const createCircleProps = ({ center, radius }: Pointer, designMode = fals
     };
 };
 
-export const Circle: FC<Props> = ({ key, name, position, radius, selected }) => {
+export const Circle: FC<Props> = ({ name, position, radius, selected }) => {
     const shape = useRef(null);
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
-    console.log('rendering Circle');
 
     return (
         <circle
@@ -57,14 +57,6 @@ export const Circle: FC<Props> = ({ key, name, position, radius, selected }) => 
             ref={shape}
             stroke="grey"
             strokeWidth={2}
-            onClick={() => {
-                // console.log('circle native bbox', shape.current.getBBox());
-                console.log('Circle:onClick', { position, radius });
-                // console.log(
-                //   'circle cacl bbox',
-                //   getBoundingBoxForCircle({ center: { x: cx, y: cy }, radius: r })
-                // );
-            }}
         />
     );
 };
@@ -93,13 +85,15 @@ export const CircleCommand: Command = {
     },
     regex: /(?<toolCode>circle)\((?<cx>\d+),(?<cy>\d+),(?<radius>\d+)\)/,
     shortcut: 'ctrl+c',
-    canExecute: (context) => true,
+    canExecute: ({ state }) =>
+        state.events.pointer.size.width > 0 || state.events.pointer.size.height > 0,
     execute: ({ actions, state }) => {
-        console.log('CircleCommand:execute');
-
         const shape = createCircleProps(state.events.pointer);
 
         actions.addShape(shape);
+    },
+    shouldDeactivate: function (context: Context): boolean {
+        return !context.state.events.pointer.dragging;
     }
 };
 

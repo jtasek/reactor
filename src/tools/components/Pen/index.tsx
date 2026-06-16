@@ -7,6 +7,7 @@ import type { Tool } from 'src/tools/types';
 import { newShapeName } from 'src/app/factories';
 import { stringifyPath } from 'src/app/utils';
 import { usePointer } from 'src/app/hooks';
+import { Context } from 'src/app';
 
 /**
  * Draws a line based on path
@@ -39,7 +40,6 @@ export const createPenProps = ({ path }: Pointer, designMode = false): Props => 
 
 export const Pen: FC<Props> = ({ key, name, points, selected }) => {
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
-    console.log('rendering Pen');
 
     return (
         <polyline className={className} data-cy={name} key={key} points={stringifyPath(points)} />
@@ -70,13 +70,15 @@ export const PenCommand: Command = {
     },
     regex: /(?<toolCode>pen)\((?<x1>\d+),(?<y1>\d+),(?<x2>\d+),(?<y2>\d+)\)/,
     shortcut: 'ctrl+p',
-    canExecute: (context) => true,
+    canExecute: ({ state }) =>
+        state.events.pointer.size.width > 0 || state.events.pointer.size.height > 0,
     execute: ({ actions, state }) => {
-        console.log('PenCommand:execute');
-
         const shape = createPenProps(state.events.pointer);
 
         actions.addShape(shape);
+    },
+    shouldDeactivate: function (context: Context): boolean {
+        return !context.state.events.pointer.dragging;
     }
 };
 

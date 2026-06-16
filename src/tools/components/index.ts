@@ -1,10 +1,8 @@
 import { Tool } from '../types';
-import { getTools } from '../../app/actions';
+import { getTool, getTools } from '../../app/actions';
 
 export function getToolById(toolId: string): Tool | undefined {
-    const tools = getTools();
-
-    return Object.values(tools).find((item) => item.id === toolId);
+    return getTool(toolId);
 }
 
 export function getComponentByType(type: string) {
