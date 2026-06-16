@@ -7,10 +7,8 @@ import type {
     SyntheticEvent,
     WheelEvent
 } from 'react';
-import { scaleDown, scaleUp } from 'src/tools/actions';
 import { screenToCanvas } from './helpers';
 import { useActions, useCamera, useControls, useEvents, useLog, useTools } from 'src/app/hooks';
-import { zoomAt } from './cameraMath';
 import { trySetPointerCapture, tryReleasePointerCapture } from './pointerCapture';
 
 export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | undefined) => {
@@ -161,24 +159,18 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
 
             if (event.ctrlKey) {
                 const rect = svgEl.getBoundingClientRect();
-                const screenPoint = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+                const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
 
-                const newScale = event.deltaY > 0 ? scaleDown(scale) : scaleUp(scale);
-                const camera = zoomAt({ position, scale }, newScale, screenPoint);
-
-                const delta = {
-                    deltaX: camera.position.x,
-                    deltaY: camera.position.y,
-                    deltaZ: 0
-                };
-
-                actions.tools.zoom({ scale: newScale, delta });
+                // Delegate to the action so the zoom is computed against the live
+                // camera state, not a stale closure — this prevents drift when
+                // wheel events arrive faster than React re-renders.
+                actions.tools.zoomAtPoint({ point, deltaY: event.deltaY });
                 return;
             }
 
             actions.tools.moveCamera({ deltaX: event.deltaX, deltaY: event.deltaY, deltaZ: 0 });
         },
-        [log, actions, scale, position, contextMenu.visible, getSvgElement]
+        [log, actions, contextMenu.visible, getSvgElement]
     );
 
     const handleContextMenu = useCallback(

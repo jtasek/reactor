@@ -1,5 +1,7 @@
 import { Context } from '../app';
+import { Point } from 'src/app/types';
 import { getToolById } from './components';
+import { zoomAt } from 'src/events/drivers/cameraMath';
 import { DEFAULT_TOOL_ID } from './state';
 
 const DEFAULT_SCALE = 1;
@@ -78,6 +80,34 @@ export const zoom = ({ state: { currentDocument } }: Context, options: ZoomOptio
         currentDocument.camera.position.x = options.delta.deltaX;
         currentDocument.camera.position.y = options.delta.deltaY;
     }
+};
+
+/**
+ * Zooms one step in/out while keeping the world point under `point` (a surface
+ * local screen coordinate) anchored, so the canvas does not drift. The camera is
+ * read live from state — never from a stale React closure — so rapid wheel events
+ * compose correctly against the latest scale/position.
+ */
+export const zoomAtPoint = (
+    { state: { currentDocument } }: Context,
+    options: { point: Point; deltaY: number }
+) => {
+    const { camera } = currentDocument;
+    const newScale = options.deltaY > 0 ? scaleDown(camera.scale) : scaleUp(camera.scale);
+
+    if (newScale === camera.scale) {
+        return;
+    }
+
+    const next = zoomAt(
+        { scale: camera.scale, position: { x: camera.position.x, y: camera.position.y } },
+        newScale,
+        options.point
+    );
+
+    camera.scale = next.scale;
+    camera.position.x = next.position.x;
+    camera.position.y = next.position.y;
 };
 
 export const moveCamera = (
