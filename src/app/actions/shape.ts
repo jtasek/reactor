@@ -118,8 +118,14 @@ export const setShapeBounds: ActionWithParam<{ id: string; bounds: Box }> = (
 };
 
 export const unselectShapes: Action = ({ state }) => {
-    const shapes = Object.values(state.currentDocument.shapes);
-    shapes.forEach((shape) => (shape.selected = false));
+    const shapes = Object.values(state.currentDocument.shapes) as Shape[];
+    shapes.forEach((shape) => {
+        // Only write when it actually changes, so a background click with nothing
+        // selected doesn't needlessly re-render every shape.
+        if (shape.selected) {
+            shape.selected = false;
+        }
+    });
 };
 
 export const unselectShape: ActionWithParam<string> = ({ state }, shapeId) => {

@@ -75,6 +75,13 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
 
         trySetPointerCapture(svgEl, event.pointerId);
 
+        // Clicking empty canvas (not a shape, its selection box or a resize
+        // handle — all of which live under #shapes) clears the current selection.
+        const target = event.target as Element | null;
+        if (!target?.closest?.('#shapes')) {
+            actions.unselectShapes();
+        }
+
         if (!pointer.dragging) {
             actions.events.startDragging();
         }
