@@ -39,6 +39,7 @@ export const Handle: FC<Props> = ({
             cx={position.x}
             cy={position.y}
             r={size}
+            data-handle
             data-type={handlerType}
             onPointerDown={(e) => {
                 e.preventDefault();

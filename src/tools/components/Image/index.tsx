@@ -5,7 +5,7 @@ import type { Command, Point, Size } from 'src/app/types';
 import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
 import { newShapeName } from '../../../app/factories';
-import { useActions, usePointer } from '../../../app/hooks';
+import { usePointer } from '../../../app/hooks';
 import { Context } from 'src/app';
 
 /**
@@ -101,8 +101,7 @@ export const createImageProps = (pointer: Pointer, designMode = false): Props =>
     };
 };
 
-export const Image: FC<Props> = ({ key, name, position, size, source, selected, id }) => {
-    const actions = useActions();
+export const Image: FC<Props> = ({ key, name, position, size, source, selected }) => {
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
     return (
@@ -116,9 +115,6 @@ export const Image: FC<Props> = ({ key, name, position, size, source, selected, 
             x={position.x}
             xlinkHref={source}
             y={position.y}
-            onClick={() => {
-                actions.toggleShapeSelected(id!);
-            }}
         />
     );
 };

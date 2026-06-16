@@ -9,7 +9,7 @@ import type {
 } from 'react';
 import { scaleDown, scaleUp } from 'src/tools/actions';
 import { screenToCanvas } from './helpers';
-import { useActions, useCamera, useControls, useEvents, useLog } from 'src/app/hooks';
+import { useActions, useCamera, useControls, useEvents, useLog, useTools } from 'src/app/hooks';
 import { zoomAt } from './cameraMath';
 import { trySetPointerCapture, tryReleasePointerCapture } from './pointerCapture';
 
@@ -18,6 +18,7 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
     const actions = useActions();
     const { contextMenu } = useControls();
     const { pointer } = useEvents();
+    const { activeToolsIds } = useTools();
     const { scale, position } = useCamera();
 
     const getSvgElement = useCallback(
@@ -75,18 +76,6 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
 
         trySetPointerCapture(svgEl, event.pointerId);
 
-        // Did the drag start on empty canvas, or on a shape / its selection box /
-        // a resize handle (all of which live under #shapes)? This distinguishes a
-        // marquee-select or background click from a shape interaction (e.g. resize).
-        const target = event.target as Element | null;
-        const onBackground = !target?.closest?.('#shapes');
-
-        actions.events.setBackground(onBackground);
-
-        if (onBackground) {
-            actions.unselectShapes();
-        }
-
         if (!pointer.dragging) {
             actions.events.startDragging();
         }
@@ -96,6 +85,35 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
         actions.events.resetDragging();
         actions.events.setStartPosition(currentPosition);
         actions.events.setCurrentPosition(currentPosition);
+
+        // A resize handle owns its own pointer interaction; leave selection and
+        // tools untouched so the Resizable can drive the resize.
+        const target = event.target as Element | null;
+        if (target?.closest?.('[data-handle]')) {
+            actions.events.setBackground(false);
+            return;
+        }
+
+        const activeToolId = activeToolsIds[0];
+
+        if (activeToolId === 'select') {
+            // In select mode a press either grabs the shape under the pointer
+            // (selecting it and arming the move tool) or, on empty canvas,
+            // clears the selection and arms a marquee select.
+            const hit = actions.selectShapeAtPointer();
+
+            if (hit) {
+                actions.events.setBackground(false);
+                actions.tools.activateTool('move');
+            } else {
+                actions.events.setBackground(true);
+            }
+
+            return;
+        }
+
+        // A drawing tool is active: draw regardless of what is under the pointer.
+        actions.events.setBackground(false);
     };
 
     const handlePointerMove: PointerEventHandler<SVGSVGElement> = (event) => {

@@ -1,5 +1,6 @@
 import {
     Action,
+    ActionGuard,
     ActionWithParam,
     Application,
     Box,
@@ -78,6 +79,73 @@ export const selectShapeByPoint: Action = ({ state }) => {
     shapes.forEach((shape) => {
         if (isPointInBox(current, shape)) {
             shape.selected = true;
+        }
+    });
+};
+
+/**
+ * Selects the topmost shape under the pointer (clearing any other selection) and
+ * reports whether one was hit. Iterates shapesIds in z-order so the last (top)
+ * shape containing the point wins.
+ */
+export const selectShapeAtPointer: ActionGuard = ({ state }) => {
+    const { current } = state.events.pointer;
+    const { shapesIds, shapes } = state.currentDocument;
+
+    let hitId: string | null = null;
+    for (const id of shapesIds) {
+        const shape = shapes[id];
+        if (shape && isPointInBox(current, shape)) {
+            hitId = id;
+        }
+    }
+
+    shapesIds.forEach((id: string) => {
+        const shape = shapes[id];
+        if (!shape) {
+            return;
+        }
+
+        const selected = id === hitId;
+        if (shape.selected !== selected) {
+            shape.selected = selected;
+        }
+    });
+
+    return hitId !== null;
+};
+
+const translateShape = (shape: Shape, dx: number, dy: number) => {
+    const line = shape as Line;
+    if (line.start && line.end) {
+        line.start = { x: line.start.x + dx, y: line.start.y + dy };
+        line.end = { x: line.end.x + dx, y: line.end.y + dy };
+    } else {
+        const pen = shape as Pen;
+        if (Array.isArray(pen.points)) {
+            pen.points = pen.points.map((point) => ({ x: point.x + dx, y: point.y + dy }));
+        } else if (shape.position) {
+            shape.position = { x: shape.position.x + dx, y: shape.position.y + dy };
+        }
+    }
+
+    // Shift the cached bounds too so the selection box and handles follow the
+    // shape immediately, without waiting for the next getBBox measurement.
+    if (shape.bounds) {
+        shape.bounds = {
+            topLeft: { x: shape.bounds.topLeft.x + dx, y: shape.bounds.topLeft.y + dy },
+            bottomRight: { x: shape.bounds.bottomRight.x + dx, y: shape.bounds.bottomRight.y + dy },
+            width: shape.bounds.width,
+            height: shape.bounds.height
+        };
+    }
+};
+
+export const moveSelectedShapes: ActionWithParam<Point> = ({ state }, delta) => {
+    const shapes = Object.values(state.currentDocument.shapes) as Shape[];
+    shapes.forEach((shape) => {
+        if (shape.selected) {
+            translateShape(shape, delta.x, delta.y);
         }
     });
 };

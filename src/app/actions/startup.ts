@@ -20,6 +20,7 @@ import {
     EllipseTool,
     ImageTool,
     LineTool,
+    MoveTool,
     PenTool,
     RectTool,
     SelectTool,
@@ -82,6 +83,7 @@ function registerTools(state, instance) {
     registerTool(EllipseTool);
     registerTool(ImageTool);
     registerTool(LineTool);
+    registerTool(MoveTool);
     registerTool(PenTool);
     registerTool(RectTool);
     registerTool(SelectTool);
