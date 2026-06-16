@@ -84,9 +84,12 @@ export const selectShapeByPoint: Action = ({ state }) => {
 };
 
 /**
- * Selects the topmost shape under the pointer (clearing any other selection) and
- * reports whether one was hit. Iterates shapesIds in z-order so the last (top)
- * shape containing the point wins.
+ * Resolves the shape under the pointer and updates the selection so a move can
+ * begin, returning whether a shape was hit. Iterates shapesIds in z-order so the
+ * topmost shape containing the point wins. Pressing an already-selected shape
+ * keeps the whole selection intact (so a multi-selection can be dragged as a
+ * group); pressing an unselected shape replaces the selection with just it; an
+ * empty hit clears the selection.
  */
 export const selectShapeAtPointer: ActionGuard = ({ state }) => {
     const { current } = state.events.pointer;
@@ -98,6 +101,23 @@ export const selectShapeAtPointer: ActionGuard = ({ state }) => {
         if (shape && isPointInBox(current, shape)) {
             hitId = id;
         }
+    }
+
+    if (hitId === null) {
+        shapesIds.forEach((id: string) => {
+            const shape = shapes[id];
+            if (shape && shape.selected) {
+                shape.selected = false;
+            }
+        });
+
+        return false;
+    }
+
+    // Preserve an existing multi-selection when grabbing one of its members, so
+    // the whole group moves together.
+    if (shapes[hitId]?.selected) {
+        return true;
     }
 
     shapesIds.forEach((id: string) => {
@@ -112,7 +132,7 @@ export const selectShapeAtPointer: ActionGuard = ({ state }) => {
         }
     });
 
-    return hitId !== null;
+    return true;
 };
 
 const translateShape = (shape: Shape, dx: number, dy: number) => {
