@@ -110,12 +110,16 @@ export const zoomAtPoint = (
     camera.position.y = next.position.y;
 };
 
-export const moveCamera = (
+/**
+ * Pans the camera by a screen-space delta (grab-and-drag): the content follows
+ * the delta, so a positive dx moves the canvas right.
+ */
+export const panCamera = (
     { state: { currentDocument } }: Context,
-    delta: { deltaX: number; deltaY: number; deltaZ: number }
+    delta: { dx: number; dy: number }
 ) => {
-    currentDocument.camera.position.x -= delta.deltaX;
-    currentDocument.camera.position.y -= delta.deltaY;
+    currentDocument.camera.position.x += delta.dx;
+    currentDocument.camera.position.y += delta.dy;
 };
 
 export const executeToolCommands = (context: Context) => {
