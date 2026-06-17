@@ -4,11 +4,16 @@ interface Props {
     id: string;
     name: string;
     selected: boolean;
+    active?: boolean;
     onClick: (id: string) => void;
 }
 
-export const NavBarListItem: FC<Props> = ({ id, name, selected, onClick }) => (
-    <li className={selected ? styles.selected : ''}>
-        <a onClick={() => onClick(id)}>{name}</a>
-    </li>
-);
+export const NavBarListItem: FC<Props> = ({ id, name, selected, active = false, onClick }) => {
+    const className = selected ? styles.selected : active ? styles.active : '';
+
+    return (
+        <li className={className}>
+            <a onClick={() => onClick(id)}>{name}</a>
+        </li>
+    );
+};

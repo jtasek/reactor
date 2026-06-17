@@ -28,7 +28,7 @@
 }
 
 .navBar li.active:before {
-  background-color: deepskyblue;
+  background-color: cornflowerblue;
   border-radius: 50%;
   content: '';
   height: 4px;
@@ -36,6 +36,11 @@
   position: absolute;
   top: 40%;
   width: 4px;
+}
+
+.navBar li.active > a {
+  color: cornflowerblue;
+  font-weight: 600;
 }
 
 .navBar li.new:before {

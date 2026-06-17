@@ -13,6 +13,7 @@ const ShapesListItem = ({ shapeId }: { shapeId: string }) => {
             id={shapeId}
             name={shape.name}
             selected={shape.selected}
+            active={shape.active}
             onClick={toggleShapeSelected}
         />
     );
