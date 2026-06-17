@@ -325,7 +325,3 @@ export type Application = {
     started: Date;
     user: User;
 };
-
-export interface Renderer {
-    render(document: Document): void;
-}
