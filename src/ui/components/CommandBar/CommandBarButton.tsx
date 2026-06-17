@@ -22,7 +22,7 @@ export const CommandBarButton: FC<Props> = ({ active, command, onClick }) => {
                     onClick={(event) => {
                         event.preventDefault();
                         onClick();
-                        // executeCommand(command.execute);
+                        executeCommand(command.execute);
                     }}
                     title={command.description}
                 >
