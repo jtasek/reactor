@@ -1,6 +1,4 @@
-import { Application } from '../types';
-
-export const loadState = (key: string): Application | null => {
+export const loadState = (key: string): unknown => {
     try {
         const serializedState = localStorage.getItem(key);
 
@@ -10,7 +8,8 @@ export const loadState = (key: string): Application | null => {
 
         return JSON.parse(serializedState);
     } catch (error) {
-        throw new Error(`Failed to load application state: ${error}`);
+        console.warn(`Failed to load application state for "${key}"; ignoring it.`, error);
+        return null;
     }
 };
 

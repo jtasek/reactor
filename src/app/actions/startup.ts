@@ -28,6 +28,11 @@ import {
 } from 'src/tools';
 
 import { Tool } from '../../tools/types';
+import {
+    PERSISTENCE_KEY,
+    migratePersistedState,
+    serializePersistedState
+} from '../services/persistence';
 
 const commands: Record<string, Command> = {};
 const tools: Record<string, Tool> = {};
@@ -91,9 +96,11 @@ function registerTools(state: Context['state'], instance: Overmind<Context>) {
 }
 
 function loadLocalData(effects: Context['effects'], state: Context['state']) {
-    const savedApp = effects.loadState('reactor');
-    if (savedApp) {
-        state.documents = savedApp.documents;
+    const persisted = migratePersistedState(effects.loadState(PERSISTENCE_KEY));
+
+    if (persisted) {
+        state.documents = persisted.documents;
+        state.currentDocumentId = persisted.currentDocumentId;
     }
 }
 
@@ -102,7 +109,7 @@ function activateAutosave(instance: Overmind<Context>, effects: Context['effects
 
     instance.reaction(
         (state) => state.currentDocument,
-        (document) => effects.saveState('reactor', document),
+        () => effects.saveState(PERSISTENCE_KEY, serializePersistedState(instance.state)),
         { nested: true }
     );
 }
