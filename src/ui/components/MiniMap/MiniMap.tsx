@@ -5,11 +5,18 @@ import { Size } from 'src/app/types';
 
 export interface Props {
     size: Size;
+    viewBox: string;
     children?: ReactNode;
 }
 
-export const MiniMap: FC<Props> = ({ size, children }) => (
-    <svg className={styles.minimap} width={size.width} height={size.height} viewBox="0 0 1000 1000">
+export const MiniMap: FC<Props> = ({ size, viewBox, children }) => (
+    <svg
+        className={styles.minimap}
+        width={size.width}
+        height={size.height}
+        viewBox={viewBox}
+        preserveAspectRatio="xMidYMid meet"
+    >
         {children}
     </svg>
 );
