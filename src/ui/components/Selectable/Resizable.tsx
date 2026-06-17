@@ -72,6 +72,9 @@ export const Resizable: FC<Props> = ({ shape }) => {
     };
 
     const rotatePosition = { x: middleTop.x, y: middleTop.y - ROTATE_HANDLE_OFFSET };
+    const rotation = shape.rotation ?? 0;
+    const badgePosition = { x: rotatePosition.x, y: rotatePosition.y - 14 };
+    const displayDegrees = ((Math.round(rotation) % 360) + 360) % 360;
 
     return (
         <>
@@ -89,6 +92,16 @@ export const Resizable: FC<Props> = ({ shape }) => {
                 shapeId={shape.id}
                 onActivate={setRotateActive}
             />
+            {rotateActive && (
+                <text
+                    className={handleStyles.rotateBadge}
+                    x={badgePosition.x}
+                    y={badgePosition.y}
+                    transform={`rotate(${-rotation} ${badgePosition.x} ${badgePosition.y})`}
+                >
+                    {displayDegrees}°
+                </text>
+            )}
             <Handle
                 key={`topLeft + ${shape.id}`}
                 active={activeHandle === 'topLeft'}
