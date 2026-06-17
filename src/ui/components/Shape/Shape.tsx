@@ -1,4 +1,4 @@
-import React, { FC, useLayoutEffect, useRef } from 'react';
+import React, { memo, useLayoutEffect, useRef } from 'react';
 import { Label } from '../Label';
 import { Resizable } from '../Selectable/Resizable';
 import { Selectable } from '../Selectable/Selectable';
@@ -10,7 +10,7 @@ interface Props {
     shapeId: string;
 }
 
-export const Shape: FC<Props> = ({ shapeId }) => {
+export const Shape = memo(({ shapeId }: Props) => {
     const shape = useShape(shapeId);
     const { setShapeBounds } = useActions();
     // A move is a pure translation: `moveSelectedShapes` already shifts the
@@ -53,14 +53,25 @@ export const Shape: FC<Props> = ({ shapeId }) => {
         return null;
     }
 
+    // The selection overlays (box, resize handles, label) are only relevant for
+    // a selected shape. Gating them here — rather than letting each overlay
+    // early-return null — keeps unselected shapes from mounting Resizable, whose
+    // usePointer() subscription would otherwise re-render every shape on every
+    // pointer frame during a drag.
     return (
         <>
             <g ref={groupRef}>
                 <Component {...shape} />
             </g>
-            <Selectable key={`selectable-${shape.type}-${shape.id}`} shape={shape} />
-            <Resizable key={`resizable-${shape.type}-${shape.id}`} shape={shape} />
-            <Label key={`label-${shape.type}-${shape.id}`} shape={shape} />
+            {shape.selected && (
+                <>
+                    <Selectable key={`selectable-${shape.type}-${shape.id}`} shape={shape} />
+                    <Resizable key={`resizable-${shape.type}-${shape.id}`} shape={shape} />
+                    <Label key={`label-${shape.type}-${shape.id}`} shape={shape} />
+                </>
+            )}
         </>
     );
-};
+});
+
+Shape.displayName = 'Shape';
