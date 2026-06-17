@@ -6,7 +6,10 @@ import {
     isEllipseInBox,
     isRectangleInBox,
     overlaps,
-    isPointInBox
+    isPointInBox,
+    boxCenter,
+    rotatePoint,
+    angleBetween
 } from '../utils';
 
 describe('utils', () => {
@@ -208,6 +211,57 @@ describe('utils', () => {
             const actual = isPointInBox(point, shape);
 
             expect(actual).toBe(false);
+        });
+    });
+
+    describe('boxCenter()', () => {
+        it('returns the geometric center of a box', () => {
+            const box: Box = {
+                topLeft: { x: 10, y: 20 },
+                bottomRight: { x: 30, y: 60 },
+                width: 20,
+                height: 40
+            };
+
+            expect(boxCenter(box)).toEqual({ x: 20, y: 40 });
+        });
+    });
+
+    describe('rotatePoint()', () => {
+        const center: Point = { x: 0, y: 0 };
+
+        it('returns the same point when rotating by 0 degrees', () => {
+            expect(rotatePoint({ x: 10, y: 0 }, center, 0)).toEqual({ x: 10, y: 0 });
+        });
+
+        it('rotates 90 degrees clockwise around the center', () => {
+            const result = rotatePoint({ x: 10, y: 0 }, center, 90);
+
+            expect(result.x).toBeCloseTo(0);
+            expect(result.y).toBeCloseTo(10);
+        });
+
+        it('rotates around a non-origin center', () => {
+            const result = rotatePoint({ x: 5, y: 0 }, { x: 5, y: 5 }, 90);
+
+            expect(result.x).toBeCloseTo(10);
+            expect(result.y).toBeCloseTo(5);
+        });
+    });
+
+    describe('angleBetween()', () => {
+        const center: Point = { x: 0, y: 0 };
+
+        it('measures 0 degrees along the +x axis', () => {
+            expect(angleBetween(center, { x: 10, y: 0 })).toBeCloseTo(0);
+        });
+
+        it('measures 90 degrees straight down (y grows downward)', () => {
+            expect(angleBetween(center, { x: 0, y: 10 })).toBeCloseTo(90);
+        });
+
+        it('measures -90 degrees straight up', () => {
+            expect(angleBetween(center, { x: 0, y: -10 })).toBeCloseTo(-90);
         });
     });
 });

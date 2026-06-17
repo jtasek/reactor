@@ -4,7 +4,7 @@ import { Label } from '../Label';
 import { Resizable } from '../Selectable/Resizable';
 import { Selectable } from '../Selectable/Selectable';
 import { getComponentByType } from 'src/tools/components';
-import { rectToBox, shapeGeometryKey } from 'src/app/utils';
+import { rectToBox, shapeGeometryKey, getShapeBounds, boxCenter } from 'src/app/utils';
 import { useActions, useAppState, useShape } from 'src/app/hooks';
 
 interface Props {
@@ -59,8 +59,16 @@ export const Shape = memo(({ shapeId }: Props) => {
     // early-return null — keeps unselected shapes from mounting Resizable, whose
     // usePointer() subscription would otherwise re-render every shape on every
     // pointer frame during a drag.
+    // A rotation is applied as a group transform around the box center so the
+    // shape and all of its overlays (selection box, handles, label) rotate
+    // together while the stored geometry stays axis-aligned.
+    const center = boxCenter(getShapeBounds(shape));
+    const transform = shape.rotation
+        ? `rotate(${shape.rotation} ${center.x} ${center.y})`
+        : undefined;
+
     return (
-        <>
+        <g transform={transform}>
             <g
                 ref={groupRef}
                 style={{ pointerEvents: 'all' }}
@@ -79,7 +87,7 @@ export const Shape = memo(({ shapeId }: Props) => {
                     <Label key={`label-${shape.type}-${shape.id}`} shape={shape} />
                 </>
             )}
-        </>
+        </g>
     );
 });
 

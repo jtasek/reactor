@@ -95,6 +95,7 @@ export function createShape(options: Partial<Shape> = {}): Shape {
         modifiedBy: getCurrentUserName(),
         name: newShapeName(),
         position: { x: 0, y: 0 },
+        rotation: 0,
         selected: true,
         type,
         visible: true,

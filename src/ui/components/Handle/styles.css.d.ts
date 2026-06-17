@@ -8,6 +8,8 @@ declare namespace StylesCssNamespace {
     middleLeft: string;
     middleRight: string;
     middleTop: string;
+    rotate: string;
+    rotateLine: string;
     topLeft: string;
     topRight: string;
   }

@@ -1,9 +1,13 @@
 import React, { FC, useEffect, useState } from 'react';
 import { Box, ResizeHandlerType } from '../../../app/types';
 import { Handle } from '../Handle';
+import { RotateHandle } from '../Handle/RotateHandle';
+import handleStyles from '../Handle/styles.css';
 import { Props } from './Selectable';
 import { getShapeBounds } from '../../../app/utils';
 import { usePointer } from 'src/app/hooks';
+
+const ROTATE_HANDLE_OFFSET = 24;
 
 function calcBoundingPoints(box: Box) {
     const topLeft = box.topLeft;
@@ -33,10 +37,12 @@ function calcBoundingPoints(box: Box) {
 export const Resizable: FC<Props> = ({ shape }) => {
     const { dragging } = usePointer();
     const [activeHandle, setActiveHandle] = useState<ResizeHandlerType>();
+    const [rotateActive, setRotateActive] = useState(false);
 
     useEffect(() => {
         if (!dragging) {
             setActiveHandle(undefined);
+            setRotateActive(false);
         }
     }, [dragging]);
 
@@ -65,8 +71,24 @@ export const Resizable: FC<Props> = ({ shape }) => {
         setActiveHandle(handlerType);
     };
 
+    const rotatePosition = { x: middleTop.x, y: middleTop.y - ROTATE_HANDLE_OFFSET };
+
     return (
         <>
+            <line
+                className={handleStyles.rotateLine}
+                x1={middleTop.x}
+                y1={middleTop.y}
+                x2={rotatePosition.x}
+                y2={rotatePosition.y}
+            />
+            <RotateHandle
+                key={`rotate + ${shape.id}`}
+                active={rotateActive}
+                position={rotatePosition}
+                shapeId={shape.id}
+                onActivate={setRotateActive}
+            />
             <Handle
                 key={`topLeft + ${shape.id}`}
                 active={activeHandle === 'topLeft'}

@@ -446,8 +446,33 @@ export function vector(p1: Point, p2: Point): Vector {
         x: p2.x - p1.x,
         y: p2.y - p1.y
     };
+}export function dot(u: Point, v: Point): number {
+    return u.x * v.x + u.y * v.y;
 }
 
-export function dot(u: Point, v: Point): number {
-    return u.x * v.x + u.y * v.y;
+/** Geometric center of a box. */
+export function boxCenter(box: Box): Point {
+    return {
+        x: box.topLeft.x + box.width / 2,
+        y: box.topLeft.y + box.height / 2
+    };
+}
+
+/** Rotates `point` around `center` by `angle` degrees (clockwise in SVG's y-down space). */
+export function rotatePoint(point: Point, center: Point, angle: number): Point {
+    const radians = (angle * Math.PI) / 180;
+    const cos = Math.cos(radians);
+    const sin = Math.sin(radians);
+    const dx = point.x - center.x;
+    const dy = point.y - center.y;
+
+    return {
+        x: center.x + dx * cos - dy * sin,
+        y: center.y + dx * sin + dy * cos
+    };
+}
+
+/** Angle in degrees of the vector from `center` to `point`, measured from the +x axis. */
+export function angleBetween(center: Point, point: Point): number {
+    return (Math.atan2(point.y - center.y, point.x - center.x) * 180) / Math.PI;
 }

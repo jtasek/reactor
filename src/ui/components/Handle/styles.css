@@ -30,3 +30,13 @@
 .middleBottom {
   cursor: ns-resize;
 }
+
+.rotate {
+  cursor: grab;
+}
+
+.rotateLine {
+  stroke: cornflowerblue;
+  stroke-width: 1;
+  fill: none;
+}

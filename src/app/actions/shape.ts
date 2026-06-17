@@ -22,7 +22,10 @@ import {
     mapPointBetweenBoxes,
     overlaps,
     isPointInBox,
-    resizeBox
+    resizeBox,
+    boxCenter,
+    rotatePoint,
+    angleBetween
 } from '../utils';
 
 const getShape = ({ currentDocument }: Application, shapeId: string) => {
@@ -423,7 +426,35 @@ export const resizeShape = (
     }
 
     const oldBox = getShapeBounds(shape);
-    const newBox = resizeBox(oldBox, handlerType, position);
+    // The shape (and its handles) are rendered rotated around the box center, but
+    // the box itself is stored axis-aligned. Map the pointer back into that
+    // unrotated frame so the resize math stays correct while rotated.
+    const localPosition = shape.rotation
+        ? rotatePoint(position, boxCenter(oldBox), -shape.rotation)
+        : position;
+    const newBox = resizeBox(oldBox, handlerType, localPosition);
 
-    applyBoxToShape(shape, oldBox, newBox, handlerType, position);
+    applyBoxToShape(shape, oldBox, newBox, handlerType, localPosition);
+};
+
+export const rotateShape = (
+    { state }: Context,
+    payload: {
+        shapeId: string;
+        position: Point;
+    }
+) => {
+    const { shapeId, position } = payload;
+
+    const shape = state.currentDocument?.shapes[shapeId];
+
+    if (!shape) {
+        return;
+    }
+
+    const center = boxCenter(getShapeBounds(shape));
+
+    // The rotate handle sits directly above the shape, so a pointer straight up
+    // from the center maps to 0°. atan2 measures from the +x axis, hence +90.
+    shape.rotation = angleBetween(center, position) + 90;
 };

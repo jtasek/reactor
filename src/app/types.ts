@@ -114,6 +114,7 @@ export interface Shape {
     name: string;
     parentShapeId?: string;
     position: Point;
+    rotation?: number;
     selected: boolean;
     size?: Size;
     type: 'circle' | 'ellipse' | 'image' | 'line' | 'path' | 'pen' | 'rectangle' | 'text';
