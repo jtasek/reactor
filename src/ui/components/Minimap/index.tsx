@@ -2,7 +2,6 @@ import React, { FC } from 'react';
 
 import { useControls, useCurrentDocument } from 'src/app/hooks';
 import { getShapeBounds } from 'src/app/utils';
-import { Grid } from '../Grid/Grid';
 import { MiniMap } from './MiniMap';
 import { Rulers } from '../Surface/Rulers';
 import { Shapes } from '../Surface/Shapes';
@@ -53,7 +52,7 @@ const getContentViewBox = (document: ReturnType<typeof useCurrentDocument>): str
 };
 
 export const MiniMapContainer: FC = () => {
-    const { grid, miniMap } = useControls();
+    const { miniMap } = useControls();
     const document = useCurrentDocument();
 
     if (!miniMap.visible) {
@@ -64,7 +63,6 @@ export const MiniMapContainer: FC = () => {
 
     return (
         <MiniMap size={{ width: 200, height: 200 }} viewBox={viewBox}>
-            {grid.visible && <Grid id="minimap" camera={STATIC_CAMERA} grid={grid} />}
             <Rulers key="minimap-rulers" camera={STATIC_CAMERA} />
             <Shapes />
         </MiniMap>
