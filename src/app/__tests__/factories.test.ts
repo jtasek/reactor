@@ -1,6 +1,5 @@
 import {
     createApplication,
-    createCommand,
     createDocument,
     createGroup,
     createLayer,
@@ -16,21 +15,10 @@ import {
     newLayerName,
     newLinkName,
     newRulerName,
-    newShapeName,
-    sequence
+    newShapeName
 } from '../factories';
 
 describe('factories', () => {
-    describe('sequence()', () => {
-        const generator = sequence();
-
-        it('returns incremental numbers', () => {
-            const actual = [generator.next().value, generator.next().value, generator.next().value];
-
-            expect(actual).toEqual([1, 2, 3]);
-        });
-    });
-
     describe('newApplicationName()', () => {
         it('returns new application instance name', () => {
             const actual = newApplicationName();
@@ -43,7 +31,7 @@ describe('factories', () => {
         it('returns new document name', () => {
             const actual = newDocumentName();
 
-            expect(actual).toBe('Document_1');
+            expect(actual).toBe('document-1');
         });
     });
 
@@ -51,7 +39,7 @@ describe('factories', () => {
         it('returns new group name', () => {
             const actual = newGroupName();
 
-            expect(actual).toBe('Group_1');
+            expect(actual).toBe('group-1');
         });
     });
 
@@ -59,7 +47,7 @@ describe('factories', () => {
         it('returns new layer name', () => {
             const actual = newLayerName();
 
-            expect(actual).toBe('Layer_1');
+            expect(actual).toBe('layer-1');
         });
     });
 
@@ -67,7 +55,7 @@ describe('factories', () => {
         it('returns new link name', () => {
             const actual = newLinkName();
 
-            expect(actual).toBe('Link_1');
+            expect(actual).toBe('link-1');
         });
     });
 
@@ -75,7 +63,7 @@ describe('factories', () => {
         it('returns new ruler name', () => {
             const actual = newRulerName();
 
-            expect(actual).toBe('Ruler_1');
+            expect(actual).toBe('ruler-1');
         });
     });
 
@@ -83,7 +71,7 @@ describe('factories', () => {
         it('returns new shape name', () => {
             const actual = newShapeName();
 
-            expect(actual).toBe('Shape_1');
+            expect(actual).toBe('shape-1');
         });
     });
 
@@ -114,14 +102,6 @@ describe('factories', () => {
             const actual = getDefaultType();
 
             expect(actual).toBe('rectangle');
-        });
-    });
-
-    describe('createCommand()', () => {
-        it('creates new command object with default values', () => {
-            const actual = createCommand({ name: 'COMMAND_NAME' });
-
-            expect(actual).toHaveProperty('name', 'COMMAND_NAME');
         });
     });
 

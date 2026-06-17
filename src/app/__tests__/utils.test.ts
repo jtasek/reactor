@@ -1,6 +1,5 @@
-import { Box, Point, Shape } from '../types';
+import { Box, Ellipse, Point, Shape } from '../types';
 import {
-    Ellipse,
     getDistance,
     isCircleInBox,
     isEllipseInBox,
@@ -50,7 +49,7 @@ describe('utils', () => {
 
         it('should return false if circle intersects box', () => {
             const box: Box = {
-                topLeft: { x: 3, y: 3 },
+                topLeft: { x: 4, y: 4 },
                 bottomRight: { x: 10, y: 10 }
             };
             expect(isCircleInBox(center, r, box)).toBe(false);
@@ -89,11 +88,10 @@ describe('utils', () => {
     });
 
     describe('isEllipseInBox', () => {
-        const ellipse: Ellipse = {
-            center: { x: 5, y: 5 },
-            radiusX: 2,
-            radiusY: 3
-        };
+        const ellipse = {
+            position: { x: 5, y: 5 },
+            radius: { x: 2, y: 3 }
+        } as Ellipse;
         const box: Box = {
             topLeft: { x: 2, y: 2 },
             bottomRight: { x: 8, y: 8 }
@@ -104,20 +102,18 @@ describe('utils', () => {
         });
 
         test('Ellipse outside box should return false', () => {
-            const ellipse2: Ellipse = {
-                center: { x: 10, y: 10 },
-                radiusX: 2,
-                radiusY: 3
-            };
+            const ellipse2 = {
+                position: { x: 10, y: 10 },
+                radius: { x: 2, y: 3 }
+            } as Ellipse;
             expect(isEllipseInBox(ellipse2, box)).toBe(false);
         });
 
         test('Ellipse partially outside box should return false', () => {
-            const ellipse3: Ellipse = {
-                center: { x: 6, y: 6 },
-                radiusX: 3,
-                radiusY: 4
-            };
+            const ellipse3 = {
+                position: { x: 6, y: 6 },
+                radius: { x: 3, y: 4 }
+            } as Ellipse;
             expect(isEllipseInBox(ellipse3, box)).toBe(false);
         });
     });
@@ -145,11 +141,20 @@ describe('utils', () => {
     describe('overlap()', () => {
         it('returns false when source is on the left from target', () => {
             const source: Box = { topLeft: { x: 100, y: 100 }, bottomRight: { x: 200, y: 200 } };
-            const target: Box = { topLeft: { x: 200, y: 100 }, bottomRight: { x: 300, y: 200300 } };
+            const target: Box = { topLeft: { x: 250, y: 100 }, bottomRight: { x: 300, y: 300 } };
 
             const actual = overlaps(source, target);
 
             expect(actual).toBeFalsy();
+        });
+
+        it('returns true when source and target overlap', () => {
+            const source: Box = { topLeft: { x: 100, y: 100 }, bottomRight: { x: 200, y: 200 } };
+            const target: Box = { topLeft: { x: 150, y: 150 }, bottomRight: { x: 300, y: 300 } };
+
+            const actual = overlaps(source, target);
+
+            expect(actual).toBeTruthy();
         });
     });
 
