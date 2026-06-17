@@ -407,7 +407,7 @@ export function overlaps(
     return true;
 }
 
-export function getPropValue(prop: any): unknown {
+export function getPropValue(prop: any): string | undefined {
     if (!prop) {
         return;
     }

@@ -14,7 +14,7 @@ export const loadState = (key: string): Application | null => {
     }
 };
 
-export const saveState = (key: string, state: Application): void => {
+export const saveState = (key: string, state: unknown): void => {
     try {
         const serializedState = JSON.stringify(state);
 

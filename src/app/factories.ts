@@ -67,7 +67,7 @@ export function getCurrentUserName(): string {
     return 'anonymous';
 }
 
-export function getDefaultType(): string {
+export function getDefaultType(): Shape['type'] {
     return 'rectangle';
 }
 

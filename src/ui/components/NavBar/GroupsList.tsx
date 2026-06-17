@@ -3,7 +3,7 @@ import { NavBarList } from './NavBarList';
 import { NavBarListItem } from './NavBarListItem';
 import { useActions, useCurrentDocument, useGroup } from 'src/app/hooks';
 
-const GroupListItem = ({ groupId }) => {
+const GroupListItem = ({ groupId }: { groupId: string }) => {
     const group = useGroup(groupId);
     const { toggleGroupSelected } = useActions();
 
@@ -27,7 +27,7 @@ export const GroupsList = () => {
 
     return (
         <NavBarList name="Groups">
-            {groupsIds.map((groupId) => (
+            {groupsIds.map((groupId: string) => (
                 <GroupListItem key={groupId} groupId={groupId} />
             ))}
         </NavBarList>

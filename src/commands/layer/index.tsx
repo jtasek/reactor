@@ -29,7 +29,7 @@ export const LayerCommand: Command = {
 export const deleteSelectedLayers = ({ state }: Context) => {
     const { selectedLayersIds } = state.currentDocument;
 
-    selectedLayersIds?.forEach((layerId) => delete state.currentDocument.layers[layerId]);
+    selectedLayersIds?.forEach((layerId: string) => delete state.currentDocument.layers[layerId]);
 };
 
 export const UnlayerCommand: Command = {

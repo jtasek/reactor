@@ -10,7 +10,7 @@ export interface Props {
 }
 
 export const Slider: FC<Props> = ({ min, max, step, value, onChange }) => {
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         e.preventDefault();
         const newValue = parseFloat(e.target.value);
         if (value !== newValue) {

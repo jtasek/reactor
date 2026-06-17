@@ -259,7 +259,7 @@ export interface Command {
     shortcut?: string;
     canExecute: ActionGuard;
     execute: Action;
-    shouldDeactivate: ActionGuard;
+    shouldDeactivate?: ActionGuard;
 }
 
 export interface User {

@@ -3,7 +3,7 @@ import { NavBarList } from './NavBarList';
 import { NavBarListItem } from './NavBarListItem';
 import { useActions, useCurrentDocument, useShape } from 'src/app/hooks';
 
-const ShapesListItem = ({ shapeId }) => {
+const ShapesListItem = ({ shapeId }: { shapeId: string }) => {
     const shape = useShape(shapeId);
     const { toggleShapeSelected } = useActions();
 
@@ -27,7 +27,7 @@ export const ShapesList = () => {
 
     return (
         <NavBarList name="Shapes">
-            {shapesIds.map((shapeId) => (
+            {shapesIds.map((shapeId: string) => (
                 <ShapesListItem key={shapeId} shapeId={shapeId} />
             ))}
         </NavBarList>

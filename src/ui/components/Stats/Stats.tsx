@@ -2,15 +2,15 @@ import React, { FC } from 'react';
 import { useCamera, usePointer, useShapes } from 'src/app/hooks';
 import styles from './styles.css';
 
-const printObject = (value) => {
-    if (typeof value === 'object') {
+const printObject = (value: unknown): string => {
+    if (Array.isArray(value)) {
+        return value.map((val) => printObject(val)).join(', ');
+    }
+
+    if (typeof value === 'object' && value !== null) {
         return Object.entries(value)
             .map(([key, val]) => `${key}: ${printObject(val)}`)
             .join(', ');
-    }
-
-    if (Array.isArray(value)) {
-        return value.map((val) => printObject(val)).join(', ');
     }
 
     if (typeof value === 'boolean') {
@@ -18,10 +18,10 @@ const printObject = (value) => {
     }
 
     if (typeof value === 'number') {
-        return Math.floor(value);
+        return String(Math.floor(value));
     }
 
-    return value;
+    return String(value);
 };
 
 export const Stats: FC = () => {

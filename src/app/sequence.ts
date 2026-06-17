@@ -10,7 +10,7 @@ export class Sequence {
     public next(): number {
         let value: number;
         if (this.available.size > 0) {
-            value = this.available.values().next().value;
+            value = this.available.values().next().value as number;
             this.available.delete(value);
             return value;
         }

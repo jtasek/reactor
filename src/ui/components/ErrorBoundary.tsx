@@ -1,4 +1,5 @@
 import { Component, ReactNode } from 'react';
+import type { ErrorInfo } from 'react';
 
 interface State {
     hasError: boolean;
@@ -10,18 +11,18 @@ interface Props {
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-    constructor(props) {
+    constructor(props: Props) {
         super(props);
 
         this.state = { hasError: false };
     }
 
-    static getDerivedStateFromError(error) {
+    static getDerivedStateFromError(): State {
         // Update state so the next render will show the fallback UI.
         return { hasError: true };
     }
 
-    componentDidCatch(error, info) {
+    componentDidCatch(error: unknown, info: ErrorInfo) {
         // Example "componentStack":
         //   in ComponentThatThrows (created by App)
         //   in ErrorBoundary (created by App)

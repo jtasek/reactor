@@ -60,7 +60,7 @@ export function getTool(toolId: string) {
     return tools[toolId];
 }
 
-function registerCommands(state, instance) {
+function registerCommands(state: Context['state'], instance: Overmind<Context>) {
     console.log('register commands');
 
     registerCommand(DeleteCommand);
@@ -76,7 +76,7 @@ function registerCommands(state, instance) {
     registerCommand(ZoomResetCommand);
 }
 
-function registerTools(state, instance) {
+function registerTools(state: Context['state'], instance: Overmind<Context>) {
     console.log('register tools');
 
     registerTool(CircleTool);
@@ -90,14 +90,14 @@ function registerTools(state, instance) {
     registerTool(TextTool);
 }
 
-function loadLocalData(effects, state) {
+function loadLocalData(effects: Context['effects'], state: Context['state']) {
     const savedApp = effects.loadState('reactor');
     if (savedApp) {
         state.documents = savedApp.documents;
     }
 }
 
-function activateAutosave(instance, effects) {
+function activateAutosave(instance: Overmind<Context>, effects: Context['effects']) {
     console.log('Autosave is on');
 
     instance.reaction(
@@ -107,7 +107,7 @@ function activateAutosave(instance, effects) {
     );
 }
 
-function registerRoutes(effects, actions) {
+function registerRoutes(effects: Context['effects'], actions: Context['actions']) {
     effects.initializeRoutes({
         '/': actions.showDesigner,
         '/documents': actions.showDocuments

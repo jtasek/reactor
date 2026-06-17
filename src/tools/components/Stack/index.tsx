@@ -7,7 +7,7 @@ export const Stack: FC = () => {
 
     return (
         <g id="tools">
-            {activeToolsIds.map((toolId) => (
+            {activeToolsIds.map((toolId: string) => (
                 <Tool key={toolId} toolId={toolId} />
             ))}
         </g>

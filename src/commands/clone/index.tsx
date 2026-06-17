@@ -1,4 +1,4 @@
-import { Command } from 'src/app/types';
+import { Command, Shape } from 'src/app/types';
 import { createShape } from 'src/app/factories';
 import { Context } from '../../app';
 
@@ -6,7 +6,7 @@ const POSITION_SHIFT_STEP = 10;
 
 export const cloneSelection = ({ state }: Context) => {
     state.currentDocument?.selectedShapes
-        .map((shape) =>
+        .map((shape: Shape) =>
             createShape({
                 ...shape,
                 id: undefined,
@@ -18,7 +18,7 @@ export const cloneSelection = ({ state }: Context) => {
                 selected: false
             })
         )
-        .forEach((shape) => (state.currentDocument.shapes[shape.id] = shape));
+        .forEach((shape: Shape) => (state.currentDocument.shapes[shape.id] = shape));
 };
 
 export const CloneCommand: Command = {

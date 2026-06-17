@@ -3,7 +3,7 @@ import { NavBarList } from './NavBarList';
 import { NavBarListItem } from './NavBarListItem';
 import { useActions, useCurrentDocument, useRuler } from 'src/app/hooks';
 
-const RulerListItem = ({ rulerId }) => {
+const RulerListItem = ({ rulerId }: { rulerId: string }) => {
     const ruler = useRuler(rulerId);
     const { toggleRulerSelected } = useActions();
 
@@ -27,7 +27,7 @@ export const RulersList = () => {
 
     return (
         <NavBarList name="Rulers">
-            {rulersIds.map((rulerId) => (
+            {rulersIds.map((rulerId: string) => (
                 <RulerListItem key={rulerId} rulerId={rulerId} />
             ))}
         </NavBarList>

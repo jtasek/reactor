@@ -7,7 +7,7 @@ export const Shapes: FC = () => {
 
     return (
         <g id="shapes">
-            {shapesIds.map((shapeId) => (
+            {shapesIds.map((shapeId: string) => (
                 <Shape key={shapeId} shapeId={shapeId} />
             ))}
         </g>

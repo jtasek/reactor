@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 import { Ruler } from '../Ruler';
 import { useCamera, useControls, useRulers } from 'src/app/hooks';
-import { Camera } from 'src/app/types';
+import { Camera, Ruler as RulerShape } from 'src/app/types';
 
 interface Props {
     camera?: Camera;
@@ -20,7 +20,7 @@ export const Rulers: FC<Props> = ({ camera }) => {
 
     return (
         <g id="rulers">
-            {Object.values(rulers).map((ruler) => (
+            {(Object.values(rulers) as RulerShape[]).map((ruler) => (
                 <Ruler key={ruler.id} ruler={ruler} position={position} scale={scale} />
             ))}
         </g>

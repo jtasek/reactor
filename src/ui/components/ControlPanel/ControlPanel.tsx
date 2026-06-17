@@ -11,8 +11,8 @@ export interface Props {
 
 export const ControlPanel: FC<Props> = ({ controls, onChange }) => (
     <ul className={styles.controlPanel}>
-        {Object.keys(controls).map((name, index) => (
-            <ControlPanelItem key={index} control={controls[name]} onChange={onChange} />
+        {Object.values(controls).map((control, index) => (
+            <ControlPanelItem key={index} control={control} onChange={onChange} />
         ))}
     </ul>
 );

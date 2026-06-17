@@ -75,7 +75,7 @@ export const selectShape: ActionWithParam<string> = ({ state }, shapeId) => {
 export const selectShapeByPoint: Action = ({ state }) => {
     const { current } = state.events.pointer;
 
-    const shapes = Object.values(state.currentDocument.shapes);
+    const shapes = Object.values(state.currentDocument.shapes) as Shape[];
     shapes.forEach((shape) => {
         if (isPointInBox(current, shape)) {
             shape.selected = true;

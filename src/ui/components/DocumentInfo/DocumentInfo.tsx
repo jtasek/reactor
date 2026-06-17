@@ -20,7 +20,7 @@ export const DocumentInfo: FC<Props> = ({ document }) => {
                     <DocumentInfoField
                         key={index}
                         name={name}
-                        value={getPropValue(document[name])}
+                        value={getPropValue((document as unknown as Record<string, unknown>)[name])}
                     />
                 ))}
             </tbody>

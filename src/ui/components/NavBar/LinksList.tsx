@@ -3,7 +3,7 @@ import { NavBarList } from './NavBarList';
 import { NavBarListItem } from './NavBarListItem';
 import { useActions, useCurrentDocument, useLink } from 'src/app/hooks';
 
-const LinkListItem = ({ linkId }) => {
+const LinkListItem = ({ linkId }: { linkId: string }) => {
     const link = useLink(linkId);
     const { toggleLinkSelected } = useActions();
 
@@ -27,7 +27,7 @@ export const LinksList = () => {
 
     return (
         <NavBarList name="Links">
-            {linksIds.map((linkId) => (
+            {linksIds.map((linkId: string) => (
                 <LinkListItem key={linkId} linkId={linkId} />
             ))}
         </NavBarList>

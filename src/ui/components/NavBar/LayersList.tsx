@@ -3,7 +3,7 @@ import { NavBarList } from './NavBarList';
 import { NavBarListItem } from './NavBarListItem';
 import { useActions, useCurrentDocument, useLayer } from 'src/app/hooks';
 
-const LayerListItem = ({ layerId }) => {
+const LayerListItem = ({ layerId }: { layerId: string }) => {
     const layer = useLayer(layerId);
     const { toggleLayerSelected } = useActions();
 
@@ -27,7 +27,7 @@ export const LayersList = () => {
 
     return (
         <NavBarList name="Layers">
-            {layersIds.map((layerId) => (
+            {layersIds.map((layerId: string) => (
                 <LayerListItem key={layerId} layerId={layerId} />
             ))}
         </NavBarList>

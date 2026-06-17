@@ -10,15 +10,16 @@ export const hideContextMenu: Action = ({ state }) => {
 };
 
 export const showControl: ActionWithParam<string> = ({ state }, controlId: string) => {
-    state.ui[controlId].visible = true;
+    (state.ui[controlId as keyof typeof state.ui] as { visible: boolean }).visible = true;
 };
 
 export const hideControl: ActionWithParam<string> = ({ state }, controlId: string) => {
-    state.ui[controlId].visible = false;
+    (state.ui[controlId as keyof typeof state.ui] as { visible: boolean }).visible = false;
 };
 
 export const toggleControlVisibility: ActionWithParam<string> = ({ state }, controlId: string) => {
-    state.ui[controlId].visible = !state.ui[controlId].visible;
+    const control = state.ui[controlId as keyof typeof state.ui] as { visible: boolean };
+    control.visible = !control.visible;
 };
 
 export const distractionFreeMode: Action = ({ state }) => {

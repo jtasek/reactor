@@ -29,7 +29,7 @@ export const GroupCommand: Command = {
 export const deleteSelectedGroups = ({ state }: Context) => {
     const { selectedGroupsIds } = state.currentDocument;
 
-    selectedGroupsIds?.forEach((groupId) => delete state.currentDocument.groups[groupId]);
+    selectedGroupsIds?.forEach((groupId: string) => delete state.currentDocument.groups[groupId]);
 };
 
 export const UngroupCommand: Command = {

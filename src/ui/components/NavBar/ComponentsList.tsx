@@ -3,7 +3,7 @@ import { NavBarList } from './NavBarList';
 import { NavBarListItem } from './NavBarListItem';
 import { useActions, useCurrentDocument, useComponent } from 'src/app/hooks';
 
-const ComponentListItem = ({ componentId }) => {
+const ComponentListItem = ({ componentId }: { componentId: string }) => {
     const component = useComponent(componentId);
     const { toggleComponentSelected } = useActions();
 
@@ -27,7 +27,7 @@ export const ComponentsList = () => {
 
     return (
         <NavBarList name="Components">
-            {componentsIds.map((componentId) => (
+            {componentsIds.map((componentId: string) => (
                 <ComponentListItem key={componentId} componentId={componentId} />
             ))}
         </NavBarList>
