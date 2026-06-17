@@ -35,12 +35,6 @@ importers:
       react-dom:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
-      swc-loader:
-        specifier: ^0.2.7
-        version: 0.2.7(@swc/core@1.15.41)(webpack@5.107.2)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
       uuid:
         specifier: ^11.1.1
         version: 11.1.1
@@ -135,9 +129,15 @@ importers:
       style-loader:
         specifier: ^4.0.0
         version: 4.0.0(webpack@5.107.2)
+      swc-loader:
+        specifier: ^0.2.7
+        version: 0.2.7(@swc/core@1.15.41)(webpack@5.107.2)
       tsconfig-paths-webpack-plugin:
         specifier: ^4.2.0
         version: 4.2.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
       vitest:
         specifier: ^4.1.9
         version: 4.1.9(@types/node@24.13.2)(vite@8.0.16(@types/node@24.13.2)(terser@5.48.0))
