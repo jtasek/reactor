@@ -1,4 +1,5 @@
 import React, { memo, useLayoutEffect, useRef } from 'react';
+import { Active } from '../Active/Active';
 import { Label } from '../Label';
 import { Resizable } from '../Selectable/Resizable';
 import { Selectable } from '../Selectable/Selectable';
@@ -12,7 +13,7 @@ interface Props {
 
 export const Shape = memo(({ shapeId }: Props) => {
     const shape = useShape(shapeId);
-    const { setShapeBounds } = useActions();
+    const { setShapeBounds, activateShape, deactivateShape } = useActions();
     // A move is a pure translation: `moveSelectedShapes` already shifts the
     // cached bounds analytically, so re-measuring via getBBox every frame is
     // wasted work that forces a synchronous layout reflow. Skip measurement
@@ -60,9 +61,17 @@ export const Shape = memo(({ shapeId }: Props) => {
     // pointer frame during a drag.
     return (
         <>
-            <g ref={groupRef}>
+            <g
+                ref={groupRef}
+                style={{ pointerEvents: 'all' }}
+                onPointerEnter={() => activateShape(shapeId)}
+                onPointerLeave={() => deactivateShape(shapeId)}
+            >
                 <Component {...shape} />
             </g>
+            {shape.active && !shape.selected && (
+                <Active key={`active-${shape.type}-${shape.id}`} shape={shape} />
+            )}
             {shape.selected && (
                 <>
                     <Selectable key={`selectable-${shape.type}-${shape.id}`} shape={shape} />

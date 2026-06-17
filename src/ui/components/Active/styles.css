@@ -1,0 +1,7 @@
+.active {
+    fill: cornflowerblue;
+    fill-opacity: .05;
+    stroke: cornflowerblue;
+    stroke-width: 2;
+    pointer-events: none;
+}

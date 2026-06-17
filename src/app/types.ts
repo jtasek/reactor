@@ -99,6 +99,7 @@ export interface Grid {
 }
 
 export interface Shape {
+    active: boolean;
     bounds?: Box;
     center?: Point;
     children?: Shape[];

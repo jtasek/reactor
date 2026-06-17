@@ -216,6 +216,22 @@ export const unselectShape: ActionWithParam<string> = ({ state }, shapeId) => {
     shape.selected = false;
 };
 
+export const activateShape: ActionWithParam<string> = ({ state }, shapeId) => {
+    const shape = getShape(state, shapeId);
+
+    if (!shape.active) {
+        shape.active = true;
+    }
+};
+
+export const deactivateShape: ActionWithParam<string> = ({ state }, shapeId) => {
+    const shape = getShape(state, shapeId);
+
+    if (shape.active) {
+        shape.active = false;
+    }
+};
+
 export const lockShape: ActionWithParam<string> = ({ state }, shapeId) => {
     const shape = getShape(state, shapeId);
 

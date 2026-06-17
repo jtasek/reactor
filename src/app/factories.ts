@@ -86,6 +86,7 @@ export function createShape(options: Partial<Shape> = {}): Shape {
     const type = options.type ?? getDefaultType();
 
     return {
+        active: false,
         children: [],
         created: new Date(),
         createdBy: getCurrentUserName(),
