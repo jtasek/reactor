@@ -1,5 +1,6 @@
 import { Box, Ellipse, Point, Shape } from '../types';
 import {
+    debounce,
     getDistance,
     isCircleInBox,
     isEllipseInBox,
@@ -9,6 +10,43 @@ import {
 } from '../utils';
 
 describe('utils', () => {
+    describe('debounce()', () => {
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
+
+        it('invokes the function once after the delay, with the latest args', () => {
+            const fn = vi.fn();
+            const debounced = debounce(fn, 500);
+
+            debounced('a');
+            debounced('b');
+            debounced('c');
+
+            expect(fn).not.toHaveBeenCalled();
+
+            vi.advanceTimersByTime(500);
+
+            expect(fn).toHaveBeenCalledTimes(1);
+            expect(fn).toHaveBeenCalledWith('c');
+        });
+
+        it('restarts the timer on each call', () => {
+            const fn = vi.fn();
+            const debounced = debounce(fn, 500);
+
+            debounced();
+            vi.advanceTimersByTime(400);
+            debounced();
+            vi.advanceTimersByTime(400);
+
+            expect(fn).not.toHaveBeenCalled();
+
+            vi.advanceTimersByTime(100);
+
+            expect(fn).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('getDistance()', () => {
         it('returns distance between two points', () => {
             const p1 = { x: 1, y: 1 };

@@ -28,6 +28,7 @@ import {
 } from 'src/tools';
 
 import { Tool } from '../../tools/types';
+import { debounce } from '../utils';
 import {
     PERSISTENCE_KEY,
     migratePersistedState,
@@ -104,14 +105,17 @@ function loadLocalData(effects: Context['effects'], state: Context['state']) {
     }
 }
 
+const AUTOSAVE_DELAY_MS = 500;
+
 function activateAutosave(instance: Overmind<Context>, effects: Context['effects']) {
     console.log('Autosave is on');
 
-    instance.reaction(
-        (state) => state.currentDocument,
+    const save = debounce(
         () => effects.saveState(PERSISTENCE_KEY, serializePersistedState(instance.state)),
-        { nested: true }
+        AUTOSAVE_DELAY_MS
     );
+
+    instance.reaction((state) => state.currentDocument, save, { nested: true });
 }
 
 function registerRoutes(effects: Context['effects'], actions: Context['actions']) {
