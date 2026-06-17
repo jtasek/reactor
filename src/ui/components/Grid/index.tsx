@@ -11,5 +11,5 @@ export const GridContainer: FC = () => {
         return null;
     }
 
-    return <Grid key="grid" camera={camera} grid={grid} />;
+    return <Grid key="grid" id="canvas" camera={camera} grid={grid} />;
 };

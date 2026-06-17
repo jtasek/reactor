@@ -17,7 +17,7 @@ export const MiniMapContainer: FC = () => {
 
     return (
         <MiniMap size={{ width: 200, height: 200 }}>
-            {grid.visible && <Grid camera={STATIC_CAMERA} grid={grid} />}
+            {grid.visible && <Grid id="minimap" camera={STATIC_CAMERA} grid={grid} />}
             <Rulers key="minimap-rulers" camera={STATIC_CAMERA} />
             <Shapes />
         </MiniMap>
