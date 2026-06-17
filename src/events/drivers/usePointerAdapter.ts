@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import type {
     MouseEvent,
     PointerEvent as ReactPointerEvent,
@@ -18,14 +18,6 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
     const { pointer } = useEvents();
     const { activeToolsIds } = useTools();
     const { scale, position } = useCamera();
-
-    // Tracks an in-progress empty-canvas pan. `moved` distinguishes a pan (drag)
-    // from a plain click, which deselects on release.
-    const pan = useRef<{
-        origin: { x: number; y: number };
-        last: { x: number; y: number };
-        moved: boolean;
-    } | null>(null);
 
     const getSvgElement = useCallback(
         (event: SyntheticEvent<SVGSVGElement>) =>
@@ -49,15 +41,6 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
             });
 
             tryReleasePointerCapture(svgRef?.current, event.pointerId);
-
-            // Finalize an empty-canvas interaction: a click (no pan movement)
-            // deselects; a pan leaves the selection alone.
-            if (pan.current) {
-                if (!pan.current.moved) {
-                    actions.unselectShapes();
-                }
-                pan.current = null;
-            }
 
             if (pointer.dragging) {
                 actions.events.endDragging();
@@ -122,19 +105,9 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
                 return;
             }
 
-            // Empty canvas: Shift-drag draws a marquee, a plain drag pans the
-            // canvas (selection preserved), and a plain click deselects on
-            // release.
-            if (event.shiftKey) {
-                actions.events.setBackground(true);
-            } else {
-                actions.events.setBackground(false);
-                pan.current = {
-                    origin: { x: event.clientX, y: event.clientY },
-                    last: { x: event.clientX, y: event.clientY },
-                    moved: false
-                };
-            }
+            // Empty canvas: a drag draws a marquee selection; a plain click
+            // (zero-size marquee) deselects everything.
+            actions.events.setBackground(true);
 
             return;
         }
@@ -163,25 +136,6 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
         const currentPosition = toCanvas(event, svgEl);
 
         actions.events.updateCurrentPosition(currentPosition);
-
-        // Pan the canvas by the incremental screen delta while dragging empty
-        // canvas. The svg uses a 1:1 pixel coordinate space, so the client-space
-        // delta maps directly to the camera translation.
-        if (pan.current) {
-            const dx = event.clientX - pan.current.last.x;
-            const dy = event.clientY - pan.current.last.y;
-
-            if (dx !== 0 || dy !== 0) {
-                actions.tools.panCamera({ dx, dy });
-                pan.current.last = { x: event.clientX, y: event.clientY };
-            }
-
-            const totalX = event.clientX - pan.current.origin.x;
-            const totalY = event.clientY - pan.current.origin.y;
-            if (Math.hypot(totalX, totalY) > 3) {
-                pan.current.moved = true;
-            }
-        }
     };
 
     const handlePointerEnd: PointerEventHandler<SVGSVGElement> = useCallback(
