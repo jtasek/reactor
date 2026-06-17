@@ -1,6 +1,7 @@
 import {
     Box,
     Circle,
+    Document,
     Ellipse,
     Line,
     Pen,
@@ -448,6 +449,43 @@ export function vector(p1: Point, p2: Point): Vector {
     };
 }export function dot(u: Point, v: Point): number {
     return u.x * v.x + u.y * v.y;
+}
+
+/**
+ * A shape is immutable when it is locked itself, when the document is locked, or
+ * when it belongs to any locked group or layer. Used to block moves, resizes,
+ * rotations, deletions and selection of locked shapes.
+ */
+export function isShapeLocked(document: Document | undefined, shapeId: string): boolean {
+    if (!document) {
+        return false;
+    }
+
+    const shape = document.shapes?.[shapeId];
+
+    if (!shape) {
+        return false;
+    }
+
+    if (document.locked || shape.locked) {
+        return true;
+    }
+
+    const inLockedGroup = document.groupsIds?.some((id) => {
+        const group = document.groups?.[id];
+        return Boolean(group?.locked && group.shapesIds?.includes(shapeId));
+    });
+
+    if (inLockedGroup) {
+        return true;
+    }
+
+    return Boolean(
+        document.layersIds?.some((id) => {
+            const layer = document.layers?.[id];
+            return Boolean(layer?.locked && layer.shapesIds?.includes(shapeId));
+        })
+    );
 }
 
 /** Geometric center of a box. */

@@ -22,6 +22,7 @@ import {
     mapPointBetweenBoxes,
     overlaps,
     isPointInBox,
+    isShapeLocked,
     resizeBox,
     boxCenter,
     rotatePoint,
@@ -60,6 +61,10 @@ export const cloneShape: ActionWithParam<string> = ({ state, effects }, shapeId)
 };
 
 export const removeShape: ActionWithParam<string> = ({ state }, shapeId) => {
+    if (isShapeLocked(state.currentDocument, shapeId)) {
+        return;
+    }
+
     deleteShape(state, shapeId);
 };
 
@@ -80,7 +85,7 @@ export const selectShapeByPoint: Action = ({ state }) => {
 
     const shapes = Object.values(state.currentDocument.shapes) as Shape[];
     shapes.forEach((shape) => {
-        if (isPointInBox(current, shape)) {
+        if (isPointInBox(current, shape) && !isShapeLocked(state.currentDocument, shape.id)) {
             shape.selected = true;
         }
     });
@@ -102,7 +107,7 @@ export const selectShapeAtPointer: ActionGuard = ({ state }) => {
     let hitId: string | null = null;
     for (const id of shapesIds) {
         const shape = shapes[id];
-        if (shape && isPointInBox(current, shape)) {
+        if (shape && isPointInBox(current, shape) && !isShapeLocked(state.currentDocument, id)) {
             hitId = id;
         }
     }
@@ -161,7 +166,7 @@ const translateShape = (shape: Shape, dx: number, dy: number) => {
 export const moveSelectedShapes: ActionWithParam<Point> = ({ state }, delta) => {
     const shapes = Object.values(state.currentDocument.shapes) as Shape[];
     shapes.forEach((shape) => {
-        if (shape.selected) {
+        if (shape.selected && !isShapeLocked(state.currentDocument, shape.id)) {
             translateShape(shape, delta.x, delta.y);
         }
     });
@@ -173,7 +178,7 @@ export const selectShapes: Action = ({ state }) => {
 
     const shapes = Object.values(state.currentDocument.shapes) as Shape[];
     shapes.forEach((shape) => {
-        const selected = overlaps(source, getShapeBounds(shape));
+        const selected = !isShapeLocked(state.currentDocument, shape.id) && overlaps(source, getShapeBounds(shape));
 
         // Only write when the value actually changes so shapes that stay
         // outside (or inside) the marquee don't re-render every pointer move.
@@ -260,6 +265,10 @@ export const hideShape = ({ state }: Context, shapeId: string) => {
 };
 
 export const updateShape = ({ state }: Context, options: Partial<Shape> & { id: string }) => {
+    if (isShapeLocked(state.currentDocument, options.id)) {
+        return;
+    }
+
     const shape = getShape(state, options.id);
 
     setShape(state, { ...shape, ...options });
@@ -421,7 +430,7 @@ export const resizeShape = (
 
     const shape = state.currentDocument?.shapes[shapeId];
 
-    if (!shape) {
+    if (!shape || isShapeLocked(state.currentDocument, shapeId)) {
         return;
     }
 
@@ -448,7 +457,7 @@ export const rotateShape = (
 
     const shape = state.currentDocument?.shapes[shapeId];
 
-    if (!shape) {
+    if (!shape || isShapeLocked(state.currentDocument, shapeId)) {
         return;
     }
 
