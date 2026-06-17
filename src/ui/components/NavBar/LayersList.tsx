@@ -5,7 +5,7 @@ import { useActions, useCurrentDocument, useLayer } from 'src/app/hooks';
 
 const LayerListItem = ({ layerId }: { layerId: string }) => {
     const layer = useLayer(layerId);
-    const { toggleLayerSelected } = useActions();
+    const { toggleLayerSelected, toggleLayerLocked, toggleLayerVisible } = useActions();
 
     return (
         <NavBarListItem
@@ -13,7 +13,11 @@ const LayerListItem = ({ layerId }: { layerId: string }) => {
             id={layerId}
             name={layer.name}
             selected={layer.selected}
+            locked={layer.locked}
+            visible={layer.visible}
             onClick={toggleLayerSelected}
+            onToggleLocked={toggleLayerLocked}
+            onToggleVisible={toggleLayerVisible}
         />
     );
 };

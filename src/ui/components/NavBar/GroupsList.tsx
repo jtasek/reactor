@@ -5,7 +5,7 @@ import { useActions, useCurrentDocument, useGroup } from 'src/app/hooks';
 
 const GroupListItem = ({ groupId }: { groupId: string }) => {
     const group = useGroup(groupId);
-    const { toggleGroupSelected } = useActions();
+    const { toggleGroupSelected, toggleGroupLocked, toggleGroupVisible } = useActions();
 
     return (
         <NavBarListItem
@@ -13,7 +13,11 @@ const GroupListItem = ({ groupId }: { groupId: string }) => {
             id={groupId}
             name={group.name}
             selected={group.selected}
+            locked={group.locked}
+            visible={group.visible}
             onClick={toggleGroupSelected}
+            onToggleLocked={toggleGroupLocked}
+            onToggleVisible={toggleGroupVisible}
         />
     );
 };

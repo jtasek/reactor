@@ -54,6 +54,10 @@ export const Shape = memo(({ shapeId }: Props) => {
         return null;
     }
 
+    if (shape.visible === false) {
+        return null;
+    }
+
     // The selection overlays (box, resize handles, label) are only relevant for
     // a selected shape. Gating them here — rather than letting each overlay
     // early-return null — keeps unselected shapes from mounting Resizable, whose

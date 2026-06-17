@@ -1,6 +1,11 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
     active: string;
+    hidden: string;
+    item: string;
+    itemIcon: string;
+    itemIcons: string;
+    itemName: string;
     navBar: string;
     new: string;
     selected: string;

@@ -246,6 +246,18 @@ export const lockShape: ActionWithParam<string> = ({ state }, shapeId) => {
     shape.locked = true;
 };
 
+export const toggleShapeLocked: ActionWithParam<string> = ({ state }, shapeId) => {
+    const shape = getShape(state, shapeId);
+
+    shape.locked = !shape.locked;
+};
+
+export const toggleShapeVisible: ActionWithParam<string> = ({ state }, shapeId) => {
+    const shape = getShape(state, shapeId);
+
+    shape.visible = !shape.visible;
+};
+
 export const unlockShape: ActionWithParam<string> = ({ state }, shapeId) => {
     const shape = getShape(state, shapeId);
 

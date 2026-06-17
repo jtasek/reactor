@@ -5,7 +5,7 @@ import { useActions, useCurrentDocument, useShape } from 'src/app/hooks';
 
 const ShapesListItem = ({ shapeId }: { shapeId: string }) => {
     const shape = useShape(shapeId);
-    const { toggleShapeSelected } = useActions();
+    const { toggleShapeSelected, toggleShapeLocked, toggleShapeVisible } = useActions();
 
     return (
         <NavBarListItem
@@ -14,7 +14,11 @@ const ShapesListItem = ({ shapeId }: { shapeId: string }) => {
             name={shape.name}
             selected={shape.selected}
             active={shape.active}
+            locked={shape.locked}
+            visible={shape.visible}
             onClick={toggleShapeSelected}
+            onToggleLocked={toggleShapeLocked}
+            onToggleVisible={toggleShapeVisible}
         />
     );
 };

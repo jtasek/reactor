@@ -16,6 +16,41 @@
   position: relative;
 }
 
+.navBar li.item {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.itemName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navBar li.hidden .itemName {
+  font-style: italic;
+  opacity: 0.5;
+}
+
+.itemIcons {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.itemIcon {
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.6;
+}
+
+.itemIcon:hover {
+  opacity: 1;
+}
+
 .navBar li.selected:before {
   background-color: mediumpurple;
   border-radius: 50%;

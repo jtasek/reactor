@@ -5,7 +5,7 @@ import { useActions, useCurrentDocument, useComponent } from 'src/app/hooks';
 
 const ComponentListItem = ({ componentId }: { componentId: string }) => {
     const component = useComponent(componentId);
-    const { toggleComponentSelected } = useActions();
+    const { toggleComponentSelected, toggleComponentLocked, toggleComponentVisible } = useActions();
 
     return (
         <NavBarListItem
@@ -13,7 +13,11 @@ const ComponentListItem = ({ componentId }: { componentId: string }) => {
             id={componentId}
             name={component.name}
             selected={component.selected}
+            locked={component.locked}
+            visible={component.visible}
             onClick={toggleComponentSelected}
+            onToggleLocked={toggleComponentLocked}
+            onToggleVisible={toggleComponentVisible}
         />
     );
 };
