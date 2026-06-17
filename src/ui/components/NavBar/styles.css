@@ -27,6 +27,11 @@
   width: 4px;
 }
 
+.navBar li.selected > a {
+  color: mediumpurple;
+  font-weight: 600;
+}
+
 .navBar li.active:before {
   background-color: cornflowerblue;
   border-radius: 50%;
