@@ -23,9 +23,6 @@ importers:
       overmind-react:
         specifier: ^29.2.1
         version: 29.2.1(react@19.2.7)
-      page:
-        specifier: ^1.11.6
-        version: 1.11.6
       pino:
         specifier: ^10.3.1
         version: 10.3.1
@@ -63,9 +60,6 @@ importers:
       '@types/node':
         specifier: ^24.13.2
         version: 24.13.2
-      '@types/page':
-        specifier: ^1.11.9
-        version: 1.11.9
       '@types/react':
         specifier: ^19.2.17
         version: 19.2.17
@@ -693,9 +687,6 @@ packages:
 
   '@types/node@24.13.2':
     resolution: {integrity: sha512-fRa09kZTgu8o71KFcDjUFuc7F+dEbZYZmkI0mg5YBTRs0yMKjYHsq/c0urDKeDb+D5qVgXOdFcuu+DZPKOITwA==}
-
-  '@types/page@1.11.9':
-    resolution: {integrity: sha512-Ki8IZMwg63i7+tF3UpfDIl4rwBN1B1kWQjZCUzaWoohfMB0m9CYap/dExbz7W21uS2WPoA/8lvlDuwX0X/YfIQ==}
 
   '@types/react-dom@19.2.3':
     resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
@@ -1995,9 +1986,6 @@ packages:
     resolution: {integrity: sha512-mfcwb6IzQyOKTs84CQMrOwW4gQcaTOAWJ0zzJCl2WSPDrWk/OzDaImWFH3djXhb24g4eudZfLRozAvPGw4d9hQ==}
     engines: {node: '>= 0.4'}
 
-  isarray@0.0.1:
-    resolution: {integrity: sha512-D2S+3GLxWH+uhrNEcoh/fnmYeP8E8/zHl644d/jdA0g2uyXvy3sb0qxotE+ne0LtccHknQzWwZEzhak7oJ0COQ==}
-
   isarray@2.0.5:
     resolution: {integrity: sha512-xHjhDr3cNBK0BzdUJSPXZntQUx/mwMS5Rw4A7lPJ90XGAO6ISP/ePDNuo0vhqOZU+UD5JoodwCAAoZQd3FeAKw==}
 
@@ -2401,9 +2389,6 @@ packages:
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
 
-  page@1.11.6:
-    resolution: {integrity: sha512-P6e2JfzkBrPeFCIPplLP7vDDiU84RUUZMrWdsH4ZBGJ8OosnwFkcUkBHp1DTIjuipLliw9yQn/ZJsXZvarsO+g==}
-
   param-case@3.0.4:
     resolution: {integrity: sha512-RXlj7zCYokReqWpOPH9oYivUzLYZ5vAPIfEmCTNViosC78F8F0H9y7T7gG2M39ymgutxF5gcFEsyZQSph9Bp3A==}
 
@@ -2432,9 +2417,6 @@ packages:
   path-scurry@2.0.2:
     resolution: {integrity: sha512-3O/iVVsJAPsOnpwWIeD+d6z/7PmqApyQePUtCndjatj/9I5LylHvt5qluFaBT3I5h3r1ejfR056c+FCv+NnNXg==}
     engines: {node: 18 || 20 || >=22}
-
-  path-to-regexp@1.2.1:
-    resolution: {integrity: sha512-DBw9IhWfevR2zCVwEZURTuQNseCvu/Q9f5ZgqMCK0Rh61bDa4uyjPAOy9b55yKiPT59zZn+7uYKxmWwsguInwg==}
 
   path-to-regexp@8.4.2:
     resolution: {integrity: sha512-qRcuIdP69NPm4qbACK+aDogI5CBDMi1jKe0ry5rSQJz8JVLsC7jV8XpiJjGRLLol3N+R5ihGYcrPLTno6pAdBA==}
@@ -3839,8 +3821,6 @@ snapshots:
   '@types/node@24.13.2':
     dependencies:
       undici-types: 7.18.2
-
-  '@types/page@1.11.9': {}
 
   '@types/react-dom@19.2.3(@types/react@19.2.17)':
     dependencies:
@@ -5350,8 +5330,6 @@ snapshots:
       call-bound: 1.0.4
       get-intrinsic: 1.3.0
 
-  isarray@0.0.1: {}
-
   isarray@2.0.5: {}
 
   isexe@2.0.0: {}
@@ -5743,10 +5721,6 @@ snapshots:
 
   package-json-from-dist@1.0.1: {}
 
-  page@1.11.6:
-    dependencies:
-      path-to-regexp: 1.2.1
-
   param-case@3.0.4:
     dependencies:
       dot-case: 3.0.4
@@ -5773,10 +5747,6 @@ snapshots:
     dependencies:
       lru-cache: 11.5.1
       minipass: 7.1.3
-
-  path-to-regexp@1.2.1:
-    dependencies:
-      isarray: 0.0.1
 
   path-to-regexp@8.4.2: {}
 
