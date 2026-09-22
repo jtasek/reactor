@@ -68,7 +68,9 @@ describe('utils', () => {
         it('should return true if circle is contained in box', () => {
             const box: Box = {
                 topLeft: { x: 0, y: 0 },
-                bottomRight: { x: 10, y: 10 }
+                bottomRight: { x: 10, y: 10 },
+                width: 10,
+                height: 10
             };
             expect(isCircleInBox(center, r, box)).toBe(true);
         });
@@ -76,7 +78,9 @@ describe('utils', () => {
         it('should return false if circle is not contained in box', () => {
             const box: Box = {
                 topLeft: { x: 0, y: 0 },
-                bottomRight: { x: 4, y: 4 }
+                bottomRight: { x: 4, y: 4 },
+                width: 4,
+                height: 4
             };
             expect(isCircleInBox(center, r, box)).toBe(false);
         });
@@ -84,7 +88,9 @@ describe('utils', () => {
         it('should return false if circle center is outside box', () => {
             const box: Box = {
                 topLeft: { x: 6, y: 6 },
-                bottomRight: { x: 10, y: 10 }
+                bottomRight: { x: 10, y: 10 },
+                width: 4,
+                height: 4
             };
             expect(isCircleInBox(center, r, box)).toBe(false);
         });
@@ -92,7 +98,9 @@ describe('utils', () => {
         it('should return false if circle intersects box', () => {
             const box: Box = {
                 topLeft: { x: 4, y: 4 },
-                bottomRight: { x: 10, y: 10 }
+                bottomRight: { x: 10, y: 10 },
+                width: 6,
+                height: 6
             };
             expect(isCircleInBox(center, r, box)).toBe(false);
         });
@@ -101,15 +109,21 @@ describe('utils', () => {
     describe('isRectangleInBox', () => {
         const box1: Box = {
             topLeft: { x: 2, y: 2 },
-            bottomRight: { x: 6, y: 6 }
+            bottomRight: { x: 6, y: 6 },
+            width: 4,
+            height: 4
         };
         const box2: Box = {
             topLeft: { x: 3, y: 3 },
-            bottomRight: { x: 5, y: 5 }
+            bottomRight: { x: 5, y: 5 },
+            width: 2,
+            height: 2
         };
         const box3: Box = {
             topLeft: { x: 4, y: 4 },
-            bottomRight: { x: 8, y: 8 }
+            bottomRight: { x: 8, y: 8 },
+            width: 4,
+            height: 4
         };
 
         test('Box inside box should return true', () => {
@@ -123,7 +137,9 @@ describe('utils', () => {
         test('Box partially inside box should return false', () => {
             const box4: Box = {
                 topLeft: { x: 1, y: 1 },
-                bottomRight: { x: 4, y: 4 }
+                bottomRight: { x: 4, y: 4 },
+                width: 3,
+                height: 3
             };
             expect(isRectangleInBox(box4, box1)).toBe(false);
         });
@@ -136,7 +152,9 @@ describe('utils', () => {
         } as Ellipse;
         const box: Box = {
             topLeft: { x: 2, y: 2 },
-            bottomRight: { x: 8, y: 8 }
+            bottomRight: { x: 8, y: 8 },
+            width: 6,
+            height: 6
         };
 
         test('Ellipse inside box should return true', () => {
@@ -182,8 +200,18 @@ describe('utils', () => {
 
     describe('overlap()', () => {
         it('returns false when source is on the left from target', () => {
-            const source: Box = { topLeft: { x: 100, y: 100 }, bottomRight: { x: 200, y: 200 } };
-            const target: Box = { topLeft: { x: 250, y: 100 }, bottomRight: { x: 300, y: 300 } };
+            const source: Box = {
+                topLeft: { x: 100, y: 100 },
+                bottomRight: { x: 200, y: 200 },
+                width: 100,
+                height: 100
+            };
+            const target: Box = {
+                topLeft: { x: 250, y: 100 },
+                bottomRight: { x: 300, y: 300 },
+                width: 50,
+                height: 200
+            };
 
             const actual = overlaps(source, target);
 
@@ -191,8 +219,18 @@ describe('utils', () => {
         });
 
         it('returns true when source and target overlap', () => {
-            const source: Box = { topLeft: { x: 100, y: 100 }, bottomRight: { x: 200, y: 200 } };
-            const target: Box = { topLeft: { x: 150, y: 150 }, bottomRight: { x: 300, y: 300 } };
+            const source: Box = {
+                topLeft: { x: 100, y: 100 },
+                bottomRight: { x: 200, y: 200 },
+                width: 100,
+                height: 100
+            };
+            const target: Box = {
+                topLeft: { x: 150, y: 150 },
+                bottomRight: { x: 300, y: 300 },
+                width: 150,
+                height: 150
+            };
 
             const actual = overlaps(source, target);
 
@@ -200,8 +238,8 @@ describe('utils', () => {
         });
     });
 
-    describe('isPointInBox()', () => {
-        it('returns true when point is withing the box boundaries', () => {
+    describe('isPointInBox() outside boundaries', () => {
+        it('returns false when point is outside the box boundaries', () => {
             const point: Point = { x: 100, y: 100 };
 
             const shape: Partial<Shape> = {

@@ -62,7 +62,9 @@ export const config = {
                     '@teamsupercell/typings-for-css-modules-loader',
                     {
                         loader: 'css-loader',
-                        options: { modules: { namedExport: false, exportLocalsConvention: 'as-is' } }
+                        options: {
+                            modules: { namedExport: false, exportLocalsConvention: 'as-is' }
+                        }
                     }
                 ]
             },

@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.6.2",
     "@swc/core": "^1.15.41",
     "@teamsupercell/typings-for-css-modules-loader": "^2.5.2",
@@ -83,13 +84,18 @@
     "build": "pnpm run clean && pnpm run build:webpack",
     "build:webpack": "cross-env NODE_ENV=production node ./node_modules/webpack/bin/webpack --config webpack.config.mjs",
     "clean": "rimraf dist",
-    "lint": "eslint src --fix",
+    "lint": "eslint src tests *.js *.mjs *.mts *.config.ts scripts --max-warnings 0",
     "rebuild": "pnpm run build:webpack",
     "serve": "cross-env NODE_ENV=production node server.prod.js",
     "start": "node server",
     "test": "vitest run",
     "test:watch": "vitest",
     "tsc": "tsc --noEmit",
-    "webpack": "node ./node_modules/webpack/bin/webpack"
+    "webpack": "node ./node_modules/webpack/bin/webpack",
+    "lint:fix": "eslint src tests *.js *.mjs *.mts *.config.ts scripts --max-warnings 0 --fix",
+    "lint:baseline": "node scripts/check-lint-baseline.mjs",
+    "typecheck": "pnpm run tsc && tsc -p tsconfig.test.json",
+    "test:browser": "playwright test",
+    "check": "pnpm run lint:baseline && pnpm run typecheck && pnpm test && pnpm run test:browser"
   }
 }

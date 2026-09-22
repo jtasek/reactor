@@ -1,6 +1,6 @@
 # Repository Audit and Refactoring Plan
 
-Audit date: 2026-09-22. Status: proposed; implementation has not started.
+Audit date: 2026-09-22. Status: Phase 1 implemented; Phases 2-8 remain proposed.
 
 ## Verified Baseline
 
@@ -124,6 +124,18 @@ templates and different fallback behavior.
   fails, fix that phase before proceeding. Do not mark untested behavior complete.
 
 ## Phase 1 - Establish Repeatable Verification
+
+Completed 2026-09-22. `pnpm check` runs a non-mutating lint debt/touched-file gate,
+application and test type-checks, 66 unit/store tests, and a Chromium editor/SVG
+wheel smoke test against a fresh production build. The remaining lint baseline is
+66 errors and 14 warnings; touched files must be clean. Thirteen incomplete Box
+fixtures were repaired and one duplicate test-suite title corrected. Node server
+and build configurations are linted. See README for commands and comparison refs.
+
+Verification also confirmed that the lint gate rejects a temporary new unused
+variable, and that test-harness identifiers are absent from emitted JS bundles.
+Local browser/server execution required sandbox escalation. No application
+behavioral fixes from later phases are included.
 
 1. Split scripts into read-only `lint` and explicit `lint:fix`; add a `check` script.
 2. Add test type-checking configuration and scoped lint configuration for Node

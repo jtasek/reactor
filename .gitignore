@@ -5,3 +5,6 @@
 dist
 node_modules
 todo
+test-results/
+playwright-report/
+.pnpm-store/

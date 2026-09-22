@@ -40,7 +40,10 @@ const logger = pinoHttp({
 const app = express();
 
 // Behind a load balancer / reverse proxy this lets Express trust X-Forwarded-* headers.
-app.set('trust proxy', TRUST_PROXY === 'false' ? false : TRUST_PROXY === 'true' ? true : TRUST_PROXY);
+app.set(
+    'trust proxy',
+    TRUST_PROXY === 'false' ? false : TRUST_PROXY === 'true' ? true : TRUST_PROXY
+);
 app.disable('x-powered-by');
 app.disable('etag');
 

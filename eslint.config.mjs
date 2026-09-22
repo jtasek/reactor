@@ -12,11 +12,18 @@ import prettierRecommended from 'eslint-plugin-prettier/recommended';
 
 export default [
     {
-        ignores: ['dist/**', 'node_modules/**', 'static/**', '**/*.css.d.ts']
+        ignores: [
+            'dist/**',
+            'node_modules/**',
+            'static/**',
+            '**/*.css.d.ts',
+            'test-results/**',
+            'playwright-report/**'
+        ]
     },
     js.configs.recommended,
     {
-        files: ['src/**/*.{ts,tsx,js,jsx}'],
+        files: ['src/**/*.{ts,tsx,js,jsx}', 'tests/**/*.ts', '*.config.{ts,mts}'],
         languageOptions: {
             parser: tsParser,
             parserOptions: {
@@ -83,6 +90,10 @@ export default [
         rules: {
             ...vitestPlugin.configs.recommended.rules
         }
+    },
+    {
+        files: ['*.{js,mjs}', 'scripts/**/*.mjs'],
+        languageOptions: { globals: globals.node }
     },
     prettierRecommended
 ];
