@@ -13,7 +13,7 @@ export const ZoomInCommand: Command = {
         size: 24
     },
     regex: /(?<toolCode>zoomin)\((?<factor>[\d]+)\)/,
-    shortcut: 'z',
+    shortcut: '+,=',
     canExecute: ({ state }) => state.currentDocument.camera.scale < MAX_SCALE,
     execute: zoomIn
 };
@@ -29,7 +29,7 @@ export const ZoomOutCommand: Command = {
         size: 24
     },
     regex: /(?<toolCode>zoomout)\((?<factor>[\d]+)\)/,
-    shortcut: 'z',
+    shortcut: '-',
     canExecute: ({ state }) => state.currentDocument.camera.scale > MIN_SCALE,
     execute: zoomOut
 };
@@ -45,7 +45,7 @@ export const ZoomResetCommand: Command = {
         size: 24
     },
     regex: /(?<toolCode>zoomreset)\((?<factor>[\d]+)\)/,
-    shortcut: 'z',
+    shortcut: '0',
     canExecute: () => true,
     execute: zoomReset
 };

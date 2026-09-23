@@ -21,7 +21,6 @@ export const LayerCommand: Command = {
         size: 24
     },
     regex: /(?<toolCode>layer)\('(?<shapeName>\w+)',(?<x>\d+),(?<y>\d+)\)/,
-    shortcut: 'm',
     canExecute: ({ state }) => state.currentDocument?.selectedShapes.length > 0,
     execute: layerSelection
 };
@@ -43,7 +42,6 @@ export const UnlayerCommand: Command = {
         size: 24
     },
     regex: /(?<toolCode>unlayer)\('(?<shapeName>\w+)',(?<x>\d+),(?<y>\d+)\)/,
-    shortcut: 'm',
     canExecute: ({ state }) => state.currentDocument.selectedLayersIds.length > 0,
     execute: deleteSelectedLayers
 };
