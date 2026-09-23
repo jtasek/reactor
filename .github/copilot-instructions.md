@@ -68,7 +68,7 @@ Overmind re-renders. Components never mutate state directly.
   each a component + actions; tool state lives in the `tools` namespace.
 - **Renderers** (planned, not built yet; see Phase 9 in `REFACTOR_PLAN.md`): pluggable
   renderers in `src/app/renderers/` that turn a document into another format (JSON, XML,
-  text, SVG, Canvas/PNG, PDF, ASCII).
+  text, SVG, HTML, Canvas/PNG, PDF, ASCII).
 - Entry: `src/index.tsx` creates the Overmind instance and wraps `<Shell>` in the
   overmind-react `<Provider>`. `Shell` (`src/app/components/Shell.tsx`) switches between
   `Designer` and `Documents` pages based on `state.currentPage`.

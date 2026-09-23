@@ -153,7 +153,7 @@ re-renders.** Components never mutate state directly.
 - **Tools** (`src/tools/`): drawing/selection tools; tool state lives in the `tools` namespace.
 - **Renderers** (planned, not built yet; see Phase 9 in `REFACTOR_PLAN.md`): pluggable
   renderers in `src/app/renderers/` that turn a document into another format, such as JSON,
-  XML, text, SVG, Canvas/PNG, PDF or ASCII.
+  XML, text, SVG, HTML, Canvas/PNG, PDF or ASCII.
 - Entry: `src/index.tsx` creates the Overmind instance and wraps `<Shell>` in the
   overmind-react `<Provider>`. `Shell` switches between `Designer` and `Documents` pages.
 

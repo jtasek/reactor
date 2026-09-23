@@ -1,6 +1,6 @@
 # Repository Audit and Refactoring Plan
 
-Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phase 6 in progress; Phases 7-8 remain proposed (Phase 8 step 4 partly done); Phase 9 designed.
+Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phase 6 in progress; Phase 7 proposed (step 1 partly done); Phase 8 proposed (step 4 partly done); Phase 9 designed.
 
 ## Verified Baseline
 
@@ -338,6 +338,10 @@ mixed values; no TODO/no-op is presented as an available feature.
 
 ## Phase 7 - Enforce Accessibility and Repository Hygiene
 
+Step 1 partly done (#11): the command bar's actions are native buttons, disabled
+while their command cannot run. Action anchors remain in the toolbar, navigation
+bar and context menu.
+
 1. Replace action anchors and click-only elements with native buttons; add labels,
    valid ARIA state, focus behavior, and keyboard interaction. Note that
    `CommandBar/styles.css` declares `.commandBarButton button, div`, which styles
@@ -382,40 +386,55 @@ core, not part of the release gate in Phase 8.
 
 There is no standard for web application plugins (OSGi and the W3C WebExtensions
 group cover other platforms). The design uses standard building blocks — ES modules
-with dynamic `import()`, `<iframe sandbox>` or Workers with `postMessage`, CSP,
-SemVer and JSON Schema — and follows proven models: VS Code's manifest, `engines`
-range and disposable contributions; Figma's sandbox with message passing; and
-tldraw's per-shape-type definitions.
+with dynamic `import()`, `<iframe sandbox>` with `postMessage`, CSP, SemVer and
+JSON Schema — and follows proven models: VS Code's manifest, `engines` range and
+disposable contributions; Figma's sandbox with message passing; and tldraw's
+per-shape-type definitions.
 
 Design:
 
-- Two trust levels. In-process plugins (built-in or trusted, loaded with a
-  same-origin `import()`, as the CSP's `script-src 'self'` already requires) may
-  contribute tools and shape types, which run synchronously on the gesture and
-  rendering hot path. Sandboxed plugins (`<iframe sandbox="allow-scripts">` or a
-  Worker) contribute declaratively (commands, properties, renderers) and reach the
-  document through an async, permission-checked API.
+- Two trust levels. In-process plugins get full access to the editor, so only the
+  plugins the deployment itself serves and lists (the built-ins and any
+  first-party additions) load in-process; nothing a user or a document supplies
+  does. They may contribute tools and shape types, which run synchronously on the
+  gesture and rendering hot path. Every other plugin runs in an opaque-origin
+  `<iframe sandbox="allow-scripts">`. A Worker loaded from the app's origin or a
+  blob: URL is not a sandbox on its own: it shares that origin's IndexedDB, caches
+  and same-origin requests.
+- Functions cannot cross `postMessage`, and the UI evaluates command guards and
+  reads properties synchronously while rendering, so sandboxed plugins describe
+  both as data: a command is enabled by a `when` condition over fixed context
+  keys, as in VS Code, and a property is a typed field of the plugin's
+  `extensions` data, which the core reads and writes. Their code runs only behind
+  async calls: running a command, rendering (plain data in and out) and a
+  permission-checked document API.
 - A manifest (`id`, `version`, `engine` SemVer range, `main`, `permissions`) is
   validated with a JSON Schema; incompatible engine ranges are refused.
 - `activate(context)` receives a versioned `PluginContext`: `registerTool`,
   `registerCommand`, `registerShapeType`, `registerProperty`, `registerRenderer`,
   `onSelectionChange` and `runCommand`. Every registration returns a `Disposable`;
   deactivating a plugin removes all of its contributions.
-- Custom shapes add one variant to the `Shape` union, `{ type: 'custom'; kind;
-  data }`. Exhaustive switches delegate that case to the registered definition
-  (bounds, hit test, translate, resize, primitives, component, data validator).
-  A document whose plugin is missing keeps the data and draws a placeholder.
+- Custom shapes add one variant to the `Shape` union,
+  `{ type: 'custom'; kind; position; size; data }`. The core owns the frame
+  (`position`, `size` and the base `rotation`) and the plugin draws `data` relative
+  to it, so moving a shape never needs the plugin. Exhaustive switches delegate
+  that case to the registered definition (bounds, hit test, resize, primitives,
+  component, data validator). A document whose plugin is missing keeps the data and
+  draws the frame as a placeholder, which can be selected, moved, rotated and
+  deleted but not resized or edited, because only the plugin knows how its data
+  changes.
 - Plugin data on shapes lives in an `extensions` record keyed by plugin id. Plugin
   properties name their property panel section (`group`), e.g. Events or Data.
 - Renderers turn a document into an output format. Model serializers (JSON, XML,
-  text) start from the validated persistence data, so they stay lossless and never
-  drift from what is saved. Picture renderers (SVG, PDF, Canvas, PNG, ASCII) start
-  from a display list: the visible shapes as primitives (rect, ellipse, polyline,
-  text, image) in z-order with rotation applied, never the editor's React
-  components. Each registered renderer adds an "Export as ..." command; its output
-  is downloaded or copied. PNG draws the display list on an `OffscreenCanvas`; PDF
-  needs a library. Cross-origin images without CORS headers make PNG and PDF
-  export fail and must be reported for the shape concerned.
+  text) start from the validated persistence data, so they never drift from what
+  is saved. JSON is lossless, and so is XML if its schema maps every field; text is
+  a readable summary, not a format to re-import. Picture renderers (SVG, HTML, PDF,
+  Canvas, PNG, ASCII) start from a display list: the visible shapes as primitives
+  (rect, ellipse, polyline, text, image) in z-order with rotation applied, never
+  the editor's React components. Each registered renderer adds an "Export as ..."
+  command; its output is downloaded or copied. PNG draws the display list on an
+  `OffscreenCanvas`; PDF needs a library. Cross-origin images without CORS headers
+  make PNG and PDF export fail and must be reported for the shape concerned.
 
 Steps:
 
@@ -423,25 +442,38 @@ Steps:
    built-ins through them as a core plugin. Report shortcut conflicts at runtime,
    replacing the uniqueness test's role for contributed bindings.
 2. Add the renderer contribution point, the display list and built-in JSON, SVG,
-   text and PNG renderers with export commands. XML, ASCII and PDF follow the same
-   interface.
+   text and PNG renderers with export commands. XML, HTML, ASCII and PDF follow the
+   same interface.
 3. Add plugin properties and the `extensions` record, with validation and a
    persistence schema bump.
 4. Add the `custom` shape variant and the shape-type registry, with placeholders
    for missing plugins.
-5. Load trusted same-origin plugins from manifests: check the engine range,
-   isolate and report activation failures, put each plugin's UI behind an error
-   boundary, and disable a misbehaving plugin.
-6. Only if third-party plugins are wanted: the sandbox bridge (iframe or Worker,
-   RPC, permissions), starting with renderers, whose input and output are plain
-   data.
+5. Load the listed plugins from their manifests with a native
+   `import(/* webpackIgnore: true */ url)` from the app's origin, which
+   `script-src 'self'` requires. Without that comment webpack replaces the call
+   with an empty context that rejects every URL with "Cannot find module". Check
+   the engine range, isolate and report activation failures, put each plugin's UI
+   behind an error boundary, and disable a misbehaving plugin.
+6. Only if third-party plugins are wanted: the sandbox bridge (the iframe, RPC,
+   permissions), starting with renderers, whose input and output are plain data.
+   The production headers block every way to host the frame today: with no
+   `frame-src`, `default-src 'self'` refuses blob:, data: and cross-origin frames;
+   a srcdoc frame inherits `script-src 'self'`, which blocks inline script; every
+   response carries `frame-ancestors 'none'`, so the app cannot frame even its own
+   pages; and with helmet's default `Cross-Origin-Resource-Policy: same-origin`
+   and no CORS headers, an opaque-origin frame cannot load the app's scripts.
+   Serve the frame and its scripts from a route with their own headers, and
+   confirm in a browser test that they load and run in the opaque origin.
 
 Gate: built-in tools, commands and renderers work only through the public
 registries; registering and disposing a contribution updates the toolbar, command
 bar, shortcuts, property panel and export commands without a reload; every
-renderer has fixed expected-output tests (text formats) or screenshot comparisons
-(PNG); a document saved with a plugin's shapes and data reloads without the plugin,
-preserves them, and renders them again once the plugin returns.
+renderer is tested: text formats (JSON, XML, text, SVG, HTML, ASCII) against fixed
+expected output, PNG and the live Canvas by screenshot comparison, and PDF by
+rasterizing its pages (for example with pdf.js) and comparing them the same way;
+a document saved with a plugin's shapes and data reloads without the plugin, keeps
+them as placeholders in their frames, and renders them again once the plugin
+returns.
 
 ## Scope Boundaries
 
