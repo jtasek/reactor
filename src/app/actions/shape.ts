@@ -47,6 +47,7 @@ const setShape = ({ currentDocument }: Application, shape: Shape) => {
 
 const deleteShape = ({ currentDocument }: Application, shapeId: string) => {
     delete currentDocument.shapes[shapeId];
+
     for (const table of [
         currentDocument.groups,
         currentDocument.layers,

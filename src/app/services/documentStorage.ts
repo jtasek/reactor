@@ -16,7 +16,7 @@ type ShapeData = Omit<
     start?: Point;
     end?: Point;
     points?: Point[];
-    text?: string;
+    value?: string;
     fontSize?: number;
     source?: string;
 };
@@ -178,6 +178,7 @@ function readShape(value: unknown): ShapeData {
         ...(s.parentShapeId === undefined ? {} : { parentShapeId: id(s.parentShapeId) }),
         ...(s.children === undefined ? {} : { children: list(s.children, readShape) })
     };
+
     switch (s.type) {
         case 'rectangle':
             return { ...base, type: s.type, size: size(s.size) };
@@ -201,7 +202,7 @@ function readShape(value: unknown): ShapeData {
             return {
                 ...base,
                 type: s.type,
-                text: text(s.text),
+                value: text(s.value ?? s.text),
                 ...(s.fontSize === undefined ? {} : { fontSize: positive(s.fontSize) })
             };
         default:
@@ -259,6 +260,7 @@ function readDocument(value: unknown): DocumentData {
         })
     };
     const hasShape = (shapeId: string) => Object.hasOwn(document.shapes, shapeId);
+
     for (const members of [document.groups, document.layers, document.components]) {
         for (const item of Object.values(members)) {
             if (!item.shapesIds.every(hasShape)) {
@@ -276,6 +278,12 @@ function readDocument(value: unknown): DocumentData {
     for (const shape of Object.values(document.shapes)) {
         if (shape.parentShapeId && !hasShape(shape.parentShapeId)) {
             throw new Error('Dangling parent');
+        }
+    }
+
+    for (const component of Object.values(document.components)) {
+        if (component.parentId && !Object.hasOwn(document.components, component.parentId)) {
+            throw new Error('Dangling component parent');
         }
     }
 
@@ -304,6 +312,7 @@ export function migratePersistedState(raw: unknown): PersistedState | null {
         const entries = Object.entries(record(data.documents));
         const documents: Record<string, DocumentData> = {};
         let currentDocumentId = text(data.currentDocumentId);
+
         for (const [key, value] of entries) {
             const document = readDocument(value);
 
@@ -361,7 +370,8 @@ function hydrateMembers<T extends MemberData>(
 
 export function hydrateDocument(data: DocumentData): Document {
     data = readDocument(data);
-    const document = createDocument({
+
+    return createDocument({
         ...data,
         created: new Date(data.created),
         modified: new Date(data.modified),
@@ -378,8 +388,6 @@ export function hydrateDocument(data: DocumentData): Document {
             Object.entries(data.rulers).map(([key, ruler]) => [key, { ...ruler, selected: false }])
         )
     });
-
-    return document;
 }
 
 export function restoreDocuments(data: PersistedState): Record<string, Document> {

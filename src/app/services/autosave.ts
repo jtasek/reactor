@@ -1,4 +1,3 @@
-import type { Overmind } from 'overmind';
 import type { Context } from '../index';
 import { PERSISTENCE_KEY, serializePersistedState } from './documentStorage';
 
@@ -9,11 +8,12 @@ export function disposeAutosave(instance: object): void {
 }
 
 export function startAutosave(
-    instance: Overmind<Context>,
+    instance: Pick<Context, 'state' | 'reaction'>,
     effects: Pick<Context['effects'], 'saveState'>,
     onError: (message: string) => void
 ) {
     disposeAutosave(instance);
+
     let timer: ReturnType<typeof setTimeout> | undefined;
     let dirty = false;
     let disposed = false;
@@ -59,6 +59,10 @@ export function startAutosave(
     const controller = {
         flush,
         dispose: () => {
+            if (disposed) {
+                return;
+            }
+
             flush();
             disposed = true;
             clearTimeout(timer);

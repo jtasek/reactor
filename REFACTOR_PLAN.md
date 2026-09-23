@@ -1,6 +1,6 @@
 # Repository Audit and Refactoring Plan
 
-Audit date: 2026-09-22. Status: Phase 1 implemented; Phases 2-8 remain proposed.
+Audit date: 2026-09-22. Status: Phases 1-2 implemented; Phases 3-8 remain proposed.
 
 ## Verified Baseline
 
@@ -149,6 +149,27 @@ Gate: reproducible baseline commands; test fixtures are type-checked; a browser
 smoke test opens the editor; no audit-only files enter the application bundle.
 
 ## Phase 2 - Repair Persistence and Document Ownership
+
+Completed 2026-09-23. Version 2 stores validated durable data, restores dates and
+live derived indexes, and migrates version-1 document keys. Original payloads are
+preserved; identical migration backups are reused across reloads. Invalid data,
+including a stored JSON null, cannot be overwritten by session autosave. Text
+content now follows the drawing tool's `value` field.
+
+Clones own independent nested data and retain document-scoped content IDs so
+internal references remain intact. Deleting the active or final document leaves
+a valid editor; shape deletion cleans memberships, links, and parent references.
+Autosave observes all documents, coalesces writes, flushes on pagehide/disposal,
+reports failures, and safely supports repeated disposal/replacement. Its default
+remains disabled.
+
+Verification: 104 unit/store tests and 3 Chromium tests pass, including all drawing
+tools' persisted content, restore/add/select/delete, clone isolation, last-document
+deletion, inactive-document edits, migration backups, and malformed-data recovery.
+Application/test types and the lint gate against `e63b55f` pass; all Phase 2 files
+are lint-clean. The production build passes through the browser harness. Unrelated
+lint debt remains deferred to Phase 7. Browser execution required local server
+and Chromium permission. The diff was reviewed before marking this gate complete.
 
 1. Define versioned persisted document DTOs containing durable fields only.
 2. Validate nested geometry, finite positive camera scale, tables, IDs, and schema

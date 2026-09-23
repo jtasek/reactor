@@ -11,6 +11,7 @@ test('opens the editor and pans the SVG surface', async ({ page }) => {
     const before = await camera.getAttribute('transform');
     await surface.hover();
     await page.mouse.wheel(0, 100);
+
     await expect(camera).not.toHaveAttribute('transform', before ?? '');
     expect(errors).toEqual([]);
 });

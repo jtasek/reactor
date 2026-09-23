@@ -1,6 +1,5 @@
 import type { Command } from 'src/app/types';
 import type { Context } from '../index';
-import { Overmind } from 'overmind';
 import {
     CloneCommand,
     DeleteCommand,
@@ -97,7 +96,7 @@ function loadLocalData({ effects, state, actions }: Context): boolean {
     try {
         const raw = effects.loadState(PERSISTENCE_KEY);
 
-        if (raw === null) {
+        if (raw === undefined) {
             return true;
         }
 
@@ -142,8 +141,12 @@ function registerRoutes(effects: Context['effects'], actions: Context['actions']
 }
 
 /**  Do not rename, it's a mandatory action name! */
-export const onInitializeOvermind = (context: Context, instance: Overmind<Context>) => {
+export const onInitializeOvermind = (
+    context: Context,
+    instance: Pick<Context, 'state' | 'reaction'>
+) => {
     const { state, effects, actions } = context;
+
     registerCommands();
     registerTools();
     registerRoutes(effects, actions);

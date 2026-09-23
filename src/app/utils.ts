@@ -423,15 +423,16 @@ export function overlaps(
     return true;
 }
 
-export function getPropValue(prop: any): string | undefined {
+export function getPropValue(prop: unknown): string | undefined {
     if (!prop) {
         return;
     }
 
+    if (Array.isArray(prop)) {
+        return `${prop.length} item(s)`;
+    }
+
     if (typeof prop === 'object') {
-        if (prop instanceof Array) {
-            return `${prop.length} item(s)`;
-        }
         return '[object]';
     }
 

@@ -34,21 +34,27 @@ export const cloneDocument: ActionWithParam<string> = ({ state, effects }, docum
 export const removeDocument: ActionWithParam<string> = ({ state }, documentId) => {
     deleteDocument(state, documentId);
 
-    if (!state.documents[state.currentDocumentId]) {
-        const nextId = Object.keys(state.documents)[0];
-
-        if (nextId) {
-            state.currentDocumentId = nextId;
-        } else {
-            const document = createDocument();
-            setDocument(state, document);
-            state.currentDocumentId = document.id;
-        }
+    if (state.documents[state.currentDocumentId]) {
+        return;
     }
+
+    const nextId = Object.keys(state.documents)[0];
+
+    if (nextId) {
+        state.currentDocumentId = nextId;
+
+        return;
+    }
+
+    const document = createDocument();
+
+    setDocument(state, document);
+    state.currentDocumentId = document.id;
 };
 
 export const openDocument: ActionWithParam<string> = ({ state }, documentId) => {
     getDocument(state, documentId);
+
     state.currentDocumentId = documentId;
 };
 

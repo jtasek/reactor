@@ -36,6 +36,23 @@ See [REFACTOR_PLAN.md](./REFACTOR_PLAN.md) for phase acceptance criteria. The
 browser smoke test establishes the harness; full gesture coverage belongs to
 Phase 4.
 
+## Document Storage
+
+Documents use version 2 of the `reactor` localStorage payload. Only durable content
+is saved; dates use ISO strings and derived indexes and selections are rebuilt on
+load. Cloned documents have independent content but preserve internal IDs, which
+are scoped to each document.
+
+Version-1 snapshots are validated and migrated after backing up their original
+bytes under `reactor:backup:*`. Repeated loads reuse identical backups. Unsupported
+or malformed data remains untouched, shows a notification, and disables autosave
+for that session. A backup failure also prevents migration and autosave.
+
+Autosave remains **off by default**. When enabled through application configuration,
+it observes all documents, debounces writes for 500 ms, flushes on pagehide or
+disposal, and reports storage failures. Transient selection changes do not produce
+writes. Recovery notices do not imply that new session edits have been saved.
+
 * create prototypes
 * create diagrams
 * create mockups
