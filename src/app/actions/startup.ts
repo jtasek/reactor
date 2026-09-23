@@ -28,12 +28,13 @@ import {
 } from 'src/tools';
 
 import { Tool } from '../../tools/types';
-import { debounce } from '../utils';
+import { startAutosave } from '../services/autosave';
 import {
+    SCHEMA_VERSION,
     PERSISTENCE_KEY,
     migratePersistedState,
-    serializePersistedState
-} from '../services/persistence';
+    restoreDocuments
+} from '../services/documentStorage';
 
 const commands: Record<string, Command> = {};
 const tools: Record<string, Tool> = {};
@@ -66,9 +67,7 @@ export function getTool(toolId: string) {
     return tools[toolId];
 }
 
-function registerCommands(state: Context['state'], instance: Overmind<Context>) {
-    console.log('register commands');
-
+function registerCommands() {
     registerCommand(DeleteCommand);
     registerCommand(CloneCommand);
     registerCommand(MoveCommand);
@@ -82,9 +81,7 @@ function registerCommands(state: Context['state'], instance: Overmind<Context>) 
     registerCommand(ZoomResetCommand);
 }
 
-function registerTools(state: Context['state'], instance: Overmind<Context>) {
-    console.log('register tools');
-
+function registerTools() {
     registerTool(CircleTool);
     registerTool(EllipseTool);
     registerTool(ImageTool);
@@ -96,26 +93,45 @@ function registerTools(state: Context['state'], instance: Overmind<Context>) {
     registerTool(TextTool);
 }
 
-function loadLocalData(effects: Context['effects'], state: Context['state']) {
-    const persisted = migratePersistedState(effects.loadState(PERSISTENCE_KEY));
+function loadLocalData({ effects, state, actions }: Context): boolean {
+    try {
+        const raw = effects.loadState(PERSISTENCE_KEY);
 
-    if (persisted) {
-        state.documents = persisted.documents;
+        if (raw === null) {
+            return true;
+        }
+
+        const persisted = migratePersistedState(raw);
+
+        if (!persisted) {
+            effects.backupState(PERSISTENCE_KEY);
+            actions.displayError(
+                'Saved data could not be loaded. The original is preserved; autosave is disabled for this session.'
+            );
+
+            return false;
+        }
+
+        if (
+            typeof raw === 'object' &&
+            raw !== null &&
+            'version' in raw &&
+            raw.version !== SCHEMA_VERSION
+        ) {
+            effects.backupState(PERSISTENCE_KEY);
+        }
+
+        state.documents = restoreDocuments(persisted);
         state.currentDocumentId = persisted.currentDocumentId;
+
+        return true;
+    } catch {
+        actions.displayError(
+            'Saved data could not be read or backed up. The original is preserved; autosave is disabled for this session.'
+        );
+
+        return false;
     }
-}
-
-const AUTOSAVE_DELAY_MS = 500;
-
-function activateAutosave(instance: Overmind<Context>, effects: Context['effects']) {
-    console.log('Autosave is on');
-
-    const save = debounce(
-        () => effects.saveState(PERSISTENCE_KEY, serializePersistedState(instance.state)),
-        AUTOSAVE_DELAY_MS
-    );
-
-    instance.reaction((state) => state.currentDocument, save, { nested: true });
 }
 
 function registerRoutes(effects: Context['effects'], actions: Context['actions']) {
@@ -126,17 +142,15 @@ function registerRoutes(effects: Context['effects'], actions: Context['actions']
 }
 
 /**  Do not rename, it's a mandatory action name! */
-export const onInitializeOvermind = (
-    { state, effects, actions }: Context,
-    instance: Overmind<Context>
-) => {
-    registerCommands(state, instance);
-    registerTools(state, instance);
+export const onInitializeOvermind = (context: Context, instance: Overmind<Context>) => {
+    const { state, effects, actions } = context;
+    registerCommands();
+    registerTools();
     registerRoutes(effects, actions);
 
-    loadLocalData(effects, state);
+    const canSave = loadLocalData(context);
 
-    if (state.config.autoSave) {
-        activateAutosave(instance, effects);
+    if (canSave && state.config.autoSave) {
+        startAutosave(instance, effects, actions.displayError);
     }
 };

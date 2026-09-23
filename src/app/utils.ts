@@ -447,7 +447,9 @@ export function vector(p1: Point, p2: Point): Vector {
         x: p2.x - p1.x,
         y: p2.y - p1.y
     };
-}export function dot(u: Point, v: Point): number {
+}
+
+export function dot(u: Point, v: Point): number {
     return u.x * v.x + u.y * v.y;
 }
 

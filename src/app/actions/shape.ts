@@ -45,8 +45,34 @@ const setShape = ({ currentDocument }: Application, shape: Shape) => {
     }
 };
 
-const deleteShape = ({ currentDocument }: Application, shapeId: string) =>
+const deleteShape = ({ currentDocument }: Application, shapeId: string) => {
     delete currentDocument.shapes[shapeId];
+    for (const table of [
+        currentDocument.groups,
+        currentDocument.layers,
+        currentDocument.components
+    ]) {
+        for (const member of Object.values(table)) {
+            member.shapesIds = member.shapesIds.filter((id) => id !== shapeId);
+        }
+    }
+
+    for (const link of Object.values(currentDocument.links)) {
+        if (link.source === shapeId || link.target === shapeId) {
+            delete currentDocument.links[link.id];
+        }
+    }
+
+    for (const shape of Object.values(currentDocument.shapes)) {
+        if (shape.parentShapeId === shapeId) {
+            delete shape.parentShapeId;
+        }
+
+        if (shape.children) {
+            shape.children = shape.children.filter((child) => child.id !== shapeId);
+        }
+    }
+};
 
 export const addShape: ActionWithParam<Partial<Shape>> = ({ state }, options) => {
     const shape = createShape(options);
@@ -107,6 +133,7 @@ export const selectShapeAtPointer: ActionGuard = ({ state }) => {
     let hitId: string | null = null;
     for (const id of shapesIds) {
         const shape = shapes[id];
+
         if (shape && isPointInBox(current, shape) && !isShapeLocked(state.currentDocument, id)) {
             hitId = id;
         }
@@ -124,11 +151,13 @@ export const selectShapeAtPointer: ActionGuard = ({ state }) => {
 
     shapesIds.forEach((id: string) => {
         const shape = shapes[id];
+
         if (!shape) {
             return;
         }
 
         const selected = id === hitId;
+
         if (shape.selected !== selected) {
             shape.selected = selected;
         }
@@ -139,11 +168,13 @@ export const selectShapeAtPointer: ActionGuard = ({ state }) => {
 
 const translateShape = (shape: Shape, dx: number, dy: number) => {
     const line = shape as Line;
+
     if (line.start && line.end) {
         line.start = { x: line.start.x + dx, y: line.start.y + dy };
         line.end = { x: line.end.x + dx, y: line.end.y + dy };
     } else {
         const pen = shape as Pen;
+
         if (Array.isArray(pen.points)) {
             pen.points = pen.points.map((point) => ({ x: point.x + dx, y: point.y + dy }));
         } else if (shape.position) {
@@ -178,7 +209,9 @@ export const selectShapes: Action = ({ state }) => {
 
     const shapes = Object.values(state.currentDocument.shapes) as Shape[];
     shapes.forEach((shape) => {
-        const selected = !isShapeLocked(state.currentDocument, shape.id) && overlaps(source, getShapeBounds(shape));
+        const selected =
+            !isShapeLocked(state.currentDocument, shape.id) &&
+            overlaps(source, getShapeBounds(shape));
 
         // Only write when the value actually changes so shapes that stay
         // outside (or inside) the marquee don't re-render every pointer move.
@@ -343,6 +376,7 @@ const resizeAspectBox = (
         handlerType === 'bottomRight';
 
     let x = centerX - width / 2;
+
     if (movesLeft) {
         x = right - width;
     } else if (movesRight) {
@@ -350,6 +384,7 @@ const resizeAspectBox = (
     }
 
     let y = centerY - height / 2;
+
     if (movesTop) {
         y = bottom - height;
     } else if (movesBottom) {
@@ -380,6 +415,7 @@ const applyBoxToShape = (
 
         shape.position = { x: box.topLeft.x, y: box.topLeft.y };
         shape.size = { width: box.width, height: box.height };
+
         return;
     }
 
@@ -387,6 +423,7 @@ const applyBoxToShape = (
         // rectangle
         shape.position = { x: newBox.topLeft.x, y: newBox.topLeft.y };
         shape.size = { width: newBox.width, height: newBox.height };
+
         return;
     }
 
@@ -394,6 +431,7 @@ const applyBoxToShape = (
         const box = resizeAspectBox(oldBox, handlerType, pointer, 1);
         shape.position = centerOf(box);
         (shape as Circle).radius = box.width / 2;
+
         return;
     }
 
@@ -401,19 +439,24 @@ const applyBoxToShape = (
         const center = centerOf(newBox);
         shape.position = center;
         (shape as Ellipse).radius = { x: newBox.width / 2, y: newBox.height / 2 };
+
         return;
     }
 
     const line = shape as Line;
+
     if (line.start && line.end) {
         line.start = mapPointBetweenBoxes(line.start, oldBox, newBox);
         line.end = mapPointBetweenBoxes(line.end, oldBox, newBox);
+
         return;
     }
 
     const pen = shape as Pen;
+
     if (Array.isArray(pen.points)) {
         pen.points = pen.points.map((point) => mapPointBetweenBoxes(point, oldBox, newBox));
+
         return;
     }
 

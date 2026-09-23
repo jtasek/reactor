@@ -19,7 +19,6 @@ import { Sequence } from './sequence';
 import {
     Application,
     Camera,
-    Command,
     Component,
     Document,
     Grid,
@@ -27,14 +26,13 @@ import {
     Layer,
     Link,
     Notification,
-    NotificationType,
     Orientation,
     Ruler,
     Shape,
     User
 } from './types';
 
-export const getDefaultName = (type: string): string => 'rectangle';
+export const getDefaultName = (): string => 'rectangle';
 
 const componentSequence = new Sequence();
 const documentSequence = new Sequence();
@@ -164,30 +162,30 @@ export function createDocument(options: Partial<Document> = {}): Document {
         description: '',
         filter: '',
         grid: createGrid(),
-        componentsIds,
         components: {},
-        selectedGroupsIds,
-        groupsIds,
         groups: {},
         //history: [],
-        selectedLayersIds,
-        layersIds,
         layers: {},
-        linksIds,
         links: {},
         locked: false,
         modified: new Date(),
         modifiedBy: getCurrentUserName(),
         name: newDocumentName(),
-        rulersIds,
         rulers: {},
         selected: false,
-        selectedShapesIds,
-        selectedShapes,
-        shapesIds,
         shapes: {},
         tags: [],
-        ...options
+        ...options,
+        componentsIds,
+        selectedGroupsIds,
+        groupsIds,
+        selectedLayersIds,
+        layersIds,
+        linksIds,
+        rulersIds,
+        selectedShapesIds,
+        selectedShapes,
+        shapesIds
     };
 }
 
@@ -230,7 +228,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         notifications: [],
         providers: {},
         documentsIds,
-        documents: { 'document-1': createDocument() },
+        documents: { 'document-1': createDocument({ id: 'document-1' }) },
         ...options
     };
 }

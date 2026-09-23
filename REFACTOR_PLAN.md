@@ -19,7 +19,7 @@ Audit date: 2026-09-22. Status: Phase 1 implemented; Phases 2-8 remain proposed.
 
 ### F1 - High: persistence restores derived state as static data
 
-`src/app/services/persistence.ts:12` serializes runtime documents wholesale.
+`src/app/services/documentStorage.ts:12` serializes runtime documents wholesale.
 `src/app/actions/startup.ts` installs the parsed documents directly. The derived
 indexes and selections created in `src/app/factories.ts` are not rehydrated.
 A local reproduction using the installed Overmind library and this same

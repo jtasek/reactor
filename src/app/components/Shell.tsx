@@ -2,6 +2,7 @@ import React, { FC, Suspense, lazy } from 'react';
 import { useCurrentPage } from '../hooks';
 import { useKeyboardDriver } from 'src/events/drivers/useKeyboardDriver';
 import { usePreventNativePinchZoom } from './usePreventNativePinchZoom';
+import { Notification } from './Notification';
 
 const Designer = lazy(() =>
     import('../../pages/Designer').then((module) => ({ default: module.Designer }))
@@ -17,9 +18,12 @@ export const Shell: FC = () => {
     const currentPage = useCurrentPage();
 
     return (
-        <Suspense fallback={null}>
-            {currentPage === 'designer' && <Designer />}
-            {currentPage === 'documents' && <Documents />}
-        </Suspense>
+        <>
+            <Notification />
+            <Suspense fallback={null}>
+                {currentPage === 'designer' && <Designer />}
+                {currentPage === 'documents' && <Documents />}
+            </Suspense>
+        </>
     );
 };

@@ -1,18 +1,11 @@
 import { Command } from 'src/app/types';
-import { isShapeLocked } from 'src/app/utils';
 
 import { Context } from '../../app';
 
-export const deleteSelectedShapes = ({ state }: Context) => {
+export const deleteSelectedShapes = ({ state, actions }: Context) => {
     const { selectedShapesIds } = state.currentDocument;
 
-    selectedShapesIds?.forEach((shapeId: string) => {
-        if (isShapeLocked(state.currentDocument, shapeId)) {
-            return;
-        }
-
-        delete state.currentDocument.shapes[shapeId];
-    });
+    [...selectedShapesIds].forEach((shapeId) => actions.removeShape(shapeId));
 };
 
 export const DeleteCommand: Command = {

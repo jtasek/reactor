@@ -9,3 +9,4 @@ export * from './ruler';
 export * from './search';
 export * from './shape';
 export * from './startup';
+export * from './notifications';

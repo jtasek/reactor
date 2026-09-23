@@ -1,5 +1,6 @@
 import { ActionWithParam, Application, Document } from '../types';
 import { createDocument } from '../factories';
+import { copyDocument } from '../services/documentStorage';
 
 const getDocument = ({ documents }: Application, documentId: string) => {
     const document = documents[documentId];
@@ -27,11 +28,28 @@ export const addDocument: ActionWithParam<Partial<Document>> = ({ state }, optio
 export const cloneDocument: ActionWithParam<string> = ({ state, effects }, documentId) => {
     const document = getDocument(state, documentId);
 
-    setDocument(state, { ...document, id: effects.newId() });
+    setDocument(state, copyDocument(document, effects.newId()));
 };
 
 export const removeDocument: ActionWithParam<string> = ({ state }, documentId) => {
     deleteDocument(state, documentId);
+
+    if (!state.documents[state.currentDocumentId]) {
+        const nextId = Object.keys(state.documents)[0];
+
+        if (nextId) {
+            state.currentDocumentId = nextId;
+        } else {
+            const document = createDocument();
+            setDocument(state, document);
+            state.currentDocumentId = document.id;
+        }
+    }
+};
+
+export const openDocument: ActionWithParam<string> = ({ state }, documentId) => {
+    getDocument(state, documentId);
+    state.currentDocumentId = documentId;
 };
 
 export const selectDocument: ActionWithParam<string> = ({ state }, documentId) => {
@@ -64,5 +82,5 @@ export const updateDocument: ActionWithParam<Partial<Document> & { id: string }>
 ) => {
     const document = getDocument(state, options.id);
 
-    setDocument(state, { ...document, ...options });
+    setDocument(state, createDocument({ ...document, ...options }));
 };

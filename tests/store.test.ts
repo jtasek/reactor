@@ -13,6 +13,7 @@ describe('store harness', () => {
         });
 
         const document = first.store.state.currentDocument;
+
         expect(document.shapesIds).toHaveLength(1);
         expect(document.selectedShapesIds).toEqual(document.shapesIds);
         expect(second.store.state.currentDocument.shapesIds).toEqual([]);
@@ -23,6 +24,7 @@ describe('store harness', () => {
     it('stores snapshots rather than retaining references to caller data', () => {
         const { effects, storage } = createTestStore();
         const payload = { camera: { scale: 1 } };
+
         effects.saveState('example', payload);
         payload.camera.scale = 2;
 

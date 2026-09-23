@@ -1,26 +1,28 @@
+/** Failures propagate to startup/autosave so the UI can report them. */
 export const loadState = (key: string): unknown => {
-    try {
-        const serializedState = localStorage.getItem(key);
+    const value = localStorage.getItem(key);
 
-        if (!serializedState) {
-            return null;
-        }
-
-        return JSON.parse(serializedState);
-    } catch (error) {
-        console.warn(`Failed to load application state for "${key}"; ignoring it.`, error);
-        return null;
-    }
+    return value === null ? null : JSON.parse(value);
 };
 
 export const saveState = (key: string, state: unknown): void => {
-    try {
-        const serializedState = JSON.stringify(state);
+    localStorage.setItem(key, JSON.stringify(state));
+};
 
-        localStorage.setItem(key, serializedState);
+/** Keep the exact original bytes, including malformed JSON, before migration. */
+export const backupState = (key: string): void => {
+    const value = localStorage.getItem(key);
 
-        console.log('Application state saved');
-    } catch (error) {
-        console.error('Failed to save application state', error);
+    if (value === null) {
+        return;
     }
+
+    const prefix = `${key}:backup:${Date.now()}`;
+    let backupKey = prefix;
+    let suffix = 0;
+    while (localStorage.getItem(backupKey) !== null) {
+        backupKey = `${prefix}:${++suffix}`;
+    }
+
+    localStorage.setItem(backupKey, value);
 };
