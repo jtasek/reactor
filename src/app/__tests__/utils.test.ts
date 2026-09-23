@@ -1,5 +1,4 @@
 import { Box, Document, Ellipse, Point, Shape } from '../types';
-import { createShape } from '../factories';
 import {
     debounce,
     getDistance,
@@ -7,7 +6,6 @@ import {
     isEllipseInBox,
     isRectangleInBox,
     overlaps,
-    isPointInBox,
     boxCenter,
     rotatePoint,
     angleBetween,
@@ -179,34 +177,6 @@ describe('utils', () => {
         });
     });
 
-    describe('isPointInBox()', () => {
-        it('returns true when point is inside of rectangle', () => {
-            const actual = isPointInBox(
-                { x: 50, y: 50 },
-                createShape({
-                    type: 'rectangle',
-                    position: { x: 1, y: 1 },
-                    size: { width: 100, height: 100 }
-                })
-            );
-
-            expect(actual).toBe(true);
-        });
-
-        it('returns false when point is outside of rectangle', () => {
-            const actual = isPointInBox(
-                { x: 1, y: 1 },
-                createShape({
-                    type: 'rectangle',
-                    position: { x: 50, y: 50 },
-                    size: { width: 100, height: 100 }
-                })
-            );
-
-            expect(actual).toBe(false);
-        });
-    });
-
     describe('overlap()', () => {
         it('returns false when source is on the left from target', () => {
             const source: Box = {
@@ -244,22 +214,6 @@ describe('utils', () => {
             const actual = overlaps(source, target);
 
             expect(actual).toBeTruthy();
-        });
-    });
-
-    describe('isPointInBox() outside boundaries', () => {
-        it('returns false when point is outside the box boundaries', () => {
-            const point: Point = { x: 100, y: 100 };
-
-            const shape = createShape({
-                type: 'rectangle',
-                position: { x: 200, y: 300 },
-                size: { height: 100, width: 100 }
-            });
-
-            const actual = isPointInBox(point, shape);
-
-            expect(actual).toBe(false);
         });
     });
 

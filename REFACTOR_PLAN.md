@@ -278,7 +278,10 @@ the lock rule (a shape is hidden by its own flag or any hidden group or layer)
 and applies to rendering, presses, marquee, live edits and the selection that
 commands act on; locked shapes show no resize/rotate handles. New groups and
 layers start visible, and schema v3 shows v1/v2 groups and layers, whose
-visibility never hid shapes. Remaining: step 4 and clone.
+visibility never hid shapes. Step 4: presses hit shapes where they are drawn —
+in their rotated frame, closed shapes by area and lines/pens by stroke, within
+half the stroke plus 4 screen pixels — and marquees use rotated bounds; a click
+without a drag clears the selection. Remaining: clone regressions.
 
 1. Convert shapes to a discriminated union with per-type required geometry.
 2. Extract geometry operations from the large shape action module into pure

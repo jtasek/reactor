@@ -315,15 +315,6 @@ export function mapPointBetweenBoxes(point: Point, from: Box, to: Box): Point {
     };
 }
 
-export function isPointInBox(p: Point, shape: Shape): boolean {
-    const box = getShapeBounds(shape);
-
-    const horizontalFit = box.topLeft.x <= p.x && p.x <= box.bottomRight.x;
-    const verticalFit = box.topLeft.y <= p.y && p.y <= box.bottomRight.y;
-
-    return horizontalFit && verticalFit;
-}
-
 export function isCircleInBox(center: Point, r: number, box: Box): boolean {
     // Step 1: Check if the center of the circle is inside the rectangle
     if (
