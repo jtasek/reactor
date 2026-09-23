@@ -1,0 +1,50 @@
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # Full history, so the lint gate can compare a pull request with its base.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # Installs the pnpm version pinned by `packageManager` in package.json.
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm exec playwright install --with-deps chromium
+
+      # Lint gate, app and test type-checks, unit tests, then browser tests
+      # against a production build. On pull requests, every file the pull
+      # request changes must be lint-clean.
+      - run: pnpm check
+        env:
+          LINT_BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'HEAD' }}
+
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-traces
+          path: test-results/
+          if-no-files-found: ignore
