@@ -7,20 +7,20 @@ describe('camera actions', () => {
         const { store } = createTestStore();
 
         for (let index = 0; index < 120; index++) {
-            store.actions.executeCommand(ZoomInCommand.execute);
+            store.actions.runCommand(ZoomInCommand);
         }
 
         expect(store.state.currentDocument.camera.scale).toBe(10);
-        expect(store.actions.canExecuteCommand(ZoomInCommand.canExecute)).toBe(false);
+        expect(ZoomInCommand.canExecute(store)).toBe(false);
 
         for (let index = 0; index < 120; index++) {
-            store.actions.executeCommand(ZoomOutCommand.execute);
+            store.actions.runCommand(ZoomOutCommand);
         }
 
         expect(store.state.currentDocument.camera.scale).toBe(0.1);
-        expect(store.actions.canExecuteCommand(ZoomOutCommand.canExecute)).toBe(false);
+        expect(ZoomOutCommand.canExecute(store)).toBe(false);
 
-        store.actions.executeCommand(ZoomResetCommand.execute);
+        store.actions.runCommand(ZoomResetCommand);
 
         expect(store.state.currentDocument.camera.scale).toBe(1);
     });

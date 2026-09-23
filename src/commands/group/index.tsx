@@ -22,7 +22,7 @@ export const GroupCommand: Command = {
     },
     regex: /(?<toolCode>group)\('(?<shapeName>\w+)',(?<x>\d+),(?<y>\d+)\)/,
     shortcut: 'm',
-    canExecute: ({ state }: Context) => state.currentDocument?.selectedShapes.length > 0,
+    canExecute: ({ state }) => state.currentDocument?.selectedShapes.length > 0,
     execute: groupSelection
 };
 
@@ -44,6 +44,6 @@ export const UngroupCommand: Command = {
     },
     regex: /(?<toolCode>group)\('(?<shapeName>\w+)',(?<x>\d+),(?<y>\d+)\)/,
     shortcut: 'm',
-    canExecute: ({ state }: Context) => state.currentDocument.selectedGroupsIds.length > 0,
+    canExecute: ({ state }) => state.currentDocument.selectedGroupsIds.length > 0,
     execute: deleteSelectedGroups
 };

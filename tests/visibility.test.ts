@@ -1,6 +1,6 @@
-import { groupSelection } from 'src/commands/group';
-import { deleteSelectedShapes } from 'src/commands/delete';
-import { layerSelection } from 'src/commands/layer';
+import { GroupCommand } from 'src/commands/group';
+import { DeleteCommand } from 'src/commands/delete';
+import { LayerCommand } from 'src/commands/layer';
 import {
     PERSISTENCE_KEY,
     SCHEMA_VERSION,
@@ -93,7 +93,7 @@ describe('shape visibility policy', () => {
 
         expect(document().selectedShapesIds).toEqual([visible]);
 
-        store.actions.executeCommand(deleteSelectedShapes);
+        store.actions.runCommand(DeleteCommand);
 
         expect(document().shapesIds).toEqual([hidden]);
     });
@@ -122,8 +122,8 @@ describe('shape visibility policy', () => {
         const { store, addRect, document } = setup();
         const id = addRect(0, true);
 
-        store.actions.executeCommand(groupSelection);
-        store.actions.executeCommand(layerSelection);
+        store.actions.runCommand(GroupCommand);
+        store.actions.runCommand(LayerCommand);
 
         expect(Object.values(document().groups).map((group) => group.visible)).toEqual([true]);
         expect(Object.values(document().layers).map((layer) => layer.visible)).toEqual([true]);

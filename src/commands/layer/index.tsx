@@ -1,5 +1,5 @@
 import { Command } from 'src/app/types';
-import { createGroup, createLayer } from 'src/app/factories';
+import { createLayer } from 'src/app/factories';
 import { Context } from '../../app';
 
 export const layerSelection = (context: Context) => {
@@ -22,7 +22,7 @@ export const LayerCommand: Command = {
     },
     regex: /(?<toolCode>layer)\('(?<shapeName>\w+)',(?<x>\d+),(?<y>\d+)\)/,
     shortcut: 'm',
-    canExecute: ({ state }: Context) => state.currentDocument?.selectedShapes.length > 0,
+    canExecute: ({ state }) => state.currentDocument?.selectedShapes.length > 0,
     execute: layerSelection
 };
 
@@ -44,6 +44,6 @@ export const UnlayerCommand: Command = {
     },
     regex: /(?<toolCode>unlayer)\('(?<shapeName>\w+)',(?<x>\d+),(?<y>\d+)\)/,
     shortcut: 'm',
-    canExecute: ({ state }: Context) => state.currentDocument.selectedLayersIds.length > 0,
+    canExecute: ({ state }) => state.currentDocument.selectedLayersIds.length > 0,
     execute: deleteSelectedLayers
 };

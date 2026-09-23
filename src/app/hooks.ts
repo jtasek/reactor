@@ -8,6 +8,7 @@ import { getCommand, getCommands } from './actions';
 import { Context } from '.';
 import { useCallback } from 'react';
 import { isShapeLocked, isShapeVisible } from './utils';
+import type { Command } from './types';
 
 export const useActions = createActionsHook<Context>();
 export const useEffects = createEffectsHook<Context>();
@@ -28,6 +29,11 @@ export const useCommand = (commandId: string) => {
 
 export const useCommands = () => {
     return getCommands();
+};
+
+/** Whether `command` can run now; re-renders when the state its guard reads changes. */
+export const useCommandEnabled = (command: Command) => {
+    return useAppState((state) => command.canExecute({ state }));
 };
 
 export const useComponent = (id: string) => {

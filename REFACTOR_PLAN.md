@@ -305,6 +305,14 @@ supported shape types pass move, resize, rotate, and clone regressions.
 
 ## Phase 6 - Resolve Incomplete Features
 
+In progress. Steps 1-2 (without shortcuts): commands run through one guarded
+`runCommand`; guards only read state, so the command bar re-evaluates them as the
+selection changes; its buttons are native buttons. The command line runs a
+command by id or name on Enter and reports unknown or unavailable commands. The
+Move and Pan stubs, which only logged a TODO, are removed rather than wired: as
+bar buttons they have no target or distance, and dragging already moves shapes.
+Remaining: keyboard shortcuts (unique bindings and dispatch), steps 3-6.
+
 1. Consolidate command registration, parsing, guards, and execution. Connect Move
    and Pan to the existing interaction actions and give shortcuts unique bindings.
 2. Make the command line parse and execute on explicit submission, reporting
@@ -324,7 +332,9 @@ mixed values; no TODO/no-op is presented as an available feature.
 ## Phase 7 - Enforce Accessibility and Repository Hygiene
 
 1. Replace action anchors and click-only elements with native buttons; add labels,
-   valid ARIA state, focus behavior, and keyboard interaction.
+   valid ARIA state, focus behavior, and keyboard interaction. Note that
+   `CommandBar/styles.css` declares `.commandBarButton button, div`, which styles
+   every `div` in the app; scope it only with a visual check of the whole editor.
 2. Remove unused imports/parameters and replace remaining any types with explicit
    types or unknown plus narrowing. Address hook dependencies without disabling
    rules. Separate debug logging from normal production interaction.

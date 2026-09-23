@@ -31,10 +31,19 @@
     background-color: var(--control-background-active);
 }
 
-.commandBarButton a, div {
+.commandBarButton button, div {
     align-items: center;
     display: flex;
     flex-direction: column;
+}
+
+.commandBarButton button {
+    background: none;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
 }
 
 .delimiter {
@@ -46,7 +55,7 @@
     background-color: var(--control-background-active);
 }
 
-.commandBarButton[aria-disabled="true"] {
+.commandBarButton[data-disabled="true"] {
     background-color: var(--control-background-disabled);
     cursor: default;
     pointer-events: none;
