@@ -12,6 +12,7 @@ export const Surface: FC<Props> = ({ children }) => {
 
     const {
         handleContextMenu,
+        handleLostPointerCapture,
         handleMouseWheel,
         handlePointerCancel,
         handlePointerDown,
@@ -26,6 +27,7 @@ export const Surface: FC<Props> = ({ children }) => {
             preserveAspectRatio="none"
             ref={svgRef}
             onContextMenu={handleContextMenu}
+            onLostPointerCapture={handleLostPointerCapture}
             onPointerCancel={handlePointerCancel}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}

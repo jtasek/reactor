@@ -1,4 +1,5 @@
-import type { Camera, Point } from 'src/app/types';
+import type { Camera, Point, ResizeHandlerType } from 'src/app/types';
+import type { HandleTarget } from 'src/events/types';
 import { isFinitePoint, screenToWorld } from 'src/app/camera';
 
 type ScreenMatrix = Pick<DOMMatrix, 'a' | 'b' | 'c' | 'd' | 'e' | 'f'>;
@@ -63,4 +64,36 @@ export function screenToCanvas(
     const point = clientToSurface(event, surface);
 
     return point ? screenToWorld(point, camera) : null;
+}
+
+// Keyed by every handler type so the compiler flags a missing entry.
+const RESIZE_HANDLER_TYPES: Record<ResizeHandlerType, true> = {
+    bottomLeft: true,
+    bottomRight: true,
+    middleBottom: true,
+    middleLeft: true,
+    middleRight: true,
+    middleTop: true,
+    topLeft: true,
+    topRight: true
+};
+
+const isResizeHandlerType = (type: string): type is ResizeHandlerType =>
+    Object.hasOwn(RESIZE_HANDLER_TYPES, type);
+
+/** Resolves the resize/rotate handle (if any) that an event target belongs to. */
+export function getHandleTarget(target: EventTarget | null): HandleTarget | undefined {
+    const handle = target instanceof Element ? target.closest('[data-handle]') : null;
+    const shapeId = handle?.getAttribute('data-shape-id');
+    const type = handle?.getAttribute('data-type');
+
+    if (!shapeId) {
+        return undefined;
+    }
+
+    if (type === 'rotate' || (type && isResizeHandlerType(type))) {
+        return { shapeId, type };
+    }
+
+    return undefined;
 }
