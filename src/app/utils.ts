@@ -479,21 +479,21 @@ function inContainer(
  * rotations, deletions and selection of locked shapes.
  */
 export function isShapeLocked(document: Document | undefined, shapeId: string): boolean {
-    if (!document) {
+    return (
+        Boolean(document?.shapes?.[shapeId]?.locked) || isShapeLockedExternally(document, shapeId)
+    );
+}
+
+/**
+ * Whether a shape is locked by its document or by a group or layer containing it,
+ * rather than by its own flag, so unlocking the shape itself would not help.
+ */
+export function isShapeLockedExternally(document: Document | undefined, shapeId: string): boolean {
+    if (!document?.shapes?.[shapeId]) {
         return false;
     }
 
-    const shape = document.shapes?.[shapeId];
-
-    if (!shape) {
-        return false;
-    }
-
-    if (document.locked || shape.locked) {
-        return true;
-    }
-
-    return inContainer(document, shapeId, (container) => container.locked);
+    return document.locked || inContainer(document, shapeId, (container) => container.locked);
 }
 
 /**

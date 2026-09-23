@@ -1,37 +1,42 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
-import { getCommonProperties } from './service';
-import { PropertyList } from './PropertyList';
-import { Shape } from 'src/app/types';
+import { PropertyField } from './PropertyField';
+import { PropertyGroup } from './PropertyGroup';
+import { groupRows, type PropertyRow, type PropertyValue } from 'src/app/properties';
 
 export interface Props {
-    shapes?: Shape[];
+    rows: PropertyRow[];
+    shapeIds: string[];
+    onChange: (shapeIds: string[], key: string, value: PropertyValue) => void;
 }
 
-export const PropertyPanel: FC<Props> = ({ shapes }) => {
-    if (!shapes) {
-        return null;
-    }
-
-    if (shapes.length === 0) {
+/**
+ * The properties every selected shape shares, in sections; editing one changes
+ * all of them.
+ */
+export const PropertyPanel: FC<Props> = ({ rows, shapeIds, onChange }) => {
+    if (shapeIds.length === 0) {
         return <div className={styles.propertyPanel}>No shapes selected</div>;
     }
 
     return (
         <table className={styles.propertyPanel}>
-            <thead>
-                <tr>
-                    <td>field</td>
-                    <td>value</td>
-                </tr>
-            </thead>
-            <tbody>
-                <PropertyList key="properties" items={getCommonProperties(shapes)} />
-            </tbody>
+            {groupRows(rows).map(({ group, rows: grouped }) => (
+                <PropertyGroup key={group} name={group}>
+                    {grouped.map((row) => (
+                        <PropertyField
+                            key={row.property.key}
+                            row={row}
+                            shapeIds={shapeIds}
+                            onChange={onChange}
+                        />
+                    ))}
+                </PropertyGroup>
+            ))}
             <tfoot>
                 <tr>
-                    <td>Selected: </td>
-                    <td>{shapes.length}</td>
+                    <td>Selected</td>
+                    <td>{shapeIds.length}</td>
                 </tr>
             </tfoot>
         </table>

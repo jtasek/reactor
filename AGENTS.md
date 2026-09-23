@@ -227,6 +227,10 @@ Examples worth modelling new tools on:
   its `canExecute` guard first; never call `execute` directly. Guards are `CommandGuard`s that
   only read `state`, so UI evaluates them while rendering (`useCommandEnabled`) and stays in
   sync. The command line submits text through `submitCommandLine`.
+- **Property panel**: fields come from `SHAPE_PROPERTIES` (`src/app/properties.ts`), which
+  says how each property is read, written and typed, and which section (`group`, e.g. Shape,
+  Text) lists it; add properties there, not in the panel. Edits go through
+  `setShapesProperty`, gated by `canEdit`.
 - **Shortcuts**: a tool or command declares `shortcut` (`r`, `mod+d`, `delete,backspace`;
   `mod` is Ctrl or Cmd, see `src/events/shortcuts.ts`). `events.pressShortcut` activates the
   tool or runs the command; the keyboard adapter skips it while a text field has focus. Keep
