@@ -1,5 +1,6 @@
 import { derived } from 'overmind';
 import { Application, Document } from '../types';
+import { isShapeVisible } from '../utils';
 
 export const commandsIds = derived(({ commands }: Application) => {
     return Object.keys(commands);
@@ -41,12 +42,16 @@ export const shapesIds = derived((currentDocument: Document) => {
     return Object.keys(currentDocument.shapes);
 });
 
+// The selection commands act on: a hidden shape keeps its `selected` flag but is
+// left out until it is shown again.
 export const selectedShapes = derived((currentDocument: Document) => {
-    return Object.values(currentDocument.shapes).filter((shape) => shape.selected);
+    return Object.values(currentDocument.shapes).filter(
+        (shape) => shape.selected && isShapeVisible(currentDocument, shape.id)
+    );
 });
 
 export const selectedShapesIds = derived((currentDocument: Document) => {
     return Object.values(currentDocument.shapes)
-        .filter((shape) => shape.selected)
+        .filter((shape) => shape.selected && isShapeVisible(currentDocument, shape.id))
         .map((shape) => shape.id);
 });

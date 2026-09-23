@@ -18,6 +18,7 @@ import {
     overlaps,
     isPointInBox,
     isShapeLocked,
+    isShapeVisible,
     boxCenter,
     angleBetween
 } from '../utils';
@@ -37,6 +38,10 @@ const setShape = ({ currentDocument }: Application, shape: Shape) => {
         currentDocument.shapes[shape.id] = shape;
     }
 };
+
+/** Shapes the pointer can hit, select and drag: visible and not locked. */
+const isInteractive = ({ currentDocument }: Application, shapeId: string) =>
+    isShapeVisible(currentDocument, shapeId) && !isShapeLocked(currentDocument, shapeId);
 
 const deleteShape = ({ currentDocument }: Application, shapeId: string) => {
     delete currentDocument.shapes[shapeId];
@@ -105,7 +110,7 @@ export const selectShapeByPoint: Action = ({ state }) => {
 
     const shapes = Object.values(state.currentDocument.shapes);
     shapes.forEach((shape) => {
-        if (isPointInBox(current, shape) && !isShapeLocked(state.currentDocument, shape.id)) {
+        if (isPointInBox(current, shape) && isInteractive(state, shape.id)) {
             shape.selected = true;
         }
     });
@@ -128,7 +133,7 @@ export const selectShapeAtPointer: ActionGuard = ({ state }) => {
     for (const id of shapesIds) {
         const shape = shapes[id];
 
-        if (shape && isPointInBox(current, shape) && !isShapeLocked(state.currentDocument, id)) {
+        if (shape && isPointInBox(current, shape) && isInteractive(state, id)) {
             hitId = id;
         }
     }
@@ -163,7 +168,7 @@ export const selectShapeAtPointer: ActionGuard = ({ state }) => {
 export const moveSelectedShapes: ActionWithParam<Point> = ({ state }, delta) => {
     const shapes = Object.values(state.currentDocument.shapes);
     shapes.forEach((shape) => {
-        if (shape.selected && !isShapeLocked(state.currentDocument, shape.id)) {
+        if (shape.selected && isInteractive(state, shape.id)) {
             translateShape(shape, delta);
         }
     });
@@ -175,9 +180,7 @@ export const selectShapes: Action = ({ state }) => {
 
     const shapes = Object.values(state.currentDocument.shapes);
     shapes.forEach((shape) => {
-        const selected =
-            !isShapeLocked(state.currentDocument, shape.id) &&
-            overlaps(source, getShapeBounds(shape));
+        const selected = isInteractive(state, shape.id) && overlaps(source, getShapeBounds(shape));
 
         // Only write when the value actually changes so shapes that stay
         // outside (or inside) the marquee don't re-render every pointer move.
@@ -302,7 +305,7 @@ export const resizeShape = (
 
     const shape = state.currentDocument?.shapes[shapeId];
 
-    if (!shape || isShapeLocked(state.currentDocument, shapeId)) {
+    if (!shape || !isInteractive(state, shapeId)) {
         return;
     }
 
@@ -320,7 +323,7 @@ export const rotateShape = (
 
     const shape = state.currentDocument?.shapes[shapeId];
 
-    if (!shape || isShapeLocked(state.currentDocument, shapeId)) {
+    if (!shape || !isInteractive(state, shapeId)) {
         return;
     }
 

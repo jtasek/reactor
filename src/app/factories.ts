@@ -129,7 +129,7 @@ export function createGroup(options: Partial<Group> = {}): Group {
         name: newGroupName(),
         selected: false,
         shapesIds: [],
-        visible: false,
+        visible: true,
         ...options
     };
 }
@@ -141,7 +141,7 @@ export function createLayer(options: Partial<Layer> = {}): Layer {
         name: newLayerName(),
         selected: false,
         shapesIds: [],
-        visible: false,
+        visible: true,
         ...options
     };
 }

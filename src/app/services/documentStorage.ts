@@ -3,7 +3,7 @@ import { Orientation } from '../types';
 import { createDocument } from '../factories';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
@@ -309,12 +309,29 @@ export function serializePersistedState(
     };
 }
 
-/** v1 stored derived fields and used an incorrect default document map key. */
+/**
+ * Before v3, group and layer visibility never hid their shapes, and new groups
+ * and layers were created hidden. Showing them keeps those documents looking as
+ * they did now that hiding a group or layer hides its shapes.
+ */
+function showContainers(document: DocumentData): DocumentData {
+    const show = <T extends MemberData>(items: Record<string, T>) =>
+        Object.fromEntries(
+            Object.entries(items).map(([key, item]) => [key, { ...item, visible: true }])
+        );
+
+    return { ...document, groups: show(document.groups), layers: show(document.layers) };
+}
+
+/**
+ * v1 stored derived fields and used an incorrect default document map key; v1
+ * and v2 group and layer visibility is migrated by `showContainers`.
+ */
 export function migratePersistedState(raw: unknown): PersistedState | null {
     try {
         const data = record(raw);
 
-        if (data.version !== 1 && data.version !== SCHEMA_VERSION) {
+        if (data.version !== 1 && data.version !== 2 && data.version !== SCHEMA_VERSION) {
             return null;
         }
 
@@ -323,9 +340,10 @@ export function migratePersistedState(raw: unknown): PersistedState | null {
         let currentDocumentId = text(data.currentDocumentId);
 
         for (const [key, value] of entries) {
-            const document = readDocument(value);
+            const read = readDocument(value);
+            const document = data.version === SCHEMA_VERSION ? read : showContainers(read);
 
-            if (data.version === SCHEMA_VERSION && key !== document.id) {
+            if (data.version !== 1 && key !== document.id) {
                 return null;
             }
 
