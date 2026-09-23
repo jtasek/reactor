@@ -12,8 +12,12 @@ The repo uses **pnpm** (see `pnpm-lock.yaml`). Use `pnpm` for installs.
 - Tests: `pnpm test` (Vitest, `vitest run`; esbuild handles TS/TSX). `pnpm test:watch` for watch mode.
   - Single file: `pnpm test src/app/__tests__/utils.test.ts`
   - By name: `pnpm test -- -t "name of test"`
-- Type-check: `pnpm tsc` (`tsc --noEmit`). Build does emit; this script does not.
-- Lint: `pnpm lint` (`eslint src --fix`).
+- Type-check: `pnpm typecheck` (app via `pnpm tsc`, plus tests via `tsconfig.test.json`).
+  Build does emit; these scripts do not.
+- Lint: `pnpm lint` (read-only, `--max-warnings 0`); `pnpm lint:fix` applies fixes;
+  `pnpm lint:baseline` requires touched files to be lint-clean.
+- Browser tests: `pnpm test:browser` (Playwright against the production build). `pnpm check`
+  runs the lint gate, type-checks, unit and browser tests.
 - Production build: `pnpm build` — `NODE_ENV=production` webpack via `webpack.config.mjs`.
   Emits content-hashed JS/CSS, extracted CSS (`mini-css-extract-plugin`), and a generated
   `dist/index.html` (`html-webpack-plugin`, template `src/template.html`). Overmind devtools
@@ -87,8 +91,9 @@ Overmind re-renders. Components never mutate state directly.
   (typings-for-css-modules-loader). Don't hand-edit the `.d.ts` files.
 - **Style** (Prettier `.prettierrc`): 4-space indent, single quotes, semicolons,
   `printWidth` 100, no trailing commas. ESLint enforces these plus `prettier/prettier: error`.
-- **Tests** live in `__tests__/` folders next to the code they cover and run on Vitest
-  with `globals: true` (no need to import `describe`/`it`/`expect`/`vi`). `*.test.ts`
-  files are excluded from `tsc`.
+- **Tests** live in `__tests__/` folders next to the code they cover (pure units) and in
+  `tests/` (store tests via `createTestStore`, browser specs in `tests/browser/`). They run on
+  Vitest with `globals: true` (no need to import `describe`/`it`/`expect`/`vi`) and are
+  type-checked by `pnpm typecheck`, not by `pnpm tsc`.
 - TypeScript is `strict`; avoid `any`. `console.log` triggers a lint warning
   (only `warn`/`error`/`info` are allowed) — prefer the `useLog` hook for debug output.
