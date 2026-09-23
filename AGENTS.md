@@ -223,8 +223,10 @@ Examples worth modelling new tools on:
   domain hooks here rather than ad-hoc `useAppState` selectors in components.
 - **Action typing**: use the aliases in `src/app/types.ts` — `Action`, `ActionWithParam<T>`,
   `ActionGuard`. Destructure what you need from context (`{ state }`, `{ state, effects }`).
-- **Commands**: actions can run through the command layer (`actions/commands.ts`:
-  `canExecuteCommand`/`executeCommand`, guarded by `ActionGuard`).
+- **Commands**: run a command with `runCommand(command)` (`actions/commands.ts`), which checks
+  its `canExecute` guard first; never call `execute` directly. Guards are `CommandGuard`s that
+  only read `state`, so UI evaluates them while rendering (`useCommandEnabled`) and stays in
+  sync. The command line submits text through `submitCommandLine`.
 - **Path alias** `src/*` → `./src` (in `tsconfig.json` and `webpack.config.mjs`). Mixed
   relative and `src/...` imports both appear; keep them consistent within a file.
 - **CSS Modules**: `*.css` with generated `*.css.d.ts` typings. Don't hand-edit the `.d.ts`.

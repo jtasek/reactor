@@ -153,7 +153,7 @@ describe('document ownership', () => {
         store.actions.addLink({ id: 'retained', source: remainingId, target: remainingId });
         store.actions.unselectShapes();
         store.actions.selectShape(deletedId);
-        store.actions.executeCommand(DeleteCommand.execute);
+        store.actions.runCommand(DeleteCommand);
 
         expect(document.shapesIds).toEqual([remainingId]);
         expect(document.selectedShapesIds).toEqual([]);
@@ -179,7 +179,7 @@ describe('document ownership', () => {
 
         store.actions.addGroup({ id: 'group', shapesIds: [shapeId] });
         store.actions.addLink({ id: 'link', source: shapeId });
-        store.actions.executeCommand(DeleteCommand.execute);
+        store.actions.runCommand(DeleteCommand);
 
         expect(document.shapesIds).toEqual([shapeId]);
         expect(document.groups.group.shapesIds).toEqual([shapeId]);

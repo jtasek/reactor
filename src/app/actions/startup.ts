@@ -5,8 +5,6 @@ import {
     DeleteCommand,
     GroupCommand,
     LayerCommand,
-    MoveCommand,
-    PanCommand,
     UngroupCommand,
     UnlayerCommand,
     ZoomInCommand,
@@ -69,8 +67,6 @@ export function getTool(toolId: string) {
 function registerCommands() {
     registerCommand(DeleteCommand);
     registerCommand(CloneCommand);
-    registerCommand(MoveCommand);
-    registerCommand(PanCommand);
     registerCommand(GroupCommand);
     registerCommand(UngroupCommand);
     registerCommand(LayerCommand);

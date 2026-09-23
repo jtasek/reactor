@@ -1,4 +1,4 @@
-import { cloneSelection } from 'src/commands/clone';
+import { CloneCommand } from 'src/commands/clone';
 import type { ShapeInput } from 'src/app/types';
 import { getShapeBounds } from 'src/app/utils';
 import { createTestStore } from './support/store';
@@ -32,7 +32,7 @@ function cloneOf(shape: ShapeInput) {
 
     const [originalId] = store.state.currentDocument.shapesIds;
 
-    store.actions.executeCommand(cloneSelection);
+    store.actions.runCommand(CloneCommand);
 
     const cloneId = store.state.currentDocument.shapesIds.find((id) => id !== originalId)!;
     const get = (id: string) => store.state.currentDocument.shapes[id];
@@ -83,7 +83,7 @@ it('does not copy the measured bounds of the original', () => {
         id,
         bounds: { topLeft: { x: 9, y: 19 }, bottomRight: { x: 51, y: 51 }, width: 42, height: 32 }
     });
-    store.actions.executeCommand(cloneSelection);
+    store.actions.runCommand(CloneCommand);
 
     const clone = Object.values(store.state.currentDocument.shapes).find(
         (shape) => shape.id !== id

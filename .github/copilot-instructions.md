@@ -83,8 +83,8 @@ Overmind re-renders. Components never mutate state directly.
   `ActionGuard = (context) => boolean`. Destructure what you need from context
   (`{ state }`, `{ state, effects }`). See `src/app/actions/shape.ts` for the canonical
   pattern (private `getShape`/`setShape`/`deleteShape` helpers + exported actions).
-- **Commands**: actions can be run through the command layer
-  (`actions/commands.ts`: `canExecuteCommand`/`executeCommand`, guarded by `ActionGuard`).
+- **Commands**: run a command with `runCommand(command)` (`actions/commands.ts`), which
+  checks its state-only `CommandGuard` first; UI reads guards via `useCommandEnabled`.
 - **Path alias** `src/*` resolves to `./src` (configured in `tsconfig.json` and
   `webpack.config.mjs`). Mixed relative and `src/...` imports both appear; keep them in sync.
 - **CSS Modules**: `*.css` with generated `*.css.d.ts` typings

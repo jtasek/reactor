@@ -11,7 +11,7 @@ export const ConnectedCommandLine: FC = () => {
         return null;
     }
 
-    return <CommandLine onChange={() => actions.executeCommand} />;
+    return <CommandLine onSubmit={actions.submitCommandLine} />;
 };
 
 export default ConnectedCommandLine;

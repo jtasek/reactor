@@ -272,6 +272,12 @@ export type Action = (context: Context) => void;
 export type ActionGuard = (context: Context) => boolean;
 export type ActionWithParam<T> = (context: Context, param: T) => void;
 
+/**
+ * Whether a command can run now. It may only read state, so the UI can evaluate
+ * it while rendering and stay in sync as the state changes.
+ */
+export type CommandGuard = (context: Pick<Context, 'state'>) => boolean;
+
 export interface Command {
     id: string;
     category: string;
@@ -280,7 +286,7 @@ export interface Command {
     name: string;
     regex: RegExp;
     shortcut?: string;
-    canExecute: ActionGuard;
+    canExecute: CommandGuard;
     execute: Action;
     shouldDeactivate?: ActionGuard;
 }
