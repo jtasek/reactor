@@ -23,6 +23,7 @@ import {
     getShapeBounds,
     isShapeLocked,
     isShapeVisible,
+    shapeGeometry,
     boxCenter,
     angleBetween
 } from '../utils';
@@ -83,10 +84,29 @@ export const addShape: ActionWithParam<ShapeInput> = ({ state }, options) => {
     setShape(state, shape);
 };
 
-export const cloneShape: ActionWithParam<string> = ({ state, effects }, shapeId) => {
-    const shape = getShape(state, shapeId);
+/** How far a clone is offset from its original so it does not cover it. */
+const CLONE_OFFSET: Point = { x: 10, y: 10 };
 
-    setShape(state, { ...shape, id: effects.newId() });
+/**
+ * Adds an independent copy of a shape, offset by `CLONE_OFFSET`. The copy keeps
+ * the original's geometry and appearance but gets its own id, name and
+ * timestamps, starts unselected and is measured afresh.
+ */
+export const cloneShape: ActionWithParam<string> = ({ state }, shapeId) => {
+    const original = getShape(state, shapeId);
+    const clone = createShape({
+        ...shapeGeometry(original),
+        name: `Clone of ${original.name}`,
+        description: original.description,
+        parentShapeId: original.parentShapeId,
+        rotation: original.rotation,
+        locked: original.locked,
+        visible: original.visible,
+        selected: false
+    });
+
+    translateShape(clone, CLONE_OFFSET);
+    setShape(state, clone);
 };
 
 export const removeShape: ActionWithParam<string> = ({ state }, shapeId) => {

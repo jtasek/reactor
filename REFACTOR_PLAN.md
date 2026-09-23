@@ -1,6 +1,6 @@
 # Repository Audit and Refactoring Plan
 
-Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 in progress; Phases 6-8 remain proposed.
+Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phases 6-8 remain proposed.
 
 ## Verified Baseline
 
@@ -270,7 +270,7 @@ and one gesture produces at most one commit.
 
 ## Phase 5 - Align Geometry, Selection, and Visibility
 
-In progress. Steps 1-2: shapes are a discriminated union with per-type required
+Implemented 2026-09-23 (#5-#8). Steps 1-2: shapes are a discriminated union with per-type required
 geometry (lines/pens no longer carry an unused `position`), and move/resize are
 exhaustive per-type operations in `src/app/geometry.ts`, pinned by a per-type
 move/resize/rotate characterization suite. Step 3: one visibility rule mirrors
@@ -281,7 +281,14 @@ layers start visible, and schema v3 shows v1/v2 groups and layers, whose
 visibility never hid shapes. Step 4: presses hit shapes where they are drawn —
 in their rotated frame, closed shapes by area and lines/pens by stroke, within
 half the stroke plus 4 screen pixels — and marquees use rotated bounds; a click
-without a drag clears the selection. Remaining: clone regressions.
+without a drag clears the selection. Clone: one action copies a shape's geometry
+(offset by 10, including lines and pens) with fresh identity, timestamps and
+measurement; the command delegates to it.
+
+Verification: store tests cover bounds, move, resize, rotate and clone for every
+shape type, visibility/lock policy and migration, and hit-testing; browser tests
+cover hidden layers, locked handles, and rotated and line presses. Clone has no
+browser test yet: the command bar cannot enable it (F6), which Phase 6 fixes.
 
 1. Convert shapes to a discriminated union with per-type required geometry.
 2. Extract geometry operations from the large shape action module into pure

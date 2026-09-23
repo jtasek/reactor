@@ -12,6 +12,7 @@ import {
     Rectangle,
     ResizeHandlerType,
     Shape,
+    ShapeInput,
     Text,
     Vector
 } from './types';
@@ -236,27 +237,51 @@ export function boxesEqual(a: Box, b: Box, epsilon = 0.5): boolean {
 }
 
 /**
- * A stable string describing only the geometry-relevant fields of a shape. Used
- * to decide when a shape must be re-measured, so toggling unrelated state such as
- * `selected` does not force an expensive getBBox reflow.
+ * A detached copy of what a shape draws: its type and geometry, plus a text's
+ * content or an image's source. Metadata such as ids, names and flags is left out.
  */
-export function shapeGeometryKey(shape: Shape): string {
+export function shapeGeometry(shape: Shape): ShapeInput {
     switch (shape.type) {
         case 'rectangle':
+            return { type: shape.type, position: { ...shape.position }, size: { ...shape.size } };
         case 'image':
-            return JSON.stringify([shape.type, shape.position, shape.size]);
+            return {
+                type: shape.type,
+                position: { ...shape.position },
+                size: { ...shape.size },
+                source: shape.source
+            };
         case 'circle':
+            return { type: shape.type, position: { ...shape.position }, radius: shape.radius };
         case 'ellipse':
-            return JSON.stringify([shape.type, shape.position, shape.radius]);
+            return {
+                type: shape.type,
+                position: { ...shape.position },
+                radius: { ...shape.radius }
+            };
         case 'line':
-            return JSON.stringify([shape.type, shape.start, shape.end]);
+            return { type: shape.type, start: { ...shape.start }, end: { ...shape.end } };
         case 'pen':
-            return JSON.stringify([shape.type, shape.points]);
+            return { type: shape.type, points: shape.points.map((point) => ({ ...point })) };
         case 'text':
-            return JSON.stringify([shape.type, shape.position, shape.value, shape.fontSize]);
+            return {
+                type: shape.type,
+                position: { ...shape.position },
+                value: shape.value,
+                fontSize: shape.fontSize
+            };
         default:
             return assertNever(shape);
     }
+}
+
+/**
+ * A stable string describing only what a shape draws. Used to decide when a
+ * shape must be re-measured, so toggling unrelated state such as `selected` does
+ * not force an expensive getBBox reflow.
+ */
+export function shapeGeometryKey(shape: Shape): string {
+    return JSON.stringify(shapeGeometry(shape));
 }
 
 /**
