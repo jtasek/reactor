@@ -59,13 +59,30 @@ export function zoomAt(camera: Camera, scale: number, point?: Point): Camera | n
 
     const world = screenToWorld(point, camera);
 
-    if (!world) {
+    return world ? placeWorldPoint(camera, nextScale, world, point) : null;
+}
+
+/** Scales the camera and positions it so `world` is drawn at the surface-local `screen` point. */
+export function placeWorldPoint(
+    camera: Camera,
+    scale: number,
+    world: Point,
+    screen: Point
+): Camera | null {
+    const nextScale = limitScale(scale);
+
+    if (
+        nextScale === null ||
+        !isValidCamera(camera) ||
+        !isFinitePoint(world) ||
+        !isFinitePoint(screen)
+    ) {
         return null;
     }
 
     const position = {
-        x: point.x - world.x * nextScale,
-        y: point.y - world.y * nextScale
+        x: screen.x - world.x * nextScale,
+        y: screen.y - world.y * nextScale
     };
 
     return isFinitePoint(position) ? { scale: nextScale, position } : null;

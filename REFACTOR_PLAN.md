@@ -1,6 +1,6 @@
 # Repository Audit and Refactoring Plan
 
-Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 in progress; Phases 5-8 remain proposed.
+Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phases 5-8 remain proposed.
 
 ## Verified Baseline
 
@@ -226,13 +226,22 @@ coordinate tests pass.
 
 ## Phase 4 - Make Gesture Lifecycle Explicit
 
-In progress. Gesture lifecycle (step 1 transitions, step 2 for drawing and
-marquee, step 3, and zoom suppression from step 5): an explicit gesture owned by
-one pointer, with begin/move/end/cancel in actions. Cancel, lost capture, blur,
-context menu and unmount discard drawings and restore the selection; release
-coordinates are committed; other pointers are ignored; zoom is blocked mid-drag.
-Remaining: action-driven move/resize/rotate with geometry rollback, and
-touchscreen pinch.
+Implemented 2026-09-23 in three stacked changes. The gesture is an explicit
+state owned by one pointer (drawing, marquee, moving, resizing, rotating) or by
+two touch contacts (pinching), with begin/move/end/cancel in actions; the adapter
+only translates DOM events. Cancel, lost capture, blur, context menu and unmount
+never commit: drawings are discarded, and edited geometry and selection are
+restored from snapshots. Move/resize/rotate apply in actions, including the
+release position. Zoom is blocked mid-drag. Touchscreen pinch uses the Touch
+Events contact list with a minimal baseline (two contact ids, distance, scale,
+world anchor); it may replace only an unmoved touch gesture, and a remaining
+contact stays inert until all contacts lift.
+
+Verification: unit/store tests and Chromium browser tests cover mouse and pen
+drags, Ctrl-wheel (trackpad) and touchscreen pinch, cancel/lost capture, blur,
+menu interruption, second contacts, fast move+release, and both pinch release
+orders. Touch input is synthetic; it has not been checked on a physical touch
+device, so the gate stays open until that is done.
 
 1. Model idle, drawing, moving, resizing, rotating, and pinching interactions.
    Keep transitions and mutations in actions; adapters translate browser events.

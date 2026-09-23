@@ -5,10 +5,12 @@ import type {
     PointerEventHandler,
     RefObject,
     SyntheticEvent,
+    TouchEvent,
     WheelEvent
 } from 'react';
 import { clientToSurface, getHandleTarget, screenDeltaToSurface, screenToCanvas } from './helpers';
 import { useActions, useCamera, useControls, useLog } from 'src/app/hooks';
+import type { TouchContact } from 'src/events/types';
 import { trySetPointerCapture, tryReleasePointerCapture } from './pointerCapture';
 
 export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | undefined) => {
@@ -124,7 +126,8 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
         const started = actions.events.beginGesture({
             pointerId: event.pointerId,
             position,
-            handle: getHandleTarget(event.target)
+            handle: getHandleTarget(event.target),
+            touch: event.pointerType === 'touch'
         });
 
         if (started) {
@@ -186,6 +189,34 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
         tryReleasePointerCapture(svgRef?.current, event.pointerId);
     };
 
+    // Touch Events carry the full contact list a pinch needs; single-contact
+    // drags still go through the Pointer Events handlers above.
+    const toContacts = (event: TouchEvent<SVGSVGElement>): TouchContact[] => {
+        const svgEl = getSvgElement(event);
+
+        return Array.from(event.touches).flatMap((touch) => {
+            const point = clientToSurface(touch, svgEl);
+
+            return point ? [{ id: touch.identifier, point }] : [];
+        });
+    };
+
+    const handleTouchStart = (event: TouchEvent<SVGSVGElement>) => {
+        if (contextMenu.visible || event.touches.length < 2) {
+            return;
+        }
+
+        actions.events.beginPinch(toContacts(event));
+    };
+
+    const handleTouchMove = (event: TouchEvent<SVGSVGElement>) => {
+        actions.events.updatePinch(toContacts(event));
+    };
+
+    const handleTouchEnd = (event: TouchEvent<SVGSVGElement>) => {
+        actions.events.endPinch(event.touches.length);
+    };
+
     const handleMouseWheel = useCallback(
         (event: WheelEvent<SVGSVGElement>) => {
             log('handleMouseWheel', event.deltaX, event.deltaY);
@@ -245,6 +276,10 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
         handleLostPointerCapture: handlePointerInterrupted,
         handlePointerDown,
         handlePointerMove,
-        handlePointerUp
+        handlePointerUp,
+        handleTouchCancel: handleTouchEnd,
+        handleTouchEnd,
+        handleTouchMove,
+        handleTouchStart
     };
 };

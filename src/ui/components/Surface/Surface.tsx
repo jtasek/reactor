@@ -17,7 +17,11 @@ export const Surface: FC<Props> = ({ children }) => {
         handlePointerCancel,
         handlePointerDown,
         handlePointerMove,
-        handlePointerUp
+        handlePointerUp,
+        handleTouchCancel,
+        handleTouchEnd,
+        handleTouchMove,
+        handleTouchStart
     } = usePointerAdapter(svgRef);
 
     return (
@@ -32,6 +36,10 @@ export const Surface: FC<Props> = ({ children }) => {
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
+            onTouchCancel={handleTouchCancel}
+            onTouchEnd={handleTouchEnd}
+            onTouchMove={handleTouchMove}
+            onTouchStart={handleTouchStart}
             onWheel={handleMouseWheel}
             style={{
                 touchAction: 'none', // 🔑 prevents native pinch zoom / scrolling

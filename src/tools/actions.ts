@@ -1,7 +1,15 @@
 import { Context } from '../app';
 import { Point } from 'src/app/types';
 import { getToolById } from './components';
-import { DEFAULT_SCALE, MAX_SCALE, MIN_SCALE, ZOOM_STEP, panBy, zoomAt } from 'src/app/camera';
+import {
+    DEFAULT_SCALE,
+    MAX_SCALE,
+    MIN_SCALE,
+    ZOOM_STEP,
+    panBy,
+    placeWorldPoint,
+    zoomAt
+} from 'src/app/camera';
 import { DEFAULT_TOOL_ID } from './state';
 
 type ZoomOptions = { scale: number; point?: Point };
@@ -76,6 +84,30 @@ export const zoom = ({ state: { currentDocument, events } }: Context, options: Z
     }
 
     const next = zoomAt(currentDocument.camera, options.scale, options.point);
+
+    if (!next) {
+        return;
+    }
+
+    currentDocument.camera.scale = next.scale;
+    currentDocument.camera.position.x = next.position.x;
+    currentDocument.camera.position.y = next.position.y;
+};
+
+/**
+ * Pinch zoom: scales the camera while keeping the `anchor` world point under the
+ * surface-local `point`, so the canvas follows the fingers as well as zooming.
+ */
+export const zoomToAnchor = (
+    { state: { currentDocument } }: Context,
+    options: { scale: number; anchor: Point; point: Point }
+) => {
+    const next = placeWorldPoint(
+        currentDocument.camera,
+        options.scale,
+        options.anchor,
+        options.point
+    );
 
     if (!next) {
         return;

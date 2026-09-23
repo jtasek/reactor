@@ -56,7 +56,7 @@ describe('pointer gestures', () => {
 
         expect(store.state.events.pointer.start).toEqual({ x: 10, y: 10 });
         expect(store.state.events.pointer.current).toEqual({ x: 10, y: 10 });
-        expect(store.state.events.pointer.gesture).toEqual({ kind: 'drawing', pointerId: 1 });
+        expect(store.state.events.pointer.gesture).toMatchObject({ kind: 'drawing', pointerId: 1 });
         expect(store.state.currentDocument.shapesIds).toEqual([]);
     });
 
@@ -129,7 +129,7 @@ describe('pointer gestures', () => {
             handle: { shapeId, type: 'bottomRight' }
         });
 
-        expect(store.state.events.pointer.gesture).toEqual({
+        expect(store.state.events.pointer.gesture).toMatchObject({
             kind: 'resizing',
             pointerId: 3,
             shapeId,
@@ -144,7 +144,7 @@ describe('pointer gestures', () => {
             handle: { shapeId, type: 'rotate' }
         });
 
-        expect(store.state.events.pointer.gesture).toEqual({
+        expect(store.state.events.pointer.gesture).toMatchObject({
             kind: 'rotating',
             pointerId: 4,
             shapeId
@@ -164,5 +164,200 @@ describe('pointer gestures', () => {
         store.actions.tools.zoomIn();
 
         expect(store.state.currentDocument.camera.scale).toBeGreaterThan(1);
+    });
+
+    it('moves the selection by pointer deltas, including the release position', () => {
+        const store = storeWithTool('select');
+        const shapeId = addRect(store, 0, 0, true);
+
+        store.actions.events.beginGesture({ pointerId: 1, position: { x: 10, y: 10 } });
+        store.actions.events.movePointer({ pointerId: 1, position: { x: 15, y: 20 } });
+        store.actions.events.endGesture({ pointerId: 1, position: { x: 40, y: 30 } });
+
+        expect(store.state.currentDocument.shapes[shapeId].position).toEqual({ x: 30, y: 20 });
+    });
+
+    it('restores moved shapes when the move is canceled', () => {
+        const store = storeWithTool('select');
+        const first = addRect(store, 0, 0, true);
+        const second = addRect(store, 100, 100, true);
+
+        store.actions.events.beginGesture({ pointerId: 1, position: { x: 10, y: 10 } });
+        store.actions.events.movePointer({ pointerId: 1, position: { x: 60, y: 40 } });
+
+        expect(store.state.currentDocument.shapes[second].position).toEqual({ x: 150, y: 130 });
+
+        store.actions.events.cancelGesture();
+
+        expect(store.state.currentDocument.shapes[first].position).toEqual({ x: 0, y: 0 });
+        expect(store.state.currentDocument.shapes[second].position).toEqual({ x: 100, y: 100 });
+        expect(store.state.currentDocument.shapes[second].selected).toBe(true);
+    });
+
+    it('resizes live and restores the size when the resize is canceled', () => {
+        const store = storeWithTool('select');
+        const shapeId = addRect(store, 0, 0, true);
+        const handle = { shapeId, type: 'bottomRight' as const };
+
+        store.actions.events.beginGesture({ pointerId: 1, position: { x: 20, y: 20 }, handle });
+        store.actions.events.movePointer({ pointerId: 1, position: { x: 50, y: 40 } });
+
+        expect(store.state.currentDocument.shapes[shapeId].size).toEqual({
+            width: 50,
+            height: 40
+        });
+
+        store.actions.events.cancelGesture();
+
+        expect(store.state.currentDocument.shapes[shapeId].size).toEqual({
+            width: 20,
+            height: 20
+        });
+        expect(store.state.currentDocument.shapes[shapeId].position).toEqual({ x: 0, y: 0 });
+    });
+
+    it('rotates live and restores the rotation when the rotation is canceled', () => {
+        const store = storeWithTool('select');
+        const shapeId = addRect(store, 0, 0, true);
+        const handle = { shapeId, type: 'rotate' as const };
+
+        store.actions.events.beginGesture({ pointerId: 1, position: { x: 10, y: -20 }, handle });
+        store.actions.events.endGesture({ pointerId: 1, position: { x: 40, y: 10 } });
+
+        expect(store.state.currentDocument.shapes[shapeId].rotation).toBe(90);
+
+        store.actions.events.beginGesture({ pointerId: 2, position: { x: 40, y: 10 }, handle });
+        store.actions.events.movePointer({ pointerId: 2, position: { x: 10, y: 40 } });
+
+        expect(store.state.currentDocument.shapes[shapeId].rotation).toBe(180);
+
+        store.actions.events.cancelGesture();
+
+        expect(store.state.currentDocument.shapes[shapeId].rotation).toBe(90);
+    });
+
+    it('does not resurrect a shape deleted during a canceled gesture', () => {
+        const store = storeWithTool('select');
+        const shapeId = addRect(store, 0, 0, true);
+
+        store.actions.events.beginGesture({ pointerId: 1, position: { x: 10, y: 10 } });
+        store.actions.removeShape(shapeId);
+        store.actions.events.cancelGesture();
+
+        expect(store.state.currentDocument.shapes[shapeId]).toBeUndefined();
+        expect(store.state.currentDocument.shapesIds).toEqual([]);
+    });
+
+    it('treats a handle of a missing shape as empty canvas', () => {
+        const store = storeWithTool('select');
+
+        expect(
+            store.actions.events.beginGesture({
+                pointerId: 1,
+                position: { x: 0, y: 0 },
+                handle: { shapeId: 'missing', type: 'rotate' }
+            })
+        ).toBe(true);
+        expect(store.state.events.pointer.gesture.kind).toBe('marquee');
+    });
+});
+
+describe('touch pinch', () => {
+    const contacts = (a: [number, number], b: [number, number]) => [
+        { id: 1, point: { x: a[0], y: a[1] } },
+        { id: 2, point: { x: b[0], y: b[1] } }
+    ];
+
+    it('scales by finger distance and keeps the anchor between the fingers', () => {
+        const { store } = createTestStore();
+
+        store.actions.events.beginPinch(contacts([100, 100], [200, 100]));
+        store.actions.events.updatePinch(contacts([50, 100], [250, 100]));
+
+        expect(store.state.currentDocument.camera.scale).toBe(2);
+        expect(store.state.currentDocument.camera.position).toEqual({ x: -150, y: -100 });
+
+        // Moving both fingers pans: the anchor follows their midpoint.
+        store.actions.events.updatePinch(contacts([60, 120], [260, 120]));
+
+        expect(store.state.currentDocument.camera.position).toEqual({ x: -140, y: -80 });
+        expect(store.state.events.pointer.dragging).toBe(false);
+
+        // The scale is clamped, but the anchor stays under the midpoint.
+        store.actions.events.updatePinch(contacts([-5000, 100], [5000, 100]));
+
+        expect(store.state.currentDocument.camera.scale).toBe(10);
+        expect(store.state.currentDocument.camera.position).toEqual({ x: -1500, y: -900 });
+    });
+
+    it('replaces an unmoved touch drawing but never a moved or mouse gesture', () => {
+        const unmoved = storeWithTool('rectangle');
+
+        unmoved.actions.events.beginGesture({
+            pointerId: 1,
+            position: { x: 100, y: 100 },
+            touch: true
+        });
+        unmoved.actions.events.beginPinch(contacts([100, 100], [200, 100]));
+
+        expect(unmoved.state.events.pointer.gesture.kind).toBe('pinching');
+        expect(unmoved.state.tools.activeToolsIds).toEqual(['select']);
+
+        const moved = storeWithTool('rectangle');
+
+        moved.actions.events.beginGesture({ pointerId: 1, position: { x: 0, y: 0 }, touch: true });
+        moved.actions.events.movePointer({ pointerId: 1, position: { x: 5, y: 0 } });
+        moved.actions.events.movePointer({ pointerId: 1, position: { x: 0, y: 0 } });
+        moved.actions.events.beginPinch(contacts([100, 100], [200, 100]));
+
+        expect(moved.state.events.pointer.gesture.kind).toBe('drawing');
+
+        const mouse = storeWithTool('rectangle');
+
+        mouse.actions.events.beginGesture({ pointerId: 1, position: { x: 0, y: 0 } });
+        mouse.actions.events.beginPinch(contacts([100, 100], [200, 100]));
+
+        expect(mouse.state.events.pointer.gesture.kind).toBe('drawing');
+    });
+
+    it('ignores pointer input and keeps a lone remaining contact inert', () => {
+        const store = storeWithTool('rectangle');
+
+        store.actions.events.beginPinch(contacts([100, 100], [200, 100]));
+
+        expect(store.actions.events.beginGesture({ pointerId: 1, position: { x: 0, y: 0 } })).toBe(
+            false
+        );
+
+        store.actions.events.movePointer({ pointerId: 1, position: { x: 30, y: 30 } });
+        store.actions.events.endGesture({ pointerId: 1, position: { x: 30, y: 30 } });
+        expect(store.actions.events.cancelGesture(1)).toBeNull();
+        store.actions.events.updatePinch([{ id: 1, point: { x: 0, y: 0 } }]);
+        store.actions.events.endPinch(1);
+
+        expect(store.state.events.pointer.gesture.kind).toBe('pinching');
+        expect(store.state.currentDocument.camera.scale).toBe(1);
+        expect(store.state.currentDocument.shapesIds).toEqual([]);
+
+        store.actions.events.endPinch(0);
+
+        expect(store.state.events.pointer.gesture.kind).toBe('idle');
+    });
+
+    it('is canceled by blur-style cancellation without a pointer id', () => {
+        const { store } = createTestStore();
+
+        store.actions.events.beginPinch(contacts([100, 100], [200, 100]));
+
+        expect(store.actions.events.cancelGesture()).toBeNull();
+        expect(store.state.events.pointer.gesture.kind).toBe('idle');
+    });
+
+    it('ignores contacts that are too close to measure', () => {
+        const { store } = createTestStore();
+
+        store.actions.events.beginPinch(contacts([100, 100], [100, 100]));
+
+        expect(store.state.events.pointer.gesture.kind).toBe('idle');
     });
 });
