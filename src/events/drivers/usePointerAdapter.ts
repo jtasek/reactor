@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type {
     MouseEvent,
     PointerEvent as ReactPointerEvent,
@@ -18,6 +18,8 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
     const { pointer } = useEvents();
     const { activeToolsIds } = useTools();
     const { scale, position } = useCamera();
+    const pendingPan = useRef({ dx: 0, dy: 0 });
+    const panFrame = useRef<number | null>(null);
 
     const getSvgElement = useCallback(
         (event: SyntheticEvent<SVGSVGElement>) =>
@@ -30,6 +32,44 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
             screenToCanvas(event.nativeEvent, svgEl, scale, position),
         [scale, position]
     );
+
+    const flushPan = useCallback(() => {
+        panFrame.current = null;
+
+        const { dx, dy } = pendingPan.current;
+        pendingPan.current = { dx: 0, dy: 0 };
+
+        if (dx === 0 && dy === 0) {
+            return;
+        }
+
+        actions.tools.panCamera({ dx, dy });
+    }, [actions]);
+
+    const schedulePan = useCallback(
+        (dx: number, dy: number) => {
+            pendingPan.current.dx += dx;
+            pendingPan.current.dy += dy;
+
+            if (panFrame.current !== null) {
+                return;
+            }
+
+            panFrame.current = requestAnimationFrame(flushPan);
+        },
+        [flushPan]
+    );
+
+    useEffect(() => {
+        return () => {
+            if (panFrame.current !== null) {
+                cancelAnimationFrame(panFrame.current);
+            }
+
+            panFrame.current = null;
+            pendingPan.current = { dx: 0, dy: 0 };
+        };
+    }, []);
 
     const completePointerInteraction = useCallback(
         (event: ReactPointerEvent<SVGSVGElement>) => {
@@ -48,7 +88,7 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
                 actions.tools.resetTools();
             }
         },
-        [log, actions, svgRef]
+        [log, actions, pointer.dragging, svgRef]
     );
 
     const handlePointerDown: PointerEventHandler<SVGSVGElement> = (event) => {
@@ -171,9 +211,9 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
             }
 
             // Scroll-wheel pan: scrolling moves the content opposite the delta.
-            actions.tools.panCamera({ dx: -event.deltaX, dy: -event.deltaY });
+            schedulePan(-event.deltaX, -event.deltaY);
         },
-        [log, actions, contextMenu.visible, getSvgElement]
+        [log, actions, contextMenu.visible, getSvgElement, schedulePan]
     );
 
     const handleContextMenu = useCallback(
