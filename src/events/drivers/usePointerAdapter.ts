@@ -7,7 +7,7 @@ import type {
     SyntheticEvent,
     WheelEvent
 } from 'react';
-import { screenToCanvas } from './helpers';
+import { clientToSurface, screenDeltaToSurface, screenToCanvas } from './helpers';
 import { useActions, useCamera, useControls, useEvents, useLog, useTools } from 'src/app/hooks';
 import { trySetPointerCapture, tryReleasePointerCapture } from './pointerCapture';
 
@@ -17,7 +17,7 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
     const { contextMenu } = useControls();
     const { pointer } = useEvents();
     const { activeToolsIds } = useTools();
-    const { scale, position } = useCamera();
+    const camera = useCamera();
     const pendingPan = useRef({ dx: 0, dy: 0 });
     const panFrame = useRef<number | null>(null);
 
@@ -29,11 +29,15 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
 
     const toCanvas = useCallback(
         (event: ReactPointerEvent<SVGSVGElement>, svgEl: SVGSVGElement) =>
-            screenToCanvas(event.nativeEvent, svgEl, scale, position),
-        [scale, position]
+            screenToCanvas(event.nativeEvent, svgEl, camera),
+        [camera]
     );
 
     const flushPan = useCallback(() => {
+        if (panFrame.current !== null) {
+            cancelAnimationFrame(panFrame.current);
+        }
+
         panFrame.current = null;
 
         const { dx, dy } = pendingPan.current;
@@ -108,7 +112,16 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
         }
 
         const svgEl = getSvgElement(event);
+
         if (!svgEl) {
+            return;
+        }
+
+        flushPan();
+
+        const currentPosition = toCanvas(event, svgEl);
+
+        if (!currentPosition) {
             return;
         }
 
@@ -117,8 +130,6 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
         if (!pointer.dragging) {
             actions.events.startDragging();
         }
-
-        const currentPosition = toCanvas(event, svgEl);
 
         actions.events.resetDragging();
         actions.events.setStartPosition(currentPosition);
@@ -175,6 +186,10 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
 
         const currentPosition = toCanvas(event, svgEl);
 
+        if (!currentPosition) {
+            return;
+        }
+
         actions.events.updateCurrentPosition(currentPosition);
     };
 
@@ -197,23 +212,38 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
             }
 
             const svgEl = getSvgElement(event);
-            if (!svgEl) return;
+
+            if (!svgEl) {
+                return;
+            }
 
             if (event.ctrlKey) {
-                const rect = svgEl.getBoundingClientRect();
-                const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+                const point = clientToSurface(event, svgEl);
+
+                if (!point) {
+                    return;
+                }
+
+                flushPan();
 
                 // Delegate to the action so the zoom is computed against the live
                 // camera state, not a stale closure — this prevents drift when
                 // wheel events arrive faster than React re-renders.
                 actions.tools.zoomAtPoint({ point, deltaY: event.deltaY });
+
+                return;
+            }
+
+            const delta = screenDeltaToSurface({ x: -event.deltaX, y: -event.deltaY }, svgEl);
+
+            if (!delta) {
                 return;
             }
 
             // Scroll-wheel pan: scrolling moves the content opposite the delta.
-            schedulePan(-event.deltaX, -event.deltaY);
+            schedulePan(delta.x, delta.y);
         },
-        [log, actions, contextMenu.visible, getSvgElement, schedulePan]
+        [log, actions, contextMenu.visible, getSvgElement, schedulePan, flushPan]
     );
 
     const handleContextMenu = useCallback(

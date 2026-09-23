@@ -53,6 +53,18 @@ it observes all documents, debounces writes for 500 ms, flushes on pagehide or
 disposal, and reports storage failures. Transient selection changes do not produce
 writes. Recovery notices do not imply that new session edits have been saved.
 
+## Camera Coordinates
+
+Camera math and zoom bounds live in `src/app/camera.ts`. Camera position and pan
+deltas use surface-local SVG units; positive deltas move content right/down.
+The input adapter converts browser client coordinates through the surface CTM
+before applying the camera transform. Input is ignored when that transform is
+unavailable or singular.
+
+All zoom controls share the 10%-1000% range. Ctrl-wheel pinch is continuous and
+anchored at the pointer; toolbar/tool steps are discrete. Slider zoom preserves
+the current pan position. Full touchscreen gesture handling remains Phase 4 work.
+
 * create prototypes
 * create diagrams
 * create mockups

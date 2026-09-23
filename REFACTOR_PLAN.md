@@ -1,6 +1,6 @@
 # Repository Audit and Refactoring Plan
 
-Audit date: 2026-09-22. Status: Phases 1-2 implemented; Phases 3-8 remain proposed.
+Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phases 4-8 remain proposed.
 
 ## Verified Baseline
 
@@ -190,6 +190,27 @@ malformed data is recoverable; inactive-document edits persist when autosave is
 enabled; deleting the final document leaves a usable editor.
 
 ## Phase 3 - Unify Camera and Coordinate Math
+
+Completed 2026-09-23. Shared camera math lives in `src/app/camera.ts`; commands,
+tool actions, the slider, and Ctrl-wheel zoom delegate to one bounded zoom action.
+The range remains 0.1-10. Invalid scale/step/coordinate inputs are ignored; zero
+wheel delta is a no-op. Pinch uses continuous exponential scaling while discrete
+steps remove arithmetic noise. Zoom at a limit leaves the position unchanged.
+The slider preserves pan rather than resetting it.
+
+Surface-local SVG units are the common coordinate space. Positive pan deltas move
+content right/down. Client points and wheel vectors use the inverse surface CTM,
+including CSS/viewBox transforms. Missing, invalid, or singular transforms return
+an unavailable result, and the adapter ignores those inputs. Pending frame-batched
+pan is flushed before anchored zoom or pointer-down; pinch reads live camera state.
+
+Verification: 137 unit/store tests and 5 Chromium tests pass, including custom-step
+bounds, invalid input, rapid fractional zoom, matrix conversion, slider pan
+preservation, and an offset/scaled SVG anchor regression. Application/test types,
+touched-file lint, and the production build pass. The diff was reviewed; 62
+unrelated lint findings remain deferred. Browser execution required local server
+and Chromium permission. Gesture ownership, cancellation, and touchscreen pinch
+remain in Phase 4.
 
 1. Move pure camera math to a shared domain module and choose one pan sign contract.
 2. Route command, wheel, slider, and tool zoom through one bounded action API.

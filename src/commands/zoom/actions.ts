@@ -1,22 +1,13 @@
 import { Context } from '../../app';
 
-const DEFAULT_STEP = 0.1;
-const DEFAULT_SCALE = 1;
-
-export const zoomIn = (context: Context) => {
-    const { currentDocument } = context.state;
-
-    currentDocument.camera.scale += DEFAULT_STEP;
+export const zoomIn = ({ actions }: Context) => {
+    actions.tools.zoomIn();
 };
 
-export const zoomOut = (context: Context) => {
-    const { currentDocument } = context.state;
-
-    currentDocument.camera.scale -= DEFAULT_STEP;
+export const zoomOut = ({ actions }: Context) => {
+    actions.tools.zoomOut();
 };
 
-export const zoomReset = (context: Context) => {
-    const { currentDocument } = context.state;
-
-    currentDocument.camera.scale = DEFAULT_SCALE;
+export const zoomReset = ({ actions }: Context) => {
+    actions.tools.zoomReset();
 };

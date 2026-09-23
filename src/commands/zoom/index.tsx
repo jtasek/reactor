@@ -1,6 +1,6 @@
 import { Command } from 'src/app/types';
 import { zoomIn, zoomOut, zoomReset } from './actions';
-import { Context } from '../../app';
+import { MAX_SCALE, MIN_SCALE } from 'src/app/camera';
 
 export const ZoomInCommand: Command = {
     id: 'zoom-in',
@@ -14,7 +14,7 @@ export const ZoomInCommand: Command = {
     },
     regex: /(?<toolCode>zoomin)\((?<factor>[\d]+)\)/,
     shortcut: 'z',
-    canExecute: (context: Context) => true,
+    canExecute: ({ state }) => state.currentDocument.camera.scale < MAX_SCALE,
     execute: zoomIn
 };
 
@@ -30,7 +30,7 @@ export const ZoomOutCommand: Command = {
     },
     regex: /(?<toolCode>zoomout)\((?<factor>[\d]+)\)/,
     shortcut: 'z',
-    canExecute: (context: Context) => true,
+    canExecute: ({ state }) => state.currentDocument.camera.scale > MIN_SCALE,
     execute: zoomOut
 };
 
@@ -46,6 +46,6 @@ export const ZoomResetCommand: Command = {
     },
     regex: /(?<toolCode>zoomreset)\((?<factor>[\d]+)\)/,
     shortcut: 'z',
-    canExecute: (context: Context) => true,
+    canExecute: () => true,
     execute: zoomReset
 };

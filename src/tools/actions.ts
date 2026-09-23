@@ -1,22 +1,10 @@
 import { Context } from '../app';
 import { Point } from 'src/app/types';
 import { getToolById } from './components';
-import { zoomAt } from 'src/events/drivers/cameraMath';
+import { DEFAULT_SCALE, MAX_SCALE, MIN_SCALE, ZOOM_STEP, panBy, zoomAt } from 'src/app/camera';
 import { DEFAULT_TOOL_ID } from './state';
 
-const DEFAULT_SCALE = 1;
-const MAX_SCALE = 10;
-const MIN_SCALE = 0.1;
-const ZOOM_STEP = 0.1;
-
-type Delta = { deltaX: number; deltaY: number; deltaZ: number };
-type ZoomOptions = { scale: number; delta?: Delta };
-
-export const limitScale = (scale: number) =>
-    parseFloat(Math.min(Math.max(scale, MIN_SCALE), MAX_SCALE).toFixed(1));
-
-export const scaleUp = (scale: number) => limitScale(scale + ZOOM_STEP);
-export const scaleDown = (scale: number) => limitScale(scale - ZOOM_STEP);
+type ZoomOptions = { scale: number; point?: Point };
 
 export const activateTool = ({ state: { tools }, actions }: Context, toolId: string) => {
     // Tools are mutually exclusive modes: selecting one replaces any other.
@@ -55,71 +43,82 @@ export const resetTools = (context: Context) => {
     }
 };
 
-export const zoomIn = ({ state: { currentDocument } }: Context, step = ZOOM_STEP) => {
-    if (currentDocument.camera.scale >= MAX_SCALE) return;
-    const scale = currentDocument.camera.scale + step;
+const zoomByStep = ({ state, actions }: Context, step: number, direction: number) => {
+    if (!Number.isFinite(step) || step <= 0) {
+        return;
+    }
 
-    currentDocument.camera.scale = parseFloat(scale.toFixed(1));
+    const scale = Math.min(
+        MAX_SCALE,
+        Math.max(MIN_SCALE, state.currentDocument.camera.scale + direction * step)
+    );
+
+    // Remove arithmetic noise for discrete steps without quantizing pinch input.
+    actions.tools.zoom({ scale: Number(scale.toFixed(10)) });
 };
 
-export const zoomOut = ({ state: { currentDocument } }: Context, step = ZOOM_STEP) => {
-    if (currentDocument.camera.scale <= MIN_SCALE) return;
-
-    const scale = currentDocument.camera.scale - step;
-
-    currentDocument.camera.scale = parseFloat(scale.toFixed(1));
+export const zoomIn = (context: Context, step = ZOOM_STEP) => {
+    zoomByStep(context, step, 1);
 };
 
-export const zoomReset = ({ state: { currentDocument } }: Context) => {
-    currentDocument.camera.scale = DEFAULT_SCALE;
+export const zoomOut = (context: Context, step = ZOOM_STEP) => {
+    zoomByStep(context, step, -1);
+};
+
+export const zoomReset = ({ actions }: Context) => {
+    actions.tools.zoom({ scale: DEFAULT_SCALE });
 };
 
 export const zoom = ({ state: { currentDocument } }: Context, options: ZoomOptions) => {
-    currentDocument.camera.scale = limitScale(options.scale);
-    if (options.delta) {
-        currentDocument.camera.position.x = options.delta.deltaX;
-        currentDocument.camera.position.y = options.delta.deltaY;
+    const next = zoomAt(currentDocument.camera, options.scale, options.point);
+
+    if (!next) {
+        return;
     }
+
+    currentDocument.camera.scale = next.scale;
+    currentDocument.camera.position.x = next.position.x;
+    currentDocument.camera.position.y = next.position.y;
 };
 
 /**
- * Zooms one step in/out while keeping the world point under `point` (a surface
+ * Zooms continuously while keeping the world point under `point` (a surface
  * local screen coordinate) anchored, so the canvas does not drift. The camera is
  * read live from state — never from a stale React closure — so rapid wheel events
  * compose correctly against the latest scale/position.
  */
 export const zoomAtPoint = (
-    { state: { currentDocument } }: Context,
+    { state: { currentDocument }, actions }: Context,
     options: { point: Point; deltaY: number }
 ) => {
-    const { camera } = currentDocument;
-    const newScale = options.deltaY > 0 ? scaleDown(camera.scale) : scaleUp(camera.scale);
-
-    if (newScale === camera.scale) {
+    if (!Number.isFinite(options.deltaY) || options.deltaY === 0) {
         return;
     }
 
-    const next = zoomAt(
-        { scale: camera.scale, position: { x: camera.position.x, y: camera.position.y } },
-        newScale,
-        options.point
-    );
+    const delta = Math.min(1000, Math.max(-1000, options.deltaY));
 
-    camera.scale = next.scale;
-    camera.position.x = next.position.x;
-    camera.position.y = next.position.y;
+    actions.tools.zoom({
+        scale: currentDocument.camera.scale * Math.exp(-delta * 0.01),
+        point: options.point
+    });
 };
 
 /**
- * Pans the camera by a screen-space delta (grab-and-drag): the content follows
+ * Pans the camera by a surface-local delta (grab-and-drag): the content follows
  * the delta, so a positive dx moves the canvas right.
  */
 export const panCamera = (
     { state: { currentDocument } }: Context,
     delta: { dx: number; dy: number }
 ) => {
-    currentDocument.camera.position.x += delta.dx;
-    currentDocument.camera.position.y += delta.dy;
+    const next = panBy(currentDocument.camera, { x: delta.dx, y: delta.dy });
+
+    if (!next) {
+        return;
+    }
+
+    currentDocument.camera.position.x = next.position.x;
+    currentDocument.camera.position.y = next.position.y;
 };
 
 export const executeToolCommands = (context: Context) => {
