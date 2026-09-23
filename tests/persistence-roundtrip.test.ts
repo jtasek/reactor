@@ -54,7 +54,11 @@ describe('real persisted documents', () => {
     it('retains live derived indexes and dates after JSON restore', async () => {
         const first = createTestStore();
 
-        first.store.actions.addShape({ type: 'rectangle', size: { width: 20, height: 30 } });
+        first.store.actions.addShape({
+            type: 'rectangle',
+            position: { x: 0, y: 0 },
+            size: { width: 20, height: 30 }
+        });
 
         const saved = JSON.stringify(serializePersistedState(first.store.state));
         const { store } = createTestStore({ reactor: saved });

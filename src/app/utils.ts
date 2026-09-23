@@ -3,6 +3,7 @@ import {
     Circle,
     Document,
     Ellipse,
+    Image,
     Line,
     Pen,
     Point,
@@ -15,6 +16,11 @@ import {
 
 export function stringifyPath(path: Point[]): string {
     return path.map((point: Point) => `${point.x}, ${point.y}`).join(' ');
+}
+
+/** Exhaustiveness check for switches over a union: unreachable when every case is handled. */
+export function assertNever(value: never): never {
+    throw new Error(`Unexpected value: ${JSON.stringify(value)}`);
 }
 
 export function getRandomNumber(max: number): number {
@@ -44,7 +50,7 @@ export function getDistance(p1: Point, p2: Point): number {
     return Math.hypot(Math.abs(p2.x - p1.x), Math.abs(p2.y - p1.y));
 }
 
-export function getRectBoundingBox(rectangle: Rectangle): Box {
+export function getRectBoundingBox(rectangle: Rectangle | Image): Box {
     const topLeft = rectangle.position;
     const bottomRight = {
         x: rectangle.position.x + rectangle.size.width,
@@ -156,7 +162,7 @@ const TEXT_CHAR_WIDTH_RATIO = 0.6;
 const TEXT_ASCENT_RATIO = 0.8;
 
 export function getTextBoundingBox(text: Text): Box {
-    const value = (text as { value?: string }).value ?? text.text ?? '';
+    const value = text.value;
     const fontSize = text.fontSize ?? DEFAULT_TEXT_FONT_SIZE;
 
     const width = value.length * fontSize * TEXT_CHAR_WIDTH_RATIO;
@@ -180,29 +186,24 @@ export function getTextBoundingBox(text: Text): Box {
     };
 }
 
-export function getBoundingBox(shape: Partial<Shape>): Box {
-    if (shape.type === 'line') {
-        return getLineBoundingBox(shape as Line);
+export function getBoundingBox(shape: Shape): Box {
+    switch (shape.type) {
+        case 'line':
+            return getLineBoundingBox(shape);
+        case 'circle':
+            return getCircleBoundingBox(shape);
+        case 'ellipse':
+            return getEllipseBoundingBox(shape);
+        case 'pen':
+            return getPathBoundingBox(shape);
+        case 'text':
+            return getTextBoundingBox(shape);
+        case 'rectangle':
+        case 'image':
+            return getRectBoundingBox(shape);
+        default:
+            return assertNever(shape);
     }
-
-    if (shape.type === 'circle') {
-        return getCircleBoundingBox(shape as Circle);
-    }
-
-    if (shape.type === 'ellipse') {
-        return getEllipseBoundingBox(shape as Ellipse);
-    }
-
-    if (shape.type === 'pen') {
-        return getPathBoundingBox(shape as Pen);
-    }
-
-    if (shape.type === 'text') {
-        return getTextBoundingBox(shape as Text);
-    }
-
-    // image, rect
-    return getRectBoundingBox(shape as Rectangle);
 }
 
 /**
@@ -210,7 +211,7 @@ export function getBoundingBox(shape: Partial<Shape>): Box {
  * (see getBBox measurement in the Shape component), falling back to the analytic
  * box for shapes that have not been measured yet.
  */
-export function getShapeBounds(shape: Partial<Shape>): Box {
+export function getShapeBounds(shape: Shape): Box {
     return shape.bounds ?? getBoundingBox(shape);
 }
 
@@ -232,39 +233,28 @@ export function boxesEqual(a: Box, b: Box, epsilon = 0.5): boolean {
     );
 }
 
-type GeometryView = {
-    type: string;
-    position?: Point;
-    size?: { width: number; height: number };
-    radius?: number | Point;
-    start?: Point;
-    end?: Point;
-    points?: Point[];
-    value?: string;
-    text?: string;
-    fontSize?: number;
-};
-
 /**
  * A stable string describing only the geometry-relevant fields of a shape. Used
  * to decide when a shape must be re-measured, so toggling unrelated state such as
  * `selected` does not force an expensive getBBox reflow.
  */
 export function shapeGeometryKey(shape: Shape): string {
-    const g = shape as unknown as GeometryView;
-
-    return JSON.stringify({
-        type: g.type,
-        position: g.position,
-        size: g.size,
-        radius: g.radius,
-        start: g.start,
-        end: g.end,
-        points: g.points,
-        value: g.value,
-        text: g.text,
-        fontSize: g.fontSize
-    });
+    switch (shape.type) {
+        case 'rectangle':
+        case 'image':
+            return JSON.stringify([shape.type, shape.position, shape.size]);
+        case 'circle':
+        case 'ellipse':
+            return JSON.stringify([shape.type, shape.position, shape.radius]);
+        case 'line':
+            return JSON.stringify([shape.type, shape.start, shape.end]);
+        case 'pen':
+            return JSON.stringify([shape.type, shape.points]);
+        case 'text':
+            return JSON.stringify([shape.type, shape.position, shape.value, shape.fontSize]);
+        default:
+            return assertNever(shape);
+    }
 }
 
 /**
@@ -323,15 +313,11 @@ export function mapPointBetweenBoxes(point: Point, from: Box, to: Box): Point {
     };
 }
 
-export function isPointInBox(p: Point, shape: Partial<Shape>): boolean {
+export function isPointInBox(p: Point, shape: Shape): boolean {
     const box = getShapeBounds(shape);
 
-    if (!box) {
-        return false;
-    }
-
-    const horizontalFit = box.topLeft!.x <= p.x && p.x <= box.bottomRight.x;
-    const verticalFit = box.topLeft!.y <= p.y && p.y <= box.bottomRight.y;
+    const horizontalFit = box.topLeft.x <= p.x && p.x <= box.bottomRight.x;
+    const verticalFit = box.topLeft.y <= p.y && p.y <= box.bottomRight.y;
 
     return horizontalFit && verticalFit;
 }

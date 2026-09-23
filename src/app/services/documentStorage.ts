@@ -5,20 +5,16 @@ import { createDocument } from '../factories';
 export const PERSISTENCE_KEY = 'reactor';
 export const SCHEMA_VERSION = 2;
 
-type ShapeData = Omit<
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+
+/** A shape's durable fields: runtime-only state is omitted and dates are ISO strings. */
+type ShapeData = DistributiveOmit<
     Shape,
     'created' | 'modified' | 'selected' | 'active' | 'bounds' | 'children' | 'key'
 > & {
     created: string;
     modified: string;
     children?: ShapeData[];
-    radius?: number | Point;
-    start?: Point;
-    end?: Point;
-    points?: Point[];
-    value?: string;
-    fontSize?: number;
-    source?: string;
 };
 type MemberData = Omit<Group, 'selected'>;
 type DocumentData = Pick<
@@ -172,26 +168,38 @@ function readShape(value: unknown): ShapeData {
         modified: date(s.modified),
         createdBy: text(s.createdBy),
         modifiedBy: text(s.modifiedBy),
-        position: point(s.position),
         rotation: s.rotation === undefined ? 0 : number(s.rotation),
         ...(s.description === undefined ? {} : { description: text(s.description) }),
         ...(s.parentShapeId === undefined ? {} : { parentShapeId: id(s.parentShapeId) }),
         ...(s.children === undefined ? {} : { children: list(s.children, readShape) })
     };
 
+    // Lines and pens are placed by their points; earlier versions also stored an
+    // unused `position` for them, which is dropped here.
     switch (s.type) {
         case 'rectangle':
-            return { ...base, type: s.type, size: size(s.size) };
+            return { ...base, type: s.type, position: point(s.position), size: size(s.size) };
         case 'image':
-            return { ...base, type: s.type, size: size(s.size), source: text(s.source) };
+            return {
+                ...base,
+                type: s.type,
+                position: point(s.position),
+                size: size(s.size),
+                source: text(s.source)
+            };
         case 'circle':
-            return { ...base, type: s.type, radius: number(s.radius, 0) };
+            return {
+                ...base,
+                type: s.type,
+                position: point(s.position),
+                radius: number(s.radius, 0)
+            };
         case 'ellipse': {
             const radius = point(s.radius);
             number(radius.x, 0);
             number(radius.y, 0);
 
-            return { ...base, type: s.type, radius };
+            return { ...base, type: s.type, position: point(s.position), radius };
         }
 
         case 'line':
@@ -202,6 +210,7 @@ function readShape(value: unknown): ShapeData {
             return {
                 ...base,
                 type: s.type,
+                position: point(s.position),
                 value: text(s.value ?? s.text),
                 ...(s.fontSize === undefined ? {} : { fontSize: positive(s.fontSize) })
             };

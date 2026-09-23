@@ -1,6 +1,6 @@
 # Repository Audit and Refactoring Plan
 
-Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phases 5-8 remain proposed.
+Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 in progress; Phases 6-8 remain proposed.
 
 ## Verified Baseline
 
@@ -265,6 +265,11 @@ orders. A canceled gesture creates no shape, zoom never occurs during a drag,
 and one gesture produces at most one commit.
 
 ## Phase 5 - Align Geometry, Selection, and Visibility
+
+In progress. Steps 1-2: shapes are a discriminated union with per-type required
+geometry (lines/pens no longer carry an unused `position`), and move/resize are
+exhaustive per-type operations in `src/app/geometry.ts`, pinned by a per-type
+move/resize/rotate characterization suite. Remaining: steps 3-4 and clone.
 
 1. Convert shapes to a discriminated union with per-type required geometry.
 2. Extract geometry operations from the large shape action module into pure

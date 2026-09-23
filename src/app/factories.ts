@@ -29,6 +29,7 @@ import {
     Orientation,
     Ruler,
     Shape,
+    ShapeInput,
     User
 } from './types';
 
@@ -65,10 +66,6 @@ export function getCurrentUserName(): string {
     return 'anonymous';
 }
 
-export function getDefaultType(): Shape['type'] {
-    return 'rectangle';
-}
-
 export function createNotification(options: Partial<Notification> = {}): Notification {
     return {
         id: newId(),
@@ -79,9 +76,8 @@ export function createNotification(options: Partial<Notification> = {}): Notific
     };
 }
 
-export function createShape(options: Partial<Shape> = {}): Shape {
+export function createShape(input: ShapeInput): Shape {
     const id = newId();
-    const type = options.type ?? getDefaultType();
 
     return {
         active: false,
@@ -92,14 +88,12 @@ export function createShape(options: Partial<Shape> = {}): Shape {
         modified: new Date(),
         modifiedBy: getCurrentUserName(),
         name: newShapeName(),
-        position: { x: 0, y: 0 },
         rotation: 0,
         selected: true,
-        type,
         visible: true,
-        ...options,
+        ...input,
         id,
-        key: `${type}-${id}`
+        key: `${input.type}-${id}`
     };
 }
 

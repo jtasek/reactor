@@ -4,28 +4,21 @@ import {
     ActionWithParam,
     Application,
     Box,
-    Circle,
-    Ellipse,
-    Line,
-    Pen,
     Point,
     ResizeHandlerType,
     Shape,
-    Text
+    ShapeInput
 } from '../types';
 import { Context } from '../index';
 import { createShape } from '../factories';
+import { resizeShapeFromHandle, translateShape } from '../geometry';
 import {
-    DEFAULT_TEXT_FONT_SIZE,
     boxesEqual,
     getShapeBounds,
-    mapPointBetweenBoxes,
     overlaps,
     isPointInBox,
     isShapeLocked,
-    resizeBox,
     boxCenter,
-    rotatePoint,
     angleBetween
 } from '../utils';
 
@@ -75,7 +68,7 @@ const deleteShape = ({ currentDocument }: Application, shapeId: string) => {
     }
 };
 
-export const addShape: ActionWithParam<Partial<Shape>> = ({ state }, options) => {
+export const addShape: ActionWithParam<ShapeInput> = ({ state }, options) => {
     const shape = createShape(options);
 
     setShape(state, shape);
@@ -110,7 +103,7 @@ export const selectShape: ActionWithParam<string> = ({ state }, shapeId) => {
 export const selectShapeByPoint: Action = ({ state }) => {
     const { current } = state.events.pointer;
 
-    const shapes = Object.values(state.currentDocument.shapes) as Shape[];
+    const shapes = Object.values(state.currentDocument.shapes);
     shapes.forEach((shape) => {
         if (isPointInBox(current, shape) && !isShapeLocked(state.currentDocument, shape.id)) {
             shape.selected = true;
@@ -167,39 +160,11 @@ export const selectShapeAtPointer: ActionGuard = ({ state }) => {
     return true;
 };
 
-const translateShape = (shape: Shape, dx: number, dy: number) => {
-    const line = shape as Line;
-
-    if (line.start && line.end) {
-        line.start = { x: line.start.x + dx, y: line.start.y + dy };
-        line.end = { x: line.end.x + dx, y: line.end.y + dy };
-    } else {
-        const pen = shape as Pen;
-
-        if (Array.isArray(pen.points)) {
-            pen.points = pen.points.map((point) => ({ x: point.x + dx, y: point.y + dy }));
-        } else if (shape.position) {
-            shape.position = { x: shape.position.x + dx, y: shape.position.y + dy };
-        }
-    }
-
-    // Shift the cached bounds too so the selection box and handles follow the
-    // shape immediately, without waiting for the next getBBox measurement.
-    if (shape.bounds) {
-        shape.bounds = {
-            topLeft: { x: shape.bounds.topLeft.x + dx, y: shape.bounds.topLeft.y + dy },
-            bottomRight: { x: shape.bounds.bottomRight.x + dx, y: shape.bounds.bottomRight.y + dy },
-            width: shape.bounds.width,
-            height: shape.bounds.height
-        };
-    }
-};
-
 export const moveSelectedShapes: ActionWithParam<Point> = ({ state }, delta) => {
-    const shapes = Object.values(state.currentDocument.shapes) as Shape[];
+    const shapes = Object.values(state.currentDocument.shapes);
     shapes.forEach((shape) => {
         if (shape.selected && !isShapeLocked(state.currentDocument, shape.id)) {
-            translateShape(shape, delta.x, delta.y);
+            translateShape(shape, delta);
         }
     });
 };
@@ -208,7 +173,7 @@ export const selectShapes: Action = ({ state }) => {
     const { topLeft, bottomRight } = state.events.pointer;
     const source = { topLeft, bottomRight };
 
-    const shapes = Object.values(state.currentDocument.shapes) as Shape[];
+    const shapes = Object.values(state.currentDocument.shapes);
     shapes.forEach((shape) => {
         const selected =
             !isShapeLocked(state.currentDocument, shape.id) &&
@@ -242,7 +207,7 @@ export const setShapeBounds: ActionWithParam<{ id: string; bounds: Box }> = (
 };
 
 export const unselectShapes: Action = ({ state }) => {
-    const shapes = Object.values(state.currentDocument.shapes) as Shape[];
+    const shapes = Object.values(state.currentDocument.shapes);
     shapes.forEach((shape) => {
         // Only write when it actually changes, so a background click with nothing
         // selected doesn't needlessly re-render every shape.
@@ -317,161 +282,12 @@ export const updateShape = ({ state }: Context, options: Partial<Shape> & { id: 
 
     const shape = getShape(state, options.id);
 
-    setShape(state, { ...shape, ...options });
-};
-
-const centerOf = (box: Box): Point => ({
-    x: box.topLeft.x + box.width / 2,
-    y: box.topLeft.y + box.height / 2
-});
-
-/**
- * Resizes a box from a handle drag while locking it to `ratio` (width / height).
- * Corner handles keep the dominant axis and anchor the opposite corner; middle
- * handles drive their own axis, derive the other from the ratio, and stay
- * centred on the perpendicular axis.
- */
-const resizeAspectBox = (
-    oldBox: Box,
-    handlerType: ResizeHandlerType,
-    pointer: Point,
-    ratio: number,
-    min = 1
-): Box => {
-    const free = resizeBox(oldBox, handlerType, pointer, min);
-
-    const left = oldBox.topLeft.x;
-    const top = oldBox.topLeft.y;
-    const right = oldBox.bottomRight.x;
-    const bottom = oldBox.bottomRight.y;
-    const centerX = left + oldBox.width / 2;
-    const centerY = top + oldBox.height / 2;
-
-    const isHorizontalMiddle = handlerType === 'middleLeft' || handlerType === 'middleRight';
-    const isVerticalMiddle = handlerType === 'middleTop' || handlerType === 'middleBottom';
-
-    let width = free.width;
-    let height = free.height;
-
-    if (isHorizontalMiddle) {
-        height = width / ratio;
-    } else if (isVerticalMiddle) {
-        width = height * ratio;
-    } else if (width / ratio >= height) {
-        height = width / ratio;
-    } else {
-        width = height * ratio;
-    }
-
-    const movesLeft =
-        handlerType === 'topLeft' || handlerType === 'middleLeft' || handlerType === 'bottomLeft';
-    const movesRight =
-        handlerType === 'topRight' ||
-        handlerType === 'middleRight' ||
-        handlerType === 'bottomRight';
-    const movesTop =
-        handlerType === 'topLeft' || handlerType === 'middleTop' || handlerType === 'topRight';
-    const movesBottom =
-        handlerType === 'bottomLeft' ||
-        handlerType === 'middleBottom' ||
-        handlerType === 'bottomRight';
-
-    let x = centerX - width / 2;
-
-    if (movesLeft) {
-        x = right - width;
-    } else if (movesRight) {
-        x = left;
-    }
-
-    let y = centerY - height / 2;
-
-    if (movesTop) {
-        y = bottom - height;
-    } else if (movesBottom) {
-        y = top;
-    }
-
-    return {
-        topLeft: { x, y },
-        bottomRight: { x: x + width, y: y + height },
-        width,
-        height
-    };
-};
-
-/** Maps a resized bounding box back onto a shape's native geometry. */
-const applyBoxToShape = (
-    shape: Shape,
-    oldBox: Box,
-    newBox: Box,
-    handlerType: ResizeHandlerType,
-    pointer: Point
-) => {
-    if (shape.type === 'image') {
-        // Lock to the image's aspect ratio so it never letterboxes inside its
-        // box (which would leave the selection border outside the picture).
-        const ratio = oldBox.height > 0 ? oldBox.width / oldBox.height : 1;
-        const box = resizeAspectBox(oldBox, handlerType, pointer, ratio);
-
-        shape.position = { x: box.topLeft.x, y: box.topLeft.y };
-        shape.size = { width: box.width, height: box.height };
-
+    // A shape's type fixes which geometry it has, so an update cannot change it.
+    if (options.type !== undefined && options.type !== shape.type) {
         return;
     }
 
-    if (shape.size) {
-        // rectangle
-        shape.position = { x: newBox.topLeft.x, y: newBox.topLeft.y };
-        shape.size = { width: newBox.width, height: newBox.height };
-
-        return;
-    }
-
-    if (shape.type === 'circle') {
-        const box = resizeAspectBox(oldBox, handlerType, pointer, 1);
-        shape.position = centerOf(box);
-        (shape as Circle).radius = box.width / 2;
-
-        return;
-    }
-
-    if (shape.type === 'ellipse') {
-        const center = centerOf(newBox);
-        shape.position = center;
-        (shape as Ellipse).radius = { x: newBox.width / 2, y: newBox.height / 2 };
-
-        return;
-    }
-
-    const line = shape as Line;
-
-    if (line.start && line.end) {
-        line.start = mapPointBetweenBoxes(line.start, oldBox, newBox);
-        line.end = mapPointBetweenBoxes(line.end, oldBox, newBox);
-
-        return;
-    }
-
-    const pen = shape as Pen;
-
-    if (Array.isArray(pen.points)) {
-        pen.points = pen.points.map((point) => mapPointBetweenBoxes(point, oldBox, newBox));
-
-        return;
-    }
-
-    if (shape.type === 'text') {
-        const text = shape as Text;
-        const ratio = oldBox.height > 0 ? newBox.height / oldBox.height : 1;
-
-        text.fontSize = Math.max(1, (text.fontSize ?? DEFAULT_TEXT_FONT_SIZE) * ratio);
-        // Keep the top-left edge following the handle (text anchors at its baseline).
-        shape.position = {
-            x: newBox.topLeft.x,
-            y: (shape.position?.y ?? newBox.topLeft.y) + (newBox.topLeft.y - oldBox.topLeft.y)
-        };
-    }
+    Object.assign(shape, options);
 };
 
 export const resizeShape = (
@@ -490,16 +306,7 @@ export const resizeShape = (
         return;
     }
 
-    const oldBox = getShapeBounds(shape);
-    // The shape (and its handles) are rendered rotated around the box center, but
-    // the box itself is stored axis-aligned. Map the pointer back into that
-    // unrotated frame so the resize math stays correct while rotated.
-    const localPosition = shape.rotation
-        ? rotatePoint(position, boxCenter(oldBox), -shape.rotation)
-        : position;
-    const newBox = resizeBox(oldBox, handlerType, localPosition);
-
-    applyBoxToShape(shape, oldBox, newBox, handlerType, localPosition);
+    resizeShapeFromHandle(shape, handlerType, position);
 };
 
 export const rotateShape = (

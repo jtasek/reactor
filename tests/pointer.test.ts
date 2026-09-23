@@ -36,7 +36,7 @@ describe('pointer gestures', () => {
         const shapes = Object.values(store.state.currentDocument.shapes);
 
         expect(shapes).toHaveLength(1);
-        expect(shapes[0].size).toEqual({ width: 30, height: 20 });
+        expect(shapes[0]).toMatchObject({ size: { width: 30, height: 20 } });
         expect(store.state.events.pointer.gesture.kind).toBe('idle');
         expect(store.state.tools.activeToolsIds).toEqual(['select']);
     });
@@ -174,7 +174,9 @@ describe('pointer gestures', () => {
         store.actions.events.movePointer({ pointerId: 1, position: { x: 15, y: 20 } });
         store.actions.events.endGesture({ pointerId: 1, position: { x: 40, y: 30 } });
 
-        expect(store.state.currentDocument.shapes[shapeId].position).toEqual({ x: 30, y: 20 });
+        expect(store.state.currentDocument.shapes[shapeId]).toMatchObject({
+            position: { x: 30, y: 20 }
+        });
     });
 
     it('restores moved shapes when the move is canceled', () => {
@@ -185,12 +187,18 @@ describe('pointer gestures', () => {
         store.actions.events.beginGesture({ pointerId: 1, position: { x: 10, y: 10 } });
         store.actions.events.movePointer({ pointerId: 1, position: { x: 60, y: 40 } });
 
-        expect(store.state.currentDocument.shapes[second].position).toEqual({ x: 150, y: 130 });
+        expect(store.state.currentDocument.shapes[second]).toMatchObject({
+            position: { x: 150, y: 130 }
+        });
 
         store.actions.events.cancelGesture();
 
-        expect(store.state.currentDocument.shapes[first].position).toEqual({ x: 0, y: 0 });
-        expect(store.state.currentDocument.shapes[second].position).toEqual({ x: 100, y: 100 });
+        expect(store.state.currentDocument.shapes[first]).toMatchObject({
+            position: { x: 0, y: 0 }
+        });
+        expect(store.state.currentDocument.shapes[second]).toMatchObject({
+            position: { x: 100, y: 100 }
+        });
         expect(store.state.currentDocument.shapes[second].selected).toBe(true);
     });
 
@@ -202,18 +210,18 @@ describe('pointer gestures', () => {
         store.actions.events.beginGesture({ pointerId: 1, position: { x: 20, y: 20 }, handle });
         store.actions.events.movePointer({ pointerId: 1, position: { x: 50, y: 40 } });
 
-        expect(store.state.currentDocument.shapes[shapeId].size).toEqual({
-            width: 50,
-            height: 40
+        expect(store.state.currentDocument.shapes[shapeId]).toMatchObject({
+            size: { width: 50, height: 40 }
         });
 
         store.actions.events.cancelGesture();
 
-        expect(store.state.currentDocument.shapes[shapeId].size).toEqual({
-            width: 20,
-            height: 20
+        expect(store.state.currentDocument.shapes[shapeId]).toMatchObject({
+            size: { width: 20, height: 20 }
         });
-        expect(store.state.currentDocument.shapes[shapeId].position).toEqual({ x: 0, y: 0 });
+        expect(store.state.currentDocument.shapes[shapeId]).toMatchObject({
+            position: { x: 0, y: 0 }
+        });
     });
 
     it('rotates live and restores the rotation when the rotation is canceled', () => {
@@ -275,19 +283,23 @@ describe('touch pinch', () => {
         store.actions.events.updatePinch(contacts([50, 100], [250, 100]));
 
         expect(store.state.currentDocument.camera.scale).toBe(2);
-        expect(store.state.currentDocument.camera.position).toEqual({ x: -150, y: -100 });
+        expect(store.state.currentDocument.camera).toMatchObject({
+            position: { x: -150, y: -100 }
+        });
 
         // Moving both fingers pans: the anchor follows their midpoint.
         store.actions.events.updatePinch(contacts([60, 120], [260, 120]));
 
-        expect(store.state.currentDocument.camera.position).toEqual({ x: -140, y: -80 });
+        expect(store.state.currentDocument.camera).toMatchObject({ position: { x: -140, y: -80 } });
         expect(store.state.events.pointer.dragging).toBe(false);
 
         // The scale is clamped, but the anchor stays under the midpoint.
         store.actions.events.updatePinch(contacts([-5000, 100], [5000, 100]));
 
         expect(store.state.currentDocument.camera.scale).toBe(10);
-        expect(store.state.currentDocument.camera.position).toEqual({ x: -1500, y: -900 });
+        expect(store.state.currentDocument.camera).toMatchObject({
+            position: { x: -1500, y: -900 }
+        });
     });
 
     it('replaces an unmoved touch drawing but never a moved or mouse gesture', () => {
