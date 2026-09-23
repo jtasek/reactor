@@ -315,9 +315,10 @@ Shortcuts: every tool and command has a unique binding (tools by letter; Delete
 or Backspace, Ctrl/Cmd+D, Ctrl/Cmd+G, Ctrl/Cmd+Shift+G, +/=, -, 0), dispatched
 from the keyboard adapter except while a text field has focus or text is being
 typed. Step 3: the property panel lists the properties every selected shape
-shares (from one table, `src/app/properties.ts`), shows "Mixed" where values
-differ, and edits all selected shapes through typed fields; locked shapes only
-take metadata edits. Width and height are read-only for now. Remaining: steps 4-6.
+shares (from one table, `src/app/properties.ts`) in sections such as Shape and
+Text, shows "Mixed" where values differ, and edits all selected shapes through
+typed fields; locked shapes only take metadata edits. Width and height are
+read-only for now. Remaining: steps 4-6.
 
 1. Consolidate command registration, parsing, guards, and execution. Connect Move
    and Pan to the existing interaction actions and give shortcuts unique bindings.

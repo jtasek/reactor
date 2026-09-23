@@ -1,5 +1,5 @@
 import { createShape } from '../factories';
-import { SHAPE_PROPERTIES, applyProperty } from '../properties';
+import { SHAPE_PROPERTIES, applyProperty, groupRows } from '../properties';
 
 const rect = () =>
     createShape({
@@ -45,5 +45,28 @@ describe('applyProperty()', () => {
         applyProperty(property('width'), shape, 99);
 
         expect(shape).toMatchObject({ size: { width: 40 } });
+    });
+});
+
+describe('groupRows()', () => {
+    const row = (key: string) => ({ property: property(key), mixed: false, readOnly: false });
+
+    it('lists each section once, in the order its first property appears', () => {
+        const sections = groupRows(['text', 'name', 'fontSize', 'x'].map(row)).map(
+            ({ group, rows }) => [group, rows.map(({ property }) => property.key)]
+        );
+
+        expect(sections).toEqual([
+            ['Text', ['text', 'fontSize']],
+            ['Shape', ['name', 'x']]
+        ]);
+    });
+
+    it('puts every property in a section', () => {
+        const groups = groupRows(SHAPE_PROPERTIES.map(({ key }) => row(key))).map(
+            ({ group }) => group
+        );
+
+        expect(groups).toEqual(['Shape', 'Text']);
     });
 });

@@ -10,14 +10,15 @@ import {
 export type PropertyValue = string | number | boolean;
 
 /**
- * A property the property panel shows. `read` returns undefined when the
- * property does not apply to a shape; without `write` it is read-only.
- * `editable` says whether it may change on a shape now; by default only while
- * the shape is not locked.
+ * A property the property panel shows, listed under the section named by
+ * `group`. `read` returns undefined when the property does not apply to a shape;
+ * without `write` it is read-only. `editable` says whether it may change on a
+ * shape now; by default only while the shape is not locked.
  */
 export type ShapeProperty = {
     key: string;
     label: string;
+    group: string;
     editable?: (shape: Shape, document: Document) => boolean;
 } & (
     | {
@@ -40,11 +41,12 @@ export type ShapeProperty = {
 // Metadata may change on a locked shape, but not in a locked document.
 const unlessDocumentLocked = (_shape: Shape, document: Document) => !document.locked;
 
-/** The properties the panel offers, in display order. */
+/** The properties the panel offers, in display order, grouped into sections. */
 export const SHAPE_PROPERTIES: ShapeProperty[] = [
     {
         key: 'name',
         label: 'Name',
+        group: 'Shape',
         kind: 'text',
         editable: unlessDocumentLocked,
         read: (shape) => shape.name,
@@ -57,6 +59,7 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
     {
         key: 'x',
         label: 'X',
+        group: 'Shape',
         kind: 'number',
         read: (shape) => getShapeBounds(shape).topLeft.x,
         write: (shape, value) =>
@@ -65,21 +68,30 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
     {
         key: 'y',
         label: 'Y',
+        group: 'Shape',
         kind: 'number',
         read: (shape) => getShapeBounds(shape).topLeft.y,
         write: (shape, value) =>
             translateShape(shape, { x: 0, y: value - getShapeBounds(shape).topLeft.y })
     },
-    { key: 'width', label: 'Width', kind: 'number', read: (shape) => getShapeBounds(shape).width },
+    {
+        key: 'width',
+        label: 'Width',
+        group: 'Shape',
+        kind: 'number',
+        read: (shape) => getShapeBounds(shape).width
+    },
     {
         key: 'height',
         label: 'Height',
+        group: 'Shape',
         kind: 'number',
         read: (shape) => getShapeBounds(shape).height
     },
     {
         key: 'rotation',
         label: 'Rotation',
+        group: 'Shape',
         kind: 'number',
         read: (shape) => shape.rotation ?? 0,
         write: (shape, value) => {
@@ -87,8 +99,32 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         }
     },
     {
+        key: 'visible',
+        label: 'Visible',
+        group: 'Shape',
+        kind: 'boolean',
+        editable: unlessDocumentLocked,
+        read: (shape) => shape.visible,
+        write: (shape, value) => {
+            shape.visible = value;
+        }
+    },
+    {
+        key: 'locked',
+        label: 'Locked',
+        group: 'Shape',
+        kind: 'boolean',
+        // Shows every lock, but only the shape's own lock can be changed here.
+        editable: (shape, document) => !isShapeLockedExternally(document, shape.id),
+        read: (shape, document) => isShapeLocked(document, shape.id),
+        write: (shape, value) => {
+            shape.locked = value;
+        }
+    },
+    {
         key: 'text',
         label: 'Text',
+        group: 'Text',
         kind: 'text',
         read: (shape) => (shape.type === 'text' ? shape.value : undefined),
         write: (shape, value) => {
@@ -101,6 +137,7 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
     {
         key: 'fontSize',
         label: 'Font size',
+        group: 'Text',
         kind: 'number',
         read: (shape) =>
             shape.type === 'text' ? (shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE) : undefined,
@@ -108,27 +145,6 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
             if (shape.type === 'text' && value > 0) {
                 shape.fontSize = value;
             }
-        }
-    },
-    {
-        key: 'visible',
-        label: 'Visible',
-        kind: 'boolean',
-        editable: unlessDocumentLocked,
-        read: (shape) => shape.visible,
-        write: (shape, value) => {
-            shape.visible = value;
-        }
-    },
-    {
-        key: 'locked',
-        label: 'Locked',
-        kind: 'boolean',
-        // Shows every lock, but only the shape's own lock can be changed here.
-        editable: (shape, document) => !isShapeLockedExternally(document, shape.id),
-        read: (shape, document) => isShapeLocked(document, shape.id),
-        write: (shape, value) => {
-            shape.locked = value;
         }
     }
 ];
@@ -198,4 +214,15 @@ export function applyProperty(property: ShapeProperty, shape: Shape, value: Prop
             }
             break;
     }
+}
+
+/** The rows under each panel section, in the order the sections first appear. */
+export function groupRows(rows: PropertyRow[]): { group: string; rows: PropertyRow[] }[] {
+    const groups = new Map<string, PropertyRow[]>();
+
+    for (const row of rows) {
+        groups.set(row.property.group, [...(groups.get(row.property.group) ?? []), row]);
+    }
+
+    return Array.from(groups, ([group, grouped]) => ({ group, rows: grouped }));
 }

@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { drawRect, handles, openEditor, pointer, selectTool, shapes } from './support/editor';
 
 const field = (page: Page, label: string) => page.getByLabel(label, { exact: true });
+const section = (page: Page, name: string) => page.getByRole('columnheader', { name, exact: true });
 const rectAttribute = (page: Page, name: string, attribute: string) =>
     page.locator(`svg#surface rect[data-cy="${name}"]`).getAttribute(attribute);
 
@@ -32,6 +33,8 @@ test('the property panel shows shared and mixed values and edits every selected 
     await pointer(page, 'pointermove', { x: 380, y: 170 });
     await pointer(page, 'pointerup', { x: 380, y: 170 });
 
+    await expect(section(page, 'Shape')).toBeVisible();
+    await expect(section(page, 'Text')).toHaveCount(0);
     await expect(field(page, 'X')).toHaveValue('');
     await expect(field(page, 'X')).toHaveAttribute('placeholder', 'Mixed');
     await expect(field(page, 'Y')).toHaveValue('100');
@@ -111,6 +114,7 @@ test('an edit is applied even when selecting another shape removes its field', a
 
     await click(page, 600, 500);
     await click(page, 110, 295);
+    await expect(section(page, 'Text')).toBeVisible();
     await field(page, 'Text').fill('changed');
 
     // Selecting a rectangle removes the Text field before it would lose focus.
