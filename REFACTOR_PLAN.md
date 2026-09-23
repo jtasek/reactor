@@ -231,8 +231,9 @@ marquee, step 3, and zoom suppression from step 5): an explicit gesture owned by
 one pointer, with begin/move/end/cancel in actions. Cancel, lost capture, blur,
 context menu and unmount discard drawings and restore the selection; release
 coordinates are committed; other pointers are ignored; zoom is blocked mid-drag.
-Remaining: action-driven move/resize/rotate with geometry rollback, and
-touchscreen pinch.
+Move/resize/rotate are applied by the gesture actions (not render effects),
+including the release position, and cancel restores their geometry snapshot.
+Remaining: touchscreen pinch.
 
 1. Model idle, drawing, moving, resizing, rotating, and pinching interactions.
    Keep transitions and mutations in actions; adapters translate browser events.

@@ -1,5 +1,5 @@
-import React, { FC, useEffect, useState } from 'react';
-import { Box, ResizeHandlerType } from '../../../app/types';
+import React, { FC } from 'react';
+import { Box } from '../../../app/types';
 import { Handle } from '../Handle';
 import { RotateHandle } from '../Handle/RotateHandle';
 import handleStyles from '../Handle/styles.css';
@@ -35,16 +35,10 @@ function calcBoundingPoints(box: Box) {
 }
 
 export const Resizable: FC<Props> = ({ shape }) => {
-    const { dragging } = usePointer();
-    const [activeHandle, setActiveHandle] = useState<ResizeHandlerType>();
-    const [rotateActive, setRotateActive] = useState(false);
-
-    useEffect(() => {
-        if (!dragging) {
-            setActiveHandle(undefined);
-            setRotateActive(false);
-        }
-    }, [dragging]);
+    const { gesture } = usePointer();
+    const activeHandle =
+        gesture.kind === 'resizing' && gesture.shapeId === shape.id ? gesture.handle : undefined;
+    const rotateActive = gesture.kind === 'rotating' && gesture.shapeId === shape.id;
 
     if (!shape.selected) {
         return null;
@@ -67,10 +61,6 @@ export const Resizable: FC<Props> = ({ shape }) => {
         middleBottom
     } = calcBoundingPoints(box);
 
-    const handlePointerDown = (handlerType?: ResizeHandlerType) => {
-        setActiveHandle(handlerType);
-    };
-
     const rotatePosition = { x: middleTop.x, y: middleTop.y - ROTATE_HANDLE_OFFSET };
     const rotation = shape.rotation ?? 0;
     const badgePosition = { x: rotatePosition.x, y: rotatePosition.y - 14 };
@@ -90,7 +80,6 @@ export const Resizable: FC<Props> = ({ shape }) => {
                 active={rotateActive}
                 position={rotatePosition}
                 shapeId={shape.id}
-                onActivate={setRotateActive}
             />
             {rotateActive && (
                 <text
@@ -108,7 +97,6 @@ export const Resizable: FC<Props> = ({ shape }) => {
                 position={topLeft}
                 handlerType="topLeft"
                 shapeId={shape.id}
-                onActivate={handlePointerDown}
             />
             <Handle
                 key={`middleTop + ${shape.id}`}
@@ -116,7 +104,6 @@ export const Resizable: FC<Props> = ({ shape }) => {
                 position={middleTop}
                 handlerType="middleTop"
                 shapeId={shape.id}
-                onActivate={handlePointerDown}
             />
             <Handle
                 key="topRight"
@@ -124,7 +111,6 @@ export const Resizable: FC<Props> = ({ shape }) => {
                 position={topRight}
                 handlerType="topRight"
                 shapeId={shape.id}
-                onActivate={handlePointerDown}
             />
             <Handle
                 key={`middleRight + ${shape.id}`}
@@ -132,7 +118,6 @@ export const Resizable: FC<Props> = ({ shape }) => {
                 position={middleRight}
                 handlerType="middleRight"
                 shapeId={shape.id}
-                onActivate={handlePointerDown}
             />
             <Handle
                 key={`bottomRight + ${shape.id}`}
@@ -140,7 +125,6 @@ export const Resizable: FC<Props> = ({ shape }) => {
                 position={bottomRight}
                 handlerType="bottomRight"
                 shapeId={shape.id}
-                onActivate={handlePointerDown}
             />
             <Handle
                 key={`middleBottom + ${shape.id}`}
@@ -148,7 +132,6 @@ export const Resizable: FC<Props> = ({ shape }) => {
                 position={middleBottom}
                 handlerType="middleBottom"
                 shapeId={shape.id}
-                onActivate={handlePointerDown}
             />
             <Handle
                 key={`bottomLeft + ${shape.id}`}
@@ -156,7 +139,6 @@ export const Resizable: FC<Props> = ({ shape }) => {
                 position={bottomLeft}
                 handlerType="bottomLeft"
                 shapeId={shape.id}
-                onActivate={handlePointerDown}
             />
             <Handle
                 key={`middleLeft + ${shape.id}`}
@@ -164,7 +146,6 @@ export const Resizable: FC<Props> = ({ shape }) => {
                 position={middleLeft}
                 handlerType="middleLeft"
                 shapeId={shape.id}
-                onActivate={handlePointerDown}
             />
         </>
     );

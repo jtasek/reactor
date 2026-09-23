@@ -1,43 +1,13 @@
-import { FC, useEffect, useRef } from 'react';
+import { FC } from 'react';
 
-import type { Command, Point } from 'src/app/types';
+import type { Command } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
-import { useActions, usePointer } from 'src/app/hooks';
 
 /**
  * Moves the current selection. Activated automatically when a drag starts inside
- * a shape; the selected shapes follow the pointer until the button is released.
+ * a shape; the gesture actions translate the selected shapes as the pointer moves.
  */
-export const DesignMove: FC = () => {
-    const pointer = usePointer();
-    const { moveSelectedShapes } = useActions();
-
-    const { current, dragging } = pointer;
-    const previous = useRef<Point | null>(null);
-
-    // Translate by the incremental delta between pointer moves so the motion
-    // never accumulates or drifts.
-    useEffect(() => {
-        if (!dragging) {
-            previous.current = null;
-            return;
-        }
-
-        const prev = previous.current;
-        if (prev) {
-            const dx = current.x - prev.x;
-            const dy = current.y - prev.y;
-
-            if (dx !== 0 || dy !== 0) {
-                moveSelectedShapes({ x: dx, y: dy });
-            }
-        }
-
-        previous.current = { x: current.x, y: current.y };
-    }, [current.x, current.y, dragging, moveSelectedShapes]);
-
-    return null;
-};
+export const DesignMove: FC = () => null;
 
 export const MoveCommand: Command = {
     id: 'move',

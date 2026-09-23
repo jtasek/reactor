@@ -1,6 +1,7 @@
+import { json } from 'overmind';
 import { Context } from '../../app';
 import { ActionWithParam, Point, Shape } from '../../app/types';
-import { HandleTarget, SelectionSnapshot } from '../types';
+import { HandleTarget, SelectionSnapshot, ShapesSnapshot } from '../types';
 
 type PointerInput = { pointerId: number; position: Point };
 
@@ -18,6 +19,10 @@ export const updatePath: ActionWithParam<Point> = ({ state }, position) => {
 
 function snapshotSelection(shapes: Record<string, Shape>): SelectionSnapshot {
     return Object.fromEntries(Object.values(shapes).map((shape) => [shape.id, shape.selected]));
+}
+
+function snapshotShapes(shapes: Shape[]): ShapesSnapshot {
+    return Object.fromEntries(shapes.map((shape) => [shape.id, json(shape)]));
 }
 
 /**
@@ -40,11 +45,21 @@ export const beginGesture = (
     pointer.current = position;
     pointer.path = [];
 
-    if (handle) {
+    const handleShape = handle && state.currentDocument.shapes[handle.shapeId];
+
+    if (handle && handleShape) {
+        const shapes = snapshotShapes([handleShape]);
+
         pointer.gesture =
             handle.type === 'rotate'
-                ? { kind: 'rotating', pointerId, shapeId: handle.shapeId }
-                : { kind: 'resizing', pointerId, shapeId: handle.shapeId, handle: handle.type };
+                ? { kind: 'rotating', pointerId, shapeId: handle.shapeId, shapes }
+                : {
+                      kind: 'resizing',
+                      pointerId,
+                      shapeId: handle.shapeId,
+                      handle: handle.type,
+                      shapes
+                  };
 
         return true;
     }
@@ -59,8 +74,17 @@ export const beginGesture = (
     const selection = snapshotSelection(state.currentDocument.shapes);
 
     if (actions.selectShapeAtPointer()) {
+        const selected = Object.values(state.currentDocument.shapes).filter(
+            (shape) => shape.selected
+        );
+
         actions.tools.activateTool('move');
-        pointer.gesture = { kind: 'moving', pointerId, selection };
+        pointer.gesture = {
+            kind: 'moving',
+            pointerId,
+            selection,
+            shapes: snapshotShapes(selected)
+        };
 
         return true;
     }
@@ -79,6 +103,8 @@ export const movePointer = ({ state, actions }: Context, { pointerId, position }
         return;
     }
 
+    const previous = pointer.current;
+
     pointer.current = position;
 
     if (gesture.kind === 'drawing') {
@@ -87,6 +113,18 @@ export const movePointer = ({ state, actions }: Context, { pointerId, position }
 
     if (gesture.kind === 'marquee') {
         actions.selectShapes();
+    }
+
+    if (gesture.kind === 'moving') {
+        actions.moveSelectedShapes({ x: position.x - previous.x, y: position.y - previous.y });
+    }
+
+    if (gesture.kind === 'resizing') {
+        actions.resizeShape({ shapeId: gesture.shapeId, handlerType: gesture.handle, position });
+    }
+
+    if (gesture.kind === 'rotating') {
+        actions.rotateShape({ shapeId: gesture.shapeId, position });
     }
 };
 
@@ -114,9 +152,10 @@ export const endGesture = ({ state, actions }: Context, { pointerId, position }:
 };
 
 /**
- * Abandons the gesture without committing it and restores the selection it
- * changed. With a `pointerId`, only that pointer's gesture is canceled. Returns
- * the owner of the canceled gesture so the caller can release its capture.
+ * Abandons the gesture without committing it and restores the shapes and
+ * selection it changed. With a `pointerId`, only that pointer's gesture is
+ * canceled. Returns the owner of the canceled gesture so the caller can release
+ * its capture.
  */
 export const cancelGesture = ({ state, actions }: Context, pointerId?: number): number | null => {
     const pointer = state.events.pointer;
@@ -126,7 +165,18 @@ export const cancelGesture = ({ state, actions }: Context, pointerId?: number): 
         return null;
     }
 
-    if (gesture.kind === 'marquee' || gesture.kind === 'moving') {
+    if ('shapes' in gesture) {
+        Object.entries(gesture.shapes).forEach(([id, snapshot]) => {
+            const shape = state.currentDocument.shapes[id];
+
+            // Restore what the gesture edited, but keep the live hover state.
+            if (shape) {
+                Object.assign(shape, json(snapshot), { active: shape.active });
+            }
+        });
+    }
+
+    if ('selection' in gesture) {
         Object.entries(gesture.selection).forEach(([id, selected]) => {
             const shape = state.currentDocument.shapes[id];
 

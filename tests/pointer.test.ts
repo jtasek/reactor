@@ -129,7 +129,7 @@ describe('pointer gestures', () => {
             handle: { shapeId, type: 'bottomRight' }
         });
 
-        expect(store.state.events.pointer.gesture).toEqual({
+        expect(store.state.events.pointer.gesture).toMatchObject({
             kind: 'resizing',
             pointerId: 3,
             shapeId,
@@ -144,7 +144,7 @@ describe('pointer gestures', () => {
             handle: { shapeId, type: 'rotate' }
         });
 
-        expect(store.state.events.pointer.gesture).toEqual({
+        expect(store.state.events.pointer.gesture).toMatchObject({
             kind: 'rotating',
             pointerId: 4,
             shapeId
@@ -164,5 +164,100 @@ describe('pointer gestures', () => {
         store.actions.tools.zoomIn();
 
         expect(store.state.currentDocument.camera.scale).toBeGreaterThan(1);
+    });
+
+    it('moves the selection by pointer deltas, including the release position', () => {
+        const store = storeWithTool('select');
+        const shapeId = addRect(store, 0, 0, true);
+
+        store.actions.events.beginGesture({ pointerId: 1, position: { x: 10, y: 10 } });
+        store.actions.events.movePointer({ pointerId: 1, position: { x: 15, y: 20 } });
+        store.actions.events.endGesture({ pointerId: 1, position: { x: 40, y: 30 } });
+
+        expect(store.state.currentDocument.shapes[shapeId].position).toEqual({ x: 30, y: 20 });
+    });
+
+    it('restores moved shapes when the move is canceled', () => {
+        const store = storeWithTool('select');
+        const first = addRect(store, 0, 0, true);
+        const second = addRect(store, 100, 100, true);
+
+        store.actions.events.beginGesture({ pointerId: 1, position: { x: 10, y: 10 } });
+        store.actions.events.movePointer({ pointerId: 1, position: { x: 60, y: 40 } });
+
+        expect(store.state.currentDocument.shapes[second].position).toEqual({ x: 150, y: 130 });
+
+        store.actions.events.cancelGesture();
+
+        expect(store.state.currentDocument.shapes[first].position).toEqual({ x: 0, y: 0 });
+        expect(store.state.currentDocument.shapes[second].position).toEqual({ x: 100, y: 100 });
+        expect(store.state.currentDocument.shapes[second].selected).toBe(true);
+    });
+
+    it('resizes live and restores the size when the resize is canceled', () => {
+        const store = storeWithTool('select');
+        const shapeId = addRect(store, 0, 0, true);
+        const handle = { shapeId, type: 'bottomRight' as const };
+
+        store.actions.events.beginGesture({ pointerId: 1, position: { x: 20, y: 20 }, handle });
+        store.actions.events.movePointer({ pointerId: 1, position: { x: 50, y: 40 } });
+
+        expect(store.state.currentDocument.shapes[shapeId].size).toEqual({
+            width: 50,
+            height: 40
+        });
+
+        store.actions.events.cancelGesture();
+
+        expect(store.state.currentDocument.shapes[shapeId].size).toEqual({
+            width: 20,
+            height: 20
+        });
+        expect(store.state.currentDocument.shapes[shapeId].position).toEqual({ x: 0, y: 0 });
+    });
+
+    it('rotates live and restores the rotation when the rotation is canceled', () => {
+        const store = storeWithTool('select');
+        const shapeId = addRect(store, 0, 0, true);
+        const handle = { shapeId, type: 'rotate' as const };
+
+        store.actions.events.beginGesture({ pointerId: 1, position: { x: 10, y: -20 }, handle });
+        store.actions.events.endGesture({ pointerId: 1, position: { x: 40, y: 10 } });
+
+        expect(store.state.currentDocument.shapes[shapeId].rotation).toBe(90);
+
+        store.actions.events.beginGesture({ pointerId: 2, position: { x: 40, y: 10 }, handle });
+        store.actions.events.movePointer({ pointerId: 2, position: { x: 10, y: 40 } });
+
+        expect(store.state.currentDocument.shapes[shapeId].rotation).toBe(180);
+
+        store.actions.events.cancelGesture();
+
+        expect(store.state.currentDocument.shapes[shapeId].rotation).toBe(90);
+    });
+
+    it('does not resurrect a shape deleted during a canceled gesture', () => {
+        const store = storeWithTool('select');
+        const shapeId = addRect(store, 0, 0, true);
+
+        store.actions.events.beginGesture({ pointerId: 1, position: { x: 10, y: 10 } });
+        store.actions.removeShape(shapeId);
+        store.actions.events.cancelGesture();
+
+        expect(store.state.currentDocument.shapes[shapeId]).toBeUndefined();
+        expect(store.state.currentDocument.shapesIds).toEqual([]);
+    });
+
+    it('treats a handle of a missing shape as empty canvas', () => {
+        const store = storeWithTool('select');
+
+        expect(
+            store.actions.events.beginGesture({
+                pointerId: 1,
+                position: { x: 0, y: 0 },
+                handle: { shapeId: 'missing', type: 'rotate' }
+            })
+        ).toBe(true);
+        expect(store.state.events.pointer.gesture.kind).toBe('marquee');
     });
 });
