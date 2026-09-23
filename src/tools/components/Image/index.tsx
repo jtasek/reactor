@@ -142,7 +142,7 @@ export const ImageCommand: Command = {
         size: 24
     },
     regex: /(?<toolCode>image)\('(?<protocol>www|http|https):\/\/(?<url>[^\s]+[\w])'\)/,
-    shortcut: 'ctrl+i',
+    shortcut: 'i',
     canExecute: ({ state }) =>
         state.events.pointer.size.width > 0 || state.events.pointer.size.height > 0,
     execute: ({ actions, state }) => {

@@ -84,7 +84,7 @@ export const CircleCommand: Command = {
         size: 24
     },
     regex: /(?<toolCode>circle)\((?<cx>\d+),(?<cy>\d+),(?<radius>\d+)\)/,
-    shortcut: 'ctrl+c',
+    shortcut: 'c',
     canExecute: ({ state }) =>
         state.events.pointer.size.width > 0 || state.events.pointer.size.height > 0,
     execute: ({ actions, state }) => {

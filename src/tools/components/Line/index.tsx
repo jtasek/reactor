@@ -74,7 +74,7 @@ export const LineCommand: Command = {
         size: 24
     },
     regex: /(?<toolCode>line)\((?<x1>\d+),(?<y1>\d+),(?<x2>\d+),(?<y2>\d+)\)/,
-    shortcut: 'ctrl+l',
+    shortcut: 'l',
     canExecute: ({ state }) =>
         state.events.pointer.size.width > 0 || state.events.pointer.size.height > 0,
     execute: ({ actions, state }) => {

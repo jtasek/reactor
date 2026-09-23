@@ -81,7 +81,7 @@ export const EllipseCommand: Command = {
         size: 24
     },
     regex: /(?<toolCode>ellipse)\((?<cx>\d+),(?<cy>\d+),(?<rx>\d+),(?<ry>\d+)\)/,
-    shortcut: 'ctrl+e',
+    shortcut: 'e',
     canExecute: ({ state }) =>
         state.events.pointer.size.width > 0 || state.events.pointer.size.height > 0,
     execute: ({ actions, state }) => {

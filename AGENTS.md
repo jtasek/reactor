@@ -227,6 +227,10 @@ Examples worth modelling new tools on:
   its `canExecute` guard first; never call `execute` directly. Guards are `CommandGuard`s that
   only read `state`, so UI evaluates them while rendering (`useCommandEnabled`) and stays in
   sync. The command line submits text through `submitCommandLine`.
+- **Shortcuts**: a tool or command declares `shortcut` (`r`, `mod+d`, `delete,backspace`;
+  `mod` is Ctrl or Cmd, see `src/events/shortcuts.ts`). `events.pressShortcut` activates the
+  tool or runs the command; the keyboard adapter skips it while a text field has focus. Keep
+  bindings unique (`tests/shortcuts.test.ts` checks) and avoid plain Ctrl/Cmd browser keys.
 - **Path alias** `src/*` → `./src` (in `tsconfig.json` and `webpack.config.mjs`). Mixed
   relative and `src/...` imports both appear; keep them consistent within a file.
 - **CSS Modules**: `*.css` with generated `*.css.d.ts` typings. Don't hand-edit the `.d.ts`.

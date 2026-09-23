@@ -97,3 +97,34 @@ export function getHandleTarget(target: EventTarget | null): HandleTarget | unde
 
     return undefined;
 }
+
+// Input types whose key presses do not enter text, so shortcuts still apply.
+const NON_TEXT_INPUT_TYPES = new Set([
+    'button',
+    'checkbox',
+    'color',
+    'file',
+    'hidden',
+    'image',
+    'radio',
+    'range',
+    'reset',
+    'submit'
+]);
+
+/** Whether key presses on `target` edit text, so keyboard shortcuts must leave them alone. */
+export function isTextEntry(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) {
+        return false;
+    }
+
+    if (
+        target.isContentEditable ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement
+    ) {
+        return true;
+    }
+
+    return target instanceof HTMLInputElement && !NON_TEXT_INPUT_TYPES.has(target.type);
+}

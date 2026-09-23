@@ -311,7 +311,10 @@ selection changes; its buttons are native buttons. The command line runs a
 command by id or name on Enter and reports unknown or unavailable commands. The
 Move and Pan stubs, which only logged a TODO, are removed rather than wired: as
 bar buttons they have no target or distance, and dragging already moves shapes.
-Remaining: keyboard shortcuts (unique bindings and dispatch), steps 3-6.
+Shortcuts: every tool and command has a unique binding (tools by letter; Delete
+or Backspace, Ctrl/Cmd+D, Ctrl/Cmd+G, Ctrl/Cmd+Shift+G, +/=, -, 0), dispatched
+from the keyboard adapter except while a text field has focus or text is being
+typed. Remaining: steps 3-6.
 
 1. Consolidate command registration, parsing, guards, and execution. Connect Move
    and Pan to the existing interaction actions and give shortcuts unique bindings.
