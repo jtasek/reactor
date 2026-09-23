@@ -1,48 +1,82 @@
-import React, { FC, KeyboardEvent } from 'react';
+import React, { FC, KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
 import type { PropertyRow, PropertyValue } from 'src/app/properties';
 
 interface Props {
     row: PropertyRow;
-    onChange: (key: string, value: PropertyValue) => void;
+    /** The shapes the panel shows. */
+    shapeIds: string[];
+    onChange: (shapeIds: string[], key: string, value: PropertyValue) => void;
 }
 
 /**
  * One property as a typed field: a checkbox for booleans (indeterminate when
- * mixed), otherwise a text or number input that commits on Enter or blur and
- * reverts on Escape. Mixed values show an empty input with a "Mixed" placeholder.
+ * mixed), otherwise a text or number input. Typing edits a draft that is applied
+ * on Enter, on blur or when the pointer is pressed elsewhere, to the shapes
+ * selected when typing began; Escape discards it. The field then shows the
+ * shapes' actual value again, so a rejected edit does not linger. Mixed values
+ * show an empty input with a "Mixed" placeholder.
  */
-export const PropertyField: FC<Props> = ({ row: { property, value, mixed }, onChange }) => {
+export const PropertyField: FC<Props> = ({ row, shapeIds, onChange }) => {
+    const { property, value, mixed, readOnly } = row;
     const id = `property-${property.key}`;
     const shown = mixed || value === undefined ? '' : String(value);
+    const [edit, setEdit] = useState<{ text: string; shapeIds: string[] } | null>(null);
+    const input = useRef<HTMLInputElement>(null);
 
-    const commit = (input: HTMLInputElement) => {
-        if (!property.write || input.value === shown) {
+    const apply = useCallback(() => {
+        setEdit(null);
+
+        if (!edit) {
             return;
         }
 
         if (property.kind !== 'number') {
-            onChange(property.key, input.value);
+            onChange(edit.shapeIds, property.key, edit.text);
 
             return;
         }
 
-        const number = input.value.trim() === '' ? NaN : Number(input.value);
+        const number = edit.text.trim() === '' ? NaN : Number(edit.text);
 
-        if (Number.isFinite(number)) {
-            onChange(property.key, number);
-        } else {
-            input.value = shown;
+        if (!Number.isFinite(number)) {
+            return;
         }
-    };
+
+        onChange(edit.shapeIds, property.key, number);
+    }, [edit, onChange, property]);
+
+    // Apply a pending edit before a press elsewhere acts on it: selecting another
+    // shape can remove this field before it would lose focus.
+    useEffect(() => {
+        if (!edit) {
+            return;
+        }
+
+        const handlePointerDown = (event: PointerEvent) => {
+            if (event.target instanceof Node && input.current?.contains(event.target)) {
+                return;
+            }
+
+            apply();
+        };
+
+        document.addEventListener('pointerdown', handlePointerDown, true);
+
+        return () => document.removeEventListener('pointerdown', handlePointerDown, true);
+    }, [edit, apply]);
 
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+        // Enter also confirms an input method composition; leave that alone.
+        if (event.nativeEvent.isComposing) {
+            return;
+        }
+
         if (event.key === 'Enter') {
-            commit(event.currentTarget);
+            apply();
         }
 
         if (event.key === 'Escape') {
-            event.currentTarget.value = shown;
-            event.currentTarget.blur();
+            setEdit(null);
         }
     };
 
@@ -57,25 +91,30 @@ export const PropertyField: FC<Props> = ({ row: { property, value, mixed }, onCh
                         id={id}
                         type="checkbox"
                         checked={value === true}
-                        disabled={!property.write}
+                        disabled={readOnly}
                         ref={(input) => {
                             if (input) {
                                 input.indeterminate = mixed;
                             }
                         }}
-                        onChange={(event) => onChange(property.key, event.target.checked)}
+                        onChange={(event) => onChange(shapeIds, property.key, event.target.checked)}
                     />
                 ) : (
                     <input
-                        // Remount when the value changes elsewhere, e.g. while dragging.
-                        key={shown}
+                        ref={input}
                         id={id}
                         type={property.kind === 'number' ? 'number' : 'text'}
                         step={property.kind === 'number' ? 'any' : undefined}
-                        defaultValue={shown}
+                        value={edit?.text ?? shown}
                         placeholder={mixed ? 'Mixed' : undefined}
-                        readOnly={!property.write}
-                        onBlur={(event) => commit(event.currentTarget)}
+                        readOnly={readOnly}
+                        onChange={(event) =>
+                            setEdit({
+                                text: event.target.value,
+                                shapeIds: edit?.shapeIds ?? shapeIds
+                            })
+                        }
+                        onBlur={apply}
                         onKeyDown={handleKeyDown}
                     />
                 )}

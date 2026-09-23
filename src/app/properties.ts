@@ -1,32 +1,44 @@
-import type { Shape } from './types';
+import type { Document, Shape } from './types';
 import { translateShape } from './geometry';
-import { DEFAULT_TEXT_FONT_SIZE, getShapeBounds } from './utils';
+import {
+    DEFAULT_TEXT_FONT_SIZE,
+    getShapeBounds,
+    isShapeLocked,
+    isShapeLockedExternally
+} from './utils';
 
 export type PropertyValue = string | number | boolean;
 
 /**
  * A property the property panel shows. `read` returns undefined when the
- * property does not apply to a shape; without `write` it is read-only. Only
- * properties marked `whileLocked` (metadata such as the name) change on locked
- * shapes.
+ * property does not apply to a shape; without `write` it is read-only.
+ * `editable` says whether it may change on a shape now; by default only while
+ * the shape is not locked.
  */
-export type ShapeProperty = { key: string; label: string; whileLocked?: boolean } & (
+export type ShapeProperty = {
+    key: string;
+    label: string;
+    editable?: (shape: Shape, document: Document) => boolean;
+} & (
     | {
           kind: 'text';
-          read: (shape: Shape) => string | undefined;
+          read: (shape: Shape, document: Document) => string | undefined;
           write?: (shape: Shape, value: string) => void;
       }
     | {
           kind: 'number';
-          read: (shape: Shape) => number | undefined;
+          read: (shape: Shape, document: Document) => number | undefined;
           write?: (shape: Shape, value: number) => void;
       }
     | {
           kind: 'boolean';
-          read: (shape: Shape) => boolean | undefined;
+          read: (shape: Shape, document: Document) => boolean | undefined;
           write?: (shape: Shape, value: boolean) => void;
       }
 );
+
+// Metadata may change on a locked shape, but not in a locked document.
+const unlessDocumentLocked = (_shape: Shape, document: Document) => !document.locked;
 
 /** The properties the panel offers, in display order. */
 export const SHAPE_PROPERTIES: ShapeProperty[] = [
@@ -34,7 +46,7 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         key: 'name',
         label: 'Name',
         kind: 'text',
-        whileLocked: true,
+        editable: unlessDocumentLocked,
         read: (shape) => shape.name,
         write: (shape, value) => {
             if (value.trim()) {
@@ -80,7 +92,8 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         kind: 'text',
         read: (shape) => (shape.type === 'text' ? shape.value : undefined),
         write: (shape, value) => {
-            if (shape.type === 'text') {
+            // Like the text tool, never leave an invisible text shape.
+            if (shape.type === 'text' && value.trim()) {
                 shape.value = value;
             }
         }
@@ -101,7 +114,7 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         key: 'visible',
         label: 'Visible',
         kind: 'boolean',
-        whileLocked: true,
+        editable: unlessDocumentLocked,
         read: (shape) => shape.visible,
         write: (shape, value) => {
             shape.visible = value;
@@ -111,41 +124,62 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         key: 'locked',
         label: 'Locked',
         kind: 'boolean',
-        whileLocked: true,
-        read: (shape) => shape.locked,
+        // Shows every lock, but only the shape's own lock can be changed here.
+        editable: (shape, document) => !isShapeLockedExternally(document, shape.id),
+        read: (shape, document) => isShapeLocked(document, shape.id),
         write: (shape, value) => {
             shape.locked = value;
         }
     }
 ];
 
-/** A property shared by every selected shape: its common value, or `mixed`. */
-export type PropertyRow = { property: ShapeProperty; value?: PropertyValue; mixed: boolean };
+/** Whether `property` may be changed on `shape` now. */
+export function canEdit(property: ShapeProperty, shape: Shape, document: Document): boolean {
+    if (!property.write) {
+        return false;
+    }
+
+    return property.editable
+        ? property.editable(shape, document)
+        : !isShapeLocked(document, shape.id);
+}
+
+/**
+ * A property shared by every selected shape: its common value, or `mixed`. It is
+ * `readOnly` when it cannot be changed on any of them.
+ */
+export type PropertyRow = {
+    property: ShapeProperty;
+    value?: PropertyValue;
+    mixed: boolean;
+    readOnly: boolean;
+};
 
 // Numbers are compared as the panel shows them, so float noise does not read as mixed.
 const shown = (value: PropertyValue | undefined) =>
     typeof value === 'number' ? Math.round(value * 100) / 100 : value;
 
 /** The properties that apply to every one of `shapes`, with their shared value. */
-export function sharedProperties(shapes: Shape[]): PropertyRow[] {
+export function sharedProperties(shapes: Shape[], document: Document): PropertyRow[] {
     if (shapes.length === 0) {
         return [];
     }
 
     return SHAPE_PROPERTIES.flatMap((property) => {
-        const values = shapes.map((shape) => shown(property.read(shape)));
+        const values = shapes.map((shape) => shown(property.read(shape, document)));
 
         if (values.some((value) => value === undefined)) {
             return [];
         }
 
         const mixed = values.some((value) => value !== values[0]);
+        const readOnly = !shapes.some((shape) => canEdit(property, shape, document));
 
-        return [{ property, value: mixed ? undefined : values[0], mixed }];
+        return [{ property, value: mixed ? undefined : values[0], mixed, readOnly }];
     });
 }
 
-/** Writes `value` to `shape` when the property is editable and `value` has its type. */
+/** Writes `value` to `shape` when `value` has the property's type. */
 export function applyProperty(property: ShapeProperty, shape: Shape, value: PropertyValue) {
     switch (property.kind) {
         case 'text':

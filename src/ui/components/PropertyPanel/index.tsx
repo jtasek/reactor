@@ -1,10 +1,11 @@
 import React, { FC } from 'react';
 
 import { PropertyPanel } from './PropertyPanel';
+import { sharedProperties } from 'src/app/properties';
 import { useActions, useControls, useCurrentDocument } from 'src/app/hooks';
 
 export const PropertyPanelContainer: FC = () => {
-    const { selectedShapes, selectedShapesIds } = useCurrentDocument();
+    const currentDocument = useCurrentDocument();
     const { propertyPanel } = useControls();
     const { setShapesProperty } = useActions();
 
@@ -14,10 +15,9 @@ export const PropertyPanelContainer: FC = () => {
 
     return (
         <PropertyPanel
-            shapes={selectedShapes}
-            onChange={(key, value) =>
-                setShapesProperty({ shapeIds: [...selectedShapesIds], key, value })
-            }
+            rows={sharedProperties(currentDocument.selectedShapes, currentDocument)}
+            shapeIds={[...currentDocument.selectedShapesIds]}
+            onChange={(shapeIds, key, value) => setShapesProperty({ shapeIds, key, value })}
         />
     );
 };

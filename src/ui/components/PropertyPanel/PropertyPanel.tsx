@@ -1,31 +1,36 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
 import { PropertyField } from './PropertyField';
-import { PropertyValue, sharedProperties } from 'src/app/properties';
-import { Shape } from 'src/app/types';
+import type { PropertyRow, PropertyValue } from 'src/app/properties';
 
 export interface Props {
-    shapes: Shape[];
-    onChange: (key: string, value: PropertyValue) => void;
+    rows: PropertyRow[];
+    shapeIds: string[];
+    onChange: (shapeIds: string[], key: string, value: PropertyValue) => void;
 }
 
 /** The properties every selected shape shares; editing one changes all of them. */
-export const PropertyPanel: FC<Props> = ({ shapes, onChange }) => {
-    if (shapes.length === 0) {
+export const PropertyPanel: FC<Props> = ({ rows, shapeIds, onChange }) => {
+    if (shapeIds.length === 0) {
         return <div className={styles.propertyPanel}>No shapes selected</div>;
     }
 
     return (
         <table className={styles.propertyPanel}>
             <tbody>
-                {sharedProperties(shapes).map((row) => (
-                    <PropertyField key={row.property.key} row={row} onChange={onChange} />
+                {rows.map((row) => (
+                    <PropertyField
+                        key={row.property.key}
+                        row={row}
+                        shapeIds={shapeIds}
+                        onChange={onChange}
+                    />
                 ))}
             </tbody>
             <tfoot>
                 <tr>
                     <td>Selected</td>
-                    <td>{shapes.length}</td>
+                    <td>{shapeIds.length}</td>
                 </tr>
             </tfoot>
         </table>
