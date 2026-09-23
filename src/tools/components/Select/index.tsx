@@ -1,11 +1,11 @@
-import React, { FC, useEffect } from 'react';
+import React, { FC } from 'react';
 
 import styles from './styles.css';
 import type { Point, Size } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
 import { Command } from 'src/app/types';
 import { Pointer } from '../../../events/types';
-import { useActions, usePointer } from '../../../app/hooks';
+import { usePointer } from '../../../app/hooks';
 import { Context } from 'src/app';
 
 /**
@@ -47,16 +47,8 @@ export const Select: FC<Props> = ({ key, name, position, size }) => {
 
 export const DesignSelect: FC = () => {
     const pointer = usePointer();
-    const { selectShapes } = useActions();
 
-    const { current, dragging, background } = pointer;
-
-    // While the marquee is being dragged, keep the selection in sync with the box.
-    useEffect(() => {
-        if (dragging && background) {
-            selectShapes();
-        }
-    }, [dragging, background, current.x, current.y, selectShapes]);
+    const { dragging, background } = pointer;
 
     // The marquee only appears for drags that begin on empty canvas — never for
     // shape interactions such as resizing a handle.

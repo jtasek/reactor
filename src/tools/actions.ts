@@ -69,7 +69,12 @@ export const zoomReset = ({ actions }: Context) => {
     actions.tools.zoom({ scale: DEFAULT_SCALE });
 };
 
-export const zoom = ({ state: { currentDocument } }: Context, options: ZoomOptions) => {
+export const zoom = ({ state: { currentDocument, events } }: Context, options: ZoomOptions) => {
+    // Zooming mid-gesture would move the canvas under a pointer that is editing it.
+    if (events.pointer.dragging) {
+        return;
+    }
+
     const next = zoomAt(currentDocument.camera, options.scale, options.point);
 
     if (!next) {

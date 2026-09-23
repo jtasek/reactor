@@ -1,6 +1,6 @@
 # Repository Audit and Refactoring Plan
 
-Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phases 4-8 remain proposed.
+Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 in progress; Phases 5-8 remain proposed.
 
 ## Verified Baseline
 
@@ -225,6 +225,14 @@ anchor points stay fixed across rapid zoom updates, and offset/scaled SVG
 coordinate tests pass.
 
 ## Phase 4 - Make Gesture Lifecycle Explicit
+
+In progress. Gesture lifecycle (step 1 transitions, step 2 for drawing and
+marquee, step 3, and zoom suppression from step 5): an explicit gesture owned by
+one pointer, with begin/move/end/cancel in actions. Cancel, lost capture, blur,
+context menu and unmount discard drawings and restore the selection; release
+coordinates are committed; other pointers are ignored; zoom is blocked mid-drag.
+Remaining: action-driven move/resize/rotate with geometry rollback, and
+touchscreen pinch.
 
 1. Model idle, drawing, moving, resizing, rotating, and pinching interactions.
    Keep transitions and mutations in actions; adapters translate browser events.

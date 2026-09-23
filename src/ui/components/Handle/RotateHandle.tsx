@@ -37,6 +37,7 @@ export const RotateHandle: FC<Props> = ({
             cy={position.y}
             r={size}
             data-handle
+            data-shape-id={shapeId}
             data-type="rotate"
             onPointerDown={(e) => {
                 e.preventDefault();

@@ -45,3 +45,12 @@ export const topLeft = derived<Pointer, Application, Point>((pointer) => {
         y: start.y > current.y ? current.y : start.y
     };
 });
+
+export const dragging = derived<Pointer, Application, boolean>(
+    ({ gesture }) => gesture.kind !== 'idle'
+);
+
+/** True while a marquee selection is being dragged from empty canvas. */
+export const background = derived<Pointer, Application, boolean>(
+    ({ gesture }) => gesture.kind === 'marquee'
+);

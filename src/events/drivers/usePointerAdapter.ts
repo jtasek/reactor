@@ -7,16 +7,14 @@ import type {
     SyntheticEvent,
     WheelEvent
 } from 'react';
-import { clientToSurface, screenDeltaToSurface, screenToCanvas } from './helpers';
-import { useActions, useCamera, useControls, useEvents, useLog, useTools } from 'src/app/hooks';
+import { clientToSurface, getHandleTarget, screenDeltaToSurface, screenToCanvas } from './helpers';
+import { useActions, useCamera, useControls, useLog } from 'src/app/hooks';
 import { trySetPointerCapture, tryReleasePointerCapture } from './pointerCapture';
 
 export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | undefined) => {
     const log = useLog();
     const actions = useActions();
     const { contextMenu } = useControls();
-    const { pointer } = useEvents();
-    const { activeToolsIds } = useTools();
     const camera = useCamera();
     const pendingPan = useRef({ dx: 0, dy: 0 });
     const panFrame = useRef<number | null>(null);
@@ -75,25 +73,23 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
         };
     }, []);
 
-    const completePointerInteraction = useCallback(
-        (event: ReactPointerEvent<SVGSVGElement>) => {
-            log('handlePointerUp', {
-                button: event.button,
-                buttons: event.buttons,
-                x: event.clientX,
-                y: event.clientY
-            });
+    // Abandons the active gesture (if any) and releases its pointer capture.
+    const cancelGesture = useCallback(() => {
+        const owner = actions.events.cancelGesture();
 
-            tryReleasePointerCapture(svgRef?.current, event.pointerId);
+        if (owner !== null) {
+            tryReleasePointerCapture(svgRef?.current, owner);
+        }
+    }, [actions, svgRef]);
 
-            if (pointer.dragging) {
-                actions.events.endDragging();
-                actions.tools.executeToolCommands();
-                actions.tools.resetTools();
-            }
-        },
-        [log, actions, pointer.dragging, svgRef]
-    );
+    useEffect(() => {
+        window.addEventListener('blur', cancelGesture);
+
+        return () => {
+            window.removeEventListener('blur', cancelGesture);
+            cancelGesture();
+        };
+    }, [cancelGesture]);
 
     const handlePointerDown: PointerEventHandler<SVGSVGElement> = (event) => {
         log('handlePointerDown', {
@@ -119,52 +115,21 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
 
         flushPan();
 
-        const currentPosition = toCanvas(event, svgEl);
+        const position = toCanvas(event, svgEl);
 
-        if (!currentPosition) {
+        if (!position) {
             return;
         }
 
-        trySetPointerCapture(svgEl, event.pointerId);
+        const started = actions.events.beginGesture({
+            pointerId: event.pointerId,
+            position,
+            handle: getHandleTarget(event.target)
+        });
 
-        if (!pointer.dragging) {
-            actions.events.startDragging();
+        if (started) {
+            trySetPointerCapture(svgEl, event.pointerId);
         }
-
-        actions.events.resetDragging();
-        actions.events.setStartPosition(currentPosition);
-        actions.events.setCurrentPosition(currentPosition);
-
-        // A resize handle owns its own pointer interaction; leave selection and
-        // tools untouched so the Resizable can drive the resize.
-        const target = event.target as Element | null;
-        if (target?.closest?.('[data-handle]')) {
-            actions.events.setBackground(false);
-            return;
-        }
-
-        const activeToolId = activeToolsIds[0];
-
-        if (activeToolId === 'select') {
-            // Pressing a shape selects it (or keeps an existing multi-selection)
-            // and arms the move tool.
-            const hit = actions.selectShapeAtPointer();
-
-            if (hit) {
-                actions.events.setBackground(false);
-                actions.tools.activateTool('move');
-                return;
-            }
-
-            // Empty canvas: a drag draws a marquee selection; a plain click
-            // (zero-size marquee) deselects everything.
-            actions.events.setBackground(true);
-
-            return;
-        }
-
-        // A drawing tool is active: draw regardless of what is under the pointer.
-        actions.events.setBackground(false);
     };
 
     const handlePointerMove: PointerEventHandler<SVGSVGElement> = (event) => {
@@ -184,24 +149,42 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
             return;
         }
 
-        const currentPosition = toCanvas(event, svgEl);
+        const position = toCanvas(event, svgEl);
 
-        if (!currentPosition) {
+        if (!position) {
             return;
         }
 
-        actions.events.updateCurrentPosition(currentPosition);
+        actions.events.movePointer({ pointerId: event.pointerId, position });
     };
 
-    const handlePointerEnd: PointerEventHandler<SVGSVGElement> = useCallback(
-        (event) => {
-            if (contextMenu.visible) {
-                return;
-            }
-            completePointerInteraction(event);
-        },
-        [contextMenu.visible, completePointerInteraction]
-    );
+    const handlePointerUp: PointerEventHandler<SVGSVGElement> = (event) => {
+        log('handlePointerUp', {
+            button: event.button,
+            buttons: event.buttons,
+            x: event.clientX,
+            y: event.clientY
+        });
+
+        const svgEl = getSvgElement(event);
+        const position = svgEl ? toCanvas(event, svgEl) : null;
+
+        // Commit before releasing capture, whose lostpointercapture would cancel.
+        if (position) {
+            actions.events.endGesture({ pointerId: event.pointerId, position });
+        } else {
+            actions.events.cancelGesture(event.pointerId);
+        }
+
+        tryReleasePointerCapture(svgEl, event.pointerId);
+    };
+
+    // The browser took the pointer away (pointercancel) or capture was lost:
+    // abandon that pointer's gesture rather than committing it.
+    const handlePointerInterrupted: PointerEventHandler<SVGSVGElement> = (event) => {
+        actions.events.cancelGesture(event.pointerId);
+        tryReleasePointerCapture(svgRef?.current, event.pointerId);
+    };
 
     const handleMouseWheel = useCallback(
         (event: WheelEvent<SVGSVGElement>) => {
@@ -249,22 +232,19 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
     const handleContextMenu = useCallback(
         (event: MouseEvent<SVGSVGElement>) => {
             event.preventDefault();
-
-            if (pointer.dragging) {
-                actions.events.endDragging();
-            }
-
+            cancelGesture();
             actions.ui.displayContextMenu({ x: event.clientX, y: event.clientY });
         },
-        [actions, pointer.dragging]
+        [actions, cancelGesture]
     );
 
     return {
         handleContextMenu,
         handleMouseWheel,
-        handlePointerCancel: handlePointerEnd,
+        handlePointerCancel: handlePointerInterrupted,
+        handleLostPointerCapture: handlePointerInterrupted,
         handlePointerDown,
         handlePointerMove,
-        handlePointerUp: handlePointerEnd
+        handlePointerUp
     };
 };

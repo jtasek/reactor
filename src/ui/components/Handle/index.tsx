@@ -40,6 +40,7 @@ export const Handle: FC<Props> = ({
             cy={position.y}
             r={size}
             data-handle
+            data-shape-id={shapeId}
             data-type={handlerType}
             onPointerDown={(e) => {
                 e.preventDefault();
