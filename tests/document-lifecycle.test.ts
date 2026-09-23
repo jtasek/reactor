@@ -14,7 +14,11 @@ describe('document ownership', () => {
     it('clones nested content independently', () => {
         const { store } = createTestStore();
 
-        store.actions.addShape({ type: 'rectangle', size: { width: 30, height: 40 } });
+        store.actions.addShape({
+            type: 'rectangle',
+            position: { x: 0, y: 0 },
+            size: { width: 30, height: 40 }
+        });
 
         const original = store.state.currentDocument;
 
@@ -31,9 +35,13 @@ describe('document ownership', () => {
         store.actions.updateShape({ id: shapeId, size: { width: 99, height: 100 } });
 
         expect(original.camera.position).toEqual({ x: 0, y: 0 });
-        expect(original.shapes[shapeId].size).toEqual({ width: 30, height: 40 });
+        expect(original.shapes[shapeId]).toMatchObject({ size: { width: 30, height: 40 } });
 
-        store.actions.addShape({ type: 'rectangle', size: { width: 5, height: 6 } });
+        store.actions.addShape({
+            type: 'rectangle',
+            position: { x: 0, y: 0 },
+            size: { width: 5, height: 6 }
+        });
 
         expect(store.state.currentDocument.shapesIds).toHaveLength(2);
         expect(original.shapesIds).toHaveLength(1);
@@ -47,7 +55,11 @@ describe('document ownership', () => {
         expect(store.state.currentDocument).toBeDefined();
         expect(store.state.currentDocument.id).toBe(store.state.currentDocumentId);
 
-        store.actions.addShape({ type: 'rectangle', size: { width: 10, height: 20 } });
+        store.actions.addShape({
+            type: 'rectangle',
+            position: { x: 0, y: 0 },
+            size: { width: 10, height: 20 }
+        });
 
         expect(store.state.currentDocument.shapesIds).toHaveLength(1);
         expect(() => serializePersistedState(store.state)).not.toThrow();
@@ -72,7 +84,11 @@ describe('document ownership', () => {
     it('keeps all cloned tables independent while preserving document-scoped IDs', () => {
         const { store } = createTestStore();
 
-        store.actions.addShape({ type: 'rectangle', size: { width: 30, height: 40 } });
+        store.actions.addShape({
+            type: 'rectangle',
+            position: { x: 0, y: 0 },
+            size: { width: 30, height: 40 }
+        });
 
         const originalId = store.state.currentDocumentId;
         const [shapeId] = store.state.currentDocument.shapesIds;
@@ -116,8 +132,16 @@ describe('document ownership', () => {
     it('cleans memberships, links, and parents through the delete command', () => {
         const { store } = createTestStore();
 
-        store.actions.addShape({ type: 'rectangle', size: { width: 10, height: 20 } });
-        store.actions.addShape({ type: 'rectangle', size: { width: 30, height: 40 } });
+        store.actions.addShape({
+            type: 'rectangle',
+            position: { x: 0, y: 0 },
+            size: { width: 10, height: 20 }
+        });
+        store.actions.addShape({
+            type: 'rectangle',
+            position: { x: 0, y: 0 },
+            size: { width: 30, height: 40 }
+        });
 
         const document = store.state.currentDocument;
         const [deletedId, remainingId] = document.shapesIds;
@@ -145,6 +169,7 @@ describe('document ownership', () => {
 
         store.actions.addShape({
             type: 'rectangle',
+            position: { x: 0, y: 0 },
             size: { width: 10, height: 20 },
             locked: true
         });

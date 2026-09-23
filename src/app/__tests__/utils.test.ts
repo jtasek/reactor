@@ -1,4 +1,5 @@
 import { Box, Document, Ellipse, Point, Shape } from '../types';
+import { createShape } from '../factories';
 import {
     debounce,
     getDistance,
@@ -182,7 +183,11 @@ describe('utils', () => {
         it('returns true when point is inside of rectangle', () => {
             const actual = isPointInBox(
                 { x: 50, y: 50 },
-                { position: { x: 1, y: 1 }, size: { width: 100, height: 100 } }
+                createShape({
+                    type: 'rectangle',
+                    position: { x: 1, y: 1 },
+                    size: { width: 100, height: 100 }
+                })
             );
 
             expect(actual).toBe(true);
@@ -191,7 +196,11 @@ describe('utils', () => {
         it('returns false when point is outside of rectangle', () => {
             const actual = isPointInBox(
                 { x: 1, y: 1 },
-                { position: { x: 50, y: 50 }, size: { width: 100, height: 100 } }
+                createShape({
+                    type: 'rectangle',
+                    position: { x: 50, y: 50 },
+                    size: { width: 100, height: 100 }
+                })
             );
 
             expect(actual).toBe(false);
@@ -242,10 +251,11 @@ describe('utils', () => {
         it('returns false when point is outside the box boundaries', () => {
             const point: Point = { x: 100, y: 100 };
 
-            const shape: Partial<Shape> = {
+            const shape = createShape({
+                type: 'rectangle',
                 position: { x: 200, y: 300 },
                 size: { height: 100, width: 100 }
-            };
+            });
 
             const actual = isPointInBox(point, shape);
 

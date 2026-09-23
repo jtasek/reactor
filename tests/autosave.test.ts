@@ -79,7 +79,11 @@ describe('autosave lifecycle', () => {
     it('ignores transient selection changes', async () => {
         const { store, effects } = createTestStore();
 
-        store.actions.addShape({ type: 'rectangle', size: { width: 10, height: 20 } });
+        store.actions.addShape({
+            type: 'rectangle',
+            position: { x: 0, y: 0 },
+            size: { width: 10, height: 20 }
+        });
 
         const controller = startAutosave(store, effects, vi.fn());
 
@@ -212,7 +216,11 @@ describe('autosave lifecycle', () => {
 
             await store.onInitialize();
 
-            store.actions.addShape({ type: 'rectangle', size: { width: 10, height: 20 } });
+            store.actions.addShape({
+                type: 'rectangle',
+                position: { x: 0, y: 0 },
+                size: { width: 10, height: 20 }
+            });
 
             await vi.advanceTimersByTimeAsync(1000);
 

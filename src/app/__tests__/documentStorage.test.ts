@@ -14,7 +14,11 @@ import {
 
 const fixture = () => {
     const document = createDocument({ id: 'd' });
-    const shape = createShape({ type: 'rectangle', size: { width: 10, height: 20 } });
+    const shape = createShape({
+        type: 'rectangle',
+        position: { x: 0, y: 0 },
+        size: { width: 10, height: 20 }
+    });
 
     document.shapes[shape.id] = shape;
 
@@ -85,7 +89,13 @@ describe('document storage', () => {
 
         const geometry = fixture();
 
-        Object.values(geometry.documents.d.shapes)[0].size = { width: -1, height: 10 };
+        const [shape] = Object.values(geometry.documents.d.shapes);
+
+        if (shape.type !== 'rectangle') {
+            throw new Error('Expected a rectangle fixture');
+        }
+
+        shape.size = { width: -1, height: 10 };
 
         expect(migratePersistedState(geometry)).toBeNull();
 

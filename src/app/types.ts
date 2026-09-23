@@ -98,10 +98,10 @@ export interface Grid {
     height: number;
 }
 
-export interface Shape {
+/** Fields every shape carries, whatever its geometry. */
+export interface ShapeBase {
     active: boolean;
     bounds?: Box;
-    center?: Point;
     children?: Shape[];
     created: Date;
     createdBy: string;
@@ -113,54 +113,75 @@ export interface Shape {
     modifiedBy: string;
     name: string;
     parentShapeId?: string;
-    position: Point;
     rotation?: number;
     selected: boolean;
-    size?: Size;
-    type: 'circle' | 'ellipse' | 'image' | 'line' | 'path' | 'pen' | 'rectangle' | 'text';
     visible: boolean;
 }
 
-export interface Circle extends Shape {
+export interface Rectangle extends ShapeBase {
+    type: 'rectangle';
+    position: Point;
+    size: Size;
+}
+
+export interface Image extends ShapeBase {
+    type: 'image';
+    position: Point;
+    size: Size;
+    source: string;
+}
+
+/** `position` is the center. */
+export interface Circle extends ShapeBase {
+    type: 'circle';
     position: Point;
     radius: number;
-    type: 'circle';
 }
 
-export interface Ellipse extends Shape {
+/** `position` is the center. */
+export interface Ellipse extends ShapeBase {
+    type: 'ellipse';
     position: Point;
     radius: Point;
-    type: 'ellipse';
 }
 
-export interface Text extends Shape {
-    fontSize?: number;
-    position: Point;
-    text: string;
-    type: 'text';
-}
-
-export interface Rectangle extends Shape {
-    position: Point;
-    size: Size;
-    type: 'rectangle';
-}
-
-export interface Line extends Shape {
-    end: Point;
-    start: Point;
+export interface Line extends ShapeBase {
     type: 'line';
+    start: Point;
+    end: Point;
 }
 
-export interface Image extends Shape {
-    position: Point;
-    size: Size;
-    type: 'image';
-}
-
-export interface Pen extends Shape {
+export interface Pen extends ShapeBase {
+    type: 'pen';
     points: Point[];
 }
+
+/** `position` is the left end of the text baseline. */
+export interface Text extends ShapeBase {
+    type: 'text';
+    position: Point;
+    value: string;
+    fontSize?: number;
+}
+
+export type Shape = Rectangle | Image | Circle | Ellipse | Line | Pen | Text;
+
+export type ShapeType = Shape['type'];
+
+type ShapeMetadata = Exclude<
+    keyof ShapeBase,
+    'bounds' | 'children' | 'description' | 'parentShapeId' | 'rotation'
+>;
+
+/**
+ * What a caller supplies to create a shape: its type and geometry, plus any
+ * metadata to override. The factory fills in the remaining metadata.
+ */
+export type ShapeInput = Shape extends infer S
+    ? S extends Shape
+        ? Omit<S, ShapeMetadata> & Partial<Pick<S, ShapeMetadata>>
+        : never
+    : never;
 
 export interface Link {
     id: string;
@@ -277,7 +298,7 @@ export interface User {
 export interface Event {
     action: string;
     category: string;
-    data: any;
+    data: unknown;
     occurred: Date;
     user: string;
 }
@@ -288,7 +309,7 @@ export interface Provider {
     id: string;
     name: string;
     description?: string;
-    data?: any;
+    data?: unknown;
 }
 
 export interface OnlineProvider extends Provider {

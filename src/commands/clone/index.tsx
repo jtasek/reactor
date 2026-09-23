@@ -6,18 +6,22 @@ const POSITION_SHIFT_STEP = 10;
 
 export const cloneSelection = ({ state }: Context) => {
     state.currentDocument?.selectedShapes
-        .map((shape: Shape) =>
-            createShape({
+        .map((shape: Shape) => {
+            const clone = createShape({
                 ...shape,
-                id: undefined,
                 name: `Clone of ${shape.name}`,
-                position: {
-                    x: shape.position.x + POSITION_SHIFT_STEP,
-                    y: shape.position.y + POSITION_SHIFT_STEP
-                },
                 selected: false
-            })
-        )
+            });
+
+            if ('position' in clone) {
+                clone.position = {
+                    x: clone.position.x + POSITION_SHIFT_STEP,
+                    y: clone.position.y + POSITION_SHIFT_STEP
+                };
+            }
+
+            return clone;
+        })
         .forEach((shape: Shape) => (state.currentDocument.shapes[shape.id] = shape));
 };
 

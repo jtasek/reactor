@@ -8,7 +8,6 @@ import {
     createShape,
     getAnonymousUser,
     getCurrentUserName,
-    getDefaultType,
     newApplicationName,
     newDocumentName,
     newGroupName,
@@ -97,17 +96,14 @@ describe('factories', () => {
         });
     });
 
-    describe('getDefaultType()', () => {
-        it('returns default type', () => {
-            const actual = getDefaultType();
-
-            expect(actual).toBe('rectangle');
-        });
-    });
-
     describe('createShape()', () => {
         it('creates new shape object with default values', () => {
-            const actual = createShape({ name: 'SHAPE_NAME' });
+            const actual = createShape({
+                type: 'rectangle',
+                position: { x: 0, y: 0 },
+                size: { width: 10, height: 10 },
+                name: 'SHAPE_NAME'
+            });
 
             expect(actual).toHaveProperty('name', 'SHAPE_NAME');
         });

@@ -177,6 +177,11 @@ Examples worth modelling new tools on:
 
 ## Bounding boxes & selection
 
+- `Shape` (`src/app/types.ts`) is a discriminated union on `type`; each variant carries only
+  its own geometry (lines `start`/`end`, pens `points`, the others `position`). Dispatch with an
+  exhaustive `switch (shape.type)` ending in `assertNever` — never casts or field sniffing.
+  Per-type move/resize live in `src/app/geometry.ts`; create shapes from a `ShapeInput` via
+  `createShape`.
 - `getBoundingBox(shape)` (`src/app/utils.ts`) computes an **analytic** box per shape type.
 - Each rendered shape is also **measured** with `getBBox()` in `src/ui/components/Shape/Shape.tsx`
   (the shape's primitive is wrapped in a `<g ref>`), and the result is stored as `shape.bounds`
