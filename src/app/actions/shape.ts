@@ -11,6 +11,7 @@ import {
 } from '../types';
 import { Context } from '../index';
 import { createShape } from '../factories';
+import { PropertyValue, SHAPE_PROPERTIES, applyProperty } from '../properties';
 import {
     hitTestShape,
     hitTolerance,
@@ -321,6 +322,31 @@ export const updateShape = ({ state }: Context, options: Partial<Shape> & { id: 
     }
 
     Object.assign(shape, options);
+};
+
+/**
+ * Sets a property-panel property (see SHAPE_PROPERTIES) on each shape. Locked
+ * shapes only take properties allowed while locked, such as their name.
+ */
+export const setShapesProperty = (
+    { state }: Context,
+    { shapeIds, key, value }: { shapeIds: string[]; key: string; value: PropertyValue }
+) => {
+    const property = SHAPE_PROPERTIES.find((item) => item.key === key);
+
+    if (!property) {
+        return;
+    }
+
+    shapeIds.forEach((id) => {
+        const shape = state.currentDocument.shapes[id];
+
+        if (!shape || (!property.whileLocked && isShapeLocked(state.currentDocument, id))) {
+            return;
+        }
+
+        applyProperty(property, shape, value);
+    });
 };
 
 export const resizeShape = (
