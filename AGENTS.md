@@ -89,12 +89,19 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
 
 - **Dev server**: `pnpm start` — `node server.js` (Express + webpack-dev-middleware + HMR /
   React Fast Refresh) on http://localhost:4000.
-- **Type-check**: `pnpm tsc` (`tsc --noEmit`). `*.test.ts` files are excluded from `tsc`.
-- **Lint**: `pnpm lint` (`eslint src --fix`). Flat config in `eslint.config.mjs`.
+- **Type-check**: `pnpm typecheck` checks the app (`pnpm tsc`, which excludes tests) and the
+  tests (`tsconfig.test.json`).
+- **Lint**: `pnpm lint` is read-only (`--max-warnings 0`, covers `src`, `tests`, root configs
+  and `scripts`); `pnpm lint:fix` applies fixes. Flat config in `eslint.config.mjs`.
 - **Tests**: `pnpm test` (Vitest, `globals: true` — no need to import `describe`/`it`/
-  `expect`/`vi`). `pnpm test:watch` for watch mode.
+  `expect`/`vi`). `pnpm test:watch` for watch mode. Store tests use `createTestStore`
+  (`tests/support/store.ts`).
     - Single file: `pnpm test src/app/__tests__/utils.test.ts`
     - By name: `pnpm test -- -t "name of test"`
+- **Browser tests**: `pnpm test:browser` (Playwright, Chromium) builds the production bundle
+  and serves it with `server.prod.js`. Shared editor helpers live in
+  `tests/browser/support/editor.ts`.
+- **Everything**: `pnpm check` runs the lint gate, type-checks, unit and browser tests.
 - **Production build**: `pnpm build` — `NODE_ENV=production` webpack via `webpack.config.mjs`.
   Content-hashed JS/CSS, extracted CSS, generated `dist/index.html`. Overmind devtools and
   source maps off.
@@ -106,12 +113,12 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
 
 ### Verification baseline (do not treat as regressions)
 
-- `pnpm tsc` reports a number of **pre-existing** errors (implicit-`any` in some state/
-  components, named-capture-group regex errors in tools targeting < ES2018). When changing
-  code, keep the error count at or below the current baseline rather than expecting zero.
-- A few `utils.test.ts` tests fail on a clean checkout (`isCircleInBox`, `isEllipseInBox`,
-  `overlaps` logic bugs). Leave them unless the task is to fix them.
-- `pnpm build` finishes with **2 performance warnings** (bundle size). That is expected.
+- Type-checking and all unit and browser tests pass on a clean checkout; keep it that way.
+- `pnpm lint` still reports **existing lint debt**, recorded per file in `lint-baseline.json`
+  (not suppressed). `pnpm lint:baseline` fails on any finding in a file changed relative to
+  `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
+  recorded counts: fix a touched file's existing findings rather than adding exceptions.
+- `pnpm build` finishes with **1 performance warning** (entrypoint size). That is expected.
 
 ## Architecture
 
@@ -153,13 +160,24 @@ re-renders.** Components never mutate state directly.
 A `Tool` (`src/tools/types.ts`) extends a `Command` with `component` (renders committed
 shapes) and `designComponent` (the in-progress preview, rendered by `Stack`).
 
-The pointer gesture is driven in `src/events/drivers/usePointerAdapter.ts`:
+A pointer gesture is explicit state, `state.events.pointer.gesture`: `idle`, or `drawing`,
+`marquee`, `moving`, `resizing` or `rotating` owned by one pointer, or a two-finger `pinching`.
+`dragging` and `background` are derived from it. `src/events/drivers/usePointerAdapter.ts`
+only translates DOM events into the gesture actions (`src/events/actions/pointer.ts`):
 
-- **pointer down** → `startDragging` + `setStartPosition`/`setCurrentPosition`.
-- **pointer move** → `updateCurrentPosition` (derived `topLeft`/`size`/… recompute).
-- **pointer up** (while dragging) → `endDragging` → `executeToolCommands()` → `resetTools()`,
-  **synchronously**. React effects flush _after_ this, so anything a tool must persist on
-  release has to happen inside the synchronous `execute` (not a mount/layout effect).
+- **pointer down** → `beginGesture` decides the kind (a handle resizes/rotates; the select
+  tool moves a hit shape or starts a marquee; any other tool draws) and snapshots what the
+  gesture may change. Input from any other pointer is ignored until the gesture ends.
+- **pointer move** → `movePointer`: drawing extends the path, marquee re-selects, and
+  move/resize/rotate edit shapes live.
+- **pointer up** → `endGesture` applies the release position, runs `executeToolCommands()`
+  exactly once for drawing and marquee gestures, then `resetTools()` — **synchronously**.
+  React effects flush _after_ this, so anything a tool must persist on release has to happen
+  inside the synchronous `execute` (not a mount/layout effect).
+- **cancel** (pointercancel, lost capture, window blur, context menu, unmount) →
+  `cancelGesture` never commits: it restores the snapshots and resets tools.
+- Zoom is ignored during a drag. Touchscreen pinch (`beginPinch`/`updatePinch`/`endPinch`) is
+  fed by Touch Events and may only replace a touch gesture that has not moved.
 
 `executeToolCommands` (`src/tools/actions.ts`) runs `execute(context)` for each active tool
 when `canExecute(context)` is true. `resetTools` deactivates a tool when its
