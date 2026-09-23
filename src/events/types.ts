@@ -7,22 +7,42 @@ export type SelectionSnapshot = Record<string, boolean>;
 export type ShapesSnapshot = Record<string, Shape>;
 
 /**
- * The pointer gesture in progress. Every active gesture is owned by the pointer
- * that started it; input from any other pointer is ignored until it ends.
+ * The pointer that owns a gesture. Input from any other pointer is ignored until
+ * the gesture ends. `moved` records whether the owner has moved since it started.
+ */
+type Owner = { pointerId: number; touch: boolean; moved: boolean };
+
+/**
+ * The gesture in progress. A two-finger pinch is driven by touch contacts and has
+ * no owning pointer; it lasts until every contact has lifted.
  */
 export type Gesture =
     | { kind: 'idle' }
-    | { kind: 'drawing'; pointerId: number }
-    | { kind: 'marquee'; pointerId: number; selection: SelectionSnapshot }
-    | { kind: 'moving'; pointerId: number; selection: SelectionSnapshot; shapes: ShapesSnapshot }
     | {
-          kind: 'resizing';
-          pointerId: number;
-          shapeId: string;
-          handle: ResizeHandlerType;
-          shapes: ShapesSnapshot;
+          kind: 'pinching';
+          touchIds: [number, number];
+          /** Finger distance and camera scale when the pinch started. */
+          distance: number;
+          scale: number;
+          /** World point kept under the fingers' midpoint. */
+          anchor: Point;
       }
-    | { kind: 'rotating'; pointerId: number; shapeId: string; shapes: ShapesSnapshot };
+    | (Owner &
+          (
+              | { kind: 'drawing' }
+              | { kind: 'marquee'; selection: SelectionSnapshot }
+              | { kind: 'moving'; selection: SelectionSnapshot; shapes: ShapesSnapshot }
+              | {
+                    kind: 'resizing';
+                    shapeId: string;
+                    handle: ResizeHandlerType;
+                    shapes: ShapesSnapshot;
+                }
+              | { kind: 'rotating'; shapeId: string; shapes: ShapesSnapshot }
+          ));
+
+/** A touch contact in surface-local SVG units. */
+export type TouchContact = { id: number; point: Point };
 
 /** A resize or rotate handle under the pointer when a gesture starts. */
 export type HandleTarget = { shapeId: string; type: ResizeHandlerType | 'rotate' };

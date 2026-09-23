@@ -56,7 +56,7 @@ describe('pointer gestures', () => {
 
         expect(store.state.events.pointer.start).toEqual({ x: 10, y: 10 });
         expect(store.state.events.pointer.current).toEqual({ x: 10, y: 10 });
-        expect(store.state.events.pointer.gesture).toEqual({ kind: 'drawing', pointerId: 1 });
+        expect(store.state.events.pointer.gesture).toMatchObject({ kind: 'drawing', pointerId: 1 });
         expect(store.state.currentDocument.shapesIds).toEqual([]);
     });
 
@@ -259,5 +259,105 @@ describe('pointer gestures', () => {
             })
         ).toBe(true);
         expect(store.state.events.pointer.gesture.kind).toBe('marquee');
+    });
+});
+
+describe('touch pinch', () => {
+    const contacts = (a: [number, number], b: [number, number]) => [
+        { id: 1, point: { x: a[0], y: a[1] } },
+        { id: 2, point: { x: b[0], y: b[1] } }
+    ];
+
+    it('scales by finger distance and keeps the anchor between the fingers', () => {
+        const { store } = createTestStore();
+
+        store.actions.events.beginPinch(contacts([100, 100], [200, 100]));
+        store.actions.events.updatePinch(contacts([50, 100], [250, 100]));
+
+        expect(store.state.currentDocument.camera.scale).toBe(2);
+        expect(store.state.currentDocument.camera.position).toEqual({ x: -150, y: -100 });
+
+        // Moving both fingers pans: the anchor follows their midpoint.
+        store.actions.events.updatePinch(contacts([60, 120], [260, 120]));
+
+        expect(store.state.currentDocument.camera.position).toEqual({ x: -140, y: -80 });
+        expect(store.state.events.pointer.dragging).toBe(false);
+
+        // The scale is clamped, but the anchor stays under the midpoint.
+        store.actions.events.updatePinch(contacts([-5000, 100], [5000, 100]));
+
+        expect(store.state.currentDocument.camera.scale).toBe(10);
+        expect(store.state.currentDocument.camera.position).toEqual({ x: -1500, y: -900 });
+    });
+
+    it('replaces an unmoved touch drawing but never a moved or mouse gesture', () => {
+        const unmoved = storeWithTool('rectangle');
+
+        unmoved.actions.events.beginGesture({
+            pointerId: 1,
+            position: { x: 100, y: 100 },
+            touch: true
+        });
+        unmoved.actions.events.beginPinch(contacts([100, 100], [200, 100]));
+
+        expect(unmoved.state.events.pointer.gesture.kind).toBe('pinching');
+        expect(unmoved.state.tools.activeToolsIds).toEqual(['select']);
+
+        const moved = storeWithTool('rectangle');
+
+        moved.actions.events.beginGesture({ pointerId: 1, position: { x: 0, y: 0 }, touch: true });
+        moved.actions.events.movePointer({ pointerId: 1, position: { x: 5, y: 0 } });
+        moved.actions.events.movePointer({ pointerId: 1, position: { x: 0, y: 0 } });
+        moved.actions.events.beginPinch(contacts([100, 100], [200, 100]));
+
+        expect(moved.state.events.pointer.gesture.kind).toBe('drawing');
+
+        const mouse = storeWithTool('rectangle');
+
+        mouse.actions.events.beginGesture({ pointerId: 1, position: { x: 0, y: 0 } });
+        mouse.actions.events.beginPinch(contacts([100, 100], [200, 100]));
+
+        expect(mouse.state.events.pointer.gesture.kind).toBe('drawing');
+    });
+
+    it('ignores pointer input and keeps a lone remaining contact inert', () => {
+        const store = storeWithTool('rectangle');
+
+        store.actions.events.beginPinch(contacts([100, 100], [200, 100]));
+
+        expect(store.actions.events.beginGesture({ pointerId: 1, position: { x: 0, y: 0 } })).toBe(
+            false
+        );
+
+        store.actions.events.movePointer({ pointerId: 1, position: { x: 30, y: 30 } });
+        store.actions.events.endGesture({ pointerId: 1, position: { x: 30, y: 30 } });
+        expect(store.actions.events.cancelGesture(1)).toBeNull();
+        store.actions.events.updatePinch([{ id: 1, point: { x: 0, y: 0 } }]);
+        store.actions.events.endPinch(1);
+
+        expect(store.state.events.pointer.gesture.kind).toBe('pinching');
+        expect(store.state.currentDocument.camera.scale).toBe(1);
+        expect(store.state.currentDocument.shapesIds).toEqual([]);
+
+        store.actions.events.endPinch(0);
+
+        expect(store.state.events.pointer.gesture.kind).toBe('idle');
+    });
+
+    it('is canceled by blur-style cancellation without a pointer id', () => {
+        const { store } = createTestStore();
+
+        store.actions.events.beginPinch(contacts([100, 100], [200, 100]));
+
+        expect(store.actions.events.cancelGesture()).toBeNull();
+        expect(store.state.events.pointer.gesture.kind).toBe('idle');
+    });
+
+    it('ignores contacts that are too close to measure', () => {
+        const { store } = createTestStore();
+
+        store.actions.events.beginPinch(contacts([100, 100], [100, 100]));
+
+        expect(store.state.events.pointer.gesture.kind).toBe('idle');
     });
 });

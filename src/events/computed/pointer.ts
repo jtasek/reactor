@@ -46,8 +46,9 @@ export const topLeft = derived<Pointer, Application, Point>((pointer) => {
     };
 });
 
+/** True while a pointer drags; a pinch only moves the camera, so it is not a drag. */
 export const dragging = derived<Pointer, Application, boolean>(
-    ({ gesture }) => gesture.kind !== 'idle'
+    ({ gesture }) => gesture.kind !== 'idle' && gesture.kind !== 'pinching'
 );
 
 /** True while a marquee selection is being dragged from empty canvas. */
