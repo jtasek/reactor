@@ -83,6 +83,10 @@ also leaves membership IDs and link references behind.
 - `src/pages/Documents.tsx` contains only a menu and heading.
 - Multiple commands reuse `m` or `z` shortcuts; the keyboard adapter only updates
   keyboard state and does not dispatch these shortcuts.
+- Command bar buttons evaluate `canExecute` through an action call during render,
+  which tracks no state, so they never re-render when the selection changes:
+  Delete, Clone, Group and Layer stay disabled after shapes are selected
+  (found 2026-09-23 while testing Phase 5).
 
 ### F7 - Medium: reverse-proxy hop configuration is parsed incorrectly
 
@@ -269,7 +273,12 @@ and one gesture produces at most one commit.
 In progress. Steps 1-2: shapes are a discriminated union with per-type required
 geometry (lines/pens no longer carry an unused `position`), and move/resize are
 exhaustive per-type operations in `src/app/geometry.ts`, pinned by a per-type
-move/resize/rotate characterization suite. Remaining: steps 3-4 and clone.
+move/resize/rotate characterization suite. Step 3: one visibility rule mirrors
+the lock rule (a shape is hidden by its own flag or any hidden group or layer)
+and applies to rendering, presses, marquee, live edits and the selection that
+commands act on; locked shapes show no resize/rotate handles. New groups and
+layers start visible, and schema v3 shows v1/v2 groups and layers, whose
+visibility never hid shapes. Remaining: step 4 and clone.
 
 1. Convert shapes to a discriminated union with per-type required geometry.
 2. Extract geometry operations from the large shape action module into pure

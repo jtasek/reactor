@@ -1,62 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
-
-type PointerInit = {
-    pointerId?: number;
-    x: number;
-    y: number;
-    buttons?: number;
-    target?: string;
-    pointerType?: 'mouse' | 'pen';
-};
-
-/**
- * Dispatches a synthetic pointer event at surface-relative coordinates, on the
- * surface or on a `target` element inside it.
- */
-async function pointer(
-    page: Page,
-    type: string,
-    { pointerId = 1, x, y, buttons, target, pointerType = 'mouse' }: PointerInit
-) {
-    const surface = page.locator('svg#surface');
-    const box = await surface.boundingBox();
-
-    await (target ? surface.locator(target) : surface).dispatchEvent(type, {
-        bubbles: true,
-        cancelable: true,
-        pointerId,
-        pointerType,
-        isPrimary: pointerId === 1,
-        button: 0,
-        buttons: buttons ?? (type === 'pointerup' || type === 'pointercancel' ? 0 : 1),
-        clientX: box!.x + x,
-        clientY: box!.y + y
-    });
-}
-
-async function openEditor(page: Page) {
-    await page.goto('/');
-    await expect(page.locator('svg#surface')).toBeVisible();
-
-    // The drawing tools live in the side bar, which is hidden by default.
-    for (const control of ['Side Bar', 'Tool Bar']) {
-        await page.getByRole('checkbox', { name: control, exact: true }).check();
-    }
-}
-
-async function selectTool(page: Page, description: string) {
-    await page.locator(`a[title="${description}"]`).dispatchEvent('click');
-}
-
-const shapes = (page: Page) => page.locator('svg#surface #shapes > g');
-const handles = (page: Page) => page.locator('svg#surface [data-handle]');
-
-async function drawRect(page: Page, from: { x: number; y: number }, to: { x: number; y: number }) {
-    await selectTool(page, 'Draws a rectangle or square');
-    await pointer(page, 'pointerdown', from);
-    await pointer(page, 'pointermove', to);
-    await pointer(page, 'pointerup', to);
-}
+import {
+    drawRect,
+    firstShape,
+    handles,
+    openEditor,
+    pointer,
+    selectTool,
+    shapes
+} from './support/editor';
 
 for (const pointerType of ['mouse', 'pen'] as const) {
     test(`a ${pointerType} drawing commits once, at the release position`, async ({ page }) => {
@@ -160,8 +111,6 @@ test('a canceled marquee restores the previous selection', async ({ page }) => {
 
     await expect(handles(page).first()).toBeVisible();
 });
-
-const firstShape = (page: Page) => shapes(page).first();
 
 test('moving a shape follows the pointer to its release position', async ({ page }) => {
     await openEditor(page);

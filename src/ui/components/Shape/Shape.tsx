@@ -5,7 +5,7 @@ import { Resizable } from '../Selectable/Resizable';
 import { Selectable } from '../Selectable/Selectable';
 import { getComponentByType } from 'src/tools/components';
 import { rectToBox, shapeGeometryKey, getShapeBounds, boxCenter } from 'src/app/utils';
-import { useActions, useAppState, useShape } from 'src/app/hooks';
+import { useActions, useAppState, useShape, useShapeLocked, useShapeVisible } from 'src/app/hooks';
 
 interface Props {
     shapeId: string;
@@ -13,6 +13,8 @@ interface Props {
 
 export const Shape = memo(({ shapeId }: Props) => {
     const shape = useShape(shapeId);
+    const visible = useShapeVisible(shapeId);
+    const locked = useShapeLocked(shapeId);
     const { setShapeBounds, activateShape, deactivateShape } = useActions();
     // A move is a pure translation: `moveSelectedShapes` already shifts the
     // cached bounds analytically, so re-measuring via getBBox every frame is
@@ -29,9 +31,10 @@ export const Shape = memo(({ shapeId }: Props) => {
     // label match exactly. getBBox returns local (canvas) coordinates, so it is
     // unaffected by the camera pan/zoom transform on ancestor groups. Keyed on
     // the geometry only, so toggling `selected` during a marquee drag does not
-    // trigger a costly reflow.
+    // trigger a costly reflow. Re-measure when a hidden shape is shown again, as
+    // its geometry may have changed while it was not rendered.
     useLayoutEffect(() => {
-        if (!measuring) {
+        if (!measuring || !visible) {
             return;
         }
 
@@ -47,14 +50,15 @@ export const Shape = memo(({ shapeId }: Props) => {
         } catch {
             // getBBox throws for elements that are not yet renderable; ignore.
         }
-    }, [geometryKey, shapeId, setShapeBounds, measuring]);
+    }, [geometryKey, shapeId, setShapeBounds, measuring, visible]);
 
     if (!Component) {
         console.error(`Component ${shape.type} not found`);
         return null;
     }
 
-    if (shape.visible === false) {
+    // Hidden by its own flag or by a hidden group or layer.
+    if (!visible) {
         return null;
     }
 
@@ -87,7 +91,10 @@ export const Shape = memo(({ shapeId }: Props) => {
             {shape.selected && (
                 <>
                     <Selectable key={`selectable-${shape.type}-${shape.id}`} shape={shape} />
-                    <Resizable key={`resizable-${shape.type}-${shape.id}`} shape={shape} />
+                    {/* Locked shapes stay selectable but cannot be resized or rotated. */}
+                    {!locked && (
+                        <Resizable key={`resizable-${shape.type}-${shape.id}`} shape={shape} />
+                    )}
                     <Label key={`label-${shape.type}-${shape.id}`} shape={shape} />
                 </>
             )}

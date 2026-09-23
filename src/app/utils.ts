@@ -3,7 +3,9 @@ import {
     Circle,
     Document,
     Ellipse,
+    Group,
     Image,
+    Layer,
     Line,
     Pen,
     Point,
@@ -440,6 +442,21 @@ export function dot(u: Point, v: Point): number {
     return u.x * v.x + u.y * v.y;
 }
 
+/** Whether a group or layer containing `shapeId` matches `predicate`. */
+function inContainer(
+    document: Document,
+    shapeId: string,
+    predicate: (container: Group | Layer) => boolean
+): boolean {
+    const matches = (container: Group | Layer | undefined) =>
+        Boolean(container && predicate(container) && container.shapesIds?.includes(shapeId));
+
+    return (
+        Boolean(document.groupsIds?.some((id) => matches(document.groups?.[id]))) ||
+        Boolean(document.layersIds?.some((id) => matches(document.layers?.[id])))
+    );
+}
+
 /**
  * A shape is immutable when it is locked itself, when the document is locked, or
  * when it belongs to any locked group or layer. Used to block moves, resizes,
@@ -460,21 +477,23 @@ export function isShapeLocked(document: Document | undefined, shapeId: string): 
         return true;
     }
 
-    const inLockedGroup = document.groupsIds?.some((id) => {
-        const group = document.groups?.[id];
-        return Boolean(group?.locked && group.shapesIds?.includes(shapeId));
-    });
+    return inContainer(document, shapeId, (container) => container.locked);
+}
 
-    if (inLockedGroup) {
-        return true;
+/**
+ * A shape is visible only when it is visible itself and no group or layer
+ * containing it is hidden: hiding a container hides all of its shapes, just as
+ * locking one locks them. Hidden shapes are not rendered, hit-tested, marquee
+ * selected, edited or part of the selection that commands act on.
+ */
+export function isShapeVisible(document: Document | undefined, shapeId: string): boolean {
+    const shape = document?.shapes?.[shapeId];
+
+    if (!document || !shape?.visible) {
+        return false;
     }
 
-    return Boolean(
-        document.layersIds?.some((id) => {
-            const layer = document.layers?.[id];
-            return Boolean(layer?.locked && layer.shapesIds?.includes(shapeId));
-        })
-    );
+    return !inContainer(document, shapeId, (container) => !container.visible);
 }
 
 /** Geometric center of a box. */

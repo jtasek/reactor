@@ -7,6 +7,7 @@ import {
 import { getCommand, getCommands } from './actions';
 import { Context } from '.';
 import { useCallback } from 'react';
+import { isShapeLocked, isShapeVisible } from './utils';
 
 export const useActions = createActionsHook<Context>();
 export const useEffects = createEffectsHook<Context>();
@@ -81,6 +82,16 @@ export const useShape = (id: string) => {
     return useCurrentDocument()?.shapes[id];
 };
 
+/** Whether the shape is drawn: see `isShapeVisible`. */
+export const useShapeVisible = (id: string) => {
+    return useAppState((state) => isShapeVisible(state.currentDocument, id));
+};
+
+/** Whether the shape can be edited: see `isShapeLocked`. */
+export const useShapeLocked = (id: string) => {
+    return useAppState((state) => isShapeLocked(state.currentDocument, id));
+};
+
 export const useShapes = () => {
     return useCurrentDocument()?.shapes ?? [];
 };
@@ -121,9 +132,9 @@ export const useLog = () => {
     const debugMode = useDebugMode();
 
     return useCallback(
-        (message?: any, ...optionalParams: any[]) => {
+        (message?: unknown, ...optionalParams: unknown[]) => {
             if (debugMode) {
-                console.log(message, ...optionalParams);
+                console.info(message, ...optionalParams);
             }
         },
         [debugMode]

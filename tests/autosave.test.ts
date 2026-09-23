@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createTestStore } from './support/store';
-import { serializePersistedState } from 'src/app/services/documentStorage';
+import { SCHEMA_VERSION, serializePersistedState } from 'src/app/services/documentStorage';
 import { startAutosave, disposeAutosave } from 'src/app/services/autosave';
 
 describe('autosave lifecycle', () => {
@@ -173,7 +173,7 @@ describe('autosave lifecycle', () => {
         await vi.advanceTimersByTimeAsync(500);
 
         expect(effects.loadState('reactor')).toMatchObject({
-            version: 2,
+            version: SCHEMA_VERSION,
             documents: { 'test-document': { name: 'Migrated' } }
         });
         expect(storage.get('reactor:backup')).toBe(original);
