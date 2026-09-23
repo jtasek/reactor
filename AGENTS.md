@@ -172,8 +172,9 @@ Examples worth modelling new tools on:
   probe `Image`, never hardcoded).
 - `Text` — two-phase: select tool → click canvas to place + enter typing mode → type → Enter
   to commit (Escape cancels). The placement click starts typing inside `execute` (synchronous).
-- `Select` — marquee: press + drag draws the dashed rect; `selectShapes` selects shapes that
-  overlap it (authoritative: sets `selected` true/false), and the selection persists on release.
+- `Select` — marquee: press + drag draws the dashed rect; `selectShapes` selects shapes whose
+  (rotated) bounds overlap it (authoritative: sets `selected` true/false), and the selection
+  persists on release. A click without a drag clears the selection.
 
 ## Bounding boxes & selection
 
@@ -188,8 +189,9 @@ Examples worth modelling new tools on:
   via the `setShapeBounds` action. `getBBox` returns canvas-space coords, unaffected by the
   camera pan/zoom transform on ancestor groups.
 - **Always read bounds via `getShapeBounds(shape)`** (measured `bounds` when present, analytic
-  fallback otherwise). Consumers: `Selectable`, `Resizable`, `Label`, plus `selectShapes` and
-  `isPointInBox`.
+  fallback otherwise). Consumers: `Selectable`, `Resizable`, `Label`, plus `hitTestShape` and
+  `shapeIntersectsBox` (`src/app/geometry.ts`), which hit-test presses and marquees where a shape
+  is drawn: in its rotated frame, closed shapes by area and lines/pens by stroke.
 - Performance rules for the hot path:
     - The measurement effect is keyed on `shapeGeometryKey(shape)` so toggling `selected` during
       a marquee drag does **not** force a reflow. Keep it that way.

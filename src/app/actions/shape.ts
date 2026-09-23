@@ -11,12 +11,16 @@ import {
 } from '../types';
 import { Context } from '../index';
 import { createShape } from '../factories';
-import { resizeShapeFromHandle, translateShape } from '../geometry';
+import {
+    hitTestShape,
+    hitTolerance,
+    resizeShapeFromHandle,
+    shapeIntersectsBox,
+    translateShape
+} from '../geometry';
 import {
     boxesEqual,
     getShapeBounds,
-    overlaps,
-    isPointInBox,
     isShapeLocked,
     isShapeVisible,
     boxCenter,
@@ -107,10 +111,11 @@ export const selectShape: ActionWithParam<string> = ({ state }, shapeId) => {
 
 export const selectShapeByPoint: Action = ({ state }) => {
     const { current } = state.events.pointer;
+    const tolerance = hitTolerance(state.currentDocument.camera.scale);
 
     const shapes = Object.values(state.currentDocument.shapes);
     shapes.forEach((shape) => {
-        if (isPointInBox(current, shape) && isInteractive(state, shape.id)) {
+        if (hitTestShape(shape, current, tolerance) && isInteractive(state, shape.id)) {
             shape.selected = true;
         }
     });
@@ -119,21 +124,22 @@ export const selectShapeByPoint: Action = ({ state }) => {
 /**
  * Resolves the shape under the pointer and updates the selection so a move can
  * begin, returning whether a shape was hit. Iterates shapesIds in z-order so the
- * topmost shape containing the point wins. Pressing an already-selected shape
- * keeps the whole selection intact (so a multi-selection can be dragged as a
- * group); pressing an unselected shape replaces the selection with just it. An
- * empty hit leaves the selection untouched — the caller decides what an
- * empty-canvas press means (pan, marquee or deselect).
+ * topmost shape drawn under the point (see hitTestShape) wins. Pressing an
+ * already-selected shape keeps the whole selection intact (so a multi-selection
+ * can be dragged as a group); pressing an unselected shape replaces the
+ * selection with just it. An empty hit leaves the selection untouched — the
+ * caller decides what an empty-canvas press means (pan, marquee or deselect).
  */
 export const selectShapeAtPointer: ActionGuard = ({ state }) => {
     const { current } = state.events.pointer;
-    const { shapesIds, shapes } = state.currentDocument;
+    const { shapesIds, shapes, camera } = state.currentDocument;
+    const tolerance = hitTolerance(camera.scale);
 
     let hitId: string | null = null;
     for (const id of shapesIds) {
         const shape = shapes[id];
 
-        if (shape && isPointInBox(current, shape) && isInteractive(state, id)) {
+        if (shape && hitTestShape(shape, current, tolerance) && isInteractive(state, id)) {
             hitId = id;
         }
     }
@@ -175,12 +181,16 @@ export const moveSelectedShapes: ActionWithParam<Point> = ({ state }, delta) => 
 };
 
 export const selectShapes: Action = ({ state }) => {
-    const { topLeft, bottomRight } = state.events.pointer;
+    const { topLeft, bottomRight, size } = state.events.pointer;
     const source = { topLeft, bottomRight };
+    // A click without a drag clears the selection: presses select by hit-testing,
+    // so a click that missed must not select a bounding box containing it.
+    const isClick = size.width === 0 && size.height === 0;
 
     const shapes = Object.values(state.currentDocument.shapes);
     shapes.forEach((shape) => {
-        const selected = isInteractive(state, shape.id) && overlaps(source, getShapeBounds(shape));
+        const selected =
+            !isClick && isInteractive(state, shape.id) && shapeIntersectsBox(shape, source);
 
         // Only write when the value actually changes so shapes that stay
         // outside (or inside) the marquee don't re-render every pointer move.

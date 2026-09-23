@@ -3,11 +3,19 @@ import {
     DEFAULT_TEXT_FONT_SIZE,
     assertNever,
     boxCenter,
+    getDistance,
     getShapeBounds,
     mapPointBetweenBoxes,
+    overlaps,
     resizeBox,
     rotatePoint
 } from './utils';
+
+/** Half the stroke width shapes are drawn with (`.shape` in src/tools/styles.css). */
+const STROKE_HALF_WIDTH = 1;
+
+/** Extra reach of a press, in screen pixels, so thin strokes stay easy to hit. */
+const HIT_SLOP_PX = 4;
 
 const add = (point: Point, delta: Point): Point => ({ x: point.x + delta.x, y: point.y + delta.y });
 
@@ -189,4 +197,125 @@ export function resizeShapeFromHandle(
         default:
             assertNever(shape);
     }
+}
+
+/** How far from a shape's drawn geometry a press still hits it, in world units. */
+export function hitTolerance(cameraScale: number): number {
+    return STROKE_HALF_WIDTH + HIT_SLOP_PX / cameraScale;
+}
+
+function distanceToBox(point: Point, box: Box): number {
+    const dx = Math.max(box.topLeft.x - point.x, 0, point.x - box.bottomRight.x);
+    const dy = Math.max(box.topLeft.y - point.y, 0, point.y - box.bottomRight.y);
+
+    return Math.hypot(dx, dy);
+}
+
+function distanceToSegment(point: Point, start: Point, end: Point): number {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const lengthSquared = dx * dx + dy * dy;
+    const t =
+        lengthSquared === 0
+            ? 0
+            : Math.max(
+                  0,
+                  Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared)
+              );
+
+    return getDistance(point, { x: start.x + t * dx, y: start.y + t * dy });
+}
+
+function distanceToPolyline(point: Point, points: Point[]): number {
+    if (points.length === 1) {
+        return getDistance(point, points[0]);
+    }
+
+    let distance = Infinity;
+
+    for (let index = 1; index < points.length; index++) {
+        distance = Math.min(distance, distanceToSegment(point, points[index - 1], points[index]));
+    }
+
+    return distance;
+}
+
+/**
+ * Whether `point` hits `shape` where it is drawn: within `tolerance` of its
+ * outline, or anywhere inside a closed shape (rectangle, image, text, circle,
+ * ellipse). Lines and pens are open, so only their stroke hits. Shapes are drawn
+ * rotated about their box center, so the point is tested in the unrotated frame.
+ */
+export function hitTestShape(shape: Shape, point: Point, tolerance: number): boolean {
+    const bounds = getShapeBounds(shape);
+    const local = shape.rotation ? rotatePoint(point, boxCenter(bounds), -shape.rotation) : point;
+
+    switch (shape.type) {
+        case 'rectangle':
+        case 'image':
+        case 'text':
+            return distanceToBox(local, bounds) <= tolerance;
+        case 'circle':
+            return getDistance(local, shape.position) <= shape.radius + tolerance;
+        case 'ellipse': {
+            // Inflating the radii approximates the band around the outline.
+            const dx = (local.x - shape.position.x) / (shape.radius.x + tolerance);
+            const dy = (local.y - shape.position.y) / (shape.radius.y + tolerance);
+
+            return dx * dx + dy * dy <= 1;
+        }
+        case 'line':
+            return distanceToSegment(local, shape.start, shape.end) <= tolerance;
+        case 'pen':
+            return distanceToPolyline(local, shape.points) <= tolerance;
+        default:
+            return assertNever(shape);
+    }
+}
+
+function boxCorners(box: Pick<Box, 'topLeft' | 'bottomRight'>): Point[] {
+    return [
+        box.topLeft,
+        { x: box.bottomRight.x, y: box.topLeft.y },
+        box.bottomRight,
+        { x: box.topLeft.x, y: box.bottomRight.y }
+    ];
+}
+
+/** Whether the projections of two point sets onto `axis` do not overlap. */
+function separatedAlong(axis: Point, a: Point[], b: Point[]): boolean {
+    const project = (points: Point[]) => points.map((point) => point.x * axis.x + point.y * axis.y);
+    const pa = project(a);
+    const pb = project(b);
+
+    return Math.max(...pa) < Math.min(...pb) || Math.max(...pb) < Math.min(...pa);
+}
+
+/**
+ * Whether a shape's drawn bounding box (rotated with the shape) intersects an
+ * axis-aligned `area`, such as a marquee. Rotated boxes are compared with the
+ * separating axis test.
+ */
+export function shapeIntersectsBox(
+    shape: Shape,
+    area: Pick<Box, 'topLeft' | 'bottomRight'>
+): boolean {
+    const bounds = getShapeBounds(shape);
+    const { rotation } = shape;
+
+    if (!rotation) {
+        return overlaps(area, bounds);
+    }
+
+    const center = boxCenter(bounds);
+    const corners = boxCorners(bounds).map((corner) => rotatePoint(corner, center, rotation));
+    const radians = (rotation * Math.PI) / 180;
+    const axes = [
+        { x: 1, y: 0 },
+        { x: 0, y: 1 },
+        { x: Math.cos(radians), y: Math.sin(radians) },
+        { x: -Math.sin(radians), y: Math.cos(radians) }
+    ];
+
+    return !axes.some((axis) => separatedAlong(axis, corners, boxCorners(area)));
 }
