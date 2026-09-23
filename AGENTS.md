@@ -151,7 +151,9 @@ re-renders.** Components never mutate state directly.
   that translate DOM events into store actions — `useKeyboardDriver` is mounted in `Shell`
   and `usePointerAdapter` in the canvas `Surface` (`src/ui/components/Surface/Surface.tsx`).
 - **Tools** (`src/tools/`): drawing/selection tools; tool state lives in the `tools` namespace.
-- **Renderers** (`src/app/renderers/`): pluggable output renderers (Svg/Canvas/Html/Pdf).
+- **Renderers** (planned, not built yet; see Phase 9 in `REFACTOR_PLAN.md`): pluggable
+  renderers in `src/app/renderers/` that turn a document into another format, such as JSON,
+  XML, text, SVG, Canvas/PNG, PDF or ASCII.
 - Entry: `src/index.tsx` creates the Overmind instance and wraps `<Shell>` in the
   overmind-react `<Provider>`. `Shell` switches between `Designer` and `Documents` pages.
 

@@ -1,6 +1,6 @@
 # Repository Audit and Refactoring Plan
 
-Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phases 6-8 remain proposed.
+Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phase 6 in progress; Phases 7-8 remain proposed (Phase 8 step 4 partly done); Phase 9 designed.
 
 ## Verified Baseline
 
@@ -354,6 +354,12 @@ receive the appropriate lint checks.
 
 ## Phase 8 - Validate Servers and Automate Release Gates
 
+Step 4 partly done (#10): the `Check` workflow runs `pnpm check` (lint gate, types,
+unit and browser tests on a production build) for pull requests and `master`. Its
+first runs exposed and fixed unapproved dependency builds under pnpm 11 and a
+minimap directory that did not resolve on case-sensitive file systems. The Docker
+build and smoke test, zero-warning lint and bundle budget remain.
+
 1. Parse and validate TRUST_PROXY hop counts explicitly while preserving supported
    boolean/address forms. Document examples and test forwarding behavior.
 2. Unify dev/prod HTML source and missing-asset fallback rules. Validate dev port
@@ -368,6 +374,74 @@ receive the appropriate lint checks.
 Gate: a clean checkout passes the full CI pipeline and container smoke test.
 Release is blocked by any failed gate, unresolved high-severity finding, or
 regression in the Phase 4 input matrix.
+
+## Phase 9 - Plugins and Renderers
+
+Designed 2026-09-24; not started. This is feature work built on the refactored
+core, not part of the release gate in Phase 8.
+
+There is no standard for web application plugins (OSGi and the W3C WebExtensions
+group cover other platforms). The design uses standard building blocks — ES modules
+with dynamic `import()`, `<iframe sandbox>` or Workers with `postMessage`, CSP,
+SemVer and JSON Schema — and follows proven models: VS Code's manifest, `engines`
+range and disposable contributions; Figma's sandbox with message passing; and
+tldraw's per-shape-type definitions.
+
+Design:
+
+- Two trust levels. In-process plugins (built-in or trusted, loaded with a
+  same-origin `import()`, as the CSP's `script-src 'self'` already requires) may
+  contribute tools and shape types, which run synchronously on the gesture and
+  rendering hot path. Sandboxed plugins (`<iframe sandbox="allow-scripts">` or a
+  Worker) contribute declaratively (commands, properties, renderers) and reach the
+  document through an async, permission-checked API.
+- A manifest (`id`, `version`, `engine` SemVer range, `main`, `permissions`) is
+  validated with a JSON Schema; incompatible engine ranges are refused.
+- `activate(context)` receives a versioned `PluginContext`: `registerTool`,
+  `registerCommand`, `registerShapeType`, `registerProperty`, `registerRenderer`,
+  `onSelectionChange` and `runCommand`. Every registration returns a `Disposable`;
+  deactivating a plugin removes all of its contributions.
+- Custom shapes add one variant to the `Shape` union, `{ type: 'custom'; kind;
+  data }`. Exhaustive switches delegate that case to the registered definition
+  (bounds, hit test, translate, resize, primitives, component, data validator).
+  A document whose plugin is missing keeps the data and draws a placeholder.
+- Plugin data on shapes lives in an `extensions` record keyed by plugin id. Plugin
+  properties name their property panel section (`group`), e.g. Events or Data.
+- Renderers turn a document into an output format. Model serializers (JSON, XML,
+  text) start from the validated persistence data, so they stay lossless and never
+  drift from what is saved. Picture renderers (SVG, PDF, Canvas, PNG, ASCII) start
+  from a display list: the visible shapes as primitives (rect, ellipse, polyline,
+  text, image) in z-order with rotation applied, never the editor's React
+  components. Each registered renderer adds an "Export as ..." command; its output
+  is downloaded or copied. PNG draws the display list on an `OffscreenCanvas`; PDF
+  needs a library. Cross-origin images without CORS headers make PNG and PDF
+  export fail and must be reported for the shape concerned.
+
+Steps:
+
+1. Make the tool and command registries reactive and disposable, and register the
+   built-ins through them as a core plugin. Report shortcut conflicts at runtime,
+   replacing the uniqueness test's role for contributed bindings.
+2. Add the renderer contribution point, the display list and built-in JSON, SVG,
+   text and PNG renderers with export commands. XML, ASCII and PDF follow the same
+   interface.
+3. Add plugin properties and the `extensions` record, with validation and a
+   persistence schema bump.
+4. Add the `custom` shape variant and the shape-type registry, with placeholders
+   for missing plugins.
+5. Load trusted same-origin plugins from manifests: check the engine range,
+   isolate and report activation failures, put each plugin's UI behind an error
+   boundary, and disable a misbehaving plugin.
+6. Only if third-party plugins are wanted: the sandbox bridge (iframe or Worker,
+   RPC, permissions), starting with renderers, whose input and output are plain
+   data.
+
+Gate: built-in tools, commands and renderers work only through the public
+registries; registering and disposing a contribution updates the toolbar, command
+bar, shortcuts, property panel and export commands without a reload; every
+renderer has fixed expected-output tests (text formats) or screenshot comparisons
+(PNG); a document saved with a plugin's shapes and data reloads without the plugin,
+preserves them, and renders them again once the plugin returns.
 
 ## Scope Boundaries
 
