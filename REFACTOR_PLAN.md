@@ -625,10 +625,10 @@ Design:
   group, layer, link or parent that refers to a shape deleted in another copy,
   and with Phase 10 a component cycle, a shape in two sources, or an instance
   whose component was deleted or emptied. After each merge and on load, the
-  binding repairs these by fixed rules based on ids: dangling references are
-  dropped, and an instance without a usable component draws a placeholder. Every
-  copy reaches the same result without a server, and the load checks that
-  reject dangling references today become these repairs.
+  binding repairs these by fixed rules based on ids: references to deleted shapes
+  are dropped, and an instance without a usable component draws a placeholder.
+  Every copy reaches the same result without a server, and the load checks that
+  reject such references today become these repairs.
 - Storage: each Yjs document is saved in IndexedDB on its own, with a small index
   of documents. A document that fails to load affects only itself.
 - Open copies on one device sync through a BroadcastChannel. A copy that was
@@ -665,12 +665,13 @@ Steps:
    records into the redo history and redoing into the undo history, so undo then
    redo returns the same document even while others edit.
 
-Gate: concurrent edits from two open copies and from two browsers merge without
-loss and leave every copy in the same state, including draw order and repaired
-merges; a copy that was hidden, offline or restored from the back/forward cache
-catches up; view state is never shared; a document that fails to load affects
-only itself; the migration keeps the original payload; the bundle stays within
-Phase 8's budget.
+Gate: when two open copies or two browsers edit at once, every edit survives
+unless both changed the same field (then one value wins in every copy), and all
+copies end in the same state, including draw order and repaired merges; a copy
+that was hidden, offline or restored from the back/forward cache catches up;
+view state is never shared; a document that fails to load affects only itself;
+the migration keeps the original payload; the bundle stays within Phase 8's
+budget.
 
 ## Scope Boundaries
 
