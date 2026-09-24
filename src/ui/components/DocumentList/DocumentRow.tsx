@@ -7,28 +7,23 @@ interface Props {
     current: boolean;
 }
 
-/**
- * One document with its actions. Deleting asks for confirmation in place, since a
- * deleted document cannot be restored.
- */
 export const DocumentRow: FC<Props> = ({ documentId, current }) => {
     const document = useDocument(documentId);
     const { editDocument, cloneDocument, removeDocument } = useActions();
     const [confirming, setConfirming] = useState(false);
-    const asked = useRef(false);
+    const wasConfirming = useRef(false);
     const deleteButton = useRef<HTMLButtonElement>(null);
     const cancelButton = useRef<HTMLButtonElement>(null);
 
-    // The buttons are replaced while confirming, so keep keyboard focus in the row.
     useEffect(() => {
         if (confirming) {
-            asked.current = true;
+            wasConfirming.current = true;
             cancelButton.current?.focus();
 
             return;
         }
 
-        if (asked.current) {
+        if (wasConfirming.current) {
             deleteButton.current?.focus();
         }
     }, [confirming]);

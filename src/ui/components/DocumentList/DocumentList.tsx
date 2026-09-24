@@ -8,7 +8,6 @@ interface Props {
     onCreate: () => void;
 }
 
-/** Every document, with the current one marked, and a button to create another. */
 export const DocumentList: FC<Props> = ({ documentsIds, currentDocumentId, onCreate }) => (
     <main className={styles.documentList}>
         <header className={styles.header}>

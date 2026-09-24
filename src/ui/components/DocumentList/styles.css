@@ -1,5 +1,3 @@
-/* CommandBar/styles.css styles every div as a centered column (see Phase 7), so
-   this page sets its own width and row directions. */
 .documentList {
   align-self: stretch;
   box-sizing: border-box;

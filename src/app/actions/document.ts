@@ -25,10 +25,6 @@ export const addDocument: ActionWithParam<Partial<Document>> = ({ state }, optio
     setDocument(state, document);
 };
 
-/**
- * Creates an empty document, named with the lowest number no other document uses,
- * and opens it in the designer.
- */
 export const newDocument: Action = ({ state, effects }) => {
     const names = new Set(Object.values(state.documents).map(({ name }) => name));
     let number = 1;
@@ -79,7 +75,6 @@ export const openDocument: ActionWithParam<string> = ({ state }, documentId) => 
     state.currentDocumentId = documentId;
 };
 
-/** Opens a document in the designer. */
 export const editDocument: ActionWithParam<string> = ({ actions, effects }, documentId) => {
     actions.openDocument(documentId);
     effects.navigate('/');
