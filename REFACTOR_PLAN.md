@@ -506,8 +506,9 @@ Design:
   replaces `parentId`. Props of nested instances are not exposed.
 - Props: a source exposes chosen `text`, `fontSize` or `visible` properties of its
   shapes, each with a label; the source's values are the defaults. An instance
-  stores only its overrides, applied to copies while drawing. The property panel
-  lists props in a Component section, with "Mixed" values and a reset.
+  stores only its overrides, applied to copies while drawing; an overridden prop
+  no longer follows the source until it is reset. The property panel lists props
+  in a Component section, with "Mixed" values and a reset.
 - `component.visible` and `component.locked` hide and lock only the source.
   Instances draw each shape by its own `visible` flag or their override, never by
   `isShapeVisible`.
