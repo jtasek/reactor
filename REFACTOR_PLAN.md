@@ -483,7 +483,8 @@ in the document. Today `Component` is only a saved list of `shapesIds` with an
 unused `parentId`, and its lock and visibility toggles do nothing.
 
 Decisions: the source stays on the canvas; instances can override chosen props;
-instances move and rotate but do not resize.
+instances move and rotate but do not resize; other documents use a component
+through a copy that is updated on request.
 
 Design:
 
@@ -495,6 +496,11 @@ Design:
   top-left of their drawn box at `position`. It is selected, moved, rotated,
   duplicated and deleted as one; its parts cannot be picked, it has only the
   rotation handle, and its width and height are read-only.
+- Propagation: everything about the source's shapes reaches every instance: their
+  arrangement and size, text, and, once shapes have them, colour and behaviour.
+  Only an instance's position, rotation, lock and visibility are its own, so
+  moving the source moves no instance. Behaviour runs per instance: an action
+  inside an instance changes that instance, never the source.
 - Nesting: a source may contain instances of other components. Cycles are refused
   when editing and rejected on load, and drawing stops at a depth limit. This
   replaces `parentId`. Props of nested instances are not exposed.
@@ -513,6 +519,14 @@ Design:
   and Detach instance, which replaces the instance with a group of copies in its
   layers and groups, with overrides and rotation applied; nested instances stay
   instances.
+- Libraries: a document uses another document's component through a copy of the
+  component, its shapes and the components nested in it, which keeps their ids
+  and records the library document and a hash of the component's saved data.
+  The copy is read-only and its shapes live inside the component, so they are
+  neither drawn nor selectable. When the hash no longer matches, the document
+  shows that an update is available and applies it on request, keeping the
+  overrides whose props still exist. Copies keep working if the library
+  document or component is deleted.
 - Other phases: Phase 9's display list expands instances and its serializers keep
   them as references; component props and plugin properties share the dynamic
   property rows; plugin shapes may be source shapes. Cloning a document (Phase 6
@@ -543,14 +557,21 @@ Steps:
    Measure drag cost with many instances before optimizing further.
 3. Add props and overrides with the Component section, and test that source edits
    change only props an instance has not overridden.
-4. Later, if wanted: scaling, an off-canvas component library, swapping an
-   instance's component, and `<symbol>`/`<use>` for instances without overrides.
+4. After document switching (Phase 6 step 4), add library copies: using a
+   component from another document, the component record reading a copy's
+   shapes, update notices when a document is opened, and applying updates. Test
+   that a copy changes only when an update is applied and survives the deletion
+   of its library.
+5. Later, if wanted: scaling, sources kept off the canvas with their own editing
+   mode, swapping an instance's component, and `<symbol>`/`<use>` for instances
+   without overrides.
 
-Gate: source edits reach every instance except overridden props; nothing done to
-an instance changes its source; hiding or locking a source leaves its instances
-unchanged; instance parts cannot be edited on their own; no command empties a
-component that has instances; cycles can be neither created nor loaded; saving and
-reloading keep sources, instances and overrides.
+Gate: source edits, including size, reach every instance except overridden props,
+and moving a source moves no instance; nothing done to an instance changes its
+source; hiding or locking a source leaves its instances unchanged; instance parts
+cannot be edited on their own; no command empties a component that has instances;
+cycles can be neither created nor loaded; saving and reloading keep sources,
+instances and overrides; a library copy changes only when an update is applied.
 
 ## Scope Boundaries
 
