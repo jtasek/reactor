@@ -4,6 +4,7 @@ import { createDocument } from '../factories';
 
 export const PERSISTENCE_KEY = 'reactor';
 export const SCHEMA_VERSION = 3;
+export const RUNTIME_FIELDS = new Set(['active', 'bounds', 'filter', 'key', 'selected']);
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
