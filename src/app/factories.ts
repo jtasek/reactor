@@ -212,7 +212,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         commandsIds,
         config: {
             version: '1.0',
-            autoSave: false,
+            autoSave: true,
             debugMode: true
         },
         currentDocumentId: 'document-1',

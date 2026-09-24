@@ -164,8 +164,9 @@ Clones own independent nested data and retain document-scoped content IDs so
 internal references remain intact. Deleting the active or final document leaves
 a valid editor; shape deletion cleans memberships, links, and parent references.
 Autosave observes all documents, coalesces writes, flushes on pagehide/disposal,
-reports failures, and safely supports repeated disposal/replacement. Its default
-remains disabled.
+reports failures, and safely supports repeated disposal/replacement. With the
+persistence contract verified (step 6), autosave has been on by default since
+2026-09-24; tabs load each other's saves, so one tab cannot overwrite another.
 
 Verification: 104 unit/store tests and 3 Chromium tests pass, including all drawing
 tools' persisted content, restore/add/select/delete, clone isolation, last-document

@@ -136,10 +136,34 @@ function registerRoutes(effects: Context['effects'], actions: Context['actions']
     });
 }
 
+export const loadSavedDocuments = ({ state }: Context, json: string): boolean => {
+    let saved: unknown;
+
+    try {
+        saved = JSON.parse(json);
+    } catch {
+        return false;
+    }
+
+    const persisted = migratePersistedState(saved);
+
+    if (!persisted) {
+        return false;
+    }
+
+    state.documents = restoreDocuments(persisted);
+
+    if (!state.documents[state.currentDocumentId]) {
+        state.currentDocumentId = persisted.currentDocumentId;
+    }
+
+    return true;
+};
+
 /**  Do not rename, it's a mandatory action name! */
 export const onInitializeOvermind = (
     context: Context,
-    instance: Pick<Context, 'state' | 'reaction'>
+    instance: Pick<Context, 'state' | 'actions' | 'addMutationListener'>
 ) => {
     const { state, effects, actions } = context;
 
