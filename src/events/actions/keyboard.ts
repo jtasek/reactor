@@ -68,11 +68,16 @@ export const keyUp: ActionWithParam<KeyboardEvent> = (
 /**
  * Activates the tool or runs the command bound to a key press. Returns whether a
  * shortcut matched — even when its command cannot run now — so the caller can
- * keep the browser from also acting on the keys. Presses are ignored while text
- * is being typed or a pointer gesture is in progress.
+ * keep the browser from also acting on the keys. Presses are ignored outside the
+ * designer, where the shapes they act on are not shown, while text is being typed,
+ * and while a pointer gesture is in progress.
  */
 export const pressShortcut = ({ state, actions }: Context, press: KeyPress): boolean => {
-    if (state.events.keyboard.typing || state.events.pointer.dragging) {
+    if (
+        state.currentPage !== 'designer' ||
+        state.events.keyboard.typing ||
+        state.events.pointer.dragging
+    ) {
         return false;
     }
 

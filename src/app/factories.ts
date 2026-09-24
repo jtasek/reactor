@@ -45,7 +45,7 @@ const shapeSequence = new Sequence();
 
 export const newApplicationName = (): string => `reactor-${Date.now()}`;
 export const newComponentName = (): string => `component-${componentSequence.next()}`;
-export const newDocumentName = (): string => `document-${documentSequence.next()}`;
+export const newDocumentName = (number = documentSequence.next()): string => `document-${number}`;
 export const newGroupName = (): string => `group-${groupSequence.next()}`;
 export const newLayerName = (): string => `layer-${layerSequence.next()}`;
 export const newLinkName = (): string => `link-${linkSequence.next()}`;

@@ -1,0 +1,74 @@
+/* CommandBar/styles.css styles every div as a centered column (see Phase 7), so
+   this page sets its own width and row directions. */
+.documentList {
+  align-self: stretch;
+  box-sizing: border-box;
+  color: var(--text-color);
+  height: 100%;
+  overflow: auto;
+  padding: 24px 32px;
+}
+
+.documentList h1 {
+  font-size: 1.5rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.documentList button {
+  background: var(--control-background-active);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  color: var(--text-color);
+  cursor: pointer;
+  font: inherit;
+  padding: 4px 10px;
+}
+
+.documentList button:hover {
+  color: var(--text-color-hover);
+  box-shadow: var(--box-shadow-hover);
+}
+
+.header {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.documentList table {
+  border-collapse: collapse;
+  max-width: 900px;
+  width: 100%;
+}
+
+.documentList th,
+.documentList td {
+  border-bottom: 1px solid var(--control-delimiter);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.documentList thead th {
+  font-weight: 500;
+}
+
+.documentList tbody th {
+  font-weight: normal;
+}
+
+.current {
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  font-size: 0.8em;
+  margin-left: 4px;
+  padding: 1px 6px;
+}
+
+.actions {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
