@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { PersistedState } from 'src/app/services/documentStorage';
+import { drawRect, openEditor, shapes } from './support/editor';
 
 test('migrates a legacy text shape, renders its content, and preserves the original', async ({
     page
@@ -81,4 +82,13 @@ test('shows a recovery notice without replacing malformed saved data', async ({ 
     await expect(page.getByRole('alert')).toContainText('original is preserved');
 
     expect(await page.evaluate(() => localStorage.getItem('reactor'))).toBe(original);
+});
+
+test('saves drawn shapes, so they survive a reload', async ({ page }) => {
+    await openEditor(page);
+    await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
+
+    await page.reload();
+
+    await expect(shapes(page)).toHaveCount(1);
 });

@@ -48,9 +48,9 @@ bytes under `reactor:backup:*`. Repeated loads reuse identical backups. Unsuppor
 or malformed data remains untouched, shows a notification, and disables autosave
 for that session. A backup failure also prevents migration and autosave.
 
-Autosave remains **off by default**. When enabled through application configuration,
-it observes all documents, debounces writes for 500 ms, flushes on pagehide or
-disposal, and reports storage failures. Transient selection changes do not produce
+Autosave is **on by default** (`config.autoSave`). It observes all documents,
+debounces writes for 500 ms, flushes on pagehide or disposal, and reports storage
+failures. Transient selection changes do not produce
 writes. Recovery notices do not imply that new session edits have been saved.
 
 ## Camera Coordinates
