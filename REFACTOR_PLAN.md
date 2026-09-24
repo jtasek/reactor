@@ -1,6 +1,6 @@
 # Repository Audit and Refactoring Plan
 
-Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phase 6 in progress; Phase 7 proposed (step 1 partly done); Phase 8 proposed (step 4 partly done); Phases 9-10 designed.
+Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phase 6 in progress; Phase 7 proposed (step 1 partly done); Phase 8 proposed (step 4 partly done); Phases 9-11 designed.
 
 ## Verified Baseline
 
@@ -166,7 +166,8 @@ a valid editor; shape deletion cleans memberships, links, and parent references.
 Autosave observes all documents, coalesces writes, flushes on pagehide/disposal,
 reports failures, and safely supports repeated disposal/replacement. With the
 persistence contract verified (step 6), autosave has been on by default since
-2026-09-24; tabs load each other's saves, so one tab cannot overwrite another.
+2026-09-24. Open copies load each other's saves, but edits not yet saved when
+another copy saves are lost; Phase 11 merges them instead.
 
 Verification: 104 unit/store tests and 3 Chromium tests pass, including all drawing
 tools' persisted content, restore/add/select/delete, clone isolation, last-document
@@ -447,8 +448,8 @@ Steps:
 2. Add the renderer contribution point, the display list and built-in JSON, SVG,
    text and PNG renderers with export commands. XML, HTML, ASCII and PDF follow the
    same interface.
-3. Add plugin properties and the `extensions` record, with validation and a
-   persistence schema bump.
+3. Add plugin properties and the `extensions` record, with validation, saved
+   through Phase 11.
 4. Add the `custom` shape variant and the shape-type registry, with placeholders
    for missing plugins.
 5. Load the listed plugins from their manifests with a native
@@ -519,9 +520,9 @@ Design:
   that instance, never the source.
 - Nesting: a source may contain instances of other components. A component can
   never contain itself, directly or through other components: this is refused
-  while editing and rejected on load, and drawing stops at a depth limit. This
-  replaces `parentId`. The outer component does not expose the props of the
-  instances nested in it.
+  while editing, a cycle produced by a merge is repaired by Phase 11's merge
+  rules, and drawing stops at a depth limit. This replaces `parentId`. The outer
+  component does not expose the props of the instances nested in it.
 - Visibility and lock: `component.visible` and `component.locked` hide and lock
   only the source. Instances use each shape's own `visible` flag (or their
   override), never `isShapeVisible`, so hiding the source, or a layer or group
@@ -561,13 +562,14 @@ Steps:
    size an overridden text: add the component key to their measurement key, and
    measure them when a gesture ends, not during it. Placing or duplicating an
    instance sets its `bounds` from the component's box. The minimap draws
-   instances as boxes. Save as schema v4: read v3 saves unchanged (without
-   `showContainers`) and drop `parentId`. One document that fails validation
-   stops the whole load, so reject only a missing component, a shape in two
-   sources or a cycle, and drop stale props and overrides. Test with geometry,
-   store and persistence tests, and with browser tests on seeded saves, including
-   one that drags a source shape and checks that no instance is measured before
-   the drag ends.
+   instances as boxes. Save instances and component props with the rest of the
+   document's content (Phase 11), dropping `parentId` when documents are
+   converted. An instance of a missing or empty component, a shape in two
+   sources and a cycle can come from a merge, so they are repaired by Phase 11's
+   merge rules instead of rejecting the document; stale props and overrides are
+   dropped. Test with geometry, store and persistence tests, and with browser
+   tests on seeded saves, including one that drags a source shape and checks that
+   no instance is measured before the drag ends.
 2. Add the `instance` tool, the commands, the source rules and unique shortcuts,
    and outline a source with its name while one of its shapes is selected.
    Browser tests cover source edits reaching instances, hiding or locking a
@@ -589,13 +591,91 @@ Gate: source edits, including size, reach every instance except overridden props
 moving a source moves no instance; nothing done to an instance changes its
 source; hiding or locking a source leaves its instances unchanged; an instance's
 parts cannot be edited on their own; no command leaves a component that has
-instances without shapes; cycles can be neither created nor loaded; saving and
-reloading keep sources, instances and overrides; a library copy changes only when
-an update is applied.
+instances without shapes; no cycle can be created, and one produced by a merge
+is repaired the same way in every copy; saving and reloading keep sources,
+instances and overrides; a library copy changes only when an update is applied.
+
+## Phase 11 - Collaboration
+
+Designed 2026-09-25; not started. Several people can edit the same document live,
+and open copies of the editor on one device share their changes. Steps 1-3 come
+before Phases 9 and 10, since both add saved data.
+
+Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
+line), so concurrent changes merge instead of one overwriting another; each user
+keeps their own view.
+
+Design:
+
+- Content: each document is a Yjs document holding everything saved today except
+  the camera. View state (camera, selection, hover, measured bounds) is never
+  shared; the camera is saved per device.
+- Order: draw order is an explicit fractional index on each shape, because the
+  key order of a Yjs map does not merge. The migration assigns indexes in today's
+  order, and reordering a shape changes only its index. If items later nest (for
+  example groups in groups), an item's parent and index are stored as one value,
+  so a move never leaves them disagreeing.
+- Store binding: the Overmind store stays the app's state. Changes to saved fields
+  are written to the Yjs document in one transaction per action, from the mutation
+  paths autosave already receives and an explicit list of saved fields per entity
+  type. Remote changes reach the store through one action and are marked as
+  remote, so they are not sent back. Only the binding uses the Yjs API, so a
+  later move to Yjs v14 stays inside it.
+- Merge rules: a merge can produce what each copy refuses on its own: today a
+  group, layer, link or parent that refers to a shape deleted in another copy,
+  and with Phase 10 a component cycle, a shape in two sources, or an instance
+  whose component was deleted or emptied. After each merge and on load, the
+  binding repairs these by fixed rules based on ids: references to deleted shapes
+  are dropped, and an instance without a usable component draws a placeholder.
+  Every copy reaches the same result without a server, and the load checks that
+  reject such references today become these repairs.
+- Storage: each Yjs document is saved in IndexedDB on its own, with a small index
+  of documents. A document that fails to load affects only itself.
+- Open copies on one device sync through a BroadcastChannel. A copy that was
+  hidden, or restored from the back/forward cache, catches up by exchanging what
+  each copy has already seen.
+- Network: a WebSocket endpoint on the server relays changes and stores each
+  document. Edits made offline merge when the connection returns.
+- Presence: each user has a name and color, anonymous until accounts exist.
+  Pointers and selections are shown to others and never saved.
+- Cancelling a gesture undoes only that gesture's own changes, so it never
+  reverts someone else's edit made meanwhile.
+- A status indicator shows saved, syncing, offline or not saving, instead of
+  one-off notices.
+- Migration: the local storage payload is backed up and converted into Yjs
+  documents once; later loads read IndexedDB.
+
+Steps:
+
+1. Add Yjs and the store binding for documents in memory. Test with a simulator
+   of three bound copies making random concurrent edits, including different
+   shapes, different fields of one shape, a delete against an edit, a reference
+   to a shape deleted elsewhere and concurrent reorders, and check that all
+   copies converge. Phase 10 adds its component rules to the same simulator.
+2. Save documents in IndexedDB with the index, migrate the local storage payload
+   (backed up first), and sync open copies on one device, including catch-up.
+   This replaces autosave's whole-state save and tab sync.
+3. Save the camera per device, make gesture cancel undo only its own changes, and
+   add the status indicator.
+4. Add the WebSocket endpoint to the production and dev servers, with storage per
+   document on the server and `connect-src` allowing it, and connect documents to
+   it.
+5. Add presence: names, colors, remote pointers and selections.
+6. Later, if wanted: accounts and sharing permissions, and undo per user. Undoing
+   records into the redo history and redoing into the undo history, so undo then
+   redo returns the same document even while others edit.
+
+Gate: when two open copies or two browsers edit at once, every edit survives
+unless both changed the same field (then one value wins in every copy), and all
+copies end in the same state, including draw order and repaired merges; a copy
+that was hidden, offline or restored from the back/forward cache catches up;
+view state is never shared; a document that fails to load affects only itself;
+the migration keeps the original payload; the bundle stays within Phase 8's
+budget.
 
 ## Scope Boundaries
 
 No framework/state-library replacement, broad dependency upgrade, authentication,
-collaboration, or new undo-history system is required by this plan. Gesture rollback
+or new undo-history system is required by this plan. Gesture rollback
 is scoped to cancellation. Investigate performance with measurements after the
 correctness gates; do not add memoization preemptively.
