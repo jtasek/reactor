@@ -384,12 +384,9 @@ regression in the Phase 4 input matrix.
 Designed 2026-09-24; not started. This is feature work built on the refactored
 core, not part of the release gate in Phase 8.
 
-There is no standard for web application plugins (OSGi and the W3C WebExtensions
-group cover other platforms). The design uses standard building blocks — ES modules
-with dynamic `import()`, `<iframe sandbox>` with `postMessage`, CSP, SemVer and
-JSON Schema — and follows proven models: VS Code's manifest, `engines` range and
-disposable contributions; Figma's sandbox with message passing; and tldraw's
-per-shape-type definitions.
+There is no standard for web application plugins. The design uses standard
+building blocks: ES modules with dynamic `import()`, `<iframe sandbox>` with
+`postMessage`, CSP, SemVer and JSON Schema.
 
 Design:
 
@@ -404,7 +401,7 @@ Design:
 - Functions cannot cross `postMessage`, and the UI evaluates command guards and
   reads properties synchronously while rendering, so sandboxed plugins describe
   both as data: a command is enabled by a `when` condition over fixed context
-  keys, as in VS Code, and a property is a typed field of the plugin's
+  keys, and a property is a typed field of the plugin's
   `extensions` data, which the core reads and writes. Their code runs only behind
   async calls: running a command, rendering (plain data in and out) and a
   permission-checked document API.
@@ -470,138 +467,90 @@ registries; registering and disposing a contribution updates the toolbar, comman
 bar, shortcuts, property panel and export commands without a reload; every
 renderer is tested: text formats (JSON, XML, text, SVG, HTML, ASCII) against fixed
 expected output, PNG and the live Canvas by screenshot comparison, and PDF by
-rasterizing its pages (for example with pdf.js) and comparing them the same way;
+rasterizing its pages and comparing them the same way;
 a document saved with a plugin's shapes and data reloads without the plugin, keeps
 them as placeholders in their frames, and renders them again once the plugin
 returns.
 
 ## Phase 10 - Components
 
-Designed 2026-09-24; not started. Like Phase 9, this is feature work built on the
-refactored core, not part of the release gate in Phase 8. It does not depend on
-Phase 9 and may be done before it; the last design point lists where they meet.
+Designed 2026-09-24; not started. Feature work outside the Phase 8 release gate;
+independent of Phase 9, so it may come first.
 
-A component is a reusable drawing made of shapes and other components. It has one
-source and any number of instances that draw it, and editing the source updates
-every instance in the document. Today `Component` is only a named list of shapes
-(`shapesIds`, plus a `parentId` that nothing sets). It is saved and listed in the
-navigation bar, but has no instances, and its lock and visibility toggles do
-nothing because `inContainer` checks only groups and layers.
+A component is a reusable drawing of shapes and other components: one source and
+any number of instances that draw it. Editing the source updates every instance
+in the document. Today `Component` is only a saved list of `shapesIds` with an
+unused `parentId`, and its lock and visibility toggles do nothing.
 
-Decided on 2026-09-24: the source stays on the canvas; instances can override
-chosen props; instances move and rotate but do not resize.
+Decisions: the source stays on the canvas; instances can override chosen props;
+instances move and rotate but do not resize.
 
 Design:
 
-- The source is the existing `Component` and its shapes, left where they were
-  drawn and edited with the normal tools and the property panel, like Figma's main
-  component. A shape belongs to at most one source.
-- An instance is a new `Shape` variant,
-  `{ type: 'instance'; componentId; position; overrides }`; the field is not
-  called `props` because `Shape.tsx` spreads a shape into its renderer's props.
-  As a shape it gets selection, moving, rotation, lock, visibility, groups,
-  layers, the property panel, deletion and saving, and every exhaustive switch
-  must handle it. Duplicating an instance creates another instance.
-- An instance stores no copy of its source. It draws the source's shapes in their
-  drawing order, shifted so that the top-left corner of the box around them (as
-  drawn, rotations included) lands on `position`, and rotates about its own centre
-  like any shape. Overmind re-renders every instance when a source shape changes,
-  so there is no sync code.
-- An instance behaves like a locked group: it is selected, moved, rotated and
-  deleted as one, its parts cannot be picked, and it shows only the rotation
-  handle. Its width and height stay read-only, as they already are in the panel.
-- A source may contain instances of other components, but no component may
-  contain itself, directly or through others: creating or extending a source
-  refuses a cycle, loading rejects one, and drawing stops at a depth limit. This
-  replaces `parentId`. Props of nested instances are not exposed through the outer
-  component in this phase.
-- Props: a source exposes chosen properties of its shapes from the property table
-  (`text`, `fontSize`, `visible`), each with a label. A prop's default is the
-  source shape's current value, so editing the source updates every instance that
-  has not overridden it. An instance stores only its overrides, which follow the
-  property's rules and are applied to copies while drawing, never to the source.
-  The property panel lists props in a Component section, shows "Mixed" where the
-  selected instances differ, and can reset an override.
-- `component.visible` hides only the source's own drawing, and
-  `component.locked` locks only the source's shapes, which gives the navigation
-  bar's toggles a meaning. Instances keep their own flags and draw a source shape
-  by its own `visible` flag (or their override of it), never by `isShapeVisible`,
-  so hiding the source, or a layer or group that holds it, leaves them unchanged.
-- A shape that leaves the source leaves every instance, together with its props
-  and their overrides. A shape already in a source cannot be added to another.
-  While a component has instances, anything that would leave it without shapes
-  (deleting the component, or deleting or removing the last of its source's
-  shapes) is refused with a notification.
-- Commands: Create component (from the selection), Insert instance (choose a
-  component in the list, then click the canvas), Add to component, Remove from
-  component, Select source, Detach instance and Reset overrides. Detaching
-  replaces an instance with a group of copies of the source's shapes, with
-  overrides applied and the instance's rotation combined into each copy; the
-  copies also join the instance's layers and groups, and nested instances stay
+- Source: the existing `Component` and its shapes, edited in place with the normal
+  tools. A shape belongs to at most one source.
+- Instance: a new `Shape` variant,
+  `{ type: 'instance'; componentId; position; overrides }`. It draws the source's
+  shapes by reference (nothing is copied or synced), in drawing order, with the
+  top-left of their drawn box at `position`. It is selected, moved, rotated,
+  duplicated and deleted as one; its parts cannot be picked, it has only the
+  rotation handle, and its width and height are read-only.
+- Nesting: a source may contain instances of other components. Cycles are refused
+  when editing and rejected on load, and drawing stops at a depth limit. This
+  replaces `parentId`. Props of nested instances are not exposed.
+- Props: a source exposes chosen `text`, `fontSize` or `visible` properties of its
+  shapes, each with a label; the source's values are the defaults. An instance
+  stores only its overrides, applied to copies while drawing. The property panel
+  lists props in a Component section, with "Mixed" values and a reset.
+- `component.visible` and `component.locked` hide and lock only the source.
+  Instances draw each shape by its own `visible` flag or their override, never by
+  `isShapeVisible`.
+- A shape that leaves the source takes its props and their overrides with it. A
+  component with instances is never left without shapes: deleting it, or deleting
+  or removing its last shapes, is refused with a notification.
+- Commands: Create component, Insert instance (pick it in the list, then click the
+  canvas), Add to component, Remove from component, Select source, Reset overrides
+  and Detach instance, which replaces the instance with a group of copies in its
+  layers and groups, with overrides and rotation applied; nested instances stay
   instances.
-- Where this meets other phases: Phase 9's display list expands instances
-  recursively, and its model serializers keep them as references; component props
-  and plugin properties share the dynamic property rows, built by whichever phase
-  comes first; a plugin's custom shapes may be source shapes. Cloning a document
-  (Phase 6 step 4) must remap `componentId`, source membership and prop targets if
-  it renews ids.
+- Other phases: Phase 9's display list expands instances and its serializers keep
+  them as references; component props and plugin properties share the dynamic
+  property rows; plugin shapes may be source shapes. Cloning a document (Phase 6
+  step 4) remaps `componentId`, membership and prop targets when it renews ids.
 
 Steps:
 
-1. Add the `instance` variant with its geometry, a hit test on its box in its
-   rotated frame, duplication and no resizing (`Resizable` shows only the
-   rotation handle). Derive one record per component, recomputed once when its
-   source changes and read by every instance: its shapes in the document's
-   drawing order (`shapesIds` is in membership order, so no instance filters the
-   document's shapes itself), the box around them as drawn, and a key built from
-   their geometry and measured bounds, nested components included. An instance's
-   renderer draws each source shape through a memoized child that reads that
-   shape by id, as `Shapes` renders `Shape`, so a change to one source shape
-   re-renders one child per instance. The child draws the shape's primitive
-   (`getComponentByType`) with the shape's own rotation, bypassing `Shape.tsx`,
-   which would measure the source shape again and mount overlays. Instances are
-   measured like other shapes, because only the DOM sizes an overridden text
-   exactly: each adds its component's key to its measurement key, so a change to
-   the source, including one that only moves its drawn box, re-measures every
-   instance once. During a gesture instances are not re-measured; they are
-   measured once when it ends, as `Shape.tsx` already does for Move-tool drags,
-   so a drag does not call `getBBox` for every instance on every frame. Placing
-   or duplicating an instance sets its `bounds` to its component's box moved to
-   `position`, so store logic and store tests have a box before the DOM measures
-   one; after a reload, an instance has no box only until its first measurement,
-   before anything is painted. The minimap, which renders `<Shapes />` a second
-   time, draws instances as their boxes. Save as schema v4 with instances and
-   component props.
-   `migratePersistedState` accepts only versions 1, 2 and the current one, and
-   runs `showContainers`, which shows every group and layer, on any other version;
-   v4 must accept v3 and read it as it is, apart from dropping `parentId`. One
-   document that fails to load keeps the whole saved state from loading (it is
-   backed up and autosave stops), so loading rejects only what cannot be drawn or
-   breaks an invariant (an instance of a missing component, a shape in two
-   sources, a cycle) and drops harmless leftovers (a prop whose shape left its
-   source, an override of a missing prop or of the wrong type). Test with
-   geometry, store and persistence tests, and with browser tests that seed a
-   saved document as the persistence tests do, including one that drags a source
-   shape and checks that no instance is measured before the drag ends.
-2. Add the `instance` tool, the commands and the source rules above, with unique
-   shortcuts, and outline a source with its name while one of its shapes is
-   selected. Browser tests: create a component, place instances, edit the source
-   and see every instance change; hide and lock the source and see its instances
-   unchanged; nest components; detach; refuse a cycle and anything that would
-   empty a source that has instances. Measure the cost of dragging a source shape
-   with many instances before optimizing further.
-3. Add props and overrides with the property panel's Component section, and test
-   that editing the source changes only the props an instance has not overridden.
-4. Later, if wanted: scaling instances, an off-canvas component library with its
-   own editing mode, swapping an instance's component, and `<symbol>`/`<use>` for
-   instances without overrides.
+1. Add the `instance` variant: geometry, a box hit test in the rotated frame and
+   duplication, with only the rotation handle in `Resizable`. Derive one record
+   per component, shared by its instances: its shapes in drawing order
+   (`shapesIds` is in membership order), their drawn box, and a key from their
+   geometry and measured bounds, nested components included. Draw each source
+   shape through a memoized child that reads it by id and renders its primitive
+   (`getComponentByType`) with its rotation, not through `Shape.tsx`. Measure
+   instances, since only the DOM sizes overridden text: the component key joins
+   their measurement key, and they are measured when a gesture ends, not during
+   it. Placing or duplicating an instance sets `bounds` from the component box;
+   the minimap draws instances as boxes. Save as schema v4: read v3 as is
+   (without `showContainers`) and drop `parentId`. A document that fails
+   validation blocks the whole load, so reject only a missing component, a shape
+   in two sources or a cycle, and drop stale props and overrides. Test with
+   geometry, store and persistence tests and browser tests on seeded saves,
+   including a source drag that measures no instance before it ends.
+2. Add the `instance` tool, the commands, the source rules and unique shortcuts,
+   and outline a source with its name while one of its shapes is selected.
+   Browser tests: source edits reach instances; hiding or locking a source leaves
+   them unchanged; nesting; detaching; refusing cycles and emptying a used source.
+   Measure drag cost with many instances before optimizing further.
+3. Add props and overrides with the Component section, and test that source edits
+   change only props an instance has not overridden.
+4. Later, if wanted: scaling, an off-canvas component library, swapping an
+   instance's component, and `<symbol>`/`<use>` for instances without overrides.
 
-Gate: editing a source changes every instance in the document, except for props
-an instance overrides; nothing done to an instance changes its source; hiding or
-locking a source leaves its instances unchanged; an instance's parts cannot be
-selected or edited on their own; no command leaves a component that has instances
-without shapes; cycles can be neither created nor loaded; saving and reloading
-keep sources, instances and overrides.
+Gate: source edits reach every instance except overridden props; nothing done to
+an instance changes its source; hiding or locking a source leaves its instances
+unchanged; instance parts cannot be edited on their own; no command empties a
+component that has instances; cycles can be neither created nor loaded; saving and
+reloading keep sources, instances and overrides.
 
 ## Scope Boundaries
 
