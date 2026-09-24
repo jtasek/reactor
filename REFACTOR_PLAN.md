@@ -467,7 +467,7 @@ registries; registering and disposing a contribution updates the toolbar, comman
 bar, shortcuts, property panel and export commands without a reload; every
 renderer is tested: text formats (JSON, XML, text, SVG, HTML, ASCII) against fixed
 expected output, PNG and the live Canvas by screenshot comparison, and PDF by
-rasterizing its pages and comparing them the same way;
+rasterizing its pages (for example with pdf.js) and comparing them the same way;
 a document saved with a plugin's shapes and data reloads without the plugin, keeps
 them as placeholders in their frames, and renders them again once the plugin
 returns.
