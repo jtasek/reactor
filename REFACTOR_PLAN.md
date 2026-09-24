@@ -443,8 +443,8 @@ Steps:
 2. Add the renderer contribution point, the display list and built-in JSON, SVG,
    text and PNG renderers with export commands. XML, HTML, ASCII and PDF follow the
    same interface.
-3. Add plugin properties and the `extensions` record, with validation and a
-   persistence schema bump.
+3. Add plugin properties and the `extensions` record, with validation, saved
+   through Phase 11.
 4. Add the `custom` shape variant and the shape-type registry, with placeholders
    for missing plugins.
 5. Load the listed plugins from their manifests with a native
@@ -515,9 +515,9 @@ Design:
   that instance, never the source.
 - Nesting: a source may contain instances of other components. A component can
   never contain itself, directly or through other components: this is refused
-  while editing and rejected on load, and drawing stops at a depth limit. This
-  replaces `parentId`. The outer component does not expose the props of the
-  instances nested in it.
+  while editing, a cycle produced by a merge is repaired by Phase 11's merge
+  rules, and drawing stops at a depth limit. This replaces `parentId`. The outer
+  component does not expose the props of the instances nested in it.
 - Visibility and lock: `component.visible` and `component.locked` hide and lock
   only the source. Instances use each shape's own `visible` flag (or their
   override), never `isShapeVisible`, so hiding the source, or a layer or group
@@ -559,9 +559,10 @@ Steps:
    instance sets its `bounds` from the component's box. The minimap draws
    instances as boxes. Save instances and component props with the rest of the
    document's content (Phase 11), dropping `parentId` when documents are
-   converted. Loading rejects a document with an instance of a missing
-   component, a shape in two sources or a cycle, and drops stale props and
-   overrides. Test with geometry, store and persistence tests, and with browser
+   converted. An instance of a missing or empty component, a shape in two
+   sources and a cycle can come from a merge, so they are repaired by Phase 11's
+   merge rules instead of rejecting the document; stale props and overrides are
+   dropped. Test with geometry, store and persistence tests, and with browser
    tests on seeded saves, including one that drags a source shape and checks that
    no instance is measured before the drag ends.
 2. Add the `instance` tool, the commands, the source rules and unique shortcuts,
@@ -585,9 +586,9 @@ Gate: source edits, including size, reach every instance except overridden props
 moving a source moves no instance; nothing done to an instance changes its
 source; hiding or locking a source leaves its instances unchanged; an instance's
 parts cannot be edited on their own; no command leaves a component that has
-instances without shapes; cycles can be neither created nor loaded; saving and
-reloading keep sources, instances and overrides; a library copy changes only when
-an update is applied.
+instances without shapes; no cycle can be created, and one produced by a merge
+is repaired the same way in every copy; saving and reloading keep sources,
+instances and overrides; a library copy changes only when an update is applied.
 
 ## Phase 11 - Collaboration
 
@@ -595,19 +596,34 @@ Designed 2026-09-25; not started. Several people can edit the same document live
 and open copies of the editor on one device share their changes. Steps 1-3 come
 before Phases 9 and 10, since both add saved data.
 
-Decisions: documents become CRDT documents (Yjs), so concurrent changes merge
-instead of one overwriting another; each user keeps their own view.
+Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
+line), so concurrent changes merge instead of one overwriting another; each user
+keeps their own view.
 
 Design:
 
 - Content: each document is a Yjs document holding everything saved today except
   the camera. View state (camera, selection, hover, measured bounds) is never
   shared; the camera is saved per device.
+- Order: draw order is an explicit fractional index on each shape, because the
+  key order of a Yjs map does not merge. The migration assigns indexes in today's
+  order, and reordering a shape changes only its index. If items later nest (for
+  example groups in groups), an item's parent and index are stored as one value,
+  so a move never leaves them disagreeing.
 - Store binding: the Overmind store stays the app's state. Changes to saved fields
   are written to the Yjs document in one transaction per action, from the mutation
   paths autosave already receives and an explicit list of saved fields per entity
   type. Remote changes reach the store through one action and are marked as
-  remote, so they are not sent back.
+  remote, so they are not sent back. Only the binding uses the Yjs API, so a
+  later move to Yjs v14 stays inside it.
+- Merge rules: a merge can produce what each copy refuses on its own: today a
+  group, layer, link or parent that refers to a shape deleted in another copy,
+  and with Phase 10 a component cycle, a shape in two sources, or an instance
+  whose component was deleted or emptied. After each merge and on load, the
+  binding repairs these by fixed rules based on ids: dangling references are
+  dropped, and an instance without a usable component draws a placeholder. Every
+  copy reaches the same result without a server, and the load checks that
+  reject dangling references today become these repairs.
 - Storage: each Yjs document is saved in IndexedDB on its own, with a small index
   of documents. A document that fails to load affects only itself.
 - Open copies on one device sync through a BroadcastChannel. A copy that was
@@ -626,9 +642,11 @@ Design:
 
 Steps:
 
-1. Add Yjs and the store binding for documents in memory. Test that two bound
-   stores converge under concurrent edits: different shapes, different fields of
-   one shape, and a delete against an edit.
+1. Add Yjs and the store binding for documents in memory. Test with a simulator
+   of three bound copies making random concurrent edits, including different
+   shapes, different fields of one shape, a delete against an edit, a reference
+   to a shape deleted elsewhere and concurrent reorders, and check that all
+   copies converge. Phase 10 adds its component rules to the same simulator.
 2. Save documents in IndexedDB with the index, migrate the local storage payload
    (backed up first), and sync open copies on one device, including catch-up.
    This replaces autosave's whole-state save and tab sync.
@@ -638,10 +656,13 @@ Steps:
    document on the server and `connect-src` allowing it, and connect documents to
    it.
 5. Add presence: names, colors, remote pointers and selections.
-6. Later, if wanted: accounts and sharing permissions, and undo per user.
+6. Later, if wanted: accounts and sharing permissions, and undo per user. Undoing
+   records into the redo history and redoing into the undo history, so undo then
+   redo returns the same document even while others edit.
 
 Gate: concurrent edits from two open copies and from two browsers merge without
-loss; a copy that was hidden, offline or restored from the back/forward cache
+loss and leave every copy in the same state, including draw order and repaired
+merges; a copy that was hidden, offline or restored from the back/forward cache
 catches up; view state is never shared; a document that fails to load affects
 only itself; the migration keeps the original payload; the bundle stays within
 Phase 8's budget.
