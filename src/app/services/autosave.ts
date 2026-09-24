@@ -1,14 +1,23 @@
 import type { Context } from '../index';
-import { PERSISTENCE_KEY, serializePersistedState } from './documentStorage';
+import { PERSISTENCE_KEY, RUNTIME_FIELDS, serializePersistedState } from './documentStorage';
 
 const controllers = new WeakMap<object, { flush: () => void; dispose: () => void }>();
+
+const isDurableChange = ({ path, delimiter }: { path: string; delimiter: string }) => {
+    const [root, ...fields] = path.split(delimiter);
+
+    return (
+        (root === 'documents' || root === 'currentDocumentId') &&
+        !fields.some((field) => RUNTIME_FIELDS.has(field))
+    );
+};
 
 export function disposeAutosave(instance: object): void {
     controllers.get(instance)?.dispose();
 }
 
 export function startAutosave(
-    instance: Pick<Context, 'state' | 'reaction'>,
+    instance: Pick<Context, 'state' | 'actions' | 'addMutationListener'>,
     effects: Pick<Context['effects'], 'saveState'>,
     onError: (message: string) => void
 ) {
@@ -54,8 +63,45 @@ export function startAutosave(
         timer = setTimeout(flush, 500);
     };
 
-    const stopDocuments = instance.reaction((state) => state.documents, schedule, { nested: true });
-    const stopCurrent = instance.reaction((state) => state.currentDocumentId, schedule);
+    const handleStorage = (event: StorageEvent) => {
+        if (disposed || event.key !== PERSISTENCE_KEY || event.newValue === null) {
+            return;
+        }
+
+        if (!instance.actions.loadSavedDocuments(event.newValue)) {
+            stop();
+            onError(
+                'Another tab saved documents this tab cannot read. Reload this tab; changes made in it are no longer saved.'
+            );
+
+            return;
+        }
+
+        clearTimeout(timer);
+        timer = undefined;
+        dirty = false;
+        lastSaved = JSON.stringify(serializePersistedState(instance.state));
+    };
+
+    const stopListening = instance.addMutationListener((mutation) => {
+        if (isDurableChange(mutation)) {
+            schedule();
+        }
+    });
+
+    const stop = () => {
+        disposed = true;
+        clearTimeout(timer);
+        stopListening();
+
+        if (typeof window !== 'undefined') {
+            window.removeEventListener('pagehide', flush);
+            window.removeEventListener('storage', handleStorage);
+        }
+
+        controllers.delete(instance);
+    };
+
     const controller = {
         flush,
         dispose: () => {
@@ -64,21 +110,13 @@ export function startAutosave(
             }
 
             flush();
-            disposed = true;
-            clearTimeout(timer);
-            stopDocuments();
-            stopCurrent();
-
-            if (typeof window !== 'undefined') {
-                window.removeEventListener('pagehide', flush);
-            }
-
-            controllers.delete(instance);
+            stop();
         }
     };
 
     if (typeof window !== 'undefined') {
         window.addEventListener('pagehide', flush);
+        window.addEventListener('storage', handleStorage);
     }
 
     controllers.set(instance, controller);

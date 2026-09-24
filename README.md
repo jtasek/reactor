@@ -50,8 +50,10 @@ for that session. A backup failure also prevents migration and autosave.
 
 Autosave is **on by default** (`config.autoSave`). It observes all documents,
 debounces writes for 500 ms, flushes on pagehide or disposal, and reports storage
-failures. Transient selection changes do not produce
-writes. Recovery notices do not imply that new session edits have been saved.
+failures. Runtime-only changes, such as selection, hover and measured bounds, do not
+schedule a save. When another tab saves, this tab loads its documents and keeps its
+current one open; a tab that cannot read them stops saving and says so. Recovery
+notices do not imply that new session edits have been saved.
 
 ## Camera Coordinates
 

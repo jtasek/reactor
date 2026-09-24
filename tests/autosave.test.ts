@@ -96,7 +96,94 @@ describe('autosave lifecycle', () => {
         expect(effects.saveState).not.toHaveBeenCalled();
     });
 
-    it('flushes on pagehide and removes the listener on disposal', async () => {
+    it('schedules no save for changes to fields that are never saved', () => {
+        const { store, effects } = createTestStore();
+
+        store.actions.addShape({
+            type: 'rectangle',
+            position: { x: 0, y: 0 },
+            size: { width: 10, height: 20 }
+        });
+
+        const [shapeId] = store.state.currentDocument.shapesIds;
+        const controller = startAutosave(store, effects, vi.fn());
+        const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+
+        cleanup.push(
+            () => controller.dispose(),
+            () => setTimeoutSpy.mockRestore()
+        );
+
+        store.actions.activateShape(shapeId);
+        store.actions.unselectShapes();
+        store.actions.setShapeBounds({
+            id: shapeId,
+            bounds: {
+                topLeft: { x: 1, y: 1 },
+                bottomRight: { x: 11, y: 21 },
+                width: 10,
+                height: 20
+            }
+        });
+
+        expect(setTimeoutSpy).not.toHaveBeenCalledWith(expect.any(Function), 500);
+    });
+
+    it('loads documents another tab saved, without saving them again', async () => {
+        const window = new EventTarget();
+
+        vi.stubGlobal('window', window);
+
+        const { store, effects, storage } = createTestStore();
+        const controller = startAutosave(store, effects, vi.fn());
+        const otherTab = createTestStore().store;
+
+        cleanup.push(controller.dispose);
+
+        otherTab.actions.addDocument({ id: 'from-other-tab' });
+        storage.set('reactor', JSON.stringify(serializePersistedState(otherTab.state)));
+        window.dispatchEvent(
+            Object.assign(new Event('storage'), {
+                key: 'reactor',
+                newValue: storage.get('reactor')
+            })
+        );
+
+        expect(store.state.documentsIds).toContain('from-other-tab');
+        expect(store.state.currentDocumentId).toBe('test-document');
+
+        await vi.advanceTimersByTimeAsync(500);
+
+        expect(effects.saveState).not.toHaveBeenCalled();
+    });
+
+    it('stops saving, and says so, when another tab saves data it cannot read', async () => {
+        const window = new EventTarget();
+
+        vi.stubGlobal('window', window);
+
+        const { store, effects, storage } = createTestStore();
+        const errors = vi.fn();
+        const controller = startAutosave(store, effects, errors);
+        const newer = JSON.stringify({ version: 99 });
+
+        cleanup.push(controller.dispose);
+
+        storage.set('reactor', newer);
+        window.dispatchEvent(
+            Object.assign(new Event('storage'), { key: 'reactor', newValue: newer })
+        );
+        store.actions.updateDocument({ id: store.state.currentDocumentId, name: 'Not saved' });
+
+        await vi.advanceTimersByTimeAsync(500);
+        controller.dispose();
+
+        expect(errors).toHaveBeenCalledOnce();
+        expect(effects.saveState).not.toHaveBeenCalled();
+        expect(storage.get('reactor')).toBe(newer);
+    });
+
+    it('flushes on pagehide and removes its listeners on disposal', async () => {
         const window = new EventTarget();
         const removeListener = vi.spyOn(window, 'removeEventListener');
 
@@ -122,7 +209,8 @@ describe('autosave lifecycle', () => {
         window.dispatchEvent(new Event('pagehide'));
 
         expect(effects.saveState).toHaveBeenCalledOnce();
-        expect(removeListener).toHaveBeenCalledExactlyOnceWith('pagehide', controller.flush);
+        expect(removeListener.mock.calls.map(([type]) => type)).toEqual(['pagehide', 'storage']);
+        expect(removeListener).toHaveBeenCalledWith('pagehide', controller.flush);
     });
 
     it('replaces an existing controller without leaving duplicate subscriptions', async () => {
