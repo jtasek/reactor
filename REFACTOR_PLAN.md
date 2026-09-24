@@ -522,16 +522,22 @@ Design:
   The property panel lists props in a Component section, shows "Mixed" where the
   selected instances differ, and can reset an override.
 - `component.visible` hides only the source's own drawing, and
-  `component.locked` locks only the source's shapes; instances keep their own
-  flags. This gives the navigation bar's toggles a meaning. A shape that leaves
-  the source leaves every instance, together with its props and their overrides.
-  While a component has instances, deleting it or the last shape of its source is
-  refused with a notification.
+  `component.locked` locks only the source's shapes, which gives the navigation
+  bar's toggles a meaning. Instances keep their own flags and draw a source shape
+  by its own `visible` flag (or their override of it), never by `isShapeVisible`,
+  so hiding the source, or a layer or group that holds it, leaves them unchanged.
+- A shape that leaves the source leaves every instance, together with its props
+  and their overrides. A shape already in a source cannot be added to another.
+  While a component has instances, anything that would leave it without shapes
+  (deleting the component, or deleting or removing the last of its source's
+  shapes) is refused with a notification.
 - Commands: Create component (from the selection), Insert instance (choose a
   component in the list, then click the canvas), Add to component, Remove from
-  component, Select source, Detach instance (replaced by a group of copies of the
-  source's shapes, with overrides applied and the instance's rotation combined
-  into each copy; nested instances stay instances) and Reset overrides.
+  component, Select source, Detach instance and Reset overrides. Detaching
+  replaces an instance with a group of copies of the source's shapes, with
+  overrides applied and the instance's rotation combined into each copy; the
+  copies also join the instance's layers and groups, and nested instances stay
+  instances.
 - Where this meets other phases: Phase 9's display list expands instances
   recursively, and its model serializers keep them as references; component props
   and plugin properties share the dynamic property rows, built by whichever phase
@@ -541,35 +547,50 @@ Design:
 
 Steps:
 
-1. Add the `instance` variant with its geometry, bounds, a hit test on its box in
-   its rotated frame, duplication and no resizing (`Resizable` shows only the
+1. Add the `instance` variant with its geometry, a hit test on its box in its
+   rotated frame, duplication and no resizing (`Resizable` shows only the
    rotation handle). Its renderer draws the source's shapes through their
    primitives (`getComponentByType`) with their own rotation, bypassing
    `Shape.tsx`, which would measure the source shapes again and mount overlays.
-   An instance's measurement key includes its source's geometry, nested sources
-   too, or its box stays stale after the source changes; until it is first
-   measured its box is empty, because `getBoundingBox` cannot see the source, so
-   store tests set `bounds`. Save as schema v4, backing up the old payload:
-   instances, component props, a migration that drops `parentId`, and validation
-   (an instance names an existing component, a shape has at most one source, no
-   cycles, props and overrides name existing shapes and props with the right
-   types). Test with geometry, store and persistence tests, and a browser test
-   that seeds a saved document as the persistence tests do.
+   Instances are measured like other shapes, because only the DOM sizes an
+   overridden text exactly. Derive one key per component from its source shapes'
+   geometry and measured bounds, nested components included, and add it to each
+   instance's measurement key: a change to the source, including one that only
+   moves its drawn box, then re-measures every instance once, and no instance
+   serializes the source itself. Placing or duplicating an instance sets its
+   `bounds` to the box around its source's shapes moved to `position`, so store
+   logic and store tests have a box before the DOM measures one; after a reload,
+   an instance has no box only until its first measurement, before anything is
+   painted. Save as schema v4 with instances and component props.
+   `migratePersistedState` accepts only versions 1, 2 and the current one, and
+   runs `showContainers`, which shows every group and layer, on any other version;
+   v4 must accept v3 and read it as it is, apart from dropping `parentId`. One
+   document that fails to load keeps the whole saved state from loading (it is
+   backed up and autosave stops), so loading rejects only what cannot be drawn or
+   breaks an invariant (an instance of a missing component, a shape in two
+   sources, a cycle) and drops harmless leftovers (a prop whose shape left its
+   source, an override of a missing prop or of the wrong type). Test with
+   geometry, store and persistence tests, and a browser test that seeds a saved
+   document as the persistence tests do.
 2. Add the `instance` tool, the commands and the source rules above, with unique
    shortcuts, and outline a source with its name while one of its shapes is
    selected. Browser tests: create a component, place instances, edit the source
-   and see every instance change; nest components; detach; refuse a cycle and a
-   deletion that would empty a source that has instances. Measure the cost of
-   dragging a source shape with many instances before optimizing it.
-3. Add props and overrides with the property panel's Component section.
+   and see every instance change; hide and lock the source and see its instances
+   unchanged; nest components; detach; refuse a cycle and anything that would
+   empty a source that has instances. Measure the cost of dragging a source shape
+   with many instances before optimizing it.
+3. Add props and overrides with the property panel's Component section, and test
+   that editing the source changes only the props an instance has not overridden.
 4. Later, if wanted: scaling instances, an off-canvas component library with its
    own editing mode, swapping an instance's component, and `<symbol>`/`<use>` for
    instances without overrides.
 
-Gate: editing a source changes every instance in the document; nothing done to an
-instance changes its source; an instance's parts cannot be selected or edited on
-their own; cycles can be neither created nor loaded; saving and reloading keep
-sources, instances and overrides.
+Gate: editing a source changes every instance in the document, except for props
+an instance overrides; nothing done to an instance changes its source; hiding or
+locking a source leaves its instances unchanged; an instance's parts cannot be
+selected or edited on their own; no command leaves a component that has instances
+without shapes; cycles can be neither created nor loaded; saving and reloading
+keep sources, instances and overrides.
 
 ## Scope Boundaries
 
