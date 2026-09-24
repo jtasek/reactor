@@ -474,105 +474,118 @@ returns.
 
 ## Phase 10 - Components
 
-Designed 2026-09-24; not started. Feature work outside the Phase 8 release gate;
-independent of Phase 9, so it may come first.
+Designed 2026-09-24; not started. This is feature work outside the Phase 8
+release gate. It does not depend on Phase 9 and may be done first.
 
-A component is a reusable drawing of shapes and other components: one source and
-any number of instances that draw it. Editing the source updates every instance
-in the document. Today `Component` is only a saved list of `shapesIds` with an
-unused `parentId`, and its lock and visibility toggles do nothing.
+A component is a reusable drawing made of shapes and other components. It has
+one source and any number of instances that draw it. Editing the source updates
+every instance in the document. Today `Component` is only a saved list of shape
+ids (`shapesIds`) with an unused `parentId`, and its lock and visibility toggles
+do nothing.
 
-Decisions: the source stays on the canvas; instances can override chosen props;
-instances move and rotate but do not resize; other documents use a component
-through a copy that is updated on request.
+Decisions: the source stays on the canvas; instances can override the props the
+source exposes; instances can be moved and rotated but not resized; other
+documents use a component through a copy that is updated on request.
 
 Design:
 
-- Source: the existing `Component` and its shapes, edited in place with the normal
-  tools. A shape belongs to at most one source.
+- Source: the existing `Component` and its shapes, edited where they are with
+  the normal tools. A shape belongs to at most one source.
 - Instance: a new `Shape` variant,
   `{ type: 'instance'; componentId; position; overrides }`. It draws the source's
-  shapes by reference (nothing is copied or synced), in drawing order, with the
-  top-left of their drawn box at `position`. It is selected, moved, rotated,
-  duplicated and deleted as one; its parts cannot be picked, it has only the
-  rotation handle, and its width and height are read-only.
-- Propagation: everything about the source's shapes reaches every instance: their
-  arrangement and size, text, and, once shapes have them, colour and behaviour.
-  Only an instance's position, rotation, lock and visibility are its own, so
-  moving the source moves no instance. Behaviour runs per instance: an action
-  inside an instance changes that instance, never the source.
-- Nesting: a source may contain instances of other components. Cycles are refused
-  when editing and rejected on load, and drawing stops at a depth limit. This
-  replaces `parentId`. Props of nested instances are not exposed.
-- Props: a source exposes chosen `text`, `fontSize` or `visible` properties of its
-  shapes, each with a label; the source's values are the defaults. An instance
-  stores only its overrides, applied to copies while drawing; an overridden prop
-  no longer follows the source until it is reset. The property panel lists props
-  in a Component section, with "Mixed" values and a reset.
-- `component.visible` and `component.locked` hide and lock only the source.
-  Instances draw each shape by its own `visible` flag or their override, never by
-  `isShapeVisible`.
-- A shape that leaves the source takes its props and their overrides with it. A
-  component with instances is never left without shapes: deleting it, or deleting
-  or removing its last shapes, is refused with a notification.
-- Commands: Create component, Insert instance (pick it in the list, then click the
-  canvas), Add to component, Remove from component, Select source, Reset overrides
-  and Detach instance, which replaces the instance with a group of copies in its
-  layers and groups, with overrides and rotation applied; nested instances stay
-  instances.
-- Libraries: a document uses another document's component through a copy of the
-  component, its shapes and the components nested in it, which keeps their ids
-  and records the library document and a hash of the component's saved data.
-  The copy is read-only and its shapes live inside the component, so they are
-  neither drawn nor selectable. When the hash no longer matches, the document
-  shows that an update is available and applies it on request, keeping the
-  overrides whose props still exist. Copies keep working if the library
-  document or component is deleted.
-- Other phases: Phase 9's display list expands instances and its serializers keep
-  them as references; component props and plugin properties share the dynamic
-  property rows; plugin shapes may be source shapes. Cloning a document (Phase 6
-  step 4) remaps `componentId`, membership and prop targets when it renews ids.
+  shapes by reference, so nothing is copied or synced. The shapes keep their
+  drawing order, and the top-left corner of their drawn box is placed at
+  `position`. An instance is selected, moved, rotated, duplicated and deleted as
+  one piece: its parts cannot be selected, it shows only the rotation handle, and
+  its width and height are read-only.
+- Props: the source exposes chosen `text`, `fontSize` or `visible` properties of
+  its shapes, each with a label. The source's values are the defaults. An
+  instance stores only the props it overrides and applies them when it draws,
+  never to the source. An overridden prop no longer follows the source until it
+  is reset.
+  The property panel lists props in a Component section, shows "Mixed" where the
+  selected instances differ, and can reset an override.
+- Propagation: changes to the source's shapes reach every instance, including
+  their arrangement, size and text, and their color and behavior once shapes
+  have them. Overridden props are the only exception. An instance's position,
+  rotation, lock and visibility are its own, so moving the source moves no
+  instance. Behavior runs per instance: an action inside an instance changes
+  that instance, never the source.
+- Nesting: a source may contain instances of other components. A component can
+  never contain itself, directly or through other components: this is refused
+  while editing and rejected on load, and drawing stops at a depth limit. This
+  replaces `parentId`. The outer component does not expose the props of the
+  instances nested in it.
+- Visibility and lock: `component.visible` and `component.locked` hide and lock
+  only the source. Instances use each shape's own `visible` flag (or their
+  override), never `isShapeVisible`, so hiding the source, or a layer or group
+  that holds it, does not hide them.
+- Membership: when a shape leaves the source, its props and their overrides are
+  removed. A component that has instances is never left without shapes: deleting
+  it, or deleting or removing its last shapes, is refused with a notification.
+- Commands: Create component (from the selection), Insert instance (choose a
+  component in the list, then click the canvas), Add to component, Remove from
+  component, Select source, Reset overrides and Detach instance. Detaching
+  replaces an instance with a group of plain shapes copied from the source, with
+  the instance's overrides and rotation applied, in the instance's layers and
+  groups. Nested instances stay instances.
+- Libraries: to use another document's component, a document copies it with its
+  shapes and nested components, keeping their ids. The copy records the document
+  it came from and a hash of the component's saved data. It is read-only, and its
+  shapes live inside the component, so they are neither drawn nor selectable.
+  When the hash no longer matches, the document shows that an update is
+  available and applies it on request, keeping the overrides whose props still
+  exist. Copies keep working if the library document or component is deleted.
+- Other phases: Phase 9's display list expands instances into their shapes, and
+  its serializers keep them as references. Component props and plugin properties
+  add rows to the property panel in the same way. Plugin shapes may be source
+  shapes. Cloning a document (Phase 6 step 4) remaps `componentId`, membership
+  and prop targets when it renews ids.
 
 Steps:
 
-1. Add the `instance` variant: geometry, a box hit test in the rotated frame and
-   duplication, with only the rotation handle in `Resizable`. Derive one record
-   per component, shared by its instances: its shapes in drawing order
-   (`shapesIds` is in membership order), their drawn box, and a key from their
-   geometry and measured bounds, nested components included. Draw each source
-   shape through a memoized child that reads it by id and renders its primitive
-   (`getComponentByType`) with its rotation, not through `Shape.tsx`. Measure
-   instances, since only the DOM sizes overridden text: the component key joins
-   their measurement key, and they are measured when a gesture ends, not during
-   it. Placing or duplicating an instance sets `bounds` from the component box;
-   the minimap draws instances as boxes. Save as schema v4: read v3 as is
-   (without `showContainers`) and drop `parentId`. A document that fails
-   validation blocks the whole load, so reject only a missing component, a shape
-   in two sources or a cycle, and drop stale props and overrides. Test with
-   geometry, store and persistence tests and browser tests on seeded saves,
-   including a source drag that measures no instance before it ends.
+1. Add the `instance` variant: its geometry, a hit test on its box in its
+   rotated frame, duplication, and only the rotation handle in `Resizable`.
+   Derive one record per component, shared by all its instances: its shapes in
+   drawing order (`shapesIds` is in membership order), their drawn box, and a key
+   built from their geometry and measured bounds, nested components included.
+   Draw each source shape through a memoized child that reads the shape by id and
+   renders its primitive (`getComponentByType`) with its rotation, not through
+   `Shape.tsx`. Measure instances like other shapes, because only the DOM can
+   size an overridden text: add the component key to their measurement key, and
+   measure them when a gesture ends, not during it. Placing or duplicating an
+   instance sets its `bounds` from the component's box. The minimap draws
+   instances as boxes. Save as schema v4: read v3 saves unchanged (without
+   `showContainers`) and drop `parentId`. One document that fails validation
+   stops the whole load, so reject only a missing component, a shape in two
+   sources or a cycle, and drop stale props and overrides. Test with geometry,
+   store and persistence tests, and with browser tests on seeded saves, including
+   one that drags a source shape and checks that no instance is measured before
+   the drag ends.
 2. Add the `instance` tool, the commands, the source rules and unique shortcuts,
    and outline a source with its name while one of its shapes is selected.
-   Browser tests: source edits reach instances; hiding or locking a source leaves
-   them unchanged; nesting; detaching; refusing cycles and emptying a used source.
-   Measure drag cost with many instances before optimizing further.
-3. Add props and overrides with the Component section, and test that source edits
-   change only props an instance has not overridden.
+   Browser tests cover source edits reaching instances, hiding or locking a
+   source without affecting them, nesting, detaching, and refusing cycles or
+   anything that would empty a source that has instances. Measure the cost of
+   dragging with many instances before optimizing further.
+3. Add props and overrides with the property panel's Component section, and test
+   that source edits change only the props an instance has not overridden.
 4. After document switching (Phase 6 step 4), add library copies: using a
-   component from another document, the component record reading a copy's
-   shapes, update notices when a document is opened, and applying updates. Test
-   that a copy changes only when an update is applied and survives the deletion
-   of its library.
-5. Later, if wanted: scaling, sources kept off the canvas with their own editing
-   mode, swapping an instance's component, and `<symbol>`/`<use>` for instances
-   without overrides.
+   component from another document, reading a copy's shapes in the component
+   record, showing available updates when a document is opened, and applying
+   them. Test that a copy changes only when an update is applied and keeps
+   working after its library is deleted.
+5. Later, if wanted: scaling instances, sources kept off the canvas with their own
+   editing mode, swapping an instance's component, and `<symbol>`/`<use>` for
+   instances without overrides.
 
-Gate: source edits, including size, reach every instance except overridden props,
-and moving a source moves no instance; nothing done to an instance changes its
-source; hiding or locking a source leaves its instances unchanged; instance parts
-cannot be edited on their own; no command empties a component that has instances;
-cycles can be neither created nor loaded; saving and reloading keep sources,
-instances and overrides; a library copy changes only when an update is applied.
+Gate: source edits, including size, reach every instance except overridden props;
+moving a source moves no instance; nothing done to an instance changes its
+source; hiding or locking a source leaves its instances unchanged; an instance's
+parts cannot be edited on their own; no command leaves a component that has
+instances without shapes; cycles can be neither created nor loaded; saving and
+reloading keep sources, instances and overrides; a library copy changes only when
+an update is applied.
 
 ## Scope Boundaries
 
