@@ -19,7 +19,6 @@ import { Context } from 'src/app';
 **/
 
 interface Props {
-    key: string;
     name: string;
     position: Point;
     radius: number;
@@ -29,10 +28,8 @@ interface Props {
 
 export const createCircleProps = ({ center, radius }: Pointer, designMode = false): Props => {
     const name = designMode ? 'Circle x' : newShapeName();
-    const key = name.toLowerCase();
 
     return {
-        key,
         name,
         position: center,
         radius: radius,

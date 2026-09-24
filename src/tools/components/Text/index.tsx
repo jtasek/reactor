@@ -25,7 +25,6 @@ import { useActions, useKeyboard, usePointer } from 'src/app/hooks';
 
 interface Props {
     fontSize: number;
-    key: string;
     name: string;
     position: Point;
     selected: boolean;
@@ -39,11 +38,9 @@ export const createTextProps = (
     designMode = false
 ): Props => {
     const name = designMode ? 'Text x' : newShapeName();
-    const key = name.toLowerCase();
 
     return {
         fontSize: DEFAULT_TEXT_FONT_SIZE,
-        key,
         name,
         position: start,
         selected: true,
@@ -52,14 +49,13 @@ export const createTextProps = (
     };
 };
 
-export const Text: FC<Props> = ({ fontSize, key, name, position, value, selected }) => {
+export const Text: FC<Props> = ({ fontSize, name, position, value, selected }) => {
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
     return (
         <text
             className={className}
             data-cy={name}
-            key={key}
             style={{ fontSize }}
             x={position.x}
             y={position.y}

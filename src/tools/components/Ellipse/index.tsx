@@ -20,7 +20,6 @@ import { Context } from 'src/app';
 **/
 
 interface Props {
-    key: string;
     name: string;
     position: Point;
     radius: Point;
@@ -30,10 +29,8 @@ interface Props {
 
 export const createEllipseProps = ({ center, size }: Pointer, designMode = false): Props => {
     const name = designMode ? 'Ellipse x' : newShapeName();
-    const key = name.toLowerCase();
 
     return {
-        key,
         position: center,
         radius: { x: size.width / 2, y: size.height / 2 },
         name,
@@ -53,7 +50,7 @@ export const DesignEllipse: FC = () => {
     return <Ellipse {...props} />;
 };
 
-export const Ellipse: FC<Props> = ({ key, name, position, radius, selected }) => {
+export const Ellipse: FC<Props> = ({ name, position, radius, selected }) => {
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
     return (
@@ -62,7 +59,6 @@ export const Ellipse: FC<Props> = ({ key, name, position, radius, selected }) =>
             cx={position.x}
             cy={position.y}
             data-cy={name}
-            key={key}
             rx={radius.x}
             ry={radius.y}
         />

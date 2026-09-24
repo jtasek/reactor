@@ -22,7 +22,6 @@ import { Context } from 'src/app';
  **/
 
 interface Props {
-    key: string;
     name: string;
     position: Point;
     selected: boolean;
@@ -32,10 +31,8 @@ interface Props {
 
 export const createRectProps = ({ size, topLeft }: Pointer, designMode = false): Props => {
     const name = designMode ? 'Rectangle x' : newShapeName();
-    const key = name.toLowerCase();
 
     return {
-        key,
         name,
         position: topLeft,
         selected: true,
@@ -44,7 +41,7 @@ export const createRectProps = ({ size, topLeft }: Pointer, designMode = false):
     };
 };
 
-export const Rect: FC<Props> = ({ key, name, position, size, selected }) => {
+export const Rect: FC<Props> = ({ name, position, size, selected }) => {
     const shape = useRef(null);
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
@@ -54,7 +51,6 @@ export const Rect: FC<Props> = ({ key, name, position, size, selected }) => {
             data-cy={name}
             fill="none"
             height={size?.height}
-            key={key}
             ref={shape}
             width={size?.width}
             x={position?.x}
@@ -69,18 +65,9 @@ export const DesignRect: FC = () => {
         return null;
     }
 
-    const { key, name, position, selected, size, type } = createRectProps(pointer, true);
+    const { name, position, selected, size, type } = createRectProps(pointer, true);
 
-    return (
-        <Rect
-            key={key}
-            name={name}
-            position={position}
-            size={size}
-            selected={selected}
-            type={type}
-        />
-    );
+    return <Rect name={name} position={position} size={size} selected={selected} type={type} />;
 };
 
 export const RectCommand: Command = {

@@ -42,7 +42,6 @@ if (typeof window !== 'undefined' && typeof window.Image !== 'undefined') {
 
 interface Props {
     id?: string;
-    key: string;
     name: string;
     position: Point;
     selected: boolean;
@@ -87,11 +86,9 @@ const getImageBounds = (
 
 export const createImageProps = (pointer: Pointer, designMode = false): Props => {
     const name = designMode ? 'Image x' : newShapeName();
-    const key = name.toLowerCase();
     const { position, size } = getImageBounds(pointer);
 
     return {
-        key,
         name,
         position,
         selected: true,
@@ -101,7 +98,7 @@ export const createImageProps = (pointer: Pointer, designMode = false): Props =>
     };
 };
 
-export const Image: FC<Props> = ({ key, name, position, size, source, selected }) => {
+export const Image: FC<Props> = ({ name, position, size, source, selected }) => {
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
     return (
@@ -109,7 +106,6 @@ export const Image: FC<Props> = ({ key, name, position, size, source, selected }
             className={className}
             data-cy={name}
             height={size.height}
-            key={key}
             preserveAspectRatio="xMidYMid meet"
             width={size.width}
             x={position.x}
