@@ -84,6 +84,14 @@ export const useDocuments = () => {
     return useAppState((state) => state.documents) ?? [];
 };
 
+export const useDocumentsIds = () => {
+    return useAppState((state) => state.documentsIds);
+};
+
+export const useCurrentDocumentId = () => {
+    return useAppState((state) => state.currentDocumentId);
+};
+
 export const useShape = (id: string) => {
     return useCurrentDocument()?.shapes[id];
 };

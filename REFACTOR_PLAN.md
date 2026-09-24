@@ -319,7 +319,12 @@ typed. Step 3: the property panel lists the properties every selected shape
 shares (from one table, `src/app/properties.ts`) in sections such as Shape and
 Text, shows "Mixed" where values differ, and edits all selected shapes through
 typed fields; locked shapes only take metadata edits. Width and height are
-read-only for now. Remaining: steps 4-6.
+read-only for now. Step 4: the documents page lists every document with its
+shape count and creation date, and opens, clones and deletes documents, asking
+before a delete. A new document takes the lowest unused `document-N` name, and a
+clone is named after its original. Shortcuts act only in the designer, so keys
+pressed on the documents page cannot change shapes that are not shown.
+Remaining: steps 5-6.
 
 1. Consolidate command registration, parsing, guards, and execution. Connect Move
    and Pan to the existing interaction actions and give shortcuts unique bindings.

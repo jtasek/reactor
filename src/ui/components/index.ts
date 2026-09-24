@@ -5,6 +5,7 @@ export { ConnectedControlPanel as ControlPanel } from './ControlPanel';
 export { ConnectedCursor as Cursor } from './Cursor';
 export { ConnectedDataView as DataView } from './DataView';
 export { ConnectedDocumentInfo as DocumentInfo } from './DocumentInfo';
+export { DocumentListContainer as DocumentList } from './DocumentList';
 export { ConnectedExplorer as Explorer } from './Explorer';
 export { ConnectedOverlay as Overlay } from './Overlay';
 export { Dialog } from './Dialog';

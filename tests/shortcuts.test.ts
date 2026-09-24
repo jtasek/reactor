@@ -98,4 +98,15 @@ describe('keyboard shortcuts', () => {
         expect(store.actions.events.pressShortcut(press('Delete'))).toBe(false);
         expect(store.state.currentDocument.shapesIds).toHaveLength(1);
     });
+
+    it('ignores shortcuts outside the designer, where shapes are not shown', () => {
+        const store = storeWithRect(true);
+
+        store.actions.showDocuments();
+
+        expect(store.actions.events.pressShortcut(press('Delete'))).toBe(false);
+        expect(store.actions.events.pressShortcut(press('r'))).toBe(false);
+        expect(store.state.currentDocument.shapesIds).toHaveLength(1);
+        expect(store.state.tools.activeToolsIds).toEqual(['select']);
+    });
 });
