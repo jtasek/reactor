@@ -203,6 +203,9 @@ Examples worth modelling new tools on:
   exhaustive `switch (shape.type)` ending in `assertNever` — never casts or field sniffing.
   Per-type move/resize live in `src/app/geometry.ts`; create shapes from a `ShapeInput` via
   `createShape`.
+- Shapes are drawn and hit-tested in `shapesIds` order: by each shape's `order` (a fractional
+  index from `fractional-indexing`), then by id. `addShape` and `cloneShape` put new shapes on
+  top. Never rely on the key order of `shapes`.
 - `getBoundingBox(shape)` (`src/app/utils.ts`) computes an **analytic** box per shape type.
 - Each rendered shape is also **measured** with `getBBox()` in `src/ui/components/Shape/Shape.tsx`
   (the shape's primitive is wrapped in a `<g ref>`), and the result is stored as `shape.bounds`

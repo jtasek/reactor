@@ -71,6 +71,7 @@
   "dependencies": {
     "compression": "^1.8.1",
     "express": "^5.2.1",
+    "fractional-indexing": "^4.0.0",
     "helmet": "^8.2.0",
     "overmind": "^28.2.1",
     "overmind-react": "^29.2.1",

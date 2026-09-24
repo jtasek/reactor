@@ -1,6 +1,6 @@
 # Repository Audit and Refactoring Plan
 
-Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phase 6 in progress; Phase 7 proposed (step 1 partly done); Phase 8 proposed (step 4 partly done); Phases 9-11 designed.
+Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phase 6 in progress; Phase 7 proposed (step 1 partly done); Phase 8 proposed (step 4 partly done); Phases 9-10 designed; Phase 11 in progress.
 
 ## Verified Baseline
 
@@ -597,9 +597,12 @@ instances and overrides; a library copy changes only when an update is applied.
 
 ## Phase 11 - Collaboration
 
-Designed 2026-09-25; not started. Several people can edit the same document live,
+Designed 2026-09-25; in progress. Several people can edit the same document live,
 and open copies of the editor on one device share their changes. Steps 1-3 come
 before Phases 9 and 10, since both add saved data.
+
+Done: draw order. Each shape has an `order` (a fractional index); new shapes and
+clones go on top, and saves without one keep their saved order.
 
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user

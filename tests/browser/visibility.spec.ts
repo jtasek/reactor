@@ -34,6 +34,7 @@ function layeredDocument(): PersistedState {
                         name: 'Box',
                         type: 'rectangle',
                         visible: true,
+                        order: 'a0',
                         rotation: 0,
                         position: { x: 100, y: 100 },
                         size: { width: 50, height: 50 }

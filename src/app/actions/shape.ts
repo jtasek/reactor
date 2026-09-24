@@ -9,6 +9,7 @@ import {
     Shape,
     ShapeInput
 } from '../types';
+import { generateKeyBetween } from 'fractional-indexing';
 import { Context } from '../index';
 import { createShape } from '../factories';
 import { PropertyValue, SHAPE_PROPERTIES, applyProperty, canEdit } from '../properties';
@@ -43,6 +44,13 @@ const setShape = ({ currentDocument }: Application, shape: Shape) => {
     if (currentDocument) {
         currentDocument.shapes[shape.id] = shape;
     }
+};
+
+const orderOnTop = ({ currentDocument }: Application) => {
+    const { shapes, shapesIds } = currentDocument;
+    const top = shapesIds[shapesIds.length - 1];
+
+    return generateKeyBetween(top ? shapes[top].order : null, null);
 };
 
 /** Shapes the pointer can hit, select and drag: visible and not locked. */
@@ -80,7 +88,7 @@ const deleteShape = ({ currentDocument }: Application, shapeId: string) => {
 };
 
 export const addShape: ActionWithParam<ShapeInput> = ({ state }, options) => {
-    const shape = createShape(options);
+    const shape = createShape({ order: orderOnTop(state), ...options });
 
     setShape(state, shape);
 };
@@ -97,6 +105,7 @@ export const cloneShape: ActionWithParam<string> = ({ state }, shapeId) => {
     const original = getShape(state, shapeId);
     const clone = createShape({
         ...shapeGeometry(original),
+        order: orderOnTop(state),
         name: `Clone of ${original.name}`,
         description: original.description,
         parentShapeId: original.parentShapeId,

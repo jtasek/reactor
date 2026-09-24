@@ -1,3 +1,4 @@
+import { generateKeyBetween } from 'fractional-indexing';
 import type { Application, Document, Shape, Point, Size, Group, Link, Ruler } from '../types';
 import { Orientation } from '../types';
 import { createDocument } from '../factories';
@@ -161,7 +162,19 @@ function member(value: unknown): MemberData & { parentId?: string } {
     };
 }
 
-function readShape(value: unknown): ShapeData {
+function drawOrder(value: unknown): string {
+    const result = text(value);
+
+    try {
+        generateKeyBetween(result, null);
+    } catch {
+        throw new Error('Invalid draw order');
+    }
+
+    return result;
+}
+
+function readShape(value: unknown, nextOrder: () => string): ShapeData {
     const s = record(value);
     const base = {
         ...entity(value),
@@ -169,10 +182,13 @@ function readShape(value: unknown): ShapeData {
         modified: date(s.modified),
         createdBy: text(s.createdBy),
         modifiedBy: text(s.modifiedBy),
+        order: s.order === undefined ? nextOrder() : drawOrder(s.order),
         rotation: s.rotation === undefined ? 0 : number(s.rotation),
         ...(s.description === undefined ? {} : { description: text(s.description) }),
         ...(s.parentShapeId === undefined ? {} : { parentShapeId: id(s.parentShapeId) }),
-        ...(s.children === undefined ? {} : { children: list(s.children, readShape) })
+        ...(s.children === undefined
+            ? {}
+            : { children: list(s.children, (child) => readShape(child, nextOrder)) })
     };
 
     // Lines and pens are placed by their points; earlier versions also stored an
@@ -220,6 +236,19 @@ function readShape(value: unknown): ShapeData {
     }
 }
 
+function readShapes(value: unknown): Record<string, ShapeData> {
+    let top = Object.values(record(value))
+        .map((shape) => record(shape).order)
+        .filter((order) => order !== undefined)
+        .map(drawOrder)
+        .reduce<string | null>(
+            (highest, order) => (highest === null || order > highest ? order : highest),
+            null
+        );
+
+    return table(value, (shape) => readShape(shape, () => (top = generateKeyBetween(top, null))));
+}
+
 function readDocument(value: unknown): DocumentData {
     const d = record(value);
     const camera = record(d.camera);
@@ -242,7 +271,7 @@ function readDocument(value: unknown): DocumentData {
             factor: positive(grid.factor),
             visible: bool(grid.visible)
         },
-        shapes: table(d.shapes, readShape),
+        shapes: readShapes(d.shapes),
         groups: table(d.groups, member),
         layers: table(d.layers, member),
         components: table(d.components, member),
