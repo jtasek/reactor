@@ -497,10 +497,11 @@ Design:
   drawn and edited with the normal tools and the property panel, like Figma's main
   component. A shape belongs to at most one source.
 - An instance is a new `Shape` variant,
-  `{ type: 'instance'; componentId; position; props }`. As a shape it gets
-  selection, moving, rotation, lock, visibility, groups, layers, the property
-  panel, deletion and saving, and every exhaustive switch must handle it.
-  Duplicating an instance creates another instance.
+  `{ type: 'instance'; componentId; position; overrides }`; the field is not
+  called `props` because `Shape.tsx` spreads a shape into its renderer's props.
+  As a shape it gets selection, moving, rotation, lock, visibility, groups,
+  layers, the property panel, deletion and saving, and every exhaustive switch
+  must handle it. Duplicating an instance creates another instance.
 - An instance stores no copy of its source. It draws the source's shapes in their
   drawing order, shifted so that the top-left corner of the box around them (as
   drawn, rotations included) lands on `position`, and rotates about its own centre
@@ -549,19 +550,28 @@ Steps:
 
 1. Add the `instance` variant with its geometry, a hit test on its box in its
    rotated frame, duplication and no resizing (`Resizable` shows only the
-   rotation handle). Its renderer draws the source's shapes through their
-   primitives (`getComponentByType`) with their own rotation, bypassing
-   `Shape.tsx`, which would measure the source shapes again and mount overlays.
-   Instances are measured like other shapes, because only the DOM sizes an
-   overridden text exactly. Derive one key per component from its source shapes'
-   geometry and measured bounds, nested components included, and add it to each
-   instance's measurement key: a change to the source, including one that only
-   moves its drawn box, then re-measures every instance once, and no instance
-   serializes the source itself. Placing or duplicating an instance sets its
-   `bounds` to the box around its source's shapes moved to `position`, so store
-   logic and store tests have a box before the DOM measures one; after a reload,
-   an instance has no box only until its first measurement, before anything is
-   painted. Save as schema v4 with instances and component props.
+   rotation handle). Derive one record per component, recomputed once when its
+   source changes and read by every instance: its shapes in the document's
+   drawing order (`shapesIds` is in membership order, so no instance filters the
+   document's shapes itself), the box around them as drawn, and a key built from
+   their geometry and measured bounds, nested components included. An instance's
+   renderer draws each source shape through a memoized child that reads that
+   shape by id, as `Shapes` renders `Shape`, so a change to one source shape
+   re-renders one child per instance. The child draws the shape's primitive
+   (`getComponentByType`) with the shape's own rotation, bypassing `Shape.tsx`,
+   which would measure the source shape again and mount overlays. Instances are
+   measured like other shapes, because only the DOM sizes an overridden text
+   exactly: each adds its component's key to its measurement key, so a change to
+   the source, including one that only moves its drawn box, re-measures every
+   instance once. During a gesture instances are not re-measured; they are
+   measured once when it ends, as `Shape.tsx` already does for Move-tool drags,
+   so a drag does not call `getBBox` for every instance on every frame. Placing
+   or duplicating an instance sets its `bounds` to its component's box moved to
+   `position`, so store logic and store tests have a box before the DOM measures
+   one; after a reload, an instance has no box only until its first measurement,
+   before anything is painted. The minimap, which renders `<Shapes />` a second
+   time, draws instances as their boxes. Save as schema v4 with instances and
+   component props.
    `migratePersistedState` accepts only versions 1, 2 and the current one, and
    runs `showContainers`, which shows every group and layer, on any other version;
    v4 must accept v3 and read it as it is, apart from dropping `parentId`. One
@@ -570,15 +580,16 @@ Steps:
    breaks an invariant (an instance of a missing component, a shape in two
    sources, a cycle) and drops harmless leftovers (a prop whose shape left its
    source, an override of a missing prop or of the wrong type). Test with
-   geometry, store and persistence tests, and a browser test that seeds a saved
-   document as the persistence tests do.
+   geometry, store and persistence tests, and with browser tests that seed a
+   saved document as the persistence tests do, including one that drags a source
+   shape and checks that no instance is measured before the drag ends.
 2. Add the `instance` tool, the commands and the source rules above, with unique
    shortcuts, and outline a source with its name while one of its shapes is
    selected. Browser tests: create a component, place instances, edit the source
    and see every instance change; hide and lock the source and see its instances
    unchanged; nest components; detach; refuse a cycle and anything that would
    empty a source that has instances. Measure the cost of dragging a source shape
-   with many instances before optimizing it.
+   with many instances before optimizing further.
 3. Add props and overrides with the property panel's Component section, and test
    that editing the source changes only the props an instance has not overridden.
 4. Later, if wanted: scaling instances, an off-canvas component library with its
