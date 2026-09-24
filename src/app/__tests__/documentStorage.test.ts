@@ -17,7 +17,8 @@ const fixture = () => {
     const shape = createShape({
         type: 'rectangle',
         position: { x: 0, y: 0 },
-        size: { width: 10, height: 20 }
+        size: { width: 10, height: 20 },
+        order: 'a0'
     });
 
     document.shapes[shape.id] = shape;

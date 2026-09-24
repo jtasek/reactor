@@ -38,12 +38,12 @@ Phase 4.
 
 ## Document Storage
 
-Documents use version 2 of the `reactor` localStorage payload. Only durable content
+Documents use version 4 of the `reactor` localStorage payload. Only durable content
 is saved; dates use ISO strings and derived indexes and selections are rebuilt on
 load. Cloned documents have independent content but preserve internal IDs, which
 are scoped to each document.
 
-Version-1 snapshots are validated and migrated after backing up their original
+Snapshots from versions 1-3 are validated and migrated after backing up their original
 bytes under `reactor:backup:*`. Repeated loads reuse identical backups. Unsupported
 or malformed data remains untouched, shows a notification, and disables autosave
 for that session. A backup failure also prevents migration and autosave.

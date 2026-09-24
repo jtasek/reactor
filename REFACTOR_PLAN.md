@@ -601,8 +601,10 @@ Designed 2026-09-25; in progress. Several people can edit the same document live
 and open copies of the editor on one device share their changes. Steps 1-3 come
 before Phases 9 and 10, since both add saved data.
 
-Done: draw order. Each shape has an `order` (a fractional index); new shapes and
-clones go on top, and saves without one keep their saved order.
+Done: draw order (save format version 4). Each shape has an `order` (a fractional
+index); new shapes and clones go on top, and a shape saved without a valid order
+gets one above the others, in saved order. Copies of the editor on an older build
+cannot read version 4, so they stop saving instead of dropping orders.
 
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user

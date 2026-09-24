@@ -1,14 +1,7 @@
 import { derived } from 'overmind';
-import { Application, Document, Shape } from '../types';
+import { Application, Document } from '../types';
+import { byDrawingOrder } from '../drawOrder';
 import { isShapeVisible } from '../utils';
-
-const byDrawingOrder = (a: Shape, b: Shape) => {
-    if (a.order !== b.order) {
-        return a.order < b.order ? -1 : 1;
-    }
-
-    return a.id < b.id ? -1 : 1;
-};
 
 export const commandsIds = derived(({ commands }: Application) => {
     return Object.keys(commands);
@@ -48,8 +41,9 @@ export const rulersIds = derived((currentDocument: Document) => {
 
 export const shapesIds = derived((currentDocument: Document) => {
     return Object.values(currentDocument.shapes)
+        .map(({ id, order }) => ({ id, order }))
         .sort(byDrawingOrder)
-        .map((shape) => shape.id);
+        .map(({ id }) => id);
 });
 
 // The selection commands act on: a hidden shape keeps its `selected` flag but is

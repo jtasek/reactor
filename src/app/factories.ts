@@ -13,7 +13,6 @@ import {
     selectedShapesIds,
     shapesIds
 } from './computed/shapes';
-import { generateKeyBetween } from 'fractional-indexing';
 import { newId } from './effects';
 import { Sequence } from './sequence';
 
@@ -77,7 +76,7 @@ export function createNotification(options: Partial<Notification> = {}): Notific
     };
 }
 
-export function createShape(input: ShapeInput): Shape {
+export function createShape(input: ShapeInput & Pick<Shape, 'order'>): Shape {
     const id = newId();
 
     return {
@@ -89,7 +88,6 @@ export function createShape(input: ShapeInput): Shape {
         modified: new Date(),
         modifiedBy: getCurrentUserName(),
         name: newShapeName(),
-        order: generateKeyBetween(null, null),
         rotation: 0,
         selected: true,
         visible: true,

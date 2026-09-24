@@ -9,9 +9,9 @@ import {
     Shape,
     ShapeInput
 } from '../types';
-import { generateKeyBetween } from 'fractional-indexing';
 import { Context } from '../index';
 import { createShape } from '../factories';
+import { isDrawOrder, orderAbove } from '../drawOrder';
 import { PropertyValue, SHAPE_PROPERTIES, applyProperty, canEdit } from '../properties';
 import {
     hitTestShape,
@@ -50,7 +50,7 @@ const orderOnTop = ({ currentDocument }: Application) => {
     const { shapes, shapesIds } = currentDocument;
     const top = shapesIds[shapesIds.length - 1];
 
-    return generateKeyBetween(top ? shapes[top].order : null, null);
+    return orderAbove(top ? shapes[top].order : null);
 };
 
 /** Shapes the pointer can hit, select and drag: visible and not locked. */
@@ -88,7 +88,10 @@ const deleteShape = ({ currentDocument }: Application, shapeId: string) => {
 };
 
 export const addShape: ActionWithParam<ShapeInput> = ({ state }, options) => {
-    const shape = createShape({ order: orderOnTop(state), ...options });
+    const shape = createShape({
+        ...options,
+        order: isDrawOrder(options.order) ? options.order : orderOnTop(state)
+    });
 
     setShape(state, shape);
 };
@@ -330,7 +333,9 @@ export const updateShape = ({ state }: Context, options: Partial<Shape> & { id: 
         return;
     }
 
-    Object.assign(shape, options);
+    const { order, ...changes } = options;
+
+    Object.assign(shape, isDrawOrder(order) ? { ...changes, order } : changes);
 };
 
 /**
