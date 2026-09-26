@@ -15,10 +15,10 @@ const DEFAULT_VIEW_BOX = '0 0 1000 1000';
  * Computes a viewBox that frames every shape (with a small margin) so the
  * minimap always shows the whole canvas where the shapes are.
  */
-const getContentViewBox = (document: ReturnType<typeof useCurrentDocument>): string => {
-    const { shapesIds, shapes } = document;
+const getContentViewBox = ({ shapes }: ReturnType<typeof useCurrentDocument>): string => {
+    const allShapes = Object.values(shapes);
 
-    if (shapesIds.length === 0) {
+    if (allShapes.length === 0) {
         return DEFAULT_VIEW_BOX;
     }
 
@@ -27,12 +27,7 @@ const getContentViewBox = (document: ReturnType<typeof useCurrentDocument>): str
     let maxX = -Infinity;
     let maxY = -Infinity;
 
-    shapesIds.forEach((id: string) => {
-        const shape = shapes[id];
-        if (!shape) {
-            return;
-        }
-
+    allShapes.forEach((shape) => {
         const { topLeft, bottomRight } = getShapeBounds(shape);
         minX = Math.min(minX, topLeft.x);
         minY = Math.min(minY, topLeft.y);

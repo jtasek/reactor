@@ -96,7 +96,10 @@ function loadLocalData({ effects, state, actions }: Context): boolean {
             return true;
         }
 
-        const persisted = migratePersistedState(raw);
+        let repaired = false;
+        const persisted = migratePersistedState(raw, () => {
+            repaired = true;
+        });
 
         if (!persisted) {
             effects.backupState(PERSISTENCE_KEY);
@@ -108,10 +111,11 @@ function loadLocalData({ effects, state, actions }: Context): boolean {
         }
 
         if (
-            typeof raw === 'object' &&
-            raw !== null &&
-            'version' in raw &&
-            raw.version !== SCHEMA_VERSION
+            repaired ||
+            (typeof raw === 'object' &&
+                raw !== null &&
+                'version' in raw &&
+                raw.version !== SCHEMA_VERSION)
         ) {
             effects.backupState(PERSISTENCE_KEY);
         }

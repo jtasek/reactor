@@ -1,52 +1,102 @@
-import { migratePersistedState, serializePersistedState } from 'src/app/services/documentStorage';
+import { CloneCommand } from 'src/commands/clone';
+import { byDrawingOrder, untie } from 'src/app/drawOrder';
+import { createDocument, createShape } from 'src/app/factories';
+import {
+    PERSISTENCE_KEY,
+    SCHEMA_VERSION,
+    migratePersistedState,
+    serializePersistedState
+} from 'src/app/services/documentStorage';
 import { createTestStore } from './support/store';
 
-const rectangle = (order?: string) => ({
+const rectangle = {
     type: 'rectangle' as const,
     position: { x: 0, y: 0 },
-    size: { width: 10, height: 10 },
-    ...(order === undefined ? {} : { order })
-});
-
-const savedWithOrders = (replace: (order: string, index: number) => string | undefined) => {
-    const { store } = createTestStore();
-    let index = 0;
-
-    store.actions.addShape(rectangle());
-    store.actions.addShape(rectangle());
-    store.actions.addShape(rectangle());
-
-    const saved = serializePersistedState(store.state);
-    const replaced: unknown = JSON.parse(
-        JSON.stringify(saved, (key, value) => (key === 'order' ? replace(value, index++) : value))
-    );
-
-    return { saved, replaced, documentId: store.state.currentDocumentId };
+    size: { width: 10, height: 10 }
 };
 
-const loadedOrders = (payload: unknown, documentId: string) =>
-    Object.values(migratePersistedState(payload)!.documents[documentId].shapes).map(
+/** A save whose shapes `s0`, `s1`, ... have these orders; `undefined` leaves one out. */
+const saved = (orders: (string | undefined)[], version = SCHEMA_VERSION) => {
+    const document = createDocument({ id: 'test-document' });
+
+    orders.forEach((_, index) => {
+        const id = `s${index}`;
+
+        document.shapes[id] = { ...createShape({ ...rectangle, order: 'a0' }), id };
+    });
+
+    const payload = JSON.parse(
+        JSON.stringify(
+            serializePersistedState({
+                currentDocumentId: document.id,
+                documents: { [document.id]: document }
+            })
+        )
+    );
+
+    orders.forEach((order, index) => {
+        payload.documents[document.id].shapes[`s${index}`].order = order;
+    });
+
+    return JSON.stringify({ ...payload, version });
+};
+
+const loadedOrders = (json: string) =>
+    Object.values(migratePersistedState(JSON.parse(json))!.documents['test-document'].shapes).map(
         ({ order }) => order
     );
 
+const loaded = (json: string) => {
+    const { store, storage } = createTestStore();
+
+    storage.set(PERSISTENCE_KEY, json);
+    expect(store.actions.loadSavedDocuments(json)).toBe(true);
+
+    return { store, storage };
+};
+
 describe('draw order', () => {
-    it('draws shapes by their order, then by id', () => {
-        const { store } = createTestStore();
+    it('draws shapes by their order', () => {
+        const { store } = loaded(saved(['a2', 'a0', 'a1']));
 
-        store.actions.addShape(rectangle('a2'));
-        store.actions.addShape(rectangle('a0'));
-        store.actions.addShape(rectangle('a1'));
-        store.actions.addShape(rectangle('a1'));
+        expect(store.state.currentDocument.shapesIds).toEqual(['s1', 's2', 's0']);
+    });
 
-        const { shapes, shapesIds } = store.state.currentDocument;
-        const tied = shapesIds.filter((id) => shapes[id].order === 'a1');
+    it('breaks ties by id', () => {
+        const shapes = [
+            { id: 'b', order: 'a1' },
+            { id: 'a', order: 'a1' },
+            { id: 'c', order: 'a0' }
+        ];
 
-        expect(shapesIds.map((id) => shapes[id].order)).toEqual(['a0', 'a1', 'a1', 'a2']);
-        expect(tied).toEqual([...tied].sort());
+        expect(shapes.sort(byDrawingOrder).map(({ id }) => id)).toEqual(['c', 'a', 'b']);
+    });
+
+    it('unties orders by id, whatever order the items come in', () => {
+        const items = [
+            { id: 'c', order: 'a1' },
+            { id: 'a', order: 'a1' },
+            { id: 'b', order: 'a1' },
+            { id: 'd', order: 'a2' }
+        ];
+
+        untie(items);
+
+        expect(items.find(({ id }) => id === 'a')?.order).toBe('a1');
+        expect([...items].sort(byDrawingOrder).map(({ id }) => id)).toEqual(['a', 'b', 'c', 'd']);
+        expect(new Set(items.map(({ order }) => order)).size).toBe(4);
+    });
+
+    it('gives tied saved orders new ones that keep the stacking', () => {
+        const orders = loadedOrders(saved(['a1', 'a1', 'a1', 'a2']));
+
+        expect(orders[0]).toBe('a1');
+        expect(orders[3]).toBe('a2');
+        expect(orders).toEqual([...new Set(orders)].sort());
     });
 
     it('puts new shapes and clones above every other shape', () => {
-        const { store } = createTestStore();
+        const { store } = loaded(saved(['a5', 'a0']));
         const addedBy = (act: () => void) => {
             const before = new Set(store.state.currentDocument.shapesIds);
 
@@ -55,54 +105,86 @@ describe('draw order', () => {
             return store.state.currentDocument.shapesIds.find((id) => !before.has(id))!;
         };
 
-        store.actions.addShape(rectangle('a5'));
-        store.actions.addShape(rectangle('a0'));
+        const added = addedBy(() => store.actions.addShape(rectangle));
+        const clone = addedBy(() => store.actions.cloneShapes(['s1']));
 
-        const added = addedBy(() => store.actions.addShape(rectangle()));
-        const clone = addedBy(() => store.actions.cloneShape(added));
-        const invalid = addedBy(() => store.actions.addShape(rectangle('zz')));
-        const outsideAlphabet = addedBy(() => store.actions.addShape(rectangle('a€')));
-        const unset = addedBy(() => store.actions.addShape({ ...rectangle(), order: undefined }));
+        expect(store.state.currentDocument.shapesIds).toEqual(['s1', 's0', added, clone]);
+    });
+
+    it('clones a selection above every other shape, stacked like the originals', () => {
+        const { store } = loaded(saved(['a2', 'a1']));
+
+        store.actions.selectShape('s0');
+        store.actions.selectShape('s1');
+        store.actions.runCommand(CloneCommand);
+
         const { shapes, shapesIds } = store.state.currentDocument;
 
-        expect(shapesIds.slice(-5)).toEqual([added, clone, invalid, outsideAlphabet, unset]);
-        expect(shapes[added].order > 'a5').toBe(true);
+        expect(shapesIds.map((id) => shapes[id].order)).toEqual(['a1', 'a2', 'a3', 'a4']);
+        expect(shapesIds.slice(2).map((id) => shapes[id].name)).toEqual([
+            `Clone of ${shapes.s1.name}`,
+            `Clone of ${shapes.s0.name}`
+        ]);
     });
 
-    it('ignores an invalid order in a shape update', () => {
-        const { store } = createTestStore();
+    it('keeps shapesIds in draw order as shapes are added, cloned and removed', () => {
+        const { store } = loaded(saved(['a2', undefined, 'a0', 'a1']));
+        const { currentDocument } = store.state;
 
-        store.actions.addShape(rectangle());
+        store.actions.addShape(rectangle);
+        store.actions.cloneShapes(['s0', 's2']);
+        store.actions.removeShape('s3');
 
-        const [id] = store.state.currentDocument.shapesIds;
-        const { order } = store.state.currentDocument.shapes[id];
-
-        store.actions.updateShape({ id, order: 'zz', name: 'Renamed' });
-
-        expect(store.state.currentDocument.shapes[id]).toMatchObject({ order, name: 'Renamed' });
+        expect(currentDocument.shapesIds).toHaveLength(6);
+        expect(currentDocument.shapesIds).toEqual(
+            Object.values(currentDocument.shapes)
+                .sort(byDrawingOrder)
+                .map(({ id }) => id)
+        );
     });
 
-    it('keeps the saved order of shapes saved before draw order existed', () => {
-        const { saved, replaced, documentId } = savedWithOrders(() => undefined);
-        const shapes = migratePersistedState(replaced)!.documents[documentId].shapes;
-        const orders = Object.values(shapes).map(({ order }) => order);
+    it('places shapes saved without a valid order above the others, in saved order', () => {
+        const invalid = ['zz', 'a€', 'A00000000000000000000000001', `a0${'z'.repeat(1000)}1`];
 
-        expect(Object.keys(shapes)).toEqual(Object.keys(saved.documents[documentId].shapes));
-        expect(orders).toEqual([...orders].sort());
-        expect(new Set(orders).size).toBe(3);
+        expect(loadedOrders(saved(['a5', 'a1', undefined]))).toEqual(['a5', 'a1', 'a6']);
+        expect(loadedOrders(saved(['a5', ...invalid, 'a1']))).toEqual([
+            'a5',
+            'a6',
+            'a7',
+            'a8',
+            'a9',
+            'a1'
+        ]);
     });
 
-    it('places shapes saved without a valid order above the ordered ones', () => {
-        const mixed = savedWithOrders((order, index) => (index === 1 ? 'a1' : undefined));
-        const invalid = savedWithOrders((order, index) => (index === 1 ? 'a1' : 'zz'));
+    it('orders shapes saved before version 4 as they were saved, after a backup', async () => {
+        const original = saved([undefined, undefined, undefined], 3);
+        const { store, storage } = createTestStore({ [PERSISTENCE_KEY]: original });
 
-        expect(loadedOrders(mixed.replaced, mixed.documentId)).toEqual(['a2', 'a1', 'a3']);
-        expect(loadedOrders(invalid.replaced, invalid.documentId)).toEqual(['a2', 'a1', 'a3']);
+        await store.onInitialize();
+
+        const { shapes, shapesIds } = store.state.currentDocument;
+
+        expect(storage.get(`${PERSISTENCE_KEY}:backup`)).toBe(original);
+        expect(shapesIds).toEqual(['s0', 's1', 's2']);
+        expect(shapesIds.map((id) => shapes[id].order)).toEqual(['a0', 'a1', 'a2']);
+        expect(store.state.notifications).toEqual([]);
     });
 
-    it('keeps saved orders through a save and reload', () => {
-        const { saved } = savedWithOrders((order) => order);
+    it('backs up a current save whose orders had to be repaired', async () => {
+        const original = saved(['a1', 'zz']);
+        const { store, storage } = createTestStore({ [PERSISTENCE_KEY]: original });
 
-        expect(migratePersistedState(JSON.parse(JSON.stringify(saved)))).toEqual(saved);
+        await store.onInitialize();
+
+        expect(storage.get(`${PERSISTENCE_KEY}:backup`)).toBe(original);
+        expect(store.state.currentDocument.shapes.s1.order).toBe('a2');
+    });
+
+    it('adopts an older save from another tab without backing it up', () => {
+        const { store, storage } = loaded(saved([undefined, undefined], 3));
+
+        expect(store.state.currentDocument.shapesIds).toEqual(['s0', 's1']);
+        expect(storage.has(`${PERSISTENCE_KEY}:backup`)).toBe(false);
     });
 });

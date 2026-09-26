@@ -11,7 +11,7 @@ import {
 } from '../types';
 import { Context } from '../index';
 import { createShape } from '../factories';
-import { isDrawOrder, orderAbove } from '../drawOrder';
+import { orderAbove } from '../drawOrder';
 import { PropertyValue, SHAPE_PROPERTIES, applyProperty, canEdit } from '../properties';
 import {
     hitTestShape,
@@ -40,17 +40,17 @@ const getShape = ({ currentDocument }: Application, shapeId: string) => {
     return shape;
 };
 
-const setShape = ({ currentDocument }: Application, shape: Shape) => {
-    if (currentDocument) {
-        currentDocument.shapes[shape.id] = shape;
-    }
+/** Adds a new shape whose order is above every other shape's. */
+const putOnTop = ({ currentDocument }: Application, shape: Shape) => {
+    currentDocument.shapes[shape.id] = shape;
+    currentDocument.shapesIds.push(shape.id);
 };
 
-const orderOnTop = ({ currentDocument }: Application) => {
+const topOrder = ({ currentDocument }: Application) => {
     const { shapes, shapesIds } = currentDocument;
     const top = shapesIds[shapesIds.length - 1];
 
-    return orderAbove(top ? shapes[top].order : null);
+    return top ? shapes[top].order : null;
 };
 
 /** Shapes the pointer can hit, select and drag: visible and not locked. */
@@ -58,6 +58,12 @@ const isInteractive = ({ currentDocument }: Application, shapeId: string) =>
     isShapeVisible(currentDocument, shapeId) && !isShapeLocked(currentDocument, shapeId);
 
 const deleteShape = ({ currentDocument }: Application, shapeId: string) => {
+    const index = currentDocument.shapesIds.indexOf(shapeId);
+
+    if (index >= 0) {
+        currentDocument.shapesIds.splice(index, 1);
+    }
+
     delete currentDocument.shapes[shapeId];
 
     for (const table of [
@@ -88,38 +94,45 @@ const deleteShape = ({ currentDocument }: Application, shapeId: string) => {
 };
 
 export const addShape: ActionWithParam<ShapeInput> = ({ state }, options) => {
-    const shape = createShape({
-        ...options,
-        order: isDrawOrder(options.order) ? options.order : orderOnTop(state)
-    });
+    const shape = createShape({ ...options, order: orderAbove(topOrder(state)) });
 
-    setShape(state, shape);
+    putOnTop(state, shape);
 };
 
 /** How far a clone is offset from its original so it does not cover it. */
 const CLONE_OFFSET: Point = { x: 10, y: 10 };
 
 /**
- * Adds an independent copy of a shape, offset by `CLONE_OFFSET`. The copy keeps
- * the original's geometry and appearance but gets its own id, name and
- * timestamps, starts unselected and is measured afresh.
+ * Adds an independent copy of each shape, offset by `CLONE_OFFSET`, above all
+ * other shapes and stacked like the originals. A copy keeps its original's
+ * geometry and appearance but gets its own id, name and timestamps, starts
+ * unselected and is measured afresh.
  */
-export const cloneShape: ActionWithParam<string> = ({ state }, shapeId) => {
-    const original = getShape(state, shapeId);
-    const clone = createShape({
-        ...shapeGeometry(original),
-        order: orderOnTop(state),
-        name: `Clone of ${original.name}`,
-        description: original.description,
-        parentShapeId: original.parentShapeId,
-        rotation: original.rotation,
-        locked: original.locked,
-        visible: original.visible,
-        selected: false
-    });
+export const cloneShapes: ActionWithParam<string[]> = ({ state }, shapeIds) => {
+    const { shapes, shapesIds } = state.currentDocument;
+    const cloning = new Set(shapeIds);
+    let order = topOrder(state);
 
-    translateShape(clone, CLONE_OFFSET);
-    setShape(state, clone);
+    for (const id of shapesIds.filter((shapeId) => cloning.has(shapeId))) {
+        const original = shapes[id];
+
+        order = orderAbove(order);
+
+        const clone = createShape({
+            ...shapeGeometry(original),
+            order,
+            name: `Clone of ${original.name}`,
+            description: original.description,
+            parentShapeId: original.parentShapeId,
+            rotation: original.rotation,
+            locked: original.locked,
+            visible: original.visible,
+            selected: false
+        });
+
+        translateShape(clone, CLONE_OFFSET);
+        putOnTop(state, clone);
+    }
 };
 
 export const removeShape: ActionWithParam<string> = ({ state }, shapeId) => {
@@ -321,7 +334,7 @@ export const hideShape = ({ state }: Context, shapeId: string) => {
     shape.visible = false;
 };
 
-export const updateShape = ({ state }: Context, options: Partial<Shape> & { id: string }) => {
+export const updateShape = ({ state }: Context, options: Partial<ShapeInput> & { id: string }) => {
     if (isShapeLocked(state.currentDocument, options.id)) {
         return;
     }
@@ -333,9 +346,7 @@ export const updateShape = ({ state }: Context, options: Partial<Shape> & { id: 
         return;
     }
 
-    const { order, ...changes } = options;
-
-    Object.assign(shape, isDrawOrder(order) ? { ...changes, order } : changes);
+    Object.assign(shape, options);
 };
 
 /**

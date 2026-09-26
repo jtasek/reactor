@@ -601,10 +601,11 @@ Designed 2026-09-25; in progress. Several people can edit the same document live
 and open copies of the editor on one device share their changes. Steps 1-3 come
 before Phases 9 and 10, since both add saved data.
 
-Done: draw order (save format version 4). Each shape has an `order` (a fractional
-index); new shapes and clones go on top, and a shape saved without a valid order
-gets one above the others, in saved order. Copies of the editor on an older build
-cannot read version 4, so they stop saving instead of dropping orders.
+Done: draw order (save format version 4). Each shape has a unique `order` (a
+fractional index); new shapes and clones go on top. Loading backs up, then repairs:
+a shape without a valid order goes above the others in saved order, and tied orders
+get new ones that keep the stacking. Copies of the editor on an older build cannot
+read version 4, so they stop saving instead of dropping orders.
 
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user
@@ -617,7 +618,9 @@ Design:
   shared; the camera is saved per device.
 - Order: draw order is an explicit fractional index on each shape, because the
   key order of a Yjs map does not merge. The migration assigns indexes in today's
-  order, and reordering a shape changes only its index. If items later nest (for
+  order, and reordering a shape changes only its index. Orders are unique: merges
+  re-key ties by id, keeping the stacking, as loading does, and remote changes keep
+  the store's ordered list of shape ids up to date. If items later nest (for
   example groups in groups), an item's parent and index are stored as one value,
   so a move never leaves them disagreeing.
 - Store binding: the Overmind store stays the app's state. Changes to saved fields
