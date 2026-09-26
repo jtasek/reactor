@@ -1,3 +1,4 @@
+export * from './collaboration';
 export * from './commands';
 export * from './components';
 export * from './document';

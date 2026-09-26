@@ -79,7 +79,8 @@
     "pino-http": "^11.0.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "uuid": "^11.1.1"
+    "uuid": "^11.1.1",
+    "yjs": "13.6.33"
   },
   "scripts": {
     "build": "pnpm run clean && pnpm run build:webpack",

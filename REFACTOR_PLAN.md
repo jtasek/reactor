@@ -601,11 +601,15 @@ Designed 2026-09-25; in progress. Several people can edit the same document live
 and open copies of the editor on one device share their changes. Steps 1-3 come
 before Phases 9 and 10, since both add saved data.
 
-Done: draw order (save format version 4). Each shape has a unique `order` (a
-fractional index); new shapes and clones go on top. Loading backs up, then repairs:
-a shape without a valid order goes above the others in saved order, and tied orders
-get new ones that keep the stacking. Copies of the editor on an older build cannot
-read version 4, so they stop saving instead of dropping orders.
+Done: draw order (save format version 4). Each shape has an `order` (a fractional
+index); new shapes and clones go on top. Loading backs up, then repairs: a shape
+without a valid order goes above the others in saved order, and tied orders get new
+ones that keep the stacking. Copies of the editor on an older build cannot read
+version 4, so they stop saving instead of dropping orders.
+
+Done: step 1. The binding is an Overmind effect, `effects.collaboration`, that loads
+Yjs when initialized, and a simulator of three copies making random concurrent edits
+checks that they converge. The app starts it in step 2.
 
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user
@@ -616,27 +620,30 @@ Design:
 - Content: each document is a Yjs document holding everything saved today except
   the camera. View state (camera, selection, hover, measured bounds) is never
   shared; the camera is saved per device.
-- Order: draw order is an explicit fractional index on each shape, because the
-  key order of a Yjs map does not merge. The migration assigns indexes in today's
-  order, and reordering a shape changes only its index. Orders are unique: merges
-  re-key ties by id, keeping the stacking, as loading does, and remote changes keep
-  the store's ordered list of shape ids up to date. If items later nest (for
-  example groups in groups), an item's parent and index are stored as one value,
-  so a move never leaves them disagreeing.
-- Store binding: the Overmind store stays the app's state. Changes to saved fields
-  are written to the Yjs document in one transaction per action, from the mutation
-  paths autosave already receives and an explicit list of saved fields per entity
-  type. Remote changes reach the store through one action and are marked as
-  remote, so they are not sent back. Only the binding uses the Yjs API, so a
-  later move to Yjs v14 stays inside it.
+- Order: draw order is an explicit fractional index on each shape, because the key
+  order of a Yjs map does not merge. The migration assigns indexes in today's order,
+  and reordering a shape changes only its index. A merge can tie orders, as when two
+  copies add a shape on top at once: tied shapes are drawn by id in every copy, and
+  placing a shape between tied ones gives them new orders first. Remote changes keep
+  the store's ordered list of shape ids up to date. If items later nest (for example
+  groups in groups), an item's parent and index are stored as one value, so a move
+  never leaves them disagreeing.
+- Store binding: the Overmind store stays the app's state. The binding is an
+  Overmind effect and the only code that uses the Yjs API, so a later move to Yjs
+  v14 stays inside it. Changes to saved fields are written to the Yjs document in
+  one transaction once the action ends, found from the mutation paths autosave
+  already receives; entities are written in their saved form. Remote changes reach
+  the store through one action and are marked as remote, so they are not sent back.
 - Merge rules: a merge can produce what each copy refuses on its own: today a
   group, layer, link or parent that refers to a shape deleted in another copy,
   and with Phase 10 a component cycle, a shape in two sources, or an instance
   whose component was deleted or emptied. After each merge and on load, the
   binding repairs these by fixed rules based on ids: references to deleted shapes
-  are dropped, and an instance without a usable component draws a placeholder.
-  Every copy reaches the same result without a server, and the load checks that
-  reject such references today become these repairs.
+  are dropped as deleting the shape would, entities that fail validation are left
+  out, and an instance without a usable component draws a placeholder. Repairs
+  change only each copy's view, never the shared document, so they cannot override
+  a concurrent edit, and every copy reaches the same result without a server.
+  Loading saved data repairs references the same way.
 - Storage: each Yjs document is saved in IndexedDB on its own, with a small index
   of documents. A document that fails to load affects only itself.
 - Open copies on one device sync through a BroadcastChannel. A copy that was

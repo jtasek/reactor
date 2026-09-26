@@ -146,8 +146,16 @@ re-renders.** Components never mutate state directly.
   re-exported from `actions/index.ts`. Actions receive the Overmind `Context` and mutate
   state in place. `src/app/actions/shape.ts` is the canonical pattern (private
   `getShape`/`putOnTop`/`deleteShape` helpers + exported actions).
-- **Effects** (`src/app/effects.ts`): impure helpers (`newId`, localStorage, routing). Call
-  them from actions (`effects.newId()`); don't import those libs directly in actions.
+- **Effects** (`src/app/effects.ts`): impure helpers (`newId`, localStorage, routing,
+  `collaboration`). Call them from actions (`effects.newId()`); don't import those libs
+  directly in actions.
+- **Collaboration** (`src/app/services/collaboration.ts`, `effects.collaboration`): the only
+  code that uses Yjs, which it loads in `initialize`. It writes store changes to each shared
+  document's Yjs document, one transaction per task, and applies other copies' changes through
+  the `applyRemoteChanges` action, marked so they are not sent back. Every copy shows the same
+  merged content: invalid entities are left out and references to missing shapes are dropped,
+  as a local delete would, without writing these repairs back. The app starts it in Phase 11
+  step 2; `tests/support/collaboration.ts` runs copies over a network the test controls.
 - **Events** (`src/events/`): pointer/keyboard/clipboard input. `drivers/` are React hooks
   that translate DOM events into store actions — `useKeyboardDriver` is mounted in `Shell`
   and `usePointerAdapter` in the canvas `Surface` (`src/ui/components/Surface/Surface.tsx`).
@@ -206,8 +214,10 @@ Examples worth modelling new tools on:
   `createShape`.
 - Shapes are drawn and hit-tested in `shapesIds` order: by each shape's `order` (a fractional
   index, see `src/app/drawOrder.ts`), then by id. Only the store assigns orders: `createShape`
-  takes one, `addShape` and `cloneShapes` put new shapes on top, and loading repairs missing,
-  invalid and tied orders. `shapesIds` is document state, not derived, so reading it stays
+  takes one, `addShape` and `cloneShapes` put new shapes on top, `bringShapesToFront` and
+  `sendShapesToBack` reorder, and loading repairs missing, invalid and tied orders. A merge
+  can tie orders; tied shapes are drawn by id. `shapesIds` is document state, not derived, so
+  reading it stays
   cheap: whatever adds, removes or reorders shapes must update it, and components read it
   through `useShapesIds`. Never rely on the key order of `shapes`.
 - `getBoundingBox(shape)` (`src/app/utils.ts`) computes an **analytic** box per shape type.
