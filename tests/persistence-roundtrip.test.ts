@@ -43,10 +43,9 @@ describe('real persisted documents', () => {
         const shapes = Object.values(restored.store.state.currentDocument.shapes);
 
         properties.forEach((props, index) => {
-            const { key, selected, ...durable } = props;
+            const { selected, ...durable } = props;
 
             expect(shapes[index]).toMatchObject(durable);
-            expect(shapes[index].key).not.toBe(key);
             expect(shapes[index].selected).toBe(!selected);
         });
     });

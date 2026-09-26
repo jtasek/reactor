@@ -13,7 +13,6 @@ import { Context } from 'src/app';
  **/
 
 interface Props {
-    key: string;
     name: string;
     position: Point;
     size: Size;
@@ -22,7 +21,6 @@ interface Props {
 
 export function createSelectProps({ topLeft, size }: Pointer): Props {
     return {
-        key: 'selection',
         name: 'selection',
         position: topLeft,
         size: size,
@@ -30,12 +28,11 @@ export function createSelectProps({ topLeft, size }: Pointer): Props {
     };
 }
 
-export const Select: FC<Props> = ({ key, name, position, size }) => {
+export const Select: FC<Props> = ({ name, position, size }) => {
     return (
         <rect
             data-cy={name}
             height={size.height}
-            key={key}
             strokeDasharray="5, 5"
             className={styles.selectable}
             width={size.width}
@@ -56,9 +53,9 @@ export const DesignSelect: FC = () => {
         return null;
     }
 
-    const { key, name, position, size, type } = createSelectProps(pointer);
+    const { name, position, size, type } = createSelectProps(pointer);
 
-    return <Select key={key} name={name} position={position} size={size} type={type} />;
+    return <Select name={name} position={position} size={size} type={type} />;
 };
 
 export const SelectCommand: Command = {

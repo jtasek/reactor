@@ -17,7 +17,6 @@ import { Context } from 'src/app';
 **/
 
 interface Props {
-    key: string;
     name: string;
     points: Point[];
     selected: boolean;
@@ -26,11 +25,9 @@ interface Props {
 
 export const createPenProps = ({ path }: Pointer, designMode = false): Props => {
     const name = designMode ? 'Pen x' : newShapeName();
-    const key = name.toLowerCase();
     const points = path.map(({ x, y }) => ({ x, y }));
 
     return {
-        key,
         name,
         points,
         selected: true,
@@ -38,12 +35,10 @@ export const createPenProps = ({ path }: Pointer, designMode = false): Props => 
     };
 };
 
-export const Pen: FC<Props> = ({ key, name, points, selected }) => {
+export const Pen: FC<Props> = ({ name, points, selected }) => {
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
-    return (
-        <polyline className={className} data-cy={name} key={key} points={stringifyPath(points)} />
-    );
+    return <polyline className={className} data-cy={name} points={stringifyPath(points)} />;
 };
 
 export const DesignPen: FC = () => {
@@ -52,9 +47,9 @@ export const DesignPen: FC = () => {
         return null;
     }
 
-    const { key, name, points, selected, type } = createPenProps(pointer, true);
+    const { name, points, selected, type } = createPenProps(pointer, true);
 
-    return <Pen key={key} name={name} points={points} selected={selected} type={type} />;
+    return <Pen name={name} points={points} selected={selected} type={type} />;
 };
 
 export const PenCommand: Command = {

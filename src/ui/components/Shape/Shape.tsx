@@ -74,6 +74,7 @@ export const Shape = memo(({ shapeId }: Props) => {
     const transform = shape.rotation
         ? `rotate(${shape.rotation} ${center.x} ${center.y})`
         : undefined;
+    const { key, ...props } = shape;
 
     return (
         <g transform={transform}>
@@ -83,7 +84,7 @@ export const Shape = memo(({ shapeId }: Props) => {
                 onPointerEnter={() => activateShape(shapeId)}
                 onPointerLeave={() => deactivateShape(shapeId)}
             >
-                <Component {...shape} />
+                <Component key={key} {...props} />
             </g>
             {shape.active && !shape.selected && (
                 <Active key={`active-${shape.type}-${shape.id}`} shape={shape} />

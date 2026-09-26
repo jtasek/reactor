@@ -14,7 +14,6 @@ import { Context } from 'src/app';
 
 interface Props {
     end: Point;
-    key: string;
     name: string;
     selected: boolean;
     start: Point;
@@ -23,11 +22,9 @@ interface Props {
 
 export const createLineProps = ({ start, current }: Pointer, designMode = false): Props => {
     const name = designMode ? 'Line x' : newShapeName();
-    const key = name.toLowerCase();
 
     return {
         end: current,
-        key,
         name,
         selected: true,
         start: start,
@@ -35,14 +32,13 @@ export const createLineProps = ({ start, current }: Pointer, designMode = false)
     };
 };
 
-export const Line: FC<Props> = ({ key, name, start, end, selected }) => {
+export const Line: FC<Props> = ({ name, start, end, selected }) => {
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
     return (
         <line
             className={className}
             data-cy={name}
-            key={key}
             x1={start.x}
             x2={end.x}
             y1={start.y}
@@ -57,9 +53,9 @@ export const DesignLine: FC = () => {
         return null;
     }
 
-    const { key, name, start, end, selected, type } = createLineProps(pointer, true);
+    const { name, start, end, selected, type } = createLineProps(pointer, true);
 
-    return <Line key={key} name={name} start={start} end={end} selected={selected} type={type} />;
+    return <Line name={name} start={start} end={end} selected={selected} type={type} />;
 };
 
 export const LineCommand: Command = {
