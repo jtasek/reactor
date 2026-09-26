@@ -112,6 +112,7 @@ export interface ShapeBase {
     modified: Date;
     modifiedBy: string;
     name: string;
+    order: string;
     parentShapeId?: string;
     rotation?: number;
     selected: boolean;

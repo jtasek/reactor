@@ -155,13 +155,16 @@ describe('visibility migration', () => {
         }
     );
 
-    it('keeps hidden groups and layers saved by the current version', () => {
-        const { payload } = savedWithHiddenLayer(SCHEMA_VERSION);
-        const document = migratePersistedState(payload)?.documents['test-document'];
+    it.each([3, SCHEMA_VERSION])(
+        'keeps hidden groups and layers saved by version %i',
+        (version) => {
+            const { payload } = savedWithHiddenLayer(version);
+            const document = migratePersistedState(payload)?.documents['test-document'];
 
-        expect(document?.layers.layer.visible).toBe(false);
-        expect(document?.groups.group.visible).toBe(false);
-    });
+            expect(document?.layers.layer.visible).toBe(false);
+            expect(document?.groups.group.visible).toBe(false);
+        }
+    );
 
     it('backs up the previous version before restoring it', async () => {
         const { payload } = savedWithHiddenLayer(2);

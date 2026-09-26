@@ -1,5 +1,4 @@
 import { expect, test, type Page } from '@playwright/test';
-import type { PersistedState } from 'src/app/services/documentStorage';
 import { drawRect, openEditor, shapes } from './support/editor';
 
 const savedData = (page: Page) => page.evaluate(() => localStorage.getItem('reactor') ?? '');
@@ -14,7 +13,7 @@ test('migrates a legacy text shape, renders its content, and preserves the origi
         modifiedBy: 'anonymous',
         locked: false
     };
-    const snapshot: PersistedState = {
+    const snapshot = {
         version: 1,
         currentDocumentId: 'document-1',
         documents: {

@@ -1,9 +1,10 @@
 import type { Application, Document, Shape, Point, Size, Group, Link, Ruler } from '../types';
 import { Orientation } from '../types';
 import { createDocument } from '../factories';
+import { isDrawOrder, orderAbove } from '../drawOrder';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 export const RUNTIME_FIELDS = new Set(['active', 'bounds', 'filter', 'key', 'selected']);
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
@@ -161,7 +162,7 @@ function member(value: unknown): MemberData & { parentId?: string } {
     };
 }
 
-function readShape(value: unknown): ShapeData {
+function readShape(value: unknown, orderOf: (saved: unknown) => string): ShapeData {
     const s = record(value);
     const base = {
         ...entity(value),
@@ -169,10 +170,13 @@ function readShape(value: unknown): ShapeData {
         modified: date(s.modified),
         createdBy: text(s.createdBy),
         modifiedBy: text(s.modifiedBy),
+        order: orderOf(s.order),
         rotation: s.rotation === undefined ? 0 : number(s.rotation),
         ...(s.description === undefined ? {} : { description: text(s.description) }),
         ...(s.parentShapeId === undefined ? {} : { parentShapeId: id(s.parentShapeId) }),
-        ...(s.children === undefined ? {} : { children: list(s.children, readShape) })
+        ...(s.children === undefined
+            ? {}
+            : { children: list(s.children, (child) => readShape(child, orderOf)) })
     };
 
     // Lines and pens are placed by their points; earlier versions also stored an
@@ -220,6 +224,24 @@ function readShape(value: unknown): ShapeData {
     }
 }
 
+function readShapes(value: unknown): Record<string, ShapeData> {
+    const validOrders = new Set(
+        Object.values(record(value))
+            .map((shape) => record(shape).order)
+            .filter(isDrawOrder)
+    );
+    let top = [...validOrders].reduce<string | null>(
+        (highest, order) => (highest === null || order > highest ? order : highest),
+        null
+    );
+    const orderOf = (saved: unknown) =>
+        typeof saved === 'string' && (validOrders.has(saved) || isDrawOrder(saved))
+            ? saved
+            : (top = orderAbove(top));
+
+    return table(value, (shape) => readShape(shape, orderOf));
+}
+
 function readDocument(value: unknown): DocumentData {
     const d = record(value);
     const camera = record(d.camera);
@@ -242,7 +264,7 @@ function readDocument(value: unknown): DocumentData {
             factor: positive(grid.factor),
             visible: bool(grid.visible)
         },
-        shapes: table(d.shapes, readShape),
+        shapes: readShapes(d.shapes),
         groups: table(d.groups, member),
         layers: table(d.layers, member),
         components: table(d.components, member),
@@ -326,13 +348,19 @@ function showContainers(document: DocumentData): DocumentData {
 
 /**
  * v1 stored derived fields and used an incorrect default document map key; v1
- * and v2 group and layer visibility is migrated by `showContainers`.
+ * and v2 group and layer visibility is migrated by `showContainers`. Shapes saved
+ * before v4 have no draw order, so `readShapes` gives them one in saved order.
  */
 export function migratePersistedState(raw: unknown): PersistedState | null {
     try {
         const data = record(raw);
 
-        if (data.version !== 1 && data.version !== 2 && data.version !== SCHEMA_VERSION) {
+        if (
+            data.version !== 1 &&
+            data.version !== 2 &&
+            data.version !== 3 &&
+            data.version !== SCHEMA_VERSION
+        ) {
             return null;
         }
 
@@ -342,7 +370,7 @@ export function migratePersistedState(raw: unknown): PersistedState | null {
 
         for (const [key, value] of entries) {
             const read = readDocument(value);
-            const document = data.version === SCHEMA_VERSION ? read : showContainers(read);
+            const document = data.version === 1 || data.version === 2 ? showContainers(read) : read;
 
             if (data.version !== 1 && key !== document.id) {
                 return null;

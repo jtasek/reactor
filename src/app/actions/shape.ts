@@ -11,6 +11,7 @@ import {
 } from '../types';
 import { Context } from '../index';
 import { createShape } from '../factories';
+import { isDrawOrder, orderAbove } from '../drawOrder';
 import { PropertyValue, SHAPE_PROPERTIES, applyProperty, canEdit } from '../properties';
 import {
     hitTestShape,
@@ -43,6 +44,13 @@ const setShape = ({ currentDocument }: Application, shape: Shape) => {
     if (currentDocument) {
         currentDocument.shapes[shape.id] = shape;
     }
+};
+
+const orderOnTop = ({ currentDocument }: Application) => {
+    const { shapes, shapesIds } = currentDocument;
+    const top = shapesIds[shapesIds.length - 1];
+
+    return orderAbove(top ? shapes[top].order : null);
 };
 
 /** Shapes the pointer can hit, select and drag: visible and not locked. */
@@ -80,7 +88,10 @@ const deleteShape = ({ currentDocument }: Application, shapeId: string) => {
 };
 
 export const addShape: ActionWithParam<ShapeInput> = ({ state }, options) => {
-    const shape = createShape(options);
+    const shape = createShape({
+        ...options,
+        order: isDrawOrder(options.order) ? options.order : orderOnTop(state)
+    });
 
     setShape(state, shape);
 };
@@ -97,6 +108,7 @@ export const cloneShape: ActionWithParam<string> = ({ state }, shapeId) => {
     const original = getShape(state, shapeId);
     const clone = createShape({
         ...shapeGeometry(original),
+        order: orderOnTop(state),
         name: `Clone of ${original.name}`,
         description: original.description,
         parentShapeId: original.parentShapeId,
@@ -321,7 +333,9 @@ export const updateShape = ({ state }: Context, options: Partial<Shape> & { id: 
         return;
     }
 
-    Object.assign(shape, options);
+    const { order, ...changes } = options;
+
+    Object.assign(shape, isDrawOrder(order) ? { ...changes, order } : changes);
 };
 
 /**

@@ -76,7 +76,7 @@ export function createNotification(options: Partial<Notification> = {}): Notific
     };
 }
 
-export function createShape(input: ShapeInput): Shape {
+export function createShape(input: ShapeInput & Pick<Shape, 'order'>): Shape {
     const id = newId();
 
     return {

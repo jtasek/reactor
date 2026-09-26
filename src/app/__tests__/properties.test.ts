@@ -6,10 +6,11 @@ const rect = () =>
         type: 'rectangle',
         position: { x: 10, y: 20 },
         size: { width: 40, height: 30 },
-        name: 'Box'
+        name: 'Box',
+        order: 'a0'
     });
 const text = () =>
-    createShape({ type: 'text', position: { x: 0, y: 40 }, value: 'a', fontSize: 20 });
+    createShape({ type: 'text', position: { x: 0, y: 40 }, value: 'a', fontSize: 20, order: 'a0' });
 const property = (key: string) => SHAPE_PROPERTIES.find((item) => item.key === key)!;
 
 describe('applyProperty()', () => {

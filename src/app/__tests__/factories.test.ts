@@ -102,7 +102,8 @@ describe('factories', () => {
                 type: 'rectangle',
                 position: { x: 0, y: 0 },
                 size: { width: 10, height: 10 },
-                name: 'SHAPE_NAME'
+                name: 'SHAPE_NAME',
+                order: 'a0'
             });
 
             expect(actual).toHaveProperty('name', 'SHAPE_NAME');
