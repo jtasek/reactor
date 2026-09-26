@@ -11,7 +11,7 @@ import {
 } from '../types';
 import { Context } from '../index';
 import { createShape } from '../factories';
-import { orderAbove } from '../drawOrder';
+import { orderAbove, ordersAbove, ordersBelow } from '../drawOrder';
 import { PropertyValue, SHAPE_PROPERTIES, applyProperty, canEdit } from '../properties';
 import {
     hitTestShape,
@@ -133,6 +133,43 @@ export const cloneShapes: ActionWithParam<string[]> = ({ state }, shapeIds) => {
         translateShape(clone, CLONE_OFFSET);
         putOnTop(state, clone);
     }
+};
+
+/**
+ * Moves unlocked shapes to the top or the bottom of the draw order, keeping their
+ * order among themselves.
+ */
+const moveToEdge = (
+    { currentDocument }: Application,
+    shapeIds: string[],
+    edge: 'front' | 'back'
+) => {
+    const { shapes, shapesIds } = currentDocument;
+    const moving = new Set(shapeIds.filter((id) => !isShapeLocked(currentDocument, id)));
+    const moved = shapesIds.filter((id) => moving.has(id));
+    const rest = shapesIds.filter((id) => !moving.has(id));
+
+    if (moved.length === 0) {
+        return;
+    }
+
+    const orders =
+        edge === 'front'
+            ? ordersAbove(shapes[shapesIds[shapesIds.length - 1]].order, moved.length)
+            : ordersBelow(shapes[shapesIds[0]].order, moved.length);
+
+    moved.forEach((id, index) => {
+        shapes[id].order = orders[index];
+    });
+    currentDocument.shapesIds = edge === 'front' ? [...rest, ...moved] : [...moved, ...rest];
+};
+
+export const bringShapesToFront: ActionWithParam<string[]> = ({ state }, shapeIds) => {
+    moveToEdge(state, shapeIds, 'front');
+};
+
+export const sendShapesToBack: ActionWithParam<string[]> = ({ state }, shapeIds) => {
+    moveToEdge(state, shapeIds, 'back');
 };
 
 export const removeShape: ActionWithParam<string> = ({ state }, shapeId) => {
