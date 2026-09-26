@@ -120,35 +120,34 @@ describe('document storage', () => {
         ).toBeNull();
     });
 
-    it('rejects dangling memberships and links', () => {
-        const membership = fixture();
+    it('drops memberships and links that refer to missing shapes, as deleting them would', () => {
+        const saved = fixture();
+        const [shapeId] = Object.keys(saved.documents.d.shapes);
+        const onRepair = vi.fn();
 
-        membership.documents.d.groups.g = createGroup({ id: 'g', shapesIds: ['missing'] });
+        saved.documents.d.groups.g = createGroup({ id: 'g', shapesIds: ['missing', shapeId] });
+        saved.documents.d.links.l = createLink({ id: 'l', source: 'missing' });
 
-        expect(migratePersistedState(membership)).toBeNull();
+        const document = migratePersistedState(saved, onRepair)?.documents.d;
 
-        const links = fixture();
-
-        links.documents.d.links.l = createLink({ id: 'l', source: 'missing' });
-
-        expect(migratePersistedState(links)).toBeNull();
+        expect(document?.groups.g.shapesIds).toEqual([shapeId]);
+        expect(document?.links).toEqual({});
+        expect(onRepair).toHaveBeenCalled();
     });
 
-    it('rejects dangling shape and component parents', () => {
-        const shapeParent = fixture();
+    it('drops shape and component parents that are missing', () => {
+        const saved = fixture();
+        const [shapeId] = Object.keys(saved.documents.d.shapes);
+        const onRepair = vi.fn();
 
-        Object.values(shapeParent.documents.d.shapes)[0].parentShapeId = 'missing';
+        saved.documents.d.shapes[shapeId].parentShapeId = 'missing';
+        saved.documents.d.components.c = createComponent({ id: 'c', parentId: 'missing' });
 
-        expect(migratePersistedState(shapeParent)).toBeNull();
+        const document = migratePersistedState(saved, onRepair)?.documents.d;
 
-        const componentParent = fixture();
-
-        componentParent.documents.d.components.c = createComponent({
-            id: 'c',
-            parentId: 'missing'
-        });
-
-        expect(migratePersistedState(componentParent)).toBeNull();
+        expect(document?.shapes[shapeId].parentShapeId).toBeUndefined();
+        expect(document?.components.c.parentId).toBeUndefined();
+        expect(onRepair).toHaveBeenCalled();
     });
 
     it('rejects duplicate migrated document IDs and unsafe entity IDs', () => {
