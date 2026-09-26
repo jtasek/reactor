@@ -1,5 +1,5 @@
 import { CloneCommand } from 'src/commands/clone';
-import { byDrawingOrder } from 'src/app/drawOrder';
+import { byDrawingOrder, untie } from 'src/app/drawOrder';
 import { createDocument, createShape } from 'src/app/factories';
 import {
     PERSISTENCE_KEY,
@@ -70,6 +70,21 @@ describe('draw order', () => {
         ];
 
         expect(shapes.sort(byDrawingOrder).map(({ id }) => id)).toEqual(['c', 'a', 'b']);
+    });
+
+    it('unties orders by id, whatever order the items come in', () => {
+        const items = [
+            { id: 'c', order: 'a1' },
+            { id: 'a', order: 'a1' },
+            { id: 'b', order: 'a1' },
+            { id: 'd', order: 'a2' }
+        ];
+
+        untie(items);
+
+        expect(items.find(({ id }) => id === 'a')?.order).toBe('a1');
+        expect([...items].sort(byDrawingOrder).map(({ id }) => id)).toEqual(['a', 'b', 'c', 'd']);
+        expect(new Set(items.map(({ order }) => order)).size).toBe(4);
     });
 
     it('gives tied saved orders new ones that keep the stacking', () => {
@@ -166,11 +181,10 @@ describe('draw order', () => {
         expect(store.state.currentDocument.shapes.s1.order).toBe('a2');
     });
 
-    it('backs up a save from another tab only when loading changes it', () => {
-        const older = loaded(saved(['a0', 'a1'], 3));
-        const current = loaded(saved(['a0', 'a1']));
+    it('adopts an older save from another tab without backing it up', () => {
+        const { store, storage } = loaded(saved([undefined, undefined], 3));
 
-        expect(older.storage.has(`${PERSISTENCE_KEY}:backup`)).toBe(true);
-        expect(current.storage.has(`${PERSISTENCE_KEY}:backup`)).toBe(false);
+        expect(store.state.currentDocument.shapesIds).toEqual(['s0', 's1']);
+        expect(storage.has(`${PERSISTENCE_KEY}:backup`)).toBe(false);
     });
 });

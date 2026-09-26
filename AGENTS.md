@@ -138,7 +138,8 @@ re-renders.** Components never mutate state directly.
   keyed by id; each `Document` holds dictionaries of `shapes`, `links`, `layers`, `groups`,
   `rulers` keyed by id, plus `*Ids` arrays (derived, except `shapesIds`; see below).
 - **Computed/derived** (`src/app/computed/`, `src/events/computed/`): Overmind `derived(...)`.
-  `*Ids` and `selected*` fields are wired to these — keep derivations here, not in components.
+  `*Ids` (except `shapesIds`) and `selected*` fields are wired to these — keep derivations
+  here, not in components.
   The pointer drag model lives in `src/events/computed/pointer.ts` (`topLeft`, `size`,
   `bottomRight`, `center`, `radius`, `offset`).
 - **Actions** (`src/app/actions/`): one file per domain (`shape.ts`, `link.ts`, …),

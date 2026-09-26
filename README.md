@@ -43,12 +43,13 @@ is saved; dates use ISO strings and derived indexes and selections are rebuilt o
 load. Cloned documents have independent content but preserve internal IDs, which
 are scoped to each document.
 
-Snapshots from versions 1-3 are validated and migrated after backing up their
-original bytes under `reactor:backup:*`, whether they are loaded at startup or saved
-by another tab. A current save with missing, invalid or tied draw orders is backed up
-the same way before they are repaired. Repeated loads reuse identical backups.
-Unsupported or malformed data remains untouched, shows a notification, and disables
-autosave for that session. A backup failure also prevents migration and autosave.
+At startup, snapshots from versions 1-3 are validated and migrated after backing up
+their original bytes under `reactor:backup:*`, and a current save with missing,
+invalid or tied draw orders is backed up the same way before they are repaired. A save
+adopted from another tab is migrated without a backup. Repeated loads reuse identical
+backups. Unsupported or malformed data remains untouched, shows a notification, and
+disables autosave for that session. A backup failure also prevents migration and
+autosave.
 
 Autosave is **on by default** (`config.autoSave`). It observes all documents,
 debounces writes for 500 ms, flushes on pagehide or disposal, and reports storage

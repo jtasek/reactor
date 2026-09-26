@@ -29,7 +29,6 @@ import { startAutosave } from '../services/autosave';
 import {
     SCHEMA_VERSION,
     PERSISTENCE_KEY,
-    type PersistedState,
     migratePersistedState,
     restoreDocuments
 } from '../services/documentStorage';
@@ -89,28 +88,6 @@ function registerTools() {
     registerTool(TextTool);
 }
 
-/**
- * Migrates saved data, first backing up the original when loading changes it: an
- * older version, or draw orders that had to be repaired.
- */
-function migrateSaved(effects: Context['effects'], raw: unknown): PersistedState | null {
-    let repaired = false;
-    const persisted = migratePersistedState(raw, () => {
-        repaired = true;
-    });
-    const current =
-        typeof raw === 'object' &&
-        raw !== null &&
-        'version' in raw &&
-        raw.version === SCHEMA_VERSION;
-
-    if (persisted && (repaired || !current)) {
-        effects.backupState(PERSISTENCE_KEY);
-    }
-
-    return persisted;
-}
-
 function loadLocalData({ effects, state, actions }: Context): boolean {
     try {
         const raw = effects.loadState(PERSISTENCE_KEY);
@@ -119,7 +96,10 @@ function loadLocalData({ effects, state, actions }: Context): boolean {
             return true;
         }
 
-        const persisted = migrateSaved(effects, raw);
+        let repaired = false;
+        const persisted = migratePersistedState(raw, () => {
+            repaired = true;
+        });
 
         if (!persisted) {
             effects.backupState(PERSISTENCE_KEY);
@@ -128,6 +108,16 @@ function loadLocalData({ effects, state, actions }: Context): boolean {
             );
 
             return false;
+        }
+
+        if (
+            repaired ||
+            (typeof raw === 'object' &&
+                raw !== null &&
+                'version' in raw &&
+                raw.version !== SCHEMA_VERSION)
+        ) {
+            effects.backupState(PERSISTENCE_KEY);
         }
 
         state.documents = restoreDocuments(persisted);
@@ -150,14 +140,16 @@ function registerRoutes(effects: Context['effects'], actions: Context['actions']
     });
 }
 
-export const loadSavedDocuments = ({ state, effects }: Context, json: string): boolean => {
-    let persisted: PersistedState | null;
+export const loadSavedDocuments = ({ state }: Context, json: string): boolean => {
+    let saved: unknown;
 
     try {
-        persisted = migrateSaved(effects, JSON.parse(json));
+        saved = JSON.parse(json);
     } catch {
         return false;
     }
+
+    const persisted = migratePersistedState(saved);
 
     if (!persisted) {
         return false;
