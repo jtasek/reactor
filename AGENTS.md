@@ -136,7 +136,7 @@ re-renders.** Components never mutate state directly.
 
 - **State** (`src/app/state.ts`, `src/app/types.ts`): an `Application` holding `documents`
   keyed by id; each `Document` holds dictionaries of `shapes`, `links`, `layers`, `groups`,
-  `rulers` keyed by id, plus `*Ids` derived arrays.
+  `rulers` keyed by id, plus `*Ids` arrays (derived, except `shapesIds`; see below).
 - **Computed/derived** (`src/app/computed/`, `src/events/computed/`): Overmind `derived(...)`.
   `*Ids` and `selected*` fields are wired to these — keep derivations here, not in components.
   The pointer drag model lives in `src/events/computed/pointer.ts` (`topLeft`, `size`,
@@ -144,7 +144,7 @@ re-renders.** Components never mutate state directly.
 - **Actions** (`src/app/actions/`): one file per domain (`shape.ts`, `link.ts`, …),
   re-exported from `actions/index.ts`. Actions receive the Overmind `Context` and mutate
   state in place. `src/app/actions/shape.ts` is the canonical pattern (private
-  `getShape`/`setShape`/`deleteShape` helpers + exported actions).
+  `getShape`/`putOnTop`/`deleteShape` helpers + exported actions).
 - **Effects** (`src/app/effects.ts`): impure helpers (`newId`, localStorage, routing). Call
   them from actions (`effects.newId()`); don't import those libs directly in actions.
 - **Events** (`src/events/`): pointer/keyboard/clipboard input. `drivers/` are React hooks
@@ -204,9 +204,11 @@ Examples worth modelling new tools on:
   Per-type move/resize live in `src/app/geometry.ts`; create shapes from a `ShapeInput` via
   `createShape`.
 - Shapes are drawn and hit-tested in `shapesIds` order: by each shape's `order` (a fractional
-  index, see `src/app/drawOrder.ts`), then by id. `createShape` takes an explicit `order`;
-  `addShape` and `cloneShape` put new shapes on top. Actions ignore an invalid `order` and
-  loading replaces one. Never rely on the key order of `shapes`.
+  index, see `src/app/drawOrder.ts`), then by id. Only the store assigns orders: `createShape`
+  takes one, `addShape` and `cloneShapes` put new shapes on top, and loading repairs missing,
+  invalid and tied orders. `shapesIds` is document state, not derived, so reading it stays
+  cheap: whatever adds, removes or reorders shapes must update it, and components read it
+  through `useShapesIds`. Never rely on the key order of `shapes`.
 - `getBoundingBox(shape)` (`src/app/utils.ts`) computes an **analytic** box per shape type.
 - Each rendered shape is also **measured** with `getBBox()` in `src/ui/components/Shape/Shape.tsx`
   (the shape's primitive is wrapped in a `<g ref>`), and the result is stored as `shape.bounds`

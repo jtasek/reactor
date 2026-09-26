@@ -171,16 +171,17 @@ export type ShapeType = Shape['type'];
 
 type ShapeMetadata = Exclude<
     keyof ShapeBase,
-    'bounds' | 'children' | 'description' | 'parentShapeId' | 'rotation'
+    'bounds' | 'children' | 'description' | 'order' | 'parentShapeId' | 'rotation'
 >;
 
 /**
  * What a caller supplies to create a shape: its type and geometry, plus any
- * metadata to override. The factory fills in the remaining metadata.
+ * metadata to override. The factory fills in the remaining metadata, and the
+ * store assigns the draw order.
  */
 export type ShapeInput = Shape extends infer S
     ? S extends Shape
-        ? Omit<S, ShapeMetadata> & Partial<Pick<S, ShapeMetadata>>
+        ? Omit<S, ShapeMetadata | 'order'> & Partial<Pick<S, ShapeMetadata>>
         : never
     : never;
 

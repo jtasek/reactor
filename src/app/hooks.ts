@@ -1,3 +1,4 @@
+import { json } from 'overmind';
 import {
     createActionsHook,
     createEffectsHook,
@@ -108,6 +109,17 @@ export const useShapeLocked = (id: string) => {
 
 export const useShapes = () => {
     return useCurrentDocument()?.shapes ?? [];
+};
+
+/**
+ * Shape ids in draw order, copied so a render tracks the list rather than each id.
+ * The current document is read after tracking starts, so replacing or switching
+ * documents re-renders too.
+ */
+export const useShapesIds = () => {
+    const state = useAppState();
+
+    return json(state.currentDocument.shapesIds);
 };
 
 export const useRuler = (id: string) => {

@@ -10,9 +10,9 @@ import {
     linksIds,
     rulersIds,
     selectedShapes,
-    selectedShapesIds,
-    shapesIds
+    selectedShapesIds
 } from './computed/shapes';
+import { inDrawingOrder } from './drawOrder';
 import { newId } from './effects';
 import { Sequence } from './sequence';
 
@@ -179,7 +179,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
         rulersIds,
         selectedShapesIds,
         selectedShapes,
-        shapesIds
+        shapesIds: inDrawingOrder(options.shapes ?? {})
     };
 }
 

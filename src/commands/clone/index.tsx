@@ -2,7 +2,7 @@ import { Command } from 'src/app/types';
 import { Context } from '../../app';
 
 export const cloneSelection = ({ state, actions }: Context) => {
-    [...state.currentDocument.selectedShapesIds].forEach((shapeId) => actions.cloneShape(shapeId));
+    actions.cloneShapes(state.currentDocument.selectedShapesIds);
 };
 
 export const CloneCommand: Command = {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavBarList } from './NavBarList';
 import { NavBarListItem } from './NavBarListItem';
-import { useActions, useCurrentDocument, useShape } from 'src/app/hooks';
+import { useActions, useShape, useShapesIds } from 'src/app/hooks';
 
 const ShapesListItem = ({ shapeId }: { shapeId: string }) => {
     const shape = useShape(shapeId);
@@ -24,9 +24,9 @@ const ShapesListItem = ({ shapeId }: { shapeId: string }) => {
 };
 
 export const ShapesList = () => {
-    const { shapesIds } = useCurrentDocument();
+    const shapesIds = useShapesIds();
 
-    if (shapesIds?.length === 0) {
+    if (shapesIds.length === 0) {
         return null;
     }
 

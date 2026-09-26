@@ -1,7 +1,7 @@
 import type { Application, Document, Shape, Point, Size, Group, Link, Ruler } from '../types';
 import { Orientation } from '../types';
 import { createDocument } from '../factories';
-import { isDrawOrder, orderAbove } from '../drawOrder';
+import { orderAbove, untie, validDrawOrder } from '../drawOrder';
 
 export const PERSISTENCE_KEY = 'reactor';
 export const SCHEMA_VERSION = 4;
@@ -162,7 +162,7 @@ function member(value: unknown): MemberData & { parentId?: string } {
     };
 }
 
-function readShape(value: unknown, orderOf: (saved: unknown) => string): ShapeData {
+function readShape(value: unknown, readChild: (child: unknown) => ShapeData): ShapeData {
     const s = record(value);
     const base = {
         ...entity(value),
@@ -170,13 +170,11 @@ function readShape(value: unknown, orderOf: (saved: unknown) => string): ShapeDa
         modified: date(s.modified),
         createdBy: text(s.createdBy),
         modifiedBy: text(s.modifiedBy),
-        order: orderOf(s.order),
+        order: validDrawOrder(s.order) ?? '',
         rotation: s.rotation === undefined ? 0 : number(s.rotation),
         ...(s.description === undefined ? {} : { description: text(s.description) }),
         ...(s.parentShapeId === undefined ? {} : { parentShapeId: id(s.parentShapeId) }),
-        ...(s.children === undefined
-            ? {}
-            : { children: list(s.children, (child) => readShape(child, orderOf)) })
+        ...(s.children === undefined ? {} : { children: list(s.children, readChild) })
     };
 
     // Lines and pens are placed by their points; earlier versions also stored an
@@ -224,25 +222,45 @@ function readShape(value: unknown, orderOf: (saved: unknown) => string): ShapeDa
     }
 }
 
-function readShapes(value: unknown): Record<string, ShapeData> {
-    const validOrders = new Set(
-        Object.values(record(value))
-            .map((shape) => record(shape).order)
-            .filter(isDrawOrder)
-    );
-    let top = [...validOrders].reduce<string | null>(
-        (highest, order) => (highest === null || order > highest ? order : highest),
+function readShapes(value: unknown, onRepair: () => void): Record<string, ShapeData> {
+    const unordered: ShapeData[] = [];
+    const read = (item: unknown): ShapeData => {
+        const shape = readShape(item, read);
+
+        if (!shape.order) {
+            unordered.push(shape);
+        }
+
+        return shape;
+    };
+    const shapes = table(value, read);
+    const ordered = Object.values(shapes).filter(({ order }) => order);
+    const tied = new Set(ordered.map(({ order }) => order)).size < ordered.length;
+
+    if (!tied && unordered.length === 0) {
+        return shapes;
+    }
+
+    onRepair();
+
+    if (tied) {
+        untie(ordered);
+    }
+
+    let top = ordered.reduce<string | null>(
+        (highest, { order }) => (highest === null || order > highest ? order : highest),
         null
     );
-    const orderOf = (saved: unknown) =>
-        typeof saved === 'string' && (validOrders.has(saved) || isDrawOrder(saved))
-            ? saved
-            : (top = orderAbove(top));
 
-    return table(value, (shape) => readShape(shape, orderOf));
+    unordered.forEach((shape) => {
+        top = orderAbove(top);
+        shape.order = top;
+    });
+
+    return shapes;
 }
 
-function readDocument(value: unknown): DocumentData {
+function readDocument(value: unknown, onRepair = () => {}): DocumentData {
     const d = record(value);
     const camera = record(d.camera);
     const grid = record(d.grid);
@@ -264,7 +282,7 @@ function readDocument(value: unknown): DocumentData {
             factor: positive(grid.factor),
             visible: bool(grid.visible)
         },
-        shapes: readShapes(d.shapes),
+        shapes: readShapes(d.shapes, onRepair),
         groups: table(d.groups, member),
         layers: table(d.layers, member),
         components: table(d.components, member),
@@ -350,8 +368,10 @@ function showContainers(document: DocumentData): DocumentData {
  * v1 stored derived fields and used an incorrect default document map key; v1
  * and v2 group and layer visibility is migrated by `showContainers`. Shapes saved
  * before v4 have no draw order, so `readShapes` gives them one in saved order.
+ * `onRepair` runs when shapes get new orders: shapes saved before v4, and v4
+ * shapes with missing, invalid or tied orders.
  */
-export function migratePersistedState(raw: unknown): PersistedState | null {
+export function migratePersistedState(raw: unknown, onRepair = () => {}): PersistedState | null {
     try {
         const data = record(raw);
 
@@ -369,7 +389,7 @@ export function migratePersistedState(raw: unknown): PersistedState | null {
         let currentDocumentId = text(data.currentDocumentId);
 
         for (const [key, value] of entries) {
-            const read = readDocument(value);
+            const read = readDocument(value, onRepair);
             const document = data.version === 1 || data.version === 2 ? showContainers(read) : read;
 
             if (data.version !== 1 && key !== document.id) {

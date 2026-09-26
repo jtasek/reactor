@@ -1,9 +1,9 @@
-import React, { FC } from 'react';
-import { useCurrentDocument } from 'src/app/hooks';
+import React, { memo } from 'react';
+import { useShapesIds } from 'src/app/hooks';
 import { Shape } from '../Shape/Shape';
 
-export const Shapes: FC = () => {
-    const { shapesIds } = useCurrentDocument();
+export const Shapes = memo(() => {
+    const shapesIds = useShapesIds();
 
     return (
         <g id="shapes">
@@ -12,4 +12,6 @@ export const Shapes: FC = () => {
             ))}
         </g>
     );
-};
+});
+
+Shapes.displayName = 'Shapes';
