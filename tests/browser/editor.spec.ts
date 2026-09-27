@@ -7,6 +7,7 @@ test('opens the editor and pans the SVG surface', async ({ page }) => {
     await page.goto('/');
     const surface = page.locator('svg#surface');
     await expect(surface).toBeVisible();
+    await expect(surface).toHaveCSS('filter', 'none');
     const camera = surface.locator('#camera');
     const before = await camera.getAttribute('transform');
     await surface.hover();
