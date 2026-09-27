@@ -10,6 +10,14 @@ const ORDER_KEY = /^[B-Za-z][0-9A-Za-z]*$/;
 
 export const orderAbove = (order: string | null): string => generateKeyBetween(order, null);
 
+/** `count` ascending orders above `order`, or anywhere when it is null. */
+export const ordersAbove = (order: string | null, count: number): string[] =>
+    generateNKeysBetween(order, null, count);
+
+/** `count` ascending orders below `order`, or anywhere when it is null. */
+export const ordersBelow = (order: string | null, count: number): string[] =>
+    generateNKeysBetween(null, order, count);
+
 /** Returns `value` when it is a draw order the library can build on, otherwise undefined. */
 export function validDrawOrder(value: unknown): string | undefined {
     if (typeof value !== 'string' || value.length > MAX_ORDER_LENGTH || !ORDER_KEY.test(value)) {

@@ -13,7 +13,7 @@ import {
     selectedShapesIds
 } from './computed/shapes';
 import { inDrawingOrder } from './drawOrder';
-import { newId } from './effects';
+import { v4 as newId } from 'uuid';
 import { Sequence } from './sequence';
 
 import {

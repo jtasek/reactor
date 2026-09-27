@@ -127,6 +127,25 @@ describe('draw order', () => {
         ]);
     });
 
+    it('brings shapes to the front and sends them to the back, keeping their order', () => {
+        const { store } = loaded(saved(['a0', 'a1', 'a2', 'a3']));
+        const { currentDocument } = store.state;
+
+        store.actions.lockShape('s2');
+        store.actions.bringShapesToFront(['s1', 's0', 's2']);
+
+        expect(currentDocument.shapesIds).toEqual(['s2', 's3', 's0', 's1']);
+
+        store.actions.sendShapesToBack(['s1', 's3']);
+
+        expect(currentDocument.shapesIds).toEqual(['s3', 's1', 's2', 's0']);
+        expect(currentDocument.shapesIds).toEqual(
+            Object.values(currentDocument.shapes)
+                .sort(byDrawingOrder)
+                .map(({ id }) => id)
+        );
+    });
+
     it('keeps shapesIds in draw order as shapes are added, cloned and removed', () => {
         const { store } = loaded(saved(['a2', undefined, 'a0', 'a1']));
         const { currentDocument } = store.state;

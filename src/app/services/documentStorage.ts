@@ -6,6 +6,9 @@ import { orderAbove, untie, validDrawOrder } from '../drawOrder';
 export const PERSISTENCE_KEY = 'reactor';
 export const SCHEMA_VERSION = 4;
 export const RUNTIME_FIELDS = new Set(['active', 'bounds', 'filter', 'key', 'selected']);
+export const COLLECTIONS = ['shapes', 'groups', 'layers', 'components', 'links', 'rulers'] as const;
+
+export type Collection = (typeof COLLECTIONS)[number];
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
@@ -18,8 +21,12 @@ type ShapeData = DistributiveOmit<
     modified: string;
     children?: ShapeData[];
 };
-type MemberData = Omit<Group, 'selected'>;
-type DocumentData = Pick<
+type MemberData = Omit<Group, 'selected'> & { parentId?: string };
+type LinkData = Omit<Link, 'selected'>;
+type RulerData = Omit<Ruler, 'selected'>;
+
+/** A document's durable fields, without its entities and its per-device camera. */
+export type DocumentFields = Pick<
     Document,
     | 'id'
     | 'author'
@@ -28,19 +35,28 @@ type DocumentData = Pick<
     | 'name'
     | 'description'
     | 'locked'
-    | 'camera'
     | 'grid'
     | 'tags'
 > & {
     created: string;
     modified: string;
-    shapes: Record<string, ShapeData>;
-    groups: Record<string, MemberData>;
-    layers: Record<string, MemberData>;
-    components: Record<string, MemberData & { parentId?: string }>;
-    links: Record<string, Omit<Link, 'selected'>>;
-    rulers: Record<string, Omit<Ruler, 'selected'>>;
 };
+
+/** The durable form of each kind of entity a document holds. */
+export interface SavedEntities {
+    shapes: ShapeData;
+    groups: MemberData;
+    layers: MemberData;
+    components: MemberData;
+    links: LinkData;
+    rulers: RulerData;
+}
+
+type DocumentData = DocumentFields &
+    Pick<Document, 'camera'> & { [C in Collection]: Record<string, SavedEntities[C]> };
+
+/** Whether an entity exists, for dropping references to ones that do not. */
+export type Exists = (collection: 'shapes' | 'components', id: string) => boolean;
 export interface PersistedState {
     version: number;
     currentDocumentId: string;
@@ -152,7 +168,7 @@ function entity(value: unknown) {
     return { id: id(e.id), name: text(e.name), locked: bool(e.locked), visible: bool(e.visible) };
 }
 
-function member(value: unknown): MemberData & { parentId?: string } {
+function readMember(value: unknown): MemberData {
     const m = record(value);
 
     return {
@@ -222,6 +238,142 @@ function readShape(value: unknown, readChild: (child: unknown) => ShapeData): Sh
     }
 }
 
+function readLink(value: unknown): LinkData {
+    const l = record(value);
+
+    return {
+        ...entity(value),
+        type: text(l.type),
+        ...(l.source === undefined ? {} : { source: id(l.source) }),
+        ...(l.target === undefined ? {} : { target: id(l.target) })
+    };
+}
+
+function readRuler(value: unknown): RulerData {
+    const r = record(value);
+
+    if (r.orientation !== Orientation.Horizontal && r.orientation !== Orientation.Vertical) {
+        throw new Error('Invalid orientation');
+    }
+
+    return { ...entity(value), orientation: r.orientation, position: point(r.position) };
+}
+
+/** Like `readShape`, but a missing or invalid draw order makes the shape invalid. */
+function readOrderedShape(value: unknown): ShapeData {
+    const shape = readShape(value, readOrderedShape);
+
+    if (!shape.order) {
+        throw new Error('Invalid draw order');
+    }
+
+    return shape;
+}
+
+const entityReaders: { [C in Collection]: (value: unknown) => SavedEntities[C] } = {
+    shapes: readOrderedShape,
+    groups: readMember,
+    layers: readMember,
+    components: readMember,
+    links: readLink,
+    rulers: readRuler
+};
+
+/** Reads one entity's durable form, throwing when it is invalid. */
+export function readEntity<C extends Collection>(collection: C, value: unknown): SavedEntities[C] {
+    return entityReaders[collection](value);
+}
+
+const withoutMissingMembers = <T extends MemberData>(member: T, exists: Exists): T =>
+    member.shapesIds.every((shapeId) => exists('shapes', shapeId))
+        ? member
+        : { ...member, shapesIds: member.shapesIds.filter((shapeId) => exists('shapes', shapeId)) };
+
+const referenceRepairs: {
+    [C in Collection]: (entity: SavedEntities[C], exists: Exists) => SavedEntities[C] | null;
+} = {
+    shapes: (shape, exists) =>
+        shape.parentShapeId === undefined || exists('shapes', shape.parentShapeId)
+            ? shape
+            : { ...shape, parentShapeId: undefined },
+    groups: withoutMissingMembers,
+    layers: withoutMissingMembers,
+    components: (component, exists) => {
+        const members = withoutMissingMembers(component, exists);
+
+        return members.parentId === undefined || exists('components', members.parentId)
+            ? members
+            : { ...members, parentId: undefined };
+    },
+    links: (link, exists) =>
+        [link.source, link.target].every((end) => end === undefined || exists('shapes', end))
+            ? link
+            : null,
+    rulers: (ruler) => ruler
+};
+
+/**
+ * Drops an entity's references to shapes and components that do not exist, as
+ * deleting them would: memberships and parents go, and a link to a missing shape
+ * goes entirely (null). Returns the same entity when nothing was missing.
+ */
+export function withoutDanglingReferences<C extends Collection>(
+    collection: C,
+    entity: SavedEntities[C],
+    exists: Exists
+): SavedEntities[C] | null {
+    return referenceRepairs[collection](entity, exists);
+}
+
+function repairReferences<C extends Collection>(
+    collection: C,
+    items: Record<string, SavedEntities[C]>,
+    exists: Exists,
+    onRepair: () => void
+): Record<string, SavedEntities[C]> {
+    const repaired = Object.entries(items).map(
+        ([key, item]) => [key, item, withoutDanglingReferences(collection, item, exists)] as const
+    );
+
+    if (repaired.every(([, item, result]) => result === item)) {
+        return items;
+    }
+
+    onRepair();
+
+    return Object.fromEntries(
+        repaired.flatMap(([key, , result]) => (result === null ? [] : [[key, result]]))
+    );
+}
+
+function readFields(d: Record<string, unknown>): DocumentFields {
+    const grid = record(d.grid);
+
+    return {
+        id: id(d.id),
+        author: text(d.author),
+        name: text(d.name),
+        locked: bool(d.locked),
+        created: date(d.created),
+        modified: date(d.modified),
+        createdBy: text(d.createdBy),
+        modifiedBy: text(d.modifiedBy),
+        ...(d.description === undefined ? {} : { description: text(d.description) }),
+        tags: list(d.tags, text),
+        grid: {
+            width: positive(grid.width),
+            height: positive(grid.height),
+            factor: positive(grid.factor),
+            visible: bool(grid.visible)
+        }
+    };
+}
+
+/** Reads a document's durable fields, throwing when they are invalid. */
+export function readDocumentFields(value: unknown): DocumentFields {
+    return readFields(record(value));
+}
+
 function readShapes(value: unknown, onRepair: () => void): Record<string, ShapeData> {
     const unordered: ShapeData[] = [];
     const read = (item: unknown): ShapeData => {
@@ -263,81 +415,23 @@ function readShapes(value: unknown, onRepair: () => void): Record<string, ShapeD
 function readDocument(value: unknown, onRepair = () => {}): DocumentData {
     const d = record(value);
     const camera = record(d.camera);
-    const grid = record(d.grid);
-    const document: DocumentData = {
-        id: id(d.id),
-        author: text(d.author),
-        name: text(d.name),
-        locked: bool(d.locked),
-        created: date(d.created),
-        modified: date(d.modified),
-        createdBy: text(d.createdBy),
-        modifiedBy: text(d.modifiedBy),
-        ...(d.description === undefined ? {} : { description: text(d.description) }),
-        tags: list(d.tags, text),
+    const shapes = readShapes(d.shapes, onRepair);
+    const components = table(d.components, readMember);
+    const exists: Exists = (collection, entityId) =>
+        Object.hasOwn(collection === 'shapes' ? shapes : components, entityId);
+    const repair = <C extends Collection>(collection: C, items: Record<string, SavedEntities[C]>) =>
+        repairReferences(collection, items, exists, onRepair);
+
+    return {
+        ...readFields(d),
         camera: { scale: positive(camera.scale), position: point(camera.position) },
-        grid: {
-            width: positive(grid.width),
-            height: positive(grid.height),
-            factor: positive(grid.factor),
-            visible: bool(grid.visible)
-        },
-        shapes: readShapes(d.shapes, onRepair),
-        groups: table(d.groups, member),
-        layers: table(d.layers, member),
-        components: table(d.components, member),
-        links: table(d.links, (value) => {
-            const l = record(value);
-
-            return {
-                ...entity(value),
-                type: text(l.type),
-                ...(l.source === undefined ? {} : { source: id(l.source) }),
-                ...(l.target === undefined ? {} : { target: id(l.target) })
-            };
-        }),
-        rulers: table(d.rulers, (value) => {
-            const r = record(value);
-
-            if (
-                r.orientation !== Orientation.Horizontal &&
-                r.orientation !== Orientation.Vertical
-            ) {
-                throw new Error('Invalid orientation');
-            }
-
-            return { ...entity(value), orientation: r.orientation, position: point(r.position) };
-        })
+        shapes: repair('shapes', shapes),
+        groups: repair('groups', table(d.groups, readMember)),
+        layers: repair('layers', table(d.layers, readMember)),
+        components: repair('components', components),
+        links: repair('links', table(d.links, readLink)),
+        rulers: table(d.rulers, readRuler)
     };
-    const hasShape = (shapeId: string) => Object.hasOwn(document.shapes, shapeId);
-
-    for (const members of [document.groups, document.layers, document.components]) {
-        for (const item of Object.values(members)) {
-            if (!item.shapesIds.every(hasShape)) {
-                throw new Error('Dangling shape membership');
-            }
-        }
-    }
-
-    for (const link of Object.values(document.links)) {
-        if ((link.source && !hasShape(link.source)) || (link.target && !hasShape(link.target))) {
-            throw new Error('Dangling link');
-        }
-    }
-
-    for (const shape of Object.values(document.shapes)) {
-        if (shape.parentShapeId && !hasShape(shape.parentShapeId)) {
-            throw new Error('Dangling parent');
-        }
-    }
-
-    for (const component of Object.values(document.components)) {
-        if (component.parentId && !Object.hasOwn(document.components, component.parentId)) {
-            throw new Error('Dangling component parent');
-        }
-    }
-
-    return document;
 }
 
 export function serializePersistedState(
@@ -368,8 +462,9 @@ function showContainers(document: DocumentData): DocumentData {
  * v1 stored derived fields and used an incorrect default document map key; v1
  * and v2 group and layer visibility is migrated by `showContainers`. Shapes saved
  * before v4 have no draw order, so `readShapes` gives them one in saved order.
- * `onRepair` runs when shapes get new orders: shapes saved before v4, and v4
- * shapes with missing, invalid or tied orders.
+ * `onRepair` runs when loading changes saved content: shapes that get new orders
+ * (all shapes saved before v4, and v4 shapes with missing, invalid or tied
+ * orders) and references to missing shapes or components that are dropped.
  */
 export function migratePersistedState(raw: unknown, onRepair = () => {}): PersistedState | null {
     try {
@@ -421,7 +516,7 @@ export function migratePersistedState(raw: unknown, onRepair = () => {}): Persis
     }
 }
 
-function hydrateShape(shape: ShapeData): Shape {
+export function hydrateShape(shape: ShapeData): Shape {
     return {
         ...shape,
         key: `${shape.type}-${shape.id}`,
@@ -433,15 +528,24 @@ function hydrateShape(shape: ShapeData): Shape {
     };
 }
 
-function hydrateMembers<T extends MemberData>(
-    items: Record<string, T>
-): Record<string, T & { selected: boolean }> {
-    return Object.fromEntries(
-        Object.entries(items).map(([key, value]) => [
-            key,
-            { ...value, shapesIds: [...value.shapesIds], selected: false }
-        ])
-    );
+export const hydrateMember = (member: MemberData) => ({
+    ...member,
+    shapesIds: [...member.shapesIds],
+    selected: false
+});
+
+export const hydrateLink = (link: LinkData): Link => ({ ...link, selected: false });
+
+export const hydrateRuler = (ruler: RulerData): Ruler => ({ ...ruler, selected: false });
+
+export const hydrateDocumentFields = (fields: DocumentFields) => ({
+    ...fields,
+    created: new Date(fields.created),
+    modified: new Date(fields.modified)
+});
+
+function hydrateTable<T, R>(items: Record<string, T>, hydrate: (item: T) => R) {
+    return Object.fromEntries(Object.entries(items).map(([key, item]) => [key, hydrate(item)]));
 }
 
 export function hydrateDocument(data: DocumentData): Document {
@@ -449,20 +553,13 @@ export function hydrateDocument(data: DocumentData): Document {
 
     return createDocument({
         ...data,
-        created: new Date(data.created),
-        modified: new Date(data.modified),
-        shapes: Object.fromEntries(
-            Object.entries(data.shapes).map(([key, shape]) => [key, hydrateShape(shape)])
-        ),
-        groups: hydrateMembers(data.groups),
-        layers: hydrateMembers(data.layers),
-        components: hydrateMembers(data.components),
-        links: Object.fromEntries(
-            Object.entries(data.links).map(([key, link]) => [key, { ...link, selected: false }])
-        ),
-        rulers: Object.fromEntries(
-            Object.entries(data.rulers).map(([key, ruler]) => [key, { ...ruler, selected: false }])
-        )
+        ...hydrateDocumentFields(data),
+        shapes: hydrateTable(data.shapes, hydrateShape),
+        groups: hydrateTable(data.groups, hydrateMember),
+        layers: hydrateTable(data.layers, hydrateMember),
+        components: hydrateTable(data.components, hydrateMember),
+        links: hydrateTable(data.links, hydrateLink),
+        rulers: hydrateTable(data.rulers, hydrateRuler)
     });
 }
 
