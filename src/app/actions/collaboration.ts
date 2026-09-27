@@ -65,7 +65,7 @@ function applyViews<V extends object, E extends object>(
     let reordered = false;
 
     for (const [id, view] of Object.entries(views ?? {})) {
-        const current = table[id];
+        const current = Object.hasOwn(table, id) ? table[id] : undefined;
 
         if (view === null) {
             if (current !== undefined) {
@@ -91,7 +91,7 @@ function applyViews<V extends object, E extends object>(
 }
 
 /**
- * Applies changes from other copies of the document. Runtime state such as the
+ * Applies normalized changes from the shared document. Runtime state such as the
  * selection and the camera stays this copy's own.
  */
 export const applyRemoteChanges: ActionWithParam<RemoteChanges> = (

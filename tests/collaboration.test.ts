@@ -1,6 +1,9 @@
 import type { Document } from 'src/app/types';
+import * as Y from 'yjs';
+import { Collaboration } from 'src/app/services/collaboration';
 import {
     type Copy,
+    DOCUMENT_ID,
     createCopies,
     deliver,
     documentOf,
@@ -94,7 +97,171 @@ function deliverSome(copy: Copy, random: Random) {
     deliver(copy, count);
 }
 
+/** Builds an update from a peer, including data the editor would not normally create. */
+function remoteUpdate(copy: Copy, change: (document: Y.Doc) => void) {
+    const document = new Y.Doc();
+
+    Y.applyUpdate(document, copy.collaboration.state(DOCUMENT_ID));
+
+    const before = Y.encodeStateVector(document);
+
+    document.transact(() => change(document));
+
+    const update = Y.encodeStateAsUpdate(document, before);
+
+    document.destroy();
+
+    return update;
+}
+
 describe('collaboration', () => {
+    it('rejects unsafe or mismatched remote table keys before applying entities', async () => {
+        const [copy] = await createCopies(1, (store) =>
+            store.actions.addGroup({ id: 'valid-group' })
+        );
+        const applyRemoteChanges = vi.fn();
+        const collaboration = new Collaboration();
+
+        await collaboration.initialize({
+            getDocument: () => documentOf(copy),
+            addMutationListener: copy.store.addMutationListener,
+            applyRemoteChanges
+        });
+        collaboration.open(DOCUMENT_ID, copy.collaboration.state(DOCUMENT_ID));
+        applyRemoteChanges.mockClear();
+
+        const update = remoteUpdate(copy, (document) => {
+            for (const key of ['__proto__', 'constructor', 'prototype', 'mismatched-id']) {
+                document
+                    .getMap('groups')
+                    .set(key, new Y.Map(Object.entries(sharedState(copy).groups['valid-group'])));
+            }
+        });
+
+        collaboration.receive(DOCUMENT_ID, update);
+
+        expect(applyRemoteChanges).toHaveBeenCalledExactlyOnceWith(
+            expect.objectContaining({
+                entities: expect.objectContaining({
+                    groups: expect.objectContaining(
+                        Object.fromEntries(
+                            ['__proto__', 'constructor', 'prototype', 'mismatched-id'].map((id) => [
+                                id,
+                                null
+                            ])
+                        )
+                    )
+                })
+            })
+        );
+        collaboration.dispose();
+    });
+
+    it('does not mutate prototypes or expose shapes under mismatched keys', async () => {
+        const [copy] = await createCopies(1, (store) => store.actions.addShape(rectangle()));
+        const [id] = documentOf(copy).shapesIds;
+        const shape = sharedState(copy).shapes[id];
+        const prototype = Object.getOwnPropertyDescriptors(Object.prototype);
+        const update = remoteUpdate(copy, (document) => {
+            for (const key of ['__proto__', 'constructor', 'prototype', 'mismatched-id']) {
+                document.getMap('shapes').set(key, new Y.Map(Object.entries(shape)));
+            }
+        });
+
+        copy.collaboration.receive(DOCUMENT_ID, update);
+
+        expect(Object.keys(documentOf(copy).shapes)).toEqual([id]);
+        expect(Object.getOwnPropertyDescriptors(Object.prototype)).toEqual(prototype);
+        expectConsistent(copy);
+    });
+
+    it('applies valid entities alongside malformed remote table values', async () => {
+        const [copy] = await createCopies(1, (store) => store.actions.addShape(rectangle()));
+        const [id] = documentOf(copy).shapesIds;
+        const shape = sharedState(copy).shapes[id];
+        const update = remoteUpdate(copy, (document) => {
+            document.getMap('shapes').set('malformed', {});
+            document.getMap('shapes').set('null-value', null);
+            document
+                .getMap('shapes')
+                .set('valid-shape', new Y.Map(Object.entries({ ...shape, id: 'valid-shape' })));
+        });
+
+        expect(() => copy.collaboration.receive(DOCUMENT_ID, update)).not.toThrow();
+        expect(documentOf(copy).shapes['valid-shape']).toMatchObject({ id: 'valid-shape' });
+        expect(Object.keys(documentOf(copy).shapes)).toHaveLength(2);
+        expectConsistent(copy);
+
+        // A later structural change must also tolerate malformed values left in Yjs.
+        edit(copy, (actions) => actions.addShape(rectangle(40)));
+        expect(Object.keys(documentOf(copy).shapes)).toHaveLength(3);
+    });
+
+    it('normalizes component parents in the deleting copy as well as its peers', async () => {
+        const copies = await createCopies(2, (store) => {
+            store.actions.addComponent({ id: 'parent' });
+            store.actions.addComponent({ id: 'child', parentId: 'parent' });
+        });
+
+        edit(copies[0], (actions) => actions.removeComponent('parent'));
+        settle(copies);
+
+        copies.forEach((copy) => {
+            expect(documentOf(copy).components.child.parentId).toBeUndefined();
+            expect(sharedState(copy).components.child.parentId).toBe('parent');
+        });
+    });
+
+    it('preserves hidden references when a group is renamed before its shape arrives', async () => {
+        const copies = await createCopies(3);
+        const [a, b, c] = copies;
+
+        edit(a, (actions) => actions.addShape(rectangle()));
+
+        const [id] = documentOf(a).shapesIds;
+
+        deliver(b);
+        edit(b, (actions) => actions.addGroup({ id: 'group', shapesIds: [id] }));
+        c.inbox.reverse();
+        deliver(c, 1);
+        expect(documentOf(c).groups.group.shapesIds).toEqual([]);
+
+        edit(c, (actions) => actions.updateGroup({ id: 'group', name: 'renamed' }));
+        expect(sharedState(c).groups.group.shapesIds).toEqual([id]);
+        settle(copies);
+
+        copies.forEach((copy) => {
+            expect(documentOf(copy).groups.group).toMatchObject({
+                name: 'renamed',
+                shapesIds: [id]
+            });
+        });
+    });
+
+    it('preserves hidden links when the document is renamed before their shapes arrive', async () => {
+        const copies = await createCopies(3);
+        const [a, b, c] = copies;
+
+        edit(a, (actions) => actions.addShape(rectangle()));
+
+        const [id] = documentOf(a).shapesIds;
+
+        deliver(b);
+        edit(b, (actions) => actions.addLink({ id: 'link', source: id }));
+        c.inbox.reverse();
+        deliver(c, 1);
+        expect(documentOf(c).links.link).toBeUndefined();
+
+        edit(c, (actions) => actions.updateDocument({ id: DOCUMENT_ID, name: 'renamed' }));
+        expect(sharedState(c).links.link.source).toBe(id);
+        settle(copies);
+
+        copies.forEach((copy) => {
+            expect(documentOf(copy).links.link.source).toBe(id);
+            expect(documentOf(copy).name).toBe('renamed');
+        });
+    });
+
     it('starts every copy with the same content', async () => {
         const copies = await createCopies(3, (store) => {
             store.actions.addShape(rectangle());

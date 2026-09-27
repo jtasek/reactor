@@ -12,7 +12,7 @@ import {
     type SavedEntities
 } from './documentStorage';
 
-/** Changes other copies made to a document, in durable form; `null` removes an entity. */
+/** Normalized changes from the shared document, in durable form; `null` removes an entity. */
 export interface RemoteChanges {
     documentId: string;
     fields?: DocumentFields;
@@ -28,7 +28,7 @@ interface Mutation {
 export interface CollaborationOptions {
     /** The store's document, whose changes are shared. */
     getDocument(documentId: string): Document | undefined;
-    /** Applies changes that came from other copies, as one action. */
+    /** Applies the shared document's normalized view, as one action. */
     applyRemoteChanges(changes: RemoteChanges): void;
     /** Reports every store mutation, to find the changes this copy makes. */
     addMutationListener(listener: (mutation: Mutation) => void): () => void;
@@ -37,6 +37,16 @@ export interface CollaborationOptions {
 }
 
 type YEntity = Yjs.Map<unknown>;
+type EntityViews = { [C in Collection]: Map<string, SavedEntities[C] | null> };
+
+const emptyViews = (): EntityViews => ({
+    shapes: new Map(),
+    groups: new Map(),
+    layers: new Map(),
+    components: new Map(),
+    links: new Map(),
+    rulers: new Map()
+});
 
 interface Changes {
     fields: boolean;
@@ -48,9 +58,11 @@ interface Changes {
 interface Binding {
     doc: Yjs.Doc;
     fields: Yjs.Map<unknown>;
-    tables: Record<Collection, Yjs.Map<YEntity>>;
+    tables: Record<Collection, Yjs.Map<unknown>>;
     local: Changes;
     remote: Changes;
+    /** Last normalized values, so subsequent local edits do not publish view-only repairs. */
+    views: EntityViews;
     /** Entities left out of the store because they failed validation. */
     invalid: Record<Collection, Set<string>>;
 }
@@ -74,23 +86,34 @@ const touch = (changes: Changes, collection: Collection, id: string) => {
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
-/** Makes `target` hold exactly `values`, writing only the fields that differ. */
-function writeFields(target: Yjs.Map<unknown>, values: object) {
-    const entries = Object.entries(values).filter(([, value]) => value !== undefined);
-    const keys = new Set(entries.map(([key]) => key));
+/** Writes changes from `previous` to `values`, preserving fields only repaired in the view. */
+function writeFields(target: Yjs.Map<unknown>, values: object, previous: object = target.toJSON()) {
+    const keys = new Set([...Object.keys(previous), ...Object.keys(values)]);
 
-    for (const key of [...target.keys()].filter((key) => !keys.has(key))) {
-        target.delete(key);
-    }
+    for (const key of keys) {
+        const value: unknown = Reflect.get(values, key);
 
-    for (const [key, value] of entries.filter(([key, value]) => !same(target.get(key), value))) {
-        target.set(key, value);
+        if (same(Reflect.get(previous, key), value)) {
+            continue;
+        }
+
+        if (value === undefined) {
+            target.delete(key);
+        } else {
+            target.set(key, value);
+        }
     }
 }
 
-function validEntity<C extends Collection>(collection: C, value: unknown): SavedEntities[C] | null {
+function validEntity<C extends Collection>(
+    collection: C,
+    id: string,
+    value: unknown
+): SavedEntities[C] | null {
     try {
-        return readEntity(collection, value);
+        const entity = readEntity(collection, value);
+
+        return entity.id === id ? entity : null;
     } catch {
         return null;
     }
@@ -150,6 +173,7 @@ export class Collaboration {
             },
             local: noChanges(),
             remote: noChanges(),
+            views: emptyViews(),
             invalid: {
                 shapes: new Set(),
                 groups: new Set(),
@@ -302,7 +326,7 @@ export class Collaboration {
             return true;
         }
 
-        if (entityField !== undefined && isLocalOnly(entityField)) {
+        if (entityField !== undefined && RUNTIME_FIELDS.has(entityField)) {
             return false;
         }
 
@@ -342,26 +366,34 @@ export class Collaboration {
             const entities: Record<string, unknown> = document[collection];
 
             for (const id of ids) {
-                const entity = entities[id];
+                const entity = Object.hasOwn(entities, id) ? entities[id] : undefined;
+                const previous = binding.views[collection].get(id);
 
                 if (entity === undefined) {
-                    table.delete(id);
+                    // Hidden/invalid entities are absent from the view, not locally deleted.
+                    if (previous) {
+                        table.delete(id);
+                    }
                     continue;
                 }
 
-                writeFields(this.entityOf(table, id), readEntity(collection, entity));
+                writeFields(
+                    this.entityOf(table, id),
+                    readEntity(collection, entity),
+                    previous ?? undefined
+                );
             }
         }
     }
 
-    private entityOf(table: Yjs.Map<YEntity>, id: string): YEntity {
+    private entityOf(table: Yjs.Map<unknown>, id: string): YEntity {
+        const { yjs } = this.ready();
         const existing = table.get(id);
 
-        if (existing) {
+        if (existing instanceof yjs.Map) {
             return existing;
         }
 
-        const { yjs } = this.ready();
         const created = new yjs.Map<unknown>();
 
         table.set(id, created);
@@ -377,11 +409,7 @@ export class Collaboration {
         for (const collection of COLLECTIONS) {
             const table = binding.tables[collection];
 
-            table.observeDeep((events, transaction) => {
-                if (transaction.origin === LOCAL) {
-                    return;
-                }
-
+            table.observeDeep((events) => {
                 for (const event of events) {
                     const own = event.target === table;
                     const ids = own ? [...event.changes.keys.keys()] : [String(event.path[0])];
@@ -393,10 +421,9 @@ export class Collaboration {
             });
         }
 
-        binding.doc.on('afterTransaction', (transaction) => {
-            if (transaction.origin !== LOCAL) {
-                this.applyRemote(documentId, binding);
-            }
+        binding.doc.on('afterTransaction', () => {
+            // Local structural edits need the same reference repairs as received edits.
+            this.applyRemote(documentId, binding);
         });
         binding.doc.on('update', (update: Uint8Array, origin: unknown) => {
             if (origin === LOCAL) {
@@ -431,14 +458,8 @@ export class Collaboration {
 
     /** The store's view of the changed entities, and of every reference if shapes changed. */
     private views(binding: Binding, remote: Changes): RemoteChanges['entities'] {
-        const reads: { [C in Collection]: Map<string, SavedEntities[C] | null> } = {
-            shapes: new Map(),
-            groups: new Map(),
-            layers: new Map(),
-            components: new Map(),
-            links: new Map(),
-            rulers: new Map()
-        };
+        const { yjs } = this.ready();
+        const reads = emptyViews();
         let { structure } = remote;
         const read = <C extends Collection>(collection: C, id: string) => {
             if (reads[collection].has(id)) {
@@ -446,7 +467,8 @@ export class Collaboration {
             }
 
             const entity = binding.tables[collection].get(id);
-            const saved = entity === undefined ? null : validEntity(collection, entity.toJSON());
+            const saved =
+                entity instanceof yjs.Map ? validEntity(collection, id, entity.toJSON()) : null;
             const invalid = binding.invalid[collection];
             const wasInvalid = invalid.has(id);
 
@@ -467,7 +489,7 @@ export class Collaboration {
                 binding.tables[collection].forEach((_, id) => read(collection, id))
             );
             binding.tables.shapes.forEach((shape, id) => {
-                if (shape.get('parentShapeId') !== undefined) {
+                if (shape instanceof yjs.Map && shape.get('parentShapeId') !== undefined) {
                     read('shapes', id);
                 }
             });
@@ -477,10 +499,18 @@ export class Collaboration {
             binding.tables[collection].has(id) && !binding.invalid[collection].has(id);
         const viewsOf = <C extends Collection>(collection: C) =>
             Object.fromEntries(
-                [...reads[collection]].map(([id, entity]) => [
-                    id,
-                    entity && withoutDanglingReferences(collection, entity, exists)
-                ])
+                [...reads[collection]].map(([id, entity]) => {
+                    const view = entity && withoutDanglingReferences(collection, entity, exists);
+
+                    if (view) {
+                        // Hydration may share geometry objects with the store; keep an independent copy.
+                        binding.views[collection].set(id, readEntity(collection, view));
+                    } else {
+                        binding.views[collection].delete(id);
+                    }
+
+                    return [id, view];
+                })
             );
 
         return {
