@@ -5,6 +5,7 @@ import {
     COLLECTIONS,
     RUNTIME_FIELDS,
     readDocumentFields,
+    orUndefined,
     readEntity,
     withoutDanglingReferences,
     type Collection,
@@ -118,15 +119,6 @@ const changedFields = (previous: object, next: object) =>
         (key) => !same(Reflect.get(previous, key), Reflect.get(next, key))
     );
 
-/** What `read` returns, or null when it finds the value invalid. */
-function valid<T>(read: () => T): T | null {
-    try {
-        return read();
-    } catch {
-        return null;
-    }
-}
-
 /** Removes the members `previous` has and `next` lacks, wherever they are, and appends new ones. */
 function writeMembers(members: Yjs.Array<unknown>, next: string[], previous: unknown[]) {
     const items = members.toArray();
@@ -166,11 +158,9 @@ export class Collaboration {
     private paused = false;
 
     async initialize(options: CollaborationOptions): Promise<void> {
-        // Listens before anything reads derived state: Overmind drops a derived value's
-        // listener while it calls listeners, which skips the listener after the dropped one.
-        this.stopListening = options.addMutationListener((mutation) => this.record(mutation));
-        this.options = options;
         this.yjs = await import('yjs');
+        this.options = options;
+        this.stopListening = options.addMutationListener((mutation) => this.record(mutation));
     }
 
     /**
@@ -641,7 +631,7 @@ export class Collaboration {
         binding: Binding,
         document: Document
     ): ViewChange<DocumentFields> | undefined {
-        const view = valid(() => readDocumentFields(binding.fields.toJSON()));
+        const view = orUndefined(() => readDocumentFields(binding.fields.toJSON()));
 
         if (!view || view.id !== documentId) {
             return undefined;
@@ -667,8 +657,8 @@ export class Collaboration {
             const entity = binding.tables[collection].get(id);
             const saved =
                 entity instanceof yjs.Map
-                    ? valid(() => readEntity(collection, entity.toJSON()))
-                    : null;
+                    ? orUndefined(() => readEntity(collection, entity.toJSON()))
+                    : undefined;
             const view = saved?.id === id ? saved : null;
             const invalid = binding.invalid[collection];
             const wasInvalid = invalid.has(id);

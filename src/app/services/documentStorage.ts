@@ -437,7 +437,8 @@ export interface View {
     cameras: Record<string, Camera>;
 }
 
-const orUndefined = <T>(read: () => T): T | undefined => {
+/** What `read` returns, or undefined when it finds the value invalid. */
+export const orUndefined = <T>(read: () => T): T | undefined => {
     try {
         return read();
     } catch {

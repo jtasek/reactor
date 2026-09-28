@@ -8,7 +8,8 @@ import {
     SCHEMA_VERSION,
     migratePersistedState,
     readView,
-    restoreDocuments
+    restoreDocuments,
+    type View
 } from './documentStorage';
 import { TabSync } from './tabSync';
 
@@ -105,12 +106,14 @@ export async function startDocumentSync(context: Context, instance: Instance): P
         instance.actions;
     /** Documents in the database, so their changes are saved. */
     const saved = new Set<string>();
+    /** Documents seen in the database, so one missing from it later was deleted elsewhere. */
+    const confirmed = new Set<string>();
     /** Documents deleted here, which a late read of the database must not bring back. */
     const deletedHere = new Set<string>();
     /** Documents added or deleted since the last reconcile. */
     const touched = new Set<string>();
-    /** Documents created while loading, shared once other copies are listened to. */
-    const unannounced: string[] = [];
+    /** Documents created while loading, and their state, shared once other copies listen. */
+    const unannounced: Array<[string, Uint8Array]> = [];
     const appended = new Map<string, number>();
     let database: DocumentDatabase | undefined = undefined;
     let sync: TabSync | undefined = undefined;
@@ -118,7 +121,6 @@ export async function startDocumentSync(context: Context, instance: Instance): P
     let failing = false;
     let viewTimer: ReturnType<typeof setTimeout> | undefined;
     let reconcileQueued = false;
-    let loaded = false;
 
     const isOpen = (documentId: string) => collaboration.documentIds().includes(documentId);
 
@@ -191,6 +193,7 @@ export async function startDocumentSync(context: Context, instance: Instance): P
     const removeShared = (documentId: string) => {
         collaboration.close(documentId);
         saved.delete(documentId);
+        confirmed.delete(documentId);
         removeDocument(documentId);
     };
 
@@ -204,17 +207,22 @@ export async function startDocumentSync(context: Context, instance: Instance): P
         if (target && saving) {
             saved.add(documentId);
             void store(() =>
-                target.create(documentId, update).catch((error: unknown) => {
-                    saved.delete(documentId);
-                    throw error;
-                })
+                target.create(documentId, update).then(
+                    () => {
+                        confirmed.add(documentId);
+                    },
+                    (error: unknown) => {
+                        saved.delete(documentId);
+                        throw error;
+                    }
+                )
             );
         }
 
         if (sync) {
             sync.sendDocument(documentId, update);
         } else {
-            unannounced.push(documentId);
+            unannounced.push([documentId, update]);
         }
     };
 
@@ -240,6 +248,7 @@ export async function startDocumentSync(context: Context, instance: Instance): P
 
             collaboration.close(documentId);
             deletedHere.add(documentId);
+            confirmed.delete(documentId);
 
             const target = database;
 
@@ -259,12 +268,17 @@ export async function startDocumentSync(context: Context, instance: Instance): P
             return;
         }
 
-        const known = new Set(saved);
+        const known = new Set(confirmed);
         const savedIds = new Set(await target.documentIds());
 
         [...known]
             .filter((documentId) => !savedIds.has(documentId) && isOpen(documentId))
             .forEach(removeShared);
+        savedIds.forEach((documentId) => {
+            if (isOpen(documentId)) {
+                confirmed.add(documentId);
+            }
+        });
 
         for (const documentId of savedIds) {
             if (isOpen(documentId) || deletedHere.has(documentId)) {
@@ -274,7 +288,9 @@ export async function startDocumentSync(context: Context, instance: Instance): P
             const updates = await target.load(documentId).catch(() => undefined);
 
             if (updates && !isOpen(documentId) && !deletedHere.has(documentId)) {
-                openSaved(documentId, updates);
+                if (openSaved(documentId, updates)) {
+                    confirmed.add(documentId);
+                }
             }
         }
     };
@@ -310,6 +326,15 @@ export async function startDocumentSync(context: Context, instance: Instance): P
         }
     };
 
+    /** Records the local storage save the documents shown already account for. */
+    const remember = (value: string) => {
+        try {
+            effects.saveState(MIGRATED_KEY, value);
+        } catch {
+            // Without the record, the next start mentions the local storage save again.
+        }
+    };
+
     /** Moves the local storage save into the store, to be saved in the database. */
     const migrate = () => {
         const moved = localSave();
@@ -325,29 +350,29 @@ export async function startDocumentSync(context: Context, instance: Instance): P
         saving = loadLocalData(context) && saving;
 
         if (saving && moved) {
-            effects.saveState(MIGRATED_KEY, moved);
+            remember(moved);
         }
     };
 
     /** Tells the user once when an older build saved to local storage after the move. */
     const noticeOlderSaves = () => {
         const current = localSave();
+        let recorded: unknown;
 
         try {
-            if (current === undefined || current === effects.loadState(MIGRATED_KEY)) {
-                return;
-            }
-
-            displayError(
-                'An older version of the editor saved changes after your documents moved. They are not shown here; the save is kept in this browser.'
-            );
-
-            if (saving) {
-                effects.saveState(MIGRATED_KEY, current);
-            }
+            recorded = effects.loadState(MIGRATED_KEY);
         } catch {
-            // Nothing to compare against: the documents shown are the saved ones.
+            recorded = undefined;
         }
+
+        if (current === undefined || current === recorded) {
+            return;
+        }
+
+        displayError(
+            'An older version of the editor saved changes after your documents moved. They are not shown here; the save is kept in this browser.'
+        );
+        remember(current);
     };
 
     const load = async (target: DocumentDatabase, documentIds: string[]) => {
@@ -363,6 +388,8 @@ export async function startDocumentSync(context: Context, instance: Instance): P
                 continue;
             }
 
+            confirmed.add(documentId);
+
             if (updates.length > COMPACT_AFTER) {
                 compact(documentId);
             }
@@ -374,36 +401,6 @@ export async function startDocumentSync(context: Context, instance: Instance): P
 
         noticeOlderSaves();
     };
-
-    // Registered before loading reads derived state: Overmind drops a derived value's
-    // listener while it calls listeners, which skips the listener after the dropped one.
-    instance.addMutationListener(({ path, delimiter }) => {
-        if (!loaded) {
-            return;
-        }
-
-        const [root, documentId, field] = path.split(delimiter);
-
-        if (root === 'currentDocumentId' || (root === 'documents' && field === 'camera')) {
-            clearTimeout(viewTimer);
-            viewTimer = setTimeout(saveView, 500);
-        }
-
-        if (root !== 'documents' || field !== undefined) {
-            return;
-        }
-
-        const documentIds = documentId
-            ? [documentId]
-            : [...Object.keys(instance.state.documents), ...collaboration.documentIds()];
-
-        documentIds.forEach((id) => touched.add(id));
-
-        if (!reconcileQueued) {
-            reconcileQueued = true;
-            queueMicrotask(reconcile);
-        }
-    });
 
     const [opened] = await Promise.all([
         effects.openDocumentDatabase().catch(() => undefined),
@@ -451,7 +448,7 @@ export async function startDocumentSync(context: Context, instance: Instance): P
         .filter((documentId) => !isOpen(documentId))
         .forEach(create);
 
-    let view = readView(undefined);
+    let view: View = { cameras: {} };
 
     try {
         view = readView(effects.loadState(VIEW_KEY));
@@ -471,13 +468,31 @@ export async function startDocumentSync(context: Context, instance: Instance): P
         state.currentDocumentId = Object.keys(state.documents)[0];
     }
 
-    loaded = true;
+    instance.addMutationListener(({ path, delimiter }) => {
+        const [root, documentId, field] = path.split(delimiter);
+
+        if (root === 'currentDocumentId' || (root === 'documents' && field === 'camera')) {
+            clearTimeout(viewTimer);
+            viewTimer = setTimeout(saveView, 500);
+        }
+
+        if (root !== 'documents' || !documentId || field !== undefined) {
+            return;
+        }
+
+        touched.add(documentId);
+
+        if (!reconcileQueued) {
+            reconcileQueued = true;
+            queueMicrotask(reconcile);
+        }
+    });
 
     sync = new TabSync(collaboration, effects.openChannel(), {
         created: (documentId, update) => openSaved(documentId, [update]),
         deleted: removeShared
     });
-    unannounced.splice(0).forEach((documentId) => sync?.sendDocument(documentId));
+    unannounced.splice(0).forEach(([documentId, update]) => sync?.sendDocument(documentId, update));
 
     if (typeof window !== 'undefined') {
         window.addEventListener('pagehide', () => {
@@ -487,5 +502,5 @@ export async function startDocumentSync(context: Context, instance: Instance): P
         sync.listen(window, () => void catchUp());
     }
 
-    await catchUp();
+    void catchUp();
 }

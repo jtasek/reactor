@@ -2,6 +2,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import { createDocument, createShape } from 'src/app/factories';
 import { DocumentDatabase } from 'src/app/services/documentDatabase';
 import { PERSISTENCE_KEY, serializePersistedState } from 'src/app/services/documentStorage';
+import { MIGRATED_KEY } from 'src/app/services/documentSync';
 import type { Channel } from 'src/app/services/tabSync';
 import { Hub } from './support/channel';
 import { createTestStore } from './support/store';
@@ -272,7 +273,7 @@ describe('document sync', () => {
 
         const b = await start(indexedDB, { hub });
 
-        expect(b.store.state.documents.late.name).toBe('Late');
+        await vi.waitFor(() => expect(b.store.state.documents.late?.name).toBe('Late'));
 
         b.store.actions.addDocument({ id: 'unrelated' });
         await Promise.resolve();
@@ -294,6 +295,69 @@ describe('document sync', () => {
 
         expect(Object.keys(b.store.state.documents)).toEqual(Object.keys(a.store.state.documents));
         expect(Object.keys(a.store.state.documents)).not.toContain('test-document');
+    });
+
+    it('finishes starting when the migration cannot be recorded', async () => {
+        const indexedDB = new IDBFactory();
+        const { store, effects } = createTestStore(
+            { [PERSISTENCE_KEY]: localSave() },
+            { autoSave: true, indexedDB }
+        );
+        const saveState = effects.saveState.getMockImplementation();
+
+        effects.saveState.mockImplementation((key, value) => {
+            if (key === MIGRATED_KEY) {
+                throw new DOMException('Quota exceeded', 'QuotaExceededError');
+            }
+
+            saveState?.(key, value);
+        });
+        await store.onInitialize();
+
+        expect(messages({ store })).toEqual([]);
+        expect(await (await database(indexedDB)).documentIds()).toEqual(['saved']);
+    });
+
+    it('keeps a document another copy shared although that copy could not save it', async () => {
+        const indexedDB = new IDBFactory();
+        const hub = new Hub();
+        const document = Object.assign(new EventTarget(), { visibilityState: 'hidden' });
+
+        vi.stubGlobal('window', Object.assign(new EventTarget(), { document }));
+
+        const a = await start(indexedDB, { hub });
+        const b = await start(indexedDB, { hub });
+
+        vi.spyOn(DocumentDatabase.prototype, 'create').mockRejectedValueOnce(
+            new DOMException('Quota exceeded', 'QuotaExceededError')
+        );
+        a.store.actions.addDocument({ id: 'drawing' });
+        await Promise.resolve();
+        hub.deliver();
+        expect(b.store.state.documents.drawing).toBeDefined();
+
+        document.visibilityState = 'visible';
+        document.dispatchEvent(new Event('visibilitychange'));
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        expect(b.store.state.documents.drawing).toBeDefined();
+    });
+
+    it('says only once, with autosave off too, that an older version saved after the move', async () => {
+        const indexedDB = new IDBFactory();
+        const moved = await start(indexedDB, { seed: { [PERSISTENCE_KEY]: localSave() } });
+        const seed = {
+            ...Object.fromEntries(moved.storage),
+            [PERSISTENCE_KEY]: JSON.stringify({ ...JSON.parse(localSave()), note: 'older' })
+        };
+        const next = await start(indexedDB, { seed, autoSave: false });
+
+        expect(messages(next)).toHaveLength(1);
+        expect(
+            messages(
+                await start(indexedDB, { seed: Object.fromEntries(next.storage), autoSave: false })
+            )
+        ).toEqual([]);
     });
 
     it('says once when an older version saved to local storage after the move', async () => {

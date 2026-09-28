@@ -59,7 +59,7 @@ written over it that session. When a tab on an older version saves to local stor
 after the move, the next start says so once; that save is kept but not shown.
 
 Saving is **on by default** (`config.autoSave`); with it off, documents still load
-but nothing is written. Runtime-only changes, such as selection, hover and measured
+but none are written. Runtime-only changes, such as selection, hover and measured
 bounds, are never saved, and storage failures show a notice.
 
 ## Camera Coordinates

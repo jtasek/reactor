@@ -279,8 +279,9 @@ Examples worth modelling new tools on:
   `warn`/`error`/`info` allowed) — prefer the `useLog` hook for debug output.
 - `jsx-a11y/no-autofocus` is an **error**: focus inputs via a ref effect, not `autoFocus`.
 - Prefer **early returns** over `else` branches.
-- Register store mutation listeners before anything reads derived state: Overmind drops a
-  derived value's listener while calling listeners, which skips the listener after it.
+- Listen to store mutations through the `addMutationListener` that `onInitializeOvermind`
+  passes on (`listenToMutations`, `src/app/services/mutations.ts`), not the instance's own:
+  Overmind drops a derived value's listener while calling listeners, which skips the one after.
 
 ## Workflow expectations
 

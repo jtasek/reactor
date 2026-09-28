@@ -26,6 +26,7 @@ import {
 
 import { Tool } from '../../tools/types';
 import { startDocumentSync } from '../services/documentSync';
+import { listenToMutations } from '../services/mutations';
 
 const commands: Record<string, Command> = {};
 const tools: Record<string, Tool> = {};
@@ -95,13 +96,18 @@ export const onInitializeOvermind = async (
     instance: Pick<Context, 'state' | 'actions' | 'addMutationListener'>
 ) => {
     const { state, effects, actions } = context;
+    const addMutationListener = listenToMutations(instance);
 
     registerCommands();
     registerTools();
     registerRoutes(effects, actions);
 
     try {
-        await startDocumentSync(context, instance);
+        await startDocumentSync(context, {
+            state: instance.state,
+            actions: instance.actions,
+            addMutationListener
+        });
     } catch {
         actions.displayError('Saved documents could not be loaded. Reload the page to try again.');
     } finally {
