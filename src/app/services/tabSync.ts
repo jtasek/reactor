@@ -81,12 +81,8 @@ export class TabSync {
     }
 
     /** Shares a document this copy created, with its whole state. */
-    sendDocument(documentId: string): void {
-        this.channel.postMessage({
-            type: 'document',
-            documentId,
-            update: this.collaboration.state(documentId)
-        });
+    sendDocument(documentId: string, update = this.collaboration.state(documentId)): void {
+        this.channel.postMessage({ type: 'document', documentId, update });
     }
 
     /** Tells the other copies this copy deleted a document. */

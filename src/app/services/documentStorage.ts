@@ -431,6 +431,37 @@ export function readCamera(value: unknown): Camera {
     return { scale: positive(camera.scale), position: point(camera.position) };
 }
 
+/** What a device shows: the current document, and each document's camera. */
+export interface View {
+    currentDocumentId?: string;
+    cameras: Record<string, Camera>;
+}
+
+const orUndefined = <T>(read: () => T): T | undefined => {
+    try {
+        return read();
+    } catch {
+        return undefined;
+    }
+};
+
+/** A saved view, leaving out what is invalid in it. */
+export function readView(value: unknown): View {
+    const view = orUndefined(() => record(value)) ?? {};
+    const cameras = Object.entries(orUndefined(() => record(view.cameras)) ?? {}).flatMap(
+        ([documentId, camera]) => {
+            const entry = orUndefined(() => [id(documentId), readCamera(camera)] as const);
+
+            return entry ? [entry] : [];
+        }
+    );
+
+    return {
+        currentDocumentId: orUndefined(() => id(view.currentDocumentId)),
+        cameras: Object.fromEntries(cameras)
+    };
+}
+
 function readDocument(value: unknown, onRepair = () => {}): DocumentData {
     const d = record(value);
     const shapes = readShapes(d.shapes, onRepair);

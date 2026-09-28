@@ -169,7 +169,9 @@ re-renders.** Components never mutate state directly.
   the pages wait for (`state.loading`). It loads the documents from the database (the first
   time, moving the local storage save there, backed up first), then saves each change, shares
   changes and created or deleted documents through tab sync, and keeps the document shown and
-  cameras per device under `reactor:view`. A document that fails to load stays as saved.
+  cameras per device under `reactor:view`. A document that fails to load stays as saved. Other
+  tabs' messages are taken only once loading is done; what they sent meanwhile is picked up
+  from the database and by catching up.
 - **Events** (`src/events/`): pointer/keyboard/clipboard input. `drivers/` are React hooks
   that translate DOM events into store actions — `useKeyboardDriver` is mounted in `Shell`
   and `usePointerAdapter` in the canvas `Surface` (`src/ui/components/Surface/Surface.tsx`).
@@ -277,6 +279,8 @@ Examples worth modelling new tools on:
   `warn`/`error`/`info` allowed) — prefer the `useLog` hook for debug output.
 - `jsx-a11y/no-autofocus` is an **error**: focus inputs via a ref effect, not `autoFocus`.
 - Prefer **early returns** over `else` branches.
+- Register store mutation listeners before anything reads derived state: Overmind drops a
+  derived value's listener while calling listeners, which skips the listener after it.
 
 ## Workflow expectations
 

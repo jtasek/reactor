@@ -166,9 +166,11 @@ export class Collaboration {
     private paused = false;
 
     async initialize(options: CollaborationOptions): Promise<void> {
-        this.yjs = await import('yjs');
-        this.options = options;
+        // Listens before anything reads derived state: Overmind drops a derived value's
+        // listener while it calls listeners, which skips the listener after the dropped one.
         this.stopListening = options.addMutationListener((mutation) => this.record(mutation));
+        this.options = options;
+        this.yjs = await import('yjs');
     }
 
     /**

@@ -1,12 +1,13 @@
 import { json } from 'overmind';
 import type { Context } from '../index';
-import type { Application, Camera } from '../types';
+import type { Application } from '../types';
 import { createDocument } from '../factories';
+import type { DocumentDatabase } from './documentDatabase';
 import {
     PERSISTENCE_KEY,
     SCHEMA_VERSION,
     migratePersistedState,
-    readCamera,
+    readView,
     restoreDocuments
 } from './documentStorage';
 import { TabSync } from './tabSync';
@@ -14,39 +15,13 @@ import { TabSync } from './tabSync';
 /** Where this device keeps its view: the document it shows, and each document's camera. */
 export const VIEW_KEY = `${PERSISTENCE_KEY}:view`;
 
+/** A fingerprint of the local storage save as it was moved into the database. */
+export const MIGRATED_KEY = `${PERSISTENCE_KEY}:migrated`;
+
 /** Saved updates a document gathers before they are merged into one. */
 const COMPACT_AFTER = 100;
 
 type Instance = Pick<Context, 'state' | 'actions' | 'addMutationListener'>;
-
-interface View {
-    currentDocumentId?: string;
-    cameras: Record<string, Camera>;
-}
-
-/** A saved view, without what is invalid in it. */
-function readView(value: unknown): View {
-    if (typeof value !== 'object' || value === null) {
-        return { cameras: {} };
-    }
-
-    const currentDocumentId: unknown = Reflect.get(value, 'currentDocumentId');
-    const cameras: unknown = Reflect.get(value, 'cameras');
-    const valid = Object.entries(typeof cameras === 'object' && cameras !== null ? cameras : {})
-        .map(([documentId, camera]): [string, Camera] | undefined => {
-            try {
-                return [documentId, readCamera(camera)];
-            } catch {
-                return undefined;
-            }
-        })
-        .filter((entry) => entry !== undefined);
-
-    return {
-        currentDocumentId: typeof currentDocumentId === 'string' ? currentDocumentId : undefined,
-        cameras: Object.fromEntries(valid)
-    };
-}
 
 const viewOf = ({
     currentDocumentId,
@@ -57,6 +32,17 @@ const viewOf = ({
         Object.values(documents).map(({ id, camera }) => [id, json(camera)])
     )
 });
+
+/** A short, stable fingerprint of `text` (FNV-1a). */
+function fingerprint(text: string): string {
+    let hash = 0x811c9dc5;
+
+    for (let index = 0; index < text.length; index++) {
+        hash = Math.imul(hash ^ text.charCodeAt(index), 0x01000193);
+    }
+
+    return `${text.length}:${(hash >>> 0).toString(36)}`;
+}
 
 /** Loads the local storage save into the store; returns false when it cannot be saved on. */
 function loadLocalData({ effects, state, actions }: Context): boolean {
@@ -109,21 +95,32 @@ function loadLocalData({ effects, state, actions }: Context): boolean {
  * the other copies open on the device. Documents are saved in IndexedDB, each on its
  * own; the first time, the local storage save is backed up and moved there. A
  * document that fails to load is left as saved, and the view is saved per device.
+ * Other copies' messages are only taken once loading is done; what they sent
+ * meanwhile is picked up from the database and by catching up.
  */
 export async function startDocumentSync(context: Context, instance: Instance): Promise<void> {
     const { state, effects } = context;
     const { collaboration } = effects;
-    const { displayError, addDocument, removeDocument, applyRemoteChanges } = instance.actions;
-    const database = await effects.openDocumentDatabase().catch(() => undefined);
+    const { displayError, addDocument, discardDocument, removeDocument, applyRemoteChanges } =
+        instance.actions;
     /** Documents in the database, so their changes are saved. */
     const saved = new Set<string>();
     /** Documents deleted here, which a late read of the database must not bring back. */
     const deletedHere = new Set<string>();
+    /** Documents added or deleted since the last reconcile. */
+    const touched = new Set<string>();
+    /** Documents created while loading, shared once other copies are listened to. */
+    const unannounced: string[] = [];
     const appended = new Map<string, number>();
-    let saving = state.config.autoSave && database !== undefined;
+    let database: DocumentDatabase | undefined = undefined;
+    let sync: TabSync | undefined = undefined;
+    let saving = false;
     let failing = false;
     let viewTimer: ReturnType<typeof setTimeout> | undefined;
     let reconcileQueued = false;
+    let loaded = false;
+
+    const isOpen = (documentId: string) => collaboration.documentIds().includes(documentId);
 
     const store = (write: () => Promise<void>) =>
         write().then(
@@ -141,43 +138,53 @@ export async function startDocumentSync(context: Context, instance: Instance): P
             }
         );
 
-    const compact = (documentId: string) =>
-        database &&
-        store(() =>
-            database.compact(documentId, (updates) =>
+    const compact = (documentId: string) => {
+        const target = database;
+
+        if (!target || !saving) {
+            return;
+        }
+
+        void store(() =>
+            target.compact(documentId, (updates) =>
                 collaboration.merge(
-                    collaboration.documentIds().includes(documentId)
-                        ? [...updates, collaboration.state(documentId)]
-                        : updates
+                    isOpen(documentId) ? [...updates, collaboration.state(documentId)] : updates
                 )
             )
         );
+    };
 
     const append = (documentId: string, update: Uint8Array) => {
-        if (!database || !saving || !saved.has(documentId)) {
+        const target = database;
+
+        if (!target || !saving || !saved.has(documentId)) {
             return;
         }
 
         const count = (appended.get(documentId) ?? 0) + 1;
 
-        void store(() => database.append(documentId, update));
+        void store(() => target.append(documentId, update));
         appended.set(documentId, count % COMPACT_AFTER);
 
         if (count === COMPACT_AFTER) {
-            void compact(documentId);
+            compact(documentId);
         }
     };
 
-    /** Opens a document another copy created and saved; one that fails stays out. */
-    const openShared = (documentId: string, update: Uint8Array) => {
+    /** Opens a saved or shared document from its updates; one that cannot be read stays out. */
+    const openSaved = (documentId: string, updates: Uint8Array[]): boolean => {
         addDocument({ id: documentId });
 
         try {
-            collaboration.open(documentId, update);
+            collaboration.open(documentId, collaboration.merge(updates));
             saved.add(documentId);
+
+            return true;
         } catch {
             collaboration.close(documentId);
-            removeDocument(documentId);
+            discardDocument(documentId);
+
+            return false;
         }
     };
 
@@ -187,54 +194,73 @@ export async function startDocumentSync(context: Context, instance: Instance): P
         removeDocument(documentId);
     };
 
-    const sync = new TabSync(collaboration, effects.openChannel(), {
-        created: openShared,
-        deleted: removeShared
-    });
-
     /** Starts sharing and saving a document this copy made. */
     const create = (documentId: string) => {
         collaboration.open(documentId);
 
-        if (database && saving) {
+        const update = collaboration.state(documentId);
+        const target = database;
+
+        if (target && saving) {
             saved.add(documentId);
-            void store(() => database.create(documentId, collaboration.state(documentId)));
+            void store(() =>
+                target.create(documentId, update).catch((error: unknown) => {
+                    saved.delete(documentId);
+                    throw error;
+                })
+            );
         }
 
-        sync.sendDocument(documentId);
+        if (sync) {
+            sync.sendDocument(documentId, update);
+        } else {
+            unannounced.push(documentId);
+        }
     };
 
-    /** Shares and saves the documents this copy adds and deletes. */
+    /**
+     * Shares and saves the documents this copy added or deleted. Additions go first,
+     * so a copy told of a deletion already has the document that replaced it.
+     */
     const reconcile = () => {
         reconcileQueued = false;
 
-        const documentIds = Object.keys(instance.state.documents);
-        const shared = collaboration.documentIds();
+        const documentIds = [...touched];
+        const inStore = (documentId: string) => Object.hasOwn(instance.state.documents, documentId);
 
-        documentIds.filter((documentId) => !shared.includes(documentId)).forEach(create);
-        shared
-            .filter((documentId) => !documentIds.includes(documentId))
-            .forEach((documentId) => {
-                collaboration.close(documentId);
-                deletedHere.add(documentId);
+        touched.clear();
+        documentIds
+            .filter((documentId) => inStore(documentId) && !isOpen(documentId))
+            .forEach(create);
 
-                if (database && saved.delete(documentId)) {
-                    void store(() => database.remove(documentId));
-                }
+        for (const documentId of documentIds) {
+            if (inStore(documentId) || !isOpen(documentId)) {
+                continue;
+            }
 
-                sync.sendDeleted(documentId);
-            });
+            collaboration.close(documentId);
+            deletedHere.add(documentId);
+
+            const target = database;
+
+            if (saved.delete(documentId) && target && saving) {
+                void store(() => target.remove(documentId));
+            }
+
+            sync?.sendDeleted(documentId);
+        }
     };
 
     /** Picks up documents other copies created or deleted while this copy missed messages. */
     const refresh = async () => {
-        if (!database) {
+        const target = database;
+
+        if (!target) {
             return;
         }
 
         const known = new Set(saved);
-        const savedIds = new Set(await database.documentIds());
-        const isOpen = (documentId: string) => collaboration.documentIds().includes(documentId);
+        const savedIds = new Set(await target.documentIds());
 
         [...known]
             .filter((documentId) => !savedIds.has(documentId) && isOpen(documentId))
@@ -245,16 +271,18 @@ export async function startDocumentSync(context: Context, instance: Instance): P
                 continue;
             }
 
-            const update = await database.load(documentId).then(
-                (updates) => collaboration.merge(updates),
-                () => undefined
-            );
+            const updates = await target.load(documentId).catch(() => undefined);
 
-            if (update && !isOpen(documentId) && !deletedHere.has(documentId)) {
-                openShared(documentId, update);
+            if (updates && !isOpen(documentId) && !deletedHere.has(documentId)) {
+                openSaved(documentId, updates);
             }
         }
     };
+
+    const catchUp = () =>
+        refresh()
+            .catch(() => undefined)
+            .then(() => sync?.catchUp());
 
     const saveView = () => {
         clearTimeout(viewTimer);
@@ -271,24 +299,21 @@ export async function startDocumentSync(context: Context, instance: Instance): P
         }
     };
 
-    await collaboration.initialize({
-        getDocument: (documentId) => instance.state.documents[documentId],
-        applyRemoteChanges,
-        addMutationListener: instance.addMutationListener,
-        sendUpdate: (documentId, update) => {
-            sync.send(documentId, update);
-            append(documentId, update);
+    /** The local storage save's fingerprint, if there is one. */
+    const localSave = () => {
+        try {
+            const raw = effects.loadState(PERSISTENCE_KEY);
+
+            return raw === undefined ? undefined : fingerprint(JSON.stringify(raw));
+        } catch {
+            return undefined;
         }
-    });
+    };
 
-    if (state.config.autoSave && !database) {
-        displayError('Documents cannot be saved in this browser. Changes made here are not kept.');
-    }
+    /** Moves the local storage save into the store, to be saved in the database. */
+    const migrate = () => {
+        const moved = localSave();
 
-    const savedIds = database ? await database.documentIds().catch(() => []) : [];
-
-    if (!database || savedIds.length === 0) {
-        // Nothing saved in the database yet: move the local storage save there, backed up first.
         try {
             if (saving) {
                 effects.backupState(PERSISTENCE_KEY);
@@ -298,27 +323,48 @@ export async function startDocumentSync(context: Context, instance: Instance): P
         }
 
         saving = loadLocalData(context) && saving;
-        Object.keys(state.documents).forEach(create);
-    } else {
+
+        if (saving && moved) {
+            effects.saveState(MIGRATED_KEY, moved);
+        }
+    };
+
+    /** Tells the user once when an older build saved to local storage after the move. */
+    const noticeOlderSaves = () => {
+        const current = localSave();
+
+        try {
+            if (current === undefined || current === effects.loadState(MIGRATED_KEY)) {
+                return;
+            }
+
+            displayError(
+                'An older version of the editor saved changes after your documents moved. They are not shown here; the save is kept in this browser.'
+            );
+
+            if (saving) {
+                effects.saveState(MIGRATED_KEY, current);
+            }
+        } catch {
+            // Nothing to compare against: the documents shown are the saved ones.
+        }
+    };
+
+    const load = async (target: DocumentDatabase, documentIds: string[]) => {
         let failed = 0;
 
         state.documents = {};
 
-        for (const documentId of savedIds) {
-            try {
-                const updates = await database.load(documentId);
+        for (const documentId of documentIds) {
+            const updates = await target.load(documentId).catch(() => undefined);
 
-                state.documents[documentId] = createDocument({ id: documentId });
-                collaboration.open(documentId, collaboration.merge(updates));
-                saved.add(documentId);
-
-                if (updates.length > COMPACT_AFTER) {
-                    void compact(documentId);
-                }
-            } catch {
-                collaboration.close(documentId);
-                delete state.documents[documentId];
+            if (!updates || !openSaved(documentId, updates)) {
                 failed++;
+                continue;
+            }
+
+            if (updates.length > COMPACT_AFTER) {
+                compact(documentId);
             }
         }
 
@@ -326,15 +372,86 @@ export async function startDocumentSync(context: Context, instance: Instance): P
             displayError('A saved document could not be loaded. It is kept as it was saved.');
         }
 
-        if (Object.keys(state.documents).length === 0) {
-            const document = createDocument();
+        noticeOlderSaves();
+    };
 
-            state.documents[document.id] = document;
-            create(document.id);
+    // Registered before loading reads derived state: Overmind drops a derived value's
+    // listener while it calls listeners, which skips the listener after the dropped one.
+    instance.addMutationListener(({ path, delimiter }) => {
+        if (!loaded) {
+            return;
         }
+
+        const [root, documentId, field] = path.split(delimiter);
+
+        if (root === 'currentDocumentId' || (root === 'documents' && field === 'camera')) {
+            clearTimeout(viewTimer);
+            viewTimer = setTimeout(saveView, 500);
+        }
+
+        if (root !== 'documents' || field !== undefined) {
+            return;
+        }
+
+        const documentIds = documentId
+            ? [documentId]
+            : [...Object.keys(instance.state.documents), ...collaboration.documentIds()];
+
+        documentIds.forEach((id) => touched.add(id));
+
+        if (!reconcileQueued) {
+            reconcileQueued = true;
+            queueMicrotask(reconcile);
+        }
+    });
+
+    const [opened] = await Promise.all([
+        effects.openDocumentDatabase().catch(() => undefined),
+        collaboration.initialize({
+            getDocument: (documentId) => instance.state.documents[documentId],
+            applyRemoteChanges,
+            addMutationListener: instance.addMutationListener,
+            sendUpdate: (documentId, update) => {
+                sync?.send(documentId, update);
+                append(documentId, update);
+            }
+        })
+    ]);
+
+    database = opened;
+    saving = state.config.autoSave && database !== undefined;
+
+    if (state.config.autoSave && !database) {
+        displayError('Documents cannot be saved in this browser. Changes made here are not kept.');
     }
 
-    let view: View = { cameras: {} };
+    const savedIds = database ? await database.documentIds().catch(() => undefined) : [];
+
+    if (!savedIds) {
+        // Reading the database failed: show a new document, and write nothing over the saved ones.
+        saving = false;
+        displayError(
+            'Saved documents could not be read. They are kept as saved; changes made here are not kept.'
+        );
+    }
+
+    if (database && savedIds && savedIds.length > 0) {
+        await load(database, savedIds);
+    } else if (savedIds) {
+        migrate();
+    }
+
+    if (Object.keys(state.documents).length === 0) {
+        const document = createDocument();
+
+        state.documents[document.id] = document;
+    }
+
+    Object.keys(state.documents)
+        .filter((documentId) => !isOpen(documentId))
+        .forEach(create);
+
+    let view = readView(undefined);
 
     try {
         view = readView(effects.loadState(VIEW_KEY));
@@ -343,42 +460,32 @@ export async function startDocumentSync(context: Context, instance: Instance): P
     }
 
     Object.entries(view.cameras)
-        .filter(([documentId]) => state.documents[documentId])
+        .filter(([documentId]) => Object.hasOwn(state.documents, documentId))
         .forEach(([documentId, camera]) => {
             state.documents[documentId].camera = camera;
         });
 
-    if (view.currentDocumentId && state.documents[view.currentDocumentId]) {
+    if (view.currentDocumentId && Object.hasOwn(state.documents, view.currentDocumentId)) {
         state.currentDocumentId = view.currentDocumentId;
-    } else if (!state.documents[state.currentDocumentId]) {
+    } else if (!Object.hasOwn(state.documents, state.currentDocumentId)) {
         state.currentDocumentId = Object.keys(state.documents)[0];
     }
 
-    instance.addMutationListener(({ path, delimiter }) => {
-        const [root, , field] = path.split(delimiter);
+    loaded = true;
 
-        if (root === 'currentDocumentId' || (root === 'documents' && field === 'camera')) {
-            clearTimeout(viewTimer);
-            viewTimer = setTimeout(saveView, 500);
-        }
-
-        if (root === 'documents' && field === undefined && !reconcileQueued) {
-            reconcileQueued = true;
-            queueMicrotask(reconcile);
-        }
+    sync = new TabSync(collaboration, effects.openChannel(), {
+        created: (documentId, update) => openSaved(documentId, [update]),
+        deleted: removeShared
     });
+    unannounced.splice(0).forEach((documentId) => sync?.sendDocument(documentId));
 
     if (typeof window !== 'undefined') {
         window.addEventListener('pagehide', () => {
             collaboration.flush();
             saveView();
         });
-        sync.listen(window, () => {
-            void refresh()
-                .catch(() => undefined)
-                .then(() => sync.catchUp());
-        });
+        sync.listen(window, () => void catchUp());
     }
 
-    sync.catchUp();
+    await catchUp();
 }

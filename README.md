@@ -54,7 +54,9 @@ references to missing shapes or components are dropped as deleting them would, a
 a member listed twice is kept once. Repeated loads reuse identical backups.
 Unsupported or malformed data remains untouched, shows a notification, and nothing
 is saved that session. A document that fails to load is kept as it was saved, with
-a notice, and the others load.
+a notice, and the others load; if the database cannot be listed at all, nothing is
+written over it that session. When a tab on an older version saves to local storage
+after the move, the next start says so once; that save is kept but not shown.
 
 Saving is **on by default** (`config.autoSave`); with it off, documents still load
 but nothing is written. Runtime-only changes, such as selection, hover and measured

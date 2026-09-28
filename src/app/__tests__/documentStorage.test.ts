@@ -9,6 +9,7 @@ import {
     SCHEMA_VERSION,
     migratePersistedState,
     serializePersistedState,
+    readView,
     restoreDocuments
 } from '../services/documentStorage';
 
@@ -177,5 +178,17 @@ describe('document storage', () => {
         saved.documents.d.id = '__proto__';
 
         expect(migratePersistedState(saved)).toBeNull();
+    });
+
+    it('reads a saved view, leaving out ids that cannot be documents and invalid cameras', () => {
+        const camera = { scale: 2, position: { x: 1, y: 1 } };
+        const view = readView(
+            JSON.parse(
+                `{"currentDocumentId":"__proto__","cameras":{"__proto__":${JSON.stringify(camera)},"d":${JSON.stringify(camera)},"e":{"scale":0}}}`
+            )
+        );
+
+        expect(view).toEqual({ currentDocumentId: undefined, cameras: { d: camera } });
+        expect(readView('not a view')).toEqual({ currentDocumentId: undefined, cameras: {} });
     });
 });

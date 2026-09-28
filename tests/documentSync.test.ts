@@ -52,6 +52,7 @@ describe('document sync', () => {
     afterEach(() => {
         vi.unstubAllGlobals();
         vi.useRealTimers();
+        vi.restoreAllMocks();
     });
 
     it('moves the local storage save into the database once, backed up first', async () => {
@@ -186,6 +187,132 @@ describe('document sync', () => {
         expect(Object.keys(store.state.documents)).toEqual(['saved']);
         expect(await (await database(indexedDB)).documentIds()).toEqual([]);
         expect(storage.has(`${PERSISTENCE_KEY}:backup`)).toBe(false);
+    });
+
+    it('leaves saved documents alone with autosave off, deleting included', async () => {
+        const indexedDB = new IDBFactory();
+        const saving = await start(indexedDB);
+
+        saving.store.actions.addDocument({ id: 'other' });
+        await Promise.resolve();
+
+        const reading = await start(indexedDB, { autoSave: false });
+
+        reading.store.actions.removeDocument('other');
+        await Promise.resolve();
+
+        expect(await (await database(indexedDB)).documentIds()).toEqual(['other', 'test-document']);
+    });
+
+    it('writes nothing over saved documents when they cannot be listed', async () => {
+        const indexedDB = new IDBFactory();
+        const first = await start(indexedDB);
+
+        first.store.actions.addShape(rectangle);
+        first.effects.collaboration.flush();
+        vi.spyOn(DocumentDatabase.prototype, 'documentIds').mockRejectedValueOnce(
+            new Error('Read failed')
+        );
+
+        const second = await start(indexedDB, { seed: { [PERSISTENCE_KEY]: localSave() } });
+
+        expect(second.store.state.documents.saved).toBeUndefined();
+        expect(messages(second)).toEqual([
+            'Saved documents could not be read. They are kept as saved; changes made here are not kept.'
+        ]);
+
+        second.store.actions.addShape(rectangle);
+        second.effects.collaboration.flush();
+
+        const third = await start(indexedDB);
+
+        expect(Object.keys(third.store.state.documents)).toEqual(['test-document']);
+        expect(Object.keys(third.store.state.currentDocument.shapes)).toHaveLength(1);
+    });
+
+    it('keeps a document whose save failed', async () => {
+        const indexedDB = new IDBFactory();
+        const document = Object.assign(new EventTarget(), { visibilityState: 'hidden' });
+
+        vi.stubGlobal('window', Object.assign(new EventTarget(), { document }));
+
+        const { store } = await start(indexedDB);
+
+        vi.spyOn(DocumentDatabase.prototype, 'create').mockRejectedValueOnce(
+            new DOMException('Quota exceeded', 'QuotaExceededError')
+        );
+        store.actions.addDocument({ id: 'drawing' });
+        await vi.waitFor(() => expect(messages({ store })).toHaveLength(1));
+
+        document.visibilityState = 'visible';
+        document.dispatchEvent(new Event('visibilitychange'));
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        expect(store.state.documents.drawing).toBeDefined();
+    });
+
+    it('takes no other copy’s messages until its documents are loaded', async () => {
+        const indexedDB = new IDBFactory();
+        const hub = new Hub();
+        const a = await start(indexedDB, { hub });
+        const list = DocumentDatabase.prototype.documentIds;
+
+        vi.spyOn(DocumentDatabase.prototype, 'documentIds').mockImplementationOnce(async function (
+            this: DocumentDatabase
+        ) {
+            const documentIds = await list.call(this);
+
+            // Another copy creates a document right after this one listed the saved ones.
+            a.store.actions.addDocument({ id: 'late', name: 'Late' });
+            await Promise.resolve();
+            hub.deliver();
+
+            return documentIds;
+        });
+
+        const b = await start(indexedDB, { hub });
+
+        expect(b.store.state.documents.late.name).toBe('Late');
+
+        b.store.actions.addDocument({ id: 'unrelated' });
+        await Promise.resolve();
+        hub.deliver();
+
+        expect(a.store.state.documents.late).toBeDefined();
+        expect(await (await database(indexedDB)).documentIds()).toContain('late');
+    });
+
+    it('shares a deletion made right after starting, and its replacement', async () => {
+        const indexedDB = new IDBFactory();
+        const hub = new Hub();
+        const a = await start(indexedDB, { hub });
+        const b = await start(indexedDB, { hub });
+
+        a.store.actions.removeDocument('test-document');
+        await Promise.resolve();
+        hub.deliver();
+
+        expect(Object.keys(b.store.state.documents)).toEqual(Object.keys(a.store.state.documents));
+        expect(Object.keys(a.store.state.documents)).not.toContain('test-document');
+    });
+
+    it('says once when an older version saved to local storage after the move', async () => {
+        const indexedDB = new IDBFactory();
+        const moved = await start(indexedDB, { seed: { [PERSISTENCE_KEY]: localSave() } });
+        const changed = JSON.stringify({
+            ...JSON.parse(localSave()),
+            currentDocumentId: 'saved',
+            note: 'saved by an older version'
+        });
+        const seed = { ...Object.fromEntries(moved.storage), [PERSISTENCE_KEY]: changed };
+        const next = await start(indexedDB, { seed });
+
+        expect(messages(next)).toEqual([
+            'An older version of the editor saved changes after your documents moved. They are not shown here; the save is kept in this browser.'
+        ]);
+        expect(
+            messages(await start(indexedDB, { seed: Object.fromEntries(next.storage) }))
+        ).toEqual([]);
     });
 
     it('keeps working, and says so, when documents cannot be saved', async () => {
