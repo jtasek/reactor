@@ -611,6 +611,11 @@ Done: step 1. The binding is an Overmind effect, `effects.collaboration`, that l
 Yjs when initialized, and a simulator of three copies making random concurrent edits
 checks that they converge. The app starts it in step 2.
 
+Step 2 in progress: `DocumentDatabase` saves documents in IndexedDB, each document's
+Yjs updates as records of their own with an index of documents, so open copies save
+at once without overwriting each other. Syncing open copies, then starting both in
+the app with the migration, follow.
+
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user
 keeps their own view.

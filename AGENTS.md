@@ -158,6 +158,9 @@ re-renders.** Components never mutate state directly.
   left out and references to missing shapes are dropped, as a local delete would, without
   writing these repairs back. The app starts it in Phase 11 step 2;
   `tests/support/collaboration.ts` runs copies over a network the test controls.
+- **Document database** (`src/app/services/documentDatabase.ts`): IndexedDB with an index of
+  documents and each document's Yjs updates as records of their own; `compact` merges them in
+  one transaction. Unit tests run it on `fake-indexeddb`. The app uses it from Phase 11 step 2.
 - **Events** (`src/events/`): pointer/keyboard/clipboard input. `drivers/` are React hooks
   that translate DOM events into store actions — `useKeyboardDriver` is mounted in `Shell`
   and `usePointerAdapter` in the canvas `Surface` (`src/ui/components/Surface/Surface.tsx`).

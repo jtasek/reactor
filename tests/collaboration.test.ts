@@ -592,6 +592,30 @@ describe('collaboration', () => {
         expect(Object.keys(documentOf(a).shapes)).toHaveLength(2);
     });
 
+    it('merges saved updates into one that restores the document', async () => {
+        const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
+        const [a, b] = copies;
+        const [id] = documentOf(a).shapesIds;
+        const start = a.collaboration.state(DOCUMENT_ID);
+
+        edit(a, (actions) => actions.addShape(rectangle(40)));
+        edit(a, (actions) => actions.updateShape({ id, name: 'renamed' }));
+
+        const collaboration = new Collaboration();
+        const { store } = createTestStore({}, { collaboration });
+        const restored: Copy = { store, collaboration, inbox: [] };
+
+        await collaboration.initialize({
+            getDocument: (documentId) => store.state.documents[documentId],
+            applyRemoteChanges: store.actions.applyRemoteChanges,
+            addMutationListener: store.addMutationListener
+        });
+        collaboration.open(DOCUMENT_ID, a.collaboration.merge([start, ...b.inbox]));
+
+        expect(sharedContent(restored)).toEqual(sharedContent(a));
+        expect(documentOf(restored).shapes[id].name).toBe('renamed');
+    });
+
     it('shares a drag once, when it ends', async () => {
         const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
         const [a, b] = copies;
