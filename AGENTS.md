@@ -149,6 +149,11 @@ re-renders.** Components never mutate state directly.
 - **Effects** (`src/app/effects.ts`): impure helpers (`newId`, localStorage, routing,
   `collaboration`). Call them from actions (`effects.newId()`); don't import those libs
   directly in actions.
+- **Tab sync** (`src/app/services/tabSync.ts`): shares each copy's changes with the other copies
+  open on the device through a BroadcastChannel. A copy that missed messages, as while frozen
+  or in the back/forward cache, catches up by exchanging state vectors when shown again.
+  `tests/tabSync.test.ts` runs copies over a channel that can freeze one. The app uses it from
+  Phase 11 step 2.
 - **Collaboration** (`src/app/services/collaboration.ts`, `effects.collaboration`): the only
   app code that uses Yjs, which it loads in `initialize`. It writes store changes to each
   shared document's Yjs document, one transaction per task, and applies other copies' changes

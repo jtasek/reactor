@@ -238,16 +238,34 @@ export class Collaboration {
         this.ready().yjs.applyUpdate(binding.doc, update);
     }
 
+    /** Ids of the documents shared here. */
+    documentIds(): string[] {
+        return [...this.bindings.keys()];
+    }
+
+    /** What this copy has seen of a document, so another copy can send what it lacks. */
+    stateVector(documentId: string): Uint8Array {
+        return this.ready().yjs.encodeStateVector(this.bindingOf(documentId).doc);
+    }
+
+    /**
+     * What a copy that has seen `stateVector` lacks of a document. Changes held by
+     * `pause` are left out until `resume`.
+     */
+    missing(documentId: string, stateVector: Uint8Array): Uint8Array {
+        const binding = this.bindingOf(documentId);
+
+        this.flush();
+
+        return this.ready().yjs.encodeStateAsUpdate(binding.doc, stateVector);
+    }
+
     /**
      * The document's whole state, to start another copy or to save. Changes held
      * by `pause` are left out until `resume`.
      */
     state(documentId: string): Uint8Array {
-        const binding = this.bindings.get(documentId);
-
-        if (!binding) {
-            throw new Error(`Document ${documentId} is not shared`);
-        }
+        const binding = this.bindingOf(documentId);
 
         this.flush();
 
@@ -307,6 +325,16 @@ export class Collaboration {
         }
 
         return { yjs, options };
+    }
+
+    private bindingOf(documentId: string): Binding {
+        const binding = this.bindings.get(documentId);
+
+        if (!binding) {
+            throw new Error(`Document ${documentId} is not shared`);
+        }
+
+        return binding;
     }
 
     private record({ path, delimiter, hasChangedValue }: Mutation) {
