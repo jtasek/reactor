@@ -254,6 +254,11 @@ export class Collaboration {
         return this.ready().yjs.encodeStateAsUpdate(binding.doc);
     }
 
+    /** One update holding everything `updates` hold, as saved updates are compacted. */
+    merge(updates: Uint8Array[]): Uint8Array {
+        return this.ready().yjs.mergeUpdates(updates);
+    }
+
     /** Stops sharing a document, after writing its pending changes. */
     close(documentId: string): void {
         const binding = this.bindings.get(documentId);
