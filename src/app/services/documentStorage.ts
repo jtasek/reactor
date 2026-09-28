@@ -284,10 +284,11 @@ export function readEntity<C extends Collection>(collection: C, value: unknown):
     return entityReaders[collection](value);
 }
 
-const withoutMissingMembers = <T extends MemberData>(member: T, exists: Exists): T =>
-    member.shapesIds.every((shapeId) => exists('shapes', shapeId))
-        ? member
-        : { ...member, shapesIds: member.shapesIds.filter((shapeId) => exists('shapes', shapeId)) };
+const withoutMissingMembers = <T extends MemberData>(member: T, exists: Exists): T => {
+    const shapesIds = [...new Set(member.shapesIds)].filter((shapeId) => exists('shapes', shapeId));
+
+    return shapesIds.length === member.shapesIds.length ? member : { ...member, shapesIds };
+};
 
 const referenceRepairs: {
     [C in Collection]: (entity: SavedEntities[C], exists: Exists) => SavedEntities[C] | null;
@@ -315,7 +316,8 @@ const referenceRepairs: {
 /**
  * Drops an entity's references to shapes and components that do not exist, as
  * deleting them would: memberships and parents go, and a link to a missing shape
- * goes entirely (null). Returns the same entity when nothing was missing.
+ * goes entirely (null). A member listed twice, as two copies adding it at once
+ * leave it, is kept once. Returns the same entity when nothing was dropped.
  */
 export function withoutDanglingReferences<C extends Collection>(
     collection: C,
@@ -537,6 +539,25 @@ export const hydrateMember = (member: MemberData) => ({
 export const hydrateLink = (link: LinkData): Link => ({ ...link, selected: false });
 
 export const hydrateRuler = (ruler: RulerData): Ruler => ({ ...ruler, selected: false });
+
+const entityHydrators: {
+    [C in Collection]: (entity: SavedEntities[C]) => Document[C][string];
+} = {
+    shapes: hydrateShape,
+    groups: hydrateMember,
+    layers: hydrateMember,
+    components: hydrateMember,
+    links: hydrateLink,
+    rulers: hydrateRuler
+};
+
+/** One entity as the store holds it, from its durable form. */
+export function hydrateEntity<C extends Collection>(
+    collection: C,
+    entity: SavedEntities[C]
+): Document[C][string] {
+    return entityHydrators[collection](entity);
+}
 
 export const hydrateDocumentFields = (fields: DocumentFields) => ({
     ...fields,

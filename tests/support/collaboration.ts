@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import { inDrawingOrder } from 'src/app/drawOrder';
 import { Collaboration } from 'src/app/services/collaboration';
-import { COLLECTIONS, serializePersistedState } from 'src/app/services/documentStorage';
+import { COLLECTIONS, readDocumentFields, readEntity } from 'src/app/services/documentStorage';
 import { createTestStore } from './store';
 
 export const DOCUMENT_ID = 'test-document';
@@ -23,8 +23,9 @@ export async function createCopies(count: number, setup: (store: TestStore) => v
     const copies: Copy[] = [];
 
     for (let index = 0; index < count; index++) {
-        const { store } = createTestStore();
-        const copy: Copy = { store, collaboration: new Collaboration(), inbox: [] };
+        const collaboration = new Collaboration();
+        const { store } = createTestStore({}, { collaboration });
+        const copy: Copy = { store, collaboration, inbox: [] };
 
         await copy.collaboration.initialize({
             getDocument: (documentId) => store.state.documents[documentId],
@@ -74,11 +75,28 @@ export function settle(copies: Copy[]) {
     }
 }
 
-/** What a copy shares with the others: its saved document without the camera, and draw order. */
+/**
+ * What a copy's store holds of the shared document, in durable form and without
+ * the repairs saving makes, and its draw order.
+ */
 export function sharedContent(copy: Copy) {
-    const document = serializePersistedState(copy.store.state).documents[DOCUMENT_ID];
+    const document = documentOf(copy);
 
-    return { ...document, camera: undefined, shapesIds: [...documentOf(copy).shapesIds] };
+    return {
+        fields: readDocumentFields(document),
+        shapesIds: [...document.shapesIds],
+        ...Object.fromEntries(
+            COLLECTIONS.map((collection) => [
+                collection,
+                Object.fromEntries(
+                    Object.entries(document[collection]).map(([id, entity]) => [
+                        id,
+                        readEntity(collection, entity)
+                    ])
+                )
+            ])
+        )
+    };
 }
 
 /** A copy's Yjs document, as plain data. */
@@ -92,16 +110,20 @@ export function sharedState(copy: Copy) {
     );
 }
 
-/** Checks that a copy's store has no references to missing shapes and a correct draw order. */
+/**
+ * Checks that a copy's store has a correct draw order, members listed once and no
+ * references to missing shapes or components.
+ */
 export function expectConsistent(copy: Copy) {
     const document = documentOf(copy);
     const exists = (id: string | undefined) => id === undefined || id in document.shapes;
-    const members = [document.groups, document.layers, document.components].flatMap((table) =>
-        Object.values(table).flatMap(({ shapesIds }) => shapesIds)
+    const lists = [document.groups, document.layers, document.components].flatMap((table) =>
+        Object.values(table).map(({ shapesIds }) => shapesIds)
     );
 
     expect(document.shapesIds).toEqual(inDrawingOrder(document.shapes));
-    expect(members.every(exists)).toBe(true);
+    expect(lists.every((list) => new Set(list).size === list.length)).toBe(true);
+    expect(lists.flat().every(exists)).toBe(true);
     expect(
         Object.values(document.links).every(
             ({ source, target }) => exists(source) && exists(target)
@@ -110,6 +132,11 @@ export function expectConsistent(copy: Copy) {
     expect(Object.values(document.shapes).every(({ parentShapeId }) => exists(parentShapeId))).toBe(
         true
     );
+    expect(
+        Object.values(document.components).every(
+            ({ parentId }) => parentId === undefined || parentId in document.components
+        )
+    ).toBe(true);
 }
 
 /** A repeatable random number generator (mulberry32). */

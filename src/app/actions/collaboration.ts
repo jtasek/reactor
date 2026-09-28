@@ -1,73 +1,44 @@
-import type { ActionWithParam, HashTable } from '../types';
-import type { RemoteChanges } from '../services/collaboration';
+import type { ActionWithParam, Document } from '../types';
+import type { EntityChanges, RemoteChanges } from '../services/collaboration';
 import { inDrawingOrder } from '../drawOrder';
 import {
-    RUNTIME_FIELDS,
+    COLLECTIONS,
     hydrateDocumentFields,
-    hydrateLink,
-    hydrateMember,
-    hydrateRuler,
-    hydrateShape
+    hydrateEntity,
+    type Collection
 } from '../services/documentStorage';
 
-const DOCUMENT_FIELDS = [
-    'author',
-    'created',
-    'createdBy',
-    'description',
-    'grid',
-    'locked',
-    'modified',
-    'modifiedBy',
-    'name',
-    'tags'
-];
+/** A copy for the store to own, so its later edits never reach the shared document's views. */
+const own = <T>(value: T): T =>
+    typeof value === 'object' && value !== null ? structuredClone(value) : value;
 
-const same = (a: unknown, b: unknown) =>
-    a instanceof Date && b instanceof Date
-        ? a.getTime() === b.getTime()
-        : JSON.stringify(a) === JSON.stringify(b);
-
-/** Gives `target` the values `next` has for `keys`, removing the ones it lacks; returns what changed. */
-function assign(target: object, next: object, keys: Iterable<string>): Set<string> {
-    const changed = new Set<string>();
-
-    for (const key of keys) {
+/** Gives `target` the `changed` fields of `next`, removing the ones `next` lacks. */
+function assign(target: object, next: object, changed: string[]) {
+    for (const key of changed) {
         const value: unknown = Reflect.get(next, key);
-
-        if (
-            value === undefined ? !Reflect.has(target, key) : same(Reflect.get(target, key), value)
-        ) {
-            continue;
-        }
 
         if (value === undefined) {
             Reflect.deleteProperty(target, key);
-        } else {
-            Reflect.set(target, key, value);
+            continue;
         }
 
-        changed.add(key);
+        Reflect.set(target, key, own(value));
     }
-
-    return changed;
 }
 
-const durableKeys = (a: object, b: object) =>
-    new Set([...Object.keys(a), ...Object.keys(b)].filter((key) => !RUNTIME_FIELDS.has(key)));
-
-/** Brings a table in line with the views; returns whether any draw order changed. */
-function applyViews<V extends object, E extends object>(
-    table: HashTable<E>,
-    views: Record<string, V | null> | undefined,
-    hydrate: (view: V) => E
+/** Applies one collection's changes; returns whether an entity came, went or was reordered. */
+function applyChanges<C extends Collection>(
+    document: Document,
+    collection: C,
+    changes: EntityChanges[C]
 ): boolean {
+    const table: Record<string, object> = document[collection];
     let reordered = false;
 
-    for (const [id, view] of Object.entries(views ?? {})) {
+    for (const [id, change] of Object.entries(changes)) {
         const current = Object.hasOwn(table, id) ? table[id] : undefined;
 
-        if (view === null) {
+        if (change === null) {
             if (current !== undefined) {
                 delete table[id];
                 reordered = true;
@@ -76,23 +47,24 @@ function applyViews<V extends object, E extends object>(
             continue;
         }
 
-        const next = hydrate(view);
+        const next = hydrateEntity(collection, change.view);
 
         if (current === undefined) {
-            table[id] = next;
+            table[id] = own(next);
             reordered = true;
             continue;
         }
 
-        reordered = assign(current, next, durableKeys(current, next)).has('order') || reordered;
+        assign(current, next, change.changed);
+        reordered ||= change.changed.includes('order');
     }
 
     return reordered;
 }
 
 /**
- * Applies normalized changes from the shared document. Runtime state such as the
- * selection and the camera stays this copy's own.
+ * Applies changes from the shared document, setting only the fields that differ.
+ * Runtime state such as the selection and the camera stays this copy's own.
  */
 export const applyRemoteChanges: ActionWithParam<RemoteChanges> = (
     { state },
@@ -105,18 +77,14 @@ export const applyRemoteChanges: ActionWithParam<RemoteChanges> = (
     }
 
     if (fields) {
-        assign(document, hydrateDocumentFields(fields), DOCUMENT_FIELDS);
+        assign(document, hydrateDocumentFields(fields.view), fields.changed);
     }
 
-    const reordered = applyViews(document.shapes, entities.shapes, hydrateShape);
+    for (const collection of COLLECTIONS) {
+        const reordered = applyChanges(document, collection, entities[collection]);
 
-    applyViews(document.groups, entities.groups, hydrateMember);
-    applyViews(document.layers, entities.layers, hydrateMember);
-    applyViews(document.components, entities.components, hydrateMember);
-    applyViews(document.links, entities.links, hydrateLink);
-    applyViews(document.rulers, entities.rulers, hydrateRuler);
-
-    if (reordered) {
-        document.shapesIds = inDrawingOrder(document.shapes);
+        if (reordered && collection === 'shapes') {
+            document.shapesIds = inDrawingOrder(document.shapes);
+        }
     }
 };

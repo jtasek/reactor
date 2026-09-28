@@ -45,12 +45,12 @@ are scoped to each document.
 
 At startup, snapshots from versions 1-3 are validated and migrated after backing up
 their original bytes under `reactor:backup:*`. A current save is backed up the same
-way before it is repaired: missing, invalid or tied draw orders get new ones, and
-references to missing shapes or components are dropped as deleting them would. A
-save adopted from another tab is migrated without a backup. Repeated loads reuse
-identical backups. Unsupported or malformed data remains untouched, shows a
-notification, and disables autosave for that session. A backup failure also prevents
-migration and autosave.
+way before it is repaired: missing, invalid or tied draw orders get new ones,
+references to missing shapes or components are dropped as deleting them would, and
+a member listed twice is kept once. A save adopted from another tab is migrated
+without a backup. Repeated loads reuse identical backups. Unsupported or malformed
+data remains untouched, shows a notification, and disables autosave for that
+session. A backup failure also prevents migration and autosave.
 
 Autosave is **on by default** (`config.autoSave`). It observes all documents,
 debounces writes for 500 ms, flushes on pagehide or disposal, and reports storage

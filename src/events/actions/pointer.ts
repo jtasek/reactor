@@ -37,10 +37,11 @@ function measurePinch(a: Point, b: Point) {
  * Starts a gesture owned by `pointerId` and decides what it does: a handle
  * resizes or rotates its shape, the select tool moves a hit shape or drags a
  * marquee, and any other tool draws. Returns false when another gesture is
- * already in progress.
+ * already in progress. Sharing waits until the gesture ends, so other copies
+ * get its result rather than every step.
  */
 export const beginGesture = (
-    { state, actions }: Context,
+    { state, actions, effects }: Context,
     {
         pointerId,
         position,
@@ -53,6 +54,8 @@ export const beginGesture = (
     if (pointer.gesture.kind !== 'idle') {
         return false;
     }
+
+    effects.collaboration.pause();
 
     const owner = { pointerId, touch, moved: false };
 
@@ -162,7 +165,10 @@ export const movePointer = ({ state, actions }: Context, { pointerId, position }
  * gestures commit through the active tool exactly once; the other gestures
  * edit shapes live and have nothing left to commit.
  */
-export const endGesture = ({ state, actions }: Context, { pointerId, position }: PointerInput) => {
+export const endGesture = (
+    { state, actions, effects }: Context,
+    { pointerId, position }: PointerInput
+) => {
     const pointer = state.events.pointer;
     const { gesture } = pointer;
 
@@ -178,6 +184,7 @@ export const endGesture = ({ state, actions }: Context, { pointerId, position }:
 
     pointer.gesture = { kind: 'idle' };
     actions.tools.resetTools();
+    effects.collaboration.resume();
 };
 
 /**
@@ -187,7 +194,10 @@ export const endGesture = ({ state, actions }: Context, { pointerId, position }:
  * Returns the owner of the canceled gesture so the caller can release its
  * capture.
  */
-export const cancelGesture = ({ state, actions }: Context, pointerId?: number): number | null => {
+export const cancelGesture = (
+    { state, actions, effects }: Context,
+    pointerId?: number
+): number | null => {
     const pointer = state.events.pointer;
     const { gesture } = pointer;
 
@@ -230,6 +240,7 @@ export const cancelGesture = ({ state, actions }: Context, pointerId?: number): 
 
     pointer.gesture = { kind: 'idle' };
     actions.tools.resetTools();
+    effects.collaboration.resume();
 
     return owner;
 };
