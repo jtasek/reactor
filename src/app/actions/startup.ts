@@ -25,13 +25,7 @@ import {
 } from 'src/tools';
 
 import { Tool } from '../../tools/types';
-import { startAutosave } from '../services/autosave';
-import {
-    SCHEMA_VERSION,
-    PERSISTENCE_KEY,
-    migratePersistedState,
-    restoreDocuments
-} from '../services/documentStorage';
+import { startDocumentSync } from '../services/documentSync';
 
 const commands: Record<string, Command> = {};
 const tools: Record<string, Tool> = {};
@@ -88,51 +82,6 @@ function registerTools() {
     registerTool(TextTool);
 }
 
-function loadLocalData({ effects, state, actions }: Context): boolean {
-    try {
-        const raw = effects.loadState(PERSISTENCE_KEY);
-
-        if (raw === undefined) {
-            return true;
-        }
-
-        let repaired = false;
-        const persisted = migratePersistedState(raw, () => {
-            repaired = true;
-        });
-
-        if (!persisted) {
-            effects.backupState(PERSISTENCE_KEY);
-            actions.displayError(
-                'Saved data could not be loaded. The original is preserved; autosave is disabled for this session.'
-            );
-
-            return false;
-        }
-
-        if (
-            repaired ||
-            (typeof raw === 'object' &&
-                raw !== null &&
-                'version' in raw &&
-                raw.version !== SCHEMA_VERSION)
-        ) {
-            effects.backupState(PERSISTENCE_KEY);
-        }
-
-        state.documents = restoreDocuments(persisted);
-        state.currentDocumentId = persisted.currentDocumentId;
-
-        return true;
-    } catch {
-        actions.displayError(
-            'Saved data could not be read or backed up. The original is preserved; autosave is disabled for this session.'
-        );
-
-        return false;
-    }
-}
-
 function registerRoutes(effects: Context['effects'], actions: Context['actions']) {
     effects.initializeRoutes({
         '/': actions.showDesigner,
@@ -140,32 +89,8 @@ function registerRoutes(effects: Context['effects'], actions: Context['actions']
     });
 }
 
-export const loadSavedDocuments = ({ state }: Context, json: string): boolean => {
-    let saved: unknown;
-
-    try {
-        saved = JSON.parse(json);
-    } catch {
-        return false;
-    }
-
-    const persisted = migratePersistedState(saved);
-
-    if (!persisted) {
-        return false;
-    }
-
-    state.documents = restoreDocuments(persisted);
-
-    if (!state.documents[state.currentDocumentId]) {
-        state.currentDocumentId = persisted.currentDocumentId;
-    }
-
-    return true;
-};
-
 /**  Do not rename, it's a mandatory action name! */
-export const onInitializeOvermind = (
+export const onInitializeOvermind = async (
     context: Context,
     instance: Pick<Context, 'state' | 'actions' | 'addMutationListener'>
 ) => {
@@ -175,9 +100,11 @@ export const onInitializeOvermind = (
     registerTools();
     registerRoutes(effects, actions);
 
-    const canSave = loadLocalData(context);
-
-    if (canSave && state.config.autoSave) {
-        startAutosave(instance, effects, actions.displayError);
+    try {
+        await startDocumentSync(context, instance);
+    } catch {
+        actions.displayError('Saved documents could not be loaded. Reload the page to try again.');
+    } finally {
+        state.loading = false;
     }
 };

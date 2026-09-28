@@ -26,9 +26,8 @@ files are repaired. Whole-repository zero-warning lint remains the Phase 7 gate.
 
 `tests/support/store.ts` creates independent Overmind stores with real document
 factories and JSON-backed memory storage. Startup is opt-in via
-`store.onInitialize()`; storage/routing effects are mocked and autosave is off.
-Keep tests requiring autosave timers responsible for their own timer/reaction
-cleanup. Browser tests use isolated browser contexts and port 4173; an occupied
+`store.onInitialize()`; storage, routing, IndexedDB (`fake-indexeddb`) and channel
+effects are mocked, and saving is off. Browser tests use isolated browser contexts and port 4173; an occupied
 port fails rather than silently testing a different server. Traces are retained
 in ignored `test-results/` on failure.
 
@@ -38,26 +37,28 @@ Phase 4.
 
 ## Document Storage
 
-Documents use version 4 of the `reactor` localStorage payload. Only durable content
-is saved; dates use ISO strings and derived indexes and selections are rebuilt on
-load. Cloned documents have independent content but preserve internal IDs, which
-are scoped to each document.
+Documents are saved in the `reactor` IndexedDB database: an index of documents, and
+each document's changes as Yjs updates of their own, merged into one once 100 add
+up. Only durable content is saved; derived indexes and selections are rebuilt on
+load. Open tabs share their changes and the documents they create and delete
+through a BroadcastChannel; a tab shown again after missing messages catches up
+from the others and from the database. The document shown and each document's
+camera are saved per device under `reactor:view`. Cloned documents have independent
+content but preserve internal IDs, which are scoped to each document.
 
-At startup, snapshots from versions 1-3 are validated and migrated after backing up
-their original bytes under `reactor:backup:*`. A current save is backed up the same
-way before it is repaired: missing, invalid or tied draw orders get new ones,
+The first start with this storage moves the version 4 `reactor` localStorage
+payload into the database, backed up first under `reactor:backup:*`; the payload
+itself is left as it was. Snapshots from versions 1-3 are validated and migrated
+first. Loading repairs content: missing, invalid or tied draw orders get new ones,
 references to missing shapes or components are dropped as deleting them would, and
-a member listed twice is kept once. A save adopted from another tab is migrated
-without a backup. Repeated loads reuse identical backups. Unsupported or malformed
-data remains untouched, shows a notification, and disables autosave for that
-session. A backup failure also prevents migration and autosave.
+a member listed twice is kept once. Repeated loads reuse identical backups.
+Unsupported or malformed data remains untouched, shows a notification, and nothing
+is saved that session. A document that fails to load is kept as it was saved, with
+a notice, and the others load.
 
-Autosave is **on by default** (`config.autoSave`). It observes all documents,
-debounces writes for 500 ms, flushes on pagehide or disposal, and reports storage
-failures. Runtime-only changes, such as selection, hover and measured bounds, do not
-schedule a save. When another tab saves, this tab loads its documents and keeps its
-current one open; a tab that cannot read them stops saving and says so. Recovery
-notices do not imply that new session edits have been saved.
+Saving is **on by default** (`config.autoSave`); with it off, documents still load
+but nothing is written. Runtime-only changes, such as selection, hover and measured
+bounds, are never saved, and storage failures show a notice.
 
 ## Camera Coordinates
 

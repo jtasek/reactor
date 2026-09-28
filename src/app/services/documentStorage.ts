@@ -1,4 +1,14 @@
-import type { Application, Document, Shape, Point, Size, Group, Link, Ruler } from '../types';
+import type {
+    Application,
+    Camera,
+    Document,
+    Shape,
+    Point,
+    Size,
+    Group,
+    Link,
+    Ruler
+} from '../types';
 import { Orientation } from '../types';
 import { createDocument } from '../factories';
 import { orderAbove, untie, validDrawOrder } from '../drawOrder';
@@ -414,9 +424,15 @@ function readShapes(value: unknown, onRepair: () => void): Record<string, ShapeD
     return shapes;
 }
 
+/** A camera as saved, throwing when it is invalid. */
+export function readCamera(value: unknown): Camera {
+    const camera = record(value);
+
+    return { scale: positive(camera.scale), position: point(camera.position) };
+}
+
 function readDocument(value: unknown, onRepair = () => {}): DocumentData {
     const d = record(value);
-    const camera = record(d.camera);
     const shapes = readShapes(d.shapes, onRepair);
     const components = table(d.components, readMember);
     const exists: Exists = (collection, entityId) =>
@@ -426,7 +442,7 @@ function readDocument(value: unknown, onRepair = () => {}): DocumentData {
 
     return {
         ...readFields(d),
-        camera: { scale: positive(camera.scale), position: point(camera.position) },
+        camera: readCamera(d.camera),
         shapes: repair('shapes', shapes),
         groups: repair('groups', table(d.groups, readMember)),
         layers: repair('layers', table(d.layers, readMember)),

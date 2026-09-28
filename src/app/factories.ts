@@ -223,6 +223,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         providers: {},
         documentsIds,
         documents: { 'document-1': createDocument({ id: 'document-1' }) },
+        loading: true,
         ...options
     };
 }

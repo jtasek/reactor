@@ -133,3 +133,6 @@ export class DocumentDatabase {
         this.database.close();
     }
 }
+
+/** The database of this device, from the browser's IndexedDB. */
+export const openDocumentDatabase = () => DocumentDatabase.open();

@@ -8,9 +8,18 @@ export interface Channel {
     close(): void;
 }
 
+/** What to do when another copy creates or deletes a document. */
+export interface DocumentEvents {
+    /** Another copy created a document; `update` is its whole state. */
+    created(documentId: string, update: Uint8Array): void;
+    deleted(documentId: string): void;
+}
+
 type Message =
     | { type: 'update'; documentId: string; update: Uint8Array; to?: string }
-    | { type: 'sync'; documentId: string; stateVector: Uint8Array; from: string; reply: boolean };
+    | { type: 'sync'; documentId: string; stateVector: Uint8Array; from: string; reply: boolean }
+    | { type: 'document'; documentId: string; update: Uint8Array }
+    | { type: 'deleted'; documentId: string };
 
 /** Whether `data` is a message this build understands; other builds may send others. */
 function isMessage(data: unknown): data is Message {
@@ -24,26 +33,33 @@ function isMessage(data: unknown): data is Message {
         return false;
     }
 
-    if (field('type') === 'update') {
-        return (
-            field('update') instanceof Uint8Array &&
-            (field('to') === undefined || typeof field('to') === 'string')
-        );
+    switch (field('type')) {
+        case 'update':
+            return (
+                field('update') instanceof Uint8Array &&
+                (field('to') === undefined || typeof field('to') === 'string')
+            );
+        case 'sync':
+            return (
+                field('stateVector') instanceof Uint8Array &&
+                typeof field('from') === 'string' &&
+                typeof field('reply') === 'boolean'
+            );
+        case 'document':
+            return field('update') instanceof Uint8Array;
+        case 'deleted':
+            return true;
+        default:
+            return false;
     }
-
-    return (
-        field('type') === 'sync' &&
-        field('stateVector') instanceof Uint8Array &&
-        typeof field('from') === 'string' &&
-        typeof field('reply') === 'boolean'
-    );
 }
 
 /**
  * Shares this copy's changes with the other copies of the editor open on this
- * device. A copy that missed messages, as while frozen in the background or kept in
- * the back/forward cache, catches up: it sends what it has seen of each document,
- * and the others send back what it lacks and ask for what they lack in turn.
+ * device, and the documents it creates and deletes. A copy that missed messages, as
+ * while frozen in the background or kept in the back/forward cache, catches up: it
+ * sends what it has seen of each document, and the others send back what it lacks
+ * and ask for what they lack in turn.
  */
 export class TabSync {
     private readonly id = newId();
@@ -51,9 +67,10 @@ export class TabSync {
     constructor(
         private readonly collaboration: Pick<
             Collaboration,
-            'receive' | 'documentIds' | 'stateVector' | 'missing'
+            'receive' | 'documentIds' | 'stateVector' | 'missing' | 'state'
         >,
-        private readonly channel: Channel
+        private readonly channel: Channel,
+        private readonly documents: DocumentEvents = { created: () => {}, deleted: () => {} }
     ) {
         channel.onmessage = ({ data }) => this.handle(data);
     }
@@ -63,29 +80,49 @@ export class TabSync {
         this.channel.postMessage({ type: 'update', documentId, update });
     }
 
+    /** Shares a document this copy created, with its whole state. */
+    sendDocument(documentId: string): void {
+        this.channel.postMessage({
+            type: 'document',
+            documentId,
+            update: this.collaboration.state(documentId)
+        });
+    }
+
+    /** Tells the other copies this copy deleted a document. */
+    sendDeleted(documentId: string): void {
+        this.channel.postMessage({ type: 'deleted', documentId });
+    }
+
     /** Asks the other copies for what this copy lacks of each shared document. */
     catchUp(): void {
         this.collaboration.documentIds().forEach((documentId) => this.ask(documentId, true));
     }
 
-    /** Catches up whenever the page is shown again; returns a function that stops. */
-    listen(page: Pick<Window, 'addEventListener' | 'removeEventListener' | 'document'>) {
-        const shown = (event: PageTransitionEvent) => {
+    /**
+     * Runs `shown`, by default catching up, whenever the page is shown again;
+     * returns a function that stops.
+     */
+    listen(
+        page: Pick<Window, 'addEventListener' | 'removeEventListener' | 'document'>,
+        shown: () => void = () => this.catchUp()
+    ) {
+        const restored = (event: PageTransitionEvent) => {
             if (event.persisted) {
-                this.catchUp();
+                shown();
             }
         };
         const visible = () => {
             if (page.document.visibilityState === 'visible') {
-                this.catchUp();
+                shown();
             }
         };
 
-        page.addEventListener('pageshow', shown);
+        page.addEventListener('pageshow', restored);
         page.document.addEventListener('visibilitychange', visible);
 
         return () => {
-            page.removeEventListener('pageshow', shown);
+            page.removeEventListener('pageshow', restored);
             page.document.removeEventListener('visibilitychange', visible);
         };
     }
@@ -95,27 +132,52 @@ export class TabSync {
     }
 
     private handle(data: unknown) {
-        if (!isMessage(data) || !this.collaboration.documentIds().includes(data.documentId)) {
+        if (!isMessage(data)) {
             return;
         }
 
-        if (data.type === 'update') {
-            if (data.to === undefined || data.to === this.id) {
+        const open = this.collaboration.documentIds().includes(data.documentId);
+
+        if (data.type === 'document' && !open) {
+            this.documents.created(data.documentId, data.update);
+
+            return;
+        }
+
+        if (!open) {
+            return;
+        }
+
+        switch (data.type) {
+            case 'deleted':
+                this.documents.deleted(data.documentId);
+
+                return;
+            case 'document':
                 this.collaboration.receive(data.documentId, data.update);
-            }
 
-            return;
+                return;
+            case 'update':
+                if (data.to === undefined || data.to === this.id) {
+                    this.collaboration.receive(data.documentId, data.update);
+                }
+
+                return;
+            case 'sync':
+                this.answer(data.documentId, data.stateVector, data.from, data.reply);
         }
+    }
 
+    private answer(documentId: string, stateVector: Uint8Array, to: string, reply: boolean) {
         this.channel.postMessage({
             type: 'update',
-            documentId: data.documentId,
-            update: this.collaboration.missing(data.documentId, data.stateVector),
-            to: data.from
+            documentId,
+            update: this.collaboration.missing(documentId, stateVector),
+            to
         });
 
-        if (data.reply) {
-            this.ask(data.documentId, false);
+        if (reply) {
+            this.ask(documentId, false);
         }
     }
 
@@ -129,3 +191,6 @@ export class TabSync {
         });
     }
 }
+
+/** The channel open copies of the editor on this device share. */
+export const openChannel = (): Channel => new BroadcastChannel('reactor');

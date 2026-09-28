@@ -147,13 +147,12 @@ re-renders.** Components never mutate state directly.
   state in place. `src/app/actions/shape.ts` is the canonical pattern (private
   `getShape`/`putOnTop`/`deleteShape` helpers + exported actions).
 - **Effects** (`src/app/effects.ts`): impure helpers (`newId`, localStorage, routing,
-  `collaboration`). Call them from actions (`effects.newId()`); don't import those libs
+  `collaboration`, `openDocumentDatabase`, `openChannel`). Call them from actions (`effects.newId()`); don't import those libs
   directly in actions.
 - **Tab sync** (`src/app/services/tabSync.ts`): shares each copy's changes with the other copies
   open on the device through a BroadcastChannel. A copy that missed messages, as while frozen
   or in the back/forward cache, catches up by exchanging state vectors when shown again.
-  `tests/tabSync.test.ts` runs copies over a channel that can freeze one. The app uses it from
-  Phase 11 step 2.
+  `tests/tabSync.test.ts` runs copies over a channel that can freeze one.
 - **Collaboration** (`src/app/services/collaboration.ts`, `effects.collaboration`): the only
   app code that uses Yjs, which it loads in `initialize`. It writes store changes to each
   shared document's Yjs document, one transaction per task, and applies other copies' changes
@@ -161,11 +160,16 @@ re-renders.** Components never mutate state directly.
   field by field and member lists member by member. Gestures `pause` sharing until they end,
   so a drag is shared once. Every copy shows the same merged content: invalid entities are
   left out and references to missing shapes are dropped, as a local delete would, without
-  writing these repairs back. The app starts it in Phase 11 step 2;
-  `tests/support/collaboration.ts` runs copies over a network the test controls.
+  writing these repairs back. `tests/support/collaboration.ts` runs copies over a network the
+  test controls.
 - **Document database** (`src/app/services/documentDatabase.ts`): IndexedDB with an index of
   documents and each document's Yjs updates as records of their own; `compact` merges them in
-  one transaction. Unit tests run it on `fake-indexeddb`. The app uses it from Phase 11 step 2.
+  one transaction. Unit tests run it on `fake-indexeddb`.
+- **Document sync** (`src/app/services/documentSync.ts`): started by `onInitializeOvermind`, which
+  the pages wait for (`state.loading`). It loads the documents from the database (the first
+  time, moving the local storage save there, backed up first), then saves each change, shares
+  changes and created or deleted documents through tab sync, and keeps the document shown and
+  cameras per device under `reactor:view`. A document that fails to load stays as saved.
 - **Events** (`src/events/`): pointer/keyboard/clipboard input. `drivers/` are React hooks
   that translate DOM events into store actions — `useKeyboardDriver` is mounted in `Shell`
   and `usePointerAdapter` in the canvas `Surface` (`src/ui/components/Surface/Surface.tsx`).

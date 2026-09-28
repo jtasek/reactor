@@ -1,7 +1,51 @@
 import { expect, test, type Page } from '@playwright/test';
 import { drawRect, openEditor, shapes } from './support/editor';
 
-const savedData = (page: Page) => page.evaluate(() => localStorage.getItem('reactor') ?? '');
+/** How many changes the page's documents have saved in IndexedDB. */
+const savedChanges = (page: Page) =>
+    page.evaluate(
+        () =>
+            new Promise<number>((resolve, reject) => {
+                const opening = indexedDB.open('reactor');
+
+                opening.onerror = () => reject(opening.error);
+                opening.onsuccess = () => {
+                    const count = opening.result
+                        .transaction('updates')
+                        .objectStore('updates')
+                        .count();
+
+                    count.onsuccess = () => {
+                        opening.result.close();
+                        resolve(count.result);
+                    };
+                };
+            })
+    );
+
+/** Saves a document whose content this build cannot read. */
+const saveUnreadableDocument = (page: Page) =>
+    page.evaluate(
+        () =>
+            new Promise<void>((resolve, reject) => {
+                const opening = indexedDB.open('reactor');
+
+                opening.onsuccess = () => {
+                    const database = opening.result;
+                    const transaction = database.transaction(['documents', 'updates'], 'readwrite');
+
+                    transaction.objectStore('documents').put({ id: 'unreadable' });
+                    transaction
+                        .objectStore('updates')
+                        .add({ documentId: 'unreadable', update: new Uint8Array([9, 9, 9]) });
+                    transaction.oncomplete = () => {
+                        database.close();
+                        resolve();
+                    };
+                    transaction.onerror = () => reject(transaction.error);
+                };
+            })
+    );
 
 test('migrates a legacy text shape, renders its content, and preserves the original', async ({
     page
@@ -87,15 +131,33 @@ test('shows a recovery notice without replacing malformed saved data', async ({ 
 
 test('saves drawn shapes, so they survive a reload', async ({ page }) => {
     await openEditor(page);
+
+    const saved = await savedChanges(page);
+
     await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
-    await expect.poll(() => savedData(page)).toContain('"rectangle"');
+    await expect.poll(() => savedChanges(page)).toBeGreaterThan(saved);
 
     await page.reload();
 
     await expect(shapes(page)).toHaveCount(1);
 });
 
-test('tabs load each other’s saves, so neither overwrites the other', async ({ page }) => {
+test('a document that cannot be loaded leaves the others working', async ({ page }) => {
+    await openEditor(page);
+
+    const saved = await savedChanges(page);
+
+    await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
+    await expect.poll(() => savedChanges(page)).toBeGreaterThan(saved);
+    await saveUnreadableDocument(page);
+
+    await page.reload();
+
+    await expect(shapes(page)).toHaveCount(1);
+    await expect(page.getByRole('alert')).toContainText('could not be loaded');
+});
+
+test('open tabs share their changes, and both survive a reload', async ({ page }) => {
     const otherTab = await page.context().newPage();
 
     await openEditor(page);

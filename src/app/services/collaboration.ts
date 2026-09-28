@@ -76,8 +76,6 @@ interface Binding {
     fieldsView?: DocumentFields;
     /** Entities left out of the store because they failed validation. */
     invalid: Record<Collection, Set<string>>;
-    /** The store's documents were replaced, so the shared document is applied again. */
-    replaced: boolean;
 }
 
 const LOCAL = Symbol('local change');
@@ -202,8 +200,7 @@ export class Collaboration {
             local: noChanges(),
             remote: noChanges(),
             views: perCollection(() => new Map()),
-            invalid: perCollection(() => new Set()),
-            replaced: false
+            invalid: perCollection(() => new Set())
         };
 
         this.bindings.set(documentId, binding);
@@ -233,7 +230,6 @@ export class Collaboration {
             return;
         }
 
-        this.catchUp(documentId, binding);
         this.write(documentId, binding);
         this.ready().yjs.applyUpdate(binding.doc, update);
     }
@@ -313,13 +309,11 @@ export class Collaboration {
     flush(): void {
         this.flushQueued = false;
 
-        for (const [documentId, binding] of this.bindings) {
-            this.catchUp(documentId, binding);
-
-            if (!this.paused) {
-                this.write(documentId, binding);
-            }
+        if (this.paused) {
+            return;
         }
+
+        this.bindings.forEach((binding, documentId) => this.write(documentId, binding));
     }
 
     private ready() {
@@ -349,17 +343,7 @@ export class Collaboration {
 
         const [root, documentId, field, entityId, entityField] = path.split(delimiter);
 
-        if (root !== 'documents') {
-            return;
-        }
-
-        if (documentId === undefined) {
-            this.bindings.forEach((binding) => {
-                binding.replaced = true;
-                binding.local = noChanges();
-            });
-            this.queueFlush();
-
+        if (root !== 'documents' || documentId === undefined) {
             return;
         }
 
@@ -434,19 +418,6 @@ export class Collaboration {
                 touch(changes, collection, id)
             );
         }
-    }
-
-    /** Applies the shared document again to a store document that was replaced, as by a save. */
-    private catchUp(documentId: string, binding: Binding) {
-        if (!binding.replaced) {
-            return;
-        }
-
-        binding.replaced = false;
-        binding.views = perCollection(() => new Map());
-        binding.fieldsView = undefined;
-        this.everything(documentId, binding, binding.remote);
-        this.applyRemote(documentId, binding);
     }
 
     /** Writes the store's pending changes to the shared document, in one transaction. */

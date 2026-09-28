@@ -73,6 +73,10 @@ export const useCurrentPage = () => {
     return useAppState((state) => state.currentPage);
 };
 
+export const useLoading = () => {
+    return useAppState((state) => state.loading);
+};
+
 export const useCamera = () => {
     return useAppState((state) => state.currentDocument.camera);
 };
