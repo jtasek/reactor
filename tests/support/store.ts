@@ -2,11 +2,15 @@ import { createOvermindMock } from 'overmind';
 import { vi } from 'vitest';
 import { config } from 'src/app';
 import { createApplication, createDocument } from 'src/app/factories';
+import { Collaboration } from 'src/app/services/collaboration';
 
-/** JSON-backed effects reproduce the storage boundary without browser globals. */
+/**
+ * JSON-backed effects reproduce the storage boundary without browser globals. Each
+ * store gets its own collaboration effect, so copies of the editor stay apart.
+ */
 export function createTestStore(
     seed: Record<string, string> = {},
-    options: { autoSave?: boolean } = {}
+    options: { autoSave?: boolean; collaboration?: Collaboration } = {}
 ) {
     const storage = new Map(Object.entries(seed));
     const effects = {
@@ -27,7 +31,8 @@ export function createTestStore(
             }
         }),
         initializeRoutes: vi.fn<typeof config.effects.initializeRoutes>(),
-        navigate: vi.fn<typeof config.effects.navigate>()
+        navigate: vi.fn<typeof config.effects.navigate>(),
+        collaboration: options.collaboration ?? new Collaboration()
     };
     let nextId = 1;
     const document = createDocument({ id: 'test-document' });

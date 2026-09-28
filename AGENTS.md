@@ -150,12 +150,14 @@ re-renders.** Components never mutate state directly.
   `collaboration`). Call them from actions (`effects.newId()`); don't import those libs
   directly in actions.
 - **Collaboration** (`src/app/services/collaboration.ts`, `effects.collaboration`): the only
-  code that uses Yjs, which it loads in `initialize`. It writes store changes to each shared
-  document's Yjs document, one transaction per task, and applies other copies' changes through
-  the `applyRemoteChanges` action, marked so they are not sent back. Every copy shows the same
-  merged content: invalid entities are left out and references to missing shapes are dropped,
-  as a local delete would, without writing these repairs back. The app starts it in Phase 11
-  step 2; `tests/support/collaboration.ts` runs copies over a network the test controls.
+  app code that uses Yjs, which it loads in `initialize`. It writes store changes to each
+  shared document's Yjs document, one transaction per task, and applies other copies' changes
+  through the `applyRemoteChanges` action, marked so they are not sent back. Objects merge
+  field by field and member lists member by member. Gestures `pause` sharing until they end,
+  so a drag is shared once. Every copy shows the same merged content: invalid entities are
+  left out and references to missing shapes are dropped, as a local delete would, without
+  writing these repairs back. The app starts it in Phase 11 step 2;
+  `tests/support/collaboration.ts` runs copies over a network the test controls.
 - **Events** (`src/events/`): pointer/keyboard/clipboard input. `drivers/` are React hooks
   that translate DOM events into store actions — `useKeyboardDriver` is mounted in `Shell`
   and `usePointerAdapter` in the canvas `Surface` (`src/ui/components/Surface/Surface.tsx`).

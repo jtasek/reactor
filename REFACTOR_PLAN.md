@@ -629,11 +629,16 @@ Design:
   groups in groups), an item's parent and index are stored as one value, so a move
   never leaves them disagreeing.
 - Store binding: the Overmind store stays the app's state. The binding is an
-  Overmind effect and the only code that uses the Yjs API, so a later move to Yjs
-  v14 stays inside it. Changes to saved fields are written to the Yjs document in
-  one transaction once the action ends, found from the mutation paths autosave
-  already receives; entities are written in their saved form. Remote changes reach
-  the store through one action and are marked as remote, so they are not sent back.
+  Overmind effect and the only app code that uses the Yjs API, so a later move to
+  Yjs v14 stays inside it and the test helpers. Changes to saved fields are written
+  to the Yjs document in one transaction once the task's actions end, found from
+  the mutation paths autosave already receives; entities are written in their saved
+  form, and only what changed since the copy last saw them. Objects such as a
+  position are written field by field and member lists member by member, so edits
+  to different parts merge. A gesture is shared once, when it ends. Remote changes
+  reach the store through one action, change only the fields that differ, and are
+  marked as remote, so they are not sent back. When loading replaces the store's
+  documents, shared ones take the shared state again.
 - Merge rules: a merge can produce what each copy refuses on its own: today a
   group, layer, link or parent that refers to a shape deleted in another copy,
   and with Phase 10 a component cycle, a shape in two sources, or an instance

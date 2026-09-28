@@ -150,6 +150,19 @@ describe('document storage', () => {
         expect(onRepair).toHaveBeenCalled();
     });
 
+    it('keeps a member listed twice once', () => {
+        const saved = fixture();
+        const [shapeId] = Object.keys(saved.documents.d.shapes);
+        const onRepair = vi.fn();
+
+        saved.documents.d.layers.l = createGroup({ id: 'l', shapesIds: [shapeId, shapeId] });
+
+        const document = migratePersistedState(saved, onRepair)?.documents.d;
+
+        expect(document?.layers.l.shapesIds).toEqual([shapeId]);
+        expect(onRepair).toHaveBeenCalled();
+    });
+
     it('rejects duplicate migrated document IDs and unsafe entity IDs', () => {
         const saved = fixture();
 
