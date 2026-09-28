@@ -5,6 +5,7 @@ import {
     COLLECTIONS,
     RUNTIME_FIELDS,
     readDocumentFields,
+    orUndefined,
     readEntity,
     withoutDanglingReferences,
     type Collection,
@@ -76,8 +77,6 @@ interface Binding {
     fieldsView?: DocumentFields;
     /** Entities left out of the store because they failed validation. */
     invalid: Record<Collection, Set<string>>;
-    /** The store's documents were replaced, so the shared document is applied again. */
-    replaced: boolean;
 }
 
 const LOCAL = Symbol('local change');
@@ -119,15 +118,6 @@ const changedFields = (previous: object, next: object) =>
     [...new Set([...Object.keys(previous), ...Object.keys(next)])].filter(
         (key) => !same(Reflect.get(previous, key), Reflect.get(next, key))
     );
-
-/** What `read` returns, or null when it finds the value invalid. */
-function valid<T>(read: () => T): T | null {
-    try {
-        return read();
-    } catch {
-        return null;
-    }
-}
 
 /** Removes the members `previous` has and `next` lacks, wherever they are, and appends new ones. */
 function writeMembers(members: Yjs.Array<unknown>, next: string[], previous: unknown[]) {
@@ -202,8 +192,7 @@ export class Collaboration {
             local: noChanges(),
             remote: noChanges(),
             views: perCollection(() => new Map()),
-            invalid: perCollection(() => new Set()),
-            replaced: false
+            invalid: perCollection(() => new Set())
         };
 
         this.bindings.set(documentId, binding);
@@ -233,7 +222,6 @@ export class Collaboration {
             return;
         }
 
-        this.catchUp(documentId, binding);
         this.write(documentId, binding);
         this.ready().yjs.applyUpdate(binding.doc, update);
     }
@@ -313,13 +301,11 @@ export class Collaboration {
     flush(): void {
         this.flushQueued = false;
 
-        for (const [documentId, binding] of this.bindings) {
-            this.catchUp(documentId, binding);
-
-            if (!this.paused) {
-                this.write(documentId, binding);
-            }
+        if (this.paused) {
+            return;
         }
+
+        this.bindings.forEach((binding, documentId) => this.write(documentId, binding));
     }
 
     private ready() {
@@ -349,17 +335,7 @@ export class Collaboration {
 
         const [root, documentId, field, entityId, entityField] = path.split(delimiter);
 
-        if (root !== 'documents') {
-            return;
-        }
-
-        if (documentId === undefined) {
-            this.bindings.forEach((binding) => {
-                binding.replaced = true;
-                binding.local = noChanges();
-            });
-            this.queueFlush();
-
+        if (root !== 'documents' || documentId === undefined) {
             return;
         }
 
@@ -434,19 +410,6 @@ export class Collaboration {
                 touch(changes, collection, id)
             );
         }
-    }
-
-    /** Applies the shared document again to a store document that was replaced, as by a save. */
-    private catchUp(documentId: string, binding: Binding) {
-        if (!binding.replaced) {
-            return;
-        }
-
-        binding.replaced = false;
-        binding.views = perCollection(() => new Map());
-        binding.fieldsView = undefined;
-        this.everything(documentId, binding, binding.remote);
-        this.applyRemote(documentId, binding);
     }
 
     /** Writes the store's pending changes to the shared document, in one transaction. */
@@ -668,7 +631,7 @@ export class Collaboration {
         binding: Binding,
         document: Document
     ): ViewChange<DocumentFields> | undefined {
-        const view = valid(() => readDocumentFields(binding.fields.toJSON()));
+        const view = orUndefined(() => readDocumentFields(binding.fields.toJSON()));
 
         if (!view || view.id !== documentId) {
             return undefined;
@@ -694,8 +657,8 @@ export class Collaboration {
             const entity = binding.tables[collection].get(id);
             const saved =
                 entity instanceof yjs.Map
-                    ? valid(() => readEntity(collection, entity.toJSON()))
-                    : null;
+                    ? orUndefined(() => readEntity(collection, entity.toJSON()))
+                    : undefined;
             const view = saved?.id === id ? saved : null;
             const invalid = binding.invalid[collection];
             const wasInvalid = invalid.has(id);

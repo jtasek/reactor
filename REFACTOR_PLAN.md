@@ -611,10 +611,13 @@ Done: step 1. The binding is an Overmind effect, `effects.collaboration`, that l
 Yjs when initialized, and a simulator of three copies making random concurrent edits
 checks that they converge. The app starts it in step 2.
 
-Step 2 in progress: `DocumentDatabase` saves documents in IndexedDB, each document's
-Yjs updates as records of their own with an index of documents, so open copies save
-at once without overwriting each other. Syncing open copies, then starting both in
-the app with the migration, follow.
+Done: step 2. The app loads documents from IndexedDB (`DocumentDatabase`), each
+document's Yjs updates as records of their own with an index of documents; the
+first start moves the local storage save there, backed up first. Open copies share
+changes and created or deleted documents through a BroadcastChannel (`TabSync`),
+and a copy shown again catches up from the others and from the database. The
+camera and the document shown are saved per device here rather than in step 3,
+since the whole-state save that kept them is gone.
 
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user
@@ -680,8 +683,7 @@ Steps:
 2. Save documents in IndexedDB with the index, migrate the local storage payload
    (backed up first), and sync open copies on one device, including catch-up.
    This replaces autosave's whole-state save and tab sync.
-3. Save the camera per device, make gesture cancel undo only its own changes, and
-   add the status indicator.
+3. Make gesture cancel undo only its own changes, and add the status indicator.
 4. Add the WebSocket endpoint to the production and dev servers, with storage per
    document on the server and `connect-src` allowing it, and connect documents to
    it.

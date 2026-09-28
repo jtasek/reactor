@@ -1,4 +1,14 @@
-import type { Application, Document, Shape, Point, Size, Group, Link, Ruler } from '../types';
+import type {
+    Application,
+    Camera,
+    Document,
+    Shape,
+    Point,
+    Size,
+    Group,
+    Link,
+    Ruler
+} from '../types';
 import { Orientation } from '../types';
 import { createDocument } from '../factories';
 import { orderAbove, untie, validDrawOrder } from '../drawOrder';
@@ -414,9 +424,47 @@ function readShapes(value: unknown, onRepair: () => void): Record<string, ShapeD
     return shapes;
 }
 
+/** A camera as saved, throwing when it is invalid. */
+export function readCamera(value: unknown): Camera {
+    const camera = record(value);
+
+    return { scale: positive(camera.scale), position: point(camera.position) };
+}
+
+/** What a device shows: the current document, and each document's camera. */
+export interface View {
+    currentDocumentId?: string;
+    cameras: Record<string, Camera>;
+}
+
+/** What `read` returns, or undefined when it finds the value invalid. */
+export const orUndefined = <T>(read: () => T): T | undefined => {
+    try {
+        return read();
+    } catch {
+        return undefined;
+    }
+};
+
+/** A saved view, leaving out what is invalid in it. */
+export function readView(value: unknown): View {
+    const view = orUndefined(() => record(value)) ?? {};
+    const cameras = Object.entries(orUndefined(() => record(view.cameras)) ?? {}).flatMap(
+        ([documentId, camera]) => {
+            const entry = orUndefined(() => [id(documentId), readCamera(camera)] as const);
+
+            return entry ? [entry] : [];
+        }
+    );
+
+    return {
+        currentDocumentId: orUndefined(() => id(view.currentDocumentId)),
+        cameras: Object.fromEntries(cameras)
+    };
+}
+
 function readDocument(value: unknown, onRepair = () => {}): DocumentData {
     const d = record(value);
-    const camera = record(d.camera);
     const shapes = readShapes(d.shapes, onRepair);
     const components = table(d.components, readMember);
     const exists: Exists = (collection, entityId) =>
@@ -426,7 +474,7 @@ function readDocument(value: unknown, onRepair = () => {}): DocumentData {
 
     return {
         ...readFields(d),
-        camera: { scale: positive(camera.scale), position: point(camera.position) },
+        camera: readCamera(d.camera),
         shapes: repair('shapes', shapes),
         groups: repair('groups', table(d.groups, readMember)),
         layers: repair('layers', table(d.layers, readMember)),

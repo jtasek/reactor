@@ -351,6 +351,8 @@ export type Application = {
     devices: HashTable<Device>;
     documents: HashTable<Document>;
     documentsIds: string[];
+    /** Saved documents are still loading, so the pages wait. */
+    loading: boolean;
     notifications: Notification[];
     providers: HashTable<Provider>;
     started: Date;

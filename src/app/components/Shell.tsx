@@ -1,5 +1,5 @@
 import React, { FC, Suspense, lazy } from 'react';
-import { useCurrentPage } from '../hooks';
+import { useCurrentPage, useLoading } from '../hooks';
 import { useKeyboardDriver } from 'src/events/drivers/useKeyboardDriver';
 import { usePreventNativePinchZoom } from './usePreventNativePinchZoom';
 import { Notification } from './Notification';
@@ -16,14 +16,17 @@ export const Shell: FC = () => {
     usePreventNativePinchZoom();
 
     const currentPage = useCurrentPage();
+    const loading = useLoading();
 
     return (
         <>
             <Notification />
-            <Suspense fallback={null}>
-                {currentPage === 'designer' && <Designer />}
-                {currentPage === 'documents' && <Documents />}
-            </Suspense>
+            {!loading && (
+                <Suspense fallback={null}>
+                    {currentPage === 'designer' && <Designer />}
+                    {currentPage === 'documents' && <Documents />}
+                </Suspense>
+            )}
         </>
     );
 };

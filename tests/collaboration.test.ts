@@ -1,7 +1,6 @@
 import type { Document } from 'src/app/types';
 import * as Y from 'yjs';
 import { Collaboration, type RemoteChanges } from 'src/app/services/collaboration';
-import { serializePersistedState } from 'src/app/services/documentStorage';
 import {
     type Copy,
     DOCUMENT_ID,
@@ -555,28 +554,6 @@ describe('collaboration', () => {
         expect(() => collaboration.open('other', copy.collaboration.state(DOCUMENT_ID))).toThrow(
             'Document other is not in the store'
         );
-    });
-
-    it('applies the shared document again when an older save replaces the documents', async () => {
-        const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
-        const [a, b] = copies;
-        const [id] = documentOf(a).shapesIds;
-        const saved = JSON.stringify(serializePersistedState(a.store.state));
-
-        edit(b, (actions) => {
-            actions.addShape(rectangle(60));
-            actions.updateShape({ id, name: 'renamed' });
-        });
-        settle(copies);
-        expect(a.store.actions.loadSavedDocuments(saved)).toBe(true);
-        settle(copies);
-
-        copies.forEach((copy) => {
-            expect(Object.keys(documentOf(copy).shapes)).toHaveLength(2);
-            expect(documentOf(copy).shapes[id].name).toBe('renamed');
-            expectConsistent(copy);
-        });
-        expect(sharedContent(a)).toEqual(sharedContent(b));
     });
 
     it('writes waiting changes before encoding the state or closing', async () => {

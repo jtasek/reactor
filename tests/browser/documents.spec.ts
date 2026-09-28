@@ -57,3 +57,21 @@ test('shortcuts do not change the shapes of a document that is not shown', async
 
     await expect(shapes(page)).toHaveCount(1);
 });
+
+test('documents created or deleted in one tab are in the others', async ({ page }) => {
+    const otherTab = await page.context().newPage();
+
+    await openEditor(page, ['Menu Bar']);
+    await openEditor(otherTab, ['Menu Bar']);
+    await showDocuments(page);
+    await showDocuments(otherTab);
+    await expect(rows(otherTab)).toHaveCount(1);
+
+    await button(page, 'Clone document-1').click();
+    await expect(rows(otherTab)).toHaveCount(2);
+    await expect(rows(otherTab).nth(1)).toContainText('document-1 copy');
+
+    await button(page, 'Delete document-1 copy').click();
+    await button(page, 'Delete').click();
+    await expect(rows(otherTab)).toHaveCount(1);
+});

@@ -48,6 +48,11 @@ export const cloneDocument: ActionWithParam<string> = ({ state, effects }, docum
     setDocument(state, copy);
 };
 
+/** Removes a document added only to hold saved or shared content that could not be read. */
+export const discardDocument: ActionWithParam<string> = ({ state }, documentId) => {
+    deleteDocument(state, documentId);
+};
+
 export const removeDocument: ActionWithParam<string> = ({ state }, documentId) => {
     deleteDocument(state, documentId);
 

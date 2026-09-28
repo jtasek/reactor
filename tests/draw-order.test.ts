@@ -46,18 +46,18 @@ const loadedOrders = (json: string) =>
         ({ order }) => order
     );
 
-const loaded = (json: string) => {
-    const { store, storage } = createTestStore();
+/** A store that loaded `json` at startup. */
+const loaded = async (json: string) => {
+    const { store } = createTestStore({ [PERSISTENCE_KEY]: json });
 
-    storage.set(PERSISTENCE_KEY, json);
-    expect(store.actions.loadSavedDocuments(json)).toBe(true);
+    await store.onInitialize();
 
-    return { store, storage };
+    return store;
 };
 
 describe('draw order', () => {
-    it('draws shapes by their order', () => {
-        const { store } = loaded(saved(['a2', 'a0', 'a1']));
+    it('draws shapes by their order', async () => {
+        const store = await loaded(saved(['a2', 'a0', 'a1']));
 
         expect(store.state.currentDocument.shapesIds).toEqual(['s1', 's2', 's0']);
     });
@@ -95,8 +95,8 @@ describe('draw order', () => {
         expect(orders).toEqual([...new Set(orders)].sort());
     });
 
-    it('puts new shapes and clones above every other shape', () => {
-        const { store } = loaded(saved(['a5', 'a0']));
+    it('puts new shapes and clones above every other shape', async () => {
+        const store = await loaded(saved(['a5', 'a0']));
         const addedBy = (act: () => void) => {
             const before = new Set(store.state.currentDocument.shapesIds);
 
@@ -111,8 +111,8 @@ describe('draw order', () => {
         expect(store.state.currentDocument.shapesIds).toEqual(['s1', 's0', added, clone]);
     });
 
-    it('clones a selection above every other shape, stacked like the originals', () => {
-        const { store } = loaded(saved(['a2', 'a1']));
+    it('clones a selection above every other shape, stacked like the originals', async () => {
+        const store = await loaded(saved(['a2', 'a1']));
 
         store.actions.selectShape('s0');
         store.actions.selectShape('s1');
@@ -127,8 +127,8 @@ describe('draw order', () => {
         ]);
     });
 
-    it('brings shapes to the front and sends them to the back, keeping their order', () => {
-        const { store } = loaded(saved(['a0', 'a1', 'a2', 'a3']));
+    it('brings shapes to the front and sends them to the back, keeping their order', async () => {
+        const store = await loaded(saved(['a0', 'a1', 'a2', 'a3']));
         const { currentDocument } = store.state;
 
         store.actions.lockShape('s2');
@@ -146,8 +146,8 @@ describe('draw order', () => {
         );
     });
 
-    it('keeps shapesIds in draw order as shapes are added, cloned and removed', () => {
-        const { store } = loaded(saved(['a2', undefined, 'a0', 'a1']));
+    it('keeps shapesIds in draw order as shapes are added, cloned and removed', async () => {
+        const store = await loaded(saved(['a2', undefined, 'a0', 'a1']));
         const { currentDocument } = store.state;
 
         store.actions.addShape(rectangle);
@@ -198,12 +198,5 @@ describe('draw order', () => {
 
         expect(storage.get(`${PERSISTENCE_KEY}:backup`)).toBe(original);
         expect(store.state.currentDocument.shapes.s1.order).toBe('a2');
-    });
-
-    it('adopts an older save from another tab without backing it up', () => {
-        const { store, storage } = loaded(saved([undefined, undefined], 3));
-
-        expect(store.state.currentDocument.shapesIds).toEqual(['s0', 's1']);
-        expect(storage.has(`${PERSISTENCE_KEY}:backup`)).toBe(false);
     });
 });
