@@ -645,6 +645,77 @@ describe('collaboration', () => {
         );
     });
 
+    it('cancels a drag without undoing another copy’s edit made during it', async () => {
+        const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
+        const [a, b] = copies;
+        const [id] = documentOf(a).shapesIds;
+        const { events } = a.store.actions;
+
+        a.store.actions.unselectShapes();
+        events.beginGesture({ pointerId: 1, position: { x: 5, y: 5 } });
+        events.movePointer({ pointerId: 1, position: { x: 15, y: 5 } });
+        edit(b, (actions) => actions.updateShape({ id, name: 'renamed' }));
+        deliver(a);
+        events.cancelGesture();
+        await Promise.resolve();
+        settle(copies);
+
+        copies.forEach((copy) =>
+            expect(documentOf(copy).shapes[id]).toMatchObject({
+                name: 'renamed',
+                position: { x: 0, y: 0 }
+            })
+        );
+    });
+
+    it('cancels only the coordinate a drag changed when another copy moved the shape during it', async () => {
+        const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
+        const [a, b] = copies;
+        const [id] = documentOf(a).shapesIds;
+        const { events } = a.store.actions;
+
+        a.store.actions.unselectShapes();
+        events.beginGesture({ pointerId: 1, position: { x: 5, y: 5 } });
+        events.movePointer({ pointerId: 1, position: { x: 5, y: 15 } });
+        edit(b, (actions) => actions.updateShape({ id, position: { x: 50, y: 0 } }));
+        deliver(a);
+        expect(documentOf(a).shapes[id]).toMatchObject({ position: { x: 50, y: 10 } });
+
+        events.cancelGesture();
+        await Promise.resolve();
+        settle(copies);
+
+        copies.forEach((copy) =>
+            expect(documentOf(copy).shapes[id]).toMatchObject({ position: { x: 50, y: 0 } })
+        );
+    });
+
+    it('cancels a drag without bringing back a shape another copy deleted during it', async () => {
+        const copies = await createCopies(2, (store) => {
+            store.actions.addShape(rectangle());
+            store.actions.addShape(rectangle(100));
+        });
+        const [a, b] = copies;
+        const [first, second] = documentOf(a).shapesIds;
+        const { events } = a.store.actions;
+
+        a.store.actions.selectShape(first);
+        a.store.actions.selectShape(second);
+        events.beginGesture({ pointerId: 1, position: { x: 5, y: 5 } });
+        events.movePointer({ pointerId: 1, position: { x: 15, y: 5 } });
+        edit(b, (actions) => actions.removeShape(second));
+        deliver(a);
+        events.cancelGesture();
+        await Promise.resolve();
+        settle(copies);
+
+        copies.forEach((copy) => {
+            expect(documentOf(copy).shapes[second]).toBeUndefined();
+            expect(documentOf(copy).shapes[first]).toMatchObject({ position: { x: 0, y: 0 } });
+            expectConsistent(copy);
+        });
+    });
+
     it('keeps a shape deleted while paused deleted, although another copy edits it', async () => {
         const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
         const [a, b] = copies;

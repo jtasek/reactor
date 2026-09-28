@@ -202,7 +202,8 @@ only translates DOM events into the gesture actions (`src/events/actions/pointer
   React effects flush _after_ this, so anything a tool must persist on release has to happen
   inside the synchronous `execute` (not a mount/layout effect).
 - **cancel** (pointercancel, lost capture, window blur, context menu, unmount) →
-  `cancelGesture` never commits: it restores the snapshots and resets tools.
+  `cancelGesture` never commits: it restores the snapshots and resets tools. Other copies'
+  changes that arrive during the gesture update its snapshots, so canceling undoes only its own.
 - Zoom is ignored during a drag. Touchscreen pinch (`beginPinch`/`updatePinch`/`endPinch`) is
   fed by Touch Events and may only replace a touch gesture that has not moved.
 

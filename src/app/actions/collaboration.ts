@@ -26,6 +26,63 @@ function assign(target: object, next: object, changed: string[]) {
     }
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+/**
+ * Gives `base` the values that `next` changes from `current`, down to the fields of
+ * objects as the shared document merges them, so values `current` got elsewhere
+ * stay as `base` has them.
+ */
+function rebase(base: object, current: object, next: object, keys: Iterable<string>) {
+    for (const key of keys) {
+        const value: unknown = Reflect.get(next, key);
+        const before: unknown = Reflect.get(current, key);
+        const held: unknown = Reflect.get(base, key);
+
+        if (isRecord(value) && isRecord(before) && isRecord(held)) {
+            rebase(held, before, value, new Set([...Object.keys(before), ...Object.keys(value)]));
+            continue;
+        }
+
+        if (same(value, before)) {
+            continue;
+        }
+
+        if (value === undefined) {
+            Reflect.deleteProperty(base, key);
+            continue;
+        }
+
+        Reflect.set(base, key, own(value));
+    }
+}
+
+/**
+ * Brings what a gesture restores if canceled in line with other copies' changes, so
+ * canceling undoes only the gesture's own changes.
+ */
+function rebaseGesture(
+    snapshots: Record<string, object>,
+    shapes: Record<string, object>,
+    changes: EntityChanges['shapes']
+) {
+    for (const [id, change] of Object.entries(changes)) {
+        if (!Object.hasOwn(snapshots, id)) {
+            continue;
+        }
+
+        if (change === null || !Object.hasOwn(shapes, id)) {
+            delete snapshots[id];
+            continue;
+        }
+
+        rebase(snapshots[id], shapes[id], hydrateEntity('shapes', change.view), change.changed);
+    }
+}
+
 /** Applies one collection's changes; returns whether an entity came, went or was reordered. */
 function applyChanges<C extends Collection>(
     document: Document,
@@ -74,6 +131,12 @@ export const applyRemoteChanges: ActionWithParam<RemoteChanges> = (
 
     if (!document) {
         return;
+    }
+
+    const { gesture } = state.events.pointer;
+
+    if ('shapes' in gesture && documentId === state.currentDocumentId) {
+        rebaseGesture(gesture.shapes, document.shapes, entities.shapes);
     }
 
     if (fields) {
