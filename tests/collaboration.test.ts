@@ -690,6 +690,29 @@ describe('collaboration', () => {
         );
     });
 
+    it.each([1, 2, 3, 4, 5, 6, 7, 8])(
+        'cancels a drag without undoing another copy’s change to the same coordinate (run %i)',
+        async () => {
+            const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
+            const [a, b] = copies;
+            const [id] = documentOf(a).shapesIds;
+            const { events } = a.store.actions;
+
+            a.store.actions.unselectShapes();
+            events.beginGesture({ pointerId: 1, position: { x: 5, y: 5 } });
+            events.movePointer({ pointerId: 1, position: { x: 15, y: 5 } });
+            edit(b, (actions) => actions.updateShape({ id, position: { x: 50, y: 0 } }));
+            deliver(a);
+            events.cancelGesture();
+            await Promise.resolve();
+            settle(copies);
+
+            copies.forEach((copy) =>
+                expect(documentOf(copy).shapes[id]).toMatchObject({ position: { x: 50, y: 0 } })
+            );
+        }
+    );
+
     it('cancels a drag without bringing back a shape another copy deleted during it', async () => {
         const copies = await createCopies(2, (store) => {
             store.actions.addShape(rectangle());

@@ -621,9 +621,8 @@ since the whole-state save that kept them is gone.
 
 Done: step 3, gesture cancel. Changes from other copies that arrive during a
 gesture update what canceling it restores, down to single coordinates, so
-canceling undoes only the gesture's own changes. When another copy changes the
-same field during the gesture and the gesture's value wins, canceling restores
-the value from before the gesture.
+canceling undoes only the gesture's own changes, even where they overrode
+another copy's change.
 
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user

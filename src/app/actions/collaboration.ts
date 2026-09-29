@@ -27,14 +27,13 @@ function assign(target: object, next: object, changed: string[]) {
 }
 
 /**
- * Gives `base` the values that `next` changes from `current`, down to the fields of
- * objects as the shared document merges them, so values `current` got elsewhere
- * stay as `base` has them.
+ * Gives `base` the values that `next` changes from `previous`, down to the fields
+ * of objects as the shared document merges them.
  */
-function rebase(base: object, current: object, next: object, keys: Iterable<string>) {
+function rebase(base: object, previous: object, next: object, keys: Iterable<string>) {
     for (const key of keys) {
         const value: unknown = Reflect.get(next, key);
-        const before: unknown = Reflect.get(current, key);
+        const before: unknown = Reflect.get(previous, key);
         const held: unknown = Reflect.get(base, key);
 
         if (isRecord(value) && isRecord(before) && isRecord(held)) {
@@ -56,27 +55,29 @@ function rebase(base: object, current: object, next: object, keys: Iterable<stri
 }
 
 /**
- * Brings what a gesture restores if canceled in line with other copies' changes, so
- * canceling undoes only the gesture's own changes. A change that loses to the
- * gesture's own value of the same field never reaches this copy, so canceling
- * restores the value from before the gesture instead.
+ * Gives what a gesture restores if canceled other copies' changes, so canceling
+ * undoes only the gesture's own changes, even where they override another copy's.
  */
 function rebaseGesture(
     snapshots: Record<string, object>,
-    shapes: Record<string, object>,
-    changes: EntityChanges['shapes']
+    { entities, unwritten = {} }: RemoteChanges
 ) {
-    for (const [id, change] of Object.entries(changes)) {
-        if (!Object.hasOwn(snapshots, id)) {
-            continue;
-        }
+    for (const id of Object.keys(snapshots)) {
+        const change = Object.hasOwn(unwritten, id) ? unwritten[id] : entities.shapes[id];
 
-        if (change === null || !Object.hasOwn(shapes, id)) {
+        if (change === null) {
             delete snapshots[id];
             continue;
         }
 
-        rebase(snapshots[id], shapes[id], hydrateEntity('shapes', change.view), change.changed);
+        if (change?.previous) {
+            rebase(
+                snapshots[id],
+                hydrateEntity('shapes', change.previous),
+                hydrateEntity('shapes', change.view),
+                change.changed
+            );
+        }
     }
 }
 
@@ -120,10 +121,8 @@ function applyChanges<C extends Collection>(
  * Applies changes from the shared document, setting only the fields that differ.
  * Runtime state such as the selection and the camera stays this copy's own.
  */
-export const applyRemoteChanges: ActionWithParam<RemoteChanges> = (
-    { state },
-    { documentId, fields, entities }
-) => {
+export const applyRemoteChanges: ActionWithParam<RemoteChanges> = ({ state }, changes) => {
+    const { documentId, fields, entities } = changes;
     const document = state.documents[documentId];
 
     if (!document) {
@@ -133,7 +132,7 @@ export const applyRemoteChanges: ActionWithParam<RemoteChanges> = (
     const { gesture } = state.events.pointer;
 
     if ('shapes' in gesture && documentId === state.currentDocumentId) {
-        rebaseGesture(gesture.shapes, document.shapes, entities.shapes);
+        rebaseGesture(gesture.shapes, changes);
     }
 
     if (fields) {
