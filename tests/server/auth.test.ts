@@ -1,55 +1,9 @@
-import { PGlite } from '@electric-sql/pglite';
 import express from 'express';
 import type { AddressInfo } from 'net';
-import { Kysely, sql } from 'kysely';
-import { PGliteDialect } from 'kysely-pglite-dialect';
-import { authHandler, createAuth, migrateAuth } from '../../server/auth';
+import { sql } from 'kysely';
+import { authHandler } from '../../server/auth';
 import { openPool } from '../../server/database';
-
-const ORIGIN = 'http://localhost:4000';
-
-interface Email {
-    to: string;
-    subject: string;
-    text: string;
-}
-
-/** Accounts on an empty in-process database, with email kept in an outbox. */
-async function startAccounts() {
-    const db = new Kysely<unknown>({ dialect: new PGliteDialect(new PGlite()) });
-    const outbox: Email[] = [];
-    const auth = createAuth({
-        db,
-        baseURL: ORIGIN,
-        secret: 'a test secret that is long enough to sign sessions',
-        mailer: {
-            send: async (email: Email) => {
-                outbox.push(email);
-            }
-        }
-    });
-
-    await migrateAuth(auth);
-
-    /** Sends a request as a browser on `origin` would, with the cookies it holds. */
-    const request = (
-        path: string,
-        { body, cookie, origin = ORIGIN }: { body?: object; cookie?: string; origin?: string } = {}
-    ) =>
-        auth.handler(
-            new Request(new URL(path, ORIGIN), {
-                method: body ? 'POST' : 'GET',
-                headers: {
-                    origin,
-                    ...(body ? { 'content-type': 'application/json' } : {}),
-                    ...(cookie ? { cookie } : {})
-                },
-                body: body && JSON.stringify(body)
-            })
-        );
-
-    return { db, auth, outbox, request };
-}
+import { ORIGIN, cookiesOf, linkIn, startAccounts } from './support';
 
 /**
  * Serves accounts over HTTP as the servers do; `trustProxy` is Express's
@@ -93,24 +47,6 @@ async function allowedBeforeLimit(ask: () => Promise<number>, limit = 20) {
 
     return limit;
 }
-
-/** The cookies a response sets, as a browser would send them back. */
-const cookiesOf = (response: Response) =>
-    response.headers
-        .getSetCookie()
-        .map((cookie) => cookie.split(';')[0])
-        .join('; ');
-
-/** The link in an email. */
-const linkIn = ({ text }: Email) => {
-    const link = /https?:\/\/\S+/.exec(text)?.[0];
-
-    if (!link) {
-        throw new Error(`No link in: ${text}`);
-    }
-
-    return link;
-};
 
 const sessionOf = async (
     request: Awaited<ReturnType<typeof startAccounts>>['request'],
