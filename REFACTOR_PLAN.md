@@ -636,8 +636,12 @@ Step 4, in progress: accounts run on the server when `DATABASE_URL` is set, with
 Better Auth at `/api/auth`, its tables in the `auth` schema, email confirmation
 before password sign-in, sign-in links, and email over SMTP. `compose.yaml` runs
 the editor with PostgreSQL. Server tests use PGlite, PostgreSQL built to run in
-the test process, instead of a container. Next: sign-in pages and the signed-out
-notices, then personal workspaces and the documents API.
+the test process, instead of a container. The account page (`/account`) signs in
+with a password or an emailed link and creates accounts; the status bar links to
+it, and signing in or out loads the editor again. Signed out, a notice says once,
+and again at 3 documents, that documents are kept only in this browser; notices
+stack in a corner and can be dismissed. Next: personal workspaces and the
+documents API.
 
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user

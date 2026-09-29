@@ -81,6 +81,10 @@ export const useSaveStatus = () => {
     return useAppState((state) => state.saveStatus);
 };
 
+export const useAccount = () => {
+    return useAppState((state) => state.account);
+};
+
 export const useCamera = () => {
     return useAppState((state) => state.currentDocument.camera);
 };

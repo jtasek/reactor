@@ -27,6 +27,7 @@ import {
 import { Tool } from '../../tools/types';
 import { startDocumentSync } from '../services/documentSync';
 import { listenToMutations } from '../services/mutations';
+import { readAccount } from '../services/accounts';
 
 const commands: Record<string, Command> = {};
 const tools: Record<string, Tool> = {};
@@ -86,7 +87,8 @@ function registerTools() {
 function registerRoutes(effects: Context['effects'], actions: Context['actions']) {
     effects.initializeRoutes({
         '/': actions.showDesigner,
-        '/documents': actions.showDocuments
+        '/documents': actions.showDocuments,
+        '/account': actions.showAccount
     });
 }
 
@@ -102,6 +104,10 @@ export const onInitializeOvermind = async (
     registerTools();
     registerRoutes(effects, actions);
 
+    // Read while the documents load, and shown with them: a change while the pages
+    // first render can miss components that have not subscribed yet.
+    const account = readAccount(effects.accounts);
+
     try {
         await startDocumentSync(context, {
             state: instance.state,
@@ -115,6 +121,18 @@ export const onInitializeOvermind = async (
             reason: 'Saved documents could not be loaded.'
         });
     } finally {
+        state.account = await account;
         state.loading = false;
     }
+
+    // Once startup has ended; an action run while it runs counts as part of it.
+    setTimeout(instance.actions.noticeLocalDocuments);
+    addMutationListener(({ path, delimiter }) => {
+        const [root, documentId, field] = path.split(delimiter);
+
+        // A document was added or removed; checked once the action ends.
+        if (root === 'documents' && documentId !== undefined && field === undefined) {
+            queueMicrotask(instance.actions.noticeLocalDocuments);
+        }
+    });
 };

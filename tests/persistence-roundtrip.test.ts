@@ -37,7 +37,9 @@ describe('real persisted documents', () => {
 
         await restored.store.onInitialize();
 
-        expect(restored.store.state.notifications).toEqual([]);
+        expect(restored.store.state.notifications.filter(({ type }) => type === 'error')).toEqual(
+            []
+        );
         expect(serializePersistedState(restored.store.state)).toEqual(saved);
 
         const shapes = Object.values(restored.store.state.currentDocument.shapes);

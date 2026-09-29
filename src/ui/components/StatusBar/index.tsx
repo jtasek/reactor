@@ -1,6 +1,7 @@
 import React, { FC } from 'react';
 
 import {
+    useAccount,
     useCamera,
     useControls,
     useCurrentDocument,
@@ -47,6 +48,21 @@ export const SaveStatusInfo: FC = () => {
     );
 };
 
+/** Leads to the account page: to sign in, or showing who is signed in. */
+export const AccountInfo: FC = () => {
+    const account = useAccount();
+
+    if (account.kind === 'loading' || account.kind === 'unavailable') {
+        return null;
+    }
+
+    return (
+        <a href="/account" title={account.kind === 'signedIn' ? account.email : undefined}>
+            {account.kind === 'signedIn' ? account.name : 'Sign in'}
+        </a>
+    );
+};
+
 export const StatusBarContainer: FC = () => {
     const { position: offset, scale } = useCamera();
     const { name, selectedShapesIds } = useCurrentDocument();
@@ -64,6 +80,9 @@ export const StatusBarContainer: FC = () => {
             <StatusBarSlot name="message">{name}</StatusBarSlot>
             <StatusBarSlot name="save">
                 <SaveStatusInfo />
+            </StatusBarSlot>
+            <StatusBarSlot name="account">
+                <AccountInfo />
             </StatusBarSlot>
             <StatusBarSlot name="selection">{`selection: [${selectedShapeCount}]`}</StatusBarSlot>
             <StatusBarSlot name="keyboard">

@@ -187,7 +187,7 @@ describe('draw order', () => {
         expect(storage.get(`${PERSISTENCE_KEY}:backup`)).toBe(original);
         expect(shapesIds).toEqual(['s0', 's1', 's2']);
         expect(shapesIds.map((id) => shapes[id].order)).toEqual(['a0', 'a1', 'a2']);
-        expect(store.state.notifications).toEqual([]);
+        expect(store.state.notifications.filter(({ type }) => type === 'error')).toEqual([]);
     });
 
     it('backs up a current save whose orders had to be repaired', async () => {

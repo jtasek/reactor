@@ -74,6 +74,11 @@ that PostgreSQL database and creating or updating its tables on start. People
 confirm their email address before signing in with a password, or sign in with a
 link sent by email.
 
+The account page, `/account`, reached from the status bar, signs in and out and
+creates accounts. Signed out, the editor says once, and again at 3 documents,
+that documents are kept only in this browser. Until workspaces sync, signed-in
+documents are still kept only in the browser too.
+
 | Variable | Meaning |
 |---|---|
 | `DATABASE_URL` | PostgreSQL connection string; turns accounts on |

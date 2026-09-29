@@ -8,6 +8,17 @@ export default defineConfig({
     reporter: 'list',
     use: {
         baseURL: 'http://127.0.0.1:4173',
+        // The signed-out notices count as shown, so they cover nothing tests click;
+        // tests/browser/notices.spec.ts starts without this.
+        storageState: {
+            cookies: [],
+            origins: [
+                {
+                    origin: 'http://127.0.0.1:4173',
+                    localStorage: [{ name: 'reactor:notices', value: '["first","many"]' }]
+                }
+            ]
+        },
         trace: 'retain-on-failure'
     },
     projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],

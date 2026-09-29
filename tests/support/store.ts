@@ -5,7 +5,17 @@ import { config } from 'src/app';
 import { createApplication, createDocument } from 'src/app/factories';
 import { Collaboration } from 'src/app/services/collaboration';
 import { DocumentDatabase } from 'src/app/services/documentDatabase';
+import type { Accounts } from 'src/app/services/accounts';
 import type { Channel } from 'src/app/services/tabSync';
+
+/** A server without accounts. */
+const noAccounts: Accounts = {
+    session: async () => undefined,
+    signIn: async () => ({ ok: false, message: 'No accounts' }),
+    signUp: async () => ({ ok: false, message: 'No accounts' }),
+    sendSignInLink: async () => ({ ok: false, message: 'No accounts' }),
+    signOut: async () => ({ ok: false, message: 'No accounts' })
+};
 
 /** A channel no other copy listens on. */
 const quietChannel = (): Channel => ({ onmessage: null, postMessage: () => {}, close: () => {} });
@@ -22,6 +32,7 @@ export function createTestStore(
         collaboration?: Collaboration;
         indexedDB?: IDBFactory;
         openChannel?: () => Channel;
+        accounts?: Accounts;
     } = {}
 ) {
     const storage = new Map(Object.entries(seed));
@@ -45,9 +56,11 @@ export function createTestStore(
         }),
         initializeRoutes: vi.fn<typeof config.effects.initializeRoutes>(),
         navigate: vi.fn<typeof config.effects.navigate>(),
+        reload: vi.fn<typeof config.effects.reload>(),
         collaboration: options.collaboration ?? new Collaboration(),
         openDocumentDatabase: () => DocumentDatabase.open(indexedDB),
-        openChannel: options.openChannel ?? quietChannel
+        openChannel: options.openChannel ?? quietChannel,
+        accounts: options.accounts ?? noAccounts
     };
     let nextId = 1;
     const document = createDocument({ id: 'test-document' });

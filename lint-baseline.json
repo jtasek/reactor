@@ -1,9 +1,6 @@
 {
     "description": "Phase 1 remaining lint debt. Do not add entries; remove entries as files are repaired.",
     "files": {
-        "src/app/actions/routes.ts": {
-            "[\"no-console\",1,\"Unexpected console statement. Only these console methods are allowed: warn, error, info.\"]": 2
-        },
         "src/app/actions/shape.ts": {
             "[\"prettier/prettier\",2,\"Replace `·!isShapeLocked(state.currentDocument,·shape.id)·&&` with `⏎············!isShapeLocked(state.currentDocument,·shape.id)·&&⏎···········`\"]": 1
         },
