@@ -771,8 +771,8 @@ Steps:
    grants on documents, and closing connections when access is revoked.
 9. Add presence: names, colors, remote pointers and selections.
 10. Later, if wanted: undo per user. Undoing records into the redo history and
-   redoing into the undo history, so undo then redo returns the same document even
-   while others edit.
+    redoing into the undo history, so undo then redo returns the same document
+    even while others edit.
 
 Gate: when two open copies or two browsers edit at once, every edit survives
 unless both changed the same field (then one value wins in every copy), and all
