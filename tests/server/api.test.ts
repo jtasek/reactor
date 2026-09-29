@@ -17,6 +17,9 @@ interface DocumentSummary {
     name: string;
 }
 
+/** Sign-ins so far; each is a client of its own, as sign-in's rate limit is kept across tests. */
+let clients = 0;
+
 /** The API and accounts served over HTTP as the servers do, on an empty database. */
 async function serve() {
     const accounts = await startAccounts();
@@ -34,8 +37,6 @@ async function serve() {
 
     const { port } = server.address() as AddressInfo;
 
-    let clients = 0;
-
     /**
      * Signs `email` in with an emailed link, as a client of its own so sign-in's
      * rate limit is not reached; returns the session cookie.
@@ -43,7 +44,7 @@ async function serve() {
     const signIn = async (email: string) => {
         clients++;
 
-        const headers = { 'x-reactor-client-address': `192.0.2.${clients}` };
+        const headers = { 'x-reactor-client-address': `198.18.0.${clients}` };
 
         await accounts.request('/api/auth/sign-in/magic-link', { body: { email }, headers });
 
@@ -238,6 +239,30 @@ describe('API', () => {
                 })
             ).status
         ).toBe(400);
+        expect(
+            (
+                await call('POST', documents, {
+                    cookie,
+                    body: { name: 'Plan' },
+                    headers: { 'content-type': 'application/json; charset=latin1' }
+                })
+            ).status
+        ).toBe(415);
         expect(await json(call('GET', documents, { cookie }))).toEqual([]);
+    });
+
+    it('logs a failure it did not expect, and answers it without detail', async () => {
+        const { db, call, user } = await serve();
+        const { cookie, personal } = await user('ada@example.com');
+        const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        await sql`drop table documents`.execute(db);
+
+        const response = await call('GET', `/workspaces/${personal.id}/documents`, { cookie });
+
+        expect(response.status).toBe(500);
+        expect(await response.json()).toEqual({ code: 'INTERNAL' });
+        expect(logged).toHaveBeenCalledOnce();
+        logged.mockRestore();
     });
 });

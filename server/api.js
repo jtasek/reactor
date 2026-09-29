@@ -120,11 +120,12 @@ export function createApi({ db, auth, origin }) {
 
     // eslint-disable-next-line no-unused-vars
     api.use((error, req, res, _next) => {
-        if (error.type === 'entity.parse.failed' || error.type === 'entity.too.large') {
+        // The body parser marks a request at fault with its 4xx status.
+        if (error.status >= 400 && error.status < 500) {
             return refuse(res, error.status, 'INVALID_BODY');
         }
 
-        req.log?.error(error);
+        (req.log ?? console).error(error);
 
         return refuse(res, 500, 'INTERNAL');
     });
