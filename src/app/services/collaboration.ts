@@ -91,7 +91,7 @@ const REFERABLE = new Set<Collection>(['shapes', 'components']);
 const isCollection = (value: string): value is Collection =>
     COLLECTIONS.some((collection) => collection === value);
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
+export const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const isEmpty = (value: object | undefined) => !value || Object.keys(value).length === 0;
@@ -111,7 +111,7 @@ const touch = (changes: Changes, collection: Collection, id: string) => {
     changes.entities.set(collection, ids);
 };
 
-const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+export const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
 /** The fields that differ between two durable values. */
 const changedFields = (previous: object, next: object) =>

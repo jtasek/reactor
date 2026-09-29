@@ -1,5 +1,5 @@
 import type { ActionWithParam, Document } from '../types';
-import type { EntityChanges, RemoteChanges } from '../services/collaboration';
+import { isRecord, same, type EntityChanges, type RemoteChanges } from '../services/collaboration';
 import { inDrawingOrder } from '../drawOrder';
 import {
     COLLECTIONS,
@@ -25,11 +25,6 @@ function assign(target: object, next: object, changed: string[]) {
         Reflect.set(target, key, own(value));
     }
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-    typeof value === 'object' && value !== null && !Array.isArray(value);
-
-const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
 /**
  * Gives `base` the values that `next` changes from `current`, down to the fields of
@@ -62,7 +57,9 @@ function rebase(base: object, current: object, next: object, keys: Iterable<stri
 
 /**
  * Brings what a gesture restores if canceled in line with other copies' changes, so
- * canceling undoes only the gesture's own changes.
+ * canceling undoes only the gesture's own changes. A change that loses to the
+ * gesture's own value of the same field never reaches this copy, so canceling
+ * restores the value from before the gesture instead.
  */
 function rebaseGesture(
     snapshots: Record<string, object>,
