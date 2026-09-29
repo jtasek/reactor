@@ -597,9 +597,11 @@ instances and overrides; a library copy changes only when an update is applied.
 
 ## Phase 11 - Collaboration
 
-Designed 2026-09-25; in progress. Several people can edit the same document live,
-and open copies of the editor on one device share their changes. Steps 1-3 come
-before Phases 9 and 10, since both add saved data.
+Designed 2026-09-25, accounts added 2026-09-29; in progress. People sign in, see
+their own workspace and the workspaces of their teams and organizations, and edit
+the documents they may write, live with everyone who has them open. Open copies of
+the editor on one device share their changes. Steps 1-3 come before Phases 9 and
+10, since both add saved data.
 
 Done: draw order (save format version 4). Each shape has an `order` (a fractional
 index); new shapes and clones go on top. Loading backs up, then repairs: a shape
@@ -632,7 +634,11 @@ offline come with step 4.
 
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user
-keeps their own view.
+keeps their own view. Accounts, sessions, organizations and teams use Better Auth
+with its organization plugin, inside the existing server. All server data, both
+accounts and documents, is kept in one self-hosted PostgreSQL database, queried
+through Kysely. The server relays and stores document changes with Hocuspocus,
+which speaks the Yjs sync protocol. No hosted identity service is used.
 
 Design:
 
@@ -673,16 +679,42 @@ Design:
 - Open copies on one device sync through a BroadcastChannel. A copy that was
   hidden, or restored from the back/forward cache, catches up by exchanging what
   each copy has already seen.
-- Network: a WebSocket endpoint on the server relays changes and stores each
-  document. Edits made offline merge when the connection returns.
-- Presence: each user has a name and color, anonymous until accounts exist.
-  Pointers and selections are shown to others and never saved.
+- Accounts: people sign in with email and password or a magic link; social
+  sign-in and single sign-on per organization can be added through plugins. The
+  browser holds only an HTTP-only, same-site session cookie, never a token. Using
+  the editor requires signing in.
+- Workspaces: every document belongs to one workspace. Each user has a personal
+  workspace, and each team and organization has one. A user sees their own
+  workspace and those of the teams and organizations they belong to.
+- Permissions: roles are viewer, editor and admin, in that order. A user's role on
+  a document is the highest of their role in its workspace and any grant on the
+  document itself, to them or to their team. Reading needs viewer, writing needs
+  editor, and sharing or deleting needs admin. The server decides: the API checks
+  each request, and the sync endpoint checks when a document is opened.
+- Network: the server's `/sync` WebSocket endpoint authenticates the session
+  cookie on upgrade and checks the `Origin` header. A connection without viewer
+  is refused, one without editor is read-only, and the server drops changes
+  arriving on a read-only connection. Revoking access closes the affected
+  connections. Messages have a size limit, and connections a rate limit. Edits
+  made offline merge when the connection returns. The server does not validate
+  content; each copy's merge rules already leave out what fails validation.
+- Server storage: each document's Yjs updates are rows in PostgreSQL, compacted
+  into one as they add up, as in IndexedDB. Workspace and document metadata live in
+  the same database, so a document's data and permissions are backed up together.
+  The server runs as one process at first; more processes later route each
+  document to one of them.
+- Client cache: IndexedDB stays the local copy, one database per user, cleared on
+  sign-out, so a shared computer never shows one person's documents to another.
+  The document list comes from the server.
+- Presence: each user has their account name and a color. Pointers and selections
+  are shown to others and never saved.
 - Cancelling a gesture undoes only that gesture's own changes, so it never
   reverts someone else's edit made meanwhile.
 - A status indicator shows saved, syncing, offline or not saving, instead of
   one-off notices.
 - Migration: the local storage payload is backed up and converted into Yjs
-  documents once; later loads read IndexedDB.
+  documents once; later loads read IndexedDB. On first sign-in, documents kept
+  only in the browser are backed up, then moved into the personal workspace.
 
 Steps:
 
@@ -695,13 +727,21 @@ Steps:
    (backed up first), and sync open copies on one device, including catch-up.
    This replaces autosave's whole-state save and tab sync.
 3. Make gesture cancel undo only its own changes, and add the status indicator.
-4. Add the WebSocket endpoint to the production and dev servers, with storage per
-   document on the server and `connect-src` allowing it, and connect documents to
-   it.
-5. Add presence: names, colors, remote pointers and selections.
-6. Later, if wanted: accounts and sharing permissions, and undo per user. Undoing
-   records into the redo history and redoing into the undo history, so undo then
-   redo returns the same document even while others edit.
+4. Add PostgreSQL with migrations, Better Auth and sign-in pages, personal
+   workspaces, and an API to list, create and delete a workspace's documents.
+   Tests run against PostgreSQL in a container.
+5. Add the `/sync` endpoint to the production and dev servers, with the
+   permission checks, read-only connections and storage in PostgreSQL, and
+   `connect-src` allowing it. Connect open documents to it, keep the IndexedDB
+   cache per user, and add syncing and offline to the status indicator.
+6. Move documents kept only in the browser into the personal workspace on first
+   sign-in, backed up first.
+7. Add organizations and teams: their workspaces, invitations, members and roles,
+   grants on documents, and closing connections when access is revoked.
+8. Add presence: names, colors, remote pointers and selections.
+9. Later, if wanted: undo per user. Undoing records into the redo history and
+   redoing into the undo history, so undo then redo returns the same document even
+   while others edit.
 
 Gate: when two open copies or two browsers edit at once, every edit survives
 unless both changed the same field (then one value wins in every copy), and all
@@ -709,11 +749,14 @@ copies end in the same state, including draw order and repaired merges; a copy
 that was hidden, offline or restored from the back/forward cache catches up;
 view state is never shared; a document that fails to load affects only itself;
 the migration keeps the original payload; the bundle stays within Phase 8's
-budget.
+budget. A signed-out request or connection gets nothing; a user never receives a
+document they may not read, and the server keeps no change from a user who may
+not write it, including after their access is revoked mid-session; after
+sign-out, the browser keeps none of that user's documents.
 
 ## Scope Boundaries
 
-No framework/state-library replacement, broad dependency upgrade, authentication,
-or new undo-history system is required by this plan. Gesture rollback
+No framework/state-library replacement, broad dependency upgrade or new
+undo-history system is required by this plan; accounts come only with Phase 11. Gesture rollback
 is scoped to cancellation. Investigate performance with measurements after the
 correctness gates; do not add memoization preemptively.
