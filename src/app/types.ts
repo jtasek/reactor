@@ -332,7 +332,19 @@ export interface Notification {
     scope?: string;
     message: string;
     type: NotificationType;
+    /** A link that does what the notification suggests. */
+    link?: { label: string; url: string };
 }
+
+/**
+ * Whether someone is signed in: `loading` until the server is asked, and
+ * `unavailable` when it has no accounts.
+ */
+export type Account =
+    | { kind: 'loading' }
+    | { kind: 'unavailable' }
+    | { kind: 'signedOut' }
+    | { kind: 'signedIn'; name: string; email: string };
 
 /** Whether this copy's documents are being saved; `reason` says why they are not. */
 export type SaveStatus =
@@ -348,6 +360,7 @@ export type Configuration = {
 
 export type Application = {
     id: string;
+    account: Account;
     commands: HashTable<Command>;
     commandsIds: string[];
     config: Configuration;

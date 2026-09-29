@@ -47,7 +47,7 @@ async function start(
 const database = (indexedDB: IDBFactory) => DocumentDatabase.open(indexedDB);
 
 const messages = ({ store }: { store: ReturnType<typeof createTestStore>['store'] }) =>
-    store.state.notifications.map(({ message }) => message);
+    store.state.notifications.filter(({ type }) => type === 'error').map(({ message }) => message);
 
 describe('document sync', () => {
     afterEach(() => {

@@ -262,6 +262,17 @@ Examples worth modelling new tools on:
 - **Access state only through hooks** in `src/app/hooks.ts` (`useAppState`, `useActions`,
   `useEffects`, domain hooks like `useShapes`, `useCurrentDocument`, `useCamera`). Add new
   domain hooks here rather than ad-hoc `useAppState` selectors in components.
+- **Async work and state**: in production Overmind, a change an action makes after an
+  `await` reaches components only with a later top-level action, and actions called through
+  an action's own `actions` never count as top-level. Keep async work (requests, IndexedDB)
+  outside actions, in services, and apply its results through synchronous actions called on
+  the root actions (`useActions()` in components, `instance.actions` in startup). A change
+  while a lazily loaded page first renders can miss its components, so startup applies what
+  the pages first show (documents, the account) before `loading` ends.
+- **Accounts**: `effects.accounts` talks to `/api/auth`; `state.account` is `loading`,
+  `unavailable` (server without accounts), `signedOut` or `signedIn`. Signing in or out
+  reloads the editor (`effects.reload`), so everything shown belongs to the new account;
+  `shareAccount` makes the other open tabs reload too.
 - **Action typing**: use the aliases in `src/app/types.ts` — `Action`, `ActionWithParam<T>`,
   `ActionGuard`. Destructure what you need from context (`{ state }`, `{ state, effects }`).
 - **Commands**: run a command with `runCommand(command)` (`actions/commands.ts`), which checks

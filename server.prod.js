@@ -97,6 +97,11 @@ if (accounts) {
     app.all('/api/auth/*splat', accounts.handler);
 }
 
+// Anything else under /api is unknown, including accounts when they are off.
+app.all('/api/*splat', (_req, res) => {
+    res.status(404).json({ code: 'NOT_FOUND' });
+});
+
 const setStaticCache = (res, filePath) => {
     if (filePath.endsWith('.html')) {
         res.setHeader('Cache-Control', 'no-cache');

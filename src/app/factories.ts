@@ -225,6 +225,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         documents: { 'document-1': createDocument({ id: 'document-1' }) },
         loading: true,
         saveStatus: { kind: 'notSaving', reason: 'Documents are loading.' },
+        account: { kind: 'loading' },
         ...options
     };
 }
