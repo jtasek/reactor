@@ -41,7 +41,7 @@ export const SaveStatusInfo: FC = () => {
     const status = useSaveStatus();
 
     return (
-        <span role="status" title={status.kind === 'notSaving' ? status.reason : undefined}>
+        <span title={status.kind === 'notSaving' ? status.reason : undefined}>
             {SAVE_LABELS[status.kind]}
         </span>
     );

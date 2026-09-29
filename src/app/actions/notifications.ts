@@ -19,6 +19,12 @@ export const displayError: ActionWithParam<string> = ({ state }, message: string
     state.notifications.push(notification);
 };
 
+export const dismissNotifications: ActionWithParam<string> = ({ state }, message) => {
+    state.notifications = state.notifications.filter(
+        (notification) => notification.message !== message
+    );
+};
+
 export const setSaveStatus: ActionWithParam<SaveStatus> = ({ state }, status) => {
     const current = state.saveStatus;
 

@@ -61,8 +61,9 @@ after the move, the next start says so once; that save is kept but not shown.
 Saving is **on by default** (`config.autoSave`); with it off, documents still load
 but none are written. Runtime-only changes, such as selection, hover and measured
 bounds, are never saved. The status bar shows whether changes are saved, being
-saved or not saved, and why not. After a write fails, a document is saved whole
-on its next change.
+saved or not saved; when saving stops, a notice says why, and it goes away once
+saving works again. After a write fails, a document is saved whole on its next
+change.
 
 ## Camera Coordinates
 

@@ -625,9 +625,10 @@ canceling undoes only the gesture's own changes, even where they overrode
 another copy's change.
 
 Done: step 3, status indicator. The status bar shows saved, saving, or not saving
-with the reason, instead of notices for storage that is unavailable, unreadable or
-failing. After a write fails, the document is saved whole on its next change, and
-the status returns to saved. Syncing and offline come with step 4.
+with the reason. When saving stops, one notice says why, removed once saving works
+again, instead of a notice on each failure. After a write fails, the document is
+saved whole on its next change, and the status returns to saved. Syncing and
+offline come with step 4.
 
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user

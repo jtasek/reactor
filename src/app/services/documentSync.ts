@@ -45,6 +45,8 @@ function fingerprint(text: string): string {
     return `${text.length}:${(hash >>> 0).toString(36)}`;
 }
 
+const AUTOSAVE_OFF = 'Autosave is off.';
+
 /** Loads the local storage save into the store; returns false when it cannot be saved on. */
 function loadLocalData({ effects, state, actions }: Context): boolean {
     try {
@@ -104,6 +106,7 @@ export async function startDocumentSync(context: Context, instance: Instance): P
     const { collaboration } = effects;
     const {
         displayError,
+        dismissNotifications,
         setSaveStatus,
         addDocument,
         discardDocument,
@@ -134,6 +137,8 @@ export async function startDocumentSync(context: Context, instance: Instance): P
     const savedWhole = new Map<string, number>();
     let written = 0;
     let pending = 0;
+    /** The reason for not saving that a notice shows, if one does. */
+    let announced: string | undefined;
     let viewTimer: ReturnType<typeof setTimeout> | undefined;
     let reconcileQueued = false;
 
@@ -149,6 +154,20 @@ export async function startDocumentSync(context: Context, instance: Instance): P
         setSaveStatus(
             reason ? { kind: 'notSaving', reason } : { kind: pending > 0 ? 'saving' : 'saved' }
         );
+
+        if (reason === announced) {
+            return;
+        }
+
+        if (announced) {
+            dismissNotifications(announced);
+        }
+
+        announced = reason === AUTOSAVE_OFF ? undefined : reason;
+
+        if (announced) {
+            displayError(announced);
+        }
     };
 
     /**
@@ -284,6 +303,7 @@ export async function startDocumentSync(context: Context, instance: Instance): P
         savedWhole.delete(documentId);
         confirmed.delete(documentId);
         removeDocument(documentId);
+        report();
     };
 
     /** Starts sharing and saving a document this copy made. */
@@ -332,6 +352,8 @@ export async function startDocumentSync(context: Context, instance: Instance): P
             if (saved.delete(documentId) && target && !notSaving) {
                 void store(documentId, () => target.remove(documentId), true);
             }
+
+            report();
 
             sync?.sendDeleted(documentId);
         }
@@ -426,6 +448,8 @@ export async function startDocumentSync(context: Context, instance: Instance): P
 
         if (!loadLocalData(context)) {
             notSaving ??= 'Saved data could not be loaded, so changes made here are not saved.';
+            // Loading said so already, with what became of the saved data.
+            announced = notSaving;
         }
 
         if (!notSaving && moved) {
@@ -496,9 +520,9 @@ export async function startDocumentSync(context: Context, instance: Instance): P
 
     database = opened;
     if (!state.config.autoSave) {
-        notSaving = 'Autosave is off.';
+        notSaving = AUTOSAVE_OFF;
     } else if (!database) {
-        notSaving = 'Documents cannot be saved in this browser.';
+        notSaving = 'Documents cannot be saved in this browser. Changes made here are not kept.';
     } else {
         notSaving = undefined;
     }
