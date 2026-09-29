@@ -754,7 +754,8 @@ Design:
   documents once; later loads read IndexedDB. On sign-in, if the browser holds
   documents made signed out, the user is asked whether to move them into their
   personal workspace with their images, choosing which; a shared computer may hold
-  someone else's. Chosen documents are backed up first; the rest stay in the browser.
+  someone else's. Chosen documents are backed up first; the rest stay in the
+  browser.
 
 Steps:
 
@@ -788,18 +789,18 @@ Steps:
     redoing into the undo history, so undo then redo returns the same document
     even while others edit.
 
-Gate: when two open copies or two browsers edit at once, every edit survives
-unless both changed the same field (then one value wins in every copy), and all
-copies end in the same state, including draw order and repaired merges; a copy
-that was hidden, offline or restored from the back/forward cache catches up;
-view state is never shared; a document that fails to load affects only itself;
-the migration keeps the original payload; the bundle stays within Phase 8's
-budget. A signed-out request or connection gets nothing from the server; a user never receives a
-document they may not read, and the server keeps no change from a user who may
-not write it, including after their access is revoked mid-session; after
-sign-out, the browser keeps none of that user's documents; an image is readable
-only through a document the user may read; documents made signed out reach an
-account only when the user chooses.
+Gate: when two open copies or two browsers edit at once, every edit survives unless
+both changed the same field (then one value wins in every copy), and all copies end
+in the same state, including draw order and repaired merges; a copy that was
+hidden, offline or restored from the back/forward cache catches up; view state is
+never shared; a document that fails to load affects only itself; the migration
+keeps the original payload; the bundle stays within Phase 8's budget. A signed-out
+request or connection gets nothing from the server; a user never receives a
+document they may not read, and the server keeps no change from a user who may not
+write it, including after their access is revoked mid-session; after sign-out, the
+browser keeps none of that user's documents; an image is readable only through a
+document the user may read; documents made signed out reach an account only when
+the user chooses.
 
 ## Scope Boundaries
 
