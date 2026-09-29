@@ -1,4 +1,4 @@
-import { ActionWithParam } from '../types';
+import { ActionWithParam, SaveStatus } from '../types';
 import { createNotification } from '../factories';
 
 export const displayInfo: ActionWithParam<string> = ({ state }, message) => {
@@ -17,4 +17,23 @@ export const displayError: ActionWithParam<string> = ({ state }, message: string
     const notification = createNotification({ message, type: 'error' });
 
     state.notifications.push(notification);
+};
+
+export const dismissNotifications: ActionWithParam<string> = ({ state }, message) => {
+    state.notifications = state.notifications.filter(
+        (notification) => notification.message !== message
+    );
+};
+
+export const setSaveStatus: ActionWithParam<SaveStatus> = ({ state }, status) => {
+    const current = state.saveStatus;
+
+    if (
+        current.kind !== status.kind ||
+        (current.kind === 'notSaving' &&
+            status.kind === 'notSaving' &&
+            current.reason !== status.reason)
+    ) {
+        state.saveStatus = status;
+    }
 };

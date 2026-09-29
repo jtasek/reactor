@@ -110,6 +110,10 @@ export const onInitializeOvermind = async (
         });
     } catch {
         actions.displayError('Saved documents could not be loaded. Reload the page to try again.');
+        actions.setSaveStatus({
+            kind: 'notSaving',
+            reason: 'Saved documents could not be loaded.'
+        });
     } finally {
         state.loading = false;
     }

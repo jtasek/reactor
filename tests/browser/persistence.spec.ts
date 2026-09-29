@@ -136,6 +136,7 @@ test('saves drawn shapes, so they survive a reload', async ({ page }) => {
 
     await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
     await expect.poll(() => savedChanges(page)).toBeGreaterThan(saved);
+    await expect(page.locator('#save')).toHaveText('Saved');
 
     await page.reload();
 

@@ -334,6 +334,12 @@ export interface Notification {
     type: NotificationType;
 }
 
+/** Whether this copy's documents are being saved; `reason` says why they are not. */
+export type SaveStatus =
+    | { kind: 'saved' }
+    | { kind: 'saving' }
+    | { kind: 'notSaving'; reason: string };
+
 export type Configuration = {
     autoSave: boolean;
     debugMode: boolean;
@@ -355,6 +361,7 @@ export type Application = {
     loading: boolean;
     notifications: Notification[];
     providers: HashTable<Provider>;
+    saveStatus: SaveStatus;
     started: Date;
     user: User;
 };

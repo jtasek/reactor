@@ -55,12 +55,15 @@ a member listed twice is kept once. Repeated loads reuse identical backups.
 Unsupported or malformed data remains untouched, shows a notification, and nothing
 is saved that session. A document that fails to load is kept as it was saved, with
 a notice, and the others load; if the database cannot be listed at all, nothing is
-written over it that session. When a tab on an older version saves to local storage
+written over it that session, and the status bar says so. When a tab on an older version saves to local storage
 after the move, the next start says so once; that save is kept but not shown.
 
 Saving is **on by default** (`config.autoSave`); with it off, documents still load
 but none are written. Runtime-only changes, such as selection, hover and measured
-bounds, are never saved, and storage failures show a notice.
+bounds, are never saved. The status bar shows whether changes are saved, being
+saved or not saved; when saving stops, a notice says why, and it goes away once
+saving works again. After a write fails, a document is saved whole on its next
+change.
 
 ## Camera Coordinates
 

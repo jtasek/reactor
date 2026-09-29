@@ -219,8 +219,12 @@ describe('document sync', () => {
 
         expect(second.store.state.documents.saved).toBeUndefined();
         expect(messages(second)).toEqual([
-            'Saved documents could not be read. They are kept as saved; changes made here are not kept.'
+            'Saved documents could not be read. They are kept as saved; changes made here are not.'
         ]);
+        expect(second.store.state.saveStatus).toEqual({
+            kind: 'notSaving',
+            reason: 'Saved documents could not be read. They are kept as saved; changes made here are not.'
+        });
 
         second.store.actions.addShape(rectangle);
         second.effects.collaboration.flush();
@@ -243,7 +247,7 @@ describe('document sync', () => {
             new DOMException('Quota exceeded', 'QuotaExceededError')
         );
         store.actions.addDocument({ id: 'drawing' });
-        await vi.waitFor(() => expect(messages({ store })).toHaveLength(1));
+        await vi.waitFor(() => expect(store.state.saveStatus.kind).toBe('notSaving'));
 
         document.visibilityState = 'visible';
         document.dispatchEvent(new Event('visibilitychange'));
@@ -391,5 +395,76 @@ describe('document sync', () => {
         expect(messages({ store })).toEqual([
             'Documents cannot be saved in this browser. Changes made here are not kept.'
         ]);
+        expect(store.state.saveStatus).toEqual({
+            kind: 'notSaving',
+            reason: 'Documents cannot be saved in this browser. Changes made here are not kept.'
+        });
+    });
+
+    it('shows whether changes are being saved, and that they are not with autosave off', async () => {
+        const { store, effects } = await start(new IDBFactory());
+
+        await vi.waitFor(() => expect(store.state.saveStatus).toEqual({ kind: 'saved' }));
+
+        store.actions.addShape(rectangle);
+        effects.collaboration.flush();
+
+        expect(store.state.saveStatus).toEqual({ kind: 'saving' });
+        await vi.waitFor(() => expect(store.state.saveStatus).toEqual({ kind: 'saved' }));
+
+        const off = await start(new IDBFactory(), { autoSave: false });
+
+        expect(off.store.state.saveStatus).toEqual({
+            kind: 'notSaving',
+            reason: 'Autosave is off.'
+        });
+        expect(messages(off)).toEqual([]);
+    });
+
+    it('shows that changes are not saved while writing fails, and saved once they all are', async () => {
+        const indexedDB = new IDBFactory();
+        const { store, effects } = await start(indexedDB);
+
+        vi.spyOn(DocumentDatabase.prototype, 'append').mockRejectedValueOnce(
+            new DOMException('Quota exceeded', 'QuotaExceededError')
+        );
+        store.actions.addShape(rectangle);
+        effects.collaboration.flush();
+
+        await vi.waitFor(() =>
+            expect(store.state.saveStatus).toEqual({
+                kind: 'notSaving',
+                reason: 'Changes could not be saved. Storage may be full or unavailable.'
+            })
+        );
+        expect(messages({ store })).toEqual([
+            'Changes could not be saved. Storage may be full or unavailable.'
+        ]);
+
+        store.actions.addShape(rectangle);
+        effects.collaboration.flush();
+
+        await vi.waitFor(() => expect(store.state.saveStatus).toEqual({ kind: 'saved' }));
+        expect(messages({ store })).toEqual([]);
+        expect(
+            Object.keys((await start(indexedDB)).store.state.currentDocument.shapes)
+        ).toHaveLength(2);
+    });
+
+    it('shows saved again once a document that could not be saved is deleted', async () => {
+        const { store } = await start(new IDBFactory());
+
+        await vi.waitFor(() => expect(store.state.saveStatus).toEqual({ kind: 'saved' }));
+        vi.spyOn(DocumentDatabase.prototype, 'create').mockRejectedValueOnce(
+            new DOMException('Quota exceeded', 'QuotaExceededError')
+        );
+        store.actions.addDocument({ id: 'drawing' });
+        await vi.waitFor(() => expect(store.state.saveStatus.kind).toBe('notSaving'));
+
+        store.actions.removeDocument('drawing');
+        await Promise.resolve();
+
+        expect(store.state.saveStatus).toEqual({ kind: 'saved' });
+        expect(messages({ store })).toEqual([]);
     });
 });

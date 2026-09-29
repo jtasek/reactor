@@ -45,6 +45,8 @@ function fingerprint(text: string): string {
     return `${text.length}:${(hash >>> 0).toString(36)}`;
 }
 
+const AUTOSAVE_OFF = 'Autosave is off.';
+
 /** Loads the local storage save into the store; returns false when it cannot be saved on. */
 function loadLocalData({ effects, state, actions }: Context): boolean {
     try {
@@ -102,8 +104,15 @@ function loadLocalData({ effects, state, actions }: Context): boolean {
 export async function startDocumentSync(context: Context, instance: Instance): Promise<void> {
     const { state, effects } = context;
     const { collaboration } = effects;
-    const { displayError, addDocument, discardDocument, removeDocument, applyRemoteChanges } =
-        instance.actions;
+    const {
+        displayError,
+        dismissNotifications,
+        setSaveStatus,
+        addDocument,
+        discardDocument,
+        removeDocument,
+        applyRemoteChanges
+    } = instance.actions;
     /** Documents in the database, so their changes are saved. */
     const saved = new Set<string>();
     /** Documents seen in the database, so one missing from it later was deleted elsewhere. */
@@ -117,37 +126,93 @@ export async function startDocumentSync(context: Context, instance: Instance): P
     const appended = new Map<string, number>();
     let database: DocumentDatabase | undefined = undefined;
     let sync: TabSync | undefined = undefined;
-    let saving = false;
-    let failing = false;
+    /** Why this copy saves nothing, while it does not. */
+    let notSaving: string | undefined = 'Documents are loading.';
+    /**
+     * Per document, the number of a write that failed, so the database lacks changes
+     * of it until a later write saves it whole.
+     */
+    const unsaved = new Map<string, number>();
+    /** Per document, the number of the last write that saved it whole. */
+    const savedWhole = new Map<string, number>();
+    let written = 0;
+    let pending = 0;
+    /** The reason for not saving that a notice shows, if one does. */
+    let announced: string | undefined;
     let viewTimer: ReturnType<typeof setTimeout> | undefined;
     let reconcileQueued = false;
 
     const isOpen = (documentId: string) => collaboration.documentIds().includes(documentId);
 
-    const store = (write: () => Promise<void>) =>
-        write().then(
-            () => {
-                failing = false;
-            },
-            () => {
-                if (!failing) {
-                    displayError(
-                        'Could not save your changes. Storage may be full or unavailable.'
-                    );
-                }
+    const report = () => {
+        const reason =
+            notSaving ??
+            (unsaved.size > 0
+                ? 'Changes could not be saved. Storage may be full or unavailable.'
+                : undefined);
 
-                failing = true;
-            }
+        setSaveStatus(
+            reason ? { kind: 'notSaving', reason } : { kind: pending > 0 ? 'saving' : 'saved' }
         );
+
+        if (reason === announced) {
+            return;
+        }
+
+        if (announced) {
+            dismissNotifications(announced);
+        }
+
+        announced = reason === AUTOSAVE_OFF ? undefined : reason;
+
+        if (announced) {
+            displayError(announced);
+        }
+    };
+
+    /**
+     * Runs a write for a document. One that `completes` it saves the document whole,
+     * making up for writes started before it that failed.
+     */
+    const store = (documentId: string, write: () => Promise<void>, completes = false) => {
+        const number = ++written;
+
+        pending++;
+        report();
+
+        return write()
+            .then(
+                () => {
+                    if (!completes) {
+                        return;
+                    }
+
+                    savedWhole.set(documentId, Math.max(savedWhole.get(documentId) ?? 0, number));
+
+                    if ((unsaved.get(documentId) ?? number) < number) {
+                        unsaved.delete(documentId);
+                    }
+                },
+                () => {
+                    if (number > (savedWhole.get(documentId) ?? 0)) {
+                        unsaved.set(documentId, Math.max(unsaved.get(documentId) ?? 0, number));
+                    }
+                }
+            )
+            .finally(() => {
+                pending--;
+                report();
+            });
+    };
 
     const compact = (documentId: string) => {
         const target = database;
 
-        if (!target || !saving) {
+        if (!target || notSaving) {
             return;
         }
 
-        void store(() =>
+        void store(documentId, () =>
             target.compact(documentId, (updates) =>
                 collaboration.merge(
                     isOpen(documentId) ? [...updates, collaboration.state(documentId)] : updates
@@ -156,16 +221,57 @@ export async function startDocumentSync(context: Context, instance: Instance): P
         );
     };
 
+    /** Saves a document's whole state: as a new document, or added to its saved updates. */
+    const saveWhole = (documentId: string, update: Uint8Array) => {
+        const target = database;
+
+        if (!target || notSaving) {
+            return;
+        }
+
+        if (saved.has(documentId)) {
+            void store(documentId, () => target.append(documentId, update), true);
+
+            return;
+        }
+
+        saved.add(documentId);
+        void store(
+            documentId,
+            () =>
+                target.create(documentId, update).then(
+                    () => {
+                        confirmed.add(documentId);
+                    },
+                    (error: unknown) => {
+                        saved.delete(documentId);
+                        throw error;
+                    }
+                ),
+            true
+        );
+    };
+
     const append = (documentId: string, update: Uint8Array) => {
         const target = database;
 
-        if (!target || !saving || !saved.has(documentId)) {
+        if (!target || notSaving) {
+            return;
+        }
+
+        if (unsaved.has(documentId)) {
+            saveWhole(documentId, collaboration.state(documentId));
+
+            return;
+        }
+
+        if (!saved.has(documentId)) {
             return;
         }
 
         const count = (appended.get(documentId) ?? 0) + 1;
 
-        void store(() => target.append(documentId, update));
+        void store(documentId, () => target.append(documentId, update));
         appended.set(documentId, count % COMPACT_AFTER);
 
         if (count === COMPACT_AFTER) {
@@ -193,8 +299,11 @@ export async function startDocumentSync(context: Context, instance: Instance): P
     const removeShared = (documentId: string) => {
         collaboration.close(documentId);
         saved.delete(documentId);
+        unsaved.delete(documentId);
+        savedWhole.delete(documentId);
         confirmed.delete(documentId);
         removeDocument(documentId);
+        report();
     };
 
     /** Starts sharing and saving a document this copy made. */
@@ -202,22 +311,8 @@ export async function startDocumentSync(context: Context, instance: Instance): P
         collaboration.open(documentId);
 
         const update = collaboration.state(documentId);
-        const target = database;
 
-        if (target && saving) {
-            saved.add(documentId);
-            void store(() =>
-                target.create(documentId, update).then(
-                    () => {
-                        confirmed.add(documentId);
-                    },
-                    (error: unknown) => {
-                        saved.delete(documentId);
-                        throw error;
-                    }
-                )
-            );
-        }
+        saveWhole(documentId, update);
 
         if (sync) {
             sync.sendDocument(documentId, update);
@@ -249,12 +344,16 @@ export async function startDocumentSync(context: Context, instance: Instance): P
             collaboration.close(documentId);
             deletedHere.add(documentId);
             confirmed.delete(documentId);
+            unsaved.delete(documentId);
+            savedWhole.delete(documentId);
 
             const target = database;
 
-            if (saved.delete(documentId) && target && saving) {
-                void store(() => target.remove(documentId));
+            if (saved.delete(documentId) && target && !notSaving) {
+                void store(documentId, () => target.remove(documentId), true);
             }
+
+            report();
 
             sync?.sendDeleted(documentId);
         }
@@ -340,16 +439,20 @@ export async function startDocumentSync(context: Context, instance: Instance): P
         const moved = localSave();
 
         try {
-            if (saving) {
+            if (!notSaving) {
                 effects.backupState(PERSISTENCE_KEY);
             }
         } catch {
-            saving = false;
+            notSaving = 'Saved data could not be backed up, so changes made here are not saved.';
         }
 
-        saving = loadLocalData(context) && saving;
+        if (!loadLocalData(context)) {
+            notSaving ??= 'Saved data could not be loaded, so changes made here are not saved.';
+            // Loading said so already, with what became of the saved data.
+            announced = notSaving;
+        }
 
-        if (saving && moved) {
+        if (!notSaving && moved) {
             remember(moved);
         }
     };
@@ -416,20 +519,20 @@ export async function startDocumentSync(context: Context, instance: Instance): P
     ]);
 
     database = opened;
-    saving = state.config.autoSave && database !== undefined;
-
-    if (state.config.autoSave && !database) {
-        displayError('Documents cannot be saved in this browser. Changes made here are not kept.');
+    if (!state.config.autoSave) {
+        notSaving = AUTOSAVE_OFF;
+    } else if (!database) {
+        notSaving = 'Documents cannot be saved in this browser. Changes made here are not kept.';
+    } else {
+        notSaving = undefined;
     }
 
     const savedIds = database ? await database.documentIds().catch(() => undefined) : [];
 
     if (!savedIds) {
         // Reading the database failed: show a new document, and write nothing over the saved ones.
-        saving = false;
-        displayError(
-            'Saved documents could not be read. They are kept as saved; changes made here are not kept.'
-        );
+        notSaving =
+            'Saved documents could not be read. They are kept as saved; changes made here are not.';
     }
 
     if (database && savedIds && savedIds.length > 0) {
@@ -444,6 +547,7 @@ export async function startDocumentSync(context: Context, instance: Instance): P
         state.documents[document.id] = document;
     }
 
+    report();
     Object.keys(state.documents)
         .filter((documentId) => !isOpen(documentId))
         .forEach(create);
