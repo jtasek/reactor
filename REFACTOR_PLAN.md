@@ -682,8 +682,11 @@ Design:
 - Accounts: people sign in with email and password or a magic link; social
   sign-in and single sign-on per organization can be added through plugins. The
   browser holds only an HTTP-only, same-site session cookie, never a token.
-  Signed out, the editor works as before, with documents only in the browser.
-  Better Auth's handler is mounted at
+  Signed out, the editor works as before, with documents only in the browser,
+  but holds at most 5 documents: creating or cloning another is refused with a
+  prompt to sign in, and the commands that would do it are disabled. Documents
+  already over the limit, as from an older save, stay and can be edited; deleting
+  some makes room. Better Auth's handler is mounted at
   `/api/auth/*splat` before any body parser, and its tables live in their own
   `auth` schema, created by its CLI; the app's tables have their own migrations.
   Session data is not cached in cookies, so revoking a session takes effect at
@@ -757,7 +760,8 @@ Steps:
 3. Make gesture cancel undo only its own changes, and add the status indicator.
 4. Add PostgreSQL with migrations, Better Auth with email sign-in and sign-in
    pages, personal workspaces, and an API to list, create and delete a
-   workspace's documents. Signed out, the editor keeps working as before. Tests
+   workspace's documents. Signed out, the editor keeps working as before, limited
+   to 5 documents. Tests
    run against PostgreSQL in a container, and email goes to a test outbox.
 5. Add the `/sync` endpoint to the production and dev servers, with the
    permission checks, read-only connections and storage in PostgreSQL, and
