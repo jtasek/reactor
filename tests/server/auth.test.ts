@@ -1,7 +1,10 @@
 import { PGlite } from '@electric-sql/pglite';
+import express from 'express';
+import type { AddressInfo } from 'net';
 import { Kysely, sql } from 'kysely';
 import { PGliteDialect } from 'kysely-pglite-dialect';
-import { createAuth, migrateAuth } from '../../server/auth';
+import { authHandler, createAuth, migrateAuth } from '../../server/auth';
+import { openPool } from '../../server/database';
 
 const ORIGIN = 'http://localhost:4000';
 
@@ -46,6 +49,49 @@ async function startAccounts() {
         );
 
     return { db, auth, outbox, request };
+}
+
+/**
+ * Serves accounts over HTTP as the servers do; `trustProxy` is Express's
+ * `trust proxy` setting. Returns a function that asks for a sign-in link.
+ */
+async function serveAccounts(trustProxy: boolean) {
+    const { auth } = await startAccounts();
+    const app = express();
+
+    app.set('trust proxy', trustProxy);
+    app.all('/api/auth/*splat', authHandler(auth));
+
+    const server = app.listen(0, '127.0.0.1');
+
+    await new Promise((resolve) => server.once('listening', resolve));
+    onTestFinished(() => {
+        server.close();
+    });
+
+    const { port } = server.address() as AddressInfo;
+
+    return (headers: Record<string, string> = {}) =>
+        fetch(`http://127.0.0.1:${port}/api/auth/sign-in/magic-link`, {
+            method: 'POST',
+            headers: { origin: ORIGIN, 'content-type': 'application/json', ...headers },
+            body: JSON.stringify({ email: account.email })
+        }).then(({ status }) => status);
+}
+
+/** Asks until the rate limit refuses, or `limit` times; returns how many were allowed. */
+async function allowedBeforeLimit(ask: () => Promise<number>, limit = 20) {
+    for (let allowed = 0; allowed < limit; allowed++) {
+        const status = await ask();
+
+        if (status === 429) {
+            return allowed;
+        }
+
+        expect(status).toBe(200);
+    }
+
+    return limit;
 }
 
 /** The cookies a response sets, as a browser would send them back. */
@@ -149,5 +195,41 @@ describe('accounts', () => {
         expect(rows.map(({ table_name }) => table_name)).toEqual(
             expect.arrayContaining(['account', 'session', 'user', 'verification'])
         );
+    });
+
+    it('limits a client by its own address, whatever address it claims', async () => {
+        const ask = await serveAccounts(false);
+        let claimed = 0;
+        const claiming = () => {
+            claimed++;
+
+            return ask({
+                'x-forwarded-for': `203.0.113.${claimed}`,
+                'x-reactor-client-address': `198.51.100.${claimed}`
+            });
+        };
+
+        expect(await allowedBeforeLimit(claiming)).toBeLessThan(20);
+    });
+
+    it('limits each client behind a trusted proxy on its own', async () => {
+        const ask = await serveAccounts(true);
+        const first = () => ask({ 'x-forwarded-for': '203.0.113.1' });
+
+        expect(await allowedBeforeLimit(first)).toBeLessThan(20);
+        expect(await first()).toBe(429);
+        expect(await ask({ 'x-forwarded-for': '203.0.113.2' })).toBe(200);
+    });
+});
+
+describe('database', () => {
+    it('logs a pooled connection that fails while idle instead of ending the process', async () => {
+        const log = { error: vi.fn() };
+        const pool = openPool('postgres://reactor@127.0.0.1:1/reactor', log);
+        const failure = new Error('Connection terminated unexpectedly');
+
+        expect(() => pool.emit('error', failure)).not.toThrow();
+        expect(log.error).toHaveBeenCalledWith(failure, 'An idle database connection failed');
+        await pool.end();
     });
 });

@@ -1,5 +1,4 @@
-import { toNodeHandler } from 'better-auth/node';
-import { createAuth, migrateAuth } from './auth.js';
+import { authHandler, createAuth, migrateAuth } from './auth.js';
 import { openDatabase } from './database.js';
 import { logMailer, smtpMailer } from './mailer.js';
 
@@ -35,7 +34,7 @@ export async function startAccounts(env, { production, log }) {
               env.MAIL_FROM || `Reactor <no-reply@${new URL(baseURL).hostname}>`
           )
         : logMailer(log);
-    const db = openDatabase(env.DATABASE_URL);
+    const db = openDatabase(env.DATABASE_URL, log);
     const auth = createAuth({ db, baseURL, secret, mailer });
 
     try {
@@ -45,5 +44,5 @@ export async function startAccounts(env, { production, log }) {
         throw error;
     }
 
-    return { handler: toNodeHandler(auth), close: () => db.destroy() };
+    return { handler: authHandler(auth), close: () => db.destroy() };
 }

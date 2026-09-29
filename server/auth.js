@@ -1,6 +1,10 @@
 import { betterAuth } from 'better-auth';
 import { getMigrations } from 'better-auth/db/migration';
+import { toNodeHandler } from 'better-auth/node';
 import { magicLink } from 'better-auth/plugins/magic-link';
+
+/** The header that carries the client's address, set only by `authHandler`. */
+const CLIENT_ADDRESS = 'x-reactor-client-address';
 
 /**
  * Accounts and sessions, stored in the `auth` schema of `db`. People sign up with
@@ -15,8 +19,13 @@ export function createAuth({ db, baseURL, secret, mailer }) {
         secret,
         database: { db, type: 'postgres', schemaName: 'auth' },
         session: { cookieCache: { enabled: false } },
-        // Checked in tests too, where Better Auth would otherwise skip it.
-        advanced: { disableOriginCheck: false },
+        // Both are on in tests too, where Better Auth would otherwise skip them.
+        rateLimit: { enabled: true },
+        advanced: {
+            disableOriginCheck: false,
+            // Requests are limited per client, known only from `authHandler`.
+            ipAddress: { ipAddressHeaders: [CLIENT_ADDRESS] }
+        },
         emailAndPassword: { enabled: true, requireEmailVerification: true },
         emailVerification: {
             sendOnSignUp: true,
@@ -46,4 +55,19 @@ export async function migrateAuth(auth) {
     const { runMigrations } = await getMigrations(auth.options);
 
     await runMigrations();
+}
+
+/**
+ * Handles requests to `/api/auth` in Express, telling Better Auth the client's
+ * address as Express resolved it, which follows `trust proxy`. A value the
+ * client sent itself is overwritten, so it cannot pick its own rate limit.
+ */
+export function authHandler(auth) {
+    const handle = toNodeHandler(auth);
+
+    return (req, res) => {
+        req.headers[CLIENT_ADDRESS] = req.ip ?? req.socket.remoteAddress ?? '';
+
+        return handle(req, res);
+    };
 }

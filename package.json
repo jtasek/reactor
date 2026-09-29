@@ -34,6 +34,7 @@
     "@pmmmwh/react-refresh-webpack-plugin": "^0.6.2",
     "@swc/core": "^1.15.41",
     "@teamsupercell/typings-for-css-modules-loader": "^2.5.2",
+    "@types/express": "^5.0.6",
     "@types/node": "^24.13.2",
     "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.23.1",
