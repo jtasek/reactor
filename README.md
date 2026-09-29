@@ -79,6 +79,13 @@ creates accounts. Signed out, the editor says once, and again at 3 documents,
 that documents are kept only in this browser. Until workspaces sync, signed-in
 documents are still kept only in the browser too.
 
+Signed in, the API at `/api` lists the user's workspaces, starting with a personal
+one created on first use, and lists, creates and deletes a workspace's documents.
+Reading needs the viewer role, creating editor, and deleting admin; a workspace or
+document the user may not read answers as missing. Requests that change anything
+must come from the editor's own address and send JSON. The app's tables sit next
+to Better Auth's schema and are created or updated on start.
+
 | Variable | Meaning |
 |---|---|
 | `DATABASE_URL` | PostgreSQL connection string; turns accounts on |

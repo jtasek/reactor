@@ -20,6 +20,7 @@ const accounts = await startAccounts(process.env, { production: false, log: cons
 // Before any body parser, which would consume the request Better Auth reads.
 if (accounts) {
     app.all('/api/auth/*splat', accounts.handler);
+    app.use('/api', accounts.api);
 }
 
 // Anything else under /api is unknown, including accounts when they are off.

@@ -1,6 +1,8 @@
+import { createApi } from './api.js';
 import { authHandler, createAuth, migrateAuth } from './auth.js';
 import { openDatabase } from './database.js';
 import { logMailer, smtpMailer } from './mailer.js';
+import { migrateApp } from './migrations.js';
 
 const required = (env, name) => {
     if (!env[name]) {
@@ -11,9 +13,9 @@ const required = (env, name) => {
 };
 
 /**
- * Starts accounts when `DATABASE_URL` is set: brings the account tables up to
- * date and returns the handler to mount at `/api/auth/*splat`, before any body
- * parser. Without it, the editor is used signed out only. Production sends email
+ * Starts accounts when `DATABASE_URL` is set: brings the account and app tables
+ * up to date, and returns the handler to mount at `/api/auth/*splat`, before any
+ * body parser, and the API to mount at `/api`. Without it, the editor is used signed out only. Production sends email
  * over SMTP; development without `SMTP_URL` writes it to the log.
  */
 export async function startAccounts(env, { production, log }) {
@@ -39,10 +41,15 @@ export async function startAccounts(env, { production, log }) {
 
     try {
         await migrateAuth(auth);
+        await migrateApp(db);
     } catch (error) {
         await db.destroy();
         throw error;
     }
 
-    return { handler: authHandler(auth), close: () => db.destroy() };
+    return {
+        handler: authHandler(auth),
+        api: createApi({ db, auth, origin: new URL(baseURL).origin }),
+        close: () => db.destroy()
+    };
 }
