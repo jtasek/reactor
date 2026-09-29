@@ -682,11 +682,11 @@ Design:
 - Accounts: people sign in with email and password or a magic link; social
   sign-in and single sign-on per organization can be added through plugins. The
   browser holds only an HTTP-only, same-site session cookie, never a token.
-  Signed out, the editor works as before, with documents only in the browser,
-  but holds at most 5 documents: creating or cloning another is refused with a
-  prompt to sign in, and the commands that would do it are disabled. Documents
-  already over the limit, as from an older save, stay and can be edited; deleting
-  some makes room. Better Auth's handler is mounted at
+  Signed out, the editor works as before, with any number of documents only in
+  the browser. It says so: a notice that work kept only in this browser can be
+  lost when site data is cleared, repeated once the browser holds 3 documents,
+  and sharing asks the user to sign in. Nothing signed-out is blocked. Better
+  Auth's handler is mounted at
   `/api/auth/*splat` before any body parser, and its tables live in their own
   `auth` schema, created by its CLI; the app's tables have their own migrations.
   Session data is not cached in cookies, so revoking a session takes effect at
@@ -712,6 +712,9 @@ Design:
   connections. Messages have a size limit, and connections a rate limit. Edits
   made offline merge when the connection returns. The server does not validate
   content; each copy's merge rules already leave out what fails validation.
+- Limits: server resources are limited per workspace (storage, and later
+  documents and editors), set in one place, so plans with higher limits can be
+  added later without changing permissions. Billing is not part of this phase.
 - Server storage: each document's Yjs updates are rows in PostgreSQL, compacted
   into one as they add up, as in IndexedDB. Workspace and document metadata live in
   the same database, so a document's data and permissions are backed up together.
@@ -729,8 +732,8 @@ Design:
   viewer. The server stores each blob once, by hash, in PostgreSQL behind a small
   storage interface, with a table linking documents to assets; it always requires
   the bytes, so knowing a hash grants nothing. PNG, JPEG, GIF and WebP are
-  accepted, checked by their content, with a size limit per image and a quota per
-  workspace; SVG is refused, since one opened directly could run script. Assets
+  accepted, checked by their content, with a size limit per image and a storage
+  quota per workspace; SVG is refused, since one opened directly could run script. Assets
   are served with immutable caching and `nosniff`, cached in IndexedDB for
   offline use, and shown through blob URLs, so `img-src` allows `blob:`. A shape
   pasted or cloned into another document uploads its asset for that document.
@@ -760,8 +763,8 @@ Steps:
 3. Make gesture cancel undo only its own changes, and add the status indicator.
 4. Add PostgreSQL with migrations, Better Auth with email sign-in and sign-in
    pages, personal workspaces, and an API to list, create and delete a
-   workspace's documents. Signed out, the editor keeps working as before, limited
-   to 5 documents. Tests
+   workspace's documents. Signed out, the editor keeps working as before, with the
+   notices to sign in. Tests
    run against PostgreSQL in a container, and email goes to a test outbox.
 5. Add the `/sync` endpoint to the production and dev servers, with the
    permission checks, read-only connections and storage in PostgreSQL, and
