@@ -682,17 +682,27 @@ Design:
 - Accounts: people sign in with email and password or a magic link; social
   sign-in and single sign-on per organization can be added through plugins. The
   browser holds only an HTTP-only, same-site session cookie, never a token. Using
-  the editor requires signing in.
+  the editor requires signing in. Better Auth's handler is mounted at
+  `/api/auth/*splat` before any body parser, and its tables live in their own
+  `auth` schema, created by its CLI; the app's tables have their own migrations.
+  Session data is not cached in cookies, so revoking a session takes effect at
+  once. Invitations and magic links are sent by email over SMTP.
 - Workspaces: every document belongs to one workspace. Each user has a personal
   workspace, and each team and organization has one. A user sees their own
   workspace and those of the teams and organizations they belong to.
-- Permissions: roles are viewer, editor and admin, in that order. A user's role on
-  a document is the highest of their role in its workspace and any grant on the
-  document itself, to them or to their team. Reading needs viewer, writing needs
-  editor, and sharing or deleting needs admin. The server decides: the API checks
-  each request, and the sync endpoint checks when a document is opened.
+- Permissions: Better Auth decides who belongs to which organization and team, and
+  its organization roles (owner, admin, member) govern managing members, teams and
+  invitations. Access to documents is the app's own: roles are viewer, editor and
+  admin, in that order, kept in the app's tables, since Better Auth has neither
+  roles within teams nor permissions on single resources. Each workspace has a
+  default role for its members, and a member can have their own instead. A user's
+  role on a document is the highest of their role in its workspace and any grant
+  on the document itself, to them or to their team. Reading needs viewer, writing
+  needs editor, and sharing or deleting needs admin. The server decides: the API
+  checks each request, and the sync endpoint checks when a document is opened.
 - Network: the server's `/sync` WebSocket endpoint authenticates the session
-  cookie on upgrade and checks the `Origin` header. A connection without viewer
+  cookie on upgrade, through Better Auth's session lookup, and checks the `Origin`
+  header. A connection without viewer
   is refused, one without editor is read-only, and the server drops changes
   arriving on a read-only connection. Revoking access closes the affected
   connections. Messages have a size limit, and connections a rate limit. Edits
@@ -727,9 +737,10 @@ Steps:
    (backed up first), and sync open copies on one device, including catch-up.
    This replaces autosave's whole-state save and tab sync.
 3. Make gesture cancel undo only its own changes, and add the status indicator.
-4. Add PostgreSQL with migrations, Better Auth and sign-in pages, personal
-   workspaces, and an API to list, create and delete a workspace's documents.
-   Tests run against PostgreSQL in a container.
+4. Add PostgreSQL with migrations, Better Auth with email sign-in and sign-in
+   pages, personal workspaces, and an API to list, create and delete a
+   workspace's documents. Tests run against PostgreSQL in a container, and email
+   goes to a test outbox.
 5. Add the `/sync` endpoint to the production and dev servers, with the
    permission checks, read-only connections and storage in PostgreSQL, and
    `connect-src` allowing it. Connect open documents to it, keep the IndexedDB
