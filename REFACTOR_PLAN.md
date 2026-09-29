@@ -632,6 +632,13 @@ again, instead of a notice on each failure. After a write fails, the document is
 saved whole on its next change, and the status returns to saved. Syncing and
 offline come with step 4.
 
+Step 4, in progress: accounts run on the server when `DATABASE_URL` is set, with
+Better Auth at `/api/auth`, its tables in the `auth` schema, email confirmation
+before password sign-in, sign-in links, and email over SMTP. `compose.yaml` runs
+the editor with PostgreSQL. Server tests use PGlite, PostgreSQL built to run in
+the test process, instead of a container. Next: sign-in pages and the signed-out
+notices, then personal workspaces and the documents API.
+
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user
 keeps their own view. Accounts, sessions, organizations and teams use Better Auth

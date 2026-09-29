@@ -7,6 +7,8 @@ import helmet from 'helmet';
 import compression from 'compression';
 import pinoHttp from 'pino-http';
 
+import { startAccounts } from './server/accounts.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -81,6 +83,20 @@ app.get('/healthz', (_req, res) => {
     res.json({ status: 'ok', uptime: process.uptime() });
 });
 
+let accounts;
+
+try {
+    accounts = await startAccounts(process.env, { production: true, log: logger.logger });
+} catch (err) {
+    logger.logger.error(err, 'Accounts could not be started');
+    process.exit(1);
+}
+
+// Before any body parser, which would consume the request Better Auth reads.
+if (accounts) {
+    app.all('/api/auth/*splat', accounts.handler);
+}
+
 const setStaticCache = (res, filePath) => {
     if (filePath.endsWith('.html')) {
         res.setHeader('Cache-Control', 'no-cache');
@@ -140,7 +156,9 @@ server.on('error', (err) => {
 
 const shutdown = (signal) => {
     logger.logger.info(`Received ${signal}, shutting down gracefully`);
-    server.close(() => process.exit(0));
+    server.close(() => {
+        Promise.resolve(accounts?.close()).finally(() => process.exit(0));
+    });
     // Force-exit if connections do not drain in time.
     setTimeout(() => process.exit(1), 10000).unref();
 };

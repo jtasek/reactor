@@ -109,7 +109,12 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   compression, immutable caching, SPA fallback, `/healthz`, graceful shutdown). Never ship
   the dev `server.js`.
 - **Container**: `Dockerfile` (multi-stage, non-root `node` user) builds and runs
-  `server.prod.js`.
+  `server.prod.js`. `compose.yaml` runs it with PostgreSQL.
+- **Accounts**: server code lives in `server/` (plain ES modules). `startAccounts`
+  (`server/accounts.js`) turns accounts on when `DATABASE_URL` is set and both servers mount
+  Better Auth at `/api/auth/*splat`; without it the editor runs signed out. Server tests
+  (`tests/server/`) run Better Auth against PGlite, with email in an outbox; see README
+  "Accounts" for the variables.
 
 ### Verification baseline (do not treat as regressions)
 

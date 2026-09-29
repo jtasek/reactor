@@ -45,6 +45,7 @@ COPY --chown=node:node --from=deps /app/node_modules ./node_modules
 COPY --chown=node:node --from=builder /app/dist ./dist
 COPY --chown=node:node static ./static
 COPY --chown=node:node server.prod.js package.json ./
+COPY --chown=node:node server ./server
 
 # Drop privileges; the app never writes to disk so the FS can be mounted read-only.
 USER node
