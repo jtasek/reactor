@@ -681,8 +681,9 @@ Design:
   each copy has already seen.
 - Accounts: people sign in with email and password or a magic link; social
   sign-in and single sign-on per organization can be added through plugins. The
-  browser holds only an HTTP-only, same-site session cookie, never a token. Using
-  the editor requires signing in. Better Auth's handler is mounted at
+  browser holds only an HTTP-only, same-site session cookie, never a token.
+  Signed out, the editor works as before, with documents only in the browser.
+  Better Auth's handler is mounted at
   `/api/auth/*splat` before any body parser, and its tables live in their own
   `auth` schema, created by its CLI; the app's tables have their own migrations.
   Session data is not cached in cookies, so revoking a session takes effect at
@@ -713,9 +714,25 @@ Design:
   the same database, so a document's data and permissions are backed up together.
   The server runs as one process at first; more processes later route each
   document to one of them.
-- Client cache: IndexedDB stays the local copy, one database per user, cleared on
-  sign-out, so a shared computer never shows one person's documents to another.
-  The document list comes from the server.
+- Client cache: signed in, IndexedDB is a copy of the server's documents, one
+  database per user, cleared on sign-out, so a shared computer never shows one
+  person's documents to another, and the document list comes from the server.
+  Signed out, documents live only in the browser's own database, as before.
+- Images: an uploaded image is an asset named by the SHA-256 of its bytes, and an
+  image shape's `source` refers to it as `asset:<hash>`; image data never goes
+  into a Yjs document. Signed out, assets are kept in IndexedDB. Signed in, the
+  client uploads an asset for each document using it before the shape is shared,
+  and permissions follow the document: uploading needs editor and reading needs
+  viewer. The server stores each blob once, by hash, in PostgreSQL behind a small
+  storage interface, with a table linking documents to assets; it always requires
+  the bytes, so knowing a hash grants nothing. PNG, JPEG, GIF and WebP are
+  accepted, checked by their content, with a size limit per image and a quota per
+  workspace; SVG is refused, since one opened directly could run script. Assets
+  are served with immutable caching and `nosniff`, cached in IndexedDB for
+  offline use, and shown through blob URLs, so `img-src` allows `blob:`. A shape
+  pasted or cloned into another document uploads its asset for that document.
+  Deleting a document removes its links, and a periodic job deletes blobs no
+  document links to.
 - Presence: each user has their account name and a color. Pointers and selections
   are shown to others and never saved.
 - Cancelling a gesture undoes only that gesture's own changes, so it never
@@ -723,8 +740,9 @@ Design:
 - A status indicator shows saved, syncing, offline or not saving, instead of
   one-off notices.
 - Migration: the local storage payload is backed up and converted into Yjs
-  documents once; later loads read IndexedDB. On first sign-in, documents kept
-  only in the browser are backed up, then moved into the personal workspace.
+  documents once; later loads read IndexedDB. On sign-in, documents kept only in
+  the browser are backed up, then moved into the personal workspace with their
+  images.
 
 Steps:
 
@@ -739,18 +757,20 @@ Steps:
 3. Make gesture cancel undo only its own changes, and add the status indicator.
 4. Add PostgreSQL with migrations, Better Auth with email sign-in and sign-in
    pages, personal workspaces, and an API to list, create and delete a
-   workspace's documents. Tests run against PostgreSQL in a container, and email
-   goes to a test outbox.
+   workspace's documents. Signed out, the editor keeps working as before. Tests
+   run against PostgreSQL in a container, and email goes to a test outbox.
 5. Add the `/sync` endpoint to the production and dev servers, with the
    permission checks, read-only connections and storage in PostgreSQL, and
    `connect-src` allowing it. Connect open documents to it, keep the IndexedDB
    cache per user, and add syncing and offline to the status indicator.
-6. Move documents kept only in the browser into the personal workspace on first
-   sign-in, backed up first.
-7. Add organizations and teams: their workspaces, invitations, members and roles,
+6. Add image upload: assets in IndexedDB, the asset endpoints and their storage
+   in PostgreSQL, uploads for pasted and cloned shapes, and the cleanup job.
+7. Move documents kept only in the browser, and their images, into the personal
+   workspace on sign-in, backed up first.
+8. Add organizations and teams: their workspaces, invitations, members and roles,
    grants on documents, and closing connections when access is revoked.
-8. Add presence: names, colors, remote pointers and selections.
-9. Later, if wanted: undo per user. Undoing records into the redo history and
+9. Add presence: names, colors, remote pointers and selections.
+10. Later, if wanted: undo per user. Undoing records into the redo history and
    redoing into the undo history, so undo then redo returns the same document even
    while others edit.
 
@@ -763,7 +783,8 @@ the migration keeps the original payload; the bundle stays within Phase 8's
 budget. A signed-out request or connection gets nothing; a user never receives a
 document they may not read, and the server keeps no change from a user who may
 not write it, including after their access is revoked mid-session; after
-sign-out, the browser keeps none of that user's documents.
+sign-out, the browser keeps none of that user's documents; an image is readable
+only through a document the user may read.
 
 ## Scope Boundaries
 
