@@ -1,4 +1,11 @@
-import { accounts, readAccount, type AccountUser, type Accounts } from 'src/app/services/accounts';
+import {
+    accountLabel,
+    accounts,
+    readAccount,
+    shareAccount,
+    type AccountUser,
+    type Accounts
+} from 'src/app/services/accounts';
 import { createTestStore } from './support/store';
 
 /** A server with accounts, where `user` is signed in and `correct horse` is the password. */
@@ -186,5 +193,46 @@ describe('account requests', () => {
 
         respond(404, { code: 'NOT_FOUND' });
         expect(await accounts.session()).toBeUndefined();
+    });
+});
+
+describe('accounts in other copies', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    /** A browser window whose local storage other copies can change. */
+    function browser() {
+        const storage = new Map<string, string>();
+        const page = Object.assign(new EventTarget(), {
+            localStorage: { setItem: (key: string, value: string) => storage.set(key, value) }
+        });
+        const otherCopySets = (key: string, value: string) =>
+            page.dispatchEvent(Object.assign(new Event('storage'), { key, newValue: value }));
+
+        vi.stubGlobal('window', page);
+
+        return { storage, otherCopySets };
+    }
+
+    it('names an account by its email when it has no name', () => {
+        expect(accountLabel({ name: 'Ada', email: 'ada@example.com' })).toBe('Ada');
+        expect(accountLabel({ name: '', email: 'ada@example.com' })).toBe('ada@example.com');
+    });
+
+    it('records who is signed in, and reloads when another copy signs someone else in or out', () => {
+        const { storage, otherCopySets } = browser();
+        const changed = vi.fn();
+
+        shareAccount({ kind: 'signedIn', name: 'Ada', email: 'ada@example.com' }, changed);
+
+        expect(storage.get('reactor:signedIn')).toBe('ada@example.com');
+
+        otherCopySets('reactor:signedIn', 'ada@example.com');
+        otherCopySets('reactor:notices', '["first"]');
+        expect(changed).not.toHaveBeenCalled();
+
+        otherCopySets('reactor:signedIn', '');
+        expect(changed).toHaveBeenCalledOnce();
     });
 });

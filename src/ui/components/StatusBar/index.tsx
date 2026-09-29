@@ -9,6 +9,7 @@ import {
     usePointer,
     useSaveStatus
 } from 'src/app/hooks';
+import { accountLabel } from 'src/app/services/accounts';
 
 import { ZoomSlider } from './ZoomSlider';
 import { StatusBarSlot } from './StatusBarSlot';
@@ -58,7 +59,7 @@ export const AccountInfo: FC = () => {
 
     return (
         <a href="/account" title={account.kind === 'signedIn' ? account.email : undefined}>
-            {account.kind === 'signedIn' ? account.name : 'Sign in'}
+            {account.kind === 'signedIn' ? accountLabel(account) : 'Sign in'}
         </a>
     );
 };

@@ -179,7 +179,8 @@ export const Account: FC = () => {
             <main className={styles.account}>
                 <h1>Account</h1>
                 <p>
-                    Signed in as {account.name} ({account.email}).
+                    Signed in as{' '}
+                    {account.name ? `${account.name} (${account.email})` : account.email}.
                 </p>
                 <button
                     type="button"

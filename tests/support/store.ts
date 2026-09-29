@@ -57,6 +57,8 @@ export function createTestStore(
         initializeRoutes: vi.fn<typeof config.effects.initializeRoutes>(),
         navigate: vi.fn<typeof config.effects.navigate>(),
         reload: vi.fn<typeof config.effects.reload>(),
+        reloadPage: vi.fn<typeof config.effects.reloadPage>(),
+        shareAccount: vi.fn<typeof config.effects.shareAccount>(),
         collaboration: options.collaboration ?? new Collaboration(),
         openDocumentDatabase: () => DocumentDatabase.open(indexedDB),
         openChannel: options.openChannel ?? quietChannel,

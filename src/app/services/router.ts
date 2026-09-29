@@ -71,6 +71,11 @@ export const navigate = (url: string): void => {
     dispatch(path);
 };
 
+/** Loads the editor again where it is, as when another copy signed in or out. */
+export const reloadPage = (): void => {
+    window.location.reload();
+};
+
 /** Loads the editor again at `url`, starting it afresh, as after signing in or out. */
 export const reload = (url: string): void => {
     window.location.assign(url);

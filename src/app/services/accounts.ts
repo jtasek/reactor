@@ -110,3 +110,30 @@ export async function readAccount(from: Pick<Accounts, 'session'>): Promise<Acco
         return { kind: 'unavailable' };
     }
 }
+
+/** How to name someone signed in: accounts made by an emailed link have no name. */
+export const accountLabel = ({ name, email }: AccountUser) => name || email;
+
+/** Where each open copy records who is signed in, for the others. */
+const SIGNED_IN_KEY = 'reactor:signedIn';
+
+/**
+ * Records who is signed in here for the other open copies of the editor, and runs
+ * `changed` when another copy records someone else, as after signing in or out
+ * there, so no copy keeps showing, or keeping, the previous account's documents.
+ */
+export function shareAccount(account: Account, changed: () => void) {
+    const signedIn = account.kind === 'signedIn' ? account.email : '';
+
+    window.addEventListener('storage', ({ key, newValue }) => {
+        if (key === SIGNED_IN_KEY && newValue !== null && newValue !== signedIn) {
+            changed();
+        }
+    });
+
+    try {
+        window.localStorage.setItem(SIGNED_IN_KEY, signedIn);
+    } catch {
+        // Without storage, other copies are not told; each still reads its own account.
+    }
+}

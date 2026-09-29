@@ -125,6 +125,8 @@ export const onInitializeOvermind = async (
         state.loading = false;
     }
 
+    effects.shareAccount(state.account, effects.reloadPage);
+
     // Once startup has ended; an action run while it runs counts as part of it.
     setTimeout(instance.actions.noticeLocalDocuments);
     addMutationListener(({ path, delimiter }) => {

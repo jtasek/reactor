@@ -32,3 +32,19 @@ test('the account page says when the server has no accounts', async ({ page }) =
     await page.getByRole('link', { name: 'Back to the editor' }).click();
     await expect(page.locator('svg#surface')).toBeVisible();
 });
+
+test('an open tab loads again when another tab signs someone in or out', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('svg#surface')).toBeVisible();
+
+    const other = await page.context().newPage();
+
+    await other.goto('/');
+    await expect(other.locator('svg#surface')).toBeVisible();
+
+    // As the other tab does once it has loaded again after signing in.
+    const reloaded = page.waitForEvent('load');
+
+    await other.evaluate(() => localStorage.setItem('reactor:signedIn', 'ada@example.com'));
+    await reloaded;
+});

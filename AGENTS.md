@@ -271,7 +271,8 @@ Examples worth modelling new tools on:
   the pages first show (documents, the account) before `loading` ends.
 - **Accounts**: `effects.accounts` talks to `/api/auth`; `state.account` is `loading`,
   `unavailable` (server without accounts), `signedOut` or `signedIn`. Signing in or out
-  reloads the editor (`effects.reload`), so everything shown belongs to the new account.
+  reloads the editor (`effects.reload`), so everything shown belongs to the new account;
+  `shareAccount` makes the other open tabs reload too.
 - **Action typing**: use the aliases in `src/app/types.ts` — `Action`, `ActionWithParam<T>`,
   `ActionGuard`. Destructure what you need from context (`{ state }`, `{ state, effects }`).
 - **Commands**: run a command with `runCommand(command)` (`actions/commands.ts`), which checks
