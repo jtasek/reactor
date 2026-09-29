@@ -1,5 +1,5 @@
 import type { ActionWithParam, Document } from '../types';
-import type { EntityChanges, RemoteChanges } from '../services/collaboration';
+import { isRecord, same, type EntityChanges, type RemoteChanges } from '../services/collaboration';
 import { inDrawingOrder } from '../drawOrder';
 import {
     COLLECTIONS,
@@ -23,6 +23,61 @@ function assign(target: object, next: object, changed: string[]) {
         }
 
         Reflect.set(target, key, own(value));
+    }
+}
+
+/**
+ * Gives `base` the values that `next` changes from `previous`, down to the fields
+ * of objects as the shared document merges them.
+ */
+function rebase(base: object, previous: object, next: object, keys: Iterable<string>) {
+    for (const key of keys) {
+        const value: unknown = Reflect.get(next, key);
+        const before: unknown = Reflect.get(previous, key);
+        const held: unknown = Reflect.get(base, key);
+
+        if (isRecord(value) && isRecord(before) && isRecord(held)) {
+            rebase(held, before, value, new Set([...Object.keys(before), ...Object.keys(value)]));
+            continue;
+        }
+
+        if (same(value, before)) {
+            continue;
+        }
+
+        if (value === undefined) {
+            Reflect.deleteProperty(base, key);
+            continue;
+        }
+
+        Reflect.set(base, key, own(value));
+    }
+}
+
+/**
+ * Gives what a gesture restores if canceled other copies' changes, so canceling
+ * undoes only the gesture's own changes, even where they override another copy's.
+ */
+function rebaseGesture(
+    snapshots: Record<string, object>,
+    { entities, unwritten = {} }: RemoteChanges
+) {
+    for (const id of Object.keys(snapshots)) {
+        const change = Object.hasOwn(unwritten, id) ? unwritten[id] : entities.shapes[id];
+
+        if (change === null) {
+            delete snapshots[id];
+            continue;
+        }
+
+        if (change?.previous) {
+            rebase(
+                snapshots[id],
+                hydrateEntity('shapes', change.previous),
+                hydrateEntity('shapes', change.view),
+                change.changed
+            );
+        }
     }
 }
 
@@ -66,14 +121,18 @@ function applyChanges<C extends Collection>(
  * Applies changes from the shared document, setting only the fields that differ.
  * Runtime state such as the selection and the camera stays this copy's own.
  */
-export const applyRemoteChanges: ActionWithParam<RemoteChanges> = (
-    { state },
-    { documentId, fields, entities }
-) => {
+export const applyRemoteChanges: ActionWithParam<RemoteChanges> = ({ state }, changes) => {
+    const { documentId, fields, entities } = changes;
     const document = state.documents[documentId];
 
     if (!document) {
         return;
+    }
+
+    const { gesture } = state.events.pointer;
+
+    if ('shapes' in gesture && documentId === state.currentDocumentId) {
+        rebaseGesture(gesture.shapes, changes);
     }
 
     if (fields) {

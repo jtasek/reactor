@@ -18,6 +18,8 @@ import {
 export interface ViewChange<T> {
     view: T;
     changed: string[];
+    /** What the store held before, when it held the entity. */
+    previous?: T;
 }
 
 /** Each collection's entities that change, by id; `null` removes an entity. */
@@ -30,6 +32,11 @@ export interface RemoteChanges {
     documentId: string;
     fields?: ViewChange<DocumentFields>;
     entities: EntityChanges;
+    /**
+     * Other copies' changes to shapes this copy changed and has not shared yet, as
+     * they were before merging with this copy's changes, which may override them.
+     */
+    unwritten?: EntityChanges['shapes'];
 }
 
 interface Mutation {
@@ -77,6 +84,8 @@ interface Binding {
     fieldsView?: DocumentFields;
     /** Entities left out of the store because they failed validation. */
     invalid: Record<Collection, Set<string>>;
+    /** Changes to shapes this copy has not shared, from the update being received. */
+    unwritten?: EntityChanges['shapes'];
 }
 
 const LOCAL = Symbol('local change');
@@ -91,7 +100,7 @@ const REFERABLE = new Set<Collection>(['shapes', 'components']);
 const isCollection = (value: string): value is Collection =>
     COLLECTIONS.some((collection) => collection === value);
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
+export const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const isEmpty = (value: object | undefined) => !value || Object.keys(value).length === 0;
@@ -111,7 +120,7 @@ const touch = (changes: Changes, collection: Collection, id: string) => {
     changes.entities.set(collection, ids);
 };
 
-const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+export const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
 /** The fields that differ between two durable values. */
 const changedFields = (previous: object, next: object) =>
@@ -213,7 +222,8 @@ export class Collaboration {
 
     /**
      * Applies an update another copy sent. This copy's pending changes are written
-     * first, even when paused, so the update merges with them.
+     * first, even when paused, so the update merges with them; while paused, what
+     * the update changes of them before that merge is passed on too.
      */
     receive(documentId: string, update: Uint8Array): void {
         const binding = this.bindings.get(documentId);
@@ -222,8 +232,12 @@ export class Collaboration {
             return;
         }
 
+        const unwritten = this.paused ? this.unwrittenChanges(binding, update) : undefined;
+
         this.write(documentId, binding);
+        binding.unwritten = unwritten;
         this.ready().yjs.applyUpdate(binding.doc, update);
+        binding.unwritten = undefined;
     }
 
     /** Ids of the documents shared here. */
@@ -595,9 +609,14 @@ export class Collaboration {
     }
 
     private applyRemote(documentId: string, binding: Binding) {
-        const { remote } = binding;
+        const { remote, unwritten } = binding;
 
-        if (!remote.fields && remote.entities.size === 0 && remote.referenced.size === 0) {
+        if (
+            !remote.fields &&
+            remote.entities.size === 0 &&
+            remote.referenced.size === 0 &&
+            isEmpty(unwritten)
+        ) {
             return;
         }
 
@@ -609,18 +628,23 @@ export class Collaboration {
         }
 
         binding.remote = noChanges();
+        binding.unwritten = undefined;
 
         const fields = remote.fields ? this.fieldsChange(documentId, binding, document) : undefined;
         const entities = this.entityChanges(binding, document, remote);
 
-        if (!fields && Object.values(entities).every((changes) => isEmpty(changes))) {
+        if (
+            !fields &&
+            isEmpty(unwritten) &&
+            Object.values(entities).every((changes) => isEmpty(changes))
+        ) {
             return;
         }
 
         this.applyingRemote = true;
 
         try {
-            options.applyRemoteChanges({ documentId, fields, entities });
+            options.applyRemoteChanges({ documentId, fields, entities, unwritten });
         } finally {
             this.applyingRemote = false;
         }
@@ -685,6 +709,58 @@ export class Collaboration {
         return perCollection((collection) =>
             this.changesOf(binding, document, collection, reads[collection], exists)
         ) as EntityChanges;
+    }
+
+    /**
+     * What `update` changes of the shapes this copy changed and has not written, as
+     * merged into a copy of the shared document without this copy's changes.
+     */
+    private unwrittenChanges(binding: Binding, update: Uint8Array) {
+        const ids = binding.local.entities.get('shapes');
+
+        if (!ids) {
+            return undefined;
+        }
+
+        const { yjs } = this.ready();
+        const doc = new yjs.Doc();
+
+        yjs.applyUpdate(doc, yjs.encodeStateAsUpdate(binding.doc));
+        yjs.applyUpdate(doc, update);
+
+        const table = doc.getMap('shapes');
+        const exists: Exists = (collection, id) => doc.getMap(collection).has(id);
+        const changes: EntityChanges['shapes'] = {};
+
+        for (const id of ids) {
+            const previous = binding.views.shapes.get(id);
+            const entity = table.get(id);
+            const saved =
+                entity instanceof yjs.Map
+                    ? orUndefined(() => readEntity('shapes', entity.toJSON()))
+                    : undefined;
+            const view =
+                saved?.id === id ? withoutDanglingReferences('shapes', saved, exists) : null;
+
+            if (!previous) {
+                continue;
+            }
+
+            if (!view) {
+                changes[id] = null;
+                continue;
+            }
+
+            const changed = changedFields(previous, view);
+
+            if (changed.length > 0) {
+                changes[id] = { view, changed, previous };
+            }
+        }
+
+        doc.destroy();
+
+        return changes;
     }
 
     /** Entities whose members, parent or link ends include one of `ids`. */
@@ -763,7 +839,7 @@ export class Collaboration {
             views.set(id, view);
 
             if (changed.length > 0) {
-                changes[id] = { view, changed };
+                changes[id] = { view, changed, previous };
             }
         }
 

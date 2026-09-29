@@ -3,7 +3,10 @@ import { Point, ResizeHandlerType, Shape, Size } from '../app/types';
 /** Selection flags captured when a gesture starts, restored if it is canceled. */
 export type SelectionSnapshot = Record<string, boolean>;
 
-/** Copies of the shapes a gesture edits live, restored if it is canceled. */
+/**
+ * Copies of the shapes a gesture edits live, restored if it is canceled. Other
+ * copies' changes update them, so canceling undoes only the gesture's own changes.
+ */
 export type ShapesSnapshot = Record<string, Shape>;
 
 /**

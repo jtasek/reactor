@@ -619,6 +619,11 @@ and a copy shown again catches up from the others and from the database. The
 camera and the document shown are saved per device here rather than in step 3,
 since the whole-state save that kept them is gone.
 
+Done: step 3, gesture cancel. Changes from other copies that arrive during a
+gesture update what canceling it restores, down to single coordinates, so
+canceling undoes only the gesture's own changes, even where they overrode
+another copy's change.
+
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user
 keeps their own view.

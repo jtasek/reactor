@@ -189,7 +189,7 @@ export const endGesture = (
 
 /**
  * Abandons the gesture without committing it and restores the shapes and
- * selection it changed. With a `pointerId`, only that pointer's gesture is
+ * selection it changed, keeping what other copies changed meanwhile. With a `pointerId`, only that pointer's gesture is
  * canceled; a pinch is only canceled without one (blur, context menu, unmount).
  * Returns the owner of the canceled gesture so the caller can release its
  * capture.
