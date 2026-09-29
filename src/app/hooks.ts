@@ -77,6 +77,10 @@ export const useLoading = () => {
     return useAppState((state) => state.loading);
 };
 
+export const useSaveStatus = () => {
+    return useAppState((state) => state.saveStatus);
+};
+
 export const useCamera = () => {
     return useAppState((state) => state.currentDocument.camera);
 };

@@ -39,6 +39,7 @@ test('the command line runs a command on Enter and reports what it cannot run', 
 
     const input = page.getByRole('searchbox', { name: 'Command' });
     const camera = page.locator('svg#surface #camera');
+    const message = page.locator('form', { has: input }).getByRole('status');
 
     await input.fill('zoom in');
     await expect(camera).toHaveAttribute('transform', 'translate(0,0) scale(1)');
@@ -51,11 +52,11 @@ test('the command line runs a command on Enter and reports what it cannot run', 
     await input.fill('fly');
     await input.press('Enter');
 
-    await expect(page.getByRole('status')).toHaveText('Unknown command: fly');
+    await expect(message).toHaveText('Unknown command: fly');
 
     await input.fill('delete');
     await input.press('Enter');
 
-    await expect(page.getByRole('status')).toHaveText('Delete is not available right now');
+    await expect(message).toHaveText('Delete is not available right now');
     await expect(input).toHaveValue('delete');
 });

@@ -218,9 +218,11 @@ describe('document sync', () => {
         const second = await start(indexedDB, { seed: { [PERSISTENCE_KEY]: localSave() } });
 
         expect(second.store.state.documents.saved).toBeUndefined();
-        expect(messages(second)).toEqual([
-            'Saved documents could not be read. They are kept as saved; changes made here are not kept.'
-        ]);
+        expect(messages(second)).toEqual([]);
+        expect(second.store.state.saveStatus).toEqual({
+            kind: 'notSaving',
+            reason: 'Saved documents could not be read. They are kept as saved; changes made here are not.'
+        });
 
         second.store.actions.addShape(rectangle);
         second.effects.collaboration.flush();
@@ -243,7 +245,7 @@ describe('document sync', () => {
             new DOMException('Quota exceeded', 'QuotaExceededError')
         );
         store.actions.addDocument({ id: 'drawing' });
-        await vi.waitFor(() => expect(messages({ store })).toHaveLength(1));
+        await vi.waitFor(() => expect(store.state.saveStatus.kind).toBe('notSaving'));
 
         document.visibilityState = 'visible';
         document.dispatchEvent(new Event('visibilitychange'));
@@ -388,8 +390,56 @@ describe('document sync', () => {
         const { store } = await start(unavailable, { seed: { [PERSISTENCE_KEY]: localSave() } });
 
         expect(Object.keys(store.state.documents)).toEqual(['saved']);
-        expect(messages({ store })).toEqual([
-            'Documents cannot be saved in this browser. Changes made here are not kept.'
-        ]);
+        expect(messages({ store })).toEqual([]);
+        expect(store.state.saveStatus).toEqual({
+            kind: 'notSaving',
+            reason: 'Documents cannot be saved in this browser.'
+        });
+    });
+
+    it('shows whether changes are being saved, and that they are not with autosave off', async () => {
+        const { store, effects } = await start(new IDBFactory());
+
+        await vi.waitFor(() => expect(store.state.saveStatus).toEqual({ kind: 'saved' }));
+
+        store.actions.addShape(rectangle);
+        effects.collaboration.flush();
+
+        expect(store.state.saveStatus).toEqual({ kind: 'saving' });
+        await vi.waitFor(() => expect(store.state.saveStatus).toEqual({ kind: 'saved' }));
+
+        const off = await start(new IDBFactory(), { autoSave: false });
+
+        expect(off.store.state.saveStatus).toEqual({
+            kind: 'notSaving',
+            reason: 'Autosave is off.'
+        });
+    });
+
+    it('shows that changes are not saved while writing fails, and saved once they all are', async () => {
+        const indexedDB = new IDBFactory();
+        const { store, effects } = await start(indexedDB);
+
+        vi.spyOn(DocumentDatabase.prototype, 'append').mockRejectedValueOnce(
+            new DOMException('Quota exceeded', 'QuotaExceededError')
+        );
+        store.actions.addShape(rectangle);
+        effects.collaboration.flush();
+
+        await vi.waitFor(() =>
+            expect(store.state.saveStatus).toEqual({
+                kind: 'notSaving',
+                reason: 'Changes could not be saved. Storage may be full or unavailable.'
+            })
+        );
+        expect(messages({ store })).toEqual([]);
+
+        store.actions.addShape(rectangle);
+        effects.collaboration.flush();
+
+        await vi.waitFor(() => expect(store.state.saveStatus).toEqual({ kind: 'saved' }));
+        expect(
+            Object.keys((await start(indexedDB)).store.state.currentDocument.shapes)
+        ).toHaveLength(2);
     });
 });

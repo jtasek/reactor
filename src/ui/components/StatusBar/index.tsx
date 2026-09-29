@@ -1,6 +1,13 @@
 import React, { FC } from 'react';
 
-import { useCamera, useControls, useCurrentDocument, useKeyboard, usePointer } from 'src/app/hooks';
+import {
+    useCamera,
+    useControls,
+    useCurrentDocument,
+    useKeyboard,
+    usePointer,
+    useSaveStatus
+} from 'src/app/hooks';
 
 import { ZoomSlider } from './ZoomSlider';
 import { StatusBarSlot } from './StatusBarSlot';
@@ -28,6 +35,18 @@ export const KeyboardInfo: FC = () => {
     return <span>{result.join(' ')}</span>;
 };
 
+const SAVE_LABELS = { saved: 'Saved', saving: 'Saving…', notSaving: 'Not saving' };
+
+export const SaveStatusInfo: FC = () => {
+    const status = useSaveStatus();
+
+    return (
+        <span role="status" title={status.kind === 'notSaving' ? status.reason : undefined}>
+            {SAVE_LABELS[status.kind]}
+        </span>
+    );
+};
+
 export const StatusBarContainer: FC = () => {
     const { position: offset, scale } = useCamera();
     const { name, selectedShapesIds } = useCurrentDocument();
@@ -43,6 +62,9 @@ export const StatusBarContainer: FC = () => {
     return (
         <StatusBar>
             <StatusBarSlot name="message">{name}</StatusBarSlot>
+            <StatusBarSlot name="save">
+                <SaveStatusInfo />
+            </StatusBarSlot>
             <StatusBarSlot name="selection">{`selection: [${selectedShapeCount}]`}</StatusBarSlot>
             <StatusBarSlot name="keyboard">
                 <KeyboardInfo />
