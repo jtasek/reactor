@@ -92,7 +92,7 @@ export default [
         }
     },
     {
-        files: ['*.{js,mjs}', 'scripts/**/*.mjs'],
+        files: ['*.{js,mjs}', 'scripts/**/*.mjs', 'server/**/*.js'],
         languageOptions: { globals: globals.node }
     },
     prettierRecommended

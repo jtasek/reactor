@@ -10,6 +10,7 @@ const eslint = new ESLint();
 const results = await eslint.lintFiles([
     'src',
     'tests',
+    'server',
     '*.js',
     '*.mjs',
     '*.mts',

@@ -65,6 +65,28 @@ saved or not saved; when saving stops, a notice says why, and it goes away once
 saving works again. After a write fails, a document is saved whole on its next
 change.
 
+## Accounts
+
+Accounts are optional: without `DATABASE_URL`, the editor is used signed out and
+keeps documents only in the browser. With it, the server signs people in through
+Better Auth at `/api/auth`, keeping accounts and sessions in the `auth` schema of
+that PostgreSQL database and creating or updating its tables on start. People
+confirm their email address before signing in with a password, or sign in with a
+link sent by email.
+
+| Variable | Meaning |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string; turns accounts on |
+| `BETTER_AUTH_URL` | The address people open the editor at, such as `https://reactor.example.com` |
+| `BETTER_AUTH_SECRET` | At least 32 random characters, used to sign sessions |
+| `SMTP_URL` | SMTP server for email, such as `smtps://user:password@smtp.example.com`; required in production |
+| `MAIL_FROM` | Sender address; defaults to `no-reply` at the editor's host |
+
+Without `SMTP_URL`, the development server writes email to its log instead.
+`compose.yaml` runs the editor with a PostgreSQL database: set `POSTGRES_PASSWORD`,
+`BETTER_AUTH_SECRET` and `SMTP_URL`, then run `docker compose up --build`. Server
+tests run against PGlite, PostgreSQL built to run inside the test process.
+
 ## Camera Coordinates
 
 Camera math and zoom bounds live in `src/app/camera.ts`. Camera position and pan
