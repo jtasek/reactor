@@ -13,6 +13,9 @@ const MAX_MESSAGE = 4 * 1024 * 1024;
 /** How many sockets one user may have open at once, across tabs and devices. */
 const MAX_SOCKETS_PER_USER = 16;
 
+/** How often an open socket's session is checked again, in milliseconds. */
+const SESSION_CHECK = 60 * 1000;
+
 const refuseUpgrade = (socket, status, reason) => {
     socket.end(`HTTP/1.1 ${status} ${reason}\r\nConnection: close\r\n\r\n`);
 };
@@ -61,9 +64,11 @@ async function saveState(db, documentId, document) {
  * the session cookie and the editor's own `origin`; each document then needs the
  * viewer role, and without editor its connection is read-only, so the server
  * drops the changes it sends. A document is named by its id and exists only once
- * created through the API.
+ * created through the API. Each open socket's session is checked again every
+ * `sessionCheck` milliseconds, without extending it, and the socket closes once
+ * the session has ended.
  */
-export function createSync({ db, auth, origin, log }) {
+export function createSync({ db, auth, origin, log, sessionCheck = SESSION_CHECK }) {
     const sockets = new Map();
     const hocuspocus = new Hocuspocus({
         quiet: true,
@@ -128,14 +133,35 @@ export function createSync({ db, auth, origin, log }) {
             return;
         }
 
+        // Counted with the check, before anything else can run, and given back
+        // once the socket closes, whether or not the upgrade succeeded.
+        count(userId, 1);
+        socket.once('close', () => count(userId, -1));
+
         server.handleUpgrade(req, socket, head, (websocket) => {
             const request = new Request(new URL(req.url, origin), { headers });
             const connection = hocuspocus.handleConnection(websocket, request, { userId });
+            const checking = setInterval(async () => {
+                let current;
 
-            count(userId, 1);
+                try {
+                    current = await auth.api.getSession({
+                        headers,
+                        query: { disableRefresh: true }
+                    });
+                } catch {
+                    // A check that fails says nothing about the session; the next one decides.
+                    return;
+                }
+
+                if (current?.user.id !== userId) {
+                    websocket.close(4401, 'Session ended');
+                }
+            }, sessionCheck);
+
             websocket.on('message', (data) => connection.handleMessage(new Uint8Array(data)));
             websocket.on('close', (code, reason) => {
-                count(userId, -1);
+                clearInterval(checking);
                 connection.handleClose({ code, reason: reason.toString() });
             });
             websocket.on('error', (error) => log.warn(error, 'A sync connection failed'));

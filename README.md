@@ -91,7 +91,8 @@ editor's own address. Opening a document needs the viewer role; a viewer's
 connection is read-only, so the server drops the changes it sends. Each document's
 content is kept in PostgreSQL as one compacted Yjs update, saved a few seconds after
 changes and when the server stops. Deleting a document disconnects everyone from
-it. The editor does not connect yet.
+it, and a socket closes within a minute of its session ending. The editor does not
+connect yet.
 
 | Variable | Meaning |
 |---|---|

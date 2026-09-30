@@ -102,11 +102,17 @@ let clients = 0;
  * Accounts, the API and document sync served over HTTP as the servers do, on an
  * empty database.
  */
-export async function serve() {
+export async function serve({ sessionCheck }: { sessionCheck?: number } = {}) {
     const accounts = await startAccounts();
     const app = express();
     const log = { error: () => {}, warn: () => {} };
-    const sync = createSync({ db: accounts.db, auth: accounts.auth, origin: ORIGIN, log });
+    const sync = createSync({
+        db: accounts.db,
+        auth: accounts.auth,
+        origin: ORIGIN,
+        log,
+        sessionCheck
+    });
 
     app.all('/api/auth/*splat', authHandler(accounts.auth));
     app.use(

@@ -71,8 +71,8 @@ const upgrade = ({ syncURL }: Served, headers: Record<string, string>) =>
     });
 
 /** Ada with a document in her workspace, and Grace, who has no access to it yet. */
-async function start() {
-    const served = await serve();
+async function start(options?: Parameters<typeof serve>[0]) {
+    const served = await serve(options);
     const ada = await served.user('ada@example.com');
     const grace = await served.user('grace@example.com');
     const plan = await served.json<DocumentSummary>(
@@ -166,5 +166,39 @@ describe('document sync', () => {
             (await served.call('DELETE', `/documents/${plan.id}`, { cookie: ada.cookie })).status
         ).toBe(204);
         await vi.waitFor(() => expect(copy.closed).toHaveBeenCalled());
+    });
+
+    it('lets a user open only so many sockets, even all at once', async () => {
+        const { served, ada } = await start();
+        const opened = await Promise.all(
+            Array.from(
+                { length: 24 },
+                () =>
+                    new Promise<boolean>((resolve) => {
+                        const socket = new WebSocket(served.syncURL, {
+                            headers: { origin: ORIGIN, cookie: ada.cookie }
+                        });
+
+                        socket.on('open', () => {
+                            onTestFinished(() => socket.close());
+                            resolve(true);
+                        });
+                        socket.on('unexpected-response', () => resolve(false));
+                    })
+            )
+        );
+
+        expect(opened.filter(Boolean)).toHaveLength(16);
+    });
+
+    it('disconnects a socket once its session has ended', async () => {
+        const { served, ada, plan } = await start({ sessionCheck: 50 });
+        const copy = open(served, ada.cookie, plan.id);
+
+        expect(await copy.outcome).toBe('synced');
+
+        await sql`delete from auth.session`.execute(served.db);
+        await vi.waitFor(() => expect(copy.closed).toHaveBeenCalled());
+        expect(await upgrade(served, { origin: ORIGIN, cookie: ada.cookie })).toBe(401);
     });
 });
