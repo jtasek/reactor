@@ -1,7 +1,8 @@
 import React, { FC, FormEvent, useEffect, useRef, useState } from 'react';
 
-import { useAccount, useEffects } from 'src/app/hooks';
+import { useAccount, useEffects, useReaction } from 'src/app/hooks';
 import type { AccountResult } from 'src/app/services/accounts';
+import { signOut, waitForSync } from 'src/app/services/signOut';
 
 import styles from './Account.css';
 
@@ -20,29 +21,84 @@ const DONE: Partial<Record<Mode, (email: string) => string>> = {
 };
 
 /**
- * Account requests. Signing in or out loads the editor again, so everything it
- * shows, and later keeps in this browser, belongs to the new account.
+ * Account requests. Signing in loads the editor again, so everything it shows,
+ * and later keeps in this browser, belongs to the new account.
  */
 function useAccountRequests() {
     const { accounts, forgetOwner, reload } = useEffects();
-    const reloadAfter = async (request: Promise<AccountResult>) => {
-        const result = await request;
-
-        if (result.ok) {
-            forgetOwner();
-            reload('/');
-        }
-
-        return result;
-    };
 
     return {
-        signIn: (email: string, password: string) => reloadAfter(accounts.signIn(email, password)),
+        signIn: async (email: string, password: string) => {
+            const result = await accounts.signIn(email, password);
+
+            if (result.ok) {
+                forgetOwner();
+                reload('/');
+            }
+
+            return result;
+        },
         signUp: accounts.signUp,
-        sendSignInLink: accounts.sendSignInLink,
-        signOut: () => reloadAfter(accounts.signOut())
+        sendSignInLink: accounts.sendSignInLink
     };
 }
+
+/**
+ * Signs out, after telling the user what would be lost; the page loads again
+ * signed out.
+ */
+const SignOut: FC<{ owner: string }> = ({ owner }) => {
+    const effects = useEffects();
+    const reaction = useReaction();
+    const [busy, setBusy] = useState(false);
+    const [failure, setFailure] = useState<string>();
+    const [lost, setLost] = useState<string>();
+    const leave = async (anyway: boolean) => {
+        setBusy(true);
+        setFailure(undefined);
+        setLost(undefined);
+
+        const result = await signOut(effects, owner, (wait) => waitForSync(reaction, wait), anyway);
+
+        setBusy(false);
+
+        if (result.ok) {
+            return;
+        }
+
+        if ('unsynced' in result) {
+            setLost(result.unsynced);
+        } else {
+            setFailure(result.message);
+        }
+    };
+
+    if (lost) {
+        return (
+            <div role="alert">
+                <p>
+                    {lost} Signing out removes your documents from this browser, and changes the
+                    server does not have yet are lost.
+                </p>
+                <button type="button" disabled={busy} onClick={() => leave(true)}>
+                    Sign out anyway
+                </button>{' '}
+                <button type="button" disabled={busy} onClick={() => setLost(undefined)}>
+                    Stay signed in
+                </button>
+            </div>
+        );
+    }
+
+    return (
+        <>
+            <button type="button" disabled={busy} onClick={() => leave(false)}>
+                {busy ? 'Signing out…' : 'Sign out'}
+            </button>
+            {failure && <p role="alert">{failure}</p>}
+        </>
+    );
+};
 
 const Back: FC = () => (
     <p>
@@ -158,8 +214,6 @@ const SignInForm: FC = () => {
 /** Signing in and out. Without accounts on the server, it says so. */
 export const Account: FC = () => {
     const account = useAccount();
-    const { signOut } = useAccountRequests();
-    const [failure, setFailure] = useState<string>();
 
     if (account.kind === 'loading') {
         return <main className={styles.account} aria-busy="true" />;
@@ -183,17 +237,7 @@ export const Account: FC = () => {
                     Signed in as{' '}
                     {account.name ? `${account.name} (${account.email})` : account.email}.
                 </p>
-                <button
-                    type="button"
-                    onClick={async () => {
-                        const result = await signOut();
-
-                        setFailure(result.ok ? undefined : result.message);
-                    }}
-                >
-                    Sign out
-                </button>
-                {failure && <p role="alert">{failure}</p>}
+                <SignOut owner={account.id} />
                 <Back />
             </main>
         );

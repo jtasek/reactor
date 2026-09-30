@@ -9,6 +9,10 @@ export const saveState = (key: string, state: unknown): void => {
     localStorage.setItem(key, JSON.stringify(state));
 };
 
+export const removeState = (key: string): void => {
+    localStorage.removeItem(key);
+};
+
 /** Keep the exact original bytes, including malformed JSON, before migration. */
 export const backupState = (key: string): void => {
     const value = localStorage.getItem(key);

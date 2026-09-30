@@ -2,6 +2,7 @@ import {
     accountLabel,
     accounts,
     readAccount,
+    recordSignedOut,
     shareOwner,
     type AccountUser,
     type Accounts
@@ -244,5 +245,13 @@ describe('accounts in other copies', () => {
 
         otherCopySets('reactor:account', '');
         expect(changed).toHaveBeenCalledOnce();
+    });
+
+    it('records signing out here, so the other copies load again signed out', () => {
+        const { storage } = browser();
+
+        recordSignedOut();
+
+        expect(storage.get('reactor:account')).toBe('');
     });
 });

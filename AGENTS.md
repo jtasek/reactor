@@ -184,7 +184,8 @@ re-renders.** Components never mutate state directly.
   record per account in local storage keeps the documents made here and the deletions not yet
   sent, so one the server lacks that was not made here was deleted elsewhere. It stops once
   another account is signed in. `tests/server/editorSync.test.ts` runs signed-in copies
-  against the test server.
+  against the test server. Signing out (`src/app/services/signOut.ts`) warns about changes
+  the server lacks, then removes the account's copy from the browser.
 - **Document database** (`src/app/services/documentDatabase.ts`): IndexedDB with an index of
   documents and each document's Yjs updates as records of their own; `compact` merges them in
   one transaction. Unit tests run it on `fake-indexeddb`.

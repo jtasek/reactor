@@ -664,7 +664,12 @@ and the status shows syncing and offline. A new device shows the account's
 documents rather than a new one; documents made or deleted offline are sent once
 the server can be reached, and one deleted elsewhere is removed here and from the
 device. The editor asks the server again, ever more rarely, while it cannot be
-reached, as while it restarts. Next: clearing an account's copy on sign-out.
+reached, as while it restarts.
+
+Done: step 5. Signing out waits up to 5 seconds for changes on their way to the
+server, and when some would be lost says why and offers to stay signed in. Once
+signed out, the account's database and records are removed from the browser,
+and every open copy of the editor loads again signed out.
 
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user
