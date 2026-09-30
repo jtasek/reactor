@@ -1,6 +1,6 @@
 # Repository Audit and Refactoring Plan
 
-Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phase 6 in progress; Phase 7 proposed (step 1 partly done); Phase 8 proposed (steps 1-2 done, step 4 partly done); Phases 9-10 designed; Phase 11 in progress.
+Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phase 6 in progress; Phase 7 proposed (step 1 partly done); Phase 8 proposed (steps 1-3 done, step 4 partly done); Phases 9-10 designed; Phase 11 in progress.
 
 ## Verified Baseline
 
@@ -375,11 +375,19 @@ and share `server/pages.ts`: the page for the editor's routes, 404 for a missing
 file, 405 for other methods than GET and HEAD, and the port's validation. The dev
 server closes the compiler on shutdown, and exits after 10 seconds at most.
 
+Step 3 done: `scripts/smoke.mjs` checks a running production server (health, page
+routes, cache and security headers, missing files and other methods), and
+`tests/browser/server.spec.ts` runs it, renders every page without a content
+security policy violation, and checks startup errors and a clean shutdown. The
+stylesheet no longer imports a web font the policy blocked, so production shows
+what it always did.
+
 Step 4 partly done (#10): the `Check` workflow runs `pnpm check` (lint gate, types,
 unit and browser tests on a production build) for pull requests and `master`. Its
 first runs exposed and fixed unapproved dependency builds under pnpm 11 and a
-minimap directory that did not resolve on case-sensitive file systems. The Docker
-build and smoke test, zero-warning lint and bundle budget remain.
+minimap directory that did not resolve on case-sensitive file systems. A second
+job builds the Docker image, runs it with a read-only file system, smoke-tests it
+and checks it stops cleanly. Zero-warning lint and the bundle budget remain.
 
 1. Parse and validate TRUST_PROXY hop counts explicitly while preserving supported
    boolean/address forms. Document examples and test forwarding behavior.

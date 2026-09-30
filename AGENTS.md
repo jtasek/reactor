@@ -109,7 +109,9 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   compression, immutable caching, SPA fallback, `/healthz`, graceful shutdown). Never ship
   the dev `server.ts`.
 - **Container**: `Dockerfile` (multi-stage, non-root `node` user) builds and runs
-  `server.prod.ts`. `compose.yaml` runs it with PostgreSQL.
+  `server.prod.ts`. `compose.yaml` runs it with PostgreSQL. `node scripts/smoke.mjs <address>`
+  checks a running production server; CI runs it against the image, and
+  `tests/browser/server.spec.ts` against the browser tests' server.
 - **Server code** is TypeScript that Node (22.18 or later) runs as it is, with no build step:
   it may only use syntax Node can strip (no `enum`, namespaces or parameter properties, which
   `erasableSyntaxOnly` enforces), and relative imports name the `.ts` file. The tables' types
