@@ -4,6 +4,15 @@ import { smoke } from '../../scripts/smoke.mjs';
 
 const started: ChildProcess[] = [];
 
+/** The server's settings the shell running the tests may hold, cleared unless a test sets them. */
+const CLEARED = {
+    DATABASE_URL: '',
+    BETTER_AUTH_URL: '',
+    BETTER_AUTH_SECRET: '',
+    SMTP_URL: '',
+    TRUST_PROXY: ''
+};
+
 test.afterEach(() => {
     started.splice(0).forEach((server) => server.kill());
 });
@@ -14,7 +23,7 @@ test.afterEach(() => {
  */
 function startServer(env: Record<string, string>) {
     const server = spawn(process.execPath, ['server.prod.ts'], {
-        env: { ...process.env, NODE_ENV: 'production', HOST: '127.0.0.1', ...env }
+        env: { ...process.env, ...CLEARED, NODE_ENV: 'production', HOST: '127.0.0.1', ...env }
     });
     let output = '';
 

@@ -25,7 +25,14 @@ export default defineConfig({
     webServer: {
         command: 'pnpm run build:webpack && node server.prod.ts',
         url: 'http://127.0.0.1:4173/healthz',
-        env: { NODE_ENV: 'production', HOST: '127.0.0.1', PORT: '4173' },
+        // Without accounts, whatever the shell running the tests holds.
+        env: {
+            NODE_ENV: 'production',
+            HOST: '127.0.0.1',
+            PORT: '4173',
+            DATABASE_URL: '',
+            TRUST_PROXY: ''
+        },
         reuseExistingServer: false,
         gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 },
         timeout: 120_000
