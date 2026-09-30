@@ -1,5 +1,7 @@
 import React, { FC, ReactNode } from 'react';
 
+import styles from './styles.css';
+
 import { Explorer } from './Explorer';
 import { useControls } from 'src/app/hooks';
 
