@@ -46,7 +46,10 @@ export async function openEditor(page: Page, controls: string[] = []) {
 }
 
 export async function selectTool(page: Page, description: string) {
-    await page.locator(`a[title="${description}"]`).dispatchEvent('click');
+    await page
+        .getByRole('list', { name: 'Tools' })
+        .getByRole('button', { name: description, exact: true })
+        .dispatchEvent('click');
 }
 
 export const shapes = (page: Page) => page.locator('svg#surface #shapes > g');

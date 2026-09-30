@@ -1,5 +1,6 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
+    label: string;
     selected: string;
     switch: string;
     thumb: string;

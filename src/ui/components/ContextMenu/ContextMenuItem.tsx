@@ -1,26 +1,18 @@
-import React, { FC } from 'react';
+import React, { CSSProperties, FC } from 'react';
 import { Icon } from '../Icon';
 import styles from './styles.css';
 import { Tool } from 'src/tools/types';
 
 export interface Props {
     tool: Tool;
-    inlineStyles: any;
+    inlineStyles: CSSProperties;
     onClick: (tool: string) => void;
 }
 
 export const ContextMenuItem: FC<Props> = ({ tool, inlineStyles, onClick }) => (
     <li className={styles.contextMenuButton} style={inlineStyles}>
-        <a
-            href="#"
-            onClick={(e) => {
-                console.log('ContextMenuItem onClick');
-                e.preventDefault();
-                onClick(tool.id);
-            }}
-            title={tool.description}
-        >
+        <button type="button" onClick={() => onClick(tool.id)} title={tool.description}>
             <Icon icon={tool.icon} />
-        </a>
+        </button>
     </li>
 );

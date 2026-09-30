@@ -345,16 +345,20 @@ mixed values; no TODO/no-op is presented as an available feature.
 
 ## Phase 7 - Enforce Accessibility and Repository Hygiene
 
-Step 1 partly done (#11): the command bar's actions are native buttons, disabled
-while their command cannot run. Action anchors remain in the toolbar, navigation
-bar and context menu.
+Step 1 done: the command bar's actions are native buttons, disabled while their
+command cannot run (#11). The toolbar's tools, the context menu's items, the
+navigation bar's items and the visibility and lock toggles in it and in the group
+and layer panels are native buttons too, named by their titles; tools report
+whether they are active through `aria-pressed`. The switch has a label that is
+read out. Screenshots of the toolbar, panels, navigation bar and context menu are
+identical before and after, and a browser test uses them from the keyboard.
 
 Step 2 partly done: unused imports and parameters are removed, `any` types
 replaced (the tool registry holds components as `FC<never>`, and a shape's
 component is read as taking that shape's fields), debug logging moved off
 `console.log`, and the keyboard driver lists its hook dependencies. The lint
-baseline lists only the 32 remaining findings: accessibility (step 1), a debug log
-in `usePreventNativePinchZoom.tsx`, and scaffolding kept until the styling work:
+baseline lists only the 11 remaining findings: a debug log in
+`usePreventNativePinchZoom.tsx`, and scaffolding kept until the styling work:
 stylesheet imports components do not use yet, and the empty clipboard driver.
 
 1. Replace action anchors and click-only elements with native buttons; add labels,

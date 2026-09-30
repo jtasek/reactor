@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { openEditor, pointer, shapes } from './support/editor';
 
-const activeTool = (page: Page) => page.locator('li[data-active="true"] a');
+const activeTool = (page: Page) =>
+    page.getByRole('list', { name: 'Tools' }).getByRole('button', { pressed: true });
 
 async function drag(page: Page, from: { x: number; y: number }, to: { x: number; y: number }) {
     await pointer(page, 'pointerdown', from);

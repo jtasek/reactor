@@ -40,28 +40,30 @@ export const NavBarListItem: FC<Props> = ({
 
     return (
         <li className={className}>
-            <a className={styles.itemName} onClick={() => onClick(id)}>
+            <button type="button" className={styles.itemName} onClick={() => onClick(id)}>
                 {name}
-            </a>
+            </button>
             {(onToggleVisible || onToggleLocked) && (
                 <span className={styles.itemIcons}>
                     {onToggleVisible && (
-                        <span
+                        <button
+                            type="button"
                             className={styles.itemIcon}
                             title={visible ? 'Hide' : 'Show'}
                             onClick={() => onToggleVisible(id)}
                         >
                             <Icon icon={visible ? visibleIcon : hiddenIcon} />
-                        </span>
+                        </button>
                     )}
                     {onToggleLocked && (
-                        <span
+                        <button
+                            type="button"
                             className={styles.itemIcon}
                             title={locked ? 'Unlock' : 'Lock'}
                             onClick={() => onToggleLocked(id)}
                         >
                             <Icon icon={locked ? lockedIcon : openIcon} />
-                        </span>
+                        </button>
                     )}
                 </span>
             )}

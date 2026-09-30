@@ -26,8 +26,14 @@
     opacity: 1;
 }
 
-.contextMenuButton a {
+.contextMenuButton button {
+    background: none;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
     display: block;
+    font: inherit;
+    padding: 0;
 }
 
 .contextMenuButton svg {
