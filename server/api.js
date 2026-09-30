@@ -22,14 +22,7 @@ function nameOf(body) {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
-/** The id a client chose for a new document: absent, a UUID, or `false` when invalid. */
-function idOf(body) {
-    if (body?.id === undefined) {
-        return undefined;
-    }
-
-    return typeof body.id === 'string' && UUID.test(body.id) ? body.id : false;
-}
+const isUuid = (value) => typeof value === 'string' && UUID.test(value);
 
 /**
  * The app's API, for signed-in users only. A request that changes anything must
@@ -99,13 +92,14 @@ export function createApi({ db, auth, origin, onDeleted = () => {} }) {
         }
 
         const name = nameOf(req.body);
-        const id = idOf(req.body);
+        // Chosen by the client, so a document created offline keeps its id.
+        const id = req.body?.id;
 
         if (!name) {
             return refuse(res, 400, 'INVALID_NAME');
         }
 
-        if (id === false) {
+        if (id !== undefined && !isUuid(id)) {
             return refuse(res, 400, 'INVALID_ID');
         }
 
