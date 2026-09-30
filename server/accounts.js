@@ -3,6 +3,7 @@ import { authHandler, createAuth, migrateAuth } from './auth.js';
 import { openDatabase } from './database.js';
 import { logMailer, smtpMailer } from './mailer.js';
 import { migrateApp } from './migrations.js';
+import { createSync } from './sync.js';
 
 const required = (env, name) => {
     if (!env[name]) {
@@ -15,7 +16,8 @@ const required = (env, name) => {
 /**
  * Starts accounts when `DATABASE_URL` is set: brings the account and app tables
  * up to date, and returns the handler to mount at `/api/auth/*splat`, before any
- * body parser, and the API to mount at `/api`. Without it, the editor is used signed out only. Production sends email
+ * body parser, the API to mount at `/api`, and the document sync to attach to the
+ * HTTP server. On shutdown, close the sync first, then the rest once it is done. Without it, the editor is used signed out only. Production sends email
  * over SMTP; development without `SMTP_URL` writes it to the log.
  */
 export async function startAccounts(env, { production, log }) {
@@ -47,9 +49,13 @@ export async function startAccounts(env, { production, log }) {
         throw error;
     }
 
+    const origin = new URL(baseURL).origin;
+    const sync = createSync({ db, auth, origin, log });
+
     return {
         handler: authHandler(auth),
-        api: createApi({ db, auth, origin: new URL(baseURL).origin }),
+        api: createApi({ db, auth, origin, onDeleted: sync.closeDocument }),
+        sync,
         close: () => db.destroy()
     };
 }

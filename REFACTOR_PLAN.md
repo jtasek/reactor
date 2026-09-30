@@ -647,6 +647,13 @@ created on first use, and lists, creates and deletes a workspace's documents,
 checking the session, the role and, for changes, the `Origin` and a JSON body.
 The app's tables are Kysely migrations next to Better Auth's schema.
 
+Step 5, server: the `/sync` WebSocket serves documents with Hocuspocus. The upgrade
+checks the `Origin` and the session, and each document the role: none refuses it,
+and a viewer's connection is read-only. Each document's content is one compacted
+Yjs update in `document_states`, saved shortly after changes and on shutdown.
+Deleting a document disconnects everyone; a user may have 16 sockets open, and a
+message may be 4 MB. Next: connecting the editor.
+
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user
 keeps their own view. Accounts, sessions, organizations and teams use Better Auth
