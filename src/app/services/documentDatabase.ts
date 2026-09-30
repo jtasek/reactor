@@ -135,5 +135,17 @@ export class DocumentDatabase {
     }
 }
 
+/**
+ * Deletes a database. Open copies of the editor close theirs when asked, as
+ * `DocumentDatabase` does, and the deletion waits until they have.
+ */
+export const deleteDocumentDatabase = (name: string, factory: IDBFactory = indexedDB) =>
+    new Promise<void>((resolve, reject) => {
+        const deleting = factory.deleteDatabase(name);
+
+        deleting.onsuccess = () => resolve();
+        deleting.onerror = () => reject(deleting.error);
+    });
+
 /** The database of this device, from the browser's IndexedDB. */
 export const openDocumentDatabase = (name?: string) => DocumentDatabase.open(indexedDB, name);

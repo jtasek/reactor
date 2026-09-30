@@ -2,7 +2,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import { createDocument, createShape } from 'src/app/factories';
 import { DocumentDatabase } from 'src/app/services/documentDatabase';
 import { PERSISTENCE_KEY, serializePersistedState } from 'src/app/services/documentStorage';
-import { MIGRATED_KEY } from 'src/app/services/documentSync';
+import { MIGRATED_KEY, accountCopy } from 'src/app/services/documentSync';
 import type { AccountUser, Accounts } from 'src/app/services/accounts';
 import type { Channel } from 'src/app/services/tabSync';
 import { Hub } from './support/channel';
@@ -588,5 +588,22 @@ describe('document sync', () => {
         expect(channels).toEqual([undefined]);
         expect(effects.shareOwner).toHaveBeenCalledWith('user-ada', expect.any(Function));
         expect(effects.reloadPage).toHaveBeenCalledOnce();
+    });
+
+    it('keeps no record of an account once the browser signed out of it', async () => {
+        const { store, storage, effects } = createCopy(async () => ada, 'user-ada');
+        const { viewKey } = accountCopy('user-ada');
+
+        await store.onInitialize();
+        store.actions.addDocument({ id: 'second' });
+        store.actions.openDocument('second');
+        await vi.waitFor(() => expect(storage.has(viewKey)).toBe(true));
+
+        storage.delete(viewKey);
+        effects.lastOwner.mockReturnValue('');
+        store.actions.openDocument(Object.keys(store.state.documents)[0]);
+        await new Promise((resolve) => setTimeout(resolve, 600));
+
+        expect(storage.has(viewKey)).toBe(false);
     });
 });

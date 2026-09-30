@@ -138,6 +138,18 @@ export function forgetOwner() {
     }
 }
 
+/**
+ * Records that this browser signed out, so the other open copies of the editor
+ * load again signed out and the next start opens the documents kept signed out.
+ */
+export function recordSignedOut() {
+    try {
+        window.localStorage.setItem(OWNER_KEY, '');
+    } catch {
+        // Other copies are not told; each still reads its own account.
+    }
+}
+
 /** Whose documents to open for `account`; while it cannot be read, `last`'s. */
 export function documentOwner(account: Account, last = ''): string {
     if (account.kind === 'signedIn') {

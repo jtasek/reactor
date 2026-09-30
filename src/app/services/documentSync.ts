@@ -18,6 +18,13 @@ import { TabSync } from './tabSync';
 /** Where this device keeps its view: the document it shows, and each document's camera. */
 export const VIEW_KEY = `${PERSISTENCE_KEY}:view`;
 
+/** Where this browser keeps an account's copy of its documents. */
+export const accountCopy = (owner: string) => ({
+    database: `reactor-${owner}`,
+    viewKey: `${VIEW_KEY}:${owner}`,
+    recordKey: `${PERSISTENCE_KEY}:server:${owner}`
+});
+
 /** A fingerprint of the local storage save as it was moved into the database. */
 export const MIGRATED_KEY = `${PERSISTENCE_KEY}:migrated`;
 
@@ -119,8 +126,9 @@ export async function startDocumentSync(
     owner: string
 ): Promise<void> {
     const { state, effects } = context;
-    const scope = owner ? `reactor-${owner}` : undefined;
-    const viewKey = owner ? `${VIEW_KEY}:${owner}` : VIEW_KEY;
+    const copy = owner ? accountCopy(owner) : undefined;
+    const scope = copy?.database;
+    const viewKey = copy?.viewKey ?? VIEW_KEY;
     const { collaboration } = effects;
     const {
         displayError,
@@ -147,7 +155,12 @@ export async function startDocumentSync(
     let server: ServerSync | undefined = undefined;
     /** How syncing stands before the server sync has started, or when it cannot. */
     let serverStarting: SyncStatus = owner ? 'syncing' : 'synced';
-    const recordKey = `${PERSISTENCE_KEY}:server:${owner}`;
+    const recordKey = accountCopy(owner).recordKey;
+    /**
+     * Whether this copy may still keep the account's records: not once the browser
+     * signed out, as the page saving its view as it unloads would bring them back.
+     */
+    const keepsRecords = () => !owner || (effects.lastOwner() ?? owner) === owner;
     /** Why this copy saves nothing, while it does not. */
     let notSaving: string | undefined = 'Documents are loading.';
     /**
@@ -387,6 +400,10 @@ export async function startDocumentSync(
             record: {
                 load: readRecord,
                 save: (record) => {
+                    if (!keepsRecords()) {
+                        return;
+                    }
+
                     try {
                         effects.saveState(recordKey, record);
                     } catch {
@@ -510,7 +527,7 @@ export async function startDocumentSync(
         clearTimeout(viewTimer);
         viewTimer = undefined;
 
-        if (!instance.state.config.autoSave) {
+        if (!instance.state.config.autoSave || !keepsRecords()) {
             return;
         }
 
