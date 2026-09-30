@@ -1,41 +1,87 @@
-# reactor - simple design prototyping tool
+# reactor
 
-Simple and easy to use prototyping tool
+A browser-based editor for prototypes, diagrams and mockups: draw shapes, links,
+layers, groups and rulers on a canvas, and keep documents in the browser or, signed
+in, on a server that syncs them between devices and people.
 
-## Refactoring Verification
+## Requirements
 
-Use the pnpm version pinned in `package.json`. Install dependencies with
-`pnpm install --frozen-lockfile`, then install the browser once with
-`pnpm exec playwright install chromium` (Linux CI may need `--with-deps`).
+- Node.js 22.18 or later, which runs the server's TypeScript directly
+- pnpm 11, the version pinned in `package.json` (`corepack enable` provides it)
+- Optional: PostgreSQL 17 for accounts and syncing, or Docker to run both with
+  `compose.yaml`
 
-- `pnpm check`: lint baseline/touched-file gate, application and test types,
-  unit/store tests, then a fresh production build and Chromium smoke test.
-- `pnpm lint`: full read-only ESLint report; intentionally fails while recorded
-  legacy debt remains. `pnpm lint:fix` explicitly applies automatic fixes.
-- `pnpm lint:baseline`: fails on any new diagnostic or any diagnostic in a
-  changed/untracked file. Existing diagnostics remain visible through `pnpm lint`.
-- `pnpm typecheck`: checks application code and test fixtures separately.
-- `pnpm test`: unit and store tests. `pnpm test:browser`: browser tests against
-  the production server, including SVG wheel input.
+## Getting started
 
-The lint gate compares local staged/unstaged files against `HEAD` by default.
-For a committed branch or CI review, set `LINT_BASE_REF` to the comparison commit
-or merge base, for example `LINT_BASE_REF=origin/main pnpm check`. That ref must
-exist locally. Do not add entries to `lint-baseline.json`; reduce the baseline as
-files are repaired. Whole-repository zero-warning lint remains the Phase 7 gate.
+```bash
+git clone https://github.com/jtasek/reactor.git
+cd reactor
+pnpm install
+pnpm start
+```
 
-`tests/support/store.ts` creates independent Overmind stores with real document
-factories and JSON-backed memory storage. Startup is opt-in via
-`store.onInitialize()`; storage, routing, IndexedDB (`fake-indexeddb`) and channel
-effects are mocked, and saving is off. Browser tests use isolated browser contexts and port 4173; an occupied
-port fails rather than silently testing a different server. Traces are retained
-in ignored `test-results/` on failure.
+Then open http://localhost:4000. Without a database, the editor runs signed out and
+keeps documents in the browser.
 
-See [REFACTOR_PLAN.md](./REFACTOR_PLAN.md) for phase acceptance criteria. The
-browser smoke test establishes the harness; full gesture coverage belongs to
-Phase 4.
+## Commands
 
-## Document Storage
+| Command | What it does |
+|---|---|
+| `pnpm start` | Development server with hot reload on port 4000 |
+| `pnpm build` | Production build into `dist/` |
+| `pnpm serve` | Production server for `dist/` (run `pnpm build` first) |
+| `pnpm check` | Lint gate, type checks, unit tests and browser tests |
+| `pnpm test` | Unit and store tests; `pnpm test:watch` reruns them on change |
+| `pnpm test:browser` | Browser tests (Chromium) against a production build |
+| `pnpm typecheck` | Type checks for the app, the tests and the server |
+| `pnpm lint` | Full lint report; `pnpm lint:fix` applies automatic fixes |
+
+`docker compose up --build` runs the production server in a container with
+PostgreSQL; see Accounts below.
+
+## Server settings
+
+| Variable | Meaning |
+|---|---|
+| `PORT` | Port to listen on; 4000 by default |
+| `HOST` | Address to listen on; `localhost` for the development server, `0.0.0.0` for the production server |
+| `LOG_LEVEL` | Production server log level; `info` by default |
+| `TRUST_PROXY` | Reverse proxies whose `X-Forwarded-*` headers the production server trusts: a hop count such as `1`, `true`, or addresses and subnets such as `loopback, 10.0.0.0/8`; none by default. Set it behind a proxy, since sign-in is rate limited per client address |
+
+The production server stops at start with a clear message when a setting is
+invalid. Account settings are listed under Accounts.
+
+## Using the editor
+
+Tools draw on the canvas; the control panel (top right) shows or hides the tool
+bar, side bar, panels and other parts of the editor.
+
+| Key | Action |
+|---|---|
+| `s` | Select tool: click a shape, or drag to select shapes a box touches |
+| `r`, `c`, `e`, `l`, `p`, `t`, `i` | Rectangle, circle, ellipse, line, pen, text and image tools |
+| Delete or Backspace | Delete the selection |
+| Ctrl/Cmd+D | Clone the selection |
+| Ctrl/Cmd+G, Ctrl/Cmd+Shift+G | Group and ungroup the selection |
+| `+` or `=`, `-`, `0` | Zoom in, zoom out, reset zoom |
+
+Shortcuts do nothing while a text field has focus. The command line runs a command
+by name.
+
+Input:
+
+- Mouse and pen draw, select, move, resize and rotate shapes; a drag commits on
+  release, and is undone if it is interrupted, as by the context menu or leaving
+  the window.
+- The scroll wheel pans the canvas; a trackpad pinch (or Ctrl and the wheel) zooms
+  at the pointer.
+- On a touchscreen, one finger acts as the mouse and two fingers pinch to zoom.
+  Touch input is tested with simulated touches; it has not yet been checked on a
+  physical touch device.
+- The editor's buttons, lists and panels can be used from the keyboard; drawing
+  on the canvas needs a pointer.
+
+## Saving
 
 Documents are saved in the `reactor` IndexedDB database: an index of documents, and
 each document's changes as Yjs updates of their own, merged into one once 100 add
@@ -108,7 +154,6 @@ reached, and one deleted elsewhere is removed.
 | `BETTER_AUTH_SECRET` | At least 32 random characters, used to sign sessions |
 | `SMTP_URL` | SMTP server for email, such as `smtps://user:password@smtp.example.com`; required in production |
 | `MAIL_FROM` | Sender address; defaults to `no-reply` at the editor's host |
-| `TRUST_PROXY` | Reverse proxies whose `X-Forwarded-*` headers the production server trusts: a hop count such as `1`, `true`, or addresses and subnets such as `loopback, 10.0.0.0/8`; none by default. Set it behind a proxy, since sign-in is rate limited per client address |
 
 Without `SMTP_URL`, the development server writes email to its log instead.
 `compose.yaml` runs the editor with a PostgreSQL database: set `POSTGRES_PASSWORD`,
@@ -125,40 +170,34 @@ unavailable or singular.
 
 All zoom controls share the 10%-1000% range. Ctrl-wheel pinch is continuous and
 anchored at the pointer; toolbar/tool steps are discrete. Slider zoom preserves
-the current pan position. Full touchscreen gesture handling remains Phase 4 work.
+the current pan position. Touchscreen pinch zooms the same way; see Input below.
 
-* create prototypes
-* create diagrams
-* create mockups
+## Not yet available
 
-## Installation
+- Copy, cut and paste
+- Uploading images: the image tool draws a placeholder picture
+- Moving documents made signed out into an account
+- Organizations, teams and sharing documents with others
+- Seeing other people's pointers and selections
+- Components (reusable drawings) and plugins with other renderers (SVG, PNG, PDF)
 
-1. Clone the repo:
+[REFACTOR_PLAN.md](./REFACTOR_PLAN.md) describes each of these and the order they
+come in.
 
-```javascript
-$ git clone https://github.com/jtasek/reactor.git
-```
+## Development
 
-2. Install npm packages
+`pnpm check` is what CI runs, with a second job that builds the Docker image,
+runs it and checks it with `node scripts/smoke.mjs <address>`. Install the test
+browser once with `pnpm exec playwright install chromium` (Linux may need
+`--with-deps`).
 
-```javascript
-$ npm install
-```
+The lint gate (`pnpm lint:baseline`) fails on any finding in a file that changed
+and on any finding beyond those recorded in `lint-baseline.json`. It compares with
+`HEAD` by default; set `LINT_BASE_REF` to compare a branch, for example
+`LINT_BASE_REF=origin/master pnpm check`. Remove entries from `lint-baseline.json`
+as files are repaired; never add them.
 
-OR
-
-```javascript
-$ yarn
-```
-
-3. Run the application
-
-```javascript
-$ npm start
-```
-
-OR
-
-```javascript
-$ yarn start
-```
+`tests/support/store.ts` creates independent stores with in-memory storage,
+IndexedDB (`fake-indexeddb`) and channels; startup is opt-in with
+`store.onInitialize()`. Browser tests use port 4173 and fail rather than test
+another server that holds it; traces of failures are kept in `test-results/`.
