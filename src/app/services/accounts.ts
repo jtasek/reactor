@@ -139,7 +139,7 @@ export function forgetOwner() {
 }
 
 /** Whose documents to open for `account`; while it cannot be read, `last`'s. */
-export function ownerOf(account: Account, last = ''): string {
+export function documentOwner(account: Account, last = ''): string {
     if (account.kind === 'signedIn') {
         return account.id;
     }

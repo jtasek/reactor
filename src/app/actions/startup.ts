@@ -27,7 +27,7 @@ import {
 import { Tool } from '../../tools/types';
 import { startDocumentSync } from '../services/documentSync';
 import { listenToMutations } from '../services/mutations';
-import { ownerOf, readAccount } from '../services/accounts';
+import { documentOwner, readAccount } from '../services/accounts';
 
 const commands: Record<string, Command> = {};
 const tools: Record<string, Tool> = {};
@@ -109,7 +109,7 @@ export const onInitializeOvermind = async (
     // It is shown with them: a change while the pages first render can miss
     // components that have not subscribed yet.
     const reading = readAccount(effects.accounts);
-    const owner = effects.lastOwner() ?? ownerOf(await reading);
+    const owner = effects.lastOwner() ?? documentOwner(await reading);
 
     try {
         await startDocumentSync(
@@ -128,7 +128,7 @@ export const onInitializeOvermind = async (
         state.loading = false;
     }
 
-    const current = ownerOf(state.account, owner);
+    const current = documentOwner(state.account, owner);
 
     // Signed in or out elsewhere, as by an emailed link, since these documents opened.
     if (effects.shareOwner(current, effects.reloadPage) && current !== owner) {

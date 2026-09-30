@@ -512,7 +512,7 @@ describe('document sync', () => {
     });
 
     /** A copy whose account `session` reads, on a browser that opened `lastOwner`'s documents last. */
-    function copyOf(session: Accounts['session'], lastOwner?: string) {
+    function createCopy(session: Accounts['session'], lastOwner?: string) {
         const channels: Array<string | undefined> = [];
         const test = createTestStore(
             {},
@@ -533,7 +533,7 @@ describe('document sync', () => {
     }
 
     it('shares an account’s changes only with its own open copies', async () => {
-        const { store, channels } = copyOf(async () => ada);
+        const { store, channels } = createCopy(async () => ada);
 
         await store.onInitialize();
 
@@ -542,7 +542,7 @@ describe('document sync', () => {
 
     it('opens the documents opened last without waiting for the account', async () => {
         let answer: (user: AccountUser) => void = () => {};
-        const { store, channels, effects } = copyOf(
+        const { store, channels, effects } = createCopy(
             () => new Promise((resolve) => (answer = resolve)),
             'user-ada'
         );
@@ -557,7 +557,7 @@ describe('document sync', () => {
     });
 
     it('keeps the documents opened last while the account cannot be read', async () => {
-        const { store, channels, effects } = copyOf(async () => {
+        const { store, channels, effects } = createCopy(async () => {
             throw new Error('Offline');
         }, 'user-ada');
 
@@ -570,7 +570,7 @@ describe('document sync', () => {
     });
 
     it('loads again when the account read is not the one whose documents opened', async () => {
-        const { store, channels, effects } = copyOf(async () => ada, '');
+        const { store, channels, effects } = createCopy(async () => ada, '');
 
         await store.onInitialize();
 
