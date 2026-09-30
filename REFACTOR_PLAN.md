@@ -1,6 +1,6 @@
 # Repository Audit and Refactoring Plan
 
-Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phase 6 in progress; Phase 7 proposed (step 1 partly done); Phase 8 proposed (step 1 done, step 4 partly done); Phases 9-10 designed; Phase 11 in progress.
+Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phase 6 in progress; Phase 7 proposed (step 1 partly done); Phase 8 proposed (steps 1-2 done, step 4 partly done); Phases 9-10 designed; Phase 11 in progress.
 
 ## Verified Baseline
 
@@ -369,6 +369,11 @@ Step 1 done: `TRUST_PROXY` is read by `server/trustProxy.ts`, which passes a hop
 count to Express as a number, keeps `true`, `false` and address lists, and stops
 the server with a clear message on a value Express cannot read. Tests check the
 client address a forwarded request gets.
+
+Step 2 done: both servers serve the page webpack builds from `src/template.html`,
+and share `server/pages.ts`: the page for the editor's routes, 404 for a missing
+file, 405 for other methods than GET and HEAD, and the port's validation. The dev
+server closes the compiler on shutdown, and exits after 10 seconds at most.
 
 Step 4 partly done (#10): the `Check` workflow runs `pnpm check` (lint gate, types,
 unit and browser tests on a production build) for pull requests and `master`. Its
