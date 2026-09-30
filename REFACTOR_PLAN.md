@@ -1,6 +1,6 @@
 # Repository Audit and Refactoring Plan
 
-Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phase 6 in progress; Phase 7 proposed (step 1 partly done); Phase 8 proposed (steps 1-3 done, step 4 partly done); Phases 9-10 designed; Phase 11 in progress.
+Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phase 6 in progress; Phase 7 proposed (steps 1 and 3 done, step 2 partly done); Phase 8 proposed (steps 1-3 done, step 4 partly done); Phases 9-10 designed; Phase 11 in progress.
 
 ## Verified Baseline
 
@@ -360,6 +360,10 @@ component is read as taking that shape's fields), debug logging moved off
 baseline lists only the 11 remaining findings: a debug log in
 `usePreventNativePinchZoom.tsx`, and scaffolding kept until the styling work:
 stylesheet imports components do not use yet, and the empty clipboard driver.
+
+Step 3 done: the README covers requirements, getting started, the commands, server
+settings, using the editor (tools, shortcuts and input), saving, accounts, what is
+not available yet, and development.
 
 1. Replace action anchors and click-only elements with native buttons; add labels,
    valid ARIA state, focus behavior, and keyboard interaction. Note that
