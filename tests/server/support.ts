@@ -66,14 +66,14 @@ export async function startAccounts() {
 }
 
 /** The cookies a response sets, as a browser would send them back. */
-export const cookiesOf = (response: Response) =>
+export const cookieHeader = (response: Response) =>
     response.headers
         .getSetCookie()
         .map((cookie) => cookie.split(';')[0])
         .join('; ');
 
 /** The link in an email. */
-export const linkIn = ({ text }: Email) => {
+export const findLink = ({ text }: Email) => {
     const link = /https?:\/\/\S+/.exec(text)?.[0];
 
     if (!link) {
@@ -153,7 +153,7 @@ export async function serve({ sessionCheck }: { sessionCheck?: number } = {}) {
             throw new Error(`No sign-in link was sent to ${email}`);
         }
 
-        return cookiesOf(await accounts.request(linkIn(sent), { headers }));
+        return cookieHeader(await accounts.request(findLink(sent), { headers }));
     };
 
     /** Calls the API as a browser on this site would, or with other `headers`. */

@@ -52,14 +52,14 @@ const memberships = (db, userId) =>
         ]);
 
 /** The workspaces the user belongs to, with their role in each; the personal one first. */
-export const workspacesOf = (db, userId) =>
+export const listWorkspaces = (db, userId) =>
     memberships(db, userId)
         .orderBy((eb) => eb('workspace.kind', '=', 'personal'), 'desc')
         .orderBy('workspace.created_at')
         .execute();
 
 /** The user's role in a workspace, or undefined when they do not belong to it. */
-export async function roleIn(db, userId, workspaceId) {
+export async function workspaceRole(db, userId, workspaceId) {
     const found = await memberships(db, userId)
         .where('workspace.id', '=', workspaceId)
         .executeTakeFirst();
@@ -68,19 +68,19 @@ export async function roleIn(db, userId, workspaceId) {
 }
 
 /** The user's role on a document and its workspace, or undefined when they have none. */
-export async function roleOnDocument(db, userId, documentId) {
+export async function documentRole(db, userId, documentId) {
     const document = await db
         .selectFrom('documents')
         .select('workspace_id')
         .where('id', '=', documentId)
         .executeTakeFirst();
 
-    return document && roleIn(db, userId, document.workspace_id);
+    return document && workspaceRole(db, userId, document.workspace_id);
 }
 
 const DOCUMENT = ['id', 'name', 'created_at as createdAt', 'updated_at as updatedAt'];
 
-export const documentsIn = (db, workspaceId) =>
+export const listDocuments = (db, workspaceId) =>
     db
         .selectFrom('documents')
         .select(DOCUMENT)

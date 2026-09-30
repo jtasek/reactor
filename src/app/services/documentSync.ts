@@ -24,7 +24,7 @@ const COMPACT_AFTER = 100;
 
 type Instance = Pick<Context, 'state' | 'actions' | 'addMutationListener'>;
 
-const viewOf = ({
+const captureView = ({
     currentDocumentId,
     documents
 }: Pick<Application, 'currentDocumentId' | 'documents'>) => ({
@@ -417,7 +417,7 @@ export async function startDocumentSync(
         }
 
         try {
-            effects.saveState(viewKey, viewOf(instance.state));
+            effects.saveState(viewKey, captureView(instance.state));
         } catch {
             // The view is a convenience; documents are saved on their own.
         }

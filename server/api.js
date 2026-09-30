@@ -4,17 +4,17 @@ import {
     allows,
     createDocument,
     deleteDocument,
-    documentsIn,
+    listDocuments,
     ensurePersonalWorkspace,
-    roleIn,
-    roleOnDocument,
-    workspacesOf
+    workspaceRole,
+    documentRole,
+    listWorkspaces
 } from './workspaces.js';
 
 const refuse = (res, status, code) => res.status(status).json({ code });
 
 /** A document name as given, or undefined when it is not one. */
-function nameOf(body) {
+function parseName(body) {
     const name = typeof body?.name === 'string' ? body.name.trim() : '';
 
     return name.length > 0 && name.length <= 200 ? name : undefined;
@@ -67,21 +67,21 @@ export function createApi({ db, auth, origin, onDeleted = () => {} }) {
 
     api.get('/workspaces', async (req, res) => {
         await ensurePersonalWorkspace(db, req.userId);
-        res.json(await workspacesOf(db, req.userId));
+        res.json(await listWorkspaces(db, req.userId));
     });
 
     api.get('/workspaces/:workspaceId/documents', async (req, res) => {
-        const role = await roleIn(db, req.userId, req.params.workspaceId);
+        const role = await workspaceRole(db, req.userId, req.params.workspaceId);
 
         if (!allows(role, 'viewer')) {
             return refuse(res, 404, 'NOT_FOUND');
         }
 
-        return res.json(await documentsIn(db, req.params.workspaceId));
+        return res.json(await listDocuments(db, req.params.workspaceId));
     });
 
     api.post('/workspaces/:workspaceId/documents', async (req, res) => {
-        const role = await roleIn(db, req.userId, req.params.workspaceId);
+        const role = await workspaceRole(db, req.userId, req.params.workspaceId);
 
         if (!allows(role, 'viewer')) {
             return refuse(res, 404, 'NOT_FOUND');
@@ -91,7 +91,7 @@ export function createApi({ db, auth, origin, onDeleted = () => {} }) {
             return refuse(res, 403, 'FORBIDDEN');
         }
 
-        const name = nameOf(req.body);
+        const name = parseName(req.body);
         // Chosen by the client, so a document created offline keeps its id.
         const id = req.body?.id;
 
@@ -118,7 +118,7 @@ export function createApi({ db, auth, origin, onDeleted = () => {} }) {
     });
 
     api.delete('/documents/:documentId', async (req, res) => {
-        const role = await roleOnDocument(db, req.userId, req.params.documentId);
+        const role = await documentRole(db, req.userId, req.params.documentId);
 
         if (!allows(role, 'viewer')) {
             return refuse(res, 404, 'NOT_FOUND');

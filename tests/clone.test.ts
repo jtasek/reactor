@@ -25,7 +25,7 @@ const shapes: ShapeInput[] = [
     { type: 'text', position: { x: 10, y: 40 }, value: 'abc', fontSize: 20 }
 ];
 
-function cloneOf(shape: ShapeInput) {
+function cloneShape(shape: ShapeInput) {
     const { store } = createTestStore();
 
     store.actions.addShape({ ...shape, name: 'Original', selected: true, rotation: 30 });
@@ -42,7 +42,7 @@ function cloneOf(shape: ShapeInput) {
 
 describe.each(shapes)('cloning a $type', (shape) => {
     it('adds an independent copy offset by (10, 10) with fresh metadata', () => {
-        const { original, clone, cloneId } = cloneOf(shape);
+        const { original, clone, cloneId } = cloneShape(shape);
         const source = getShapeBounds(original());
 
         expect(getShapeBounds(clone())).toMatchObject({
@@ -62,7 +62,7 @@ describe.each(shapes)('cloning a $type', (shape) => {
     });
 
     it('does not follow later edits of the original', () => {
-        const { store, original, clone } = cloneOf(shape);
+        const { store, original, clone } = cloneShape(shape);
         const before = getShapeBounds(clone());
 
         store.actions.moveSelectedShapes({ x: 100, y: 100 });
