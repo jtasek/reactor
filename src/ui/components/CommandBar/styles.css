@@ -31,8 +31,7 @@
     background-color: var(--control-background-active);
 }
 
-.commandBarButton button,
-div {
+.commandBarButton button, div {
     align-items: center;
     display: flex;
     flex-direction: column;
@@ -52,11 +51,11 @@ div {
     margin: 10px 5px 10px 5px;
 }
 
-.commandBarButton[aria-current='true'] {
+.commandBarButton[aria-current="true"] {
     background-color: var(--control-background-active);
 }
 
-.commandBarButton[data-disabled='true'] {
+.commandBarButton[data-disabled="true"] {
     background-color: var(--control-background-disabled);
     cursor: default;
     pointer-events: none;

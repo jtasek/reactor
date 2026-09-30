@@ -1,25 +1,25 @@
 .controlPanel {
-    backdrop-filter: var(--backdrop-filter);
-    background-color: var(--control-background);
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    color: var(--text-color);
-    display: block;
-    padding: 10px;
-    position: absolute;
-    right: 0;
-    top: 0;
-    transition: all 0.2s ease-in-out;
-    user-select: none;
-    width: var(--control-width);
-    z-index: 100;
+  backdrop-filter: var(--backdrop-filter);
+  background-color: var(--control-background);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  color: var(--text-color);
+  display: block;
+  padding: 10px;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: all 0.2s ease-in-out;
+  user-select: none;
+  width: var(--control-width);
+  z-index: 100;
 }
 
 .controlPanel:hover {
-    box-shadow: var(--box-shadow-hover);
+  box-shadow: var(--box-shadow-hover);
 }
 
 .controlItem input {
-    vertical-align: middle;
-    margin-right: 10px;
+  vertical-align: middle;
+  margin-right: 10px;
 }

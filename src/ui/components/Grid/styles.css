@@ -1,18 +1,18 @@
 .grid {
-    height: 100%;
-    width: 100%;
+  height: 100%;
+  width: 100%;
 }
 
 .grid-lines-small {
-    fill: none;
-    stroke-width: 0.5;
-    stroke: gray;
+  fill: none;
+  stroke-width: 0.5;
+  stroke: gray;
 }
 
 .grid-lines-large {
-    fill: none;
-    stroke-width: 1;
-    stroke: gray;
+  fill: none;
+  stroke-width: 1;
+  stroke: gray;
 }
 
 /*Light Theme */

@@ -1,15 +1,15 @@
 declare namespace StylesCssNamespace {
-    export interface IStylesCss {
-        groupItem: string;
-        groupLabel: string;
-        groupPanel: string;
-        icons: string;
-    }
+  export interface IStylesCss {
+    groupItem: string;
+    groupLabel: string;
+    groupPanel: string;
+    icons: string;
+  }
 }
 
 declare const StylesCssModule: StylesCssNamespace.IStylesCss & {
-    /** WARNING: Only available when `css-loader` is used without `style-loader` or `mini-css-extract-plugin` */
-    locals: StylesCssNamespace.IStylesCss;
+  /** WARNING: Only available when `css-loader` is used without `style-loader` or `mini-css-extract-plugin` */
+  locals: StylesCssNamespace.IStylesCss;
 };
 
 export = StylesCssModule;

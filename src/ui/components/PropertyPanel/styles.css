@@ -1,23 +1,23 @@
 .propertyPanel {
-    backdrop-filter: var(--backdrop-filter);
-    background-color: var(--control-background);
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    color: var(--text-color);
-    display: block;
-    padding: 10px;
-    position: absolute;
-    right: 450px;
-    top: 80px;
-    transition: all 0.2s ease-in-out;
-    user-select: none;
-    z-index: 100;
+  backdrop-filter: var(--backdrop-filter);
+  background-color: var(--control-background);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  color: var(--text-color);
+  display: block;
+  padding: 10px;
+  position: absolute;
+  right: 450px;
+  top: 80px;
+  transition: all 0.2s ease-in-out;
+  user-select: none;
+  z-index: 100;
 }
 
 .propertyPanel:hover {
-    box-shadow: var(--box-shadow-hover);
+  box-shadow: var(--box-shadow-hover);
 }
 
 td ~ td {
-    padding-left: 10px;
+  padding-left: 10px;
 }

@@ -1,24 +1,25 @@
 .statusBar {
-    align-items: stretch;
-    backdrop-filter: var(--backdrop-filter);
-    background-color: var(--control-background);
-    bottom: 0;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-    box-sizing: border-box;
-    color: var(--text-color);
-    display: flex;
-    flex-direction: row;
-    height: 25px;
-    justify-content: space-between;
-    line-height: 25px;
-    padding: 0 10px;
-    position: fixed;
-    user-select: none;
-    width: 100%;
-    z-index: 100;
+  align-items: stretch;
+  backdrop-filter: var(--backdrop-filter);
+  background-color: var(--control-background);
+  bottom: 0;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
+  color: var(--text-color);
+  display: flex;
+  flex-direction: row;
+  height: 25px;
+  justify-content: space-between;
+  line-height: 25px;
+  padding: 0 10px;
+  position: fixed;
+  user-select: none;
+  width: 100%;
+  z-index: 100;
 }
 
 .statusBarSlot {
-    text-align: right;
-    width: calc(100% / 8);
+  text-align: right;
+  width: calc(100% / 8);
 }
+

@@ -1,42 +1,42 @@
 .layerPanel {
-    backdrop-filter: var(--backdrop-filter);
-    background-color: var(--control-background);
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    color: var(--text-color);
-    display: block;
-    left: 700px;
-    padding: 10px;
-    position: absolute;
-    top: 60px;
-    transition: all 0.2s ease-in-out;
-    user-select: none;
-    width: var(--control-width);
-    z-index: 100;
+  backdrop-filter: var(--backdrop-filter);
+  background-color: var(--control-background);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  color: var(--text-color);
+  display: block;
+  left: 700px;
+  padding: 10px;
+  position: absolute;
+  top: 60px;
+  transition: all 0.2s ease-in-out;
+  user-select: none;
+  width: var(--control-width);
+  z-index: 100;
 }
 
 .layerPanel:hover {
-    box-shadow: var(--box-shadow-hover);
+  box-shadow: var(--box-shadow-hover);
 }
 
 .layerPanel input {
-    margin-right: 10px;
+  margin-right: 10px;
 }
 
 .layerItem {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .layerLabel {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-    margin-right: 10px;
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-right: 10px;
 }
 
 .icons {
-    display: inline-flex;
+  display: inline-flex;
 }

@@ -1,15 +1,15 @@
 .shape {
-    background-color: transparent;
-    color: rgba(0, 0, 0, 0.5);
-    cursor: text;
-    font-size: 1.5rem;
-    line-height: 1.5rem;
+  background-color: transparent;
+  color: rgba(0, 0, 0, 0.5);
+  cursor: text;
+  font-size: 1.5rem;
+  line-height: 1.5rem;
 }
 
 .selected {
-    background-color: transparent;
-    color: rgba(0, 0, 255, 0.5);
-    cursor: text;
-    font-size: 1.5rem;
-    line-height: 1.5rem;
+  background-color: transparent;
+  color: rgba(0, 0, 255, 0.5);
+  cursor: text;
+  font-size: 1.5rem;
+  line-height: 1.5rem;
 }
