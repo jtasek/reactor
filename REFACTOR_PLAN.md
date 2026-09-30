@@ -657,8 +657,14 @@ message may be 4 MB. Next: connecting the editor.
 Step 5, editor groundwork: signed in, documents are kept in a database and shared
 over a channel of the account's own, apart from the ones kept signed out, and the
 local storage save is not moved into an account. The API accepts a document id
-chosen by the client. Next: syncing open documents, then clearing an account's
-copy on sign-out.
+chosen by the client.
+
+Step 5, syncing: signed in, every document syncs with the server over one socket,
+and the status shows syncing and offline. A new device shows the account's
+documents rather than a new one; documents made or deleted offline are sent once
+the server can be reached, and one deleted elsewhere is removed here and from the
+device. The editor asks the server again, ever more rarely, while it cannot be
+reached, as while it restarts. Next: clearing an account's copy on sign-out.
 
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user
@@ -682,8 +688,9 @@ Design:
   groups in groups), an item's parent and index are stored as one value, so a move
   never leaves them disagreeing.
 - Store binding: the Overmind store stays the app's state. The binding is an
-  Overmind effect and the only app code that uses the Yjs API, so a later move to
-  Yjs v14 stays inside it and the test helpers. Changes to saved fields are written
+  Overmind effect and, with the server sync's mirror documents, the only app code
+  that uses the Yjs API, so a later move to Yjs v14 stays inside them and the test
+  helpers. Changes to saved fields are written
   to the Yjs document in one transaction once the task's actions end, found from
   the mutation paths autosave already receives; entities are written in their saved
   form, and only what changed since the copy last saw them. Objects such as a

@@ -37,13 +37,30 @@ export const KeyboardInfo: FC = () => {
     return <span>{result.join(' ')}</span>;
 };
 
-const SAVE_LABELS = { saved: 'Saved', saving: 'Saving…', notSaving: 'Not saving' };
+const SAVE_LABELS = {
+    saved: 'Saved',
+    saving: 'Saving…',
+    syncing: 'Syncing…',
+    offline: 'Offline',
+    notSaving: 'Not saving'
+};
+
+const OFFLINE =
+    'The server cannot be reached. Changes are kept in this browser and sync once it can.';
 
 export const SaveStatusInfo: FC = () => {
     const status = useSaveStatus();
 
     return (
-        <span title={status.kind === 'notSaving' ? status.reason : undefined}>
+        <span
+            title={
+                status.kind === 'notSaving'
+                    ? status.reason
+                    : status.kind === 'offline'
+                      ? OFFLINE
+                      : undefined
+            }
+        >
             {SAVE_LABELS[status.kind]}
         </span>
     );

@@ -7,7 +7,7 @@ import {
 } from 'overmind-react';
 import { getCommand, getCommands } from './actions';
 import { Context } from '.';
-import { useCallback } from 'react';
+import { useCallback, useLayoutEffect, useReducer } from 'react';
 import { isShapeLocked, isShapeVisible } from './utils';
 import type { Command } from './types';
 
@@ -77,8 +77,31 @@ export const useLoading = () => {
     return useAppState((state) => state.loading);
 };
 
+/**
+ * Whether this copy's documents are saved and synced. It changes on its own, also
+ * while the editor's page first renders, before overmind-react listens for
+ * changes, so it is read again once the page shows.
+ */
 export const useSaveStatus = () => {
-    return useAppState((state) => state.saveStatus);
+    const status = useAppState((state) => state.saveStatus);
+    const reaction = useReaction();
+    const [, catchUp] = useReducer((renders: number) => renders + 1, 0);
+
+    useLayoutEffect(() => {
+        const stop = reaction(
+            (state) => state.saveStatus.kind,
+            (kind) => {
+                if (kind !== status.kind) {
+                    catchUp();
+                }
+            },
+            { immediate: true }
+        );
+
+        stop();
+    }, [reaction, status.kind]);
+
+    return status;
 };
 
 export const useAccount = () => {

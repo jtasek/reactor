@@ -11,6 +11,8 @@ import {
     restoreDocuments,
     type View
 } from './documentStorage';
+import type { ServerRecord } from './api';
+import type { ServerSync } from './serverSync';
 import { TabSync } from './tabSync';
 
 /** Where this device keeps its view: the document it shows, and each document's camera. */
@@ -18,6 +20,12 @@ export const VIEW_KEY = `${PERSISTENCE_KEY}:view`;
 
 /** A fingerprint of the local storage save as it was moved into the database. */
 export const MIGRATED_KEY = `${PERSISTENCE_KEY}:migrated`;
+
+/** How long a new device waits for the server's documents before starting a new one. */
+const SERVER_WAIT = 5000;
+
+const isIdList = (value: unknown): value is string[] =>
+    Array.isArray(value) && value.every((item) => typeof item === 'string');
 
 /** Saved updates a document gathers before they are merged into one. */
 const COMPACT_AFTER = 100;
@@ -101,8 +109,9 @@ function loadLocalData({ effects, state, actions }: Context): boolean {
  * Other copies' messages are only taken once loading is done; what they sent
  * meanwhile is picked up from the database and by catching up. With an `owner`,
  * the account whose documents open, the database, the channel and the view are the
- * account's own, and the local storage save, which belongs to this browser signed
- * out, is left alone.
+ * account's own, the local storage save, which belongs to this browser signed out,
+ * is left alone, and the documents sync with the server; the database is then a
+ * copy of the account's documents there.
  */
 export async function startDocumentSync(
     context: Context,
@@ -135,6 +144,8 @@ export async function startDocumentSync(
     const appended = new Map<string, number>();
     let database: DocumentDatabase | undefined = undefined;
     let sync: TabSync | undefined = undefined;
+    let server: ServerSync | undefined = undefined;
+    const recordKey = `${PERSISTENCE_KEY}:server:${owner}`;
     /** Why this copy saves nothing, while it does not. */
     let notSaving: string | undefined = 'Documents are loading.';
     /**
@@ -160,8 +171,12 @@ export async function startDocumentSync(
                 ? 'Changes could not be saved. Storage may be full or unavailable.'
                 : undefined);
 
+        const synced = server?.status ?? 'synced';
+
         setSaveStatus(
-            reason ? { kind: 'notSaving', reason } : { kind: pending > 0 ? 'saving' : 'saved' }
+            reason
+                ? { kind: 'notSaving', reason }
+                : { kind: pending > 0 ? 'saving' : synced === 'synced' ? 'saved' : synced }
         );
 
         if (reason === announced) {
@@ -306,6 +321,7 @@ export async function startDocumentSync(
     };
 
     const removeShared = (documentId: string) => {
+        server?.forget(documentId);
         collaboration.close(documentId);
         saved.delete(documentId);
         unsaved.delete(documentId);
@@ -315,6 +331,82 @@ export async function startDocumentSync(
         report();
     };
 
+    /** Removes a document deleted on the server, here and on the device. */
+    const removeDeleted = (documentId: string) => {
+        removeShared(documentId);
+
+        const target = database;
+
+        if (target && !notSaving) {
+            void store(documentId, () => target.remove(documentId), true);
+        }
+
+        sync?.sendDeleted(documentId);
+    };
+
+    /** Opens a document from the server, saves it, and shares it with the other copies. */
+    const openFromServer = (documentId: string, update: Uint8Array) => {
+        if (isOpen(documentId)) {
+            collaboration.receive(documentId, update);
+
+            return true;
+        }
+
+        if (!openSaved(documentId, [update])) {
+            return false;
+        }
+
+        saved.delete(documentId);
+        saveWhole(documentId, update);
+        sync?.sendDocument(documentId, update);
+
+        return true;
+    };
+
+    const readRecord = (): ServerRecord => {
+        try {
+            const record: unknown = effects.loadState(recordKey);
+            const known: unknown = Reflect.get(Object(record), 'known');
+            const deleting: unknown = Reflect.get(Object(record), 'deleting');
+
+            return {
+                known: isIdList(known) ? known : [],
+                deleting: isIdList(deleting) ? deleting : []
+            };
+        } catch {
+            return { known: [], deleting: [] };
+        }
+    };
+
+    const startServer = async () => {
+        const { ServerSync } = await import('./serverSync');
+        server = new ServerSync({
+            collaboration,
+            api: effects.api,
+            transport: effects.serverTransport(),
+            record: {
+                load: readRecord,
+                save: (record) => {
+                    try {
+                        effects.saveState(recordKey, record);
+                    } catch {
+                        // Without the record, documents deleted elsewhere are created again.
+                    }
+                }
+            },
+            events: {
+                documentIds: () => collaboration.documentIds(),
+                documentName: (documentId) => instance.state.documents[documentId]?.name ?? '',
+                opened: openFromServer,
+                deleted: removeDeleted,
+                received: append,
+                changed: report
+            }
+        });
+
+        await server.refresh();
+    };
+
     /** Starts sharing and saving a document this copy made. */
     const create = (documentId: string) => {
         collaboration.open(documentId);
@@ -322,6 +414,7 @@ export async function startDocumentSync(
         const update = collaboration.state(documentId);
 
         saveWhole(documentId, update);
+        server?.created(documentId);
 
         if (sync) {
             sync.sendDocument(documentId, update);
@@ -364,6 +457,7 @@ export async function startDocumentSync(
 
             report();
 
+            server?.deleted(documentId);
             sync?.sendDeleted(documentId);
         }
     };
@@ -406,7 +500,10 @@ export async function startDocumentSync(
     const catchUp = () =>
         refresh()
             .catch(() => undefined)
-            .then(() => sync?.catchUp());
+            .then(() => {
+                sync?.catchUp();
+                void server?.refresh();
+            });
 
     const saveView = () => {
         clearTimeout(viewTimer);
@@ -524,6 +621,7 @@ export async function startDocumentSync(
             addMutationListener: instance.addMutationListener,
             sendUpdate: (documentId, update) => {
                 sync?.send(documentId, update);
+                server?.send(documentId, update);
                 append(documentId, update);
             }
         })
@@ -550,6 +648,21 @@ export async function startDocumentSync(
         await load(database, savedIds);
     } else if (savedIds && !scope) {
         migrate();
+    }
+
+    // A new device shows the account's documents rather than starting one of its own.
+    const serverStarted = owner
+        ? startServer().catch((error: unknown) =>
+              console.warn('Documents cannot sync with the server', error)
+          )
+        : undefined;
+
+    if (serverStarted && savedIds?.length === 0) {
+        state.documents = {};
+        await Promise.race([
+            serverStarted,
+            new Promise((resolve) => setTimeout(resolve, SERVER_WAIT))
+        ]);
     }
 
     if (Object.keys(state.documents).length === 0) {
@@ -605,7 +718,8 @@ export async function startDocumentSync(
 
     sync = new TabSync(collaboration, effects.openChannel(scope), {
         created: (documentId, update) => openSaved(documentId, [update]),
-        deleted: removeShared
+        deleted: removeShared,
+        received: (documentId, update) => server?.send(documentId, update)
     });
     unannounced.splice(0).forEach(([documentId, update]) => sync?.sendDocument(documentId, update));
 

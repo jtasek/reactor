@@ -346,10 +346,12 @@ export type Account =
     | { kind: 'signedOut' }
     | { kind: 'signedIn'; id: string; name: string; email: string };
 
-/** Whether this copy's documents are being saved; `reason` says why they are not. */
+/** Whether this copy's documents are saved, and signed in synced; `reason` says why they are not saved. */
 export type SaveStatus =
     | { kind: 'saved' }
     | { kind: 'saving' }
+    | { kind: 'syncing' }
+    | { kind: 'offline' }
     | { kind: 'notSaving'; reason: string };
 
 export type Configuration = {
