@@ -71,6 +71,21 @@ const migrations = {
                 .column('workspace_id')
                 .execute();
         }
+    },
+    '0002_document_states': {
+        async up(db) {
+            // Each document's shared content, as one Yjs update holding all of it.
+            await db.schema
+                .createTable('document_states')
+                .addColumn('document_id', 'text', (column) =>
+                    column.primaryKey().references('documents.id').onDelete('cascade')
+                )
+                .addColumn('state', 'bytea', (column) => column.notNull())
+                .addColumn('updated_at', 'timestamptz', (column) =>
+                    column.notNull().defaultTo(sql`now()`)
+                )
+                .execute();
+        }
     }
 };
 

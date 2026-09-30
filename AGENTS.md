@@ -117,7 +117,10 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   "Accounts" for the variables. The app's tables are Kysely migrations in
   `server/migrations.js` (add new ones, never edit released ones), workspace queries live in
   `server/workspaces.js`, and `server/api.js` is the `/api` router, which checks the
-  session, the `Origin` of changes and the role on every request.
+  session, the `Origin` of changes and the role on every request. `server/sync.js` serves
+  documents over the `/sync` WebSocket with Hocuspocus: the upgrade checks the `Origin` and
+  the session, `onConnect` the role (viewers are read-only), and content is kept in
+  `document_states`. `tests/server/support.ts` `serve()` runs all of it over HTTP.
 
 ### Verification baseline (do not treat as regressions)
 

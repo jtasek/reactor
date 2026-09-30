@@ -57,14 +57,19 @@ const server = app.listen(Number(PORT), HOST, () => {
     console.log(`Listening at http://${HOST}:${PORT}`);
 });
 
+accounts?.sync.attach(server);
+
 server.on('error', (err) => {
     console.error(err);
     process.exit(1);
 });
 
-const shutdown = () =>
+const shutdown = () => {
+    const synced = Promise.resolve(accounts?.sync.close());
+
     server.close(() => {
-        Promise.resolve(accounts?.close()).finally(() => process.exit(0));
+        synced.then(() => accounts?.close()).finally(() => process.exit(0));
     });
+};
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);

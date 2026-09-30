@@ -26,7 +26,7 @@ function nameOf(body) {
  * user's cookie. Workspaces and documents the user may not read are answered as
  * missing, so their existence is not revealed.
  */
-export function createApi({ db, auth, origin }) {
+export function createApi({ db, auth, origin, onDeleted = () => {} }) {
     const api = express.Router();
 
     api.use((req, res, next) => {
@@ -114,6 +114,7 @@ export function createApi({ db, auth, origin }) {
         }
 
         await deleteDocument(db, req.params.documentId);
+        onDeleted(req.params.documentId);
 
         return res.status(204).end();
     });

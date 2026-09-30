@@ -33,6 +33,13 @@ if (!fs.existsSync(INDEX_HTML)) {
     process.exit(1);
 }
 
+// With accounts, documents sync over a WebSocket on the editor's own address,
+// which some browsers do not count as 'self'.
+const SYNC_ORIGIN =
+    process.env.DATABASE_URL && process.env.BETTER_AUTH_URL
+        ? new URL(process.env.BETTER_AUTH_URL).origin.replace(/^http/, 'ws')
+        : undefined;
+
 const logger = pinoHttp({
     level: LOG_LEVEL,
     // Health-check probes are high-volume and low-signal; do not log them.
@@ -65,7 +72,7 @@ app.use(
                 styleSrc: ["'self'", "'unsafe-inline'"],
                 imgSrc: ["'self'", 'data:'],
                 fontSrc: ["'self'", 'data:'],
-                connectSrc: ["'self'"],
+                connectSrc: ["'self'", ...(SYNC_ORIGIN ? [SYNC_ORIGIN] : [])],
                 manifestSrc: ["'self'"],
                 workerSrc: ["'self'", 'blob:'],
                 upgradeInsecureRequests: []
@@ -155,6 +162,8 @@ const server = app.listen(PORT, HOST, () => {
     logger.logger.info(`Production server listening on http://${HOST}:${PORT}`);
 });
 
+accounts?.sync.attach(server);
+
 server.on('error', (err) => {
     logger.logger.error(err);
     process.exit(1);
@@ -162,8 +171,12 @@ server.on('error', (err) => {
 
 const shutdown = (signal) => {
     logger.logger.info(`Received ${signal}, shutting down gracefully`);
+    // Closing the sync disconnects its sockets, which would keep the server open,
+    // and saves the documents open here before the database closes.
+    const synced = Promise.resolve(accounts?.sync.close());
+
     server.close(() => {
-        Promise.resolve(accounts?.close()).finally(() => process.exit(0));
+        synced.then(() => accounts?.close()).finally(() => process.exit(0));
     });
     // Force-exit if connections do not drain in time.
     setTimeout(() => process.exit(1), 10000).unref();
