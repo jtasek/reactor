@@ -104,6 +104,17 @@ export const config = {
               ]
             : [new MiniCssExtractPlugin({ filename: '[name].[contenthash].css' })])
     ],
+    // The bundle budget: the production build fails beyond it. Measured on 2026-10-01
+    // at 401 KiB for the entry bundle (React DOM, Overmind and React 225 KiB, the
+    // app 172 KiB) and 225 KiB for its largest file; raise it only for code the
+    // editor needs as it opens, after checking what grew.
+    performance: isDev
+        ? false
+        : {
+              hints: 'error',
+              maxEntrypointSize: 420 * 1024,
+              maxAssetSize: 240 * 1024
+          },
     optimization: {
         // Readable module names on HMR in dev; stable hashes for caching in prod.
         moduleIds: isDev ? 'named' : 'deterministic',
