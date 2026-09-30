@@ -1,4 +1,4 @@
-import React, { memo, useLayoutEffect, useRef } from 'react';
+import React, { FC, memo, useLayoutEffect, useRef } from 'react';
 import { Active } from '../Active/Active';
 import { Label } from '../Label';
 import { Resizable } from '../Selectable/Resizable';
@@ -24,7 +24,8 @@ export const Shape = memo(({ shapeId }: Props) => {
         (state) => !(state.tools.activeToolsIds[0] === 'move' && state.events.pointer.dragging)
     );
     const groupRef = useRef<SVGGElement>(null);
-    const Component = getComponentByType(shape.type);
+    // The component of this shape's type, which takes this shape's fields.
+    const Component = getComponentByType(shape.type) as FC<Omit<typeof shape, 'key'>>;
     const geometryKey = shapeGeometryKey(shape);
 
     // Measure the actual rendered geometry so the selection box, handles and

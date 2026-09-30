@@ -111,7 +111,7 @@
     "test:watch": "vitest",
     "tsc": "tsc --noEmit",
     "webpack": "node ./node_modules/webpack/bin/webpack",
-    "lint:fix": "eslint src tests server *.js *.mjs *.mts *.config.ts scripts --max-warnings 0 --fix",
+    "lint:fix": "eslint src tests server *.ts *.mjs *.mts scripts --max-warnings 0 --fix",
     "lint:baseline": "node scripts/check-lint-baseline.mjs",
     "typecheck": "pnpm run tsc && tsc -p tsconfig.test.json && tsc -p tsconfig.server.json",
     "test:browser": "playwright test",

@@ -6,7 +6,7 @@ export interface Props {
     max: number;
     step: number;
     value: number;
-    onChange: (value: any) => void;
+    onChange: (value: number) => void;
 }
 
 export const Slider: FC<Props> = ({ min, max, step, value, onChange }) => {

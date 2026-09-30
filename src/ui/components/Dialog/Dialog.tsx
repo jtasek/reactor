@@ -12,19 +12,14 @@ export interface Props {
     title: string;
     description: string;
     visible: boolean;
-    stateChart?: any;
     children?: ReactNode;
 }
 
-export const Dialog: FC<Props> = ({ title, description, visible, stateChart, children }) => {
+export const Dialog: FC<Props> = ({ title, description, visible, children }) => {
     if (!visible) {
         return null;
     }
 
-    /*  if (!stateChart) {
-    throw Error('Please provide a state chart');
-  }
-*/
     return (
         <div style={{ width: '100%', height: '100%', position: 'absolute' }}>
             <Overlay />

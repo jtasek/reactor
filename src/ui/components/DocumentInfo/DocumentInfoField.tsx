@@ -1,8 +1,8 @@
-import React, { FC } from 'react';
+import React, { FC, ReactNode } from 'react';
 
 interface Props {
     name: string;
-    value: any;
+    value: ReactNode;
 }
 
 export const DocumentInfoField: FC<Props> = ({ name, value }) => (
