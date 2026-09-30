@@ -18,5 +18,5 @@ export const useKeyboardDriver = () => {
 
             log('Keyboard driver removed.');
         };
-    }, []);
+    }, [handleKeyDown, handleKeyUp, log]);
 };

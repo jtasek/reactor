@@ -3,8 +3,6 @@ import React, { FC } from 'react';
 import { useControls } from 'src/app/hooks';
 import { MenuBar } from './MenuBar';
 
-import styles from './styles.css';
-
 export const MenuBarContainer: FC = () => {
     const { menuBar } = useControls();
 

@@ -1,6 +1,5 @@
 import React, { FC } from 'react';
 
-import styles from './styles.css';
 import { NavBar } from './NavBar';
 import { ComponentsList } from './ComponentsList';
 import { GroupsList } from './GroupsList';

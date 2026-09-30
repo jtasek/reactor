@@ -5,9 +5,7 @@ import {
     CommandLine,
     ContextMenu,
     ControlPanel,
-    Cursor,
     DataView,
-    Dialog,
     DocumentInfo,
     Explorer,
     GroupPanel,
@@ -23,7 +21,6 @@ import {
     StatusBar,
     Stats,
     Canvas,
-    Switch,
     ToolBar
 } from 'src/ui/components';
 

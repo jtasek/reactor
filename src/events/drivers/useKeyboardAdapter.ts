@@ -1,40 +1,42 @@
+import { useCallback } from 'react';
 import { useActions, useLog } from '../../app/hooks';
 import { isTextEntry } from './helpers';
+
+const keys = ({ altKey, ctrlKey, key, metaKey, shiftKey }: KeyboardEvent) => ({
+    altKey,
+    ctrlKey,
+    key,
+    metaKey,
+    shiftKey
+});
 
 export const useKeyboardAdapter = () => {
     const { keyDown, keyUp, pressShortcut } = useActions().events;
     const log = useLog();
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-        log('keyDown', {
-            altKey: event.altKey,
-            ctrlKey: event.ctrlKey,
-            key: event.key,
-            metaKey: event.metaKey,
-            shiftKey: event.shiftKey
-        });
-        keyDown(event);
+    const handleKeyDown = useCallback(
+        (event: KeyboardEvent) => {
+            log('keyDown', keys(event));
+            keyDown(event);
 
-        if (isTextEntry(event.target)) {
-            return;
-        }
+            if (isTextEntry(event.target)) {
+                return;
+            }
 
-        const { key, altKey, ctrlKey, metaKey, shiftKey } = event;
+            if (pressShortcut(keys(event))) {
+                event.preventDefault();
+            }
+        },
+        [keyDown, log, pressShortcut]
+    );
 
-        if (pressShortcut({ key, altKey, ctrlKey, metaKey, shiftKey })) {
-            event.preventDefault();
-        }
-    };
+    const handleKeyUp = useCallback(
+        (event: KeyboardEvent) => {
+            log('keyUp', keys(event));
+            keyUp(event);
+        },
+        [keyUp, log]
+    );
 
-    const handleKeyUp = (event: KeyboardEvent) => {
-        log('keyDown', {
-            altKey: event.altKey,
-            ctrlKey: event.ctrlKey,
-            key: event.key,
-            metaKey: event.metaKey,
-            shiftKey: event.shiftKey
-        });
-        keyUp(event);
-    };
     return { handleKeyDown, handleKeyUp };
 };
