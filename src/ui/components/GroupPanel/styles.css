@@ -1,43 +1,43 @@
 .groupPanel {
-  backdrop-filter: var(--backdrop-filter);
-  background-color: var(--control-background);
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow);
-  color: var(--text-color);
-  display: block;
-  left: 900px;
-  padding: 10px;
-  position: absolute;
-  top: 60px;
-  transition: all 0.2s ease-in-out;
-  user-select: none;
-  width: var(--control-width);
-  z-index: 100;
+    backdrop-filter: var(--backdrop-filter);
+    background-color: var(--control-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    color: var(--text-color);
+    display: block;
+    left: 900px;
+    padding: 10px;
+    position: absolute;
+    top: 60px;
+    transition: all 0.2s ease-in-out;
+    user-select: none;
+    width: var(--control-width);
+    z-index: 100;
 }
 
 .groupPanel:hover {
-  box-shadow: var(--box-shadow-hover);
+    box-shadow: var(--box-shadow-hover);
 }
 
 .groupPanel input {
-  vertical-align: middle;
-  margin-right: 10px;
+    vertical-align: middle;
+    margin-right: 10px;
 }
 
 .groupItem {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
 }
 
 .groupLabel {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-  margin-right: 10px;
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-right: 10px;
 }
 
 .icons {
-  display: inline-flex;
+    display: inline-flex;
 }

@@ -104,16 +104,16 @@ export const onInitializeOvermind = async (
     registerTools();
     registerRoutes(effects, actions);
 
-    // Read while the documents load, and shown with them: a change while the pages
-    // first render can miss components that have not subscribed yet.
-    const account = readAccount(effects.accounts);
+    // Read first, as it decides whose documents open, and shown with them: a change
+    // while the pages first render can miss components that have not subscribed yet.
+    const account = await readAccount(effects.accounts);
 
     try {
-        await startDocumentSync(context, {
-            state: instance.state,
-            actions: instance.actions,
-            addMutationListener
-        });
+        await startDocumentSync(
+            context,
+            { state: instance.state, actions: instance.actions, addMutationListener },
+            account
+        );
     } catch {
         actions.displayError('Saved documents could not be loaded. Reload the page to try again.');
         actions.setSaveStatus({
@@ -121,7 +121,7 @@ export const onInitializeOvermind = async (
             reason: 'Saved documents could not be loaded.'
         });
     } finally {
-        state.account = await account;
+        state.account = account;
         state.loading = false;
     }
 

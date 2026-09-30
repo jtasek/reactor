@@ -175,4 +175,35 @@ describe('API', () => {
         expect(logged).toHaveBeenCalledOnce();
         logged.mockRestore();
     });
+
+    it('creates a document with the id its client chose, once, and never one taken elsewhere', async () => {
+        const { call, json, user } = await serve();
+        const ada = await user('ada@example.com');
+        const grace = await user('grace@example.com');
+        const id = '0b7e2a4c-3f1d-4c8e-9a6b-2d5f8e1c7a90';
+        const create = (cookie: string, workspaceId: string, body: object) =>
+            call('POST', `/workspaces/${workspaceId}/documents`, { cookie, body });
+
+        const first = await create(ada.cookie, ada.personal.id, { id, name: 'Plan' });
+
+        expect(first.status).toBe(201);
+        expect(await first.json()).toMatchObject({ id, name: 'Plan' });
+
+        const again = await create(ada.cookie, ada.personal.id, { id, name: 'Plan' });
+
+        expect(again.status).toBe(200);
+        expect(await again.json()).toMatchObject({ id, name: 'Plan' });
+        expect(
+            await json(
+                call('GET', `/workspaces/${ada.personal.id}/documents`, { cookie: ada.cookie })
+            )
+        ).toHaveLength(1);
+
+        expect((await create(grace.cookie, grace.personal.id, { id, name: 'Mine' })).status).toBe(
+            409
+        );
+        expect(
+            (await create(ada.cookie, ada.personal.id, { id: 'not-a-uuid', name: 'Plan' })).status
+        ).toBe(400);
+    });
 });

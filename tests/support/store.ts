@@ -31,7 +31,7 @@ export function createTestStore(
         autoSave?: boolean;
         collaboration?: Collaboration;
         indexedDB?: IDBFactory;
-        openChannel?: () => Channel;
+        openChannel?: (name?: string) => Channel;
         accounts?: Accounts;
     } = {}
 ) {
@@ -60,7 +60,7 @@ export function createTestStore(
         reloadPage: vi.fn<typeof config.effects.reloadPage>(),
         shareAccount: vi.fn<typeof config.effects.shareAccount>(),
         collaboration: options.collaboration ?? new Collaboration(),
-        openDocumentDatabase: () => DocumentDatabase.open(indexedDB),
+        openDocumentDatabase: (name?: string) => DocumentDatabase.open(indexedDB, name),
         openChannel: options.openChannel ?? quietChannel,
         accounts: options.accounts ?? noAccounts
     };

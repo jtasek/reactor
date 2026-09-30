@@ -1,6 +1,6 @@
 .active {
     fill: cornflowerblue;
-    fill-opacity: .05;
+    fill-opacity: 0.05;
     stroke: cornflowerblue;
     stroke-width: 2;
     pointer-events: none;

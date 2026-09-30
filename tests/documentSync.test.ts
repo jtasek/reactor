@@ -3,6 +3,7 @@ import { createDocument, createShape } from 'src/app/factories';
 import { DocumentDatabase } from 'src/app/services/documentDatabase';
 import { PERSISTENCE_KEY, serializePersistedState } from 'src/app/services/documentStorage';
 import { MIGRATED_KEY } from 'src/app/services/documentSync';
+import type { AccountUser, Accounts } from 'src/app/services/accounts';
 import type { Channel } from 'src/app/services/tabSync';
 import { Hub } from './support/channel';
 import { createTestStore } from './support/store';
@@ -28,20 +29,37 @@ function localSave() {
 /** Starts a copy of the editor on a device whose IndexedDB is `indexedDB`. */
 async function start(
     indexedDB: IDBFactory,
-    options: { seed?: Record<string, string>; autoSave?: boolean; hub?: Hub } = {}
+    options: {
+        seed?: Record<string, string>;
+        autoSave?: boolean;
+        hub?: Hub;
+        signedIn?: AccountUser;
+    } = {}
 ) {
-    const { hub } = options;
+    const { hub, signedIn } = options;
     let channel: Channel | undefined;
     const test = createTestStore(options.seed, {
         autoSave: options.autoSave ?? true,
         indexedDB,
-        openChannel: hub && (() => (channel = hub.open()))
+        openChannel: hub && (() => (channel = hub.open())),
+        accounts: signedIn && { ...signedOut, session: async () => signedIn }
     });
 
     await test.store.onInitialize();
 
     return { ...test, channel };
 }
+
+/** A server with accounts, where no one is signed in. */
+const signedOut: Accounts = {
+    session: async () => null,
+    signIn: async () => ({ ok: true }),
+    signUp: async () => ({ ok: true }),
+    sendSignInLink: async () => ({ ok: true }),
+    signOut: async () => ({ ok: true })
+};
+
+const ada: AccountUser = { id: 'user-ada', name: 'Ada', email: 'ada@example.com' };
 
 /** The database as another copy reads it, after the writes asked for so far. */
 const database = (indexedDB: IDBFactory) => DocumentDatabase.open(indexedDB);
@@ -466,5 +484,51 @@ describe('document sync', () => {
 
         expect(store.state.saveStatus).toEqual({ kind: 'saved' });
         expect(messages({ store })).toEqual([]);
+    });
+
+    it('keeps an account’s documents apart from the ones kept signed out', async () => {
+        const indexedDB = new IDBFactory();
+        const signedOutCopy = await start(indexedDB, { seed: { [PERSISTENCE_KEY]: localSave() } });
+
+        signedOutCopy.store.actions.addShape(rectangle);
+        signedOutCopy.effects.collaboration.flush();
+
+        const signedIn = await start(indexedDB, {
+            signedIn: ada,
+            seed: { [PERSISTENCE_KEY]: localSave() }
+        });
+
+        // The local storage save belongs to this browser signed out, not to Ada.
+        expect(signedIn.store.state.documents.saved).toBeUndefined();
+        expect(Object.keys(signedIn.store.state.currentDocument.shapes)).toHaveLength(0);
+        expect(
+            await (await DocumentDatabase.open(indexedDB, 'reactor-user-ada')).documentIds()
+        ).toEqual(Object.keys(signedIn.store.state.documents));
+
+        const later = await start(indexedDB);
+
+        expect(Object.keys(later.store.state.documents)).toEqual(['saved']);
+        expect(Object.keys(later.store.state.currentDocument.shapes)).toHaveLength(2);
+    });
+
+    it('shares an account’s changes only with its own open copies', async () => {
+        const opened: Array<string | undefined> = [];
+        const test = createTestStore(
+            {},
+            {
+                autoSave: true,
+                indexedDB: new IDBFactory(),
+                openChannel: (name) => {
+                    opened.push(name);
+
+                    return { onmessage: null, postMessage: () => {}, close: () => {} };
+                },
+                accounts: { ...signedOut, session: async () => ada }
+            }
+        );
+
+        await test.store.onInitialize();
+
+        expect(opened).toEqual(['reactor-user-ada']);
     });
 });

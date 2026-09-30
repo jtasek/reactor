@@ -5,14 +5,14 @@
     list-style-type: none;
     list-style: none;
     margin: 1.75em auto 0;
-    padding: 2.8em;  /*2.8em = 2em*1.4 (2em = half the width of a link with img, 1.4 = sqrt(2))*/
+    padding: 2.8em; /*2.8em = 2em*1.4 (2em = half the width of a link with img, 1.4 = sqrt(2))*/
     position: relative;
     user-select: none;
     width: 24em;
 }
 
 .contextMenuButton {
-    background-color: var(--control-background);  
+    background-color: var(--control-background);
     border-radius: 50%;
     box-shadow: var(--box-shadow-hover);
     display: block;

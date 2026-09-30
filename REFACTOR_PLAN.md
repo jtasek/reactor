@@ -654,6 +654,12 @@ Yjs update in `document_states`, saved shortly after changes and on shutdown.
 Deleting a document disconnects everyone; a user may have 16 sockets open, and a
 message may be 4 MB. Next: connecting the editor.
 
+Step 5, editor groundwork: signed in, documents are kept in a database and shared
+over a channel of the account's own, apart from the ones kept signed out, and the
+local storage save is not moved into an account. The API accepts a document id
+chosen by the client. Next: syncing open documents, then clearing an account's
+copy on sign-out.
+
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user
 keeps their own view. Accounts, sessions, organizations and teams use Better Auth

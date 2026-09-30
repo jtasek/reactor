@@ -188,5 +188,5 @@ export class TabSync {
     }
 }
 
-/** The channel open copies of the editor on this device share. */
-export const openChannel = (): Channel => new BroadcastChannel('reactor');
+/** The channel open copies of the editor on this device share, signed out or in `name`'s account. */
+export const openChannel = (name = 'reactor'): Channel => new BroadcastChannel(name);

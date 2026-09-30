@@ -1,12 +1,12 @@
 .stack {
-  backdrop-filter: var(--backdrop-filter);
-  background-color: var(--control-background);
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow);
-  color: var(--text-color);
-  right: 350px;
-  padding: 10px;
-  position: fixed;
-  bottom: 30px;
-  z-index: 100;
+    backdrop-filter: var(--backdrop-filter);
+    background-color: var(--control-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    color: var(--text-color);
+    right: 350px;
+    padding: 10px;
+    position: fixed;
+    bottom: 30px;
+    z-index: 100;
 }

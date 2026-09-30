@@ -19,7 +19,7 @@ function server(user: AccountUser | null = null): Accounts {
                 return { ok: false, message: 'The email address or password is wrong.' };
             }
 
-            current = { name: 'Ada', email };
+            current = { id: 'user-ada', name: 'Ada', email };
 
             return { ok: true };
         },
@@ -50,9 +50,11 @@ const notices = ({ store }: Pick<ReturnType<typeof createTestStore>, 'store'>) =
 describe('accounts', () => {
     it('shows who is signed in, and no accounts where the server has none', async () => {
         expect(
-            (await start(server({ name: 'Ada', email: 'ada@example.com' }))).store.state.account
+            (await start(server({ id: 'user-ada', name: 'Ada', email: 'ada@example.com' }))).store
+                .state.account
         ).toEqual({
             kind: 'signedIn',
+            id: 'user-ada',
             name: 'Ada',
             email: 'ada@example.com'
         });
@@ -86,6 +88,7 @@ describe('accounts', () => {
         expect(await accounts.signIn('ada@example.com', 'correct horse')).toEqual({ ok: true });
         expect(await readAccount(accounts)).toEqual({
             kind: 'signedIn',
+            id: 'user-ada',
             name: 'Ada',
             email: 'ada@example.com'
         });
@@ -126,7 +129,9 @@ describe('signed-out notices', () => {
     });
 
     it('says nothing to someone signed in, and offers no sign-in without accounts', async () => {
-        expect(notices(await start(server({ name: 'Ada', email: 'ada@example.com' })))).toEqual([]);
+        expect(
+            notices(await start(server({ id: 'user-ada', name: 'Ada', email: 'ada@example.com' })))
+        ).toEqual([]);
         expect(notices(await start({ ...server(), session: async () => undefined }))).toEqual([
             expect.objectContaining({ link: undefined })
         ]);
@@ -185,8 +190,12 @@ describe('account requests', () => {
     });
 
     it('reads the session, and no accounts from a server without them', async () => {
-        respond(200, { user: { name: 'Ada', email: 'ada@example.com', id: 'u1' } });
-        expect(await accounts.session()).toEqual({ name: 'Ada', email: 'ada@example.com' });
+        respond(200, { user: { name: 'Ada', email: 'ada@example.com', id: 'user-ada' } });
+        expect(await accounts.session()).toEqual({
+            id: 'user-ada',
+            name: 'Ada',
+            email: 'ada@example.com'
+        });
 
         respond(200, null);
         expect(await accounts.session()).toBeNull();
@@ -216,15 +225,20 @@ describe('accounts in other copies', () => {
     }
 
     it('names an account by its email when it has no name', () => {
-        expect(accountLabel({ name: 'Ada', email: 'ada@example.com' })).toBe('Ada');
-        expect(accountLabel({ name: '', email: 'ada@example.com' })).toBe('ada@example.com');
+        expect(accountLabel({ id: 'user-ada', name: 'Ada', email: 'ada@example.com' })).toBe('Ada');
+        expect(accountLabel({ id: 'user-ada', name: '', email: 'ada@example.com' })).toBe(
+            'ada@example.com'
+        );
     });
 
     it('records who is signed in, and reloads when another copy signs someone else in or out', () => {
         const { storage, otherCopySets } = browser();
         const changed = vi.fn();
 
-        shareAccount({ kind: 'signedIn', name: 'Ada', email: 'ada@example.com' }, changed);
+        shareAccount(
+            { kind: 'signedIn', id: 'user-ada', name: 'Ada', email: 'ada@example.com' },
+            changed
+        );
 
         expect(storage.get('reactor:signedIn')).toBe('ada@example.com');
 

@@ -20,6 +20,17 @@ function nameOf(body) {
     return name.length > 0 && name.length <= 200 ? name : undefined;
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+/** The id a client chose for a new document: absent, a UUID, or `false` when invalid. */
+function idOf(body) {
+    if (body?.id === undefined) {
+        return undefined;
+    }
+
+    return typeof body.id === 'string' && UUID.test(body.id) ? body.id : false;
+}
+
 /**
  * The app's API, for signed-in users only. A request that changes anything must
  * come from `origin` and send JSON, so another site cannot make one with the
@@ -88,18 +99,28 @@ export function createApi({ db, auth, origin, onDeleted = () => {} }) {
         }
 
         const name = nameOf(req.body);
+        const id = idOf(req.body);
 
         if (!name) {
             return refuse(res, 400, 'INVALID_NAME');
         }
 
-        return res.status(201).json(
-            await createDocument(db, {
-                workspaceId: req.params.workspaceId,
-                name,
-                userId: req.userId
-            })
-        );
+        if (id === false) {
+            return refuse(res, 400, 'INVALID_ID');
+        }
+
+        const result = await createDocument(db, {
+            id,
+            workspaceId: req.params.workspaceId,
+            name,
+            userId: req.userId
+        });
+
+        if (result.conflict) {
+            return refuse(res, 409, 'ID_TAKEN');
+        }
+
+        return res.status(result.created ? 201 : 200).json(result.document);
     });
 
     api.delete('/documents/:documentId', async (req, res) => {

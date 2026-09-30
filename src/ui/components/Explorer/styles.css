@@ -1,15 +1,15 @@
 .explorer {
-  backdrop-filter: var(--backdrop-filter);
-  background-color: var(--control-background);
-  box-shadow: var(--box-shadow);
-  color: var(--text-color);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: scroll;
-  padding: 10px;
-  transition: all 0.5s ease-in-out;
-  user-select: none;
-  width: 250px;
-  z-index: 100;
+    backdrop-filter: var(--backdrop-filter);
+    background-color: var(--control-background);
+    box-shadow: var(--box-shadow);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: scroll;
+    padding: 10px;
+    transition: all 0.5s ease-in-out;
+    user-select: none;
+    width: 250px;
+    z-index: 100;
 }

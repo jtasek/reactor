@@ -344,7 +344,7 @@ export type Account =
     | { kind: 'loading' }
     | { kind: 'unavailable' }
     | { kind: 'signedOut' }
-    | { kind: 'signedIn'; name: string; email: string };
+    | { kind: 'signedIn'; id: string; name: string; email: string };
 
 /** Whether this copy's documents are being saved; `reason` says why they are not. */
 export type SaveStatus =

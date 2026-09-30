@@ -5,6 +5,7 @@ export const NOTICES_KEY = 'reactor:notices';
 
 /** Someone signed in. */
 export interface AccountUser {
+    id: string;
     name: string;
     email: string;
 }
@@ -82,7 +83,9 @@ export const accounts = {
 
         const session = (await response.json()) as { user: AccountUser } | null;
 
-        return session && { name: session.user.name, email: session.user.email };
+        return (
+            session && { id: session.user.id, name: session.user.name, email: session.user.email }
+        );
     },
     signIn: (email: string, password: string) => post('sign-in/email', { email, password }),
     signUp: (name: string, email: string, password: string) =>

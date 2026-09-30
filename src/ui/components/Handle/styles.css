@@ -1,57 +1,57 @@
 .handle {
-  fill-opacity: 0.9;
-  fill: cornflowerblue;
-  stroke-width: 1px;
-  stroke: ghostwhite;
+    fill-opacity: 0.9;
+    fill: cornflowerblue;
+    stroke-width: 1px;
+    stroke: ghostwhite;
 }
 
 .active {
-  fill: lightcoral;
+    fill: lightcoral;
 }
 
 /*[ auto | crosshair | default | pointer | move | e-resize | ne-resize | nw-resize | n-resize | se-resize | sw-resize | s-resize | w-resize| text | wait | help ]] */
 
 .topRight,
 .bottomLeft {
-  cursor: nesw-resize;
+    cursor: nesw-resize;
 }
 
 .topLeft,
 .bottomRight {
-  cursor: nwse-resize;
+    cursor: nwse-resize;
 }
 
 .middleLeft,
 .middleRight {
-  cursor: ew-resize;
+    cursor: ew-resize;
 }
 
 .middleTop,
 .middleBottom {
-  cursor: ns-resize;
+    cursor: ns-resize;
 }
 
 .rotate {
-  cursor: grab;
+    cursor: grab;
 }
 
 .rotateLine {
-  stroke: cornflowerblue;
-  stroke-width: 1;
-  fill: none;
+    stroke: cornflowerblue;
+    stroke-width: 1;
+    fill: none;
 }
 
 .rotateBadge {
-  fill: cornflowerblue;
-  font-family: sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  text-anchor: middle;
-  dominant-baseline: middle;
-  paint-order: stroke;
-  stroke: white;
-  stroke-width: 3px;
-  stroke-linejoin: round;
-  pointer-events: none;
-  user-select: none;
+    fill: cornflowerblue;
+    font-family: sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    paint-order: stroke;
+    stroke: white;
+    stroke-width: 3px;
+    stroke-linejoin: round;
+    pointer-events: none;
+    user-select: none;
 }

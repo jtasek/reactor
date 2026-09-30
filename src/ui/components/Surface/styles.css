@@ -1,22 +1,22 @@
 .surface {
-  background-color: #e9e9e9;
-  color: #2d2d2d;
-  /*cursor: none;*/
-  /* height: 100%; */
-  overflow: hidden;
-  /* width: 100%; */
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+    background-color: #e9e9e9;
+    color: #2d2d2d;
+    /*cursor: none;*/
+    /* height: 100%; */
+    overflow: hidden;
+    /* width: 100%; */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
 }
 
 .surface-black {
-  background-color: #2d2d2d;
+    background-color: #2d2d2d;
 }
 
 .camera {
-  height: 100%;
-  width: 100%;
+    height: 100%;
+    width: 100%;
 }
