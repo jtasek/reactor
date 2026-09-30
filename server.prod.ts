@@ -9,12 +9,12 @@ import { pinoHttp } from 'pino-http';
 import type { ServerResponse } from 'node:http';
 
 import { startAccounts } from './server/accounts.ts';
+import { notFound, pageFallback, parsePort } from './server/pages.ts';
 import { parseTrustProxy } from './server/trustProxy.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const PORT = Number(process.env.PORT ?? 4000);
 const HOST = process.env.HOST ?? '0.0.0.0';
 const LOG_LEVEL = process.env.LOG_LEVEL ?? 'info';
 
@@ -22,16 +22,13 @@ const DIST_DIR = path.join(__dirname, 'dist');
 const STATIC_DIR = path.join(__dirname, 'static');
 const INDEX_HTML = path.join(DIST_DIR, 'index.html');
 
-if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
-    console.error(`Invalid PORT: ${process.env.PORT}`);
-    process.exit(1);
-}
-
+let PORT = 4000;
 // The reverse proxies in front of this server, as `parseTrustProxy` reads them. Required
 // for correct client IPs and for Secure/HSTS behaviour behind a TLS-terminating proxy.
 let TRUST_PROXY: ReturnType<typeof parseTrustProxy> = false;
 
 try {
+    PORT = parsePort(process.env.PORT);
     TRUST_PROXY = parseTrustProxy(process.env.TRUST_PROXY);
 } catch (err) {
     console.error((err as Error).message);
@@ -141,23 +138,13 @@ app.use(
     })
 );
 
-// SPA fallback: serve index.html for client-side routes (e.g. /documents),
-// but let requests for missing files (anything with an extension) 404 properly.
-app.use((req, res, next) => {
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
-        res.set('Allow', 'GET, HEAD');
-        return res.status(405).type('text/plain').send('Method Not Allowed');
-    }
-    if (path.extname(req.path)) {
-        return next();
-    }
-    res.setHeader('Cache-Control', 'no-cache');
-    res.sendFile(INDEX_HTML);
-});
-
-app.use((_req, res) => {
-    res.status(404).type('text/plain').send('Not Found');
-});
+app.use(
+    pageFallback((_req, res) => {
+        res.setHeader('Cache-Control', 'no-cache');
+        res.sendFile(INDEX_HTML);
+    })
+);
+app.use(notFound);
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {

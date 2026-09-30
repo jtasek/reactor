@@ -81,28 +81,29 @@ export const config = {
             }
         ]
     },
-    plugins: isDev
-        ? [
-              // enable HMR globally
-              new webpack.HotModuleReplacementPlugin(),
-              new webpack.NoEmitOnErrorsPlugin(),
-              new ESLintWebpackPlugin(),
-              // React Fast Refresh (dev only) — preserves component state on edits
-              new ReactRefreshWebpackPlugin({ overlay: { sockIntegration: 'whm' } })
-          ]
-        : [
-              new MiniCssExtractPlugin({ filename: '[name].[contenthash].css' }),
-              new HtmlWebpackPlugin({
-                  template: path.join(__dirname, 'src', 'template.html'),
-                  inject: 'body',
-                  minify: {
-                      collapseWhitespace: true,
-                      removeComments: true,
-                      minifyCSS: true,
-                      minifyJS: true
-                  }
-              })
-          ],
+    plugins: [
+        // The page both servers serve, with the bundle's scripts.
+        new HtmlWebpackPlugin({
+            template: path.join(__dirname, 'src', 'template.html'),
+            inject: 'body',
+            minify: !isDev && {
+                collapseWhitespace: true,
+                removeComments: true,
+                minifyCSS: true,
+                minifyJS: true
+            }
+        }),
+        ...(isDev
+            ? [
+                  // enable HMR globally
+                  new webpack.HotModuleReplacementPlugin(),
+                  new webpack.NoEmitOnErrorsPlugin(),
+                  new ESLintWebpackPlugin(),
+                  // React Fast Refresh (dev only) — preserves component state on edits
+                  new ReactRefreshWebpackPlugin({ overlay: { sockIntegration: 'whm' } })
+              ]
+            : [new MiniCssExtractPlugin({ filename: '[name].[contenthash].css' })])
+    ],
     optimization: {
         // Readable module names on HMR in dev; stable hashes for caching in prod.
         moduleIds: isDev ? 'named' : 'deterministic',
