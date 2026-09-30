@@ -3,7 +3,7 @@ import type { AddressInfo } from 'net';
 import { sql } from 'kysely';
 import { authHandler } from '../../server/auth';
 import { openPool } from '../../server/database';
-import { ORIGIN, cookiesOf, linkIn, startAccounts } from './support';
+import { ORIGIN, cookieHeader, findLink, startAccounts } from './support';
 
 /**
  * Serves accounts over HTTP as the servers do; `trustProxy` is Express's
@@ -48,7 +48,7 @@ async function allowedBeforeLimit(ask: () => Promise<number>, limit = 20) {
     return limit;
 }
 
-const sessionOf = async (
+const fetchSession = async (
     request: Awaited<ReturnType<typeof startAccounts>>['request'],
     cookie: string
 ) => {
@@ -71,15 +71,17 @@ describe('accounts', () => {
 
         expect(early.status).toBe(403);
 
-        const confirmed = await request(linkIn(outbox[0]));
-        const cookie = cookiesOf(confirmed);
+        const confirmed = await request(findLink(outbox[0]));
+        const cookie = cookieHeader(confirmed);
 
-        expect((await sessionOf(request, cookie))?.user.email).toBe(account.email);
+        expect((await fetchSession(request, cookie))?.user.email).toBe(account.email);
 
         const signedIn = await request('/api/auth/sign-in/email', { body: account });
 
         expect(signedIn.ok).toBe(true);
-        expect((await sessionOf(request, cookiesOf(signedIn)))?.user.email).toBe(account.email);
+        expect((await fetchSession(request, cookieHeader(signedIn)))?.user.email).toBe(
+            account.email
+        );
     });
 
     it('signs in with a link sent by email', async () => {
@@ -90,9 +92,9 @@ describe('accounts', () => {
         ).toBe(true);
         expect(outbox).toHaveLength(1);
 
-        const cookie = cookiesOf(await request(linkIn(outbox[0])));
+        const cookie = cookieHeader(await request(findLink(outbox[0])));
 
-        expect((await sessionOf(request, cookie))?.user.email).toBe(account.email);
+        expect((await fetchSession(request, cookie))?.user.email).toBe(account.email);
     });
 
     it('ends the session at once when signing out', async () => {
@@ -100,10 +102,10 @@ describe('accounts', () => {
 
         await request('/api/auth/sign-in/magic-link', { body: { email: account.email } });
 
-        const cookie = cookiesOf(await request(linkIn(outbox[0])));
+        const cookie = cookieHeader(await request(findLink(outbox[0])));
 
         expect((await request('/api/auth/sign-out', { body: {}, cookie })).ok).toBe(true);
-        expect(await sessionOf(request, cookie)).toBeNull();
+        expect(await fetchSession(request, cookie)).toBeNull();
     });
 
     it('refuses a request from another site that carries the session', async () => {
@@ -111,7 +113,7 @@ describe('accounts', () => {
 
         await request('/api/auth/sign-in/magic-link', { body: { email: account.email } });
 
-        const cookie = cookiesOf(await request(linkIn(outbox[0])));
+        const cookie = cookieHeader(await request(findLink(outbox[0])));
         const response = await request('/api/auth/sign-out', {
             body: {},
             cookie,
@@ -119,7 +121,7 @@ describe('accounts', () => {
         });
 
         expect(response.status).toBe(403);
-        expect((await sessionOf(request, cookie))?.user.email).toBe(account.email);
+        expect((await fetchSession(request, cookie))?.user.email).toBe(account.email);
     });
 
     it('keeps its tables in the auth schema', async () => {

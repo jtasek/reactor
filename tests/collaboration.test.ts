@@ -6,7 +6,7 @@ import {
     DOCUMENT_ID,
     createCopies,
     deliver,
-    documentOf,
+    shownDocument,
     edit,
     expectConsistent,
     seeded,
@@ -101,7 +101,7 @@ function deliverSome(copy: Copy, random: Random) {
 /** Each group's members in a copy, as `group shape` pairs. */
 const memberships = (copy: Copy) =>
     new Set(
-        Object.values(documentOf(copy).groups).flatMap(({ id, shapesIds }) =>
+        Object.values(shownDocument(copy).groups).flatMap(({ id, shapesIds }) =>
             shapesIds.map((shapeId) => `${id} ${shapeId}`)
         )
     );
@@ -132,7 +132,7 @@ describe('collaboration', () => {
         const collaboration = new Collaboration();
 
         await collaboration.initialize({
-            getDocument: () => documentOf(copy),
+            getDocument: () => shownDocument(copy),
             addMutationListener: copy.store.addMutationListener,
             applyRemoteChanges
         });
@@ -161,7 +161,7 @@ describe('collaboration', () => {
 
     it('does not mutate prototypes or expose shapes under mismatched keys', async () => {
         const [copy] = await createCopies(1, (store) => store.actions.addShape(rectangle()));
-        const [id] = documentOf(copy).shapesIds;
+        const [id] = shownDocument(copy).shapesIds;
         const shape = sharedState(copy).shapes[id];
         const prototype = Object.getOwnPropertyDescriptors(Object.prototype);
         const update = remoteUpdate(copy, (document) => {
@@ -172,14 +172,14 @@ describe('collaboration', () => {
 
         copy.collaboration.receive(DOCUMENT_ID, update);
 
-        expect(Object.keys(documentOf(copy).shapes)).toEqual([id]);
+        expect(Object.keys(shownDocument(copy).shapes)).toEqual([id]);
         expect(Object.getOwnPropertyDescriptors(Object.prototype)).toEqual(prototype);
         expectConsistent(copy);
     });
 
     it('applies valid entities alongside malformed remote table values', async () => {
         const [copy] = await createCopies(1, (store) => store.actions.addShape(rectangle()));
-        const [id] = documentOf(copy).shapesIds;
+        const [id] = shownDocument(copy).shapesIds;
         const shape = sharedState(copy).shapes[id];
         const update = remoteUpdate(copy, (document) => {
             document.getMap('shapes').set('malformed', {});
@@ -190,13 +190,13 @@ describe('collaboration', () => {
         });
 
         expect(() => copy.collaboration.receive(DOCUMENT_ID, update)).not.toThrow();
-        expect(documentOf(copy).shapes['valid-shape']).toMatchObject({ id: 'valid-shape' });
-        expect(Object.keys(documentOf(copy).shapes)).toHaveLength(2);
+        expect(shownDocument(copy).shapes['valid-shape']).toMatchObject({ id: 'valid-shape' });
+        expect(Object.keys(shownDocument(copy).shapes)).toHaveLength(2);
         expectConsistent(copy);
 
         // A later structural change must also tolerate malformed values left in Yjs.
         edit(copy, (actions) => actions.addShape(rectangle(40)));
-        expect(Object.keys(documentOf(copy).shapes)).toHaveLength(3);
+        expect(Object.keys(shownDocument(copy).shapes)).toHaveLength(3);
     });
 
     it('normalizes component parents in the deleting copy as well as its peers', async () => {
@@ -209,7 +209,7 @@ describe('collaboration', () => {
         settle(copies);
 
         copies.forEach((copy) => {
-            expect(documentOf(copy).components.child.parentId).toBeUndefined();
+            expect(shownDocument(copy).components.child.parentId).toBeUndefined();
             expect(sharedState(copy).components.child.parentId).toBe('parent');
         });
     });
@@ -220,20 +220,20 @@ describe('collaboration', () => {
 
         edit(a, (actions) => actions.addShape(rectangle()));
 
-        const [id] = documentOf(a).shapesIds;
+        const [id] = shownDocument(a).shapesIds;
 
         deliver(b);
         edit(b, (actions) => actions.addGroup({ id: 'group', shapesIds: [id] }));
         c.inbox.reverse();
         deliver(c, 1);
-        expect(documentOf(c).groups.group.shapesIds).toEqual([]);
+        expect(shownDocument(c).groups.group.shapesIds).toEqual([]);
 
         edit(c, (actions) => actions.updateGroup({ id: 'group', name: 'renamed' }));
         expect(sharedState(c).groups.group.shapesIds).toEqual([id]);
         settle(copies);
 
         copies.forEach((copy) => {
-            expect(documentOf(copy).groups.group).toMatchObject({
+            expect(shownDocument(copy).groups.group).toMatchObject({
                 name: 'renamed',
                 shapesIds: [id]
             });
@@ -246,21 +246,21 @@ describe('collaboration', () => {
 
         edit(a, (actions) => actions.addShape(rectangle()));
 
-        const [id] = documentOf(a).shapesIds;
+        const [id] = shownDocument(a).shapesIds;
 
         deliver(b);
         edit(b, (actions) => actions.addLink({ id: 'link', source: id }));
         c.inbox.reverse();
         deliver(c, 1);
-        expect(documentOf(c).links.link).toBeUndefined();
+        expect(shownDocument(c).links.link).toBeUndefined();
 
         edit(c, (actions) => actions.updateDocument({ id: DOCUMENT_ID, name: 'renamed' }));
         expect(sharedState(c).links.link.source).toBe(id);
         settle(copies);
 
         copies.forEach((copy) => {
-            expect(documentOf(copy).links.link.source).toBe(id);
-            expect(documentOf(copy).name).toBe('renamed');
+            expect(shownDocument(copy).links.link.source).toBe(id);
+            expect(shownDocument(copy).name).toBe('renamed');
         });
     });
 
@@ -282,14 +282,14 @@ describe('collaboration', () => {
     it('keeps changes two copies made to different fields of one shape', async () => {
         const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
         const [a, b] = copies;
-        const [id] = documentOf(a).shapesIds;
+        const [id] = shownDocument(a).shapesIds;
 
         edit(a, (actions) => actions.updateShape({ id, position: { x: 50, y: 60 } }));
         edit(b, (actions) => actions.updateShape({ id, name: 'renamed' }));
         settle(copies);
 
         copies.forEach((copy) =>
-            expect(documentOf(copy).shapes[id]).toMatchObject({
+            expect(shownDocument(copy).shapes[id]).toMatchObject({
                 position: { x: 50, y: 60 },
                 name: 'renamed'
             })
@@ -299,27 +299,27 @@ describe('collaboration', () => {
     it('lets one value win in every copy when two copies change the same field', async () => {
         const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
         const [a, b] = copies;
-        const [id] = documentOf(a).shapesIds;
+        const [id] = shownDocument(a).shapesIds;
 
         edit(a, (actions) => actions.updateShape({ id, name: 'from a' }));
         edit(b, (actions) => actions.updateShape({ id, name: 'from b' }));
         settle(copies);
 
-        expect(['from a', 'from b']).toContain(documentOf(a).shapes[id].name);
-        expect(documentOf(b).shapes[id].name).toBe(documentOf(a).shapes[id].name);
+        expect(['from a', 'from b']).toContain(shownDocument(a).shapes[id].name);
+        expect(shownDocument(b).shapes[id].name).toBe(shownDocument(a).shapes[id].name);
     });
 
     it('keeps edits two copies made to different coordinates of one shape', async () => {
         const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
         const [a, b] = copies;
-        const [id] = documentOf(a).shapesIds;
+        const [id] = shownDocument(a).shapesIds;
 
         edit(a, (actions) => actions.setShapesProperty({ shapeIds: [id], key: 'x', value: 100 }));
         edit(b, (actions) => actions.setShapesProperty({ shapeIds: [id], key: 'y', value: 200 }));
         settle(copies);
 
         copies.forEach((copy) =>
-            expect(documentOf(copy).shapes[id]).toMatchObject({ position: { x: 100, y: 200 } })
+            expect(shownDocument(copy).shapes[id]).toMatchObject({ position: { x: 100, y: 200 } })
         );
     });
 
@@ -334,30 +334,32 @@ describe('collaboration', () => {
             });
         });
         const [a, b] = copies;
-        const [first, second, third] = documentOf(a).shapesIds;
+        const [first, second, third] = shownDocument(a).shapesIds;
 
         edit(a, (actions) => actions.updateGroup({ id: 'group', shapesIds: [first, second] }));
         edit(b, (actions) => actions.updateGroup({ id: 'group', shapesIds: [first, third] }));
         settle(copies);
 
-        expect([...documentOf(a).groups.group.shapesIds].sort()).toEqual(
+        expect([...shownDocument(a).groups.group.shapesIds].sort()).toEqual(
             [first, second, third].sort()
         );
-        expect(documentOf(b).groups.group.shapesIds).toEqual(documentOf(a).groups.group.shapesIds);
+        expect(shownDocument(b).groups.group.shapesIds).toEqual(
+            shownDocument(a).groups.group.shapesIds
+        );
     });
 
     it('removes a shape deleted in one copy although another copy edits it', async () => {
         const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
         const [a, b] = copies;
-        const [id] = documentOf(a).shapesIds;
+        const [id] = shownDocument(a).shapesIds;
 
         edit(a, (actions) => actions.removeShape(id));
         edit(b, (actions) => actions.updateShape({ id, position: { x: 90, y: 90 } }));
         settle(copies);
 
         copies.forEach((copy) => {
-            expect(documentOf(copy).shapes[id]).toBeUndefined();
-            expect(documentOf(copy).shapesIds).toEqual([]);
+            expect(shownDocument(copy).shapes[id]).toBeUndefined();
+            expect(shownDocument(copy).shapesIds).toEqual([]);
         });
     });
 
@@ -367,7 +369,7 @@ describe('collaboration', () => {
             store.actions.addShape(rectangle(40));
         });
         const [a, b] = copies;
-        const [kept, deleted] = documentOf(a).shapesIds;
+        const [kept, deleted] = shownDocument(a).shapesIds;
 
         edit(a, (actions) => actions.removeShape(deleted));
         edit(b, (actions) => {
@@ -378,7 +380,7 @@ describe('collaboration', () => {
         settle(copies);
 
         copies.forEach((copy) => {
-            const document = documentOf(copy);
+            const document = shownDocument(copy);
 
             expect(document.groups.group.shapesIds).toEqual([kept]);
             expect(document.links.link).toBeUndefined();
@@ -392,14 +394,14 @@ describe('collaboration', () => {
             store.actions.addShape(rectangle(40));
         });
         const [a, b] = copies;
-        const [kept, deleted] = documentOf(a).shapesIds;
+        const [kept, deleted] = shownDocument(a).shapesIds;
 
         edit(a, (actions) => actions.removeShape(deleted));
         edit(b, (actions) => actions.addGroup({ id: 'group', shapesIds: [kept, deleted] }));
         settle(copies);
 
         copies.forEach((copy) => {
-            expect(documentOf(copy).groups.group.shapesIds).toEqual([kept]);
+            expect(shownDocument(copy).groups.group.shapesIds).toEqual([kept]);
             expect(sharedState(copy).groups.group.shapesIds).toEqual([kept, deleted]);
         });
     });
@@ -410,18 +412,18 @@ describe('collaboration', () => {
 
         edit(a, (actions) => actions.addShape(rectangle()));
 
-        const [id] = documentOf(a).shapesIds;
+        const [id] = shownDocument(a).shapesIds;
 
         deliver(b);
         edit(b, (actions) => actions.addGroup({ id: 'group', shapesIds: [id] }));
         c.inbox.reverse();
         deliver(c, 1);
 
-        expect(documentOf(c).groups.group.shapesIds).toEqual([]);
+        expect(shownDocument(c).groups.group.shapesIds).toEqual([]);
 
         deliver(c);
 
-        expect(documentOf(c).groups.group.shapesIds).toEqual([id]);
+        expect(shownDocument(c).groups.group.shapesIds).toEqual([id]);
     });
 
     it('keeps members a copy does not show yet when it edits the member list', async () => {
@@ -436,19 +438,19 @@ describe('collaboration', () => {
 
         edit(a, (actions) => actions.addShape(rectangle(40)));
 
-        const [deleted, arriving] = documentOf(a).shapesIds;
+        const [deleted, arriving] = shownDocument(a).shapesIds;
 
         deliver(b);
         edit(b, (actions) => actions.updateGroup({ id: 'group', shapesIds: [deleted, arriving] }));
         c.inbox.reverse();
         deliver(c, 1);
-        expect(documentOf(c).groups.group.shapesIds).toEqual([deleted]);
+        expect(shownDocument(c).groups.group.shapesIds).toEqual([deleted]);
 
         edit(c, (actions) => actions.removeShape(deleted));
         settle(copies);
 
         copies.forEach((copy) => {
-            expect(documentOf(copy).groups.group.shapesIds).toEqual([arriving]);
+            expect(shownDocument(copy).groups.group.shapesIds).toEqual([arriving]);
             expect(sharedState(copy).groups.group.shapesIds).toEqual([arriving]);
         });
     });
@@ -463,7 +465,7 @@ describe('collaboration', () => {
             });
         });
         const [a] = copies;
-        const [deleted, kept] = documentOf(a).shapesIds;
+        const [deleted, kept] = shownDocument(a).shapesIds;
         const update = remoteUpdate(a, (document) => {
             const shape = { ...sharedState(a).shapes[kept], id: 'future', type: 'hologram' };
             const group = document.getMap('groups').get('group') as Y.Map<unknown>;
@@ -477,7 +479,7 @@ describe('collaboration', () => {
         settle(copies);
 
         copies.forEach((copy) => {
-            expect(documentOf(copy).groups.group.shapesIds).toEqual([kept]);
+            expect(shownDocument(copy).groups.group.shapesIds).toEqual([kept]);
             expect(sharedState(copy).groups.group.shapesIds).toEqual([kept, 'future']);
         });
     });
@@ -489,23 +491,23 @@ describe('collaboration', () => {
             store.actions.addShape(rectangle(80));
         });
         const [a, b] = copies;
-        const [first, second] = documentOf(a).shapesIds;
+        const [first, second] = shownDocument(a).shapesIds;
 
         edit(a, (actions) => actions.bringShapesToFront([first]));
         edit(b, (actions) => actions.bringShapesToFront([second]));
         settle(copies);
 
-        const { shapes, shapesIds } = documentOf(a);
+        const { shapes, shapesIds } = shownDocument(a);
 
         expect(shapes[first].order).toBe(shapes[second].order);
         expect(shapesIds.slice(1)).toEqual([first, second].sort());
-        expect(documentOf(b).shapesIds).toEqual(shapesIds);
+        expect(shownDocument(b).shapesIds).toEqual(shapesIds);
     });
 
     it('keeps the selection and the camera to each copy', async () => {
         const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
         const [a, b] = copies;
-        const [id] = documentOf(a).shapesIds;
+        const [id] = shownDocument(a).shapesIds;
 
         a.store.actions.unselectShapes();
         b.store.actions.unselectShapes();
@@ -516,15 +518,15 @@ describe('collaboration', () => {
         edit(b, (actions) => actions.updateShape({ id, name: 'renamed' }));
         settle(copies);
 
-        expect(documentOf(a).shapes[id]).toMatchObject({ name: 'renamed', selected: true });
-        expect(documentOf(b).shapes[id].selected).toBe(false);
-        expect(documentOf(b).camera).not.toEqual(documentOf(a).camera);
+        expect(shownDocument(a).shapes[id]).toMatchObject({ name: 'renamed', selected: true });
+        expect(shownDocument(b).shapes[id].selected).toBe(false);
+        expect(shownDocument(b).camera).not.toEqual(shownDocument(a).camera);
     });
 
     it('keeps sharing a document that is opened again', async () => {
         const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
         const [a, b] = copies;
-        const [id] = documentOf(a).shapesIds;
+        const [id] = shownDocument(a).shapesIds;
 
         a.collaboration.open(DOCUMENT_ID);
         edit(b, (actions) => actions.updateShape({ id, name: 'from b' }));
@@ -533,7 +535,7 @@ describe('collaboration', () => {
         settle(copies);
 
         copies.forEach((copy) =>
-            expect(documentOf(copy).shapes[id]).toMatchObject({
+            expect(shownDocument(copy).shapes[id]).toMatchObject({
                 name: 'from b',
                 position: { x: 77, y: 77 }
             })
@@ -566,13 +568,13 @@ describe('collaboration', () => {
         b.store.actions.addShape(rectangle(40));
         b.collaboration.close(DOCUMENT_ID);
         deliver(a);
-        expect(Object.keys(documentOf(a).shapes)).toHaveLength(2);
+        expect(Object.keys(shownDocument(a).shapes)).toHaveLength(2);
     });
 
     it('merges saved updates into one that restores the document', async () => {
         const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
         const [a, b] = copies;
-        const [id] = documentOf(a).shapesIds;
+        const [id] = shownDocument(a).shapesIds;
         const start = a.collaboration.state(DOCUMENT_ID);
 
         edit(a, (actions) => actions.addShape(rectangle(40)));
@@ -590,13 +592,13 @@ describe('collaboration', () => {
         collaboration.open(DOCUMENT_ID, a.collaboration.merge([start, ...b.inbox]));
 
         expect(sharedContent(restored)).toEqual(sharedContent(a));
-        expect(documentOf(restored).shapes[id].name).toBe('renamed');
+        expect(shownDocument(restored).shapes[id].name).toBe('renamed');
     });
 
     it('shares a drag once, when it ends', async () => {
         const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
         const [a, b] = copies;
-        const [id] = documentOf(a).shapesIds;
+        const [id] = shownDocument(a).shapesIds;
         const { events } = a.store.actions;
 
         a.store.actions.unselectShapes();
@@ -614,13 +616,13 @@ describe('collaboration', () => {
 
         expect(b.inbox).toHaveLength(1);
         deliver(b);
-        expect(documentOf(b).shapes[id]).toMatchObject({ position: { x: 25, y: 0 } });
+        expect(shownDocument(b).shapes[id]).toMatchObject({ position: { x: 25, y: 0 } });
     });
 
     it('keeps a drag and another copy’s edit made during it', async () => {
         const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
         const [a, b] = copies;
-        const [id] = documentOf(a).shapesIds;
+        const [id] = shownDocument(a).shapesIds;
         const { events } = a.store.actions;
 
         a.store.actions.unselectShapes();
@@ -628,7 +630,7 @@ describe('collaboration', () => {
         events.movePointer({ pointerId: 1, position: { x: 15, y: 5 } });
         edit(b, (actions) => actions.updateShape({ id, name: 'renamed' }));
         deliver(a);
-        expect(documentOf(a).shapes[id]).toMatchObject({
+        expect(shownDocument(a).shapes[id]).toMatchObject({
             name: 'renamed',
             position: { x: 10, y: 0 }
         });
@@ -638,7 +640,7 @@ describe('collaboration', () => {
         settle(copies);
 
         copies.forEach((copy) =>
-            expect(documentOf(copy).shapes[id]).toMatchObject({
+            expect(shownDocument(copy).shapes[id]).toMatchObject({
                 name: 'renamed',
                 position: { x: 20, y: 0 }
             })
@@ -648,7 +650,7 @@ describe('collaboration', () => {
     it('cancels a drag without undoing another copy’s edit made during it', async () => {
         const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
         const [a, b] = copies;
-        const [id] = documentOf(a).shapesIds;
+        const [id] = shownDocument(a).shapesIds;
         const { events } = a.store.actions;
 
         a.store.actions.unselectShapes();
@@ -661,7 +663,7 @@ describe('collaboration', () => {
         settle(copies);
 
         copies.forEach((copy) =>
-            expect(documentOf(copy).shapes[id]).toMatchObject({
+            expect(shownDocument(copy).shapes[id]).toMatchObject({
                 name: 'renamed',
                 position: { x: 0, y: 0 }
             })
@@ -671,7 +673,7 @@ describe('collaboration', () => {
     it('cancels only the coordinate a drag changed when another copy moved the shape during it', async () => {
         const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
         const [a, b] = copies;
-        const [id] = documentOf(a).shapesIds;
+        const [id] = shownDocument(a).shapesIds;
         const { events } = a.store.actions;
 
         a.store.actions.unselectShapes();
@@ -679,14 +681,14 @@ describe('collaboration', () => {
         events.movePointer({ pointerId: 1, position: { x: 5, y: 15 } });
         edit(b, (actions) => actions.updateShape({ id, position: { x: 50, y: 0 } }));
         deliver(a);
-        expect(documentOf(a).shapes[id]).toMatchObject({ position: { x: 50, y: 10 } });
+        expect(shownDocument(a).shapes[id]).toMatchObject({ position: { x: 50, y: 10 } });
 
         events.cancelGesture();
         await Promise.resolve();
         settle(copies);
 
         copies.forEach((copy) =>
-            expect(documentOf(copy).shapes[id]).toMatchObject({ position: { x: 50, y: 0 } })
+            expect(shownDocument(copy).shapes[id]).toMatchObject({ position: { x: 50, y: 0 } })
         );
     });
 
@@ -695,7 +697,7 @@ describe('collaboration', () => {
         async () => {
             const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
             const [a, b] = copies;
-            const [id] = documentOf(a).shapesIds;
+            const [id] = shownDocument(a).shapesIds;
             const { events } = a.store.actions;
 
             a.store.actions.unselectShapes();
@@ -708,7 +710,7 @@ describe('collaboration', () => {
             settle(copies);
 
             copies.forEach((copy) =>
-                expect(documentOf(copy).shapes[id]).toMatchObject({ position: { x: 50, y: 0 } })
+                expect(shownDocument(copy).shapes[id]).toMatchObject({ position: { x: 50, y: 0 } })
             );
         }
     );
@@ -719,7 +721,7 @@ describe('collaboration', () => {
             store.actions.addShape(rectangle(100));
         });
         const [a, b] = copies;
-        const [first, second] = documentOf(a).shapesIds;
+        const [first, second] = shownDocument(a).shapesIds;
         const { events } = a.store.actions;
 
         a.store.actions.selectShape(first);
@@ -733,8 +735,8 @@ describe('collaboration', () => {
         settle(copies);
 
         copies.forEach((copy) => {
-            expect(documentOf(copy).shapes[second]).toBeUndefined();
-            expect(documentOf(copy).shapes[first]).toMatchObject({ position: { x: 0, y: 0 } });
+            expect(shownDocument(copy).shapes[second]).toBeUndefined();
+            expect(shownDocument(copy).shapes[first]).toMatchObject({ position: { x: 0, y: 0 } });
             expectConsistent(copy);
         });
     });
@@ -742,18 +744,18 @@ describe('collaboration', () => {
     it('keeps a shape deleted while paused deleted, although another copy edits it', async () => {
         const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
         const [a, b] = copies;
-        const [id] = documentOf(a).shapesIds;
+        const [id] = shownDocument(a).shapesIds;
 
         a.collaboration.pause();
         edit(a, (actions) => actions.removeShape(id));
         edit(b, (actions) => actions.updateShape({ id, name: 'renamed' }));
         deliver(a);
-        expect(documentOf(a).shapes[id]).toBeUndefined();
+        expect(shownDocument(a).shapes[id]).toBeUndefined();
 
         a.collaboration.resume();
         settle(copies);
 
-        copies.forEach((copy) => expect(documentOf(copy).shapes[id]).toBeUndefined());
+        copies.forEach((copy) => expect(shownDocument(copy).shapes[id]).toBeUndefined());
     });
 
     it.each(Array.from({ length: 30 }, (_, index) => index + 1))(
@@ -790,7 +792,7 @@ describe('collaboration', () => {
 
                 const before = memberships(copy);
 
-                edit(copy, (actions) => pick(EDITS, random)(actions, documentOf(copy), random));
+                edit(copy, (actions) => pick(EDITS, random)(actions, shownDocument(copy), random));
 
                 const after = memberships(copy);
 
@@ -801,7 +803,7 @@ describe('collaboration', () => {
             paused.forEach((copy) => copy.collaboration.resume());
             settle(copies);
 
-            const { groups, shapes } = documentOf(copies[0]);
+            const { groups, shapes } = shownDocument(copies[0]);
             const survivors = [...added].filter((member) => {
                 const [groupId, shapeId] = member.split(' ');
 

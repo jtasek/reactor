@@ -50,7 +50,7 @@ export async function createCopies(count: number, setup: (store: TestStore) => v
     return copies;
 }
 
-export const documentOf = ({ store }: Copy) => store.state.documents[DOCUMENT_ID];
+export const shownDocument = ({ store }: Copy) => store.state.documents[DOCUMENT_ID];
 
 /** Runs `change` in a copy and shares it, as the end of an action does. */
 export function edit(copy: Copy, change: (actions: TestStore['actions']) => void) {
@@ -80,7 +80,7 @@ export function settle(copies: Copy[]) {
  * the repairs saving makes, and its draw order.
  */
 export function sharedContent(copy: Copy) {
-    const document = documentOf(copy);
+    const document = shownDocument(copy);
 
     return {
         fields: readDocumentFields(document),
@@ -115,7 +115,7 @@ export function sharedState(copy: Copy) {
  * references to missing shapes or components.
  */
 export function expectConsistent(copy: Copy) {
-    const document = documentOf(copy);
+    const document = shownDocument(copy);
     const exists = (id: string | undefined) => id === undefined || id in document.shapes;
     const lists = [document.groups, document.layers, document.components].flatMap((table) =>
         Object.values(table).map(({ shapesIds }) => shapesIds)

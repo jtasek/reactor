@@ -2,7 +2,7 @@ import { fromNodeHeaders } from 'better-auth/node';
 import { Hocuspocus } from '@hocuspocus/server';
 import { WebSocketServer } from 'ws';
 import * as Y from 'yjs';
-import { allows, roleOnDocument } from './workspaces.js';
+import { allows, documentRole } from './workspaces.js';
 
 /** Where the editor connects to share documents. */
 export const SYNC_PATH = '/sync';
@@ -73,7 +73,7 @@ export function createSync({ db, auth, origin, log, sessionCheck = SESSION_CHECK
     const hocuspocus = new Hocuspocus({
         quiet: true,
         async onConnect({ context, documentName, connectionConfig }) {
-            const role = await roleOnDocument(db, context.userId, documentName);
+            const role = await documentRole(db, context.userId, documentName);
 
             if (!allows(role, 'viewer')) {
                 throw new Error('Not found');

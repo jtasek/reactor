@@ -1,7 +1,7 @@
 import { Collaboration } from 'src/app/services/collaboration';
 import { type Channel, TabSync } from 'src/app/services/tabSync';
 import { Hub } from './support/channel';
-import { type Copy, DOCUMENT_ID, documentOf, sharedContent } from './support/collaboration';
+import { type Copy, DOCUMENT_ID, shownDocument, sharedContent } from './support/collaboration';
 import { createTestStore } from './support/store';
 
 type Actions = Copy['store']['actions'];
@@ -63,19 +63,19 @@ describe('tab sync', () => {
         change(a, (actions) => actions.addShape(rectangle()));
         hub.deliver();
 
-        const [id] = documentOf(b).shapesIds;
+        const [id] = shownDocument(b).shapesIds;
 
         change(b, (actions) => actions.updateShape({ id, name: 'renamed' }));
         hub.deliver();
 
-        expect(documentOf(a).shapes[id].name).toBe('renamed');
+        expect(shownDocument(a).shapes[id].name).toBe('renamed');
         expect(sharedContent(a)).toEqual(sharedContent(b));
     });
 
     it('catches up copies that missed each other’s changes while frozen', async () => {
         const hub = new Hub();
         const [a, b] = await openTabs(hub, 2, (actions) => actions.addShape(rectangle()));
-        const [id] = documentOf(a).shapesIds;
+        const [id] = shownDocument(a).shapesIds;
 
         hub.frozen.add(a.channel);
         change(b, (actions) => actions.updateShape({ id, name: 'from b' }));
@@ -89,8 +89,8 @@ describe('tab sync', () => {
         b.sync.catchUp();
         hub.deliver();
 
-        expect(documentOf(a).shapes[id].name).toBe('from b');
-        expect(Object.keys(documentOf(b).shapes)).toHaveLength(2);
+        expect(shownDocument(a).shapes[id].name).toBe('from b');
+        expect(Object.keys(shownDocument(b).shapes)).toHaveLength(2);
         expect(sharedContent(a)).toEqual(sharedContent(b));
     });
 
