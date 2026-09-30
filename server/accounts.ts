@@ -1,11 +1,12 @@
-import { createApi } from './api.js';
-import { authHandler, createAuth, migrateAuth } from './auth.js';
-import { openDatabase } from './database.js';
-import { logMailer, smtpMailer } from './mailer.js';
-import { migrateApp } from './migrations.js';
-import { createSync } from './sync.js';
+import { createApi } from './api.ts';
+import { authHandler, createAuth, migrateAuth } from './auth.ts';
+import { openDatabase } from './database.ts';
+import { logMailer, smtpMailer } from './mailer.ts';
+import { migrateApp } from './migrations.ts';
+import type { Log } from './schema.ts';
+import { createSync } from './sync.ts';
 
-const required = (env, name) => {
+const required = (env: NodeJS.ProcessEnv, name: string) => {
     if (!env[name]) {
         throw new Error(`${name} is required when DATABASE_URL is set`);
     }
@@ -20,7 +21,10 @@ const required = (env, name) => {
  * HTTP server. On shutdown, close the sync first, then the rest once it is done. Without it, the editor is used signed out only. Production sends email
  * over SMTP; development without `SMTP_URL` writes it to the log.
  */
-export async function startAccounts(env, { production, log }) {
+export async function startAccounts(
+    env: NodeJS.ProcessEnv,
+    { production, log }: { production: boolean; log: Log }
+) {
     if (!env.DATABASE_URL) {
         return undefined;
     }

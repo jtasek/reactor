@@ -2,12 +2,13 @@ import path, { dirname } from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
-import express from 'express';
+import express, { type NextFunction, type Request, type Response } from 'express';
 import helmet from 'helmet';
 import compression from 'compression';
-import pinoHttp from 'pino-http';
+import { pinoHttp } from 'pino-http';
+import type { ServerResponse } from 'node:http';
 
-import { startAccounts } from './server/accounts.js';
+import { startAccounts } from './server/accounts.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -90,7 +91,7 @@ app.get('/healthz', (_req, res) => {
     res.json({ status: 'ok', uptime: process.uptime() });
 });
 
-let accounts;
+let accounts: Awaited<ReturnType<typeof startAccounts>>;
 
 try {
     accounts = await startAccounts(process.env, { production: true, log: logger.logger });
@@ -110,7 +111,7 @@ app.all('/api/*splat', (_req, res) => {
     res.status(404).json({ code: 'NOT_FOUND' });
 });
 
-const setStaticCache = (res, filePath) => {
+const setStaticCache = (res: ServerResponse, filePath: string) => {
     if (filePath.endsWith('.html')) {
         res.setHeader('Cache-Control', 'no-cache');
     } else {
@@ -152,8 +153,8 @@ app.use((_req, res) => {
     res.status(404).type('text/plain').send('Not Found');
 });
 
-// eslint-disable-next-line no-unused-vars
-app.use((err, req, res, _next) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
     req.log?.error(err);
     res.status(500).type('text/plain').send('Internal Server Error');
 });
@@ -169,7 +170,7 @@ server.on('error', (err) => {
     process.exit(1);
 });
 
-const shutdown = (signal) => {
+const shutdown = (signal: string) => {
     logger.logger.info(`Received ${signal}, shutting down gracefully`);
     // Closing the sync disconnects its sockets, which would keep the server open,
     // and saves the documents open here before the database closes.

@@ -12,7 +12,7 @@
   "type": "module",
   "packageManager": "pnpm@11.5.0",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.18"
   },
   "keywords": [
     "design",
@@ -35,12 +35,14 @@
     "@pmmmwh/react-refresh-webpack-plugin": "^0.6.2",
     "@swc/core": "^1.15.41",
     "@teamsupercell/typings-for-css-modules-loader": "^2.5.2",
+    "@types/compression": "^1.8.1",
     "@types/express": "^5.0.6",
     "@types/node": "^24.13.2",
     "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.23.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@types/webpack-hot-middleware": "^2.25.12",
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.61.1",
     "@typescript-eslint/parser": "^8.61.1",
@@ -101,17 +103,17 @@
     "build": "pnpm run clean && pnpm run build:webpack",
     "build:webpack": "cross-env NODE_ENV=production node ./node_modules/webpack/bin/webpack --config webpack.config.mjs",
     "clean": "rimraf dist",
-    "lint": "eslint src tests server *.js *.mjs *.mts *.config.ts scripts --max-warnings 0",
+    "lint": "eslint src tests server *.ts *.mjs *.mts scripts --max-warnings 0",
     "rebuild": "pnpm run build:webpack",
-    "serve": "cross-env NODE_ENV=production node server.prod.js",
-    "start": "node server",
+    "serve": "cross-env NODE_ENV=production node server.prod.ts",
+    "start": "node server.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "tsc": "tsc --noEmit",
     "webpack": "node ./node_modules/webpack/bin/webpack",
     "lint:fix": "eslint src tests server *.js *.mjs *.mts *.config.ts scripts --max-warnings 0 --fix",
     "lint:baseline": "node scripts/check-lint-baseline.mjs",
-    "typecheck": "pnpm run tsc && tsc -p tsconfig.test.json",
+    "typecheck": "pnpm run tsc && tsc -p tsconfig.test.json && tsc -p tsconfig.server.json",
     "test:browser": "playwright test",
     "check": "pnpm run lint:baseline && pnpm run typecheck && pnpm test && pnpm run test:browser"
   }

@@ -90,7 +90,7 @@ also leaves membership IDs and link references behind.
 
 ### F7 - Medium: reverse-proxy hop configuration is parsed incorrectly
 
-`server.prod.js` describes TRUST_PROXY as a hop count, but passes numeric environment
+`server.prod.ts` describes TRUST_PROXY as a hop count, but passes numeric environment
 values to Express as strings. With the installed Express, setting `"1"` returned
 false for `trust proxy fn('10.0.0.2', 0)`, while numeric `1` returned true. The
 documented one-hop configuration therefore does not behave as advertised.

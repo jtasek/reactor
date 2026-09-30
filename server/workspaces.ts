@@ -1,14 +1,12 @@
 import { randomUUID } from 'node:crypto';
-
-/** Roles on a workspace or document, weakest first. */
-export const ROLES = ['viewer', 'editor', 'admin'];
+import { ROLES, type Db, type Role } from './schema.ts';
 
 /** Whether `role` allows what `needed` does. */
-export const allows = (role, needed) =>
+export const allows = (role: Role | undefined, needed: Role) =>
     role !== undefined && ROLES.indexOf(role) >= ROLES.indexOf(needed);
 
 /** Creates the user's personal workspace once, with them as its admin. */
-export async function ensurePersonalWorkspace(db, userId) {
+export async function ensurePersonalWorkspace(db: Db, userId: string) {
     await db.transaction().execute(async (trx) => {
         await trx
             .insertInto('workspaces')
@@ -39,7 +37,7 @@ export async function ensurePersonalWorkspace(db, userId) {
     });
 }
 
-const memberships = (db, userId) =>
+const memberships = (db: Db, userId: string) =>
     db
         .selectFrom('workspace_members as member')
         .innerJoin('workspaces as workspace', 'workspace.id', 'member.workspace_id')
@@ -52,14 +50,14 @@ const memberships = (db, userId) =>
         ]);
 
 /** The workspaces the user belongs to, with their role in each; the personal one first. */
-export const listWorkspaces = (db, userId) =>
+export const listWorkspaces = (db: Db, userId: string) =>
     memberships(db, userId)
         .orderBy((eb) => eb('workspace.kind', '=', 'personal'), 'desc')
         .orderBy('workspace.created_at')
         .execute();
 
 /** The user's role in a workspace, or undefined when they do not belong to it. */
-export async function workspaceRole(db, userId, workspaceId) {
+export async function workspaceRole(db: Db, userId: string, workspaceId: string) {
     const found = await memberships(db, userId)
         .where('workspace.id', '=', workspaceId)
         .executeTakeFirst();
@@ -68,7 +66,7 @@ export async function workspaceRole(db, userId, workspaceId) {
 }
 
 /** The user's role on a document and its workspace, or undefined when they have none. */
-export async function documentRole(db, userId, documentId) {
+export async function documentRole(db: Db, userId: string, documentId: string) {
     const document = await db
         .selectFrom('documents')
         .select('workspace_id')
@@ -78,9 +76,9 @@ export async function documentRole(db, userId, documentId) {
     return document && workspaceRole(db, userId, document.workspace_id);
 }
 
-const DOCUMENT = ['id', 'name', 'created_at as createdAt', 'updated_at as updatedAt'];
+const DOCUMENT = ['id', 'name', 'created_at as createdAt', 'updated_at as updatedAt'] as const;
 
-export const listDocuments = (db, workspaceId) =>
+export const listDocuments = (db: Db, workspaceId: string) =>
     db
         .selectFrom('documents')
         .select(DOCUMENT)
@@ -88,13 +86,30 @@ export const listDocuments = (db, workspaceId) =>
         .orderBy('created_at')
         .execute();
 
+export interface DocumentSummary {
+    id: string;
+    name: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export type CreatedDocument = { conflict: true } | { document: DocumentSummary; created: boolean };
+
 /**
  * Creates a document with the id the client chose, or a new one. Creating it
  * again in the same workspace, as when a client retries, returns it as it is,
  * and creates it again if it was deleted meanwhile; `conflict` is set when the id
  * is taken elsewhere.
  */
-export async function createDocument(db, { id = randomUUID(), workspaceId, name, userId }) {
+export async function createDocument(
+    db: Db,
+    {
+        id = randomUUID(),
+        workspaceId,
+        name,
+        userId
+    }: { id?: string; workspaceId: string; name: string; userId: string }
+): Promise<CreatedDocument> {
     const created = await db
         .insertInto('documents')
         .values({ id, workspace_id: workspaceId, name, created_by: userId })
@@ -131,5 +146,5 @@ export async function createDocument(db, { id = randomUUID(), workspaceId, name,
     };
 }
 
-export const deleteDocument = (db, documentId) =>
+export const deleteDocument = (db: Db, documentId: string) =>
     db.deleteFrom('documents').where('id', '=', documentId).execute();

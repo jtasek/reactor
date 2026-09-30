@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type NextFunction, type Request, type Response } from 'express';
 import { fromNodeHeaders } from 'better-auth/node';
 import {
     allows,
@@ -9,12 +9,28 @@ import {
     workspaceRole,
     documentRole,
     listWorkspaces
-} from './workspaces.js';
+} from './workspaces.ts';
+import type { Auth } from './auth.ts';
+import type { Db, Log } from './schema.ts';
 
-const refuse = (res, status, code) => res.status(status).json({ code });
+declare global {
+    // eslint-disable-next-line @typescript-eslint/no-namespace
+    namespace Express {
+        interface Request {
+            /** Who is signed in, set once the session is read. */
+            userId: string;
+            /** The request's logger, where the server logs requests. */
+            log?: Log;
+        }
+    }
+}
+
+const refuse = (res: Response, status: number, code: string) => {
+    res.status(status).json({ code });
+};
 
 /** A document name as given, or undefined when it is not one. */
-function parseName(body) {
+function parseName(body: { name?: unknown } | undefined) {
     const name = typeof body?.name === 'string' ? body.name.trim() : '';
 
     return name.length > 0 && name.length <= 200 ? name : undefined;
@@ -22,7 +38,7 @@ function parseName(body) {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
-const isUuid = (value) => typeof value === 'string' && UUID.test(value);
+const isUuid = (value: unknown): value is string => typeof value === 'string' && UUID.test(value);
 
 /**
  * The app's API, for signed-in users only. A request that changes anything must
@@ -30,7 +46,17 @@ const isUuid = (value) => typeof value === 'string' && UUID.test(value);
  * user's cookie. Workspaces and documents the user may not read are answered as
  * missing, so their existence is not revealed.
  */
-export function createApi({ db, auth, origin, onDeleted = () => {} }) {
+export function createApi({
+    db,
+    auth,
+    origin,
+    onDeleted = () => {}
+}: {
+    db: Db;
+    auth: Auth;
+    origin: string;
+    onDeleted?: (documentId: string) => void;
+}) {
     const api = express.Router();
 
     api.use((req, res, next) => {
@@ -77,7 +103,7 @@ export function createApi({ db, auth, origin, onDeleted = () => {} }) {
             return refuse(res, 404, 'NOT_FOUND');
         }
 
-        return res.json(await listDocuments(db, req.params.workspaceId));
+        res.json(await listDocuments(db, req.params.workspaceId));
     });
 
     api.post('/workspaces/:workspaceId/documents', async (req, res) => {
@@ -110,11 +136,11 @@ export function createApi({ db, auth, origin, onDeleted = () => {} }) {
             userId: req.userId
         });
 
-        if (result.conflict) {
+        if ('conflict' in result) {
             return refuse(res, 409, 'ID_TAKEN');
         }
 
-        return res.status(result.created ? 201 : 200).json(result.document);
+        res.status(result.created ? 201 : 200).json(result.document);
     });
 
     api.delete('/documents/:documentId', async (req, res) => {
@@ -131,20 +157,24 @@ export function createApi({ db, auth, origin, onDeleted = () => {} }) {
         await deleteDocument(db, req.params.documentId);
         onDeleted(req.params.documentId);
 
-        return res.status(204).end();
+        res.status(204).end();
     });
 
-    // eslint-disable-next-line no-unused-vars
-    api.use((error, req, res, _next) => {
-        // The body parser marks a request at fault with its 4xx status.
-        if (error.status >= 400 && error.status < 500) {
-            return refuse(res, error.status, 'INVALID_BODY');
+    api.use(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        (error: Error & { status?: number }, req: Request, res: Response, _next: NextFunction) => {
+            const status = error.status ?? 500;
+
+            // The body parser marks a request at fault with its 4xx status.
+            if (status >= 400 && status < 500) {
+                return refuse(res, status, 'INVALID_BODY');
+            }
+
+            (req.log ?? console).error(error);
+
+            refuse(res, 500, 'INTERNAL');
         }
-
-        (req.log ?? console).error(error);
-
-        return refuse(res, 500, 'INTERNAL');
-    });
+    );
 
     return api;
 }

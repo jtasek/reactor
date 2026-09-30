@@ -8,7 +8,7 @@ state lives in a single [Overmind](https://overmindjs.org) store.
 
 The repo uses **pnpm** (see `pnpm-lock.yaml`). Use `pnpm` for installs.
 
-- Dev server: `pnpm start` — runs `node server.js` (Express + webpack-dev-middleware + HMR) on http://localhost:4000.
+- Dev server: `pnpm start` — runs `node server.ts` (Express + webpack-dev-middleware + HMR) on http://localhost:4000.
 - Tests: `pnpm test` (Vitest, `vitest run`; esbuild handles TS/TSX). `pnpm test:watch` for watch mode.
   - Single file: `pnpm test src/app/__tests__/utils.test.ts`
   - By name: `pnpm test -- -t "name of test"`
@@ -22,16 +22,16 @@ The repo uses **pnpm** (see `pnpm-lock.yaml`). Use `pnpm` for installs.
   Emits content-hashed JS/CSS, extracted CSS (`mini-css-extract-plugin`), and a generated
   `dist/index.html` (`html-webpack-plugin`, template `src/template.html`). Overmind devtools
   and source maps are disabled in this mode.
-- Production server: `pnpm serve` — runs the hardened static server `server.prod.js`
+- Production server: `pnpm serve` — runs the hardened static server `server.prod.ts`
   (helmet/CSP, compression, immutable caching for hashed assets, SPA fallback, `/healthz`,
-  graceful shutdown). Serves `dist/` + `static/`; never ship the dev `server.js`.
-- Container: `Dockerfile` (multi-stage, non-root `node` user) builds and runs `server.prod.js`.
+  graceful shutdown). Serves `dist/` + `static/`; never ship the dev `server.ts`.
+- Container: `Dockerfile` (multi-stage, non-root `node` user) builds and runs `server.prod.ts`.
 
 ## Build vs serve
 
 `webpack.config.mjs` branches on `NODE_ENV`: dev keeps HMR + React Fast Refresh + `style-loader`;
 prod adds contenthash filenames, `MiniCssExtractPlugin`, `HtmlWebpackPlugin`, code-split vendor
-chunk, and disables source maps. The dev server (`server.js`) and prod server (`server.prod.js`)
+chunk, and disables source maps. The dev server (`server.ts`) and prod server (`server.prod.ts`)
 are separate; the prod server only serves prebuilt files and has no webpack/dev dependencies.
 
 

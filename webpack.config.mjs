@@ -14,6 +14,7 @@ const isDev = NODE_ENV === 'development';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+/** @type {import('webpack').Configuration} */
 export const config = {
     // Full source maps in dev; none in prod to avoid leaking source.
     devtool: isDev ? 'source-map' : false,

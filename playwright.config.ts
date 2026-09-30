@@ -23,7 +23,7 @@ export default defineConfig({
     },
     projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
     webServer: {
-        command: 'pnpm run build:webpack && node server.prod.js',
+        command: 'pnpm run build:webpack && node server.prod.ts',
         url: 'http://127.0.0.1:4173/healthz',
         env: { NODE_ENV: 'production', HOST: '127.0.0.1', PORT: '4173' },
         reuseExistingServer: false,

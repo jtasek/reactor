@@ -218,10 +218,11 @@ describe('API', () => {
             body: { id, name: 'Plan' }
         });
 
-        const { created_by: userId } = (await db
-            .selectFrom('documents' as never)
-            .select('created_by' as never)
-            .executeTakeFirstOrThrow()) as { created_by: string };
+        const { created_by: userId } = await db
+            .selectFrom('documents')
+            .select('created_by')
+            .$narrowType<{ created_by: string }>()
+            .executeTakeFirstOrThrow();
         let deleting = true;
         // Deletes the document just after the retry finds it created.
         const deletedMeanwhile: KyselyPlugin = {

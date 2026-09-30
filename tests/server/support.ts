@@ -6,6 +6,7 @@ import { PGliteDialect } from 'kysely-pglite-dialect';
 import { createApi } from '../../server/api';
 import { authHandler, createAuth, migrateAuth } from '../../server/auth';
 import { migrateApp } from '../../server/migrations';
+import type { Database } from '../../server/schema';
 import { createSync } from '../../server/sync';
 
 export const ORIGIN = 'http://localhost:4000';
@@ -18,7 +19,7 @@ export interface Email {
 
 /** Accounts on an empty in-process database, with email kept in an outbox. */
 export async function startAccounts() {
-    const db = new Kysely<unknown>({ dialect: new PGliteDialect(new PGlite()) });
+    const db = new Kysely<Database>({ dialect: new PGliteDialect(new PGlite()) });
     const outbox: Email[] = [];
     const auth = createAuth({
         db,
