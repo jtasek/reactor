@@ -31,8 +31,9 @@ export function createTestStore(
         autoSave?: boolean;
         collaboration?: Collaboration;
         indexedDB?: IDBFactory;
-        openChannel?: () => Channel;
+        openChannel?: (name?: string) => Channel;
         accounts?: Accounts;
+        lastOwner?: string;
     } = {}
 ) {
     const storage = new Map(Object.entries(seed));
@@ -58,9 +59,11 @@ export function createTestStore(
         navigate: vi.fn<typeof config.effects.navigate>(),
         reload: vi.fn<typeof config.effects.reload>(),
         reloadPage: vi.fn<typeof config.effects.reloadPage>(),
-        shareAccount: vi.fn<typeof config.effects.shareAccount>(),
+        lastOwner: vi.fn(() => options.lastOwner),
+        forgetOwner: vi.fn<typeof config.effects.forgetOwner>(),
+        shareOwner: vi.fn<typeof config.effects.shareOwner>(() => true),
         collaboration: options.collaboration ?? new Collaboration(),
-        openDocumentDatabase: () => DocumentDatabase.open(indexedDB),
+        openDocumentDatabase: (name?: string) => DocumentDatabase.open(indexedDB, name),
         openChannel: options.openChannel ?? quietChannel,
         accounts: options.accounts ?? noAccounts
     };

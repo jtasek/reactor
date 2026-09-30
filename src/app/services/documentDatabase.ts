@@ -1,3 +1,4 @@
+/** The database of documents kept signed out; each account has one of its own. */
 const NAME = 'reactor';
 const VERSION = 1;
 const DOCUMENTS = 'documents';
@@ -32,8 +33,8 @@ export class DocumentDatabase {
         database.onversionchange = () => database.close();
     }
 
-    static async open(factory: IDBFactory = indexedDB): Promise<DocumentDatabase> {
-        const opening = factory.open(NAME, VERSION);
+    static async open(factory: IDBFactory = indexedDB, name = NAME): Promise<DocumentDatabase> {
+        const opening = factory.open(name, VERSION);
 
         opening.onupgradeneeded = () => {
             const database = opening.result;
@@ -135,4 +136,4 @@ export class DocumentDatabase {
 }
 
 /** The database of this device, from the browser's IndexedDB. */
-export const openDocumentDatabase = () => DocumentDatabase.open();
+export const openDocumentDatabase = (name?: string) => DocumentDatabase.open(indexedDB, name);

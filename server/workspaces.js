@@ -88,12 +88,48 @@ export const documentsIn = (db, workspaceId) =>
         .orderBy('created_at')
         .execute();
 
-export const createDocument = (db, { workspaceId, name, userId }) =>
-    db
+/**
+ * Creates a document with the id the client chose, or a new one. Creating it
+ * again in the same workspace, as when a client retries, returns it as it is,
+ * and creates it again if it was deleted meanwhile; `conflict` is set when the id
+ * is taken elsewhere.
+ */
+export async function createDocument(db, { id = randomUUID(), workspaceId, name, userId }) {
+    const created = await db
         .insertInto('documents')
-        .values({ id: randomUUID(), workspace_id: workspaceId, name, created_by: userId })
+        .values({ id, workspace_id: workspaceId, name, created_by: userId })
+        .onConflict((conflict) => conflict.column('id').doNothing())
         .returning(DOCUMENT)
-        .executeTakeFirstOrThrow();
+        .executeTakeFirst();
+
+    if (created) {
+        return { document: created, created: true };
+    }
+
+    const existing = await db
+        .selectFrom('documents')
+        .select([...DOCUMENT, 'workspace_id'])
+        .where('id', '=', id)
+        .executeTakeFirst();
+
+    if (!existing) {
+        return createDocument(db, { id, workspaceId, name, userId });
+    }
+
+    if (existing.workspace_id !== workspaceId) {
+        return { conflict: true };
+    }
+
+    return {
+        document: {
+            id: existing.id,
+            name: existing.name,
+            createdAt: existing.createdAt,
+            updatedAt: existing.updatedAt
+        },
+        created: false
+    };
+}
 
 export const deleteDocument = (db, documentId) =>
     db.deleteFrom('documents').where('id', '=', documentId).execute();

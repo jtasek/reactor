@@ -77,12 +77,15 @@ link sent by email.
 The account page, `/account`, reached from the status bar, signs in and out and
 creates accounts. Signed out, the editor says once, and again at 3 documents,
 that documents are kept only in this browser. Until workspaces sync, signed-in
-documents are still kept only in the browser too.
+documents are still kept only in the browser too, in a database of the account's
+own (`reactor-<user id>`), apart from the ones kept signed out.
 
 Signed in, the API at `/api` lists the user's workspaces, starting with a personal
 one created on first use, and lists, creates and deletes a workspace's documents.
 Reading needs the viewer role, creating editor, and deleting admin; a workspace or
-document the user may not read answers as missing. Requests that change anything
+document the user may not read answers as missing. A client may choose a new
+document's id (a UUID), so documents made offline keep theirs; creating one again
+in the same workspace returns it, and an id taken elsewhere is refused. Requests that change anything
 must come from the editor's own address and send JSON. The app's tables sit next
 to Better Auth's schema and are created or updated on start.
 

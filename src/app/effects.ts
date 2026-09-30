@@ -4,4 +4,4 @@ export { initializeRoutes, navigate, reload, reloadPage } from './services/route
 export { collaboration } from './services/collaboration';
 export { openDocumentDatabase } from './services/documentDatabase';
 export { openChannel } from './services/tabSync';
-export { accounts, shareAccount } from './services/accounts';
+export { accounts, forgetOwner, lastOwner, shareOwner } from './services/accounts';

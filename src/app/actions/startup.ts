@@ -27,7 +27,7 @@ import {
 import { Tool } from '../../tools/types';
 import { startDocumentSync } from '../services/documentSync';
 import { listenToMutations } from '../services/mutations';
-import { readAccount } from '../services/accounts';
+import { documentOwner, readAccount } from '../services/accounts';
 
 const commands: Record<string, Command> = {};
 const tools: Record<string, Tool> = {};
@@ -104,16 +104,19 @@ export const onInitializeOvermind = async (
     registerTools();
     registerRoutes(effects, actions);
 
-    // Read while the documents load, and shown with them: a change while the pages
-    // first render can miss components that have not subscribed yet.
-    const account = readAccount(effects.accounts);
+    // The documents opened last open while the account is read; the first time, and
+    // after signing in or out, the account is read first, as it decides whose open.
+    // It is shown with them: a change while the pages first render can miss
+    // components that have not subscribed yet.
+    const reading = readAccount(effects.accounts);
+    const owner = effects.lastOwner() ?? documentOwner(await reading);
 
     try {
-        await startDocumentSync(context, {
-            state: instance.state,
-            actions: instance.actions,
-            addMutationListener
-        });
+        await startDocumentSync(
+            context,
+            { state: instance.state, actions: instance.actions, addMutationListener },
+            owner
+        );
     } catch {
         actions.displayError('Saved documents could not be loaded. Reload the page to try again.');
         actions.setSaveStatus({
@@ -121,11 +124,18 @@ export const onInitializeOvermind = async (
             reason: 'Saved documents could not be loaded.'
         });
     } finally {
-        state.account = await account;
+        state.account = await reading;
         state.loading = false;
     }
 
-    effects.shareAccount(state.account, effects.reloadPage);
+    const current = documentOwner(state.account, owner);
+
+    // Signed in or out elsewhere, as by an emailed link, since these documents opened.
+    if (effects.shareOwner(current, effects.reloadPage) && current !== owner) {
+        effects.reloadPage();
+
+        return;
+    }
 
     // Once startup has ended; an action run while it runs counts as part of it.
     setTimeout(instance.actions.noticeLocalDocuments);

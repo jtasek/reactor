@@ -99,10 +99,19 @@ function loadLocalData({ effects, state, actions }: Context): boolean {
  * own; the first time, the local storage save is backed up and moved there. A
  * document that fails to load is left as saved, and the view is saved per device.
  * Other copies' messages are only taken once loading is done; what they sent
- * meanwhile is picked up from the database and by catching up.
+ * meanwhile is picked up from the database and by catching up. With an `owner`,
+ * the account whose documents open, the database, the channel and the view are the
+ * account's own, and the local storage save, which belongs to this browser signed
+ * out, is left alone.
  */
-export async function startDocumentSync(context: Context, instance: Instance): Promise<void> {
+export async function startDocumentSync(
+    context: Context,
+    instance: Instance,
+    owner: string
+): Promise<void> {
     const { state, effects } = context;
+    const scope = owner ? `reactor-${owner}` : undefined;
+    const viewKey = owner ? `${VIEW_KEY}:${owner}` : VIEW_KEY;
     const { collaboration } = effects;
     const {
         displayError,
@@ -408,7 +417,7 @@ export async function startDocumentSync(context: Context, instance: Instance): P
         }
 
         try {
-            effects.saveState(VIEW_KEY, viewOf(instance.state));
+            effects.saveState(viewKey, viewOf(instance.state));
         } catch {
             // The view is a convenience; documents are saved on their own.
         }
@@ -502,11 +511,13 @@ export async function startDocumentSync(context: Context, instance: Instance): P
             displayError('A saved document could not be loaded. It is kept as it was saved.');
         }
 
-        noticeOlderSaves();
+        if (!scope) {
+            noticeOlderSaves();
+        }
     };
 
     const [opened] = await Promise.all([
-        effects.openDocumentDatabase().catch(() => undefined),
+        effects.openDocumentDatabase(scope).catch(() => undefined),
         collaboration.initialize({
             getDocument: (documentId) => instance.state.documents[documentId],
             applyRemoteChanges,
@@ -537,7 +548,7 @@ export async function startDocumentSync(context: Context, instance: Instance): P
 
     if (database && savedIds && savedIds.length > 0) {
         await load(database, savedIds);
-    } else if (savedIds) {
+    } else if (savedIds && !scope) {
         migrate();
     }
 
@@ -555,7 +566,7 @@ export async function startDocumentSync(context: Context, instance: Instance): P
     let view: View = { cameras: {} };
 
     try {
-        view = readView(effects.loadState(VIEW_KEY));
+        view = readView(effects.loadState(viewKey));
     } catch {
         // An unreadable view shows the first document, with its saved camera.
     }
@@ -592,7 +603,7 @@ export async function startDocumentSync(context: Context, instance: Instance): P
         }
     });
 
-    sync = new TabSync(collaboration, effects.openChannel(), {
+    sync = new TabSync(collaboration, effects.openChannel(scope), {
         created: (documentId, update) => openSaved(documentId, [update]),
         deleted: removeShared
     });

@@ -24,11 +24,12 @@ const DONE: Partial<Record<Mode, (email: string) => string>> = {
  * shows, and later keeps in this browser, belongs to the new account.
  */
 function useAccountRequests() {
-    const { accounts, reload } = useEffects();
+    const { accounts, forgetOwner, reload } = useEffects();
     const reloadAfter = async (request: Promise<AccountResult>) => {
         const result = await request;
 
         if (result.ok) {
+            forgetOwner();
             reload('/');
         }
 
