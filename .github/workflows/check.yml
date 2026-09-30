@@ -35,7 +35,7 @@ jobs:
 
       - run: pnpm exec playwright install --with-deps chromium
 
-      # Lint gate, app and test type-checks, unit tests, then browser tests
+      # Lint gate, app, test and server type-checks, unit tests, then browser tests
       # against a production build. On pull requests, every file the pull
       # request changes must be lint-clean.
       - run: pnpm check
