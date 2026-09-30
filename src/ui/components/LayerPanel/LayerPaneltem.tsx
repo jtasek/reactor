@@ -54,11 +54,23 @@ export const LayerPanelItem: FC<Props> = ({ layerId }) => {
                 className={styles.icons}
                 style={{ display: 'flex', justifyItems: 'center', alignItems: 'center' }}
             >
-                <li onClick={() => toggleLayerVisible(layerId)}>
-                    <Icon icon={visible ? visibleIcon : hiddenIcon} />
+                <li>
+                    <button
+                        type="button"
+                        title={visible ? 'Hide' : 'Show'}
+                        onClick={() => toggleLayerVisible(layerId)}
+                    >
+                        <Icon icon={visible ? visibleIcon : hiddenIcon} />
+                    </button>
                 </li>
-                <li onClick={() => toggleLayerLocked(layerId)}>
-                    <Icon icon={locked ? lockedIcon : openIcon} />
+                <li>
+                    <button
+                        type="button"
+                        title={locked ? 'Unlock' : 'Lock'}
+                        onClick={() => toggleLayerLocked(layerId)}
+                    >
+                        <Icon icon={locked ? lockedIcon : openIcon} />
+                    </button>
                 </li>
             </ul>
         </li>

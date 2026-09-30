@@ -10,7 +10,7 @@ export const ToolBar: FC = () => {
     const tools = useRegisteredTools();
 
     return (
-        <ul className={styles.toolBar}>
+        <ul className={styles.toolBar} aria-label="Tools">
             {tools.map((item) => (
                 <ToolBarButton
                     active={activeToolsIds.includes(item.id)}

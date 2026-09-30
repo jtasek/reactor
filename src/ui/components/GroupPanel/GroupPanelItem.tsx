@@ -46,16 +46,28 @@ export const GroupPanelItem: FC<Props> = ({ groupId }) => {
                     type="checkbox"
                     value={name}
                     checked={selected}
-                    onChange={(e) => toggleGroupSelected(groupId)}
+                    onChange={() => toggleGroupSelected(groupId)}
                 />
                 {name}
             </label>
             <ul className={styles.icons}>
-                <li onClick={() => toggleGroupVisible(groupId)}>
-                    <Icon icon={visible ? visibleIcon : hiddenIcon} />
+                <li>
+                    <button
+                        type="button"
+                        title={visible ? 'Hide' : 'Show'}
+                        onClick={() => toggleGroupVisible(groupId)}
+                    >
+                        <Icon icon={visible ? visibleIcon : hiddenIcon} />
+                    </button>
                 </li>
-                <li onClick={() => toggleGroupLocked(groupId)}>
-                    <Icon icon={locked ? lockedIcon : openIcon} />
+                <li>
+                    <button
+                        type="button"
+                        title={locked ? 'Unlock' : 'Lock'}
+                        onClick={() => toggleGroupLocked(groupId)}
+                    >
+                        <Icon icon={locked ? lockedIcon : openIcon} />
+                    </button>
                 </li>
             </ul>
         </li>
