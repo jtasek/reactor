@@ -48,3 +48,30 @@ jobs:
           name: playwright-traces
           path: test-results/
           if-no-files-found: ignore
+
+  # The container as deployed: built from the Dockerfile, with a read-only file
+  # system, smoke-tested, then stopped as an orchestrator would.
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - run: docker build -t reactor .
+
+      - run: docker run -d --name reactor --read-only -p 127.0.0.1:4000:4000 reactor
+
+      - run: timeout 60 sh -c 'until curl -sf -o /dev/null http://127.0.0.1:4000/healthz; do sleep 1; done'
+
+      - run: node scripts/smoke.mjs http://127.0.0.1:4000
+
+      - run: |
+          docker stop --time 15 reactor
+          test "$(docker inspect --format '{{.State.ExitCode}}' reactor)" = 0
+
+      - if: failure()
+        run: docker logs reactor
