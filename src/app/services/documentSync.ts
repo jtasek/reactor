@@ -11,7 +11,7 @@ import {
     restoreDocuments,
     type View
 } from './documentStorage';
-import type { ServerRecord } from './api';
+import type { ServerRecord, SyncStatus } from './api';
 import type { ServerSync } from './serverSync';
 import { TabSync } from './tabSync';
 
@@ -145,6 +145,8 @@ export async function startDocumentSync(
     let database: DocumentDatabase | undefined = undefined;
     let sync: TabSync | undefined = undefined;
     let server: ServerSync | undefined = undefined;
+    /** How syncing stands before the server sync has started, or when it cannot. */
+    let serverStarting: SyncStatus = owner ? 'syncing' : 'synced';
     const recordKey = `${PERSISTENCE_KEY}:server:${owner}`;
     /** Why this copy saves nothing, while it does not. */
     let notSaving: string | undefined = 'Documents are loading.';
@@ -171,7 +173,7 @@ export async function startDocumentSync(
                 ? 'Changes could not be saved. Storage may be full or unavailable.'
                 : undefined);
 
-        const synced = server?.status ?? 'synced';
+        const synced = server?.status ?? serverStarting;
 
         setSaveStatus(
             reason
@@ -334,6 +336,7 @@ export async function startDocumentSync(
     /** Removes a document deleted on the server, here and on the device. */
     const removeDeleted = (documentId: string) => {
         removeShared(documentId);
+        deletedHere.add(documentId);
 
         const target = database;
 
@@ -363,18 +366,15 @@ export async function startDocumentSync(
         return true;
     };
 
-    const readRecord = (): ServerRecord => {
+    const readRecord = (): ServerRecord | undefined => {
         try {
             const record: unknown = effects.loadState(recordKey);
-            const known: unknown = Reflect.get(Object(record), 'known');
+            const unsent: unknown = Reflect.get(Object(record), 'unsent');
             const deleting: unknown = Reflect.get(Object(record), 'deleting');
 
-            return {
-                known: isIdList(known) ? known : [],
-                deleting: isIdList(deleting) ? deleting : []
-            };
+            return isIdList(unsent) && isIdList(deleting) ? { unsent, deleting } : undefined;
         } catch {
-            return { known: [], deleting: [] };
+            return undefined;
         }
     };
 
@@ -394,6 +394,7 @@ export async function startDocumentSync(
                     }
                 }
             },
+            signedIn: async () => (await effects.accounts.session())?.id === owner,
             events: {
                 documentIds: () => collaboration.documentIds(),
                 documentName: (documentId) => instance.state.documents[documentId]?.name ?? '',
@@ -652,9 +653,11 @@ export async function startDocumentSync(
 
     // A new device shows the account's documents rather than starting one of its own.
     const serverStarted = owner
-        ? startServer().catch((error: unknown) =>
-              console.warn('Documents cannot sync with the server', error)
-          )
+        ? startServer().catch((error: unknown) => {
+              console.warn('Documents cannot sync with the server', error);
+              serverStarting = 'offline';
+              report();
+          })
         : undefined;
 
     if (serverStarted && savedIds?.length === 0) {

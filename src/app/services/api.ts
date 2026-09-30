@@ -21,8 +21,11 @@ export type SyncStatus = 'synced' | 'syncing' | 'offline';
 
 /** What a copy of the editor remembers of the server between starts; shared by the copies on a device. */
 export interface ServerRecord {
-    /** Documents seen on the server, so one missing from it later was deleted there. */
-    known: string[];
+    /**
+     * Documents made here that the server may not have yet; one it lacks that is
+     * not among them was deleted elsewhere.
+     */
+    unsent: string[];
     /** Documents deleted here that the server may still hold. */
     deleting: string[];
 }

@@ -181,8 +181,10 @@ re-renders.** Components never mutate state directly.
   document over one Hocuspocus socket through a Yjs document that mirrors the shared one, and
   passes the server's changes to `Collaboration.receive`, so they merge like any other copy's.
   The server's document list (`src/app/services/api.ts`) decides which documents exist; a
-  record per account in local storage keeps the documents seen there and deletions not yet
-  sent. `tests/server/editorSync.test.ts` runs signed-in copies against the test server.
+  record per account in local storage keeps the documents made here and the deletions not yet
+  sent, so one the server lacks that was not made here was deleted elsewhere. It stops once
+  another account is signed in. `tests/server/editorSync.test.ts` runs signed-in copies
+  against the test server.
 - **Document database** (`src/app/services/documentDatabase.ts`): IndexedDB with an index of
   documents and each document's Yjs updates as records of their own; `compact` merges them in
   one transaction. Unit tests run it on `fake-indexeddb`.

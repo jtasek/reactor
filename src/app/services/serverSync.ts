@@ -22,8 +22,16 @@ export interface ServerSyncOptions {
     api: Api;
     transport: Transport;
     events: ServerEvents;
-    record: { load(): ServerRecord; save(record: ServerRecord): void };
+    /** The record, or `undefined` before this device first synced the account. */
+    record: { load(): ServerRecord | undefined; save(record: ServerRecord): void };
+    /**
+     * Whether the account whose documents these are is still the one signed in;
+     * throws when that cannot be told, as offline.
+     */
+    signedIn(): Promise<boolean>;
 }
+
+const union = (ids: string[], more: string[]) => [...new Set([...ids, ...more])];
 
 interface Link {
     doc: Yjs.Doc;
@@ -48,8 +56,9 @@ const OUTGOING = Symbol('outgoing');
  * the server reach the store through `Collaboration.receive`, merged with this
  * copy's as any other copy's are. The server's document list decides which
  * documents exist: documents made here are created on it, those deleted here are
- * deleted on it, and those it lacks after holding them were deleted elsewhere. A
- * document made or deleted while the server cannot be reached is sent later.
+ * deleted on it, and those it lacks that were not made here were deleted
+ * elsewhere. A document made or deleted while the server cannot be reached is
+ * sent later. Once another account is signed in, it stops.
  */
 export class ServerSync {
     private readonly links = new Map<string, Link>();
@@ -69,13 +78,19 @@ export class ServerSync {
     private refreshAgain = false;
     private retryTimer?: ReturnType<typeof setTimeout>;
     private retryDelay = RETRY_FIRST;
+    private stopped = false;
 
-    constructor(private readonly options: ServerSyncOptions) {}
+    constructor(private readonly options: ServerSyncOptions) {
+        // Documents this device held before it first synced the account were made here.
+        if (!options.record.load()) {
+            options.record.save({ unsent: options.events.documentIds(), deleting: [] });
+        }
+    }
 
     get status(): SyncStatus {
         const { Disconnected, Connecting } = Hocuspocus.WebSocketStatus;
 
-        if (!this.reachable || this.socket?.status === Disconnected) {
+        if (this.stopped || !this.reachable || this.socket?.status === Disconnected) {
             return 'offline';
         }
 
@@ -96,6 +111,10 @@ export class ServerSync {
      * Resolves once the documents it opens have arrived.
      */
     refresh(): Promise<void> {
+        if (this.stopped) {
+            return Promise.resolve();
+        }
+
         if (this.refreshing) {
             this.refreshAgain = true;
 
@@ -132,21 +151,26 @@ export class ServerSync {
 
     /** Creates a document this copy made on the server, then syncs it. */
     created(documentId: string): void {
+        if (this.stopped) {
+            return;
+        }
+
+        this.change(({ unsent, deleting }) => ({ unsent: union(unsent, [documentId]), deleting }));
         void this.create(documentId);
     }
 
-    /** Deletes a document this copy deleted from the server. */
+    /** Deletes a document this copy deleted from the server, which may have it. */
     deleted(documentId: string): void {
         this.unlink(documentId);
 
-        if (!this.creations.has(documentId) && !this.record().known.includes(documentId)) {
+        if (this.stopped) {
             return;
         }
 
         this.deletions.add(documentId);
-        this.change(({ known, deleting }) => ({
-            known,
-            deleting: [...new Set([...deleting, documentId])]
+        this.change(({ unsent, deleting }) => ({
+            unsent: unsent.filter((id) => id !== documentId),
+            deleting: union(deleting, [documentId])
         }));
         void this.sendDeletion(documentId);
     }
@@ -186,7 +210,14 @@ export class ServerSync {
     }
 
     private record(): ServerRecord {
-        return this.options.record.load();
+        return this.options.record.load() ?? { unsent: [], deleting: [] };
+    }
+
+    /** Stops syncing, as the account these documents belong to is no longer signed in. */
+    private stop() {
+        this.stopped = true;
+        this.dispose();
+        this.options.events.changed();
     }
 
     /** Changes the record as the device holds it now, as other copies change it too. */
@@ -196,9 +227,18 @@ export class ServerSync {
 
     private async follow() {
         const { api, events } = this.options;
+        // Taken before the list, so what changes meanwhile waits for the next refresh.
+        const held = events.documentIds();
+        const { unsent, deleting } = this.record();
         let listed: Set<string>;
 
         try {
+            if (!(await this.options.signedIn())) {
+                this.stop();
+
+                return;
+            }
+
             const workspaces = await api.workspaces();
             const lists = await Promise.all(workspaces.map(({ id }) => api.documents(id)));
 
@@ -211,21 +251,17 @@ export class ServerSync {
             return;
         }
 
-        const { known, deleting } = this.record();
-
         deleting.forEach((documentId) => this.deletions.add(documentId));
         await Promise.all(deleting.map((documentId) => this.sendDeletion(documentId)));
 
-        const held = new Set(events.documentIds());
-        const gone = [...held].filter((id) => !listed.has(id) && known.includes(id));
+        const current = new Set(events.documentIds());
+        const kept = held.filter((id) => current.has(id));
+        const gone = kept.filter(
+            (id) => !listed.has(id) && !unsent.includes(id) && !this.creations.has(id)
+        );
 
         this.change((record) => ({
-            known: [
-                ...new Set([
-                    ...record.known.filter((id) => !gone.includes(id)),
-                    ...[...held].filter((id) => listed.has(id))
-                ])
-            ],
+            unsent: record.unsent.filter((id) => !listed.has(id)),
             deleting: record.deleting
         }));
         gone.forEach((documentId) => {
@@ -236,11 +272,11 @@ export class ServerSync {
         const deletedHere = new Set(this.record().deleting);
 
         await Promise.all([
-            ...[...held]
+            ...kept
                 .filter((id) => !gone.includes(id))
                 .map((id) => (listed.has(id) ? this.link(id, true) : this.create(id))),
             ...[...listed]
-                .filter((id) => !held.has(id) && !deletedHere.has(id))
+                .filter((id) => !current.has(id) && !deletedHere.has(id))
                 .map((id) => this.link(id, false))
         ]);
     }
@@ -273,8 +309,8 @@ export class ServerSync {
                         return;
                     }
 
-                    this.change(({ known, deleting }) => ({
-                        known: [...new Set([...known, documentId])],
+                    this.change(({ unsent, deleting }) => ({
+                        unsent: unsent.filter((id) => id !== documentId),
                         deleting
                     }));
 
@@ -306,8 +342,8 @@ export class ServerSync {
             await this.options.api.deleteDocument(documentId);
             this.reachable = true;
             this.deletions.delete(documentId);
-            this.change(({ known, deleting }) => ({
-                known: known.filter((id) => id !== documentId),
+            this.change(({ unsent, deleting }) => ({
+                unsent,
                 deleting: deleting.filter((id) => id !== documentId)
             }));
         } catch {
@@ -388,14 +424,7 @@ export class ServerSync {
 
         if (!link.held) {
             this.unlink(documentId);
-
-            return;
         }
-
-        this.change(({ known, deleting }) => ({
-            known: [...new Set([...known, documentId])],
-            deleting
-        }));
     }
 
     /**

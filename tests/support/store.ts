@@ -47,9 +47,11 @@ export function createTestStore(
         lastOwner?: string;
         api?: Api;
         serverTransport?: Transport;
+        /** Local storage shared with other stores, as copies on one device share it. */
+        storage?: Map<string, string>;
     } = {}
 ) {
-    const storage = new Map(Object.entries(seed));
+    const storage = options.storage ?? new Map(Object.entries(seed));
     const indexedDB = options.indexedDB ?? new IDBFactory();
     const effects = {
         newId: vi.fn(() => `test-id-${nextId++}`),
