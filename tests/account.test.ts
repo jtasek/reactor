@@ -2,7 +2,7 @@ import {
     accountLabel,
     accounts,
     readAccount,
-    shareAccount,
+    shareOwner,
     type AccountUser,
     type Accounts
 } from 'src/app/services/accounts';
@@ -231,22 +231,18 @@ describe('accounts in other copies', () => {
         );
     });
 
-    it('records who is signed in, and reloads when another copy signs someone else in or out', () => {
+    it('records whose documents opened, and reloads when another copy opens someone else’s', () => {
         const { storage, otherCopySets } = browser();
         const changed = vi.fn();
 
-        shareAccount(
-            { kind: 'signedIn', id: 'user-ada', name: 'Ada', email: 'ada@example.com' },
-            changed
-        );
+        expect(shareOwner('user-ada', changed)).toBe(true);
+        expect(storage.get('reactor:account')).toBe('user-ada');
 
-        expect(storage.get('reactor:signedIn')).toBe('ada@example.com');
-
-        otherCopySets('reactor:signedIn', 'ada@example.com');
+        otherCopySets('reactor:account', 'user-ada');
         otherCopySets('reactor:notices', '["first"]');
         expect(changed).not.toHaveBeenCalled();
 
-        otherCopySets('reactor:signedIn', '');
+        otherCopySets('reactor:account', '');
         expect(changed).toHaveBeenCalledOnce();
     });
 });

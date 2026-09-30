@@ -90,8 +90,9 @@ export const documentsIn = (db, workspaceId) =>
 
 /**
  * Creates a document with the id the client chose, or a new one. Creating it
- * again in the same workspace, as when a client retries, returns it as it is;
- * `conflict` is set when the id is taken elsewhere.
+ * again in the same workspace, as when a client retries, returns it as it is,
+ * and creates it again if it was deleted meanwhile; `conflict` is set when the id
+ * is taken elsewhere.
  */
 export async function createDocument(db, { id = randomUUID(), workspaceId, name, userId }) {
     const created = await db
@@ -109,7 +110,11 @@ export async function createDocument(db, { id = randomUUID(), workspaceId, name,
         .selectFrom('documents')
         .select([...DOCUMENT, 'workspace_id'])
         .where('id', '=', id)
-        .executeTakeFirstOrThrow();
+        .executeTakeFirst();
+
+    if (!existing) {
+        return createDocument(db, { id, workspaceId, name, userId });
+    }
 
     if (existing.workspace_id !== workspaceId) {
         return { conflict: true };

@@ -1,4 +1,5 @@
-import { sql } from 'kysely';
+import { sql, type KyselyPlugin } from 'kysely';
+import { createDocument } from '../../server/workspaces';
 import { serve, type DocumentSummary } from './support';
 
 describe('API', () => {
@@ -205,5 +206,43 @@ describe('API', () => {
         expect(
             (await create(ada.cookie, ada.personal.id, { id: 'not-a-uuid', name: 'Plan' })).status
         ).toBe(400);
+    });
+
+    it('creates a document again when it is deleted while its client retries', async () => {
+        const { db, call, user } = await serve();
+        const ada = await user('ada@example.com');
+        const id = '5d2c9b1e-7a4f-4e3b-8c6d-1f0a9e8b7c65';
+
+        await call('POST', `/workspaces/${ada.personal.id}/documents`, {
+            cookie: ada.cookie,
+            body: { id, name: 'Plan' }
+        });
+
+        const { created_by: userId } = (await db
+            .selectFrom('documents' as never)
+            .select('created_by' as never)
+            .executeTakeFirstOrThrow()) as { created_by: string };
+        let deleting = true;
+        // Deletes the document just after the retry finds it created.
+        const deletedMeanwhile: KyselyPlugin = {
+            transformQuery: ({ node }) => node,
+            transformResult: async ({ result }) => {
+                if (deleting && result.rows.length === 0) {
+                    deleting = false;
+                    await sql`delete from documents where id = ${id}`.execute(db);
+                }
+
+                return result;
+            }
+        };
+
+        expect(
+            await createDocument(db.withPlugin(deletedMeanwhile), {
+                id,
+                workspaceId: ada.personal.id,
+                name: 'Plan',
+                userId
+            })
+        ).toMatchObject({ document: { id, name: 'Plan' }, created: true });
     });
 });

@@ -1,6 +1,6 @@
 import { json } from 'overmind';
 import type { Context } from '../index';
-import type { Account, Application } from '../types';
+import type { Application } from '../types';
 import { createDocument } from '../factories';
 import type { DocumentDatabase } from './documentDatabase';
 import {
@@ -99,18 +99,19 @@ function loadLocalData({ effects, state, actions }: Context): boolean {
  * own; the first time, the local storage save is backed up and moved there. A
  * document that fails to load is left as saved, and the view is saved per device.
  * Other copies' messages are only taken once loading is done; what they sent
- * meanwhile is picked up from the database and by catching up. Signed in, the
- * database, the channel and the view are the account's own, and the local storage
- * save, which belongs to this browser signed out, is left alone.
+ * meanwhile is picked up from the database and by catching up. With an `owner`,
+ * the account whose documents open, the database, the channel and the view are the
+ * account's own, and the local storage save, which belongs to this browser signed
+ * out, is left alone.
  */
 export async function startDocumentSync(
     context: Context,
     instance: Instance,
-    account: Account
+    owner: string
 ): Promise<void> {
     const { state, effects } = context;
-    const scope = account.kind === 'signedIn' ? `reactor-${account.id}` : undefined;
-    const viewKey = account.kind === 'signedIn' ? `${VIEW_KEY}:${account.id}` : VIEW_KEY;
+    const scope = owner ? `reactor-${owner}` : undefined;
+    const viewKey = owner ? `${VIEW_KEY}:${owner}` : VIEW_KEY;
     const { collaboration } = effects;
     const {
         displayError,

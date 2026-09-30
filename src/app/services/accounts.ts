@@ -117,26 +117,55 @@ export async function readAccount(from: Pick<Accounts, 'session'>): Promise<Acco
 /** How to name someone signed in: accounts made by an emailed link have no name. */
 export const accountLabel = ({ name, email }: AccountUser) => name || email;
 
-/** Where each open copy records who is signed in, for the others. */
-const SIGNED_IN_KEY = 'reactor:signedIn';
+/** Where each open copy records whose documents it opened: an account's id, or '' signed out. */
+const OWNER_KEY = 'reactor:account';
+
+/** Whose documents this browser opened last, or `undefined` when not known. */
+export function lastOwner(): string | undefined {
+    try {
+        return window.localStorage.getItem(OWNER_KEY) ?? undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+/** Forgets whose documents opened, so the next start reads the account first. */
+export function forgetOwner() {
+    try {
+        window.localStorage.removeItem(OWNER_KEY);
+    } catch {
+        // The next start then opens the documents opened last and loads again if needed.
+    }
+}
+
+/** Whose documents to open for `account`; while it cannot be read, `last`'s. */
+export function ownerOf(account: Account, last = ''): string {
+    if (account.kind === 'signedIn') {
+        return account.id;
+    }
+
+    return account.kind === 'signedOut' ? '' : last;
+}
 
 /**
- * Records who is signed in here for the other open copies of the editor, and runs
- * `changed` when another copy records someone else, as after signing in or out
- * there, so no copy keeps showing, or keeping, the previous account's documents.
+ * Records whose documents opened here for the other open copies of the editor, and
+ * runs `changed` when another copy records someone else's, as after signing in or
+ * out there, so no copy keeps showing, or keeping, the previous account's documents.
+ * Returns whether it was recorded.
  */
-export function shareAccount(account: Account, changed: () => void) {
-    const signedIn = account.kind === 'signedIn' ? account.email : '';
-
+export function shareOwner(owner: string, changed: () => void): boolean {
     window.addEventListener('storage', ({ key, newValue }) => {
-        if (key === SIGNED_IN_KEY && newValue !== null && newValue !== signedIn) {
+        if (key === OWNER_KEY && newValue !== null && newValue !== owner) {
             changed();
         }
     });
 
     try {
-        window.localStorage.setItem(SIGNED_IN_KEY, signedIn);
+        window.localStorage.setItem(OWNER_KEY, owner);
+
+        return true;
     } catch {
         // Without storage, other copies are not told; each still reads its own account.
+        return false;
     }
 }

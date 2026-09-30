@@ -45,6 +45,6 @@ test('an open tab loads again when another tab signs someone in or out', async (
     // As the other tab does once it has loaded again after signing in.
     const reloaded = page.waitForEvent('load');
 
-    await other.evaluate(() => localStorage.setItem('reactor:signedIn', 'ada@example.com'));
+    await other.evaluate(() => localStorage.setItem('reactor:account', 'user-ada'));
     await reloaded;
 });

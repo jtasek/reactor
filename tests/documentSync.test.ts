@@ -511,24 +511,71 @@ describe('document sync', () => {
         expect(Object.keys(later.store.state.currentDocument.shapes)).toHaveLength(2);
     });
 
-    it('shares an account’s changes only with its own open copies', async () => {
-        const opened: Array<string | undefined> = [];
+    /** A copy whose account `session` reads, on a browser that opened `lastOwner`'s documents last. */
+    function copyOf(session: Accounts['session'], lastOwner?: string) {
+        const channels: Array<string | undefined> = [];
         const test = createTestStore(
             {},
             {
                 autoSave: true,
                 indexedDB: new IDBFactory(),
                 openChannel: (name) => {
-                    opened.push(name);
+                    channels.push(name);
 
                     return { onmessage: null, postMessage: () => {}, close: () => {} };
                 },
-                accounts: { ...signedOut, session: async () => ada }
+                accounts: { ...signedOut, session },
+                lastOwner
             }
         );
 
-        await test.store.onInitialize();
+        return { ...test, channels };
+    }
 
-        expect(opened).toEqual(['reactor-user-ada']);
+    it('shares an account’s changes only with its own open copies', async () => {
+        const { store, channels } = copyOf(async () => ada);
+
+        await store.onInitialize();
+
+        expect(channels).toEqual(['reactor-user-ada']);
+    });
+
+    it('opens the documents opened last without waiting for the account', async () => {
+        let answer: (user: AccountUser) => void = () => {};
+        const { store, channels, effects } = copyOf(
+            () => new Promise((resolve) => (answer = resolve)),
+            'user-ada'
+        );
+        const starting = store.onInitialize();
+
+        await vi.waitFor(() => expect(channels).toEqual(['reactor-user-ada']));
+        answer(ada);
+        await starting;
+
+        expect(store.state.account).toMatchObject({ kind: 'signedIn', id: 'user-ada' });
+        expect(effects.reloadPage).not.toHaveBeenCalled();
+    });
+
+    it('keeps the documents opened last while the account cannot be read', async () => {
+        const { store, channels, effects } = copyOf(async () => {
+            throw new Error('Offline');
+        }, 'user-ada');
+
+        await store.onInitialize();
+
+        expect(channels).toEqual(['reactor-user-ada']);
+        expect(store.state.account).toEqual({ kind: 'unavailable' });
+        expect(effects.shareOwner).toHaveBeenCalledWith('user-ada', expect.any(Function));
+        expect(effects.reloadPage).not.toHaveBeenCalled();
+    });
+
+    it('loads again when the account read is not the one whose documents opened', async () => {
+        const { store, channels, effects } = copyOf(async () => ada, '');
+
+        await store.onInitialize();
+
+        expect(channels).toEqual([undefined]);
+        expect(effects.shareOwner).toHaveBeenCalledWith('user-ada', expect.any(Function));
+        expect(effects.reloadPage).toHaveBeenCalledOnce();
     });
 });
