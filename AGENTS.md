@@ -87,10 +87,10 @@ server in production.
 
 The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for installs.
 
-- **Dev server**: `pnpm start` — `node server.js` (Express + webpack-dev-middleware + HMR /
+- **Dev server**: `pnpm start` — `node server.ts` (Express + webpack-dev-middleware + HMR /
   React Fast Refresh) on http://localhost:4000.
-- **Type-check**: `pnpm typecheck` checks the app (`pnpm tsc`, which excludes tests) and the
-  tests (`tsconfig.test.json`).
+- **Type-check**: `pnpm typecheck` checks the app (`pnpm tsc`, which excludes tests), the
+  tests (`tsconfig.test.json`) and the server (`tsconfig.server.json`).
 - **Lint**: `pnpm lint` is read-only (`--max-warnings 0`, covers `src`, `tests`, root configs
   and `scripts`); `pnpm lint:fix` applies fixes. Flat config in `eslint.config.mjs`.
 - **Tests**: `pnpm test` (Vitest, `globals: true` — no need to import `describe`/`it`/
@@ -99,25 +99,29 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
     - Single file: `pnpm test src/app/__tests__/utils.test.ts`
     - By name: `pnpm test -- -t "name of test"`
 - **Browser tests**: `pnpm test:browser` (Playwright, Chromium) builds the production bundle
-  and serves it with `server.prod.js`. Shared editor helpers live in
+  and serves it with `server.prod.ts`. Shared editor helpers live in
   `tests/browser/support/editor.ts`.
 - **Everything**: `pnpm check` runs the lint gate, type-checks, unit and browser tests.
 - **Production build**: `pnpm build` — `NODE_ENV=production` webpack via `webpack.config.mjs`.
   Content-hashed JS/CSS, extracted CSS, generated `dist/index.html`. Overmind devtools and
   source maps off.
-- **Production server**: `pnpm serve` — hardened static server `server.prod.js` (helmet/CSP,
+- **Production server**: `pnpm serve` — hardened static server `server.prod.ts` (helmet/CSP,
   compression, immutable caching, SPA fallback, `/healthz`, graceful shutdown). Never ship
-  the dev `server.js`.
+  the dev `server.ts`.
 - **Container**: `Dockerfile` (multi-stage, non-root `node` user) builds and runs
-  `server.prod.js`. `compose.yaml` runs it with PostgreSQL.
-- **Accounts**: server code lives in `server/` (plain ES modules). `startAccounts`
-  (`server/accounts.js`) turns accounts on when `DATABASE_URL` is set and both servers mount
+  `server.prod.ts`. `compose.yaml` runs it with PostgreSQL.
+- **Server code** is TypeScript that Node (22.18 or later) runs as it is, with no build step:
+  it may only use syntax Node can strip (no `enum`, namespaces or parameter properties, which
+  `erasableSyntaxOnly` enforces), and relative imports name the `.ts` file. The tables' types
+  are in `server/schema.ts`.
+- **Accounts**: server code lives in `server/`. `startAccounts`
+  (`server/accounts.ts`) turns accounts on when `DATABASE_URL` is set and both servers mount
   Better Auth at `/api/auth/*splat`; without it the editor runs signed out. Server tests
   (`tests/server/`) run Better Auth against PGlite, with email in an outbox; see README
   "Accounts" for the variables. The app's tables are Kysely migrations in
-  `server/migrations.js` (add new ones, never edit released ones), workspace queries live in
-  `server/workspaces.js`, and `server/api.js` is the `/api` router, which checks the
-  session, the `Origin` of changes and the role on every request. `server/sync.js` serves
+  `server/migrations.ts` (add new ones, never edit released ones), workspace queries live in
+  `server/workspaces.ts`, and `server/api.ts` is the `/api` router, which checks the
+  session, the `Origin` of changes and the role on every request. `server/sync.ts` serves
   documents over the `/sync` WebSocket with Hocuspocus: the upgrade checks the `Origin` and
   the session, `onConnect` the role (viewers are read-only), and content is kept in
   `document_states`. `tests/server/support.ts` `serve()` runs all of it over HTTP.

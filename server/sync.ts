@@ -1,8 +1,12 @@
 import { fromNodeHeaders } from 'better-auth/node';
 import { Hocuspocus } from '@hocuspocus/server';
+import type { IncomingMessage, Server } from 'node:http';
+import type { Duplex } from 'node:stream';
 import { WebSocketServer } from 'ws';
 import * as Y from 'yjs';
-import { allows, documentRole } from './workspaces.js';
+import type { Auth } from './auth.ts';
+import type { Db, Log } from './schema.ts';
+import { allows, documentRole } from './workspaces.ts';
 
 /** Where the editor connects to share documents. */
 export const SYNC_PATH = '/sync';
@@ -16,12 +20,12 @@ const MAX_SOCKETS_PER_USER = 16;
 /** How often an open socket's session is checked again, in milliseconds. */
 const SESSION_CHECK = 60 * 1000;
 
-const refuseUpgrade = (socket, status, reason) => {
+const refuseUpgrade = (socket: Duplex, status: number, reason: string) => {
     socket.end(`HTTP/1.1 ${status} ${reason}\r\nConnection: close\r\n\r\n`);
 };
 
 /** Reads a document's saved content into `document`. */
-async function loadState(db, documentId, document) {
+async function loadState(db: Db, documentId: string, document: Y.Doc) {
     const saved = await db
         .selectFrom('document_states')
         .select('state')
@@ -34,7 +38,7 @@ async function loadState(db, documentId, document) {
 }
 
 /** Saves a document's whole content, unless it was deleted meanwhile. */
-async function saveState(db, documentId, document) {
+async function saveState(db: Db, documentId: string, document: Y.Doc) {
     const state = Buffer.from(Y.encodeStateAsUpdate(document));
 
     await db.transaction().execute(async (trx) => {
@@ -68,8 +72,20 @@ async function saveState(db, documentId, document) {
  * `sessionCheck` milliseconds, without extending it, and the socket closes once
  * the session has ended.
  */
-export function createSync({ db, auth, origin, log, sessionCheck = SESSION_CHECK }) {
-    const sockets = new Map();
+export function createSync({
+    db,
+    auth,
+    origin,
+    log,
+    sessionCheck = SESSION_CHECK
+}: {
+    db: Db;
+    auth: Auth;
+    origin: string;
+    log: Pick<Log, 'warn' | 'error'>;
+    sessionCheck?: number;
+}) {
+    const sockets = new Map<string, number>();
     const hocuspocus = new Hocuspocus({
         quiet: true,
         async onConnect({ context, documentName, connectionConfig }) {
@@ -93,7 +109,7 @@ export function createSync({ db, auth, origin, log, sessionCheck = SESSION_CHECK
     });
     const server = new WebSocketServer({ noServer: true, maxPayload: MAX_MESSAGE });
 
-    const count = (userId, change) => {
+    const count = (userId: string, change: number) => {
         const open = (sockets.get(userId) ?? 0) + change;
 
         if (open > 0) {
@@ -103,8 +119,10 @@ export function createSync({ db, auth, origin, log, sessionCheck = SESSION_CHECK
         }
     };
 
-    async function upgrade(req, socket, head) {
-        if (new URL(req.url, origin).pathname !== SYNC_PATH) {
+    async function upgrade(req: IncomingMessage, socket: Duplex, head: Buffer) {
+        const url = new URL(req.url ?? '/', origin);
+
+        if (url.pathname !== SYNC_PATH) {
             socket.destroy();
 
             return;
@@ -139,7 +157,7 @@ export function createSync({ db, auth, origin, log, sessionCheck = SESSION_CHECK
         socket.once('close', () => count(userId, -1));
 
         server.handleUpgrade(req, socket, head, (websocket) => {
-            const request = new Request(new URL(req.url, origin), { headers });
+            const request = new Request(url, { headers });
             const connection = hocuspocus.handleConnection(websocket, request, { userId });
             const checking = setInterval(async () => {
                 let current;
@@ -159,7 +177,9 @@ export function createSync({ db, auth, origin, log, sessionCheck = SESSION_CHECK
                 }
             }, sessionCheck);
 
-            websocket.on('message', (data) => connection.handleMessage(new Uint8Array(data)));
+            websocket.on('message', (data: Buffer) =>
+                connection.handleMessage(new Uint8Array(data))
+            );
             websocket.on('close', (code, reason) => {
                 clearInterval(checking);
                 connection.handleClose({ code, reason: reason.toString() });
@@ -170,7 +190,7 @@ export function createSync({ db, auth, origin, log, sessionCheck = SESSION_CHECK
 
     return {
         /** Takes the WebSocket upgrades of `httpServer`. */
-        attach(httpServer) {
+        attach(httpServer: Server) {
             httpServer.on('upgrade', (req, socket, head) => {
                 upgrade(req, socket, head).catch((error) => {
                     log.error(error, 'A sync connection could not be opened');
@@ -179,7 +199,7 @@ export function createSync({ db, auth, origin, log, sessionCheck = SESSION_CHECK
             });
         },
         /** Disconnects everyone from a document, as when it is deleted. */
-        closeDocument(documentId) {
+        closeDocument(documentId: string) {
             hocuspocus.closeConnections(documentId);
         },
         /** Saves every document open here and disconnects everyone. */

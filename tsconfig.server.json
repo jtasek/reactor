@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "allowImportingTsExtensions": true,
+        "allowJs": true,
+        "erasableSyntaxOnly": true,
+        "module": "nodenext",
+        "noEmit": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "target": "esnext",
+        "types": ["node"],
+        "verbatimModuleSyntax": true
+    },
+    "include": ["server", "server.ts", "server.prod.ts"]
+}

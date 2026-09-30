@@ -5,7 +5,7 @@ import webpackMiddleware from 'webpack-dev-middleware';
 import webpackHotMiddleware from 'webpack-hot-middleware';
 import { config } from './webpack.config.mjs';
 import { fileURLToPath } from 'url';
-import { startAccounts } from './server/accounts.js';
+import { startAccounts } from './server/accounts.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -30,16 +30,12 @@ app.all('/api/*splat', (_req, res) => {
 
 app.use(
     webpackMiddleware(compiler, {
-        publicPath: config.output.publicPath,
+        publicPath: config.output?.publicPath,
         stats: { colors: true }
     })
 );
 
-app.use(
-    webpackHotMiddleware(compiler, {
-        reload: true // reload page when webpack gets stuck
-    })
-);
+app.use(webpackHotMiddleware(compiler));
 
 app.use('/icons', express.static(path.join(__dirname, 'static', 'icons')));
 app.use('/images', express.static(path.join(__dirname, 'static', 'images')));
@@ -54,7 +50,7 @@ app.use((req, res, next) => {
 });
 
 const server = app.listen(Number(PORT), HOST, () => {
-    console.log(`Listening at http://${HOST}:${PORT}`);
+    console.info(`Listening at http://${HOST}:${PORT}`);
 });
 
 accounts?.sync.attach(server);

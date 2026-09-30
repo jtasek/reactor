@@ -23,7 +23,7 @@ export default [
     },
     js.configs.recommended,
     {
-        files: ['src/**/*.{ts,tsx,js,jsx}', 'tests/**/*.ts', '*.config.{ts,mts}'],
+        files: ['src/**/*.{ts,tsx,js,jsx}', 'tests/**/*.ts', 'server/**/*.ts', '*.{ts,mts}'],
         languageOptions: {
             parser: tsParser,
             parserOptions: {
@@ -92,8 +92,13 @@ export default [
         }
     },
     {
-        files: ['*.{js,mjs}', 'scripts/**/*.mjs', 'server/**/*.js'],
+        files: ['*.mjs', 'scripts/**/*.mjs'],
         languageOptions: { globals: globals.node }
+    },
+    {
+        // Node runs the server's TypeScript as it is, so its imports name the files.
+        files: ['server/**/*.ts', 'server*.ts'],
+        rules: { 'import/extensions': ['error', 'ignorePackages'] }
     },
     prettierRecommended
 ];

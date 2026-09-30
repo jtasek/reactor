@@ -11,10 +11,9 @@ const results = await eslint.lintFiles([
     'src',
     'tests',
     'server',
-    '*.js',
+    '*.ts',
     '*.mjs',
     '*.mts',
-    '*.config.ts',
     'scripts'
 ]);
 const base = process.env.LINT_BASE_REF ?? 'HEAD';

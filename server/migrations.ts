@@ -1,10 +1,11 @@
 import { sql } from 'kysely';
-import { Migrator } from 'kysely/migration';
+import { Migrator, type Migration } from 'kysely/migration';
+import type { Db } from './schema.ts';
 
 const ROLES = sql`('viewer', 'editor', 'admin')`;
 
 /** The app's tables, next to Better Auth's in the `auth` schema; in order, never edited once released. */
-const migrations = {
+const migrations: Record<string, Migration> = {
     '0001_workspaces': {
         async up(db) {
             await db.schema
@@ -90,7 +91,7 @@ const migrations = {
 };
 
 /** Creates or updates the app's tables. */
-export async function migrateApp(db) {
+export async function migrateApp(db: Db) {
     const migrator = new Migrator({ db, provider: { getMigrations: async () => migrations } });
     const { error } = await migrator.migrateToLatest();
 

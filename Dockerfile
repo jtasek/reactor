@@ -44,7 +44,7 @@ WORKDIR /app
 COPY --chown=node:node --from=deps /app/node_modules ./node_modules
 COPY --chown=node:node --from=builder /app/dist ./dist
 COPY --chown=node:node static ./static
-COPY --chown=node:node server.prod.js package.json ./
+COPY --chown=node:node server.prod.ts package.json ./
 COPY --chown=node:node server ./server
 
 # Drop privileges; the app never writes to disk so the FS can be mounted read-only.
@@ -55,4 +55,4 @@ EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||4000)+'/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-CMD ["node", "server.prod.js"]
+CMD ["node", "server.prod.ts"]
