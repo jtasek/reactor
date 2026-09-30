@@ -30,7 +30,6 @@
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
     "@eslint/js": "^10.0.1",
-    "@hocuspocus/provider": "4.7.0",
     "@playwright/test": "^1.63.0",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.6.2",
     "@swc/core": "^1.15.41",
@@ -79,6 +78,7 @@
     "webpack-hot-middleware": "^2.26.1"
   },
   "dependencies": {
+    "@hocuspocus/provider": "4.7.0",
     "@hocuspocus/server": "4.7.0",
     "better-auth": "^1.7.6",
     "compression": "^1.8.1",

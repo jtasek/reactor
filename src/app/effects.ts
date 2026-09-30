@@ -5,3 +5,4 @@ export { collaboration } from './services/collaboration';
 export { openDocumentDatabase } from './services/documentDatabase';
 export { openChannel } from './services/tabSync';
 export { accounts, forgetOwner, lastOwner, shareOwner } from './services/accounts';
+export { api, serverTransport } from './services/api';

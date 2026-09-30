@@ -168,15 +168,23 @@ re-renders.** Components never mutate state directly.
   open on the device through a BroadcastChannel. A copy that missed messages, as while frozen
   or in the back/forward cache, catches up by exchanging state vectors when shown again.
   `tests/tabSync.test.ts` runs copies over a channel that can freeze one.
-- **Collaboration** (`src/app/services/collaboration.ts`, `effects.collaboration`): the only
-  app code that uses Yjs, which it loads in `initialize`. It writes store changes to each
-  shared document's Yjs document, one transaction per task, and applies other copies' changes
-  through the `applyRemoteChanges` action, marked so they are not sent back. Objects merge
-  field by field and member lists member by member. Gestures `pause` sharing until they end,
-  so a drag is shared once. Every copy shows the same merged content: invalid entities are
+- **Collaboration** (`src/app/services/collaboration.ts`, `effects.collaboration`): binds the
+  store to Yjs, which it loads in `initialize`; with server sync, the only app code that uses
+  Yjs. It writes store changes to each shared document's Yjs document, one transaction per
+  task, and applies other copies' changes through the `applyRemoteChanges` action, marked so
+  they are not sent back. Objects merge field by field and member lists member by member.
+  Gestures `pause` sharing until they end, so a drag is shared once. Every copy shows the same merged content: invalid entities are
   left out and references to missing shapes are dropped, as a local delete would, without
   writing these repairs back. `tests/support/collaboration.ts` runs copies over a network the
   test controls.
+- **Server sync** (`src/app/services/serverSync.ts`, loaded only when signed in): syncs each
+  document over one Hocuspocus socket through a Yjs document that mirrors the shared one, and
+  passes the server's changes to `Collaboration.receive`, so they merge like any other copy's.
+  The server's document list (`src/app/services/api.ts`) decides which documents exist; a
+  record per account in local storage keeps the documents made here and the deletions not yet
+  sent, so one the server lacks that was not made here was deleted elsewhere. It stops once
+  another account is signed in. `tests/server/editorSync.test.ts` runs signed-in copies
+  against the test server.
 - **Document database** (`src/app/services/documentDatabase.ts`): IndexedDB with an index of
   documents and each document's Yjs updates as records of their own; `compact` merges them in
   one transaction. Unit tests run it on `fake-indexeddb`.

@@ -512,13 +512,17 @@ describe('document sync', () => {
     });
 
     /** A copy whose account `session` reads, on a browser that opened `lastOwner`'s documents last. */
-    function createCopy(session: Accounts['session'], lastOwner?: string) {
+    function createCopy(
+        session: Accounts['session'],
+        lastOwner?: string,
+        indexedDB = new IDBFactory()
+    ) {
         const channels: Array<string | undefined> = [];
         const test = createTestStore(
             {},
             {
                 autoSave: true,
-                indexedDB: new IDBFactory(),
+                indexedDB,
                 openChannel: (name) => {
                     channels.push(name);
 
@@ -541,15 +545,22 @@ describe('document sync', () => {
     });
 
     it('opens the documents opened last without waiting for the account', async () => {
-        let answer: (user: AccountUser) => void = () => {};
+        const indexedDB = new IDBFactory();
+        let signIn: () => void = () => {};
+        const signedIn = new Promise<void>((resolve) => (signIn = resolve));
+
+        // Ada's documents, as this device keeps them from a start before.
+        await start(indexedDB, { signedIn: ada });
+
         const { store, channels, effects } = createCopy(
-            () => new Promise((resolve) => (answer = resolve)),
-            'user-ada'
+            () => signedIn.then(() => ada),
+            'user-ada',
+            indexedDB
         );
         const starting = store.onInitialize();
 
         await vi.waitFor(() => expect(channels).toEqual(['reactor-user-ada']));
-        answer(ada);
+        signIn();
         await starting;
 
         expect(store.state.account).toMatchObject({ kind: 'signedIn', id: 'user-ada' });

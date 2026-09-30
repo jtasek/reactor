@@ -11,6 +11,9 @@ import { createSync } from '../../server/sync';
 
 export const ORIGIN = 'http://localhost:4000';
 
+// Each test starts PostgreSQL in the test process, which takes seconds on a busy machine.
+vi.setConfig({ testTimeout: 20_000 });
+
 export interface Email {
     to: string;
     subject: string;

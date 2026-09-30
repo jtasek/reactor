@@ -13,6 +13,8 @@ export interface DocumentEvents {
     /** Another copy created a document; `update` is its whole state. */
     created(documentId: string, update: Uint8Array): void;
     deleted(documentId: string): void;
+    /** Another copy's change was applied to a document this copy holds. */
+    received?(documentId: string, update: Uint8Array): void;
 }
 
 type Message =
@@ -150,18 +152,23 @@ export class TabSync {
 
                 return;
             case 'document':
-                this.collaboration.receive(data.documentId, data.update);
+                this.receive(data.documentId, data.update);
 
                 return;
             case 'update':
                 if (data.to === undefined || data.to === this.id) {
-                    this.collaboration.receive(data.documentId, data.update);
+                    this.receive(data.documentId, data.update);
                 }
 
                 return;
             case 'sync':
                 this.answer(data.documentId, data.stateVector, data.from, data.reply);
         }
+    }
+
+    private receive(documentId: string, update: Uint8Array) {
+        this.collaboration.receive(documentId, update);
+        this.documents.received?.(documentId, update);
     }
 
     private answer(documentId: string, stateVector: Uint8Array, to: string, reply: boolean) {

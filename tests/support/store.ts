@@ -6,6 +6,7 @@ import { createApplication, createDocument } from 'src/app/factories';
 import { Collaboration } from 'src/app/services/collaboration';
 import { DocumentDatabase } from 'src/app/services/documentDatabase';
 import type { Accounts } from 'src/app/services/accounts';
+import type { Api, Transport } from 'src/app/services/api';
 import type { Channel } from 'src/app/services/tabSync';
 
 /** A server without accounts. */
@@ -15,6 +16,16 @@ const noAccounts: Accounts = {
     signUp: async () => ({ ok: false, message: 'No accounts' }),
     sendSignInLink: async () => ({ ok: false, message: 'No accounts' }),
     signOut: async () => ({ ok: false, message: 'No accounts' })
+};
+
+const unreachable = () => Promise.reject(new Error('The server cannot be reached'));
+
+/** A server that cannot be reached. */
+const offline: Api = {
+    workspaces: unreachable,
+    documents: unreachable,
+    createDocument: unreachable,
+    deleteDocument: unreachable
 };
 
 /** A channel no other copy listens on. */
@@ -34,9 +45,13 @@ export function createTestStore(
         openChannel?: (name?: string) => Channel;
         accounts?: Accounts;
         lastOwner?: string;
+        api?: Api;
+        serverTransport?: Transport;
+        /** Local storage shared with other stores, as copies on one device share it. */
+        storage?: Map<string, string>;
     } = {}
 ) {
-    const storage = new Map(Object.entries(seed));
+    const storage = options.storage ?? new Map(Object.entries(seed));
     const indexedDB = options.indexedDB ?? new IDBFactory();
     const effects = {
         newId: vi.fn(() => `test-id-${nextId++}`),
@@ -65,7 +80,9 @@ export function createTestStore(
         collaboration: options.collaboration ?? new Collaboration(),
         openDocumentDatabase: (name?: string) => DocumentDatabase.open(indexedDB, name),
         openChannel: options.openChannel ?? quietChannel,
-        accounts: options.accounts ?? noAccounts
+        accounts: options.accounts ?? noAccounts,
+        api: options.api ?? offline,
+        serverTransport: () => options.serverTransport ?? { url: 'ws://127.0.0.1:9/sync' }
     };
     let nextId = 1;
     const document = createDocument({ id: 'test-document' });
