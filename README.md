@@ -61,7 +61,7 @@ after the move, the next start says so once; that save is kept but not shown.
 Saving is **on by default** (`config.autoSave`); with it off, documents still load
 but none are written. Runtime-only changes, such as selection, hover and measured
 bounds, are never saved. The status bar shows whether changes are saved, being
-saved or not saved; when saving stops, a notice says why, and it goes away once
+saved, syncing, offline or not saved; when saving stops, a notice says why, and it goes away once
 saving works again. After a write fails, a document is saved whole on its next
 change.
 
@@ -76,9 +76,11 @@ link sent by email.
 
 The account page, `/account`, reached from the status bar, signs in and out and
 creates accounts. Signed out, the editor says once, and again at 3 documents,
-that documents are kept only in this browser. Until workspaces sync, signed-in
-documents are still kept only in the browser too, in a database of the account's
-own (`reactor-<user id>`), apart from the ones kept signed out.
+that documents are kept only in this browser. Signed in, documents sync with the
+server, and the browser keeps a copy of them in a database of the account's own
+(`reactor-<user id>`), apart from the ones kept signed out. Signing out waits for
+changes still on their way to the server, says what would be lost if some cannot
+be sent, then removes that copy from the browser.
 
 Signed in, the API at `/api` lists the user's workspaces, starting with a personal
 one created on first use, and lists, creates and deletes a workspace's documents.
@@ -94,8 +96,10 @@ editor's own address. Opening a document needs the viewer role; a viewer's
 connection is read-only, so the server drops the changes it sends. Each document's
 content is kept in PostgreSQL as one compacted Yjs update, saved a few seconds after
 changes and when the server stops. Deleting a document disconnects everyone from
-it, and a socket closes within a minute of its session ending. The editor does not
-connect yet.
+it, and a socket closes within a minute of its session ending. Signed in, the
+editor syncs every document over one socket: a new device shows the account's
+documents, documents made or deleted offline are sent once the server can be
+reached, and one deleted elsewhere is removed.
 
 | Variable | Meaning |
 |---|---|
