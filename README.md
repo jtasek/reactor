@@ -104,6 +104,7 @@ connect yet.
 | `BETTER_AUTH_SECRET` | At least 32 random characters, used to sign sessions |
 | `SMTP_URL` | SMTP server for email, such as `smtps://user:password@smtp.example.com`; required in production |
 | `MAIL_FROM` | Sender address; defaults to `no-reply` at the editor's host |
+| `TRUST_PROXY` | Reverse proxies whose `X-Forwarded-*` headers the production server trusts: a hop count such as `1`, `true`, or addresses and subnets such as `loopback, 10.0.0.0/8`; none by default. Set it behind a proxy, since sign-in is rate limited per client address |
 
 Without `SMTP_URL`, the development server writes email to its log instead.
 `compose.yaml` runs the editor with a PostgreSQL database: set `POSTGRES_PASSWORD`,

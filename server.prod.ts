@@ -9,6 +9,7 @@ import { pinoHttp } from 'pino-http';
 import type { ServerResponse } from 'node:http';
 
 import { startAccounts } from './server/accounts.ts';
+import { parseTrustProxy } from './server/trustProxy.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -16,9 +17,6 @@ const __dirname = dirname(__filename);
 const PORT = Number(process.env.PORT ?? 4000);
 const HOST = process.env.HOST ?? '0.0.0.0';
 const LOG_LEVEL = process.env.LOG_LEVEL ?? 'info';
-// Number of trusted reverse-proxy hops in front of this server. Required for
-// correct client IPs and for Secure/HSTS behaviour behind a TLS-terminating proxy.
-const TRUST_PROXY = process.env.TRUST_PROXY ?? false;
 
 const DIST_DIR = path.join(__dirname, 'dist');
 const STATIC_DIR = path.join(__dirname, 'static');
@@ -26,6 +24,17 @@ const INDEX_HTML = path.join(DIST_DIR, 'index.html');
 
 if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
     console.error(`Invalid PORT: ${process.env.PORT}`);
+    process.exit(1);
+}
+
+// The reverse proxies in front of this server, as `parseTrustProxy` reads them. Required
+// for correct client IPs and for Secure/HSTS behaviour behind a TLS-terminating proxy.
+let TRUST_PROXY: ReturnType<typeof parseTrustProxy> = false;
+
+try {
+    TRUST_PROXY = parseTrustProxy(process.env.TRUST_PROXY);
+} catch (err) {
+    console.error((err as Error).message);
     process.exit(1);
 }
 
@@ -50,10 +59,7 @@ const logger = pinoHttp({
 const app = express();
 
 // Behind a load balancer / reverse proxy this lets Express trust X-Forwarded-* headers.
-app.set(
-    'trust proxy',
-    TRUST_PROXY === 'false' ? false : TRUST_PROXY === 'true' ? true : TRUST_PROXY
-);
+app.set('trust proxy', TRUST_PROXY);
 app.disable('x-powered-by');
 app.disable('etag');
 
