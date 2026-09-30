@@ -48,8 +48,9 @@ PostgreSQL; see Accounts below.
 | `LOG_LEVEL` | Production server log level; `info` by default |
 | `TRUST_PROXY` | Reverse proxies whose `X-Forwarded-*` headers the production server trusts: a hop count such as `1`, `true`, or addresses and subnets such as `loopback, 10.0.0.0/8`; none by default. Set it behind a proxy, since sign-in is rate limited per client address |
 
-The production server stops at start with a clear message when a setting is
-invalid. Account settings are listed under Accounts.
+The production server stops at start with a clear message when `PORT` or
+`TRUST_PROXY` is invalid; `LOG_LEVEL` must be one of `fatal`, `error`, `warn`,
+`info`, `debug`, `trace` or `silent`. Account settings are listed under Accounts.
 
 ## Using the editor
 
@@ -170,7 +171,7 @@ unavailable or singular.
 
 All zoom controls share the 10%-1000% range. Ctrl-wheel pinch is continuous and
 anchored at the pointer; toolbar/tool steps are discrete. Slider zoom preserves
-the current pan position. Touchscreen pinch zooms the same way; see Input below.
+the current pan position. Touchscreen pinch zooms the same way; see Input above.
 
 ## Not yet available
 
