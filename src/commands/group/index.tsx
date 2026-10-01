@@ -1,49 +1,36 @@
 import { Command } from 'src/app/types';
-import { createGroup } from 'src/app/factories';
-import { Context } from '../../app';
-
-export const groupSelection = (context: Context) => {
-    const { state } = context;
-
-    const group = createGroup({ shapesIds: state.currentDocument?.selectedShapesIds });
-
-    state.currentDocument.groups[group.id] = group;
-};
+import { GROUP_MINIMUM, editableSelectedShapesIds } from 'src/app/membership';
 
 export const GroupCommand: Command = {
     id: 'group',
     name: 'Group',
     category: 'groups',
-    description: 'Group current selection',
+    description: 'Group selected shapes',
     icon: {
         group: 'av',
         name: 'library_add',
         size: 24
     },
-    regex: /(?<toolCode>group)\('(?<shapeName>\w+)',(?<x>\d+),(?<y>\d+)\)/,
     shortcut: 'mod+g',
-    canExecute: ({ state }) => state.currentDocument?.selectedShapes.length > 0,
-    execute: groupSelection
-};
-
-export const deleteSelectedGroups = ({ state }: Context) => {
-    const { selectedGroupsIds } = state.currentDocument;
-
-    selectedGroupsIds?.forEach((groupId: string) => delete state.currentDocument.groups[groupId]);
+    canExecute: ({ state }) =>
+        editableSelectedShapesIds(state.currentDocument).length >= GROUP_MINIMUM,
+    execute: ({ actions }) => actions.groupSelection()
 };
 
 export const UngroupCommand: Command = {
     id: 'ungroup',
     name: 'Ungroup',
     category: 'groups',
-    description: 'Delete selected group',
+    description: 'Ungroup selected groups',
     icon: {
         group: 'av',
         name: 'library_books',
         size: 24
     },
-    regex: /(?<toolCode>group)\('(?<shapeName>\w+)',(?<x>\d+),(?<y>\d+)\)/,
     shortcut: 'mod+shift+g',
-    canExecute: ({ state }) => state.currentDocument.selectedGroupsIds.length > 0,
-    execute: deleteSelectedGroups
+    canExecute: ({ state }) =>
+        state.currentDocument.selectedGroupsIds.some(
+            (id) => !state.currentDocument.groups[id].locked
+        ),
+    execute: ({ actions }) => actions.ungroupSelection()
 };

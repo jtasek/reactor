@@ -1,5 +1,7 @@
-import { ActionWithParam, Application, Layer } from '../types';
+import { Action, ActionWithParam, Application, Layer } from '../types';
 import { createLayer } from '../factories';
+import { LAYER_MINIMUM, editableSelectedShapesIds, removeFromContainers } from '../membership';
+import { isShapeVisible } from '../utils';
 
 const getLayer = ({ currentDocument }: Application, layerId: string) => {
     const layer = currentDocument.layers[layerId];
@@ -36,10 +38,44 @@ export const removeLayer: ActionWithParam<string> = ({ state }, layerId) => {
     deleteLayer(state, layerId);
 };
 
-export const toggleLayerSelected: ActionWithParam<string> = ({ state }, layerId) => {
-    const layer = getLayer(state, layerId);
+/**
+ * Moves the selected shapes the commands may change into a new layer, out of
+ * their layers, as a shape is on one layer at most. Layers left empty are removed.
+ */
+export const layerSelection: Action = ({ state }) => {
+    const { currentDocument } = state;
+    const shapesIds = editableSelectedShapesIds(currentDocument);
 
-    layer.selected = !layer.selected;
+    if (shapesIds.length < LAYER_MINIMUM) {
+        return;
+    }
+
+    removeFromContainers(currentDocument.layers, shapesIds, LAYER_MINIMUM);
+    setLayer(state, createLayer({ shapesIds }));
+};
+
+/** Takes the selected shapes the commands may change off their layers, removing layers left empty. */
+export const unlayerSelection: Action = ({ state }) => {
+    const { currentDocument } = state;
+
+    removeFromContainers(
+        currentDocument.layers,
+        editableSelectedShapesIds(currentDocument),
+        LAYER_MINIMUM
+    );
+};
+
+/** Selects a layer's shown shapes, or unselects them when it is selected. */
+export const toggleLayerSelected: ActionWithParam<string> = ({ state }, layerId) => {
+    const { currentDocument } = state;
+    const layer = getLayer(state, layerId);
+    const selected = !currentDocument.selectedLayersIds.includes(layerId);
+
+    layer.shapesIds
+        .filter((id) => isShapeVisible(currentDocument, id))
+        .forEach((id) => {
+            currentDocument.shapes[id].selected = selected;
+        });
 };
 
 export const unselectLayer: ActionWithParam<string> = ({ state }, layerId) => {

@@ -337,7 +337,11 @@ commands use its asynchronous clipboard, which may ask for permission to paste. 
 browser's own clipboard. Step 6 partly done: stale commented-out code and the unused `LoginBox`, which the
 account page replaced, are removed; `LayerPaneltem.tsx` is `LayerPanelItem.tsx`,
 and the clipboard driver exports `useClipboardDriver`. Unused helpers are removed
-one by one as each is approved. Remaining: the rest of step 6.
+one by one as each is approved. Commands: a group is selected as one, and a
+shape is in one group and on one layer at most; Group, Ungroup, Layer and Unlayer
+act on the selected shapes, Layer and Unlayer have shortcuts (Ctrl/Cmd+Alt+L, with
+Shift), Clone selects its clones and keeps their layers and groups, and every
+command is unavailable when it would do nothing. Remaining: the rest of step 6.
 
 Feature inventory:
 

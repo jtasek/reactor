@@ -257,6 +257,18 @@ Examples worth modelling new tools on:
   (rotated) bounds overlap it (authoritative: sets `selected` true/false), and the selection
   persists on release. A click without a drag clears the selection.
 
+## Groups and layers
+
+A group is selected as one: pressing or boxing any of its shapes selects all of them
+(`withTheirGroups`, `src/app/membership.ts`), so moving, deleting, cloning and copying act
+on the whole group. A shape is in one group and on one layer at most: Group and Layer take
+the selected shapes out of their groups or layers first, Group needs two shapes, and a
+group left with one shape, or a layer left empty, by these commands is removed. Deleting a
+shape keeps its groups, so member lists merge as collaboration expects. Commands act on
+`editableSelectedShapesIds`: shown, selected and not locked. A group or layer counts as
+selected (`selectedGroupsIds`, `selectedLayersIds`) when it holds a selected shape; its
+panel item selects or unselects its shapes.
+
 ## Bounding boxes & selection
 
 - `Shape` (`src/app/types.ts`) is a discriminated union on `type`; each variant carries only

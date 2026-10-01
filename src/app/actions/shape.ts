@@ -12,7 +12,8 @@ import {
     ShapeInput
 } from '../types';
 import { Context } from '../index';
-import { createShape } from '../factories';
+import { createGroup, createShape } from '../factories';
+import { containersHolding, withTheirGroups } from '../membership';
 import { orderAbove, ordersAbove, ordersBelow } from '../drawOrder';
 import { PropertyValue, SHAPE_PROPERTIES, applyProperty, canEdit } from '../properties';
 import { PasteResult, readClipboard, writeClipboard } from '../clipboard';
@@ -109,14 +110,20 @@ const CLONE_OFFSET: Point = { x: 10, y: 10 };
 
 /**
  * Adds an independent copy of each shape, offset by `CLONE_OFFSET`, above all
- * other shapes and stacked like the originals. A copy keeps its original's
- * geometry and appearance but gets its own id, name and timestamps, starts
- * unselected and is measured afresh.
+ * other shapes and stacked like the originals, and selects the copies in place
+ * of the selection. A copy keeps its original's geometry and appearance but gets
+ * its own id, name and timestamps, and is measured afresh. Copies join their
+ * originals' layers; a group copied whole is copied as a group of its own, and
+ * copies of some of a group's shapes join it.
  */
-export const cloneShapes: ActionWithParam<string[]> = ({ state }, shapeIds) => {
-    const { shapes, shapesIds } = state.currentDocument;
+export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shapeIds) => {
+    const { currentDocument } = state;
+    const { shapes, shapesIds } = currentDocument;
     const cloning = new Set(shapeIds);
+    const clonesIds = new Map<string, string>();
     let order = topOrder(state);
+
+    actions.unselectShapes();
 
     for (const id of shapesIds.filter((shapeId) => cloning.has(shapeId))) {
         const original = shapes[id];
@@ -132,11 +139,31 @@ export const cloneShapes: ActionWithParam<string[]> = ({ state }, shapeIds) => {
             rotation: original.rotation,
             locked: original.locked,
             visible: original.visible,
-            selected: false
+            selected: true
         });
 
         translateShape(clone, CLONE_OFFSET);
         putOnTop(state, clone);
+        clonesIds.set(id, clone.id);
+    }
+
+    const clonesOf = (ids: string[]) =>
+        ids.map((id) => clonesIds.get(id)).filter((id) => id !== undefined);
+
+    for (const layer of containersHolding(currentDocument.layers, clonesIds.keys())) {
+        layer.shapesIds = [...layer.shapesIds, ...clonesOf(layer.shapesIds)];
+    }
+
+    for (const group of containersHolding(currentDocument.groups, clonesIds.keys())) {
+        const copies = clonesOf(group.shapesIds);
+
+        if (copies.length === group.shapesIds.length) {
+            const copy = createGroup({ shapesIds: copies, name: `Clone of ${group.name}` });
+
+            currentDocument.groups[copy.id] = copy;
+        } else {
+            group.shapesIds = [...group.shapesIds, ...copies];
+        }
     }
 };
 
@@ -328,6 +355,9 @@ export const selectShapeAtPointer: ActionGuard = ({ state }) => {
         return true;
     }
 
+    // A group is selected as one.
+    const hit = withTheirGroups(state.currentDocument, [hitId]);
+
     shapesIds.forEach((id: string) => {
         const shape = shapes[id];
 
@@ -335,7 +365,7 @@ export const selectShapeAtPointer: ActionGuard = ({ state }) => {
             return;
         }
 
-        const selected = id === hitId;
+        const selected = hit.has(id) && isInteractive(state, id);
 
         if (shape.selected !== selected) {
             shape.selected = selected;
@@ -362,9 +392,19 @@ export const selectShapes: Action = ({ state }) => {
     const isClick = size.width === 0 && size.height === 0;
 
     const shapes = Object.values(state.currentDocument.shapes);
+    const boxed = isClick
+        ? new Set<string>()
+        : withTheirGroups(
+              state.currentDocument,
+              shapes
+                  .filter(
+                      (shape) => isInteractive(state, shape.id) && shapeIntersectsBox(shape, source)
+                  )
+                  .map((shape) => shape.id)
+          );
+
     shapes.forEach((shape) => {
-        const selected =
-            !isClick && isInteractive(state, shape.id) && shapeIntersectsBox(shape, source);
+        const selected = boxed.has(shape.id) && isInteractive(state, shape.id);
 
         // Only write when the value actually changes so shapes that stay
         // outside (or inside) the marquee don't re-render every pointer move.

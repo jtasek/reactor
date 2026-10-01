@@ -1,10 +1,11 @@
 import React from 'react';
 import { NavBarList } from './NavBarList';
 import { NavBarListItem } from './NavBarListItem';
-import { useActions, useCurrentDocument, useLayer } from 'src/app/hooks';
+import { useActions, useCurrentDocument, useLayer, useLayerSelected } from 'src/app/hooks';
 
 const LayerListItem = ({ layerId }: { layerId: string }) => {
     const layer = useLayer(layerId);
+    const selected = useLayerSelected(layerId);
     const { toggleLayerSelected, toggleLayerLocked, toggleLayerVisible } = useActions();
 
     return (
@@ -12,7 +13,7 @@ const LayerListItem = ({ layerId }: { layerId: string }) => {
             key={layerId}
             id={layerId}
             name={layer.name}
-            selected={layer.selected}
+            selected={selected}
             locked={layer.locked}
             visible={layer.visible}
             onClick={toggleLayerSelected}

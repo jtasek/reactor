@@ -180,6 +180,11 @@ export const useGroup = (id: string) => {
     return useCurrentDocument()?.groups[id];
 };
 
+/** Whether a selected shape is in the group. */
+export const useGroupSelected = (id: string) => {
+    return useAppState((state) => state.currentDocument.selectedGroupsIds.includes(id));
+};
+
 export const useGroups = () => {
     return useCurrentDocument()?.groups ?? [];
 };
@@ -194,6 +199,11 @@ export const useLinks = () => {
 
 export const useLayer = (id: string) => {
     return useCurrentDocument()?.layers[id];
+};
+
+/** Whether a selected shape is on the layer. */
+export const useLayerSelected = (id: string) => {
+    return useAppState((state) => state.currentDocument.selectedLayersIds.includes(id));
 };
 
 export const useLayers = () => {

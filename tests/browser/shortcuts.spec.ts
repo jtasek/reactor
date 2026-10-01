@@ -22,10 +22,10 @@ test('keys pick tools and run commands on the selection', async ({ page }) => {
     await page.keyboard.press('ControlOrMeta+d');
     await expect(shapes(page)).toHaveCount(2);
 
-    // The clone is unselected, so Delete removes only the original.
+    // The clone replaces the selection, so Delete removes only the clone.
     await page.keyboard.press('Delete');
     await expect(shapes(page)).toHaveCount(1);
-    await expect(shapes(page).locator('rect[data-cy]')).toHaveAttribute('x', '110');
+    await expect(shapes(page).locator('rect[data-cy]')).toHaveAttribute('x', '100');
 
     await page.keyboard.press('+');
     await expect(page.locator('svg#surface #camera')).toHaveAttribute(

@@ -37,7 +37,13 @@ function cloneShape(shape: ShapeInput) {
     const cloneId = store.state.currentDocument.shapesIds.find((id) => id !== originalId)!;
     const get = (id: string) => store.state.currentDocument.shapes[id];
 
-    return { store, original: () => get(originalId), clone: () => get(cloneId), cloneId };
+    return {
+        store,
+        originalId,
+        original: () => get(originalId),
+        clone: () => get(cloneId),
+        cloneId
+    };
 }
 
 describe.each(shapes)('cloning a $type', (shape) => {
@@ -56,15 +62,17 @@ describe.each(shapes)('cloning a $type', (shape) => {
             key: `${shape.type}-${cloneId}`,
             name: 'Clone of Original',
             rotation: 30,
-            selected: false,
+            selected: true,
             children: []
         });
     });
 
     it('does not follow later edits of the original', () => {
-        const { store, original, clone } = cloneShape(shape);
+        const { store, originalId, original, clone } = cloneShape(shape);
         const before = getShapeBounds(clone());
 
+        store.actions.unselectShapes();
+        store.actions.selectShape(originalId);
         store.actions.moveSelectedShapes({ x: 100, y: 100 });
 
         expect(getShapeBounds(original()).topLeft.x).toBeGreaterThan(90);

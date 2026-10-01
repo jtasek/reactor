@@ -62,9 +62,10 @@ bar, side bar, panels and other parts of the editor.
 | `s` | Select tool: click a shape, or drag to select shapes a box touches |
 | `r`, `c`, `e`, `l`, `p`, `t`, `i` | Rectangle, circle, ellipse, line, pen, text and image tools |
 | Delete or Backspace | Delete the selection |
-| Ctrl/Cmd+D | Clone the selection |
+| Ctrl/Cmd+D | Clone the selection; the clones become the selection |
 | Ctrl/Cmd+C, Ctrl/Cmd+X, Ctrl/Cmd+V | Copy, cut and paste the selection, also between documents and tabs |
-| Ctrl/Cmd+G, Ctrl/Cmd+Shift+G | Group and ungroup the selection |
+| Ctrl/Cmd+G, Ctrl/Cmd+Shift+G | Group and ungroup the selection; pressing a grouped shape selects its whole group |
+| Ctrl/Cmd+Alt+L, Ctrl/Cmd+Alt+Shift+L | Move the selection to a new layer, take it off its layer |
 | `+` or `=`, `-`, `0` | Zoom in, zoom out, reset zoom |
 
 Shortcuts do nothing while a text field has focus. The command line runs a command

@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
 import { Icon } from '../Icon';
-import { useActions, useGroup } from 'src/app/hooks';
+import { useActions, useGroup, useGroupSelected } from 'src/app/hooks';
 
 const visibleIcon = {
     group: 'action',
@@ -36,7 +36,8 @@ interface Props {
 }
 
 export const GroupPanelItem: FC<Props> = ({ groupId }) => {
-    const { name, locked, selected, visible } = useGroup(groupId);
+    const { name, locked, visible } = useGroup(groupId);
+    const selected = useGroupSelected(groupId);
     const { toggleGroupLocked, toggleGroupSelected, toggleGroupVisible } = useActions();
 
     return (
