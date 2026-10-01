@@ -64,7 +64,8 @@ bar, side bar, panels and other parts of the editor.
 | Delete or Backspace | Delete the selection |
 | Ctrl/Cmd+D | Clone the selection; the clones become the selection |
 | Ctrl/Cmd+C, Ctrl/Cmd+X, Ctrl/Cmd+V | Copy, cut and paste the selection, also between documents and tabs |
-| Ctrl/Cmd+G, Ctrl/Cmd+Shift+G | Group and ungroup the selection; pressing a grouped shape selects its whole group |
+| Ctrl/Cmd+G, Ctrl/Cmd+Shift+G | Group and ungroup the selection. A group is selected, moved, turned and scaled as one; double-click a shape in it to select that shape alone |
+| Ctrl/Cmd+Alt+G | Remove the shapes selected inside a group from it |
 | Ctrl/Cmd+Alt+L, Ctrl/Cmd+Alt+Shift+L | Move the selection to a new layer, take it off its layer |
 | `+` or `=`, `-`, `0` | Zoom in, zoom out, reset zoom |
 

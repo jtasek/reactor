@@ -5,7 +5,14 @@ import { Resizable } from '../Selectable/Resizable';
 import { Selectable } from '../Selectable/Selectable';
 import { getComponentByType } from 'src/tools/components';
 import { rectToBox, shapeGeometryKey, getShapeBounds, boxCenter } from 'src/app/utils';
-import { useActions, useAppState, useShape, useShapeLocked, useShapeVisible } from 'src/app/hooks';
+import {
+    useActions,
+    useAppState,
+    useShape,
+    useShapeInSelectedGroup,
+    useShapeLocked,
+    useShapeVisible
+} from 'src/app/hooks';
 
 interface Props {
     shapeId: string;
@@ -15,6 +22,7 @@ export const Shape = memo(({ shapeId }: Props) => {
     const shape = useShape(shapeId);
     const visible = useShapeVisible(shapeId);
     const locked = useShapeLocked(shapeId);
+    const inSelectedGroup = useShapeInSelectedGroup(shapeId);
     const { setShapeBounds, activateShape, deactivateShape } = useActions();
     // A move is a pure translation: `moveSelectedShapes` already shifts the
     // cached bounds analytically, so re-measuring via getBBox every frame is
@@ -90,7 +98,7 @@ export const Shape = memo(({ shapeId }: Props) => {
             {shape.active && !shape.selected && (
                 <Active key={`active-${shape.type}-${shape.id}`} shape={shape} />
             )}
-            {shape.selected && (
+            {shape.selected && !inSelectedGroup && (
                 <>
                     <Selectable key={`selectable-${shape.type}-${shape.id}`} shape={shape} />
                     {/* Locked shapes stay selectable but cannot be resized or rotated. */}

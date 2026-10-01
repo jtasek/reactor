@@ -216,6 +216,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         currentDocumentId: 'document-1',
         currentDocument,
         currentPage: 'designer',
+        enteredGroupId: null,
         devices: {},
         notifications: [],
         providers: {},

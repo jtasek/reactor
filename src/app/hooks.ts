@@ -11,6 +11,7 @@ import { useCallback, useLayoutEffect, useReducer } from 'react';
 import { isShapeLocked, isShapeVisible } from './utils';
 import type { Command } from './types';
 import { takesEditorInput } from '../events/input';
+import { groupFrame, selectedGroupsIdsOf } from './membership';
 
 export const useActions = createActionsHook<Context>();
 export const useEffects = createEffectsHook<Context>();
@@ -180,9 +181,43 @@ export const useGroup = (id: string) => {
     return useCurrentDocument()?.groups[id];
 };
 
-/** Whether a selected shape is in the group. */
+// The group hooks compute from the current document read while rendering, so
+// every field they depend on is tracked, as a selector alone missed added groups.
+
+/** The groups selected as one. */
+export const useSelectedGroupsIds = () => {
+    const document = useCurrentDocument();
+    const enteredGroupId = useAppState((state) => state.enteredGroupId);
+
+    return selectedGroupsIdsOf(document, enteredGroupId);
+};
+
+/** Whether the group is selected as one. */
 export const useGroupSelected = (id: string) => {
-    return useAppState((state) => state.currentDocument.selectedGroupsIds.includes(id));
+    return useSelectedGroupsIds().includes(id);
+};
+
+/** Where a group is drawn: its box and rotation, none when no shape of it is shown. */
+export const useGroupFrame = (id: string) => {
+    const document = useCurrentDocument();
+    const group = document.groups[id];
+
+    return group ? groupFrame(document, group) : null;
+};
+
+/** Whether a group, or any of its shapes, is locked, so it cannot be resized or rotated. */
+export const useGroupLocked = (id: string) => {
+    const document = useCurrentDocument();
+    const group = document.groups[id];
+
+    return !group || group.shapesIds.some((shapeId) => isShapeLocked(document, shapeId));
+};
+
+/** Whether a shape is in a group selected as one, which draws the selection instead. */
+export const useShapeInSelectedGroup = (shapeId: string) => {
+    const document = useCurrentDocument();
+
+    return useSelectedGroupsIds().some((id) => document.groups[id].shapesIds.includes(shapeId));
 };
 
 export const useGroups = () => {
@@ -199,11 +234,6 @@ export const useLinks = () => {
 
 export const useLayer = (id: string) => {
     return useCurrentDocument()?.layers[id];
-};
-
-/** Whether a selected shape is on the layer. */
-export const useLayerSelected = (id: string) => {
-    return useAppState((state) => state.currentDocument.selectedLayersIds.includes(id));
 };
 
 export const useLayers = () => {

@@ -6,7 +6,7 @@ import { Context } from '../../app';
 export const deleteSelectedShapes = ({ state, actions }: Context) => {
     const { selectedShapesIds } = state.currentDocument;
 
-    [...selectedShapesIds].forEach((shapeId) => actions.removeShape(shapeId));
+    actions.removeShapes([...selectedShapesIds]);
 };
 
 export const DeleteCommand: Command = {

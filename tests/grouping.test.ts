@@ -1,5 +1,6 @@
 import { registerCommand } from 'src/app/actions/startup';
-import type { ShapeInput } from 'src/app/types';
+import { groupFrame } from 'src/app/membership';
+import type { Point, ShapeInput } from 'src/app/types';
 import * as commands from 'src/commands';
 import { createTestStore } from './support/store';
 
@@ -282,5 +283,126 @@ describe('the Layer and Unlayer shortcuts', () => {
 
         expect(store.actions.events.pressShortcut(press(true))).toBe(true);
         expect(layers()).toEqual([]);
+    });
+});
+
+describe('a group as one object', () => {
+    /** Two 10 by 10 squares at x 0 and 20, grouped and selected. */
+    function grouped() {
+        const setup = storeWith(0, 20);
+
+        setup.run('group');
+
+        const [groupId] = Object.keys(setup.document().groups);
+        const press = (x: number, y: number) => {
+            setup.store.actions.events.setCurrentPosition({ x, y });
+            setup.store.actions.selectShapeAtPointer();
+        };
+        const drag = (type: 'rotate' | 'bottomRight', from: Point, to: Point) => {
+            const { events } = setup.store.actions;
+
+            events.beginGesture({ pointerId: 1, position: from, handle: { groupId, type } });
+            events.movePointer({ pointerId: 1, position: to });
+        };
+
+        return { ...setup, groupId, press, drag };
+    }
+
+    it('is selected by pressing any of its shapes', () => {
+        const { store, groupId, press, document } = grouped();
+
+        store.actions.unselectShapes();
+        press(25, 5);
+
+        expect(document().selectedGroupsIds).toEqual([groupId]);
+    });
+
+    it('is entered by double-clicking a shape, whose shapes are then pressed one by one', () => {
+        const { store, ids, groupId, press, selected, document } = grouped();
+
+        store.actions.events.setCurrentPosition({ x: 5, y: 5 });
+        expect(store.actions.enterGroupAtPointer()).toBe(true);
+        expect(selected()).toEqual([ids[0]]);
+        expect(document().selectedGroupsIds).toEqual([]);
+
+        press(25, 5);
+        expect(selected()).toEqual([ids[1]]);
+
+        store.actions.addShape({ ...square(100), selected: false });
+        press(105, 5);
+        press(5, 5);
+        expect(document().selectedGroupsIds).toEqual([groupId]);
+    });
+
+    it('turns its shapes about its center, and its box with them', () => {
+        const { store, ids, groupId, drag, document } = grouped();
+
+        drag('rotate', { x: 15, y: -20 }, { x: 25, y: 5 });
+
+        expect(positions(store, ids)).toEqual([
+            { x: expect.closeTo(10), y: expect.closeTo(-10) },
+            { x: expect.closeTo(10), y: expect.closeTo(10) }
+        ]);
+        expect(ids.map((id) => document().shapes[id].rotation)).toEqual([90, 90]);
+        expect(document().groups[groupId].rotation).toBe(90);
+        expect(groupFrame(document(), document().groups[groupId])?.box).toMatchObject({
+            width: expect.closeTo(30),
+            height: expect.closeTo(10)
+        });
+    });
+
+    it('scales its shapes in proportion from the opposite corner', () => {
+        const { store, ids, drag, document } = grouped();
+
+        drag('bottomRight', { x: 30, y: 10 }, { x: 60, y: 20 });
+
+        expect(positions(store, ids)).toEqual([
+            { x: 0, y: 0 },
+            { x: 40, y: 0 }
+        ]);
+        expect(
+            ids.map((id) => {
+                const shape = document().shapes[id];
+
+                return shape.type === 'rectangle' ? shape.size : null;
+            })
+        ).toEqual([
+            { width: 20, height: 20 },
+            { width: 20, height: 20 }
+        ]);
+    });
+
+    it('is put back as it was when a rotation is canceled', () => {
+        const { store, ids, groupId, drag, document } = grouped();
+
+        drag('rotate', { x: 15, y: -20 }, { x: 25, y: 5 });
+        store.actions.events.cancelGesture();
+
+        expect(positions(store, ids)).toEqual([
+            { x: 0, y: 0 },
+            { x: 20, y: 0 }
+        ]);
+        expect(document().groups[groupId].rotation ?? 0).toBe(0);
+    });
+
+    it('is removed when all of it is deleted', () => {
+        const { groups, run } = grouped();
+
+        run('delete');
+
+        expect(groups()).toEqual([]);
+    });
+
+    it('lets a shape be removed from it once entered', () => {
+        const { store, ids, groups, run } = storeWith(0, 20, 40);
+
+        run('group');
+        expect(run('remove from group')).toBe('Remove from group is not available right now');
+
+        store.actions.events.setCurrentPosition({ x: 5, y: 5 });
+        store.actions.enterGroupAtPointer();
+        expect(run('remove from group')).toBeUndefined();
+
+        expect(groups()).toEqual([[ids[1], ids[2]]]);
     });
 });

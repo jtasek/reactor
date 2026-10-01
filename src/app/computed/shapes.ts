@@ -1,7 +1,7 @@
 import { derived } from 'overmind';
 import { Application, Document } from '../types';
 import { isShapeVisible } from '../utils';
-import { containersHolding } from '../membership';
+import { selectedGroupsIdsOf } from '../membership';
 
 export const commandsIds = derived(({ commands }: Application) => {
     return Object.keys(commands);
@@ -15,22 +15,20 @@ export const groupsIds = derived((currentDocument: Document) => {
     return Object.keys(currentDocument.groups);
 });
 
-/** The groups holding a selected shape. */
-export const selectedGroupsIds = derived((currentDocument: Document) => {
-    return containersHolding(currentDocument.groups, currentDocument.selectedShapesIds).map(
-        (group) => group.id
-    );
-});
+/** The groups selected as one: see `selectedGroupsIdsOf`. */
+export const selectedGroupsIds = derived(
+    (currentDocument: Document, { enteredGroupId }: Application) =>
+        selectedGroupsIdsOf(currentDocument, enteredGroupId)
+);
 
 export const layersIds = derived((currentDocument: Document) => {
     return Object.keys(currentDocument.layers);
 });
 
-/** The layers holding a selected shape. */
 export const selectedLayersIds = derived((currentDocument: Document) => {
-    return containersHolding(currentDocument.layers, currentDocument.selectedShapesIds).map(
-        (layer) => layer.id
-    );
+    return Object.values(currentDocument.layers)
+        .filter((layer) => layer.selected)
+        .map((layer) => layer.id);
 });
 
 export const linksIds = derived((currentDocument: Document) => {

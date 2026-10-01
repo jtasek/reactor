@@ -2,6 +2,7 @@ import { json } from 'overmind';
 import { Context } from '../../app';
 import { ActionWithParam, Point, Shape } from '../../app/types';
 import { screenToWorld } from '../../app/camera';
+import { groupFrame, shownGroupShapesIds } from '../../app/membership';
 import { HandleTarget, SelectionSnapshot, ShapesSnapshot, TouchContact } from '../types';
 
 type PointerInput = { pointerId: number; position: Point };
@@ -63,9 +64,36 @@ export const beginGesture = (
     pointer.current = position;
     pointer.path = [];
 
-    const handleShape = handle && state.currentDocument.shapes[handle.shapeId];
+    const handleGroup =
+        handle && 'groupId' in handle && state.currentDocument.groups[handle.groupId];
+    const frame = handleGroup ? groupFrame(state.currentDocument, handleGroup) : null;
 
-    if (handle && handleShape) {
+    if (handle && 'groupId' in handle && handleGroup && frame) {
+        const shapes = snapshotShapes(
+            shownGroupShapesIds(state.currentDocument, handleGroup).map(
+                (id) => state.currentDocument.shapes[id]
+            )
+        );
+
+        pointer.gesture =
+            handle.type === 'rotate'
+                ? { ...owner, kind: 'rotatingGroup', groupId: handle.groupId, shapes, frame }
+                : {
+                      ...owner,
+                      kind: 'resizingGroup',
+                      groupId: handle.groupId,
+                      handle: handle.type,
+                      shapes,
+                      frame
+                  };
+
+        return true;
+    }
+
+    const handleShape =
+        handle && 'shapeId' in handle && state.currentDocument.shapes[handle.shapeId];
+
+    if (handle && 'shapeId' in handle && handleShape) {
         const shapes = snapshotShapes([handleShape]);
 
         pointer.gesture =
@@ -163,6 +191,18 @@ export const movePointer = ({ state, actions }: Context, { pointerId, position }
     if (gesture.kind === 'rotating') {
         actions.rotateShape({ shapeId: gesture.shapeId, position });
     }
+
+    if (gesture.kind === 'resizingGroup') {
+        const { groupId, handle, shapes, frame } = gesture;
+
+        actions.resizeGroup({ groupId, handle, position, shapes, frame });
+    }
+
+    if (gesture.kind === 'rotatingGroup') {
+        const { groupId, shapes, frame } = gesture;
+
+        actions.rotateGroup({ groupId, position, shapes, frame });
+    }
 };
 
 /**
@@ -229,6 +269,14 @@ export const cancelGesture = (
                 Object.assign(shape, json(snapshot), { active: shape.active });
             }
         });
+    }
+
+    if ('frame' in gesture) {
+        const group = state.currentDocument.groups[gesture.groupId];
+
+        if (group) {
+            group.rotation = gesture.frame.rotation;
+        }
     }
 
     if ('selection' in gesture) {

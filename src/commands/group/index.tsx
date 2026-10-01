@@ -1,5 +1,9 @@
 import { Command } from 'src/app/types';
-import { GROUP_MINIMUM, editableSelectedShapesIds } from 'src/app/membership';
+import {
+    GROUP_MINIMUM,
+    editableSelectedShapesIds,
+    groupedShapesSelectedAlone
+} from 'src/app/membership';
 
 export const GroupCommand: Command = {
     id: 'group',
@@ -33,4 +37,19 @@ export const UngroupCommand: Command = {
             (id) => !state.currentDocument.groups[id].locked
         ),
     execute: ({ actions }) => actions.ungroupSelection()
+};
+
+export const RemoveFromGroupCommand: Command = {
+    id: 'remove-from-group',
+    name: 'Remove from group',
+    category: 'groups',
+    description: 'Remove selected shapes from their group',
+    icon: {
+        group: 'content',
+        name: 'remove_circle_outline',
+        size: 24
+    },
+    shortcut: 'mod+alt+g',
+    canExecute: ({ state }) => groupedShapesSelectedAlone(state.currentDocument).length > 0,
+    execute: ({ actions }) => actions.removeSelectionFromGroups()
 };

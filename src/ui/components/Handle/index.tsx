@@ -1,10 +1,11 @@
 import React, { FC } from 'react';
 
 import styles from './styles.css';
+import type { HandleOwner } from '../../../events/types';
 import { Point, ResizeHandlerType } from '../../../app/types';
 
 export interface Props {
-    shapeId: string;
+    owner: HandleOwner;
     position: Point;
     size?: number;
     handlerType: ResizeHandlerType;
@@ -13,7 +14,7 @@ export interface Props {
 }
 
 export const Handle: FC<Props> = ({
-    shapeId,
+    owner,
     position,
     handlerType,
     size = 5,
@@ -31,7 +32,8 @@ export const Handle: FC<Props> = ({
             r={size}
             style={cursor ? { cursor } : undefined}
             data-handle
-            data-shape-id={shapeId}
+            data-shape-id={'shapeId' in owner ? owner.shapeId : undefined}
+            data-group-id={'groupId' in owner ? owner.groupId : undefined}
             data-type={handlerType}
             onPointerDown={(e) => e.preventDefault()}
         />

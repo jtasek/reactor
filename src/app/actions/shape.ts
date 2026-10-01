@@ -13,7 +13,7 @@ import {
 } from '../types';
 import { Context } from '../index';
 import { createGroup, createShape } from '../factories';
-import { containersHolding, withTheirGroups } from '../membership';
+import { containersHolding, shapeGroup, withTheirGroups } from '../membership';
 import { orderAbove, ordersAbove, ordersBelow } from '../drawOrder';
 import { PropertyValue, SHAPE_PROPERTIES, applyProperty, canEdit } from '../properties';
 import { PasteResult, readClipboard, writeClipboard } from '../clipboard';
@@ -160,7 +160,11 @@ export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shape
 
         // Hidden shapes are not cloned, so a group is cloned whole when its shown ones are.
         if (copies.length === shown.length) {
-            const copy = createGroup({ shapesIds: copies, name: `Clone of ${group.name}` });
+            const copy = createGroup({
+                shapesIds: copies,
+                name: `Clone of ${group.name}`,
+                rotation: group.rotation
+            });
 
             currentDocument.groups[copy.id] = copy;
         } else {
@@ -178,11 +182,15 @@ const selectedInDrawOrder = ({ currentDocument }: Application) => {
         .map((id) => currentDocument.shapes[id]);
 };
 
+/** The groups selected as one. */
+const selectedGroups = ({ currentDocument }: Application) =>
+    currentDocument.selectedGroupsIds.map((id) => currentDocument.groups[id]);
+
 /** The selected shapes as clipboard text, or null when there are none to copy. */
 export const copySelection: ActionWithResult<string | null> = ({ state }) => {
     const selected = takesEditorInput(state) ? selectedInDrawOrder(state) : [];
 
-    return selected.length > 0 ? writeClipboard(selected) : null;
+    return selected.length > 0 ? writeClipboard(selected, selectedGroups(state)) : null;
 };
 
 /**
@@ -199,17 +207,28 @@ export const selectionToCut: ActionWithResult<{ text: string; shapeIds: string[]
         : [];
 
     return cut.length > 0
-        ? { text: writeClipboard(cut), shapeIds: cut.map((shape) => shape.id) }
+        ? {
+              text: writeClipboard(cut, selectedGroups(state)),
+              shapeIds: cut.map((shape) => shape.id)
+          }
         : null;
 };
 
-/** Removes the shapes that still exist and are not locked. */
+/**
+ * Removes the shapes that still exist and are not locked, and the groups this
+ * empties, as deleting or cutting a whole group removes it.
+ */
 export const removeShapes: ActionWithParam<string[]> = ({ state }, shapeIds) => {
-    shapeIds
-        .filter(
-            (id) => state.currentDocument.shapes[id] && !isShapeLocked(state.currentDocument, id)
-        )
-        .forEach((id) => deleteShape(state, id));
+    const { currentDocument } = state;
+    const removed = shapeIds.filter(
+        (id) => currentDocument.shapes[id] && !isShapeLocked(currentDocument, id)
+    );
+    const groups = containersHolding(currentDocument.groups, removed);
+
+    removed.forEach((id) => deleteShape(state, id));
+    groups
+        .filter((group) => group.shapesIds.length === 0)
+        .forEach((group) => delete currentDocument.groups[group.id]);
 };
 
 /**
@@ -229,12 +248,12 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (
 
     const copied = readClipboard(text);
 
-    if (copied.length === 0) {
+    if (copied.shapes.length === 0) {
         return 'noShapes';
     }
 
     let order = topOrder(state);
-    const pasted = copied.map((input) => {
+    const pasted = copied.shapes.map((input) => {
         order = orderAbove(order);
 
         return createShape({ ...input, order, selected: true });
@@ -250,7 +269,17 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (
     }
 
     actions.unselectShapes();
+    state.enteredGroupId = null;
     pasted.forEach((shape) => putOnTop(state, shape));
+    copied.groups.forEach(({ name, rotation, members }) => {
+        const group = createGroup({
+            name,
+            rotation,
+            shapesIds: members.map((index) => pasted[index].id)
+        });
+
+        state.currentDocument.groups[group.id] = group;
+    });
 
     return 'pasted';
 };
@@ -324,6 +353,58 @@ export const selectShapeByPoint: Action = ({ state }) => {
     });
 };
 
+/** The topmost shape drawn under the pointer that it can press, if any. */
+const shapeAtPointer = (state: Context['state']): string | null => {
+    const { current } = state.events.pointer;
+    const { shapesIds, shapes, camera } = state.currentDocument;
+    const tolerance = hitTolerance(camera.scale);
+    let hitId: string | null = null;
+
+    for (const id of shapesIds) {
+        const shape = shapes[id];
+
+        if (shape && hitTestShape(shape, current, tolerance) && isInteractive(state, id)) {
+            hitId = id;
+        }
+    }
+
+    return hitId;
+};
+
+/** Leaves the group double-clicked into unless every shape in `shapeIds` is in it. */
+const leaveGroupWithout = (state: Context['state'], shapeIds: string[]) => {
+    const entered = state.enteredGroupId && state.currentDocument.groups[state.enteredGroupId];
+
+    if (
+        state.enteredGroupId !== null &&
+        (!entered ||
+            shapeIds.length === 0 ||
+            shapeIds.some((id) => !entered.shapesIds.includes(id)))
+    ) {
+        state.enteredGroupId = null;
+    }
+};
+
+/**
+ * Double-clicking a shape of a selected group enters the group: the shape alone
+ * is selected, and its group's shapes are pressed one by one until a press
+ * outside the group. Returns whether a group was entered.
+ */
+export const enterGroupAtPointer: ActionGuard = ({ state, actions }) => {
+    const hitId = shapeAtPointer(state);
+    const group = hitId === null ? undefined : shapeGroup(state.currentDocument, hitId);
+
+    if (hitId === null || !group || !state.currentDocument.selectedGroupsIds.includes(group.id)) {
+        return false;
+    }
+
+    state.enteredGroupId = group.id;
+    actions.unselectShapes();
+    state.currentDocument.shapes[hitId].selected = true;
+
+    return true;
+};
+
 /**
  * Resolves the shape under the pointer and updates the selection so a move can
  * begin, returning whether a shape was hit. Iterates shapesIds in z-order so the
@@ -334,22 +415,14 @@ export const selectShapeByPoint: Action = ({ state }) => {
  * caller decides what an empty-canvas press means (pan, marquee or deselect).
  */
 export const selectShapeAtPointer: ActionGuard = ({ state }) => {
-    const { current } = state.events.pointer;
-    const { shapesIds, shapes, camera } = state.currentDocument;
-    const tolerance = hitTolerance(camera.scale);
-
-    let hitId: string | null = null;
-    for (const id of shapesIds) {
-        const shape = shapes[id];
-
-        if (shape && hitTestShape(shape, current, tolerance) && isInteractive(state, id)) {
-            hitId = id;
-        }
-    }
+    const { shapesIds, shapes } = state.currentDocument;
+    const hitId = shapeAtPointer(state);
 
     if (hitId === null) {
         return false;
     }
+
+    leaveGroupWithout(state, [hitId]);
 
     // Preserve an existing multi-selection when grabbing one of its members, so
     // the whole group moves together.
@@ -358,7 +431,7 @@ export const selectShapeAtPointer: ActionGuard = ({ state }) => {
     }
 
     // A group is selected as one.
-    const hit = withTheirGroups(state.currentDocument, [hitId]);
+    const hit = withTheirGroups(state.currentDocument, [hitId], state.enteredGroupId);
 
     shapesIds.forEach((id: string) => {
         const shape = shapes[id];
@@ -394,16 +467,17 @@ export const selectShapes: Action = ({ state }) => {
     const isClick = size.width === 0 && size.height === 0;
 
     const shapes = Object.values(state.currentDocument.shapes);
-    const boxed = isClick
-        ? new Set<string>()
-        : withTheirGroups(
-              state.currentDocument,
-              shapes
-                  .filter(
-                      (shape) => isInteractive(state, shape.id) && shapeIntersectsBox(shape, source)
-                  )
-                  .map((shape) => shape.id)
-          );
+    const hits = isClick
+        ? []
+        : shapes
+              .filter(
+                  (shape) => isInteractive(state, shape.id) && shapeIntersectsBox(shape, source)
+              )
+              .map((shape) => shape.id);
+
+    leaveGroupWithout(state, hits);
+
+    const boxed = withTheirGroups(state.currentDocument, hits, state.enteredGroupId);
 
     shapes.forEach((shape) => {
         const selected = boxed.has(shape.id) && isInteractive(state, shape.id);

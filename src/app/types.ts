@@ -167,6 +167,8 @@ export interface Group {
     id: string;
     locked: boolean;
     name: string;
+    /** Degrees the group's box is turned by; its shapes carry their own rotations. */
+    rotation?: number;
     selected: boolean;
     shapesIds: string[];
     visible: boolean;
@@ -339,6 +341,8 @@ export type Application = {
     currentDocumentId: string;
     currentDocument: Document;
     currentPage: string;
+    /** The group double-clicked into, whose shapes are selected one by one. */
+    enteredGroupId: string | null;
     devices: HashTable<Device>;
     documents: HashTable<Document>;
     documentsIds: string[];

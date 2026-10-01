@@ -98,11 +98,12 @@ it('pastes into the same document offset from the copies already there', () => {
     expect(pasted.map((shape) => shape.selected)).toEqual([false, false, true, true]);
 });
 
-it('copies selected shapes in drawing order, without memberships or locks', () => {
+it('copies selected shapes in drawing order with their group, without layers or locks', () => {
     const { store, document, ordered } = storeWith(shapes[0], shapes[2]);
     const [rectangle, circle] = document().shapesIds;
 
-    store.actions.addGroup({ shapesIds: [rectangle, circle] });
+    store.actions.addGroup({ shapesIds: [rectangle, circle], rotation: 30 });
+    store.actions.addLayer({ shapesIds: [rectangle, circle] });
     store.actions.bringShapesToFront([rectangle]);
     store.actions.lockShape(rectangle);
 
@@ -113,7 +114,13 @@ it('copies selected shapes in drawing order, without memberships or locks', () =
 
     expect(ordered().map((shape) => shape.type)).toEqual(['circle', 'rectangle']);
     expect(ordered().every((shape) => !shape.locked && !shape.parentShapeId)).toBe(true);
-    expect(Object.values(document().groups)).toEqual([]);
+    expect(
+        Object.values(document().groups).map((group) => ({
+            rotation: group.rotation,
+            types: group.shapesIds.map((id) => document().shapes[id].type)
+        }))
+    ).toEqual([{ rotation: 30, types: ['rectangle', 'circle'] }]);
+    expect(Object.values(document().layers)).toEqual([]);
 });
 
 it('copies and cuts only the selected shapes that are shown', () => {

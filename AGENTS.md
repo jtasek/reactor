@@ -259,15 +259,24 @@ Examples worth modelling new tools on:
 
 ## Groups and layers
 
-A group is selected as one: pressing or boxing any of its shapes selects all of them
-(`withTheirGroups`, `src/app/membership.ts`), so moving, deleting, cloning and copying act
-on the whole group. A shape is in one group and on one layer at most: Group and Layer take
-the selected shapes out of their groups or layers first, Group needs two shapes, and a
-group left with one shape, or a layer left empty, by these commands is removed. Deleting a
-shape keeps its groups, so member lists merge as collaboration expects. Commands act on
-`editableSelectedShapesIds`: shown, selected and not locked. A group or layer counts as
-selected (`selectedGroupsIds`, `selectedLayersIds`) when it holds a selected shape; its
-panel item selects or unselects its shapes.
+A group is one object. Pressing or boxing any of its shapes selects it, which selects all
+of its shapes (`withTheirGroups`, `src/app/membership.ts`), so moving, deleting, cloning
+and copying act on all of it. A group counts as selected (`selectedGroupsIdsOf`) when every
+shown shape of it is; it then draws one box with handles (`GroupSelection`) turned by its
+own `rotation`, and its shapes draw none. Its frame (`groupFrame`) is the box around its
+shapes as drawn, in the group's turned frame. Rotating turns every shape about the group's
+center; resizing scales them in proportion (`rotateGroup`, `resizeGroup`, through the
+`rotatingGroup` and `resizingGroup` gestures). Double-clicking a shape of a selected group
+enters it (`enteredGroupId`): its shapes are then pressed one by one until a press outside.
+Group hooks compute from `useCurrentDocument()` while rendering; a selector alone missed
+groups being added.
+
+A shape is in one group and on one layer at most: Group and Layer take the selected shapes
+out of their groups or layers first, Group needs two shapes, and a group these commands
+leave with one shape, or a layer left empty, is removed. Deleting one shape keeps its
+groups, so member lists merge as collaboration expects; deleting or cutting a selection
+(`removeShapes`) removes the groups it empties. Commands act on
+`editableSelectedShapesIds`: shown, selected and not locked. Layers only show and hide.
 
 ## Bounding boxes & selection
 

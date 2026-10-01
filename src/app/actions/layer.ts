@@ -1,7 +1,6 @@
 import { Action, ActionWithParam, Application, Layer } from '../types';
 import { createLayer } from '../factories';
 import { LAYER_MINIMUM, editableSelectedShapesIds, removeFromContainers } from '../membership';
-import { isShapeVisible } from '../utils';
 
 const getLayer = ({ currentDocument }: Application, layerId: string) => {
     const layer = currentDocument.layers[layerId];
@@ -65,17 +64,10 @@ export const unlayerSelection: Action = ({ state }) => {
     );
 };
 
-/** Selects a layer's shown shapes, or unselects them when it is selected. */
 export const toggleLayerSelected: ActionWithParam<string> = ({ state }, layerId) => {
-    const { currentDocument } = state;
     const layer = getLayer(state, layerId);
-    const selected = !currentDocument.selectedLayersIds.includes(layerId);
 
-    layer.shapesIds
-        .filter((id) => isShapeVisible(currentDocument, id))
-        .forEach((id) => {
-            currentDocument.shapes[id].selected = selected;
-        });
+    layer.selected = !layer.selected;
 };
 
 export const unselectLayer: ActionWithParam<string> = ({ state }, layerId) => {

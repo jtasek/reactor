@@ -1,0 +1,8 @@
+.groupSelection {
+    fill: cornflowerblue;
+    fill-opacity: 0.05;
+    stroke: cornflowerblue;
+    stroke-width: 2;
+    stroke-dasharray: 6 3;
+    vector-effect: non-scaling-stroke;
+}

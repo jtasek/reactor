@@ -1,16 +1,17 @@
 import React, { FC } from 'react';
 
 import styles from './styles.css';
+import type { HandleOwner } from '../../../events/types';
 import { Point } from '../../../app/types';
 
 export interface Props {
-    shapeId: string;
+    owner: HandleOwner;
     position: Point;
     size?: number;
     active: boolean;
 }
 
-export const RotateHandle: FC<Props> = ({ shapeId, position, size = 5, active = false }) => {
+export const RotateHandle: FC<Props> = ({ owner, position, size = 5, active = false }) => {
     const classes = [styles.handle, styles.rotate, active ? styles.active : undefined];
 
     return (
@@ -20,7 +21,8 @@ export const RotateHandle: FC<Props> = ({ shapeId, position, size = 5, active = 
             cy={position.y}
             r={size}
             data-handle
-            data-shape-id={shapeId}
+            data-shape-id={'shapeId' in owner ? owner.shapeId : undefined}
+            data-group-id={'groupId' in owner ? owner.groupId : undefined}
             data-type="rotate"
             onPointerDown={(e) => e.preventDefault()}
         />

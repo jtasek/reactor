@@ -52,13 +52,98 @@ export function translateShape(shape: Shape, delta: Point): void {
     }
 }
 
+/** `point` moved away from `origin` by `factor`. */
+const scaleAbout = (point: Point, origin: Point, factor: number): Point => ({
+    x: origin.x + (point.x - origin.x) * factor,
+    y: origin.y + (point.y - origin.y) * factor
+});
+
+/**
+ * Gives a shape `original`'s geometry and measured bounds scaled by `factor`
+ * about `origin`, then moved by `delta`: how a group's shapes follow the group.
+ */
+export function placeShapeFrom(
+    shape: Shape,
+    original: Shape,
+    origin: Point,
+    factor: number,
+    delta: Point
+): void {
+    const at = (point: Point) => add(scaleAbout(point, origin, factor), delta);
+
+    switch (shape.type) {
+        case 'rectangle':
+        case 'image':
+            if (original.type === shape.type) {
+                shape.position = at(original.position);
+                shape.size = {
+                    width: original.size.width * factor,
+                    height: original.size.height * factor
+                };
+            }
+            break;
+        case 'circle':
+            if (original.type === 'circle') {
+                shape.position = at(original.position);
+                shape.radius = original.radius * factor;
+            }
+            break;
+        case 'ellipse':
+            if (original.type === 'ellipse') {
+                shape.position = at(original.position);
+                shape.radius = { x: original.radius.x * factor, y: original.radius.y * factor };
+            }
+            break;
+        case 'line':
+            if (original.type === 'line') {
+                shape.start = at(original.start);
+                shape.end = at(original.end);
+            }
+            break;
+        case 'pen':
+            if (original.type === 'pen') {
+                shape.points = original.points.map(at);
+            }
+            break;
+        case 'text':
+            if (original.type === 'text') {
+                shape.position = at(original.position);
+                shape.fontSize = Math.max(
+                    1,
+                    (original.fontSize ?? DEFAULT_TEXT_FONT_SIZE) * factor
+                );
+            }
+            break;
+        default:
+            assertNever(shape);
+    }
+
+    if (!original.bounds) {
+        delete shape.bounds;
+
+        return;
+    }
+
+    {
+        const topLeft = at(original.bounds.topLeft);
+        const bottomRight = at(original.bounds.bottomRight);
+
+        shape.bounds = {
+            topLeft,
+            bottomRight,
+            width: bottomRight.x - topLeft.x,
+            height: bottomRight.y - topLeft.y
+        };
+    }
+}
+
 /**
  * Resizes a box from a handle drag while locking it to `ratio` (width / height).
  * Corner handles keep the dominant axis and anchor the opposite corner; middle
  * handles drive their own axis, derive the other from the ratio, and stay
  * centred on the perpendicular axis.
  */
-function resizeAspectBox(
+export function resizeAspectBox(
     oldBox: Box,
     handlerType: ResizeHandlerType,
     pointer: Point,
@@ -133,7 +218,7 @@ function resizeAspectBox(
  * changes size, so the box is shifted by how far the old and new pivots would
  * carry it apart.
  */
-function keepDrawnPlace(box: Box, oldCenter: Point, rotation: number): Box {
+export function keepDrawnPlace(box: Box, oldCenter: Point, rotation: number): Box {
     const center = boxCenter(box);
     const drawn = rotatePoint(center, oldCenter, rotation);
     const shift = { x: drawn.x - center.x, y: drawn.y - center.y };

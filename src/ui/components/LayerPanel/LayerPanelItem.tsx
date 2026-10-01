@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
 import { Icon } from '../Icon';
-import { useActions, useLayer, useLayerSelected } from 'src/app/hooks';
+import { useActions, useLayer } from 'src/app/hooks';
 
 const visibleIcon = {
     group: 'action',
@@ -36,8 +36,7 @@ interface Props {
 }
 
 export const LayerPanelItem: FC<Props> = ({ layerId }) => {
-    const { name, locked, visible } = useLayer(layerId);
-    const selected = useLayerSelected(layerId);
+    const { name, locked, selected, visible } = useLayer(layerId);
     const { toggleLayerLocked, toggleLayerSelected, toggleLayerVisible } = useActions();
 
     return (
