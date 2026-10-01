@@ -161,8 +161,13 @@ test('the pointer highlights a grouped shape only inside its group', async ({ pa
     await hover(520, 120);
     await expect(rectangles(2)).toHaveCount(2);
 
+    // Over a grouped shape, the group's box is highlighted, not the shape.
+    const groupHighlight = page.locator('svg#surface #group-selections rect');
+
+    await expect(groupHighlight).toHaveCount(0);
     await hover(320, 120);
     await expect(rectangles(0)).toHaveCount(1);
+    await expect(groupHighlight).toHaveAttribute('width', '140');
 
     // A click selects the group, and a second one enters it.
     await page.mouse.click(surface.x + 320, surface.y + 120);

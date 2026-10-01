@@ -11,7 +11,7 @@ import { useCallback, useEffect, useLayoutEffect, useReducer, useState } from 'r
 import { isShapeLocked, isShapeVisible } from './utils';
 import type { Command } from './types';
 import { takesEditorInput } from '../events/input';
-import { groupFrame, outline, selectedGroupsIdsOf } from './membership';
+import { groupFrame, hoveredGroupsIds, outline, selectedGroupsIdsOf } from './membership';
 
 export const useActions = createActionsHook<Context>();
 export const useEffects = createEffectsHook<Context>();
@@ -217,6 +217,11 @@ export const useGroup = (id: string) => {
 /** The groups selected as one. */
 export const useSelectedGroupsIds = () => {
     return useAppState((state) => selectedGroupsIdsOf(state.currentDocument, state.enteredGroupId));
+};
+
+/** The groups the pointer highlights: see `hoveredGroupsIds`. */
+export const useHoveredGroupsIds = () => {
+    return useAppState((state) => hoveredGroupsIds(state.currentDocument, state.enteredGroupId));
 };
 
 /** Whether the group is selected as one. */

@@ -1,5 +1,5 @@
 import { registerCommand } from 'src/app/actions/startup';
-import { groupFrame } from 'src/app/membership';
+import { groupFrame, hoveredGroupsIds } from 'src/app/membership';
 import type { Point, ShapeInput } from 'src/app/types';
 import * as commands from 'src/commands';
 import { createTestStore } from './support/store';
@@ -315,6 +315,26 @@ describe('a group as one object', () => {
         press(25, 5);
 
         expect(document().selectedGroupsIds).toEqual([groupId]);
+    });
+
+    it('is highlighted under the pointer until it is selected or entered', () => {
+        const { store, ids, groupId, document } = grouped();
+        const hovered = () => hoveredGroupsIds(document(), store.state.enteredGroupId);
+
+        store.actions.activateShape(ids[0]);
+        expect(hovered()).toEqual([]);
+
+        store.actions.unselectShapes();
+        expect(hovered()).toEqual([groupId]);
+
+        store.actions.events.setCurrentPosition({ x: 5, y: 5 });
+        store.actions.selectShapeAtPointer();
+        store.actions.enterGroupAtPointer();
+        expect(hovered()).toEqual([]);
+
+        store.actions.deactivateShape(ids[0]);
+        store.actions.unselectShapes();
+        expect(hovered()).toEqual([]);
     });
 
     it('is entered by clicking a shape of it once it is selected', () => {

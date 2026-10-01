@@ -140,6 +140,23 @@ export function selectedGroupsIdsOf(document: Document, enteredGroupId: string |
         .map((group) => group.id);
 }
 
+/**
+ * The groups to highlight under the pointer: it is over a shown shape of theirs,
+ * and they are neither selected as one nor the group double-clicked into.
+ */
+export function hoveredGroupsIds(document: Document, enteredGroupId: string | null): string[] {
+    const selected = new Set(selectedGroupsIdsOf(document, enteredGroupId));
+
+    return Object.values(document.groups)
+        .filter(
+            (group) =>
+                group.id !== enteredGroupId &&
+                !selected.has(group.id) &&
+                shownGroupShapesIds(document, group).some((id) => document.shapes[id].active)
+        )
+        .map((group) => group.id);
+}
+
 /** The selected shapes the commands may change, in drawing order. */
 export function editableSelectedShapesIds(document: Document): string[] {
     const selected = new Set(document.selectedShapesIds);
