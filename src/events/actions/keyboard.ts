@@ -2,6 +2,7 @@ import { ActionWithParam, Action } from 'src/app/types';
 import { Context } from '../../app';
 import { getCommands, getTools } from '../../app/actions/startup';
 import { KeyPress, matchesShortcut } from '../shortcuts';
+import { takesEditorInput } from '../input';
 
 export const typing: ActionWithParam<string> = (
     {
@@ -71,11 +72,7 @@ export const keyUp: ActionWithParam<KeyboardEvent> = (
  * keep the browser from also acting on the keys.
  */
 export const pressShortcut = ({ state, actions }: Context, press: KeyPress): boolean => {
-    if (
-        state.currentPage !== 'designer' ||
-        state.events.keyboard.typing ||
-        state.events.pointer.dragging
-    ) {
+    if (!takesEditorInput(state)) {
         return false;
     }
 

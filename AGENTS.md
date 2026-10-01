@@ -205,6 +205,7 @@ re-renders.** Components never mutate state directly.
   are mounted in `Shell` and `usePointerAdapter` in the canvas `Surface`
   (`src/ui/components/Surface/Surface.tsx`). Copied shapes are clipboard text in the format
   of `src/app/clipboard.ts`, and a paste checks them with the readers saved documents use.
+  Shortcuts and the clipboard act only while `takesEditorInput` (`src/events/input.ts`).
 - **Tools** (`src/tools/`): drawing/selection tools; tool state lives in the `tools` namespace.
 - **Renderers** (planned, not built yet; see Phase 9 in `REFACTOR_PLAN.md`): pluggable
   renderers in `src/app/renderers/` that turn a document into another format, such as JSON,
@@ -299,7 +300,8 @@ Examples worth modelling new tools on:
   reloads the editor (`effects.reload`), so everything shown belongs to the new account;
   `shareAccount` makes the other open tabs reload too.
 - **Action typing**: use the aliases in `src/app/types.ts` — `Action`, `ActionWithParam<T>`,
-  `ActionGuard`. Destructure what you need from context (`{ state }`, `{ state, effects }`).
+  `ActionGuard`, and `ActionWithResult<R>` or `ActionWithParamAndResult<T, R>` for an action
+  that answers its caller. Destructure what you need from context (`{ state }`, `{ state, effects }`).
 - **Commands**: run a command with `runCommand(command)` (`actions/commands.ts`), which checks
   its `canExecute` guard first; never call `execute` directly. Guards are `CommandGuard`s that
   only read `state`, so UI evaluates them while rendering (`useCommandEnabled`) and stays in

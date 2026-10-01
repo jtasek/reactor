@@ -39,3 +39,42 @@ test('leaves copying and pasting in a text field to the field', async ({ page })
     await expect(shapes(page)).toHaveCount(1);
     await expect(input).toHaveValue(await clipboardText(page));
 });
+
+test('copies the selected shapes after their text was double-clicked or dragged across', async ({
+    page
+}) => {
+    await openEditor(page);
+    await page.keyboard.press('t');
+    await page.mouse.click(300, 300);
+    await page.keyboard.type('Words');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('s');
+    await page.mouse.click(600, 600);
+    await page.mouse.dblclick(310, 295);
+    await page.mouse.move(250, 250);
+    await page.mouse.down();
+    await page.mouse.move(400, 330, { steps: 5 });
+    await page.mouse.up();
+    await press(page, 'c');
+
+    expect(JSON.parse(await clipboardText(page))).toMatchObject({
+        format: 'reactor/shapes',
+        shapes: [{ type: 'text', value: 'Words' }]
+    });
+    expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
+});
+
+test('leaves the clipboard as it was when nothing is selected', async ({ page }) => {
+    await openEditor(page);
+    await page.evaluate(() => navigator.clipboard.writeText('kept'));
+
+    const focused = await page.evaluateHandle(() => document.activeElement);
+
+    await press(page, 'c');
+    await press(page, 'x');
+
+    expect(await clipboardText(page)).toBe('kept');
+    expect(await page.evaluate((element) => document.activeElement === element, focused)).toBe(
+        true
+    );
+});

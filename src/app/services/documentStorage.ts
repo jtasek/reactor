@@ -259,9 +259,14 @@ export function readShapeGeometry(value: unknown) {
 /** Reads a copied shape: what it draws, its name, description and rotation. */
 export function readCopiedShape(value: unknown): ShapeInput {
     const s = record(value);
+    const geometry = readShapeGeometry(value);
+
+    if (geometry.type === 'pen' && geometry.points.length === 0) {
+        throw new Error('A pen needs a point');
+    }
 
     return {
-        ...readShapeGeometry(value),
+        ...geometry,
         name: text(s.name),
         rotation: s.rotation === undefined ? 0 : number(s.rotation),
         ...(s.description === undefined ? {} : { description: text(s.description) })

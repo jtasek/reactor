@@ -239,6 +239,9 @@ export interface Icon {
 export type Action = (context: Context) => void;
 export type ActionGuard = (context: Context) => boolean;
 export type ActionWithParam<T> = (context: Context, param: T) => void;
+/** An action that answers its caller, as copying answers with the clipboard text. */
+export type ActionWithResult<R> = (context: Context) => R;
+export type ActionWithParamAndResult<T, R> = (context: Context, param: T) => R;
 
 /**
  * Whether a command can run now. It may only read state, so the UI can evaluate

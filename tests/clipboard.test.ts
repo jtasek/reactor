@@ -95,6 +95,25 @@ it('copies selected shapes in drawing order, without memberships or locks', () =
     expect(Object.values(document().groups)).toEqual([]);
 });
 
+it('copies and cuts only the selected shapes that are shown', () => {
+    const { store, document, ordered } = storeWith(shapes[0], shapes[2]);
+    const [rectangle, circle] = document().shapesIds;
+
+    store.actions.addLayer({ shapesIds: [circle], visible: false });
+
+    const copied = store.actions.copySelection()!;
+    const cut = store.actions.cutSelection()!;
+
+    expect(document().shapesIds).toEqual([circle]);
+
+    store.actions.newDocument();
+    store.actions.pasteShapes(copied);
+    store.actions.pasteShapes(cut);
+
+    expect(ordered().map((shape) => shape.type)).toEqual(['rectangle', 'rectangle']);
+    expect(ordered().every((shape) => shape.id !== rectangle)).toBe(true);
+});
+
 it('cuts the selected shapes it can delete, and keeps locked ones', () => {
     const { store, document, ordered } = storeWith(shapes[0], shapes[2]);
     const [rectangle, circle] = document().shapesIds;
@@ -139,7 +158,14 @@ it.each([
         'an unknown shape type',
         JSON.stringify({ format: 'reactor/shapes', shapes: [{ type: 'x' }] })
     ],
-    ['no shapes', JSON.stringify({ format: 'reactor/shapes', shapes: [] })]
+    ['no shapes', JSON.stringify({ format: 'reactor/shapes', shapes: [] })],
+    [
+        'a pen with no points',
+        JSON.stringify({
+            format: 'reactor/shapes',
+            shapes: [{ type: 'pen', points: [], name: 'p' }]
+        })
+    ]
 ])('pastes nothing from %s', (_, text) => {
     const { store, document } = storeWith(shapes[0]);
 

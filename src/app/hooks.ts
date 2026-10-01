@@ -10,6 +10,7 @@ import { Context } from '.';
 import { useCallback, useLayoutEffect, useReducer } from 'react';
 import { isShapeLocked, isShapeVisible } from './utils';
 import type { Command } from './types';
+import { takesEditorInput } from '../events/input';
 
 export const useActions = createActionsHook<Context>();
 export const useEffects = createEffectsHook<Context>();
@@ -71,6 +72,11 @@ export const useCurrentDocument = () => {
 
 export const useCurrentPage = () => {
     return useAppState((state) => state.currentPage);
+};
+
+/** Whether the editor takes shortcuts and the clipboard now. */
+export const useTakesEditorInput = () => {
+    return useAppState(takesEditorInput);
 };
 
 export const useLoading = () => {
