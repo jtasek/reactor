@@ -317,6 +317,36 @@ describe('a group as one object', () => {
         expect(document().selectedGroupsIds).toEqual([groupId]);
     });
 
+    it('is entered by clicking a shape of it once it is selected', () => {
+        const { store, ids, groupId, selected, document } = grouped();
+        const click = (x: number, y: number) => {
+            store.actions.events.beginGesture({ pointerId: 1, position: { x, y } });
+            store.actions.events.endGesture({ pointerId: 1, position: { x, y } });
+        };
+
+        store.actions.unselectShapes();
+        click(25, 5);
+        expect(document().selectedGroupsIds).toEqual([groupId]);
+
+        click(25, 5);
+        expect(selected()).toEqual([ids[1]]);
+        expect(store.state.enteredGroupId).toBe(groupId);
+    });
+
+    it('is moved, not entered, by dragging a shape of it while it is selected', () => {
+        const { store, ids, groupId, document } = grouped();
+        const { events } = store.actions;
+
+        events.beginGesture({ pointerId: 1, position: { x: 25, y: 5 } });
+        events.endGesture({ pointerId: 1, position: { x: 25, y: 15 } });
+
+        expect(positions(store, ids)).toEqual([
+            { x: 0, y: 10 },
+            { x: 20, y: 10 }
+        ]);
+        expect(document().selectedGroupsIds).toEqual([groupId]);
+    });
+
     it('is entered by double-clicking a shape, whose shapes are then pressed one by one', () => {
         const { store, ids, groupId, press, selected, document } = grouped();
 

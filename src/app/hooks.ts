@@ -245,6 +245,18 @@ export const useGroupLocked = (id: string) => {
     });
 };
 
+/**
+ * The shapes of the groups not double-clicked into, which are not highlighted
+ * one by one under the pointer, as a press there selects their group.
+ */
+export const useShapesInClosedGroupsIds = () => {
+    return useAppState((state) =>
+        Object.values(state.currentDocument.groups)
+            .filter((group) => group.id !== state.enteredGroupId)
+            .flatMap((group) => group.shapesIds)
+    );
+};
+
 /** The shapes of the groups selected as one, which draw one selection for them. */
 export const useShapesInSelectedGroupsIds = () => {
     return useAppState((state) => {

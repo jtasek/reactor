@@ -11,9 +11,11 @@ interface Props {
     shapeId: string;
     /** In a group selected as one, which draws the selection instead. */
     inSelectedGroup: boolean;
+    /** In a group not double-clicked into, so the pointer does not highlight it alone. */
+    inClosedGroup: boolean;
 }
 
-export const Shape = memo(({ shapeId, inSelectedGroup }: Props) => {
+export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup }: Props) => {
     const shape = useShape(shapeId);
     const visible = useShapeVisible(shapeId);
     const locked = useShapeLocked(shapeId);
@@ -89,7 +91,7 @@ export const Shape = memo(({ shapeId, inSelectedGroup }: Props) => {
             >
                 <Component key={key} {...props} />
             </g>
-            {shape.active && !shape.selected && (
+            {shape.active && !shape.selected && !inClosedGroup && (
                 <Active key={`active-${shape.type}-${shape.id}`} shape={shape} />
             )}
             {shape.selected && !inSelectedGroup && (
