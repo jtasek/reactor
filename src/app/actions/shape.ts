@@ -40,7 +40,8 @@ import {
     shapeGeometry,
     shapeGeometryKey,
     boxCenter,
-    angleBetween
+    angleBetween,
+    getBoundingBox
 } from '../utils';
 
 const getShape = ({ currentDocument }: Application, shapeId: string) => {
@@ -244,9 +245,9 @@ export const removeShapes: ActionWithParam<string[]> = ({ state }, shapeIds) => 
 
 /**
  * Adds the shapes clipboard text holds above all others, selected in place of the
- * selection. Where the first already has a shape drawn exactly like it, as when
- * pasting into the document copied from, they are offset like clones until it has
- * not. Pastes nothing while the editor takes no input, or when the text holds no
+ * selection, centered where the canvas was last pressed. Where the first already
+ * has a shape drawn exactly like it, as when pasting twice, they are offset like
+ * clones until it has not. Pastes nothing while the editor takes no input, or when the text holds no
  * shapes.
  */
 export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (
@@ -269,6 +270,20 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (
 
         return createShape({ ...input, order, selected: true });
     });
+    const { lastPress } = state.events.pointer;
+
+    // Centered where the canvas was last pressed; before any press, where they were copied.
+    if (lastPress) {
+        const boxes = pasted.map(getBoundingBox);
+        const left = Math.min(...boxes.map((box) => box.topLeft.x));
+        const top = Math.min(...boxes.map((box) => box.topLeft.y));
+        const right = Math.max(...boxes.map((box) => box.bottomRight.x));
+        const bottom = Math.max(...boxes.map((box) => box.bottomRight.y));
+        const delta = { x: lastPress.x - (left + right) / 2, y: lastPress.y - (top + bottom) / 2 };
+
+        pasted.forEach((shape) => translateShape(shape, delta));
+    }
+
     const drawn = new Set(
         Object.values(state.currentDocument.shapes)
             .filter((shape) => shape.type === pasted[0].type)

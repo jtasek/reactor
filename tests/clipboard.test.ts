@@ -98,6 +98,42 @@ it('pastes into the same document offset from the copies already there', () => {
     expect(pasted.map((shape) => shape.selected)).toEqual([false, false, true, true]);
 });
 
+describe('pasting where the canvas was last pressed', () => {
+    /** A press on empty canvas, which clears the selection. */
+    const press = (store: ReturnType<typeof storeWith>['store'], x: number, y: number) => {
+        store.actions.events.beginGesture({ pointerId: 1, position: { x, y } });
+        store.actions.events.endGesture({ pointerId: 1, position: { x, y } });
+    };
+
+    it('centers the pasted shapes there, keeping their layout', () => {
+        // A 40 by 30 rectangle at (10, 20) and a circle of radius 10 at (50, 50): x 10 to 60, y 20 to 60.
+        const { store, ordered } = storeWith(shapes[0], shapes[2]);
+        const copied = store.actions.copySelection()!;
+
+        press(store, 235, 140);
+        store.actions.pasteShapes(copied);
+
+        expect(ordered().slice(2)).toMatchObject([
+            { type: 'rectangle', position: { x: 210, y: 120 } },
+            { type: 'circle', position: { x: 250, y: 150 } }
+        ]);
+    });
+
+    it('steps a second paste off the first, as they would cover each other', () => {
+        const { store, ordered } = storeWith(shapes[0]);
+        const copied = store.actions.copySelection()!;
+
+        press(store, 200, 100);
+        store.actions.pasteShapes(copied);
+        store.actions.pasteShapes(copied);
+
+        expect(ordered().slice(1)).toMatchObject([
+            { position: { x: 180, y: 85 } },
+            { position: { x: 190, y: 95 } }
+        ]);
+    });
+});
+
 it('copies selected shapes in drawing order with their group, without layers or locks', () => {
     const { store, document, ordered } = storeWith(shapes[0], shapes[2]);
     const [rectangle, circle] = document().shapesIds;

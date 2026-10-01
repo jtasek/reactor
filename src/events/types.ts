@@ -76,6 +76,8 @@ export interface Pointer {
     dragging: boolean;
     /** Whether the pointer is over the canvas, where `current` follows it. */
     inside: boolean;
+    /** Where the canvas was last pressed, which is where a paste goes; null until it is. */
+    lastPress: Point | null;
     gesture: Gesture;
     offset: Point;
     path: Point[];

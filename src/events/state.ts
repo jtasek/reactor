@@ -19,6 +19,7 @@ export const state: Events = {
         dragging,
         gesture: { kind: 'idle' },
         inside: false,
+        lastPress: null,
         offset,
         path: [],
         radius,

@@ -63,7 +63,7 @@ bar, side bar, panels and other parts of the editor.
 | `r`, `c`, `e`, `l`, `p`, `t`, `i` | Rectangle, circle, ellipse, line, pen, text and image tools |
 | Delete or Backspace | Delete the selection |
 | Ctrl/Cmd+D | Clone the selection; the clones become the selection |
-| Ctrl/Cmd+C, Ctrl/Cmd+X, Ctrl/Cmd+V | Copy, cut and paste the selection, also between documents and tabs |
+| Ctrl/Cmd+C, Ctrl/Cmd+X, Ctrl/Cmd+V | Copy, cut and paste the selection, also between documents and tabs. A paste is centered where you last pressed on the canvas |
 | Ctrl/Cmd+G, Ctrl/Cmd+Shift+G | Group and ungroup the selection. A group is selected, moved, turned and scaled as one; click a shape in a selected group, or double-click it, to select that shape alone |
 | Ctrl/Cmd+Alt+G | Remove the shapes selected inside a group from it |
 | Ctrl/Cmd+Alt+L, Ctrl/Cmd+Alt+Shift+L | Move the selection to a new layer, take it off its layer |
