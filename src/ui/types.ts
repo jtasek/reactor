@@ -23,6 +23,7 @@ export interface UI {
     menuBar: Control;
     miniMap: Control;
     navBar: Control;
+    outline: Control;
     overlay: Control;
     propertyPanel: Control;
     rulers: Control;

@@ -135,8 +135,8 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   (not suppressed). `pnpm lint:baseline` fails on any finding in a file changed relative to
   `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
   recorded counts: fix a touched file's existing findings rather than adding exceptions.
-- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 420 KiB or
-  any file 240 KiB (the budget in `webpack.config.mjs`, measured at 401 and 225 KiB); raise
+- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 440 KiB or
+  any file 240 KiB (the budget in `webpack.config.mjs`, measured at 424 and 225 KiB); raise
   it only for code the editor needs as it opens, after checking what grew.
 
 ## Architecture
@@ -277,6 +277,16 @@ leave with one shape, or a layer left empty, is removed. Deleting one shape keep
 groups, so member lists merge as collaboration expects; deleting or cutting a selection
 (`removeShapes`) removes the groups it empties. Commands act on
 `editableSelectedShapesIds`: shown, selected and not locked. Layers only show and hide.
+
+A group is on one layer, with all its shapes (`putShapesOnLayer`, `putShapesInGroup`): Group
+puts its shapes on the topmost one's layer, a group moved to a layer moves whole, and a shape
+moved without the rest of its group leaves it. Loading does not repair a group other copies'
+merges left across layers; the outline lists it under its first shape's layer. The outline
+(`outline`, `src/ui/components/Outline`) is the explorer's tree of layers, their groups
+and shapes: dragging a shape or group onto a layer or group moves it there. Pressing a
+layer's name shows only that layer and the shapes on no layer (`showOnlyLayer`,
+`document.shownLayerId`), on this screen only: it is a runtime field, neither saved nor
+shared, and layers keep their own `visible`.
 
 ## Bounding boxes & selection
 

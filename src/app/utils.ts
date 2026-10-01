@@ -498,10 +498,25 @@ export function isShapeLockedExternally(document: Document | undefined, shapeId:
  * locking one locks them. Hidden shapes are not rendered, hit-tested, marquee
  * selected, edited or part of the selection that commands act on.
  */
+/** Whether this screen shows one layer only and the shape is on another. */
+function hiddenByShownLayer(document: Document, shapeId: string): boolean {
+    const shown = document.shownLayerId ? document.layers[document.shownLayerId] : undefined;
+
+    return (
+        shown !== undefined &&
+        !shown.shapesIds.includes(shapeId) &&
+        Object.values(document.layers).some((layer) => layer.shapesIds.includes(shapeId))
+    );
+}
+
 export function isShapeVisible(document: Document | undefined, shapeId: string): boolean {
     const shape = document?.shapes?.[shapeId];
 
     if (!document || !shape?.visible) {
+        return false;
+    }
+
+    if (hiddenByShownLayer(document, shapeId)) {
         return false;
     }
 

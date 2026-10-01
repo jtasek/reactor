@@ -165,3 +165,105 @@ export function groupedShapesSelectedAlone(document: Document): string[] {
         (id) => grouped.has(id) && !wholeGroups.has(id)
     );
 }
+
+/** The layer a shape is on, if any. */
+export function shapeLayer(document: Document, shapeId: string): Layer | undefined {
+    return containersHolding(document.layers, [shapeId])[0];
+}
+
+/**
+ * Puts shapes on a layer, or on none, out of any other, removing layers left
+ * empty. A group is on one layer: a group moved whole stays a group, and a shape
+ * moved without the rest of its group leaves it.
+ */
+export function putShapesOnLayer(
+    document: Document,
+    shapeIds: Iterable<string>,
+    layerId: string | null
+) {
+    const ids = new Set(shapeIds);
+    const leavingGroups = containersHolding(document.groups, ids)
+        .filter((group) => !group.shapesIds.every((id) => ids.has(id)))
+        .flatMap((group) => group.shapesIds.filter((id) => ids.has(id)));
+
+    removeFromContainers(document.groups, leavingGroups, GROUP_MINIMUM);
+
+    for (const layer of Object.values(document.layers)) {
+        if (layer.id === layerId) {
+            const held = new Set(layer.shapesIds);
+
+            layer.shapesIds = [...layer.shapesIds, ...[...ids].filter((id) => !held.has(id))];
+        } else if (layer.shapesIds.some((id) => ids.has(id))) {
+            layer.shapesIds = layer.shapesIds.filter((id) => !ids.has(id));
+
+            if (layer.shapesIds.length < LAYER_MINIMUM) {
+                delete document.layers[layer.id];
+            }
+        }
+    }
+}
+
+/**
+ * Adds shapes to a group, out of any other group, and puts them on the group's
+ * layer, the one its first shape is on.
+ */
+export function putShapesInGroup(document: Document, shapeIds: string[], groupId: string) {
+    const group = document.groups[groupId];
+    const added = shapeIds.filter((id) => !group.shapesIds.includes(id));
+
+    putShapesOnLayer(document, added, shapeLayer(document, group.shapesIds[0])?.id ?? null);
+
+    for (const other of containersHolding(document.groups, added)) {
+        other.shapesIds = other.shapesIds.filter((id) => !added.includes(id));
+
+        if (other.shapesIds.length < GROUP_MINIMUM) {
+            delete document.groups[other.id];
+        }
+    }
+
+    group.shapesIds = [...group.shapesIds, ...added];
+}
+
+/** A layer of the outline, or the shapes on no layer: its groups, then its other shapes. */
+export interface OutlineLayer {
+    layerId: string | null;
+    groups: { groupId: string; shapesIds: string[] }[];
+    shapesIds: string[];
+}
+
+/**
+ * The document as a tree: each layer with its groups and its shapes in no group,
+ * in drawing order, then the same for the shapes on no layer when there are any.
+ * A group is listed under the layer of its first shape.
+ */
+export function outline(document: Document): OutlineLayer[] {
+    const layerOf = new Map<string, string>();
+    const groupOf = new Map<string, string>();
+
+    Object.values(document.layers).forEach((layer) =>
+        layer.shapesIds.forEach((id) => layerOf.set(id, layer.id))
+    );
+    Object.values(document.groups).forEach((group) =>
+        group.shapesIds.forEach((id) => groupOf.set(id, group.id))
+    );
+
+    const entry = (layerId: string | null): OutlineLayer => ({
+        layerId,
+        groups: Object.values(document.groups)
+            .filter(
+                (group) =>
+                    group.shapesIds.length > 0 &&
+                    (layerOf.get(group.shapesIds[0]) ?? null) === layerId
+            )
+            .map((group) => ({ groupId: group.id, shapesIds: [...group.shapesIds] })),
+        shapesIds: document.shapesIds.filter(
+            (id) => !groupOf.has(id) && (layerOf.get(id) ?? null) === layerId
+        )
+    });
+    const unlayered = entry(null);
+
+    return [
+        ...Object.keys(document.layers).map(entry),
+        ...(unlayered.groups.length > 0 || unlayered.shapesIds.length > 0 ? [unlayered] : [])
+    ];
+}

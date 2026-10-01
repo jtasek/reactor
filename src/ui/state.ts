@@ -68,6 +68,11 @@ export const state: UI = {
         name: 'Navigation Bar',
         visible: false
     },
+    outline: {
+        id: 'outline',
+        name: 'Outline',
+        visible: false
+    },
     overlay: {
         id: 'overlay',
         name: 'Overlay',

@@ -343,7 +343,10 @@ rotation, and entered by a double-click to reach a single shape; a shape is in
 one group and on one layer at most; Group, Ungroup, Layer and Unlayer
 act on the selected shapes, Layer and Unlayer have shortcuts (Ctrl/Cmd+Alt+L, with
 Shift), Clone selects its clones and keeps their layers and groups, and every
-command is unavailable when it would do nothing. Remaining: the rest of step 6.
+command is unavailable when it would do nothing. Outline: a panel in the explorer lists
+layers, their groups and shapes as a tree, moves a shape or group dropped on a layer
+or group, and shows one layer alone on this screen when its name is pressed; a group
+is on one layer. Remaining: the rest of step 6.
 
 Feature inventory:
 
@@ -445,8 +448,9 @@ Step 5 done: the entry bundle measured 401 KiB on 2026-10-01: React DOM, Overmin
 and React 225 KiB, the app 172 KiB, the webpack runtime 4 KiB. The app's share is
 what the editor needs as it opens (loading and syncing documents, actions, tools),
 and Yjs, the server sync and the pages already load on demand, so nothing is split
-further. The production build fails beyond 420 KiB for the entry bundle or 240 KiB
-for any file.
+further. The production build fails beyond 440 KiB for the entry bundle or 240 KiB
+for any file; the entry bundle measured 424 KiB on 2026-10-02, the growth being the
+store's group, layer and clipboard actions, which register at startup.
 
 1. Parse and validate TRUST_PROXY hop counts explicitly while preserving supported
    boolean/address forms. Document examples and test forwarding behavior.
