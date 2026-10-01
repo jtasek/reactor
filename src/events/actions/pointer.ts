@@ -2,7 +2,7 @@ import { json } from 'overmind';
 import { Context } from '../../app';
 import { ActionWithParam, Point, Shape } from '../../app/types';
 import { screenToWorld } from '../../app/camera';
-import { groupFrame, shownGroupShapesIds } from '../../app/membership';
+import { groupFrame } from '../../app/membership';
 import { HandleTarget, SelectionSnapshot, ShapesSnapshot, TouchContact } from '../types';
 
 type PointerInput = { pointerId: number; position: Point };
@@ -69,10 +69,11 @@ export const beginGesture = (
     const frame = handleGroup ? groupFrame(state.currentDocument, handleGroup) : null;
 
     if (handle && 'groupId' in handle && handleGroup && frame) {
+        // Hidden shapes follow too; only the frame comes from the shown ones.
         const shapes = snapshotShapes(
-            shownGroupShapesIds(state.currentDocument, handleGroup).map(
-                (id) => state.currentDocument.shapes[id]
-            )
+            handleGroup.shapesIds
+                .map((id) => state.currentDocument.shapes[id])
+                .filter((shape) => shape !== undefined)
         );
 
         pointer.gesture =

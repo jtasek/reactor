@@ -16,7 +16,16 @@ import { groupFrame, selectedGroupsIdsOf } from './membership';
 export const useActions = createActionsHook<Context>();
 export const useEffects = createEffectsHook<Context>();
 export const useReaction = createReactionHook<Context>();
-export const useAppState = createStateHook<Context>();
+const useRootState = createStateHook<Context>();
+
+/**
+ * What `select` reads from the state. overmind-react runs a selector before
+ * it starts tracking the component, which subscribes whichever component rendered
+ * before to what the selector reads; selecting here, after it, subscribes this one.
+ */
+export const useAppState = <T>(select: (state: Context['state']) => T): T => {
+    return select(useRootState());
+};
 
 export const useConfig = () => {
     return useAppState((state) => state.config);
@@ -158,15 +167,9 @@ export const useShapes = () => {
     return useCurrentDocument()?.shapes ?? [];
 };
 
-/**
- * Shape ids in draw order, copied so a render tracks the list rather than each id.
- * The current document is read after tracking starts, so replacing or switching
- * documents re-renders too.
- */
+/** Shape ids in draw order, copied so a render tracks the list rather than each id. */
 export const useShapesIds = () => {
-    const state = useAppState();
-
-    return json(state.currentDocument.shapesIds);
+    return useAppState((state) => json(state.currentDocument.shapesIds));
 };
 
 export const useRuler = (id: string) => {
@@ -181,43 +184,46 @@ export const useGroup = (id: string) => {
     return useCurrentDocument()?.groups[id];
 };
 
-// The group hooks compute from the current document read while rendering, so
-// every field they depend on is tracked, as a selector alone missed added groups.
-
 /** The groups selected as one. */
 export const useSelectedGroupsIds = () => {
-    const document = useCurrentDocument();
-    const enteredGroupId = useAppState((state) => state.enteredGroupId);
-
-    return selectedGroupsIdsOf(document, enteredGroupId);
+    return useAppState((state) => selectedGroupsIdsOf(state.currentDocument, state.enteredGroupId));
 };
 
 /** Whether the group is selected as one. */
 export const useGroupSelected = (id: string) => {
-    return useSelectedGroupsIds().includes(id);
+    return useAppState((state) =>
+        selectedGroupsIdsOf(state.currentDocument, state.enteredGroupId).includes(id)
+    );
 };
 
 /** Where a group is drawn: its box and rotation, none when no shape of it is shown. */
 export const useGroupFrame = (id: string) => {
-    const document = useCurrentDocument();
-    const group = document.groups[id];
+    return useAppState((state) => {
+        const group = state.currentDocument.groups[id];
 
-    return group ? groupFrame(document, group) : null;
+        return group ? groupFrame(state.currentDocument, group) : null;
+    });
 };
 
 /** Whether a group, or any of its shapes, is locked, so it cannot be resized or rotated. */
 export const useGroupLocked = (id: string) => {
-    const document = useCurrentDocument();
-    const group = document.groups[id];
+    return useAppState((state) => {
+        const document = state.currentDocument;
+        const group = document.groups[id];
 
-    return !group || group.shapesIds.some((shapeId) => isShapeLocked(document, shapeId));
+        return !group || group.shapesIds.some((shapeId) => isShapeLocked(document, shapeId));
+    });
 };
 
-/** Whether a shape is in a group selected as one, which draws the selection instead. */
-export const useShapeInSelectedGroup = (shapeId: string) => {
-    const document = useCurrentDocument();
+/** The shapes of the groups selected as one, which draw one selection for them. */
+export const useShapesInSelectedGroupsIds = () => {
+    return useAppState((state) => {
+        const { groups } = state.currentDocument;
 
-    return useSelectedGroupsIds().some((id) => document.groups[id].shapesIds.includes(shapeId));
+        return selectedGroupsIdsOf(state.currentDocument, state.enteredGroupId).flatMap(
+            (id) => groups[id].shapesIds
+        );
+    });
 };
 
 export const useGroups = () => {

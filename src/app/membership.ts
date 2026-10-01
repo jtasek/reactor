@@ -127,9 +127,7 @@ export function groupFrame(document: Document, group: Group): GroupFrame | null 
  * are not the group double-clicked into.
  */
 export function selectedGroupsIdsOf(document: Document, enteredGroupId: string | null): string[] {
-    // Read through `groupsIds`, so a component reading this sees groups added.
-    return document.groupsIds
-        .map((id) => document.groups[id])
+    return Object.values(document.groups)
         .filter((group) => {
             const shown = shownGroupShapesIds(document, group);
 

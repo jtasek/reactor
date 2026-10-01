@@ -267,9 +267,9 @@ own `rotation`, and its shapes draw none. Its frame (`groupFrame`) is the box ar
 shapes as drawn, in the group's turned frame. Rotating turns every shape about the group's
 center; resizing scales them in proportion (`rotateGroup`, `resizeGroup`, through the
 `rotatingGroup` and `resizingGroup` gestures). Double-clicking a shape of a selected group
-enters it (`enteredGroupId`): its shapes are then pressed one by one until a press outside.
-Group hooks compute from `useCurrentDocument()` while rendering; a selector alone missed
-groups being added.
+enters it (`enteredGroupId`): its shapes are then pressed or boxed one by one until a press
+outside. Shapes of selected groups are found once, in `Shapes`, so a selection change does
+not re-render every shape.
 
 A shape is in one group and on one layer at most: Group and Layer take the selected shapes
 out of their groups or layers first, Group needs two shapes, and a group these commands
@@ -310,6 +310,9 @@ groups, so member lists merge as collaboration expects; deleting or cutting a se
 
 ## Conventions
 
+- **`useAppState(select)`** runs `select` after overmind-react starts tracking the component;
+  overmind-react's own selector runs before, which subscribes the component rendered before
+  it instead, so a selector computing a value never re-rendered its component.
 - **Access state only through hooks** in `src/app/hooks.ts` (`useAppState`, `useActions`,
   `useEffects`, domain hooks like `useShapes`, `useCurrentDocument`, `useCamera`). Add new
   domain hooks here rather than ad-hoc `useAppState` selectors in components.

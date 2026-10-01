@@ -406,3 +406,77 @@ describe('a group as one object', () => {
         expect(groups()).toEqual([[ids[1], ids[2]]]);
     });
 });
+
+describe('a group with a hidden shape', () => {
+    function groupedWithHidden() {
+        const setup = storeWith(0, 20, 40);
+
+        setup.run('group');
+        setup.store.actions.hideShape(setup.ids[2]);
+
+        const [groupId] = Object.keys(setup.document().groups);
+
+        return { ...setup, groupId };
+    }
+
+    it('takes the hidden shape along when turned, about the shown shapes’ center', () => {
+        const { store, ids, groupId, document } = groupedWithHidden();
+        const { events } = store.actions;
+
+        events.beginGesture({
+            pointerId: 1,
+            position: { x: 15, y: -20 },
+            handle: { groupId, type: 'rotate' }
+        });
+        events.endGesture({ pointerId: 1, position: { x: 25, y: 5 } });
+        store.actions.showShape(ids[2]);
+
+        // The shown shapes span x 0 to 30, so the group turns about (15, 5).
+        expect(positions(store, [ids[2]])).toEqual([
+            { x: expect.closeTo(10), y: expect.closeTo(30) }
+        ]);
+        expect(document().shapes[ids[2]].rotation).toBe(90);
+    });
+
+    it('is copied as a group of its shown shapes', () => {
+        const { store, groups, document } = groupedWithHidden();
+        const copied = store.actions.copySelection()!;
+
+        store.actions.newDocument();
+        store.actions.pasteShapes(copied);
+
+        expect(groups()).toEqual([document().shapesIds]);
+    });
+});
+
+describe('inside an entered group', () => {
+    it('a marquee selects its shapes one by one', () => {
+        const { store, ids, selected, run } = storeWith(0, 20, 40);
+        const { events } = store.actions;
+
+        run('group');
+        events.setCurrentPosition({ x: 5, y: 5 });
+        store.actions.enterGroupAtPointer();
+
+        // A marquee starts touching nothing, then reaches the shape.
+        events.setStartPosition({ x: -5, y: -5 });
+        events.setCurrentPosition({ x: -4, y: -4 });
+        store.actions.selectShapes();
+        events.setCurrentPosition({ x: 25, y: 5 });
+        store.actions.selectShapes();
+
+        expect(selected()).toEqual([ids[0], ids[1]]);
+        expect(store.state.enteredGroupId).not.toBeNull();
+    });
+
+    it('is not entered by a double-click with a drawing tool', () => {
+        const { store, run } = storeWith(0, 20);
+
+        run('group');
+        store.actions.tools.activateTool('rectangle');
+        store.actions.events.setCurrentPosition({ x: 5, y: 5 });
+
+        expect(store.actions.enterGroupAtPointer()).toBe(false);
+        expect(store.state.enteredGroupId).toBeNull();
+    });
+});

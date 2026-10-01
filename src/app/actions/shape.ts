@@ -13,7 +13,7 @@ import {
 } from '../types';
 import { Context } from '../index';
 import { createGroup, createShape } from '../factories';
-import { containersHolding, shapeGroup, withTheirGroups } from '../membership';
+import { containersHolding, shapeGroup, shownGroupShapesIds, withTheirGroups } from '../membership';
 import { orderAbove, ordersAbove, ordersBelow } from '../drawOrder';
 import { PropertyValue, SHAPE_PROPERTIES, applyProperty, canEdit } from '../properties';
 import { PasteResult, readClipboard, writeClipboard } from '../clipboard';
@@ -182,9 +182,13 @@ const selectedInDrawOrder = ({ currentDocument }: Application) => {
         .map((id) => currentDocument.shapes[id]);
 };
 
-/** The groups selected as one. */
+/** The groups selected as one, with the shapes of theirs that are shown, as only those are copied. */
 const selectedGroups = ({ currentDocument }: Application) =>
-    currentDocument.selectedGroupsIds.map((id) => currentDocument.groups[id]);
+    currentDocument.selectedGroupsIds.map((id) => {
+        const group = currentDocument.groups[id];
+
+        return { ...group, shapesIds: shownGroupShapesIds(currentDocument, group) };
+    });
 
 /** The selected shapes as clipboard text, or null when there are none to copy. */
 export const copySelection: ActionWithResult<string | null> = ({ state }) => {
@@ -371,15 +375,13 @@ const shapeAtPointer = (state: Context['state']): string | null => {
     return hitId;
 };
 
-/** Leaves the group double-clicked into unless every shape in `shapeIds` is in it. */
+/** Leaves the group double-clicked into when a shape in `shapeIds` is outside it. */
 const leaveGroupWithout = (state: Context['state'], shapeIds: string[]) => {
     const entered = state.enteredGroupId && state.currentDocument.groups[state.enteredGroupId];
 
     if (
         state.enteredGroupId !== null &&
-        (!entered ||
-            shapeIds.length === 0 ||
-            shapeIds.some((id) => !entered.shapesIds.includes(id)))
+        (!entered || shapeIds.some((id) => !entered.shapesIds.includes(id)))
     ) {
         state.enteredGroupId = null;
     }
@@ -391,6 +393,10 @@ const leaveGroupWithout = (state: Context['state'], shapeIds: string[]) => {
  * outside the group. Returns whether a group was entered.
  */
 export const enterGroupAtPointer: ActionGuard = ({ state, actions }) => {
+    if (state.tools.activeToolsIds[0] !== 'select') {
+        return false;
+    }
+
     const hitId = shapeAtPointer(state);
     const group = hitId === null ? undefined : shapeGroup(state.currentDocument, hitId);
 
@@ -474,6 +480,11 @@ export const selectShapes: Action = ({ state }) => {
                   (shape) => isInteractive(state, shape.id) && shapeIntersectsBox(shape, source)
               )
               .map((shape) => shape.id);
+
+    // A click leaves the group double-clicked into; a box leaves it once it reaches a shape outside it.
+    if (isClick) {
+        state.enteredGroupId = null;
+    }
 
     leaveGroupWithout(state, hits);
 

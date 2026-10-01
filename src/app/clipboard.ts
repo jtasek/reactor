@@ -24,7 +24,10 @@ const CLIPBOARD_FORMAT = 'reactor/shapes';
 export function writeClipboard(shapes: Shape[], groups: Group[] = []): string {
     const positions = new Map(shapes.map((shape, index) => [shape.id, index]));
     const copiedGroups = groups
-        .filter((group) => group.shapesIds.every((id) => positions.has(id)))
+        .filter(
+            (group) =>
+                group.shapesIds.length >= 2 && group.shapesIds.every((id) => positions.has(id))
+        )
         .map((group) => ({
             name: group.name,
             rotation: group.rotation ?? 0,
