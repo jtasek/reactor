@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { LayerPanelItem } from './LayerPaneltem';
+import { LayerPanelItem } from './LayerPanelItem';
 import styles from './styles.css';
 
 export interface Props {

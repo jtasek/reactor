@@ -243,7 +243,6 @@ export interface Document {
     groupsIds: string[];
     selectedGroupsIds: string[];
     groups: HashTable<Group>;
-    //history: Action[];
     selectedLayersIds: string[];
     layers: HashTable<Layer>;
     layersIds: string[];

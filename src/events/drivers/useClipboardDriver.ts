@@ -1,11 +1,8 @@
-import { useActions } from 'src/app/hooks';
-
-export const useKeyboardDriver = () => {
-    const actions = useActions();
-
-    const handleCopy = (event: ClipboardEvent) => {};
-    const handleCut = (event: ClipboardEvent) => {};
-    const handlePaste = (event: ClipboardEvent) => {};
+/** Copying, cutting and pasting shapes; not implemented yet. */
+export const useClipboardDriver = () => {
+    const handleCopy: (event: ClipboardEvent) => void = () => {};
+    const handleCut: (event: ClipboardEvent) => void = () => {};
+    const handlePaste: (event: ClipboardEvent) => void = () => {};
 
     return {
         handleCopy,

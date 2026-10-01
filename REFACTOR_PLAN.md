@@ -325,7 +325,29 @@ shape count and creation date, and opens, clones and deletes documents, asking
 before a delete. A new document takes the lowest unused `document-N` name, and a
 clone is named after its original. Shortcuts act only in the designer, so keys
 pressed on the documents page cannot change shapes that are not shown.
-Remaining: steps 5-6.
+Step 6 partly done: stale commented-out code and the unused `LoginBox`, which the
+account page replaced, are removed; `LayerPaneltem.tsx` is `LayerPanelItem.tsx`,
+and the clipboard driver exports `useClipboardDriver`. Unused helpers are removed
+one by one as each is approved. Remaining: step 5, and the rest of step 6.
+
+Feature inventory:
+
+- Shipped and tested: the select, rectangle, circle, ellipse, line, pen, text,
+  image and move tools; the delete, clone, group, ungroup, layer, unlayer and zoom
+  commands, with shortcuts and the command line; the property panel; the
+  documents page; the navigation bar, group and layer panels with hide and lock;
+  the context menu; saving in the browser and sharing between tabs; accounts,
+  syncing with the server, and signing out.
+- Shown but not covered by tests: the minimap, rulers, data view, document info,
+  overlay and stats panels.
+- Started, not working yet: the search box stores what is typed, but no list is
+  filtered (the `filtered*` derivations are not used); copy, cut and paste have an
+  empty driver; the image tool draws a placeholder picture.
+- Kept for later, not shown: the `Badge`, `Dialog`, `Cursor`, `Overlay` and
+  `Switch` components, and the stylesheets components do not use yet.
+- Planned: components (Phase 10), plugins and renderers (Phase 9), image upload,
+  moving signed-out documents into an account, organizations, teams and sharing,
+  presence, and undo per user (Phase 11).
 
 1. Consolidate command registration, parsing, guards, and execution. Connect Move
    and Pan to the existing interaction actions and give shortcuts unique bindings.
