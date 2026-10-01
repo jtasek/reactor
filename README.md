@@ -69,6 +69,11 @@ bar, side bar, panels and other parts of the editor.
 | Ctrl/Cmd+Alt+L, Ctrl/Cmd+Alt+Shift+L | Move the selection to a new layer, take it off its layer |
 | `+` or `=`, `-`, `0` | Zoom in, zoom out, reset zoom |
 
+The Outline panel (in the explorer) lists the layers with their groups and shapes as a
+tree. Drag a shape or a group onto a layer or a group to move it there. Press a layer's
+name to see only that layer, with the shapes on no layer, on your screen; press it again,
+or Show all layers, to see everything. A group is on one layer, with all its shapes.
+
 Shortcuts do nothing while a text field has focus. The command line runs a command
 by name.
 

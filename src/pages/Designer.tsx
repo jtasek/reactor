@@ -14,6 +14,7 @@ import {
     MenuBar,
     Minimap,
     NavBar,
+    Outline,
     PropertyPanel,
     SearchBox,
     SideBar,
@@ -33,6 +34,7 @@ export const Designer: FC = () => (
             <ToolBar />
             <Explorer>
                 <SearchBox />
+                <Outline />
                 <NavBar />
             </Explorer>
         </SideBar>

@@ -14,9 +14,19 @@ import {
     type GroupFrame,
     editableSelectedShapesIds,
     groupedShapesSelectedAlone,
-    removeFromContainers
+    putShapesInGroup,
+    putShapesOnLayer,
+    removeFromContainers,
+    shapeLayer
 } from '../membership';
-import { angleBetween, boxCenter, getShapeBounds, isShapeVisible, rotatePoint } from '../utils';
+import {
+    angleBetween,
+    boxCenter,
+    getShapeBounds,
+    isShapeLocked,
+    isShapeVisible,
+    rotatePoint
+} from '../utils';
 
 const getGroup = ({ currentDocument }: Application, groupId: string) => {
     const group = currentDocument.groups[groupId];
@@ -67,6 +77,31 @@ export const groupSelection: Action = ({ state }) => {
 
     removeFromContainers(currentDocument.groups, shapesIds, GROUP_MINIMUM);
     setGroup(state, createGroup({ shapesIds }));
+    // A group is on one layer: the topmost shape's, or none.
+    putShapesOnLayer(
+        currentDocument,
+        shapesIds,
+        shapeLayer(currentDocument, shapesIds[shapesIds.length - 1])?.id ?? null
+    );
+};
+
+/** Adds shapes that are not locked to an unlocked group, on its layer and out of any other group. */
+export const addShapesToGroup: ActionWithParam<{ shapeIds: string[]; groupId: string }> = (
+    { state },
+    { shapeIds, groupId }
+) => {
+    const { currentDocument } = state;
+    const group = currentDocument.groups[groupId];
+
+    if (!group || group.locked) {
+        return;
+    }
+
+    putShapesInGroup(
+        currentDocument,
+        shapeIds.filter((id) => !isShapeLocked(currentDocument, id)),
+        groupId
+    );
 };
 
 /** Removes the selected groups that are unlocked; their shapes stay selected. */

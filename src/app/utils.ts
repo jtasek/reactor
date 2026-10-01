@@ -498,6 +498,17 @@ export function isShapeLockedExternally(document: Document | undefined, shapeId:
  * locking one locks them. Hidden shapes are not rendered, hit-tested, marquee
  * selected, edited or part of the selection that commands act on.
  */
+/** Whether this screen shows one layer only and the shape is on another. */
+function hiddenByShownLayer(document: Document, shapeId: string): boolean {
+    const shown = document.shownLayerId ? document.layers[document.shownLayerId] : undefined;
+
+    return (
+        shown !== undefined &&
+        !shown.shapesIds.includes(shapeId) &&
+        Object.values(document.layers).some((layer) => layer.shapesIds.includes(shapeId))
+    );
+}
+
 export function isShapeVisible(document: Document | undefined, shapeId: string): boolean {
     const shape = document?.shapes?.[shapeId];
 
@@ -505,7 +516,18 @@ export function isShapeVisible(document: Document | undefined, shapeId: string):
         return false;
     }
 
-    return !inContainer(document, shapeId, (container) => !container.visible);
+    if (hiddenByShownLayer(document, shapeId)) {
+        return false;
+    }
+
+    // The one layer this screen shows is shown even when hidden by its own setting.
+    const shownLayer = document.shownLayerId ? document.layers[document.shownLayerId] : undefined;
+
+    return !inContainer(
+        document,
+        shapeId,
+        (container) => !container.visible && container !== shownLayer
+    );
 }
 
 /** Geometric center of a box. */

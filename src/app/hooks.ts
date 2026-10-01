@@ -11,7 +11,7 @@ import { useCallback, useLayoutEffect, useReducer } from 'react';
 import { isShapeLocked, isShapeVisible } from './utils';
 import type { Command } from './types';
 import { takesEditorInput } from '../events/input';
-import { groupFrame, selectedGroupsIdsOf } from './membership';
+import { groupFrame, outline, selectedGroupsIdsOf } from './membership';
 
 export const useActions = createActionsHook<Context>();
 export const useEffects = createEffectsHook<Context>();
@@ -236,6 +236,20 @@ export const useLink = (id: string) => {
 
 export const useLinks = () => {
     return useCurrentDocument()?.links ?? [];
+};
+
+/** The document as a tree of layers, their groups and shapes. */
+export const useOutline = () => {
+    return useAppState((state) => outline(state.currentDocument));
+};
+
+/** The one layer this screen shows, if it shows only one. */
+export const useShownLayerId = () => {
+    return useAppState((state) => {
+        const { layers, shownLayerId } = state.currentDocument;
+
+        return shownLayerId && layers[shownLayerId] ? shownLayerId : undefined;
+    });
 };
 
 export const useLayer = (id: string) => {
