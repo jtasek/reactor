@@ -61,6 +61,7 @@ export const beginGesture = (
     const owner = { pointerId, touch, moved: false };
 
     pointer.start = position;
+    pointer.lastPress = { documentId: state.currentDocumentId, position };
     pointer.current = position;
     pointer.path = [];
 

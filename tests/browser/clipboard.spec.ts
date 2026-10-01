@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { drawRect, openEditor, shapes } from './support/editor';
+import { drawRect, openEditor, pointer, shapes } from './support/editor';
 
 test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
 
@@ -15,9 +15,13 @@ test('copies, cuts and pastes shapes with the keyboard', async ({ page }) => {
     await press(page, 'c');
     expect(JSON.parse(await clipboardText(page))).toMatchObject({ format: 'reactor/shapes' });
 
+    // The paste is centered where the canvas was last pressed: a 60 by 40 box about (400, 300).
+    await pointer(page, 'pointerdown', { x: 400, y: 300 });
+    await pointer(page, 'pointerup', { x: 400, y: 300 });
     await press(page, 'v');
     await expect(shapes(page)).toHaveCount(2);
-    await expect(shapes(page).nth(1).locator('rect[data-cy]')).toHaveAttribute('x', '110');
+    await expect(shapes(page).nth(1).locator('rect[data-cy]')).toHaveAttribute('x', '370');
+    await expect(shapes(page).nth(1).locator('rect[data-cy]')).toHaveAttribute('y', '280');
 
     await press(page, 'x');
     await expect(shapes(page)).toHaveCount(1);
