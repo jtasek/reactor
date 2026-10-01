@@ -13,6 +13,7 @@ import {
     ShapeInput
 } from '../types';
 import { Context } from '../index';
+import { screenToWorld } from '../camera';
 import { createGroup, createShape } from '../factories';
 import {
     containersHolding,
@@ -245,15 +246,37 @@ export const removeShapes: ActionWithParam<string[]> = ({ state }, shapeIds) => 
 
 /**
  * Adds the shapes clipboard text holds above all others, selected in place of the
- * selection, centered where the canvas was last pressed. Where the first already
+ * selection, centered on `pasteTarget`. Where the first already
  * has a shape drawn exactly like it, as when pasting twice, they are offset like
  * clones until it has not. Pastes nothing while the editor takes no input, or when the text holds no
  * shapes.
  */
-export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (
-    { state, actions },
-    text
-) => {
+/**
+ * Where a paste is centered: where this document's canvas was last pressed, or
+ * the middle of the view once that place is out of sight. None before any press.
+ */
+const pasteTarget = ({ state, effects }: Context): Point | null => {
+    const { lastPress } = state.events.pointer;
+    const { camera } = state.currentDocument;
+    const { width, height } = effects.viewSize();
+    const topLeft = screenToWorld({ x: 0, y: 0 }, camera);
+    const bottomRight = screenToWorld({ x: width, y: height }, camera);
+
+    if (lastPress?.documentId !== state.currentDocumentId || !topLeft || !bottomRight) {
+        return null;
+    }
+
+    const { x, y } = lastPress.position;
+    const inView = x >= topLeft.x && x <= bottomRight.x && y >= topLeft.y && y <= bottomRight.y;
+
+    return inView
+        ? lastPress.position
+        : { x: (topLeft.x + bottomRight.x) / 2, y: (topLeft.y + bottomRight.y) / 2 };
+};
+
+export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (context, text) => {
+    const { state, actions } = context;
+
     if (!takesEditorInput(state)) {
         return 'notNow';
     }
@@ -270,16 +293,16 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (
 
         return createShape({ ...input, order, selected: true });
     });
-    const { lastPress } = state.events.pointer;
+    const target = pasteTarget(context);
 
-    // Centered where the canvas was last pressed; before any press, where they were copied.
-    if (lastPress) {
+    // Centered on the target; without one, where they were copied.
+    if (target) {
         const boxes = pasted.map(getBoundingBox);
         const left = Math.min(...boxes.map((box) => box.topLeft.x));
         const top = Math.min(...boxes.map((box) => box.topLeft.y));
         const right = Math.max(...boxes.map((box) => box.bottomRight.x));
         const bottom = Math.max(...boxes.map((box) => box.bottomRight.y));
-        const delta = { x: lastPress.x - (left + right) / 2, y: lastPress.y - (top + bottom) / 2 };
+        const delta = { x: target.x - (left + right) / 2, y: target.y - (top + bottom) / 2 };
 
         pasted.forEach((shape) => translateShape(shape, delta));
     }

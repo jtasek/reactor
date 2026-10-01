@@ -8,3 +8,4 @@ export { accounts, forgetOwner, lastOwner, recordSignedOut, shareOwner } from '.
 export { api, serverTransport } from './services/api';
 export { clipboard } from './services/clipboard';
 export { assets } from './services/assets';
+export { viewSize } from './services/viewSize';

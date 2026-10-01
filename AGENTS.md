@@ -205,7 +205,8 @@ re-renders.** Components never mutate state directly.
   are mounted in `Shell` and `usePointerAdapter` in the canvas `Surface`
   (`src/ui/components/Surface/Surface.tsx`). Copied shapes are clipboard text in the format
   of `src/app/clipboard.ts`, and a paste checks them with the readers saved documents use
-  and centers them where the canvas was last pressed (`pointer.lastPress`).
+  and centers them where the document's canvas was last pressed (`pointer.lastPress`), or in
+  the middle of the view (`effects.viewSize`) once that place is out of sight.
   The Copy, Cut and Paste commands (`src/commands/clipboard`) go through `effects.clipboard`
   (`src/app/services/clipboard.ts`): run by their shortcuts, the browser's clipboard event
   runs them (`useClipboardDriver`) with its data; run otherwise, they use the asynchronous

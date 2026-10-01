@@ -119,6 +119,29 @@ describe('pasting where the canvas was last pressed', () => {
         ]);
     });
 
+    it('centers them in the view instead once the press is out of sight', () => {
+        const { store, ordered } = storeWith(shapes[0]);
+        const copied = store.actions.copySelection()!;
+
+        press(store, 200, 100);
+        // The test view is 1000 by 800; panned, it shows x 2000 to 3000 and y 0 to 800.
+        store.actions.tools.panCamera({ dx: -2000, dy: 0 });
+        store.actions.pasteShapes(copied);
+
+        expect(ordered()[1]).toMatchObject({ position: { x: 2480, y: 385 } });
+    });
+
+    it('forgets a press made in another document', () => {
+        const { store, ordered } = storeWith(shapes[0]);
+        const copied = store.actions.copySelection()!;
+
+        press(store, 200, 100);
+        store.actions.newDocument();
+        store.actions.pasteShapes(copied);
+
+        expect(ordered()[0]).toMatchObject({ position: { x: 10, y: 20 } });
+    });
+
     it('steps a second paste off the first, as they would cover each other', () => {
         const { store, ordered } = storeWith(shapes[0]);
         const copied = store.actions.copySelection()!;
