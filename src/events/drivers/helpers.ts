@@ -6,12 +6,6 @@ type ScreenMatrix = Pick<DOMMatrix, 'a' | 'b' | 'c' | 'd' | 'e' | 'f'>;
 type Surface = { getScreenCTM: () => ScreenMatrix | null };
 type ClientPoint = { clientX: number; clientY: number };
 
-export function dist(a: PointerEvent, b: PointerEvent) {
-    const dx = a.clientX - b.clientX;
-    const dy = a.clientY - b.clientY;
-    return Math.hypot(dx, dy);
-}
-
 export function midpoint(a: PointerEvent, b: PointerEvent) {
     return { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 };
 }

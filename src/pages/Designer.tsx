@@ -47,16 +47,6 @@ export const Designer: FC = () => (
         <PropertyPanel />
         <LayerPanel />
         <GroupPanel />
-        {/* <Cursor /> */}
-        {/* <Dialog
-        description="Description"
-        visible={true}
-        title={'Tohle je modalni dialog'}
-        // onCancel={() => alert('cancel')}
-        //  onSubmit={() => alert('submit')}
-      >
-        <p>Nejake kecicky....</p>
-      </Dialog> */}
         <StatusBar />
     </Layout>
 );

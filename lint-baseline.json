@@ -8,10 +8,6 @@
         "src/app/components/usePreventNativePinchZoom.tsx": {
             "[\"no-console\",1,\"Unexpected console statement. Only these console methods are allowed: warn, error, info.\"]": 1
         },
-        "src/events/drivers/useClipboardDriver.ts": {
-            "[\"@typescript-eslint/no-unused-vars\",2,\"'actions' is assigned a value but never used.\"]": 1,
-            "[\"@typescript-eslint/no-unused-vars\",2,\"'event' is defined but never used.\"]": 3
-        },
         "src/ui/components/Explorer/index.tsx": {
             "[\"@typescript-eslint/no-unused-vars\",2,\"'styles' is defined but never used.\"]": 1
         },

@@ -33,8 +33,6 @@ import {
     User
 } from './types';
 
-export const getDefaultName = (): string => 'rectangle';
-
 const componentSequence = new Sequence();
 const documentSequence = new Sequence();
 const groupSequence = new Sequence();

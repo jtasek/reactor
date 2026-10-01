@@ -45,10 +45,6 @@ export function debounce<A extends unknown[]>(
     };
 }
 
-export function getRandomColor(): string {
-    return `rgb(${getRandomNumber(255)}, ${getRandomNumber(255)}, ${getRandomNumber(255)})`;
-}
-
 export function getDistance(p1: Point, p2: Point): number {
     return Math.hypot(Math.abs(p2.x - p1.x), Math.abs(p2.y - p1.y));
 }
