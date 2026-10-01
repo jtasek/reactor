@@ -325,15 +325,15 @@ shape count and creation date, and opens, clones and deletes documents, asking
 before a delete. A new document takes the lowest unused `document-N` name, and a
 clone is named after its original. Shortcuts act only in the designer, so keys
 pressed on the documents page cannot change shapes that are not shown.
-Step 5: the Copy, Cut and Paste commands, and Ctrl/Cmd+C, X and V, copy, cut
-and paste the selected shapes as text in an explicit format
+Step 5: the Copy, Cut and Paste commands, with Ctrl/Cmd+C, X and V as their
+shortcuts, copy, cut and paste the selected shapes as text in an explicit format
 (`src/app/clipboard.ts`): what each shape draws, its name,
 description and rotation, without ids, draw order, locks or memberships. A paste
 is checked like a saved document, adds the shapes on top and selects them, and is
 offset like a clone where the first would cover a shape drawn the same way. Cut
-leaves locked shapes. The keys use the browser's clipboard events; the commands,
-run from the command bar or line, its asynchronous clipboard, which may ask for
-permission to paste. Text fields, and text selected on the page, keep the
+leaves locked shapes. The shortcuts are left to the browser, whose clipboard
+events run the commands with their data; run from the command bar or line, the
+commands use its asynchronous clipboard, which may ask for permission to paste. Text fields, and text selected on the page, keep the
 browser's own clipboard. Step 6 partly done: stale commented-out code and the unused `LoginBox`, which the
 account page replaced, are removed; `LayerPaneltem.tsx` is `LayerPanelItem.tsx`,
 and the clipboard driver exports `useClipboardDriver`. Unused helpers are removed

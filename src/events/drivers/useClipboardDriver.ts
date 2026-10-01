@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
-import { useActions, useTakesEditorInput } from '../../app/hooks';
+import { getCommands } from '../../app/actions/startup';
+import { useActions, useEffects, useTakesEditorInput } from '../../app/hooks';
+import { matchesShortcut } from '../shortcuts';
 import { isTextEntry } from './helpers';
 
-const CLIPBOARD_KEYS = new Set(['c', 'x', 'v']);
+const clipboardCommands = () => getCommands().filter(({ clipboardEvent }) => clipboardEvent);
 
 /**
- * A hidden field focused, with text selected, while Ctrl/Cmd+C, X or V is pressed
- * outside text: some browsers, as Safari, disable the clipboard commands and send
+ * A hidden field focused, with text selected, while a clipboard command's shortcut
+ * is pressed outside text: some browsers, as Safari, disable the clipboard commands and send
  * no event when nothing is selected.
  */
 function createClipboardTarget() {
@@ -27,9 +29,13 @@ function createClipboardTarget() {
     return target;
 }
 
-/** Copies, cuts and pastes shapes through the browser's clipboard events. */
+/**
+ * Runs the copy, cut and paste commands from the browser's clipboard events, with
+ * the event's data, so their shortcuts work like the browser's own.
+ */
 export const useClipboardDriver = () => {
-    const { copySelection, cutSelection, pasteShapes } = useActions();
+    const { runCommand } = useActions();
+    const { clipboard } = useEffects();
     const takesInput = useTakesEditorInput();
 
     useEffect(() => {
@@ -57,10 +63,10 @@ export const useClipboardDriver = () => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (
                 !takesInput ||
-                !(event.ctrlKey || event.metaKey) ||
-                event.altKey ||
-                !CLIPBOARD_KEYS.has(event.key.toLowerCase()) ||
-                isNativeClipboard(event.target)
+                isNativeClipboard(event.target) ||
+                !clipboardCommands().some(
+                    ({ shortcut }) => shortcut && matchesShortcut(shortcut, event)
+                )
             ) {
                 return;
             }
@@ -71,35 +77,24 @@ export const useClipboardDriver = () => {
             clipboardTarget.select();
         };
 
-        const write = (take: () => string | null) => (event: ClipboardEvent) => {
-            if (!event.clipboardData || isNativeClipboard(event.target)) {
+        const handleClipboard = (event: ClipboardEvent) => {
+            const command = clipboardCommands().find(
+                ({ clipboardEvent }) => clipboardEvent === event.type
+            );
+            const data = event.clipboardData;
+
+            if (!command || !data || isNativeClipboard(event.target)) {
                 return;
             }
 
-            const text = take();
+            let ran = false;
+
+            clipboard.during(data, () => {
+                ran = runCommand(command);
+            });
 
             // The hidden field's own text never reaches the clipboard.
-            if (text !== null || event.target === clipboardTarget) {
-                event.preventDefault();
-            }
-
-            if (text !== null) {
-                event.clipboardData.setData('text/plain', text);
-            }
-
-            release();
-        };
-        const handleCopy = write(copySelection);
-        const handleCut = write(cutSelection);
-        const handlePaste = (event: ClipboardEvent) => {
-            if (!event.clipboardData || isNativeClipboard(event.target)) {
-                return;
-            }
-
-            if (
-                pasteShapes(event.clipboardData.getData('text/plain')) ||
-                event.target === clipboardTarget
-            ) {
+            if (ran || event.target === clipboardTarget) {
                 event.preventDefault();
             }
 
@@ -109,17 +104,17 @@ export const useClipboardDriver = () => {
         document.body.append(clipboardTarget);
         document.addEventListener('keydown', handleKeyDown);
         document.addEventListener('keyup', release);
-        document.addEventListener('copy', handleCopy);
-        document.addEventListener('cut', handleCut);
-        document.addEventListener('paste', handlePaste);
+        document.addEventListener('copy', handleClipboard);
+        document.addEventListener('cut', handleClipboard);
+        document.addEventListener('paste', handleClipboard);
 
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
             document.removeEventListener('keyup', release);
-            document.removeEventListener('copy', handleCopy);
-            document.removeEventListener('cut', handleCut);
-            document.removeEventListener('paste', handlePaste);
+            document.removeEventListener('copy', handleClipboard);
+            document.removeEventListener('cut', handleClipboard);
+            document.removeEventListener('paste', handleClipboard);
             clipboardTarget.remove();
         };
-    }, [copySelection, cutSelection, pasteShapes, takesInput]);
+    }, [clipboard, runCommand, takesInput]);
 };

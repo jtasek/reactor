@@ -69,7 +69,8 @@ export const keyUp: ActionWithParam<KeyboardEvent> = (
 /**
  * Activates the tool or runs the command bound to a key press. Returns whether a
  * shortcut matched — even when its command cannot run now — so the caller can
- * keep the browser from also acting on the keys.
+ * keep the browser from also acting on the keys. A command a clipboard event runs
+ * is left to the browser.
  */
 export const pressShortcut = ({ state, actions }: Context, press: KeyPress): boolean => {
     if (!takesEditorInput(state)) {
@@ -87,6 +88,11 @@ export const pressShortcut = ({ state, actions }: Context, press: KeyPress): boo
     }
 
     const command = getCommands().find(matches);
+
+    // Left to the browser, whose clipboard event runs the command.
+    if (command?.clipboardEvent) {
+        return false;
+    }
 
     if (command) {
         actions.runCommand(command);

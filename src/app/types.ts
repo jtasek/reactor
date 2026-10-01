@@ -257,6 +257,11 @@ export interface Command {
     name: string;
     regex: RegExp;
     shortcut?: string;
+    /**
+     * The browser clipboard event that runs the command when its shortcut is
+     * pressed, so it gets the event's data without asking to read the clipboard.
+     */
+    clipboardEvent?: 'copy' | 'cut' | 'paste';
     canExecute: CommandGuard;
     execute: Action;
     shouldDeactivate?: ActionGuard;

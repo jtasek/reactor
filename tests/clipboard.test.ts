@@ -32,14 +32,14 @@ registerCommand(CutCommand);
 registerCommand(PasteCommand);
 
 function storeWith(...inputs: ShapeInput[]) {
-    const { store, systemClipboard } = createTestStore();
+    const { store, systemClipboard, effects } = createTestStore();
 
     inputs.forEach((input) => store.actions.addShape({ ...input, selected: true }));
 
     const document = () => store.state.currentDocument;
     const ordered = () => document().shapesIds.map((id) => document().shapes[id]);
 
-    return { store, document, ordered, systemClipboard };
+    return { store, document, ordered, systemClipboard, effects };
 }
 
 /** Lets the system clipboard answer, as it does after the command returns. */
@@ -262,5 +262,42 @@ describe('the copy, cut and paste commands', () => {
             'The clipboard holds no shapes to paste.',
             'The clipboard could not be read. Allow this site to read it, or press Ctrl/Cmd+V.'
         ]);
+    });
+});
+
+describe('the copy, cut and paste shortcuts', () => {
+    const press = (key: string) => ({
+        key,
+        altKey: false,
+        ctrlKey: true,
+        metaKey: false,
+        shiftKey: false
+    });
+
+    it('are left to the browser, whose clipboard events run the commands', () => {
+        const { store, document } = storeWith(shapes[0]);
+
+        expect(store.actions.events.pressShortcut(press('c'))).toBe(false);
+        expect(store.actions.events.pressShortcut(press('x'))).toBe(false);
+        expect(document().shapesIds).toHaveLength(1);
+    });
+
+    it('copy and paste through the clipboard event, without the system clipboard', () => {
+        const { store, ordered, systemClipboard, effects } = storeWith(shapes[0]);
+        const event = new Map<string, string>();
+        const data = {
+            getData: (type: string) => event.get(type) ?? '',
+            setData: (type: string, text: string) => void event.set(type, text)
+        };
+        const readText = vi.spyOn(systemClipboard, 'readText');
+        const writeText = vi.spyOn(systemClipboard, 'writeText');
+
+        effects.clipboard.during(data, () => store.actions.runCommand(CopyCommand));
+        expect(JSON.parse(event.get('text/plain')!)).toMatchObject({ format: 'reactor/shapes' });
+
+        effects.clipboard.during(data, () => store.actions.runCommand(PasteCommand));
+        expect(ordered()).toHaveLength(2);
+        expect(readText).not.toHaveBeenCalled();
+        expect(writeText).not.toHaveBeenCalled();
     });
 });

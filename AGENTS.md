@@ -205,9 +205,10 @@ re-renders.** Components never mutate state directly.
   are mounted in `Shell` and `usePointerAdapter` in the canvas `Surface`
   (`src/ui/components/Surface/Surface.tsx`). Copied shapes are clipboard text in the format
   of `src/app/clipboard.ts`, and a paste checks them with the readers saved documents use.
-  The Copy, Cut and Paste commands (`src/commands/clipboard`) use the same actions through
-  `effects.clipboard` (`src/app/services/clipboard.ts`), which reads the clipboard
-  asynchronously and pastes through the root actions it is connected to at startup.
+  The Copy, Cut and Paste commands (`src/commands/clipboard`) go through `effects.clipboard`
+  (`src/app/services/clipboard.ts`): run by their shortcuts, the browser's clipboard event
+  runs them (`useClipboardDriver`) with its data; run otherwise, they use the asynchronous
+  clipboard and paste through the root actions it is connected to at startup.
   Shortcuts and the clipboard act only while `takesEditorInput` (`src/events/input.ts`).
 - **Tools** (`src/tools/`): drawing/selection tools; tool state lives in the `tools` namespace.
 - **Renderers** (planned, not built yet; see Phase 9 in `REFACTOR_PLAN.md`): pluggable
@@ -316,7 +317,8 @@ Examples worth modelling new tools on:
 - **Shortcuts**: a tool or command declares `shortcut` (`r`, `mod+d`, `delete,backspace`;
   `mod` is Ctrl or Cmd, see `src/events/shortcuts.ts`). `events.pressShortcut` activates the
   tool or runs the command; the keyboard adapter skips it while a text field has focus. Keep
-  bindings unique (`tests/shortcuts.test.ts` checks) and avoid plain Ctrl/Cmd browser keys.
+  bindings unique (`tests/shortcuts.test.ts` checks) and avoid plain Ctrl/Cmd browser keys,
+  except a command's `clipboardEvent` shortcut, which is left to that browser event.
 - **Path alias** `src/*` → `./src` (in `tsconfig.json` and `webpack.config.mjs`). Mixed
   relative and `src/...` imports both appear; keep them consistent within a file.
 - **CSS Modules**: `*.css` with generated `*.css.d.ts` typings. Don't hand-edit the `.d.ts`.

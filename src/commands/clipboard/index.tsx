@@ -30,6 +30,8 @@ export const CopyCommand: Command = {
         size: 24
     },
     regex: /(?<toolCode>copy)\('(?<shapeName>\w+)'\)/,
+    shortcut: 'mod+c',
+    clipboardEvent: 'copy',
     canExecute: ({ state }) =>
         takesEditorInput(state) && state.currentDocument?.selectedShapesIds.length > 0,
     execute: copySelection
@@ -46,6 +48,8 @@ export const CutCommand: Command = {
         size: 24
     },
     regex: /(?<toolCode>cut)\('(?<shapeName>\w+)'\)/,
+    shortcut: 'mod+x',
+    clipboardEvent: 'cut',
     canExecute: ({ state }) =>
         takesEditorInput(state) &&
         state.currentDocument?.selectedShapesIds.some(
@@ -65,6 +69,8 @@ export const PasteCommand: Command = {
         size: 24
     },
     regex: /(?<toolCode>paste)\(\)/,
+    shortcut: 'mod+v',
+    clipboardEvent: 'paste',
     canExecute: ({ state }) => takesEditorInput(state),
     execute: ({ effects }) => {
         void effects.clipboard.paste();
