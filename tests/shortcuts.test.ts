@@ -109,4 +109,15 @@ describe('keyboard shortcuts', () => {
         expect(store.state.currentDocument.shapesIds).toHaveLength(1);
         expect(store.state.tools.activeToolsIds).toEqual(['select']);
     });
+
+    it('matches the character typed, on any layout, and the key only with Alt', () => {
+        const store = storeWithRect(false);
+
+        // On Dvorak, J is typed on the key where QWERTY has C, and P where it has R.
+        expect(store.actions.events.pressShortcut(press('j', { code: 'KeyC' }))).toBe(false);
+        expect(store.state.tools.activeToolsIds).toEqual(['select']);
+
+        store.actions.events.pressShortcut(press('p', { code: 'KeyR' }));
+        expect(store.state.tools.activeToolsIds).toEqual(['pen']);
+    });
 });

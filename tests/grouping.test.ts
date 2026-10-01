@@ -230,6 +230,18 @@ describe('Clone', () => {
     });
 });
 
+it('copies a group with a hidden shape as a group of its own', () => {
+    const { store, ids, document, groups, run } = storeWith(0, 20, 40);
+
+    run('group');
+    store.actions.hideShape(ids[2]);
+    run('clone');
+
+    const clones = document().shapesIds.slice(3);
+
+    expect(groups()).toEqual([ids, clones]);
+});
+
 describe('Delete', () => {
     it('is unavailable when every selected shape is locked', () => {
         const { store, ids, run } = storeWith(0);

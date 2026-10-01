@@ -156,8 +156,10 @@ export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shape
 
     for (const group of containersHolding(currentDocument.groups, clonesIds.keys())) {
         const copies = clonesOf(group.shapesIds);
+        const shown = group.shapesIds.filter((id) => isShapeVisible(currentDocument, id));
 
-        if (copies.length === group.shapesIds.length) {
+        // Hidden shapes are not cloned, so a group is cloned whole when its shown ones are.
+        if (copies.length === shown.length) {
             const copy = createGroup({ shapesIds: copies, name: `Clone of ${group.name}` });
 
             currentDocument.groups[copy.id] = copy;

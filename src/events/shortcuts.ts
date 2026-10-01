@@ -19,8 +19,10 @@ function parseBinding(binding: string) {
 function matchesBinding(binding: string, press: KeyPress): boolean {
     const { key, modifiers } = parseBinding(binding);
 
-    // A letter also matches its key, as Alt changes the character it types on a Mac.
-    const letterKey = /^[a-z]$/.test(key) && press.code === `Key${key.toUpperCase()}`;
+    // With Alt, a letter also matches its key, as Alt changes the character it types
+    // on a Mac. Without it, only the character counts, so every layout keeps its letters.
+    const letterKey =
+        press.altKey && /^[a-z]$/.test(key) && press.code === `Key${key.toUpperCase()}`;
 
     if (press.key.toLowerCase() !== key && !letterKey) {
         return false;
