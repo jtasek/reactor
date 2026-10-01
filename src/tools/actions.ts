@@ -11,16 +11,24 @@ import {
     zoomAt
 } from 'src/app/camera';
 import { DEFAULT_TOOL_ID } from './state';
+import type { ImageToPlace } from '../app/services/assets';
 
 type ZoomOptions = { scale: number; point?: Point };
 
-export const activateTool = ({ state: { tools }, actions }: Context, toolId: string) => {
+export const activateTool = (context: Context, toolId: string) => {
+    const { state, actions } = context;
+
     // Tools are mutually exclusive modes: selecting one replaces any other.
     // Enforcing a single active tool prevents duplicate React keys and a single
     // drag executing several tools at once (e.g. drawing a rectangle *and* a
     // circle).
-    tools.activeToolsIds = [toolId];
+    state.tools.activeToolsIds = [toolId];
     actions.ui.hideContextMenu();
+    getToolById(toolId)?.activate?.(context);
+};
+
+export const setImageToPlace = ({ state }: Context, image: ImageToPlace) => {
+    state.tools.imageToPlace = image;
 };
 
 const deactivateTool = ({ state: { tools } }: Context, toolId: string) => {

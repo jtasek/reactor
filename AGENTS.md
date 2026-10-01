@@ -136,7 +136,7 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
   recorded counts: fix a touched file's existing findings rather than adding exceptions.
 - `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 440 KiB or
-  any file 240 KiB (the budget in `webpack.config.mjs`, measured at 424 and 225 KiB); raise
+  any file 240 KiB (the budget in `webpack.config.mjs`, measured at 429 and 225 KiB); raise
   it only for code the editor needs as it opens, after checking what grew.
 
 ## Architecture
@@ -249,8 +249,12 @@ when `canExecute(context)` is true. `resetTools` deactivates a tool when its
 Examples worth modelling new tools on:
 
 - `Rect` — canonical simple tool using `pointer.topLeft` / `pointer.size`.
-- `Image` — rect-like, but preserves the image's **intrinsic** aspect ratio (measured from a
-  probe `Image`, never hardcoded).
+- `Image` — rect-like, but preserves the image's **intrinsic** aspect ratio. Choosing the
+  tool runs its `activate`, which asks for a file (`effects.assets.pickImage`); the image is
+  checked by its content, kept in the document database under the SHA-256 of its bytes, and
+  set as `state.tools.imageToPlace` with its measured ratio. The shape's `source` is
+  `asset:<hash>`, never image data, and `useImageUrl` shows it through a blob URL
+  (`src/app/services/assets.ts`).
 - `Text` — two-phase: select tool → click canvas to place + enter typing mode → type → Enter
   to commit (Escape cancels). The placement click starts typing inside `execute` (synchronous).
 - `Select` — marquee: press + drag draws the dashed rect; `selectShapes` selects shapes whose

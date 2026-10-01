@@ -359,8 +359,8 @@ Feature inventory:
 - Shown but not covered by tests: the minimap, rulers, data view, document info,
   overlay and stats panels.
 - Started, not working yet: the search box stores what is typed, but no list is
-  filtered (the `filtered*` derivations are not used); the image tool draws a
-  placeholder picture.
+  filtered (the `filtered*` derivations are not used); images are kept in the
+  browser only, not uploaded yet.
 - Kept for later, not shown: the `Badge`, `Dialog`, `Cursor`, `Overlay` and
   `Switch` components, and the stylesheets components do not use yet.
 - Planned: components (Phase 10), plugins and renderers (Phase 9), image upload,
@@ -449,7 +449,7 @@ and React 225 KiB, the app 172 KiB, the webpack runtime 4 KiB. The app's share i
 what the editor needs as it opens (loading and syncing documents, actions, tools),
 and Yjs, the server sync and the pages already load on demand, so nothing is split
 further. The production build fails beyond 440 KiB for the entry bundle or 240 KiB
-for any file; the entry bundle measured 424 KiB on 2026-10-02, the growth being the
+for any file; the entry bundle measured 429 KiB on 2026-10-02, the growth being the
 store's group, layer and clipboard actions, which register at startup.
 
 1. Parse and validate TRUST_PROXY hop counts explicitly while preserving supported
@@ -751,6 +751,13 @@ Done: step 5. Signing out waits up to 5 seconds for changes on their way to the
 server, and when some would be lost says why and offers to stay signed in. Once
 signed out, the account's database and records are removed from the browser,
 and every open copy of the editor loads again signed out.
+
+Step 6, in the browser: the image tool asks for a file, takes PNG, JPEG, GIF and
+WebP by their content up to 5 MB, and keeps the image in the document database
+under the SHA-256 of its bytes. The shape's `source` is `asset:<hash>` and is shown
+through a blob URL, which the content security policy allows. Remaining: the asset
+endpoints and their storage, uploads when signed in and for pasted and cloned
+shapes, and the cleanup job.
 
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user

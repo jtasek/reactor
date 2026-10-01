@@ -5,6 +5,7 @@ import { config } from 'src/app';
 import { createApplication, createDocument } from 'src/app/factories';
 import { Collaboration } from 'src/app/services/collaboration';
 import { createClipboard } from 'src/app/services/clipboard';
+import { createAssets } from 'src/app/services/assets';
 import { DocumentDatabase } from 'src/app/services/documentDatabase';
 import type { Accounts } from 'src/app/services/accounts';
 import type { Api, Transport } from 'src/app/services/api';
@@ -50,6 +51,8 @@ export function createTestStore(
         serverTransport?: Transport;
         /** Local storage shared with other stores, as copies on one device share it. */
         storage?: Map<string, string>;
+        /** The file chosen when the image tool asks for one; none by default. */
+        pickImage?: () => Promise<Blob | null>;
     } = {}
 ) {
     const storage = options.storage ?? new Map(Object.entries(seed));
@@ -92,7 +95,12 @@ export function createTestStore(
         accounts: options.accounts ?? noAccounts,
         api: options.api ?? offline,
         serverTransport: () => options.serverTransport ?? { url: 'ws://127.0.0.1:9/sync' },
-        clipboard: createClipboard(systemClipboard)
+        clipboard: createClipboard(systemClipboard),
+        // Every image measures 200 by 100, as nothing decodes images here.
+        assets: createAssets({
+            pick: options.pickImage ?? (async () => null),
+            measure: async () => ({ width: 200, height: 100 })
+        })
     };
     let nextId = 1;
     const document = createDocument({ id: 'test-document' });
@@ -106,6 +114,8 @@ export function createTestStore(
     });
 
     effects.clipboard.connect(store.actions);
+    effects.assets.use(Promise.resolve().then(() => DocumentDatabase.open(indexedDB)));
+    effects.assets.connect(store.actions);
 
     // Initialization is opt-in: normal action tests never register routes or load
     // saved documents. Startup tests can explicitly call store.onInitialize().

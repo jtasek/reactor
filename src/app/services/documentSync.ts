@@ -646,6 +646,8 @@ export async function startDocumentSync(
     ]);
 
     database = opened;
+    effects.assets.use(opened);
+
     if (!state.config.autoSave) {
         notSaving = AUTOSAVE_OFF;
     } else if (!database) {

@@ -23,7 +23,7 @@ describe('real persisted documents', () => {
         const properties = [
             createCircleProps(pointer),
             createEllipseProps(pointer),
-            createImageProps(pointer),
+            createImageProps(pointer, { source: 'asset:test', ratio: 1 }),
             createLineProps(pointer),
             createPenProps(pointer),
             createRectProps(pointer),

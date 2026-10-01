@@ -112,6 +112,7 @@ export const onInitializeOvermind = async (
     registerTools();
     registerRoutes(effects, actions);
     effects.clipboard.connect(instance.actions);
+    effects.assets.connect(instance.actions);
 
     // The documents opened last open while the account is read; the first time, and
     // after signing in or out, the account is read first, as it decides whose open.

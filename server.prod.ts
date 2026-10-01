@@ -74,7 +74,7 @@ app.use(
                 // React renders dynamic inline style attributes (shape positions,
                 // sizes, colors) so style-src needs 'unsafe-inline'. Scripts remain locked down.
                 styleSrc: ["'self'", "'unsafe-inline'"],
-                imgSrc: ["'self'", 'data:'],
+                imgSrc: ["'self'", 'data:', 'blob:'],
                 fontSrc: ["'self'", 'data:'],
                 connectSrc: ["'self'", ...(SYNC_ORIGIN ? [SYNC_ORIGIN] : [])],
                 manifestSrc: ["'self'"],

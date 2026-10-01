@@ -1,8 +1,16 @@
 /** The database of documents kept signed out; each account has one of its own. */
 const NAME = 'reactor';
-const VERSION = 1;
+const VERSION = 2;
 const DOCUMENTS = 'documents';
 const UPDATES = 'updates';
+const ASSETS = 'assets';
+
+/** An image kept for the documents that show it, named by the SHA-256 of its bytes. */
+export interface Asset {
+    hash: string;
+    type: string;
+    bytes: Uint8Array<ArrayBuffer>;
+}
 
 interface UpdateRecord {
     documentId: string;
@@ -36,13 +44,17 @@ export class DocumentDatabase {
     static async open(factory: IDBFactory = indexedDB, name = NAME): Promise<DocumentDatabase> {
         const opening = factory.open(name, VERSION);
 
-        opening.onupgradeneeded = () => {
+        opening.onupgradeneeded = ({ oldVersion }) => {
             const database = opening.result;
 
-            database.createObjectStore(DOCUMENTS, { keyPath: 'id' });
-            database
-                .createObjectStore(UPDATES, { autoIncrement: true })
-                .createIndex('documentId', 'documentId');
+            if (oldVersion < 1) {
+                database.createObjectStore(DOCUMENTS, { keyPath: 'id' });
+                database
+                    .createObjectStore(UPDATES, { autoIncrement: true })
+                    .createIndex('documentId', 'documentId');
+            }
+
+            database.createObjectStore(ASSETS, { keyPath: 'hash' });
         };
 
         return new DocumentDatabase(await request(opening));
@@ -128,6 +140,22 @@ export class DocumentDatabase {
         keys.onsuccess = () => keys.result.forEach((key) => updates.delete(key));
 
         return completion(transaction);
+    }
+
+    /** Keeps an image; one already kept under the hash is the same image. */
+    putAsset(asset: Asset): Promise<void> {
+        const transaction = this.database.transaction(ASSETS, 'readwrite');
+
+        transaction.objectStore(ASSETS).put(asset);
+
+        return completion(transaction);
+    }
+
+    /** The image kept under a hash, if any. */
+    asset(hash: string): Promise<Asset | undefined> {
+        return request<Asset | undefined>(
+            this.database.transaction(ASSETS).objectStore(ASSETS).get(hash)
+        );
     }
 
     close(): void {
