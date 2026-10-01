@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { getCommands } from '../../app/actions/startup';
 import { useActions, useEffects, useTakesEditorInput } from '../../app/hooks';
 import { matchesShortcut } from '../shortcuts';
@@ -15,7 +15,7 @@ function createClipboardTarget() {
     const target = document.createElement('textarea');
 
     target.tabIndex = -1;
-    target.setAttribute('aria-hidden', 'true');
+    target.setAttribute('aria-label', 'Clipboard');
     Object.assign(target.style, {
         position: 'fixed',
         top: '0',
@@ -37,6 +37,12 @@ export const useClipboardDriver = () => {
     const { runCommand } = useActions();
     const { clipboard } = useEffects();
     const takesInput = useTakesEditorInput();
+    // Read when a key is pressed, so a drag or typing does not remount the listeners.
+    const takesInputNow = useRef(takesInput);
+
+    useEffect(() => {
+        takesInputNow.current = takesInput;
+    }, [takesInput]);
 
     useEffect(() => {
         const clipboardTarget = createClipboardTarget();
@@ -62,7 +68,7 @@ export const useClipboardDriver = () => {
 
         const handleKeyDown = (event: KeyboardEvent) => {
             if (
-                !takesInput ||
+                !takesInputNow.current ||
                 isNativeClipboard(event.target) ||
                 !clipboardCommands().some(
                     ({ shortcut }) => shortcut && matchesShortcut(shortcut, event)
@@ -116,5 +122,5 @@ export const useClipboardDriver = () => {
             document.removeEventListener('paste', handleClipboard);
             clipboardTarget.remove();
         };
-    }, [clipboard, runCommand, takesInput]);
+    }, [clipboard, runCommand]);
 };

@@ -15,7 +15,7 @@ import { Context } from '../index';
 import { createShape } from '../factories';
 import { orderAbove, ordersAbove, ordersBelow } from '../drawOrder';
 import { PropertyValue, SHAPE_PROPERTIES, applyProperty, canEdit } from '../properties';
-import { readClipboard, writeClipboard } from '../clipboard';
+import { PasteResult, readClipboard, writeClipboard } from '../clipboard';
 import { takesEditorInput } from '../../events/input';
 import {
     hitTestShape,
@@ -157,41 +157,51 @@ export const copySelection: ActionWithResult<string | null> = ({ state }) => {
 };
 
 /**
- * Removes the selected shapes that are not locked and returns them as clipboard
- * text, or null when there are none to cut.
+ * The selected shapes that are not locked, as clipboard text and their ids, or
+ * null when there are none to cut. They are removed once the clipboard holds them.
  */
-export const cutSelection: ActionWithResult<string | null> = ({ state }) => {
+export const selectionToCut: ActionWithResult<{ text: string; shapeIds: string[] } | null> = ({
+    state
+}) => {
     const cut = takesEditorInput(state)
         ? selectedInDrawOrder(state).filter(
               (shape) => !isShapeLocked(state.currentDocument, shape.id)
           )
         : [];
 
-    if (cut.length === 0) {
-        return null;
-    }
+    return cut.length > 0
+        ? { text: writeClipboard(cut), shapeIds: cut.map((shape) => shape.id) }
+        : null;
+};
 
-    const text = writeClipboard(cut);
-
-    cut.forEach((shape) => deleteShape(state, shape.id));
-
-    return text;
+/** Removes the shapes that still exist and are not locked. */
+export const removeShapes: ActionWithParam<string[]> = ({ state }, shapeIds) => {
+    shapeIds
+        .filter(
+            (id) => state.currentDocument.shapes[id] && !isShapeLocked(state.currentDocument, id)
+        )
+        .forEach((id) => deleteShape(state, id));
 };
 
 /**
  * Adds the shapes clipboard text holds above all others, selected in place of the
  * selection. Where the first already has a shape drawn exactly like it, as when
  * pasting into the document copied from, they are offset like clones until it has
- * not. Returns whether the text held shapes.
+ * not. Pastes nothing while the editor takes no input, or when the text holds no
+ * shapes.
  */
-export const pasteShapes: ActionWithParamAndResult<string, boolean> = (
+export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (
     { state, actions },
     text
 ) => {
-    const copied = takesEditorInput(state) ? readClipboard(text) : [];
+    if (!takesEditorInput(state)) {
+        return 'notNow';
+    }
+
+    const copied = readClipboard(text);
 
     if (copied.length === 0) {
-        return false;
+        return 'noShapes';
     }
 
     let order = topOrder(state);
@@ -213,7 +223,7 @@ export const pasteShapes: ActionWithParamAndResult<string, boolean> = (
     actions.unselectShapes();
     pasted.forEach((shape) => putOnTop(state, shape));
 
-    return true;
+    return 'pasted';
 };
 
 /**

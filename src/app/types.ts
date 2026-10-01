@@ -255,7 +255,7 @@ export interface Command {
     description?: string;
     icon?: Icon;
     name: string;
-    regex: RegExp;
+    regex?: RegExp;
     shortcut?: string;
     /**
      * The browser clipboard event that runs the command when its shortcut is

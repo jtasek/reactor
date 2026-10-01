@@ -42,6 +42,17 @@ function storeWith(...inputs: ShapeInput[]) {
     return { store, document, ordered, systemClipboard, effects };
 }
 
+/** Cuts as the Cut command does once the clipboard holds the text: returns it, or null. */
+function cutSelected(store: ReturnType<typeof storeWith>['store']) {
+    const taken = store.actions.selectionToCut();
+
+    if (taken) {
+        store.actions.removeShapes(taken.shapeIds);
+    }
+
+    return taken?.text ?? null;
+}
+
 /** Lets the system clipboard answer, as it does after the command returns. */
 const settle = () => new Promise((resolve) => setTimeout(resolve));
 
@@ -53,7 +64,7 @@ describe.each(shapes)('copying a $type', (shape) => {
 
         store.actions.newDocument();
 
-        expect(store.actions.pasteShapes(copied!)).toBe(true);
+        expect(store.actions.pasteShapes(copied!)).toBe('pasted');
         expect(ordered()).toHaveLength(1);
         expect(shapeGeometry(ordered()[0])).toEqual(geometry);
         expect(ordered()[0]).toMatchObject({
@@ -112,7 +123,7 @@ it('copies and cuts only the selected shapes that are shown', () => {
     store.actions.addLayer({ shapesIds: [circle], visible: false });
 
     const copied = store.actions.copySelection()!;
-    const cut = store.actions.cutSelection()!;
+    const cut = cutSelected(store)!;
 
     expect(document().shapesIds).toEqual([circle]);
 
@@ -130,7 +141,7 @@ it('cuts the selected shapes it can delete, and keeps locked ones', () => {
 
     store.actions.lockShape(rectangle);
 
-    const cut = store.actions.cutSelection()!;
+    const cut = cutSelected(store)!;
 
     expect(document().shapesIds).toEqual([rectangle]);
 
@@ -146,7 +157,7 @@ it('copies and cuts nothing without a selection, and cuts nothing that is all lo
 
     store.actions.lockShape(document().shapesIds[0]);
 
-    expect(store.actions.cutSelection()).toBeNull();
+    expect(cutSelected(store)).toBeNull();
     expect(document().shapesIds).toHaveLength(1);
 
     store.actions.unselectShapes();
@@ -179,7 +190,7 @@ it.each([
 ])('pastes nothing from %s', (_, text) => {
     const { store, document } = storeWith(shapes[0]);
 
-    expect(store.actions.pasteShapes(text)).toBe(false);
+    expect(store.actions.pasteShapes(text)).toBe('noShapes');
     expect(document().shapesIds).toHaveLength(1);
     expect(document().shapes[document().shapesIds[0]].selected).toBe(true);
 });
@@ -190,12 +201,12 @@ it('leaves the clipboard alone while typing, dragging or away from the designer'
 
     store.actions.events.startTyping();
     expect(store.actions.copySelection()).toBeNull();
-    expect(store.actions.pasteShapes(copied)).toBe(false);
+    expect(store.actions.pasteShapes(copied)).toBe('notNow');
     store.actions.events.endTyping();
 
     store.actions.showDocuments();
-    expect(store.actions.cutSelection()).toBeNull();
-    expect(store.actions.pasteShapes(copied)).toBe(false);
+    expect(cutSelected(store)).toBeNull();
+    expect(store.actions.pasteShapes(copied)).toBe('notNow');
     expect(document().shapesIds).toHaveLength(1);
 });
 
@@ -240,6 +251,34 @@ describe('the copy, cut and paste commands', () => {
 
         store.actions.showDocuments();
         expect(store.actions.submitCommandLine('paste')).toBe('Paste is not available right now');
+    });
+
+    it('cut keeps the shapes when the clipboard cannot be written', async () => {
+        const { store, document, systemClipboard } = storeWith(shapes[0]);
+
+        vi.spyOn(systemClipboard, 'writeText').mockRejectedValue(new Error('Denied'));
+        store.actions.runCommand(CutCommand);
+        await settle();
+
+        expect(document().shapesIds).toHaveLength(1);
+        expect(store.state.notifications.map(({ message }) => message)).toEqual([
+            'The clipboard could not be written. Press Ctrl/Cmd+X.'
+        ]);
+    });
+
+    it('paste says so when the editor got busy before the clipboard answered', async () => {
+        const { store, document } = storeWith(shapes[0]);
+
+        store.actions.runCommand(CopyCommand);
+        await settle();
+        store.actions.runCommand(PasteCommand);
+        store.actions.showDocuments();
+        await settle();
+
+        expect(document().shapesIds).toHaveLength(1);
+        expect(store.state.notifications.map(({ message }) => message)).toEqual([
+            'Nothing was pasted, as the editor was busy. Paste again.'
+        ]);
     });
 
     it('paste reports a clipboard without shapes, or one it cannot read', async () => {

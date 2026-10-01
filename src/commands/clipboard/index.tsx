@@ -1,23 +1,6 @@
 import { Command } from 'src/app/types';
-import { Context } from '../../app';
 import { isShapeLocked } from 'src/app/utils';
 import { takesEditorInput } from 'src/events/input';
-
-export const copySelection = ({ actions, effects }: Context) => {
-    const text = actions.copySelection();
-
-    if (text !== null) {
-        void effects.clipboard.copy(text);
-    }
-};
-
-export const cutSelection = ({ actions, effects }: Context) => {
-    const text = actions.cutSelection();
-
-    if (text !== null) {
-        void effects.clipboard.copy(text);
-    }
-};
 
 export const CopyCommand: Command = {
     id: 'copy',
@@ -29,12 +12,17 @@ export const CopyCommand: Command = {
         name: 'content_copy',
         size: 24
     },
-    regex: /(?<toolCode>copy)\('(?<shapeName>\w+)'\)/,
     shortcut: 'mod+c',
     clipboardEvent: 'copy',
     canExecute: ({ state }) =>
         takesEditorInput(state) && state.currentDocument?.selectedShapesIds.length > 0,
-    execute: copySelection
+    execute: ({ actions, effects }) => {
+        const text = actions.copySelection();
+
+        if (text !== null) {
+            void effects.clipboard.copy(text);
+        }
+    }
 };
 
 export const CutCommand: Command = {
@@ -47,7 +35,6 @@ export const CutCommand: Command = {
         name: 'content_cut',
         size: 24
     },
-    regex: /(?<toolCode>cut)\('(?<shapeName>\w+)'\)/,
     shortcut: 'mod+x',
     clipboardEvent: 'cut',
     canExecute: ({ state }) =>
@@ -55,7 +42,13 @@ export const CutCommand: Command = {
         state.currentDocument?.selectedShapesIds.some(
             (id) => !isShapeLocked(state.currentDocument, id)
         ),
-    execute: cutSelection
+    execute: ({ actions, effects }) => {
+        const cut = actions.selectionToCut();
+
+        if (cut) {
+            void effects.clipboard.cut(cut);
+        }
+    }
 };
 
 export const PasteCommand: Command = {
@@ -68,7 +61,6 @@ export const PasteCommand: Command = {
         name: 'content_paste',
         size: 24
     },
-    regex: /(?<toolCode>paste)\(\)/,
     shortcut: 'mod+v',
     clipboardEvent: 'paste',
     canExecute: ({ state }) => takesEditorInput(state),

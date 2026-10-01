@@ -2,6 +2,9 @@ import type { Shape, ShapeInput } from './types';
 import { shapeGeometry } from './utils';
 import { readCopiedShape } from './services/documentStorage';
 
+/** What a paste did: added shapes, found none in the text, or waited for the editor. */
+export type PasteResult = 'pasted' | 'noShapes' | 'notNow';
+
 /** Marks clipboard text as shapes copied from the editor. */
 const CLIPBOARD_FORMAT = 'reactor/shapes';
 

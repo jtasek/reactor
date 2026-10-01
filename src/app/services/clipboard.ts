@@ -1,20 +1,35 @@
+import type { PasteResult } from '../clipboard';
+
 /** The browser's asynchronous clipboard, which commands use outside a clipboard event. */
 export type SystemClipboard = Pick<Clipboard, 'readText' | 'writeText'>;
 
 /** A clipboard event's data, which commands use while the event runs them. */
 export type ClipboardEventData = Pick<DataTransfer, 'getData' | 'setData'>;
 
+/** Shapes to cut: their clipboard text, and their ids to remove once it is copied. */
+export interface Cut {
+    text: string;
+    shapeIds: string[];
+}
+
 /** The root actions that apply what the clipboard answers. */
 interface ClipboardActions {
-    pasteShapes: (text: string) => boolean;
+    pasteShapes: (text: string) => PasteResult;
+    removeShapes: (shapeIds: string[]) => void;
     displayError: (message: string) => void;
 }
 
+const PASTE_ERRORS: Record<Exclude<PasteResult, 'pasted'>, string> = {
+    noShapes: 'The clipboard holds no shapes to paste.',
+    notNow: 'Nothing was pasted, as the editor was busy. Paste again.'
+};
+
 /**
- * Copies and pastes for the commands. Run by a clipboard event, as the copy, cut
- * and paste shortcuts are, a command uses the event's data at once. Otherwise it
- * uses the asynchronous clipboard, and a paste is applied through the root
- * actions `connect` gives once startup has run.
+ * Copies, cuts and pastes for the commands. Run by a clipboard event, as their
+ * shortcuts are, a command uses the event's data at once. Otherwise it uses the
+ * asynchronous clipboard and applies what it answers through the root actions
+ * `connect` gives once startup has run; a cut removes its shapes only once the
+ * clipboard holds them.
  */
 export function createClipboard(system: SystemClipboard | undefined) {
     let actions: ClipboardActions | undefined;
@@ -22,9 +37,30 @@ export function createClipboard(system: SystemClipboard | undefined) {
     // Pages served over plain HTTP, other than localhost, have no clipboard.
     const unavailable = () => Promise.reject(new Error('The clipboard is unavailable'));
 
+    /** Puts `text` on the clipboard; returns whether it is there. */
+    const write = async (text: string, keys: string) => {
+        if (eventData) {
+            eventData.setData('text/plain', text);
+
+            return true;
+        }
+
+        try {
+            await (system ? system.writeText(text) : unavailable());
+
+            return true;
+        } catch {
+            actions?.displayError(`The clipboard could not be written. Press ${keys}.`);
+
+            return false;
+        }
+    };
+
     const apply = (text: string) => {
-        if (actions && !actions.pasteShapes(text)) {
-            actions.displayError('The clipboard holds no shapes to paste.');
+        const result = actions?.pasteShapes(text);
+
+        if (actions && result && result !== 'pasted') {
+            actions.displayError(PASTE_ERRORS[result]);
         }
     };
 
@@ -45,16 +81,12 @@ export function createClipboard(system: SystemClipboard | undefined) {
         },
 
         async copy(text: string) {
-            if (eventData) {
-                eventData.setData('text/plain', text);
+            await write(text, 'Ctrl/Cmd+C');
+        },
 
-                return;
-            }
-
-            try {
-                await (system ? system.writeText(text) : unavailable());
-            } catch {
-                actions?.displayError('The clipboard could not be written. Press Ctrl/Cmd+C.');
+        async cut({ text, shapeIds }: Cut) {
+            if (await write(text, 'Ctrl/Cmd+X')) {
+                actions?.removeShapes(shapeIds);
             }
         },
 
