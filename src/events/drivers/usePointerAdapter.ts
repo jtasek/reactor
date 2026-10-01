@@ -5,8 +5,7 @@ import type {
     PointerEventHandler,
     RefObject,
     SyntheticEvent,
-    TouchEvent,
-    WheelEvent
+    TouchEvent
 } from 'react';
 import { clientToSurface, getHandleTarget, screenDeltaToSurface, screenToCanvas } from './helpers';
 import { useActions, useCamera, useControls, useLog } from 'src/app/hooks';
@@ -47,8 +46,12 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
             return;
         }
 
-        actions.tools.panCamera({ dx, dy });
-    }, [actions]);
+        const delta = screenDeltaToSurface({ x: dx, y: dy }, svgRef?.current ?? null);
+
+        if (delta) {
+            actions.tools.panCamera({ dx: delta.x, dy: delta.y });
+        }
+    }, [actions, svgRef]);
 
     const schedulePan = useCallback(
         (dx: number, dy: number) => {
@@ -218,14 +221,20 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
     };
 
     const handleMouseWheel = useCallback(
-        (event: WheelEvent<SVGSVGElement>) => {
+        (event: WheelEvent) => {
+            // React's wheel listeners are passive. Cancel on the surface's native
+            // listener so trackpad panning cannot navigate browser history.
+            if (event.cancelable) {
+                event.preventDefault();
+            }
+
             log('handleMouseWheel', event.deltaX, event.deltaY);
 
             if (contextMenu.visible) {
                 return;
             }
 
-            const svgEl = getSvgElement(event);
+            const svgEl = svgRef?.current;
 
             if (!svgEl) {
                 return;
@@ -248,17 +257,24 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
                 return;
             }
 
-            const delta = screenDeltaToSurface({ x: -event.deltaX, y: -event.deltaY }, svgEl);
-
-            if (!delta) {
+            if (!Number.isFinite(event.deltaX) || !Number.isFinite(event.deltaY)) {
                 return;
             }
 
-            // Scroll-wheel pan: scrolling moves the content opposite the delta.
-            schedulePan(delta.x, delta.y);
+            // Collect screen deltas here; read the SVG matrix once in the frame,
+            // instead of forcing a layout read for every trackpad event.
+            schedulePan(-event.deltaX, -event.deltaY);
         },
-        [log, actions, contextMenu.visible, getSvgElement, schedulePan, flushPan]
+        [log, actions, contextMenu.visible, svgRef, schedulePan, flushPan]
     );
+
+    useEffect(() => {
+        const svgEl = svgRef?.current;
+
+        svgEl?.addEventListener('wheel', handleMouseWheel, { passive: false });
+
+        return () => svgEl?.removeEventListener('wheel', handleMouseWheel);
+    }, [svgRef, handleMouseWheel]);
 
     const handleContextMenu = useCallback(
         (event: MouseEvent<SVGSVGElement>) => {
@@ -271,7 +287,6 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
 
     return {
         handleContextMenu,
-        handleMouseWheel,
         handlePointerCancel: handlePointerInterrupted,
         handleLostPointerCapture: handlePointerInterrupted,
         handlePointerDown,

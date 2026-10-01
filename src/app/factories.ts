@@ -211,7 +211,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         config: {
             version: '1.0',
             autoSave: true,
-            debugMode: true
+            debugMode: false
         },
         currentDocumentId: 'document-1',
         currentDocument,

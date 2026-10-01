@@ -17,6 +17,83 @@ test('slider zoom preserves a panned camera position', async ({ page }) => {
     await expect(camera).toHaveAttribute('transform', 'translate(-40,-80) scale(1.1)');
 });
 
+test('canvas wheel gestures cancel the browser default action', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page.locator('html')).toHaveCSS('overscroll-behavior', 'none');
+
+    const result = await page.locator('svg#surface').evaluate((surface) => {
+        const event = new WheelEvent('wheel', {
+            bubbles: true,
+            cancelable: true,
+            deltaX: 100
+        });
+
+        return {
+            dispatchResult: surface.dispatchEvent(event),
+            defaultPrevented: event.defaultPrevented
+        };
+    });
+
+    expect(result).toEqual({ dispatchResult: false, defaultPrevented: true });
+});
+
+test('pan bursts read the surface matrix once per frame and preserve every delta', async ({
+    page
+}) => {
+    await page.goto('/');
+
+    const surface = page.locator('svg#surface');
+
+    await expect(surface).toBeVisible();
+
+    const reads = await surface.evaluate(async (element) => {
+        const svg = element as SVGSVGElement;
+
+        svg.style.width = '600px';
+        svg.style.height = '400px';
+        svg.style.transform = 'translate(45px, 25px) scale(0.75)';
+        svg.style.transformOrigin = '0 0';
+        svg.setAttribute('viewBox', '0 0 300 200');
+
+        const getScreenCTM = svg.getScreenCTM;
+        let count = 0;
+
+        svg.getScreenCTM = () => {
+            count++;
+
+            return getScreenCTM.call(svg);
+        };
+
+        try {
+            for (let index = 0; index < 50; index++) {
+                svg.dispatchEvent(
+                    new WheelEvent('wheel', {
+                        deltaX: 6,
+                        deltaY: 3,
+                        bubbles: true,
+                        cancelable: true
+                    })
+                );
+            }
+
+            const beforeFrame = count;
+
+            await new Promise(requestAnimationFrame);
+
+            return { beforeFrame, afterFrame: count };
+        } finally {
+            svg.getScreenCTM = getScreenCTM;
+        }
+    });
+
+    expect(reads).toEqual({ beforeFrame: 0, afterFrame: 1 });
+    await expect(surface.locator('#camera')).toHaveAttribute(
+        'transform',
+        'translate(-200,-100) scale(1)'
+    );
+});
+
 test('rapid pinch events anchor correctly on an offset and scaled SVG', async ({ page }) => {
     await page.goto('/');
 

@@ -379,9 +379,8 @@ Step 2 partly done: unused imports and parameters are removed, `any` types
 replaced (the tool registry holds components as `FC<never>`, and a shape's
 component is read as taking that shape's fields), debug logging moved off
 `console.log`, and the keyboard driver lists its hook dependencies. The lint
-baseline lists only the 11 remaining findings: a debug log in
-`usePreventNativePinchZoom.tsx`, and scaffolding kept until the styling work:
-stylesheet imports components do not use yet, and the empty clipboard driver.
+baseline lists only the 6 remaining findings, all scaffolding kept until the
+styling work: stylesheet imports components do not use yet.
 
 Step 3 done: the README covers requirements, getting started, the commands, server
 settings, using the editor (tools, shortcuts and input), saving, accounts, what is
