@@ -2,8 +2,9 @@ import { useCallback } from 'react';
 import { useActions, useLog } from '../../app/hooks';
 import { isTextEntry } from './helpers';
 
-const keys = ({ altKey, ctrlKey, key, metaKey, shiftKey }: KeyboardEvent) => ({
+const keys = ({ altKey, code, ctrlKey, key, metaKey, shiftKey }: KeyboardEvent) => ({
     altKey,
+    code,
     ctrlKey,
     key,
     metaKey,

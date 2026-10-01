@@ -257,6 +257,27 @@ Examples worth modelling new tools on:
   (rotated) bounds overlap it (authoritative: sets `selected` true/false), and the selection
   persists on release. A click without a drag clears the selection.
 
+## Groups and layers
+
+A group is one object. Pressing or boxing any of its shapes selects it, which selects all
+of its shapes (`withTheirGroups`, `src/app/membership.ts`), so moving, deleting, cloning
+and copying act on all of it. A group counts as selected (`selectedGroupsIdsOf`) when every
+shown shape of it is; it then draws one box with handles (`GroupSelection`) turned by its
+own `rotation`, and its shapes draw none. Its frame (`groupFrame`) is the box around its
+shapes as drawn, in the group's turned frame. Rotating turns every shape about the group's
+center; resizing scales them in proportion (`rotateGroup`, `resizeGroup`, through the
+`rotatingGroup` and `resizingGroup` gestures). Double-clicking a shape of a selected group
+enters it (`enteredGroupId`): its shapes are then pressed or boxed one by one until a press
+outside. Shapes of selected groups are found once, in `Shapes`, so a selection change does
+not re-render every shape.
+
+A shape is in one group and on one layer at most: Group and Layer take the selected shapes
+out of their groups or layers first, Group needs two shapes, and a group these commands
+leave with one shape, or a layer left empty, is removed. Deleting one shape keeps its
+groups, so member lists merge as collaboration expects; deleting or cutting a selection
+(`removeShapes`) removes the groups it empties. Commands act on
+`editableSelectedShapesIds`: shown, selected and not locked. Layers only show and hide.
+
 ## Bounding boxes & selection
 
 - `Shape` (`src/app/types.ts`) is a discriminated union on `type`; each variant carries only
@@ -289,6 +310,9 @@ Examples worth modelling new tools on:
 
 ## Conventions
 
+- **`useAppState(select)`** runs `select` after overmind-react starts tracking the component;
+  overmind-react's own selector runs before, which subscribes the component rendered before
+  it instead, so a selector computing a value never re-rendered its component.
 - **Access state only through hooks** in `src/app/hooks.ts` (`useAppState`, `useActions`,
   `useEffects`, domain hooks like `useShapes`, `useCurrentDocument`, `useCamera`). Add new
   domain hooks here rather than ad-hoc `useAppState` selectors in components.

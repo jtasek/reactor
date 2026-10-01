@@ -8,6 +8,7 @@ import {
     GroupCommand,
     LayerCommand,
     PasteCommand,
+    RemoveFromGroupCommand,
     UngroupCommand,
     UnlayerCommand,
     ZoomInCommand,
@@ -71,6 +72,7 @@ function registerCommands() {
     registerCommand(PasteCommand);
     registerCommand(GroupCommand);
     registerCommand(UngroupCommand);
+    registerCommand(RemoveFromGroupCommand);
     registerCommand(LayerCommand);
     registerCommand(UnlayerCommand);
     registerCommand(ZoomInCommand);

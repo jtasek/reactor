@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { drawRect, openEditor, shapes } from './support/editor';
+import { drawRect, openEditor, pointer, shapes } from './support/editor';
 
 test('command bar buttons act on the current selection', async ({ page }) => {
     await openEditor(page);
@@ -16,11 +16,11 @@ test('command bar buttons act on the current selection', async ({ page }) => {
     await expect(shapes(page)).toHaveCount(2);
     await expect(shapes(page).locator('rect[data-cy][x="110"]')).toHaveCount(1);
 
-    // The clone is unselected, so Delete removes only the original.
+    // The clone replaces the selection, so Delete removes only the clone.
     await remove.click();
 
     await expect(shapes(page)).toHaveCount(1);
-    await expect(shapes(page).locator('rect[data-cy]')).toHaveAttribute('x', '110');
+    await expect(shapes(page).locator('rect[data-cy]')).toHaveAttribute('x', '100');
     await expect(remove).toBeDisabled();
 });
 
@@ -59,4 +59,68 @@ test('the command line runs a command on Enter and reports what it cannot run', 
 
     await expect(message).toHaveText('Delete is not available right now');
     await expect(input).toHaveValue('delete');
+});
+
+test('a group is pressed, moved and ungrouped as one', async ({ page }) => {
+    await openEditor(page);
+    await drawRect(page, { x: 100, y: 100 }, { x: 140, y: 140 });
+    await drawRect(page, { x: 200, y: 100 }, { x: 240, y: 140 });
+
+    // Box both, group them, then press one to select and move the whole group.
+    await pointer(page, 'pointerdown', { x: 80, y: 80 });
+    await pointer(page, 'pointermove', { x: 260, y: 160 });
+    await pointer(page, 'pointerup', { x: 260, y: 160 });
+    await page.keyboard.press('ControlOrMeta+g');
+    await pointer(page, 'pointerdown', { x: 400, y: 400 });
+    await pointer(page, 'pointerup', { x: 400, y: 400 });
+
+    await pointer(page, 'pointerdown', { x: 120, y: 120 });
+    await pointer(page, 'pointermove', { x: 120, y: 170 });
+    await pointer(page, 'pointerup', { x: 120, y: 170 });
+
+    const rects = shapes(page).locator('rect[data-cy]');
+
+    await expect(rects.nth(0)).toHaveAttribute('y', '150');
+    await expect(rects.nth(1)).toHaveAttribute('y', '150');
+
+    await page.keyboard.press('ControlOrMeta+Shift+g');
+    await pointer(page, 'pointerdown', { x: 400, y: 400 });
+    await pointer(page, 'pointerup', { x: 400, y: 400 });
+    await pointer(page, 'pointerdown', { x: 120, y: 170 });
+    await pointer(page, 'pointermove', { x: 120, y: 200 });
+    await pointer(page, 'pointerup', { x: 120, y: 200 });
+
+    await expect(rects.nth(0)).toHaveAttribute('y', '180');
+    await expect(rects.nth(1)).toHaveAttribute('y', '150');
+});
+
+test('a selected group shows one box with handles, and turns as one', async ({ page }) => {
+    await openEditor(page);
+    await drawRect(page, { x: 100, y: 100 }, { x: 140, y: 140 });
+    await drawRect(page, { x: 200, y: 100 }, { x: 240, y: 140 });
+    await pointer(page, 'pointerdown', { x: 80, y: 80 });
+    await pointer(page, 'pointermove', { x: 260, y: 160 });
+    await pointer(page, 'pointerup', { x: 260, y: 160 });
+    await page.keyboard.press('ControlOrMeta+g');
+
+    const groupHandles = page.locator('svg#surface [data-handle][data-group-id]');
+
+    // Eight resize handles and a rotate handle, for the group and none for its shapes.
+    await expect(groupHandles).toHaveCount(9);
+    await expect(page.locator('svg#surface [data-handle][data-shape-id]')).toHaveCount(0);
+
+    // Drag the rotate handle, above the box's middle at (170, 76), to the right of its center.
+    await pointer(page, 'pointerdown', {
+        x: 170,
+        y: 76,
+        target: '[data-group-id][data-type="rotate"]'
+    });
+    await pointer(page, 'pointermove', { x: 260, y: 120 });
+    await pointer(page, 'pointerup', { x: 260, y: 120 });
+
+    const rects = shapes(page).locator('rect[data-cy]');
+
+    // The left square's center (120, 120) turns 90° about (170, 120) to (170, 70).
+    await expect(rects.nth(0)).toHaveAttribute('x', '150');
+    await expect(rects.nth(0)).toHaveAttribute('y', '50');
 });

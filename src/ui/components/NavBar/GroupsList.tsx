@@ -1,10 +1,11 @@
 import React from 'react';
 import { NavBarList } from './NavBarList';
 import { NavBarListItem } from './NavBarListItem';
-import { useActions, useCurrentDocument, useGroup } from 'src/app/hooks';
+import { useActions, useCurrentDocument, useGroup, useGroupSelected } from 'src/app/hooks';
 
 const GroupListItem = ({ groupId }: { groupId: string }) => {
     const group = useGroup(groupId);
+    const selected = useGroupSelected(groupId);
     const { toggleGroupSelected, toggleGroupLocked, toggleGroupVisible } = useActions();
 
     return (
@@ -12,7 +13,7 @@ const GroupListItem = ({ groupId }: { groupId: string }) => {
             key={groupId}
             id={groupId}
             name={group.name}
-            selected={group.selected}
+            selected={selected}
             locked={group.locked}
             visible={group.visible}
             onClick={toggleGroupSelected}

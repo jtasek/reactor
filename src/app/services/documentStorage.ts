@@ -185,7 +185,8 @@ function readMember(value: unknown): MemberData {
     return {
         ...entity(value),
         shapesIds: list(m.shapesIds, id),
-        ...(m.parentId === undefined ? {} : { parentId: id(m.parentId) })
+        ...(m.parentId === undefined ? {} : { parentId: id(m.parentId) }),
+        ...(m.rotation === undefined ? {} : { rotation: number(m.rotation) })
     };
 }
 
@@ -254,6 +255,35 @@ export function readShapeGeometry(value: unknown) {
         default:
             throw new Error('Unsupported shape type');
     }
+}
+
+/**
+ * Reads a copied group: its name, rotation and the positions of its shapes among
+ * `shapeCount` copied shapes, two or more, each in no other group of `taken`.
+ */
+export function readCopiedGroup(value: unknown, shapeCount: number, taken: Set<number>) {
+    const g = record(value);
+    const members = list(g.members, (member) => {
+        const index = number(member, 0);
+
+        if (!Number.isInteger(index) || index >= shapeCount || taken.has(index)) {
+            throw new Error('Invalid group member');
+        }
+
+        taken.add(index);
+
+        return index;
+    });
+
+    if (members.length < 2) {
+        throw new Error('A group needs two shapes');
+    }
+
+    return {
+        name: text(g.name),
+        rotation: g.rotation === undefined ? 0 : number(g.rotation),
+        members
+    };
 }
 
 /** Reads a copied shape: what it draws, its name, description and rotation. */

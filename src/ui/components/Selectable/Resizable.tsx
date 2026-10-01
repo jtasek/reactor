@@ -7,6 +7,7 @@ import { Props } from './Selectable';
 import { getShapeBounds } from '../../../app/utils';
 import { resizeCursor } from '../../../app/geometry';
 import { useCameraScale, usePointer } from '../../../app/hooks';
+import type { HandleOwner } from '../../../events/types';
 
 /** Sizes on screen, in pixels, whatever the zoom. */
 const HANDLE_RADIUS = 5;
@@ -43,28 +44,21 @@ function calcBoundingPoints(box: Box) {
     };
 }
 
-export const Resizable: FC<Props> = ({ shape }) => {
-    const { gesture } = usePointer();
+interface HandlesProps {
+    box: Box;
+    rotation: number;
+    owner: HandleOwner;
+    activeHandle?: ResizeHandlerType;
+    rotateActive: boolean;
+}
+
+/** Resize and rotate handles around `box`, drawn in its turned frame. */
+export const Handles: FC<HandlesProps> = ({ box, rotation, owner, activeHandle, rotateActive }) => {
     const scale = useCameraScale();
-    const activeHandle =
-        gesture.kind === 'resizing' && gesture.shapeId === shape.id ? gesture.handle : undefined;
-    const rotateActive = gesture.kind === 'rotating' && gesture.shapeId === shape.id;
-
-    if (!shape.selected) {
-        return null;
-    }
-
-    const box = getShapeBounds(shape);
-
-    if (!box?.topLeft || !box?.bottomRight) {
-        return null;
-    }
-
     const points = calcBoundingPoints(box);
     const { middleTop } = points;
 
     const rotatePosition = { x: middleTop.x, y: middleTop.y - ROTATE_HANDLE_OFFSET / scale };
-    const rotation = shape.rotation ?? 0;
     const badgePosition = { x: rotatePosition.x, y: rotatePosition.y - BADGE_OFFSET / scale };
     const size = HANDLE_RADIUS / scale;
     // Corners stay while either side is long enough to keep them apart; middle
@@ -90,10 +84,9 @@ export const Resizable: FC<Props> = ({ shape }) => {
                 y2={rotatePosition.y}
             />
             <RotateHandle
-                key={`rotate + ${shape.id}`}
                 active={rotateActive}
                 position={rotatePosition}
-                shapeId={shape.id}
+                owner={owner}
                 size={size}
             />
             {rotateActive && (
@@ -111,10 +104,37 @@ export const Resizable: FC<Props> = ({ shape }) => {
                     cursor={resizeCursor(handlerType, rotation)}
                     handlerType={handlerType}
                     position={points[handlerType]}
-                    shapeId={shape.id}
+                    owner={owner}
                     size={size}
                 />
             ))}
         </>
+    );
+};
+
+export const Resizable: FC<Props> = ({ shape }) => {
+    const { gesture } = usePointer();
+    const activeHandle =
+        gesture.kind === 'resizing' && gesture.shapeId === shape.id ? gesture.handle : undefined;
+    const rotateActive = gesture.kind === 'rotating' && gesture.shapeId === shape.id;
+
+    if (!shape.selected) {
+        return null;
+    }
+
+    const box = getShapeBounds(shape);
+
+    if (!box?.topLeft || !box?.bottomRight) {
+        return null;
+    }
+
+    return (
+        <Handles
+            box={box}
+            rotation={shape.rotation ?? 0}
+            owner={{ shapeId: shape.id }}
+            activeHandle={activeHandle}
+            rotateActive={rotateActive}
+        />
     );
 };

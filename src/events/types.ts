@@ -1,4 +1,5 @@
 import { Point, ResizeHandlerType, Shape, Size } from '../app/types';
+import type { GroupFrame } from '../app/membership';
 
 /** Selection flags captured when a gesture starts, restored if it is canceled. */
 export type SelectionSnapshot = Record<string, boolean>;
@@ -42,13 +43,30 @@ export type Gesture =
                     shapes: ShapesSnapshot;
                 }
               | { kind: 'rotating'; shapeId: string; shapes: ShapesSnapshot }
+              | {
+                    kind: 'resizingGroup';
+                    groupId: string;
+                    handle: ResizeHandlerType;
+                    shapes: ShapesSnapshot;
+                    /** The group's box and rotation when the drag began. */
+                    frame: GroupFrame;
+                }
+              | {
+                    kind: 'rotatingGroup';
+                    groupId: string;
+                    shapes: ShapesSnapshot;
+                    frame: GroupFrame;
+                }
           ));
 
 /** A touch contact in surface-local SVG units. */
 export type TouchContact = { id: number; point: Point };
 
+/** What a handle resizes or rotates: a shape, or a group as one. */
+export type HandleOwner = { shapeId: string } | { groupId: string };
+
 /** A resize or rotate handle under the pointer when a gesture starts. */
-export type HandleTarget = { shapeId: string; type: ResizeHandlerType | 'rotate' };
+export type HandleTarget = { type: ResizeHandlerType | 'rotate' } & HandleOwner;
 
 export interface Pointer {
     background: boolean;

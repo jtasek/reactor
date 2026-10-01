@@ -79,17 +79,18 @@ const isResizeHandlerType = (type: string): type is ResizeHandlerType =>
 export function getHandleTarget(target: EventTarget | null): HandleTarget | undefined {
     const handle = target instanceof Element ? target.closest('[data-handle]') : null;
     const shapeId = handle?.getAttribute('data-shape-id');
+    const groupId = handle?.getAttribute('data-group-id');
     const type = handle?.getAttribute('data-type');
 
-    if (!shapeId) {
+    if (!(type === 'rotate' || (type && isResizeHandlerType(type)))) {
         return undefined;
     }
 
-    if (type === 'rotate' || (type && isResizeHandlerType(type))) {
-        return { shapeId, type };
+    if (groupId) {
+        return { groupId, type };
     }
 
-    return undefined;
+    return shapeId ? { shapeId, type } : undefined;
 }
 
 // Input types whose key presses do not enter text, so shortcuts still apply.

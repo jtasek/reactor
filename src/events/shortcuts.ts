@@ -1,5 +1,6 @@
 /** The parts of a key press that shortcuts are matched against. */
-export type KeyPress = Pick<KeyboardEvent, 'key' | 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'>;
+export type KeyPress = Pick<KeyboardEvent, 'key' | 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'> &
+    Partial<Pick<KeyboardEvent, 'code'>>;
 
 function parseBinding(binding: string) {
     const lower = binding.trim().toLowerCase();
@@ -18,7 +19,12 @@ function parseBinding(binding: string) {
 function matchesBinding(binding: string, press: KeyPress): boolean {
     const { key, modifiers } = parseBinding(binding);
 
-    if (press.key.toLowerCase() !== key) {
+    // With Alt, a letter also matches its key, as Alt changes the character it types
+    // on a Mac. Without it, only the character counts, so every layout keeps its letters.
+    const letterKey =
+        press.altKey && /^[a-z]$/.test(key) && press.code === `Key${key.toUpperCase()}`;
+
+    if (press.key.toLowerCase() !== key && !letterKey) {
         return false;
     }
 

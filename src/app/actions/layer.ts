@@ -1,5 +1,6 @@
-import { ActionWithParam, Application, Layer } from '../types';
+import { Action, ActionWithParam, Application, Layer } from '../types';
 import { createLayer } from '../factories';
+import { LAYER_MINIMUM, editableSelectedShapesIds, removeFromContainers } from '../membership';
 
 const getLayer = ({ currentDocument }: Application, layerId: string) => {
     const layer = currentDocument.layers[layerId];
@@ -34,6 +35,33 @@ export const cloneLayer: ActionWithParam<string> = ({ state, effects }, layerId)
 
 export const removeLayer: ActionWithParam<string> = ({ state }, layerId) => {
     deleteLayer(state, layerId);
+};
+
+/**
+ * Moves the selected shapes the commands may change into a new layer, out of
+ * their layers, as a shape is on one layer at most. Layers left empty are removed.
+ */
+export const layerSelection: Action = ({ state }) => {
+    const { currentDocument } = state;
+    const shapesIds = editableSelectedShapesIds(currentDocument);
+
+    if (shapesIds.length < LAYER_MINIMUM) {
+        return;
+    }
+
+    removeFromContainers(currentDocument.layers, shapesIds, LAYER_MINIMUM);
+    setLayer(state, createLayer({ shapesIds }));
+};
+
+/** Takes the selected shapes the commands may change off their layers, removing layers left empty. */
+export const unlayerSelection: Action = ({ state }) => {
+    const { currentDocument } = state;
+
+    removeFromContainers(
+        currentDocument.layers,
+        editableSelectedShapesIds(currentDocument),
+        LAYER_MINIMUM
+    );
 };
 
 export const toggleLayerSelected: ActionWithParam<string> = ({ state }, layerId) => {

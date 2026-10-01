@@ -122,6 +122,7 @@ describe('shape visibility policy', () => {
         const { store, addRect, document } = setup();
         const id = addRect(0, true);
 
+        addRect(100, true);
         store.actions.runCommand(GroupCommand);
         store.actions.runCommand(LayerCommand);
 

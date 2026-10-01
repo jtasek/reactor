@@ -1,6 +1,7 @@
 import { derived } from 'overmind';
 import { Application, Document } from '../types';
 import { isShapeVisible } from '../utils';
+import { selectedGroupsIdsOf } from '../membership';
 
 export const commandsIds = derived(({ commands }: Application) => {
     return Object.keys(commands);
@@ -14,11 +15,11 @@ export const groupsIds = derived((currentDocument: Document) => {
     return Object.keys(currentDocument.groups);
 });
 
-export const selectedGroupsIds = derived((currentDocument: Document) => {
-    return Object.values(currentDocument.groups)
-        .filter((group) => group.selected)
-        .map((group) => group.id);
-});
+/** The groups selected as one: see `selectedGroupsIdsOf`. */
+export const selectedGroupsIds = derived(
+    (currentDocument: Document, { enteredGroupId }: Application) =>
+        selectedGroupsIdsOf(currentDocument, enteredGroupId)
+);
 
 export const layersIds = derived((currentDocument: Document) => {
     return Object.keys(currentDocument.layers);

@@ -776,6 +776,31 @@ describe('collaboration', () => {
         });
     });
 
+    it('cancels a group drag without undoing another copy’s rotation of the group', async () => {
+        const copies = await createCopies(2, (store) => {
+            store.actions.addShape(rectangle());
+            store.actions.addShape(rectangle(40));
+            store.actions.addGroup({
+                id: 'group',
+                shapesIds: [...store.state.currentDocument.shapesIds]
+            });
+        });
+        const [a, b] = copies;
+        const { events } = a.store.actions;
+
+        events.beginGesture({
+            pointerId: 1,
+            position: { x: 60, y: 10 },
+            handle: { groupId: 'group', type: 'bottomRight' }
+        });
+        events.movePointer({ pointerId: 1, position: { x: 90, y: 20 } });
+        edit(b, (actions) => actions.updateGroup({ id: 'group', rotation: 45 }));
+        deliver(a);
+        events.cancelGesture();
+
+        expect(shownDocument(a).groups.group.rotation).toBe(45);
+    });
+
     it('cancels a drag without bringing back a shape another copy deleted during it', async () => {
         const copies = await createCopies(2, (store) => {
             store.actions.addShape(rectangle());

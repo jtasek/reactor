@@ -1,6 +1,6 @@
 import { Command } from 'src/app/types';
 import { zoomIn, zoomOut, zoomReset } from './actions';
-import { MAX_SCALE, MIN_SCALE } from 'src/app/camera';
+import { DEFAULT_SCALE, MAX_SCALE, MIN_SCALE } from 'src/app/camera';
 
 export const ZoomInCommand: Command = {
     id: 'zoom-in',
@@ -46,6 +46,6 @@ export const ZoomResetCommand: Command = {
     },
     regex: /(?<toolCode>zoomreset)\((?<factor>[\d]+)\)/,
     shortcut: '0',
-    canExecute: () => true,
+    canExecute: ({ state }) => state.currentDocument.camera.scale !== DEFAULT_SCALE,
     execute: zoomReset
 };

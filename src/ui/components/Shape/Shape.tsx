@@ -9,9 +9,11 @@ import { useActions, useAppState, useShape, useShapeLocked, useShapeVisible } fr
 
 interface Props {
     shapeId: string;
+    /** In a group selected as one, which draws the selection instead. */
+    inSelectedGroup: boolean;
 }
 
-export const Shape = memo(({ shapeId }: Props) => {
+export const Shape = memo(({ shapeId, inSelectedGroup }: Props) => {
     const shape = useShape(shapeId);
     const visible = useShapeVisible(shapeId);
     const locked = useShapeLocked(shapeId);
@@ -90,7 +92,7 @@ export const Shape = memo(({ shapeId }: Props) => {
             {shape.active && !shape.selected && (
                 <Active key={`active-${shape.type}-${shape.id}`} shape={shape} />
             )}
-            {shape.selected && (
+            {shape.selected && !inSelectedGroup && (
                 <>
                     <Selectable key={`selectable-${shape.type}-${shape.id}`} shape={shape} />
                     {/* Locked shapes stay selectable but cannot be resized or rotated. */}

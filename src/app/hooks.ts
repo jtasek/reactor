@@ -11,11 +11,21 @@ import { useCallback, useLayoutEffect, useReducer } from 'react';
 import { isShapeLocked, isShapeVisible } from './utils';
 import type { Command } from './types';
 import { takesEditorInput } from '../events/input';
+import { groupFrame, selectedGroupsIdsOf } from './membership';
 
 export const useActions = createActionsHook<Context>();
 export const useEffects = createEffectsHook<Context>();
 export const useReaction = createReactionHook<Context>();
-export const useAppState = createStateHook<Context>();
+const useRootState = createStateHook<Context>();
+
+/**
+ * What `select` reads from the state. overmind-react runs a selector before
+ * it starts tracking the component, which subscribes whichever component rendered
+ * before to what the selector reads; selecting here, after it, subscribes this one.
+ */
+export const useAppState = <T>(select: (state: Context['state']) => T): T => {
+    return select(useRootState());
+};
 
 export const useConfig = () => {
     return useAppState((state) => state.config);
@@ -157,15 +167,9 @@ export const useShapes = () => {
     return useCurrentDocument()?.shapes ?? [];
 };
 
-/**
- * Shape ids in draw order, copied so a render tracks the list rather than each id.
- * The current document is read after tracking starts, so replacing or switching
- * documents re-renders too.
- */
+/** Shape ids in draw order, copied so a render tracks the list rather than each id. */
 export const useShapesIds = () => {
-    const state = useAppState();
-
-    return json(state.currentDocument.shapesIds);
+    return useAppState((state) => json(state.currentDocument.shapesIds));
 };
 
 export const useRuler = (id: string) => {
@@ -178,6 +182,48 @@ export const useRulers = () => {
 
 export const useGroup = (id: string) => {
     return useCurrentDocument()?.groups[id];
+};
+
+/** The groups selected as one. */
+export const useSelectedGroupsIds = () => {
+    return useAppState((state) => selectedGroupsIdsOf(state.currentDocument, state.enteredGroupId));
+};
+
+/** Whether the group is selected as one. */
+export const useGroupSelected = (id: string) => {
+    return useAppState((state) =>
+        selectedGroupsIdsOf(state.currentDocument, state.enteredGroupId).includes(id)
+    );
+};
+
+/** Where a group is drawn: its box and rotation, none when no shape of it is shown. */
+export const useGroupFrame = (id: string) => {
+    return useAppState((state) => {
+        const group = state.currentDocument.groups[id];
+
+        return group ? groupFrame(state.currentDocument, group) : null;
+    });
+};
+
+/** Whether a group, or any of its shapes, is locked, so it cannot be resized or rotated. */
+export const useGroupLocked = (id: string) => {
+    return useAppState((state) => {
+        const document = state.currentDocument;
+        const group = document.groups[id];
+
+        return !group || group.shapesIds.some((shapeId) => isShapeLocked(document, shapeId));
+    });
+};
+
+/** The shapes of the groups selected as one, which draw one selection for them. */
+export const useShapesInSelectedGroupsIds = () => {
+    return useAppState((state) => {
+        const { groups } = state.currentDocument;
+
+        return selectedGroupsIdsOf(state.currentDocument, state.enteredGroupId).flatMap(
+            (id) => groups[id].shapesIds
+        );
+    });
 };
 
 export const useGroups = () => {
