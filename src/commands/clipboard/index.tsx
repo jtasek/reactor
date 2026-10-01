@@ -5,7 +5,7 @@ import { takesEditorInput } from 'src/events/input';
 export const CopyCommand: Command = {
     id: 'copy',
     name: 'Copy',
-    category: 'tools',
+    category: 'clipboard',
     description: 'Copy selected shapes',
     icon: {
         group: 'content',
@@ -28,7 +28,7 @@ export const CopyCommand: Command = {
 export const CutCommand: Command = {
     id: 'cut',
     name: 'Cut',
-    category: 'tools',
+    category: 'clipboard',
     description: 'Cut selected shapes',
     icon: {
         group: 'content',
@@ -54,7 +54,7 @@ export const CutCommand: Command = {
 export const PasteCommand: Command = {
     id: 'paste',
     name: 'Paste',
-    category: 'tools',
+    category: 'clipboard',
     description: 'Paste copied shapes',
     icon: {
         group: 'content',

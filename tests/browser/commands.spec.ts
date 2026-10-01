@@ -124,3 +124,23 @@ test('a selected group shows one box with handles, and turns as one', async ({ p
     await expect(rects.nth(0)).toHaveAttribute('x', '150');
     await expect(rects.nth(0)).toHaveAttribute('y', '50');
 });
+
+test('the command bar keeps copy, cut and paste in a group of their own', async ({ page }) => {
+    await openEditor(page);
+
+    const items = await page
+        .locator('button[title="Copy selected shapes"]')
+        .locator('xpath=ancestor::ul[1]/li')
+        .evaluateAll((elements) =>
+            elements.map((element) => element.querySelector('button')?.title ?? '|')
+        );
+    const copy = items.indexOf('Copy selected shapes');
+
+    expect(items.slice(copy - 1, copy + 4)).toEqual([
+        '|',
+        'Copy selected shapes',
+        'Cut selected shapes',
+        'Paste copied shapes',
+        '|'
+    ]);
+});
