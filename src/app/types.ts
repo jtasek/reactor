@@ -1,39 +1,8 @@
 import { Context } from './index';
 
-export enum Alignment {
-    Bottom = 'bottom',
-    Left = 'left',
-    Right = 'right',
-    Top = 'top'
-}
-
 export enum Orientation {
     Horizontal = 'horizontal',
     Vertical = 'vertical'
-}
-
-export enum Spacing {
-    SameHorizontal = 'sameHorizontal',
-    SameVertical = 'sameVertical'
-}
-
-export enum Sizing {
-    SameHeight = 'sameHeight',
-    SameSize = 'sameSize',
-    SameWidth = 'sameWidth'
-}
-
-export enum LinkType {
-    Aggregate = 'aggregate',
-    Compose = 'compose',
-    Inherit = 'inherit',
-    Refer = 'refer'
-}
-
-export enum MouseButton {
-    Left = 0,
-    Middle = 1,
-    Right = 2
 }
 
 export type Point = {
@@ -166,8 +135,6 @@ export interface Text extends ShapeBase {
 }
 
 export type Shape = Rectangle | Image | Circle | Ellipse | Line | Pen | Text;
-
-export type ShapeType = Shape['type'];
 
 type ShapeMetadata = Exclude<
     keyof ShapeBase,
@@ -317,10 +284,6 @@ export interface Provider {
     name: string;
     description?: string;
     data?: unknown;
-}
-
-export interface OnlineProvider extends Provider {
-    url: string;
 }
 
 export type NotificationType = 'info' | 'warn' | 'error';
