@@ -201,8 +201,10 @@ re-renders.** Components never mutate state directly.
   tabs' messages are taken only once loading is done; what they sent meanwhile is picked up
   from the database and by catching up.
 - **Events** (`src/events/`): pointer/keyboard/clipboard input. `drivers/` are React hooks
-  that translate DOM events into store actions — `useKeyboardDriver` is mounted in `Shell`
-  and `usePointerAdapter` in the canvas `Surface` (`src/ui/components/Surface/Surface.tsx`).
+  that translate DOM events into store actions — `useKeyboardDriver` and `useClipboardDriver`
+  are mounted in `Shell` and `usePointerAdapter` in the canvas `Surface`
+  (`src/ui/components/Surface/Surface.tsx`). Copied shapes are clipboard text in the format
+  of `src/app/clipboard.ts`, and a paste checks them with the readers saved documents use.
 - **Tools** (`src/tools/`): drawing/selection tools; tool state lives in the `tools` namespace.
 - **Renderers** (planned, not built yet; see Phase 9 in `REFACTOR_PLAN.md`): pluggable
   renderers in `src/app/renderers/` that turn a document into another format, such as JSON,

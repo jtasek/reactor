@@ -325,10 +325,16 @@ shape count and creation date, and opens, clones and deletes documents, asking
 before a delete. A new document takes the lowest unused `document-N` name, and a
 clone is named after its original. Shortcuts act only in the designer, so keys
 pressed on the documents page cannot change shapes that are not shown.
-Step 6 partly done: stale commented-out code and the unused `LoginBox`, which the
+Step 5: Ctrl/Cmd+C, X and V copy, cut and paste the selected shapes as text
+in an explicit format (`src/app/clipboard.ts`): what each shape draws, its name,
+description and rotation, without ids, draw order, locks or memberships. A paste
+is checked like a saved document, adds the shapes on top and selects them, and is
+offset like a clone where the first would cover a shape drawn the same way. Cut
+leaves locked shapes. Text fields, and text selected on the page, keep the
+browser's own clipboard. Step 6 partly done: stale commented-out code and the unused `LoginBox`, which the
 account page replaced, are removed; `LayerPaneltem.tsx` is `LayerPanelItem.tsx`,
 and the clipboard driver exports `useClipboardDriver`. Unused helpers are removed
-one by one as each is approved. Remaining: step 5, and the rest of step 6.
+one by one as each is approved. Remaining: the rest of step 6.
 
 Feature inventory:
 
@@ -336,13 +342,13 @@ Feature inventory:
   image and move tools; the delete, clone, group, ungroup, layer, unlayer and zoom
   commands, with shortcuts and the command line; the property panel; the
   documents page; the navigation bar, group and layer panels with hide and lock;
-  the context menu; saving in the browser and sharing between tabs; accounts,
+  the context menu; copy, cut and paste; saving in the browser and sharing between tabs; accounts,
   syncing with the server, and signing out.
 - Shown but not covered by tests: the minimap, rulers, data view, document info,
   overlay and stats panels.
 - Started, not working yet: the search box stores what is typed, but no list is
-  filtered (the `filtered*` derivations are not used); copy, cut and paste have an
-  empty driver; the image tool draws a placeholder picture.
+  filtered (the `filtered*` derivations are not used); the image tool draws a
+  placeholder picture.
 - Kept for later, not shown: the `Badge`, `Dialog`, `Cursor`, `Overlay` and
   `Switch` components, and the stylesheets components do not use yet.
 - Planned: components (Phase 10), plugins and renderers (Phase 9), image upload,

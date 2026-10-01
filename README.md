@@ -63,6 +63,7 @@ bar, side bar, panels and other parts of the editor.
 | `r`, `c`, `e`, `l`, `p`, `t`, `i` | Rectangle, circle, ellipse, line, pen, text and image tools |
 | Delete or Backspace | Delete the selection |
 | Ctrl/Cmd+D | Clone the selection |
+| Ctrl/Cmd+C, Ctrl/Cmd+X, Ctrl/Cmd+V | Copy, cut and paste the selection, also between documents and tabs |
 | Ctrl/Cmd+G, Ctrl/Cmd+Shift+G | Group and ungroup the selection |
 | `+` or `=`, `-`, `0` | Zoom in, zoom out, reset zoom |
 
@@ -175,7 +176,6 @@ the current pan position. Touchscreen pinch zooms the same way; see Input above.
 
 ## Not yet available
 
-- Copy, cut and paste
 - Uploading images: the image tool draws a placeholder picture
 - Moving documents made signed out into an account
 - Organizations, teams and sharing documents with others
