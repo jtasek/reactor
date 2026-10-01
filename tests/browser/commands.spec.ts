@@ -144,3 +144,29 @@ test('the command bar keeps copy, cut and paste in a group of their own', async 
         '|'
     ]);
 });
+
+test('the pointer highlights a grouped shape only inside its group', async ({ page }) => {
+    await openEditor(page);
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
+    await page.keyboard.press('ControlOrMeta+g');
+    await drawRect(page, { x: 500, y: 100 }, { x: 540, y: 140 });
+    await page.mouse.click(700, 500);
+
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    const hover = (x: number, y: number) => page.mouse.move(surface.x + x, surface.y + y);
+    // A highlighted shape draws a second rectangle, around itself.
+    const rectangles = (index: number) => shapes(page).nth(index).locator('rect');
+
+    await hover(520, 120);
+    await expect(rectangles(2)).toHaveCount(2);
+
+    await hover(320, 120);
+    await expect(rectangles(0)).toHaveCount(1);
+
+    // A click selects the group, and a second one enters it.
+    await page.mouse.click(surface.x + 320, surface.y + 120);
+    await page.mouse.click(surface.x + 320, surface.y + 120);
+    await hover(420, 120);
+    await expect(rectangles(1)).toHaveCount(2);
+});

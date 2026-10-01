@@ -270,9 +270,10 @@ shown shape of it is; it then draws one box with handles (`GroupSelection`) turn
 own `rotation`, and its shapes draw none. Its frame (`groupFrame`) is the box around its
 shapes as drawn, in the group's turned frame. Rotating turns every shape about the group's
 center; resizing scales them in proportion (`rotateGroup`, `resizeGroup`, through the
-`rotatingGroup` and `resizingGroup` gestures). Double-clicking a shape of a selected group
-enters it (`enteredGroupId`): its shapes are then pressed or boxed one by one until a press
-outside. Shapes of selected groups are found once, in `Shapes`, so a selection change does
+`rotatingGroup` and `resizingGroup` gestures). Clicking a shape of a group that is already
+selected, or double-clicking it, enters the group (`enteredGroupId`, `enterClickedGroup` on
+a release that did not move): its shapes are then pressed or boxed one by one until a press
+outside. The pointer highlights a grouped shape alone only inside its group. Shapes of selected groups are found once, in `Shapes`, so a selection change does
 not re-render every shape.
 
 A shape is in one group and on one layer at most: Group and Layer take the selected shapes

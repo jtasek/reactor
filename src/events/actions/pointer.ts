@@ -224,6 +224,11 @@ export const endGesture = (
 
     actions.events.movePointer({ pointerId, position });
 
+    // A click, rather than a drag, on a shape of a group selected before it enters the group.
+    if (gesture.kind === 'moving' && !gesture.moved) {
+        actions.enterClickedGroup(gesture.selection);
+    }
+
     if (gesture.kind === 'drawing' || gesture.kind === 'marquee') {
         actions.tools.executeToolCommands();
     }

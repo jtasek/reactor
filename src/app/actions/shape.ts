@@ -6,6 +6,7 @@ import {
     ActionWithResult,
     Application,
     Box,
+    Group,
     Point,
     ResizeHandlerType,
     Shape,
@@ -388,19 +389,19 @@ const leaveGroupWithout = (state: Context['state'], shapeIds: string[]) => {
 };
 
 /**
- * Double-clicking a shape of a selected group enters the group: the shape alone
- * is selected, and its group's shapes are pressed one by one until a press
- * outside the group. Returns whether a group was entered.
+ * Enters the group of the shape under the pointer when `wasSelected` says the
+ * group was selected as one: the shape alone is selected, and its group's shapes
+ * are pressed one by one until a press outside the group. Returns whether a
+ * group was entered.
  */
-export const enterGroupAtPointer: ActionGuard = ({ state, actions }) => {
-    if (state.tools.activeToolsIds[0] !== 'select') {
-        return false;
-    }
-
+const enterGroupUnderPointer = (
+    { state, actions }: Context,
+    wasSelected: (group: Group) => boolean
+): boolean => {
     const hitId = shapeAtPointer(state);
     const group = hitId === null ? undefined : shapeGroup(state.currentDocument, hitId);
 
-    if (hitId === null || !group || !state.currentDocument.selectedGroupsIds.includes(group.id)) {
+    if (hitId === null || !group || !wasSelected(group)) {
         return false;
     }
 
@@ -409,6 +410,34 @@ export const enterGroupAtPointer: ActionGuard = ({ state, actions }) => {
     state.currentDocument.shapes[hitId].selected = true;
 
     return true;
+};
+
+/** Double-clicking a shape of a selected group, with the select tool, enters the group. */
+export const enterGroupAtPointer: ActionGuard = (context) => {
+    const { state } = context;
+
+    if (state.tools.activeToolsIds[0] !== 'select') {
+        return false;
+    }
+
+    return enterGroupUnderPointer(context, (group) =>
+        state.currentDocument.selectedGroupsIds.includes(group.id)
+    );
+};
+
+/**
+ * Clicking a shape of a group that was already selected enters the group.
+ * `selection` is the selection before the press, as the press itself selects.
+ */
+export const enterClickedGroup: ActionWithParam<Record<string, boolean>> = (context, selection) => {
+    const { state } = context;
+
+    enterGroupUnderPointer(
+        context,
+        (group) =>
+            group.id !== state.enteredGroupId &&
+            shownGroupShapesIds(state.currentDocument, group).every((id) => selection[id])
+    );
 };
 
 /**
