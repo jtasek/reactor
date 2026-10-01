@@ -13,7 +13,6 @@ export const Surface: FC<Props> = ({ children }) => {
     const {
         handleContextMenu,
         handleLostPointerCapture,
-        handleMouseWheel,
         handlePointerCancel,
         handlePointerDown,
         handlePointerMove,
@@ -40,7 +39,6 @@ export const Surface: FC<Props> = ({ children }) => {
             onTouchEnd={handleTouchEnd}
             onTouchMove={handleTouchMove}
             onTouchStart={handleTouchStart}
-            onWheel={handleMouseWheel}
             style={{
                 touchAction: 'none', // 🔑 prevents native pinch zoom / scrolling
                 userSelect: 'none'

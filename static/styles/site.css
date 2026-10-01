@@ -2,6 +2,7 @@ html,
 body {
   color: #fff;
   margin: 0;
+  overscroll-behavior: none;
   padding: 0;
 }
 

@@ -6,7 +6,7 @@ import { createOvermind } from 'overmind';
 import { createRoot } from 'react-dom/client';
 
 const overmind = createOvermind(config, {
-    devtools: process.env.NODE_ENV !== 'production'
+    devtools: process.env.NODE_ENV !== 'production' && config.state.config.debugMode
 });
 
 const App: FC = () => (

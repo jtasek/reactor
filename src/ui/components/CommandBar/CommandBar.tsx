@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, Fragment } from 'react';
 
 import { useCommands } from 'src/app/hooks';
 import type { Command } from 'src/app/types';
@@ -38,10 +38,10 @@ export const CommandBar: FC = () => {
     return (
         <ul className={styles.commandBar}>
             {groups.map(([key, value]) => (
-                <>
-                    <CommandBarGroup key={`item-${key}`} commands={value} />
-                    <CommandBarDelimiter key={`delimiter-${key}`} />
-                </>
+                <Fragment key={key}>
+                    <CommandBarGroup commands={value} />
+                    <CommandBarDelimiter />
+                </Fragment>
             ))}
             <CommandBarGroup commands={last[1]} />
         </ul>
