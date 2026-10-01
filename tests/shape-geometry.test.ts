@@ -227,6 +227,29 @@ it('keeps a rotated flat line in place, as it is drawn once measured', () => {
     });
 });
 
+it('widens a rectangle that has no width', () => {
+    const {
+        store,
+        id,
+        shape: current
+    } = storeWith({
+        type: 'rectangle',
+        position: { x: 10, y: 20 },
+        size: { width: 0, height: 30 }
+    });
+
+    store.actions.resizeShape({
+        shapeId: id,
+        handlerType: 'middleRight',
+        position: { x: 40, y: 35 }
+    });
+
+    expect(current()).toMatchObject({
+        position: { x: 10, y: 20 },
+        size: { width: 30, height: 30 }
+    });
+});
+
 it('resizes from where the drag began, so steps between measurements do not add up', () => {
     const { store, id, shape: current } = storeWith(cases[0].shape);
 

@@ -147,8 +147,9 @@ function keepDrawnPlace(box: Box, oldCenter: Point, rotation: number): Box {
 }
 
 /**
- * Keeps a side the old box lacked, as a flat line's height, where it was: the
- * geometry has nothing to stretch along it, so the box must not grow there.
+ * Keeps a side the old box lacked, as a flat line's height, where it was: a
+ * line's or pen's points have nothing to stretch along it, so the box must not
+ * grow there.
  */
 function keepFlatSides(box: Box, oldBox: Box): Box {
     const left = oldBox.width > 0 ? box.topLeft.x : oldBox.topLeft.x;
@@ -184,10 +185,13 @@ export function resizeShapeFromHandle(
     const ratio = oldBox.height > 0 ? oldBox.width / oldBox.height : 1;
     // Images keep their aspect ratio, so they never letterbox inside their box,
     // text scales with its font size, and circles stay round.
+    const free = resizeBox(oldBox, handlerType, local);
     const resized =
         original.type === 'image' || original.type === 'text' || original.type === 'circle'
             ? resizeAspectBox(oldBox, handlerType, local, original.type === 'circle' ? 1 : ratio)
-            : keepFlatSides(resizeBox(oldBox, handlerType, local), oldBox);
+            : original.type === 'line' || original.type === 'pen'
+              ? keepFlatSides(free, oldBox)
+              : free;
     const box = rotation ? keepDrawnPlace(resized, center, rotation) : resized;
     const scaleX = oldBox.width > 0 ? box.width / oldBox.width : 1;
     const scaleY = oldBox.height > 0 ? box.height / oldBox.height : 1;

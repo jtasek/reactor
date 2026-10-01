@@ -745,6 +745,37 @@ describe('collaboration', () => {
         });
     });
 
+    it('resizes a flat line that another copy tilted during the drag', async () => {
+        const copies = await createCopies(2, (store) =>
+            store.actions.addShape({
+                type: 'line',
+                start: { x: 0, y: 0 },
+                end: { x: 40, y: 0 }
+            })
+        );
+        const [a, b] = copies;
+        const [id] = shownDocument(a).shapesIds;
+        const { events } = a.store.actions;
+
+        a.store.actions.setShapeBounds({
+            id,
+            bounds: { topLeft: { x: 0, y: 0 }, bottomRight: { x: 40, y: 0 }, width: 40, height: 0 }
+        });
+        events.beginGesture({
+            pointerId: 1,
+            position: { x: 40, y: 0 },
+            handle: { shapeId: id, type: 'bottomRight' }
+        });
+        edit(b, (actions) => actions.updateShape({ id, end: { x: 40, y: 20 } }));
+        deliver(a);
+        events.movePointer({ pointerId: 1, position: { x: 80, y: 40 } });
+
+        expect(shownDocument(a).shapes[id]).toMatchObject({
+            start: { x: 0, y: 0 },
+            end: { x: 80, y: 40 }
+        });
+    });
+
     it('cancels a drag without bringing back a shape another copy deleted during it', async () => {
         const copies = await createCopies(2, (store) => {
             store.actions.addShape(rectangle());

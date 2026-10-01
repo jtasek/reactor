@@ -20,8 +20,9 @@ test('a rotated shape is pressed where it is drawn', async ({ page }) => {
     await click(page, 190, 110);
     await expect(handles(page)).toHaveCount(0);
 
+    // Selected: the corners and the rotate handle, as 20 is too short for middle handles.
     await click(page, 150, 150);
-    await expect(handles(page)).toHaveCount(9);
+    await expect(handles(page)).toHaveCount(5);
 });
 
 test('a line is pressed near its stroke, not anywhere in its bounds', async ({ page }) => {

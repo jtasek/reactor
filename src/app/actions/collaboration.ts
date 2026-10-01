@@ -58,10 +58,19 @@ function rebase(base: object, previous: object, next: object, keys: Iterable<str
 /**
  * Moves and scales measured bounds as the geometry they were measured from
  * changed, since they are this copy's own and other copies never change them.
+ * A side the geometry had no extent along takes the new geometry's.
  */
 function followBox(box: Box, from: Box, to: Box): Box {
-    const topLeft = mapPointBetweenBoxes(box.topLeft, from, to);
-    const bottomRight = mapPointBetweenBoxes(box.bottomRight, from, to);
+    const start = mapPointBetweenBoxes(box.topLeft, from, to);
+    const end = mapPointBetweenBoxes(box.bottomRight, from, to);
+    const topLeft = {
+        x: from.width > 0 ? start.x : to.topLeft.x,
+        y: from.height > 0 ? start.y : to.topLeft.y
+    };
+    const bottomRight = {
+        x: from.width > 0 ? end.x : to.bottomRight.x,
+        y: from.height > 0 ? end.y : to.bottomRight.y
+    };
 
     return {
         topLeft,

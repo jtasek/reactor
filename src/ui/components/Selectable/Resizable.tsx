@@ -12,6 +12,11 @@ import { useCameraScale, usePointer } from '../../../app/hooks';
 const HANDLE_RADIUS = 5;
 const ROTATE_HANDLE_OFFSET = 24;
 const BADGE_OFFSET = 14;
+/** Below this length on screen, handles along a side would cover the shape. */
+const MIN_HANDLED_SIDE = 6 * HANDLE_RADIUS;
+
+const CORNERS: ResizeHandlerType[] = ['topLeft', 'topRight', 'bottomRight', 'bottomLeft'];
+const MIDDLES: ResizeHandlerType[] = ['middleTop', 'middleRight', 'middleBottom', 'middleLeft'];
 
 function calcBoundingPoints(box: Box) {
     const topLeft = box.topLeft;
@@ -55,28 +60,24 @@ export const Resizable: FC<Props> = ({ shape }) => {
         return null;
     }
 
-    const {
-        topLeft,
-        topRight,
-        bottomLeft,
-        bottomRight,
-        middleLeft,
-        middleRight,
-        middleTop,
-        middleBottom
-    } = calcBoundingPoints(box);
+    const points = calcBoundingPoints(box);
+    const { middleTop } = points;
 
     const rotatePosition = { x: middleTop.x, y: middleTop.y - ROTATE_HANDLE_OFFSET / scale };
     const rotation = shape.rotation ?? 0;
     const badgePosition = { x: rotatePosition.x, y: rotatePosition.y - BADGE_OFFSET / scale };
     const size = HANDLE_RADIUS / scale;
-    const handle = (handlerType: ResizeHandlerType) => ({
-        active: activeHandle === handlerType,
-        cursor: resizeCursor(handlerType, rotation),
-        handlerType,
-        shapeId: shape.id,
-        size
-    });
+    // Corners stay while either side is long enough to keep them apart; middle
+    // handles need both, as they would otherwise meet the corners or each other.
+    const longSides = [box.width, box.height].filter(
+        (side) => side * scale >= MIN_HANDLED_SIDE
+    ).length;
+    const shown = [...(longSides > 0 ? CORNERS : []), ...(longSides > 1 ? MIDDLES : [])];
+
+    if (activeHandle && !shown.includes(activeHandle)) {
+        shown.push(activeHandle);
+    }
+
     const displayDegrees = ((Math.round(rotation) % 360) + 360) % 360;
 
     return (
@@ -103,34 +104,17 @@ export const Resizable: FC<Props> = ({ shape }) => {
                     {displayDegrees}°
                 </text>
             )}
-            <Handle key={`topLeft + ${shape.id}`} position={topLeft} {...handle('topLeft')} />
-            <Handle key={`middleTop + ${shape.id}`} position={middleTop} {...handle('middleTop')} />
-            <Handle key="topRight" position={topRight} {...handle('topRight')} />
-            <Handle
-                key={`middleRight + ${shape.id}`}
-                position={middleRight}
-                {...handle('middleRight')}
-            />
-            <Handle
-                key={`bottomRight + ${shape.id}`}
-                position={bottomRight}
-                {...handle('bottomRight')}
-            />
-            <Handle
-                key={`middleBottom + ${shape.id}`}
-                position={middleBottom}
-                {...handle('middleBottom')}
-            />
-            <Handle
-                key={`bottomLeft + ${shape.id}`}
-                position={bottomLeft}
-                {...handle('bottomLeft')}
-            />
-            <Handle
-                key={`middleLeft + ${shape.id}`}
-                position={middleLeft}
-                {...handle('middleLeft')}
-            />
+            {shown.map((handlerType) => (
+                <Handle
+                    key={handlerType}
+                    active={activeHandle === handlerType}
+                    cursor={resizeCursor(handlerType, rotation)}
+                    handlerType={handlerType}
+                    position={points[handlerType]}
+                    shapeId={shape.id}
+                    size={size}
+                />
+            ))}
         </>
     );
 };

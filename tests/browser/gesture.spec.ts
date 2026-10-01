@@ -262,7 +262,7 @@ test('a rotated shape resizes from the handle under the pointer, with the opposi
 
 test('handles keep their size on screen at any zoom', async ({ page }) => {
     await openEditor(page);
-    await drawRect(page, { x: 200, y: 200 }, { x: 260, y: 240 });
+    await drawRect(page, { x: 200, y: 200 }, { x: 320, y: 280 });
 
     for (const key of ['+', '+', '+', '-', '-', '-', '-', '-', '-']) {
         await page.keyboard.press(key);
@@ -275,6 +275,28 @@ test('handles keep their size on screen at any zoom', async ({ page }) => {
         expect(rotate.size).toBeCloseTo(11, 0);
         expect(handle.y - rotate.y).toBeCloseTo(24, 0);
     }
+});
+
+test('a shape small on screen is moved, not resized, by pressing it', async ({ page }) => {
+    await openEditor(page);
+    await drawRect(page, { x: 200, y: 200 }, { x: 230, y: 220 });
+
+    for (let step = 0; step < 6; step++) {
+        await page.keyboard.press('-');
+    }
+
+    const rect = firstShape(page).locator('rect[data-cy]');
+    const box = (await rect.boundingBox())!;
+    const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+
+    await page.mouse.move(center.x, center.y);
+    await page.mouse.down();
+    await page.mouse.move(center.x + 20, center.y, { steps: 4 });
+    await page.mouse.up();
+
+    await expect(rect).toHaveAttribute('width', '30');
+    await expect(rect).toHaveAttribute('height', '20');
+    await expect(rect).not.toHaveAttribute('x', '200');
 });
 
 type Contact = { id: number; x: number; y: number };
