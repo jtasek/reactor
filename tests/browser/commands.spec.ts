@@ -175,3 +175,30 @@ test('the pointer highlights a grouped shape only inside its group', async ({ pa
     await hover(420, 120);
     await expect(rectangles(1)).toHaveCount(2);
 });
+
+test('a group is selected and dragged by its box, between its shapes', async ({ page }) => {
+    await openEditor(page);
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
+    await page.keyboard.press('ControlOrMeta+g');
+
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    const at = (x: number, y: number) => [surface.x + x, surface.y + y] as const;
+
+    await page.mouse.click(...at(700, 500));
+    await expect(page.locator('[data-handle][data-group-id]')).toHaveCount(0);
+
+    // Hovering the gap highlights the group; pressing there selects it and drags it.
+    await page.mouse.move(...at(370, 120));
+    await expect(page.locator('#group-selections > rect')).toHaveCount(1);
+
+    await page.mouse.down();
+    await page.mouse.move(...at(370, 220), { steps: 5 });
+    await page.mouse.up();
+
+    const rects = shapes(page).locator('rect[data-cy]');
+
+    await expect(rects.nth(0)).toHaveAttribute('y', '200');
+    await expect(rects.nth(1)).toHaveAttribute('y', '200');
+    await expect(page.locator('[data-handle][data-group-id]')).toHaveCount(9);
+});

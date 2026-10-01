@@ -290,8 +290,13 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
         actions.enterGroupAtPointer();
     }, [actions]);
 
+    const handlePointerLeave = useCallback(() => {
+        actions.events.leaveSurface();
+    }, [actions]);
+
     return {
         handleContextMenu,
+        handlePointerLeave,
         handleDoubleClick,
         handlePointerCancel: handlePointerInterrupted,
         handleLostPointerCapture: handlePointerInterrupted,
