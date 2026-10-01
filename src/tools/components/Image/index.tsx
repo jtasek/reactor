@@ -142,8 +142,9 @@ export const ImageCommand: Command = {
 
 export const ImageTool: Tool = {
     ...ImageCommand,
-    // Choosing the tool asks for the image to draw.
-    activate: ({ effects }) => {
+    // Choosing the tool asks for the image to draw; until it is ready, none is drawn.
+    activate: ({ state, effects }) => {
+        delete state.tools.imageToPlace;
         void effects.assets.pickImage();
     },
     component: Image,

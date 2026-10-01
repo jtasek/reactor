@@ -6,7 +6,11 @@ export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 /** How an image shape's `source` names an asset: `asset:` and the SHA-256 of its bytes. */
 const ASSET_PREFIX = 'asset:';
 
-const REFUSED = 'That file is not a PNG, JPEG, GIF or WebP image of 5 MB or less.';
+const NOT_AN_IMAGE = 'That file is not a PNG, JPEG, GIF or WebP image of 5 MB or less.';
+const NOT_KEPT = 'Images cannot be kept in this browser, so none can be added.';
+
+/** Why an image was not added, in words for the user. */
+class ImageRefused extends Error {}
 
 /** An image to draw: the asset it shows and its width over its height. */
 export interface ImageToPlace {
@@ -105,23 +109,29 @@ export function createAssets({ pick = pickFile, measure = measureImage } = {}) {
     let actions: AssetActions | undefined;
     const urls = new Map<string, Promise<string | undefined>>();
 
-    const add = async (file: Blob): Promise<ImageToPlace | null> => {
-        const image = await readImage(file);
+    /** Keeps a file as an image to draw; throws `ImageRefused` saying why it cannot. */
+    const add = async (file: Blob): Promise<ImageToPlace> => {
         const opened = await database;
 
-        if (!image || !opened) {
-            return null;
+        // Hashing needs a secure page: HTTPS, or localhost.
+        if (!opened || !globalThis.crypto?.subtle) {
+            throw new ImageRefused(NOT_KEPT);
         }
 
-        const { width, height } = await measure(new Blob([image.bytes], { type: image.type }));
+        const image = await readImage(file);
+        const size =
+            image &&
+            (await measure(new Blob([image.bytes], { type: image.type })).catch(() => null));
 
-        if (!(width > 0 && height > 0)) {
-            return null;
+        if (!image || !size || !(size.width > 0 && size.height > 0)) {
+            throw new ImageRefused(NOT_AN_IMAGE);
         }
 
-        await opened.putAsset(image);
+        await opened.putAsset(image).catch(() => {
+            throw new ImageRefused(NOT_KEPT);
+        });
 
-        return { source: `${ASSET_PREFIX}${image.hash}`, ratio: width / height };
+        return { source: `${ASSET_PREFIX}${image.hash}`, ratio: size.width / size.height };
     };
 
     return {
@@ -140,23 +150,24 @@ export function createAssets({ pick = pickFile, measure = measureImage } = {}) {
 
         /**
          * Asks for an image and makes it the one the image tool draws. Without
-         * one the select tool takes over, with a notice when a file was refused.
+         * one the select tool takes over, with a notice saying why a file was
+         * not taken.
          */
         async pickImage() {
             const file = await pick();
-            const image = file && (await add(file).catch(() => null));
 
-            if (image) {
-                actions?.tools.setImageToPlace(image);
+            if (!file) {
+                actions?.tools.activateTool('select');
 
                 return;
             }
 
-            if (file) {
-                actions?.displayError(REFUSED);
+            try {
+                actions?.tools.setImageToPlace(await add(file));
+            } catch (error) {
+                actions?.displayError(error instanceof ImageRefused ? error.message : NOT_KEPT);
+                actions?.tools.activateTool('select');
             }
-
-            actions?.tools.activateTool('select');
         },
 
         /**

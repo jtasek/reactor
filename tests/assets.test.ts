@@ -102,8 +102,8 @@ describe('keeping images', () => {
         const added = await assets.add(new Blob([PNG]));
 
         expect(added).toEqual({ source: `asset:${await pngHash()}`, ratio: 2 });
-        expect(await assets.url(added!.source)).toMatch(/^blob:/);
-        expect(await assets.url(added!.source)).toBe(await assets.url(added!.source));
+        expect(await assets.url(added.source)).toMatch(/^blob:/);
+        expect(await assets.url(added.source)).toBe(await assets.url(added.source));
         expect(await assets.url('/images/avatar.jpg')).toBe('/images/avatar.jpg');
         expect(await assets.url('asset:missing')).toBeUndefined();
     });
@@ -146,6 +146,36 @@ describe('the image tool', () => {
 
         expect(store.state.tools.activeToolsIds).toEqual(['select']);
         expect(store.state.notifications).toEqual([]);
+    });
+
+    it('says images cannot be kept, not that the file is wrong, without a database', async () => {
+        const { store, effects } = createTestStore({}, { pickImage: async () => new Blob([PNG]) });
+
+        effects.assets.use(undefined);
+        store.actions.tools.activateTool('image');
+        await settle();
+
+        expect(store.state.notifications.map(({ message }) => message)).toEqual([
+            'Images cannot be kept in this browser, so none can be added.'
+        ]);
+    });
+
+    it('draws nothing while a newly chosen image is being read', async () => {
+        let choose: (file: Blob) => void = () => {};
+        const { store } = createTestStore(
+            {},
+            { pickImage: () => new Promise<Blob>((resolve) => (choose = resolve)) }
+        );
+        const { events } = store.actions;
+
+        store.actions.tools.setImageToPlace({ source: 'asset:earlier', ratio: 1 });
+        store.actions.tools.activateTool('image');
+        events.beginGesture({ pointerId: 1, position: { x: 10, y: 10 } });
+        events.endGesture({ pointerId: 1, position: { x: 110, y: 20 } });
+        choose(new Blob([PNG]));
+        await settle();
+
+        expect(store.state.currentDocument.shapesIds).toEqual([]);
     });
 
     it('says why a file is not taken, and draws nothing without an image', async () => {

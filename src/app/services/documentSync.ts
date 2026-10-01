@@ -219,7 +219,16 @@ export async function startDocumentSync(
         pending++;
         report();
 
-        return write()
+        let writing: Promise<void>;
+
+        // A closed database throws at once, which counts as not saved like any failed write.
+        try {
+            writing = write();
+        } catch (error) {
+            writing = Promise.reject(error);
+        }
+
+        return writing
             .then(
                 () => {
                     if (!completes) {
