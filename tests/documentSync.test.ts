@@ -469,6 +469,31 @@ describe('document sync', () => {
         ).toHaveLength(2);
     });
 
+    it('shows that changes are not saved once a newer build has upgraded the database', async () => {
+        const indexedDB = new IDBFactory();
+        const { store, effects } = await start(indexedDB);
+
+        // A newer build opening the database closes this copy's connection.
+        await new Promise<void>((resolve, reject) => {
+            const newer = indexedDB.open('reactor', 99);
+
+            newer.onsuccess = () => {
+                newer.result.close();
+                resolve();
+            };
+            newer.onerror = () => reject(newer.error);
+        });
+        store.actions.addShape(rectangle);
+        effects.collaboration.flush();
+
+        await vi.waitFor(() =>
+            expect(store.state.saveStatus).toEqual({
+                kind: 'notSaving',
+                reason: 'Changes could not be saved. Storage may be full or unavailable.'
+            })
+        );
+    });
+
     it('shows saved again once a document that could not be saved is deleted', async () => {
         const { store } = await start(new IDBFactory());
 

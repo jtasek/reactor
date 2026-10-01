@@ -74,6 +74,9 @@ tree. Drag a shape or a group onto a layer or a group to move it there. Press a 
 name to see only that layer, with the shapes on no layer, on your screen; press it again,
 or Show all layers, to see everything. A group is on one layer, with all its shapes.
 
+The image tool asks for a PNG, JPEG, GIF or WebP file of 5 MB or less, then draws it
+at its own proportions where you drag.
+
 Shortcuts do nothing while a text field has focus. The command line runs a command
 by name.
 
@@ -183,7 +186,8 @@ the current pan position. Touchscreen pinch zooms the same way; see Input above.
 
 ## Not yet available
 
-- Uploading images: the image tool draws a placeholder picture
+- Images on other devices: an image is kept in this browser only, so a document
+  opened elsewhere shows an empty box in its place until uploads arrive
 - Moving documents made signed out into an account
 - Organizations, teams and sharing documents with others
 - Seeing other people's pointers and selections

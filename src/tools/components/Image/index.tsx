@@ -5,7 +5,8 @@ import type { Command, Point, Size } from 'src/app/types';
 import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
 import { newShapeName } from '../../../app/factories';
-import { usePointer } from '../../../app/hooks';
+import { useImageToPlace, useImageUrl, usePointer } from '../../../app/hooks';
+import type { ImageToPlace } from '../../../app/services/assets';
 import { Context } from 'src/app';
 
 /**
@@ -22,24 +23,6 @@ import { Context } from 'src/app';
  
  **/
 
-const DEFAULT_IMAGE = '/images/avatar.jpg';
-
-// Intrinsic aspect ratio (width / height) of the source image, measured from the
-// image itself so the drawn bounds match it exactly and the picture is never
-// distorted or letterboxed. Null until the image has loaded and reported its
-// natural dimensions.
-let imageRatio: number | null = null;
-
-if (typeof window !== 'undefined' && typeof window.Image !== 'undefined') {
-    const probe = new window.Image();
-    probe.onload = () => {
-        if (probe.naturalWidth > 0 && probe.naturalHeight > 0) {
-            imageRatio = probe.naturalWidth / probe.naturalHeight;
-        }
-    };
-    probe.src = DEFAULT_IMAGE;
-}
-
 interface Props {
     id?: string;
     name: string;
@@ -52,7 +35,7 @@ interface Props {
 
 const getImageBounds = (
     pointer: Pick<Pointer, 'start' | 'current'>,
-    ratio = imageRatio
+    ratio: number
 ): { position: Point; size: Size } => {
     const { start, current } = pointer;
     const deltaX = current.x - start.x;
@@ -68,11 +51,6 @@ const getImageBounds = (
         size: { width, height }
     });
 
-    // Intrinsic ratio not known yet — fall back to free-form bounds (rect tool).
-    if (!ratio || ratio <= 0) {
-        return toBounds(Math.abs(deltaX), Math.abs(deltaY));
-    }
-
     // Lock the drag box to the image aspect ratio using the dominant drag axis,
     // so the box reaches the cursor without distorting the image.
     if (Math.abs(deltaX) >= Math.abs(deltaY) * ratio) {
@@ -84,22 +62,28 @@ const getImageBounds = (
     return toBounds(height * ratio, height);
 };
 
-export const createImageProps = (pointer: Pointer, designMode = false): Props => {
+/** An image shape drawn by the drag, showing `image` at its own proportions. */
+export const createImageProps = (
+    pointer: Pointer,
+    image: ImageToPlace,
+    designMode = false
+): Props => {
     const name = designMode ? 'Image x' : newShapeName();
-    const { position, size } = getImageBounds(pointer);
+    const { position, size } = getImageBounds(pointer, image.ratio);
 
     return {
         name,
         position,
         selected: true,
         size,
-        source: DEFAULT_IMAGE,
+        source: image.source,
         type: 'image'
     };
 };
 
 export const Image: FC<Props> = ({ name, position, size, source, selected }) => {
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
+    const url = useImageUrl(source);
 
     return (
         <image
@@ -109,7 +93,7 @@ export const Image: FC<Props> = ({ name, position, size, source, selected }) => 
             preserveAspectRatio="xMidYMid meet"
             width={size.width}
             x={position.x}
-            xlinkHref={source}
+            href={url}
             y={position.y}
         />
     );
@@ -117,11 +101,13 @@ export const Image: FC<Props> = ({ name, position, size, source, selected }) => 
 
 export const DesignImage: FC = () => {
     const pointer = usePointer();
-    if (!pointer.dragging) {
+    const image = useImageToPlace();
+
+    if (!pointer.dragging || !image) {
         return null;
     }
 
-    const props = createImageProps(pointer, true);
+    const props = createImageProps(pointer, image, true);
 
     return <Image {...props} />;
 };
@@ -140,11 +126,14 @@ export const ImageCommand: Command = {
     regex: /(?<toolCode>image)\('(?<protocol>www|http|https):\/\/(?<url>[^\s]+[\w])'\)/,
     shortcut: 'i',
     canExecute: ({ state }) =>
-        state.events.pointer.size.width > 0 || state.events.pointer.size.height > 0,
+        state.tools.imageToPlace !== undefined &&
+        (state.events.pointer.size.width > 0 || state.events.pointer.size.height > 0),
     execute: ({ actions, state }) => {
-        const shape = createImageProps(state.events.pointer);
+        const image = state.tools.imageToPlace;
 
-        actions.addShape(shape);
+        if (image) {
+            actions.addShape(createImageProps(state.events.pointer, image));
+        }
     },
     shouldDeactivate: function (context: Context): boolean {
         return !context.state.events.pointer.dragging;
@@ -153,6 +142,11 @@ export const ImageCommand: Command = {
 
 export const ImageTool: Tool = {
     ...ImageCommand,
+    // Choosing the tool asks for the image to draw; until it is ready, none is drawn.
+    activate: ({ state, effects }) => {
+        delete state.tools.imageToPlace;
+        void effects.assets.pickImage();
+    },
     component: Image,
     designComponent: DesignImage
 };
