@@ -2,9 +2,12 @@ import type { Command } from 'src/app/types';
 import type { Context } from '../index';
 import {
     CloneCommand,
+    CopyCommand,
+    CutCommand,
     DeleteCommand,
     GroupCommand,
     LayerCommand,
+    PasteCommand,
     UngroupCommand,
     UnlayerCommand,
     ZoomInCommand,
@@ -63,6 +66,9 @@ export function getTool(toolId: string) {
 function registerCommands() {
     registerCommand(DeleteCommand);
     registerCommand(CloneCommand);
+    registerCommand(CopyCommand);
+    registerCommand(CutCommand);
+    registerCommand(PasteCommand);
     registerCommand(GroupCommand);
     registerCommand(UngroupCommand);
     registerCommand(LayerCommand);
@@ -103,6 +109,7 @@ export const onInitializeOvermind = async (
     registerCommands();
     registerTools();
     registerRoutes(effects, actions);
+    effects.clipboard.connect(instance.actions);
 
     // The documents opened last open while the account is read; the first time, and
     // after signing in or out, the account is read first, as it decides whose open.

@@ -1,4 +1,6 @@
+import { registerCommand } from 'src/app/actions/startup';
 import type { ShapeInput } from 'src/app/types';
+import { CopyCommand, CutCommand, PasteCommand } from 'src/commands';
 import { shapeGeometry } from 'src/app/utils';
 import { createTestStore } from './support/store';
 
@@ -24,16 +26,24 @@ const shapes: ShapeInput[] = [
     { type: 'text', position: { x: 10, y: 40 }, value: 'abc', fontSize: 20 }
 ];
 
+// Commands are registered by application startup, which the test store skips.
+registerCommand(CopyCommand);
+registerCommand(CutCommand);
+registerCommand(PasteCommand);
+
 function storeWith(...inputs: ShapeInput[]) {
-    const { store } = createTestStore();
+    const { store, systemClipboard } = createTestStore();
 
     inputs.forEach((input) => store.actions.addShape({ ...input, selected: true }));
 
     const document = () => store.state.currentDocument;
     const ordered = () => document().shapesIds.map((id) => document().shapes[id]);
 
-    return { store, document, ordered };
+    return { store, document, ordered, systemClipboard };
 }
+
+/** Lets the system clipboard answer, as it does after the command returns. */
+const settle = () => new Promise((resolve) => setTimeout(resolve));
 
 describe.each(shapes)('copying a $type', (shape) => {
     it('pastes into another document as it was drawn, with its name and rotation', () => {
@@ -187,4 +197,70 @@ it('leaves the clipboard alone while typing, dragging or away from the designer'
     expect(store.actions.cutSelection()).toBeNull();
     expect(store.actions.pasteShapes(copied)).toBe(false);
     expect(document().shapesIds).toHaveLength(1);
+});
+
+describe('the copy, cut and paste commands', () => {
+    it('copy and paste through the system clipboard from the command line', async () => {
+        const { store, ordered, systemClipboard } = storeWith(shapes[0]);
+
+        expect(store.actions.submitCommandLine('copy')).toBeUndefined();
+        await settle();
+        expect(JSON.parse(await systemClipboard.readText())).toMatchObject({
+            format: 'reactor/shapes'
+        });
+
+        expect(store.actions.submitCommandLine('Paste')).toBeUndefined();
+        await settle();
+        expect(ordered().map((shape) => 'position' in shape && shape.position)).toEqual([
+            { x: 10, y: 20 },
+            { x: 20, y: 30 }
+        ]);
+    });
+
+    it('cut the selection and paste it back where it was', async () => {
+        const { store, document, ordered } = storeWith(shapes[0]);
+
+        store.actions.runCommand(CutCommand);
+        await settle();
+        expect(document().shapesIds).toEqual([]);
+
+        store.actions.runCommand(PasteCommand);
+        await settle();
+        expect(ordered()).toMatchObject([{ position: { x: 10, y: 20 }, selected: true }]);
+    });
+
+    it('are unavailable when they have nothing to act on', () => {
+        const { store, document } = storeWith(shapes[0]);
+
+        store.actions.lockShape(document().shapesIds[0]);
+        expect(store.actions.submitCommandLine('cut')).toBe('Cut is not available right now');
+
+        store.actions.unselectShapes();
+        expect(store.actions.submitCommandLine('copy')).toBe('Copy is not available right now');
+
+        store.actions.showDocuments();
+        expect(store.actions.submitCommandLine('paste')).toBe('Paste is not available right now');
+    });
+
+    it('paste reports a clipboard without shapes, or one it cannot read', async () => {
+        const { store, document, systemClipboard } = storeWith(shapes[0]);
+        const errors = () =>
+            store.state.notifications
+                .filter(({ type }) => type === 'error')
+                .map(({ message }) => message);
+
+        await systemClipboard.writeText('hello');
+        store.actions.runCommand(PasteCommand);
+        await settle();
+
+        vi.spyOn(systemClipboard, 'readText').mockRejectedValue(new Error('Denied'));
+        store.actions.runCommand(PasteCommand);
+        await settle();
+
+        expect(document().shapesIds).toHaveLength(1);
+        expect(errors()).toEqual([
+            'The clipboard holds no shapes to paste.',
+            'The clipboard could not be read. Allow this site to read it, or press Ctrl/Cmd+V.'
+        ]);
+    });
 });

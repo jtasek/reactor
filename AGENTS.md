@@ -205,6 +205,9 @@ re-renders.** Components never mutate state directly.
   are mounted in `Shell` and `usePointerAdapter` in the canvas `Surface`
   (`src/ui/components/Surface/Surface.tsx`). Copied shapes are clipboard text in the format
   of `src/app/clipboard.ts`, and a paste checks them with the readers saved documents use.
+  The Copy, Cut and Paste commands (`src/commands/clipboard`) use the same actions through
+  `effects.clipboard` (`src/app/services/clipboard.ts`), which reads the clipboard
+  asynchronously and pastes through the root actions it is connected to at startup.
   Shortcuts and the clipboard act only while `takesEditorInput` (`src/events/input.ts`).
 - **Tools** (`src/tools/`): drawing/selection tools; tool state lives in the `tools` namespace.
 - **Renderers** (planned, not built yet; see Phase 9 in `REFACTOR_PLAN.md`): pluggable

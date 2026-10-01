@@ -78,3 +78,27 @@ test('leaves the clipboard as it was when nothing is selected', async ({ page })
         true
     );
 });
+
+test('the command bar and the command line copy, cut and paste', async ({ page }) => {
+    await openEditor(page, ['Command Line']);
+
+    const copy = page.locator('button[title="Copy selected shapes"]');
+    const cut = page.locator('button[title="Cut selected shapes"]');
+    const paste = page.locator('button[title="Paste copied shapes"]');
+    const input = page.getByRole('searchbox', { name: 'Command' });
+
+    await expect(copy).toBeDisabled();
+    await drawRect(page, { x: 100, y: 100 }, { x: 160, y: 140 });
+
+    await copy.click();
+    await expect.poll(() => clipboardText(page)).toContain('reactor/shapes');
+    await paste.click();
+    await expect(shapes(page)).toHaveCount(2);
+
+    await cut.click();
+    await expect(shapes(page)).toHaveCount(1);
+
+    await input.fill('paste');
+    await input.press('Enter');
+    await expect(shapes(page)).toHaveCount(2);
+});

@@ -63,7 +63,7 @@ bar, side bar, panels and other parts of the editor.
 | `r`, `c`, `e`, `l`, `p`, `t`, `i` | Rectangle, circle, ellipse, line, pen, text and image tools |
 | Delete or Backspace | Delete the selection |
 | Ctrl/Cmd+D | Clone the selection |
-| Ctrl/Cmd+C, Ctrl/Cmd+X, Ctrl/Cmd+V | Copy, cut and paste the selection, also between documents and tabs |
+| Ctrl/Cmd+C, Ctrl/Cmd+X, Ctrl/Cmd+V | Copy, cut and paste the selection, also between documents and tabs; also the Copy, Cut and Paste commands |
 | Ctrl/Cmd+G, Ctrl/Cmd+Shift+G | Group and ungroup the selection |
 | `+` or `=`, `-`, `0` | Zoom in, zoom out, reset zoom |
 

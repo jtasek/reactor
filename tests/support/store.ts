@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 import { config } from 'src/app';
 import { createApplication, createDocument } from 'src/app/factories';
 import { Collaboration } from 'src/app/services/collaboration';
+import { createClipboard } from 'src/app/services/clipboard';
 import { DocumentDatabase } from 'src/app/services/documentDatabase';
 import type { Accounts } from 'src/app/services/accounts';
 import type { Api, Transport } from 'src/app/services/api';
@@ -53,6 +54,14 @@ export function createTestStore(
 ) {
     const storage = options.storage ?? new Map(Object.entries(seed));
     const indexedDB = options.indexedDB ?? new IDBFactory();
+    let copied = '';
+    // The system clipboard, kept in memory.
+    const systemClipboard = {
+        readText: async () => copied,
+        writeText: async (text: string) => {
+            copied = text;
+        }
+    };
     const effects = {
         newId: vi.fn(() => `test-id-${nextId++}`),
         loadState: vi.fn((key: string): unknown => {
@@ -82,7 +91,8 @@ export function createTestStore(
         openChannel: options.openChannel ?? quietChannel,
         accounts: options.accounts ?? noAccounts,
         api: options.api ?? offline,
-        serverTransport: () => options.serverTransport ?? { url: 'ws://127.0.0.1:9/sync' }
+        serverTransport: () => options.serverTransport ?? { url: 'ws://127.0.0.1:9/sync' },
+        clipboard: createClipboard(systemClipboard)
     };
     let nextId = 1;
     const document = createDocument({ id: 'test-document' });
@@ -95,7 +105,9 @@ export function createTestStore(
         Object.assign(state, app);
     });
 
+    effects.clipboard.connect(store.actions);
+
     // Initialization is opt-in: normal action tests never register routes or load
     // saved documents. Startup tests can explicitly call store.onInitialize().
-    return { store, storage, effects };
+    return { store, storage, effects, systemClipboard };
 }
