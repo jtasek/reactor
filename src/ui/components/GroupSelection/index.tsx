@@ -1,7 +1,13 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
 import { Handles } from '../Selectable/Resizable';
-import { useGroupFrame, useGroupLocked, usePointer, useSelectedGroupsIds } from 'src/app/hooks';
+import {
+    useGroupFrame,
+    useGroupLocked,
+    useHoveredGroupsIds,
+    usePointer,
+    useSelectedGroupsIds
+} from 'src/app/hooks';
 import { boxCenter } from 'src/app/utils';
 
 interface Props {
@@ -49,12 +55,39 @@ export const GroupSelection: FC<Props> = ({ groupId }) => {
     );
 };
 
-/** The boxes and handles of the selected groups. */
+/** The box of a group the pointer is over, turned with the group. */
+const GroupHighlight: FC<Props> = ({ groupId }) => {
+    const frame = useGroupFrame(groupId);
+
+    if (!frame) {
+        return null;
+    }
+
+    const { box, rotation } = frame;
+    const center = boxCenter(box);
+
+    return (
+        <rect
+            className={styles.groupHighlight}
+            transform={rotation ? `rotate(${rotation} ${center.x} ${center.y})` : undefined}
+            x={box.topLeft.x}
+            y={box.topLeft.y}
+            width={box.width}
+            height={box.height}
+        />
+    );
+};
+
+/** The boxes and handles of the selected groups, and the boxes of those under the pointer. */
 export const GroupSelections: FC = () => {
     const groupsIds = useSelectedGroupsIds();
+    const hoveredIds = useHoveredGroupsIds();
 
     return (
         <g id="group-selections">
+            {hoveredIds.map((groupId) => (
+                <GroupHighlight key={groupId} groupId={groupId} />
+            ))}
             {groupsIds.map((groupId) => (
                 <GroupSelection key={groupId} groupId={groupId} />
             ))}

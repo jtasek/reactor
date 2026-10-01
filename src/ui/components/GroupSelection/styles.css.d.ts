@@ -1,5 +1,6 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
+    groupHighlight: string;
     groupSelection: string;
   }
 }

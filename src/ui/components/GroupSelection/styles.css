@@ -6,3 +6,12 @@
     stroke-dasharray: 6 3;
     vector-effect: non-scaling-stroke;
 }
+
+.groupHighlight {
+    fill: cornflowerblue;
+    fill-opacity: 0.05;
+    pointer-events: none;
+    stroke: cornflowerblue;
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+}
