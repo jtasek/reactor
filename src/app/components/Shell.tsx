@@ -1,5 +1,6 @@
 import React, { FC, Suspense, lazy } from 'react';
 import { useCurrentPage, useLoading } from '../hooks';
+import { useClipboardDriver } from 'src/events/drivers/useClipboardDriver';
 import { useKeyboardDriver } from 'src/events/drivers/useKeyboardDriver';
 import { usePreventNativePinchZoom } from './usePreventNativePinchZoom';
 import { Notification } from './Notification';
@@ -16,6 +17,7 @@ const Documents = lazy(() =>
 
 export const Shell: FC = () => {
     useKeyboardDriver();
+    useClipboardDriver();
     usePreventNativePinchZoom();
 
     const currentPage = useCurrentPage();

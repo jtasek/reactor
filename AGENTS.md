@@ -201,8 +201,15 @@ re-renders.** Components never mutate state directly.
   tabs' messages are taken only once loading is done; what they sent meanwhile is picked up
   from the database and by catching up.
 - **Events** (`src/events/`): pointer/keyboard/clipboard input. `drivers/` are React hooks
-  that translate DOM events into store actions — `useKeyboardDriver` is mounted in `Shell`
-  and `usePointerAdapter` in the canvas `Surface` (`src/ui/components/Surface/Surface.tsx`).
+  that translate DOM events into store actions — `useKeyboardDriver` and `useClipboardDriver`
+  are mounted in `Shell` and `usePointerAdapter` in the canvas `Surface`
+  (`src/ui/components/Surface/Surface.tsx`). Copied shapes are clipboard text in the format
+  of `src/app/clipboard.ts`, and a paste checks them with the readers saved documents use.
+  The Copy, Cut and Paste commands (`src/commands/clipboard`) go through `effects.clipboard`
+  (`src/app/services/clipboard.ts`): run by their shortcuts, the browser's clipboard event
+  runs them (`useClipboardDriver`) with its data; run otherwise, they use the asynchronous
+  clipboard and paste through the root actions it is connected to at startup.
+  Shortcuts and the clipboard act only while `takesEditorInput` (`src/events/input.ts`).
 - **Tools** (`src/tools/`): drawing/selection tools; tool state lives in the `tools` namespace.
 - **Renderers** (planned, not built yet; see Phase 9 in `REFACTOR_PLAN.md`): pluggable
   renderers in `src/app/renderers/` that turn a document into another format, such as JSON,
@@ -297,7 +304,8 @@ Examples worth modelling new tools on:
   reloads the editor (`effects.reload`), so everything shown belongs to the new account;
   `shareAccount` makes the other open tabs reload too.
 - **Action typing**: use the aliases in `src/app/types.ts` — `Action`, `ActionWithParam<T>`,
-  `ActionGuard`. Destructure what you need from context (`{ state }`, `{ state, effects }`).
+  `ActionGuard`, and `ActionWithResult<R>` or `ActionWithParamAndResult<T, R>` for an action
+  that answers its caller. Destructure what you need from context (`{ state }`, `{ state, effects }`).
 - **Commands**: run a command with `runCommand(command)` (`actions/commands.ts`), which checks
   its `canExecute` guard first; never call `execute` directly. Guards are `CommandGuard`s that
   only read `state`, so UI evaluates them while rendering (`useCommandEnabled`) and stays in
@@ -309,7 +317,8 @@ Examples worth modelling new tools on:
 - **Shortcuts**: a tool or command declares `shortcut` (`r`, `mod+d`, `delete,backspace`;
   `mod` is Ctrl or Cmd, see `src/events/shortcuts.ts`). `events.pressShortcut` activates the
   tool or runs the command; the keyboard adapter skips it while a text field has focus. Keep
-  bindings unique (`tests/shortcuts.test.ts` checks) and avoid plain Ctrl/Cmd browser keys.
+  bindings unique (`tests/shortcuts.test.ts` checks) and avoid plain Ctrl/Cmd browser keys,
+  except a command's `clipboardEvent` shortcut, which is left to that browser event.
 - **Path alias** `src/*` → `./src` (in `tsconfig.json` and `webpack.config.mjs`). Mixed
   relative and `src/...` imports both appear; keep them consistent within a file.
 - **CSS Modules**: `*.css` with generated `*.css.d.ts` typings. Don't hand-edit the `.d.ts`.

@@ -3,6 +3,7 @@ import type {
     Camera,
     Document,
     Shape,
+    ShapeInput,
     Point,
     Size,
     Group,
@@ -203,14 +204,23 @@ function readShape(value: unknown, readChild: (child: unknown) => ShapeData): Sh
         ...(s.children === undefined ? {} : { children: list(s.children, readChild) })
     };
 
+    return { ...base, ...readShapeGeometry(value) };
+}
+
+/**
+ * Reads what a shape draws: its type and geometry, and an image's source or a
+ * text's value and size. Throws when any of it is invalid.
+ */
+export function readShapeGeometry(value: unknown) {
+    const s = record(value);
+
     // Lines and pens are placed by their points; earlier versions also stored an
     // unused `position` for them, which is dropped here.
     switch (s.type) {
         case 'rectangle':
-            return { ...base, type: s.type, position: point(s.position), size: size(s.size) };
+            return { type: s.type, position: point(s.position), size: size(s.size) };
         case 'image':
             return {
-                ...base,
                 type: s.type,
                 position: point(s.position),
                 size: size(s.size),
@@ -218,7 +228,6 @@ function readShape(value: unknown, readChild: (child: unknown) => ShapeData): Sh
             };
         case 'circle':
             return {
-                ...base,
                 type: s.type,
                 position: point(s.position),
                 radius: number(s.radius, 0)
@@ -228,16 +237,15 @@ function readShape(value: unknown, readChild: (child: unknown) => ShapeData): Sh
             number(radius.x, 0);
             number(radius.y, 0);
 
-            return { ...base, type: s.type, position: point(s.position), radius };
+            return { type: s.type, position: point(s.position), radius };
         }
 
         case 'line':
-            return { ...base, type: s.type, start: point(s.start), end: point(s.end) };
+            return { type: s.type, start: point(s.start), end: point(s.end) };
         case 'pen':
-            return { ...base, type: s.type, points: list(s.points, point) };
+            return { type: s.type, points: list(s.points, point) };
         case 'text':
             return {
-                ...base,
                 type: s.type,
                 position: point(s.position),
                 value: text(s.value ?? s.text),
@@ -246,6 +254,23 @@ function readShape(value: unknown, readChild: (child: unknown) => ShapeData): Sh
         default:
             throw new Error('Unsupported shape type');
     }
+}
+
+/** Reads a copied shape: what it draws, its name, description and rotation. */
+export function readCopiedShape(value: unknown): ShapeInput {
+    const s = record(value);
+    const geometry = readShapeGeometry(value);
+
+    if (geometry.type === 'pen' && geometry.points.length === 0) {
+        throw new Error('A pen needs a point');
+    }
+
+    return {
+        ...geometry,
+        name: text(s.name),
+        rotation: s.rotation === undefined ? 0 : number(s.rotation),
+        ...(s.description === undefined ? {} : { description: text(s.description) })
+    };
 }
 
 function readLink(value: unknown): LinkData {

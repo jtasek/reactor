@@ -2,6 +2,8 @@ import {
     Action,
     ActionGuard,
     ActionWithParam,
+    ActionWithParamAndResult,
+    ActionWithResult,
     Application,
     Box,
     Point,
@@ -13,6 +15,8 @@ import { Context } from '../index';
 import { createShape } from '../factories';
 import { orderAbove, ordersAbove, ordersBelow } from '../drawOrder';
 import { PropertyValue, SHAPE_PROPERTIES, applyProperty, canEdit } from '../properties';
+import { PasteResult, readClipboard, writeClipboard } from '../clipboard';
+import { takesEditorInput } from '../../events/input';
 import {
     hitTestShape,
     hitTolerance,
@@ -26,6 +30,7 @@ import {
     isShapeLocked,
     isShapeVisible,
     shapeGeometry,
+    shapeGeometryKey,
     boxCenter,
     angleBetween
 } from '../utils';
@@ -133,6 +138,92 @@ export const cloneShapes: ActionWithParam<string[]> = ({ state }, shapeIds) => {
         translateShape(clone, CLONE_OFFSET);
         putOnTop(state, clone);
     }
+};
+
+/** The selection commands act on, shown shapes only, in drawing order. */
+const selectedInDrawOrder = ({ currentDocument }: Application) => {
+    const selected = new Set(currentDocument.selectedShapesIds);
+
+    return currentDocument.shapesIds
+        .filter((id) => selected.has(id))
+        .map((id) => currentDocument.shapes[id]);
+};
+
+/** The selected shapes as clipboard text, or null when there are none to copy. */
+export const copySelection: ActionWithResult<string | null> = ({ state }) => {
+    const selected = takesEditorInput(state) ? selectedInDrawOrder(state) : [];
+
+    return selected.length > 0 ? writeClipboard(selected) : null;
+};
+
+/**
+ * The selected shapes that are not locked, as clipboard text and their ids, or
+ * null when there are none to cut. They are removed once the clipboard holds them.
+ */
+export const selectionToCut: ActionWithResult<{ text: string; shapeIds: string[] } | null> = ({
+    state
+}) => {
+    const cut = takesEditorInput(state)
+        ? selectedInDrawOrder(state).filter(
+              (shape) => !isShapeLocked(state.currentDocument, shape.id)
+          )
+        : [];
+
+    return cut.length > 0
+        ? { text: writeClipboard(cut), shapeIds: cut.map((shape) => shape.id) }
+        : null;
+};
+
+/** Removes the shapes that still exist and are not locked. */
+export const removeShapes: ActionWithParam<string[]> = ({ state }, shapeIds) => {
+    shapeIds
+        .filter(
+            (id) => state.currentDocument.shapes[id] && !isShapeLocked(state.currentDocument, id)
+        )
+        .forEach((id) => deleteShape(state, id));
+};
+
+/**
+ * Adds the shapes clipboard text holds above all others, selected in place of the
+ * selection. Where the first already has a shape drawn exactly like it, as when
+ * pasting into the document copied from, they are offset like clones until it has
+ * not. Pastes nothing while the editor takes no input, or when the text holds no
+ * shapes.
+ */
+export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (
+    { state, actions },
+    text
+) => {
+    if (!takesEditorInput(state)) {
+        return 'notNow';
+    }
+
+    const copied = readClipboard(text);
+
+    if (copied.length === 0) {
+        return 'noShapes';
+    }
+
+    let order = topOrder(state);
+    const pasted = copied.map((input) => {
+        order = orderAbove(order);
+
+        return createShape({ ...input, order, selected: true });
+    });
+    const drawn = new Set(
+        Object.values(state.currentDocument.shapes)
+            .filter((shape) => shape.type === pasted[0].type)
+            .map(shapeGeometryKey)
+    );
+
+    while (drawn.has(shapeGeometryKey(pasted[0]))) {
+        pasted.forEach((shape) => translateShape(shape, CLONE_OFFSET));
+    }
+
+    actions.unselectShapes();
+    pasted.forEach((shape) => putOnTop(state, shape));
+
+    return 'pasted';
 };
 
 /**
