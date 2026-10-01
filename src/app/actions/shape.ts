@@ -14,7 +14,13 @@ import {
 } from '../types';
 import { Context } from '../index';
 import { createGroup, createShape } from '../factories';
-import { containersHolding, shapeGroup, shownGroupShapesIds, withTheirGroups } from '../membership';
+import {
+    containersHolding,
+    groupAtPoint,
+    shapeGroup,
+    shownGroupShapesIds,
+    withTheirGroups
+} from '../membership';
 import { orderAbove, ordersAbove, ordersBelow } from '../drawOrder';
 import { PropertyValue, SHAPE_PROPERTIES, applyProperty, canEdit } from '../properties';
 import { PasteResult, readClipboard, writeClipboard } from '../clipboard';
@@ -452,21 +458,32 @@ export const enterClickedGroup: ActionWithParam<Record<string, boolean>> = (cont
 export const selectShapeAtPointer: ActionGuard = ({ state }) => {
     const { shapesIds, shapes } = state.currentDocument;
     const hitId = shapeAtPointer(state);
+    // A press in a group's box, between its shapes, presses the group.
+    const pressed =
+        hitId !== null
+            ? [hitId]
+            : (
+                  groupAtPoint(
+                      state.currentDocument,
+                      state.events.pointer.current,
+                      state.enteredGroupId
+                  )?.shapesIds ?? []
+              ).filter((id) => isInteractive(state, id));
 
-    if (hitId === null) {
+    if (pressed.length === 0) {
         return false;
     }
 
-    leaveGroupWithout(state, [hitId]);
+    leaveGroupWithout(state, pressed);
 
     // Preserve an existing multi-selection when grabbing one of its members, so
     // the whole group moves together.
-    if (shapes[hitId]?.selected) {
+    if (pressed.every((id) => shapes[id]?.selected)) {
         return true;
     }
 
     // A group is selected as one.
-    const hit = withTheirGroups(state.currentDocument, [hitId], state.enteredGroupId);
+    const hit = withTheirGroups(state.currentDocument, pressed, state.enteredGroupId);
 
     shapesIds.forEach((id: string) => {
         const shape = shapes[id];

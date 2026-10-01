@@ -317,9 +317,60 @@ describe('a group as one object', () => {
         expect(document().selectedGroupsIds).toEqual([groupId]);
     });
 
+    /** Two squares at x 0 and 60, grouped: the box spans x 0 to 70 with a wide gap. */
+    function spaced() {
+        const setup = storeWith(0, 60);
+
+        setup.run('group');
+
+        return { ...setup, groupId: Object.keys(setup.document().groups)[0] };
+    }
+
+    it('is selected and moved by pressing its box between its shapes', () => {
+        const { store, ids, groupId, document } = spaced();
+        const { events } = store.actions;
+
+        store.actions.unselectShapes();
+        events.beginGesture({ pointerId: 1, position: { x: 35, y: 5 } });
+        expect(document().selectedGroupsIds).toEqual([groupId]);
+
+        events.endGesture({ pointerId: 1, position: { x: 35, y: 25 } });
+        expect(positions(store, ids)).toEqual([
+            { x: 0, y: 20 },
+            { x: 60, y: 20 }
+        ]);
+    });
+
+    it('is highlighted with the pointer anywhere in its box', () => {
+        const { store, groupId, document } = spaced();
+        const hovered = () =>
+            hoveredGroupsIds(document(), store.state.enteredGroupId, store.state.events.pointer);
+
+        store.actions.unselectShapes();
+        store.actions.events.setCurrentPosition({ x: 35, y: 5 });
+        expect(hovered()).toEqual([groupId]);
+
+        store.actions.events.setCurrentPosition({ x: 35, y: 50 });
+        expect(hovered()).toEqual([]);
+    });
+
+    it('is not pressed by its box once entered, so a click there leaves it', () => {
+        const { store, selected } = spaced();
+        const { events } = store.actions;
+
+        events.setCurrentPosition({ x: 5, y: 5 });
+        store.actions.enterGroupAtPointer();
+        events.beginGesture({ pointerId: 1, position: { x: 35, y: 5 } });
+        events.endGesture({ pointerId: 1, position: { x: 35, y: 5 } });
+
+        expect(selected()).toEqual([]);
+        expect(store.state.enteredGroupId).toBeNull();
+    });
+
     it('is highlighted under the pointer until it is selected or entered', () => {
         const { store, ids, groupId, document } = grouped();
-        const hovered = () => hoveredGroupsIds(document(), store.state.enteredGroupId);
+        const hovered = () =>
+            hoveredGroupsIds(document(), store.state.enteredGroupId, store.state.events.pointer);
 
         store.actions.activateShape(ids[0]);
         expect(hovered()).toEqual([]);

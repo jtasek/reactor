@@ -221,7 +221,9 @@ export const useSelectedGroupsIds = () => {
 
 /** The groups the pointer highlights: see `hoveredGroupsIds`. */
 export const useHoveredGroupsIds = () => {
-    return useAppState((state) => hoveredGroupsIds(state.currentDocument, state.enteredGroupId));
+    return useAppState((state) =>
+        hoveredGroupsIds(state.currentDocument, state.enteredGroupId, state.events.pointer)
+    );
 };
 
 /** Whether the group is selected as one. */

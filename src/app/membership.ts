@@ -141,20 +141,49 @@ export function selectedGroupsIdsOf(document: Document, enteredGroupId: string |
 }
 
 /**
- * The groups to highlight under the pointer: it is over a shown shape of theirs,
- * and they are neither selected as one nor the group double-clicked into.
+ * The group whose box holds a point, if any: the last one, but never the group
+ * double-clicked into, whose shapes are pressed one by one.
  */
-export function hoveredGroupsIds(document: Document, enteredGroupId: string | null): string[] {
-    const selected = new Set(selectedGroupsIdsOf(document, enteredGroupId));
+export function groupAtPoint(
+    document: Document,
+    point: Point,
+    enteredGroupId: string | null
+): Group | undefined {
+    return Object.values(document.groups).findLast((group) => {
+        const frame = group.id === enteredGroupId ? null : groupFrame(document, group);
 
-    return Object.values(document.groups)
-        .filter(
-            (group) =>
-                group.id !== enteredGroupId &&
-                !selected.has(group.id) &&
-                shownGroupShapesIds(document, group).some((id) => document.shapes[id].active)
-        )
-        .map((group) => group.id);
+        if (!frame) {
+            return false;
+        }
+
+        const { topLeft, bottomRight } = frame.box;
+        const local = rotatePoint(point, boxCenter(frame.box), -frame.rotation);
+
+        return (
+            local.x >= topLeft.x &&
+            local.x <= bottomRight.x &&
+            local.y >= topLeft.y &&
+            local.y <= bottomRight.y
+        );
+    });
+}
+
+/**
+ * The groups to highlight under the pointer: it is in their box, no drag is in
+ * progress, and they are neither selected as one nor the group double-clicked into.
+ */
+export function hoveredGroupsIds(
+    document: Document,
+    enteredGroupId: string | null,
+    pointer: { current: Point; dragging: boolean }
+): string[] {
+    const group = pointer.dragging
+        ? undefined
+        : groupAtPoint(document, pointer.current, enteredGroupId);
+
+    return group && !selectedGroupsIdsOf(document, enteredGroupId).includes(group.id)
+        ? [group.id]
+        : [];
 }
 
 /** The selected shapes the commands may change, in drawing order. */
