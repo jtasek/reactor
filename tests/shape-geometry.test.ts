@@ -1,4 +1,7 @@
-import { getShapeBounds } from 'src/app/utils';
+import { json } from 'overmind';
+import { resizeCursor } from 'src/app/geometry';
+import type { Box, Point, Shape } from 'src/app/types';
+import { boxCenter, getShapeBounds, rotatePoint } from 'src/app/utils';
 import { createTestStore } from './support/store';
 
 /**
@@ -96,9 +99,10 @@ const cases = [
         // Estimated from the font size: 0.6em per character, ascent 0.8em.
         bounds: { topLeft: { x: 10, y: 24 }, bottomRight: { x: 46, y: 44 } },
         moved: { position: { x: 15, y: 35 } },
-        // Text scales its font with the box height and keeps its baseline anchor.
+        // Text scales its font with the box, whose top-left corner stays put, so its
+        // baseline moves down with the larger ascent.
         resizeTo: { x: 82, y: 64 },
-        resized: { position: { x: 10, y: 40 }, fontSize: 40 }
+        resized: { position: { x: 10, y: 56 }, fontSize: 40 }
     }
 ];
 
@@ -149,19 +153,85 @@ describe.each(cases)('$name geometry', ({ shape, bounds, moved, resizeTo, resize
     });
 });
 
-it('maps a resize pointer into the unrotated frame of a rotated shape', () => {
+/** Where a point of a shape's unrotated box is drawn, rotated about the box center. */
+function drawn(shape: Shape, point: (box: Box) => Point) {
+    const box = getShapeBounds(shape);
+
+    return rotatePoint(point(box), boxCenter(box), shape.rotation ?? 0);
+}
+
+function rectangle(shape: Shape) {
+    if (shape.type !== 'rectangle') {
+        throw new Error(`Expected a rectangle, not a ${shape.type}`);
+    }
+
+    return shape;
+}
+
+const topLeft = (box: Box) => box.topLeft;
+const bottomRight = (box: Box) => box.bottomRight;
+
+it('resizes a rotated shape so the handle follows the pointer and the opposite one stays', () => {
     const { store, id, shape: current } = storeWith(cases[0].shape);
 
     store.actions.updateShape({ id, rotation: 90 });
-    // Rotating (70, 60) by 90° around the center (30, 35) gives (5, 75).
+
+    const anchor = drawn(current(), topLeft);
+    // Where the bottom-right corner of a 60 by 40 box would be drawn.
+    const pointer = { x: 5, y: 75 };
+
+    store.actions.resizeShape({ shapeId: id, handlerType: 'bottomRight', position: pointer });
+
+    expect(rectangle(current()).size).toEqual({
+        width: expect.closeTo(60),
+        height: expect.closeTo(40)
+    });
+    expect(drawn(current(), topLeft)).toEqual({
+        x: expect.closeTo(anchor.x),
+        y: expect.closeTo(anchor.y)
+    });
+    expect(drawn(current(), bottomRight)).toEqual({
+        x: expect.closeTo(pointer.x),
+        y: expect.closeTo(pointer.y)
+    });
+});
+
+it('resizes from where the drag began, so steps between measurements do not add up', () => {
+    const { store, id, shape: current } = storeWith(cases[0].shape);
+
+    store.actions.updateShape({ id, rotation: 30 });
+
+    const original = rectangle(json(current()));
+
+    for (const position of [
+        { x: 60, y: 70 },
+        { x: 75, y: 80 },
+        { x: 90, y: 95 }
+    ]) {
+        store.actions.resizeShape({ shapeId: id, handlerType: 'bottomRight', position, original });
+    }
+
+    const stepped = rectangle(json(current()));
+
+    store.actions.updateShape({ id, position: original.position, size: original.size });
     store.actions.resizeShape({
         shapeId: id,
         handlerType: 'bottomRight',
-        position: { x: 5, y: 75 }
+        position: { x: 90, y: 95 },
+        original
     });
 
-    expect(current()).toMatchObject({
-        position: { x: expect.closeTo(10), y: expect.closeTo(20) },
-        size: { width: expect.closeTo(60), height: expect.closeTo(40) }
-    });
+    expect(current()).toMatchObject({ position: stepped.position, size: stepped.size });
+});
+
+it('points each resize cursor the way its handle points on screen', () => {
+    expect(resizeCursor('topLeft')).toBe('nwse-resize');
+    expect(resizeCursor('topRight')).toBe('nesw-resize');
+    expect(resizeCursor('middleTop')).toBe('ns-resize');
+    expect(resizeCursor('middleLeft')).toBe('ew-resize');
+
+    expect(resizeCursor('middleTop', 90)).toBe('ew-resize');
+    expect(resizeCursor('topLeft', 90)).toBe('nesw-resize');
+    expect(resizeCursor('middleRight', 45)).toBe('nwse-resize');
+    expect(resizeCursor('middleRight', -45)).toBe('nesw-resize');
 });

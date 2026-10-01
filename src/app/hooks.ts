@@ -112,6 +112,11 @@ export const useCamera = () => {
     return useAppState((state) => state.currentDocument.camera);
 };
 
+/** The camera's zoom, for overlays drawn at a constant size on screen. */
+export const useCameraScale = () => {
+    return useAppState((state) => state.currentDocument.camera.scale);
+};
+
 export const useDocument = (id: string) => {
     return useAppState((state) => state.documents[id]);
 };

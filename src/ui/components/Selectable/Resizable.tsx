@@ -5,9 +5,14 @@ import { RotateHandle } from '../Handle/RotateHandle';
 import handleStyles from '../Handle/styles.css';
 import { Props } from './Selectable';
 import { getShapeBounds } from '../../../app/utils';
-import { usePointer } from 'src/app/hooks';
+import { resizeCursor } from 'src/app/geometry';
+import type { ResizeHandlerType } from 'src/app/types';
+import { useCameraScale, usePointer } from 'src/app/hooks';
 
+/** Sizes on screen, in pixels, whatever the zoom. */
+const HANDLE_RADIUS = 5;
 const ROTATE_HANDLE_OFFSET = 24;
+const BADGE_OFFSET = 14;
 
 function calcBoundingPoints(box: Box) {
     const topLeft = box.topLeft;
@@ -36,6 +41,7 @@ function calcBoundingPoints(box: Box) {
 
 export const Resizable: FC<Props> = ({ shape }) => {
     const { gesture } = usePointer();
+    const scale = useCameraScale();
     const activeHandle =
         gesture.kind === 'resizing' && gesture.shapeId === shape.id ? gesture.handle : undefined;
     const rotateActive = gesture.kind === 'rotating' && gesture.shapeId === shape.id;
@@ -61,9 +67,17 @@ export const Resizable: FC<Props> = ({ shape }) => {
         middleBottom
     } = calcBoundingPoints(box);
 
-    const rotatePosition = { x: middleTop.x, y: middleTop.y - ROTATE_HANDLE_OFFSET };
+    const rotatePosition = { x: middleTop.x, y: middleTop.y - ROTATE_HANDLE_OFFSET / scale };
     const rotation = shape.rotation ?? 0;
-    const badgePosition = { x: rotatePosition.x, y: rotatePosition.y - 14 };
+    const badgePosition = { x: rotatePosition.x, y: rotatePosition.y - BADGE_OFFSET / scale };
+    const size = HANDLE_RADIUS / scale;
+    const handle = (handlerType: ResizeHandlerType) => ({
+        active: activeHandle === handlerType,
+        cursor: resizeCursor(handlerType, rotation),
+        handlerType,
+        shapeId: shape.id,
+        size
+    });
     const displayDegrees = ((Math.round(rotation) % 360) + 360) % 360;
 
     return (
@@ -80,72 +94,43 @@ export const Resizable: FC<Props> = ({ shape }) => {
                 active={rotateActive}
                 position={rotatePosition}
                 shapeId={shape.id}
+                size={size}
             />
             {rotateActive && (
                 <text
                     className={handleStyles.rotateBadge}
-                    x={badgePosition.x}
-                    y={badgePosition.y}
-                    transform={`rotate(${-rotation} ${badgePosition.x} ${badgePosition.y})`}
+                    transform={`translate(${badgePosition.x} ${badgePosition.y}) rotate(${-rotation}) scale(${1 / scale})`}
                 >
                     {displayDegrees}°
                 </text>
             )}
-            <Handle
-                key={`topLeft + ${shape.id}`}
-                active={activeHandle === 'topLeft'}
-                position={topLeft}
-                handlerType="topLeft"
-                shapeId={shape.id}
-            />
-            <Handle
-                key={`middleTop + ${shape.id}`}
-                active={activeHandle === 'middleTop'}
-                position={middleTop}
-                handlerType="middleTop"
-                shapeId={shape.id}
-            />
-            <Handle
-                key="topRight"
-                active={activeHandle === 'topRight'}
-                position={topRight}
-                handlerType="topRight"
-                shapeId={shape.id}
-            />
+            <Handle key={`topLeft + ${shape.id}`} position={topLeft} {...handle('topLeft')} />
+            <Handle key={`middleTop + ${shape.id}`} position={middleTop} {...handle('middleTop')} />
+            <Handle key="topRight" position={topRight} {...handle('topRight')} />
             <Handle
                 key={`middleRight + ${shape.id}`}
-                active={activeHandle === 'middleRight'}
                 position={middleRight}
-                handlerType="middleRight"
-                shapeId={shape.id}
+                {...handle('middleRight')}
             />
             <Handle
                 key={`bottomRight + ${shape.id}`}
-                active={activeHandle === 'bottomRight'}
                 position={bottomRight}
-                handlerType="bottomRight"
-                shapeId={shape.id}
+                {...handle('bottomRight')}
             />
             <Handle
                 key={`middleBottom + ${shape.id}`}
-                active={activeHandle === 'middleBottom'}
                 position={middleBottom}
-                handlerType="middleBottom"
-                shapeId={shape.id}
+                {...handle('middleBottom')}
             />
             <Handle
                 key={`bottomLeft + ${shape.id}`}
-                active={activeHandle === 'bottomLeft'}
                 position={bottomLeft}
-                handlerType="bottomLeft"
-                shapeId={shape.id}
+                {...handle('bottomLeft')}
             />
             <Handle
                 key={`middleLeft + ${shape.id}`}
-                active={activeHandle === 'middleLeft'}
                 position={middleLeft}
-                handlerType="middleLeft"
-                shapeId={shape.id}
+                {...handle('middleLeft')}
             />
         </>
     );
