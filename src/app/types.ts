@@ -1,4 +1,5 @@
 import { Context } from './index';
+import type { GroupFrame } from './membership';
 
 export enum Orientation {
     Horizontal = 'horizontal',
@@ -211,6 +212,7 @@ export interface Document {
     components: HashTable<Component>;
     groupsIds: string[];
     selectedGroupsIds: string[];
+    groupFrames: Record<string, GroupFrame | undefined>;
     groups: HashTable<Group>;
     selectedLayersIds: string[];
     layers: HashTable<Layer>;

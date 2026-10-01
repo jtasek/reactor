@@ -74,6 +74,8 @@ export interface Pointer {
     center: Point;
     current: Point;
     dragging: boolean;
+    /** Whether the pointer is over the canvas, where `current` follows it. */
+    inside: boolean;
     gesture: Gesture;
     offset: Point;
     path: Point[];

@@ -16,6 +16,7 @@ export const Surface: FC<Props> = ({ children }) => {
         handleLostPointerCapture,
         handlePointerCancel,
         handlePointerDown,
+        handlePointerLeave,
         handlePointerMove,
         handlePointerUp,
         handleTouchCancel,
@@ -35,6 +36,7 @@ export const Surface: FC<Props> = ({ children }) => {
             onLostPointerCapture={handleLostPointerCapture}
             onPointerCancel={handlePointerCancel}
             onPointerDown={handlePointerDown}
+            onPointerLeave={handlePointerLeave}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onTouchCancel={handleTouchCancel}

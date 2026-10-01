@@ -1,7 +1,7 @@
 import { derived } from 'overmind';
 import { Application, Document } from '../types';
 import { isShapeVisible } from '../utils';
-import { selectedGroupsIdsOf } from '../membership';
+import { groupFrame, selectedGroupsIdsOf } from '../membership';
 
 export const commandsIds = derived(({ commands }: Application) => {
     return Object.keys(commands);
@@ -19,6 +19,16 @@ export const groupsIds = derived((currentDocument: Document) => {
 export const selectedGroupsIds = derived(
     (currentDocument: Document, { enteredGroupId }: Application) =>
         selectedGroupsIdsOf(currentDocument, enteredGroupId)
+);
+
+/** Each group's box and rotation, kept until its shapes change; none without a shown shape. */
+export const groupFrames = derived((currentDocument: Document) =>
+    Object.fromEntries(
+        Object.values(currentDocument.groups).map((group) => [
+            group.id,
+            groupFrame(currentDocument, group) ?? undefined
+        ])
+    )
 );
 
 export const layersIds = derived((currentDocument: Document) => {

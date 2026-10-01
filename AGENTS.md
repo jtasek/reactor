@@ -276,7 +276,9 @@ a release that did not move): its shapes are then pressed or boxed one by one un
 outside. The pointer highlights a grouped shape alone only inside its group;
 outside it, the group's box is highlighted (`hoveredGroupsIds`). A group's box counts
 as the group: a press anywhere in it, also between its shapes, selects and drags the group
-(`groupAtPoint`), and the pointer anywhere in it highlights it. Shapes of selected groups are found once, in `Shapes`, so a selection change does
+(`groupAtPoint`), and the pointer anywhere in it highlights it, unless a shape outside the
+group is under it or it has left the canvas (`pointer.inside`). Frames are cached per
+document (`groupFrames`, derived), so a pointer move does not recompute them. Shapes of selected groups are found once, in `Shapes`, so a selection change does
 not re-render every shape.
 
 A shape is in one group and on one layer at most: Group and Layer take the selected shapes

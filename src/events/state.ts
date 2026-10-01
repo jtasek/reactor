@@ -18,6 +18,7 @@ export const state: Events = {
         current: { x: 0, y: 0 },
         dragging,
         gesture: { kind: 'idle' },
+        inside: false,
         offset,
         path: [],
         radius,

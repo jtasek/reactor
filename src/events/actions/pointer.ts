@@ -160,6 +160,10 @@ export const movePointer = ({ state, actions }: Context, { pointerId, position }
 
     pointer.current = position;
 
+    if (!pointer.inside) {
+        pointer.inside = true;
+    }
+
     if (
         gesture.kind !== 'idle' &&
         !gesture.moved &&
@@ -204,6 +208,11 @@ export const movePointer = ({ state, actions }: Context, { pointerId, position }
 
         actions.rotateGroup({ groupId, position, shapes, frame });
     }
+};
+
+/** The pointer left the canvas, so what it was over there is no longer under it. */
+export const leaveSurface = ({ state }: Context) => {
+    state.events.pointer.inside = false;
 };
 
 /**

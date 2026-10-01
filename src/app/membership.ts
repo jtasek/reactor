@@ -150,7 +150,7 @@ export function groupAtPoint(
     enteredGroupId: string | null
 ): Group | undefined {
     return Object.values(document.groups).findLast((group) => {
-        const frame = group.id === enteredGroupId ? null : groupFrame(document, group);
+        const frame = group.id === enteredGroupId ? undefined : document.groupFrames[group.id];
 
         if (!frame) {
             return false;
@@ -169,21 +169,30 @@ export function groupAtPoint(
 }
 
 /**
- * The groups to highlight under the pointer: it is in their box, no drag is in
- * progress, and they are neither selected as one nor the group double-clicked into.
+ * The groups to highlight under the pointer, as a press there would select
+ * them: the pointer is over the canvas in their box, with no shape outside the
+ * group under it and no drag in progress, and they are neither selected as one
+ * nor the group double-clicked into.
  */
 export function hoveredGroupsIds(
     document: Document,
     enteredGroupId: string | null,
-    pointer: { current: Point; dragging: boolean }
+    pointer: { current: Point; dragging: boolean; inside: boolean }
 ): string[] {
-    const group = pointer.dragging
-        ? undefined
-        : groupAtPoint(document, pointer.current, enteredGroupId);
+    const group =
+        pointer.inside && !pointer.dragging
+            ? groupAtPoint(document, pointer.current, enteredGroupId)
+            : undefined;
 
-    return group && !selectedGroupsIdsOf(document, enteredGroupId).includes(group.id)
-        ? [group.id]
-        : [];
+    if (!group || selectedGroupsIdsOf(document, enteredGroupId).includes(group.id)) {
+        return [];
+    }
+
+    const takesThePress = document.shapesIds.some(
+        (id) => document.shapes[id].active && !group.shapesIds.includes(id)
+    );
+
+    return takesThePress ? [] : [group.id];
 }
 
 /** The selected shapes the commands may change, in drawing order. */
