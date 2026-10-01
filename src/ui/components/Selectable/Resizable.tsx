@@ -1,13 +1,22 @@
 import React, { FC } from 'react';
-import { Box } from '../../../app/types';
+import type { Box, ResizeHandlerType } from '../../../app/types';
 import { Handle } from '../Handle';
 import { RotateHandle } from '../Handle/RotateHandle';
 import handleStyles from '../Handle/styles.css';
 import { Props } from './Selectable';
 import { getShapeBounds } from '../../../app/utils';
-import { usePointer } from 'src/app/hooks';
+import { resizeCursor } from '../../../app/geometry';
+import { useCameraScale, usePointer } from '../../../app/hooks';
 
+/** Sizes on screen, in pixels, whatever the zoom. */
+const HANDLE_RADIUS = 5;
 const ROTATE_HANDLE_OFFSET = 24;
+const BADGE_OFFSET = 14;
+/** Below this length on screen, handles along a side would cover the shape. */
+const MIN_HANDLED_SIDE = 6 * HANDLE_RADIUS;
+
+const CORNERS: ResizeHandlerType[] = ['topLeft', 'topRight', 'bottomRight', 'bottomLeft'];
+const MIDDLES: ResizeHandlerType[] = ['middleTop', 'middleRight', 'middleBottom', 'middleLeft'];
 
 function calcBoundingPoints(box: Box) {
     const topLeft = box.topLeft;
@@ -36,6 +45,7 @@ function calcBoundingPoints(box: Box) {
 
 export const Resizable: FC<Props> = ({ shape }) => {
     const { gesture } = usePointer();
+    const scale = useCameraScale();
     const activeHandle =
         gesture.kind === 'resizing' && gesture.shapeId === shape.id ? gesture.handle : undefined;
     const rotateActive = gesture.kind === 'rotating' && gesture.shapeId === shape.id;
@@ -50,20 +60,24 @@ export const Resizable: FC<Props> = ({ shape }) => {
         return null;
     }
 
-    const {
-        topLeft,
-        topRight,
-        bottomLeft,
-        bottomRight,
-        middleLeft,
-        middleRight,
-        middleTop,
-        middleBottom
-    } = calcBoundingPoints(box);
+    const points = calcBoundingPoints(box);
+    const { middleTop } = points;
 
-    const rotatePosition = { x: middleTop.x, y: middleTop.y - ROTATE_HANDLE_OFFSET };
+    const rotatePosition = { x: middleTop.x, y: middleTop.y - ROTATE_HANDLE_OFFSET / scale };
     const rotation = shape.rotation ?? 0;
-    const badgePosition = { x: rotatePosition.x, y: rotatePosition.y - 14 };
+    const badgePosition = { x: rotatePosition.x, y: rotatePosition.y - BADGE_OFFSET / scale };
+    const size = HANDLE_RADIUS / scale;
+    // Corners stay while either side is long enough to keep them apart; middle
+    // handles need both, as they would otherwise meet the corners or each other.
+    const longSides = [box.width, box.height].filter(
+        (side) => side * scale >= MIN_HANDLED_SIDE
+    ).length;
+    const shown = [...(longSides > 0 ? CORNERS : []), ...(longSides > 1 ? MIDDLES : [])];
+
+    if (activeHandle && !shown.includes(activeHandle)) {
+        shown.push(activeHandle);
+    }
+
     const displayDegrees = ((Math.round(rotation) % 360) + 360) % 360;
 
     return (
@@ -80,73 +94,27 @@ export const Resizable: FC<Props> = ({ shape }) => {
                 active={rotateActive}
                 position={rotatePosition}
                 shapeId={shape.id}
+                size={size}
             />
             {rotateActive && (
                 <text
                     className={handleStyles.rotateBadge}
-                    x={badgePosition.x}
-                    y={badgePosition.y}
-                    transform={`rotate(${-rotation} ${badgePosition.x} ${badgePosition.y})`}
+                    transform={`translate(${badgePosition.x} ${badgePosition.y}) rotate(${-rotation}) scale(${1 / scale})`}
                 >
                     {displayDegrees}°
                 </text>
             )}
-            <Handle
-                key={`topLeft + ${shape.id}`}
-                active={activeHandle === 'topLeft'}
-                position={topLeft}
-                handlerType="topLeft"
-                shapeId={shape.id}
-            />
-            <Handle
-                key={`middleTop + ${shape.id}`}
-                active={activeHandle === 'middleTop'}
-                position={middleTop}
-                handlerType="middleTop"
-                shapeId={shape.id}
-            />
-            <Handle
-                key="topRight"
-                active={activeHandle === 'topRight'}
-                position={topRight}
-                handlerType="topRight"
-                shapeId={shape.id}
-            />
-            <Handle
-                key={`middleRight + ${shape.id}`}
-                active={activeHandle === 'middleRight'}
-                position={middleRight}
-                handlerType="middleRight"
-                shapeId={shape.id}
-            />
-            <Handle
-                key={`bottomRight + ${shape.id}`}
-                active={activeHandle === 'bottomRight'}
-                position={bottomRight}
-                handlerType="bottomRight"
-                shapeId={shape.id}
-            />
-            <Handle
-                key={`middleBottom + ${shape.id}`}
-                active={activeHandle === 'middleBottom'}
-                position={middleBottom}
-                handlerType="middleBottom"
-                shapeId={shape.id}
-            />
-            <Handle
-                key={`bottomLeft + ${shape.id}`}
-                active={activeHandle === 'bottomLeft'}
-                position={bottomLeft}
-                handlerType="bottomLeft"
-                shapeId={shape.id}
-            />
-            <Handle
-                key={`middleLeft + ${shape.id}`}
-                active={activeHandle === 'middleLeft'}
-                position={middleLeft}
-                handlerType="middleLeft"
-                shapeId={shape.id}
-            />
+            {shown.map((handlerType) => (
+                <Handle
+                    key={handlerType}
+                    active={activeHandle === handlerType}
+                    cursor={resizeCursor(handlerType, rotation)}
+                    handlerType={handlerType}
+                    position={points[handlerType]}
+                    shapeId={shape.id}
+                    size={size}
+                />
+            ))}
         </>
     );
 };

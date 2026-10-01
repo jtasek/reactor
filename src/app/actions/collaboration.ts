@@ -1,4 +1,5 @@
-import type { ActionWithParam, Document } from '../types';
+import type { ActionWithParam, Box, Document, Shape } from '../types';
+import { getBoundingBox, mapPointBetweenBoxes } from '../utils';
 import { isRecord, same, type EntityChanges, type RemoteChanges } from '../services/collaboration';
 import { inDrawingOrder } from '../drawOrder';
 import {
@@ -55,11 +56,36 @@ function rebase(base: object, previous: object, next: object, keys: Iterable<str
 }
 
 /**
+ * Moves and scales measured bounds as the geometry they were measured from
+ * changed, since they are this copy's own and other copies never change them.
+ * A side the geometry had no extent along takes the new geometry's.
+ */
+function followBox(box: Box, from: Box, to: Box): Box {
+    const start = mapPointBetweenBoxes(box.topLeft, from, to);
+    const end = mapPointBetweenBoxes(box.bottomRight, from, to);
+    const topLeft = {
+        x: from.width > 0 ? start.x : to.topLeft.x,
+        y: from.height > 0 ? start.y : to.topLeft.y
+    };
+    const bottomRight = {
+        x: from.width > 0 ? end.x : to.bottomRight.x,
+        y: from.height > 0 ? end.y : to.bottomRight.y
+    };
+
+    return {
+        topLeft,
+        bottomRight,
+        width: bottomRight.x - topLeft.x,
+        height: bottomRight.y - topLeft.y
+    };
+}
+
+/**
  * Gives what a gesture restores if canceled other copies' changes, so canceling
  * undoes only the gesture's own changes, even where they override another copy's.
  */
 function rebaseGesture(
-    snapshots: Record<string, object>,
+    snapshots: Record<string, Shape>,
     { entities, unwritten = {} }: RemoteChanges
 ) {
     for (const id of Object.keys(snapshots)) {
@@ -71,12 +97,19 @@ function rebaseGesture(
         }
 
         if (change?.previous) {
+            const snapshot = snapshots[id];
+            const before = getBoundingBox(snapshot);
+
             rebase(
-                snapshots[id],
+                snapshot,
                 hydrateEntity('shapes', change.previous),
                 hydrateEntity('shapes', change.view),
                 change.changed
             );
+
+            if (snapshot.bounds) {
+                snapshot.bounds = followBox(snapshot.bounds, before, getBoundingBox(snapshot));
+            }
         }
     }
 }

@@ -128,75 +128,126 @@ function resizeAspectBox(
 }
 
 /**
- * Resizes a shape in place so the dragged handle follows `pointer`. The shape is
- * rendered rotated around its box center while its geometry stays axis-aligned,
- * so the pointer is first mapped back into that unrotated frame.
+ * Moves a box resized in a rotated shape's unrotated frame so the shape is drawn
+ * where it was: the shape rotates about its box's center, which moves as the box
+ * changes size, so the box is shifted by how far the old and new pivots would
+ * carry it apart.
+ */
+function keepDrawnPlace(box: Box, oldCenter: Point, rotation: number): Box {
+    const center = boxCenter(box);
+    const drawn = rotatePoint(center, oldCenter, rotation);
+    const shift = { x: drawn.x - center.x, y: drawn.y - center.y };
+
+    return {
+        topLeft: add(box.topLeft, shift),
+        bottomRight: add(box.bottomRight, shift),
+        width: box.width,
+        height: box.height
+    };
+}
+
+/**
+ * Keeps a side the old box lacked, as a flat line's height, where it was: a
+ * line's or pen's points have nothing to stretch along it, so the box must not
+ * grow there.
+ */
+function keepFlatSides(box: Box, oldBox: Box): Box {
+    const left = oldBox.width > 0 ? box.topLeft.x : oldBox.topLeft.x;
+    const top = oldBox.height > 0 ? box.topLeft.y : oldBox.topLeft.y;
+    const width = oldBox.width > 0 ? box.width : 0;
+    const height = oldBox.height > 0 ? box.height : 0;
+
+    return {
+        topLeft: { x: left, y: top },
+        bottomRight: { x: left + width, y: top + height },
+        width,
+        height
+    };
+}
+
+/**
+ * Resizes a shape in place so the dragged handle follows `pointer`, from the shape
+ * as it was when the drag began (`original`), so the result depends only on where
+ * the pointer is. The shape is drawn rotated about its box center while its
+ * geometry stays axis-aligned: the pointer is mapped into that unrotated frame,
+ * and the resized box is moved so the opposite handle stays where it was drawn.
  */
 export function resizeShapeFromHandle(
     shape: Shape,
     handlerType: ResizeHandlerType,
-    pointer: Point
+    pointer: Point,
+    original: Shape
 ): void {
-    const oldBox = getShapeBounds(shape);
-    const local = shape.rotation
-        ? rotatePoint(pointer, boxCenter(oldBox), -shape.rotation)
-        : pointer;
-    const newBox = resizeBox(oldBox, handlerType, local);
+    const oldBox = getShapeBounds(original);
+    const center = boxCenter(oldBox);
+    const rotation = original.rotation ?? 0;
+    const local = rotation ? rotatePoint(pointer, center, -rotation) : pointer;
+    const ratio = oldBox.height > 0 ? oldBox.width / oldBox.height : 1;
+    // Images keep their aspect ratio, so they never letterbox inside their box,
+    // text scales with its font size, and circles stay round.
+    const free = resizeBox(oldBox, handlerType, local);
+    const resized =
+        original.type === 'image' || original.type === 'text' || original.type === 'circle'
+            ? resizeAspectBox(oldBox, handlerType, local, original.type === 'circle' ? 1 : ratio)
+            : original.type === 'line' || original.type === 'pen'
+              ? keepFlatSides(free, oldBox)
+              : free;
+    const box = rotation ? keepDrawnPlace(resized, center, rotation) : resized;
+    const scaleX = oldBox.width > 0 ? box.width / oldBox.width : 1;
+    const scaleY = oldBox.height > 0 ? box.height / oldBox.height : 1;
 
     switch (shape.type) {
-        case 'image': {
-            // Lock to the image's aspect ratio so it never letterboxes inside its
-            // box (which would leave the selection border outside the picture).
-            const ratio = oldBox.height > 0 ? oldBox.width / oldBox.height : 1;
-            const box = resizeAspectBox(oldBox, handlerType, local, ratio);
-
+        case 'image':
+        case 'rectangle':
             shape.position = { x: box.topLeft.x, y: box.topLeft.y };
             shape.size = { width: box.width, height: box.height };
             break;
-        }
 
-        case 'rectangle':
-            shape.position = { x: newBox.topLeft.x, y: newBox.topLeft.y };
-            shape.size = { width: newBox.width, height: newBox.height };
-            break;
-
-        case 'circle': {
-            const box = resizeAspectBox(oldBox, handlerType, local, 1);
-
+        case 'circle':
             shape.position = boxCenter(box);
             shape.radius = box.width / 2;
             break;
-        }
 
         case 'ellipse':
-            shape.position = boxCenter(newBox);
-            shape.radius = { x: newBox.width / 2, y: newBox.height / 2 };
+            shape.position = boxCenter(box);
+            shape.radius = { x: box.width / 2, y: box.height / 2 };
             break;
 
         case 'line':
-            shape.start = mapPointBetweenBoxes(shape.start, oldBox, newBox);
-            shape.end = mapPointBetweenBoxes(shape.end, oldBox, newBox);
+            if (original.type === 'line') {
+                shape.start = mapPointBetweenBoxes(original.start, oldBox, box);
+                shape.end = mapPointBetweenBoxes(original.end, oldBox, box);
+            }
             break;
 
         case 'pen':
-            shape.points = shape.points.map((point) => mapPointBetweenBoxes(point, oldBox, newBox));
+            if (original.type === 'pen') {
+                shape.points = original.points.map((point) =>
+                    mapPointBetweenBoxes(point, oldBox, box)
+                );
+            }
             break;
 
-        case 'text': {
-            const ratio = oldBox.height > 0 ? newBox.height / oldBox.height : 1;
-
-            shape.fontSize = Math.max(1, (shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE) * ratio);
-            // Keep the top edge following the handle (text anchors at its baseline).
-            shape.position = {
-                x: newBox.topLeft.x,
-                y: shape.position.y + (newBox.topLeft.y - oldBox.topLeft.y)
-            };
+        case 'text':
+            if (original.type === 'text') {
+                shape.fontSize = Math.max(
+                    1,
+                    (original.fontSize ?? DEFAULT_TEXT_FONT_SIZE) * scaleY
+                );
+                // Text is placed at its baseline, below the top of its box.
+                shape.position = {
+                    x: box.topLeft.x + (original.position.x - oldBox.topLeft.x) * scaleX,
+                    y: box.topLeft.y + (original.position.y - oldBox.topLeft.y) * scaleY
+                };
+            }
             break;
-        }
 
         default:
             assertNever(shape);
     }
+
+    // The pivot follows the new box at once, rather than after the next measurement.
+    shape.bounds = box;
 }
 
 /** How far from a shape's drawn geometry a press still hits it, in world units. */
@@ -318,4 +369,25 @@ export function shapeIntersectsBox(
     ];
 
     return !axes.some((axis) => separatedAlong(axis, corners, boxCorners(area)));
+}
+
+/** The direction each resize handle points from the box center, in degrees clockwise from +x. */
+const HANDLE_DIRECTIONS: Record<ResizeHandlerType, number> = {
+    middleRight: 0,
+    bottomRight: 45,
+    middleBottom: 90,
+    bottomLeft: 135,
+    middleLeft: 180,
+    topLeft: 225,
+    middleTop: 270,
+    topRight: 315
+};
+
+const RESIZE_CURSORS = ['ew-resize', 'nwse-resize', 'ns-resize', 'nesw-resize'];
+
+/** The resize cursor for a handle of a shape drawn rotated by `rotation` degrees. */
+export function resizeCursor(handlerType: ResizeHandlerType, rotation = 0): string {
+    const direction = (((HANDLE_DIRECTIONS[handlerType] + rotation) % 180) + 180) % 180;
+
+    return RESIZE_CURSORS[Math.round(direction / 45) % RESIZE_CURSORS.length];
 }

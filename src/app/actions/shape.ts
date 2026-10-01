@@ -418,9 +418,11 @@ export const resizeShape = (
         shapeId: string;
         handlerType: ResizeHandlerType;
         position: Point;
+        /** The shape as it was when the drag began; the shape itself when there is none. */
+        original?: Shape;
     }
 ) => {
-    const { shapeId, handlerType, position } = payload;
+    const { shapeId, handlerType, position, original } = payload;
 
     const shape = state.currentDocument?.shapes[shapeId];
 
@@ -428,7 +430,7 @@ export const resizeShape = (
         return;
     }
 
-    resizeShapeFromHandle(shape, handlerType, position);
+    resizeShapeFromHandle(shape, handlerType, position, original ?? shape);
 };
 
 export const rotateShape = (

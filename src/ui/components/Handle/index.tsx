@@ -9,9 +9,17 @@ export interface Props {
     size?: number;
     handlerType: ResizeHandlerType;
     active: boolean;
+    cursor?: string;
 }
 
-export const Handle: FC<Props> = ({ shapeId, position, handlerType, size = 5, active = false }) => {
+export const Handle: FC<Props> = ({
+    shapeId,
+    position,
+    handlerType,
+    size = 5,
+    active = false,
+    cursor
+}) => {
     const classes = [styles.handle, styles[handlerType], active ? styles.active : undefined];
 
     return (
@@ -21,6 +29,7 @@ export const Handle: FC<Props> = ({ shapeId, position, handlerType, size = 5, ac
             cx={position.x}
             cy={position.y}
             r={size}
+            style={cursor ? { cursor } : undefined}
             data-handle
             data-shape-id={shapeId}
             data-type={handlerType}

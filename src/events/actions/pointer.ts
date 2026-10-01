@@ -152,7 +152,12 @@ export const movePointer = ({ state, actions }: Context, { pointerId, position }
     }
 
     if (gesture.kind === 'resizing') {
-        actions.resizeShape({ shapeId: gesture.shapeId, handlerType: gesture.handle, position });
+        actions.resizeShape({
+            shapeId: gesture.shapeId,
+            handlerType: gesture.handle,
+            position,
+            original: gesture.shapes[gesture.shapeId]
+        });
     }
 
     if (gesture.kind === 'rotating') {

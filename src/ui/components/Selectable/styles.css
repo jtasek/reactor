@@ -3,4 +3,5 @@
     fill-opacity: .1;
     stroke: cornflowerblue;
     stroke-width: 2;
+    vector-effect: non-scaling-stroke;
 }

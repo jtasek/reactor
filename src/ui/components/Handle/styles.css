@@ -3,6 +3,7 @@
   fill: cornflowerblue;
   stroke-width: 1px;
   stroke: ghostwhite;
+  vector-effect: non-scaling-stroke;
 }
 
 .active {
@@ -39,6 +40,7 @@
   stroke: cornflowerblue;
   stroke-width: 1;
   fill: none;
+  vector-effect: non-scaling-stroke;
 }
 
 .rotateBadge {

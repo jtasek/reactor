@@ -217,6 +217,88 @@ test('rotating applies the release position and a canceled rotation restores it'
     await expect(group).toHaveAttribute('transform', 'rotate(90 125 125)');
 });
 
+/** Where a handle is drawn, in surface coordinates. */
+async function handleCenter(page: Page, type: string) {
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    const box = (await page.locator(`[data-handle][data-type="${type}"]`).boundingBox())!;
+
+    return {
+        x: box.x + box.width / 2 - surface.x,
+        y: box.y + box.height / 2 - surface.y,
+        size: box.width
+    };
+}
+
+test('a rotated shape resizes from the handle under the pointer, with the opposite corner in place', async ({
+    page
+}) => {
+    await openEditor(page);
+    await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
+
+    // Rotated by 90°, the bottom-right handle is drawn at (100, 150) and the
+    // top-left one at (150, 100).
+    await pointer(page, 'pointerdown', {
+        x: 125,
+        y: 76,
+        target: '[data-handle][data-type="rotate"]'
+    });
+    await pointer(page, 'pointerup', { x: 225, y: 125 });
+    await expect(firstShape(page)).toHaveAttribute('transform', 'rotate(90 125 125)');
+
+    const handle = '[data-handle][data-type="bottomRight"]';
+
+    await pointer(page, 'pointerdown', { x: 100, y: 150, target: handle });
+    await pointer(page, 'pointermove', { x: 90, y: 165 });
+    await pointer(page, 'pointerup', { x: 80, y: 180 });
+
+    const anchor = await handleCenter(page, 'topLeft');
+    const dragged = await handleCenter(page, 'bottomRight');
+
+    expect(anchor.x).toBeCloseTo(150, 0);
+    expect(anchor.y).toBeCloseTo(100, 0);
+    expect(dragged.x).toBeCloseTo(80, 0);
+    expect(dragged.y).toBeCloseTo(180, 0);
+});
+
+test('handles keep their size on screen at any zoom', async ({ page }) => {
+    await openEditor(page);
+    await drawRect(page, { x: 200, y: 200 }, { x: 320, y: 280 });
+
+    for (const key of ['+', '+', '+', '-', '-', '-', '-', '-', '-']) {
+        await page.keyboard.press(key);
+
+        const handle = await handleCenter(page, 'middleTop');
+        const rotate = await handleCenter(page, 'rotate');
+
+        // A radius of 5 pixels, and a border of 1.
+        expect(handle.size).toBeCloseTo(11, 0);
+        expect(rotate.size).toBeCloseTo(11, 0);
+        expect(handle.y - rotate.y).toBeCloseTo(24, 0);
+    }
+});
+
+test('a shape small on screen is moved, not resized, by pressing it', async ({ page }) => {
+    await openEditor(page);
+    await drawRect(page, { x: 200, y: 200 }, { x: 230, y: 220 });
+
+    for (let step = 0; step < 6; step++) {
+        await page.keyboard.press('-');
+    }
+
+    const rect = firstShape(page).locator('rect[data-cy]');
+    const box = (await rect.boundingBox())!;
+    const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+
+    await page.mouse.move(center.x, center.y);
+    await page.mouse.down();
+    await page.mouse.move(center.x + 20, center.y, { steps: 4 });
+    await page.mouse.up();
+
+    await expect(rect).toHaveAttribute('width', '30');
+    await expect(rect).toHaveAttribute('height', '20');
+    await expect(rect).not.toHaveAttribute('x', '200');
+});
+
 type Contact = { id: number; x: number; y: number };
 
 /**
