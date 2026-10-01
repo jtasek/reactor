@@ -104,6 +104,12 @@ export const OutlineItem: FC<Props> = ({
                     }
                 }}
             >
+                {dragged && (
+                    // Some browsers start no drag from a press on a button, as the name is.
+                    <span className={styles.grip} draggable aria-hidden="true">
+                        ⠿
+                    </span>
+                )}
                 {onClick ? (
                     <button
                         type="button"

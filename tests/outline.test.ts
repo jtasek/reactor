@@ -29,13 +29,15 @@ function storeWith(...xs: number[]) {
         chosen.forEach((id) => store.actions.selectShape(id));
     };
     const run = (command: string) => store.actions.submitCommandLine(command);
-    /** Each layer's shapes by layer name, and the shapes on no layer under `none`. */
+    /** Each layer's shapes by layer name, and the shapes on no layer, when any, under `none`. */
     const layers = () =>
         Object.fromEntries(
-            outline(document()).map((entry) => [
-                entry.layerId ? document().layers[entry.layerId].name : 'none',
-                [...entry.groups.flatMap((group) => group.shapesIds), ...entry.shapesIds]
-            ])
+            outline(document())
+                .map((entry) => [
+                    entry.layerId ? document().layers[entry.layerId].name : 'none',
+                    [...entry.groups.flatMap((group) => group.shapesIds), ...entry.shapesIds]
+                ])
+                .filter(([, shapesIds]) => shapesIds.length > 0)
         );
     const layer = (name: string, ...shapesIds: string[]) =>
         store.actions.addLayer({ id: name, name, shapesIds });
@@ -122,6 +124,16 @@ describe('a group is on one layer', () => {
     });
 });
 
+it('keeps the shapes on no layer as an entry while there are layers, to drop shapes on', () => {
+    const { ids, document, layer } = storeWith(0);
+
+    expect(outline(document())).toEqual([{ layerId: null, groups: [], shapesIds: ids }]);
+
+    layer('walls', ids[0]);
+
+    expect(outline(document()).map((entry) => entry.layerId)).toEqual(['walls', null]);
+});
+
 describe('showing only one layer', () => {
     function plan() {
         const setup = storeWith(0, 20, 40);
@@ -149,6 +161,16 @@ describe('showing only one layer', () => {
 
         store.actions.showOnlyLayer('walls');
         expect(shown()).toEqual(ids);
+    });
+
+    it('shows a layer hidden by its own setting while it is the one shown', () => {
+        const { store, ids, shown } = plan();
+
+        store.actions.hideLayer('pipes');
+        expect(shown()).toEqual([ids[0], ids[2]]);
+
+        store.actions.showOnlyLayer('pipes');
+        expect(shown()).toEqual([ids[1], ids[2]]);
     });
 
     it('keeps shapes of other layers from being pressed', () => {

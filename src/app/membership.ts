@@ -233,7 +233,7 @@ export interface OutlineLayer {
 
 /**
  * The document as a tree: each layer with its groups and its shapes in no group,
- * in drawing order, then the same for the shapes on no layer when there are any.
+ * in drawing order, then the same for the shapes on no layer.
  * A group is listed under the layer of its first shape.
  */
 export function outline(document: Document): OutlineLayer[] {
@@ -260,10 +260,11 @@ export function outline(document: Document): OutlineLayer[] {
             (id) => !groupOf.has(id) && (layerOf.get(id) ?? null) === layerId
         )
     });
+    const layersIds = Object.keys(document.layers);
     const unlayered = entry(null);
+    // With layers, the entry stays when empty, as where a shape is dropped to leave its layer.
+    const listed =
+        layersIds.length > 0 || unlayered.groups.length > 0 || unlayered.shapesIds.length > 0;
 
-    return [
-        ...Object.keys(document.layers).map(entry),
-        ...(unlayered.groups.length > 0 || unlayered.shapesIds.length > 0 ? [unlayered] : [])
-    ];
+    return [...layersIds.map(entry), ...(listed ? [unlayered] : [])];
 }

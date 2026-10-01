@@ -520,7 +520,14 @@ export function isShapeVisible(document: Document | undefined, shapeId: string):
         return false;
     }
 
-    return !inContainer(document, shapeId, (container) => !container.visible);
+    // The one layer this screen shows is shown even when hidden by its own setting.
+    const shownLayer = document.shownLayerId ? document.layers[document.shownLayerId] : undefined;
+
+    return !inContainer(
+        document,
+        shapeId,
+        (container) => !container.visible && container !== shownLayer
+    );
 }
 
 /** Geometric center of a box. */

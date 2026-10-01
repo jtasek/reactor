@@ -107,3 +107,13 @@
     font: inherit;
     padding: 0 0 4px 10px;
 }
+
+.grip {
+    cursor: grab;
+    flex: 0 0 auto;
+    opacity: 0.4;
+}
+
+.grip:hover {
+    opacity: 1;
+}
