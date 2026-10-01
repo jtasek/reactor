@@ -188,7 +188,8 @@ come in.
 ## Development
 
 `pnpm check` is what CI runs, with a second job that builds the Docker image,
-runs it and checks it with `node scripts/smoke.mjs <address>`. Install the test
+runs it and checks it with `node scripts/smoke.mjs <address>`. The production build fails when
+the bundle outgrows its budget in `webpack.config.mjs`. Install the test
 browser once with `pnpm exec playwright install chromium` (Linux may need
 `--with-deps`).
 

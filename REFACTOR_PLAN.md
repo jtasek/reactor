@@ -1,6 +1,6 @@
 # Repository Audit and Refactoring Plan
 
-Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phase 6 in progress; Phase 7 proposed (steps 1 and 3 done, step 2 partly done); Phase 8 proposed (steps 1-3 done, step 4 partly done); Phases 9-10 designed; Phase 11 in progress.
+Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phase 6 in progress; Phase 7 proposed (steps 1 and 3 done, step 2 partly done); Phase 8 proposed (steps 1-3 and 5 done, step 4 partly done); Phases 9-10 designed; Phase 11 in progress.
 
 ## Verified Baseline
 
@@ -403,7 +403,14 @@ unit and browser tests on a production build) for pull requests and `master`. It
 first runs exposed and fixed unapproved dependency builds under pnpm 11 and a
 minimap directory that did not resolve on case-sensitive file systems. A second
 job builds the Docker image, runs it with a read-only file system, smoke-tests it
-and checks it stops cleanly. Zero-warning lint and the bundle budget remain.
+and checks it stops cleanly. Zero-warning lint remains.
+
+Step 5 done: the entry bundle measured 401 KiB on 2026-10-01: React DOM, Overmind
+and React 225 KiB, the app 172 KiB, the webpack runtime 4 KiB. The app's share is
+what the editor needs as it opens (loading and syncing documents, actions, tools),
+and Yjs, the server sync and the pages already load on demand, so nothing is split
+further. The production build fails beyond 420 KiB for the entry bundle or 240 KiB
+for any file.
 
 1. Parse and validate TRUST_PROXY hop counts explicitly while preserving supported
    boolean/address forms. Document examples and test forwarding behavior.
