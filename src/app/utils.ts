@@ -50,7 +50,7 @@ export function getDistance(p1: Point, p2: Point): number {
 }
 
 export function getRectBoundingBox(rectangle: Rectangle | Image): Box {
-    const topLeft = rectangle.position;
+    const topLeft = { ...rectangle.position };
     const bottomRight = {
         x: rectangle.position.x + rectangle.size.width,
         y: rectangle.position.y + rectangle.size.height

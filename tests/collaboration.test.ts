@@ -715,6 +715,36 @@ describe('collaboration', () => {
         }
     );
 
+    it('resizes from where another copy moved the shape during the drag', async () => {
+        const copies = await createCopies(2, (store) => store.actions.addShape(rectangle()));
+        const [a, b] = copies;
+        const [id] = shownDocument(a).shapesIds;
+        const { events } = a.store.actions;
+
+        a.store.actions.setShapeBounds({
+            id,
+            bounds: {
+                topLeft: { x: 0, y: 0 },
+                bottomRight: { x: 20, y: 10 },
+                width: 20,
+                height: 10
+            }
+        });
+        events.beginGesture({
+            pointerId: 1,
+            position: { x: 20, y: 10 },
+            handle: { shapeId: id, type: 'bottomRight' }
+        });
+        edit(b, (actions) => actions.updateShape({ id, position: { x: 50, y: 0 } }));
+        deliver(a);
+        events.movePointer({ pointerId: 1, position: { x: 80, y: 20 } });
+
+        expect(shownDocument(a).shapes[id]).toMatchObject({
+            position: { x: 50, y: 0 },
+            size: { width: 30, height: 20 }
+        });
+    });
+
     it('cancels a drag without bringing back a shape another copy deleted during it', async () => {
         const copies = await createCopies(2, (store) => {
             store.actions.addShape(rectangle());

@@ -147,6 +147,24 @@ function keepDrawnPlace(box: Box, oldCenter: Point, rotation: number): Box {
 }
 
 /**
+ * Keeps a side the old box lacked, as a flat line's height, where it was: the
+ * geometry has nothing to stretch along it, so the box must not grow there.
+ */
+function keepFlatSides(box: Box, oldBox: Box): Box {
+    const left = oldBox.width > 0 ? box.topLeft.x : oldBox.topLeft.x;
+    const top = oldBox.height > 0 ? box.topLeft.y : oldBox.topLeft.y;
+    const width = oldBox.width > 0 ? box.width : 0;
+    const height = oldBox.height > 0 ? box.height : 0;
+
+    return {
+        topLeft: { x: left, y: top },
+        bottomRight: { x: left + width, y: top + height },
+        width,
+        height
+    };
+}
+
+/**
  * Resizes a shape in place so the dragged handle follows `pointer`, from the shape
  * as it was when the drag began (`original`), so the result depends only on where
  * the pointer is. The shape is drawn rotated about its box center while its
@@ -157,7 +175,7 @@ export function resizeShapeFromHandle(
     shape: Shape,
     handlerType: ResizeHandlerType,
     pointer: Point,
-    original: Shape = shape
+    original: Shape
 ): void {
     const oldBox = getShapeBounds(original);
     const center = boxCenter(oldBox);
@@ -169,7 +187,7 @@ export function resizeShapeFromHandle(
     const resized =
         original.type === 'image' || original.type === 'text' || original.type === 'circle'
             ? resizeAspectBox(oldBox, handlerType, local, original.type === 'circle' ? 1 : ratio)
-            : resizeBox(oldBox, handlerType, local);
+            : keepFlatSides(resizeBox(oldBox, handlerType, local), oldBox);
     const box = rotation ? keepDrawnPlace(resized, center, rotation) : resized;
     const scaleX = oldBox.width > 0 ? box.width / oldBox.width : 1;
     const scaleY = oldBox.height > 0 ? box.height / oldBox.height : 1;

@@ -1,4 +1,3 @@
-import { json } from 'overmind';
 import {
     Action,
     ActionGuard,
@@ -431,7 +430,7 @@ export const resizeShape = (
         return;
     }
 
-    resizeShapeFromHandle(shape, handlerType, position, original ?? json(shape));
+    resizeShapeFromHandle(shape, handlerType, position, original ?? shape);
 };
 
 export const rotateShape = (

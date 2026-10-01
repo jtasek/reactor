@@ -1,7 +1,7 @@
 import { json } from 'overmind';
 import { resizeCursor } from 'src/app/geometry';
 import type { Box, Point, Shape } from 'src/app/types';
-import { boxCenter, getShapeBounds, rotatePoint } from 'src/app/utils';
+import { boxCenter, getBoundingBox, getShapeBounds, rotatePoint } from 'src/app/utils';
 import { createTestStore } from './support/store';
 
 /**
@@ -193,6 +193,37 @@ it('resizes a rotated shape so the handle follows the pointer and the opposite o
     expect(drawn(current(), bottomRight)).toEqual({
         x: expect.closeTo(pointer.x),
         y: expect.closeTo(pointer.y)
+    });
+});
+
+it('keeps a rotated flat line in place, as it is drawn once measured', () => {
+    const {
+        store,
+        id,
+        shape: current
+    } = storeWith({
+        type: 'line',
+        start: { x: 0, y: 0 },
+        end: { x: 40, y: 0 }
+    });
+
+    store.actions.updateShape({ id, rotation: 45 });
+
+    const anchor = drawn(current(), topLeft);
+
+    store.actions.resizeShape({
+        shapeId: id,
+        handlerType: 'bottomRight',
+        position: rotatePoint({ x: 60, y: 20 }, { x: 20, y: 0 }, 45)
+    });
+
+    // Measured bounds of a flat line have no height.
+    const measured = getBoundingBox(current());
+
+    expect(measured.height).toBe(0);
+    expect(rotatePoint(measured.topLeft, boxCenter(measured), 45)).toEqual({
+        x: expect.closeTo(anchor.x),
+        y: expect.closeTo(anchor.y)
     });
 });
 
