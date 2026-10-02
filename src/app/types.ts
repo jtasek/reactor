@@ -301,12 +301,7 @@ export interface Provider {
 }
 
 /** What a notification tells: each kind is shown in a color of its own. */
-export enum NotificationType {
-    Info = 'info',
-    Success = 'success',
-    Warning = 'warning',
-    Error = 'error'
-}
+export type NotificationType = 'info' | 'success' | 'warning' | 'error';
 
 export interface Notification {
     id: string;

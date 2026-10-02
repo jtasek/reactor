@@ -1,4 +1,3 @@
-import { NotificationType } from 'src/app/types';
 import { createTestStore } from './support/store';
 
 it('shows each kind of notification as its own type', () => {
@@ -10,10 +9,9 @@ it('shows each kind of notification as its own type', () => {
     store.actions.displayError('Failed');
 
     expect(store.state.notifications.map(({ type, message }) => [type, message])).toEqual([
-        [NotificationType.Info, 'Noted'],
-        [NotificationType.Success, 'Done'],
-        [NotificationType.Warning, 'Careful'],
-        [NotificationType.Error, 'Failed']
+        ['info', 'Noted'],
+        ['success', 'Done'],
+        ['warning', 'Careful'],
+        ['error', 'Failed']
     ]);
-    expect(Object.values(NotificationType)).toEqual(['info', 'success', 'warning', 'error']);
 });

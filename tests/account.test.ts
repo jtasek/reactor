@@ -7,7 +7,6 @@ import {
     type AccountUser,
     type Accounts
 } from 'src/app/services/accounts';
-import { NotificationType } from 'src/app/types';
 import { createTestStore } from './support/store';
 
 /** A server with accounts, where `user` is signed in and `correct horse` is the password. */
@@ -47,7 +46,7 @@ async function start(accounts: Accounts, seed: Record<string, string> = {}) {
 }
 
 const notices = ({ store }: Pick<ReturnType<typeof createTestStore>, 'store'>) =>
-    store.state.notifications.filter(({ type }) => type === NotificationType.Info);
+    store.state.notifications.filter(({ type }) => type === 'info');
 
 describe('accounts', () => {
     it('shows who is signed in, and no accounts where the server has none', async () => {

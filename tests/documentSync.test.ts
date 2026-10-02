@@ -6,7 +6,6 @@ import { MIGRATED_KEY, accountCopy } from 'src/app/services/documentSync';
 import type { AccountUser, Accounts } from 'src/app/services/accounts';
 import type { Channel } from 'src/app/services/tabSync';
 import { Hub } from './support/channel';
-import { NotificationType } from 'src/app/types';
 import { createTestStore } from './support/store';
 
 const rectangle = {
@@ -66,9 +65,7 @@ const ada: AccountUser = { id: 'user-ada', name: 'Ada', email: 'ada@example.com'
 const database = (indexedDB: IDBFactory) => DocumentDatabase.open(indexedDB);
 
 const messages = ({ store }: { store: ReturnType<typeof createTestStore>['store'] }) =>
-    store.state.notifications
-        .filter(({ type }) => type === NotificationType.Error)
-        .map(({ message }) => message);
+    store.state.notifications.filter(({ type }) => type === 'error').map(({ message }) => message);
 
 describe('document sync', () => {
     afterEach(() => {

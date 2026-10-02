@@ -27,7 +27,6 @@ import {
     Layer,
     Link,
     Notification,
-    NotificationType,
     Orientation,
     Ruler,
     Shape,
@@ -71,7 +70,7 @@ export function createNotification(options: Partial<Notification> = {}): Notific
         id: newId(),
         created: new Date(),
         message: 'Empty message',
-        type: NotificationType.Info,
+        type: 'info',
         ...options
     };
 }
