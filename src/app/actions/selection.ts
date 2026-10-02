@@ -33,9 +33,11 @@ export const hideSelection: Action = ({ state }) => {
     });
 };
 
-/** Shows every hidden shape, group and layer. */
-export const showAll: Action = ({ state }) => {
+/** Shows every hidden shape, group and layer, and every layer again after one was highlighted. */
+export const showAll: Action = ({ state, actions }) => {
     const { shapes, groups, layers } = state.currentDocument;
+
+    actions.showAllLayers();
 
     [shapes, groups, layers].forEach((table) =>
         Object.values(table).forEach((item) => {
