@@ -1,6 +1,16 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
 import { Dragged, OutlineItem } from './OutlineItem';
+import { commandAction, toggleAction } from '../ItemMenu';
+import type { Command } from 'src/app/types';
+import {
+    BringToFrontCommand,
+    CloneCommand,
+    DeleteCommand,
+    SendToBackCommand,
+    UngroupCommand,
+    UnlayerCommand
+} from 'src/commands';
 import {
     useActions,
     useControls,
@@ -9,12 +19,50 @@ import {
     useLayer,
     useOutline,
     useShape,
+    useShapeLocked,
     useShownLayerId
 } from 'src/app/hooks';
+
+const hidden = (isHidden: boolean, onRun: () => void) =>
+    toggleAction(
+        'hide',
+        isHidden,
+        {
+            on: { label: 'Show', icon: 'visibility_off' },
+            off: { label: 'Hide', icon: 'visibility' }
+        },
+        onRun
+    );
+
+const locked = (isLocked: boolean, onRun: () => void) =>
+    toggleAction(
+        'lock',
+        isLocked,
+        {
+            on: { label: 'Unlock', icon: 'lock_outline' },
+            off: { label: 'Lock', icon: 'lock_open' }
+        },
+        onRun
+    );
+
+/** Menu buttons that run commands for `shapeIds`, which they select first. */
+const useCommandActions = (shapeIds: string[], disabled: boolean) => {
+    const { runCommandOn } = useActions();
+
+    return (...commands: Command[]) =>
+        commands.map((command) =>
+            commandAction(
+                command,
+                () => runCommandOn({ shapeIds, commandId: command.id }),
+                disabled
+            )
+        );
+};
 
 const ShapeItem: FC<{ shapeId: string }> = ({ shapeId }) => {
     const shape = useShape(shapeId);
     const { toggleShapeSelected, toggleShapeLocked, toggleShapeVisible } = useActions();
+    const commands = useCommandActions([shapeId], useShapeLocked(shapeId));
 
     return (
         <OutlineItem
@@ -23,11 +71,13 @@ const ShapeItem: FC<{ shapeId: string }> = ({ shapeId }) => {
             dragged={{ kind: 'shape', id: shapeId }}
             selected={shape.selected}
             active={shape.active}
-            locked={shape.locked}
             visible={shape.visible}
             onClick={() => toggleShapeSelected(shapeId)}
-            onToggleLocked={() => toggleShapeLocked(shapeId)}
-            onToggleVisible={() => toggleShapeVisible(shapeId)}
+            menu={[
+                hidden(!shape.visible, () => toggleShapeVisible(shapeId)),
+                locked(shape.locked, () => toggleShapeLocked(shapeId))
+            ]}
+            more={commands(CloneCommand, DeleteCommand, BringToFrontCommand, SendToBackCommand)}
         />
     );
 };
@@ -37,6 +87,7 @@ const GroupItem: FC<{ groupId: string; shapesIds: string[] }> = ({ groupId, shap
     const selected = useGroupSelected(groupId);
     const { addShapesToGroup, toggleGroupSelected, toggleGroupLocked, toggleGroupVisible } =
         useActions();
+    const commands = useCommandActions(group.shapesIds, group.locked);
 
     return (
         <OutlineItem
@@ -44,11 +95,13 @@ const GroupItem: FC<{ groupId: string; shapesIds: string[] }> = ({ groupId, shap
             name={group.name}
             dragged={{ kind: 'group', id: groupId }}
             selected={selected}
-            locked={group.locked}
             visible={group.visible}
             onClick={() => toggleGroupSelected(groupId)}
-            onToggleLocked={() => toggleGroupLocked(groupId)}
-            onToggleVisible={() => toggleGroupVisible(groupId)}
+            menu={[
+                hidden(!group.visible, () => toggleGroupVisible(groupId)),
+                locked(group.locked, () => toggleGroupLocked(groupId))
+            ]}
+            more={commands(UngroupCommand, CloneCommand, DeleteCommand)}
             onDrop={({ kind, id }) => {
                 // Only shapes join a group; a group dropped on a group stays as it is.
                 if (kind === 'shape') {
@@ -92,18 +145,29 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
     const shown = useShownLayerId() === layerId;
     const { moveShapesToLayer, showOnlyLayer, toggleLayerLocked, toggleLayerVisible } =
         useActions();
+    const commands = useCommandActions(layer.shapesIds, layer.locked);
 
     return (
         <OutlineItem
             kind="layer"
             name={layer.name}
             shown={shown}
-            locked={layer.locked}
             visible={layer.visible}
             onClick={() => showOnlyLayer(layerId)}
-            onHighlight={() => showOnlyLayer(layerId)}
-            onToggleLocked={() => toggleLayerLocked(layerId)}
-            onToggleVisible={() => toggleLayerVisible(layerId)}
+            menu={[
+                toggleAction(
+                    'highlight',
+                    shown,
+                    {
+                        on: { label: 'Show all layers', group: 'toggle', icon: 'star' },
+                        off: { label: 'Highlight layer', group: 'toggle', icon: 'star_border' }
+                    },
+                    () => showOnlyLayer(layerId)
+                ),
+                hidden(!layer.visible, () => toggleLayerVisible(layerId)),
+                locked(layer.locked, () => toggleLayerLocked(layerId)),
+                ...commands(UnlayerCommand)
+            ]}
             onDrop={(dragged) => moveShapesToLayer({ shapeIds: shapesOf(dragged), layerId })}
         >
             <LayerContents groups={groups} shapesIds={shapesIds} />

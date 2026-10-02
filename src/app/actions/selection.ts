@@ -1,5 +1,6 @@
-import { Action, Application, Document } from '../types';
-import { editableSelectedShapesIds, selectedItems } from '../membership';
+import { Action, ActionWithParam, Application, Document } from '../types';
+import { getCommand } from './startup';
+import { editableSelectedShapesIds, selectedItems, shapeGroup } from '../membership';
 
 const unselect = ({ shapes }: Document, shapeIds: string[]) => {
     shapeIds.forEach((id) => {
@@ -62,4 +63,32 @@ export const lockSelection: Action = ({ state }) => {
 
 export const unlockSelection: Action = ({ state }) => {
     setSelectionLocked(state, false);
+};
+
+/**
+ * Runs a command for the given shapes, as an item's menu does: they become the
+ * selection, then the command runs if it may.
+ */
+export const runCommandOn: ActionWithParam<{ shapeIds: string[]; commandId: string }> = (
+    { state, actions },
+    { shapeIds, commandId }
+) => {
+    const command = getCommand(commandId);
+
+    if (!command) {
+        return;
+    }
+
+    actions.unselectShapes();
+    // One shape of a group is selected alone, as inside its group.
+    state.enteredGroupId =
+        shapeIds.length === 1 ? (shapeGroup(state.currentDocument, shapeIds[0])?.id ?? null) : null;
+    shapeIds.forEach((id) => {
+        const shape = state.currentDocument.shapes[id];
+
+        if (shape) {
+            shape.selected = true;
+        }
+    });
+    actions.runCommand(command);
 };

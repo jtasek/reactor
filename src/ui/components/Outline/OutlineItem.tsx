@@ -1,15 +1,6 @@
 import React, { DragEvent, FC, ReactNode, useState } from 'react';
 import styles from './styles.css';
-import { Icon } from '../Icon';
-
-const icon = (name: string) => ({ group: 'action', name, color: 'rgba(255,255,255)', size: 16 });
-const visibleIcon = icon('visibility');
-const hiddenIcon = icon('visibility_off');
-const lockedIcon = icon('lock_outline');
-const openIcon = icon('lock_open');
-const star = (name: string) => ({ ...icon(name), group: 'toggle' });
-const highlightedIcon = star('star');
-const highlightIcon = star('star_border');
+import { ItemMenu, ItemMenuAction } from '../ItemMenu';
 
 /** What is dragged in the outline: a shape, or a group with all its shapes. */
 export interface Dragged {
@@ -40,14 +31,13 @@ interface Props {
     active?: boolean;
     /** The one layer this screen shows. */
     shown?: boolean;
-    locked?: boolean;
     visible?: boolean;
     /** What pressing the name does; the name is plain text without it. */
     onClick?: () => void;
-    /** Shows only this layer, or every layer again when it is the one shown. */
-    onHighlight?: () => void;
-    onToggleLocked?: () => void;
-    onToggleVisible?: () => void;
+    /** The buttons of the item's menu, shown while the pointer is over the row. */
+    menu?: ItemMenuAction[];
+    /** The buttons its More button rolls out. */
+    more?: ItemMenuAction[];
     /** Takes a shape or group dropped on the item. */
     onDrop?: (dragged: Dragged) => void;
     children?: ReactNode;
@@ -61,12 +51,10 @@ export const OutlineItem: FC<Props> = ({
     selected = false,
     active = false,
     shown = false,
-    locked = false,
     visible = true,
     onClick,
-    onHighlight,
-    onToggleLocked,
-    onToggleVisible,
+    menu,
+    more,
     onDrop,
     children
 }) => {
@@ -87,6 +75,7 @@ export const OutlineItem: FC<Props> = ({
         <li className={className}>
             <div
                 className={[styles.row, dropTarget && styles.dropTarget].filter(Boolean).join(' ')}
+                data-menu-host
                 draggable={dragged !== undefined}
                 onDragStart={(event) => {
                     event.dataTransfer.setData(DRAG_TYPE, JSON.stringify(dragged));
@@ -128,39 +117,7 @@ export const OutlineItem: FC<Props> = ({
                 ) : (
                     <span className={styles.label}>{name}</span>
                 )}
-                <span className={styles.icons}>
-                    {onHighlight && (
-                        <button
-                            type="button"
-                            className={styles.icon}
-                            title={shown ? 'Show all layers' : 'Highlight layer'}
-                            aria-pressed={shown}
-                            onClick={onHighlight}
-                        >
-                            <Icon icon={shown ? highlightedIcon : highlightIcon} />
-                        </button>
-                    )}
-                    {onToggleVisible && (
-                        <button
-                            type="button"
-                            className={styles.icon}
-                            title={visible ? 'Hide' : 'Show'}
-                            onClick={onToggleVisible}
-                        >
-                            <Icon icon={visible ? visibleIcon : hiddenIcon} />
-                        </button>
-                    )}
-                    {onToggleLocked && (
-                        <button
-                            type="button"
-                            className={styles.icon}
-                            title={locked ? 'Unlock' : 'Lock'}
-                            onClick={onToggleLocked}
-                        >
-                            <Icon icon={locked ? lockedIcon : openIcon} />
-                        </button>
-                    )}
-                </span>
+                {menu && <ItemMenu label={name} actions={menu} more={more} />}
             </div>
             {children && <ul>{children}</ul>}
         </li>
