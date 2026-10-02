@@ -62,7 +62,7 @@ const useCommandActions = (shapeIds: string[], disabled: boolean) => {
 const ShapeItem: FC<{ shapeId: string }> = ({ shapeId }) => {
     const shape = useShape(shapeId);
     const { toggleShapeSelected, toggleShapeLocked, toggleShapeVisible } = useActions();
-    const commands = useCommandActions([shapeId], useShapeLocked(shapeId));
+    const commands = useCommandActions([shapeId], useShapeLocked(shapeId) || !shape.visible);
 
     return (
         <OutlineItem

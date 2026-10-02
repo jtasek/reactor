@@ -18,7 +18,8 @@
 .more {
     position: absolute;
     right: 0;
-    top: calc(100% + 2px);
+    /* Touching the bar: a gap would count as leaving the menu, which closes it. */
+    top: 100%;
     z-index: 1;
 }
 

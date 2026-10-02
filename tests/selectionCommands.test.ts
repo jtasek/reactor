@@ -179,6 +179,18 @@ describe('a command run from an item’s menu', () => {
         expect(store.state.enteredGroupId).toBe(groupId);
     });
 
+    it('leaves the selection as it was when the command cannot run for the item', () => {
+        const { store, ids, select, document } = storeWith(0, 20);
+
+        store.actions.hideShape(ids[0]);
+        select(ids[1]);
+        store.actions.runCommandOn({ shapeIds: [ids[0]], commandId: 'delete' });
+
+        expect(document().shapesIds).toEqual(ids);
+        expect(document().selectedShapesIds).toEqual([ids[1]]);
+        expect(document().shapes[ids[0]].selected).toBe(false);
+    });
+
     it('does nothing to a locked item', () => {
         const { store, ids, document } = storeWith(0);
 

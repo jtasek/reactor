@@ -69,7 +69,8 @@ export const unlockSelection: Action = ({ state }) => {
 
 /**
  * Runs a command for the given shapes, as an item's menu does: they become the
- * selection, then the command runs if it may.
+ * selection, then the command runs. When it may not run for them, the selection
+ * stays as it was.
  */
 export const runCommandOn: ActionWithParam<{ shapeIds: string[]; commandId: string }> = (
     { state, actions },
@@ -81,16 +82,28 @@ export const runCommandOn: ActionWithParam<{ shapeIds: string[]; commandId: stri
         return;
     }
 
-    actions.unselectShapes();
+    const { shapes } = state.currentDocument;
+    const chosen = new Set(shapeIds);
+    const before = {
+        selected: Object.values(shapes)
+            .filter((shape) => shape.selected)
+            .map((shape) => shape.id),
+        enteredGroupId: state.enteredGroupId
+    };
+    const select = (ids: Set<string>) =>
+        Object.values(shapes).forEach((shape) => {
+            if (shape.selected !== ids.has(shape.id)) {
+                shape.selected = ids.has(shape.id);
+            }
+        });
+
+    select(chosen);
     // One shape of a group is selected alone, as inside its group.
     state.enteredGroupId =
         shapeIds.length === 1 ? (shapeGroup(state.currentDocument, shapeIds[0])?.id ?? null) : null;
-    shapeIds.forEach((id) => {
-        const shape = state.currentDocument.shapes[id];
 
-        if (shape) {
-            shape.selected = true;
-        }
-    });
-    actions.runCommand(command);
+    if (!actions.runCommand(command)) {
+        select(new Set(before.selected));
+        state.enteredGroupId = before.enteredGroupId;
+    }
 };
