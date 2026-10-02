@@ -67,10 +67,8 @@ const MenuButton: FC<{ action: ItemMenuAction; onRun: () => void }> = ({
 );
 
 /**
- * The menu of a shape, group or layer: a small rounded bar of round buttons,
- * with the rest rolled out under it by its More button. Inside an element marked
- * `data-menu-host`, it fades in while the pointer is over that element or the
- * keyboard's focus is in it; buttons switched on stay shown.
+ * Inside an element marked `data-menu-host`, the menu fades in while the pointer
+ * is over that element or the keyboard's focus is in it; pressed buttons stay shown.
  */
 export const ItemMenu: FC<Props> = ({ itemName, actions, moreActions = [] }) => {
     const [open, setOpen] = useState(false);
