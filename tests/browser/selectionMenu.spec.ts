@@ -30,6 +30,11 @@ test('the selection’s menu fades in over the selection, runs commands and hide
     await moveTo(310, 180, 25);
     await expect(menu).toHaveCSS('opacity', '1');
 
+    // Coming from elsewhere, the pointer does not bring it up where it would be.
+    await moveTo(700, 500);
+    await moveTo(310, 180);
+    await expect(menu).toHaveCSS('opacity', '0');
+
     // During a drag it is gone.
     await moveTo(400, 250);
     await page.mouse.down();

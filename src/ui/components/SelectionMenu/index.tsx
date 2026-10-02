@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, useEffect, useRef } from 'react';
 import type { Command } from 'src/app/types';
 import { useActions, useCommandEnabled, useSelectionMenuPlacement } from 'src/app/hooks';
 import {
@@ -28,7 +28,8 @@ const useCommandAction = (command: Command) => {
  * during a drag.
  */
 export const SelectionMenu: FC = () => {
-    const placement = useSelectionMenuPlacement();
+    const shownBefore = useRef(false);
+    const placement = useSelectionMenuPlacement(shownBefore.current);
     const hide = useCommandAction(HideCommand);
     const lock = useCommandAction(LockCommand);
     const unlock = useCommandAction(UnlockCommand);
@@ -40,6 +41,10 @@ export const SelectionMenu: FC = () => {
         useCommandAction(BringToFrontCommand),
         useCommandAction(SendToBackCommand)
     ];
+
+    useEffect(() => {
+        shownBefore.current = placement?.shown ?? false;
+    });
 
     if (!placement) {
         return null;

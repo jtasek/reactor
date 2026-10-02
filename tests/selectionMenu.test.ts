@@ -81,16 +81,29 @@ describe('the selection’s menu', () => {
         });
     });
 
-    it('is shown with the pointer over the box or on its way to the menu, on the canvas', () => {
+    it('is shown with the pointer over the box, on the canvas', () => {
         const shown = (x: number, y: number, inside = true) =>
             placeSelectionMenu(box(100, 100, 200, 100), camera, { current: { x, y }, inside })
                 .shown;
 
         expect(shown(200, 150)).toBe(true);
         expect(shown(120, 95)).toBe(true);
-        expect(shown(120, 70)).toBe(true);
-        expect(shown(120, 40)).toBe(false);
         expect(shown(400, 150)).toBe(false);
         expect(shown(200, 150, false)).toBe(false);
+    });
+
+    it('stays shown on the pointer’s way from the box to it, but does not appear there', () => {
+        const shown = (y: number, alreadyShown: boolean) =>
+            placeSelectionMenu(
+                box(100, 100, 200, 100),
+                camera,
+                { current: { x: 120, y }, inside: true },
+                alreadyShown
+            ).shown;
+
+        // Coming from elsewhere, the pointer presses what is drawn under the menu.
+        expect(shown(70, false)).toBe(false);
+        expect(shown(70, true)).toBe(true);
+        expect(shown(40, true)).toBe(false);
     });
 });

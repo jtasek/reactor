@@ -226,7 +226,7 @@ export const useSelectedGroupsIds = () => {
 };
 
 /** Where the selection's menu goes; none without a selection or during a drag. */
-export const useSelectionMenuPlacement = () => {
+export const useSelectionMenuPlacement = (alreadyShown: boolean) => {
     return useAppState((state) => {
         const { pointer } = state.events;
 
@@ -236,7 +236,9 @@ export const useSelectionMenuPlacement = () => {
 
         const { selectionExtent, camera } = state.currentDocument;
 
-        return selectionExtent ? placeSelectionMenu(selectionExtent, camera, pointer) : null;
+        return selectionExtent
+            ? placeSelectionMenu(selectionExtent, camera, pointer, alreadyShown)
+            : null;
     });
 };
 

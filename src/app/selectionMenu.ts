@@ -18,13 +18,15 @@ export type SelectionMenuPlacement = { left: number; shown: boolean } & (
 /**
  * Where the selection's menu goes, in surface pixels: above the top left corner
  * of the selection's box, over the rotate handle when the menu would cover it,
- * or under the box without room above. It is shown while the pointer is over the
- * box, the menu or the way between them.
+ * or under the box without room above. The pointer over the box shows it; once
+ * shown, it stays while the pointer is on its way to the menu, but a pointer
+ * coming there from elsewhere presses what is drawn under the menu.
  */
 export function placeSelectionMenu(
     extent: Box,
     camera: Camera,
-    pointer: { current: Point; inside: boolean }
+    pointer: { current: Point; inside: boolean },
+    alreadyShown = false
 ): SelectionMenuPlacement {
     const { scale, position } = camera;
     const left = extent.topLeft.x * scale + position.x;
@@ -36,12 +38,16 @@ export function placeSelectionMenu(
     const below = top - gap - MENU_HEIGHT < 0;
     const x = pointer.current.x * scale + position.x;
     const y = pointer.current.y * scale + position.y;
-    const shown =
-        pointer.inside &&
-        x >= left - REACH &&
-        x <= Math.max(right, left + MENU_WIDTH) + REACH &&
-        y >= (below ? top : top - gap - MENU_HEIGHT) - REACH &&
-        y <= (below ? bottom + GAP + MENU_HEIGHT : bottom) + REACH;
+    const within = (minX: number, maxX: number, minY: number, maxY: number) =>
+        x >= minX - REACH && x <= maxX + REACH && y >= minY - REACH && y <= maxY + REACH;
+    const overBox = within(left, right, top, bottom);
+    const onWayToMenu = within(
+        left,
+        Math.max(right, left + MENU_WIDTH),
+        below ? bottom : top - gap - MENU_HEIGHT,
+        below ? bottom + GAP + MENU_HEIGHT : top
+    );
+    const shown = pointer.inside && (overBox || (alreadyShown && onWayToMenu));
 
     return below
         ? { left, shown, below, top: bottom + GAP }
