@@ -114,6 +114,16 @@ export const addShape: ActionWithParam<ShapeInput> = ({ state }, options) => {
     putOnTop(state, shape);
 };
 
+/**
+ * Adds a shape a tool drew, selected alone: what was selected no longer is, and
+ * a group that was entered is left.
+ */
+export const drawShape: ActionWithParam<ShapeInput> = ({ state, actions }, options) => {
+    actions.unselectShapes();
+    state.enteredGroupId = null;
+    actions.addShape(options);
+};
+
 /** How far a clone is offset from its original so it does not cover it. */
 const CLONE_OFFSET: Point = { x: 10, y: 10 };
 

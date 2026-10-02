@@ -88,7 +88,7 @@ export const RectCommand: Command = {
     execute: ({ actions, state }) => {
         const shape = createRectProps(state.events.pointer);
 
-        actions.addShape(shape);
+        actions.drawShape(shape);
     },
     shouldDeactivate: function (context: Context): boolean {
         return !context.state.events.pointer.dragging;

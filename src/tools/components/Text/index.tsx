@@ -161,7 +161,7 @@ export const TextCommand: Command = {
 
         // Commit (Enter) persists the typed text at the chosen location.
         if (keyboard.text.length > 0) {
-            actions.addShape(createTextProps(pointer, keyboard));
+            actions.drawShape(createTextProps(pointer, keyboard));
         }
     },
     shouldDeactivate: ({

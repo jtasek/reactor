@@ -70,7 +70,7 @@ export const PenCommand: Command = {
     execute: ({ actions, state }) => {
         const shape = createPenProps(state.events.pointer);
 
-        actions.addShape(shape);
+        actions.drawShape(shape);
     },
     shouldDeactivate: function (context: Context): boolean {
         return !context.state.events.pointer.dragging;

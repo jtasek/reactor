@@ -248,6 +248,9 @@ only translates DOM events into the gesture actions (`src/events/actions/pointer
 - Zoom is ignored during a drag. Touchscreen pinch (`beginPinch`/`updatePinch`/`endPinch`) is
   fed by Touch Events and may only replace a touch gesture that has not moved.
 
+A tool adds what it drew with `drawShape`, which selects it alone; `addShape` leaves the
+rest of the selection as it is.
+
 `executeToolCommands` (`src/tools/actions.ts`) runs `execute(context)` for each active tool
 when `canExecute(context)` is true. `resetTools` deactivates a tool when its
 `shouldDeactivate(context)` returns true (return `true` = deactivate now).
