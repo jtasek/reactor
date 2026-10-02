@@ -7,6 +7,9 @@ const visibleIcon = icon('visibility');
 const hiddenIcon = icon('visibility_off');
 const lockedIcon = icon('lock_outline');
 const openIcon = icon('lock_open');
+const star = (name: string) => ({ ...icon(name), group: 'toggle' });
+const highlightedIcon = star('star');
+const highlightIcon = star('star_border');
 
 /** What is dragged in the outline: a shape, or a group with all its shapes. */
 export interface Dragged {
@@ -41,6 +44,8 @@ interface Props {
     visible?: boolean;
     /** What pressing the name does; the name is plain text without it. */
     onClick?: () => void;
+    /** Shows only this layer, or every layer again when it is the one shown. */
+    onHighlight?: () => void;
     onToggleLocked?: () => void;
     onToggleVisible?: () => void;
     /** Takes a shape or group dropped on the item. */
@@ -59,6 +64,7 @@ export const OutlineItem: FC<Props> = ({
     locked = false,
     visible = true,
     onClick,
+    onHighlight,
     onToggleLocked,
     onToggleVisible,
     onDrop,
@@ -123,6 +129,17 @@ export const OutlineItem: FC<Props> = ({
                     <span className={styles.label}>{name}</span>
                 )}
                 <span className={styles.icons}>
+                    {onHighlight && (
+                        <button
+                            type="button"
+                            className={styles.icon}
+                            title={shown ? 'Show all layers' : 'Highlight layer'}
+                            aria-pressed={shown}
+                            onClick={onHighlight}
+                        >
+                            <Icon icon={shown ? highlightedIcon : highlightIcon} />
+                        </button>
+                    )}
                     {onToggleVisible && (
                         <button
                             type="button"

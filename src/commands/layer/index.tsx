@@ -1,5 +1,5 @@
 import { Command } from 'src/app/types';
-import { editableSelectedShapesIds } from 'src/app/membership';
+import { editableSelectedShapesIds, selectionLayerId } from 'src/app/membership';
 
 export const LayerCommand: Command = {
     id: 'layer',
@@ -36,4 +36,27 @@ export const UnlayerCommand: Command = {
         return editableSelectedShapesIds(currentDocument).some((id) => layered.has(id));
     },
     execute: ({ actions }) => actions.unlayerSelection()
+};
+
+export const HighlightLayerCommand: Command = {
+    id: 'highlightLayer',
+    name: 'Highlight layer',
+    category: 'layers',
+    description: 'Show only the layer of the selected shapes, or every layer again',
+    icon: {
+        group: 'toggle',
+        name: 'star',
+        size: 24
+    },
+    shortcut: 'h',
+    canExecute: ({ state }) => {
+        const { currentDocument } = state;
+        const shown = currentDocument.shownLayerId;
+
+        return (
+            selectionLayerId(currentDocument) !== undefined ||
+            (shown !== undefined && currentDocument.layers[shown] !== undefined)
+        );
+    },
+    execute: ({ actions }) => actions.highlightSelectionLayer()
 };

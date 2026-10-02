@@ -6,6 +6,7 @@ import {
     CutCommand,
     DeleteCommand,
     GroupCommand,
+    HighlightLayerCommand,
     LayerCommand,
     PasteCommand,
     RemoveFromGroupCommand,
@@ -75,6 +76,7 @@ function registerCommands() {
     registerCommand(RemoveFromGroupCommand);
     registerCommand(LayerCommand);
     registerCommand(UnlayerCommand);
+    registerCommand(HighlightLayerCommand);
     registerCommand(ZoomInCommand);
     registerCommand(ZoomOutCommand);
     registerCommand(ZoomResetCommand);

@@ -35,6 +35,24 @@ test('the outline lists layers as a tree, shows one layer alone, and takes dropp
     await first.click();
     await expect(shapes(page)).toHaveCount(2);
 
+    // The layer's star does the same, and so does the Highlight layer command, by
+    // its key, for the layer of the selected shape.
+    const star = (name: string) =>
+        first.locator('xpath=ancestor::li[1]').getByRole('button', { name, exact: true }).first();
+
+    await star('Highlight layer').click();
+    await expect(shapes(page)).toHaveCount(1);
+    await star('Show all layers').click();
+    await expect(shapes(page)).toHaveCount(2);
+
+    await click(page, 420, 120);
+    await page.keyboard.press('h');
+    await expect(second).toHaveAttribute('aria-pressed', 'true');
+    await expect(shapes(page)).toHaveCount(1);
+    await page.keyboard.press('h');
+    await expect(shapes(page)).toHaveCount(2);
+    await click(page, 600, 400);
+
     // Dropping a shape on a layer moves it there; the layer left empty goes.
     await shapesOn(second).dragTo(first);
     await expect(shapesOn(first)).toHaveCount(2);

@@ -67,6 +67,7 @@ bar, side bar, panels and other parts of the editor.
 | Ctrl/Cmd+G, Ctrl/Cmd+Shift+G | Group and ungroup the selection. A group is selected, moved, turned and scaled as one; click a shape in a selected group, or double-click it, to select that shape alone |
 | Ctrl/Cmd+Alt+G | Remove the shapes selected inside a group from it |
 | Ctrl/Cmd+Alt+L, Ctrl/Cmd+Alt+Shift+L | Move the selection to a new layer, take it off its layer |
+| `h` | Highlight the selected shapes' layer: show only it, or every layer again |
 | `+` or `=`, `-`, `0` | Zoom in, zoom out, reset zoom |
 
 The Outline panel (in the explorer) lists the layers with their groups and shapes as a

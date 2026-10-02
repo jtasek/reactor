@@ -101,6 +101,7 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
             locked={layer.locked}
             visible={layer.visible}
             onClick={() => showOnlyLayer(layerId)}
+            onHighlight={() => showOnlyLayer(layerId)}
             onToggleLocked={() => toggleLayerLocked(layerId)}
             onToggleVisible={() => toggleLayerVisible(layerId)}
             onDrop={(dragged) => moveShapesToLayer({ shapeIds: shapesOf(dragged), layerId })}
