@@ -149,6 +149,10 @@ test('the pointer highlights a grouped shape only inside its group', async ({ pa
     await openEditor(page);
     await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
     await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
+    // Box both, as a drawn shape is selected alone.
+    await pointer(page, 'pointerdown', { x: 280, y: 80 });
+    await pointer(page, 'pointermove', { x: 460, y: 160 });
+    await pointer(page, 'pointerup', { x: 460, y: 160 });
     await page.keyboard.press('ControlOrMeta+g');
     await drawRect(page, { x: 500, y: 100 }, { x: 540, y: 140 });
     await page.mouse.click(700, 500);
@@ -180,6 +184,10 @@ test('a group is selected and dragged by its box, between its shapes', async ({ 
     await openEditor(page);
     await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
     await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
+    // Box both, as a drawn shape is selected alone.
+    await pointer(page, 'pointerdown', { x: 280, y: 80 });
+    await pointer(page, 'pointermove', { x: 460, y: 160 });
+    await pointer(page, 'pointerup', { x: 460, y: 160 });
     await page.keyboard.press('ControlOrMeta+g');
 
     const surface = (await page.locator('svg#surface').boundingBox())!;

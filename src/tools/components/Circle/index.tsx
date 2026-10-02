@@ -87,7 +87,7 @@ export const CircleCommand: Command = {
     execute: ({ actions, state }) => {
         const shape = createCircleProps(state.events.pointer);
 
-        actions.addShape(shape);
+        actions.drawShape(shape);
     },
     shouldDeactivate: function (context: Context): boolean {
         return !context.state.events.pointer.dragging;

@@ -83,7 +83,7 @@ export const EllipseCommand: Command = {
     execute: ({ actions, state }) => {
         const shape = createEllipseProps(state.events.pointer);
 
-        actions.addShape(shape);
+        actions.drawShape(shape);
     },
     shouldDeactivate: function (context: Context): boolean {
         return !context.state.events.pointer.dragging;

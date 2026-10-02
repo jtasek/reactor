@@ -132,7 +132,7 @@ export const ImageCommand: Command = {
         const image = state.tools.imageToPlace;
 
         if (image) {
-            actions.addShape(createImageProps(state.events.pointer, image));
+            actions.drawShape(createImageProps(state.events.pointer, image));
         }
     },
     shouldDeactivate: function (context: Context): boolean {
