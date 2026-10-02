@@ -5,7 +5,13 @@ import { Resizable } from '../Selectable/Resizable';
 import { Selectable } from '../Selectable/Selectable';
 import { getComponentByType } from 'src/tools/components';
 import { rectToBox, shapeGeometryKey, getShapeBounds, boxCenter } from 'src/app/utils';
-import { useActions, useAppState, useShape, useShapeLocked, useShapeVisible } from 'src/app/hooks';
+import {
+    useActions,
+    useMeasuringShapes,
+    useShape,
+    useShapeLocked,
+    useShapeVisible
+} from 'src/app/hooks';
 
 interface Props {
     shapeId: string;
@@ -20,13 +26,8 @@ export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup }: Props) =
     const visible = useShapeVisible(shapeId);
     const locked = useShapeLocked(shapeId);
     const { setShapeBounds, activateShape, deactivateShape } = useActions();
-    // A move is a pure translation: `moveSelectedShapes` already shifts the
-    // cached bounds analytically, so re-measuring via getBBox every frame is
-    // wasted work that forces a synchronous layout reflow. Skip measurement
-    // while the Move tool is dragging; the effect re-runs once the drag ends.
-    const measuring = useAppState(
-        (state) => !(state.tools.activeToolsIds[0] === 'move' && state.events.pointer.dragging)
-    );
+    const measuring = useMeasuringShapes();
+    const measuredGeometry = useRef<string | null>(null);
     const groupRef = useRef<SVGGElement>(null);
     // The component of this shape's type, which takes this shape's fields.
     const Component = getComponentByType(shape.type) as FC<Omit<typeof shape, 'key'>>;
@@ -37,9 +38,17 @@ export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup }: Props) =
     // unaffected by the camera pan/zoom transform on ancestor groups. Keyed on
     // the geometry only, so toggling `selected` during a marquee drag does not
     // trigger a costly reflow. Re-measure when a hidden shape is shown again, as
-    // its geometry may have changed while it was not rendered.
+    // its geometry may have changed while it was not rendered. A gesture that
+    // keeps bounds itself puts measuring off until it ends, and then only the
+    // shapes it changed are measured.
     useLayoutEffect(() => {
-        if (!measuring || !visible) {
+        if (!visible) {
+            measuredGeometry.current = null;
+
+            return;
+        }
+
+        if (!measuring || measuredGeometry.current === geometryKey) {
             return;
         }
 
@@ -52,6 +61,7 @@ export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup }: Props) =
         try {
             const bounds = rectToBox(node.getBBox());
             setShapeBounds({ id: shapeId, bounds });
+            measuredGeometry.current = geometryKey;
         } catch {
             // getBBox throws for elements that are not yet renderable; ignore.
         }

@@ -11,6 +11,7 @@ import { useCallback, useEffect, useLayoutEffect, useReducer, useState } from 'r
 import { isShapeLocked, isShapeVisible } from './utils';
 import type { Command } from './types';
 import { takesEditorInput } from '../events/input';
+import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
 import { groupFrame, hoveredGroupsIds, outline, selectedGroupsIdsOf } from './membership';
 
 export const useActions = createActionsHook<Context>();
@@ -184,6 +185,10 @@ export const useShape = (id: string) => {
 };
 
 /** Whether the shape is drawn: see `isShapeVisible`. */
+/** Whether shapes are measured where drawn: not while a gesture keeps their bounds itself. */
+export const useMeasuringShapes = () =>
+    useAppState((state) => !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind]);
+
 export const useShapeVisible = (id: string) => {
     return useAppState((state) => isShapeVisible(state.currentDocument, id));
 };
