@@ -41,6 +41,9 @@ interface Props {
     itemName: string;
     actions: ItemMenuAction[];
     moreActions?: ItemMenuAction[];
+    /** Where the More button rolls its buttons out: under the bar's end unless said. */
+    moreAbove?: boolean;
+    moreFromStart?: boolean;
 }
 
 const moreIcon = (open: boolean) => ({
@@ -70,7 +73,13 @@ const MenuButton: FC<{ action: ItemMenuAction; onRun: () => void }> = ({
  * Inside an element marked `data-menu-host`, the menu fades in while the pointer
  * is over that element or the keyboard's focus is in it; pressed buttons stay shown.
  */
-export const ItemMenu: FC<Props> = ({ itemName, actions, moreActions = [] }) => {
+export const ItemMenu: FC<Props> = ({
+    itemName,
+    actions,
+    moreActions = [],
+    moreAbove = false,
+    moreFromStart = false
+}) => {
     const [open, setOpen] = useState(false);
 
     return (
@@ -96,7 +105,15 @@ export const ItemMenu: FC<Props> = ({ itemName, actions, moreActions = [] }) => 
                 </button>
             )}
             {open && (
-                <div className={styles.more}>
+                <div
+                    className={[
+                        styles.more,
+                        moreAbove && styles.above,
+                        moreFromStart && styles.fromStart
+                    ]
+                        .filter(Boolean)
+                        .join(' ')}
+                >
                     {moreActions.map((action) => (
                         <MenuButton
                             key={action.id}

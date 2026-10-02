@@ -315,6 +315,15 @@ shapes (`selectionLayerId`), shows only that layer and the shapes on no layer (`
 `document.shownLayerId`), on this screen only: it is a runtime field, neither saved nor
 shared, and layers keep their own `visible`.
 
+## The selection's menu
+
+`SelectionMenu` (`src/ui/components/SelectionMenu`) is HTML over the canvas, so the zoom does
+not change its size, and reuses `ItemMenu`; its buttons run commands on the selection.
+`placeSelectionMenu` (`src/app/selectionMenu.ts`) puts it above the top left corner of the
+selection's box (`document.selectionExtent`, derived), over the rotate handle when it would
+cover it, or under the box without room above. It shows while the pointer is over the box,
+the menu or the way between them, and is not rendered during a drag.
+
 ## Bounding boxes & selection
 
 - `Shape` (`src/app/types.ts`) is a discriminated union on `type`; each variant carries only

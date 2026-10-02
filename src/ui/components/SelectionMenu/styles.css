@@ -1,0 +1,22 @@
+.selectionMenu {
+    display: block;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    transition: opacity 150ms;
+    z-index: 50;
+}
+
+.selectionMenu[data-shown='true'],
+.selectionMenu:hover,
+.selectionMenu:has(:focus-visible) {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+@media (hover: none) {
+    .selectionMenu {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}

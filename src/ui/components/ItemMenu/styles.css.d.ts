@@ -1,6 +1,8 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
+    above: string;
     button: string;
+    fromStart: string;
     menu: string;
     more: string;
   }
