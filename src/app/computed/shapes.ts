@@ -1,7 +1,11 @@
 import { derived } from 'overmind';
 import { Application, Document } from '../types';
 import { isShapeVisible } from '../utils';
-import { groupFrame, selectedGroupsIdsOf } from '../membership';
+import {
+    groupFrame,
+    selectedGroupsIdsOf,
+    selectionExtent as findSelectionExtent
+} from '../membership';
 
 export const commandsIds = derived(({ commands }: Application) => {
     return Object.keys(commands);
@@ -56,6 +60,11 @@ export const selectedShapes = derived((currentDocument: Document) => {
         (shape) => shape.selected && isShapeVisible(currentDocument, shape.id)
     );
 });
+
+/** The box around the selected shapes, kept until they change: see `selectionExtent`. */
+export const selectionExtent = derived((currentDocument: Document) =>
+    findSelectionExtent(currentDocument)
+);
 
 export const selectedShapesIds = derived((currentDocument: Document) => {
     return Object.values(currentDocument.shapes)

@@ -11,7 +11,8 @@ import {
     linksIds,
     rulersIds,
     selectedShapes,
-    selectedShapesIds
+    selectedShapesIds,
+    selectionExtent
 } from './computed/shapes';
 import { inDrawingOrder } from './drawOrder';
 import { v4 as newId } from 'uuid';
@@ -178,6 +179,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
         linksIds,
         rulersIds,
         selectedShapesIds,
+        selectionExtent,
         selectedShapes,
         shapesIds: inDrawingOrder(options.shapes ?? {})
     };

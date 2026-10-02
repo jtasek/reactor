@@ -12,6 +12,7 @@ import { isShapeLocked, isShapeVisible } from './utils';
 import type { Command } from './types';
 import { takesEditorInput } from '../events/input';
 import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
+import { placeSelectionMenu } from './selectionMenu';
 import { groupFrame, hoveredGroupsIds, outline, selectedGroupsIdsOf } from './membership';
 
 export const useActions = createActionsHook<Context>();
@@ -222,6 +223,23 @@ export const useGroup = (id: string) => {
 /** The groups selected as one. */
 export const useSelectedGroupsIds = () => {
     return useAppState((state) => selectedGroupsIdsOf(state.currentDocument, state.enteredGroupId));
+};
+
+/** Where the selection's menu goes; none without a selection or during a drag. */
+export const useSelectionMenuPlacement = (alreadyShown: boolean) => {
+    return useAppState((state) => {
+        const { pointer } = state.events;
+
+        if (pointer.dragging) {
+            return null;
+        }
+
+        const { selectionExtent, camera } = state.currentDocument;
+
+        return selectionExtent
+            ? placeSelectionMenu(selectionExtent, camera, pointer, alreadyShown)
+            : null;
+    });
 };
 
 /** The groups the pointer highlights: see `hoveredGroupsIds`. */

@@ -23,6 +23,16 @@
     z-index: 1;
 }
 
+.more.above {
+    bottom: 100%;
+    top: auto;
+}
+
+.more.fromStart {
+    left: 0;
+    right: auto;
+}
+
 .button {
     align-items: center;
     background: rgba(0, 0, 0, 0.06);

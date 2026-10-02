@@ -205,6 +205,39 @@ export function selectionLayerId(document: Document): string | undefined {
         : undefined;
 }
 
+/** The upright box around the selected shapes as drawn, each turned by its rotation; none without a selection. */
+export function selectionExtent(document: Document): Box | null {
+    const corners = document.selectedShapesIds.flatMap((id) => {
+        const shape = document.shapes[id];
+        const bounds = getShapeBounds(shape);
+        const center = boxCenter(bounds);
+        const { topLeft, bottomRight } = bounds;
+
+        return [
+            topLeft,
+            { x: bottomRight.x, y: topLeft.y },
+            bottomRight,
+            { x: topLeft.x, y: bottomRight.y }
+        ].map((corner) => rotatePoint(corner, center, shape.rotation ?? 0));
+    });
+
+    if (corners.length === 0) {
+        return null;
+    }
+
+    const xs = corners.map((corner) => corner.x);
+    const ys = corners.map((corner) => corner.y);
+    const topLeft = { x: Math.min(...xs), y: Math.min(...ys) };
+    const bottomRight = { x: Math.max(...xs), y: Math.max(...ys) };
+
+    return {
+        topLeft,
+        bottomRight,
+        width: bottomRight.x - topLeft.x,
+        height: bottomRight.y - topLeft.y
+    };
+}
+
 /** The selected shapes the commands may change, in drawing order. */
 export function editableSelectedShapesIds(document: Document): string[] {
     const selected = new Set(document.selectedShapesIds);
