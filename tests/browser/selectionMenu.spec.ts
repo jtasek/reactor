@@ -60,3 +60,28 @@ test('the selection’s menu fades in over the selection, runs commands and hide
     await expect(shapes(page)).toHaveCount(1);
     await expect(toolbar).toHaveCount(0);
 });
+
+test('More rolls out to the left of the bar without room to its right', async ({ page }) => {
+    await openEditor(page);
+
+    const { width } = page.viewportSize()!;
+
+    await drawRect(page, { x: width - 90, y: 300 }, { x: width - 40, y: 350 });
+
+    const toolbar = page.getByRole('toolbar', { name: 'Selection menu' });
+    const button = (name: string) => toolbar.getByRole('button', { name, exact: true });
+
+    await button('More').dispatchEvent('click');
+
+    const more = (await button('More').boundingBox())!;
+    const buttons = await Promise.all(
+        ['Clone', 'Delete', 'Bring to front', 'Send to back'].map((name) =>
+            button(name).boundingBox()
+        )
+    );
+
+    for (const box of buttons) {
+        expect(box!.x + box!.width).toBeLessThan(more.x);
+        expect(box!.x).toBeGreaterThan(0);
+    }
+});

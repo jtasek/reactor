@@ -1,4 +1,4 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useLayoutEffect, useRef, useState } from 'react';
 import type { Command, Icon as IconType } from 'src/app/types';
 import { Icon } from '../Icon';
 import styles from './styles.css';
@@ -84,6 +84,23 @@ export const ItemMenu: FC<Props> = ({
     moreBeside = false
 }) => {
     const [open, setOpen] = useState(false);
+    const [besideOnLeft, setBesideOnLeft] = useState(false);
+    const rolledOut = useRef<HTMLDivElement>(null);
+
+    // Without room in the window to the bar's right, the buttons go to its left.
+    useLayoutEffect(() => {
+        if (!open) {
+            setBesideOnLeft(false);
+
+            return;
+        }
+
+        const box = rolledOut.current?.getBoundingClientRect();
+
+        if (moreBeside && box && box.right > window.innerWidth) {
+            setBesideOnLeft(true);
+        }
+    }, [open, moreBeside]);
 
     return (
         <div
@@ -108,7 +125,16 @@ export const ItemMenu: FC<Props> = ({
                 </button>
             )}
             {open && (
-                <div className={moreBeside ? `${styles.more} ${styles.beside}` : styles.more}>
+                <div
+                    ref={rolledOut}
+                    className={[
+                        styles.more,
+                        moreBeside && styles.beside,
+                        besideOnLeft && styles.onLeft
+                    ]
+                        .filter(Boolean)
+                        .join(' ')}
+                >
                     {moreActions.map((action) => (
                         <MenuButton
                             key={action.id}

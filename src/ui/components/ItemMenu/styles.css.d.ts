@@ -4,6 +4,7 @@ declare namespace StylesCssNamespace {
     button: string;
     menu: string;
     more: string;
+    onLeft: string;
   }
 }
 

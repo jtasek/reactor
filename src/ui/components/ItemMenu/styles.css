@@ -29,6 +29,11 @@
     top: 0;
 }
 
+.more.beside.onLeft {
+    left: auto;
+    right: 100%;
+}
+
 .button {
     align-items: center;
     background: rgba(0, 0, 0, 0.06);
