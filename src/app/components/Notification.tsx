@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from './Notification.css';
-import { useActions, useAppState } from '../hooks';
+import { useActions, useNotifications } from '../hooks';
 import type { NotificationType } from '../types';
 import { Icon } from '../../ui/components/Icon';
 
@@ -21,7 +21,7 @@ const closeIcon = icon('navigation', 'close');
 
 /** The notifications, newest at the bottom, each until dismissed. */
 export const Notification = () => {
-    const notifications = useAppState((state) => state.notifications);
+    const notifications = useNotifications();
     const { dismissNotification } = useActions();
 
     if (notifications.length === 0) {
