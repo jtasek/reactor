@@ -436,6 +436,37 @@ describe('a group as one object', () => {
         expect(store.state.enteredGroupId).toBe(groupId);
     });
 
+    it('is entered by a click during which the pointer slips, without being moved', () => {
+        const { store, ids, groupId } = grouped();
+        const { events } = store.actions;
+
+        events.beginGesture({ pointerId: 1, position: { x: 25, y: 5 } });
+        events.movePointer({ pointerId: 1, position: { x: 26, y: 6 } });
+        events.endGesture({ pointerId: 1, position: { x: 27, y: 6 } });
+
+        expect(store.state.enteredGroupId).toBe(groupId);
+        expect(positions(store, ids)).toEqual([
+            { x: 0, y: 0 },
+            { x: 20, y: 0 }
+        ]);
+    });
+
+    it('follows the pointer from where it was pressed once a drag goes beyond a slip', () => {
+        const { store, ids } = grouped();
+        const { events } = store.actions;
+
+        events.beginGesture({ pointerId: 1, position: { x: 25, y: 5 } });
+        events.movePointer({ pointerId: 1, position: { x: 26, y: 5 } });
+        events.movePointer({ pointerId: 1, position: { x: 30, y: 5 } });
+        events.endGesture({ pointerId: 1, position: { x: 31, y: 5 } });
+
+        expect(positions(store, ids)).toEqual([
+            { x: 6, y: 0 },
+            { x: 26, y: 0 }
+        ]);
+        expect(store.state.enteredGroupId).toBeNull();
+    });
+
     it('is moved, not entered, by dragging a shape of it while it is selected', () => {
         const { store, ids, groupId, document } = grouped();
         const { events } = store.actions;

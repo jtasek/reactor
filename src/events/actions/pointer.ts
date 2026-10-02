@@ -3,6 +3,7 @@ import { Context } from '../../app';
 import { ActionWithParam, Point, Shape } from '../../app/types';
 import { screenToWorld } from '../../app/camera';
 import { groupFrame } from '../../app/membership';
+import { beyondClickSlip } from '../gestures';
 import { HandleTarget, SelectionSnapshot, ShapesSnapshot, TouchContact } from '../types';
 
 type PointerInput = { pointerId: number; position: Point };
@@ -131,7 +132,8 @@ export const beginGesture = (
             ...owner,
             kind: 'moving',
             selection,
-            shapes: snapshotShapes(selected)
+            shapes: snapshotShapes(selected),
+            dragged: false
         };
 
         return true;
@@ -181,8 +183,22 @@ export const movePointer = ({ state, actions }: Context, { pointerId, position }
         actions.selectShapes();
     }
 
-    if (gesture.kind === 'moving') {
+    if (gesture.kind === 'moving' && gesture.dragged) {
         actions.moveSelectedShapes({ x: position.x - previous.x, y: position.y - previous.y });
+    }
+
+    // A pointer that slips during a click moves nothing; beyond that, the shapes
+    // follow it from where it was pressed.
+    if (
+        gesture.kind === 'moving' &&
+        !gesture.dragged &&
+        beyondClickSlip(pointer.start, position, state.currentDocument.camera.scale)
+    ) {
+        gesture.dragged = true;
+        actions.moveSelectedShapes({
+            x: position.x - pointer.start.x,
+            y: position.y - pointer.start.y
+        });
     }
 
     if (gesture.kind === 'resizing') {
@@ -235,7 +251,7 @@ export const endGesture = (
     actions.events.movePointer({ pointerId, position });
 
     // A click, rather than a drag, on a shape of a group selected before it enters the group.
-    if (gesture.kind === 'moving' && !gesture.moved) {
+    if (gesture.kind === 'moving' && !gesture.dragged) {
         actions.enterClickedGroup(gesture.selection);
     }
 
