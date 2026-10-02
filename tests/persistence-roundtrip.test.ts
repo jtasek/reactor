@@ -5,6 +5,7 @@ import { createImageProps } from 'src/tools/components/Image';
 import { createLineProps } from 'src/tools/components/Line';
 import { createPenProps } from 'src/tools/components/Pen';
 import { createRectProps } from 'src/tools/components/Rect';
+import { NotificationType } from 'src/app/types';
 import { createTestStore } from './support/store';
 import { createTextProps } from 'src/tools/components/Text';
 import { serializePersistedState } from 'src/app/services/documentStorage';
@@ -37,9 +38,9 @@ describe('real persisted documents', () => {
 
         await restored.store.onInitialize();
 
-        expect(restored.store.state.notifications.filter(({ type }) => type === 'error')).toEqual(
-            []
-        );
+        expect(
+            restored.store.state.notifications.filter(({ type }) => type === NotificationType.Error)
+        ).toEqual([]);
         expect(serializePersistedState(restored.store.state)).toEqual(saved);
 
         const shapes = Object.values(restored.store.state.currentDocument.shapes);

@@ -1,20 +1,26 @@
-import { ActionWithParam, SaveStatus } from '../types';
+import { ActionWithParam, NotificationType, SaveStatus } from '../types';
 import { createNotification } from '../factories';
 
 export const displayInfo: ActionWithParam<string> = ({ state }, message) => {
-    const notification = createNotification({ message, type: 'info' });
+    const notification = createNotification({ message, type: NotificationType.Info });
+
+    state.notifications.push(notification);
+};
+
+export const displaySuccess: ActionWithParam<string> = ({ state }, message) => {
+    const notification = createNotification({ message, type: NotificationType.Success });
 
     state.notifications.push(notification);
 };
 
 export const displayWarning: ActionWithParam<string> = ({ state }, message: string) => {
-    const notification = createNotification({ message, type: 'warn' });
+    const notification = createNotification({ message, type: NotificationType.Warning });
 
     state.notifications.push(notification);
 };
 
 export const displayError: ActionWithParam<string> = ({ state }, message: string) => {
-    const notification = createNotification({ message, type: 'error' });
+    const notification = createNotification({ message, type: NotificationType.Error });
 
     state.notifications.push(notification);
 };

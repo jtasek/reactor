@@ -1,0 +1,96 @@
+/*
+ * A stack in the corner above the status bar, clear of the canvas and the menus.
+ * Named under #app so its size wins over the page size site.css gives `#app > div`.
+ */
+:global(#app) > .notifications {
+    align-items: stretch;
+    bottom: 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: auto;
+    left: 16px;
+    max-width: min(520px, calc(100vw - 32px));
+    overflow: visible;
+    position: fixed;
+    width: auto;
+    z-index: 10000;
+}
+
+/* One notification: a soft tint of its color, with text and icons in a darker shade. */
+.notification {
+    align-items: center;
+    background: var(--notification-background);
+    border-radius: 12px;
+    color: var(--notification-color);
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    padding: 10px 14px;
+}
+
+.info {
+    --notification-background: #e4dff3;
+    --notification-color: #6a55c2;
+}
+
+.success {
+    --notification-background: #dcefe2;
+    --notification-color: #2c7a4b;
+}
+
+.warning {
+    --notification-background: #f6ecd0;
+    --notification-color: #8a6100;
+}
+
+.error {
+    --notification-background: #f6dcdc;
+    --notification-color: #b3312f;
+}
+
+.icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+}
+
+.icon svg,
+.dismiss svg {
+    display: block;
+    fill: currentColor;
+    stroke: none;
+}
+
+.message {
+    flex: 1;
+}
+
+/* What the notification suggests doing, as a button at its end. */
+.action {
+    background: #fff;
+    border: 1px solid rgb(0 0 0 / 15%);
+    border-radius: 8px;
+    color: #1f1f1f;
+    flex: 0 0 auto;
+    padding: 3px 10px;
+    text-decoration: none;
+}
+
+.action:hover {
+    border-color: rgb(0 0 0 / 35%);
+}
+
+.dismiss {
+    background: none;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 auto;
+    opacity: 0.7;
+    padding: 2px;
+}
+
+.dismiss:hover {
+    opacity: 1;
+}

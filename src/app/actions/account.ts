@@ -1,6 +1,7 @@
 import type { Context } from '../index';
 import { NOTICES_KEY } from '../services/accounts';
 import { createNotification } from '../factories';
+import { NotificationType } from '../types';
 
 /** From this many documents on, signed-out users are told again. */
 const MANY_DOCUMENTS = 3;
@@ -46,7 +47,7 @@ export const noticeLocalDocuments = (context: Context) => {
     state.notifications.push(
         createNotification({
             message: LOCAL_ONLY,
-            type: 'info',
+            type: NotificationType.Info,
             link:
                 state.account.kind === 'signedOut'
                     ? { label: 'Sign in to keep them', url: '/account' }

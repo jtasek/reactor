@@ -1,5 +1,5 @@
 import { registerCommand } from 'src/app/actions/startup';
-import type { ShapeInput } from 'src/app/types';
+import { NotificationType, type ShapeInput } from 'src/app/types';
 import { CopyCommand, CutCommand, PasteCommand } from 'src/commands';
 import { shapeGeometry } from 'src/app/utils';
 import { createTestStore } from './support/store';
@@ -351,7 +351,7 @@ describe('the copy, cut and paste commands', () => {
         const { store, document, systemClipboard } = storeWith(shapes[0]);
         const errors = () =>
             store.state.notifications
-                .filter(({ type }) => type === 'error')
+                .filter(({ type }) => type === NotificationType.Error)
                 .map(({ message }) => message);
 
         await systemClipboard.writeText('hello');
