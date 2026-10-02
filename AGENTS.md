@@ -308,7 +308,8 @@ merges left across layers; the outline lists it under its first shape's layer. T
 (`outline`, `src/ui/components/Outline`) is the explorer's tree of layers, their groups
 and shapes: dragging a shape or group onto a layer or group moves it there. A row's menu
 (`ItemMenu`, `src/ui/components/ItemMenu`) fades in under the pointer: hide and lock switch
-the row's item itself, and the commands its More button rolls out run for that item, which
+the row's item itself, and the commands its More button reveals in the bar, until the pointer or focus leaves the
+menu, run for that item, which
 `runCommandOn` selects first. Pressing a
 layer's name or star, or running the Highlight layer command for the layer of the selected
 shapes (`selectionLayerId`), shows only that layer and the shapes on no layer (`showOnlyLayer`,

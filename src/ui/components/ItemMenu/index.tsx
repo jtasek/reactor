@@ -41,24 +41,14 @@ interface Props {
     itemName: string;
     actions: ItemMenuAction[];
     moreActions?: ItemMenuAction[];
-    /** Rolls the More button's buttons out to the right of the bar, not under it. */
-    moreBeside?: boolean;
 }
 
-const MORE_ICONS = {
-    under: { closed: 'expand_more', open: 'expand_less' },
-    beside: { closed: 'chevron_right', open: 'chevron_left' }
-};
+const MORE_ICON = { group: 'navigation', name: 'chevron_right', size: ICON_SIZE };
 
-const moreIcon = (open: boolean, beside: boolean) => ({
-    group: 'navigation',
-    name: MORE_ICONS[beside ? 'beside' : 'under'][open ? 'open' : 'closed'],
-    size: ICON_SIZE
-});
+const WINDOW_MARGIN = 4;
 
-const MenuButton: FC<{ action: ItemMenuAction; onRun: () => void }> = ({
-    action: { label, icon, pressed, disabled },
-    onRun
+const MenuButton: FC<{ action: ItemMenuAction }> = ({
+    action: { label, icon, pressed, disabled, onRun }
 }) => (
     <button
         type="button"
@@ -76,77 +66,69 @@ const MenuButton: FC<{ action: ItemMenuAction; onRun: () => void }> = ({
 /**
  * Inside an element marked `data-menu-host`, the menu fades in while the pointer
  * is over that element or the keyboard's focus is in it; pressed buttons stay shown.
+ * Its More button reveals `moreActions` in its own place, until the pointer or the
+ * focus leaves the menu.
  */
-export const ItemMenu: FC<Props> = ({
-    itemName,
-    actions,
-    moreActions = [],
-    moreBeside = false
-}) => {
-    const [open, setOpen] = useState(false);
-    const [besideOnLeft, setBesideOnLeft] = useState(false);
-    const rolledOut = useRef<HTMLDivElement>(null);
+export const ItemMenu: FC<Props> = ({ itemName, actions, moreActions = [] }) => {
+    const [revealed, setRevealed] = useState(false);
+    const [shiftLeft, setShiftLeft] = useState(0);
+    const menu = useRef<HTMLDivElement>(null);
+    const more = useRef<HTMLButtonElement>(null);
 
-    // Without room in the window to the bar's right, the buttons go to its left.
     useLayoutEffect(() => {
-        if (!open) {
-            setBesideOnLeft(false);
+        if (!revealed) {
+            setShiftLeft(0);
 
             return;
         }
 
-        const box = rolledOut.current?.getBoundingClientRect();
+        const overflow =
+            (menu.current?.getBoundingClientRect().right ?? 0) + WINDOW_MARGIN - window.innerWidth;
 
-        if (moreBeside && box && box.right > window.innerWidth) {
-            setBesideOnLeft(true);
+        if (overflow > 0) {
+            setShiftLeft(overflow);
         }
-    }, [open, moreBeside]);
+
+        // Focus goes on from the More button, which is gone, to what it revealed.
+        menu.current?.querySelectorAll('button')[actions.length]?.focus();
+    }, [revealed, actions.length]);
 
     return (
         <div
+            ref={menu}
             className={styles.menu}
             role="toolbar"
             aria-label={`${itemName} menu`}
-            onMouseLeave={() => setOpen(false)}
+            style={shiftLeft ? { transform: `translateX(-${shiftLeft}px)` } : undefined}
+            onMouseLeave={() => setRevealed(false)}
+            onBlur={(event) => {
+                // Losing the More button itself is not leaving the menu.
+                if (
+                    !more.current?.contains(event.target) &&
+                    !event.currentTarget.contains(event.relatedTarget)
+                ) {
+                    setRevealed(false);
+                }
+            }}
         >
             {actions.map((action) => (
-                <MenuButton key={action.id} action={action} onRun={action.onRun} />
+                <MenuButton key={action.id} action={action} />
             ))}
-            {moreActions.length > 0 && (
-                <button
-                    type="button"
-                    className={styles.button}
-                    title="More"
-                    aria-label="More"
-                    aria-expanded={open}
-                    onClick={() => setOpen(!open)}
-                >
-                    <Icon icon={moreIcon(open, moreBeside)} />
-                </button>
-            )}
-            {open && (
-                <div
-                    ref={rolledOut}
-                    className={[
-                        styles.more,
-                        moreBeside && styles.beside,
-                        besideOnLeft && styles.onLeft
-                    ]
-                        .filter(Boolean)
-                        .join(' ')}
-                >
-                    {moreActions.map((action) => (
-                        <MenuButton
-                            key={action.id}
-                            action={action}
-                            onRun={() => {
-                                setOpen(false);
-                                action.onRun();
-                            }}
-                        />
-                    ))}
-                </div>
-            )}
+            {revealed
+                ? moreActions.map((action) => <MenuButton key={action.id} action={action} />)
+                : moreActions.length > 0 && (
+                      <button
+                          ref={more}
+                          type="button"
+                          className={styles.button}
+                          title="More"
+                          aria-label="More"
+                          aria-expanded={false}
+                          onClick={() => setRevealed(true)}
+                      >
+                          <Icon icon={MORE_ICON} />
+                      </button>
+                  )}
         </div>
     );
 };
