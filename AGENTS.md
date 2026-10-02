@@ -331,6 +331,10 @@ shared, and layers keep their own `visible`.
 - Performance rules for the hot path:
     - The measurement effect is keyed on `shapeGeometryKey(shape)` so toggling `selected` during
       a marquee drag does **not** force a reflow. Keep it that way.
+    - A gesture that keeps bounds itself as it edits shapes is listed in `KEEPS_SHAPE_BOUNDS`
+      (`src/events/gestures.ts`): while it lasts no shape is measured, and when it ends only
+      the shapes whose geometry changed are. A new gesture kind must be added to the list,
+      and one listed as keeping bounds must update `shape.bounds` with the geometry.
     - `setShapeBounds` writes idempotently (epsilon compare) and `selectShapes` only writes
       `selected` when it changes — both avoid render loops / churn. Preserve these guards.
 
