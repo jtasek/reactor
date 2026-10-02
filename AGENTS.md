@@ -238,6 +238,8 @@ only translates DOM events into the gesture actions (`src/events/actions/pointer
   gesture may change. Input from any other pointer is ignored until the gesture ends.
 - **pointer move** → `movePointer`: drawing extends the path, marquee re-selects, and
   move/resize/rotate edit shapes live.
+  A move starts only once the pointer goes beyond a click's slip (`beyondClickSlip`, 3 screen
+  pixels), then follows it from where it was pressed; until then the press is a click.
 - **pointer up** → `endGesture` applies the release position, runs `executeToolCommands()`
   exactly once for drawing and marquee gestures, then `resetTools()` — **synchronously**.
   React effects flush _after_ this, so anything a tool must persist on release has to happen

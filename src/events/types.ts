@@ -35,7 +35,13 @@ export type Gesture =
           (
               | { kind: 'drawing' }
               | { kind: 'marquee'; selection: SelectionSnapshot }
-              | { kind: 'moving'; selection: SelectionSnapshot; shapes: ShapesSnapshot }
+              | {
+                    kind: 'moving';
+                    selection: SelectionSnapshot;
+                    shapes: ShapesSnapshot;
+                    /** Whether the pointer has gone beyond a slip, so the shapes follow it. */
+                    dragged: boolean;
+                }
               | {
                     kind: 'resizing';
                     shapeId: string;
