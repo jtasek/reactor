@@ -96,6 +96,19 @@ describe('Hide and Show all', () => {
         expect(shown()).toEqual(ids);
     });
 
+    it('show the layers a highlighted layer left out', () => {
+        const { store, ids, run, shown, document } = storeWith(0, 20);
+
+        store.actions.addLayer({ id: 'walls', shapesIds: [ids[0]] });
+        store.actions.addLayer({ id: 'pipes', shapesIds: [ids[1]] });
+        store.actions.showOnlyLayer('walls');
+        expect(shown()).toEqual([ids[0]]);
+
+        expect(run('Show all')).toBeUndefined();
+        expect(shown()).toEqual(ids);
+        expect(document().shownLayerId).toBeUndefined();
+    });
+
     it('are available only with something to hide or to show', () => {
         const { run } = storeWith(0);
 

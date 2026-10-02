@@ -345,8 +345,12 @@ export function selectedItems(document: Document) {
     return { groups, shapes };
 }
 
-/** Whether a shape, group or layer of the document is hidden by its own setting. */
+/**
+ * Whether something of the document is not shown: a shape, group or layer hidden
+ * by its own setting, or the layers a highlighted layer leaves out.
+ */
 export const hasHidden = (document: Document) =>
+    (document.shownLayerId !== undefined && document.layers[document.shownLayerId] !== undefined) ||
     [document.shapes, document.groups, document.layers].some((table) =>
         Object.values(table).some((item) => !item.visible)
     );
