@@ -126,7 +126,11 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   session, the `Origin` of changes and the role on every request. `server/sync.ts` serves
   documents over the `/sync` WebSocket with Hocuspocus: the upgrade checks the `Origin` and
   the session, `onConnect` the role (viewers are read-only), and content is kept in
-  `document_states`. `tests/server/support.ts` `serve()` runs all of it over HTTP.
+  `document_states`. `server/assets.ts` keeps images: an editor uploads one's bytes with
+  `PUT /api/documents/:documentId/assets/:hash` and a viewer reads it there. The server
+  checks the type by content and the hash, stores the bytes once (`BlobStorage`), links them
+  to the document (`document_assets`) and counts each workspace's images against a quota.
+  `tests/server/support.ts` `serve()` runs all of it over HTTP.
 
 ### Verification baseline (do not treat as regressions)
 

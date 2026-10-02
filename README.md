@@ -187,7 +187,8 @@ the current pan position. Touchscreen pinch zooms the same way; see Input above.
 ## Not yet available
 
 - Images on other devices: an image is kept in this browser only, so a document
-  opened elsewhere shows an empty box in its place until uploads arrive
+  opened elsewhere shows an empty box in its place. The server takes and serves
+  images already; the editor does not upload them yet
 - Moving documents made signed out into an account
 - Organizations, teams and sharing documents with others
 - Seeing other people's pointers and selections

@@ -33,6 +33,20 @@ export interface Database {
         state: Buffer;
         updated_at: Generated<Date>;
     };
+    assets: {
+        hash: string;
+        type: string;
+        size: number;
+        created_at: Generated<Date>;
+    };
+    asset_blobs: {
+        hash: string;
+        bytes: Buffer;
+    };
+    document_assets: {
+        document_id: string;
+        hash: string;
+    };
 }
 
 export type Db = Kysely<Database>;

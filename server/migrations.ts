@@ -87,6 +87,39 @@ const migrations: Record<string, Migration> = {
                 )
                 .execute();
         }
+    },
+    '0003_assets': {
+        async up(db) {
+            // An image, named by the SHA-256 of its bytes, which are kept apart.
+            await db.schema
+                .createTable('assets')
+                .addColumn('hash', 'text', (column) => column.primaryKey())
+                .addColumn('type', 'text', (column) => column.notNull())
+                .addColumn('size', 'integer', (column) => column.notNull())
+                .addColumn('created_at', 'timestamptz', (column) =>
+                    column.notNull().defaultTo(sql`now()`)
+                )
+                .execute();
+            await db.schema
+                .createTable('asset_blobs')
+                .addColumn('hash', 'text', (column) => column.primaryKey())
+                .addColumn('bytes', 'bytea', (column) => column.notNull())
+                .execute();
+            // The documents using an image: it is read and counted through them.
+            await db.schema
+                .createTable('document_assets')
+                .addColumn('document_id', 'text', (column) =>
+                    column.notNull().references('documents.id').onDelete('cascade')
+                )
+                .addColumn('hash', 'text', (column) => column.notNull().references('assets.hash'))
+                .addPrimaryKeyConstraint('document_assets_pkey', ['document_id', 'hash'])
+                .execute();
+            await db.schema
+                .createIndex('document_assets_hash')
+                .on('document_assets')
+                .column('hash')
+                .execute();
+        }
     }
 };
 
