@@ -1,4 +1,4 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useLayoutEffect, useRef, useState } from 'react';
 import type { Command, Icon as IconType } from 'src/app/types';
 import { Icon } from '../Icon';
 import styles from './styles.css';
@@ -41,14 +41,18 @@ interface Props {
     itemName: string;
     actions: ItemMenuAction[];
     moreActions?: ItemMenuAction[];
-    /** Where the More button rolls its buttons out: under the bar's end unless said. */
-    moreAbove?: boolean;
-    moreFromStart?: boolean;
+    /** Rolls the More button's buttons out to the right of the bar, not under it. */
+    moreBeside?: boolean;
 }
 
-const moreIcon = (open: boolean) => ({
+const MORE_ICONS = {
+    under: { closed: 'expand_more', open: 'expand_less' },
+    beside: { closed: 'chevron_right', open: 'chevron_left' }
+};
+
+const moreIcon = (open: boolean, beside: boolean) => ({
     group: 'navigation',
-    name: open ? 'expand_less' : 'expand_more',
+    name: MORE_ICONS[beside ? 'beside' : 'under'][open ? 'open' : 'closed'],
     size: ICON_SIZE
 });
 
@@ -77,10 +81,26 @@ export const ItemMenu: FC<Props> = ({
     itemName,
     actions,
     moreActions = [],
-    moreAbove = false,
-    moreFromStart = false
+    moreBeside = false
 }) => {
     const [open, setOpen] = useState(false);
+    const [besideOnLeft, setBesideOnLeft] = useState(false);
+    const rolledOut = useRef<HTMLDivElement>(null);
+
+    // Without room in the window to the bar's right, the buttons go to its left.
+    useLayoutEffect(() => {
+        if (!open) {
+            setBesideOnLeft(false);
+
+            return;
+        }
+
+        const box = rolledOut.current?.getBoundingClientRect();
+
+        if (moreBeside && box && box.right > window.innerWidth) {
+            setBesideOnLeft(true);
+        }
+    }, [open, moreBeside]);
 
     return (
         <div
@@ -101,15 +121,16 @@ export const ItemMenu: FC<Props> = ({
                     aria-expanded={open}
                     onClick={() => setOpen(!open)}
                 >
-                    <Icon icon={moreIcon(open)} />
+                    <Icon icon={moreIcon(open, moreBeside)} />
                 </button>
             )}
             {open && (
                 <div
+                    ref={rolledOut}
                     className={[
                         styles.more,
-                        moreAbove && styles.above,
-                        moreFromStart && styles.fromStart
+                        moreBeside && styles.beside,
+                        besideOnLeft && styles.onLeft
                     ]
                         .filter(Boolean)
                         .join(' ')}
