@@ -43,7 +43,14 @@ test('the selection’s menu fades in over the selection, runs commands and hide
     await page.mouse.up();
     await expect(toolbar).toHaveCount(1);
 
+    // More rolls the rest out to the right of the bar, at its height.
     await button('More').click();
+
+    const more = (await button('More').boundingBox())!;
+    const clone = (await button('Clone').boundingBox())!;
+
+    expect(clone.x).toBeGreaterThan(more.x + more.width);
+    expect(Math.abs(clone.y - more.y)).toBeLessThan(3);
     await button('Clone').click();
     await expect(shapes(page)).toHaveCount(2);
 

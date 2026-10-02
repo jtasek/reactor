@@ -41,14 +41,18 @@ interface Props {
     itemName: string;
     actions: ItemMenuAction[];
     moreActions?: ItemMenuAction[];
-    /** Where the More button rolls its buttons out: under the bar's end unless said. */
-    moreAbove?: boolean;
-    moreFromStart?: boolean;
+    /** Rolls the More button's buttons out to the right of the bar, not under it. */
+    moreBeside?: boolean;
 }
 
-const moreIcon = (open: boolean) => ({
+const MORE_ICONS = {
+    under: { closed: 'expand_more', open: 'expand_less' },
+    beside: { closed: 'chevron_right', open: 'chevron_left' }
+};
+
+const moreIcon = (open: boolean, beside: boolean) => ({
     group: 'navigation',
-    name: open ? 'expand_less' : 'expand_more',
+    name: MORE_ICONS[beside ? 'beside' : 'under'][open ? 'open' : 'closed'],
     size: ICON_SIZE
 });
 
@@ -77,8 +81,7 @@ export const ItemMenu: FC<Props> = ({
     itemName,
     actions,
     moreActions = [],
-    moreAbove = false,
-    moreFromStart = false
+    moreBeside = false
 }) => {
     const [open, setOpen] = useState(false);
 
@@ -101,19 +104,11 @@ export const ItemMenu: FC<Props> = ({
                     aria-expanded={open}
                     onClick={() => setOpen(!open)}
                 >
-                    <Icon icon={moreIcon(open)} />
+                    <Icon icon={moreIcon(open, moreBeside)} />
                 </button>
             )}
             {open && (
-                <div
-                    className={[
-                        styles.more,
-                        moreAbove && styles.above,
-                        moreFromStart && styles.fromStart
-                    ]
-                        .filter(Boolean)
-                        .join(' ')}
-                >
+                <div className={moreBeside ? `${styles.more} ${styles.beside}` : styles.more}>
                     {moreActions.map((action) => (
                         <MenuButton
                             key={action.id}
