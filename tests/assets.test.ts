@@ -110,20 +110,17 @@ describe('keeping images', () => {
 });
 
 describe('the image tool', () => {
-    /** Lets the file be read, kept and applied, which takes several tasks. */
-    const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
-
     it('asks for an image when chosen, then draws it at its proportions', async () => {
         const { store } = createTestStore({}, { pickImage: async () => new Blob([PNG]) });
         const { events } = store.actions;
 
-        store.actions.tools.activateTool('image');
-        await settle();
+        const source = `asset:${await pngHash()}`;
 
-        expect(store.state.tools.imageToPlace).toEqual({
-            source: `asset:${await pngHash()}`,
-            ratio: 2
-        });
+        store.actions.tools.activateTool('image');
+        // The file is read, kept and applied over several tasks.
+        await vi.waitFor(() =>
+            expect(store.state.tools.imageToPlace).toEqual({ source, ratio: 2 })
+        );
 
         events.beginGesture({ pointerId: 1, position: { x: 10, y: 10 } });
         events.endGesture({ pointerId: 1, position: { x: 110, y: 20 } });
@@ -132,7 +129,7 @@ describe('the image tool', () => {
 
         expect(shape).toMatchObject({
             type: 'image',
-            source: `asset:${await pngHash()}`,
+            source,
             position: { x: 10, y: 10 },
             size: { width: 100, height: 50 }
         });
@@ -142,9 +139,8 @@ describe('the image tool', () => {
         const { store } = createTestStore({}, { pickImage: async () => null });
 
         store.actions.tools.activateTool('image');
-        await settle();
 
-        expect(store.state.tools.activeToolsIds).toEqual(['select']);
+        await vi.waitFor(() => expect(store.state.tools.activeToolsIds).toEqual(['select']));
         expect(store.state.notifications).toEqual([]);
     });
 
@@ -153,11 +149,12 @@ describe('the image tool', () => {
 
         effects.assets.use(undefined);
         store.actions.tools.activateTool('image');
-        await settle();
 
-        expect(store.state.notifications.map(({ message }) => message)).toEqual([
-            'Images cannot be kept in this browser, so none can be added.'
-        ]);
+        await vi.waitFor(() =>
+            expect(store.state.notifications.map(({ message }) => message)).toEqual([
+                'Images cannot be kept in this browser, so none can be added.'
+            ])
+        );
     });
 
     it('draws nothing while a newly chosen image is being read', async () => {
@@ -173,8 +170,8 @@ describe('the image tool', () => {
         events.beginGesture({ pointerId: 1, position: { x: 10, y: 10 } });
         events.endGesture({ pointerId: 1, position: { x: 110, y: 20 } });
         choose(new Blob([PNG]));
-        await settle();
 
+        await vi.waitFor(() => expect(store.state.tools.imageToPlace).toBeDefined());
         expect(store.state.currentDocument.shapesIds).toEqual([]);
     });
 
@@ -185,12 +182,13 @@ describe('the image tool', () => {
         store.actions.tools.activateTool('image');
         events.beginGesture({ pointerId: 1, position: { x: 10, y: 10 } });
         events.endGesture({ pointerId: 1, position: { x: 110, y: 20 } });
-        await settle();
 
+        await vi.waitFor(() =>
+            expect(store.state.notifications.map(({ message }) => message)).toEqual([
+                'That file is not a PNG, JPEG, GIF or WebP image of 5 MB or less.'
+            ])
+        );
         expect(store.state.currentDocument.shapesIds).toEqual([]);
-        expect(store.state.notifications.map(({ message }) => message)).toEqual([
-            'That file is not a PNG, JPEG, GIF or WebP image of 5 MB or less.'
-        ]);
         expect(store.state.tools.activeToolsIds).toEqual(['select']);
     });
 });
