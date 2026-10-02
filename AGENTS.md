@@ -305,7 +305,8 @@ moved without the rest of its group leaves it. Loading does not repair a group o
 merges left across layers; the outline lists it under its first shape's layer. The outline
 (`outline`, `src/ui/components/Outline`) is the explorer's tree of layers, their groups
 and shapes: dragging a shape or group onto a layer or group moves it there. Pressing a
-layer's name shows only that layer and the shapes on no layer (`showOnlyLayer`,
+layer's name or star, or running the Highlight layer command for the layer of the selected
+shapes (`selectionLayerId`), shows only that layer and the shapes on no layer (`showOnlyLayer`,
 `document.shownLayerId`), on this screen only: it is a runtime field, neither saved nor
 shared, and layers keep their own `visible`.
 

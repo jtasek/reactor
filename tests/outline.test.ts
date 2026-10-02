@@ -182,6 +182,34 @@ describe('showing only one layer', () => {
         expect(store.actions.selectShapeAtPointer()).toBe(false);
     });
 
+    it('is done by the Highlight layer command for the layer of the selected shapes', () => {
+        const { store, ids, shown, select, run, document } = plan();
+
+        select(ids[1]);
+        expect(run('highlightLayer')).toBeUndefined();
+        expect(document().shownLayerId).toBe('pipes');
+        expect(shown()).toEqual([ids[1], ids[2]]);
+
+        // Again, with or without a selection, it shows every layer.
+        store.actions.unselectShapes();
+        expect(run('Highlight layer')).toBeUndefined();
+        expect(shown()).toEqual(ids);
+    });
+
+    it('is not available without one layer to highlight', () => {
+        const { ids, select, run, document } = plan();
+        const refused = 'Highlight layer is not available right now';
+
+        expect(run('highlightLayer')).toBe(refused);
+
+        select(ids[2]);
+        expect(run('highlightLayer')).toBe(refused);
+
+        select(ids[0], ids[1]);
+        expect(run('highlightLayer')).toBe(refused);
+        expect(document().shownLayerId).toBeUndefined();
+    });
+
     it('is this screen’s own: it is neither saved nor shown to other copies', async () => {
         const copies = await createCopies(2, (store) => {
             store.actions.addShape(square(0));

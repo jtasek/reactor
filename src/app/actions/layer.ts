@@ -1,6 +1,11 @@
 import { Action, ActionWithParam, Application, Layer } from '../types';
 import { createLayer } from '../factories';
-import { LAYER_MINIMUM, editableSelectedShapesIds, putShapesOnLayer } from '../membership';
+import {
+    LAYER_MINIMUM,
+    editableSelectedShapesIds,
+    putShapesOnLayer,
+    selectionLayerId
+} from '../membership';
 import { isShapeLocked } from '../utils';
 
 const getLayer = ({ currentDocument }: Application, layerId: string) => {
@@ -110,6 +115,22 @@ export const showOnlyLayer: ActionWithParam<string> = ({ state }, layerId) => {
 
 export const showAllLayers: Action = ({ state }) => {
     delete state.currentDocument.shownLayerId;
+};
+
+/**
+ * Shows only the layer the selected shapes are on, or every layer again when
+ * that is the one shown already or no one layer is selected.
+ */
+export const highlightSelectionLayer: Action = ({ state, actions }) => {
+    const layerId = selectionLayerId(state.currentDocument);
+
+    if (layerId === undefined) {
+        actions.showAllLayers();
+
+        return;
+    }
+
+    actions.showOnlyLayer(layerId);
 };
 
 export const toggleLayerSelected: ActionWithParam<string> = ({ state }, layerId) => {

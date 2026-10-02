@@ -195,6 +195,16 @@ export function hoveredGroupsIds(
     return takesThePress ? [] : [group.id];
 }
 
+/** The layer every selected shape is on, when they are all on one. */
+export function selectionLayerId(document: Document): string | undefined {
+    const selected = document.selectedShapesIds;
+    const [layer, another] = containersHolding(document.layers, selected);
+
+    return layer && !another && selected.every((id) => layer.shapesIds.includes(id))
+        ? layer.id
+        : undefined;
+}
+
 /** The selected shapes the commands may change, in drawing order. */
 export function editableSelectedShapesIds(document: Document): string[] {
     const selected = new Set(document.selectedShapesIds);
