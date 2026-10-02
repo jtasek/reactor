@@ -114,9 +114,13 @@ export const addShape: ActionWithParam<ShapeInput> = ({ state }, options) => {
     putOnTop(state, shape);
 };
 
-/** Adds a shape a tool drew, selected alone: what was selected no longer is. */
-export const drawShape: ActionWithParam<ShapeInput> = ({ actions }, options) => {
+/**
+ * Adds a shape a tool drew, selected alone: what was selected no longer is, and
+ * a group that was entered is left.
+ */
+export const drawShape: ActionWithParam<ShapeInput> = ({ state, actions }, options) => {
     actions.unselectShapes();
+    state.enteredGroupId = null;
     actions.addShape(options);
 };
 

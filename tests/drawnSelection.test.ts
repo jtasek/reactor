@@ -40,3 +40,22 @@ it('selects a drawn shape alone, in place of the selection', () => {
         position: { x: 100, y: 0 }
     });
 });
+
+it('leaves the group that was entered when a shape is drawn', () => {
+    const { store } = createTestStore();
+
+    drawSquare(store, 0);
+    drawSquare(store, 100);
+
+    const [first, second] = store.state.currentDocument.shapesIds;
+
+    store.actions.addGroup({ id: 'pair', shapesIds: [first, second] });
+    // A click selects the group, and a second one enters it.
+    drag(store, { x: 20, y: 20 }, { x: 20, y: 20 });
+    drag(store, { x: 20, y: 20 }, { x: 20, y: 20 });
+    expect(store.state.enteredGroupId).toBe('pair');
+
+    drawSquare(store, 200);
+
+    expect(store.state.enteredGroupId).toBeNull();
+});
