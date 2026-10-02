@@ -755,9 +755,11 @@ and every open copy of the editor loads again signed out.
 Step 6, in the browser: the image tool asks for a file, takes PNG, JPEG, GIF and
 WebP by their content up to 5 MB, and keeps the image in the document database
 under the SHA-256 of its bytes. The shape's `source` is `asset:<hash>` and is shown
-through a blob URL, which the content security policy allows. Remaining: the asset
-endpoints and their storage, uploads when signed in and for pasted and cloned
-shapes, and the cleanup job.
+through a blob URL, which the content security policy allows. On the server: an
+editor uploads an image's bytes for a document and a viewer reads it, at
+`/api/documents/:documentId/assets/:hash`; bytes are stored once by hash, linked
+to the documents using them, within 500 MB per workspace. Remaining: uploads when
+signed in and for pasted and cloned shapes, and the cleanup job.
 
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user

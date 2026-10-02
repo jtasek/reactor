@@ -99,6 +99,18 @@ export interface DocumentSummary {
     name: string;
 }
 
+const contentType = (body: unknown) =>
+    body instanceof Uint8Array ? 'application/octet-stream' : 'application/json';
+
+/** A blob for bytes, which fetch can send again when the answer is 401, as a browser does. */
+const sentBody = (body: unknown) => {
+    if (body === undefined) {
+        return undefined;
+    }
+
+    return body instanceof Uint8Array ? new Blob([new Uint8Array(body)]) : JSON.stringify(body);
+};
+
 /** Sign-ins so far; each is a client of its own, as sign-in's rate limit is kept across tests. */
 let clients = 0;
 
@@ -106,7 +118,10 @@ let clients = 0;
  * Accounts, the API and document sync served over HTTP as the servers do, on an
  * empty database.
  */
-export async function serve({ sessionCheck }: { sessionCheck?: number } = {}) {
+export async function serve({
+    sessionCheck,
+    assetQuota
+}: { sessionCheck?: number; assetQuota?: number } = {}) {
     const accounts = await startAccounts();
     const app = express();
     const log = { error: () => {}, warn: () => {} };
@@ -125,7 +140,8 @@ export async function serve({ sessionCheck }: { sessionCheck?: number } = {}) {
             db: accounts.db,
             auth: accounts.auth,
             origin: ORIGIN,
-            onDeleted: sync.closeDocument
+            onDeleted: sync.closeDocument,
+            assetQuota
         })
     );
 
@@ -160,7 +176,10 @@ export async function serve({ sessionCheck }: { sessionCheck?: number } = {}) {
         return cookieHeader(await accounts.request(findLink(sent), { headers }));
     };
 
-    /** Calls the API as a browser on this site would, or with other `headers`. */
+    /**
+     * Calls the API as a browser on this site would, or with other `headers`. A
+     * `body` of bytes is sent as it is; any other as JSON.
+     */
     const call = (
         method: string,
         path: string,
@@ -174,11 +193,11 @@ export async function serve({ sessionCheck }: { sessionCheck?: number } = {}) {
             method,
             headers: {
                 origin: ORIGIN,
-                ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+                ...(body === undefined ? {} : { 'content-type': contentType(body) }),
                 ...(cookie ? { cookie } : {}),
                 ...headers
             },
-            body: body === undefined ? undefined : JSON.stringify(body)
+            body: sentBody(body)
         });
 
     const json = async <T>(response: Promise<Response>) => (await (await response).json()) as T;
