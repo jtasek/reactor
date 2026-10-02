@@ -75,30 +75,6 @@
     opacity: 0.5;
 }
 
-.icons {
-    align-items: center;
-    display: inline-flex;
-    flex: 0 0 auto;
-    gap: 4px;
-}
-
-.icon {
-    align-items: center;
-    color: var(--text-color);
-    display: inline-flex;
-    opacity: 0.55;
-}
-
-.icon:hover {
-    opacity: 1;
-}
-
-.icon svg {
-    display: block;
-    fill: currentColor;
-    stroke: currentColor;
-}
-
 .showAll {
     background: none;
     border: 0;

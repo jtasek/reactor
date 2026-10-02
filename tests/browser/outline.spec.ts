@@ -58,3 +58,57 @@ test('the outline lists layers as a tree, shows one layer alone, and takes dropp
     await expect(shapesOn(first)).toHaveCount(2);
     await expect(second).toHaveCount(0);
 });
+
+test('an item’s menu fades in under the pointer and runs commands for that item', async ({
+    page
+}) => {
+    await openEditor(page, ['Explorer', 'Outline']);
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
+    await click(page, 600, 400);
+
+    const row = page.getByRole('button', { name: 'shape-1', exact: true }).locator('..');
+    const menu = row.getByRole('toolbar', { name: 'shape-1 menu' });
+    const button = (name: string) => menu.getByRole('button', { name, exact: true });
+
+    await expect(button('Hide')).toHaveCSS('opacity', '0');
+    await row.hover();
+    await expect(button('Hide')).toHaveCSS('opacity', '1');
+
+    // The More button rolls out the rest. Nothing is selected: a command runs
+    // for the row's shape.
+    await expect(button('Clone')).toHaveCount(0);
+    await button('More').click();
+
+    // The pointer goes down to the rolled-out buttons slowly, without closing them.
+    const from = (await button('More').boundingBox())!;
+    const to = (await button('Clone').boundingBox())!;
+
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.move(from.x + from.width / 2, to.y + to.height / 2, { steps: 40 });
+    await expect(button('Clone')).toBeVisible();
+    await button('Clone').click();
+    await expect(shapes(page)).toHaveCount(3);
+    await button('More').click();
+    await button('Delete').click();
+    await expect(shapes(page)).toHaveCount(2);
+    await expect(page.getByRole('button', { name: 'shape-1', exact: true })).toHaveCount(0);
+
+    // A button switched on stays shown when the pointer leaves.
+    const other = page.getByRole('button', { name: 'shape-3', exact: true }).locator('..');
+
+    await other.hover();
+    await other.getByRole('button', { name: 'Lock', exact: true }).click();
+    await page.mouse.move(700, 500);
+    await expect(other.getByRole('button', { name: 'Unlock', exact: true })).toHaveCSS(
+        'opacity',
+        '1'
+    );
+    await expect(other.getByRole('button', { name: 'Hide', exact: true })).toHaveCSS(
+        'opacity',
+        '0'
+    );
+    await other.hover();
+    await other.getByRole('button', { name: 'More', exact: true }).click();
+    await expect(other.getByRole('button', { name: 'Delete', exact: true })).toBeDisabled();
+});

@@ -149,3 +149,54 @@ describe('Lock and Unlock', () => {
         expect(locked()).toEqual([]);
     });
 });
+
+describe('a command run from an item’s menu', () => {
+    it('acts on that item, which becomes the selection', () => {
+        const { store, ids, select, document } = storeWith(0, 20, 40);
+
+        select(ids[0]);
+        store.actions.runCommandOn({ shapeIds: [ids[1]], commandId: 'delete' });
+
+        expect(document().shapesIds).toEqual([ids[0], ids[2]]);
+
+        store.actions.runCommandOn({ shapeIds: [ids[0]], commandId: 'bring-to-front' });
+
+        expect(document().shapesIds).toEqual([ids[2], ids[0]]);
+        expect(document().selectedShapesIds).toEqual([ids[0]]);
+    });
+
+    it('selects one shape of a group alone, inside its group', () => {
+        const { store, ids, select, run, document } = storeWith(0, 20, 40);
+
+        select(...ids);
+        run('group');
+
+        const [groupId] = Object.keys(document().groups);
+
+        store.actions.runCommandOn({ shapeIds: [ids[0]], commandId: 'delete' });
+
+        expect(document().groups[groupId].shapesIds).toEqual([ids[1], ids[2]]);
+        expect(store.state.enteredGroupId).toBe(groupId);
+    });
+
+    it('leaves the selection as it was when the command cannot run for the item', () => {
+        const { store, ids, select, document } = storeWith(0, 20);
+
+        store.actions.hideShape(ids[0]);
+        select(ids[1]);
+        store.actions.runCommandOn({ shapeIds: [ids[0]], commandId: 'delete' });
+
+        expect(document().shapesIds).toEqual(ids);
+        expect(document().selectedShapesIds).toEqual([ids[1]]);
+        expect(document().shapes[ids[0]].selected).toBe(false);
+    });
+
+    it('does nothing to a locked item', () => {
+        const { store, ids, document } = storeWith(0);
+
+        store.actions.lockShape(ids[0]);
+        store.actions.runCommandOn({ shapeIds: ids, commandId: 'delete' });
+
+        expect(document().shapesIds).toEqual(ids);
+    });
+});
