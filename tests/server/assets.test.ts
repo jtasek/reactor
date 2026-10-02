@@ -230,6 +230,35 @@ describe('assets', () => {
         expect((await read(png(3))).status).toBe(404);
     });
 
+    it('keeps no bytes of an image refused over the quota', async () => {
+        const { db, upload } = await serveDocument({ assetQuota: PNG.length });
+
+        await upload(PNG);
+        await upload(JPEG);
+
+        const { rows } = await sql<{ hash: string }>`select hash from asset_blobs`.execute(db);
+
+        expect(rows).toEqual([{ hash: hashOf(PNG) }]);
+    });
+
+    it('lets another document use an image its workspace already counts, even over the quota', async () => {
+        const { db, plan, createDocument, upload } = await serveDocument({
+            assetQuota: PNG.length
+        });
+        const other = await createDocument('Other');
+
+        await upload(PNG);
+        // As when the quota was larger once.
+        await sql`insert into assets (hash, type, size) values ('earlier', 'image/png', 100)`.execute(
+            db
+        );
+        await sql`insert into document_assets (document_id, hash)
+            values (${plan.id}, 'earlier')`.execute(db);
+
+        expect((await upload(PNG, { documentId: other.id })).status).toBe(201);
+        expect((await upload(JPEG, { documentId: other.id })).status).toBe(413);
+    });
+
     it('counts a quota per workspace', async () => {
         const { user, createDocument, upload } = await serveDocument({ assetQuota: PNG.length });
         const grace = await user('grace@example.com');

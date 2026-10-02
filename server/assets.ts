@@ -69,38 +69,49 @@ export const postgresBlobs = (db: Db): BlobStorage => ({
 
 export type AddedAsset = 'added' | 'alreadyThere' | 'overQuota' | 'noDocument';
 
+interface AssetToAdd {
+    documentId: string;
+    hash: string;
+    type: string;
+    bytes: Uint8Array;
+    quota: number;
+}
+
 /**
- * Keeps an image for a document, unless its workspace's documents would then use
- * more than `quota` bytes of images, each counted once.
+ * Whether a document may take an image: `room` when it may. The document and its
+ * workspace stay locked for the transaction, so uploads to a workspace are counted
+ * one after another and the document is not deleted meanwhile.
  */
-export async function addDocumentAsset(
-    db: Db,
-    blobs: BlobStorage,
-    {
-        documentId,
-        hash,
-        type,
-        bytes,
-        quota
-    }: { documentId: string; hash: string; type: string; bytes: Uint8Array; quota: number }
-): Promise<AddedAsset> {
-    // Bytes kept for an upload then refused are linked to no document, and cleaned up as such.
-    await blobs.put(hash, bytes);
+async function roomForAsset(
+    trx: Db,
+    { documentId, hash, bytes, quota }: AssetToAdd
+): Promise<'room' | Exclude<AddedAsset, 'added'>> {
+    const workspace = await trx
+        .selectFrom('workspaces')
+        .innerJoin('documents', 'documents.workspace_id', 'workspaces.id')
+        .select('workspaces.id')
+        .where('documents.id', '=', documentId)
+        .forUpdate()
+        .executeTakeFirst();
 
-    return db.transaction().execute(async (trx) => {
-        // Locked, so uploads to a workspace are counted one after another.
-        const workspace = await trx
-            .selectFrom('workspaces')
-            .innerJoin('documents', 'documents.workspace_id', 'workspaces.id')
-            .select('workspaces.id')
-            .where('documents.id', '=', documentId)
-            .forUpdate('workspaces')
-            .executeTakeFirst();
+    if (!workspace) {
+        return 'noDocument';
+    }
 
-        if (!workspace) {
-            return 'noDocument';
-        }
+    const used = await trx
+        .selectFrom('assets')
+        .select(['hash', 'size'])
+        .where('hash', 'in', (select) =>
+            select
+                .selectFrom('document_assets')
+                .innerJoin('documents', 'documents.id', 'document_assets.document_id')
+                .select('document_assets.hash')
+                .where('documents.workspace_id', '=', workspace.id)
+        )
+        .execute();
 
+    // An image the workspace uses already is counted, whichever document takes it next.
+    if (used.some((asset) => asset.hash === hash)) {
         const linked = await trx
             .selectFrom('document_assets')
             .select('hash')
@@ -108,25 +119,39 @@ export async function addDocumentAsset(
             .where('hash', '=', hash)
             .executeTakeFirst();
 
-        if (linked) {
-            return 'alreadyThere';
-        }
+        return linked ? 'alreadyThere' : 'room';
+    }
 
-        const used = await trx
-            .selectFrom('assets')
-            .select((select) => select.fn.sum<string | null>('size').as('bytes'))
-            .where('hash', '!=', hash)
-            .where('hash', 'in', (select) =>
-                select
-                    .selectFrom('document_assets')
-                    .innerJoin('documents', 'documents.id', 'document_assets.document_id')
-                    .select('document_assets.hash')
-                    .where('documents.workspace_id', '=', workspace.id)
-            )
-            .executeTakeFirstOrThrow();
+    const usedBytes = used.reduce((sum, asset) => sum + asset.size, 0);
 
-        if (Number(used.bytes ?? 0) + bytes.length > quota) {
-            return 'overQuota';
+    return usedBytes + bytes.length > quota ? 'overQuota' : 'room';
+}
+
+/**
+ * Keeps an image for a document, unless its workspace's documents would then use
+ * more than `quota` bytes of images, each counted once.
+ */
+export async function addDocumentAsset(
+    db: Db,
+    blobs: BlobStorage,
+    asset: AssetToAdd
+): Promise<AddedAsset> {
+    const { documentId, hash, type, bytes } = asset;
+    // Checked before the bytes are kept, so an upload refused keeps none.
+    const before = await db.transaction().execute((trx) => roomForAsset(trx, asset));
+
+    if (before !== 'room') {
+        return before;
+    }
+
+    await blobs.put(hash, bytes);
+
+    return db.transaction().execute(async (trx) => {
+        // Checked again: another upload may have taken the room meanwhile.
+        const room = await roomForAsset(trx, asset);
+
+        if (room !== 'room') {
+            return room;
         }
 
         await trx
