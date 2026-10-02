@@ -17,7 +17,6 @@ export const sendSelectionToBack: Action = ({ state, actions }) => {
     actions.sendShapesToBack(editableSelectedShapesIds(state.currentDocument));
 };
 
-/** Hides the selection, a group selected as one as a group; what is hidden is no longer selected. */
 export const hideSelection: Action = ({ state }) => {
     const { currentDocument } = state;
     const { groups, shapes } = selectedItems(currentDocument);
@@ -32,7 +31,6 @@ export const hideSelection: Action = ({ state }) => {
     });
 };
 
-/** Shows every hidden shape, group and layer, and every layer again after one was highlighted. */
 export const showAll: Action = ({ state, actions }) => {
     const { shapes, groups, layers } = state.currentDocument;
 
@@ -57,7 +55,6 @@ const setSelectionLocked = ({ currentDocument }: Application, locked: boolean) =
     });
 };
 
-/** Locks the selection, a group selected as one as a group; it stays selected. */
 export const lockSelection: Action = ({ state }) => {
     setSelectionLocked(state, true);
 };
