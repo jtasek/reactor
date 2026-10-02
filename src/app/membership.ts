@@ -333,3 +333,24 @@ export function outline(document: Document): OutlineLayer[] {
 
     return [...layersIds.map(entry), ...(listed ? [unlayered] : [])];
 }
+
+/** The selected groups and the selected shapes outside them: what Hide and Lock act on. */
+export function selectedItems(document: Document) {
+    const groups = document.selectedGroupsIds.map((id) => document.groups[id]);
+    const grouped = new Set(groups.flatMap((group) => group.shapesIds));
+    const shapes = document.selectedShapesIds
+        .filter((id) => !grouped.has(id))
+        .map((id) => document.shapes[id]);
+
+    return { groups, shapes };
+}
+
+/**
+ * Whether something of the document is not shown: a shape, group or layer hidden
+ * by its own setting, or the layers a highlighted layer leaves out.
+ */
+export const hasHidden = (document: Document) =>
+    (document.shownLayerId !== undefined && document.layers[document.shownLayerId] !== undefined) ||
+    [document.shapes, document.groups, document.layers].some((table) =>
+        Object.values(table).some((item) => !item.visible)
+    );

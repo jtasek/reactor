@@ -8,6 +8,7 @@ export * from './link';
 export * from './routes';
 export * from './ruler';
 export * from './search';
+export * from './selection';
 export * from './shape';
 export * from './startup';
 export * from './notifications';

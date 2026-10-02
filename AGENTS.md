@@ -139,8 +139,8 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   (not suppressed). `pnpm lint:baseline` fails on any finding in a file changed relative to
   `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
   recorded counts: fix a touched file's existing findings rather than adding exceptions.
-- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 440 KiB or
-  any file 240 KiB (the budget in `webpack.config.mjs`, measured at 429 and 225 KiB); raise
+- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 450 KiB or
+  any file 240 KiB (the budget in `webpack.config.mjs`, measured at 443 and 225 KiB); raise
   it only for code the editor needs as it opens, after checking what grew.
 
 ## Architecture
@@ -298,6 +298,8 @@ leave with one shape, or a layer left empty, is removed. Deleting one shape keep
 groups, so member lists merge as collaboration expects; deleting or cutting a selection
 (`removeShapes`) removes the groups it empties. Commands act on
 `editableSelectedShapesIds`: shown, selected and not locked. Layers only show and hide.
+Hide and Lock act on `selectedItems`: a group selected as one as a group, by its own flag,
+and the other selected shapes by theirs.
 
 A group is on one layer, with all its shapes (`putShapesOnLayer`, `putShapesInGroup`): Group
 puts its shapes on the topmost one's layer, a group moved to a layer moves whole, and a shape
