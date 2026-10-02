@@ -45,7 +45,6 @@ const locked = (isLocked: boolean, onRun: () => void) =>
         onRun
     );
 
-/** Menu buttons that run commands for `shapeIds`, which they select first. */
 const useCommandActions = (shapeIds: string[], disabled: boolean) => {
     const { runCommandOn } = useActions();
 
@@ -73,11 +72,16 @@ const ShapeItem: FC<{ shapeId: string }> = ({ shapeId }) => {
             active={shape.active}
             visible={shape.visible}
             onClick={() => toggleShapeSelected(shapeId)}
-            menu={[
+            menuActions={[
                 hidden(!shape.visible, () => toggleShapeVisible(shapeId)),
                 locked(shape.locked, () => toggleShapeLocked(shapeId))
             ]}
-            more={commands(CloneCommand, DeleteCommand, BringToFrontCommand, SendToBackCommand)}
+            moreMenuActions={commands(
+                CloneCommand,
+                DeleteCommand,
+                BringToFrontCommand,
+                SendToBackCommand
+            )}
         />
     );
 };
@@ -97,11 +101,11 @@ const GroupItem: FC<{ groupId: string; shapesIds: string[] }> = ({ groupId, shap
             selected={selected}
             visible={group.visible}
             onClick={() => toggleGroupSelected(groupId)}
-            menu={[
+            menuActions={[
                 hidden(!group.visible, () => toggleGroupVisible(groupId)),
                 locked(group.locked, () => toggleGroupLocked(groupId))
             ]}
-            more={commands(UngroupCommand, CloneCommand, DeleteCommand)}
+            moreMenuActions={commands(UngroupCommand, CloneCommand, DeleteCommand)}
             onDrop={({ kind, id }) => {
                 // Only shapes join a group; a group dropped on a group stays as it is.
                 if (kind === 'shape') {
@@ -154,7 +158,7 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
             shown={shown}
             visible={layer.visible}
             onClick={() => showOnlyLayer(layerId)}
-            menu={[
+            menuActions={[
                 toggleAction(
                     'highlight',
                     shown,

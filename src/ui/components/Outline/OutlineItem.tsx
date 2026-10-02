@@ -34,10 +34,8 @@ interface Props {
     visible?: boolean;
     /** What pressing the name does; the name is plain text without it. */
     onClick?: () => void;
-    /** The buttons of the item's menu, shown while the pointer is over the row. */
-    menu?: ItemMenuAction[];
-    /** The buttons its More button rolls out. */
-    more?: ItemMenuAction[];
+    menuActions?: ItemMenuAction[];
+    moreMenuActions?: ItemMenuAction[];
     /** Takes a shape or group dropped on the item. */
     onDrop?: (dragged: Dragged) => void;
     children?: ReactNode;
@@ -53,8 +51,8 @@ export const OutlineItem: FC<Props> = ({
     shown = false,
     visible = true,
     onClick,
-    menu,
-    more,
+    menuActions,
+    moreMenuActions,
     onDrop,
     children
 }) => {
@@ -117,7 +115,9 @@ export const OutlineItem: FC<Props> = ({
                 ) : (
                     <span className={styles.label}>{name}</span>
                 )}
-                {menu && <ItemMenu label={name} actions={menu} more={more} />}
+                {menuActions && (
+                    <ItemMenu itemName={name} actions={menuActions} moreActions={moreMenuActions} />
+                )}
             </div>
             {children && <ul>{children}</ul>}
         </li>

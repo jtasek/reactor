@@ -3,13 +3,10 @@ import type { Command, Icon as IconType } from 'src/app/types';
 import { Icon } from '../Icon';
 import styles from './styles.css';
 
-/** A button of an item's menu. */
 export interface ItemMenuAction {
     id: string;
-    /** Said by the button's tooltip and to screen readers. */
     label: string;
     icon: IconType;
-    /** For a button that switches something on and off: whether it is on. */
     pressed?: boolean;
     disabled?: boolean;
     onRun: () => void;
@@ -17,7 +14,6 @@ export interface ItemMenuAction {
 
 const ICON_SIZE = 16;
 
-/** A menu button that runs a command, with the command's name and icon. */
 export const commandAction = (
     command: Command,
     onRun: () => void,
@@ -30,7 +26,6 @@ export const commandAction = (
     onRun
 });
 
-/** A menu button that switches something on and off, as hiding or locking. */
 export const toggleAction = (
     id: string,
     pressed: boolean,
@@ -43,12 +38,9 @@ export const toggleAction = (
 };
 
 interface Props {
-    /** What the menu is for, as "shape-1". */
-    label: string;
-    /** The buttons always in the bar: the most used ones. */
+    itemName: string;
     actions: ItemMenuAction[];
-    /** The buttons rolled out by the More button. */
-    more?: ItemMenuAction[];
+    moreActions?: ItemMenuAction[];
 }
 
 const moreIcon = (open: boolean) => ({
@@ -80,20 +72,20 @@ const MenuButton: FC<{ action: ItemMenuAction; onRun: () => void }> = ({
  * `data-menu-host`, it fades in while the pointer is over that element or the
  * keyboard's focus is in it; buttons switched on stay shown.
  */
-export const ItemMenu: FC<Props> = ({ label, actions, more = [] }) => {
+export const ItemMenu: FC<Props> = ({ itemName, actions, moreActions = [] }) => {
     const [open, setOpen] = useState(false);
 
     return (
         <div
             className={styles.menu}
             role="toolbar"
-            aria-label={`${label} menu`}
+            aria-label={`${itemName} menu`}
             onMouseLeave={() => setOpen(false)}
         >
             {actions.map((action) => (
                 <MenuButton key={action.id} action={action} onRun={action.onRun} />
             ))}
-            {more.length > 0 && (
+            {moreActions.length > 0 && (
                 <button
                     type="button"
                     className={styles.button}
@@ -107,7 +99,7 @@ export const ItemMenu: FC<Props> = ({ label, actions, more = [] }) => {
             )}
             {open && (
                 <div className={styles.more}>
-                    {more.map((action) => (
+                    {moreActions.map((action) => (
                         <MenuButton
                             key={action.id}
                             action={action}
