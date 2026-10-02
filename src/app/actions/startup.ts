@@ -1,17 +1,23 @@
 import type { Command } from 'src/app/types';
 import type { Context } from '../index';
 import {
+    BringToFrontCommand,
     CloneCommand,
     CopyCommand,
     CutCommand,
     DeleteCommand,
     GroupCommand,
+    HideCommand,
     HighlightLayerCommand,
     LayerCommand,
+    LockCommand,
     PasteCommand,
     RemoveFromGroupCommand,
+    SendToBackCommand,
+    ShowAllCommand,
     UngroupCommand,
     UnlayerCommand,
+    UnlockCommand,
     ZoomInCommand,
     ZoomOutCommand,
     ZoomResetCommand
@@ -77,6 +83,12 @@ function registerCommands() {
     registerCommand(LayerCommand);
     registerCommand(UnlayerCommand);
     registerCommand(HighlightLayerCommand);
+    registerCommand(BringToFrontCommand);
+    registerCommand(SendToBackCommand);
+    registerCommand(HideCommand);
+    registerCommand(ShowAllCommand);
+    registerCommand(LockCommand);
+    registerCommand(UnlockCommand);
     registerCommand(ZoomInCommand);
     registerCommand(ZoomOutCommand);
     registerCommand(ZoomResetCommand);

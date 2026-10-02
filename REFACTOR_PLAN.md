@@ -448,9 +448,9 @@ Step 5 done: the entry bundle measured 401 KiB on 2026-10-01: React DOM, Overmin
 and React 225 KiB, the app 172 KiB, the webpack runtime 4 KiB. The app's share is
 what the editor needs as it opens (loading and syncing documents, actions, tools),
 and Yjs, the server sync and the pages already load on demand, so nothing is split
-further. The production build fails beyond 440 KiB for the entry bundle or 240 KiB
-for any file; the entry bundle measured 429 KiB on 2026-10-02, the growth being the
-store's group, layer and clipboard actions, which register at startup.
+further. The production build fails beyond 450 KiB for the entry bundle or 240 KiB
+for any file; the entry bundle measured 443 KiB on 2026-10-02, the growth being the
+store's group, layer and clipboard actions and the commands, which register at startup.
 
 1. Parse and validate TRUST_PROXY hop counts explicitly while preserving supported
    boolean/address forms. Document examples and test forwarding behavior.

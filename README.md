@@ -68,6 +68,9 @@ bar, side bar, panels and other parts of the editor.
 | Ctrl/Cmd+Alt+G | Remove the shapes selected inside a group from it |
 | Ctrl/Cmd+Alt+L, Ctrl/Cmd+Alt+Shift+L | Move the selection to a new layer, take it off its layer |
 | `h` | Highlight the selected shapes' layer: show only it, or every layer again |
+| `]`, `[` | Bring the selection to the front, send it to the back |
+| Shift+H, Alt+Shift+H | Hide the selection; show every hidden shape, group and layer |
+| `k`, Shift+K | Lock and unlock the selection |
 | `+` or `=`, `-`, `0` | Zoom in, zoom out, reset zoom |
 
 The Outline panel (in the explorer) lists the layers with their groups and shapes as a
