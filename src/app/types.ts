@@ -300,7 +300,8 @@ export interface Provider {
     data?: unknown;
 }
 
-export type NotificationType = 'info' | 'warn' | 'error';
+/** What a notification tells: each kind is shown in a color of its own. */
+export type NotificationType = 'info' | 'success' | 'warning' | 'error';
 
 export interface Notification {
     id: string;

@@ -7,8 +7,14 @@ export const displayInfo: ActionWithParam<string> = ({ state }, message) => {
     state.notifications.push(notification);
 };
 
+export const displaySuccess: ActionWithParam<string> = ({ state }, message) => {
+    const notification = createNotification({ message, type: 'success' });
+
+    state.notifications.push(notification);
+};
+
 export const displayWarning: ActionWithParam<string> = ({ state }, message: string) => {
-    const notification = createNotification({ message, type: 'warn' });
+    const notification = createNotification({ message, type: 'warning' });
 
     state.notifications.push(notification);
 };

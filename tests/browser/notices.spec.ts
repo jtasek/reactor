@@ -12,6 +12,10 @@ test('tells a signed-out user once that documents are kept only in this browser'
     const notice = page.getByRole('status').filter({ hasText: LOCAL_ONLY });
 
     await expect(notice).toBeVisible();
+    // An information notice: tinted in its color, with text in a darker shade of it.
+    await expect(notice).toHaveAttribute('data-type', 'info');
+    await expect(notice).toHaveCSS('background-color', 'rgb(228, 223, 243)');
+    await expect(notice).toHaveCSS('color', 'rgb(106, 85, 194)');
     // This server has no accounts, so there is no sign-in to offer.
     await expect(notice.getByRole('link')).toHaveCount(0);
 
