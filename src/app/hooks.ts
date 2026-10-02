@@ -112,6 +112,10 @@ export const useCurrentDocument = () => {
     return useAppState((state) => state.currentDocument);
 };
 
+export const useNotifications = () => {
+    return useAppState((state) => state.notifications);
+};
+
 export const useCurrentPage = () => {
     return useAppState((state) => state.currentPage);
 };
