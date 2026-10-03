@@ -67,7 +67,6 @@ export const SelectionMenu: FC = () => {
                 itemName="Selection"
                 actions={[hide, lockOrUnlock]}
                 moreActions={[...others, ...[group, ungroup].filter(({ disabled }) => !disabled)]}
-                moreBeside
             />
         </div>
     );

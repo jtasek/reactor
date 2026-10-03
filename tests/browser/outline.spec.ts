@@ -75,21 +75,14 @@ test('an item’s menu fades in under the pointer and runs commands for that ite
     await row.hover();
     await expect(button('Hide')).toHaveCSS('opacity', '1');
 
-    // The More button rolls out the rest. Nothing is selected: a command runs
-    // for the row's shape.
+    // The More button reveals the rest in the bar. Nothing is selected: a
+    // command runs for the row's shape.
     await expect(button('Clone')).toHaveCount(0);
     await button('More').click();
 
-    // The pointer goes down to the rolled-out buttons slowly, without closing them.
-    const from = (await button('More').boundingBox())!;
-    const to = (await button('Clone').boundingBox())!;
-
-    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
-    await page.mouse.move(from.x + from.width / 2, to.y + to.height / 2, { steps: 40 });
-    await expect(button('Clone')).toBeVisible();
+    await expect(button('More')).toHaveCount(0);
     await button('Clone').click();
     await expect(shapes(page)).toHaveCount(3);
-    await button('More').click();
     await button('Delete').click();
     await expect(shapes(page)).toHaveCount(2);
     await expect(page.getByRole('button', { name: 'shape-1', exact: true })).toHaveCount(0);
