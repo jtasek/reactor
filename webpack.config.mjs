@@ -110,11 +110,12 @@ export const config = {
     // editor needs as it opens, after checking what grew. It was raised from 420 KiB
     // for the store's group, layer and clipboard actions, and from 440 KiB for the
     // arrange, hide and lock commands, which all register at startup.
+    // The reset request/confirmation actions add less than 1 KiB at startup.
     performance: isDev
         ? false
         : {
               hints: 'error',
-              maxEntrypointSize: 450 * 1024,
+              maxEntrypointSize: 451 * 1024,
               maxAssetSize: 240 * 1024
           },
     optimization: {

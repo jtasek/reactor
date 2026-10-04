@@ -32,6 +32,44 @@ test('the command bar offers no commands that do nothing', async ({ page }) => {
     await expect(page.getByText('Pan', { exact: true })).toHaveCount(0);
 });
 
+for (const width of [360, 700]) {
+    test(`the command bar keeps every command reachable at ${width}px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 720 });
+        await openEditor(page);
+        const commandLine = page.getByRole('checkbox', { name: 'Command Line', exact: true });
+        await commandLine.check();
+        await expect(page.getByRole('searchbox', { name: 'Command' })).toBeVisible();
+        await commandLine.uncheck();
+        await drawRect(page, { x: 150, y: 300 }, { x: 190, y: 340 });
+
+        const zoomOut = page.getByRole('button', { name: 'Zoom out', exact: true });
+        const commandBar = page.getByRole('list', { name: 'Commands' });
+        const bounds = (await commandBar.boundingBox())!;
+
+        expect(bounds.x).toBeGreaterThanOrEqual(0);
+        expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
+        expect(await commandBar.evaluate((element) => element.scrollWidth)).toBeGreaterThan(
+            await commandBar.evaluate((element) => element.clientWidth)
+        );
+
+        for (const button of await commandBar.getByRole('button').all()) {
+            if (await button.isEnabled()) {
+                await button.click({ trial: true });
+            }
+        }
+
+        await zoomOut.scrollIntoViewIfNeeded();
+        await expect(zoomOut).toBeVisible();
+        await zoomOut.click();
+        await expect(page.locator('svg#surface #camera')).toHaveAttribute(
+            'transform',
+            'translate(0,0) scale(0.9)'
+        );
+        await commandBar.getByRole('button', { name: 'Reset document', exact: true }).click();
+        await expect(page.getByRole('dialog', { name: 'Reset document?' })).toBeVisible();
+    });
+}
+
 test('the command line runs a command on Enter and reports what it cannot run', async ({
     page
 }) => {

@@ -1,39 +1,59 @@
-import React, { FC, ReactNode } from 'react';
+import React, { FC, ReactNode, useEffect, useId, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import styles from './styles.css';
-import { Overlay } from '../Overlay/Overlay';
-
-import { Icon } from '../Icon';
-
-const closeIcon = { group: 'content', name: 'clear', color: 'none', size: 18 };
-
-export const CloseButton: FC = () => <Icon icon={closeIcon} />;
 
 export interface Props {
     title: string;
     description: string;
     visible: boolean;
+    onClose: () => void;
+    actions?: ReactNode;
     children?: ReactNode;
 }
 
-export const Dialog: FC<Props> = ({ title, description, visible, children }) => {
-    if (!visible) {
-        return null;
-    }
+export const Dialog: FC<Props> = ({ title, description, visible, onClose, actions, children }) => {
+    const ref = useRef<HTMLDialogElement>(null);
+    const titleId = useId();
+    const descriptionId = useId();
 
-    return (
-        <div style={{ width: '100%', height: '100%', position: 'absolute' }}>
-            <Overlay />
-            <div className={styles.dialog}>
-                <CloseButton />
-                <h4>{title}</h4>
-                <p>{description}</p>
-                <form>
-                    <fieldset>{children}</fieldset>
-                </form>
-                <div className={styles.actions}>
-                    <button data-action="close">Close</button>
-                </div>
+    useEffect(() => {
+        const dialog = ref.current;
+        if (!dialog || !visible) return;
+        const trigger = document.activeElement;
+        const stopShortcuts = (event: KeyboardEvent) => event.stopPropagation();
+        dialog.addEventListener('keydown', stopShortcuts);
+        dialog.showModal();
+        return () => {
+            dialog.close();
+            dialog.removeEventListener('keydown', stopShortcuts);
+            if (trigger instanceof HTMLElement && trigger.isConnected) trigger.focus();
+        };
+    }, [visible]);
+
+    if (!visible) return null;
+
+    return createPortal(
+        <dialog
+            ref={ref}
+            className={styles.dialog}
+            aria-labelledby={titleId}
+            aria-describedby={descriptionId}
+            onCancel={(event) => {
+                event.preventDefault();
+                onClose();
+            }}
+        >
+            <h2 id={titleId}>{title}</h2>
+            <p id={descriptionId}>{description}</p>
+            {children}
+            <div className={styles.actions}>
+                {actions ?? (
+                    <button type="button" onClick={onClose}>
+                        Close
+                    </button>
+                )}
             </div>
-        </div>
+        </dialog>,
+        document.body
     );
 };

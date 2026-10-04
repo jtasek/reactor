@@ -1,49 +1,84 @@
 .layerPanel {
-  backdrop-filter: var(--backdrop-filter);
-  background-color: var(--control-background);
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow);
-  color: var(--text-color);
-  display: block;
-  padding: 10px;
-  position: static;
-  user-select: none;
-  width: var(--control-width);
-  z-index: 100;
+    --layer-panel-padding: 10px;
+    backdrop-filter: var(--backdrop-filter);
+    background-color: var(--control-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    color: var(--text-color);
+    display: block;
+    padding: var(--layer-panel-padding);
+    position: static;
+    user-select: none;
+    width: var(--control-width);
+    max-width: 100%;
+    z-index: 100;
 }
 
 .layerPanel:hover {
-  box-shadow: var(--box-shadow-hover);
+    box-shadow: var(--box-shadow-hover);
 }
 
 .layerPanel input {
-  margin-right: 10px;
+    margin-right: var(--layer-panel-padding);
+}
+
+.layerPanel button {
+    background: transparent;
+    border: 0;
+    border-radius: var(--border-radius);
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+}
+
+.layerPanel > button {
+    display: block;
+    padding: var(--layer-panel-padding);
+    width: 100%;
+}
+
+.layerPanel [data-layer-highlight][aria-pressed='true'] {
+    background: var(--control-background-active);
+    font-weight: bold;
+}
+
+.layerPanel button:hover,
+.layerPanel button:focus-visible {
+    background: var(--control-background-active);
 }
 
 .layerItem {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
 }
 
 .layerLabel {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-  margin-right: 10px;
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-right: var(--layer-panel-padding);
+    min-width: 0;
+}
+
+.layerLabel button {
+    overflow-wrap: anywhere;
+    padding: var(--layer-panel-padding) 0;
 }
 
 .icons {
-  display: inline-flex;
+    display: inline-flex;
 }
 
 .icons button {
-  background: none;
-  border: 0;
-  color: inherit;
-  cursor: pointer;
-  display: block;
-  font: inherit;
-  padding: 0;
+    background: none;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    display: block;
+    font: inherit;
+    padding: 0;
 }

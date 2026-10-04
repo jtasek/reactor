@@ -1,13 +1,16 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
 import { ToolBarButton } from './ToolBarButton';
-import { useActions, useTools } from 'src/app/hooks';
-import { useRegisteredTools } from '../../../tools/components';
+import { useActions, useCommandEnabled, useTools } from 'src/app/hooks';
+import { useRegisteredTools } from 'src/tools/components';
+import { ResetDocumentCommand } from 'src/commands/document';
+import { Icon } from '../Icon';
 
 export const ToolBar: FC = () => {
     const actions = useActions();
     const { activeToolsIds } = useTools();
     const tools = useRegisteredTools();
+    const resetEnabled = useCommandEnabled(ResetDocumentCommand);
 
     return (
         <ul className={styles.toolBar} aria-label="Tools">
@@ -19,6 +22,16 @@ export const ToolBar: FC = () => {
                     tool={item}
                 />
             ))}
+            <li className={styles.toolBarButton}>
+                <button
+                    type="button"
+                    title={ResetDocumentCommand.name}
+                    disabled={!resetEnabled}
+                    onClick={() => actions.runCommand(ResetDocumentCommand)}
+                >
+                    <Icon icon={ResetDocumentCommand.icon} />
+                </button>
+            </li>
         </ul>
     );
 };

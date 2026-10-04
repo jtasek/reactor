@@ -40,13 +40,13 @@
 }
 
 .warning {
-    --notification-background: #f6ecd0;
-    --notification-color: #8a6100;
+    --notification-background: var(--warning-background);
+    --notification-color: var(--warning-color);
 }
 
 .error {
-    --notification-background: #f6dcdc;
-    --notification-color: #b3312f;
+    --notification-background: var(--error-background);
+    --notification-color: var(--error-color);
 }
 
 .icon {

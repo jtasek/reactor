@@ -26,6 +26,7 @@ import {
     ToolBar,
     PanelLayout
 } from 'src/ui/components';
+import { ResetDocumentDialog } from 'src/ui/components/ResetDocumentDialog';
 
 export const Designer: FC = () => (
     <Layout>
@@ -72,5 +73,6 @@ export const Designer: FC = () => (
             </DockablePanel>
         </PanelLayout>
         <StatusBar />
+        <ResetDocumentDialog />
     </Layout>
 );
