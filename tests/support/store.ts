@@ -3,6 +3,7 @@ import { createOvermindMock } from 'overmind';
 import { vi } from 'vitest';
 import { config } from 'src/app';
 import { createApplication, createDocument } from 'src/app/factories';
+import { DEFAULT_PANEL_LAYOUT, readPanelLayout } from 'src/app/panelLayout';
 import { Collaboration } from 'src/app/services/collaboration';
 import { createClipboard } from 'src/app/services/clipboard';
 import { createAssets } from 'src/app/services/assets';
@@ -108,7 +109,12 @@ export function createTestStore(
     const app = createApplication({
         currentDocumentId: document.id,
         documents: { [document.id]: document },
-        config: { autoSave: options.autoSave ?? false, debugMode: false, version: '1.0' }
+        config: {
+            autoSave: options.autoSave ?? false,
+            debugMode: false,
+            panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT),
+            version: '1.0'
+        }
     });
     const store = createOvermindMock(config, effects, (state) => {
         Object.assign(state, app);

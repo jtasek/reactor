@@ -335,7 +335,22 @@ export type SaveStatus =
 export type Configuration = {
     autoSave: boolean;
     debugMode: boolean;
+    panelLayout: Record<string, PanelPlacement>;
     version: string;
+};
+
+export type PanelPlacement = {
+    dock:
+        | 'top-left'
+        | 'left'
+        | 'bottom-left'
+        | 'top-right'
+        | 'right'
+        | 'bottom-right'
+        | 'top'
+        | 'bottom'
+        | null;
+    position: Point;
 };
 
 export type Application = {

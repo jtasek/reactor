@@ -1,0 +1,225 @@
+.panelLayer {
+    --panel-header-height: 28px;
+    --panel-gap: 8px;
+    inset: 0;
+    pointer-events: none;
+    position: fixed;
+    z-index: 100;
+}
+
+.column {
+    align-items: stretch;
+    bottom: 25px;
+    display: flex;
+    flex-direction: column;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+}
+
+.leftColumn,
+.rightColumn {
+    width: min(35vw, 360px);
+}
+
+.leftColumn {
+    left: 0;
+}
+
+.rightColumn {
+    right: 0;
+}
+
+.dock {
+    align-items: center;
+    display: flex;
+    flex: 0 1 auto;
+    flex-direction: column;
+    gap: var(--panel-gap);
+    pointer-events: none;
+}
+
+.leftColumn .dock {
+    align-items: flex-start;
+}
+
+.rightColumn .dock {
+    align-items: flex-end;
+}
+
+.centerColumn {
+    left: min(35vw, 360px);
+    right: min(35vw, 360px);
+}
+
+.spacer {
+    flex: 1 0 8px;
+}
+
+.panel {
+    backdrop-filter: var(--backdrop-filter);
+    background-color: var(--control-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    color: var(--text-color);
+    display: flex;
+    flex: 0 1 auto;
+    flex-direction: column;
+    max-height: min(70vh, 700px);
+    max-width: min(90vw, 420px);
+    min-height: var(--panel-header-height);
+    overflow: hidden;
+    pointer-events: auto;
+    user-select: none;
+}
+
+.floating {
+    position: absolute;
+}
+
+.docked {
+    max-width: 100%;
+}
+
+.handle {
+    align-items: center;
+    background: rgba(0, 0, 0, 0.08);
+    border: 0;
+    box-sizing: border-box;
+    color: inherit;
+    cursor: grab;
+    display: flex;
+    flex: 0 0 var(--panel-header-height);
+    font: inherit;
+    justify-content: center;
+    min-width: 28px;
+    min-height: var(--panel-header-height);
+    padding: 4px 8px;
+    touch-action: none;
+}
+
+.handle:active {
+    cursor: grabbing;
+}
+
+.handle:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
+}
+
+.sideBarPanel .handle {
+    padding: 2px;
+    width: 24px;
+}
+
+.content {
+    display: block;
+    min-height: 0;
+    overflow: auto;
+}
+
+.dockZones {
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+    z-index: 2;
+}
+
+.zone {
+    background: color-mix(in srgb, var(--control-background) 85%, mediumpurple);
+    border: 2px dashed mediumpurple;
+    border-radius: var(--border-radius);
+    box-sizing: border-box;
+    opacity: 0.18;
+    position: absolute;
+    transition:
+        opacity 0.12s ease-in-out,
+        background-color 0.12s ease-in-out;
+}
+
+.activeZone {
+    background: mediumpurple;
+    opacity: 0.38;
+}
+
+.zoneTopLeft,
+.zoneTopRight,
+.zoneBottomLeft,
+.zoneBottomRight {
+    height: 28vh;
+    width: min(35vw, 360px);
+}
+
+.zoneTopLeft,
+.zoneTopRight {
+    top: 0;
+}
+
+.zoneBottomLeft,
+.zoneBottomRight {
+    bottom: 25px;
+}
+
+.zoneTopLeft,
+.zoneBottomLeft {
+    left: 0;
+}
+
+.zoneTopRight,
+.zoneBottomRight {
+    right: 0;
+}
+
+.zoneLeft,
+.zoneRight {
+    bottom: calc(28vh + 25px);
+    top: 28vh;
+    width: min(35vw, 360px);
+}
+
+.zoneLeft {
+    left: 0;
+}
+
+.zoneRight {
+    right: 0;
+}
+
+.zoneTop,
+.zoneBottom {
+    height: 28vh;
+    left: min(35vw, 360px);
+    right: min(35vw, 360px);
+}
+
+.zoneTop {
+    top: 0;
+}
+
+.zoneBottom {
+    bottom: 25px;
+}
+
+.dragSource {
+    opacity: 0.55;
+}
+
+.dragPreview {
+    background: var(--control-background);
+    border: 2px dashed currentColor;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow-hover);
+    color: var(--text-color);
+    left: 0;
+    min-width: 120px;
+    padding: 10px;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+}
+
+.dragPreview span {
+    display: block;
+    font-size: 0.8em;
+    margin-top: 4px;
+}

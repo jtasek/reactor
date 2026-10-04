@@ -6,6 +6,7 @@ import {
     ContextMenu,
     ControlPanel,
     DataView,
+    DockablePanel,
     DocumentInfo,
     Explorer,
     GroupPanel,
@@ -22,7 +23,8 @@ import {
     StatusBar,
     Stats,
     Canvas,
-    ToolBar
+    ToolBar,
+    PanelLayout
 } from 'src/ui/components';
 
 export const Designer: FC = () => (
@@ -30,25 +32,45 @@ export const Designer: FC = () => (
         <CommandBar />
         <CommandLine />
         <MenuBar />
-        <SideBar>
-            <ToolBar />
-            <Explorer>
-                <SearchBox />
-                <Outline />
-                <NavBar />
-            </Explorer>
-        </SideBar>
         <Stack />
-        <Stats />
         <Canvas />
         <ContextMenu />
-        <Minimap />
-        <DataView />
-        <DocumentInfo />
-        <ControlPanel />
-        <PropertyPanel />
-        <LayerPanel />
-        <GroupPanel />
+        <PanelLayout>
+            <DockablePanel id="sideBar" title="Side Bar">
+                <SideBar>
+                    <ToolBar />
+                    <Explorer>
+                        <SearchBox />
+                        <Outline />
+                        <NavBar />
+                    </Explorer>
+                </SideBar>
+            </DockablePanel>
+            <DockablePanel id="controlPanel" title="Control Panel">
+                <ControlPanel />
+            </DockablePanel>
+            <DockablePanel id="propertyPanel" title="Properties">
+                <PropertyPanel />
+            </DockablePanel>
+            <DockablePanel id="layerPanel" title="Layers">
+                <LayerPanel />
+            </DockablePanel>
+            <DockablePanel id="groupPanel" title="Groups">
+                <GroupPanel />
+            </DockablePanel>
+            <DockablePanel id="miniMap" title="Minimap">
+                <Minimap />
+            </DockablePanel>
+            <DockablePanel id="documentInfo" title="Document Info">
+                <DocumentInfo />
+            </DockablePanel>
+            <DockablePanel id="dataView" title="Data View">
+                <DataView />
+            </DockablePanel>
+            <DockablePanel id="stats" title="Stats">
+                <Stats />
+            </DockablePanel>
+        </PanelLayout>
         <StatusBar />
     </Layout>
 );

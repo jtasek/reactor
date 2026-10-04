@@ -15,6 +15,7 @@ export { MenuBarContainer as MenuBar } from './MenuBar';
 export { MiniMapContainer as Minimap } from './MiniMap';
 export { NavBarContainer as NavBar } from './NavBar';
 export { Outline } from './Outline';
+export { DockablePanel, PanelLayout } from './PanelLayout';
 
 export { Canvas } from './Surface';
 export { Layout } from './Layout';
