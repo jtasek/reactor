@@ -3,32 +3,34 @@ import styles from './styles.css';
 import { Icon } from '../Icon';
 import { useActions, useLayer } from 'src/app/hooks';
 
+const LAYER_ICON_SIZE = 16;
+
 const visibleIcon = {
     group: 'action',
     name: 'visibility',
     color: 'rgba(255,255,255)',
-    size: 16
+    size: LAYER_ICON_SIZE
 };
 
 const hiddenIcon = {
     group: 'action',
     name: 'visibility_off',
     color: 'rgba(255,255,255)',
-    size: 16
+    size: LAYER_ICON_SIZE
 };
 
 const lockedIcon = {
     group: 'action',
     name: 'lock_outline',
     color: 'rgba(255,255,255)',
-    size: 16
+    size: LAYER_ICON_SIZE
 };
 
 const openIcon = {
     group: 'action',
     name: 'lock_open',
     color: 'rgba(255,255,255)',
-    size: 16
+    size: LAYER_ICON_SIZE
 };
 
 interface Props {

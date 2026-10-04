@@ -1,5 +1,5 @@
 import { Tool } from '../types';
-import { getTool, getTools } from '../../app/actions';
+import { getTool, getTools } from 'src/app/actions';
 
 export function getToolById(toolId: string): Tool | undefined {
     return getTool(toolId);

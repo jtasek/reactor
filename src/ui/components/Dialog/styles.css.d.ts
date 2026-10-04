@@ -1,16 +1,7 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
-    action: string;
     actions: string;
-    close: string;
-    default: string;
     dialog: string;
-    disabled: string;
-    "modal-enter": string;
-    "modal-enter-active": string;
-    "modal-leave": string;
-    "modal-leave-active": string;
-    primary: string;
   }
 }
 

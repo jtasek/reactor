@@ -364,6 +364,7 @@ export type Application = {
     currentPage: string;
     /** The group double-clicked into, whose shapes are selected one by one. */
     enteredGroupId: string | null;
+    resetDocumentId: string | null;
     devices: HashTable<Device>;
     documents: HashTable<Document>;
     documentsIds: string[];

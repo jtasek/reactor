@@ -1,5 +1,6 @@
 import { Action, ActionWithParam, Application, Document } from '../types';
-import { createDocument, newDocumentName } from '../factories';
+import { createCamera, createDocument, createGrid, newDocumentName } from '../factories';
+import { takesEditorInput } from '../../events/input';
 import { copyDocument } from '../services/documentStorage';
 
 const getDocument = ({ documents }: Application, documentId: string) => {
@@ -40,6 +41,43 @@ export const newDocument: Action = ({ state, effects }) => {
     effects.navigate('/');
 };
 
+export const requestDocumentReset: Action = ({ state }) => {
+    if (takesEditorInput(state) && !state.currentDocument.locked) {
+        state.resetDocumentId = state.currentDocumentId;
+    }
+};
+
+export const cancelDocumentReset: Action = ({ state }) => {
+    state.resetDocumentId = null;
+};
+
+/** Confirms a reset only for the document for which it was requested. */
+export const resetDocument: Action = ({ state }) => {
+    const documentId = state.resetDocumentId;
+    state.resetDocumentId = null;
+    if (
+        documentId !== state.currentDocumentId ||
+        !takesEditorInput(state) ||
+        state.currentDocument.locked
+    ) {
+        return;
+    }
+    const document = state.currentDocument;
+    document.shapes = {};
+    document.shapesIds = [];
+    document.layers = {};
+    document.groups = {};
+    document.links = {};
+    document.rulers = {};
+    document.components = {};
+    document.camera = createCamera();
+    document.grid = createGrid();
+    document.filter = '';
+    document.modified = new Date();
+    delete document.shownLayerId;
+    state.enteredGroupId = null;
+};
+
 export const cloneDocument: ActionWithParam<string> = ({ state, effects }, documentId) => {
     const document = getDocument(state, documentId);
     const copy = copyDocument(document, effects.newId());
@@ -78,6 +116,7 @@ export const openDocument: ActionWithParam<string> = ({ state }, documentId) => 
     getDocument(state, documentId);
 
     state.currentDocumentId = documentId;
+    state.resetDocumentId = null;
 };
 
 export const editDocument: ActionWithParam<string> = ({ actions, effects }, documentId) => {

@@ -33,6 +33,13 @@ export const useConfig = () => {
     return useAppState((state) => state.config);
 };
 
+export const useDocumentReset = () =>
+    useAppState((state) =>
+        state.resetDocumentId === state.currentDocumentId
+            ? state.documents[state.resetDocumentId]?.name
+            : undefined
+    );
+
 export const useDebugMode = () => {
     return useConfig().debugMode;
 };

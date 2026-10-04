@@ -1,74 +1,68 @@
 .dialog {
-  background-color: white;
-  border-radius: 3px;
-  /*border: 2px solid #f06;*/
-  box-shadow: 0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 2px rgba(0, 0, 0, 0.12), 0 5px 5px -3px rgba(0, 0, 0, 0.2);
-  color: black;
-  display: flex;
-  flex-direction: column;
-  font-size: 18px;
-  height: 500px;
-  left: 50%;
-  margin: auto;
-  padding: 10px;
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 500px;
-  z-index: 999999;
+    --dialog-max-width: 26.25rem;
+    --dialog-padding: 1.25rem;
+    --dialog-heading-gap: 0.75rem;
+    --dialog-action-gap: 0.5rem;
+    --dialog-button-padding: 0.5rem 0.75rem;
+    --dialog-button-radius: 100rem;
+    --dialog-radius: 0.625rem;
+    --dialog-primary-background: var(--primary-action-color);
+    --dialog-primary-hover-background: color-mix(in srgb, var(--primary-action-color) 90%, black);
+    --dialog-primary-text: white;
+    --dialog-text-color: #1f1f1f;
+    --dialog-emphasis-weight: 600;
+    background: white;
+    border: 0;
+    border-radius: var(--dialog-radius);
+    box-shadow: var(--box-shadow-hover);
+    color: var(--dialog-text-color);
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        sans-serif;
+    line-height: 1.5;
+    margin: auto;
+    max-width: min(90vw, var(--dialog-max-width));
+    padding: var(--dialog-padding);
 }
 
-.dialog .close {
-  border: 2px solid #f06;
-  fill: none;
-  position: relative;
-  align-self: right;
-  stroke: rgba(117, 117, 117, .5);
-  top: 5px;
-  width: 100%;
+.dialog * {
+    font-family: inherit;
 }
 
-.dialog .actions {
-  display: flex;
-  flex-flow: row nowrap;
-  align-items: space;
+.dialog h2 {
+    font-weight: var(--dialog-emphasis-weight);
+    margin-bottom: var(--dialog-heading-gap);
 }
 
-.dialog .actions button {}
-
-.actions .default {
-  border: 2px solid #f06;
+.dialog::backdrop {
+    backdrop-filter: var(--backdrop-filter);
+    background: rgb(0 0 0 / 35%);
 }
 
-.action .primary {
-  background-color: #f06;
+.actions {
+    display: flex;
+    flex-direction: row;
+    gap: var(--dialog-action-gap);
+    justify-content: flex-end;
 }
 
-.action .disabled {
-  background-color: #ccc;
+.actions button {
+    border: 0;
+    border-radius: var(--dialog-button-radius);
+    cursor: pointer;
+    font: inherit;
+    font-weight: var(--dialog-emphasis-weight);
+    padding: var(--dialog-button-padding);
 }
 
-
-/* Animation */
-
-.modal-enter {
-  opacity: 0.00;
-  transform: scale(0.7);
-  transition: all 0.2s;
+.actions button[data-variant='primary'] {
+    background: var(--dialog-primary-background);
+    color: var(--dialog-primary-text);
 }
 
-.modal-enter.modal-enter-active {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.modal-leave {
-  opacity: 1;
-  transform: scale(1);
-  transition: all 0.2s;
-}
-
-.modal-leave.modal-leave-active {
-  opacity: 0.00;
-  transform: scale(0.7);
+.actions button[data-variant='primary']:hover {
+    background: var(--dialog-primary-hover-background);
 }

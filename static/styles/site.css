@@ -16,6 +16,11 @@ body,
 }
 
 :root {
+  --primary-action-color: rgb(234, 2, 130);
+  --warning-background: #f6ecd0;
+  --warning-color: #8a6100;
+  --error-background: #f6dcdc;
+  --error-color: #b3312f;
   --text-size: 14px;
   --text-color: rgba(0, 0, 0, .7);
   --text-color-hover: rgba(0, 0, 0, 1);

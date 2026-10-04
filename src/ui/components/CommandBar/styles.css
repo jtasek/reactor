@@ -1,4 +1,9 @@
 .commandBar {
+    --command-bar-edge: 10px;
+    --command-bar-left: 350px;
+    --command-bar-right: calc(var(--control-width) + 2 * var(--command-bar-edge));
+    --command-bar-top: 10px;
+    --command-bar-max-height: 5rem;
     backdrop-filter: var(--backdrop-filter);
     background-color: var(--control-background);
     border-radius: var(--border-radius);
@@ -6,24 +11,42 @@
     color: var(--text-color);
     display: flex;
     font-size: 0.75rem;
-    left: 350px;
+    box-sizing: border-box;
+    left: var(--command-bar-left);
+    max-height: var(--command-bar-max-height);
+    max-width: calc(100vw - var(--command-bar-right) - var(--command-bar-left));
+    overflow-x: auto;
+    overflow-y: hidden;
     padding: 2px;
-    position: absolute;
-    top: 10px;
+    position: fixed;
+    right: var(--command-bar-right);
+    top: var(--command-bar-top);
     transition: all 0.2s ease-in-out;
     user-select: none;
     z-index: 100;
+}
+
+@media (max-width: 700px) {
+    .commandBar {
+        --command-bar-left: var(--command-bar-edge);
+        --command-bar-right: max(
+            var(--dock-side-width),
+            calc(var(--control-width) + 2 * var(--command-bar-edge))
+        );
+    }
 }
 
 .commandBarButton {
     align-items: center;
     border-radius: 5px;
     display: flex;
+    flex: 0 0 auto;
     flex-direction: column;
     justify-items: center;
     margin: 5px;
     min-width: 50px;
     padding: 2px;
+    white-space: nowrap;
     transition: opacity 0.5s ease-in-out;
 }
 
@@ -31,7 +54,8 @@
     background-color: var(--control-background-active);
 }
 
-.commandBarButton button, div {
+.commandBarButton button,
+div {
     align-items: center;
     display: flex;
     flex-direction: column;
@@ -51,11 +75,11 @@
     margin: 10px 5px 10px 5px;
 }
 
-.commandBarButton[aria-current="true"] {
+.commandBarButton[aria-current='true'] {
     background-color: var(--control-background-active);
 }
 
-.commandBarButton[data-disabled="true"] {
+.commandBarButton[data-disabled='true'] {
     background-color: var(--control-background-disabled);
     cursor: default;
     pointer-events: none;

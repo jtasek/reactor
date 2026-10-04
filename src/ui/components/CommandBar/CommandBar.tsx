@@ -6,6 +6,7 @@ import type { Command } from 'src/app/types';
 import { CommandBarDelimiter } from './CommandBarDelimiter';
 import { CommandBarGroup } from './CommandBarGroup';
 import styles from './styles.css';
+import { DOCK_GEOMETRY_STYLE } from '../PanelLayout/geometry';
 
 function groupCommands(commands: Command[]): Record<string, Command[]> {
     return commands.reduce(
@@ -36,7 +37,7 @@ export const CommandBar: FC = () => {
     }
 
     return (
-        <ul className={styles.commandBar}>
+        <ul className={styles.commandBar} style={DOCK_GEOMETRY_STYLE} aria-label="Commands">
             {groups.map(([key, value]) => (
                 <Fragment key={key}>
                     <CommandBarGroup commands={value} />

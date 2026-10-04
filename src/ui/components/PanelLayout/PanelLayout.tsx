@@ -1,6 +1,5 @@
 import React, {
     Children,
-    CSSProperties,
     FC,
     PointerEvent,
     ReactElement,
@@ -14,24 +13,20 @@ import type { PanelPlacement } from 'src/app/types';
 import { useActions, useConfig, useControls } from 'src/app/hooks';
 import { beyondClickSlip } from 'src/events/gestures';
 import styles from './styles.css';
+import {
+    DOCK_GEOMETRY_STYLE,
+    SIDE_ZONE_WIDTH_RATIO,
+    SIDE_ZONE_MAX_WIDTH_PX,
+    EDGE_ZONE_HEIGHT_RATIO,
+    STATUS_BAR_HEIGHT_PX
+} from './geometry';
 
 type Dock = PanelPlacement['dock'];
 type DockZone = Exclude<Dock, null>;
 
-const SIDE_ZONE_WIDTH_RATIO = 0.35;
-const SIDE_ZONE_MAX_WIDTH_PX = 360;
-const EDGE_ZONE_HEIGHT_RATIO = 0.28;
-const STATUS_BAR_HEIGHT_PX = 25;
 const KEYBOARD_MOVE_STEP_PX = 10;
 const UNMEASURED_PANEL_SIZE = { width: 320, height: 200 };
 const SCREEN_COORDINATE_SCALE = 1;
-
-// Keep the visible zones and pointer hit testing on the same dimensions.
-const DOCK_GEOMETRY_STYLE = {
-    '--dock-side-width': `min(${SIDE_ZONE_WIDTH_RATIO * 100}vw, ${SIDE_ZONE_MAX_WIDTH_PX}px)`,
-    '--dock-edge-height': `${EDGE_ZONE_HEIGHT_RATIO * 100}vh`,
-    '--dock-bottom-inset': `${STATUS_BAR_HEIGHT_PX}px`
-} as CSSProperties;
 
 interface DockablePanelProps {
     id: string;

@@ -13,6 +13,7 @@ import {
     LockCommand,
     PasteCommand,
     RemoveFromGroupCommand,
+    ResetDocumentCommand,
     SendToBackCommand,
     ShowAllCommand,
     UngroupCommand,
@@ -93,6 +94,7 @@ function registerCommands() {
     registerCommand(ZoomInCommand);
     registerCommand(ZoomOutCommand);
     registerCommand(ZoomResetCommand);
+    registerCommand(ResetDocumentCommand);
 }
 
 function registerTools() {
