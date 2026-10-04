@@ -1,5 +1,6 @@
 import React, {
     Children,
+    CSSProperties,
     FC,
     PointerEvent,
     ReactElement,
@@ -16,6 +17,21 @@ import styles from './styles.css';
 
 type Dock = PanelPlacement['dock'];
 type DockZone = Exclude<Dock, null>;
+
+const SIDE_ZONE_WIDTH_RATIO = 0.35;
+const SIDE_ZONE_MAX_WIDTH_PX = 360;
+const EDGE_ZONE_HEIGHT_RATIO = 0.28;
+const STATUS_BAR_HEIGHT_PX = 25;
+const KEYBOARD_MOVE_STEP_PX = 10;
+const UNMEASURED_PANEL_SIZE = { width: 320, height: 200 };
+const SCREEN_COORDINATE_SCALE = 1;
+
+// Keep the visible zones and pointer hit testing on the same dimensions.
+const DOCK_GEOMETRY_STYLE = {
+    '--dock-side-width': `min(${SIDE_ZONE_WIDTH_RATIO * 100}vw, ${SIDE_ZONE_MAX_WIDTH_PX}px)`,
+    '--dock-edge-height': `${EDGE_ZONE_HEIGHT_RATIO * 100}vh`,
+    '--dock-bottom-inset': `${STATUS_BAR_HEIGHT_PX}px`
+} as CSSProperties;
 
 interface DockablePanelProps {
     id: string;
@@ -37,9 +53,9 @@ interface Drag {
 export const DockablePanel: FC<DockablePanelProps> = () => null;
 
 const zoneAt = (x: number, y: number): Dock => {
-    const sideWidth = Math.min(window.innerWidth * 0.35, 360);
-    const zoneHeight = window.innerHeight * 0.28;
-    const bottom = window.innerHeight - 25;
+    const sideWidth = Math.min(window.innerWidth * SIDE_ZONE_WIDTH_RATIO, SIDE_ZONE_MAX_WIDTH_PX);
+    const zoneHeight = window.innerHeight * EDGE_ZONE_HEIGHT_RATIO;
+    const bottom = window.innerHeight - STATUS_BAR_HEIGHT_PX;
     const leftEnd = sideWidth;
     const rightStart = window.innerWidth - sideWidth;
     const topEnd = zoneHeight;
@@ -187,7 +203,7 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
         const { id, title, children: content } = panel.props;
         const placement = panelLayout[id] ?? { dock: null, position: { x: 0, y: 0 } };
         const floating = !dock;
-        const size = sizes[id] ?? { width: 320, height: 200 };
+        const size = sizes[id] ?? UNMEASURED_PANEL_SIZE;
         const maxX = Math.max(0, viewport.width - size.width);
         const maxY = Math.max(0, viewport.height - size.height);
         const position = {
@@ -225,7 +241,11 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
             event.preventDefault();
             if (
                 !drag.moved &&
-                !beyondClickSlip(drag.start, { x: event.clientX, y: event.clientY }, 1)
+                !beyondClickSlip(
+                    drag.start,
+                    { x: event.clientX, y: event.clientY },
+                    SCREEN_COORDINATE_SCALE
+                )
             )
                 return;
             setDrag({
@@ -245,7 +265,11 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
             event.stopPropagation();
             if (
                 !drag.moved &&
-                !beyondClickSlip(drag.start, { x: event.clientX, y: event.clientY }, 1)
+                !beyondClickSlip(
+                    drag.start,
+                    { x: event.clientX, y: event.clientY },
+                    SCREEN_COORDINATE_SCALE
+                )
             ) {
                 setDrag(undefined);
                 return;
@@ -321,20 +345,19 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
                                 placeWithKeyboard({ ...placement, dock });
                                 return;
                             }
-                            const delta = 10;
                             const x =
                                 position.x +
                                 (event.key === 'ArrowLeft'
-                                    ? -delta
+                                    ? -KEYBOARD_MOVE_STEP_PX
                                     : event.key === 'ArrowRight'
-                                      ? delta
+                                      ? KEYBOARD_MOVE_STEP_PX
                                       : 0);
                             const y =
                                 position.y +
                                 (event.key === 'ArrowUp'
-                                    ? -delta
+                                    ? -KEYBOARD_MOVE_STEP_PX
                                     : event.key === 'ArrowDown'
-                                      ? delta
+                                      ? KEYBOARD_MOVE_STEP_PX
                                       : 0);
                             placeWithKeyboard({ dock: null, position: { x, y } });
                         }
@@ -368,7 +391,7 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
         .map((panel) => renderPanel(panel, null));
 
     return (
-        <div className={styles.panelLayer} ref={panelLayer}>
+        <div className={styles.panelLayer} ref={panelLayer} style={DOCK_GEOMETRY_STYLE}>
             <DockZones activeDock={drag?.moved ? drag.dock : undefined} />
             <div className={`${styles.column} ${styles.leftColumn}`}>
                 {docked('top-left')}
