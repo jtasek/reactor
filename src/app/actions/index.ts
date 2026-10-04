@@ -12,4 +12,5 @@ export * from './selection';
 export * from './shape';
 export * from './startup';
 export * from './notifications';
+export * from './panelLayout';
 export * from './account';

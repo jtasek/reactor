@@ -2,14 +2,11 @@
   backdrop-filter: var(--backdrop-filter);
   background-color: var(--control-background);
   border-radius: var(--border-radius);
-  bottom: 50px;
   box-shadow: var(--box-shadow);
   color: #fff;
   display: block;
   padding: 10px;
-  position: absolute;
-  right: 50px;
-  transition: all 0.2s ease-in-out;
+  position: static;
   user-select: none;
   z-index: 100;
 }

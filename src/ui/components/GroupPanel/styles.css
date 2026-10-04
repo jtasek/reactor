@@ -5,11 +5,8 @@
   box-shadow: var(--box-shadow);
   color: var(--text-color);
   display: block;
-  left: 900px;
   padding: 10px;
-  position: absolute;
-  top: 60px;
-  transition: all 0.2s ease-in-out;
+  position: static;
   user-select: none;
   width: var(--control-width);
   z-index: 100;

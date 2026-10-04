@@ -39,6 +39,7 @@ import { Tool } from '../../tools/types';
 import { startDocumentSync } from '../services/documentSync';
 import { listenToMutations } from '../services/mutations';
 import { documentOwner, readAccount } from '../services/accounts';
+import { PANEL_LAYOUT_KEY, readPanelLayout } from '../panelLayout';
 
 const commands: Record<string, Command> = {};
 const tools: Record<string, Tool> = {};
@@ -127,6 +128,11 @@ export const onInitializeOvermind = async (
     registerRoutes(effects, actions);
     effects.clipboard.connect(instance.actions);
     effects.assets.connect(instance.actions);
+    try {
+        state.config.panelLayout = readPanelLayout(effects.loadState(PANEL_LAYOUT_KEY));
+    } catch {
+        state.config.panelLayout = readPanelLayout(undefined);
+    }
 
     // The documents opened last open while the account is read; the first time, and
     // after signing in or out, the account is read first, as it decides whose open.

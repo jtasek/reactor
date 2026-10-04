@@ -17,6 +17,7 @@ import {
 import { inDrawingOrder } from './drawOrder';
 import { v4 as newId } from 'uuid';
 import { Sequence } from './sequence';
+import { DEFAULT_PANEL_LAYOUT, readPanelLayout } from './panelLayout';
 
 import {
     Application,
@@ -215,7 +216,8 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         config: {
             version: '1.0',
             autoSave: true,
-            debugMode: false
+            debugMode: false,
+            panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT)
         },
         currentDocumentId: 'document-1',
         currentDocument,
