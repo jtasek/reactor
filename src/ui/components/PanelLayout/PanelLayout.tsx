@@ -12,7 +12,6 @@ import React, {
 import type { PanelPlacement } from 'src/app/types';
 import { useActions, useConfig, useControls } from 'src/app/hooks';
 import { beyondClickSlip } from 'src/events/gestures';
-import { DocumentMenu } from '../DocumentMenu';
 import styles from './styles.css';
 import {
     DOCK_GEOMETRY_STYLE,
@@ -390,7 +389,6 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
         <div className={styles.panelLayer} ref={panelLayer} style={DOCK_GEOMETRY_STYLE}>
             <DockZones activeDock={drag?.moved ? drag.dock : undefined} />
             <div className={`${styles.column} ${styles.leftColumn}`}>
-                <DocumentMenu />
                 {docked('top-left')}
                 <div className={styles.spacer} />
                 {docked('left')}

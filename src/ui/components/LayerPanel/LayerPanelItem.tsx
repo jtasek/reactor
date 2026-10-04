@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
 import { Icon } from '../Icon';
-import { useActions, useLayer, useShownLayerId } from 'src/app/hooks';
+import { useActions, useLayer } from 'src/app/hooks';
 
 const LAYER_ICON_SIZE = 16;
 
@@ -35,37 +35,23 @@ const openIcon = {
 
 interface Props {
     layerId: string;
-    onHighlight?: () => void;
 }
 
-export const LayerPanelItem: FC<Props> = ({ layerId, onHighlight }) => {
+export const LayerPanelItem: FC<Props> = ({ layerId }) => {
     const { name, locked, selected, visible } = useLayer(layerId);
-    const shownLayerId = useShownLayerId();
-    const { showOnlyLayer, toggleLayerLocked, toggleLayerSelected, toggleLayerVisible } =
-        useActions();
+    const { toggleLayerLocked, toggleLayerSelected, toggleLayerVisible } = useActions();
 
     return (
         <li className={styles.layerItem}>
-            <div className={styles.layerLabel}>
+            <label className={styles.layerLabel}>
                 <input
                     type="checkbox"
                     value={name}
                     checked={selected}
-                    aria-label={`Select ${name}`}
                     onChange={() => toggleLayerSelected(layerId)}
                 />
-                <button
-                    type="button"
-                    data-layer-highlight
-                    aria-pressed={shownLayerId === layerId}
-                    onClick={() => {
-                        showOnlyLayer(layerId);
-                        onHighlight?.();
-                    }}
-                >
-                    {name}
-                </button>
-            </div>
+                {name}
+            </label>
             <ul
                 className={styles.icons}
                 style={{ display: 'flex', justifyItems: 'center', alignItems: 'center' }}
@@ -74,7 +60,6 @@ export const LayerPanelItem: FC<Props> = ({ layerId, onHighlight }) => {
                     <button
                         type="button"
                         title={visible ? 'Hide' : 'Show'}
-                        aria-label={`${visible ? 'Hide' : 'Show'} ${name}`}
                         onClick={() => toggleLayerVisible(layerId)}
                     >
                         <Icon icon={visible ? visibleIcon : hiddenIcon} />
@@ -84,7 +69,6 @@ export const LayerPanelItem: FC<Props> = ({ layerId, onHighlight }) => {
                     <button
                         type="button"
                         title={locked ? 'Unlock' : 'Lock'}
-                        aria-label={`${locked ? 'Unlock' : 'Lock'} ${name}`}
                         onClick={() => toggleLayerLocked(layerId)}
                     >
                         <Icon icon={locked ? lockedIcon : openIcon} />

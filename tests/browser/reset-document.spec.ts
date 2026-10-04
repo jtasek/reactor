@@ -37,9 +37,6 @@ test('reset document asks for confirmation before clearing the current document'
         .getByRole('button', { name: 'Reset document', exact: true })
         .click();
     await expect(shapes(page)).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /document-1: highlight a layer/ })).toContainText(
-        'document-1'
-    );
     await expect(page.locator('#save')).toHaveText('Saved');
     await page.reload();
     await expect(page.locator('svg#surface')).toBeVisible();
