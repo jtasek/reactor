@@ -403,6 +403,8 @@ the menu or the way between them, and is not rendered during a drag.
   `warn`/`error`/`info` allowed) — prefer the `useLog` hook for debug output.
 - `jsx-a11y/no-autofocus` is an **error**: focus inputs via a ref effect, not `autoFocus`.
 - Prefer **early returns** over `else` branches.
+- Extract **magic numbers into named constants** that explain their purpose. When TypeScript
+  and CSS need the same value, define it once and share it through CSS custom properties.
 - Listen to store mutations through the `addMutationListener` that `onInitializeOvermind`
   passes on (`listenToMutations`, `src/app/services/mutations.ts`), not the instance's own:
   Overmind drops a derived value's listener while calling listeners, which skips the one after.
