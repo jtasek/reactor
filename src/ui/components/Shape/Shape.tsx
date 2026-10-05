@@ -7,7 +7,7 @@ import { getComponentByType } from 'src/tools/components';
 import { rectToBox, shapeGeometryKey, getShapeBounds, boxCenter } from 'src/app/utils';
 import {
     useActions,
-    useMeasuringShapes,
+    useMeasuringShape,
     useShape,
     useShapeLocked,
     useShapeVisible
@@ -26,7 +26,7 @@ export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup }: Props) =
     const visible = useShapeVisible(shapeId);
     const locked = useShapeLocked(shapeId);
     const { setShapeBounds, activateShape, deactivateShape } = useActions();
-    const measuring = useMeasuringShapes();
+    const measuring = useMeasuringShape(shapeId);
     const measuredGeometry = useRef<string | null>(null);
     const groupRef = useRef<SVGGElement>(null);
     // The component of this shape's type, which takes this shape's fields.

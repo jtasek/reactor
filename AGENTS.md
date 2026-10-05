@@ -368,7 +368,14 @@ the menu or the way between them, and is not rendered during a drag.
     - A gesture that keeps bounds itself as it edits shapes is listed in `KEEPS_SHAPE_BOUNDS`
       (`src/events/gestures.ts`): while it lasts no shape is measured, and when it ends only
       the shapes whose geometry changed are. A new gesture kind must be added to the list,
-      and one listed as keeping bounds must update `shape.bounds` with the geometry.
+      and one listed as keeping bounds must update `shape.bounds` with the geometry. Only
+      selected shapes read the gesture (`useMeasuringShape`), since gestures change only
+      those, so the other shapes do not render again as a gesture begins and ends.
+    - Loops that only read thousands of shapes, as hit tests and snapshots on a press, read
+      them with `untracked` (`src/app/untracked.ts`), skipping the store's tracking of each
+      access; changes still go through the store.
+    - `pnpm profile:drag [address]` times pressing, dragging and releasing a shape among
+      3,000 and prints the functions that took longest; see `scripts/profile-drag.ts`.
     - `setShapeBounds` writes idempotently (epsilon compare) and `selectShapes` only writes
       `selected` when it changes — both avoid render loops / churn. Preserve these guards.
 

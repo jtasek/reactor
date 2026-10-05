@@ -23,7 +23,13 @@ export default [
     },
     js.configs.recommended,
     {
-        files: ['src/**/*.{ts,tsx,js,jsx}', 'tests/**/*.ts', 'server/**/*.ts', '*.{ts,mts}'],
+        files: [
+            'src/**/*.{ts,tsx,js,jsx}',
+            'tests/**/*.ts',
+            'server/**/*.ts',
+            'scripts/**/*.ts',
+            '*.{ts,mts}'
+        ],
         languageOptions: {
             parser: tsParser,
             parserOptions: {

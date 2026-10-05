@@ -1,3 +1,4 @@
+import { untracked } from '../untracked';
 import {
     Action,
     ActionGuard,
@@ -415,19 +416,20 @@ export const selectShapeByPoint: Action = ({ state }) => {
 /** The topmost shape drawn under the pointer that it can press, if any. */
 const shapeAtPointer = (state: Context['state']): string | null => {
     const { current } = state.events.pointer;
-    const { shapesIds, shapes, camera } = state.currentDocument;
+    const { shapesIds, shapes, camera } = untracked(state.currentDocument);
     const tolerance = hitTolerance(camera.scale);
-    let hitId: string | null = null;
 
-    for (const id of shapesIds) {
+    // From the top down, so the first hit is the one drawn over the others.
+    for (let index = shapesIds.length - 1; index >= 0; index--) {
+        const id = shapesIds[index];
         const shape = shapes[id];
 
         if (shape && hitTestShape(shape, current, tolerance) && isInteractive(state, id)) {
-            hitId = id;
+            return id;
         }
     }
 
-    return hitId;
+    return null;
 };
 
 /** Leaves the group double-clicked into when a shape in `shapeIds` is outside it. */
@@ -533,17 +535,14 @@ export const selectShapeAtPointer: ActionGuard = ({ state }) => {
     // A group is selected as one.
     const hit = withTheirGroups(state.currentDocument, pressed, state.enteredGroupId);
 
+    const plain = untracked(state.currentDocument).shapes;
+
     shapesIds.forEach((id: string) => {
-        const shape = shapes[id];
-
-        if (!shape) {
-            return;
-        }
-
         const selected = hit.has(id) && isInteractive(state, id);
 
-        if (shape.selected !== selected) {
-            shape.selected = selected;
+        // Read untracked; written through the store only where it changes.
+        if (plain[id] && plain[id].selected !== selected) {
+            shapes[id].selected = selected;
         }
     });
 
