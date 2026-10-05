@@ -295,7 +295,9 @@ not re-render every shape.
 
 Align and Space (`src/commands/align`) move the selection's items, a group selected as
 one whole, by the boxes they are drawn in (`drawnExtent`); locked items stay and do not
-count (`movableSelectedItems`, derived, so their ten guards share one list). The offsets come from pure functions in `src/app/alignment.ts`.
+count (`movableSelectedItems`, derived, so their ten guards share one list). They are in
+the Inspector's Align section (`AlignSection`), for two items or more, not in the command
+bar (`inCommandBar: false`). The offsets come from pure functions in `src/app/alignment.ts`.
 
 A shape is in one group and on one layer at most: Group and Layer take the selected shapes
 out of their groups or layers first, Group needs two shapes, and a group these commands

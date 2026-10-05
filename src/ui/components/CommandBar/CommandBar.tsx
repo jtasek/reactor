@@ -23,7 +23,7 @@ function groupCommands(commands: Command[]): Record<string, Command[]> {
 }
 
 export const CommandBar: FC = () => {
-    const commands = useCommands();
+    const commands = useCommands().filter(({ inCommandBar }) => inCommandBar !== false);
     const [hovered, setHovered] = useState<Command>();
     const [focused, setFocused] = useState<Command>();
     const description = (hovered ?? focused)?.description;

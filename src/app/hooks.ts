@@ -73,6 +73,14 @@ export const useSelectionCommands = () => {
     return commands.filter((_, index) => enabled[index]);
 };
 
+/** Whether each of `commands` can run now, in their order. */
+export const useCommandsEnabled = (commands: Command[]) =>
+    useAppState((state) => commands.map((command) => command.canExecute({ state })));
+
+/** How many selected items Align and Space may move: see `movableSelectedItems`. */
+export const useMovableSelectedItemsCount = () =>
+    useAppState((state) => state.currentDocument.movableSelectedItems.length);
+
 /** Whether `command` can run now; re-renders when the state its guard reads changes. */
 export const useCommandEnabled = (command: Command) => {
     return useAppState((state) => command.canExecute({ state }));

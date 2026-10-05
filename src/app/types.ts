@@ -263,6 +263,8 @@ export interface Command {
      * pressed, so it gets the event's data without asking to read the clipboard.
      */
     clipboardEvent?: 'copy' | 'cut' | 'paste';
+    /** Whether the command bar shows the command; it does unless this is false. */
+    inCommandBar?: boolean;
     /** The items whose menus offer the command. */
     scopes?: CommandScope[];
     /** Its place in those menus, lowest first. */

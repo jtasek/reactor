@@ -71,7 +71,7 @@ bar, side bar, panels and other parts of the editor.
 | `]`, `[` | Bring the selection to the front, send it to the back |
 | Shift+A, Shift+C, Shift+D | Align the selection's left edges, centers or right edges |
 | Shift+W, Shift+M, Shift+S | Align the selection's top edges, middles or bottom edges |
-| Shift+X, Shift+Y | Space the selection with equal gaps, horizontally or vertically; Space equally (equal distances between centers) is in the command bar |
+| Shift+X, Shift+Y | Space the selection with equal gaps, horizontally or vertically; Space equally (equal distances between centers) is in the Inspector, with all the others |
 | Shift+H, Alt+Shift+H | Hide the selection; show every hidden shape, group and layer |
 | `k`, Shift+K | Lock and unlock the selection |
 | `+` or `=`, `-`, `0` | Zoom in, zoom out, reset zoom |
