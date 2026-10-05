@@ -3,7 +3,7 @@ import { Context } from 'src/app';
 import { ActionWithParam, Point, Shape } from 'src/app/types';
 import { screenToWorld } from 'src/app/camera';
 import { drawnExtent, editableSelectedShapesIds, groupFrame } from 'src/app/membership';
-import { SNAP_DISTANCE_PX, snapMove, snapTargets } from 'src/app/snapping';
+import { SNAP_DISTANCE_PX, snapMove, targetLines } from 'src/app/snapping';
 import { isShapeVisible } from 'src/app/utils';
 import { beyondClickSlip } from '../gestures';
 import { HandleTarget, SelectionSnapshot, ShapesSnapshot, TouchContact } from '../types';
@@ -131,20 +131,13 @@ export const beginGesture = (
         );
 
         actions.tools.activateTool('move');
-        const { currentDocument } = state;
-        const moving = new Set(editableSelectedShapesIds(currentDocument));
-        const others = currentDocument.shapesIds.filter(
-            (id) => !moving.has(id) && isShapeVisible(currentDocument, id)
-        );
-
         pointer.gesture = {
             ...owner,
             kind: 'moving',
             selection,
             shapes: snapshotShapes(selected),
             dragged: false,
-            box: drawnExtent(currentDocument, [...moving]),
-            targets: snapTargets(others.flatMap((id) => drawnExtent(currentDocument, [id]) ?? [])),
+            box: null,
             movedBy: { x: 0, y: 0 },
             snapLines: { x: null, y: null }
         };
@@ -161,8 +154,26 @@ export const beginGesture = (
  * Tracks the pointer; input from a pointer that does not own the gesture, and
  * any pointer input during a pinch, is ignored.
  */
+/**
+ * When a drag begins: the box of the shapes it moves, which snaps, and the lines
+ * of the other shown shapes it snaps to, kept in `dragTargets`.
+ */
+const takeSnapTargets = ({ state, effects }: Pick<Context, 'state' | 'effects'>) => {
+    const { currentDocument } = state;
+    const moving = new Set(editableSelectedShapesIds(currentDocument));
+    const others = currentDocument.shapesIds.filter(
+        (id) => !moving.has(id) && isShapeVisible(currentDocument, id)
+    );
+
+    effects.dragTargets.take(
+        targetLines(others.flatMap((id) => drawnExtent(currentDocument, [id]) ?? []))
+    );
+
+    return drawnExtent(currentDocument, [...moving]);
+};
+
 export const movePointer = (
-    { state, actions }: Context,
+    { state, actions, effects }: Context,
     { pointerId, position, free = false }: PointerInput
 ) => {
     const pointer = state.events.pointer;
@@ -206,14 +217,18 @@ export const movePointer = (
         (gesture.dragged ||
             beyondClickSlip(pointer.start, position, state.currentDocument.camera.scale))
     ) {
-        gesture.dragged = true;
+        if (!gesture.dragged) {
+            gesture.dragged = true;
+            gesture.box = takeSnapTargets({ state, effects });
+        }
 
         const { scale } = state.currentDocument.camera;
+        const targets = effects.dragTargets.current();
         const pulled = { x: position.x - pointer.start.x, y: position.y - pointer.start.y };
         const { delta, lines } =
-            free || !gesture.box
+            free || !gesture.box || !targets
                 ? { delta: pulled, lines: { x: null, y: null } }
-                : snapMove(gesture.box, pulled, json(gesture.targets), SNAP_DISTANCE_PX / scale);
+                : snapMove(json(gesture.box), pulled, targets, SNAP_DISTANCE_PX / scale);
         const step = { x: delta.x - gesture.movedBy.x, y: delta.y - gesture.movedBy.y };
 
         if (step.x !== 0 || step.y !== 0) {
@@ -284,6 +299,7 @@ export const endGesture = (
         actions.tools.executeToolCommands();
     }
 
+    effects.dragTargets.clear();
     pointer.gesture = { kind: 'idle' };
     actions.tools.resetTools();
     effects.collaboration.resume();
@@ -346,6 +362,7 @@ export const cancelGesture = (
         });
     }
 
+    effects.dragTargets.clear();
     const owner = gesture.pointerId;
 
     pointer.gesture = { kind: 'idle' };

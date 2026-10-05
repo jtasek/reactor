@@ -1,4 +1,4 @@
-import { snapMove, snapTargets } from 'src/app/snapping';
+import { snapMove, targetLines } from 'src/app/snapping';
 import type { Box, ShapeInput } from 'src/app/types';
 import { createTestStore } from './support/store';
 
@@ -11,7 +11,7 @@ const box = (left: number, top: number, width: number, height: number): Box => (
 
 describe('snapping a moved box', () => {
     // A target 100 to 200 across and down: lines at 100, 150 and 200 on each axis.
-    const targets = snapTargets([box(100, 100, 100, 100)]);
+    const targets = targetLines([box(100, 100, 100, 100)]);
     const moved = box(0, 0, 40, 40);
 
     it('pulls the nearest of its edges and center onto a line within reach', () => {
@@ -25,6 +25,17 @@ describe('snapping a moved box', () => {
         expect(snapMove(moved, { x: 156, y: 112 }, targets, 5)).toEqual({
             delta: { x: 160, y: 110 },
             lines: { x: 200, y: 150 }
+        });
+    });
+
+    it('keeps the lines sorted, so the nearest is found among many', () => {
+        const many = targetLines([300, 0, 900, 600].map((left) => box(left, 0, 10, 10)));
+
+        expect(many.xs).toEqual([0, 5, 10, 300, 305, 310, 600, 605, 610, 900, 905, 910]);
+        // Left edge 598, center 603 and right edge 608 are each 2 from a line; the left wins.
+        expect(snapMove(box(0, 0, 10, 10), { x: 598, y: 40 }, many, 5).delta).toEqual({
+            x: 600,
+            y: 40
         });
     });
 
@@ -45,7 +56,7 @@ describe('dragging shapes', () => {
     });
 
     function twoSquares() {
-        const { store } = createTestStore();
+        const { store, effects } = createTestStore();
 
         store.actions.addShape(square(0, 0));
         store.actions.addShape(square(200, 100));
@@ -58,7 +69,7 @@ describe('dragging shapes', () => {
             return shape.type === 'rectangle' ? shape.position : null;
         };
 
-        return { store, events, position };
+        return { store, effects, events, position };
     }
 
     it('snaps the dragged shape to the other shapes and shows the line it snapped to', () => {
@@ -78,6 +89,34 @@ describe('dragging shapes', () => {
 
         expect(position()).toEqual({ x: 200, y: 30 });
         expect(store.state.events.pointer.gesture.kind).toBe('idle');
+    });
+
+    it('puts the shapes back exactly when a snapped drag is canceled', () => {
+        const { store, events, position } = twoSquares();
+
+        events.beginGesture({ pointerId: 1, position: { x: 20, y: 20 } });
+        events.movePointer({ pointerId: 1, position: { x: 217, y: 50 } });
+        events.movePointer({ pointerId: 1, position: { x: 150, y: 70 } });
+        events.movePointer({ pointerId: 1, position: { x: 216, y: 52 } });
+        events.cancelGesture(1);
+
+        expect(position()).toEqual({ x: 0, y: 0 });
+        expect(store.state.events.pointer.gesture.kind).toBe('idle');
+    });
+
+    it('takes the lines to snap to once a drag begins, not for a click', () => {
+        const { events, effects } = twoSquares();
+        const take = vi.spyOn(effects.dragTargets, 'take');
+
+        events.beginGesture({ pointerId: 1, position: { x: 20, y: 20 } });
+        events.endGesture({ pointerId: 1, position: { x: 21, y: 20 } });
+        expect(take).not.toHaveBeenCalled();
+
+        events.beginGesture({ pointerId: 1, position: { x: 20, y: 20 } });
+        events.movePointer({ pointerId: 1, position: { x: 60, y: 20 } });
+        events.movePointer({ pointerId: 1, position: { x: 90, y: 20 } });
+        events.endGesture({ pointerId: 1, position: { x: 90, y: 20 } });
+        expect(take).toHaveBeenCalledOnce();
     });
 
     it('moves freely while Ctrl or Cmd is held', () => {

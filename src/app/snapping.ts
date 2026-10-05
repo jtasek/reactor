@@ -15,31 +15,61 @@ export interface SnapLines {
     y: number | null;
 }
 
-/** The edges and centers of `boxes`, as lines to snap to. */
-export function snapTargets(boxes: Box[]): SnapTargets {
+/** The edges and centers of `boxes`, as lines to snap to, sorted. */
+export function targetLines(boxes: Box[]): SnapTargets {
+    const sorted = (lines: number[]) => lines.sort((a, b) => a - b);
+
     return {
-        xs: boxes.flatMap(({ topLeft, bottomRight, width }) => [
-            topLeft.x,
-            topLeft.x + width / 2,
-            bottomRight.x
-        ]),
-        ys: boxes.flatMap(({ topLeft, bottomRight, height }) => [
-            topLeft.y,
-            topLeft.y + height / 2,
-            bottomRight.y
-        ])
+        xs: sorted(
+            boxes.flatMap(({ topLeft, bottomRight, width }) => [
+                topLeft.x,
+                topLeft.x + width / 2,
+                bottomRight.x
+            ])
+        ),
+        ys: sorted(
+            boxes.flatMap(({ topLeft, bottomRight, height }) => [
+                topLeft.y,
+                topLeft.y + height / 2,
+                bottomRight.y
+            ])
+        )
     };
 }
 
-/** The shift that brings the nearest of `edges` onto one of `lines` within `reach`. */
+/** The index of the first of the sorted `lines` at or after `value`. */
+function firstAtOrAfter(lines: number[], value: number) {
+    let low = 0;
+    let high = lines.length;
+
+    while (low < high) {
+        const middle = (low + high) >> 1;
+
+        if (lines[middle] < value) {
+            low = middle + 1;
+        } else {
+            high = middle;
+        }
+    }
+
+    return low;
+}
+
+/** The shift that brings the nearest of `edges` onto one of the sorted `lines` within `reach`. */
 function nearestSnap(edges: number[], lines: number[], reach: number) {
     let best: { shift: number; line: number } | null = null;
 
     for (const edge of edges) {
-        for (const line of lines) {
+        const index = firstAtOrAfter(lines, edge);
+
+        for (const line of [lines[index - 1], lines[index]]) {
             const shift = line - edge;
 
-            if (Math.abs(shift) <= reach && (!best || Math.abs(shift) < Math.abs(best.shift))) {
+            if (
+                line !== undefined &&
+                Math.abs(shift) <= reach &&
+                (!best || Math.abs(shift) < Math.abs(best.shift))
+            ) {
                 best = { shift, line };
             }
         }

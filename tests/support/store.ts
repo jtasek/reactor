@@ -1,4 +1,5 @@
 import { IDBFactory } from 'fake-indexeddb';
+import { createDragTargets } from 'src/app/services/dragTargets';
 import { createOvermindMock } from 'overmind';
 import { vi } from 'vitest';
 import { config } from 'src/app';
@@ -98,6 +99,7 @@ export function createTestStore(
         serverTransport: () => options.serverTransport ?? { url: 'ws://127.0.0.1:9/sync' },
         clipboard: createClipboard(systemClipboard),
         viewSize: () => ({ width: 1000, height: 800 }),
+        dragTargets: createDragTargets(),
         // Every image measures 200 by 100, as nothing decodes images here.
         assets: createAssets({
             pick: options.pickImage ?? (async () => null),

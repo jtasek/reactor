@@ -1,6 +1,6 @@
 import { Box, Point, ResizeHandlerType, Shape, Size } from '../app/types';
 import type { GroupFrame } from '../app/membership';
-import type { SnapLines, SnapTargets } from '../app/snapping';
+import type { SnapLines } from '../app/snapping';
 
 /** Selection flags captured when a gesture starts, restored if it is canceled. */
 export type SelectionSnapshot = Record<string, boolean>;
@@ -42,10 +42,8 @@ export type Gesture =
                     shapes: ShapesSnapshot;
                     /** Whether the pointer has gone beyond a slip, so the shapes follow it. */
                     dragged: boolean;
-                    /** The moved shapes' box when the drag began, which snaps; none without one. */
+                    /** The moved shapes' box when the drag began, which snaps; none before it. */
                     box: Box | null;
-                    /** The other shapes' edges and centers, taken when the drag began. */
-                    targets: SnapTargets;
                     /** How far the shapes have been moved so far. */
                     movedBy: Point;
                     /** The lines the box snapped to, shown while the drag lasts. */
