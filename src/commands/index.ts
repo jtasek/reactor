@@ -1,3 +1,15 @@
+export {
+    AlignBottomCommand,
+    AlignCenterCommand,
+    AlignLeftCommand,
+    AlignMiddleCommand,
+    AlignRightCommand,
+    AlignTopCommand,
+    SpaceBetweenHorizontallyCommand,
+    SpaceBetweenVerticallyCommand,
+    SpaceEquallyHorizontallyCommand,
+    SpaceEquallyVerticallyCommand
+} from './align';
 export { BringToFrontCommand, SendToBackCommand } from './arrange';
 export { CloneCommand } from './clone';
 export { CopyCommand, CutCommand, PasteCommand } from './clipboard';

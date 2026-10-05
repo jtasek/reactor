@@ -69,6 +69,9 @@ bar, side bar, panels and other parts of the editor.
 | Ctrl/Cmd+Alt+L, Ctrl/Cmd+Alt+Shift+L | Move the selection to a new layer, take it off its layer |
 | `h` | Highlight the selected shapes' layer: show only it, or every layer again |
 | `]`, `[` | Bring the selection to the front, send it to the back |
+| Shift+A, Shift+C, Shift+D | Align the selection's left edges, centers or right edges |
+| Shift+W, Shift+M, Shift+S | Align the selection's top edges, middles or bottom edges |
+| Shift+X, Shift+Y | Space the selection with equal gaps, horizontally or vertically; Space equally (equal distances between centers) is in the command bar |
 | Shift+H, Alt+Shift+H | Hide the selection; show every hidden shape, group and layer |
 | `k`, Shift+K | Lock and unlock the selection |
 | `+` or `=`, `-`, `0` | Zoom in, zoom out, reset zoom |

@@ -1,6 +1,16 @@
 import type { Command, CommandScope } from 'src/app/types';
 import type { Context } from 'src/app';
 import {
+    AlignBottomCommand,
+    AlignCenterCommand,
+    AlignLeftCommand,
+    AlignMiddleCommand,
+    AlignRightCommand,
+    AlignTopCommand,
+    SpaceBetweenHorizontallyCommand,
+    SpaceBetweenVerticallyCommand,
+    SpaceEquallyHorizontallyCommand,
+    SpaceEquallyVerticallyCommand,
     BringToFrontCommand,
     CloneCommand,
     CopyCommand,
@@ -105,6 +115,16 @@ function registerCommands() {
     registerCommand(LayerCommand);
     registerCommand(UnlayerCommand);
     registerCommand(HighlightLayerCommand);
+    registerCommand(AlignLeftCommand);
+    registerCommand(AlignCenterCommand);
+    registerCommand(AlignRightCommand);
+    registerCommand(AlignTopCommand);
+    registerCommand(AlignMiddleCommand);
+    registerCommand(AlignBottomCommand);
+    registerCommand(SpaceBetweenHorizontallyCommand);
+    registerCommand(SpaceBetweenVerticallyCommand);
+    registerCommand(SpaceEquallyHorizontallyCommand);
+    registerCommand(SpaceEquallyVerticallyCommand);
     registerCommand(BringToFrontCommand);
     registerCommand(SendToBackCommand);
     registerCommand(HideCommand);
