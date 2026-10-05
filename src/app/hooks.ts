@@ -5,15 +5,21 @@ import {
     createReactionHook,
     createStateHook
 } from 'overmind-react';
-import { getCommand, getCommands } from './actions';
+import { commandsFor, getCommand, getCommands } from './actions';
 import { Context } from '.';
 import { useCallback, useEffect, useLayoutEffect, useReducer, useState } from 'react';
 import { isShapeLocked, isShapeVisible } from './utils';
-import type { Command } from './types';
+import type { Command, CommandScope } from './types';
 import { takesEditorInput } from '../events/input';
 import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
 import { placeSelectionMenu } from './selectionMenu';
-import { groupFrame, hoveredGroupsIds, outline, selectedGroupsIdsOf } from './membership';
+import {
+    groupFrame,
+    hoveredGroupsIds,
+    outline,
+    selectedGroupsIdsOf,
+    selectionScope
+} from './membership';
 
 export const useActions = createActionsHook<Context>();
 export const useEffects = createEffectsHook<Context>();
@@ -50,6 +56,21 @@ export const useCommand = (commandId: string) => {
 
 export const useCommands = () => {
     return getCommands();
+};
+
+/** The commands an item of `scope` offers in its menu: see `commandsFor`. */
+export const useScopedCommands = (scope: CommandScope | null) =>
+    scope === null ? [] : commandsFor(scope);
+
+/** The commands the selection takes, those that can run now, in menu order. */
+export const useSelectionCommands = () => {
+    const scope = useAppState((state) => selectionScope(state.currentDocument));
+    const commands = useScopedCommands(scope);
+    const enabled = useAppState((state) =>
+        commands.map((command) => command.canExecute({ state }))
+    );
+
+    return commands.filter((_, index) => enabled[index]);
 };
 
 /** Whether `command` can run now; re-renders when the state its guard reads changes. */

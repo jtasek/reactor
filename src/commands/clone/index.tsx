@@ -17,6 +17,8 @@ export const CloneCommand: Command = {
     },
     regex: /(?<toolCode>clone)\('(?<shapeName>\w+)'\)/,
     shortcut: 'mod+d',
+    scopes: ['shape', 'group', 'selection'],
+    menuOrder: 10,
     canExecute: ({ state }) => state.currentDocument?.selectedShapesIds.length > 0,
     execute: cloneSelection
 };

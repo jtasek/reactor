@@ -1,4 +1,4 @@
-import type { Command } from 'src/app/types';
+import type { Command, CommandScope } from 'src/app/types';
 import type { Context } from '../index';
 import {
     BringToFrontCommand,
@@ -45,10 +45,30 @@ import { PANEL_LAYOUT_KEY, readPanelLayout } from '../panelLayout';
 const commands: Record<string, Command> = {};
 const tools: Record<string, Tool> = {};
 
+const scoped = new Map<CommandScope, Command[]>();
+
 export function registerCommand(command: Command) {
     if (!commands[command.id]) {
         commands[command.id] = command;
+        scoped.clear();
     }
+}
+
+/** The registered commands that items of `scope` offer in their menus, in menu order. */
+export function commandsFor(scope: CommandScope): Command[] {
+    const found =
+        scoped.get(scope) ??
+        getCommands()
+            .filter(({ scopes }) => scopes?.includes(scope))
+            .sort(
+                (a, b) =>
+                    (a.menuOrder ?? Number.MAX_SAFE_INTEGER) -
+                    (b.menuOrder ?? Number.MAX_SAFE_INTEGER)
+            );
+
+    scoped.set(scope, found);
+
+    return found;
 }
 
 export function getCommands(): Command[] {

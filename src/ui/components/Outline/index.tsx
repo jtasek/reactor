@@ -4,14 +4,6 @@ import { Dragged, OutlineItem } from './OutlineItem';
 import { commandAction, toggleAction } from '../ItemMenu';
 import type { Command } from 'src/app/types';
 import {
-    BringToFrontCommand,
-    CloneCommand,
-    DeleteCommand,
-    SendToBackCommand,
-    UngroupCommand,
-    UnlayerCommand
-} from 'src/commands';
-import {
     useActions,
     useControls,
     useGroup,
@@ -20,6 +12,7 @@ import {
     useOutline,
     useShape,
     useShapeLocked,
+    useScopedCommands,
     useShownLayerId
 } from 'src/app/hooks';
 
@@ -48,7 +41,7 @@ const locked = (isLocked: boolean, onRun: () => void) =>
 const useCommandActions = (shapeIds: string[], disabled: boolean) => {
     const { runCommandOn } = useActions();
 
-    return (...commands: Command[]) =>
+    return (commands: Command[]) =>
         commands.map((command) =>
             commandAction(
                 command,
@@ -75,7 +68,7 @@ const ShapeItem: FC<{ shapeId: string }> = ({ shapeId }) => {
             menuActions={[
                 hidden(!shape.visible, () => toggleShapeVisible(shapeId)),
                 locked(shape.locked, () => toggleShapeLocked(shapeId)),
-                ...commands(CloneCommand, DeleteCommand, BringToFrontCommand, SendToBackCommand)
+                ...commands(useScopedCommands('shape'))
             ]}
         />
     );
@@ -99,7 +92,7 @@ const GroupItem: FC<{ groupId: string; shapesIds: string[] }> = ({ groupId, shap
             menuActions={[
                 hidden(!group.visible, () => toggleGroupVisible(groupId)),
                 locked(group.locked, () => toggleGroupLocked(groupId)),
-                ...commands(UngroupCommand, CloneCommand, DeleteCommand)
+                ...commands(useScopedCommands('group'))
             ]}
             onDrop={({ kind, id }) => {
                 // Only shapes join a group; a group dropped on a group stays as it is.
@@ -165,7 +158,7 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
                 ),
                 hidden(!layer.visible, () => toggleLayerVisible(layerId)),
                 locked(layer.locked, () => toggleLayerLocked(layerId)),
-                ...commands(UnlayerCommand)
+                ...commands(useScopedCommands('layer'))
             ]}
             onDrop={(dragged) => moveShapesToLayer({ shapeIds: shapesOf(dragged), layerId })}
         >
