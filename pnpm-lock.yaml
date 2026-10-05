@@ -50,6 +50,9 @@ importers:
       pino-http:
         specifier: ^11.0.0
         version: 11.0.0
+      proxy-state-tree:
+        specifier: 6.3.3
+        version: 6.3.3
       react:
         specifier: ^19.2.7
         version: 19.2.7

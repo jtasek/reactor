@@ -10,6 +10,7 @@ import {
     shownShapesIds
 } from 'src/app/membership';
 import { SNAP_DISTANCE_PX, snapMove, targetLines } from 'src/app/snapping';
+import { untracked } from 'src/app/untracked';
 import { beyondClickSlip } from '../gestures';
 import { HandleTarget, SelectionSnapshot, ShapesSnapshot, TouchContact } from '../types';
 
@@ -128,7 +129,7 @@ export const beginGesture = (
     }
 
     // Snapshot before hit-testing: pressing a shape may change the selection.
-    const selection = snapshotSelection(state.currentDocument.shapes);
+    const selection = snapshotSelection(untracked(state.currentDocument.shapes));
 
     if (actions.selectShapeAtPointer()) {
         const selected = Object.values(state.currentDocument.shapes).filter(
@@ -168,7 +169,7 @@ const takeSnapTargets = ({ state, effects }: Pick<Context, 'state' | 'effects'>)
     const movingIds = editableSelectedShapesIds(state.currentDocument);
     const moving = new Set(movingIds);
     // Read without the store's tracking: thousands of shapes are only looked at here.
-    const document = json(state.currentDocument);
+    const document = untracked(state.currentDocument);
     const others = [...shownShapesIds(document)].filter((id) => !moving.has(id));
 
     effects.dragTargets.take(targetLines(others.map((id) => drawnBox(document.shapes[id]))));

@@ -229,9 +229,17 @@ export const useShape = (id: string) => {
 };
 
 /** Whether the shape is drawn: see `isShapeVisible`. */
-/** Whether shapes are measured where drawn: not while a gesture keeps their bounds itself. */
-export const useMeasuringShapes = () =>
-    useAppState((state) => !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind]);
+/**
+ * Whether a shape is measured where drawn: not while a gesture keeps its bounds
+ * itself. Gestures change selected shapes only, so a shape not selected never
+ * reads the gesture, and does not render again as gestures begin and end.
+ */
+export const useMeasuringShape = (id: string) =>
+    useAppState(
+        (state) =>
+            !state.currentDocument.shapes[id]?.selected ||
+            !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind]
+    );
 
 export const useShapeVisible = (id: string) => {
     return useAppState((state) => isShapeVisible(state.currentDocument, id));
