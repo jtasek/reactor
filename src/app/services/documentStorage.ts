@@ -10,7 +10,6 @@ import type {
     Link,
     Ruler
 } from '../types';
-import { Orientation } from '../types';
 import { createDocument } from '../factories';
 import { orderAbove, untie, validDrawOrder } from '../drawOrder';
 
@@ -324,7 +323,7 @@ function readLink(value: unknown): LinkData {
 function readRuler(value: unknown): RulerData {
     const r = record(value);
 
-    if (r.orientation !== Orientation.Horizontal && r.orientation !== Orientation.Vertical) {
+    if (r.orientation !== 'horizontal' && r.orientation !== 'vertical') {
         throw new Error('Invalid orientation');
     }
 
