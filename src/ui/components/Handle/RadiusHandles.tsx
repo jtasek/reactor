@@ -86,7 +86,7 @@ export const RadiusHandles: FC<Props> = ({ rectangle, activeCorner }) => {
             ))}
             {dragged && (
                 <text
-                    className={styles.rotateBadge}
+                    className={styles.badge}
                     x={outward * BADGE_OFFSET}
                     style={{ textAnchor: outward < 0 ? 'end' : 'start' }}
                     transform={`translate(${dragged.x} ${dragged.y}) rotate(${-rotation}) scale(${1 / scale})`}

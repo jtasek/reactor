@@ -1,6 +1,7 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
     active: string;
+    badge: string;
     bottomLeft: string;
     bottomRight: string;
     handle: string;
@@ -10,7 +11,6 @@ declare namespace StylesCssNamespace {
     middleTop: string;
     radius: string;
     rotate: string;
-    rotateBadge: string;
     rotateLine: string;
     topLeft: string;
     topRight: string;

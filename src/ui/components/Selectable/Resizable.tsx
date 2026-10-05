@@ -94,7 +94,7 @@ export const Handles: FC<HandlesProps> = ({ box, rotation, owner, activeHandle, 
             />
             {rotateActive && (
                 <text
-                    className={handleStyles.rotateBadge}
+                    className={handleStyles.badge}
                     transform={`translate(${badgePosition.x} ${badgePosition.y}) rotate(${-rotation}) scale(${1 / scale})`}
                 >
                     {displayDegrees}°
