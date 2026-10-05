@@ -39,13 +39,13 @@ export const toggleAction = (
 
 interface Props {
     itemName: string;
+    /** Most used first: the first `SHOWN_BUTTONS` are in the bar, the rest behind More. */
     actions: ItemMenuAction[];
-    moreActions?: ItemMenuAction[];
 }
 
-const MORE_ICON = { group: 'navigation', name: 'chevron_right', size: ICON_SIZE };
+const SHOWN_BUTTONS = 7;
 
-const WINDOW_MARGIN = 4;
+const MORE_ICON = { group: 'navigation', name: 'chevron_right', size: ICON_SIZE };
 
 const MenuButton: FC<{ action: ItemMenuAction }> = ({
     action: { label, icon, pressed, disabled, onRun }
@@ -66,38 +66,30 @@ const MenuButton: FC<{ action: ItemMenuAction }> = ({
 /**
  * Inside an element marked `data-menu-host`, the menu fades in while the pointer
  * is over that element or the keyboard's focus is in it; pressed buttons stay shown.
- * Its More button reveals `moreActions` in its own place, until the pointer or the
- * focus leaves the menu.
+ * Its More button reveals the rest in its own place, until the pointer or the focus
+ * leaves the menu.
  */
-export const ItemMenu: FC<Props> = ({ itemName, actions, moreActions = [] }) => {
+export const ItemMenu: FC<Props> = ({ itemName, actions }) => {
     const [revealed, setRevealed] = useState(false);
-    const [shiftLeft, setShiftLeft] = useState(0);
     const menu = useRef<HTMLDivElement>(null);
     const more = useRef<HTMLButtonElement>(null);
+    const shownActions = actions.slice(0, SHOWN_BUTTONS);
+    const moreActions = actions.slice(SHOWN_BUTTONS);
 
     useLayoutEffect(() => {
         if (!revealed) {
-            setShiftLeft(0);
-
             return;
-        }
-
-        const overflow =
-            (menu.current?.getBoundingClientRect().right ?? 0) + WINDOW_MARGIN - window.innerWidth;
-
-        if (overflow > 0) {
-            setShiftLeft(overflow);
         }
 
         // Focus goes on from the More button, which is gone, to what it revealed,
         // or to the bar's last button that may be pressed when none of that may.
         const enabled = [...(menu.current?.querySelectorAll('button') ?? [])]
-            .map((button, index) => ({ button, revealed: index >= actions.length }))
+            .map((button, index) => ({ button, revealed: index >= shownActions.length }))
             .filter(({ button }) => !button.disabled);
         const target = (enabled.find(({ revealed }) => revealed) ?? enabled.at(-1))?.button;
 
         target?.focus();
-    }, [revealed, actions.length]);
+    }, [revealed, shownActions.length]);
 
     return (
         <div
@@ -105,7 +97,6 @@ export const ItemMenu: FC<Props> = ({ itemName, actions, moreActions = [] }) => 
             className={styles.menu}
             role="toolbar"
             aria-label={`${itemName} menu`}
-            style={shiftLeft ? { transform: `translateX(-${shiftLeft}px)` } : undefined}
             onMouseLeave={() => setRevealed(false)}
             onBlur={(event) => {
                 // Losing the More button itself is not leaving the menu.
@@ -117,7 +108,7 @@ export const ItemMenu: FC<Props> = ({ itemName, actions, moreActions = [] }) => 
                 }
             }}
         >
-            {actions.map((action) => (
+            {shownActions.map((action) => (
                 <MenuButton key={action.id} action={action} />
             ))}
             {revealed

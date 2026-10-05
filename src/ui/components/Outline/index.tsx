@@ -74,14 +74,9 @@ const ShapeItem: FC<{ shapeId: string }> = ({ shapeId }) => {
             onClick={() => toggleShapeSelected(shapeId)}
             menuActions={[
                 hidden(!shape.visible, () => toggleShapeVisible(shapeId)),
-                locked(shape.locked, () => toggleShapeLocked(shapeId))
+                locked(shape.locked, () => toggleShapeLocked(shapeId)),
+                ...commands(CloneCommand, DeleteCommand, BringToFrontCommand, SendToBackCommand)
             ]}
-            moreMenuActions={commands(
-                CloneCommand,
-                DeleteCommand,
-                BringToFrontCommand,
-                SendToBackCommand
-            )}
         />
     );
 };
@@ -103,9 +98,9 @@ const GroupItem: FC<{ groupId: string; shapesIds: string[] }> = ({ groupId, shap
             onClick={() => toggleGroupSelected(groupId)}
             menuActions={[
                 hidden(!group.visible, () => toggleGroupVisible(groupId)),
-                locked(group.locked, () => toggleGroupLocked(groupId))
+                locked(group.locked, () => toggleGroupLocked(groupId)),
+                ...commands(UngroupCommand, CloneCommand, DeleteCommand)
             ]}
-            moreMenuActions={commands(UngroupCommand, CloneCommand, DeleteCommand)}
             onDrop={({ kind, id }) => {
                 // Only shapes join a group; a group dropped on a group stays as it is.
                 if (kind === 'shape') {
