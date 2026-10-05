@@ -26,7 +26,7 @@ export interface Props {
  * rounding's arc is centered; dragging any of them in along its corner's diagonal
  * rounds all four. While one is dragged, a badge beside it shows the radius.
  */
-export const RadiusHandle: FC<Props> = ({ rectangle, activeCorner }) => {
+export const RadiusHandles: FC<Props> = ({ rectangle, activeCorner }) => {
     const scale = useCameraScale();
     const { position, size } = rectangle;
     const half = Math.min(size.width, size.height) / 2;
@@ -86,7 +86,7 @@ export const RadiusHandle: FC<Props> = ({ rectangle, activeCorner }) => {
             ))}
             {dragged && (
                 <text
-                    className={styles.rotateBadge}
+                    className={styles.badge}
                     x={outward * BADGE_OFFSET}
                     style={{ textAnchor: outward < 0 ? 'end' : 'start' }}
                     transform={`translate(${dragged.x} ${dragged.y}) rotate(${-rotation}) scale(${1 / scale})`}
