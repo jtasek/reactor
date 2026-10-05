@@ -85,7 +85,7 @@ test('migrates a legacy text shape, renders its content, and preserves the origi
                 layers: {},
                 components: {},
                 links: {},
-                rulers: {}
+                guides: {}
             }
         }
     };

@@ -251,12 +251,12 @@ export const useShapesIds = () => {
     return useAppState((state) => json(state.currentDocument.shapesIds));
 };
 
-export const useRuler = (id: string) => {
-    return useCurrentDocument()?.rulers[id];
+export const useGuide = (id: string) => {
+    return useCurrentDocument()?.guides[id];
 };
 
-export const useRulers = () => {
-    return useCurrentDocument()?.rulers ?? [];
+export const useGuides = () => {
+    return useCurrentDocument()?.guides ?? [];
 };
 
 export const useGroup = (id: string) => {

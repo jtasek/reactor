@@ -9,7 +9,7 @@ import {
     selectedLayersIds,
     layersIds,
     linksIds,
-    rulersIds,
+    guidesIds,
     selectedShapes,
     selectedShapesIds,
     selectionExtent,
@@ -30,7 +30,7 @@ import {
     Layer,
     Link,
     Notification,
-    Ruler,
+    Guide,
     Shape,
     ShapeInput,
     User
@@ -41,7 +41,7 @@ const documentSequence = new Sequence();
 const groupSequence = new Sequence();
 const layerSequence = new Sequence();
 const linkSequence = new Sequence();
-const rulerSequence = new Sequence();
+const guideSequence = new Sequence();
 const shapeSequence = new Sequence();
 
 export const newApplicationName = (): string => `reactor-${Date.now()}`;
@@ -50,7 +50,7 @@ export const newDocumentName = (number = documentSequence.next()): string => `do
 export const newGroupName = (): string => `group-${groupSequence.next()}`;
 export const newLayerName = (): string => `layer-${layerSequence.next()}`;
 export const newLinkName = (): string => `link-${linkSequence.next()}`;
-export const newRulerName = (): string => `ruler-${rulerSequence.next()}`;
+export const newGuideName = (): string => `guide-${guideSequence.next()}`;
 export const newShapeName = (): string => `shape-${shapeSequence.next()}`;
 
 export const getAnonymousUser = (): User => {
@@ -110,11 +110,11 @@ export function createLink(options: Partial<Link> = {}): Link {
     };
 }
 
-export function createRuler(options: Partial<Ruler> = {}): Ruler {
+export function createGuide(options: Partial<Guide> = {}): Guide {
     return {
         id: newId(),
         locked: false,
-        name: newRulerName(),
+        name: newGuideName(),
         orientation: 'horizontal',
         position: { x: 0, y: 0 },
         selected: false,
@@ -166,7 +166,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
         modified: new Date(),
         modifiedBy: getCurrentUserName(),
         name: newDocumentName(),
-        rulers: {},
+        guides: {},
         selected: false,
         shapes: {},
         tags: [],
@@ -178,7 +178,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
         selectedLayersIds,
         layersIds,
         linksIds,
-        rulersIds,
+        guidesIds,
         selectedShapesIds,
         selectionExtent,
         movableSelectedItems,

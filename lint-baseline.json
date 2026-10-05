@@ -15,9 +15,6 @@
         },
         "src/ui/components/NavBar/NavBarList.tsx": {
             "[\"@typescript-eslint/no-unused-vars\",2,\"'styles' is defined but never used.\"]": 1
-        },
-        "src/ui/components/NavBar/index.tsx": {
-            "[\"@typescript-eslint/no-unused-vars\",2,\"'styles' is defined but never used.\"]": 1
         }
     }
 }

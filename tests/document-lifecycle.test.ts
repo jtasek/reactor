@@ -96,7 +96,7 @@ describe('document ownership', () => {
         store.actions.addGroup({ id: 'group', shapesIds: [shapeId] });
         store.actions.addLayer({ id: 'layer', shapesIds: [shapeId] });
         store.actions.addLink({ id: 'link', source: shapeId, target: shapeId });
-        store.actions.addRuler({ id: 'ruler' });
+        store.actions.addGuide({ id: 'guide' });
         store.actions.updateDocument({
             id: originalId,
             tags: ['original'],
@@ -117,7 +117,7 @@ describe('document ownership', () => {
 
         store.actions.tools.panCamera({ dx: 100, dy: 50 });
         store.actions.updateLink({ id: 'link', name: 'Changed link' });
-        store.actions.updateRuler({ id: 'ruler', position: { x: 5, y: 10 } });
+        store.actions.updateGuide({ id: 'guide', position: { x: 5, y: 10 } });
         store.actions.removeShape(shapeId);
 
         const copy = store.state.currentDocument;

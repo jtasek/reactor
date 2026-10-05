@@ -52,7 +52,7 @@ function layeredDocument(): PersistedState {
                 },
                 components: {},
                 links: {},
-                rulers: {}
+                guides: {}
             }
         }
     };

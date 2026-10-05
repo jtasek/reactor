@@ -194,10 +194,10 @@ describe('document storage', () => {
     });
 });
 
-describe('saved rulers', () => {
-    const ruler = (orientation: unknown) => ({
+describe('saved guides', () => {
+    const guide = (orientation: unknown) => ({
         id: 'r1',
-        name: 'Ruler',
+        name: 'Guide',
         visible: true,
         locked: false,
         orientation,
@@ -205,14 +205,14 @@ describe('saved rulers', () => {
     });
 
     it('keep their orientation as the words they were saved with', () => {
-        expect(readEntity('rulers', ruler('vertical'))).toMatchObject({ orientation: 'vertical' });
-        expect(readEntity('rulers', ruler('horizontal'))).toMatchObject({
+        expect(readEntity('guides', guide('vertical'))).toMatchObject({ orientation: 'vertical' });
+        expect(readEntity('guides', guide('horizontal'))).toMatchObject({
             orientation: 'horizontal'
         });
     });
 
     it('refuse any other orientation', () => {
-        expect(() => readEntity('rulers', ruler('diagonal'))).toThrow('Invalid orientation');
-        expect(() => readEntity('rulers', ruler(0))).toThrow('Invalid orientation');
+        expect(() => readEntity('guides', guide('diagonal'))).toThrow('Invalid orientation');
+        expect(() => readEntity('guides', guide(0))).toThrow('Invalid orientation');
     });
 });

@@ -50,8 +50,8 @@ export const linksIds = derived((currentDocument: Document) => {
     return Object.keys(currentDocument.links);
 });
 
-export const rulersIds = derived((currentDocument: Document) => {
-    return Object.keys(currentDocument.rulers);
+export const guidesIds = derived((currentDocument: Document) => {
+    return Object.keys(currentDocument.guides);
 });
 
 // The selection commands act on: a hidden shape keeps its `selected` flag but is

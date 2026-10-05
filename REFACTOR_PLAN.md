@@ -356,7 +356,7 @@ Feature inventory:
   documents page; the navigation bar, group and layer panels with hide and lock;
   the context menu; copy, cut and paste; saving in the browser and sharing between tabs; accounts,
   syncing with the server, and signing out.
-- Shown but not covered by tests: the minimap, rulers, data view, document info,
+- Shown but not covered by tests: the minimap, guides, data view, document info,
   overlay and stats panels.
 - Started, not working yet: the search box stores what is typed, but no list is
   filtered (the `filtered*` derivations are not used); images are kept in the

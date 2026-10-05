@@ -3,7 +3,7 @@ import React, { FC } from 'react';
 import { useControls, useCurrentDocument } from 'src/app/hooks';
 import { getShapeBounds } from 'src/app/utils';
 import { MiniMap } from './MiniMap';
-import { Rulers } from '../Surface/Rulers';
+import { Guides } from '../Surface/Guides';
 import { Shapes } from '../Surface/Shapes';
 
 const STATIC_CAMERA = { position: { x: 0, y: 0 }, scale: 1 };
@@ -58,7 +58,7 @@ export const MiniMapContainer: FC = () => {
 
     return (
         <MiniMap size={{ width: 200, height: 200 }} viewBox={viewBox}>
-            <Rulers key="minimap-rulers" camera={STATIC_CAMERA} />
+            <Guides key="minimap-guides" camera={STATIC_CAMERA} />
             <Shapes />
         </MiniMap>
     );

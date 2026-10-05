@@ -68,7 +68,7 @@ export const resetDocument: Action = ({ state }) => {
     document.layers = {};
     document.groups = {};
     document.links = {};
-    document.rulers = {};
+    document.guides = {};
     document.components = {};
     document.camera = createCamera();
     document.grid = createGrid();
