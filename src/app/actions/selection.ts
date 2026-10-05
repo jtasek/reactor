@@ -1,6 +1,22 @@
-import { Action, ActionWithParam, Application, Document } from '../types';
+import { Action, ActionWithParam, Application, Document, Orientation, Point } from '../types';
+import {
+    ALIGN_MINIMUM,
+    AlignTo,
+    SPACE_MINIMUM,
+    Spacing,
+    alignOffsets,
+    spaceOffsets
+} from '../alignment';
+import { translateShape } from '../geometry';
 import { getCommand } from './startup';
-import { editableSelectedShapesIds, selectedItems, shapeGroup } from '../membership';
+import {
+    drawnExtent,
+    editableSelectedShapesIds,
+    movableSelectedItems,
+    selectedItems,
+    shapeGroup
+} from '../membership';
+import { isShapeVisible } from '../utils';
 
 const unselect = ({ shapes }: Document, shapeIds: string[]) => {
     shapeIds.forEach((id) => {
@@ -102,5 +118,71 @@ export const runCommandOn: ActionWithParam<{ shapeIds: string[]; commandId: stri
     if (!actions.runCommand(command)) {
         select(new Set(before.selected));
         state.enteredGroupId = before.enteredGroupId;
+    }
+};
+
+/** The movable selected items, each with the box its shown shapes are drawn in. */
+const placedItems = (document: Document) =>
+    movableSelectedItems(document).flatMap((shapeIds) => {
+        const box = drawnExtent(
+            document,
+            shapeIds.filter((id) => isShapeVisible(document, id))
+        );
+
+        return box ? [{ shapeIds, box }] : [];
+    });
+
+const moveItems = (document: Document, items: { shapeIds: string[] }[], offsets: Point[]) =>
+    items.forEach(({ shapeIds }, index) => {
+        const offset = offsets[index];
+
+        if (offset.x === 0 && offset.y === 0) {
+            return;
+        }
+
+        shapeIds.forEach((id) => {
+            const shape = document.shapes[id];
+
+            if (shape) {
+                translateShape(shape, offset);
+            }
+        });
+    });
+
+/** Lines the selected items up on a side or a center of their box. */
+export const alignSelection: ActionWithParam<AlignTo> = ({ state }, to) => {
+    const { currentDocument } = state;
+    const items = placedItems(currentDocument);
+
+    if (items.length >= ALIGN_MINIMUM) {
+        moveItems(
+            currentDocument,
+            items,
+            alignOffsets(
+                items.map(({ box }) => box),
+                to
+            )
+        );
+    }
+};
+
+/** Spaces the selected items out along an axis, the outermost staying. */
+export const spaceSelection: ActionWithParam<{ axis: Orientation; spacing: Spacing }> = (
+    { state },
+    { axis, spacing }
+) => {
+    const { currentDocument } = state;
+    const items = placedItems(currentDocument);
+
+    if (items.length >= SPACE_MINIMUM) {
+        moveItems(
+            currentDocument,
+            items,
+            spaceOffsets(
+                items.map(({ box }) => box),
+                axis,
+                spacing
+            )
+        );
     }
 };

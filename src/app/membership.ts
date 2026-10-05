@@ -205,9 +205,9 @@ export function selectionLayerId(document: Document): string | undefined {
         : undefined;
 }
 
-/** The upright box around the selected shapes as drawn, each turned by its rotation; none without a selection. */
-export function selectionExtent(document: Document): Box | null {
-    const corners = document.selectedShapesIds.flatMap((id) => {
+/** The upright box around shapes as drawn, each turned by its rotation; none without shapes. */
+export function drawnExtent(document: Document, shapeIds: string[]): Box | null {
+    const corners = shapeIds.flatMap((id) => {
         const shape = document.shapes[id];
         const bounds = getShapeBounds(shape);
         const center = boxCenter(bounds);
@@ -237,6 +237,10 @@ export function selectionExtent(document: Document): Box | null {
         height: bottomRight.y - topLeft.y
     };
 }
+
+/** The upright box around the selected shapes as drawn; none without a selection. */
+export const selectionExtent = (document: Document): Box | null =>
+    drawnExtent(document, document.selectedShapesIds);
 
 /** The selected shapes the commands may change, in drawing order. */
 export function editableSelectedShapesIds(document: Document): string[] {
@@ -400,4 +404,18 @@ export function selectionScope(document: Document): CommandScope | null {
     }
 
     return groups.length === 1 ? 'group' : shapes.length === 1 ? 'shape' : null;
+}
+
+/**
+ * The selected items alignment moves, as the shapes each moves: a group selected
+ * as one with all its shapes, hidden ones too, and each other selected shape;
+ * none with a locked shape.
+ */
+export function movableSelectedItems(document: Document): string[][] {
+    const { groups, shapes } = selectedItems(document);
+    const unlocked = (shapeIds: string[]) => !shapeIds.some((id) => isShapeLocked(document, id));
+
+    return [...groups.map((group) => group.shapesIds), ...shapes.map((shape) => [shape.id])].filter(
+        unlocked
+    );
 }
