@@ -1,4 +1,4 @@
-import React, { FC, FormEvent, useEffect, useRef, useState } from 'react';
+import React, { FC, SubmitEvent, useEffect, useRef, useState } from 'react';
 
 import { useAccount, useEffects, useReaction } from 'src/app/hooks';
 import type { AccountResult } from 'src/app/services/accounts';
@@ -126,7 +126,7 @@ const SignInForm: FC = () => {
         setResult(undefined);
     };
 
-    const submit = async (event: FormEvent) => {
+    const submit = async (event: SubmitEvent) => {
         event.preventDefault();
         setBusy(true);
 

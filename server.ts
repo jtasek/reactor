@@ -53,7 +53,7 @@ app.use('/styles', express.static(path.join(__dirname, 'static', 'styles')));
 app.use(
     pageFallback((req, res, next) => {
         req.url = '/index.html';
-        devMiddleware(req, res, next);
+        devMiddleware(req, res, next).catch(next);
     })
 );
 app.use(notFound);

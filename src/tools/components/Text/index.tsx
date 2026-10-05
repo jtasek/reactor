@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FC, FormEvent, KeyboardEvent, useEffect, useRef } from 'react';
+import React, { ChangeEvent, FC, KeyboardEvent, SubmitEvent, useEffect, useRef } from 'react';
 
 import styles from './styles.css';
 import type { Command, Point } from 'src/app/types';
@@ -99,7 +99,7 @@ export const DesignText: FC = () => {
         actions.tools.resetTools();
     };
 
-    const handleSubmit = (event: FormEvent) => {
+    const handleSubmit = (event: SubmitEvent) => {
         event.preventDefault();
         commit();
     };
