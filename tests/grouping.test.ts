@@ -1,11 +1,13 @@
-import { registerCommand } from 'src/app/actions/startup';
+import { registerCommand, registerTool } from 'src/app/actions/startup';
 import { groupFrame, hoveredGroupsIds } from 'src/app/membership';
 import type { Point, ShapeInput } from 'src/app/types';
 import * as commands from 'src/commands';
+import { SelectTool } from 'src/tools';
 import { createTestStore } from './support/store';
 
-// Commands are registered by application startup, which the test store skips.
+// Commands and tools are registered by application startup, which the test store skips.
 Object.values(commands).forEach(registerCommand);
+registerTool(SelectTool);
 
 /** Where each shape is placed; every shape here is a square. */
 const positions = (store: ReturnType<typeof createTestStore>['store'], ids: string[]) =>

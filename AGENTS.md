@@ -239,8 +239,9 @@ only translates DOM events into the gesture actions (`src/events/actions/pointer
   gesture may change. Input from any other pointer is ignored until the gesture ends.
 - **pointer move** → `movePointer`: drawing extends the path, marquee re-selects, and
   move/resize/rotate edit shapes live.
-  A move starts only once the pointer goes beyond a click's slip (`beyondClickSlip`, 3 screen
-  pixels), then follows it from where it was pressed; until then the press is a click.
+  A move or a marquee starts only once the pointer goes beyond a click's slip
+  (`beyondClickSlip`, 3 screen pixels), then follows it from where it was pressed; until then
+  the press is a click.
   A move snaps (`src/app/snapping.ts`): the moved shapes' box, taken when the drag began,
   is pulled so the nearest of its edges and center lies on another shown shape's edge or
   center within 6 screen pixels, on each axis on its own, and the lines it snapped to show
@@ -278,7 +279,7 @@ Examples worth modelling new tools on:
 - `Select` — marquee: press + drag draws the dashed rect; `selectShapes` selects shapes whose
   (rotated) bounds overlap it (authoritative: sets `selected` true/false), and the selection
   persists on release. A click without a drag clears the selection, or, on a locked item,
-  selects it (the marquee's `clickSelects`).
+  selects it (`selectClickedShapes`).
 
 ## Groups and layers
 
@@ -340,7 +341,8 @@ cover it, or under the box without room above. It shows while the pointer is ove
 the menu or the way between them, and is not rendered during a drag.
 
 Locked items get the same menu, by the same rule: a click selects a locked shape or group
-(`shapesClickSelects`, `selectClickedShapes`), and its menu offers Unlock. A press still
+(`selectClickedShapes`), and its menu offers Unlock; a selection it is in stays, as for an
+unlocked shape, and a group's hidden shapes are not selected. A press still
 passes through a locked item: an unlocked shape under it takes the press, and a drag from it
 draws a marquee, which skips locked shapes, so a locked item never moves.
 

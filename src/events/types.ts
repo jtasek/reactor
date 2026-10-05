@@ -38,8 +38,8 @@ export type Gesture =
               | {
                     kind: 'marquee';
                     selection: SelectionSnapshot;
-                    /** The locked item's shapes a click selects; none from empty canvas. */
-                    clickSelects: string[];
+                    /** Whether the pointer has gone beyond a slip, so a release draws no click. */
+                    dragged: boolean;
                 }
               | {
                     kind: 'moving';
