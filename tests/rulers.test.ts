@@ -1,4 +1,4 @@
-import { rulerMarks } from 'src/app/rulers';
+import { guidePlace, removesGuide, rulerMarks } from 'src/app/rulers';
 
 const firstLabels = (scale: number) =>
     rulerMarks(0, scale, 400)
@@ -51,5 +51,22 @@ describe('rulerMarks', () => {
             '0',
             '2'
         ]);
+    });
+});
+
+describe('guidePlace', () => {
+    it('puts a dragged guide on the whole canvas unit nearest the pointer', () => {
+        expect(guidePlace(300, 37, 1.25)).toEqual({ offset: 210, at: 299.5 });
+        expect(guidePlace(-12, 0, 2)).toEqual({ offset: -6, at: -12 });
+    });
+});
+
+describe('removesGuide', () => {
+    it('removes a guide released on its ruler or beyond the canvas', () => {
+        expect(removesGuide(19, 20, 700)).toBe(true);
+        expect(removesGuide(20, 20, 700)).toBe(false);
+        expect(removesGuide(700, 20, 700)).toBe(false);
+        expect(removesGuide(701, 20, 700)).toBe(true);
+        expect(removesGuide(-1, 0, 700)).toBe(true);
     });
 });

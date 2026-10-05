@@ -5,20 +5,20 @@
     stroke-width: 1;
 }
 
-.grip {
+.removing {
+    opacity: 0.4;
+}
+
+.grips line {
     pointer-events: stroke;
     stroke: transparent;
     stroke-width: 7;
 }
 
-.horizontal .grip {
+.rowGrip {
     cursor: row-resize;
 }
 
-.vertical .grip {
+.columnGrip {
     cursor: col-resize;
-}
-
-.leaving .line {
-    opacity: 0.4;
 }

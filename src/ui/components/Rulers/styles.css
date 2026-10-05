@@ -17,6 +17,7 @@
 }
 
 .ruler text {
+    dominant-baseline: hanging;
     fill: var(--text-color);
     pointer-events: none;
 }

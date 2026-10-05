@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
+import { drawRect, openEditor, pointer, shapes } from './support/editor';
 
-const guideLines = (page: Page) => page.locator('svg#surface #guides g > line:first-child');
+const guideLines = (page: Page) => page.locator('svg#surface #guides > line');
 
 /** Opens the editor and turns the rulers on, after checking their code is not loaded before. */
 async function openWithRulers(page: Page) {
@@ -66,4 +67,63 @@ test('a guide dragged out of a ruler and dropped back on it is not added', async
 
     await expect(guideLines(page)).toHaveCount(0);
     await expect(page.getByRole('checkbox', { name: 'Guides', exact: true })).not.toBeChecked();
+});
+
+test('a guide dragged beyond the canvas is removed', async ({ page }) => {
+    await openWithRulers(page);
+    const { height } = page.viewportSize()!;
+
+    await drag(page, [100, 10], [100, 200]);
+    await expect(guideLines(page)).toHaveAttribute('y1', '200');
+    await drag(page, [300, 200], [300, height + 40]);
+
+    await expect(guideLines(page)).toHaveCount(0);
+});
+
+/** Opens the editor with a rectangle from (400, 300) to (500, 400), selected, and a vertical guide on its left edge. */
+async function openWithShapeOnGuide(page: Page) {
+    await openEditor(page, ['Rulers']);
+    await drawRect(page, { x: 400, y: 300 }, { x: 500, y: 400 });
+    await page.getByRole('checkbox', { name: 'Side Bar', exact: true }).uncheck();
+    await drag(page, [10, 600], [400, 600]);
+    await expect(guideLines(page)).toHaveAttribute('x1', '400');
+}
+
+test('a shape on a guide takes the press, not the guide', async ({ page }) => {
+    await openWithShapeOnGuide(page);
+
+    await drag(page, [400, 350], [450, 350]);
+
+    await expect(shapes(page).locator('rect').first()).toHaveAttribute('x', '450');
+    await expect(guideLines(page)).toHaveAttribute('x1', '400');
+});
+
+test('shortcuts wait while a guide is dragged', async ({ page }) => {
+    await openWithShapeOnGuide(page);
+
+    await page.mouse.move(400, 600);
+    await page.mouse.down();
+    await page.mouse.move(300, 600, { steps: 4 });
+    await page.keyboard.press('Delete');
+    await page.mouse.up();
+
+    await expect(shapes(page)).toHaveCount(1);
+    await expect(guideLines(page)).toHaveAttribute('x1', '300');
+});
+
+test('no guide drag starts while a canvas gesture is in progress', async ({ page }) => {
+    await openWithShapeOnGuide(page);
+
+    await pointer(page, 'pointerdown', { pointerId: 1, x: 450, y: 350 });
+    await pointer(page, 'pointerdown', {
+        pointerId: 2,
+        x: 300,
+        y: 10,
+        target: '[data-ruler="top"]'
+    });
+    await pointer(page, 'pointermove', { pointerId: 2, x: 300, y: 200 });
+    await pointer(page, 'pointerup', { pointerId: 2, x: 300, y: 200 });
+    await pointer(page, 'pointerup', { pointerId: 1, x: 450, y: 350 });
+
+    await expect(guideLines(page)).toHaveCount(1);
 });

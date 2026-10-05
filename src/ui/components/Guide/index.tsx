@@ -1,2 +1,2 @@
 export { Guide } from './Guide';
-export { Guides } from './Guides';
+export { GuideGrips, Guides } from './Guides';

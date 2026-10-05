@@ -345,10 +345,13 @@ first time either is turned on (`src/ui/components/Rulers`, `src/ui/components/G
 The rulers run along the canvas's top and left edges in canvas units (`rulerMarks`,
 `src/app/rulers.ts`). Dragging out of the top ruler places a horizontal guide and out of
 the left one a vertical guide, turning the Guides control on; dragging a guide moves it,
-and dropping it on its ruler or beyond the canvas's edge removes it (`useGuideDrag`). A
-guide drag is not a pointer gesture: it takes its pointer's events before the canvas does
-and changes the document once, on release, so Escape or a lost pointer leaves it as it was.
-Guides are drawn over the shapes; hidden ones are not drawn and locked ones do not move.
+on whole canvas units (`guidePlace`), and dropping it on its ruler or beyond the canvas
+removes it (`removesGuide`). A guide drag (`useGuideDrag`) is not a pointer gesture and
+does not start during one or while the context menu is open. One runs at a time; it takes
+its pointer's events and the keys before the canvas does and changes the document once, on
+release, so Escape or a lost pointer leaves it as it was. Guide lines are drawn over the shapes and what grabs
+them under the shapes, so a shape, or a highlighted group, on a guide takes the press.
+Hidden guides are not drawn and locked ones do not move.
 
 ## Bounding boxes & selection
 

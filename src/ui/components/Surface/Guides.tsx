@@ -8,6 +8,12 @@ const GuideLines = lazy(() =>
     }))
 );
 
+const LoadedGuideGrips = lazy(() =>
+    import(/* webpackChunkName: "guides" */ '../Guide').then((module) => ({
+        default: module.GuideGrips
+    }))
+);
+
 interface Props {
     camera?: Camera;
 }
@@ -23,6 +29,21 @@ export const Guides: FC<Props> = ({ camera }) => {
     return (
         <Suspense fallback={null}>
             <GuideLines camera={camera} />
+        </Suspense>
+    );
+};
+
+/** What grabs the guides, under the shapes, loaded with them. */
+export const GuideGrips: FC = () => {
+    const { guides: control } = useControls();
+
+    if (!control.visible) {
+        return null;
+    }
+
+    return (
+        <Suspense fallback={null}>
+            <LoadedGuideGrips />
         </Suspense>
     );
 };

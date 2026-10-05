@@ -301,6 +301,10 @@ export const useSnapLines = () =>
         return gesture.kind === 'moving' && gesture.dragged ? gesture.snapLines : null;
     });
 
+/** Whether a pointer gesture is in progress on the canvas. */
+export const useGestureInProgress = () =>
+    useAppState((state) => state.events.pointer.gesture.kind !== 'idle');
+
 /** The groups the pointer highlights: see `hoveredGroupsIds`. */
 export const useHoveredGroupsIds = () => {
     return useAppState((state) =>

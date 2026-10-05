@@ -1,56 +1,116 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { useActions, useCamera, useControls } from 'src/app/hooks';
-import { RULER_SIZE_PX } from 'src/app/rulers';
-import type { Orientation, Point } from 'src/app/types';
+import { useActions, useCamera, useControls, useGestureInProgress, useGuides } from 'src/app/hooks';
+import { guidePlace, removesGuide, RULER_SIZE_PX } from 'src/app/rulers';
+import type { Camera, Orientation } from 'src/app/types';
 import { clientToSurface } from 'src/events/drivers/helpers';
 import { tryReleasePointerCapture, trySetPointerCapture } from 'src/events/drivers/pointerCapture';
 
 /**
  * A guide being dragged: a new one out of a ruler (`guideId` null) or an existing
- * one, `at` screen pixels from the canvas's top edge when it is horizontal and its
- * left edge when it is vertical.
+ * one, with the pointer `pointer` screen pixels from the canvas's top edge when the
+ * guide is horizontal and its left edge when vertical, on a canvas `length` long
+ * along that axis.
  */
-export type GuideDrag = { orientation: Orientation; guideId: string | null; at: number };
+type Drag = { orientation: Orientation; guideId: string | null; pointer: number; length: number };
+
+/** A dragged guide where it would be released: `at` screen pixels from its canvas edge. */
+export type PlacedDrag = {
+    orientation: Orientation;
+    guideId: string | null;
+    at: number;
+    /** Whether releasing it here removes it. */
+    removing: boolean;
+};
 
 /** The pointer events a drag takes for itself, so the canvas starts no gesture of its own. */
 const DRAG_EVENTS = ['pointermove', 'pointerup', 'pointercancel'] as const;
 
 /**
- * Drags guides: a guide follows the pointer and is added or moved where it is
- * released, or removed when released over its ruler or beyond the canvas's edge.
- * The document changes once, on release; Escape, a canceled pointer or leaving
- * the window cancels.
+ * The one guide drag at a time, shared by the rulers and by the guides drawn under
+ * and over the shapes, and how to stop it.
+ */
+let current: Drag | null = null;
+let stopCurrent: (() => void) | null = null;
+const listeners = new Set<() => void>();
+
+const setCurrent = (drag: Drag | null) => {
+    current = drag;
+    listeners.forEach((listener) => listener());
+};
+
+const subscribe = (listener: () => void) => {
+    listeners.add(listener);
+
+    return () => listeners.delete(listener);
+};
+
+const takeCurrent = () => current;
+
+const placeOnCamera = ({ orientation, pointer }: Drag, { position, scale }: Camera) =>
+    guidePlace(pointer, orientation === 'horizontal' ? position.y : position.x, scale);
+
+const placeDrag = (drag: Drag, camera: Camera, rulerSize: number): PlacedDrag => {
+    const { at } = placeOnCamera(drag, camera);
+
+    return {
+        orientation: drag.orientation,
+        guideId: drag.guideId,
+        at,
+        removing: removesGuide(at, rulerSize, drag.length)
+    };
+};
+
+/**
+ * Drags guides: a guide follows the pointer, on whole canvas units, and is added or
+ * moved where it is released, or removed when released over its ruler or beyond
+ * the canvas. The document changes once, on release; Escape, a canceled pointer or
+ * leaving the window cancels, and shortcuts wait until the drag ends. No drag
+ * starts during a canvas gesture or while the context menu is open.
  */
 export function useGuideDrag() {
     const actions = useActions();
     const camera = useCamera();
-    const { guides, rulers } = useControls();
-    const [drag, setDrag] = useState<GuideDrag | null>(null);
-    const latest = useRef({ camera, guidesShown: guides.visible, rulersShown: rulers.visible });
-    const stop = useRef<(() => void) | null>(null);
+    const guides = useGuides();
+    const controls = useControls();
+    const gestureInProgress = useGestureInProgress();
+    const drag = useSyncExternalStore(subscribe, takeCurrent);
+    const rulerSize = controls.rulers.visible ? RULER_SIZE_PX : 0;
+    const latest = useRef({ camera, guides, rulerSize, guidesShown: controls.guides.visible });
+    const owner = useRef(false);
 
-    latest.current = { camera, guidesShown: guides.visible, rulersShown: rulers.visible };
+    latest.current = { camera, guides, rulerSize, guidesShown: controls.guides.visible };
 
-    useEffect(() => () => stop.current?.(), []);
+    useEffect(
+        () => () => {
+            if (owner.current) {
+                stopCurrent?.();
+            }
+        },
+        []
+    );
 
-    const drop = (orientation: Orientation, guideId: string | null, at: number) => {
-        const { camera: view, guidesShown, rulersShown } = latest.current;
+    const drop = (released: Drag) => {
+        const { camera: view, guides: present, rulerSize: edge, guidesShown } = latest.current;
+        const { orientation, guideId } = released;
+        const { offset, at } = placeOnCamera(released, view);
 
-        if (at < (rulersShown ? RULER_SIZE_PX : 0)) {
-            if (guideId) {
+        // Another copy removed it meanwhile.
+        if (guideId !== null && !present[guideId]) {
+            return;
+        }
+
+        if (removesGuide(at, edge, released.length)) {
+            if (guideId !== null) {
                 actions.removeGuide(guideId);
             }
 
             return;
         }
 
-        const position: Point =
-            orientation === 'horizontal'
-                ? { x: 0, y: (at - view.position.y) / view.scale }
-                : { x: (at - view.position.x) / view.scale, y: 0 };
+        const position = orientation === 'horizontal' ? { x: 0, y: offset } : { x: offset, y: 0 };
 
-        if (guideId) {
+        if (guideId !== null) {
             actions.updateGuide({ id: guideId, position });
 
             return;
@@ -70,13 +130,18 @@ export function useGuideDrag() {
     ) => {
         const surface = event.currentTarget.ownerSVGElement;
 
-        if (event.button !== 0 || !surface || stop.current) {
+        if (
+            event.button !== 0 ||
+            !surface ||
+            stopCurrent ||
+            gestureInProgress ||
+            controls.contextMenu.visible
+        ) {
             return;
         }
 
-        event.stopPropagation();
-
         const { pointerId } = event;
+        const bounds = surface.getBoundingClientRect();
         const along = (input: { clientX: number; clientY: number }) => {
             const point = clientToSurface(input, surface);
 
@@ -88,52 +153,59 @@ export function useGuideDrag() {
             return;
         }
 
-        let at = start;
+        event.stopPropagation();
+
+        const length = orientation === 'horizontal' ? bounds.height : bounds.width;
 
         const onPointer = (input: PointerEvent) => {
-            if (input.pointerId !== pointerId) {
+            if (input.pointerId !== pointerId || !current) {
                 return;
             }
 
             input.stopPropagation();
-            at = along(input) ?? at;
+
+            const moved = { ...current, pointer: along(input) ?? current.pointer };
 
             if (input.type === 'pointermove') {
-                setDrag({ orientation, guideId, at });
+                setCurrent(moved);
 
                 return;
             }
 
-            stop.current?.();
+            stopCurrent?.();
 
             if (input.type === 'pointerup') {
-                drop(orientation, guideId, at);
+                drop(moved);
             }
         };
 
         const onKey = (input: KeyboardEvent) => {
+            input.stopPropagation();
+
             if (input.key === 'Escape') {
-                input.stopPropagation();
-                stop.current?.();
+                stopCurrent?.();
             }
         };
-        const onBlur = () => stop.current?.();
 
-        stop.current = () => {
+        const onBlur = () => stopCurrent?.();
+
+        stopCurrent = () => {
             DRAG_EVENTS.forEach((type) => window.removeEventListener(type, onPointer, true));
             window.removeEventListener('keydown', onKey, true);
             window.removeEventListener('blur', onBlur);
             tryReleasePointerCapture(surface, pointerId);
-            stop.current = null;
-            setDrag(null);
+            stopCurrent = null;
+            owner.current = false;
+            setCurrent(null);
         };
 
         DRAG_EVENTS.forEach((type) => window.addEventListener(type, onPointer, true));
         window.addEventListener('keydown', onKey, true);
         window.addEventListener('blur', onBlur);
         trySetPointerCapture(surface, pointerId);
-        setDrag({ orientation, guideId, at });
+        owner.current = true;
+        setCurrent({ orientation, guideId, pointer: start, length });
     };
 
-    return { drag, begin };
+    return { drag: drag && placeDrag(drag, camera, rulerSize), begin };
 }

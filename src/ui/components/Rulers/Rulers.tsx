@@ -1,7 +1,8 @@
 import React, { FC, useLayoutEffect, useRef, useState } from 'react';
+import type { SyntheticEvent } from 'react';
 import { Guide } from '../Guide/Guide';
 import { useGuideDrag } from '../Guide/useGuideDrag';
-import { useCamera } from 'src/app/hooks';
+import { useActions, useCamera } from 'src/app/hooks';
 import { RULER_SIZE_PX, RulerMark, rulerMarks } from 'src/app/rulers';
 
 import styles from './styles.css';
@@ -9,8 +10,11 @@ import styles from './styles.css';
 /** How far an unlabeled mark reaches into its ruler, as a part of the ruler's size. */
 const SHORT_MARK = 0.25;
 
-/** Where a label sits, in screen pixels: past its mark, and its baseline in from the ruler's outer edge. */
-const LABEL_INSET_PX = { along: 3, across: 9 };
+/** How far a label sits past its mark and in from the ruler's outer edge, in screen pixels. */
+const LABEL_INSET_PX = 3;
+
+/** Keeps a ruler's input from the canvas under it. */
+const keepToRuler = (event: SyntheticEvent) => event.stopPropagation();
 
 /** The path of a ruler's marks, drawn up from its inner edge as if it were the top one. */
 const marksPath = (marks: RulerMark[]) =>
@@ -54,17 +58,21 @@ export const Rulers: FC = () => {
     const { width, height } = useSurfaceSize(element);
     const { position, scale } = useCamera();
     const { drag, begin } = useGuideDrag();
+    const { events } = useActions();
     const top = rulerMarks(position.x, scale, width);
     const left = rulerMarks(position.y, scale, height);
 
     return (
-        <g ref={element} className={styles.rulers}>
+        <g
+            ref={element}
+            className={styles.rulers}
+            onPointerDown={keepToRuler}
+            onPointerMove={keepToRuler}
+            onPointerEnter={events.leaveSurface}
+            onDoubleClick={keepToRuler}
+        >
             {drag && drag.guideId === null && (
-                <Guide
-                    orientation={drag.orientation}
-                    at={drag.at}
-                    leaving={drag.at < RULER_SIZE_PX}
-                />
+                <Guide orientation={drag.orientation} at={drag.at} removing={drag.removing} />
             )}
             <g
                 className={`${styles.ruler} ${styles.top}`}
@@ -76,11 +84,7 @@ export const Rulers: FC = () => {
                 {top.map(
                     ({ at, label }) =>
                         label !== null && (
-                            <text
-                                key={label}
-                                x={at + LABEL_INSET_PX.along}
-                                y={LABEL_INSET_PX.across}
-                            >
+                            <text key={label} x={at + LABEL_INSET_PX} y={LABEL_INSET_PX}>
                                 {label}
                             </text>
                         )
@@ -98,19 +102,14 @@ export const Rulers: FC = () => {
                         label !== null && (
                             <text
                                 key={label}
-                                transform={`translate(${LABEL_INSET_PX.across} ${at - LABEL_INSET_PX.along}) rotate(-90)`}
+                                transform={`translate(${LABEL_INSET_PX} ${at - LABEL_INSET_PX}) rotate(-90)`}
                             >
                                 {label}
                             </text>
                         )
                 )}
             </g>
-            <rect
-                className={styles.corner}
-                width={RULER_SIZE_PX}
-                height={RULER_SIZE_PX}
-                onPointerDown={(event) => event.stopPropagation()}
-            />
+            <rect className={styles.corner} width={RULER_SIZE_PX} height={RULER_SIZE_PX} />
         </g>
     );
 };

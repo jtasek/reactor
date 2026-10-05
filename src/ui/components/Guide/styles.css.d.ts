@@ -1,10 +1,10 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
-    grip: string;
-    horizontal: string;
-    leaving: string;
+    columnGrip: string;
+    grips: string;
     line: string;
-    vertical: string;
+    removing: string;
+    rowGrip: string;
   }
 }
 

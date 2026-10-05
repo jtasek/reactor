@@ -51,3 +51,21 @@ export function rulerMarks(offset: number, scale: number, length: number): Ruler
 
 /** How thick the rulers along the canvas's top and left edges are, in screen pixels. */
 export const RULER_SIZE_PX = 20;
+
+/**
+ * Where a guide dragged to `pointer` screen pixels from its canvas edge goes: the
+ * whole canvas unit nearest it (`offset`), and where that unit is on screen (`at`),
+ * for the camera's `cameraOffset` along the same axis and `scale`.
+ */
+export function guidePlace(pointer: number, cameraOffset: number, scale: number) {
+    const offset = Math.round((pointer - cameraOffset) / scale);
+
+    return { offset, at: offset * scale + cameraOffset };
+}
+
+/**
+ * Whether a guide released `at` screen pixels from its canvas edge is removed: over
+ * its ruler, `rulerSize` wide, or beyond the canvas's `length`.
+ */
+export const removesGuide = (at: number, rulerSize: number, length: number) =>
+    at < rulerSize || at > length;
