@@ -112,4 +112,9 @@ test('More holds the buttons beyond seven, revealed in the bar until the pointer
     await moveTo(700, 500);
     await expect(button('Ungroup')).toHaveCount(0);
     await expect(button('More')).toHaveCount(1);
+
+    // From the keyboard, focus goes on from More, which is gone, to what it revealed.
+    await button('More').focus();
+    await page.keyboard.press('Enter');
+    await expect(button('Ungroup')).toBeFocused();
 });

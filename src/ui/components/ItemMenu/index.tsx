@@ -77,10 +77,18 @@ export const ItemMenu: FC<Props> = ({ itemName, actions }) => {
     const moreActions = actions.slice(SHOWN_BUTTONS);
 
     useLayoutEffect(() => {
-        if (revealed) {
-            // Focus goes on from the More button, which is gone, to what it revealed.
-            menu.current?.querySelectorAll('button')[shownActions.length]?.focus();
+        if (!revealed) {
+            return;
         }
+
+        // Focus goes on from the More button, which is gone, to what it revealed,
+        // or to the bar's last button that may be pressed when none of that may.
+        const enabled = [...(menu.current?.querySelectorAll('button') ?? [])]
+            .map((button, index) => ({ button, revealed: index >= shownActions.length }))
+            .filter(({ button }) => !button.disabled);
+        const target = (enabled.find(({ revealed }) => revealed) ?? enabled.at(-1))?.button;
+
+        target?.focus();
     }, [revealed, shownActions.length]);
 
     return (

@@ -80,6 +80,7 @@ test('an item’s menu fades in under the pointer and runs commands for that ite
     await expect(button('More')).toHaveCount(0);
     await button('Clone').click();
     await expect(shapes(page)).toHaveCount(3);
+
     await button('Delete').click();
     await expect(shapes(page)).toHaveCount(2);
     await expect(page.getByRole('button', { name: 'shape-1', exact: true })).toHaveCount(0);
