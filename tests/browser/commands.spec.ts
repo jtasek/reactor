@@ -4,8 +4,9 @@ import { drawRect, openEditor, pointer, shapes } from './support/editor';
 test('command bar buttons act on the current selection', async ({ page }) => {
     await openEditor(page);
 
-    const clone = page.locator('button[title="Clone current selection"]');
-    const remove = page.locator('button[title="Delete selected shapes"]');
+    const bar = page.getByRole('list', { name: 'Commands' });
+    const clone = bar.locator('button[title="Clone"]');
+    const remove = bar.locator('button[title="Delete"]');
 
     // Nothing is selected yet, so neither command can run.
     await expect(clone).toBeDisabled();
@@ -27,9 +28,78 @@ test('command bar buttons act on the current selection', async ({ page }) => {
 test('the command bar offers no commands that do nothing', async ({ page }) => {
     await openEditor(page);
 
-    await expect(page.getByText('Zoom in', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Zoom in', exact: true })).toBeVisible();
     await expect(page.getByText('Move', { exact: true })).toHaveCount(0);
     await expect(page.getByText('Pan', { exact: true })).toHaveCount(0);
+});
+
+test('icon commands show their name in a tooltip and their description below the bar', async ({
+    page
+}) => {
+    await openEditor(page);
+    const bar = page.getByRole('list', { name: 'Commands' });
+    const clone = bar.getByRole('button', { name: 'Clone', exact: true });
+    const info = bar.locator('..').locator('[data-cy="command-info"]');
+    await expect(clone).toHaveAttribute('title', 'Clone');
+    await expect(clone).toHaveText('');
+    await expect(clone.locator('svg')).toBeVisible();
+    await clone.locator('..').hover();
+    await expect(info).toHaveText('Clone current selection');
+    const bounds = (await bar.boundingBox())!;
+    expect((await info.boundingBox())!.y).toBeGreaterThanOrEqual(bounds.y + bounds.height);
+    const infoHeight = (await info.boundingBox())!.height;
+    await expect(clone.locator('svg')).toHaveCSS('width', '18px');
+    await bar
+        .locator('li')
+        .filter({ hasNot: page.locator('button') })
+        .first()
+        .hover();
+    await expect(info).toHaveText('Clone current selection');
+    expect((await info.boundingBox())!.height).toBe(infoHeight);
+    await page.mouse.move(600, 500);
+    await expect(info).toHaveText('');
+    await expect(info).toBeHidden();
+    expect((await bar.boundingBox())!.height).toBe(bounds.height);
+    await bar.getByRole('button', { name: 'Reset document', exact: true }).focus();
+    await expect(info).toHaveText('Remove all content from the current document');
+});
+
+test('each command button carries its own description, and a disabled one looks it', async ({
+    page
+}) => {
+    await openEditor(page);
+
+    const bar = page.getByRole('list', { name: 'Commands' });
+    const clone = bar.getByRole('button', { name: 'Clone', exact: true });
+    const remove = bar.getByRole('button', { name: 'Delete', exact: true });
+
+    // With the pointer on Clone, the focused Delete is still described as itself.
+    await clone.locator('..').hover();
+    await remove.focus();
+    await expect(remove).toHaveAccessibleDescription('Delete selected shapes');
+    await expect(bar.locator('..').locator('[data-cy="command-info"]')).toHaveAttribute(
+        'aria-hidden',
+        'true'
+    );
+
+    // Nothing is selected, so Clone cannot run and does not look clickable.
+    await expect(clone).toBeDisabled();
+    await expect(clone).toHaveCSS('cursor', 'default');
+});
+
+test('the command bar fits its buttons and the description is a separate panel', async ({
+    page
+}) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await openEditor(page);
+    const bar = page.getByRole('list', { name: 'Commands' });
+    const bounds = (await bar.boundingBox())!;
+    const last = (await bar.locator('li').last().boundingBox())!;
+    expect(bounds.x + bounds.width - last.x - last.width).toBeLessThanOrEqual(8);
+    await expect(bar.locator('..')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    await bar.getByRole('button', { name: 'Clone', exact: true }).locator('..').hover();
+    const info = bar.locator('..').locator('[data-cy="command-info"]');
+    expect((await info.boundingBox())!.y).toBeGreaterThan(bounds.y + bounds.height);
 });
 
 for (const width of [360, 700]) {
@@ -167,20 +237,14 @@ test('the command bar keeps copy, cut and paste in a group of their own', async 
     await openEditor(page);
 
     const items = await page
-        .locator('button[title="Copy selected shapes"]')
+        .locator('button[title="Copy"]')
         .locator('xpath=ancestor::ul[1]/li')
         .evaluateAll((elements) =>
             elements.map((element) => element.querySelector('button')?.title ?? '|')
         );
-    const copy = items.indexOf('Copy selected shapes');
+    const copy = items.indexOf('Copy');
 
-    expect(items.slice(copy - 1, copy + 4)).toEqual([
-        '|',
-        'Copy selected shapes',
-        'Cut selected shapes',
-        'Paste copied shapes',
-        '|'
-    ]);
+    expect(items.slice(copy - 1, copy + 4)).toEqual(['|', 'Copy', 'Cut', 'Paste', '|']);
 });
 
 test('the pointer highlights a grouped shape only inside its group', async ({ page }) => {
