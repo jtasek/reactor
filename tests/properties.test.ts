@@ -48,6 +48,7 @@ describe('sharedProperties()', () => {
             y: { value: 20, readOnly: false },
             width: { value: 40, readOnly: true },
             height: { value: 30, readOnly: true },
+            cornerRadius: { value: 0, readOnly: false },
             rotation: { value: 0, readOnly: false },
             visible: { value: true, readOnly: false },
             locked: { value: false, readOnly: false }

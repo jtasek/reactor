@@ -239,7 +239,12 @@ export function boxesEqual(a: Box, b: Box, epsilon = 0.5): boolean {
 export function shapeGeometry(shape: Shape): ShapeInput {
     switch (shape.type) {
         case 'rectangle':
-            return { type: shape.type, position: { ...shape.position }, size: { ...shape.size } };
+            return {
+                type: shape.type,
+                position: { ...shape.position },
+                size: { ...shape.size },
+                cornerRadius: shape.cornerRadius
+            };
         case 'image':
             return {
                 type: shape.type,

@@ -28,6 +28,7 @@ import { PropertyValue, SHAPE_PROPERTIES, applyProperty, canEdit } from '../prop
 import { PasteResult, readClipboard, writeClipboard } from '../clipboard';
 import { takesEditorInput } from 'src/events/input';
 import {
+    cornerRadiusAfterDrag,
     hitTestShape,
     hitTolerance,
     resizeShapeFromHandle,
@@ -804,6 +805,33 @@ export const resizeShape = (
     }
 
     resizeShapeFromHandle(shape, handlerType, position, original ?? shape);
+};
+
+/**
+ * Rounds a rectangle's corners as its radius handle is dragged from `from` to `to`,
+ * from the rectangle as it was when the drag began (`original`).
+ */
+export const roundCorners: ActionWithParam<{
+    shapeId: string;
+    from: Point;
+    to: Point;
+    original: Shape;
+}> = ({ state }, { shapeId, from, to, original }) => {
+    const shape = state.currentDocument.shapes[shapeId];
+
+    if (
+        shape?.type !== 'rectangle' ||
+        original.type !== 'rectangle' ||
+        !isInteractive(state, shapeId)
+    ) {
+        return;
+    }
+
+    const radius = cornerRadiusAfterDrag(original, from, to);
+
+    if (shape.cornerRadius !== radius) {
+        shape.cornerRadius = radius;
+    }
 };
 
 export const rotateShape = (

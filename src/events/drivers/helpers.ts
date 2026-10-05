@@ -75,12 +75,16 @@ const RESIZE_HANDLER_TYPES: Record<ResizeHandlerType, true> = {
 const isResizeHandlerType = (type: string): type is ResizeHandlerType =>
     Object.hasOwn(RESIZE_HANDLER_TYPES, type);
 
-/** Resolves the resize/rotate handle (if any) that an event target belongs to. */
+/** Resolves the resize, rotate or radius handle (if any) that an event target belongs to. */
 export function getHandleTarget(target: EventTarget | null): HandleTarget | undefined {
     const handle = target instanceof Element ? target.closest('[data-handle]') : null;
     const shapeId = handle?.getAttribute('data-shape-id');
     const groupId = handle?.getAttribute('data-group-id');
     const type = handle?.getAttribute('data-type');
+
+    if (type === 'radius') {
+        return shapeId ? { shapeId, type } : undefined;
+    }
 
     if (!(type === 'rotate' || (type && isResizeHandlerType(type)))) {
         return undefined;

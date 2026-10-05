@@ -108,6 +108,12 @@ export const beginGesture = (
     if (handle && 'shapeId' in handle && handleShape) {
         const shapes = snapshotShapes([handleShape]);
 
+        if (handle.type === 'radius') {
+            pointer.gesture = { ...owner, kind: 'rounding', shapeId: handle.shapeId, shapes };
+
+            return true;
+        }
+
         pointer.gesture =
             handle.type === 'rotate'
                 ? { ...owner, kind: 'rotating', shapeId: handle.shapeId, shapes }
@@ -268,6 +274,15 @@ export const movePointer = (
         actions.rotateShape({ shapeId: gesture.shapeId, position });
     }
 
+    if (gesture.kind === 'rounding') {
+        actions.roundCorners({
+            shapeId: gesture.shapeId,
+            from: pointer.start,
+            to: position,
+            original: gesture.shapes[gesture.shapeId]
+        });
+    }
+
     if (gesture.kind === 'resizingGroup') {
         const { groupId, handle, shapes, frame } = gesture;
 
@@ -357,7 +372,13 @@ export const cancelGesture = (
 
             // Restore what the gesture edited, but keep the live hover state.
             if (shape) {
-                Object.assign(shape, json(snapshot), { active: shape.active });
+                const restored = json(snapshot);
+
+                // A field the gesture added, such as a corner radius, goes as well.
+                Object.keys(shape)
+                    .filter((key) => !(key in restored))
+                    .forEach((key) => Reflect.deleteProperty(shape, key));
+                Object.assign(shape, restored, { active: shape.active });
             }
         });
     }

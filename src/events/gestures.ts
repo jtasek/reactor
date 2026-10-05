@@ -16,6 +16,8 @@ export const KEEPS_SHAPE_BOUNDS: Record<Gesture['kind'], boolean> = {
     moving: true,
     resizing: true,
     rotating: true,
+    // Rounding the corners leaves the box they are drawn in as it is.
+    rounding: true,
     resizingGroup: true,
     rotatingGroup: true
 };

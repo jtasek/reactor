@@ -1,5 +1,5 @@
 import type { Document, Shape } from './types';
-import { translateShape } from './geometry';
+import { limitCornerRadius, translateShape } from './geometry';
 import {
     DEFAULT_TEXT_FONT_SIZE,
     getShapeBounds,
@@ -87,6 +87,21 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         group: 'Shape',
         kind: 'number',
         read: (shape) => getShapeBounds(shape).height
+    },
+    {
+        key: 'cornerRadius',
+        label: 'Radius',
+        group: 'Shape',
+        kind: 'number',
+        read: (shape) =>
+            shape.type === 'rectangle'
+                ? limitCornerRadius(shape.size, shape.cornerRadius ?? 0)
+                : undefined,
+        write: (shape, value) => {
+            if (shape.type === 'rectangle') {
+                shape.cornerRadius = limitCornerRadius(shape.size, value);
+            }
+        }
     },
     {
         key: 'rotation',

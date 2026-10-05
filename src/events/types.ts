@@ -63,6 +63,7 @@ export type Gesture =
                     shapes: ShapesSnapshot;
                 }
               | { kind: 'rotating'; shapeId: string; shapes: ShapesSnapshot }
+              | { kind: 'rounding'; shapeId: string; shapes: ShapesSnapshot }
               | {
                     kind: 'resizingGroup';
                     groupId: string;
@@ -85,8 +86,10 @@ export type TouchContact = { id: number; point: Point };
 /** What a handle resizes or rotates: a shape, or a group as one. */
 export type HandleOwner = { shapeId: string } | { groupId: string };
 
-/** A resize or rotate handle under the pointer when a gesture starts. */
-export type HandleTarget = { type: ResizeHandlerType | 'rotate' } & HandleOwner;
+/** A resize, rotate or radius handle under the pointer when a gesture starts. */
+export type HandleTarget =
+    | ({ type: ResizeHandlerType | 'rotate' } & HandleOwner)
+    | { type: 'radius'; shapeId: string };
 
 export interface Pointer {
     background: boolean;

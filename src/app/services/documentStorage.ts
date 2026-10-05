@@ -225,7 +225,12 @@ export function readShapeGeometry(value: unknown) {
     // unused `position` for them, which is dropped here.
     switch (s.type) {
         case 'rectangle':
-            return { type: s.type, position: point(s.position), size: size(s.size) };
+            return {
+                type: s.type,
+                position: point(s.position),
+                size: size(s.size),
+                ...(s.cornerRadius === undefined ? {} : { cornerRadius: number(s.cornerRadius, 0) })
+            };
         case 'image':
             return {
                 type: s.type,

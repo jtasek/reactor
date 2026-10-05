@@ -5,6 +5,7 @@ import type { Command, Point, Size } from 'src/app/types';
 import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
 import { newShapeName } from 'src/app/factories';
+import { limitCornerRadius } from 'src/app/geometry';
 import { usePointer } from 'src/app/hooks';
 import { Context } from 'src/app';
 
@@ -27,6 +28,7 @@ interface Props {
     selected: boolean;
     size: Size;
     type: 'rectangle';
+    cornerRadius?: number;
 }
 
 export const createRectProps = ({ size, topLeft }: Pointer, designMode = false): Props => {
@@ -41,9 +43,10 @@ export const createRectProps = ({ size, topLeft }: Pointer, designMode = false):
     };
 };
 
-export const Rect: FC<Props> = ({ name, position, size, selected }) => {
+export const Rect: FC<Props> = ({ name, position, size, selected, cornerRadius = 0 }) => {
     const shape = useRef(null);
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
+    const radius = size ? limitCornerRadius(size, cornerRadius) : undefined;
 
     return (
         <rect
@@ -52,6 +55,8 @@ export const Rect: FC<Props> = ({ name, position, size, selected }) => {
             fill="none"
             height={size?.height}
             ref={shape}
+            rx={radius}
+            ry={radius}
             width={size?.width}
             x={position?.x}
             y={position?.y}
