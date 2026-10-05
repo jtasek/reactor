@@ -219,6 +219,7 @@ export interface Document {
     selectedShapes: Shape[];
     selectedShapesIds: string[];
     selectionExtent: Box | null;
+    movableSelectedItems: string[][];
     shapes: HashTable<Shape>;
     shapesIds: string[];
     /** The one layer this screen shows, with the shapes on no layer; all layers when unset. */

@@ -1,6 +1,5 @@
 import type { Command, Orientation } from 'src/app/types';
 import { ALIGN_MINIMUM, AlignTo, SPACE_MINIMUM, Spacing } from 'src/app/alignment';
-import { movableSelectedItems } from 'src/app/membership';
 
 const alignCommand = (
     id: string,
@@ -15,7 +14,7 @@ const alignCommand = (
     description: `${name}: line the selected items up on their box`,
     icon: { group: 'editor', name: icon, size: 24 },
     shortcut,
-    canExecute: ({ state }) => movableSelectedItems(state.currentDocument).length >= ALIGN_MINIMUM,
+    canExecute: ({ state }) => state.currentDocument.movableSelectedItems.length >= ALIGN_MINIMUM,
     execute: ({ actions }) => actions.alignSelection(to)
 });
 
@@ -35,7 +34,7 @@ const spaceCommand = (
             : `${name}: equal distances between the selected items' centers, the outermost staying`,
     icon: { group: 'reactor', name: `space_${spacing}_${axis}`, size: 24 },
     shortcut,
-    canExecute: ({ state }) => movableSelectedItems(state.currentDocument).length >= SPACE_MINIMUM,
+    canExecute: ({ state }) => state.currentDocument.movableSelectedItems.length >= SPACE_MINIMUM,
     execute: ({ actions }) => actions.spaceSelection({ axis, spacing })
 });
 
@@ -44,42 +43,42 @@ export const AlignLeftCommand = alignCommand(
     'Align left',
     'left',
     'format_align_left',
-    'alt+a'
+    'shift+a'
 );
 export const AlignCenterCommand = alignCommand(
     'align-center',
     'Align center',
     'center',
     'format_align_center',
-    'alt+h'
+    'shift+c'
 );
 export const AlignRightCommand = alignCommand(
     'align-right',
     'Align right',
     'right',
     'format_align_right',
-    'alt+d'
+    'shift+d'
 );
 export const AlignTopCommand = alignCommand(
     'align-top',
     'Align top',
     'top',
     'vertical_align_top',
-    'alt+w'
+    'shift+w'
 );
 export const AlignMiddleCommand = alignCommand(
     'align-middle',
     'Align middle',
     'middle',
     'vertical_align_center',
-    'alt+v'
+    'shift+m'
 );
 export const AlignBottomCommand = alignCommand(
     'align-bottom',
     'Align bottom',
     'bottom',
     'vertical_align_bottom',
-    'alt+s'
+    'shift+s'
 );
 
 export const SpaceBetweenHorizontallyCommand = spaceCommand(
@@ -87,14 +86,14 @@ export const SpaceBetweenHorizontallyCommand = spaceCommand(
     'Space between horizontally',
     'horizontal',
     'between',
-    'alt+b'
+    'shift+x'
 );
 export const SpaceBetweenVerticallyCommand = spaceCommand(
     'space-between-vertically',
     'Space between vertically',
     'vertical',
     'between',
-    'alt+shift+b'
+    'shift+y'
 );
 export const SpaceEquallyHorizontallyCommand = spaceCommand(
     'space-equally-horizontally',

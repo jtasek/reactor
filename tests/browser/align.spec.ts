@@ -13,7 +13,7 @@ test('the align commands line up the selection, from their keys and the command 
 
     const rects = shapes(page).locator('rect[data-cy]');
 
-    await page.keyboard.press('Alt+a');
+    await page.keyboard.press('Shift+A');
     await expect(rects.nth(1)).toHaveAttribute('x', '300');
 
     await page

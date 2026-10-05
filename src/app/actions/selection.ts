@@ -9,13 +9,7 @@ import {
 } from '../alignment';
 import { translateShape } from '../geometry';
 import { getCommand } from './startup';
-import {
-    drawnExtent,
-    editableSelectedShapesIds,
-    movableSelectedItems,
-    selectedItems,
-    shapeGroup
-} from '../membership';
+import { drawnExtent, editableSelectedShapesIds, selectedItems, shapeGroup } from '../membership';
 import { isShapeVisible } from '../utils';
 
 const unselect = ({ shapes }: Document, shapeIds: string[]) => {
@@ -123,7 +117,7 @@ export const runCommandOn: ActionWithParam<{ shapeIds: string[]; commandId: stri
 
 /** The movable selected items, each with the box its shown shapes are drawn in. */
 const placedItems = (document: Document) =>
-    movableSelectedItems(document).flatMap((shapeIds) => {
+    document.movableSelectedItems.flatMap((shapeIds) => {
         const box = drawnExtent(
             document,
             shapeIds.filter((id) => isShapeVisible(document, id))

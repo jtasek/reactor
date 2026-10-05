@@ -155,6 +155,40 @@ describe('the alignment commands', () => {
         expect(bar.type === 'rectangle' && bar.position.y).toBeCloseTo(40);
     });
 
+    it('run from Shift and a letter, which no browser or system takes', () => {
+        const { store, ids, select, positions } = storeWith(square(10, 0), square(50, 30, 20));
+        const press = (key: string, modifiers: { shiftKey?: boolean; altKey?: boolean } = {}) =>
+            store.actions.events.pressShortcut({
+                key,
+                code: `Key${key.toUpperCase()}`,
+                altKey: false,
+                ctrlKey: false,
+                metaKey: false,
+                shiftKey: false,
+                ...modifiers
+            });
+
+        select(...ids);
+        expect(press('a', { altKey: true })).toBe(false);
+        expect(press('A', { shiftKey: true })).toBe(true);
+        expect(positions()[1]).toEqual({ x: 10, y: 30 });
+    });
+
+    it('share one list of the items they may move, kept until the selection changes', () => {
+        const { store, ids, select } = storeWith(square(0), square(20), square(40));
+        const items = () => store.state.currentDocument.movableSelectedItems;
+
+        select(...ids);
+
+        const listed = items();
+
+        expect(listed).toEqual(ids.map((id) => [id]));
+        expect(items()).toBe(listed);
+
+        store.actions.lockShape(ids[2]);
+        expect(items()).toEqual([[ids[0]], [ids[1]]]);
+    });
+
     it('are not available without enough items they may move', () => {
         const { store, ids, select, run } = storeWith(square(0), square(20), square(40));
         const refused = (name: string) => `${name} is not available right now`;

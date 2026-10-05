@@ -411,7 +411,7 @@ export function selectionScope(document: Document): CommandScope | null {
  * as one with all its shapes, hidden ones too, and each other selected shape;
  * none with a locked shape.
  */
-export function movableSelectedItems(document: Document): string[][] {
+export function listMovableSelectedItems(document: Document): string[][] {
     const { groups, shapes } = selectedItems(document);
     const unlocked = (shapeIds: string[]) => !shapeIds.some((id) => isShapeLocked(document, id));
 
