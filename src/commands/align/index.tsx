@@ -11,7 +11,7 @@ const alignCommand = (
     id,
     name,
     category: 'align',
-    inCommandBar: false,
+    places: ['inspector'],
     description: `${name}: line the selected items up on their box`,
     icon: { group: 'editor', name: icon, size: 24 },
     shortcut,
@@ -29,7 +29,7 @@ const spaceCommand = (
     id,
     name,
     category: 'space',
-    inCommandBar: false,
+    places: ['inspector'],
     description:
         spacing === 'between'
             ? `${name}: equal gaps between the selected items, the outermost staying`

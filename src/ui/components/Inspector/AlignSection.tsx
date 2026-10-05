@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 import { ALIGN_MINIMUM } from 'src/app/alignment';
 import {
     useActions,
-    useCommands,
+    usePlacedCommands,
     useCommandsEnabled,
     useMovableSelectedItemsCount
 } from 'src/app/hooks';
@@ -18,7 +18,9 @@ const SECTION_CATEGORIES = new Set(ROWS.map(({ category }) => category));
 
 /** The align and space commands, for two selected items or more. */
 export const AlignSection: FC = () => {
-    const commands = useCommands().filter(({ category }) => SECTION_CATEGORIES.has(category));
+    const commands = usePlacedCommands('inspector').filter(({ category }) =>
+        SECTION_CATEGORIES.has(category)
+    );
     const enabled = useCommandsEnabled(commands);
     const movable = useMovableSelectedItemsCount();
     const { runCommand } = useActions();

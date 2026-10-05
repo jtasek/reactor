@@ -247,6 +247,9 @@ export type ActionWithParamAndResult<T, R> = (context: Context, param: T) => R;
  */
 export type CommandGuard = (context: Pick<Context, 'state'>) => boolean;
 
+/** Where a command is offered as a button. */
+export type CommandPlace = 'commandBar' | 'inspector';
+
 /** What a command acts on: one shape, a group selected as one, a layer, or several items. */
 export type CommandScope = 'shape' | 'group' | 'layer' | 'selection';
 
@@ -263,8 +266,8 @@ export interface Command {
      * pressed, so it gets the event's data without asking to read the clipboard.
      */
     clipboardEvent?: 'copy' | 'cut' | 'paste';
-    /** Whether the command bar shows the command; it does unless this is false. */
-    inCommandBar?: boolean;
+    /** Where the command is offered as a button; in the command bar unless named. */
+    places?: CommandPlace[];
     /** The items whose menus offer the command. */
     scopes?: CommandScope[];
     /** Its place in those menus, lowest first. */

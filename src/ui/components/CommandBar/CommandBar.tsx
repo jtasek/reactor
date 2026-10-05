@@ -1,6 +1,6 @@
 import React, { FC, Fragment, useState } from 'react';
 
-import { useCommands } from 'src/app/hooks';
+import { usePlacedCommands } from 'src/app/hooks';
 import type { Command } from 'src/app/types';
 
 import { CommandBarDelimiter } from './CommandBarDelimiter';
@@ -23,7 +23,7 @@ function groupCommands(commands: Command[]): Record<string, Command[]> {
 }
 
 export const CommandBar: FC = () => {
-    const commands = useCommands().filter(({ inCommandBar }) => inCommandBar !== false);
+    const commands = usePlacedCommands('commandBar');
     const [hovered, setHovered] = useState<Command>();
     const [focused, setFocused] = useState<Command>();
     const description = (hovered ?? focused)?.description;
