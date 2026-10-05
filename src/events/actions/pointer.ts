@@ -109,7 +109,13 @@ export const beginGesture = (
         const shapes = snapshotShapes([handleShape]);
 
         if (handle.type === 'radius') {
-            pointer.gesture = { ...owner, kind: 'rounding', shapeId: handle.shapeId, shapes };
+            pointer.gesture = {
+                ...owner,
+                kind: 'rounding',
+                shapeId: handle.shapeId,
+                corner: handle.corner,
+                shapes
+            };
 
             return true;
         }
@@ -277,6 +283,7 @@ export const movePointer = (
     if (gesture.kind === 'rounding') {
         actions.roundCorners({
             shapeId: gesture.shapeId,
+            corner: gesture.corner,
             from: pointer.start,
             to: position,
             original: gesture.shapes[gesture.shapeId]

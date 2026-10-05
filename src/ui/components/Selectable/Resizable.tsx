@@ -118,7 +118,8 @@ export const Resizable: FC<Props> = ({ shape }) => {
     const activeHandle =
         gesture.kind === 'resizing' && gesture.shapeId === shape.id ? gesture.handle : undefined;
     const rotateActive = gesture.kind === 'rotating' && gesture.shapeId === shape.id;
-    const roundingActive = gesture.kind === 'rounding' && gesture.shapeId === shape.id;
+    const activeCorner =
+        gesture.kind === 'rounding' && gesture.shapeId === shape.id ? gesture.corner : undefined;
 
     if (!shape.selected) {
         return null;
@@ -140,7 +141,7 @@ export const Resizable: FC<Props> = ({ shape }) => {
                 rotateActive={rotateActive}
             />
             {shape.type === 'rectangle' && (
-                <RadiusHandle rectangle={shape} active={roundingActive} />
+                <RadiusHandle rectangle={shape} activeCorner={activeCorner} />
             )}
         </>
     );

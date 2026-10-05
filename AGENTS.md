@@ -271,11 +271,12 @@ Examples worth modelling new tools on:
 
 - `Rect` — canonical simple tool using `pointer.topLeft` / `pointer.size`. A rectangle's
   `cornerRadius` rounds its corners, drawn at most half its shorter side (`limitCornerRadius`).
-  It is set in the inspector's Radius field, or by the radius handle (`RadiusHandle`) inside
-  the top left corner: the `rounding` gesture grows it by how far the handle is dragged in
-  along the diagonal (`cornerRadiusAfterDrag`), and a badge shows it meanwhile. The handle
-  stays in the corner's quarter, clear of the middle a press moves the shape by. A group's
-  resize scales it with the rectangle.
+  It is set in the inspector's Radius field, or by the radius handles (`RadiusHandle`), one
+  inside each corner: the `rounding` gesture grows it, for all four corners, by how far a
+  handle is dragged in along its corner's diagonal (`cornerRadiusAfterDrag`,
+  `CORNER_INWARD`), and a badge shows it meanwhile. The handles stay in their corners'
+  quarters, clear of the middle a press moves the shape by. A group's resize scales it with
+  the rectangle.
 - `Image` — rect-like, but preserves the image's **intrinsic** aspect ratio. Choosing the
   tool runs its `activate`, which asks for a file (`effects.assets.pickImage`); the image is
   checked by its content, kept in the document database under the SHA-256 of its bytes, and

@@ -10,7 +10,9 @@ test('a rectangle’s corners are rounded by its radius handle and in the inspec
     const surface = (await page.locator('svg#surface').boundingBox())!;
     const rect = shapes(page).locator('rect[data-cy]').first();
     const radiusField = page.getByLabel('Radius', { exact: true });
-    const handle = page.locator('svg#surface [data-handle][data-type="radius"]');
+    const handle = page.locator(
+        'svg#surface [data-handle][data-type="radius"][data-corner="topLeft"]'
+    );
 
     // Square, the handle stays 12 pixels in from the top left corner.
     await expect(handle).toHaveAttribute('cx', '312');
@@ -32,7 +34,7 @@ test('a rectangle’s corners are rounded by its radius handle and in the inspec
     await expect(radiusField).toHaveValue('50');
 
     // A canceled drag leaves the corners as they were.
-    const target = '[data-handle][data-type="radius"]';
+    const target = '[data-handle][data-type="radius"][data-corner="topLeft"]';
 
     await pointer(page, 'pointerdown', { x: 350, y: 250, target });
     await pointer(page, 'pointermove', { x: 320, y: 220 });
@@ -50,8 +52,10 @@ test('the radius handle shows the radius while dragged, and stays off a round sq
     const surface = (await page.locator('svg#surface').boundingBox())!;
     const rect = shapes(page).locator('rect[data-cy]').first();
     const radiusField = page.getByLabel('Radius', { exact: true });
-    const handle = page.locator('svg#surface [data-handle][data-type="radius"]');
-    const target = '[data-handle][data-type="radius"]';
+    const handle = page.locator(
+        'svg#surface [data-handle][data-type="radius"][data-corner="topLeft"]'
+    );
+    const target = '[data-handle][data-type="radius"][data-corner="topLeft"]';
 
     await pointer(page, 'pointerdown', { x: 312, y: 212, target });
     await pointer(page, 'pointermove', { x: 320, y: 220 });
@@ -80,7 +84,7 @@ test('the radius handle follows a turned rectangle, and is not offered too small
 
     const rect = shapes(page).locator('rect[data-cy]').first();
     const handles = page.locator('svg#surface [data-handle][data-type="radius"]');
-    const target = '[data-handle][data-type="radius"]';
+    const target = '[data-handle][data-type="radius"][data-corner="topLeft"]';
     const rotation = page.getByLabel('Rotation', { exact: true });
 
     // Turned half a turn, its top left corner is at the bottom right, so in is up and left.
@@ -88,7 +92,7 @@ test('the radius handle follows a turned rectangle, and is not offered too small
     await rotation.press('Enter');
     // Shortcuts wait while a field has focus.
     await rotation.blur();
-    const box = (await handles.boundingBox())!;
+    const box = (await handles.and(page.locator('[data-corner="topLeft"]')).boundingBox())!;
     const surface = (await page.locator('svg#surface').boundingBox())!;
     const at = { x: box.x + box.width / 2 - surface.x, y: box.y + box.height / 2 - surface.y };
 
@@ -105,10 +109,35 @@ test('the radius handle follows a turned rectangle, and is not offered too small
 
     // Two rectangles grouped are resized as one, without radius handles.
     await drawRect(page, { x: 600, y: 200 }, { x: 680, y: 280 });
-    await expect(handles).toHaveCount(1);
+    await expect(handles).toHaveCount(4);
     await pointer(page, 'pointerdown', { x: 490, y: 190 });
     await pointer(page, 'pointermove', { x: 700, y: 300 });
     await pointer(page, 'pointerup', { x: 700, y: 300 });
     await page.keyboard.press('ControlOrMeta+g');
     await expect(handles).toHaveCount(0);
+});
+
+test('each corner has a radius handle, and any of them rounds all four corners', async ({
+    page
+}) => {
+    await openEditor(page);
+    await drawRect(page, { x: 300, y: 200 }, { x: 500, y: 300 });
+
+    const rect = shapes(page).locator('rect[data-cy]').first();
+    const handles = page.locator('svg#surface [data-handle][data-type="radius"]');
+    const corner = (name: string) => handles.and(page.locator(`[data-corner="${name}"]`));
+    const target = '[data-handle][data-type="radius"][data-corner="bottomRight"]';
+
+    await expect(handles).toHaveCount(4);
+    await expect(corner('topRight')).toHaveAttribute('cx', '488');
+    await expect(corner('bottomLeft')).toHaveAttribute('cy', '288');
+
+    await pointer(page, 'pointerdown', { x: 488, y: 288, target });
+    await pointer(page, 'pointermove', { x: 478, y: 278 });
+    await expect(page.locator('svg#surface').getByText('Radius 10', { exact: true })).toBeVisible();
+    await pointer(page, 'pointerup', { x: 478, y: 278 });
+
+    await expect(rect).toHaveAttribute('rx', '10');
+    await expect(corner('bottomRight')).toHaveAttribute('cx', '488');
+    await expect(corner('topLeft')).toHaveAttribute('cx', '312');
 });

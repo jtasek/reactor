@@ -1,4 +1,4 @@
-import { Box, Point, ResizeHandlerType, Shape, Size } from '../app/types';
+import { Box, Corner, Point, ResizeHandlerType, Shape, Size } from '../app/types';
 import type { GroupFrame } from '../app/membership';
 import type { SnapLines } from '../app/snapping';
 
@@ -63,7 +63,7 @@ export type Gesture =
                     shapes: ShapesSnapshot;
                 }
               | { kind: 'rotating'; shapeId: string; shapes: ShapesSnapshot }
-              | { kind: 'rounding'; shapeId: string; shapes: ShapesSnapshot }
+              | { kind: 'rounding'; shapeId: string; corner: Corner; shapes: ShapesSnapshot }
               | {
                     kind: 'resizingGroup';
                     groupId: string;
@@ -89,7 +89,7 @@ export type HandleOwner = { shapeId: string } | { groupId: string };
 /** A resize, rotate or radius handle under the pointer when a gesture starts. */
 export type HandleTarget =
     | ({ type: ResizeHandlerType | 'rotate' } & HandleOwner)
-    | { type: 'radius'; shapeId: string };
+    | { type: 'radius'; shapeId: string; corner: Corner };
 
 export interface Pointer {
     background: boolean;

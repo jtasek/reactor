@@ -29,6 +29,7 @@ describe('corner radius', () => {
         const drag = (from: [number, number], to: [number, number], fields = {}) =>
             cornerRadiusAfterDrag(
                 rectangle(fields),
+                'topLeft',
                 { x: from[0], y: from[1] },
                 { x: to[0], y: to[1] }
             );
@@ -44,7 +45,27 @@ describe('corner radius', () => {
         // Turned half a turn, its top left corner is at the bottom right, so in is up and left.
         const turned = rectangle({ rotation: 180 });
 
-        expect(cornerRadiusAfterDrag(turned, { x: 88, y: 28 }, { x: 78, y: 18 })).toBeCloseTo(10);
+        expect(
+            cornerRadiusAfterDrag(turned, 'topLeft', { x: 88, y: 28 }, { x: 78, y: 18 })
+        ).toBeCloseTo(10);
+    });
+
+    it('grows as any corner’s handle is dragged in along that corner’s diagonal', () => {
+        const shape = rectangle();
+
+        expect(cornerRadiusAfterDrag(shape, 'topRight', { x: 88, y: 12 }, { x: 78, y: 22 })).toBe(
+            10
+        );
+        expect(
+            cornerRadiusAfterDrag(shape, 'bottomRight', { x: 88, y: 28 }, { x: 78, y: 18 })
+        ).toBe(10);
+        expect(cornerRadiusAfterDrag(shape, 'bottomLeft', { x: 12, y: 28 }, { x: 22, y: 18 })).toBe(
+            10
+        );
+        // Out of the bottom right corner squares it.
+        expect(
+            cornerRadiusAfterDrag(shape, 'bottomRight', { x: 88, y: 28 }, { x: 98, y: 38 })
+        ).toBe(0);
     });
 
     it('is edited in the inspector for rectangles only, as drawn', () => {
@@ -88,10 +109,14 @@ describe('corner radius', () => {
         });
         const shapeId = store.state.currentDocument.shapesIds[0];
         const shape = () => store.state.currentDocument.shapes[shapeId] as Rectangle;
-        const handle = { shapeId, type: 'radius' as const };
+        const handle = { shapeId, type: 'radius' as const, corner: 'topLeft' as const };
 
         events.beginGesture({ pointerId: 1, position: { x: 4, y: 4 }, handle });
-        expect(store.state.events.pointer.gesture).toMatchObject({ kind: 'rounding', shapeId });
+        expect(store.state.events.pointer.gesture).toMatchObject({
+            kind: 'rounding',
+            shapeId,
+            corner: 'topLeft'
+        });
 
         events.movePointer({ pointerId: 1, position: { x: 10, y: 14 } });
         expect(shape().cornerRadius).toBe(8);
@@ -103,10 +128,19 @@ describe('corner radius', () => {
         events.endGesture({ pointerId: 1, position: { x: 6, y: 10 } });
         expect(shape().cornerRadius).toBe(4);
 
+        // The bottom right handle rounds them too, dragged up and left.
+        events.beginGesture({
+            pointerId: 1,
+            position: { x: 90, y: 30 },
+            handle: { ...handle, corner: 'bottomRight' }
+        });
+        events.endGesture({ pointerId: 1, position: { x: 84, y: 24 } });
+        expect(shape().cornerRadius).toBe(10);
+
         store.actions.lockShape(shapeId);
         events.beginGesture({ pointerId: 1, position: { x: 8, y: 8 }, handle });
         events.endGesture({ pointerId: 1, position: { x: 20, y: 20 } });
-        expect(shape().cornerRadius).toBe(4);
+        expect(shape().cornerRadius).toBe(10);
     });
 
     it('scales with its group, as the group’s other shapes do', () => {

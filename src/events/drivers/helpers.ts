@@ -1,6 +1,7 @@
-import type { Camera, Point, ResizeHandlerType } from 'src/app/types';
+import type { Camera, Corner, Point, ResizeHandlerType } from 'src/app/types';
 import type { HandleTarget } from 'src/events/types';
 import { isFinitePoint, screenToWorld } from 'src/app/camera';
+import { CORNER_INWARD } from 'src/app/geometry';
 
 type ScreenMatrix = Pick<DOMMatrix, 'a' | 'b' | 'c' | 'd' | 'e' | 'f'>;
 type Surface = { getScreenCTM: () => ScreenMatrix | null };
@@ -83,7 +84,11 @@ export function getHandleTarget(target: EventTarget | null): HandleTarget | unde
     const type = handle?.getAttribute('data-type');
 
     if (type === 'radius') {
-        return shapeId ? { shapeId, type } : undefined;
+        const corner = handle?.getAttribute('data-corner');
+
+        return shapeId && corner && Object.hasOwn(CORNER_INWARD, corner)
+            ? { shapeId, type, corner: corner as Corner }
+            : undefined;
     }
 
     if (!(type === 'rotate' || (type && isResizeHandlerType(type)))) {
