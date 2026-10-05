@@ -102,6 +102,7 @@
 }
 
 .navBar li.new:before {
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- no design token yet */
   background-color: deeppink;
   border-radius: 50%;
   content: '';

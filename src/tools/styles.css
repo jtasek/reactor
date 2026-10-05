@@ -1,5 +1,6 @@
 .shape {
     fill: none;
+    /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- no design token yet */
     stroke: rgba(71, 74, 81, 1.0);
     stroke-width: 2;
 }
