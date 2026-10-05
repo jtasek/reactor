@@ -5,7 +5,7 @@ import { ErrorBoundary } from '../ErrorBoundary';
 import { GridContainer as Grid } from '../Grid';
 import { GuideGrips, Guides } from './Guides';
 import { Rulers } from '../Rulers';
-import { LockedItemMenu, SelectionMenu } from '../SelectionMenu';
+import { CanvasMenus } from '../SelectionMenu';
 import { Shapes } from './Shapes';
 import { SnapLines } from '../SnapLines';
 import { Stack } from 'src/tools/components/Stack';
@@ -27,7 +27,6 @@ export const Canvas: FC = () => (
             <Guides />
             <Rulers />
         </Surface>
-        <SelectionMenu />
-        <LockedItemMenu />
+        <CanvasMenus />
     </>
 );

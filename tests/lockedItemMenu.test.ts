@@ -98,4 +98,23 @@ describe('hoveredLockedItem', () => {
         expect(Object.keys(document().groups)).toHaveLength(1);
         expect(hovered()).toBeNull();
     });
+
+    it('is the group double-clicked into once that group is locked', () => {
+        const { store, document, first, third, hovered, hover } = setup();
+
+        store.actions.selectShape(first);
+        store.actions.selectShape(third);
+        store.actions.submitCommandLine('group');
+        const groupId = Object.keys(document().groups)[0];
+
+        store.actions.events.setCurrentPosition({ x: 5, y: 5 });
+        store.actions.enterGroupAtPointer();
+        expect(store.state.enteredGroupId).toBe(groupId);
+
+        store.actions.unselectShapes();
+        store.actions.toggleGroupLocked(groupId);
+        hover(first);
+
+        expect(hovered()).toEqual({ kind: 'group', id: groupId });
+    });
 });

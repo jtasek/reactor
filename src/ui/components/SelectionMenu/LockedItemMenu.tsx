@@ -1,20 +1,17 @@
-import React, { FC, useEffect, useRef, useState } from 'react';
+import React, { FC } from 'react';
 import type { CanvasItem } from 'src/app/membership';
 import type { SelectionMenuPlacement } from 'src/app/selectionMenu';
-import {
-    useActions,
-    useGroup,
-    useHoveredLockedItem,
-    useLockedItemMenuPlacement,
-    useScopedCommands,
-    useShape
-} from 'src/app/hooks';
+import { useActions, useGroup, useScopedCommands, useShape } from 'src/app/hooks';
 import { hideAction, lockAction, useItemCommandActions } from '../ItemMenu';
 import { CanvasMenu } from './CanvasMenu';
 
-type MenuProps = { id: string; placement: SelectionMenuPlacement };
+type MenuProps = {
+    id: string;
+    placement: SelectionMenuPlacement;
+    onEngagedChange: (engaged: boolean) => void;
+};
 
-const LockedShapeMenu: FC<MenuProps> = ({ id, placement }) => {
+const LockedShapeMenu: FC<MenuProps> = ({ id, placement, onEngagedChange }) => {
     const shape = useShape(id);
     const { toggleShapeLocked, toggleShapeVisible } = useActions();
     const commands = useItemCommandActions([id], true);
@@ -29,11 +26,12 @@ const LockedShapeMenu: FC<MenuProps> = ({ id, placement }) => {
                 lockAction(true, () => toggleShapeLocked(id)),
                 ...commands(useScopedCommands('shape'))
             ]}
+            onEngagedChange={onEngagedChange}
         />
     );
 };
 
-const LockedGroupMenu: FC<MenuProps> = ({ id, placement }) => {
+const LockedGroupMenu: FC<MenuProps> = ({ id, placement, onEngagedChange }) => {
     const group = useGroup(id);
     const { toggleGroupLocked, toggleGroupVisible } = useActions();
     const commands = useItemCommandActions(group.shapesIds, true);
@@ -48,41 +46,34 @@ const LockedGroupMenu: FC<MenuProps> = ({ id, placement }) => {
                 lockAction(true, () => toggleGroupLocked(id)),
                 ...commands(useScopedCommands('group'))
             ]}
+            onEngagedChange={onEngagedChange}
         />
     );
 };
 
-const sameItem = (a: CanvasItem | null, b: CanvasItem | null) =>
-    a?.kind === b?.kind && a?.id === b?.id;
+interface Props {
+    item: CanvasItem;
+    placement: SelectionMenuPlacement;
+    onEngagedChange: (engaged: boolean) => void;
+}
 
 /**
- * The menu of the locked shape or group under the pointer, which a press passes
- * through, so it cannot be selected for the selection's menu. It fades in over
- * the item and stays while the pointer goes to it, as the selection's does.
+ * The menu of a locked shape or group, which a press passes through, so it cannot
+ * be selected for the selection's menu.
  */
-export const LockedItemMenu: FC = () => {
-    const hovered = useHoveredLockedItem();
-    const [item, setItem] = useState<CanvasItem | null>(null);
-    const shownBefore = useRef(false);
-
-    // The last item hovered keeps its menu while the pointer leaves it for the menu.
-    if (hovered && !sameItem(hovered, item)) {
-        setItem(hovered);
-    }
-
-    const placement = useLockedItemMenuPlacement(item, shownBefore.current);
-
-    useEffect(() => {
-        shownBefore.current = placement?.shown ?? false;
-    });
-
-    if (!item || !placement) {
-        return null;
-    }
-
-    return item.kind === 'shape' ? (
-        <LockedShapeMenu key={item.id} id={item.id} placement={placement} />
+export const LockedItemMenu: FC<Props> = ({ item, placement, onEngagedChange }) =>
+    item.kind === 'shape' ? (
+        <LockedShapeMenu
+            key={item.id}
+            id={item.id}
+            placement={placement}
+            onEngagedChange={onEngagedChange}
+        />
     ) : (
-        <LockedGroupMenu key={item.id} id={item.id} placement={placement} />
+        <LockedGroupMenu
+            key={item.id}
+            id={item.id}
+            placement={placement}
+            onEngagedChange={onEngagedChange}
+        />
     );
-};

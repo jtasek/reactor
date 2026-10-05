@@ -201,8 +201,8 @@ export type CanvasItem = { kind: 'shape' | 'group'; id: string };
 /**
  * The locked item under the pointer, whose menu the canvas shows while presses pass
  * through it: the group of the shape under the pointer, or of the box the pointer is
- * in, when that group is locked and not double-clicked into, or else the shape, when
- * it is locked and in no group a press would select. None when the item is selected,
+ * in, when that group is locked, or else the shape, when it is locked and in no group
+ * a press would select. None when the item is selected,
  * as the selection's menu is then shown, off the canvas or during a drag.
  */
 export function hoveredLockedItem(
@@ -220,7 +220,8 @@ export function hoveredLockedItem(
             ? groupAtPoint(document, pointer.current, enteredGroupId)
             : shapeGroup(document, shapeId);
 
-    if (group && group.id !== enteredGroupId) {
+    // Locked, the group double-clicked into passes presses through its shapes too.
+    if (group && (group.id !== enteredGroupId || group.locked)) {
         return group.locked && !selectedGroupsIdsOf(document, enteredGroupId).includes(group.id)
             ? { kind: 'group', id: group.id }
             : null;
