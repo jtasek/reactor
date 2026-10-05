@@ -1,19 +1,30 @@
 import React, { FC } from 'react';
-import { Point, Guide as GuideType } from 'src/app/types';
+import type { PointerEvent as ReactPointerEvent } from 'react';
+import { Orientation } from 'src/app/types';
+
+import styles from './styles.css';
 
 export interface Props {
-    guide: GuideType;
-    position: Point;
-    scale: number;
+    orientation: Orientation;
+    /** Screen pixels from the canvas's top edge when horizontal, its left edge when vertical. */
+    at: number;
+    /** Whether releasing the guide here removes it. */
+    leaving?: boolean;
+    onPointerDown?: (event: ReactPointerEvent<SVGElement>) => void;
 }
 
-export const Guide: FC<Props> = ({ guide, position, scale }) => (
-    <line
-        x1={guide.orientation === 'horizontal' ? 0 : guide.position.x * scale + position.x}
-        y1={guide.orientation === 'horizontal' ? guide.position.y * scale + position.y : 0}
-        x2={guide.orientation === 'horizontal' ? '100%' : guide.position.x * scale + position.x}
-        y2={guide.orientation === 'horizontal' ? guide.position.y * scale + position.y : '100%'}
-        strokeWidth="1"
-        stroke="purple"
-    />
-);
+export const Guide: FC<Props> = ({ orientation, at, leaving = false, onPointerDown }) => {
+    const ends =
+        orientation === 'horizontal'
+            ? { x1: 0, y1: at, x2: '100%', y2: at }
+            : { x1: at, y1: 0, x2: at, y2: '100%' };
+
+    return (
+        <g className={leaving ? `${styles[orientation]} ${styles.leaving}` : styles[orientation]}>
+            <line className={styles.line} {...ends} />
+            {onPointerDown && (
+                <line className={styles.grip} onPointerDown={onPointerDown} {...ends} />
+            )}
+        </g>
+    );
+};

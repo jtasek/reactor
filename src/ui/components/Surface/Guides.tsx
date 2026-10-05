@@ -1,28 +1,28 @@
-import React, { FC } from 'react';
-import { Guide } from '../Guide';
-import { useCamera, useControls, useGuides } from 'src/app/hooks';
-import { Camera, Guide as GuideShape } from 'src/app/types';
+import React, { FC, lazy, Suspense } from 'react';
+import { useControls } from 'src/app/hooks';
+import { Camera } from 'src/app/types';
+
+const GuideLines = lazy(() =>
+    import(/* webpackChunkName: "guides" */ '../Guide').then((module) => ({
+        default: module.Guides
+    }))
+);
 
 interface Props {
     camera?: Camera;
 }
 
+/** The document's guides, loaded the first time the Guides control is turned on. */
 export const Guides: FC<Props> = ({ camera }) => {
     const { guides: control } = useControls();
-    const guides = useGuides();
-    const defaultCamera = useCamera();
 
     if (!control.visible) {
         return null;
     }
 
-    const { position, scale } = camera ?? defaultCamera;
-
     return (
-        <g id="guides">
-            {(Object.values(guides) as GuideShape[]).map((guide) => (
-                <Guide key={guide.id} guide={guide} position={position} scale={scale} />
-            ))}
-        </g>
+        <Suspense fallback={null}>
+            <GuideLines camera={camera} />
+        </Suspense>
     );
 };

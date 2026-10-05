@@ -4,6 +4,7 @@ import { ConnectedOverlay as Overlay } from '../Overlay';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { GridContainer as Grid } from '../Grid';
 import { Guides } from './Guides';
+import { Rulers } from '../Rulers';
 import { SelectionMenu } from '../SelectionMenu';
 import { Shapes } from './Shapes';
 import { SnapLines } from '../SnapLines';
@@ -14,7 +15,6 @@ export const Canvas: FC = () => (
     <>
         <Surface>
             <Grid />
-            <Guides />
             <Camera>
                 <ErrorBoundary fallback={<h1>Something went wrong while rendering shapes</h1>}>
                     <Shapes />
@@ -23,6 +23,8 @@ export const Canvas: FC = () => (
                 </ErrorBoundary>
             </Camera>
             <Overlay />
+            <Guides />
+            <Rulers />
         </Surface>
         <SelectionMenu />
     </>
