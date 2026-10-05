@@ -241,6 +241,10 @@ only translates DOM events into the gesture actions (`src/events/actions/pointer
   move/resize/rotate edit shapes live.
   A move starts only once the pointer goes beyond a click's slip (`beyondClickSlip`, 3 screen
   pixels), then follows it from where it was pressed; until then the press is a click.
+  A move snaps (`src/app/snapping.ts`): the moved shapes' box, taken when the drag began,
+  is pulled so the nearest of its edges and center lies on another shown shape's edge or
+  center within 6 screen pixels, on each axis on its own, and the lines it snapped to show
+  (`SnapLines`). Held Ctrl or Cmd (`free`), it does not snap.
 - **pointer up** → `endGesture` applies the release position, runs `executeToolCommands()`
   exactly once for drawing and marquee gestures, then `resetTools()` — **synchronously**.
   React effects flush _after_ this, so anything a tool must persist on release has to happen

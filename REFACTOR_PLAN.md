@@ -352,7 +352,8 @@ Feature inventory:
 
 - Shipped and tested: the select, rectangle, circle, ellipse, line, pen, text,
   image and move tools; the delete, clone, group, ungroup, layer, unlayer, zoom,
-  align and space commands, with shortcuts and the command line; the inspector; the
+  align and space commands, with shortcuts and the command line; snapping moves to
+  other shapes; the inspector; the
   documents page; the navigation bar, group and layer panels with hide and lock;
   the context menu; copy, cut and paste; saving in the browser and sharing between tabs; accounts,
   syncing with the server, and signing out.

@@ -161,7 +161,11 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
             return;
         }
 
-        actions.events.movePointer({ pointerId: event.pointerId, position });
+        actions.events.movePointer({
+            pointerId: event.pointerId,
+            position,
+            free: event.ctrlKey || event.metaKey
+        });
     };
 
     const handlePointerUp: PointerEventHandler<SVGSVGElement> = (event) => {
@@ -177,7 +181,11 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
 
         // Commit before releasing capture, whose lostpointercapture would cancel.
         if (position) {
-            actions.events.endGesture({ pointerId: event.pointerId, position });
+            actions.events.endGesture({
+                pointerId: event.pointerId,
+                position,
+                free: event.ctrlKey || event.metaKey
+            });
         } else {
             actions.events.cancelGesture(event.pointerId);
         }

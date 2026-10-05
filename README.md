@@ -69,6 +69,7 @@ bar, side bar, panels and other parts of the editor.
 | Ctrl/Cmd+Alt+L, Ctrl/Cmd+Alt+Shift+L | Move the selection to a new layer, take it off its layer |
 | `h` | Highlight the selected shapes' layer: show only it, or every layer again |
 | `]`, `[` | Bring the selection to the front, send it to the back |
+| Ctrl or Cmd while dragging | Move without snapping to other shapes' edges and centers |
 | Shift+A, Shift+C, Shift+D | Align the selection's left edges, centers or right edges |
 | Shift+W, Shift+M, Shift+S | Align the selection's top edges, middles or bottom edges |
 | Shift+X, Shift+Y | Space the selection with equal gaps, horizontally or vertically; Space equally (equal distances between centers) is in the Inspector, with all the others |
