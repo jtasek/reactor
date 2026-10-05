@@ -6,12 +6,14 @@
 .grid-lines-small {
   fill: none;
   stroke-width: 0.5;
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- no design token yet */
   stroke: gray;
 }
 
 .grid-lines-large {
   fill: none;
   stroke-width: 1;
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- no design token yet */
   stroke: gray;
 }
 

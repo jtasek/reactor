@@ -3,6 +3,7 @@
   background-color: var(--control-background);
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- no design token yet */
   color: #fff;
   display: block;
   padding: 10px;

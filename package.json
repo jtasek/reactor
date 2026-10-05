@@ -68,6 +68,8 @@
     "react-refresh": "^0.18.0",
     "rimraf": "^6.1.3",
     "style-loader": "^4.0.0",
+    "stylelint": "^17.16.0",
+    "stylelint-declaration-strict-value": "^1.12.1",
     "swc-loader": "^0.2.7",
     "tsconfig-paths-webpack-plugin": "^4.2.0",
     "typescript": "^5.9.3",
@@ -113,8 +115,9 @@
     "webpack": "node ./node_modules/webpack/bin/webpack",
     "lint:fix": "eslint src tests server *.ts *.mjs *.mts scripts --max-warnings 0 --fix",
     "lint:baseline": "node scripts/check-lint-baseline.mjs",
+    "lint:css": "stylelint \"src/**/*.css\"",
     "typecheck": "pnpm run tsc && tsc -p tsconfig.test.json && tsc -p tsconfig.server.json",
     "test:browser": "playwright test",
-    "check": "pnpm run lint:baseline && pnpm run typecheck && pnpm test && pnpm run test:browser"
+    "check": "pnpm run lint:baseline && pnpm run lint:css && pnpm run typecheck && pnpm test && pnpm run test:browser"
   }
 }

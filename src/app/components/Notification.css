@@ -77,7 +77,7 @@
 }
 
 .action:hover {
-    border-color: rgb(0 0 0 / 35%);
+    border-color: var(--action-border-hover);
 }
 
 .dismiss {
