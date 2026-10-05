@@ -139,8 +139,8 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   (not suppressed). `pnpm lint:baseline` fails on any finding in a file changed relative to
   `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
   recorded counts: fix a touched file's existing findings rather than adding exceptions.
-- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 450 KiB or
-  any file 240 KiB (the budget in `webpack.config.mjs`, measured at 443 and 225 KiB); raise
+- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 460 KiB or
+  any file 240 KiB (the budget in `webpack.config.mjs`, measured at 451 and 225 KiB); raise
   it only for code the editor needs as it opens, after checking what grew.
 
 ## Architecture
@@ -381,6 +381,11 @@ the menu or the way between them, and is not rendered during a drag.
 - **Action typing**: use the aliases in `src/app/types.ts` — `Action`, `ActionWithParam<T>`,
   `ActionGuard`, and `ActionWithResult<R>` or `ActionWithParamAndResult<T, R>` for an action
   that answers its caller. Destructure what you need from context (`{ state }`, `{ state, effects }`).
+- **Commands in menus**: a command lists the items whose menus offer it in `scopes`
+  (`shape`, `group`, `layer`, or `selection` for several items) and its place there in
+  `menuOrder`. Menus take them from the registry with `commandsFor(scope)`
+  (`useScopedCommands`), so a new command needs no change to the menus; the canvas menu
+  shows those its selection (`selectionScope`) can run now.
 - **Commands**: run a command with `runCommand(command)` (`actions/commands.ts`), which checks
   its `canExecute` guard first; never call `execute` directly. Guards are `CommandGuard`s that
   only read `state`, so UI evaluates them while rendering (`useCommandEnabled`) and stays in

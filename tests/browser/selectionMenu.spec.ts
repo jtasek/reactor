@@ -102,19 +102,19 @@ test('More holds the buttons beyond seven, revealed in the bar until the pointer
     const button = (name: string) => toolbar.getByRole('button', { name, exact: true });
 
     await moveTo(320, 220);
-    await expect(button('Group')).toBeVisible();
-    await expect(button('Ungroup')).toHaveCount(0);
+    await expect(button('Ungroup')).toBeVisible();
+    await expect(button('Group')).toHaveCount(0);
 
     await button('More').click();
     await expect(button('More')).toHaveCount(0);
-    await expect(button('Ungroup')).toBeVisible();
+    await expect(button('Group')).toBeVisible();
 
     await moveTo(700, 500);
-    await expect(button('Ungroup')).toHaveCount(0);
+    await expect(button('Group')).toHaveCount(0);
     await expect(button('More')).toHaveCount(1);
 
     // From the keyboard, focus goes on from More, which is gone, to what it revealed.
     await button('More').focus();
     await page.keyboard.press('Enter');
-    await expect(button('Ungroup')).toBeFocused();
+    await expect(button('Group')).toBeFocused();
 });

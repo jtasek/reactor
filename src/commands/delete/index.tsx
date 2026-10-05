@@ -21,6 +21,8 @@ export const DeleteCommand: Command = {
     },
     regex: /(?<toolCode>delete)\('(?<shapeName>\w+)'\)/,
     shortcut: 'delete,backspace',
+    scopes: ['shape', 'group', 'selection'],
+    menuOrder: 20,
     canExecute: ({ state }) => editableSelectedShapesIds(state.currentDocument).length > 0,
     execute: deleteSelectedShapes
 };

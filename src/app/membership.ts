@@ -1,4 +1,4 @@
-import type { Box, Document, Group, Layer, Point } from './types';
+import type { Box, CommandScope, Document, Group, Layer, Point } from './types';
 import { boxCenter, getShapeBounds, isShapeLocked, isShapeVisible, rotatePoint } from './utils';
 
 /** A group has two shapes at least; one left alone is no longer grouped. */
@@ -387,3 +387,17 @@ export const hasHidden = (document: Document) =>
     [document.shapes, document.groups, document.layers].some((table) =>
         Object.values(table).some((item) => !item.visible)
     );
+
+/**
+ * Which items' commands the selection takes: one shape, one group selected as
+ * one, or several items; none without a selection.
+ */
+export function selectionScope(document: Document): CommandScope | null {
+    const { groups, shapes } = selectedItems(document);
+
+    if (groups.length + shapes.length > 1) {
+        return 'selection';
+    }
+
+    return groups.length === 1 ? 'group' : shapes.length === 1 ? 'shape' : null;
+}

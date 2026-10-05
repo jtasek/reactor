@@ -27,6 +27,8 @@ export const UnlayerCommand: Command = {
         size: 24
     },
     shortcut: 'mod+alt+shift+l',
+    scopes: ['layer'],
+    menuOrder: 10,
     canExecute: ({ state }) => {
         const { currentDocument } = state;
         const layered = new Set(

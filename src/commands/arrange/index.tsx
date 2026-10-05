@@ -12,6 +12,8 @@ export const BringToFrontCommand: Command = {
         size: 24
     },
     shortcut: ']',
+    scopes: ['shape', 'group', 'selection'],
+    menuOrder: 30,
     canExecute: ({ state }) => editableSelectedShapesIds(state.currentDocument).length > 0,
     execute: ({ actions }) => actions.bringSelectionToFront()
 };
@@ -27,6 +29,8 @@ export const SendToBackCommand: Command = {
         size: 24
     },
     shortcut: '[',
+    scopes: ['shape', 'group', 'selection'],
+    menuOrder: 40,
     canExecute: ({ state }) => editableSelectedShapesIds(state.currentDocument).length > 0,
     execute: ({ actions }) => actions.sendSelectionToBack()
 };

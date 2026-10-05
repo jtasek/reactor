@@ -1,17 +1,12 @@
 import React, { FC, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Command } from 'src/app/types';
-import { useActions, useCommandEnabled, useSelectionMenuPlacement } from 'src/app/hooks';
 import {
-    BringToFrontCommand,
-    CloneCommand,
-    DeleteCommand,
-    GroupCommand,
-    HideCommand,
-    LockCommand,
-    SendToBackCommand,
-    UngroupCommand,
-    UnlockCommand
-} from 'src/commands';
+    useActions,
+    useCommandEnabled,
+    useSelectionCommands,
+    useSelectionMenuPlacement
+} from 'src/app/hooks';
+import { HideCommand, LockCommand, UnlockCommand } from 'src/commands';
 import { ItemMenu, commandAction } from '../ItemMenu';
 import styles from './styles.css';
 
@@ -35,14 +30,10 @@ export const SelectionMenu: FC = () => {
     const hide = useCommandAction(HideCommand);
     const lock = useCommandAction(LockCommand);
     const unlock = useCommandAction(UnlockCommand);
-    const group = useCommandAction(GroupCommand);
-    const ungroup = useCommandAction(UngroupCommand);
-    const others = [
-        useCommandAction(CloneCommand),
-        useCommandAction(DeleteCommand),
-        useCommandAction(BringToFrontCommand),
-        useCommandAction(SendToBackCommand)
-    ];
+    const { runCommand } = useActions();
+    const commands = useSelectionCommands().map((command) =>
+        commandAction(command, () => runCommand(command))
+    );
 
     useEffect(() => {
         shownBefore.current = placement?.shown ?? false;
@@ -86,15 +77,7 @@ export const SelectionMenu: FC = () => {
                     : { left, top: placement.bottom, transform: 'translateY(-100%)' }
             }
         >
-            <ItemMenu
-                itemName="Selection"
-                actions={[
-                    hide,
-                    lockOrUnlock,
-                    ...others,
-                    ...[group, ungroup].filter(({ disabled }) => !disabled)
-                ]}
-            />
+            <ItemMenu itemName="Selection" actions={[hide, lockOrUnlock, ...commands]} />
         </div>
     );
 };

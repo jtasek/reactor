@@ -16,6 +16,8 @@ export const GroupCommand: Command = {
         size: 24
     },
     shortcut: 'mod+g',
+    scopes: ['selection'],
+    menuOrder: 50,
     canExecute: ({ state }) =>
         editableSelectedShapesIds(state.currentDocument).length >= GROUP_MINIMUM,
     execute: ({ actions }) => actions.groupSelection()
@@ -32,6 +34,8 @@ export const UngroupCommand: Command = {
         size: 24
     },
     shortcut: 'mod+shift+g',
+    scopes: ['group', 'selection'],
+    menuOrder: 5,
     canExecute: ({ state }) =>
         state.currentDocument.selectedGroupsIds.some(
             (id) => !state.currentDocument.groups[id].locked
