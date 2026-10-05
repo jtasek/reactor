@@ -5,7 +5,7 @@ export const PANEL_LAYOUT_KEY = 'reactor:panel-layout';
 export const DEFAULT_PANEL_LAYOUT: Record<string, PanelPlacement> = {
     sideBar: { dock: 'left', position: { x: 12, y: 12 } },
     controlPanel: { dock: null, position: { x: 1100, y: 8 } },
-    propertyPanel: { dock: null, position: { x: 700, y: 80 } },
+    inspector: { dock: null, position: { x: 700, y: 80 } },
     layerPanel: { dock: null, position: { x: 700, y: 60 } },
     groupPanel: { dock: null, position: { x: 900, y: 60 } },
     miniMap: { dock: null, position: { x: 1030, y: 550 } },

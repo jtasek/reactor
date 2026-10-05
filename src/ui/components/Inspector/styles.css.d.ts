@@ -1,6 +1,6 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
-    propertyPanel: string;
+    inspector: string;
   }
 }
 

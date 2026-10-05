@@ -25,7 +25,7 @@ export interface UI {
     navBar: Control;
     outline: Control;
     overlay: Control;
-    propertyPanel: Control;
+    inspector: Control;
     rulers: Control;
     searchBox: Control;
     sideBar: Control;

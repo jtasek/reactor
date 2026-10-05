@@ -14,7 +14,7 @@ async function click(page: Page, x: number, y: number) {
 }
 
 async function twoRects(page: Page) {
-    await openEditor(page, ['Property Panel']);
+    await openEditor(page, ['Inspector']);
     await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
     await drawRect(page, { x: 300, y: 100 }, { x: 350, y: 150 });
 
@@ -23,7 +23,7 @@ async function twoRects(page: Page) {
         .evaluateAll((rects) => rects.map((rect) => rect.getAttribute('data-cy')!));
 }
 
-test('the property panel shows shared and mixed values and edits every selected shape', async ({
+test('the inspector shows shared and mixed values and edits every selected shape', async ({
     page
 }) => {
     await twoRects(page);

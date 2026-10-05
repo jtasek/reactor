@@ -316,7 +316,7 @@ bar buttons they have no target or distance, and dragging already moves shapes.
 Shortcuts: every tool and command has a unique binding (tools by letter; Delete
 or Backspace, Ctrl/Cmd+D, Ctrl/Cmd+G, Ctrl/Cmd+Shift+G, +/=, -, 0), dispatched
 from the keyboard adapter except while a text field has focus or text is being
-typed. Step 3: the property panel lists the properties every selected shape
+typed. Step 3: the inspector lists the properties every selected shape
 shares (from one table, `src/app/properties.ts`) in sections such as Shape and
 Text, shows "Mixed" where values differ, and edits all selected shapes through
 typed fields; locked shapes only take metadata edits. Width and height are
@@ -352,7 +352,7 @@ Feature inventory:
 
 - Shipped and tested: the select, rectangle, circle, ellipse, line, pen, text,
   image and move tools; the delete, clone, group, ungroup, layer, unlayer and zoom
-  commands, with shortcuts and the command line; the property panel; the
+  commands, with shortcuts and the command line; the inspector; the
   documents page; the navigation bar, group and layer panels with hide and lock;
   the context menu; copy, cut and paste; saving in the browser and sharing between tabs; accounts,
   syncing with the server, and signing out.
@@ -509,7 +509,7 @@ Design:
   deleted but not resized or edited, because only the plugin knows how its data
   changes.
 - Plugin data on shapes lives in an `extensions` record keyed by plugin id. Plugin
-  properties name their property panel section (`group`), e.g. Events or Data.
+  properties name their inspector section (`group`), e.g. Events or Data.
 - Renderers turn a document into an output format. Model serializers (JSON, XML,
   text) start from the validated persistence data, so they never drift from what
   is saved. JSON is lossless, and so is XML if its schema maps every field; text is
@@ -552,7 +552,7 @@ Steps:
 
 Gate: built-in tools, commands and renderers work only through the public
 registries; registering and disposing a contribution updates the toolbar, command
-bar, shortcuts, property panel and export commands without a reload; every
+bar, shortcuts, inspector and export commands without a reload; every
 renderer is tested: text formats (JSON, XML, text, SVG, HTML, ASCII) against fixed
 expected output, PNG and the live Canvas by screenshot comparison, and PDF by
 rasterizing its pages (for example with pdf.js) and comparing them the same way;
@@ -591,7 +591,7 @@ Design:
   instance stores only the props it overrides and applies them when it draws,
   never to the source. An overridden prop no longer follows the source until it
   is reset.
-  The property panel lists props in a Component section, shows "Mixed" where the
+  The inspector lists props in a Component section, shows "Mixed" where the
   selected instances differ, and can reset an override.
 - Propagation: changes to the source's shapes reach every instance, including
   their arrangement, size and text, and their color and behavior once shapes
@@ -626,7 +626,7 @@ Design:
   exist. Copies keep working if the library document or component is deleted.
 - Other phases: Phase 9's display list expands instances into their shapes, and
   its serializers keep them as references. Component props and plugin properties
-  add rows to the property panel in the same way. Plugin shapes may be source
+  add rows to the inspector in the same way. Plugin shapes may be source
   shapes. Cloning a document (Phase 6 step 4) remaps `componentId`, membership
   and prop targets when it renews ids.
 
@@ -657,7 +657,7 @@ Steps:
    source without affecting them, nesting, detaching, and refusing cycles or
    anything that would empty a source that has instances. Measure the cost of
    dragging with many instances before optimizing further.
-3. Add props and overrides with the property panel's Component section, and test
+3. Add props and overrides with the inspector's Component section, and test
    that source edits change only the props an instance has not overridden.
 4. After document switching (Phase 6 step 4), add library copies: using a
    component from another document, reading a copy's shapes in the component

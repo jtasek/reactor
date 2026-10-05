@@ -699,7 +699,7 @@ export const updateShape = ({ state }: Context, options: Partial<ShapeInput> & {
 };
 
 /**
- * Sets a property-panel property (see SHAPE_PROPERTIES) on each shape where it
+ * Sets an inspector property (see SHAPE_PROPERTIES) on each shape where it
  * can change now (see canEdit): locked shapes only take metadata such as their
  * name, and nothing changes in a locked document.
  */
