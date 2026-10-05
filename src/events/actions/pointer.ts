@@ -2,9 +2,14 @@ import { json } from 'overmind';
 import { Context } from 'src/app';
 import { ActionWithParam, Point, Shape } from 'src/app/types';
 import { screenToWorld } from 'src/app/camera';
-import { drawnExtent, editableSelectedShapesIds, groupFrame } from 'src/app/membership';
+import {
+    drawnBox,
+    drawnExtent,
+    editableSelectedShapesIds,
+    groupFrame,
+    shownShapesIds
+} from 'src/app/membership';
 import { SNAP_DISTANCE_PX, snapMove, targetLines } from 'src/app/snapping';
-import { isShapeVisible } from 'src/app/utils';
 import { beyondClickSlip } from '../gestures';
 import { HandleTarget, SelectionSnapshot, ShapesSnapshot, TouchContact } from '../types';
 
@@ -138,6 +143,7 @@ export const beginGesture = (
             shapes: snapshotShapes(selected),
             dragged: false,
             box: null,
+            movingIds: [],
             movedBy: { x: 0, y: 0 },
             snapLines: { x: null, y: null }
         };
@@ -159,17 +165,15 @@ export const beginGesture = (
  * of the other shown shapes it snaps to, kept in `dragTargets`.
  */
 const takeSnapTargets = ({ state, effects }: Pick<Context, 'state' | 'effects'>) => {
-    const { currentDocument } = state;
-    const moving = new Set(editableSelectedShapesIds(currentDocument));
-    const others = currentDocument.shapesIds.filter(
-        (id) => !moving.has(id) && isShapeVisible(currentDocument, id)
-    );
+    const movingIds = editableSelectedShapesIds(state.currentDocument);
+    const moving = new Set(movingIds);
+    // Read without the store's tracking: thousands of shapes are only looked at here.
+    const document = json(state.currentDocument);
+    const others = [...shownShapesIds(document)].filter((id) => !moving.has(id));
 
-    effects.dragTargets.take(
-        targetLines(others.flatMap((id) => drawnExtent(currentDocument, [id]) ?? []))
-    );
+    effects.dragTargets.take(targetLines(others.map((id) => drawnBox(document.shapes[id]))));
 
-    return drawnExtent(currentDocument, [...moving]);
+    return { movingIds, box: drawnExtent(document, movingIds) };
 };
 
 export const movePointer = (
@@ -219,7 +223,10 @@ export const movePointer = (
     ) {
         if (!gesture.dragged) {
             gesture.dragged = true;
-            gesture.box = takeSnapTargets({ state, effects });
+            const { movingIds, box } = takeSnapTargets({ state, effects });
+
+            gesture.movingIds = movingIds;
+            gesture.box = box;
         }
 
         const { scale } = state.currentDocument.camera;
@@ -232,7 +239,7 @@ export const movePointer = (
         const step = { x: delta.x - gesture.movedBy.x, y: delta.y - gesture.movedBy.y };
 
         if (step.x !== 0 || step.y !== 0) {
-            actions.moveSelectedShapes(step);
+            actions.moveShapesBy({ shapeIds: gesture.movingIds, delta: step });
             gesture.movedBy = delta;
         }
 

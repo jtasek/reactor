@@ -1,4 +1,6 @@
+import { shownShapesIds } from 'src/app/membership';
 import { snapMove, targetLines } from 'src/app/snapping';
+import { isShapeVisible } from 'src/app/utils';
 import type { Box, ShapeInput } from 'src/app/types';
 import { createTestStore } from './support/store';
 
@@ -32,6 +34,8 @@ describe('snapping a moved box', () => {
         const many = targetLines([300, 0, 900, 600].map((left) => box(left, 0, 10, 10)));
 
         expect(many.xs).toEqual([0, 5, 10, 300, 305, 310, 600, 605, 610, 900, 905, 910]);
+        // Boxes in a row share their tops, middles and bottoms: each line is kept once.
+        expect(many.ys).toEqual([0, 5, 10]);
         // Left edge 598, center 603 and right edge 608 are each 2 from a line; the left wins.
         expect(snapMove(box(0, 0, 10, 10), { x: 598, y: 40 }, many, 5).delta).toEqual({
             x: 600,
@@ -142,5 +146,44 @@ describe('dragging shapes', () => {
         events.movePointer({ pointerId: 1, position: { x: 211, y: 50 } });
 
         expect(position()).toEqual({ x: 200, y: 30 });
+    });
+});
+
+describe('the shapes shown, taken at once', () => {
+    it('are those each shape on its own is shown as, whatever hides them', () => {
+        const { store } = createTestStore();
+        const square = (x: number): ShapeInput => ({
+            type: 'rectangle',
+            position: { x, y: 0 },
+            size: { width: 10, height: 10 },
+            selected: false
+        });
+
+        [0, 20, 40, 60, 80, 100].forEach((x) => store.actions.addShape(square(x)));
+
+        const ids = [...store.state.currentDocument.shapesIds];
+        const document = () => store.state.currentDocument;
+        const agree = () =>
+            expect([...shownShapesIds(document())]).toEqual(
+                ids.filter((id) => isShapeVisible(document(), id))
+            );
+
+        store.actions.addLayer({ id: 'walls', shapesIds: [ids[0], ids[1]] });
+        store.actions.addLayer({ id: 'pipes', shapesIds: [ids[2]] });
+        store.actions.addGroup({ id: 'pair', shapesIds: [ids[3], ids[4]] });
+        agree();
+
+        store.actions.hideShape(ids[5]);
+        store.actions.hideGroup('pair');
+        agree();
+
+        store.actions.hideLayer('walls');
+        agree();
+
+        store.actions.showOnlyLayer('walls');
+        agree();
+
+        store.actions.showOnlyLayer('pipes');
+        agree();
     });
 });

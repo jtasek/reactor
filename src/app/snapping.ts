@@ -15,19 +15,22 @@ export interface SnapLines {
     y: number | null;
 }
 
-/** The edges and centers of `boxes`, as lines to snap to, sorted. */
+/** The edges and centers of `boxes`, as lines to snap to, sorted, each once. */
 export function targetLines(boxes: Box[]): SnapTargets {
-    const sorted = (lines: number[]) => lines.sort((a, b) => a - b);
+    const sortedOnce = (lines: number[]) =>
+        lines
+            .sort((a, b) => a - b)
+            .filter((line, index, sorted) => index === 0 || line !== sorted[index - 1]);
 
     return {
-        xs: sorted(
+        xs: sortedOnce(
             boxes.flatMap(({ topLeft, bottomRight, width }) => [
                 topLeft.x,
                 topLeft.x + width / 2,
                 bottomRight.x
             ])
         ),
-        ys: sorted(
+        ys: sortedOnce(
             boxes.flatMap(({ topLeft, bottomRight, height }) => [
                 topLeft.y,
                 topLeft.y + height / 2,
@@ -55,27 +58,37 @@ function firstAtOrAfter(lines: number[], value: number) {
     return low;
 }
 
-/** The shift that brings the nearest of `edges` onto one of the sorted `lines` within `reach`. */
-function nearestSnap(edges: number[], lines: number[], reach: number) {
-    let best: { shift: number; line: number } | null = null;
+/**
+ * The shift bringing the start, middle or end of a span from `start` of `size`
+ * onto the nearest of the sorted `lines` within `reach`, and that line; none
+ * is within reach when `line` is null.
+ */
+function nearestEdgeShift(start: number, size: number, lines: number[], reach: number) {
+    let line: number | null = null;
+    let shift = 0;
 
-    for (const edge of edges) {
+    for (let part = 0; part <= 2; part++) {
+        const edge = start + (size * part) / 2;
         const index = firstAtOrAfter(lines, edge);
 
-        for (const line of [lines[index - 1], lines[index]]) {
-            const shift = line - edge;
+        for (
+            let neighbor = Math.max(0, index - 1);
+            neighbor <= index && neighbor < lines.length;
+            neighbor++
+        ) {
+            const candidate = lines[neighbor] - edge;
 
             if (
-                line !== undefined &&
-                Math.abs(shift) <= reach &&
-                (!best || Math.abs(shift) < Math.abs(best.shift))
+                Math.abs(candidate) <= reach &&
+                (line === null || Math.abs(candidate) < Math.abs(shift))
             ) {
-                best = { shift, line };
+                line = lines[neighbor];
+                shift = candidate;
             }
         }
     }
 
-    return best;
+    return { line, shift };
 }
 
 /**
@@ -90,11 +103,11 @@ export function snapMove(
 ): { delta: Point; lines: SnapLines } {
     const left = box.topLeft.x + delta.x;
     const top = box.topLeft.y + delta.y;
-    const across = nearestSnap([left, left + box.width / 2, left + box.width], targets.xs, reach);
-    const down = nearestSnap([top, top + box.height / 2, top + box.height], targets.ys, reach);
+    const across = nearestEdgeShift(left, box.width, targets.xs, reach);
+    const down = nearestEdgeShift(top, box.height, targets.ys, reach);
 
     return {
-        delta: { x: delta.x + (across?.shift ?? 0), y: delta.y + (down?.shift ?? 0) },
-        lines: { x: across?.line ?? null, y: down?.line ?? null }
+        delta: { x: delta.x + across.shift, y: delta.y + down.shift },
+        lines: { x: across.line, y: down.line }
     };
 }

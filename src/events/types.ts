@@ -44,6 +44,8 @@ export type Gesture =
                     dragged: boolean;
                     /** The moved shapes' box when the drag began, which snaps; none before it. */
                     box: Box | null;
+                    /** The shapes the drag moves: selected, shown and unlocked when it began. */
+                    movingIds: string[];
                     /** How far the shapes have been moved so far. */
                     movedBy: Point;
                     /** The lines the box snapped to, shown while the drag lasts. */
