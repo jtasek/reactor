@@ -413,8 +413,11 @@ export const selectShapeByPoint: Action = ({ state }) => {
     });
 };
 
-/** The topmost shape drawn under the pointer that it can press, if any. */
-const shapeAtPointer = (state: Context['state']): string | null => {
+/** The topmost shape drawn under the pointer that it can press, by `canPress`, if any. */
+const shapeAtPointer = (
+    state: Context['state'],
+    canPress = (id: string) => isInteractive(state, id)
+): string | null => {
     const { current } = state.events.pointer;
     const { shapesIds, shapes, camera } = untracked(state.currentDocument);
     const tolerance = hitTolerance(camera.scale);
@@ -424,7 +427,7 @@ const shapeAtPointer = (state: Context['state']): string | null => {
         const id = shapesIds[index];
         const shape = shapes[id];
 
-        if (shape && hitTestShape(shape, current, tolerance) && isInteractive(state, id)) {
+        if (shape && hitTestShape(shape, current, tolerance) && canPress(id)) {
             return id;
         }
     }
@@ -568,6 +571,39 @@ export const moveSelectedShapes: ActionWithParam<Point> = ({ state }, delta) => 
     shapes.forEach((shape) => {
         if (shape.selected && isInteractive(state, shape.id)) {
             translateShape(shape, delta);
+        }
+    });
+};
+
+/**
+ * What a click selects where a press passes through, on a locked item: the topmost
+ * shape drawn under the pointer, or else the shown shapes of the group whose box it
+ * is in; none on empty canvas.
+ */
+export const shapesClickSelects: ActionWithResult<string[]> = ({ state }) => {
+    const document = state.currentDocument;
+    const hitId = shapeAtPointer(state, (id) => isShapeVisible(document, id));
+
+    if (hitId !== null) {
+        return [hitId];
+    }
+
+    const group = groupAtPoint(document, state.events.pointer.current, state.enteredGroupId);
+
+    return group ? shownGroupShapesIds(document, group) : [];
+};
+
+/** Selects `shapeIds` alone, with their groups, though they are locked, as a click on them does. */
+export const selectClickedShapes: ActionWithParam<string[]> = ({ state }, shapeIds) => {
+    leaveGroupWithout(state, shapeIds);
+
+    const clicked = withTheirGroups(state.currentDocument, shapeIds, state.enteredGroupId);
+
+    Object.values(state.currentDocument.shapes).forEach((shape) => {
+        const selected = clicked.has(shape.id);
+
+        if (shape.selected !== selected) {
+            shape.selected = selected;
         }
     });
 };

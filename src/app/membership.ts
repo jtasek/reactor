@@ -195,65 +195,6 @@ export function hoveredGroupsIds(
     return takesThePress ? [] : [group.id];
 }
 
-/** A shape, or a group as one, that a menu on the canvas acts on. */
-export type CanvasItem = { kind: 'shape' | 'group'; id: string };
-
-/**
- * The locked item under the pointer, whose menu the canvas shows while presses pass
- * through it: the group of the shape under the pointer, or of the box the pointer is
- * in, when that group is locked, or else the shape, when it is locked and in no group
- * a press would select. None when the item is selected,
- * as the selection's menu is then shown, off the canvas or during a drag.
- */
-export function hoveredLockedItem(
-    document: Document,
-    enteredGroupId: string | null,
-    pointer: { current: Point; dragging: boolean; inside: boolean }
-): CanvasItem | null {
-    if (!pointer.inside || pointer.dragging) {
-        return null;
-    }
-
-    const shapeId = document.shapesIds.findLast((id) => document.shapes[id].active);
-    const group =
-        shapeId === undefined
-            ? groupAtPoint(document, pointer.current, enteredGroupId)
-            : shapeGroup(document, shapeId);
-
-    // Locked, the group double-clicked into passes presses through its shapes too.
-    if (group && (group.id !== enteredGroupId || group.locked)) {
-        return group.locked && !selectedGroupsIdsOf(document, enteredGroupId).includes(group.id)
-            ? { kind: 'group', id: group.id }
-            : null;
-    }
-
-    const shape = shapeId === undefined ? undefined : document.shapes[shapeId];
-
-    return shape?.locked && !shape.selected ? { kind: 'shape', id: shape.id } : null;
-}
-
-/**
- * The box a locked item is drawn in while it is still locked and not selected, for
- * its menu; none once it is gone, unlocked or selected.
- */
-export function lockedItemExtent(
-    document: Document,
-    enteredGroupId: string | null,
-    { kind, id }: CanvasItem
-): Box | null {
-    if (kind === 'shape') {
-        const shape = document.shapes[id];
-
-        return shape?.locked && !shape.selected ? drawnExtent(document, [id]) : null;
-    }
-
-    const group = document.groups[id];
-
-    return group?.locked && !selectedGroupsIdsOf(document, enteredGroupId).includes(id)
-        ? drawnExtent(document, shownGroupShapesIds(document, group))
-        : null;
-}
-
 /** The layer every selected shape is on, when they are all on one. */
 export function selectionLayerId(document: Document): string | undefined {
     const selected = document.selectedShapesIds;

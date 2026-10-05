@@ -35,7 +35,12 @@ export type Gesture =
     | (Owner &
           (
               | { kind: 'drawing' }
-              | { kind: 'marquee'; selection: SelectionSnapshot }
+              | {
+                    kind: 'marquee';
+                    selection: SelectionSnapshot;
+                    /** The locked item's shapes a click selects; none from empty canvas. */
+                    clickSelects: string[];
+                }
               | {
                     kind: 'moving';
                     selection: SelectionSnapshot;

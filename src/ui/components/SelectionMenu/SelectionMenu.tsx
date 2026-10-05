@@ -1,4 +1,4 @@
-import React, { FC, memo, useEffect, useRef } from 'react';
+import React, { FC, useEffect, useRef } from 'react';
 import type { Command } from 'src/app/types';
 import {
     useActions,
@@ -17,17 +17,12 @@ const useCommandAction = (command: Command) => {
     return commandAction(command, () => runCommand(command), !enabled);
 };
 
-interface Props {
-    /** Whether a locked item's menu is shown instead. */
-    stepAside: boolean;
-}
-
 /**
  * The menu of the selected shapes, over the canvas at a size the zoom does not
  * change. It fades in while the pointer is over the selection and is gone
  * during a drag.
  */
-export const SelectionMenu: FC<Props> = memo(({ stepAside }) => {
+export const SelectionMenu: FC = () => {
     const shownBefore = useRef(false);
     const placement = useSelectionMenuPlacement(shownBefore.current);
     const hide = useCommandAction(HideCommand);
@@ -51,11 +46,9 @@ export const SelectionMenu: FC<Props> = memo(({ stepAside }) => {
     return (
         <CanvasMenu
             placement={placement}
-            shown={placement.shown && !stepAside}
+            shown={placement.shown}
             itemName="Selection"
             actions={[hide, lockOrUnlock, ...commands]}
         />
     );
-});
-
-SelectionMenu.displayName = 'SelectionMenu';
+};

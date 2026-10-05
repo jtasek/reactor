@@ -152,7 +152,13 @@ export const beginGesture = (
         return true;
     }
 
-    pointer.gesture = { ...owner, kind: 'marquee', selection };
+    // A press passes through a locked item, which a click still selects.
+    pointer.gesture = {
+        ...owner,
+        kind: 'marquee',
+        selection,
+        clickSelects: actions.shapesClickSelects()
+    };
 
     return true;
 };
@@ -303,7 +309,14 @@ export const endGesture = (
         actions.enterClickedGroup(gesture.selection);
     }
 
-    if (gesture.kind === 'drawing' || gesture.kind === 'marquee') {
+    const clickedLockedItem =
+        gesture.kind === 'marquee' &&
+        gesture.clickSelects.length > 0 &&
+        !beyondClickSlip(pointer.start, position, state.currentDocument.camera.scale);
+
+    if (clickedLockedItem) {
+        actions.selectClickedShapes(gesture.clickSelects);
+    } else if (gesture.kind === 'drawing' || gesture.kind === 'marquee') {
         actions.tools.executeToolCommands();
     }
 
