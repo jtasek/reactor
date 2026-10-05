@@ -83,6 +83,15 @@ test('an item’s menu fades in under the pointer and runs commands for that ite
     await expect(button('More')).toHaveCount(0);
     await button('Clone').click();
     await expect(shapes(page)).toHaveCount(3);
+
+    // The clone's longer name widens the explorer, which can move the row from
+    // under the pointer and so collapse its menu.
+    await row.hover();
+
+    if (await button('More').isVisible()) {
+        await button('More').click();
+    }
+
     await button('Delete').click();
     await expect(shapes(page)).toHaveCount(2);
     await expect(page.getByRole('button', { name: 'shape-1', exact: true })).toHaveCount(0);
@@ -104,4 +113,26 @@ test('an item’s menu fades in under the pointer and runs commands for that ite
     await other.hover();
     await other.getByRole('button', { name: 'More', exact: true }).click();
     await expect(other.getByRole('button', { name: 'Delete', exact: true })).toBeDisabled();
+});
+
+test('pressing More from the keyboard keeps the focus in the menu, also on a locked item', async ({
+    page
+}) => {
+    await openEditor(page, ['Explorer', 'Outline']);
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    await click(page, 600, 400);
+
+    const row = page.getByRole('button', { name: 'shape-1', exact: true }).locator('..');
+    const menu = row.getByRole('toolbar', { name: 'shape-1 menu' });
+
+    await row.hover();
+    await menu.getByRole('button', { name: 'Lock', exact: true }).click();
+    await page.mouse.move(700, 500);
+
+    await menu.getByRole('button', { name: 'More', exact: true }).focus();
+    await page.keyboard.press('Enter');
+
+    await expect(menu.getByRole('button', { name: 'Clone', exact: true })).toBeDisabled();
+    expect(await menu.evaluate((element) => element.contains(document.activeElement))).toBe(true);
+    await expect(menu.getByRole('button', { name: 'Hide', exact: true })).toHaveCSS('opacity', '1');
 });
