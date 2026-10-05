@@ -1,19 +1,27 @@
 import React, { FC } from 'react';
-import { Point, Guide as GuideType } from 'src/app/types';
+import { Orientation } from 'src/app/types';
+
+import styles from './styles.css';
 
 export interface Props {
-    guide: GuideType;
-    position: Point;
-    scale: number;
+    orientation: Orientation;
+    /** Screen pixels from the canvas's top edge when horizontal, its left edge when vertical. */
+    at: number;
+    /** Whether releasing the guide here removes it. */
+    removing?: boolean;
 }
 
-export const Guide: FC<Props> = ({ guide, position, scale }) => (
-    <line
-        x1={guide.orientation === 'horizontal' ? 0 : guide.position.x * scale + position.x}
-        y1={guide.orientation === 'horizontal' ? guide.position.y * scale + position.y : 0}
-        x2={guide.orientation === 'horizontal' ? '100%' : guide.position.x * scale + position.x}
-        y2={guide.orientation === 'horizontal' ? guide.position.y * scale + position.y : '100%'}
-        strokeWidth="1"
-        stroke="purple"
-    />
-);
+/** A guide's line across the canvas. */
+export const Guide: FC<Props> = ({ orientation, at, removing = false }) => {
+    const horizontal = orientation === 'horizontal';
+
+    return (
+        <line
+            className={removing ? `${styles.line} ${styles.removing}` : styles.line}
+            x1={horizontal ? 0 : at}
+            y1={horizontal ? at : 0}
+            x2={horizontal ? '100%' : at}
+            y2={horizontal ? at : '100%'}
+        />
+    );
+};

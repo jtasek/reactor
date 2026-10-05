@@ -1,0 +1,24 @@
+.line {
+    pointer-events: none;
+    shape-rendering: crispEdges;
+    stroke: var(--info-color);
+    stroke-width: 1;
+}
+
+.removing {
+    opacity: 0.4;
+}
+
+.grips line {
+    pointer-events: stroke;
+    stroke: transparent;
+    stroke-width: 7;
+}
+
+.rowGrip {
+    cursor: row-resize;
+}
+
+.columnGrip {
+    cursor: col-resize;
+}

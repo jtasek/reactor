@@ -1,0 +1,31 @@
+.rulers {
+    font-size: 9px;
+    user-select: none;
+}
+
+.ruler rect,
+.corner {
+    fill: var(--surface);
+    stroke: var(--border-color);
+    stroke-width: 1;
+}
+
+.ruler path {
+    shape-rendering: crispEdges;
+    stroke: var(--text-color);
+    stroke-width: 1;
+}
+
+.ruler text {
+    dominant-baseline: hanging;
+    fill: var(--text-color);
+    pointer-events: none;
+}
+
+.top {
+    cursor: row-resize;
+}
+
+.left {
+    cursor: col-resize;
+}

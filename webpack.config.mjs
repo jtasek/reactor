@@ -109,14 +109,15 @@ export const config = {
     // app 220 KiB) and 225 KiB for its largest file; raise it only for code the
     // editor needs as it opens, after checking what grew. It was raised from 420 KiB
     // for the store's group, layer and clipboard actions, from 440 KiB for the
-    // arrange, hide and lock commands, which all register at startup, and to 460 KiB
-    // for the commands' menu scopes. Commands and tools load with the entry; loading
+    // arrange, hide and lock commands, which all register at startup, from 460 KiB
+    // for the commands' menu scopes, and to 464 KiB for the rulers' control and the
+    // chunk they load from. Commands and tools load with the entry; loading
     // them with the editor page instead is the way to stop raising it.
     performance: isDev
         ? false
         : {
               hints: 'error',
-              maxEntrypointSize: 460 * 1024,
+              maxEntrypointSize: 464 * 1024,
               maxAssetSize: 240 * 1024
           },
     optimization: {

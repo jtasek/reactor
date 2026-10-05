@@ -27,6 +27,7 @@ export interface UI {
     overlay: Control;
     inspector: Control;
     guides: Control;
+    rulers: Control;
     searchBox: Control;
     sideBar: Control;
     statusBar: Control;

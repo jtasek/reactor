@@ -140,8 +140,8 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   (not suppressed). `pnpm lint:baseline` fails on any finding in a file changed relative to
   `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
   recorded counts: fix a touched file's existing findings rather than adding exceptions.
-- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 460 KiB or
-  any file 240 KiB (the budget in `webpack.config.mjs`, measured at 451 and 225 KiB); raise
+- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 464 KiB or
+  any file 240 KiB (the budget in `webpack.config.mjs`, measured at 460 and 225 KiB); raise
   it only for code the editor needs as it opens, after checking what grew.
 
 ## Architecture
@@ -338,6 +338,21 @@ selection's box (`document.selectionExtent`, derived), over the rotate handle wh
 cover it, or under the box without room above. It shows while the pointer is over the box,
 the menu or the way between them, and is not rendered during a drag.
 
+## Rulers and guides
+
+The Rulers and Guides controls are off by default, and their code loads, as one chunk, the
+first time either is turned on (`src/ui/components/Rulers`, `src/ui/components/Guide`).
+The rulers run along the canvas's top and left edges in canvas units (`rulerMarks`,
+`src/app/rulers.ts`). Dragging out of the top ruler places a horizontal guide and out of
+the left one a vertical guide, turning the Guides control on; dragging a guide moves it,
+on whole canvas units (`guidePlace`), and dropping it on its ruler or beyond the canvas
+removes it (`removesGuide`). A guide drag (`useGuideDrag`) is not a pointer gesture and
+does not start during one or while the context menu is open. One runs at a time; it takes
+its pointer's events and the keys before the canvas does and changes the document once, on
+release, so Escape or a lost pointer leaves it as it was. Guide lines are drawn over the shapes and what grabs
+them under the shapes, so a shape, or a highlighted group, on a guide takes the press.
+Hidden guides are not drawn and locked ones do not move.
+
 ## Bounding boxes & selection
 
 - `Shape` (`src/app/types.ts`) is a discriminated union on `type`; each variant carries only
@@ -419,6 +434,9 @@ the menu or the way between them, and is not rendered during a drag.
   tool or runs the command; the keyboard adapter skips it while a text field has focus. Keep
   bindings unique (`tests/shortcuts.test.ts` checks) and avoid plain Ctrl/Cmd browser keys,
   except a command's `clipboardEvent` shortcut, which is left to that browser event.
+- **Optional features**: a feature whose control is off by default loads its code when the
+  control is turned on (`lazy` behind the control's check), not with the editor; only the
+  control's state and the document's data stay in the store.
 - **Path alias** `src/*` → `./src` (in `tsconfig.json` and `webpack.config.mjs`). Mixed
   relative and `src/...` imports both appear; keep them consistent within a file.
 - **CSS Modules**: `*.css` with generated `*.css.d.ts` typings. Don't hand-edit the `.d.ts`.
