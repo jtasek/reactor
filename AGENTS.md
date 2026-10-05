@@ -230,13 +230,14 @@ A `Tool` (`src/tools/types.ts`) extends a `Command` with `component` (renders co
 shapes) and `designComponent` (the in-progress preview, rendered by `Stack`).
 
 A pointer gesture is explicit state, `state.events.pointer.gesture`: `idle`, or `drawing`,
-`marquee`, `moving`, `resizing` or `rotating` owned by one pointer, or a two-finger `pinching`.
+`marquee`, `moving`, `resizing`, `rotating` or `rounding` owned by one pointer, or a
+two-finger `pinching`.
 `dragging` and `background` are derived from it. `src/events/drivers/usePointerAdapter.ts`
 only translates DOM events into the gesture actions (`src/events/actions/pointer.ts`):
 
-- **pointer down** → `beginGesture` decides the kind (a handle resizes/rotates; the select
-  tool moves a hit shape or starts a marquee; any other tool draws) and snapshots what the
-  gesture may change. Input from any other pointer is ignored until the gesture ends.
+- **pointer down** → `beginGesture` decides the kind (a handle resizes, rotates or rounds;
+  the select tool moves a hit shape or starts a marquee; any other tool draws) and snapshots
+  what the gesture may change. Input from any other pointer is ignored until the gesture ends.
 - **pointer move** → `movePointer`: drawing extends the path, marquee re-selects, and
   move/resize/rotate edit shapes live.
   A move or a marquee starts only once the pointer goes beyond a click's slip
@@ -253,8 +254,9 @@ only translates DOM events into the gesture actions (`src/events/actions/pointer
   React effects flush _after_ this, so anything a tool must persist on release has to happen
   inside the synchronous `execute` (not a mount/layout effect).
 - **cancel** (pointercancel, lost capture, window blur, context menu, unmount) →
-  `cancelGesture` never commits: it restores the snapshots and resets tools. Other copies'
-  changes that arrive during the gesture update its snapshots, so canceling undoes only its own.
+  `cancelGesture` never commits: it restores the snapshots, removing fields the gesture added,
+  and resets tools. Other copies' changes that arrive during the gesture update its
+  snapshots, so canceling undoes only its own.
 - Zoom is ignored during a drag. Touchscreen pinch (`beginPinch`/`updatePinch`/`endPinch`) is
   fed by Touch Events and may only replace a touch gesture that has not moved.
 
@@ -267,7 +269,11 @@ when `canExecute(context)` is true. `resetTools` deactivates a tool when its
 
 Examples worth modelling new tools on:
 
-- `Rect` — canonical simple tool using `pointer.topLeft` / `pointer.size`.
+- `Rect` — canonical simple tool using `pointer.topLeft` / `pointer.size`. A rectangle's
+  `cornerRadius` rounds its corners, drawn at most half its shorter side (`limitCornerRadius`).
+  It is set in the inspector's Radius field, or by the radius handle (`RadiusHandle`) inside
+  the top left corner: the `rounding` gesture grows it by how far the handle is dragged in
+  along the diagonal (`cornerRadiusAfterDrag`).
 - `Image` — rect-like, but preserves the image's **intrinsic** aspect ratio. Choosing the
   tool runs its `activate`, which asks for a file (`effects.assets.pickImage`); the image is
   checked by its content, kept in the document database under the SHA-256 of its bytes, and

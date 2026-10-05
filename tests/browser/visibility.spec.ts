@@ -88,7 +88,8 @@ test('a locked selected shape offers no resize or rotate handles', async ({ page
     await openEditor(page, ['Explorer', 'Navigation Bar']);
     await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
 
-    await expect(handles(page)).toHaveCount(9);
+    // Resize and rotate handles, and a rectangle's radius handle.
+    await expect(handles(page)).toHaveCount(10);
 
     await navBarList(page, 'Shapes').locator('[title="Lock"]').click();
 

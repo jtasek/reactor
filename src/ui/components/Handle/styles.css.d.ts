@@ -8,6 +8,7 @@ declare namespace StylesCssNamespace {
     middleLeft: string;
     middleRight: string;
     middleTop: string;
+    radius: string;
     rotate: string;
     rotateBadge: string;
     rotateLine: string;

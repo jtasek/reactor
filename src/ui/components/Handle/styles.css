@@ -36,6 +36,12 @@
   cursor: grab;
 }
 
+.radius {
+  cursor: pointer;
+  fill: var(--surface);
+  stroke: var(--selection-color);
+}
+
 .rotateLine {
   stroke: var(--selection-color);
   stroke-width: 1;

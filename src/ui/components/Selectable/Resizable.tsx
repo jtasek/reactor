@@ -1,6 +1,7 @@
 import React, { FC } from 'react';
 import type { Box, ResizeHandlerType } from 'src/app/types';
 import { Handle } from '../Handle';
+import { RadiusHandle } from '../Handle/RadiusHandle';
 import { RotateHandle } from '../Handle/RotateHandle';
 import handleStyles from '../Handle/styles.css';
 import { Props } from './Selectable';
@@ -117,6 +118,7 @@ export const Resizable: FC<Props> = ({ shape }) => {
     const activeHandle =
         gesture.kind === 'resizing' && gesture.shapeId === shape.id ? gesture.handle : undefined;
     const rotateActive = gesture.kind === 'rotating' && gesture.shapeId === shape.id;
+    const roundingActive = gesture.kind === 'rounding' && gesture.shapeId === shape.id;
 
     if (!shape.selected) {
         return null;
@@ -129,12 +131,17 @@ export const Resizable: FC<Props> = ({ shape }) => {
     }
 
     return (
-        <Handles
-            box={box}
-            rotation={shape.rotation ?? 0}
-            owner={{ shapeId: shape.id }}
-            activeHandle={activeHandle}
-            rotateActive={rotateActive}
-        />
+        <>
+            <Handles
+                box={box}
+                rotation={shape.rotation ?? 0}
+                owner={{ shapeId: shape.id }}
+                activeHandle={activeHandle}
+                rotateActive={rotateActive}
+            />
+            {shape.type === 'rectangle' && (
+                <RadiusHandle rectangle={shape} active={roundingActive} />
+            )}
+        </>
     );
 };

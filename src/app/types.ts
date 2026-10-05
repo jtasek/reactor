@@ -83,6 +83,8 @@ export interface Rectangle extends ShapeBase {
     type: 'rectangle';
     position: Point;
     size: Size;
+    /** How round its corners are; drawn at most half its shorter side. */
+    cornerRadius?: number;
 }
 
 export interface Image extends ShapeBase {

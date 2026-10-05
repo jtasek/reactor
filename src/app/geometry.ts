@@ -1,4 +1,4 @@
-import type { Box, Point, ResizeHandlerType, Shape } from './types';
+import type { Box, Point, Rectangle, ResizeHandlerType, Shape, Size } from './types';
 import {
     DEFAULT_TEXT_FONT_SIZE,
     assertNever,
@@ -374,6 +374,26 @@ function distanceToPolyline(point: Point, points: Point[]): number {
     }
 
     return distance;
+}
+
+/** A corner radius a rectangle of `size` can take: at most half its shorter side, at least none. */
+export const limitCornerRadius = (size: Size, radius: number) =>
+    Math.min(Math.max(0, radius), Math.min(size.width, size.height) / 2);
+
+/**
+ * A rectangle's corner radius after its radius handle is dragged from `from` to
+ * `to`: the radius it is drawn with, grown by how far the drag goes in along the
+ * diagonal from its top left corner, in its turned frame.
+ */
+export function cornerRadiusAfterDrag(rectangle: Rectangle, from: Point, to: Point): number {
+    const move = rotatePoint(
+        { x: to.x - from.x, y: to.y - from.y },
+        { x: 0, y: 0 },
+        -(rectangle.rotation ?? 0)
+    );
+    const drawn = limitCornerRadius(rectangle.size, rectangle.cornerRadius ?? 0);
+
+    return limitCornerRadius(rectangle.size, drawn + (move.x + move.y) / 2);
 }
 
 /**

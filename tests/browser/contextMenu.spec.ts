@@ -12,12 +12,12 @@ test('a press outside the context menu closes it, and does nothing else', async 
 
     await page.mouse.click(surface.x + 500, surface.y + 300, { button: 'right' });
     await expect(menu).toBeVisible();
-    await expect(handles).toHaveCount(9);
+    await expect(handles).toHaveCount(10);
 
     // On the canvas: the menu closes, and the press neither deselects nor draws.
     await page.mouse.click(surface.x + 700, surface.y + 500);
     await expect(menu).toBeHidden();
-    await expect(handles).toHaveCount(9);
+    await expect(handles).toHaveCount(10);
     await expect(shapes(page)).toHaveCount(1);
 
     // On a panel: the menu closes too.
