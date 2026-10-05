@@ -1,4 +1,4 @@
-import React, { FC, FormEvent, useState } from 'react';
+import React, { FC, SubmitEvent, useState } from 'react';
 
 import styles from './styles.css';
 
@@ -11,7 +11,7 @@ export const CommandLine: FC<Props> = ({ onSubmit }) => {
     const [value, setValue] = useState('');
     const [message, setMessage] = useState<string>();
 
-    const handleSubmit = (event: FormEvent) => {
+    const handleSubmit = (event: SubmitEvent) => {
         event.preventDefault();
 
         const problem = onSubmit(value);
