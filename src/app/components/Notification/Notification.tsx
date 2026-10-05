@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
-import styles from './Notification.css';
-import { useActions, useNotifications } from '../hooks';
-import type { Notification as NotificationData, NotificationType } from '../types';
+import styles from './styles.css';
+import { useActions, useNotifications } from '../../hooks';
+import type { Notification as NotificationData, NotificationType } from '../../types';
 import { Icon } from 'src/ui/components/Icon';
 
 const icon = (group: string, name: string) => ({ group, name, size: 18 });
