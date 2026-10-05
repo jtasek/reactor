@@ -93,6 +93,7 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   tests (`tsconfig.test.json`) and the server (`tsconfig.server.json`).
 - **Lint**: `pnpm lint` is read-only (`--max-warnings 0`, covers `src`, `tests`, root configs
   and `scripts`); `pnpm lint:fix` applies fixes. Flat config in `eslint.config.mjs`.
+  `pnpm lint:css` runs Stylelint (`stylelint.config.mjs`) on `src/**/*.css`.
 - **Tests**: `pnpm test` (Vitest, `globals: true` — no need to import `describe`/`it`/
   `expect`/`vi`). `pnpm test:watch` for watch mode. Store tests use `createTestStore`
   (`tests/support/store.ts`).
@@ -402,6 +403,17 @@ the menu or the way between them, and is not rendered during a drag.
 - **Path alias** `src/*` → `./src` (in `tsconfig.json` and `webpack.config.mjs`). Mixed
   relative and `src/...` imports both appear; keep them consistent within a file.
 - **CSS Modules**: `*.css` with generated `*.css.d.ts` typings. Don't hand-edit the `.d.ts`.
+- **Design system**: the Reactor design system (https://claude.ai/artifact/GHP3rx2aZGuHx3b13DieV6)
+  names the colors, type, spacing, radii and shadows and says how the controls look and
+  behave; read its `project/README.md` and `project/tokens.json` before changing UI. Its
+  tokens are the custom properties in `:root` of `static/styles/site.css`, by the same name:
+  use `var(--name)` rather than a literal color or shadow, and add a value there, and to the
+  design system, before using it. `design/tokens.json` is a copy of the design system's
+  tokens: change both together. `tests/designTokens.test.ts` fails when `:root` and it
+  disagree, and `pnpm lint:css` (Stylelint) when a component's color, fill, stroke,
+  background or box-shadow is not a variable; a line marked `no design token yet` is debt.
+  Never remove an outline without drawing the focus ring (`--focus-ring-width` in
+  `--focus-ring-color`) on `:focus-visible`.
 - **Style** (Prettier `.prettierrc`): 4-space indent, single quotes, semicolons, `printWidth`
   100, no trailing commas. ESLint enforces these plus `prettier/prettier: error`.
 - TypeScript is `strict`; **avoid `any`**. `console.log` is a lint warning (only

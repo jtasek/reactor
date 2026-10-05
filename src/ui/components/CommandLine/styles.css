@@ -16,6 +16,10 @@
   z-index: 100;
 }
 
+.commandLine:focus-within {
+  border-color: var(--focus-ring-color);
+}
+
 .commandLine input {
   /* background-color: var(--control-background);  */
   /* backdrop-filter: var(--backdrop-filter); */

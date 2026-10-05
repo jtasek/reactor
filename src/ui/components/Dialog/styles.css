@@ -9,9 +9,9 @@
     --dialog-primary-background: var(--primary-action-color);
     --dialog-primary-hover-background: color-mix(in srgb, var(--primary-action-color) 90%, black);
     --dialog-primary-text: white;
-    --dialog-text-color: #1f1f1f;
+    --dialog-text-color: var(--ink-strong);
     --dialog-emphasis-weight: 600;
-    background: white;
+    background: var(--surface);
     backdrop-filter: var(--backdrop-filter);
     border: 0;
     border-radius: var(--dialog-radius);
@@ -34,7 +34,7 @@
 
 .dialog::backdrop {
     backdrop-filter: var(--backdrop-filter);
-    background: rgb(0 0 0 / 35%);
+    background: var(--backdrop);
 }
 
 .actions {

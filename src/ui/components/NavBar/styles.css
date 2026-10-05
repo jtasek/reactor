@@ -70,7 +70,7 @@
 }
 
 .navBar li.selected:before {
-  background-color: mediumpurple;
+  background-color: var(--accent);
   border-radius: 50%;
   content: '';
   height: 4px;
@@ -81,12 +81,12 @@
 }
 
 .navBar li.selected > .itemName {
-  color: mediumpurple;
+  color: var(--accent);
   font-weight: 600;
 }
 
 .navBar li.active:before {
-  background-color: cornflowerblue;
+  background-color: var(--selection-color);
   border-radius: 50%;
   content: '';
   height: 4px;
@@ -97,11 +97,12 @@
 }
 
 .navBar li.active > .itemName {
-  color: cornflowerblue;
+  color: var(--selection-color);
   font-weight: 600;
 }
 
 .navBar li.new:before {
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- no design token yet */
   background-color: deeppink;
   border-radius: 50%;
   content: '';

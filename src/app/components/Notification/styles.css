@@ -30,13 +30,13 @@
 }
 
 .info {
-    --notification-background: #e4dff3;
-    --notification-color: #6a55c2;
+    --notification-background: var(--info-background);
+    --notification-color: var(--info-color);
 }
 
 .success {
-    --notification-background: #dcefe2;
-    --notification-color: #2c7a4b;
+    --notification-background: var(--success-background);
+    --notification-color: var(--success-color);
 }
 
 .warning {
@@ -67,17 +67,17 @@
 
 /* What the notification suggests doing, as a button at its end. */
 .action {
-    background: #fff;
-    border: 1px solid rgb(0 0 0 / 15%);
+    background: var(--surface);
+    border: 1px solid var(--action-border);
     border-radius: 8px;
-    color: #1f1f1f;
+    color: var(--ink-strong);
     flex: 0 0 auto;
     padding: 3px 10px;
     text-decoration: none;
 }
 
 .action:hover {
-    border-color: rgb(0 0 0 / 35%);
+    border-color: var(--action-border-hover);
 }
 
 .dismiss {
