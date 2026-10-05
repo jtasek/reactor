@@ -1,4 +1,4 @@
-import type { Context } from '../index';
+import type { Context } from 'src/app';
 
 type Listener = Parameters<Context['addMutationListener']>[0];
 

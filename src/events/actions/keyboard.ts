@@ -1,6 +1,6 @@
 import { ActionWithParam, Action } from 'src/app/types';
-import { Context } from '../../app';
-import { getCommands, getTools } from '../../app/actions/startup';
+import { Context } from 'src/app';
+import { getCommands, getTools } from 'src/app/actions/startup';
 import { KeyPress, matchesShortcut } from '../shortcuts';
 import { takesEditorInput } from '../input';
 

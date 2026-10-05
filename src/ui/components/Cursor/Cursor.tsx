@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { Point } from '../../../app/types';
+import { Point } from 'src/app/types';
 
 export interface Props {
     position: Point;

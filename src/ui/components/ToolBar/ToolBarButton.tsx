@@ -3,7 +3,7 @@ import React, { FC } from 'react';
 import styles from './styles.css';
 
 import { Icon } from '../Icon';
-import type { Tool } from '../../../tools/types';
+import type { Tool } from 'src/tools/types';
 
 interface Props {
     tool: Tool;

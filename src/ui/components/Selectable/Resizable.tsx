@@ -1,13 +1,13 @@
 import React, { FC } from 'react';
-import type { Box, ResizeHandlerType } from '../../../app/types';
+import type { Box, ResizeHandlerType } from 'src/app/types';
 import { Handle } from '../Handle';
 import { RotateHandle } from '../Handle/RotateHandle';
 import handleStyles from '../Handle/styles.css';
 import { Props } from './Selectable';
-import { getShapeBounds } from '../../../app/utils';
-import { resizeCursor } from '../../../app/geometry';
-import { useCameraScale, usePointer } from '../../../app/hooks';
-import type { HandleOwner } from '../../../events/types';
+import { getShapeBounds } from 'src/app/utils';
+import { resizeCursor } from 'src/app/geometry';
+import { useCameraScale, usePointer } from 'src/app/hooks';
+import type { HandleOwner } from 'src/events/types';
 
 /** Sizes on screen, in pixels, whatever the zoom. */
 const HANDLE_RADIUS = 5;

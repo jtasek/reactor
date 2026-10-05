@@ -1,5 +1,5 @@
 import React, { FC, ReactNode } from 'react';
-import { usePointerAdapter } from '../../../events/drivers/usePointerAdapter';
+import { usePointerAdapter } from 'src/events/drivers/usePointerAdapter';
 
 import styles from './styles.css';
 

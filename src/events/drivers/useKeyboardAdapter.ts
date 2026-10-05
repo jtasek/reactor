@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useActions, useLog } from '../../app/hooks';
+import { useActions, useLog } from 'src/app/hooks';
 import { isTextEntry } from './helpers';
 
 const keys = ({ altKey, code, ctrlKey, key, metaKey, shiftKey }: KeyboardEvent) => ({

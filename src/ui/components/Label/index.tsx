@@ -1,8 +1,8 @@
 import React, { FC } from 'react';
 
 import styles from './styles.css';
-import { Shape } from '../../../app/types';
-import { getShapeBounds } from '../../../app/utils';
+import { Shape } from 'src/app/types';
+import { getShapeBounds } from 'src/app/utils';
 
 const LABEL_OFFSET = 20;
 

@@ -1,4 +1,4 @@
-import { Context } from '../../app';
+import { Context } from 'src/app';
 
 export const zoomIn = ({ actions }: Context) => {
     actions.tools.zoomIn();

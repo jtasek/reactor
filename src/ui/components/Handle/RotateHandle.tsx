@@ -1,8 +1,8 @@
 import React, { FC } from 'react';
 
 import styles from './styles.css';
-import type { HandleOwner } from '../../../events/types';
-import { Point } from '../../../app/types';
+import type { HandleOwner } from 'src/events/types';
+import { Point } from 'src/app/types';
 
 export interface Props {
     owner: HandleOwner;

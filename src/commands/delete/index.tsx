@@ -1,7 +1,7 @@
 import { Command } from 'src/app/types';
 import { editableSelectedShapesIds } from 'src/app/membership';
 
-import { Context } from '../../app';
+import { Context } from 'src/app';
 
 export const deleteSelectedShapes = ({ state, actions }: Context) => {
     const { selectedShapesIds } = state.currentDocument;

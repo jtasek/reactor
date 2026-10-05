@@ -1,4 +1,4 @@
-import type { Context } from '../index';
+import type { Context } from 'src/app';
 import type { SaveStatus } from '../types';
 import type { AccountResult } from './accounts';
 import { accountCopy } from './documentSync';

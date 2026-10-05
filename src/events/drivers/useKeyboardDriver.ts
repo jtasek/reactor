@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useKeyboardAdapter } from './useKeyboardAdapter';
-import { useLog } from '../../app/hooks';
+import { useLog } from 'src/app/hooks';
 
 export const useKeyboardDriver = () => {
     const { handleKeyDown, handleKeyUp } = useKeyboardAdapter();

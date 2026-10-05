@@ -1,5 +1,5 @@
 import { json } from 'overmind';
-import type { Context } from '../index';
+import type { Context } from 'src/app';
 import type { Application } from '../types';
 import { createDocument } from '../factories';
 import type { DocumentDatabase } from './documentDatabase';
