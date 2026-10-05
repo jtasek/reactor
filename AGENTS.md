@@ -338,6 +338,14 @@ selection's box (`document.selectionExtent`, derived), over the rotate handle wh
 cover it, or under the box without room above. It shows while the pointer is over the box,
 the menu or the way between them, and is not rendered during a drag.
 
+A press passes through a locked shape or group, so it cannot be selected on the canvas;
+instead, the pointer over it shows its own menu (`LockedItemMenu`, `hoveredLockedItem`),
+placed the same way (`CanvasMenu`): Hide, Unlock and its commands, disabled while it is
+locked. The item is what a press would select, a locked group rather than its shape; a
+shape locked only by its layer or the document has none. `CanvasMenus` finds the item once
+for both menus, removes its menu once it is neither shown nor in use, and has the
+selection's menu step aside while it shows.
+
 ## Rulers and guides
 
 The Rulers and Guides controls are off by default, and their code loads, as one chunk, the

@@ -14,8 +14,11 @@ import { takesEditorInput } from '../events/input';
 import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
 import { placeSelectionMenu } from './selectionMenu';
 import {
+    type CanvasItem,
     groupFrame,
     hoveredGroupsIds,
+    hoveredLockedItem,
+    lockedItemExtent,
     outline,
     selectedGroupsIdsOf,
     selectionScope
@@ -292,6 +295,28 @@ export const useSelectionMenuPlacement = (alreadyShown: boolean) => {
             : null;
     });
 };
+
+/** The locked item the pointer is over: see `hoveredLockedItem`. */
+export const useHoveredLockedItem = () =>
+    useAppState((state) =>
+        hoveredLockedItem(state.currentDocument, state.enteredGroupId, state.events.pointer)
+    );
+
+/**
+ * Where a locked item's menu goes; none once the item is gone, unlocked or
+ * selected, and during a drag.
+ */
+export const useLockedItemMenuPlacement = (item: CanvasItem | null, alreadyShown: boolean) =>
+    useAppState((state) => {
+        const { pointer } = state.events;
+        const { camera } = state.currentDocument;
+        const extent =
+            item && !pointer.dragging
+                ? lockedItemExtent(state.currentDocument, state.enteredGroupId, item)
+                : null;
+
+        return extent ? placeSelectionMenu(extent, camera, pointer, alreadyShown) : null;
+    });
 
 /** The lines a dragged selection snapped to; none outside a drag. */
 export const useSnapLines = () =>
