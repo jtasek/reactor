@@ -9,6 +9,7 @@ import {
     SCHEMA_VERSION,
     migratePersistedState,
     serializePersistedState,
+    readEntity,
     readView,
     restoreDocuments
 } from '../services/documentStorage';
@@ -190,5 +191,28 @@ describe('document storage', () => {
 
         expect(view).toEqual({ currentDocumentId: undefined, cameras: { d: camera } });
         expect(readView('not a view')).toEqual({ currentDocumentId: undefined, cameras: {} });
+    });
+});
+
+describe('saved rulers', () => {
+    const ruler = (orientation: unknown) => ({
+        id: 'r1',
+        name: 'Ruler',
+        visible: true,
+        locked: false,
+        orientation,
+        position: { x: 1, y: 2 }
+    });
+
+    it('keep their orientation as the words they were saved with', () => {
+        expect(readEntity('rulers', ruler('vertical'))).toMatchObject({ orientation: 'vertical' });
+        expect(readEntity('rulers', ruler('horizontal'))).toMatchObject({
+            orientation: 'horizontal'
+        });
+    });
+
+    it('refuse any other orientation', () => {
+        expect(() => readEntity('rulers', ruler('diagonal'))).toThrow('Invalid orientation');
+        expect(() => readEntity('rulers', ruler(0))).toThrow('Invalid orientation');
     });
 });

@@ -1,10 +1,7 @@
 import { Context } from './index';
 import type { GroupFrame } from './membership';
 
-export enum Orientation {
-    Horizontal = 'horizontal',
-    Vertical = 'vertical'
-}
+export type Orientation = 'horizontal' | 'vertical';
 
 export type Point = {
     x: number;
@@ -23,14 +20,7 @@ export type Box = {
     width: number;
 };
 
-export enum Side {
-    'left',
-    'right',
-    'bottom',
-    'top'
-}
-
-export const bottomLeft = Side.right + Side.left;
+export type Side = 'left' | 'right' | 'top' | 'bottom';
 
 export type ResizeHandlerType =
     | 'bottomLeft'
