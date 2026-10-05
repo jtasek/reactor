@@ -12,7 +12,7 @@ import {
     Shape,
     ShapeInput
 } from '../types';
-import { Context } from '../index';
+import { Context } from 'src/app';
 import { screenToWorld } from '../camera';
 import { createGroup, createShape } from '../factories';
 import {
@@ -25,7 +25,7 @@ import {
 import { orderAbove, ordersAbove, ordersBelow } from '../drawOrder';
 import { PropertyValue, SHAPE_PROPERTIES, applyProperty, canEdit } from '../properties';
 import { PasteResult, readClipboard, writeClipboard } from '../clipboard';
-import { takesEditorInput } from '../../events/input';
+import { takesEditorInput } from 'src/events/input';
 import {
     hitTestShape,
     hitTolerance,

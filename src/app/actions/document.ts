@@ -1,6 +1,6 @@
 import { Action, ActionWithParam, Application, Document } from '../types';
 import { createCamera, createDocument, createGrid, newDocumentName } from '../factories';
-import { takesEditorInput } from '../../events/input';
+import { takesEditorInput } from 'src/events/input';
 import { copyDocument } from '../services/documentStorage';
 
 const getDocument = ({ documents }: Application, documentId: string) => {

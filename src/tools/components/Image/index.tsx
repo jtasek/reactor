@@ -4,9 +4,9 @@ import styles from '../../styles.css';
 import type { Command, Point, Size } from 'src/app/types';
 import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
-import { newShapeName } from '../../../app/factories';
-import { useImageToPlace, useImageUrl, usePointer } from '../../../app/hooks';
-import type { ImageToPlace } from '../../../app/services/assets';
+import { newShapeName } from 'src/app/factories';
+import { useImageToPlace, useImageUrl, usePointer } from 'src/app/hooks';
+import type { ImageToPlace } from 'src/app/services/assets';
 import { Context } from 'src/app';
 
 /**

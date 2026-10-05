@@ -1,5 +1,5 @@
 import type { Command, CommandScope } from 'src/app/types';
-import type { Context } from '../index';
+import type { Context } from 'src/app';
 import {
     BringToFrontCommand,
     CloneCommand,
@@ -36,7 +36,7 @@ import {
     TextTool
 } from 'src/tools';
 
-import { Tool } from '../../tools/types';
+import { Tool } from 'src/tools/types';
 import { startDocumentSync } from '../services/documentSync';
 import { listenToMutations } from '../services/mutations';
 import { documentOwner, readAccount } from '../services/accounts';

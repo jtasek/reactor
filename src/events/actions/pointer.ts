@@ -1,8 +1,8 @@
 import { json } from 'overmind';
-import { Context } from '../../app';
-import { ActionWithParam, Point, Shape } from '../../app/types';
-import { screenToWorld } from '../../app/camera';
-import { groupFrame } from '../../app/membership';
+import { Context } from 'src/app';
+import { ActionWithParam, Point, Shape } from 'src/app/types';
+import { screenToWorld } from 'src/app/camera';
+import { groupFrame } from 'src/app/membership';
 import { beyondClickSlip } from '../gestures';
 import { HandleTarget, SelectionSnapshot, ShapesSnapshot, TouchContact } from '../types';
 

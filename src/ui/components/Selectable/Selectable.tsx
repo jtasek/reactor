@@ -2,7 +2,7 @@ import React, { FC, ReactNode } from 'react';
 
 import styles from './styles.css';
 import { Shape } from 'src/app/types';
-import { getShapeBounds } from '../../../app/utils';
+import { getShapeBounds } from 'src/app/utils';
 
 export interface Props {
     shape: Shape;

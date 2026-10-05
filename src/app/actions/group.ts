@@ -6,7 +6,7 @@ import type {
     Point,
     ResizeHandlerType
 } from '../types';
-import type { ShapesSnapshot } from '../../events/types';
+import type { ShapesSnapshot } from 'src/events/types';
 import { createGroup } from '../factories';
 import { keepDrawnPlace, placeShapeFrom, resizeAspectBox } from '../geometry';
 import {

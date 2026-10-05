@@ -1,5 +1,5 @@
 import { Command } from 'src/app/types';
-import { Context } from '../../app';
+import { Context } from 'src/app';
 
 export const cloneSelection = ({ state, actions }: Context) => {
     actions.cloneShapes(state.currentDocument.selectedShapesIds);

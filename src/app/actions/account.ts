@@ -1,4 +1,4 @@
-import type { Context } from '../index';
+import type { Context } from 'src/app';
 import { NOTICES_KEY } from '../services/accounts';
 import { createNotification } from '../factories';
 

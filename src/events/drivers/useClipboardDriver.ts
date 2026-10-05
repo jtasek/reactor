@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { getCommands } from '../../app/actions/startup';
-import { useActions, useEffects, useTakesEditorInput } from '../../app/hooks';
+import { getCommands } from 'src/app/actions/startup';
+import { useActions, useEffects, useTakesEditorInput } from 'src/app/hooks';
 import { matchesShortcut } from '../shortcuts';
 import { isTextEntry } from './helpers';
 

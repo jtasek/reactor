@@ -4,7 +4,7 @@ import { Point } from 'src/app/types';
 import styles from './styles.css';
 import { ContextMenuItems } from './ContextMenuItems';
 import { useActions, useControls } from 'src/app/hooks';
-import { useRegisteredTools } from '../../../tools/components';
+import { useRegisteredTools } from 'src/tools/components';
 
 export interface Props {
     position: Point;

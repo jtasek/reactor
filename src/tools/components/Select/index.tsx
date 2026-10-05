@@ -4,8 +4,8 @@ import styles from './styles.css';
 import type { Point, Size } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
 import { Command } from 'src/app/types';
-import { Pointer } from '../../../events/types';
-import { usePointer } from '../../../app/hooks';
+import { Pointer } from 'src/events/types';
+import { usePointer } from 'src/app/hooks';
 import { Context } from 'src/app';
 
 /**

@@ -1,5 +1,5 @@
 import { Command } from '../types';
-import { Context } from '../index';
+import { Context } from 'src/app';
 import { getCommands } from './startup';
 
 /** Runs `command` if its guard allows it now; returns whether it ran. */
