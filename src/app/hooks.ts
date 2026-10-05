@@ -285,6 +285,14 @@ export const useSelectionMenuPlacement = (alreadyShown: boolean) => {
     });
 };
 
+/** The lines a dragged selection snapped to; none outside a drag. */
+export const useSnapLines = () =>
+    useAppState((state) => {
+        const { gesture } = state.events.pointer;
+
+        return gesture.kind === 'moving' && gesture.dragged ? gesture.snapLines : null;
+    });
+
 /** The groups the pointer highlights: see `hoveredGroupsIds`. */
 export const useHoveredGroupsIds = () => {
     return useAppState((state) =>

@@ -1,4 +1,4 @@
-import type { Box, CommandScope, Document, Group, Layer, Point } from './types';
+import type { Box, CommandScope, Document, Group, Layer, Point, Shape } from './types';
 import { boxCenter, getShapeBounds, isShapeLocked, isShapeVisible, rotatePoint } from './utils';
 
 /** A group has two shapes at least; one left alone is no longer grouped. */
@@ -205,37 +205,76 @@ export function selectionLayerId(document: Document): string | undefined {
         : undefined;
 }
 
+/** The upright box around a shape as drawn, turned by its rotation. */
+export function drawnBox(shape: Shape): Box {
+    const bounds = getShapeBounds(shape);
+    const rotation = shape.rotation ?? 0;
+
+    if (rotation === 0) {
+        return bounds;
+    }
+
+    const radians = (rotation * Math.PI) / 180;
+    const cos = Math.abs(Math.cos(radians));
+    const sin = Math.abs(Math.sin(radians));
+    const width = bounds.width * cos + bounds.height * sin;
+    const height = bounds.width * sin + bounds.height * cos;
+    const center = boxCenter(bounds);
+    const topLeft = { x: center.x - width / 2, y: center.y - height / 2 };
+
+    return { topLeft, bottomRight: { x: topLeft.x + width, y: topLeft.y + height }, width, height };
+}
+
 /** The upright box around shapes as drawn, each turned by its rotation; none without shapes. */
 export function drawnExtent(document: Document, shapeIds: string[]): Box | null {
-    const corners = shapeIds.flatMap((id) => {
-        const shape = document.shapes[id];
-        const bounds = getShapeBounds(shape);
-        const center = boxCenter(bounds);
-        const { topLeft, bottomRight } = bounds;
+    let left = Infinity;
+    let top = Infinity;
+    let right = -Infinity;
+    let bottom = -Infinity;
 
-        return [
-            topLeft,
-            { x: bottomRight.x, y: topLeft.y },
-            bottomRight,
-            { x: topLeft.x, y: bottomRight.y }
-        ].map((corner) => rotatePoint(corner, center, shape.rotation ?? 0));
-    });
+    for (const id of shapeIds) {
+        const box = drawnBox(document.shapes[id]);
 
-    if (corners.length === 0) {
+        left = Math.min(left, box.topLeft.x);
+        top = Math.min(top, box.topLeft.y);
+        right = Math.max(right, box.bottomRight.x);
+        bottom = Math.max(bottom, box.bottomRight.y);
+    }
+
+    if (left === Infinity) {
         return null;
     }
 
-    const xs = corners.map((corner) => corner.x);
-    const ys = corners.map((corner) => corner.y);
-    const topLeft = { x: Math.min(...xs), y: Math.min(...ys) };
-    const bottomRight = { x: Math.max(...xs), y: Math.max(...ys) };
-
     return {
-        topLeft,
-        bottomRight,
-        width: bottomRight.x - topLeft.x,
-        height: bottomRight.y - topLeft.y
+        topLeft: { x: left, y: top },
+        bottomRight: { x: right, y: bottom },
+        width: right - left,
+        height: bottom - top
     };
+}
+
+/**
+ * The shapes shown, in drawing order, taken in one pass over the containers: as
+ * `isShapeVisible` says of each, without searching the containers for each shape.
+ */
+export function shownShapesIds(document: Document): Set<string> {
+    const shownLayer = document.shownLayerId ? document.layers[document.shownLayerId] : undefined;
+    const onShownLayer = new Set(shownLayer?.shapesIds ?? []);
+    const onLayers = new Set(Object.values(document.layers).flatMap((layer) => layer.shapesIds));
+    const inHiddenContainer = new Set(
+        [...Object.values(document.groups), ...Object.values(document.layers)]
+            .filter((container) => !container.visible && container !== shownLayer)
+            .flatMap((container) => container.shapesIds)
+    );
+
+    return new Set(
+        document.shapesIds.filter(
+            (id) =>
+                document.shapes[id]?.visible &&
+                !inHiddenContainer.has(id) &&
+                !(shownLayer && onLayers.has(id) && !onShownLayer.has(id))
+        )
+    );
 }
 
 /** The upright box around the selected shapes as drawn; none without a selection. */

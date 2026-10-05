@@ -2,11 +2,19 @@ import { json } from 'overmind';
 import { Context } from 'src/app';
 import { ActionWithParam, Point, Shape } from 'src/app/types';
 import { screenToWorld } from 'src/app/camera';
-import { groupFrame } from 'src/app/membership';
+import {
+    drawnBox,
+    drawnExtent,
+    editableSelectedShapesIds,
+    groupFrame,
+    shownShapesIds
+} from 'src/app/membership';
+import { SNAP_DISTANCE_PX, snapMove, targetLines } from 'src/app/snapping';
 import { beyondClickSlip } from '../gestures';
 import { HandleTarget, SelectionSnapshot, ShapesSnapshot, TouchContact } from '../types';
 
-type PointerInput = { pointerId: number; position: Point };
+/** A pointer's input; `free` moves without snapping, as while Ctrl or Cmd is held. */
+type PointerInput = { pointerId: number; position: Point; free?: boolean };
 
 export const setStartPosition: ActionWithParam<Point> = ({ state }, position) => {
     state.events.pointer.start = position;
@@ -133,7 +141,11 @@ export const beginGesture = (
             kind: 'moving',
             selection,
             shapes: snapshotShapes(selected),
-            dragged: false
+            dragged: false,
+            box: null,
+            movingIds: [],
+            movedBy: { x: 0, y: 0 },
+            snapLines: { x: null, y: null }
         };
 
         return true;
@@ -148,7 +160,26 @@ export const beginGesture = (
  * Tracks the pointer; input from a pointer that does not own the gesture, and
  * any pointer input during a pinch, is ignored.
  */
-export const movePointer = ({ state, actions }: Context, { pointerId, position }: PointerInput) => {
+/**
+ * When a drag begins: the box of the shapes it moves, which snaps, and the lines
+ * of the other shown shapes it snaps to, kept in `dragTargets`.
+ */
+const takeSnapTargets = ({ state, effects }: Pick<Context, 'state' | 'effects'>) => {
+    const movingIds = editableSelectedShapesIds(state.currentDocument);
+    const moving = new Set(movingIds);
+    // Read without the store's tracking: thousands of shapes are only looked at here.
+    const document = json(state.currentDocument);
+    const others = [...shownShapesIds(document)].filter((id) => !moving.has(id));
+
+    effects.dragTargets.take(targetLines(others.map((id) => drawnBox(document.shapes[id]))));
+
+    return { movingIds, box: drawnExtent(document, movingIds) };
+};
+
+export const movePointer = (
+    { state, actions, effects }: Context,
+    { pointerId, position, free = false }: PointerInput
+) => {
     const pointer = state.events.pointer;
     const { gesture } = pointer;
 
@@ -183,22 +214,38 @@ export const movePointer = ({ state, actions }: Context, { pointerId, position }
         actions.selectShapes();
     }
 
-    if (gesture.kind === 'moving' && gesture.dragged) {
-        actions.moveSelectedShapes({ x: position.x - previous.x, y: position.y - previous.y });
-    }
-
     // A pointer that slips during a click moves nothing; beyond that, the shapes
-    // follow it from where it was pressed.
+    // follow it from where it was pressed, snapping unless the move is free.
     if (
         gesture.kind === 'moving' &&
-        !gesture.dragged &&
-        beyondClickSlip(pointer.start, position, state.currentDocument.camera.scale)
+        (gesture.dragged ||
+            beyondClickSlip(pointer.start, position, state.currentDocument.camera.scale))
     ) {
-        gesture.dragged = true;
-        actions.moveSelectedShapes({
-            x: position.x - pointer.start.x,
-            y: position.y - pointer.start.y
-        });
+        if (!gesture.dragged) {
+            gesture.dragged = true;
+            const { movingIds, box } = takeSnapTargets({ state, effects });
+
+            gesture.movingIds = movingIds;
+            gesture.box = box;
+        }
+
+        const { scale } = state.currentDocument.camera;
+        const targets = effects.dragTargets.current();
+        const pulled = { x: position.x - pointer.start.x, y: position.y - pointer.start.y };
+        const { delta, lines } =
+            free || !gesture.box || !targets
+                ? { delta: pulled, lines: { x: null, y: null } }
+                : snapMove(json(gesture.box), pulled, targets, SNAP_DISTANCE_PX / scale);
+        const step = { x: delta.x - gesture.movedBy.x, y: delta.y - gesture.movedBy.y };
+
+        if (step.x !== 0 || step.y !== 0) {
+            actions.moveShapesBy({ shapeIds: gesture.movingIds, delta: step });
+            gesture.movedBy = delta;
+        }
+
+        if (gesture.snapLines.x !== lines.x || gesture.snapLines.y !== lines.y) {
+            gesture.snapLines = lines;
+        }
     }
 
     if (gesture.kind === 'resizing') {
@@ -239,7 +286,7 @@ export const leaveSurface = ({ state }: Context) => {
  */
 export const endGesture = (
     { state, actions, effects }: Context,
-    { pointerId, position }: PointerInput
+    { pointerId, position, free }: PointerInput
 ) => {
     const pointer = state.events.pointer;
     const { gesture } = pointer;
@@ -248,7 +295,7 @@ export const endGesture = (
         return;
     }
 
-    actions.events.movePointer({ pointerId, position });
+    actions.events.movePointer({ pointerId, position, free });
 
     // A click, rather than a drag, on a shape of a group selected before it enters the group.
     if (gesture.kind === 'moving' && !gesture.dragged) {
@@ -259,6 +306,7 @@ export const endGesture = (
         actions.tools.executeToolCommands();
     }
 
+    effects.dragTargets.clear();
     pointer.gesture = { kind: 'idle' };
     actions.tools.resetTools();
     effects.collaboration.resume();
@@ -321,6 +369,7 @@ export const cancelGesture = (
         });
     }
 
+    effects.dragTargets.clear();
     const owner = gesture.pointerId;
 
     pointer.gesture = { kind: 'idle' };

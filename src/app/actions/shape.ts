@@ -550,6 +550,20 @@ export const selectShapeAtPointer: ActionGuard = ({ state }) => {
     return true;
 };
 
+/** Moves the given shapes by `delta`; the caller has checked they may move. */
+export const moveShapesBy: ActionWithParam<{ shapeIds: string[]; delta: Point }> = (
+    { state },
+    { shapeIds, delta }
+) => {
+    for (const id of shapeIds) {
+        const shape = state.currentDocument.shapes[id];
+
+        if (shape) {
+            translateShape(shape, delta);
+        }
+    }
+};
+
 export const moveSelectedShapes: ActionWithParam<Point> = ({ state }, delta) => {
     const shapes = Object.values(state.currentDocument.shapes);
     shapes.forEach((shape) => {

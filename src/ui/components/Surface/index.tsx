@@ -6,6 +6,7 @@ import { GridContainer as Grid } from '../Grid';
 import { Guides } from './Guides';
 import { SelectionMenu } from '../SelectionMenu';
 import { Shapes } from './Shapes';
+import { SnapLines } from '../SnapLines';
 import { Stack } from 'src/tools/components/Stack';
 import { Surface } from './Surface';
 
@@ -17,6 +18,7 @@ export const Canvas: FC = () => (
             <Camera>
                 <ErrorBoundary fallback={<h1>Something went wrong while rendering shapes</h1>}>
                     <Shapes />
+                    <SnapLines />
                     <Stack />
                 </ErrorBoundary>
             </Camera>

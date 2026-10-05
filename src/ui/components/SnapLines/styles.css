@@ -1,0 +1,7 @@
+.snapLines line {
+    pointer-events: none;
+    stroke: var(--accent);
+    stroke-dasharray: 4 3;
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+}

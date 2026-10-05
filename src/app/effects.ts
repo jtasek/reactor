@@ -9,3 +9,4 @@ export { api, serverTransport } from './services/api';
 export { clipboard } from './services/clipboard';
 export { assets } from './services/assets';
 export { viewSize } from './services/viewSize';
+export { dragTargets } from './services/dragTargets';
