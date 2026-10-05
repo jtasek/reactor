@@ -3,6 +3,7 @@ import { Application, Document } from '../types';
 import { isShapeVisible } from '../utils';
 import {
     groupFrame,
+    listMovableSelectedItems,
     selectedGroupsIdsOf,
     selectionExtent as findSelectionExtent
 } from '../membership';
@@ -64,6 +65,11 @@ export const selectedShapes = derived((currentDocument: Document) => {
 /** The box around the selected shapes, kept until they change: see `selectionExtent`. */
 export const selectionExtent = derived((currentDocument: Document) =>
     findSelectionExtent(currentDocument)
+);
+
+/** The selected items Align and Space may move, kept until they change: see `listMovableSelectedItems`. */
+export const movableSelectedItems = derived((currentDocument: Document) =>
+    listMovableSelectedItems(currentDocument)
 );
 
 export const selectedShapesIds = derived((currentDocument: Document) => {

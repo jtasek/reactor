@@ -351,8 +351,8 @@ is on one layer. Remaining: the rest of step 6.
 Feature inventory:
 
 - Shipped and tested: the select, rectangle, circle, ellipse, line, pen, text,
-  image and move tools; the delete, clone, group, ungroup, layer, unlayer and zoom
-  commands, with shortcuts and the command line; the property panel; the
+  image and move tools; the delete, clone, group, ungroup, layer, unlayer, zoom,
+  align and space commands, with shortcuts and the command line; the property panel; the
   documents page; the navigation bar, group and layer panels with hide and lock;
   the context menu; copy, cut and paste; saving in the browser and sharing between tabs; accounts,
   syncing with the server, and signing out.
