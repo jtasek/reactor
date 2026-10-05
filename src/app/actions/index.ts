@@ -6,7 +6,7 @@ export * from './group';
 export * from './layer';
 export * from './link';
 export * from './routes';
-export * from './ruler';
+export * from './guide';
 export * from './search';
 export * from './selection';
 export * from './shape';

@@ -4,7 +4,7 @@ import {
     createGroup,
     createLayer,
     createLink,
-    createRuler,
+    createGuide,
     createShape,
     getAnonymousUser,
     getCurrentUserName,
@@ -13,7 +13,7 @@ import {
     newGroupName,
     newLayerName,
     newLinkName,
-    newRulerName,
+    newGuideName,
     newShapeName
 } from '../factories';
 
@@ -58,11 +58,11 @@ describe('factories', () => {
         });
     });
 
-    describe('newRulerName()', () => {
-        it('returns new ruler name', () => {
-            const actual = newRulerName();
+    describe('newGuideName()', () => {
+        it('returns new guide name', () => {
+            const actual = newGuideName();
 
-            expect(actual).toBe('ruler-1');
+            expect(actual).toBe('guide-1');
         });
     });
 
@@ -118,11 +118,11 @@ describe('factories', () => {
         });
     });
 
-    describe('createRuler()', () => {
-        it('creates new ruler object with default values', () => {
-            const actual = createRuler({ name: 'RULER_NAME' });
+    describe('createGuide()', () => {
+        it('creates new guide object with default values', () => {
+            const actual = createGuide({ name: 'GUIDE_NAME' });
 
-            expect(actual).toHaveProperty('name', 'RULER_NAME');
+            expect(actual).toHaveProperty('name', 'GUIDE_NAME');
         });
     });
 

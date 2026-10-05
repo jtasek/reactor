@@ -83,9 +83,9 @@ export const state: UI = {
         name: 'Inspector',
         visible: false
     },
-    rulers: {
-        id: 'rulers',
-        name: 'Rulers',
+    guides: {
+        id: 'guides',
+        name: 'Guides',
         visible: false
     },
     searchBox: {

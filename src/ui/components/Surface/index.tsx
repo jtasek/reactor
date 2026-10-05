@@ -3,7 +3,7 @@ import { Camera } from './Camera';
 import { ConnectedOverlay as Overlay } from '../Overlay';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { GridContainer as Grid } from '../Grid';
-import { Rulers } from './Rulers';
+import { Guides } from './Guides';
 import { SelectionMenu } from '../SelectionMenu';
 import { Shapes } from './Shapes';
 import { Stack } from 'src/tools/components/Stack';
@@ -13,7 +13,7 @@ export const Canvas: FC = () => (
     <>
         <Surface>
             <Grid />
-            <Rulers />
+            <Guides />
             <Camera>
                 <ErrorBoundary fallback={<h1>Something went wrong while rendering shapes</h1>}>
                     <Shapes />

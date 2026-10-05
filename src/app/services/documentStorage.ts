@@ -8,7 +8,7 @@ import type {
     Size,
     Group,
     Link,
-    Ruler
+    Guide
 } from '../types';
 import { createDocument } from '../factories';
 import { orderAbove, untie, validDrawOrder } from '../drawOrder';
@@ -23,7 +23,7 @@ export const RUNTIME_FIELDS = new Set([
     'selected',
     'shownLayerId'
 ]);
-export const COLLECTIONS = ['shapes', 'groups', 'layers', 'components', 'links', 'rulers'] as const;
+export const COLLECTIONS = ['shapes', 'groups', 'layers', 'components', 'links', 'guides'] as const;
 
 export type Collection = (typeof COLLECTIONS)[number];
 
@@ -40,7 +40,7 @@ type ShapeData = DistributiveOmit<
 };
 type MemberData = Omit<Group, 'selected'> & { parentId?: string };
 type LinkData = Omit<Link, 'selected'>;
-type RulerData = Omit<Ruler, 'selected'>;
+type GuideData = Omit<Guide, 'selected'>;
 
 /** A document's durable fields, without its entities and its per-device camera. */
 export type DocumentFields = Pick<
@@ -66,7 +66,7 @@ export interface SavedEntities {
     layers: MemberData;
     components: MemberData;
     links: LinkData;
-    rulers: RulerData;
+    guides: GuideData;
 }
 
 type DocumentData = DocumentFields &
@@ -320,7 +320,7 @@ function readLink(value: unknown): LinkData {
     };
 }
 
-function readRuler(value: unknown): RulerData {
+function readGuide(value: unknown): GuideData {
     const r = record(value);
 
     if (r.orientation !== 'horizontal' && r.orientation !== 'vertical') {
@@ -347,7 +347,7 @@ const entityReaders: { [C in Collection]: (value: unknown) => SavedEntities[C] }
     layers: readMember,
     components: readMember,
     links: readLink,
-    rulers: readRuler
+    guides: readGuide
 };
 
 /** Reads one entity's durable form, throwing when it is invalid. */
@@ -381,7 +381,7 @@ const referenceRepairs: {
         [link.source, link.target].every((end) => end === undefined || exists('shapes', end))
             ? link
             : null,
-    rulers: (ruler) => ruler
+    guides: (guide) => guide
 };
 
 /**
@@ -541,7 +541,7 @@ function readDocument(value: unknown, onRepair = () => {}): DocumentData {
         layers: repair('layers', table(d.layers, readMember)),
         components: repair('components', components),
         links: repair('links', table(d.links, readLink)),
-        rulers: table(d.rulers, readRuler)
+        guides: table(d.guides, readGuide)
     };
 }
 
@@ -647,7 +647,7 @@ export const hydrateMember = (member: MemberData) => ({
 
 export const hydrateLink = (link: LinkData): Link => ({ ...link, selected: false });
 
-export const hydrateRuler = (ruler: RulerData): Ruler => ({ ...ruler, selected: false });
+export const hydrateGuide = (guide: GuideData): Guide => ({ ...guide, selected: false });
 
 const entityHydrators: {
     [C in Collection]: (entity: SavedEntities[C]) => Document[C][string];
@@ -657,7 +657,7 @@ const entityHydrators: {
     layers: hydrateMember,
     components: hydrateMember,
     links: hydrateLink,
-    rulers: hydrateRuler
+    guides: hydrateGuide
 };
 
 /** One entity as the store holds it, from its durable form. */
@@ -689,7 +689,7 @@ export function hydrateDocument(data: DocumentData): Document {
         layers: hydrateTable(data.layers, hydrateMember),
         components: hydrateTable(data.components, hydrateMember),
         links: hydrateTable(data.links, hydrateLink),
-        rulers: hydrateTable(data.rulers, hydrateRuler)
+        guides: hydrateTable(data.guides, hydrateGuide)
     });
 }
 
