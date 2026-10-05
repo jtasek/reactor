@@ -1,4 +1,4 @@
-import type { Box, Point, Rectangle, ResizeHandlerType, Shape, Size } from './types';
+import type { Box, Corner, Point, Rectangle, ResizeHandlerType, Shape, Size } from './types';
 import {
     DEFAULT_TEXT_FONT_SIZE,
     assertNever,
@@ -388,20 +388,39 @@ function distanceToPolyline(point: Point, points: Point[]): number {
 export const limitCornerRadius = (size: Size, radius: number) =>
     Math.min(Math.max(0, radius), Math.min(size.width, size.height) / 2);
 
+/** The way in from each corner of a box, along its diagonal. */
+export const CORNER_INWARD: Record<Corner, Point> = {
+    topLeft: { x: 1, y: 1 },
+    topRight: { x: -1, y: 1 },
+    bottomRight: { x: -1, y: -1 },
+    bottomLeft: { x: 1, y: -1 }
+};
+
+/** A box's corners, clockwise from its top left. */
+export const CORNERS: Corner[] = ['topLeft', 'topRight', 'bottomRight', 'bottomLeft'];
+
+export const isCorner = (value: string): value is Corner => Object.hasOwn(CORNER_INWARD, value);
+
 /**
- * A rectangle's corner radius after its radius handle is dragged from `from` to
- * `to`: the radius it is drawn with, grown by how far the drag goes in along the
- * diagonal from its top left corner, in its turned frame.
+ * A rectangle's corner radius after the radius handle of `corner` is dragged from
+ * `from` to `to`: the radius it is drawn with, grown by how far the drag goes in
+ * along that corner's diagonal, in its turned frame.
  */
-export function cornerRadiusAfterDrag(rectangle: Rectangle, from: Point, to: Point): number {
+export function cornerRadiusAfterDrag(
+    rectangle: Rectangle,
+    corner: Corner,
+    from: Point,
+    to: Point
+): number {
     const move = rotatePoint(
         { x: to.x - from.x, y: to.y - from.y },
         { x: 0, y: 0 },
         -(rectangle.rotation ?? 0)
     );
     const drawn = limitCornerRadius(rectangle.size, rectangle.cornerRadius ?? 0);
+    const inward = CORNER_INWARD[corner];
 
-    return limitCornerRadius(rectangle.size, drawn + (move.x + move.y) / 2);
+    return limitCornerRadius(rectangle.size, drawn + (move.x * inward.x + move.y * inward.y) / 2);
 }
 
 /**

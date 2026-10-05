@@ -7,6 +7,7 @@ import {
     ActionWithResult,
     Application,
     Box,
+    Corner,
     Group,
     Point,
     ResizeHandlerType,
@@ -808,15 +809,16 @@ export const resizeShape = (
 };
 
 /**
- * Rounds a rectangle's corners as its radius handle is dragged from `from` to `to`,
- * from the rectangle as it was when the drag began (`original`).
+ * Rounds a rectangle's corners as the radius handle of `corner` is dragged from
+ * `from` to `to`, from the rectangle as it was when the drag began (`original`).
  */
 export const roundCorners: ActionWithParam<{
     shapeId: string;
+    corner: Corner;
     from: Point;
     to: Point;
     original: Shape;
-}> = ({ state }, { shapeId, from, to, original }) => {
+}> = ({ state }, { shapeId, corner, from, to, original }) => {
     const shape = state.currentDocument.shapes[shapeId];
 
     if (
@@ -827,7 +829,7 @@ export const roundCorners: ActionWithParam<{
         return;
     }
 
-    const radius = cornerRadiusAfterDrag(original, from, to);
+    const radius = cornerRadiusAfterDrag(original, corner, from, to);
 
     if (shape.cornerRadius !== radius) {
         shape.cornerRadius = radius;

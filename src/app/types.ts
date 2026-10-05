@@ -32,6 +32,12 @@ export type ResizeHandlerType =
     | 'topLeft'
     | 'topRight';
 
+/** A corner of a box. */
+export type Corner = Extract<
+    ResizeHandlerType,
+    'topLeft' | 'topRight' | 'bottomRight' | 'bottomLeft'
+>;
+
 export type Size = {
     height: number;
     width: number;
