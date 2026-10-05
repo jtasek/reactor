@@ -12,16 +12,11 @@
     --dialog-text-color: var(--ink-strong);
     --dialog-emphasis-weight: 600;
     background: var(--surface);
+    backdrop-filter: var(--backdrop-filter);
     border: 0;
     border-radius: var(--dialog-radius);
     box-shadow: var(--box-shadow-hover);
     color: var(--dialog-text-color);
-    font-family:
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        'Segoe UI',
-        sans-serif;
     line-height: 1.5;
     margin: auto;
     max-width: min(90vw, var(--dialog-max-width));

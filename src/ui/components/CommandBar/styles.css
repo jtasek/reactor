@@ -1,25 +1,25 @@
-.commandBar {
+.container {
     --command-bar-edge: 10px;
     --command-bar-left: 350px;
     --command-bar-right: calc(var(--control-width) + 2 * var(--command-bar-edge));
     --command-bar-top: 10px;
     --command-bar-max-height: 5rem;
-    backdrop-filter: var(--backdrop-filter);
-    background-color: var(--control-background);
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
+    --command-icon-size: 1.125rem;
+    --command-button-size: 2rem;
+    --command-button-spacing: 0.125rem;
+    --command-info-padding: 0.25rem;
+    --command-info-font-size: 0.875rem;
+    --command-info-transition-duration: 0.2s;
+    --command-info-gap: 0.25rem;
     color: var(--text-color);
     display: flex;
+    align-items: flex-start;
     font-size: 0.75rem;
     box-sizing: border-box;
     left: var(--command-bar-left);
-    max-height: var(--command-bar-max-height);
     max-width: calc(100vw - var(--command-bar-right) - var(--command-bar-left));
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 2px;
     position: fixed;
-    right: var(--command-bar-right);
+    width: max-content;
     top: var(--command-bar-top);
     transition: all 0.2s ease-in-out;
     user-select: none;
@@ -27,13 +27,64 @@
 }
 
 @media (max-width: 700px) {
-    .commandBar {
+    .container {
         --command-bar-left: var(--command-bar-edge);
         --command-bar-right: max(
             var(--dock-side-width),
             calc(var(--control-width) + 2 * var(--command-bar-edge))
         );
     }
+}
+
+.commandBar {
+    backdrop-filter: var(--backdrop-filter);
+    background-color: var(--control-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    display: flex;
+    flex-direction: row;
+    list-style: none;
+    margin: 0;
+    max-height: var(--command-bar-max-height);
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.125rem;
+    width: max-content;
+}
+
+.info {
+    backdrop-filter: var(--backdrop-filter);
+    background-color: var(--control-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    font-size: var(--command-info-font-size);
+    line-height: 1.5;
+    overflow: auto;
+    overflow-wrap: anywhere;
+    padding: var(--command-info-padding) 0.5rem;
+    position: absolute;
+    top: calc(100% + var(--command-info-gap));
+    left: 0;
+    width: 100%;
+    opacity: 1;
+    visibility: visible;
+    transition:
+        opacity var(--command-info-transition-duration) ease-in,
+        visibility 0s;
+}
+
+.info:empty {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+        opacity var(--command-info-transition-duration) ease-out,
+        visibility 0s var(--command-info-transition-duration);
+}
+
+.commandBarButton svg {
+    height: var(--command-icon-size);
+    width: var(--command-icon-size);
 }
 
 .commandBarButton {
@@ -43,9 +94,9 @@
     flex: 0 0 auto;
     flex-direction: column;
     justify-items: center;
-    margin: 5px;
-    min-width: 50px;
-    padding: 2px;
+    margin: var(--command-button-spacing);
+    min-width: var(--command-button-size);
+    padding: var(--command-button-spacing);
     white-space: nowrap;
     transition: opacity 0.5s ease-in-out;
 }
@@ -71,7 +122,7 @@ div {
 }
 
 .delimiter {
-    border: 1px dashed var(--control-delimiter);
+    border: 1px solid var(--control-delimiter);
     margin: 10px 5px 10px 5px;
 }
 
@@ -79,9 +130,12 @@ div {
     background-color: var(--control-background-active);
 }
 
+.commandBarButton button:disabled {
+    cursor: default;
+}
+
 .commandBarButton[data-disabled='true'] {
     background-color: var(--control-background-disabled);
     cursor: default;
-    pointer-events: none;
     text-decoration: none;
 }

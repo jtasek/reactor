@@ -17,11 +17,15 @@ test('tools, list items and their toggles are buttons that work from the keyboar
     await expect(shapes(page)).toHaveCount(1);
 
     // The list's toggle, not the Hide command of the command bar or of a menu.
-    const hide = page.locator('button[title="Hide"]:not([role="toolbar"] *)');
+    const hide = page.locator(
+        'button[title="Hide"]:not([role="toolbar"] *):not([aria-label="Commands"] *)'
+    );
 
     await hide.focus();
     await page.keyboard.press('Space');
-    await expect(page.locator('button[title="Show"]:not([role="toolbar"] *)')).toBeVisible();
+    await expect(
+        page.locator('button[title="Show"]:not([role="toolbar"] *):not([aria-label="Commands"] *)')
+    ).toBeVisible();
 
     const shape = page.getByRole('button', { name: 'shape-1', exact: true });
 

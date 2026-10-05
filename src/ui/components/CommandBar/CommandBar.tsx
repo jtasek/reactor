@@ -1,4 +1,4 @@
-import React, { FC, Fragment } from 'react';
+import React, { FC, Fragment, useState } from 'react';
 
 import { useCommands } from 'src/app/hooks';
 import type { Command } from 'src/app/types';
@@ -24,6 +24,10 @@ function groupCommands(commands: Command[]): Record<string, Command[]> {
 
 export const CommandBar: FC = () => {
     const commands = useCommands();
+    const [hovered, setHovered] = useState<Command>();
+    const [focused, setFocused] = useState<Command>();
+    const description = (hovered ?? focused)?.description;
+    const groupProps = { onHover: setHovered, onFocus: setFocused };
 
     if (commands.length === 0) {
         return null;
@@ -37,14 +41,24 @@ export const CommandBar: FC = () => {
     }
 
     return (
-        <ul className={styles.commandBar} style={DOCK_GEOMETRY_STYLE} aria-label="Commands">
-            {groups.map(([key, value]) => (
-                <Fragment key={key}>
-                    <CommandBarGroup commands={value} />
-                    <CommandBarDelimiter />
-                </Fragment>
-            ))}
-            <CommandBarGroup commands={last[1]} />
-        </ul>
+        <div className={styles.container} style={DOCK_GEOMETRY_STYLE}>
+            <ul
+                className={styles.commandBar}
+                aria-label="Commands"
+                onMouseLeave={() => setHovered(undefined)}
+            >
+                {groups.map(([key, value]) => (
+                    <Fragment key={key}>
+                        <CommandBarGroup commands={value} {...groupProps} />
+                        <CommandBarDelimiter />
+                    </Fragment>
+                ))}
+                <CommandBarGroup commands={last[1]} {...groupProps} />
+            </ul>
+            {/* Each button says its own description; this repeats it for the eye. */}
+            <p className={styles.info} data-cy="command-info" aria-hidden="true">
+                {description}
+            </p>
+        </div>
     );
 };
