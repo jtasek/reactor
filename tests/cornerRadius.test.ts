@@ -1,4 +1,4 @@
-import { cornerRadiusAfterDrag, limitCornerRadius } from 'src/app/geometry';
+import { cornerRadiusAfterDrag, limitCornerRadius, placeShapeFrom } from 'src/app/geometry';
 import { createShape } from 'src/app/factories';
 import { SHAPE_PROPERTIES, applyProperty } from 'src/app/properties';
 import { readShapeGeometry } from 'src/app/services/documentStorage';
@@ -107,5 +107,14 @@ describe('corner radius', () => {
         events.beginGesture({ pointerId: 1, position: { x: 8, y: 8 }, handle });
         events.endGesture({ pointerId: 1, position: { x: 20, y: 20 } });
         expect(shape().cornerRadius).toBe(4);
+    });
+
+    it('scales with its group, as the group’s other shapes do', () => {
+        const original = rectangle({ cornerRadius: 10 });
+        const shape = rectangle({ cornerRadius: 10 });
+
+        placeShapeFrom(shape, original, { x: 0, y: 0 }, 3, { x: 0, y: 0 });
+
+        expect(shape).toMatchObject({ size: { width: 300, height: 120 }, cornerRadius: 30 });
     });
 });

@@ -46,7 +46,7 @@ export const createRectProps = ({ size, topLeft }: Pointer, designMode = false):
 export const Rect: FC<Props> = ({ name, position, size, selected, cornerRadius = 0 }) => {
     const shape = useRef(null);
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
-    const radius = limitCornerRadius(size, cornerRadius);
+    const radius = size ? limitCornerRadius(size, cornerRadius) : undefined;
 
     return (
         <rect

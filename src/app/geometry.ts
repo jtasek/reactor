@@ -81,6 +81,14 @@ export function placeShapeFrom(
                     height: original.size.height * factor
                 };
             }
+
+            if (
+                shape.type === 'rectangle' &&
+                original.type === 'rectangle' &&
+                original.cornerRadius !== undefined
+            ) {
+                shape.cornerRadius = original.cornerRadius * factor;
+            }
             break;
         case 'circle':
             if (original.type === 'circle') {
