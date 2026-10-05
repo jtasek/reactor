@@ -1,4 +1,4 @@
-import type { Command, CommandScope } from 'src/app/types';
+import type { Command, CommandPlace, CommandScope } from 'src/app/types';
 import type { Context } from 'src/app';
 import {
     AlignBottomCommand,
@@ -62,6 +62,11 @@ export function registerCommand(command: Command) {
         commands[command.id] = command;
         scoped.clear();
     }
+}
+
+/** The registered commands offered in `place`, in the order they are registered. */
+export function commandsIn(place: CommandPlace): Command[] {
+    return getCommands().filter(({ places = ['commandBar'] }) => places.includes(place));
 }
 
 /** The registered commands that items of `scope` offer in their menus, in menu order. */

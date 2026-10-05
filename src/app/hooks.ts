@@ -5,11 +5,11 @@ import {
     createReactionHook,
     createStateHook
 } from 'overmind-react';
-import { commandsFor, getCommand, getCommands } from './actions';
+import { commandsFor, commandsIn, getCommand, getCommands } from './actions';
 import { Context } from '.';
 import { useCallback, useEffect, useLayoutEffect, useReducer, useState } from 'react';
 import { isShapeLocked, isShapeVisible } from './utils';
-import type { Command, CommandScope } from './types';
+import type { Command, CommandPlace, CommandScope } from './types';
 import { takesEditorInput } from '../events/input';
 import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
 import { placeSelectionMenu } from './selectionMenu';
@@ -58,6 +58,9 @@ export const useCommands = () => {
     return getCommands();
 };
 
+/** The commands offered in `place`: see `commandsIn`. */
+export const usePlacedCommands = (place: CommandPlace) => commandsIn(place);
+
 /** The commands an item of `scope` offers in its menu: see `commandsFor`. */
 export const useScopedCommands = (scope: CommandScope | null) =>
     scope === null ? [] : commandsFor(scope);
@@ -72,6 +75,14 @@ export const useSelectionCommands = () => {
 
     return commands.filter((_, index) => enabled[index]);
 };
+
+/** Whether each of `commands` can run now, in their order. */
+export const useCommandsEnabled = (commands: Command[]) =>
+    useAppState((state) => commands.map((command) => command.canExecute({ state })));
+
+/** How many selected items Align and Space may move: see `movableSelectedItems`. */
+export const useMovableSelectedItemsCount = () =>
+    useAppState((state) => state.currentDocument.movableSelectedItems.length);
 
 /** Whether `command` can run now; re-renders when the state its guard reads changes. */
 export const useCommandEnabled = (command: Command) => {

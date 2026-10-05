@@ -2,6 +2,7 @@ import React, { FC } from 'react';
 import styles from './styles.css';
 import { PropertyField } from './PropertyField';
 import { PropertyGroup } from './PropertyGroup';
+import { AlignSection } from './AlignSection';
 import { groupRows, type PropertyRow, type PropertyValue } from 'src/app/properties';
 
 export interface Props {
@@ -20,25 +21,28 @@ export const Inspector: FC<Props> = ({ rows, shapeIds, onChange }) => {
     }
 
     return (
-        <table className={styles.inspector}>
-            {groupRows(rows).map(({ group, rows: grouped }) => (
-                <PropertyGroup key={group} name={group}>
-                    {grouped.map((row) => (
-                        <PropertyField
-                            key={row.property.key}
-                            row={row}
-                            shapeIds={shapeIds}
-                            onChange={onChange}
-                        />
-                    ))}
-                </PropertyGroup>
-            ))}
-            <tfoot>
-                <tr>
-                    <td>Selected</td>
-                    <td>{shapeIds.length}</td>
-                </tr>
-            </tfoot>
-        </table>
+        <div className={styles.inspector}>
+            <AlignSection />
+            <table>
+                {groupRows(rows).map(({ group, rows: grouped }) => (
+                    <PropertyGroup key={group} name={group}>
+                        {grouped.map((row) => (
+                            <PropertyField
+                                key={row.property.key}
+                                row={row}
+                                shapeIds={shapeIds}
+                                onChange={onChange}
+                            />
+                        ))}
+                    </PropertyGroup>
+                ))}
+                <tfoot>
+                    <tr>
+                        <td>Selected</td>
+                        <td>{shapeIds.length}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
     );
 };

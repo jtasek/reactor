@@ -1,4 +1,4 @@
-import { commandsFor, registerCommand } from 'src/app/actions/startup';
+import { commandsFor, commandsIn, registerCommand } from 'src/app/actions/startup';
 import { selectionScope } from 'src/app/membership';
 import type { ShapeInput } from 'src/app/types';
 import * as commands from 'src/commands';
@@ -42,6 +42,31 @@ describe('commands for an item', () => {
         });
 
         expect(idsFor('shape')[0]).toBe('rename');
+    });
+});
+
+describe('commands in a place', () => {
+    it('are in the command bar unless they name their places', () => {
+        const barIds = commandsIn('commandBar').map(({ id }) => id);
+        const inspectorIds = commandsIn('inspector').map(({ id }) => id);
+
+        expect(barIds).toContain('clone');
+        expect(barIds.filter((id) => id.startsWith('align-') || id.startsWith('space-'))).toEqual(
+            []
+        );
+        // In the order they are registered, which startup sets.
+        expect([...inspectorIds].sort()).toEqual([
+            'align-bottom',
+            'align-center',
+            'align-left',
+            'align-middle',
+            'align-right',
+            'align-top',
+            'space-between-horizontally',
+            'space-between-vertically',
+            'space-equally-horizontally',
+            'space-equally-vertically'
+        ]);
     });
 });
 
