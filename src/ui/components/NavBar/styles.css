@@ -70,7 +70,7 @@
 }
 
 .navBar li.selected:before {
-  background-color: mediumpurple;
+  background-color: var(--accent);
   border-radius: 50%;
   content: '';
   height: 4px;
@@ -81,7 +81,7 @@
 }
 
 .navBar li.selected > .itemName {
-  color: mediumpurple;
+  color: var(--accent);
   font-weight: 600;
 }
 

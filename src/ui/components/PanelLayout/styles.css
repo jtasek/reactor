@@ -132,8 +132,8 @@
 }
 
 .zone {
-    background: color-mix(in srgb, var(--control-background) 85%, mediumpurple);
-    border: 2px dashed mediumpurple;
+    background: color-mix(in srgb, var(--control-background) 85%, var(--accent));
+    border: 2px dashed var(--accent);
     border-radius: var(--border-radius);
     box-sizing: border-box;
     opacity: var(--dock-zone-opacity);
@@ -144,7 +144,7 @@
 }
 
 .activeZone {
-    background: mediumpurple;
+    background: var(--accent);
     opacity: var(--dock-active-zone-opacity);
 }
 

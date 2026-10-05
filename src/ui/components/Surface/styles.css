@@ -1,6 +1,6 @@
 .surface {
-  background-color: #e9e9e9;
-  color: #2d2d2d;
+  background-color: var(--canvas);
+  color: var(--canvas-dark);
   /*cursor: none;*/
   /* height: 100%; */
   overflow: hidden;
@@ -14,7 +14,7 @@
 }
 
 .surface-black {
-  background-color: #2d2d2d;
+  background-color: var(--canvas-dark);
 }
 
 .camera {

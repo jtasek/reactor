@@ -31,7 +31,7 @@
 }
 
 .toolBarButton[data-active='true'] :before {
-    background-color: mediumpurple;
+    background-color: var(--accent);
     border-radius: 50%;
     content: '';
     height: 5px;

@@ -58,7 +58,7 @@
 }
 
 .selected > .row > .name {
-    color: mediumpurple;
+    color: var(--accent);
     font-weight: 600;
 }
 

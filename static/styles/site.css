@@ -37,6 +37,30 @@ body,
   --control-width: 200px;
   --control-delimiter: rgba(0, 0, 0, .25);
   --control-zindex: 100;
+  --canvas: #e9e9e9;
+  --canvas-dark: #2d2d2d;
+  --surface: #fff;
+  --ink-strong: #1f1f1f;
+  --backdrop: rgb(0 0 0 / 35%);
+  --accent: #9370db;
+  --handle-active: #f08080;
+  --menu-icon: #444;
+  --menu-hover: #ececec;
+  --menu-pressed: #dcdcdc;
+  --action-border: rgb(0 0 0 / 15%);
+  --info-background: #e4dff3;
+  --info-color: #6a55c2;
+  --success-background: #dcefe2;
+  --success-color: #2c7a4b;
+  --switch-track: rgba(0, 0, 0, .26);
+  --switch-track-on: rgba(63, 81, 181, .5);
+  --switch-thumb: #fafafa;
+  --switch-on: #3f51b5;
+  --shadow-thumb: 0 2px 2px 0 rgba(0, 0, 0, .14), 0 3px 1px -2px rgba(0, 0, 0, .2),
+    0 1px 5px 0 rgba(0, 0, 0, .12);
+  --shadow-thumb-on: 0 3px 4px 0 rgba(0, 0, 0, .14), 0 3px 3px -2px rgba(0, 0, 0, .2),
+    0 1px 8px 0 rgba(0, 0, 0, .12);
+  --shadow-status-bar: 0 0 5px rgba(0, 0, 0, 0.5);
 }
 
 .control {
