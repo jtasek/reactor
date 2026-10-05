@@ -271,7 +271,7 @@ Examples worth modelling new tools on:
 
 - `Rect` — canonical simple tool using `pointer.topLeft` / `pointer.size`. A rectangle's
   `cornerRadius` rounds its corners, drawn at most half its shorter side (`limitCornerRadius`).
-  It is set in the inspector's Radius field, or by the radius handles (`RadiusHandle`), one
+  It is set in the inspector's Radius field, or by the radius handles (`RadiusHandles`), one
   inside each corner: the `rounding` gesture grows it, for all four corners, by how far a
   handle is dragged in along its corner's diagonal (`cornerRadiusAfterDrag`,
   `CORNER_INWARD`), and a badge shows it meanwhile. The handles stay in their corners'

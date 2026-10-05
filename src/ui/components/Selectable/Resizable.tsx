@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 import type { Box, ResizeHandlerType } from 'src/app/types';
 import { Handle } from '../Handle';
-import { RadiusHandle } from '../Handle/RadiusHandle';
+import { RadiusHandles } from '../Handle/RadiusHandles';
 import { RotateHandle } from '../Handle/RotateHandle';
 import handleStyles from '../Handle/styles.css';
 import { Props } from './Selectable';
@@ -143,7 +143,7 @@ export const Resizable: FC<Props> = ({ shape }) => {
                 rotateActive={rotateActive}
             />
             {shape.type === 'rectangle' && (
-                <RadiusHandle rectangle={shape} activeCorner={activeCorner} />
+                <RadiusHandles rectangle={shape} activeCorner={activeCorner} />
             )}
         </>
     );
