@@ -397,6 +397,12 @@ the menu or the way between them, and is not rendered during a drag.
 - **Path alias** `src/*` → `./src` (in `tsconfig.json` and `webpack.config.mjs`). Mixed
   relative and `src/...` imports both appear; keep them consistent within a file.
 - **CSS Modules**: `*.css` with generated `*.css.d.ts` typings. Don't hand-edit the `.d.ts`.
+- **Design system**: the Reactor design system (https://claude.ai/artifact/GHP3rx2aZGuHx3b13DieV6)
+  names the colors, type, spacing, radii and shadows and says how the controls look and
+  behave; read its `project/README.md` and `project/tokens.json` before changing UI. Its
+  tokens are the custom properties in `:root` of `static/styles/site.css`, by the same name:
+  use `var(--name)` rather than a literal color or shadow, and add a value there, and to the
+  design system, before using it.
 - **Style** (Prettier `.prettierrc`): 4-space indent, single quotes, semicolons, `printWidth`
   100, no trailing commas. ESLint enforces these plus `prettier/prettier: error`.
 - TypeScript is `strict`; **avoid `any`**. `console.log` is a lint warning (only

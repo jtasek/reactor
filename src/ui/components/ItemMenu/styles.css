@@ -1,6 +1,6 @@
 .menu {
     align-items: center;
-    background: #fff;
+    background: var(--surface);
     border-radius: 13px;
     box-shadow: var(--box-shadow);
     display: inline-flex;
@@ -15,10 +15,10 @@
 
 .button {
     align-items: center;
-    background: #fff;
+    background: var(--surface);
     border: 0;
     border-radius: 50%;
-    color: #444;
+    color: var(--menu-icon);
     cursor: pointer;
     display: inline-flex;
     height: 22px;
@@ -29,11 +29,11 @@
 }
 
 .button:hover:not(:disabled) {
-    background: #ececec;
+    background: var(--menu-hover);
 }
 
 .button[aria-pressed='true'] {
-    background: #dcdcdc;
+    background: var(--menu-pressed);
 }
 
 .button:disabled {
@@ -58,7 +58,7 @@
 
 @media (hover: none) {
     [data-menu-host]:not(:hover):not(:has(:focus-visible)) .menu {
-        background: #fff;
+        background: var(--surface);
         box-shadow: var(--box-shadow);
     }
 
