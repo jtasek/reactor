@@ -97,6 +97,8 @@ test('the command bar fits its buttons and the description is a separate panel',
     const last = (await bar.locator('li').last().boundingBox())!;
     expect(bounds.x + bounds.width - last.x - last.width).toBeLessThanOrEqual(8);
     await expect(bar.locator('..')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    // A blur on the container would keep the description panel's own from reaching the canvas.
+    await expect(bar.locator('..')).toHaveCSS('backdrop-filter', 'none');
     await bar.getByRole('button', { name: 'Clone', exact: true }).locator('..').hover();
     const info = bar.locator('..').locator('[data-cy="command-info"]');
     expect((await info.boundingBox())!.y).toBeGreaterThan(bounds.y + bounds.height);

@@ -12,7 +12,6 @@
     --command-info-transition-duration: 0.2s;
     --command-info-gap: 0.25rem;
     color: var(--text-color);
-    backdrop-filter: var(--backdrop-filter);
     display: flex;
     align-items: flex-start;
     font-size: 0.75rem;
