@@ -2,14 +2,15 @@ import React, { FC } from 'react';
 
 import styles from './styles.css';
 import { useCameraScale } from 'src/app/hooks';
-import { CORNER_INWARD, limitCornerRadius } from 'src/app/geometry';
-import type { Corner, Point, Rectangle } from 'src/app/types';
+import { CORNERS, CORNER_INWARD, limitCornerRadius } from 'src/app/geometry';
+import { rotatePoint } from 'src/app/utils';
+import type { Corner, Rectangle } from 'src/app/types';
 
 /** Sizes on screen, in pixels, whatever the zoom. */
 const HANDLE_RADIUS = 4;
 /** How far in from its corner a handle stays while the corners are square or hardly round. */
 const LEAST_INSET = 12;
-/** How far the badge showing the radius sits from the dragged handle. */
+/** How far the badge showing the radius sits beside the dragged handle. */
 const BADGE_OFFSET = 18;
 /** Below this length of its shorter side on screen, the handles would crowd the resize handles. */
 const MIN_HANDLED_SIDE = 40;
@@ -35,26 +36,37 @@ export const RadiusHandle: FC<Props> = ({ rectangle, activeCorner }) => {
     }
 
     const radius = limitCornerRadius(size, rectangle.cornerRadius ?? 0);
+    const rotation = rectangle.rotation ?? 0;
     // In the corner's quarter, so a handle never covers the middle, where a press moves the shape.
     const inset = Math.min(half / 2, Math.max(radius, LEAST_INSET / scale));
-    const corners = Object.entries(CORNER_INWARD) as [Corner, Point][];
-    const handleAt = (corner: Corner) => {
+    const handles = CORNERS.map((corner) => {
         const inward = CORNER_INWARD[corner];
 
         return {
+            corner,
             x: position.x + (inward.x > 0 ? inset : size.width - inset),
             y: position.y + (inward.y > 0 ? inset : size.height - inset)
         };
-    };
-    // Above or below the handle, toward the middle, so the badge does not cover it.
-    const badge = activeCorner && {
-        x: handleAt(activeCorner).x,
-        y: handleAt(activeCorner).y + (CORNER_INWARD[activeCorner].y * BADGE_OFFSET) / scale
-    };
+    });
+    const dragged = handles.find(({ corner }) => corner === activeCorner);
+    // The badge is upright on screen, beside the dragged handle on the side away from the
+    // middle, level with it, so it covers neither that handle nor the others.
+    const outward =
+        dragged &&
+        rotatePoint(
+            {
+                x: dragged.x - (position.x + size.width / 2),
+                y: dragged.y - (position.y + size.height / 2)
+            },
+            { x: 0, y: 0 },
+            rotation
+        ).x < 0
+            ? -1
+            : 1;
 
     return (
         <>
-            {corners.map(([corner]) => (
+            {handles.map(({ corner, x, y }) => (
                 <circle
                     key={corner}
                     className={
@@ -62,8 +74,8 @@ export const RadiusHandle: FC<Props> = ({ rectangle, activeCorner }) => {
                             ? `${styles.handle} ${styles.radius} ${styles.active}`
                             : `${styles.handle} ${styles.radius}`
                     }
-                    cx={handleAt(corner).x}
-                    cy={handleAt(corner).y}
+                    cx={x}
+                    cy={y}
                     r={HANDLE_RADIUS / scale}
                     data-handle
                     data-shape-id={rectangle.id}
@@ -72,10 +84,12 @@ export const RadiusHandle: FC<Props> = ({ rectangle, activeCorner }) => {
                     onPointerDown={(e) => e.preventDefault()}
                 />
             ))}
-            {badge && (
+            {dragged && (
                 <text
                     className={styles.rotateBadge}
-                    transform={`translate(${badge.x} ${badge.y}) rotate(${-(rectangle.rotation ?? 0)}) scale(${1 / scale})`}
+                    x={outward * BADGE_OFFSET}
+                    style={{ textAnchor: outward < 0 ? 'end' : 'start' }}
+                    transform={`translate(${dragged.x} ${dragged.y}) rotate(${-rotation}) scale(${1 / scale})`}
                 >
                     Radius {Math.round(radius)}
                 </text>

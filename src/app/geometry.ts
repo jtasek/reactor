@@ -396,6 +396,11 @@ export const CORNER_INWARD: Record<Corner, Point> = {
     bottomLeft: { x: 1, y: -1 }
 };
 
+/** A box's corners, clockwise from its top left. */
+export const CORNERS: Corner[] = ['topLeft', 'topRight', 'bottomRight', 'bottomLeft'];
+
+export const isCorner = (value: string): value is Corner => Object.hasOwn(CORNER_INWARD, value);
+
 /**
  * A rectangle's corner radius after the radius handle of `corner` is dragged from
  * `from` to `to`: the radius it is drawn with, grown by how far the drag goes in

@@ -6,7 +6,7 @@ import { RotateHandle } from '../Handle/RotateHandle';
 import handleStyles from '../Handle/styles.css';
 import { Props } from './Selectable';
 import { getShapeBounds } from 'src/app/utils';
-import { resizeCursor } from 'src/app/geometry';
+import { CORNERS, resizeCursor } from 'src/app/geometry';
 import { useCameraScale, usePointer } from 'src/app/hooks';
 import type { HandleOwner } from 'src/events/types';
 
@@ -17,7 +17,6 @@ const BADGE_OFFSET = 14;
 /** Below this length on screen, handles along a side would cover the shape. */
 const MIN_HANDLED_SIDE = 6 * HANDLE_RADIUS;
 
-const CORNERS: ResizeHandlerType[] = ['topLeft', 'topRight', 'bottomRight', 'bottomLeft'];
 const MIDDLES: ResizeHandlerType[] = ['middleTop', 'middleRight', 'middleBottom', 'middleLeft'];
 
 function calcBoundingPoints(box: Box) {
@@ -67,7 +66,10 @@ export const Handles: FC<HandlesProps> = ({ box, rotation, owner, activeHandle, 
     const longSides = [box.width, box.height].filter(
         (side) => side * scale >= MIN_HANDLED_SIDE
     ).length;
-    const shown = [...(longSides > 0 ? CORNERS : []), ...(longSides > 1 ? MIDDLES : [])];
+    const shown: ResizeHandlerType[] = [
+        ...(longSides > 0 ? CORNERS : []),
+        ...(longSides > 1 ? MIDDLES : [])
+    ];
 
     if (activeHandle && !shown.includes(activeHandle)) {
         shown.push(activeHandle);
