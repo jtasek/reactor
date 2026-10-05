@@ -14,9 +14,11 @@ const ROWS = [
     { category: 'space', name: 'Space' }
 ];
 
+const SECTION_CATEGORIES = new Set(ROWS.map(({ category }) => category));
+
 /** The align and space commands, for two selected items or more. */
 export const AlignSection: FC = () => {
-    const commands = useCommands();
+    const commands = useCommands().filter(({ category }) => SECTION_CATEGORIES.has(category));
     const enabled = useCommandsEnabled(commands);
     const movable = useMovableSelectedItemsCount();
     const { runCommand } = useActions();
