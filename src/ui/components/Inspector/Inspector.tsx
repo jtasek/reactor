@@ -14,13 +14,13 @@ export interface Props {
  * The properties every selected shape shares, in sections; editing one changes
  * all of them.
  */
-export const PropertyPanel: FC<Props> = ({ rows, shapeIds, onChange }) => {
+export const Inspector: FC<Props> = ({ rows, shapeIds, onChange }) => {
     if (shapeIds.length === 0) {
-        return <div className={styles.propertyPanel}>No shapes selected</div>;
+        return <div className={styles.inspector}>No shapes selected</div>;
     }
 
     return (
-        <table className={styles.propertyPanel}>
+        <table className={styles.inspector}>
             {groupRows(rows).map(({ group, rows: grouped }) => (
                 <PropertyGroup key={group} name={group}>
                     {grouped.map((row) => (

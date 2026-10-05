@@ -16,7 +16,7 @@ import {
     Minimap,
     NavBar,
     Outline,
-    PropertyPanel,
+    Inspector,
     SearchBox,
     SideBar,
     Stack,
@@ -50,8 +50,8 @@ export const Designer: FC = () => (
             <DockablePanel id="controlPanel" title="Control Panel">
                 <ControlPanel />
             </DockablePanel>
-            <DockablePanel id="propertyPanel" title="Properties">
-                <PropertyPanel />
+            <DockablePanel id="inspector" title="Inspector">
+                <Inspector />
             </DockablePanel>
             <DockablePanel id="layerPanel" title="Layers">
                 <LayerPanel />

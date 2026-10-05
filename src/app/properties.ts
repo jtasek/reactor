@@ -10,7 +10,7 @@ import {
 export type PropertyValue = string | number | boolean;
 
 /**
- * A property the property panel shows, listed under the section named by
+ * A property the inspector shows, listed under the section named by
  * `group`. `read` returns undefined when the property does not apply to a shape;
  * without `write` it is read-only. `editable` says whether it may change on a
  * shape now; by default only while the shape is not locked.

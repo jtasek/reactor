@@ -1,20 +1,20 @@
 import React, { FC } from 'react';
 
-import { PropertyPanel } from './PropertyPanel';
+import { Inspector } from './Inspector';
 import { sharedProperties } from 'src/app/properties';
 import { useActions, useControls, useCurrentDocument } from 'src/app/hooks';
 
-export const PropertyPanelContainer: FC = () => {
+export const InspectorContainer: FC = () => {
     const currentDocument = useCurrentDocument();
-    const { propertyPanel } = useControls();
+    const { inspector } = useControls();
     const { setShapesProperty } = useActions();
 
-    if (!propertyPanel.visible) {
+    if (!inspector.visible) {
         return null;
     }
 
     return (
-        <PropertyPanel
+        <Inspector
             rows={sharedProperties(currentDocument.selectedShapes, currentDocument)}
             shapeIds={[...currentDocument.selectedShapesIds]}
             onChange={(shapeIds, key, value) => setShapesProperty({ shapeIds, key, value })}

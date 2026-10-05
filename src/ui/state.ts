@@ -78,9 +78,9 @@ export const state: UI = {
         name: 'Overlay',
         visible: false
     },
-    propertyPanel: {
-        id: 'propertyPanel',
-        name: 'Property Panel',
+    inspector: {
+        id: 'inspector',
+        name: 'Inspector',
         visible: false
     },
     rulers: {

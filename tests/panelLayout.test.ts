@@ -5,12 +5,12 @@ describe('panel layout', () => {
         const layout = readPanelLayout({
             sideBar: { dock: 'left', position: { x: 24, y: 32 } },
             stats: { dock: 'diagonal', position: { x: 10, y: 20 } },
-            propertyPanel: { dock: null, position: { x: '10', y: 20 } }
+            inspector: { dock: null, position: { x: '10', y: 20 } }
         });
 
         expect(layout.sideBar).toEqual({ dock: 'left', position: { x: 24, y: 32 } });
         expect(layout.stats).toEqual(DEFAULT_PANEL_LAYOUT.stats);
-        expect(layout.propertyPanel).toEqual(DEFAULT_PANEL_LAYOUT.propertyPanel);
+        expect(layout.inspector).toEqual(DEFAULT_PANEL_LAYOUT.inspector);
     });
 
     it('keeps valid floating and docked placements', () => {
