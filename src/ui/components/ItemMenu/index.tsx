@@ -89,8 +89,14 @@ export const ItemMenu: FC<Props> = ({ itemName, actions, moreActions = [] }) => 
             setShiftLeft(overflow);
         }
 
-        // Focus goes on from the More button, which is gone, to what it revealed.
-        menu.current?.querySelectorAll('button')[actions.length]?.focus();
+        // Focus goes on from the More button, which is gone, to what it revealed,
+        // or to the bar's last button that may be pressed when none of that may.
+        const enabled = [...(menu.current?.querySelectorAll('button') ?? [])]
+            .map((button, index) => ({ button, revealed: index >= actions.length }))
+            .filter(({ button }) => !button.disabled);
+        const target = (enabled.find(({ revealed }) => revealed) ?? enabled.at(-1))?.button;
+
+        target?.focus();
     }, [revealed, actions.length]);
 
     return (
