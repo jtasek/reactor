@@ -1,7 +1,7 @@
 # Copilot instructions for reactor
 
 reactor is a browser-based design/diagramming/prototyping tool (shapes, links, layers,
-groups, rulers on a canvas). It is a React 19 + TypeScript SPA whose entire application
+groups, guides on a canvas). It is a React 19 + TypeScript SPA whose entire application
 state lives in a single [Overmind](https://overmindjs.org) store.
 
 ## Commands
@@ -51,12 +51,12 @@ Overmind re-renders. Components never mutate state directly.
 
 - **State** (`src/app/state.ts`, `src/app/types.ts`): an `Application` holding
   `documents` keyed by id; each `Document` holds dictionaries of `shapes`, `links`,
-  `layers`, `groups`, `rulers` keyed by id, plus `*Ids` derived arrays.
+  `layers`, `groups`, `guides` keyed by id, plus `*Ids` derived arrays.
 - **Computed/derived** (`src/app/computed/`, `src/events/computed/`): use Overmind
   `derived(...)`. The `*Ids` and `selected*` fields in state are wired to these
   derived selectors — keep derivations here, not inline in components.
 - **Actions** (`src/app/actions/`): one file per domain (`shape.ts`, `link.ts`,
-  `layer.ts`, `group.ts`, `ruler.ts`, `document.ts`, `commands.ts`, …), all re-exported
+  `layer.ts`, `group.ts`, `guide.ts`, `document.ts`, `commands.ts`, …), all re-exported
   from `actions/index.ts`. Actions receive the Overmind `Context` and mutate state in place.
 - **Effects** (`src/app/effects.ts`): side-effecting/impure helpers (id generation via
   `newId`, localStorage persistence, `page` routing). Call effects from actions

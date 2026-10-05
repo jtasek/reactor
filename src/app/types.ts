@@ -41,7 +41,7 @@ export interface HashTable<T> {
     [key: string]: T;
 }
 
-export interface Ruler {
+export interface Guide {
     id: string;
     locked: boolean;
     name: string;
@@ -213,8 +213,8 @@ export interface Document {
     modified: Date;
     modifiedBy: string;
     name: string;
-    rulers: HashTable<Ruler>;
-    rulersIds: string[];
+    guides: HashTable<Guide>;
+    guidesIds: string[];
     selected: boolean;
     selectedShapes: Shape[];
     selectedShapesIds: string[];

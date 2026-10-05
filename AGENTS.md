@@ -78,7 +78,7 @@ Guidance for Claude when working in this repository.
 ## What this is
 
 **reactor** is a browser-based design / diagramming / prototyping tool (shapes, links,
-layers, groups, rulers on a canvas). It is a **React 19 + TypeScript** SPA whose entire
+layers, groups, guides on a canvas). It is a **React 19 + TypeScript** SPA whose entire
 application state lives in a single [Overmind](https://overmindjs.org) store. Bundling is
 done with **webpack + SWC**; it is served by **Express** in dev and a hardened static
 server in production.
@@ -160,7 +160,7 @@ re-renders.** Components never mutate state directly.
 
 - **State** (`src/app/state.ts`, `src/app/types.ts`): an `Application` holding `documents`
   keyed by id; each `Document` holds dictionaries of `shapes`, `links`, `layers`, `groups`,
-  `rulers` keyed by id, plus `*Ids` arrays (derived, except `shapesIds`; see below).
+  `guides` keyed by id, plus `*Ids` arrays (derived, except `shapesIds`; see below).
 - **Computed/derived** (`src/app/computed/`, `src/events/computed/`): Overmind `derived(...)`.
   `*Ids` (except `shapesIds`) and `selected*` fields are wired to these — keep derivations
   here, not in components.

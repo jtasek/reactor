@@ -25,7 +25,7 @@ describe('reset document', () => {
             layers: {},
             links: {},
             groups: {},
-            rulers: {}
+            guides: {}
         });
         const reset = store.state.currentDocument;
         for (const content of [
@@ -33,7 +33,7 @@ describe('reset document', () => {
             reset.layers,
             reset.groups,
             reset.links,
-            reset.rulers
+            reset.guides
         ]) {
             expect(content).toEqual({});
         }

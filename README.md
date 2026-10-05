@@ -1,7 +1,7 @@
 # reactor
 
 A browser-based editor for prototypes, diagrams and mockups: draw shapes, links,
-layers, groups and rulers on a canvas, and keep documents in the browser or, signed
+layers, groups and guides on a canvas, and keep documents in the browser or, signed
 in, on a server that syncs them between devices and people.
 
 ## Requirements
