@@ -35,7 +35,12 @@ export type Gesture =
     | (Owner &
           (
               | { kind: 'drawing' }
-              | { kind: 'marquee'; selection: SelectionSnapshot }
+              | {
+                    kind: 'marquee';
+                    selection: SelectionSnapshot;
+                    /** Whether the pointer has gone beyond a slip, so a release draws no click. */
+                    dragged: boolean;
+                }
               | {
                     kind: 'moving';
                     selection: SelectionSnapshot;

@@ -413,8 +413,11 @@ export const selectShapeByPoint: Action = ({ state }) => {
     });
 };
 
-/** The topmost shape drawn under the pointer that it can press, if any. */
-const shapeAtPointer = (state: Context['state']): string | null => {
+/** The topmost shape drawn under the pointer that it can press, by `canPress`, if any. */
+const shapeAtPointer = (
+    state: Context['state'],
+    canPress = (id: string) => isInteractive(state, id)
+): string | null => {
     const { current } = state.events.pointer;
     const { shapesIds, shapes, camera } = untracked(state.currentDocument);
     const tolerance = hitTolerance(camera.scale);
@@ -424,7 +427,7 @@ const shapeAtPointer = (state: Context['state']): string | null => {
         const id = shapesIds[index];
         const shape = shapes[id];
 
-        if (shape && hitTestShape(shape, current, tolerance) && isInteractive(state, id)) {
+        if (shape && hitTestShape(shape, current, tolerance) && canPress(id)) {
             return id;
         }
     }
@@ -497,6 +500,37 @@ export const enterClickedGroup: ActionWithParam<Record<string, boolean>> = (cont
 };
 
 /**
+ * Selects the pressed shapes alone, with their groups, those of them `canSelect`
+ * takes; a selection they all belong to stays, so it moves together.
+ */
+const selectPressed = (
+    state: Context['state'],
+    pressed: string[],
+    canSelect: (id: string) => boolean
+) => {
+    const { shapesIds, shapes } = state.currentDocument;
+
+    leaveGroupWithout(state, pressed);
+
+    if (pressed.every((id) => shapes[id]?.selected)) {
+        return;
+    }
+
+    // A group is selected as one.
+    const hit = withTheirGroups(state.currentDocument, pressed, state.enteredGroupId);
+    const plain = untracked(state.currentDocument).shapes;
+
+    shapesIds.forEach((id: string) => {
+        const selected = hit.has(id) && canSelect(id);
+
+        // Read untracked; written through the store only where it changes.
+        if (plain[id] && plain[id].selected !== selected) {
+            shapes[id].selected = selected;
+        }
+    });
+};
+
+/**
  * Resolves the shape under the pointer and updates the selection so a move can
  * begin, returning whether a shape was hit. Iterates shapesIds in z-order so the
  * topmost shape drawn under the point (see hitTestShape) wins. Pressing an
@@ -506,7 +540,6 @@ export const enterClickedGroup: ActionWithParam<Record<string, boolean>> = (cont
  * caller decides what an empty-canvas press means (pan, marquee or deselect).
  */
 export const selectShapeAtPointer: ActionGuard = ({ state }) => {
-    const { shapesIds, shapes } = state.currentDocument;
     const hitId = shapeAtPointer(state);
     // A press in a group's box, between its shapes, presses the group.
     const pressed =
@@ -524,27 +557,7 @@ export const selectShapeAtPointer: ActionGuard = ({ state }) => {
         return false;
     }
 
-    leaveGroupWithout(state, pressed);
-
-    // Preserve an existing multi-selection when grabbing one of its members, so
-    // the whole group moves together.
-    if (pressed.every((id) => shapes[id]?.selected)) {
-        return true;
-    }
-
-    // A group is selected as one.
-    const hit = withTheirGroups(state.currentDocument, pressed, state.enteredGroupId);
-
-    const plain = untracked(state.currentDocument).shapes;
-
-    shapesIds.forEach((id: string) => {
-        const selected = hit.has(id) && isInteractive(state, id);
-
-        // Read untracked; written through the store only where it changes.
-        if (plain[id] && plain[id].selected !== selected) {
-            shapes[id].selected = selected;
-        }
-    });
+    selectPressed(state, pressed, (id) => isInteractive(state, id));
 
     return true;
 };
@@ -570,6 +583,41 @@ export const moveSelectedShapes: ActionWithParam<Point> = ({ state }, delta) => 
             translateShape(shape, delta);
         }
     });
+};
+
+/**
+ * What a click selects where a press passes through, on a locked item: the topmost
+ * shape drawn under the pointer, or else the shown shapes of the group whose box it
+ * is in; none on empty canvas.
+ */
+const shapesClickSelects = (state: Context['state']): string[] => {
+    const document = state.currentDocument;
+    const hitId = shapeAtPointer(state, (id) => isShapeVisible(document, id));
+
+    if (hitId !== null) {
+        return [hitId];
+    }
+
+    const group = groupAtPoint(document, state.events.pointer.current, state.enteredGroupId);
+
+    return group ? shownGroupShapesIds(document, group) : [];
+};
+
+/**
+ * Selects what a click selects where a press passed through, as on a locked item,
+ * shown shapes only; returns false on empty canvas, which selects nothing.
+ */
+export const selectClickedShapes: ActionGuard = ({ state }) => {
+    const document = state.currentDocument;
+    const clicked = shapesClickSelects(state);
+
+    if (clicked.length === 0) {
+        return false;
+    }
+
+    selectPressed(state, clicked, (id) => isShapeVisible(document, id));
+
+    return true;
 };
 
 export const selectShapes: Action = ({ state }) => {

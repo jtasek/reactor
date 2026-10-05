@@ -1,1 +1,1 @@
-export { CanvasMenus } from './CanvasMenus';
+export { SelectionMenu } from './SelectionMenu';

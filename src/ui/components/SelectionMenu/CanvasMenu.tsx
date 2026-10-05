@@ -11,12 +11,10 @@ interface Props {
     shown: boolean;
     itemName: string;
     actions: ItemMenuAction[];
-    /** Called with whether the pointer is over the menu or the focus is in it. */
-    onEngagedChange?: (engaged: boolean) => void;
 }
 
 /** A menu over the canvas, where `placeSelectionMenu` puts it, at a size the zoom does not change. */
-export const CanvasMenu: FC<Props> = ({ placement, shown, itemName, actions, onEngagedChange }) => {
+export const CanvasMenu: FC<Props> = ({ placement, shown, itemName, actions }) => {
     // The menu is kept inside the window, as wide as it is with its buttons shown.
     const host = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(0);
@@ -35,12 +33,6 @@ export const CanvasMenu: FC<Props> = ({ placement, shown, itemName, actions, onE
         return () => observer.disconnect();
     }, []);
 
-    const engagement = useRef({ pointer: false, focus: false });
-    const engage = (part: 'pointer' | 'focus', engaged: boolean) => {
-        engagement.current[part] = engaged;
-        onEngagedChange?.(engagement.current.pointer || engagement.current.focus);
-    };
-
     const left = Math.max(0, Math.min(placement.left, window.innerWidth - width - WINDOW_MARGIN));
 
     return (
@@ -48,12 +40,6 @@ export const CanvasMenu: FC<Props> = ({ placement, shown, itemName, actions, onE
             ref={host}
             className={styles.selectionMenu}
             data-shown={shown}
-            onPointerEnter={() => engage('pointer', true)}
-            onPointerLeave={() => engage('pointer', false)}
-            onFocus={() => engage('focus', true)}
-            onBlur={(event) =>
-                engage('focus', event.currentTarget.contains(event.relatedTarget as Node | null))
-            }
             style={
                 placement.below
                     ? { left, top: placement.top }
