@@ -17,6 +17,7 @@ body,
 
 :root {
   --primary-action-color: rgb(234, 2, 130);
+  --selection-color: #1a5ddb;
   --warning-background: #f6ecd0;
   --warning-color: #8a6100;
   --error-background: #f6dcdc;

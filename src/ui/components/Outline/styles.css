@@ -27,7 +27,7 @@
 }
 
 .dropTarget {
-    outline: 1px dashed cornflowerblue;
+    outline: 1px dashed var(--selection-color);
 }
 
 .name,
@@ -63,11 +63,11 @@
 }
 
 .active > .row > .name {
-    color: cornflowerblue;
+    color: var(--selection-color);
 }
 
 .shown > .row > .name {
-    color: cornflowerblue;
+    color: var(--selection-color);
 }
 
 .hidden > .row > .name {
@@ -78,7 +78,7 @@
 .showAll {
     background: none;
     border: 0;
-    color: cornflowerblue;
+    color: var(--selection-color);
     cursor: pointer;
     font: inherit;
     padding: 0 0 4px 10px;

@@ -1,6 +1,6 @@
 .selectable {
     fill-opacity: .1;
-    fill: cornflowerblue;
+    fill: var(--selection-color);
     stroke-width: 2;
-    stroke: cornflowerblue;
+    stroke: var(--selection-color);
 }

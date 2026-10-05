@@ -1,7 +1,7 @@
 .active {
-    fill: cornflowerblue;
+    fill: var(--selection-color);
     fill-opacity: .05;
-    stroke: cornflowerblue;
+    stroke: var(--selection-color);
     stroke-width: 2;
     pointer-events: none;
 }

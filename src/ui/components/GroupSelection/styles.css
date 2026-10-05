@@ -1,17 +1,17 @@
 .groupSelection {
-    fill: cornflowerblue;
+    fill: var(--selection-color);
     fill-opacity: 0.05;
-    stroke: cornflowerblue;
+    stroke: var(--selection-color);
     stroke-width: 2;
     stroke-dasharray: 6 3;
     vector-effect: non-scaling-stroke;
 }
 
 .groupHighlight {
-    fill: cornflowerblue;
+    fill: var(--selection-color);
     fill-opacity: 0.05;
     pointer-events: none;
-    stroke: cornflowerblue;
+    stroke: var(--selection-color);
     stroke-width: 2;
     vector-effect: non-scaling-stroke;
 }
