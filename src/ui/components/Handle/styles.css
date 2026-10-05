@@ -1,6 +1,6 @@
 .handle {
   fill-opacity: 0.9;
-  fill: cornflowerblue;
+  fill: var(--selection-color);
   stroke-width: 1px;
   stroke: ghostwhite;
   vector-effect: non-scaling-stroke;
@@ -37,14 +37,14 @@
 }
 
 .rotateLine {
-  stroke: cornflowerblue;
+  stroke: var(--selection-color);
   stroke-width: 1;
   fill: none;
   vector-effect: non-scaling-stroke;
 }
 
 .rotateBadge {
-  fill: cornflowerblue;
+  fill: var(--selection-color);
   font-family: sans-serif;
   font-size: 13px;
   font-weight: 600;

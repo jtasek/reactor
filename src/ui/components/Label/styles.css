@@ -1,5 +1,5 @@
 .label {
-    fill: cornflowerblue;
+    fill: var(--selection-color);
     font-family: sans-serif;
     font-size: 13px;
     font-weight: 600;

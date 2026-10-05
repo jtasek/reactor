@@ -5,5 +5,5 @@
 }
 
 .selected {
-    stroke: cornflowerblue;
+    stroke: var(--selection-color);
 }

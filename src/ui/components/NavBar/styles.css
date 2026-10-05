@@ -86,7 +86,7 @@
 }
 
 .navBar li.active:before {
-  background-color: cornflowerblue;
+  background-color: var(--selection-color);
   border-radius: 50%;
   content: '';
   height: 4px;
@@ -97,7 +97,7 @@
 }
 
 .navBar li.active > .itemName {
-  color: cornflowerblue;
+  color: var(--selection-color);
   font-weight: 600;
 }
 
