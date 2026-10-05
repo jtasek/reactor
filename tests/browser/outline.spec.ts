@@ -75,11 +75,8 @@ test('an item’s menu fades in under the pointer and runs commands for that ite
     await row.hover();
     await expect(button('Hide')).toHaveCSS('opacity', '1');
 
-    // The More button reveals the rest in the bar. Nothing is selected: a
-    // command runs for the row's shape.
-    await expect(button('Clone')).toHaveCount(0);
-    await button('More').click();
-
+    // All six buttons are in the bar. Nothing is selected: a command runs for the
+    // row's shape.
     await expect(button('More')).toHaveCount(0);
     await button('Clone').click();
     await expect(shapes(page)).toHaveCount(3);
@@ -101,7 +98,5 @@ test('an item’s menu fades in under the pointer and runs commands for that ite
         'opacity',
         '0'
     );
-    await other.hover();
-    await other.getByRole('button', { name: 'More', exact: true }).click();
     await expect(other.getByRole('button', { name: 'Delete', exact: true })).toBeDisabled();
 });

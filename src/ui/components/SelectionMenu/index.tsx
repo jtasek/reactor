@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useRef } from 'react';
+import React, { FC, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Command } from 'src/app/types';
 import { useActions, useCommandEnabled, useSelectionMenuPlacement } from 'src/app/hooks';
 import {
@@ -14,6 +14,8 @@ import {
 } from 'src/commands';
 import { ItemMenu, commandAction } from '../ItemMenu';
 import styles from './styles.css';
+
+const WINDOW_MARGIN = 4;
 
 const useCommandAction = (command: Command) => {
     const { runCommand } = useActions();
@@ -46,15 +48,36 @@ export const SelectionMenu: FC = () => {
         shownBefore.current = placement?.shown ?? false;
     });
 
+    // The menu is kept inside the window, as wide as it is with its buttons shown.
+    const host = useRef<HTMLDivElement>(null);
+    const [width, setWidth] = useState(0);
+    const placed = placement !== null;
+
+    useLayoutEffect(() => {
+        const node = host.current;
+
+        if (!node) {
+            return;
+        }
+
+        const observer = new ResizeObserver(() => setWidth(node.offsetWidth));
+
+        observer.observe(node);
+
+        return () => observer.disconnect();
+    }, [placed]);
+
     if (!placement) {
         return null;
     }
 
-    const { left, shown } = placement;
+    const { shown } = placement;
+    const left = Math.max(0, Math.min(placement.left, window.innerWidth - width - WINDOW_MARGIN));
     const lockOrUnlock = unlock.disabled ? lock : { ...unlock, pressed: true };
 
     return (
         <div
+            ref={host}
             className={styles.selectionMenu}
             data-shown={shown}
             style={
@@ -65,8 +88,12 @@ export const SelectionMenu: FC = () => {
         >
             <ItemMenu
                 itemName="Selection"
-                actions={[hide, lockOrUnlock]}
-                moreActions={[...others, ...[group, ungroup].filter(({ disabled }) => !disabled)]}
+                actions={[
+                    hide,
+                    lockOrUnlock,
+                    ...others,
+                    ...[group, ungroup].filter(({ disabled }) => !disabled)
+                ]}
             />
         </div>
     );

@@ -43,8 +43,7 @@ test('the selection’s menu fades in over the selection, runs commands and hide
     await page.mouse.up();
     await expect(toolbar).toHaveCount(1);
 
-    // More reveals the rest in the bar and is gone itself.
-    await button('More').click();
+    // Up to seven buttons are in the bar, so these need no More.
     await expect(button('More')).toHaveCount(0);
 
     const hide = (await button('Hide').boundingBox())!;
@@ -53,21 +52,15 @@ test('the selection’s menu fades in over the selection, runs commands and hide
     expect(clone.x).toBeGreaterThan(hide.x);
     expect(Math.abs(clone.y - hide.y)).toBeLessThan(1);
 
-    // Away from the menu it collapses again.
-    await moveTo(700, 500);
-    await expect(button('Clone')).toHaveCount(0);
-    await moveTo(400, 250);
-    await button('More').click();
     await button('Clone').click();
     await expect(shapes(page)).toHaveCount(2);
 
-    // It stays revealed for the next command.
     await button('Delete').click();
     await expect(shapes(page)).toHaveCount(1);
     await expect(toolbar).toHaveCount(0);
 });
 
-test('the revealed menu stays inside the window at its right edge', async ({ page }) => {
+test('the menu stays inside the window at its right edge', async ({ page }) => {
     await openEditor(page);
 
     const { width } = page.viewportSize()!;
@@ -76,10 +69,47 @@ test('the revealed menu stays inside the window at its right edge', async ({ pag
 
     const toolbar = page.getByRole('toolbar', { name: 'Selection menu' });
 
-    await toolbar.getByRole('button', { name: 'More', exact: true }).dispatchEvent('click');
-    await expect(toolbar.getByRole('button', { name: 'Send to back', exact: true })).toBeVisible();
+    await expect(toolbar.getByRole('button', { name: 'Send to back', exact: true })).toBeAttached();
 
     const bar = (await toolbar.boundingBox())!;
 
     expect(bar.x + bar.width).toBeLessThanOrEqual(width);
+});
+
+test('More holds the buttons beyond seven, revealed in the bar until the pointer leaves', async ({
+    page
+}) => {
+    await openEditor(page);
+    await drawRect(page, { x: 300, y: 200 }, { x: 340, y: 240 });
+    await drawRect(page, { x: 400, y: 200 }, { x: 440, y: 240 });
+    await drawRect(page, { x: 500, y: 200 }, { x: 540, y: 240 });
+
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    const moveTo = (x: number, y: number) => page.mouse.move(surface.x + x, surface.y + y);
+    const boxSelect = async (from: [number, number], to: [number, number]) => {
+        await moveTo(...from);
+        await page.mouse.down();
+        await moveTo(...to);
+        await page.mouse.up();
+    };
+
+    // A group and a shape: Group and Ungroup both apply, eight buttons in all.
+    await boxSelect([280, 180], [460, 260]);
+    await page.keyboard.press('ControlOrMeta+g');
+    await boxSelect([280, 180], [560, 260]);
+
+    const toolbar = page.getByRole('toolbar', { name: 'Selection menu' });
+    const button = (name: string) => toolbar.getByRole('button', { name, exact: true });
+
+    await moveTo(320, 220);
+    await expect(button('Group')).toBeVisible();
+    await expect(button('Ungroup')).toHaveCount(0);
+
+    await button('More').click();
+    await expect(button('More')).toHaveCount(0);
+    await expect(button('Ungroup')).toBeVisible();
+
+    await moveTo(700, 500);
+    await expect(button('Ungroup')).toHaveCount(0);
+    await expect(button('More')).toHaveCount(1);
 });
