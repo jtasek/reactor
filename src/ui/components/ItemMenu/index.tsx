@@ -1,4 +1,5 @@
 import React, { FC, useLayoutEffect, useRef, useState } from 'react';
+import { useActions } from 'src/app/hooks';
 import type { Command, Icon as IconType } from 'src/app/types';
 import { Icon } from '../Icon';
 import styles from './styles.css';
@@ -35,6 +36,44 @@ export const toggleAction = (
     const { label, group = 'action', icon } = pressed ? on : off;
 
     return { id, label, icon: { group, name: icon, size: ICON_SIZE }, pressed, onRun };
+};
+
+/** Hides an item, or shows it again. */
+export const hideAction = (isHidden: boolean, onRun: () => void) =>
+    toggleAction(
+        'hide',
+        isHidden,
+        {
+            on: { label: 'Show', icon: 'visibility_off' },
+            off: { label: 'Hide', icon: 'visibility' }
+        },
+        onRun
+    );
+
+/** Locks an item, or unlocks it. */
+export const lockAction = (isLocked: boolean, onRun: () => void) =>
+    toggleAction(
+        'lock',
+        isLocked,
+        {
+            on: { label: 'Unlock', icon: 'lock_outline' },
+            off: { label: 'Lock', icon: 'lock_open' }
+        },
+        onRun
+    );
+
+/** Turns commands into an item's actions, which run each for the item's `shapeIds`. */
+export const useItemCommandActions = (shapeIds: string[], disabled: boolean) => {
+    const { runCommandOn } = useActions();
+
+    return (commands: Command[]) =>
+        commands.map((command) =>
+            commandAction(
+                command,
+                () => runCommandOn({ shapeIds, commandId: command.id }),
+                disabled
+            )
+        );
 };
 
 interface Props {

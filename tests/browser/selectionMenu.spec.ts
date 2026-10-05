@@ -118,3 +118,43 @@ test('More holds the buttons beyond seven, revealed in the bar until the pointer
     await page.keyboard.press('Enter');
     await expect(button('Group')).toBeFocused();
 });
+
+test('a locked shape’s menu fades in under the pointer, while a press passes through it', async ({
+    page
+}) => {
+    await openEditor(page);
+    await drawRect(page, { x: 300, y: 200 }, { x: 500, y: 300 });
+
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    const moveTo = (x: number, y: number) => page.mouse.move(surface.x + x, surface.y + y);
+    const pressAt = async (x: number, y: number) => {
+        await moveTo(x, y);
+        await page.mouse.down();
+        await page.mouse.up();
+    };
+    const selectionMenu = page.getByRole('toolbar', { name: 'Selection menu' });
+    // The locked shape's menu: over the canvas like the selection's, but not it.
+    const lockedMenu = page.locator('div[data-shown]').filter({ hasNot: selectionMenu });
+    const unlock = lockedMenu.getByRole('button', { name: 'Unlock', exact: true });
+
+    await moveTo(400, 250);
+    await selectionMenu.getByRole('button', { name: 'Lock', exact: true }).click();
+    await pressAt(700, 500);
+    await expect(selectionMenu).toHaveCount(0);
+
+    await moveTo(400, 250);
+    await expect(unlock).toHaveAttribute('aria-pressed', 'true');
+    await expect(lockedMenu).toHaveCSS('opacity', '1');
+
+    await pressAt(400, 250);
+    await expect(selectionMenu).toHaveCount(0);
+
+    await moveTo(700, 500);
+    await expect(lockedMenu).toHaveCSS('opacity', '0');
+
+    await moveTo(400, 250);
+    await unlock.click();
+    await pressAt(400, 250);
+    await expect(selectionMenu).toHaveCount(1);
+    await expect(shapes(page)).toHaveCount(1);
+});
