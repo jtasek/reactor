@@ -432,6 +432,9 @@ Hidden guides are not drawn and locked ones do not move.
 - **`useAppState(select)`** runs `select` after overmind-react starts tracking the component;
   overmind-react's own selector runs before, which subscribes the component rendered before
   it instead, so a selector computing a value never re-rendered its component.
+- A component that passes store objects to children without hooks of their own reads the
+  fields they show itself and passes plain values: what such a child reads while rendering
+  is not reliably tracked for any component, so it may not render again when it changes.
 - **Access state only through hooks** in `src/app/hooks.ts` (`useAppState`, `useActions`,
   `useEffects`, domain hooks like `useShapes`, `useCurrentDocument`, `useCamera`). Add new
   domain hooks here rather than ad-hoc `useAppState` selectors in components.

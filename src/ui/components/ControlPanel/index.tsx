@@ -13,7 +13,13 @@ export const ConnectedControlPanel: FC = () => {
 
     return (
         <ControlPanel
-            controls={Object.values(controls)}
+            // Read here, so this component re-renders when a control is turned on or off:
+            // the items, without a hook of their own, would read the store untracked.
+            controls={Object.values(controls).map(({ id, name, visible }) => ({
+                id,
+                name,
+                visible
+            }))}
             onChange={actions.ui.toggleControlVisibility}
         />
     );
