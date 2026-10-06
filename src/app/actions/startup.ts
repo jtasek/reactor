@@ -1,51 +1,5 @@
 import type { Command, CommandPlace, CommandScope } from 'src/app/types';
 import type { Context } from 'src/app';
-import {
-    AlignBottomCommand,
-    AlignCenterCommand,
-    AlignLeftCommand,
-    AlignMiddleCommand,
-    AlignRightCommand,
-    AlignTopCommand,
-    SpaceBetweenHorizontallyCommand,
-    SpaceBetweenVerticallyCommand,
-    SpaceEquallyHorizontallyCommand,
-    SpaceEquallyVerticallyCommand,
-    BringToFrontCommand,
-    CloneCommand,
-    CopyCommand,
-    CutCommand,
-    DeleteCommand,
-    GroupCommand,
-    HideCommand,
-    HighlightLayerCommand,
-    LayerCommand,
-    LockCommand,
-    PasteCommand,
-    RemoveFromGroupCommand,
-    ResetDocumentCommand,
-    SendToBackCommand,
-    ShowAllCommand,
-    UngroupCommand,
-    UnlayerCommand,
-    UnlockCommand,
-    ZoomInCommand,
-    ZoomOutCommand,
-    ZoomResetCommand
-} from 'src/commands';
-
-import {
-    CircleTool,
-    EllipseTool,
-    ImageTool,
-    LineTool,
-    MoveTool,
-    PenTool,
-    RectTool,
-    SelectTool,
-    TextTool
-} from 'src/tools';
-
 import { Tool } from 'src/tools/types';
 import { startDocumentSync } from '../services/documentSync';
 import { listenToMutations } from '../services/mutations';
@@ -108,52 +62,6 @@ export function getTool(toolId: string) {
     return tools[toolId];
 }
 
-function registerCommands() {
-    registerCommand(DeleteCommand);
-    registerCommand(CloneCommand);
-    registerCommand(CopyCommand);
-    registerCommand(CutCommand);
-    registerCommand(PasteCommand);
-    registerCommand(GroupCommand);
-    registerCommand(UngroupCommand);
-    registerCommand(RemoveFromGroupCommand);
-    registerCommand(LayerCommand);
-    registerCommand(UnlayerCommand);
-    registerCommand(HighlightLayerCommand);
-    registerCommand(AlignLeftCommand);
-    registerCommand(AlignCenterCommand);
-    registerCommand(AlignRightCommand);
-    registerCommand(AlignTopCommand);
-    registerCommand(AlignMiddleCommand);
-    registerCommand(AlignBottomCommand);
-    registerCommand(SpaceBetweenHorizontallyCommand);
-    registerCommand(SpaceBetweenVerticallyCommand);
-    registerCommand(SpaceEquallyHorizontallyCommand);
-    registerCommand(SpaceEquallyVerticallyCommand);
-    registerCommand(BringToFrontCommand);
-    registerCommand(SendToBackCommand);
-    registerCommand(HideCommand);
-    registerCommand(ShowAllCommand);
-    registerCommand(LockCommand);
-    registerCommand(UnlockCommand);
-    registerCommand(ZoomInCommand);
-    registerCommand(ZoomOutCommand);
-    registerCommand(ZoomResetCommand);
-    registerCommand(ResetDocumentCommand);
-}
-
-function registerTools() {
-    registerTool(CircleTool);
-    registerTool(EllipseTool);
-    registerTool(ImageTool);
-    registerTool(LineTool);
-    registerTool(MoveTool);
-    registerTool(PenTool);
-    registerTool(RectTool);
-    registerTool(SelectTool);
-    registerTool(TextTool);
-}
-
 function registerRoutes(effects: Context['effects'], actions: Context['actions']) {
     effects.initializeRoutes({
         '/': actions.showDesigner,
@@ -170,8 +78,6 @@ export const onInitializeOvermind = async (
     const { state, effects, actions } = context;
     const addMutationListener = listenToMutations(instance);
 
-    registerCommands();
-    registerTools();
     registerRoutes(effects, actions);
     effects.clipboard.connect(instance.actions);
     effects.assets.connect(instance.actions);

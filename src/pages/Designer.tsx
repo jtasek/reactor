@@ -27,6 +27,9 @@ import {
     PanelLayout
 } from 'src/ui/components';
 import { ResetDocumentDialog } from 'src/ui/components/ResetDocumentDialog';
+import { registerEditor } from './registerEditor';
+
+registerEditor();
 
 export const Designer: FC = () => (
     <Layout>
