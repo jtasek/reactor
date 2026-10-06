@@ -9,12 +9,12 @@ complete history before adding [chat](chat.md). All edit entry points share thes
 
 ## Behavior
 
-- Undo: Cmd/Ctrl+Z. Redo: Cmd/Ctrl+Shift+Z; also Ctrl+Y on Windows/Linux.
+- Undo: Cmd/Ctrl+Z. Redo: Cmd/Ctrl+Shift+Z.
 - Register commands with labels such as “Undo Move 3 shapes”; disable unavailable commands.
 - Text fields retain native undo. Committing a field creates one document step.
 - Disable document history during any active canvas/guide edit, including pre-slip presses.
   Escape cancels the edit.
-- Cancelled and unchanged edits preserve redo. New committed content clears redo.
+- Canceled and unchanged edits preserve redo. New committed content clears redo.
   Selection, view changes, and incoming updates preserve it.
 - Switching documents preserves each history. Reload clears it. Other tabs count as peers.
 - Restore the operation's selection, filtered through current existence, visibility, and
@@ -29,6 +29,7 @@ complete history before adding [chat](chat.md). All edit entry points share thes
 | Paste, clone, cut, delete                    | All affected entities/references together |
 | Guide create/move/remove                     | Release                                   |
 | Document metadata, grid, content reset       | Content operation                         |
+| Document lock and unlock                     | Command                                   |
 | Accepted AI edit                             | One validated operation                   |
 
 Exclude selection, hover, bounds, filters, camera, panels, tools, chat, focused-layer view,
@@ -54,10 +55,15 @@ Keep Yjs objects in the service. Overmind receives `canUndo`, `canRedo`, `undoLa
 ## Edit boundary
 
 ```ts
+type EditOutcome =
+    | { kind: 'applied'; affectedIds: string[] }
+    | { kind: 'unchanged' }
+    | { kind: 'rejected'; reason: 'not_allowed' | 'invalid' };
+
 interface EditBoundary {
-    run(documentId: string, label: string, change: () => void): void;
+    run(documentId: string, label: string, change: () => void): EditOutcome;
     beginPreview(documentId: string, label: string): void;
-    commitPreview(documentId: string): void;
+    commitPreview(documentId: string): EditOutcome;
     cancelPreview(documentId: string): void;
     undo(documentId: string): void;
     redo(documentId: string): void;
@@ -66,6 +72,8 @@ interface EditBoundary {
 
 `run` flushes preceding committed work, prepares and validates the complete durable change,
 then writes one USER_EDIT transaction synchronously. Nested actions join the outer operation.
+It returns `applied` with the affected IDs, `unchanged` for a semantic no-op, or `rejected`
+once a failure is restored; failures are returned, not rethrown.
 Never span an `await`:
 prepare uploads/clipboard/model results first, then recheck the document and commit.
 
@@ -90,7 +98,7 @@ metadata with entities; update modification timestamps outside capture without r
 ## Prerequisite: commit-only previews
 
 Today `Collaboration.receive()` writes pending local changes even while a gesture is paused.
-That would capture intermediate/cancelled drags and clear redo. Change this before adding history.
+That would capture intermediate/canceled drags and clear redo. Change this before adding history.
 
 | Stage         | Behavior                                                    |
 | ------------- | ----------------------------------------------------------- |
@@ -109,7 +117,8 @@ If a peer deletes, locks, or restructures a required target, cancel the invalid 
 A peer's same-field edit becomes the baseline beneath a subsequent local commit; cancel
 reveals it and Undo restores it. Test this change to current gesture-merging behavior.
 
-Allow one preview per tab; defer unrelated local edits while it is active. Remote updates
+Allow one preview per tab; while it is active, other local edits (commands, shortcuts,
+inspector commits) are disabled, not queued, as a gesture ignores other pointers. Remote updates
 continue. Cancel on document/account change, removal, teardown, or page hide. Autosave and
 state-vector exports see committed content only. Never hold a Yjs transaction across a drag
 or implement cancellation by invoking Undo.
@@ -158,7 +167,9 @@ Cached client access is not authorization; local documents without accounts rema
 
 Server roles remain authoritative: viewers cannot replay history. Shape locks are editing
 aids and can themselves be undone. A document lock blocks history except reversing this
-tab's still-current Lock document operation; a subsequent peer lock must block that exception.
+tab's still-current Lock document step: its stack metadata records the Yjs item that wrote
+`locked`, and the exception holds only while that item is the field's current value, so a
+subsequent peer lock blocks it.
 
 ## Lifetime and AI
 
@@ -177,13 +188,13 @@ tab's still-current Lock document operation; a subsequent peer lock must block t
 ## Delivery and checks
 
 1. Add document access state and revocation handling, then atomic edit boundaries and
-   commit-only previews; prove failed/cancelled operations preserve redo under remote updates.
+   commit-only previews; prove failed/canceled operations preserve redo under remote updates.
 2. Add managers, origin routing, metadata, and reactive summaries; verify persistence/sync.
 3. Wire every content-edit entry point, commands, shortcuts, and later the AI executor.
 4. Run repository checks plus these behavioral cases:
 
     - Operation round-trips preserve IDs, geometry, order, memberships, references, and assets.
-    - A thousand pointer moves yield one step; cancelled/no-op gestures yield none.
+    - A thousand pointer moves yield one step; canceled/no-op gestures yield none.
     - Two commands in one JS task yield two steps; nested actions yield one.
     - A callback or later entity's validation failure restores store state and bookkeeping,
       emits no Yjs/persistence/network update, and leaves both history stacks unchanged.
