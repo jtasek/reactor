@@ -14,6 +14,7 @@ import { takesEditorInput } from '../events/input';
 import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
 import { placeSelectionMenu } from './selectionMenu';
 import {
+    drawnExtent,
     groupFrame,
     hoveredGroupsIds,
     outline,
@@ -293,18 +294,39 @@ export const useSelectionMenuPlacement = (alreadyShown: boolean) => {
     });
 };
 
-/** The lines a dragged selection snapped to; none outside a drag. */
+/** The lines a dragged selection, or a resized shape's or group's edges, snapped to. */
 export const useSnapLines = () =>
     useAppState((state) => {
         const { gesture } = state.events.pointer;
 
+        if (gesture.kind === 'resizing' || gesture.kind === 'resizingGroup') {
+            return gesture.snapLines;
+        }
+
         return gesture.kind === 'moving' && gesture.dragged ? gesture.snapLines : null;
     });
 
-/** Where the dragged selection's box is now, while it is snapped to a line; none otherwise. */
+/**
+ * Where the dragged selection's box, or the resized shape's or group's, is now, while
+ * it is snapped to a line; none otherwise.
+ */
 export const useSnappedBox = () =>
     useAppState((state) => {
         const { gesture } = state.events.pointer;
+
+        if (
+            (gesture.kind === 'resizing' || gesture.kind === 'resizingGroup') &&
+            (gesture.snapLines.x !== null || gesture.snapLines.y !== null)
+        ) {
+            const document = state.currentDocument;
+            const ids =
+                gesture.kind === 'resizing' ? [gesture.shapeId] : Object.keys(gesture.shapes);
+
+            return drawnExtent(
+                document,
+                ids.filter((id) => isShapeVisible(document, id))
+            );
+        }
 
         if (
             gesture.kind !== 'moving' ||

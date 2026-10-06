@@ -8,7 +8,7 @@ import type {
 } from '../types';
 import type { ShapesSnapshot } from 'src/events/types';
 import { createGroup } from '../factories';
-import { keepDrawnPlace, placeShapeFrom, resizeAspectBox } from '../geometry';
+import { aspectRatio, keepDrawnPlace, placeShapeFrom, resizeAspectBox } from '../geometry';
 import {
     GROUP_MINIMUM,
     type GroupFrame,
@@ -259,8 +259,7 @@ export const resizeGroup: ActionWithParam<GroupDrag & { handle: ResizeHandlerTyp
     const { box, rotation } = frame;
     const center = boxCenter(box);
     const local = rotation ? rotatePoint(position, center, -rotation) : position;
-    const ratio = box.height > 0 ? box.width / box.height : 1;
-    const resized = resizeAspectBox(box, handle, local, ratio);
+    const resized = resizeAspectBox(box, handle, local, aspectRatio(box));
     const placed = rotation ? keepDrawnPlace(resized, center, rotation) : resized;
     const factor = box.width > 0 ? placed.width / box.width : placed.height / box.height;
     const placedCenter = boxCenter(placed);

@@ -285,6 +285,24 @@ export function shapeGeometryKey(shape: Shape): string {
     return JSON.stringify(shapeGeometry(shape));
 }
 
+export function movedEdges(handlerType: ResizeHandlerType) {
+    return {
+        left:
+            handlerType === 'topLeft' ||
+            handlerType === 'middleLeft' ||
+            handlerType === 'bottomLeft',
+        right:
+            handlerType === 'topRight' ||
+            handlerType === 'middleRight' ||
+            handlerType === 'bottomRight',
+        top: handlerType === 'topLeft' || handlerType === 'middleTop' || handlerType === 'topRight',
+        bottom:
+            handlerType === 'bottomLeft' ||
+            handlerType === 'middleBottom' ||
+            handlerType === 'bottomRight'
+    };
+}
+
 /**
  * Returns a new box after dragging a resize handle to `pointer`. The edges the
  * handle controls follow the pointer; the opposite edges stay fixed and the box
@@ -296,18 +314,12 @@ export function resizeBox(box: Box, handlerType: ResizeHandlerType, pointer: Poi
     let right = box.bottomRight.x;
     let bottom = box.bottomRight.y;
 
-    const movesLeft =
-        handlerType === 'topLeft' || handlerType === 'middleLeft' || handlerType === 'bottomLeft';
-    const movesRight =
-        handlerType === 'topRight' ||
-        handlerType === 'middleRight' ||
-        handlerType === 'bottomRight';
-    const movesTop =
-        handlerType === 'topLeft' || handlerType === 'middleTop' || handlerType === 'topRight';
-    const movesBottom =
-        handlerType === 'bottomLeft' ||
-        handlerType === 'middleBottom' ||
-        handlerType === 'bottomRight';
+    const {
+        left: movesLeft,
+        right: movesRight,
+        top: movesTop,
+        bottom: movesBottom
+    } = movedEdges(handlerType);
 
     if (movesLeft) {
         left = Math.min(pointer.x, right - min);

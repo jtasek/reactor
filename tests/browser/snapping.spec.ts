@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { drawRect, openEditor, shapes } from './support/editor';
+import { drawRect, openEditor, pointer, shapes } from './support/editor';
 
 test('a dragged shape snaps to another one, showing the line, unless Ctrl or Cmd is held', async ({
     page
@@ -32,4 +32,23 @@ test('a dragged shape snaps to another one, showing the line, unless Ctrl or Cmd
     await page.keyboard.up('ControlOrMeta');
 
     await expect(first).toHaveAttribute('x', '97');
+});
+
+test('a resized shape’s edge snaps to another shape, showing the line', async ({ page }) => {
+    await openEditor(page);
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    await drawRect(page, { x: 100, y: 100 }, { x: 140, y: 140 });
+
+    const handle = '[data-handle][data-type="middleRight"]';
+    const resized = shapes(page).locator('rect[data-cy]').last();
+    const snapLines = page.locator('svg#surface g[class] > path');
+
+    // Its right edge would end at 297, three short of the other's left edge at 300.
+    await pointer(page, 'pointerdown', { x: 140, y: 120, target: handle });
+    await pointer(page, 'pointermove', { x: 297, y: 120 });
+    await expect(snapLines.first()).toBeVisible();
+    await pointer(page, 'pointerup', { x: 297, y: 120 });
+
+    await expect(resized).toHaveAttribute('width', '200');
+    await expect(snapLines).toHaveCount(0);
 });

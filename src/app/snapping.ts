@@ -1,4 +1,6 @@
-import type { Box, Point } from './types';
+import { aspectRatio, resizeAspectBox } from './geometry';
+import type { Box, Point, ResizeHandlerType } from './types';
+import { movedEdges } from './utils';
 
 /** How near on screen, in pixels, a moved box's edge or center is pulled onto a line. */
 export const SNAP_DISTANCE_PX = 6;
@@ -195,4 +197,118 @@ export function snapMove(
         delta: { x: delta.x + across.shift, y: delta.y + down.shift },
         lines: { x: across.line, y: down.line }
     };
+}
+
+/** `point` pulled onto the nearest line within `reach` on each of `axes`, and those lines. */
+export function snapPoint(
+    point: Point,
+    axes: { x: boolean; y: boolean },
+    targets: SnapTargets,
+    reach: number
+): { point: Point; lines: SnapLines } {
+    const across = axes.x ? nearestEdgeShift(point.x, 0, targets.xs, reach) : null;
+    const down = axes.y ? nearestEdgeShift(point.y, 0, targets.ys, reach) : null;
+
+    return {
+        point: { x: point.x + (across?.shift ?? 0), y: point.y + (down?.shift ?? 0) },
+        lines: { x: across?.line ?? null, y: down?.line ?? null }
+    };
+}
+
+/** Those of `lines` that an edge of `box` lies on; a resize kept in proportion may miss one. */
+export function linesOnEdges(lines: SnapLines, box: Box): SnapLines {
+    const on = (line: number | null, edges: number[]) =>
+        line !== null && edges.some((edge) => Math.abs(edge - line) <= ON_LINE) ? line : null;
+
+    return {
+        x: on(lines.x, [box.topLeft.x, box.bottomRight.x]),
+        y: on(lines.y, [box.topLeft.y, box.bottomRight.y])
+    };
+}
+
+/**
+ * A box kept in proportion is sized by the axis the pointer pulls further, so its
+ * resized moving edges snap, and the handle takes the corner the box then has.
+ */
+function snapProportionalCorner(
+    box: Box,
+    handle: ResizeHandlerType,
+    pointer: Point,
+    targets: SnapTargets,
+    reach: number
+): { point: Point; lines: SnapLines } {
+    const edges = movedEdges(handle);
+    const ratio = aspectRatio(box);
+    const resized = resizeAspectBox(box, handle, pointer, ratio);
+    const fixed = {
+        x: edges.right ? box.topLeft.x : box.bottomRight.x,
+        y: edges.bottom ? box.topLeft.y : box.bottomRight.y
+    };
+    const outward = { x: edges.right ? 1 : -1, y: edges.bottom ? 1 : -1 };
+    const across = nearestEdgeShift(
+        edges.right ? resized.bottomRight.x : resized.topLeft.x,
+        0,
+        targets.xs,
+        reach
+    );
+    const down = nearestEdgeShift(
+        edges.bottom ? resized.bottomRight.y : resized.topLeft.y,
+        0,
+        targets.ys,
+        reach
+    );
+
+    if (
+        across.line !== null &&
+        (down.line === null || Math.abs(across.shift) <= Math.abs(down.shift))
+    ) {
+        const width = Math.abs(across.line - fixed.x);
+
+        return {
+            point: { x: across.line, y: fixed.y + (outward.y * width) / ratio },
+            lines: { x: across.line, y: null }
+        };
+    }
+
+    if (down.line !== null) {
+        const height = Math.abs(down.line - fixed.y);
+
+        return {
+            point: { x: fixed.x + outward.x * height * ratio, y: down.line },
+            lines: { x: null, y: down.line }
+        };
+    }
+
+    return { point: pointer, lines: { x: null, y: null } };
+}
+
+/**
+ * Where a resize handle pulled to `pointer` goes so the edges it moves snap. `box` is
+ * the box the resize began from, in its own frame; a quarter turn swaps its axes.
+ */
+export function snapResize(
+    box: Box,
+    handle: ResizeHandlerType,
+    pointer: Point,
+    proportional: boolean,
+    rotation: number,
+    targets: SnapTargets,
+    reach: number
+): { point: Point; lines: SnapLines } {
+    const edges = movedEdges(handle);
+    const across = edges.left || edges.right;
+    const down = edges.top || edges.bottom;
+
+    if (proportional && across && down && rotation % 360 === 0) {
+        return snapProportionalCorner(box, handle, pointer, targets, reach);
+    }
+
+    const sideways = Math.abs(rotation % 180) === 90;
+
+    return snapPoint(
+        pointer,
+        sideways ? { x: down, y: across } : { x: across, y: down },
+        targets,
+        reach
+    );
 }
