@@ -23,16 +23,28 @@ export interface SnapLines {
 
 /** A line a moved box snapped to, as drawn: from its first to its last point lined up. */
 export interface SnapMark {
+    /** A line down, at an `x`, or across, at a `y`. */
+    axis: 'x' | 'y';
     from: Point;
     to: Point;
-    /** The corners, edge middles and centers of the box and the targets on the line. */
-    points: Point[];
+    /** The corners, edge middles or center of the box on the line. */
+    boxPoints: Point[];
+    /** Those of the targets on the line, each once. */
+    targetPoints: Point[];
 }
+
+/** How many parts of a canvas unit lines and points are told apart by, so float noise merges. */
+const PRECISION = 1e6;
+
+/** How far apart two coordinates may be and still be on one line. */
+const ON_LINE = 1 / PRECISION;
+
+const rounded = (value: number) => Math.round(value * PRECISION) / PRECISION;
 
 /** A box's left edge, center and right edge (`xs`), and its top, middle and bottom (`ys`). */
 const thirds = ({ topLeft, width, height }: Box) => ({
-    xs: [topLeft.x, topLeft.x + width / 2, topLeft.x + width],
-    ys: [topLeft.y, topLeft.y + height / 2, topLeft.y + height]
+    xs: [topLeft.x, topLeft.x + width / 2, topLeft.x + width].map(rounded),
+    ys: [topLeft.y, topLeft.y + height / 2, topLeft.y + height].map(rounded)
 });
 
 /** The edges and centers of `boxes`, as lines to snap to, sorted, each once. */
@@ -63,43 +75,54 @@ export function targetLines(boxes: Box[]): SnapTargets {
     return { xs: sorted(alongXs), ys: sorted(alongYs), alongXs, alongYs };
 }
 
-/** How far apart two coordinates may be and still be on one line. */
-const ON_LINE = 1e-6;
+const sortedOnce = (values: number[]) => [...new Set(values)].sort((a, b) => a - b);
 
-/**
- * Where along `line` the points lined up on it lie, sorted and each once: the
- * targets' (`held`), and the box's (`boxAlong`) when one of its edges or its center
- * (`boxThirds`) is on the line.
- */
-function pointsOnLine(line: number, boxThirds: number[], boxAlong: number[], held: number[] = []) {
-    const boxOnLine = boxThirds.some((third) => Math.abs(third - line) <= ON_LINE);
+/** The point `along` a line on `axis` at `line`. */
+const pointOn = (axis: SnapMark['axis'], line: number, along: number): Point =>
+    axis === 'x' ? { x: line, y: along } : { x: along, y: line };
 
-    return [...new Set([...held, ...(boxOnLine ? boxAlong : [])])].sort((a, b) => a - b);
-}
+/** The targets' corners, edge middles and centers on the line on `axis` at `line`, each once. */
+const targetPointsOn = (axis: SnapMark['axis'], line: number, targets: SnapTargets) =>
+    sortedOnce((axis === 'x' ? targets.alongXs : targets.alongYs).get(line) ?? []).map((along) =>
+        pointOn(axis, line, along)
+    );
+
+/** The targets' points on each of `lines`: see `targetPointsOn`. */
+export const snapTargetPoints = (lines: SnapLines, targets: SnapTargets): Point[] => [
+    ...(lines.x === null ? [] : targetPointsOn('x', lines.x, targets)),
+    ...(lines.y === null ? [] : targetPointsOn('y', lines.y, targets))
+];
 
 /**
  * What a box, moved to `box`, snapped to on each of `lines`: the line from the first
- * to the last of the points lined up on it, the box's and the targets', each once.
+ * to the last of the points lined up on it, and those points, the box's and the targets'.
  */
 export function snapMarks(lines: SnapLines, box: Box, targets: SnapTargets): SnapMark[] {
     const { xs, ys } = thirds(box);
-    const marks: SnapMark[] = [];
+    const markOn = (
+        axis: SnapMark['axis'],
+        line: number,
+        boxThirds: number[],
+        boxAlong: number[]
+    ) => {
+        const targetPoints = targetPointsOn(axis, line, targets);
+        const boxOnLine = boxThirds.some((third) => Math.abs(third - line) <= ON_LINE);
+        const boxPoints = boxOnLine ? boxAlong.map((along) => pointOn(axis, line, along)) : [];
+        const alongs = [...targetPoints, ...boxPoints].map(({ x, y }) => (axis === 'x' ? y : x));
 
-    if (lines.x !== null) {
-        const x = lines.x;
-        const points = pointsOnLine(x, xs, ys, targets.alongXs.get(x)).map((y) => ({ x, y }));
+        return {
+            axis,
+            from: pointOn(axis, line, Math.min(...alongs)),
+            to: pointOn(axis, line, Math.max(...alongs)),
+            boxPoints,
+            targetPoints
+        };
+    };
 
-        marks.push({ from: points[0], to: points[points.length - 1], points });
-    }
-
-    if (lines.y !== null) {
-        const y = lines.y;
-        const points = pointsOnLine(y, ys, xs, targets.alongYs.get(y)).map((x) => ({ x, y }));
-
-        marks.push({ from: points[0], to: points[points.length - 1], points });
-    }
-
-    return marks;
+    return [
+        ...(lines.x === null ? [] : [markOn('x', lines.x, xs, ys)]),
+        ...(lines.y === null ? [] : [markOn('y', lines.y, ys, xs)])
+    ];
 }
 
 /** The index of the first of the sorted `lines` at or after `value`. */

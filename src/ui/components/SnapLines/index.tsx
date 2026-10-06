@@ -1,11 +1,60 @@
-import React, { FC } from 'react';
+import React, { FC, memo } from 'react';
 import { useCameraScale, useEffects, useSnapLines, useSnappedBox } from 'src/app/hooks';
-import { snapMarks } from 'src/app/snapping';
+import { SnapMark, snapMarks, snapTargetPoints } from 'src/app/snapping';
+import type { Point } from 'src/app/types';
 import styles from './styles.css';
 
 /** Sizes on screen, in pixels, whatever the zoom. */
 const LINE_OVERHANG = 6;
 const CROSS_HALF_SIZE = 4;
+
+/** A cross on each of `points`, `half` across each way. */
+const crossesPath = (points: Point[], half: number) =>
+    points
+        .map(
+            ({ x, y }) =>
+                `M${x - half} ${y - half}L${x + half} ${y + half}M${x + half} ${y - half}L${x - half} ${y + half}`
+        )
+        .join('');
+
+/** A snap line from its first to its last point, `overhang` beyond each. */
+const linePath = ({ axis, from, to }: SnapMark, overhang: number) =>
+    axis === 'x'
+        ? `M${from.x} ${from.y - overhang}L${to.x} ${to.y + overhang}`
+        : `M${from.x - overhang} ${from.y}L${to.x + overhang} ${to.y}`;
+
+interface TargetCrossesProps {
+    lineX: number | null;
+    lineY: number | null;
+    scale: number;
+}
+
+/**
+ * The crosses on the other shapes' points on the snapped lines, drawn again only
+ * when the lines or the zoom change, not as the selection slides along a line.
+ */
+const TargetCrosses: FC<TargetCrossesProps> = memo(({ lineX, lineY, scale }) => {
+    const { dragTargets } = useEffects();
+    const targets = dragTargets.current();
+
+    if (!targets) {
+        return null;
+    }
+
+    const path = crossesPath(
+        snapTargetPoints({ x: lineX, y: lineY }, targets),
+        CROSS_HALF_SIZE / scale
+    );
+
+    return (
+        <>
+            <path className={styles.halo} d={path} />
+            <path className={styles.line} d={path} />
+        </>
+    );
+});
+
+TargetCrosses.displayName = 'TargetCrosses';
 
 /**
  * The lines a dragged selection snapped to, each from the first to the last point
@@ -23,29 +72,19 @@ export const SnapLines: FC = () => {
         return null;
     }
 
-    const overhang = LINE_OVERHANG / scale;
-    const cross = CROSS_HALF_SIZE / scale;
     const path = snapMarks(lines, box, targets)
-        .map(({ from, to, points }) => {
-            const across = from.y === to.y;
-            const start = across
-                ? `${from.x - overhang} ${from.y}`
-                : `${from.x} ${from.y - overhang}`;
-            const end = across ? `${to.x + overhang} ${to.y}` : `${to.x} ${to.y + overhang}`;
-            const crosses = points
-                .map(
-                    ({ x, y }) =>
-                        `M${x - cross} ${y - cross}L${x + cross} ${y + cross}M${x + cross} ${y - cross}L${x - cross} ${y + cross}`
-                )
-                .join('');
-
-            return `M${start}L${end}${crosses}`;
-        })
+        .map(
+            (mark) =>
+                linePath(mark, LINE_OVERHANG / scale) +
+                crossesPath(mark.boxPoints, CROSS_HALF_SIZE / scale)
+        )
         .join('');
 
+    // The lines' halo below the other shapes' crosses, and the lines over them.
     return (
         <g className={styles.snapLines}>
             <path className={styles.halo} d={path} />
+            <TargetCrosses lineX={lines.x} lineY={lines.y} scale={scale} />
             <path className={styles.line} d={path} />
         </g>
     );
