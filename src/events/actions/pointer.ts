@@ -1,6 +1,6 @@
 import { json } from 'overmind';
 import { Context } from 'src/app';
-import { ActionWithParam, Point, Shape } from 'src/app/types';
+import { ActionWithParam, Point, ResizeHandlerType, Shape } from 'src/app/types';
 import { screenToWorld } from 'src/app/camera';
 import {
     drawnBox,
@@ -9,8 +9,9 @@ import {
     groupFrame,
     shownShapesIds
 } from 'src/app/membership';
-import { SNAP_DISTANCE_PX, snapMove, targetLines } from 'src/app/snapping';
+import { SNAP_DISTANCE_PX, linesOnEdges, snapMove, snapPoint, targetLines } from 'src/app/snapping';
 import { untracked } from 'src/app/untracked';
+import { isShapeVisible } from 'src/app/utils';
 import { beyondClickSlip } from '../gestures';
 import { HandleTarget, SelectionSnapshot, ShapesSnapshot, TouchContact } from '../types';
 
@@ -96,7 +97,8 @@ export const beginGesture = (
                       groupId: handle.groupId,
                       handle: handle.type,
                       shapes,
-                      frame
+                      frame,
+                      snapLines: { x: null, y: null }
                   };
 
         return true;
@@ -128,7 +130,8 @@ export const beginGesture = (
                       kind: 'resizing',
                       shapeId: handle.shapeId,
                       handle: handle.type,
-                      shapes
+                      shapes,
+                      snapLines: { x: null, y: null }
                   };
 
         return true;
@@ -174,20 +177,28 @@ export const beginGesture = (
  * any pointer input during a pinch, is ignored.
  */
 /**
- * When a drag begins: the box of the shapes it moves, which snaps, and the lines
- * of the other shown shapes it snaps to, kept in `dragTargets`.
+ * When a drag begins: the lines of the shown shapes other than `changingIds` that
+ * they snap to, kept in `dragTargets`, and the box they are drawn in.
  */
-const takeSnapTargets = ({ state, effects }: Pick<Context, 'state' | 'effects'>) => {
-    const movingIds = editableSelectedShapesIds(state.currentDocument);
-    const moving = new Set(movingIds);
+const takeSnapTargets = (
+    { state, effects }: Pick<Context, 'state' | 'effects'>,
+    changingIds: string[]
+) => {
+    const changing = new Set(changingIds);
     // Read without the store's tracking: thousands of shapes are only looked at here.
     const document = untracked(state.currentDocument);
-    const others = [...shownShapesIds(document)].filter((id) => !moving.has(id));
+    const others = [...shownShapesIds(document)].filter((id) => !changing.has(id));
 
     effects.dragTargets.take(targetLines(others.map((id) => drawnBox(document.shapes[id]))));
 
-    return { movingIds, box: drawnExtent(document, movingIds) };
+    return drawnExtent(document, changingIds);
 };
+
+/** Which of a box's edges, across and down, a resize handle moves. */
+const handleAxes = (handle: ResizeHandlerType) => ({
+    x: /left|right/i.test(handle),
+    y: /top|bottom/i.test(handle)
+});
 
 export const movePointer = (
     { state, actions, effects }: Context,
@@ -242,10 +253,8 @@ export const movePointer = (
     ) {
         if (!gesture.dragged) {
             gesture.dragged = true;
-            const { movingIds, box } = takeSnapTargets({ state, effects });
-
-            gesture.movingIds = movingIds;
-            gesture.box = box;
+            gesture.movingIds = editableSelectedShapesIds(state.currentDocument);
+            gesture.box = takeSnapTargets({ state, effects }, gesture.movingIds);
         }
 
         const { scale } = state.currentDocument.camera;
@@ -267,13 +276,46 @@ export const movePointer = (
         }
     }
 
-    if (gesture.kind === 'resizing') {
-        actions.resizeShape({
-            shapeId: gesture.shapeId,
-            handlerType: gesture.handle,
-            position,
-            original: gesture.shapes[gesture.shapeId]
-        });
+    // The edges a handle moves snap, unless the resize is free or the shape or group is
+    // turned, whose edges are not upright like the lines.
+    if (gesture.kind === 'resizing' || gesture.kind === 'resizingGroup') {
+        const resizing = gesture.kind === 'resizing';
+        const changingIds = resizing ? [gesture.shapeId] : Object.keys(gesture.shapes);
+        const turned = resizing
+            ? gesture.shapes[gesture.shapeId]?.rotation
+            : gesture.frame.rotation;
+
+        if (!free && !turned && !effects.dragTargets.current()) {
+            takeSnapTargets({ state, effects }, changingIds);
+        }
+
+        const targets = free || turned ? null : effects.dragTargets.current();
+        const { scale } = state.currentDocument.camera;
+        const snapped = targets
+            ? snapPoint(position, handleAxes(gesture.handle), targets, SNAP_DISTANCE_PX / scale)
+            : { point: position, lines: { x: null, y: null } };
+
+        if (resizing) {
+            actions.resizeShape({
+                shapeId: gesture.shapeId,
+                handlerType: gesture.handle,
+                position: snapped.point,
+                original: gesture.shapes[gesture.shapeId]
+            });
+        } else {
+            const { groupId, handle, shapes, frame } = gesture;
+
+            actions.resizeGroup({ groupId, handle, position: snapped.point, shapes, frame });
+        }
+
+        // The few resized shapes are looked up through the store: visibility reads its groups.
+        const drawn = changingIds.filter((id) => isShapeVisible(state.currentDocument, id));
+        const box = drawnExtent(untracked(state.currentDocument), drawn);
+        const lines = box ? linesOnEdges(snapped.lines, box) : { x: null, y: null };
+
+        if (gesture.snapLines.x !== lines.x || gesture.snapLines.y !== lines.y) {
+            gesture.snapLines = lines;
+        }
     }
 
     if (gesture.kind === 'rotating') {
@@ -288,12 +330,6 @@ export const movePointer = (
             to: position,
             original: gesture.shapes[gesture.shapeId]
         });
-    }
-
-    if (gesture.kind === 'resizingGroup') {
-        const { groupId, handle, shapes, frame } = gesture;
-
-        actions.resizeGroup({ groupId, handle, position, shapes, frame });
     }
 
     if (gesture.kind === 'rotatingGroup') {

@@ -61,6 +61,8 @@ export type Gesture =
                     shapeId: string;
                     handle: ResizeHandlerType;
                     shapes: ShapesSnapshot;
+                    /** The lines the handle's edges snapped to, shown while the resize lasts. */
+                    snapLines: SnapLines;
                 }
               | { kind: 'rotating'; shapeId: string; shapes: ShapesSnapshot }
               | { kind: 'rounding'; shapeId: string; corner: Corner; shapes: ShapesSnapshot }
@@ -71,6 +73,7 @@ export type Gesture =
                     shapes: ShapesSnapshot;
                     /** The group's box and rotation when the drag began. */
                     frame: GroupFrame;
+                    snapLines: SnapLines;
                 }
               | {
                     kind: 'rotatingGroup';

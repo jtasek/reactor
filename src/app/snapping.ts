@@ -196,3 +196,33 @@ export function snapMove(
         lines: { x: across.line, y: down.line }
     };
 }
+
+/**
+ * `point` pulled onto the nearest target line within `reach` on each axis `axes`
+ * names, as a resize handle's edges are, and the lines it was pulled onto.
+ */
+export function snapPoint(
+    point: Point,
+    axes: { x: boolean; y: boolean },
+    targets: SnapTargets,
+    reach: number
+): { point: Point; lines: SnapLines } {
+    const across = axes.x ? nearestEdgeShift(point.x, 0, targets.xs, reach) : null;
+    const down = axes.y ? nearestEdgeShift(point.y, 0, targets.ys, reach) : null;
+
+    return {
+        point: { x: point.x + (across?.shift ?? 0), y: point.y + (down?.shift ?? 0) },
+        lines: { x: across?.line ?? null, y: down?.line ?? null }
+    };
+}
+
+/** Those of `lines` that an edge of `box` lies on; a resize kept in proportion may miss one. */
+export function linesOnEdges(lines: SnapLines, box: Box): SnapLines {
+    const on = (line: number | null, edges: number[]) =>
+        line !== null && edges.some((edge) => Math.abs(edge - line) <= ON_LINE) ? line : null;
+
+    return {
+        x: on(lines.x, [box.topLeft.x, box.bottomRight.x]),
+        y: on(lines.y, [box.topLeft.y, box.bottomRight.y])
+    };
+}
