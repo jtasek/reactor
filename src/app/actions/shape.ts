@@ -16,7 +16,7 @@ import {
 } from '../types';
 import { Context } from 'src/app';
 import { screenToWorld } from '../camera';
-import { createGroup, createShape, nextShapeName, shapeNamer } from '../factories';
+import { copyName, createGroup, createShape, nextShapeName, shapeNamer } from '../factories';
 import {
     containersHolding,
     groupAtPoint,
@@ -148,6 +148,8 @@ export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shape
     const clonesIds = new Map<string, string>();
     let order = topOrder(state);
 
+    const nameShape = shapeNamer(Object.values(untracked(currentDocument).shapes));
+
     actions.unselectShapes();
 
     for (const id of shapesIds.filter((shapeId) => cloning.has(shapeId))) {
@@ -158,7 +160,7 @@ export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shape
         const clone = createShape({
             ...shapeGeometry(original),
             order,
-            name: `Clone of ${original.name}`,
+            name: nameShape(original.type),
             description: original.description,
             parentShapeId: original.parentShapeId,
             rotation: original.rotation,
@@ -309,9 +311,10 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
     const nameShape = shapeNamer(present);
     const pasted = copied.shapes.map((input) => {
         order = orderAbove(order);
-        // A name the document already has goes to the next in the shape's sequence.
         const name =
-            input.name !== undefined && !taken.has(input.name) ? input.name : nameShape(input.type);
+            input.name === undefined
+                ? nameShape(input.type)
+                : copyName(input.name, input.type, taken, nameShape);
 
         taken.add(name);
 

@@ -263,8 +263,10 @@ only translates DOM events into the gesture actions (`src/events/actions/pointer
 A tool adds what it drew with `drawShape`, which selects it alone; `addShape` leaves the
 rest of the selection as it is. A shape added without a name is named `type-N`, as
 `rectangle-3`: the next number in its document's sequence for its type (`nextShapeName`),
-one past the highest that type's names have, so tools leave the name to the store. A
-pasted shape keeps its name unless the document has it already (`shapeNamer`).
+one past the highest that type's names have, so tools leave the name to the store, and a
+clone takes the next one too (`shapeNamer`). A pasted shape keeps its name unless the
+document has it already; then a name in a type's sequence goes on in it, and any other
+name takes the next free number, as `Logo 2` (`copyName`).
 
 `executeToolCommands` (`src/tools/actions.ts`) runs `execute(context)` for each active tool
 when `canExecute(context)` is true. `resetTools` deactivates a tool when its

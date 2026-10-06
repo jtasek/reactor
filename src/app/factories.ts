@@ -42,7 +42,6 @@ const groupSequence = new Sequence();
 const layerSequence = new Sequence();
 const linkSequence = new Sequence();
 const guideSequence = new Sequence();
-const shapeSequence = new Sequence();
 
 export const newApplicationName = (): string => `reactor-${Date.now()}`;
 export const newComponentName = (): string => `component-${componentSequence.next()}`;
@@ -51,7 +50,6 @@ export const newGroupName = (): string => `group-${groupSequence.next()}`;
 export const newLayerName = (): string => `layer-${layerSequence.next()}`;
 export const newLinkName = (): string => `link-${linkSequence.next()}`;
 export const newGuideName = (): string => `guide-${guideSequence.next()}`;
-export const newShapeName = (): string => `shape-${shapeSequence.next()}`;
 
 /** A name in a type's sequence, such as `rectangle-3`. */
 const SEQUENCE_NAME = /^([a-z]+)-(\d+)$/;
@@ -79,6 +77,39 @@ export function shapeNamer(shapes: Iterable<Shape>): (type: Shape['type']) => st
 
         return `${type}-${next}`;
     };
+}
+
+/**
+ * `name` followed by the lowest number from 2 that `taken` does not have, as `Logo 2`;
+ * a number it already ends with is replaced, so `Logo 2` gives `Logo 3`.
+ */
+function numberedName(name: string, taken: Set<string>): string {
+    const base = name.replace(/ \d+$/, '');
+    let number = 2;
+
+    while (taken.has(`${base} ${number}`)) {
+        number++;
+    }
+
+    return `${base} ${number}`;
+}
+
+/**
+ * A name for a copy of a shape of `type` named `name`, one `taken` does not have: its
+ * own while it is free, else the next in its type's sequence (`nameShape`) for a name in
+ * one, or the name with a number, as `Logo 2`.
+ */
+export function copyName(
+    name: string,
+    type: Shape['type'],
+    taken: Set<string>,
+    nameShape: (type: Shape['type']) => string
+): string {
+    if (!taken.has(name)) {
+        return name;
+    }
+
+    return SEQUENCE_NAME.test(name) ? nameShape(type) : numberedName(name, taken);
 }
 
 /** The next name in a document's sequence for shapes of `type`: see `shapeNamer`. */
@@ -109,7 +140,7 @@ export function createNotification(options: Partial<Notification> = {}): Notific
     };
 }
 
-export function createShape(input: ShapeInput & Pick<Shape, 'order'>): Shape {
+export function createShape(input: ShapeInput & Pick<Shape, 'order' | 'name'>): Shape {
     const id = newId();
 
     return {
@@ -124,8 +155,6 @@ export function createShape(input: ShapeInput & Pick<Shape, 'order'>): Shape {
         selected: true,
         visible: true,
         ...input,
-        // Without a document, the first in its type's sequence.
-        name: input.name ?? nextShapeName([], input.type),
         id,
         key: `${input.type}-${id}`
     };

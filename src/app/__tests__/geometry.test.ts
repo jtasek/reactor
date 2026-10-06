@@ -16,7 +16,8 @@ describe('geometry', () => {
                 type: 'line',
                 start: { x: 10, y: 10 },
                 end: { x: 10, y: 10 },
-                order: 'a0'
+                order: 'a0',
+                name: 'shape'
             });
 
             expect(hitTestShape(dot, { x: 13, y: 14 }, 5)).toBe(true);
@@ -24,8 +25,13 @@ describe('geometry', () => {
         });
 
         it('hits a single-point pen near that point and never an empty pen', () => {
-            const single = createShape({ type: 'pen', points: [{ x: 10, y: 10 }], order: 'a0' });
-            const empty = createShape({ type: 'pen', points: [], order: 'a0' });
+            const single = createShape({
+                type: 'pen',
+                points: [{ x: 10, y: 10 }],
+                order: 'a0',
+                name: 'shape'
+            });
+            const empty = createShape({ type: 'pen', points: [], order: 'a0', name: 'shape' });
 
             expect(hitTestShape(single, { x: 10, y: 14 }, 5)).toBe(true);
             expect(hitTestShape(empty, { x: 0, y: 0 }, 5)).toBe(false);
@@ -36,7 +42,8 @@ describe('geometry', () => {
                 type: 'ellipse',
                 position: { x: 50, y: 50 },
                 radius: { x: 40, y: 0 },
-                order: 'a0'
+                order: 'a0',
+                name: 'shape'
             });
 
             expect(hitTestShape(flat, { x: 50, y: 53 }, 5)).toBe(true);
@@ -44,7 +51,12 @@ describe('geometry', () => {
         });
 
         it('tests rotated shapes in their own frame', () => {
-            const shape = { type: 'rectangle' as const, position: { x: 0, y: 0 }, order: 'a0' };
+            const shape = {
+                type: 'rectangle' as const,
+                position: { x: 0, y: 0 },
+                order: 'a0',
+                name: 'shape'
+            };
             const halfTurn = createShape({
                 ...shape,
                 size: { width: 40, height: 20 },
@@ -70,7 +82,8 @@ describe('geometry', () => {
                 type: 'rectangle',
                 position: { x: 0, y: 0 },
                 size: { width: 10, height: 10 },
-                order: 'a0'
+                order: 'a0',
+                name: 'shape'
             });
 
             expect(
@@ -94,7 +107,8 @@ describe('geometry', () => {
                 position: { x: 0, y: 0 },
                 size: { width: 20, height: 20 },
                 rotation: 45,
-                order: 'a0'
+                order: 'a0',
+                name: 'shape'
             });
 
             expect(

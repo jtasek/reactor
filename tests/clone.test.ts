@@ -60,7 +60,8 @@ describe.each(shapes)('cloning a $type', (shape) => {
             type: shape.type,
             id: cloneId,
             key: `${shape.type}-${cloneId}`,
-            name: 'Clone of Original',
+            // The next in its type's sequence, not its original's name.
+            name: `${shape.type}-1`,
             rotation: 30,
             selected: true,
             children: []

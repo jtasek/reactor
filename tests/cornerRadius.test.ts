@@ -13,6 +13,7 @@ const rectangle = (fields: Partial<Rectangle> = {}) =>
         position: { x: 0, y: 0 },
         size: { width: 100, height: 40 },
         order: 'a0',
+        name: 'shape',
         ...fields
     }) as Rectangle;
 
@@ -74,7 +75,8 @@ describe('corner radius', () => {
             type: 'circle',
             position: { x: 0, y: 0 },
             radius: 5,
-            order: 'a0'
+            order: 'a0',
+            name: 'shape'
         });
 
         expect(radiusProperty.read(shape, {} as never)).toBe(20);

@@ -1,5 +1,4 @@
 import { registerTool } from 'src/app/actions/startup';
-import { createShape } from 'src/app/factories';
 import type { ShapeInput } from 'src/app/types';
 import { RectTool } from 'src/tools/components/Rect';
 import { createTestStore } from './support/store';
@@ -73,7 +72,7 @@ describe('a new shape’s name', () => {
         expect(names()).toEqual(['rectangle-1', 'rectangle-2']);
     });
 
-    it('is the next in its sequence for a pasted shape whose name is taken', () => {
+    it('is a fresh name for a pasted shape whose name is taken', () => {
         const { store, names } = setup();
 
         store.actions.addShape({ ...square(0), selected: true });
@@ -81,17 +80,45 @@ describe('a new shape’s name', () => {
         const copied = store.actions.copySelection()!;
 
         store.actions.pasteShapes(copied);
+        store.actions.pasteShapes(copied);
         store.actions.newDocument();
         store.actions.pasteShapes(copied);
 
         expect(names()).toEqual(['rectangle-1', 'Logo']);
         store.actions.openDocument(store.state.documentsIds[0]);
-        expect(names()).toEqual(['rectangle-1', 'Logo', 'rectangle-2', 'rectangle-3']);
+        // A name in a type's sequence goes on in it; another name takes the next free number.
+        expect(names()).toEqual([
+            'rectangle-1',
+            'Logo',
+            'rectangle-2',
+            'Logo 2',
+            'rectangle-3',
+            'Logo 3'
+        ]);
     });
 
-    it('is in its type’s sequence when a shape is created without one', () => {
-        const shape = createShape({ ...circle, order: 'a0' });
+    it('is a fresh name for each of two pasted shapes named alike', () => {
+        const { store, names } = setup();
 
-        expect(shape.name).toBe('circle-1');
+        store.actions.addShape({ ...square(0), name: 'Logo', selected: true });
+        store.actions.addShape({ ...square(20), name: 'Logo', selected: true });
+        const copied = store.actions.copySelection()!;
+
+        store.actions.newDocument();
+        store.actions.pasteShapes(copied);
+
+        expect(names()).toEqual(['Logo', 'Logo 2']);
+    });
+
+    it('is the next in its sequence for a clone', () => {
+        const { store, names } = setup();
+
+        store.actions.addShape({ ...square(0), selected: true });
+        const [id] = store.state.currentDocument.shapesIds;
+
+        store.actions.cloneShapes([id]);
+        store.actions.cloneShapes([id]);
+
+        expect(names()).toEqual(['rectangle-1', 'rectangle-2', 'rectangle-3']);
     });
 });
