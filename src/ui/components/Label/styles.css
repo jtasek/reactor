@@ -1,13 +1,13 @@
 .label {
     fill: var(--selection-color);
     font-family: sans-serif;
-    font-size: 13px;
+    font-size: var(--canvas-label-size);
     font-weight: 600;
     text-anchor: middle;
     dominant-baseline: middle;
     paint-order: stroke;
     stroke: var(--surface);
-    stroke-width: 3px;
+    stroke-width: var(--canvas-label-halo-width);
     stroke-linejoin: round;
     pointer-events: none;
     user-select: none;
