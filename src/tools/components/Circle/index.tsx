@@ -26,7 +26,6 @@ interface Props {
 }
 
 export const createCircleProps = ({ center, radius }: Pointer, designMode = false): Props => {
-    // The store names what is drawn, in its document's sequence for the shape's type.
     const name = designMode ? 'Circle x' : undefined;
 
     return {

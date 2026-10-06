@@ -67,7 +67,6 @@ export const createImageProps = (
     image: ImageToPlace,
     designMode = false
 ): Props => {
-    // The store names what is drawn, in its document's sequence for the shape's type.
     const name = designMode ? 'Image x' : undefined;
     const { position, size } = getImageBounds(pointer, image.ratio);
 

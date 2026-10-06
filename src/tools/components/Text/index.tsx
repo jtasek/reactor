@@ -36,7 +36,6 @@ export const createTextProps = (
     { text }: Keyboard,
     designMode = false
 ): Props => {
-    // The store names what is drawn, in its document's sequence for the shape's type.
     const name = designMode ? 'Text x' : undefined;
 
     return {

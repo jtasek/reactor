@@ -27,7 +27,6 @@ interface Props {
 }
 
 export const createEllipseProps = ({ center, size }: Pointer, designMode = false): Props => {
-    // The store names what is drawn, in its document's sequence for the shape's type.
     const name = designMode ? 'Ellipse x' : undefined;
 
     return {

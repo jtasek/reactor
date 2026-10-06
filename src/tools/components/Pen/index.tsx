@@ -23,7 +23,6 @@ interface Props {
 }
 
 export const createPenProps = ({ path }: Pointer, designMode = false): Props => {
-    // The store names what is drawn, in its document's sequence for the shape's type.
     const name = designMode ? 'Pen x' : undefined;
     const points = path.map(({ x, y }) => ({ x, y }));
 

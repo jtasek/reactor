@@ -31,7 +31,6 @@ interface Props {
 }
 
 export const createRectProps = ({ size, topLeft }: Pointer, designMode = false): Props => {
-    // The store names what is drawn, in its document's sequence for the shape's type.
     const name = designMode ? 'Rectangle x' : undefined;
 
     return {

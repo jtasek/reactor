@@ -1,4 +1,5 @@
 import { registerTool } from 'src/app/actions/startup';
+import { createShape } from 'src/app/factories';
 import type { ShapeInput } from 'src/app/types';
 import { RectTool } from 'src/tools/components/Rect';
 import { createTestStore } from './support/store';
@@ -70,5 +71,27 @@ describe('a new shape’s name', () => {
         events.endGesture({ pointerId: 1, position: { x: 80, y: 20 } });
 
         expect(names()).toEqual(['rectangle-1', 'rectangle-2']);
+    });
+
+    it('is the next in its sequence for a pasted shape whose name is taken', () => {
+        const { store, names } = setup();
+
+        store.actions.addShape({ ...square(0), selected: true });
+        store.actions.addShape({ ...square(20), name: 'Logo', selected: true });
+        const copied = store.actions.copySelection()!;
+
+        store.actions.pasteShapes(copied);
+        store.actions.newDocument();
+        store.actions.pasteShapes(copied);
+
+        expect(names()).toEqual(['rectangle-1', 'Logo']);
+        store.actions.openDocument(store.state.documentsIds[0]);
+        expect(names()).toEqual(['rectangle-1', 'Logo', 'rectangle-2', 'rectangle-3']);
+    });
+
+    it('is in its type’s sequence when a shape is created without one', () => {
+        const shape = createShape({ ...circle, order: 'a0' });
+
+        expect(shape.name).toBe('circle-1');
     });
 });

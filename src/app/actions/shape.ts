@@ -16,7 +16,7 @@ import {
 } from '../types';
 import { Context } from 'src/app';
 import { screenToWorld } from '../camera';
-import { createGroup, createShape, nextShapeName } from '../factories';
+import { createGroup, createShape, nextShapeName, shapeNamer } from '../factories';
 import {
     containersHolding,
     groupAtPoint,
@@ -304,10 +304,18 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
     }
 
     let order = topOrder(state);
+    const present = Object.values(untracked(state.currentDocument).shapes);
+    const taken = new Set(present.map((shape) => shape.name));
+    const nameShape = shapeNamer(present);
     const pasted = copied.shapes.map((input) => {
         order = orderAbove(order);
+        // A name the document already has goes to the next in the shape's sequence.
+        const name =
+            input.name !== undefined && !taken.has(input.name) ? input.name : nameShape(input.type);
 
-        return createShape({ ...input, order, selected: true });
+        taken.add(name);
+
+        return createShape({ ...input, name, order, selected: true });
     });
     const target = pasteTarget(context);
 

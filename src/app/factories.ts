@@ -53,24 +53,37 @@ export const newLinkName = (): string => `link-${linkSequence.next()}`;
 export const newGuideName = (): string => `guide-${guideSequence.next()}`;
 export const newShapeName = (): string => `shape-${shapeSequence.next()}`;
 
+/** A name in a type's sequence, such as `rectangle-3`. */
+const SEQUENCE_NAME = /^([a-z]+)-(\d+)$/;
+
 /**
- * The next name in a document's sequence for shapes of `type`: one past the highest
- * number among its `type-N` names, so it goes on across reloads and copies.
+ * Names shapes in a document's sequences, one per type: each call gives the next
+ * `type-N`, one past the highest number among `shapes`' names of that type and the
+ * names it gave before, so a sequence goes on across reloads and copies.
  */
-export function nextShapeName(shapes: Iterable<Shape>, type: Shape['type']): string {
-    const pattern = new RegExp(`^${type}-(\\d+)$`);
-    let highest = 0;
+export function shapeNamer(shapes: Iterable<Shape>): (type: Shape['type']) => string {
+    const highest = new Map<string, number>();
 
     for (const shape of shapes) {
-        const number = pattern.exec(shape.name)?.[1];
+        const [, type, number] = SEQUENCE_NAME.exec(shape.name) ?? [];
 
-        if (number !== undefined) {
-            highest = Math.max(highest, Number(number));
+        if (type !== undefined) {
+            highest.set(type, Math.max(highest.get(type) ?? 0, Number(number)));
         }
     }
 
-    return `${type}-${highest + 1}`;
+    return (type) => {
+        const next = (highest.get(type) ?? 0) + 1;
+
+        highest.set(type, next);
+
+        return `${type}-${next}`;
+    };
 }
+
+/** The next name in a document's sequence for shapes of `type`: see `shapeNamer`. */
+export const nextShapeName = (shapes: Iterable<Shape>, type: Shape['type']): string =>
+    shapeNamer(shapes)(type);
 
 export const getAnonymousUser = (): User => {
     return {
@@ -107,11 +120,12 @@ export function createShape(input: ShapeInput & Pick<Shape, 'order'>): Shape {
         locked: false,
         modified: new Date(),
         modifiedBy: getCurrentUserName(),
-        name: newShapeName(),
         rotation: 0,
         selected: true,
         visible: true,
         ...input,
+        // Without a document, the first in its type's sequence.
+        name: input.name ?? nextShapeName([], input.type),
         id,
         key: `${input.type}-${id}`
     };

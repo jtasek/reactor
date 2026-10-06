@@ -20,7 +20,6 @@ interface Props {
 }
 
 export const createLineProps = ({ start, current }: Pointer, designMode = false): Props => {
-    // The store names what is drawn, in its document's sequence for the shape's type.
     const name = designMode ? 'Line x' : undefined;
 
     return {
