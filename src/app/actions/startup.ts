@@ -11,8 +11,12 @@ const tools: Record<string, Tool> = {};
 
 const scoped = new Map<CommandScope, Command[]>();
 
+/**
+ * Registers a command, in place of one registered under its id before, as a hot
+ * update does, which keeps that one's place in the order.
+ */
 export function registerCommand(command: Command) {
-    if (!commands[command.id]) {
+    if (commands[command.id] !== command) {
         commands[command.id] = command;
         scoped.clear();
     }
@@ -40,6 +44,7 @@ export function commandsFor(scope: CommandScope): Command[] {
     return found;
 }
 
+/** The registered commands: none until the editor page has loaded (`registerEditor`). */
 export function getCommands(): Command[] {
     return Object.values(commands);
 }
@@ -48,12 +53,12 @@ export function getCommand(commandId: string) {
     return commands[commandId];
 }
 
+/** Registers a tool, in place of one registered under its id before, keeping its place. */
 export function registerTool(tool: Tool) {
-    if (!tools[tool.id]) {
-        tools[tool.id] = tool;
-    }
+    tools[tool.id] = tool;
 }
 
+/** The registered tools: none until the editor page has loaded (`registerEditor`). */
 export function getTools(): Tool[] {
     return Object.values(tools);
 }

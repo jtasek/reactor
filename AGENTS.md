@@ -448,6 +448,11 @@ Hidden guides are not drawn and locked ones do not move.
   `menuOrder`. Menus take them from the registry with `commandsFor(scope)`
   (`useScopedCommands`), so a new command needs no change to the menus; the canvas menu
   shows those its selection (`selectionScope`) can run now.
+- **Commands and tools are registered by the editor page** as it loads (`registerEditor`,
+  `src/pages/registerEditor.ts`), not at startup, so they stay out of the entry bundle; add
+  a new one there. Until then the registry is empty (`getCommands`, `getTools`), so code
+  outside the editor must not count on them. Registering one again replaces it in place,
+  as a hot update does.
 - **Commands**: run a command with `runCommand(command)` (`actions/commands.ts`), which checks
   its `canExecute` guard first; never call `execute` directly. Guards are `CommandGuard`s that
   only read `state`, so UI evaluates them while rendering (`useCommandEnabled`) and stays in
