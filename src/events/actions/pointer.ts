@@ -12,6 +12,7 @@ import {
 import {
     SNAP_DISTANCE_PX,
     linesOnEdges,
+    sameGaps,
     snapMove,
     snapResize,
     targetLines
@@ -277,7 +278,7 @@ export const movePointer = (
             gesture.snapLines = lines;
         }
 
-        if (JSON.stringify(gesture.equalGaps) !== JSON.stringify(gaps)) {
+        if (!sameGaps(json(gesture.equalGaps), gaps)) {
             gesture.equalGaps = gaps;
         }
     }

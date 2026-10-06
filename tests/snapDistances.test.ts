@@ -1,4 +1,5 @@
-import { snapDistances, snapMove, targetLines } from 'src/app/snapping';
+import { snapDistances } from 'src/app/snapDistances';
+import { snapMove, targetLines } from 'src/app/snapping';
 import type { Box } from 'src/app/types';
 
 const box = (left: number, top: number, width: number, height: number): Box => ({
@@ -71,5 +72,37 @@ describe('equal gaps', () => {
         });
         // Far below the row, the gap between the squares does not count.
         expect(snapMove(box(0, 300, 40, 40), { x: 117, y: 0 }, targets, REACH).gaps).toEqual([]);
+    });
+
+    it('gives way to an edge as near, too', () => {
+        // A square far below gives a line at 120, as near as the row's gap.
+        const targets = targetLines([box(0, 0, 40, 40), box(60, 0, 40, 40), box(120, 300, 40, 40)]);
+
+        expect(snapMove(box(0, 0, 40, 40), { x: 117, y: 0 }, targets, REACH)).toMatchObject({
+            delta: { x: 120 },
+            lines: { x: 120 },
+            gaps: []
+        });
+    });
+
+    it('is not kept when the box leaves the row as it snaps down', () => {
+        // Its top 37 overlaps the row, then snaps to the row's bottom at 40, out of it.
+        const targets = targetLines([box(0, 0, 40, 40), box(60, 0, 40, 40)]);
+
+        expect(snapMove(box(0, 200, 40, 40), { x: 117, y: -163 }, targets, REACH)).toEqual({
+            delta: { x: 117, y: -160 },
+            lines: { x: null, y: 40 },
+            gaps: []
+        });
+    });
+
+    it('takes no gap covered by a longer shape', () => {
+        // A panel from 0 to 120 covers the gap between the squares at 20 and 60.
+        const targets = targetLines([box(0, 0, 120, 40), box(20, 0, 20, 40), box(60, 0, 20, 40)]);
+
+        expect(snapMove(box(0, 0, 20, 40), { x: 137, y: 0 }, targets, REACH)).toMatchObject({
+            delta: { x: 137 },
+            gaps: []
+        });
     });
 });

@@ -6,7 +6,8 @@ import {
     useSnapLines,
     useSnappedBox
 } from 'src/app/hooks';
-import { Gap, SnapMark, snapDistances, snapMarks, snapTargetPoints } from 'src/app/snapping';
+import { snapDistances } from 'src/app/snapDistances';
+import { Gap, gapLength, SnapMark, snapMarks, snapTargetPoints } from 'src/app/snapping';
 import type { Point } from 'src/app/types';
 import styles from './styles.css';
 
@@ -43,7 +44,8 @@ interface GapLabelsProps {
 }
 
 const GapLabels: FC<GapLabelsProps> = ({ gaps, scale, className }) =>
-    gaps.map(({ axis, from, to }) => {
+    gaps.map((gap) => {
+        const { axis, from, to } = gap;
         const x = (from.x + to.x) / 2 + (axis === 'y' ? LABEL_OFFSET / scale : 0);
         const y = (from.y + to.y) / 2 - (axis === 'x' ? LABEL_OFFSET / scale : 0);
 
@@ -54,7 +56,7 @@ const GapLabels: FC<GapLabelsProps> = ({ gaps, scale, className }) =>
                 textAnchor={axis === 'x' ? 'middle' : 'start'}
                 transform={`translate(${x} ${y}) scale(${1 / scale})`}
             >
-                {Math.round(axis === 'x' ? to.x - from.x : to.y - from.y)}
+                {Math.round(gapLength(gap))}
             </text>
         );
     });

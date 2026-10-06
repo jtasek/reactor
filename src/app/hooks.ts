@@ -311,7 +311,7 @@ export const useEqualGaps = () =>
     useAppState((state) => {
         const { gesture } = state.events.pointer;
 
-        return gesture.kind === 'moving' && gesture.dragged ? gesture.equalGaps : [];
+        return gesture.kind === 'moving' && gesture.dragged ? json(gesture.equalGaps) : [];
     });
 
 /**
