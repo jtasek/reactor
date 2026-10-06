@@ -29,9 +29,10 @@ flowchart LR
 | Server          | Authentication, validation, queue, model lifecycle              |
 | Model provider  | Prompting, tokenization, constrained output, inference          |
 
-Store chat state per document/tab in an Overmind `chat` namespace, outside saved/shared
-content. Services own async work and controllers; results reach state through synchronous
-root actions. Components use hooks. Lazy-load the panel, transport, and tool adapters.
+Keep chat state per document/tab in the lazily loaded chat service, outside the store and
+saved/shared content; the store holds only the panel's open flag. The service owns async work
+and controllers; components read it through hooks. Lazy-load the panel, service, transport,
+and tool adapters.
 
 ## UI and execution
 
@@ -70,8 +71,9 @@ Apply performs these checks in one synchronous action:
 2. Captured selection and relevant geometry, membership, visibility, and locks still match.
    Compare semantic snapshots; unrelated document changes do not invalidate the proposal.
 3. All arguments and targets are valid. Reject the whole operation if any target fails.
-4. Commit through the shared edit boundary, then consume the proposal and record affected
-   IDs/counts. Validation or preparation failure publishes nothing and creates no history.
+4. Commit through the shared edit boundary, then consume the proposal and record its
+   outcome and affected IDs. Validation or preparation failure publishes nothing and creates
+   no history.
 
 Document access is device-local state populated from workspace roles, separate from content
 locks. Unknown access blocks server-document edits. Refresh on document open, focus, sync
@@ -81,7 +83,8 @@ checks above. Menus and history use the same access guard. The server must enfor
 on active sync connections as well as HTTP requests; cached client access is only a UI guard.
 Local documents without accounts retain local editing permissions.
 
-Return `proposed`, `applied`, `stale_context`, `not_allowed`, or `invalid_arguments`.
+Return `proposed`, `applied`, `unchanged`, `stale_context`, `not_allowed`, or
+`invalid_arguments`; `applied` and `unchanged` come only from the edit boundary's outcome.
 Stale proposals require a fresh request. Exclude clipboard, account, document deletion/reset,
 file dialogs, generated code, and arbitrary store mutation from the initial tool set.
 
@@ -108,9 +111,9 @@ and non-thinking configuration for each candidate. Select the smallest model tha
 accuracy, latency, and memory checks. FunctionGemma 270M is a later option if task-specific
 fine-tuning is justified. No model is selected yet.
 
-Jev's documented choice/scoring interface does not generate arbitrary shape parameters.
-Exclude a separate decision model from v1; it adds a second inference path without covering
-the core task. Prefer compact operation parameters and deterministic editor geometry.
+Exclude a separate decision model from v1; it adds a second inference path without
+generating shape parameters, the core task. Prefer compact operation parameters and
+deterministic editor geometry.
 
 Pin the selected runtime/model/profile combination. A compatible model changes through
 path/profile configuration and restart; another engine implements `ChatModel`. Neither
@@ -133,7 +136,7 @@ later if measured memory or process stability makes in-process hosting unsuitabl
 - Initial limits: 4K context tokens, 256 output tokens, 15-second deadline including queue,
   one active generation, four queued, one outstanding request per account/local session.
 - Load asynchronously at startup; keep editing available on load failure. Reset model
-  conversation/KV state between users. Abort cancelled, disconnected, or expired requests.
+  conversation/KV state between users. Abort canceled, disconnected, or expired requests.
 - Use async native inference with capped CPU threads. Measure event-loop and sync latency.
   Same-process native crashes or out-of-memory can still affect the server.
 - Configure `CHAT_MODEL_PATH` (unset disables chat), `CHAT_MODEL_PROFILE`, `CHAT_THREADS`.
@@ -173,7 +176,7 @@ uncoordinated server-side mutation path. No agent-to-agent protocol is needed.
 | Proposed location                  | Contents                                                       |
 | ---------------------------------- | -------------------------------------------------------------- |
 | `shared/chat.ts`                   | Wire types, schemas, validation; no React/browser dependencies |
-| `src/chat/`                        | State/actions, browser service, tool adapters                  |
+| `src/chat/`                        | Browser service and its state, tool adapters                   |
 | `src/ui/components/Chat/`          | Lazy panel                                                     |
 | `server/chat.ts`                   | Routes, queue, readiness                                       |
 | `server/chat/model.ts`, `llama.ts` | Provider contract/factory and native adapter                   |
@@ -203,7 +206,6 @@ server entry points, and Docker/TypeScript configuration.
 [Qwen3.5 0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) ·
 [Qwen3.5 2B](https://huggingface.co/Qwen/Qwen3.5-2B) ·
 [FunctionGemma](https://ai.google.dev/gemma/docs/functiongemma/model_card) ·
-[Jev](https://docs.typesafe.ai/introduction) ·
 [MCP tools](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) ·
 [WebMCP](https://github.com/webmachinelearning/webmcp) ·
 [Protocol comparison](https://developer.chrome.com/docs/ai/webmcp/compare-mcp)
