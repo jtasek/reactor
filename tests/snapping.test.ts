@@ -1,5 +1,5 @@
 import { shownShapesIds } from 'src/app/membership';
-import { snapMove, targetLines } from 'src/app/snapping';
+import { snapMarks, snapMove, snapTargetPoints, targetLines } from 'src/app/snapping';
 import { isShapeVisible } from 'src/app/utils';
 import type { Box, ShapeInput } from 'src/app/types';
 import { createTestStore } from './support/store';
@@ -48,6 +48,69 @@ describe('snapping a moved box', () => {
             delta: { x: 50, y: 50 },
             lines: { x: null, y: null }
         });
+    });
+});
+
+describe('marking what a moved box snapped to', () => {
+    // Targets: one at 100 to 200 across and down, and one at 300 to 340 across, 100 to 140 down.
+    const targets = targetLines([box(100, 100, 100, 100), box(300, 100, 40, 40)]);
+
+    it('marks the points of the box and the targets on each line, and spans them', () => {
+        // The moved box's left edge on x 100, below the first target.
+        expect(snapMarks({ x: 100, y: null }, box(100, 250, 40, 40), targets)).toEqual([
+            {
+                axis: 'x',
+                from: { x: 100, y: 100 },
+                to: { x: 100, y: 290 },
+                boxPoints: [
+                    { x: 100, y: 250 },
+                    { x: 100, y: 270 },
+                    { x: 100, y: 290 }
+                ],
+                targetPoints: [
+                    { x: 100, y: 100 },
+                    { x: 100, y: 150 },
+                    { x: 100, y: 200 }
+                ]
+            }
+        ]);
+    });
+
+    it('marks every target on the line, each point once', () => {
+        // The moved box's top on y 100, between the two targets: both tops are on it.
+        const [mark] = snapMarks({ x: null, y: 100 }, box(220, 100, 40, 40), targets);
+
+        expect(mark).toMatchObject({ axis: 'y', from: { x: 100, y: 100 }, to: { x: 340, y: 100 } });
+        expect(mark.targetPoints.map((point) => point.x)).toEqual([100, 150, 200, 300, 320, 340]);
+        expect(mark.boxPoints.map((point) => point.x)).toEqual([220, 240, 260]);
+    });
+
+    it('marks both lines when both snapped, with the corner they meet at', () => {
+        const marks = snapMarks({ x: 200, y: 200 }, box(200, 200, 40, 40), targets);
+
+        expect(marks.map((mark) => mark.axis)).toEqual(['x', 'y']);
+        expect(marks[0].targetPoints).toContainEqual({ x: 200, y: 200 });
+        expect(marks[1].boxPoints).toContainEqual({ x: 200, y: 200 });
+    });
+
+    it('keeps the axis of a line whose points all lie at one place', () => {
+        // A flat box on x 100 at y 100, where the first target's corner is.
+        const [mark] = snapMarks({ x: 100, y: null }, box(100, 100, 0, 0), targetLines([]));
+
+        expect(mark.axis).toBe('x');
+    });
+
+    it('takes edges equal but for float noise as one line, with all their points', () => {
+        const noisy = targetLines([box(30, 0, 10, 10), box(30.000000000000004, 50, 10, 10)]);
+
+        expect(noisy.xs.filter((x) => Math.abs(x - 30) < 0.001)).toEqual([30]);
+        expect(snapTargetPoints({ x: 30, y: null }, noisy).map((point) => point.y)).toEqual([
+            0, 5, 10, 50, 55, 60
+        ]);
+    });
+
+    it('marks nothing without a line', () => {
+        expect(snapMarks({ x: null, y: null }, box(0, 0, 10, 10), targets)).toEqual([]);
     });
 });
 

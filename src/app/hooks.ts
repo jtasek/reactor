@@ -301,6 +301,32 @@ export const useSnapLines = () =>
         return gesture.kind === 'moving' && gesture.dragged ? gesture.snapLines : null;
     });
 
+/** Where the dragged selection's box is now, while it is snapped to a line; none otherwise. */
+export const useSnappedBox = () =>
+    useAppState((state) => {
+        const { gesture } = state.events.pointer;
+
+        if (
+            gesture.kind !== 'moving' ||
+            !gesture.dragged ||
+            !gesture.box ||
+            (gesture.snapLines.x === null && gesture.snapLines.y === null)
+        ) {
+            return null;
+        }
+
+        const { topLeft, width, height } = gesture.box;
+        const left = topLeft.x + gesture.movedBy.x;
+        const top = topLeft.y + gesture.movedBy.y;
+
+        return {
+            topLeft: { x: left, y: top },
+            bottomRight: { x: left + width, y: top + height },
+            width,
+            height
+        };
+    });
+
 /** Whether a pointer gesture is in progress on the canvas. */
 export const useGestureInProgress = () =>
     useAppState((state) => state.events.pointer.gesture.kind !== 'idle');

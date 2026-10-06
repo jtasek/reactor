@@ -11,13 +11,13 @@ test('a dragged shape snaps to another one, showing the line, unless Ctrl or Cmd
     const surface = (await page.locator('svg#surface').boundingBox())!;
     const at = (x: number, y: number) => [surface.x + x, surface.y + y] as const;
     const first = shapes(page).locator('rect[data-cy]').first();
-    const snapLines = page.locator('svg#surface g[class] > line');
+    const snapLines = page.locator('svg#surface g[class] > path');
 
     // Its left edge would end at 297, three short of the other's at 300.
     await page.mouse.move(...at(120, 120));
     await page.mouse.down();
     await page.mouse.move(...at(317, 200), { steps: 8 });
-    await expect(snapLines).toHaveCount(1);
+    await expect(snapLines.first()).toBeVisible();
     await page.mouse.up();
 
     await expect(first).toHaveAttribute('x', '300');
