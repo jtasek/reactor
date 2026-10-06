@@ -19,7 +19,7 @@
 .gapLabel {
     dominant-baseline: middle;
     font-family: sans-serif;
-    font-size: 11px;
+    font-size: var(--canvas-label-size);
     font-weight: 600;
     paint-order: stroke;
     pointer-events: none;
