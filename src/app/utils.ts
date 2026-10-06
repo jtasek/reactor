@@ -285,11 +285,6 @@ export function shapeGeometryKey(shape: Shape): string {
     return JSON.stringify(shapeGeometry(shape));
 }
 
-/**
- * Returns a new box after dragging a resize handle to `pointer`. The edges the
- * handle controls follow the pointer; the opposite edges stay fixed and the box
- * is clamped so it never collapses past `min`.
- */
 export function movedEdges(handlerType: ResizeHandlerType) {
     return {
         left:
@@ -308,6 +303,11 @@ export function movedEdges(handlerType: ResizeHandlerType) {
     };
 }
 
+/**
+ * Returns a new box after dragging a resize handle to `pointer`. The edges the
+ * handle controls follow the pointer; the opposite edges stay fixed and the box
+ * is clamped so it never collapses past `min`.
+ */
 export function resizeBox(box: Box, handlerType: ResizeHandlerType, pointer: Point, min = 1): Box {
     let left = box.topLeft.x;
     let top = box.topLeft.y;

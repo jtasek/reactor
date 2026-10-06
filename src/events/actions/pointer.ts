@@ -283,8 +283,13 @@ export const movePointer = (
         const changingIds = resizing ? [gesture.shapeId] : Object.keys(gesture.shapes);
         const rotation = resizing ? (original?.rotation ?? 0) : gesture.frame.rotation;
         const upright = rotation % 90 === 0;
-        const from = original ? getShapeBounds(original) : resizing ? null : gesture.frame.box;
-        const proportional = !resizing || (original !== undefined && keepsAspectRatio(original));
+        const startBox =
+            gesture.kind === 'resizingGroup'
+                ? gesture.frame.box
+                : original && getShapeBounds(original);
+        const proportional =
+            gesture.kind === 'resizingGroup' ||
+            (original !== undefined && keepsAspectRatio(original));
 
         if (!free && upright && !effects.dragTargets.current()) {
             takeSnapTargets({ state, effects }, changingIds);
@@ -293,9 +298,9 @@ export const movePointer = (
         const targets = free || !upright ? null : effects.dragTargets.current();
         const { scale } = state.currentDocument.camera;
         const snapped =
-            targets && from
+            targets && startBox
                 ? snapResize(
-                      from,
+                      startBox,
                       gesture.handle,
                       position,
                       proportional,
