@@ -34,6 +34,32 @@ test('keys pick tools and run commands on the selection', async ({ page }) => {
     );
 });
 
+test('the editor opened from the documents list has its tools and shortcuts', async ({ page }) => {
+    const scripts: string[] = [];
+
+    page.on('request', (request) => {
+        if (request.resourceType() === 'script') {
+            scripts.push(request.url());
+        }
+    });
+    await page.goto('/documents');
+    await expect(page.getByRole('heading', { name: 'Documents' })).toBeVisible();
+    const loadedForDocuments = scripts.length;
+
+    await page
+        .getByRole('button', { name: /^Open / })
+        .first()
+        .click();
+    for (const control of ['Side Bar', 'Tool Bar']) {
+        await page.getByRole('checkbox', { name: control, exact: true }).check();
+    }
+    await page.keyboard.press('r');
+
+    await expect(activeTool(page)).toHaveAttribute('title', 'Draws a rectangle or square');
+    // The editor's code, with its commands and tools, loads only as it opens.
+    expect(scripts.length).toBeGreaterThan(loadedForDocuments);
+});
+
 test('typing in a text field does not trigger shortcuts', async ({ page }) => {
     await openEditor(page, ['Command Line']);
 

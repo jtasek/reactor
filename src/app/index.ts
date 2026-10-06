@@ -3,7 +3,7 @@ import { merge, namespaced } from 'overmind/config';
 import * as actions from './actions';
 import * as effects from './effects';
 import * as events from '../events';
-import * as tools from '../tools';
+import * as tools from '../tools/store';
 import * as ui from '../ui';
 import { IContext } from 'overmind';
 import { state } from './state';

@@ -1,51 +1,5 @@
 import type { Command, CommandPlace, CommandScope } from 'src/app/types';
 import type { Context } from 'src/app';
-import {
-    AlignBottomCommand,
-    AlignCenterCommand,
-    AlignLeftCommand,
-    AlignMiddleCommand,
-    AlignRightCommand,
-    AlignTopCommand,
-    SpaceBetweenHorizontallyCommand,
-    SpaceBetweenVerticallyCommand,
-    SpaceEquallyHorizontallyCommand,
-    SpaceEquallyVerticallyCommand,
-    BringToFrontCommand,
-    CloneCommand,
-    CopyCommand,
-    CutCommand,
-    DeleteCommand,
-    GroupCommand,
-    HideCommand,
-    HighlightLayerCommand,
-    LayerCommand,
-    LockCommand,
-    PasteCommand,
-    RemoveFromGroupCommand,
-    ResetDocumentCommand,
-    SendToBackCommand,
-    ShowAllCommand,
-    UngroupCommand,
-    UnlayerCommand,
-    UnlockCommand,
-    ZoomInCommand,
-    ZoomOutCommand,
-    ZoomResetCommand
-} from 'src/commands';
-
-import {
-    CircleTool,
-    EllipseTool,
-    ImageTool,
-    LineTool,
-    MoveTool,
-    PenTool,
-    RectTool,
-    SelectTool,
-    TextTool
-} from 'src/tools';
-
 import { Tool } from 'src/tools/types';
 import { startDocumentSync } from '../services/documentSync';
 import { listenToMutations } from '../services/mutations';
@@ -57,8 +11,12 @@ const tools: Record<string, Tool> = {};
 
 const scoped = new Map<CommandScope, Command[]>();
 
+/**
+ * Registers a command, in place of one registered under its id before, as a hot
+ * update does, which keeps that one's place in the order.
+ */
 export function registerCommand(command: Command) {
-    if (!commands[command.id]) {
+    if (commands[command.id] !== command) {
         commands[command.id] = command;
         scoped.clear();
     }
@@ -86,6 +44,7 @@ export function commandsFor(scope: CommandScope): Command[] {
     return found;
 }
 
+/** The registered commands: none until the editor page has loaded (`registerEditor`). */
 export function getCommands(): Command[] {
     return Object.values(commands);
 }
@@ -94,64 +53,18 @@ export function getCommand(commandId: string) {
     return commands[commandId];
 }
 
+/** Registers a tool, in place of one registered under its id before, keeping its place. */
 export function registerTool(tool: Tool) {
-    if (!tools[tool.id]) {
-        tools[tool.id] = tool;
-    }
+    tools[tool.id] = tool;
 }
 
+/** The registered tools: none until the editor page has loaded (`registerEditor`). */
 export function getTools(): Tool[] {
     return Object.values(tools);
 }
 
 export function getTool(toolId: string) {
     return tools[toolId];
-}
-
-function registerCommands() {
-    registerCommand(DeleteCommand);
-    registerCommand(CloneCommand);
-    registerCommand(CopyCommand);
-    registerCommand(CutCommand);
-    registerCommand(PasteCommand);
-    registerCommand(GroupCommand);
-    registerCommand(UngroupCommand);
-    registerCommand(RemoveFromGroupCommand);
-    registerCommand(LayerCommand);
-    registerCommand(UnlayerCommand);
-    registerCommand(HighlightLayerCommand);
-    registerCommand(AlignLeftCommand);
-    registerCommand(AlignCenterCommand);
-    registerCommand(AlignRightCommand);
-    registerCommand(AlignTopCommand);
-    registerCommand(AlignMiddleCommand);
-    registerCommand(AlignBottomCommand);
-    registerCommand(SpaceBetweenHorizontallyCommand);
-    registerCommand(SpaceBetweenVerticallyCommand);
-    registerCommand(SpaceEquallyHorizontallyCommand);
-    registerCommand(SpaceEquallyVerticallyCommand);
-    registerCommand(BringToFrontCommand);
-    registerCommand(SendToBackCommand);
-    registerCommand(HideCommand);
-    registerCommand(ShowAllCommand);
-    registerCommand(LockCommand);
-    registerCommand(UnlockCommand);
-    registerCommand(ZoomInCommand);
-    registerCommand(ZoomOutCommand);
-    registerCommand(ZoomResetCommand);
-    registerCommand(ResetDocumentCommand);
-}
-
-function registerTools() {
-    registerTool(CircleTool);
-    registerTool(EllipseTool);
-    registerTool(ImageTool);
-    registerTool(LineTool);
-    registerTool(MoveTool);
-    registerTool(PenTool);
-    registerTool(RectTool);
-    registerTool(SelectTool);
-    registerTool(TextTool);
 }
 
 function registerRoutes(effects: Context['effects'], actions: Context['actions']) {
@@ -170,8 +83,6 @@ export const onInitializeOvermind = async (
     const { state, effects, actions } = context;
     const addMutationListener = listenToMutations(instance);
 
-    registerCommands();
-    registerTools();
     registerRoutes(effects, actions);
     effects.clipboard.connect(instance.actions);
     effects.assets.connect(instance.actions);
