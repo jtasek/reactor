@@ -53,6 +53,25 @@ export const newLinkName = (): string => `link-${linkSequence.next()}`;
 export const newGuideName = (): string => `guide-${guideSequence.next()}`;
 export const newShapeName = (): string => `shape-${shapeSequence.next()}`;
 
+/**
+ * The next name in a document's sequence for shapes of `type`: one past the highest
+ * number among its `type-N` names, so it goes on across reloads and copies.
+ */
+export function nextShapeName(shapes: Iterable<Shape>, type: Shape['type']): string {
+    const pattern = new RegExp(`^${type}-(\\d+)$`);
+    let highest = 0;
+
+    for (const shape of shapes) {
+        const number = pattern.exec(shape.name)?.[1];
+
+        if (number !== undefined) {
+            highest = Math.max(highest, Number(number));
+        }
+    }
+
+    return `${type}-${highest + 1}`;
+}
+
 export const getAnonymousUser = (): User => {
     return {
         id: '1',

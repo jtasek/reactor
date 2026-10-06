@@ -4,7 +4,6 @@ import styles from '../../styles.css';
 import type { Command, Point } from 'src/app/types';
 import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
-import { newShapeName } from 'src/app/factories';
 import { usePointer } from 'src/app/hooks';
 import { Context } from 'src/app';
 
@@ -14,14 +13,15 @@ import { Context } from 'src/app';
 
 interface Props {
     end: Point;
-    name: string;
+    name?: string;
     selected: boolean;
     start: Point;
     type: 'line';
 }
 
 export const createLineProps = ({ start, current }: Pointer, designMode = false): Props => {
-    const name = designMode ? 'Line x' : newShapeName();
+    // The store names what is drawn, in its document's sequence for the shape's type.
+    const name = designMode ? 'Line x' : undefined;
 
     return {
         end: current,

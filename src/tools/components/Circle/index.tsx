@@ -4,7 +4,6 @@ import styles from '../../styles.css';
 import type { Command, Point } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
 import { Pointer } from 'src/events/types';
-import { newShapeName } from 'src/app/factories';
 import { usePointer } from 'src/app/hooks';
 import { Context } from 'src/app';
 
@@ -19,7 +18,7 @@ import { Context } from 'src/app';
 **/
 
 interface Props {
-    name: string;
+    name?: string;
     position: Point;
     radius: number;
     selected: boolean;
@@ -27,7 +26,8 @@ interface Props {
 }
 
 export const createCircleProps = ({ center, radius }: Pointer, designMode = false): Props => {
-    const name = designMode ? 'Circle x' : newShapeName();
+    // The store names what is drawn, in its document's sequence for the shape's type.
+    const name = designMode ? 'Circle x' : undefined;
 
     return {
         name,

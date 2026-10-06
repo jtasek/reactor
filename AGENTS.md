@@ -261,7 +261,9 @@ only translates DOM events into the gesture actions (`src/events/actions/pointer
   fed by Touch Events and may only replace a touch gesture that has not moved.
 
 A tool adds what it drew with `drawShape`, which selects it alone; `addShape` leaves the
-rest of the selection as it is.
+rest of the selection as it is. A shape added without a name is named `type-N`, as
+`rectangle-3`: the next number in its document's sequence for its type (`nextShapeName`),
+one past the highest that type's names have, so tools leave the name to the store.
 
 `executeToolCommands` (`src/tools/actions.ts`) runs `execute(context)` for each active tool
 when `canExecute(context)` is true. `resetTools` deactivates a tool when its

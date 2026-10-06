@@ -4,7 +4,6 @@ import styles from './styles.css';
 import type { Command, Point } from 'src/app/types';
 import type { Keyboard, Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
-import { newShapeName } from 'src/app/factories';
 import { DEFAULT_TEXT_FONT_SIZE } from 'src/app/utils';
 import { useActions, useKeyboard, usePointer } from 'src/app/hooks';
 
@@ -25,7 +24,7 @@ import { useActions, useKeyboard, usePointer } from 'src/app/hooks';
 
 interface Props {
     fontSize: number;
-    name: string;
+    name?: string;
     position: Point;
     selected: boolean;
     type: 'text';
@@ -37,7 +36,8 @@ export const createTextProps = (
     { text }: Keyboard,
     designMode = false
 ): Props => {
-    const name = designMode ? 'Text x' : newShapeName();
+    // The store names what is drawn, in its document's sequence for the shape's type.
+    const name = designMode ? 'Text x' : undefined;
 
     return {
         fontSize: DEFAULT_TEXT_FONT_SIZE,

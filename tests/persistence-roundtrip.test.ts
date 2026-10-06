@@ -43,11 +43,14 @@ describe('real persisted documents', () => {
         expect(serializePersistedState(restored.store.state)).toEqual(saved);
 
         const shapes = Object.values(restored.store.state.currentDocument.shapes);
+        const named = Object.values(store.state.currentDocument.shapes);
 
         properties.forEach((props, index) => {
-            const { selected, ...durable } = props;
+            // Tools leave naming to the store, which numbers each type's shapes.
+            const { selected, name, ...durable } = props;
 
-            expect(shapes[index]).toMatchObject(durable);
+            expect(name).toBeUndefined();
+            expect(shapes[index]).toMatchObject({ ...durable, name: named[index].name });
             expect(shapes[index].selected).toBe(!selected);
         });
     });

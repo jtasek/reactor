@@ -27,7 +27,7 @@ test('tools, list items and their toggles are buttons that work from the keyboar
         page.locator('button[title="Show"]:not([role="toolbar"] *):not([aria-label="Commands"] *)')
     ).toBeVisible();
 
-    const shape = page.getByRole('button', { name: 'shape-1', exact: true });
+    const shape = page.getByRole('button', { name: 'rectangle-1', exact: true });
 
     await shape.focus();
     await expect(shape).toBeFocused();

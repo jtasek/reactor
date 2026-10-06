@@ -16,7 +16,7 @@ import {
 } from '../types';
 import { Context } from 'src/app';
 import { screenToWorld } from '../camera';
-import { createGroup, createShape } from '../factories';
+import { createGroup, createShape, nextShapeName } from '../factories';
 import {
     containersHolding,
     groupAtPoint,
@@ -112,7 +112,10 @@ const deleteShape = ({ currentDocument }: Application, shapeId: string) => {
 };
 
 export const addShape: ActionWithParam<ShapeInput> = ({ state }, options) => {
-    const shape = createShape({ ...options, order: orderAbove(topOrder(state)) });
+    const name =
+        options.name ??
+        nextShapeName(Object.values(untracked(state.currentDocument).shapes), options.type);
+    const shape = createShape({ ...options, name, order: orderAbove(topOrder(state)) });
 
     putOnTop(state, shape);
 };

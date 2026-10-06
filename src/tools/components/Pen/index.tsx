@@ -4,7 +4,6 @@ import styles from '../../styles.css';
 import type { Command, Point } from 'src/app/types';
 import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
-import { newShapeName } from 'src/app/factories';
 import { stringifyPath } from 'src/app/utils';
 import { usePointer } from 'src/app/hooks';
 import { Context } from 'src/app';
@@ -17,14 +16,15 @@ import { Context } from 'src/app';
 **/
 
 interface Props {
-    name: string;
+    name?: string;
     points: Point[];
     selected: boolean;
     type: 'pen';
 }
 
 export const createPenProps = ({ path }: Pointer, designMode = false): Props => {
-    const name = designMode ? 'Pen x' : newShapeName();
+    // The store names what is drawn, in its document's sequence for the shape's type.
+    const name = designMode ? 'Pen x' : undefined;
     const points = path.map(({ x, y }) => ({ x, y }));
 
     return {
