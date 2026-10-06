@@ -1,4 +1,6 @@
-import type { Box, Point } from './types';
+import { resizeAspectBox } from './geometry';
+import type { Box, Point, ResizeHandlerType } from './types';
+import { movedEdges } from './utils';
 
 /** How near on screen, in pixels, a moved box's edge or center is pulled onto a line. */
 export const SNAP_DISTANCE_PX = 6;
@@ -225,4 +227,96 @@ export function linesOnEdges(lines: SnapLines, box: Box): SnapLines {
         x: on(lines.x, [box.topLeft.x, box.bottomRight.x]),
         y: on(lines.y, [box.topLeft.y, box.bottomRight.y])
     };
+}
+
+/**
+ * The corner a handle pulled to `pointer` takes so a box kept in proportion (`ratio`)
+ * snaps: such a box is sized by the axis the pointer pulls further, so it is the
+ * resized box's moving edges that snap, the nearer one within reach, and the corner
+ * becomes the one the box has with that edge on its line.
+ */
+function snapProportionalCorner(
+    box: Box,
+    handle: ResizeHandlerType,
+    pointer: Point,
+    ratio: number,
+    targets: SnapTargets,
+    reach: number
+): { point: Point; lines: SnapLines } {
+    const edges = movedEdges(handle);
+    const resized = resizeAspectBox(box, handle, pointer, ratio);
+    const fixed = {
+        x: edges.right ? box.topLeft.x : box.bottomRight.x,
+        y: edges.bottom ? box.topLeft.y : box.bottomRight.y
+    };
+    const outward = { x: edges.right ? 1 : -1, y: edges.bottom ? 1 : -1 };
+    const across = nearestEdgeShift(
+        edges.right ? resized.bottomRight.x : resized.topLeft.x,
+        0,
+        targets.xs,
+        reach
+    );
+    const down = nearestEdgeShift(
+        edges.bottom ? resized.bottomRight.y : resized.topLeft.y,
+        0,
+        targets.ys,
+        reach
+    );
+
+    if (
+        across.line !== null &&
+        (down.line === null || Math.abs(across.shift) <= Math.abs(down.shift))
+    ) {
+        const width = Math.abs(across.line - fixed.x);
+
+        return {
+            point: { x: across.line, y: fixed.y + (outward.y * width) / ratio },
+            lines: { x: across.line, y: null }
+        };
+    }
+
+    if (down.line !== null) {
+        const height = Math.abs(down.line - fixed.y);
+
+        return {
+            point: { x: fixed.x + outward.x * height * ratio, y: down.line },
+            lines: { x: null, y: down.line }
+        };
+    }
+
+    return { point: pointer, lines: { x: null, y: null } };
+}
+
+/**
+ * Where a resize handle pulled to `pointer` goes so the edges it moves snap: the
+ * pointer pulled onto the lines on those edges' axes, which a quarter or three
+ * quarters of a turn (`rotation`) swaps, or, at a corner of a box kept in proportion
+ * (`ratio`) and not turned, the corner its snapped edge gives. `box` is the box the
+ * resize began from, in its own frame.
+ */
+export function snapResize(
+    box: Box,
+    handle: ResizeHandlerType,
+    pointer: Point,
+    ratio: number | null,
+    rotation: number,
+    targets: SnapTargets,
+    reach: number
+): { point: Point; lines: SnapLines } {
+    const edges = movedEdges(handle);
+    const across = edges.left || edges.right;
+    const down = edges.top || edges.bottom;
+
+    if (ratio !== null && across && down && rotation % 360 === 0) {
+        return snapProportionalCorner(box, handle, pointer, ratio, targets, reach);
+    }
+
+    const sideways = Math.abs(rotation % 180) === 90;
+
+    return snapPoint(
+        pointer,
+        sideways ? { x: down, y: across } : { x: across, y: down },
+        targets,
+        reach
+    );
 }

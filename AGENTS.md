@@ -254,10 +254,12 @@ only translates DOM events into the gesture actions (`src/events/actions/pointer
   (`snapMarks`, from where along each line the targets' points lie). Held Ctrl, or Cmd on a Mac, where Ctrl at the press is a right-click
   (`free`), it does not snap. The lines are taken when the drag passes the click's slip, kept
   sorted out of the store (`effects.dragTargets`), and searched by halves on each move.
-  A resize snaps too: the edges its handle moves are pulled onto those lines within the same
-  reach (`snapPoint`), and the lines an edge then lies on show (`linesOnEdges`), as a resize
-  kept in proportion may miss one. A turned shape or group does not snap, and neither does a
-  free resize; the lines are taken on the resize's first move.
+  A resize snaps too (`snapResize`): the edges its handle moves (`movedEdges`) are pulled onto
+  those lines within the same reach, swapped across and down for a quarter turn. At a corner
+  of a shape or group kept in proportion (`proportionOf`), whose size follows the axis pulled
+  further, the resized box's nearer moving edge snaps instead. The lines an edge then lies on
+  show (`linesOnEdges`). A shape or group turned out of upright does not snap, and neither does
+  a free resize; the lines are taken on the resize's first move.
 - **pointer up** → `endGesture` applies the release position, runs `executeToolCommands()`
   exactly once for drawing and marquee gestures, then `resetTools()` — **synchronously**.
   React effects flush _after_ this, so anything a tool must persist on release has to happen

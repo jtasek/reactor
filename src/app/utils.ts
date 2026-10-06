@@ -290,24 +290,37 @@ export function shapeGeometryKey(shape: Shape): string {
  * handle controls follow the pointer; the opposite edges stay fixed and the box
  * is clamped so it never collapses past `min`.
  */
+/** Which edges of a box a resize handle moves. */
+export function movedEdges(handlerType: ResizeHandlerType) {
+    return {
+        left:
+            handlerType === 'topLeft' ||
+            handlerType === 'middleLeft' ||
+            handlerType === 'bottomLeft',
+        right:
+            handlerType === 'topRight' ||
+            handlerType === 'middleRight' ||
+            handlerType === 'bottomRight',
+        top: handlerType === 'topLeft' || handlerType === 'middleTop' || handlerType === 'topRight',
+        bottom:
+            handlerType === 'bottomLeft' ||
+            handlerType === 'middleBottom' ||
+            handlerType === 'bottomRight'
+    };
+}
+
 export function resizeBox(box: Box, handlerType: ResizeHandlerType, pointer: Point, min = 1): Box {
     let left = box.topLeft.x;
     let top = box.topLeft.y;
     let right = box.bottomRight.x;
     let bottom = box.bottomRight.y;
 
-    const movesLeft =
-        handlerType === 'topLeft' || handlerType === 'middleLeft' || handlerType === 'bottomLeft';
-    const movesRight =
-        handlerType === 'topRight' ||
-        handlerType === 'middleRight' ||
-        handlerType === 'bottomRight';
-    const movesTop =
-        handlerType === 'topLeft' || handlerType === 'middleTop' || handlerType === 'topRight';
-    const movesBottom =
-        handlerType === 'bottomLeft' ||
-        handlerType === 'middleBottom' ||
-        handlerType === 'bottomRight';
+    const {
+        left: movesLeft,
+        right: movesRight,
+        top: movesTop,
+        bottom: movesBottom
+    } = movedEdges(handlerType);
 
     if (movesLeft) {
         left = Math.min(pointer.x, right - min);

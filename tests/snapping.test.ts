@@ -1,7 +1,7 @@
 import { registerCommand } from 'src/app/actions/startup';
 import { groupFrame, shownShapesIds } from 'src/app/membership';
 import { GroupCommand } from 'src/commands/group';
-import { snapMarks, snapMove, snapTargetPoints, targetLines } from 'src/app/snapping';
+import { linesOnEdges, snapMarks, snapMove, snapTargetPoints, targetLines } from 'src/app/snapping';
 import { isShapeVisible } from 'src/app/utils';
 import type { Box, ResizeHandlerType, ShapeInput } from 'src/app/types';
 import { createTestStore } from './support/store';
@@ -364,5 +364,72 @@ describe('resizing shapes', () => {
 
         expect(gesture.kind === 'resizingGroup' && gesture.snapLines).toEqual({ x: 150, y: null });
         expect(frame?.box.bottomRight.x).toBeCloseTo(150);
+    });
+
+    it('snaps a resize kept in proportion by the edge that drives it', () => {
+        const { store } = createTestStore();
+
+        store.actions.addShape({ type: 'circle', position: { x: 20, y: 20 }, radius: 20 });
+        store.actions.addShape(square(100, 0));
+
+        const [circleId] = store.state.currentDocument.shapesIds;
+        const { events } = store.actions;
+
+        events.beginGesture({
+            pointerId: 1,
+            position: { x: 40, y: 40 },
+            handle: { shapeId: circleId, type: 'bottomRight' }
+        });
+        // Pulled further down than across, the height sizes it, putting its right edge at
+        // 97, three short of the square's left edge at 100.
+        events.movePointer({ pointerId: 1, position: { x: 60, y: 97 } });
+
+        const circle = store.state.currentDocument.shapes[circleId];
+        const { gesture } = store.state.events.pointer;
+
+        expect(circle.type === 'circle' && circle.radius).toBeCloseTo(50);
+        expect(gesture.kind === 'resizing' && gesture.snapLines.x).toBe(100);
+    });
+
+    it('snaps once a free resize is no longer free', () => {
+        const { events, size, snapLines, press } = setup();
+
+        press('middleRight', { x: 40, y: 20 });
+        events.movePointer({ pointerId: 1, position: { x: 97, y: 20 }, free: true });
+        expect(size()).toEqual({ width: 97, height: 40 });
+
+        events.movePointer({ pointerId: 1, position: { x: 97, y: 20 } });
+        expect(size()).toEqual({ width: 100, height: 40 });
+        expect(snapLines()).toEqual({ x: 100, y: null });
+    });
+
+    it('snaps a shape turned a quarter, whose edges are upright', () => {
+        const { store } = createTestStore();
+
+        store.actions.addShape({ ...square(0, 0), rotation: 90 });
+        store.actions.addShape(square(0, 100));
+
+        const [turned] = store.state.currentDocument.shapesIds;
+        const { events } = store.actions;
+
+        // Turned a quarter, its right edge is drawn at the bottom.
+        events.beginGesture({
+            pointerId: 1,
+            position: { x: 20, y: 40 },
+            handle: { shapeId: turned, type: 'middleRight' }
+        });
+        events.movePointer({ pointerId: 1, position: { x: 20, y: 97 } });
+
+        const { gesture } = store.state.events.pointer;
+        const shape = store.state.currentDocument.shapes[turned];
+
+        expect(gesture.kind === 'resizing' && gesture.snapLines).toEqual({ x: null, y: 100 });
+        expect(shape.type === 'rectangle' && shape.size.width).toBeCloseTo(100);
+    });
+});
+
+describe('the lines a resized box lies on', () => {
+    it('keeps only the lines one of its edges lies on', () => {
+        expect(linesOnEdges({ x: 100, y: 5 }, box(0, 0, 100, 40))).toEqual({ x: 100, y: null });
     });
 });

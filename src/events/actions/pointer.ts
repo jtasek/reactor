@@ -1,6 +1,6 @@
 import { json } from 'overmind';
 import { Context } from 'src/app';
-import { ActionWithParam, Point, ResizeHandlerType, Shape } from 'src/app/types';
+import { ActionWithParam, Point, Shape } from 'src/app/types';
 import { screenToWorld } from 'src/app/camera';
 import {
     drawnBox,
@@ -9,9 +9,16 @@ import {
     groupFrame,
     shownShapesIds
 } from 'src/app/membership';
-import { SNAP_DISTANCE_PX, linesOnEdges, snapMove, snapPoint, targetLines } from 'src/app/snapping';
+import {
+    SNAP_DISTANCE_PX,
+    linesOnEdges,
+    snapMove,
+    snapResize,
+    targetLines
+} from 'src/app/snapping';
 import { untracked } from 'src/app/untracked';
-import { isShapeVisible } from 'src/app/utils';
+import { getShapeBounds } from 'src/app/utils';
+import { proportionOf } from 'src/app/geometry';
 import { beyondClickSlip } from '../gestures';
 import { HandleTarget, SelectionSnapshot, ShapesSnapshot, TouchContact } from '../types';
 
@@ -194,12 +201,6 @@ const takeSnapTargets = (
     return drawnExtent(document, changingIds);
 };
 
-/** Which of a box's edges, across and down, a resize handle moves. */
-const handleAxes = (handle: ResizeHandlerType) => ({
-    x: /left|right/i.test(handle),
-    y: /top|bottom/i.test(handle)
-});
-
 export const movePointer = (
     { state, actions, effects }: Context,
     { pointerId, position, free = false }: PointerInput
@@ -277,23 +278,39 @@ export const movePointer = (
     }
 
     // The edges a handle moves snap, unless the resize is free or the shape or group is
-    // turned, whose edges are not upright like the lines.
+    // turned out of upright, its edges no longer along the lines.
     if (gesture.kind === 'resizing' || gesture.kind === 'resizingGroup') {
         const resizing = gesture.kind === 'resizing';
+        const original = resizing ? gesture.shapes[gesture.shapeId] : undefined;
         const changingIds = resizing ? [gesture.shapeId] : Object.keys(gesture.shapes);
-        const turned = resizing
-            ? gesture.shapes[gesture.shapeId]?.rotation
-            : gesture.frame.rotation;
+        const rotation = resizing ? (original?.rotation ?? 0) : gesture.frame.rotation;
+        const upright = rotation % 90 === 0;
+        const groupBox = resizing ? null : gesture.frame.box;
+        const from = original ? getShapeBounds(original) : groupBox;
+        const ratio = original
+            ? proportionOf(original)
+            : groupBox && groupBox.height > 0
+              ? groupBox.width / groupBox.height
+              : 1;
 
-        if (!free && !turned && !effects.dragTargets.current()) {
+        if (!free && upright && !effects.dragTargets.current()) {
             takeSnapTargets({ state, effects }, changingIds);
         }
 
-        const targets = free || turned ? null : effects.dragTargets.current();
+        const targets = free || !upright ? null : effects.dragTargets.current();
         const { scale } = state.currentDocument.camera;
-        const snapped = targets
-            ? snapPoint(position, handleAxes(gesture.handle), targets, SNAP_DISTANCE_PX / scale)
-            : { point: position, lines: { x: null, y: null } };
+        const snapped =
+            targets && from
+                ? snapResize(
+                      from,
+                      gesture.handle,
+                      position,
+                      ratio,
+                      rotation,
+                      targets,
+                      SNAP_DISTANCE_PX / scale
+                  )
+                : { point: position, lines: { x: null, y: null } };
 
         if (resizing) {
             actions.resizeShape({
@@ -308,9 +325,13 @@ export const movePointer = (
             actions.resizeGroup({ groupId, handle, position: snapped.point, shapes, frame });
         }
 
-        // The few resized shapes are looked up through the store: visibility reads its groups.
-        const drawn = changingIds.filter((id) => isShapeVisible(state.currentDocument, id));
-        const box = drawnExtent(untracked(state.currentDocument), drawn);
+        // The resized shape or group is shown, and so are its group and layer: whether each
+        // shape is drawn is its own flag, read without the store's tracking.
+        const document = untracked(state.currentDocument);
+        const box = drawnExtent(
+            document,
+            changingIds.filter((id) => document.shapes[id]?.visible)
+        );
         const lines = box ? linesOnEdges(snapped.lines, box) : { x: null, y: null };
 
         if (gesture.snapLines.x !== lines.x || gesture.snapLines.y !== lines.y) {

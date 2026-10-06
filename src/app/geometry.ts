@@ -6,6 +6,7 @@ import {
     getDistance,
     getShapeBounds,
     mapPointBetweenBoxes,
+    movedEdges,
     overlaps,
     resizeBox,
     rotatePoint
@@ -183,18 +184,12 @@ export function resizeAspectBox(
         width = height * ratio;
     }
 
-    const movesLeft =
-        handlerType === 'topLeft' || handlerType === 'middleLeft' || handlerType === 'bottomLeft';
-    const movesRight =
-        handlerType === 'topRight' ||
-        handlerType === 'middleRight' ||
-        handlerType === 'bottomRight';
-    const movesTop =
-        handlerType === 'topLeft' || handlerType === 'middleTop' || handlerType === 'topRight';
-    const movesBottom =
-        handlerType === 'bottomLeft' ||
-        handlerType === 'middleBottom' ||
-        handlerType === 'bottomRight';
+    const {
+        left: movesLeft,
+        right: movesRight,
+        top: movesTop,
+        bottom: movesBottom
+    } = movedEdges(handlerType);
 
     let x = centerX - width / 2;
 
@@ -265,6 +260,25 @@ function keepFlatSides(box: Box, oldBox: Box): Box {
  * geometry stays axis-aligned: the pointer is mapped into that unrotated frame,
  * and the resized box is moved so the opposite handle stays where it was drawn.
  */
+/**
+ * The width to height a shape keeps as it is resized, or null when it is resized
+ * freely: images keep theirs, so they never letterbox inside their box, text scales
+ * with its font size, and circles stay round.
+ */
+export function proportionOf(shape: Shape): number | null {
+    if (shape.type === 'circle') {
+        return 1;
+    }
+
+    if (shape.type !== 'image' && shape.type !== 'text') {
+        return null;
+    }
+
+    const box = getShapeBounds(shape);
+
+    return box.height > 0 ? box.width / box.height : 1;
+}
+
 export function resizeShapeFromHandle(
     shape: Shape,
     handlerType: ResizeHandlerType,
@@ -275,13 +289,11 @@ export function resizeShapeFromHandle(
     const center = boxCenter(oldBox);
     const rotation = original.rotation ?? 0;
     const local = rotation ? rotatePoint(pointer, center, -rotation) : pointer;
-    const ratio = oldBox.height > 0 ? oldBox.width / oldBox.height : 1;
-    // Images keep their aspect ratio, so they never letterbox inside their box,
-    // text scales with its font size, and circles stay round.
+    const ratio = proportionOf(original);
     const free = resizeBox(oldBox, handlerType, local);
     const resized =
-        original.type === 'image' || original.type === 'text' || original.type === 'circle'
-            ? resizeAspectBox(oldBox, handlerType, local, original.type === 'circle' ? 1 : ratio)
+        ratio !== null
+            ? resizeAspectBox(oldBox, handlerType, local, ratio)
             : original.type === 'line' || original.type === 'pen'
               ? keepFlatSides(free, oldBox)
               : free;
