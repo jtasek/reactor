@@ -4,18 +4,15 @@ import { editableSelectedShapesIds } from 'src/app/membership';
 
 export const moveSelectionOrPan = ({ state, actions }: Context, direction: Point) => {
     const step = state.config.arrowKeyStep;
-    const document = state.currentDocument;
+    const shapeIds = editableSelectedShapesIds(state.currentDocument);
 
-    if (document.selectedShapesIds.length === 0) {
+    if (shapeIds.length === 0) {
         actions.tools.panCamera({ dx: -direction.x * step, dy: -direction.y * step });
 
         return;
     }
 
-    actions.moveShapesBy({
-        shapeIds: editableSelectedShapesIds(document),
-        delta: { x: direction.x * step, y: direction.y * step }
-    });
+    actions.moveShapesBy({ shapeIds, delta: { x: direction.x * step, y: direction.y * step } });
 };
 
 const moveCommand = (side: string, shortcut: string, direction: Point): Command => ({

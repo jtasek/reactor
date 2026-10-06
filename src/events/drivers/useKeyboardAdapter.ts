@@ -2,17 +2,18 @@ import { useCallback } from 'react';
 import { useActions, useLog } from 'src/app/hooks';
 import { isTextEntry, takesArrowKey } from './helpers';
 
-const keys = ({ altKey, code, ctrlKey, key, metaKey, shiftKey }: KeyboardEvent) => ({
+const keys = ({ altKey, code, ctrlKey, key, metaKey, repeat, shiftKey }: KeyboardEvent) => ({
     altKey,
     code,
     ctrlKey,
     key,
     metaKey,
+    repeat,
     shiftKey
 });
 
 export const useKeyboardAdapter = () => {
-    const { keyDown, keyUp, pressShortcut } = useActions().events;
+    const { keyDown, keyUp, pressShortcut, releaseKeys } = useActions().events;
     const log = useLog();
 
     const handleKeyDown = useCallback(
@@ -35,9 +36,12 @@ export const useKeyboardAdapter = () => {
         (event: KeyboardEvent) => {
             log('keyUp', keys(event));
             keyUp(event);
+            releaseKeys();
         },
-        [keyUp, log]
+        [keyUp, log, releaseKeys]
     );
 
-    return { handleKeyDown, handleKeyUp };
+    const handleBlur = useCallback(() => releaseKeys(), [releaseKeys]);
+
+    return { handleKeyDown, handleKeyUp, handleBlur };
 };

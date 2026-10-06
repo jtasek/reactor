@@ -1,6 +1,6 @@
 /** The parts of a key press that shortcuts are matched against. */
 export type KeyPress = Pick<KeyboardEvent, 'key' | 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'> &
-    Partial<Pick<KeyboardEvent, 'code'>>;
+    Partial<Pick<KeyboardEvent, 'code' | 'repeat'>>;
 
 function parseBinding(binding: string) {
     const lower = binding.trim().toLowerCase();

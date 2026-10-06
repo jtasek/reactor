@@ -344,7 +344,10 @@ export type SaveStatus =
     | { kind: 'notSaving'; reason: string };
 
 export type Configuration = {
-    /** How far an arrow key moves the selection, in canvas units, or pans the canvas, in pixels. */
+    /**
+     * How far an arrow key moves the selection, in canvas units, or pans the canvas
+     * without one, in screen pixels.
+     */
     arrowKeyStep: number;
     autoSave: boolean;
     debugMode: boolean;
