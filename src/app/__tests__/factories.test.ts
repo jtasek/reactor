@@ -13,8 +13,7 @@ import {
     newGroupName,
     newLayerName,
     newLinkName,
-    newGuideName,
-    newShapeName
+    newGuideName
 } from '../factories';
 
 describe('factories', () => {
@@ -63,14 +62,6 @@ describe('factories', () => {
             const actual = newGuideName();
 
             expect(actual).toBe('guide-1');
-        });
-    });
-
-    describe('newShapeName()', () => {
-        it('returns new shape name', () => {
-            const actual = newShapeName();
-
-            expect(actual).toBe('shape-1');
         });
     });
 

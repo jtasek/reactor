@@ -1,6 +1,7 @@
 import { CloneCommand } from 'src/commands/clone';
 import { byDrawingOrder, untie } from 'src/app/drawOrder';
 import { createDocument, createShape } from 'src/app/factories';
+import { getShapeBounds } from 'src/app/utils';
 import {
     PERSISTENCE_KEY,
     SCHEMA_VERSION,
@@ -15,14 +16,25 @@ const rectangle = {
     size: { width: 10, height: 10 }
 };
 
-/** A save whose shapes `s0`, `s1`, ... have these orders; `undefined` leaves one out. */
+/**
+ * A save whose shapes `s0`, `s1`, ... have these orders, each one wider than the one
+ * before; `undefined` leaves one out.
+ */
 const saved = (orders: (string | undefined)[], version = SCHEMA_VERSION) => {
     const document = createDocument({ id: 'test-document' });
 
     orders.forEach((_, index) => {
         const id = `s${index}`;
 
-        document.shapes[id] = { ...createShape({ ...rectangle, order: 'a0' }), id };
+        document.shapes[id] = {
+            ...createShape({
+                ...rectangle,
+                size: { width: 10 + index, height: 10 },
+                order: 'a0',
+                name: id
+            }),
+            id
+        };
     });
 
     const payload = JSON.parse(
@@ -66,7 +78,7 @@ describe('draw order', () => {
         const shapes = [
             { id: 'b', order: 'a1' },
             { id: 'a', order: 'a1' },
-            { id: 'c', order: 'a0' }
+            { id: 'c', order: 'a0', name: 'shape' }
         ];
 
         expect(shapes.sort(byDrawingOrder).map(({ id }) => id)).toEqual(['c', 'a', 'b']);
@@ -121,10 +133,9 @@ describe('draw order', () => {
         const { shapes, shapesIds } = store.state.currentDocument;
 
         expect(shapesIds.map((id) => shapes[id].order)).toEqual(['a1', 'a2', 'a3', 'a4']);
-        expect(shapesIds.slice(2).map((id) => shapes[id].name)).toEqual([
-            `Clone of ${shapes.s1.name}`,
-            `Clone of ${shapes.s0.name}`
-        ]);
+        const width = (id: string) => getShapeBounds(shapes[id]).width;
+
+        expect(shapesIds.slice(2).map(width)).toEqual([width('s1'), width('s0')]);
     });
 
     it('brings shapes to the front and sends them to the back, keeping their order', async () => {

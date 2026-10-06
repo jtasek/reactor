@@ -17,7 +17,7 @@ const rectangle = {
 /** A local storage save of one document, `saved`, holding one rectangle. */
 function localSave() {
     const document = createDocument({ id: 'saved', name: 'Saved drawing' });
-    const shape = createShape({ ...rectangle, order: 'a0' });
+    const shape = createShape({ ...rectangle, order: 'a0', name: 'shape' });
 
     document.shapes[shape.id] = shape;
 

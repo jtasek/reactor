@@ -4,7 +4,6 @@ import styles from '../../styles.css';
 import type { Command, Point, Size } from 'src/app/types';
 import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
-import { newShapeName } from 'src/app/factories';
 import { limitCornerRadius } from 'src/app/geometry';
 import { usePointer } from 'src/app/hooks';
 import { Context } from 'src/app';
@@ -23,7 +22,7 @@ import { Context } from 'src/app';
  **/
 
 interface Props {
-    name: string;
+    name?: string;
     position: Point;
     selected: boolean;
     size: Size;
@@ -32,7 +31,7 @@ interface Props {
 }
 
 export const createRectProps = ({ size, topLeft }: Pointer, designMode = false): Props => {
-    const name = designMode ? 'Rectangle x' : newShapeName();
+    const name = designMode ? 'Rectangle x' : undefined;
 
     return {
         name,

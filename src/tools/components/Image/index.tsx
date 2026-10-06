@@ -4,7 +4,6 @@ import styles from '../../styles.css';
 import type { Command, Point, Size } from 'src/app/types';
 import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
-import { newShapeName } from 'src/app/factories';
 import { useImageToPlace, useImageUrl, usePointer } from 'src/app/hooks';
 import type { ImageToPlace } from 'src/app/services/assets';
 import { Context } from 'src/app';
@@ -25,7 +24,7 @@ import { Context } from 'src/app';
 
 interface Props {
     id?: string;
-    name: string;
+    name?: string;
     position: Point;
     selected: boolean;
     size: Size;
@@ -68,7 +67,7 @@ export const createImageProps = (
     image: ImageToPlace,
     designMode = false
 ): Props => {
-    const name = designMode ? 'Image x' : newShapeName();
+    const name = designMode ? 'Image x' : undefined;
     const { position, size } = getImageBounds(pointer, image.ratio);
 
     return {

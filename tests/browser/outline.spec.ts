@@ -23,7 +23,7 @@ test('the outline lists layers as a tree, shows one layer alone, and takes dropp
     const first = page.getByRole('button', { name: 'layer-1', exact: true });
     const second = page.getByRole('button', { name: 'layer-2', exact: true });
     const shapesOn = (layer: Locator) =>
-        layer.locator('xpath=ancestor::li[1]').getByRole('button', { name: /^shape-/ });
+        layer.locator('xpath=ancestor::li[1]').getByRole('button', { name: /^rectangle-/ });
 
     await expect(shapesOn(first)).toHaveCount(1);
     await expect(shapesOn(second)).toHaveCount(1);
@@ -67,8 +67,8 @@ test('an item’s menu fades in under the pointer and runs commands for that ite
     await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
     await click(page, 600, 400);
 
-    const row = page.getByRole('button', { name: 'shape-1', exact: true }).locator('..');
-    const menu = row.getByRole('toolbar', { name: 'shape-1 menu' });
+    const row = page.getByRole('button', { name: 'rectangle-1', exact: true }).locator('..');
+    const menu = row.getByRole('toolbar', { name: 'rectangle-1 menu' });
     const button = (name: string) => menu.getByRole('button', { name, exact: true });
 
     await expect(button('Hide')).toHaveCSS('opacity', '0');
@@ -83,10 +83,10 @@ test('an item’s menu fades in under the pointer and runs commands for that ite
 
     await button('Delete').click();
     await expect(shapes(page)).toHaveCount(2);
-    await expect(page.getByRole('button', { name: 'shape-1', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'rectangle-1', exact: true })).toHaveCount(0);
 
     // A button switched on stays shown when the pointer leaves.
-    const other = page.getByRole('button', { name: 'shape-3', exact: true }).locator('..');
+    const other = page.getByRole('button', { name: 'rectangle-2', exact: true }).locator('..');
 
     await other.hover();
     await other.getByRole('button', { name: 'Lock', exact: true }).click();

@@ -4,7 +4,6 @@ import styles from '../../styles.css';
 import type { Command, Point } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
 import { Pointer } from 'src/events/types';
-import { newShapeName } from 'src/app/factories';
 import { usePointer } from 'src/app/hooks';
 import { Context } from 'src/app';
 
@@ -20,7 +19,7 @@ import { Context } from 'src/app';
 **/
 
 interface Props {
-    name: string;
+    name?: string;
     position: Point;
     radius: Point;
     selected: boolean;
@@ -28,7 +27,7 @@ interface Props {
 }
 
 export const createEllipseProps = ({ center, size }: Pointer, designMode = false): Props => {
-    const name = designMode ? 'Ellipse x' : newShapeName();
+    const name = designMode ? 'Ellipse x' : undefined;
 
     return {
         position: center,

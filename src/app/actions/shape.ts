@@ -16,7 +16,7 @@ import {
 } from '../types';
 import { Context } from 'src/app';
 import { screenToWorld } from '../camera';
-import { createGroup, createShape } from '../factories';
+import { copyName, createGroup, createShape, nextShapeName, shapeNamer } from '../factories';
 import {
     containersHolding,
     groupAtPoint,
@@ -112,7 +112,10 @@ const deleteShape = ({ currentDocument }: Application, shapeId: string) => {
 };
 
 export const addShape: ActionWithParam<ShapeInput> = ({ state }, options) => {
-    const shape = createShape({ ...options, order: orderAbove(topOrder(state)) });
+    const name =
+        options.name ??
+        nextShapeName(Object.values(untracked(state.currentDocument).shapes), options.type);
+    const shape = createShape({ ...options, name, order: orderAbove(topOrder(state)) });
 
     putOnTop(state, shape);
 };
@@ -145,6 +148,8 @@ export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shape
     const clonesIds = new Map<string, string>();
     let order = topOrder(state);
 
+    const nameShape = shapeNamer(Object.values(untracked(currentDocument).shapes));
+
     actions.unselectShapes();
 
     for (const id of shapesIds.filter((shapeId) => cloning.has(shapeId))) {
@@ -155,7 +160,7 @@ export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shape
         const clone = createShape({
             ...shapeGeometry(original),
             order,
-            name: `Clone of ${original.name}`,
+            name: nameShape(original.type),
             description: original.description,
             parentShapeId: original.parentShapeId,
             rotation: original.rotation,
@@ -301,10 +306,19 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
     }
 
     let order = topOrder(state);
+    const present = Object.values(untracked(state.currentDocument).shapes);
+    const taken = new Set(present.map((shape) => shape.name));
+    const nameShape = shapeNamer(present);
     const pasted = copied.shapes.map((input) => {
         order = orderAbove(order);
+        const name =
+            input.name === undefined
+                ? nameShape(input.type)
+                : copyName(input.name, input.type, taken, nameShape);
 
-        return createShape({ ...input, order, selected: true });
+        taken.add(name);
+
+        return createShape({ ...input, name, order, selected: true });
     });
     const target = pasteTarget(context);
 
