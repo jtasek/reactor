@@ -1,7 +1,16 @@
-.snapLines line {
+.snapLines path {
+    fill: none;
     pointer-events: none;
-    stroke: var(--accent);
-    stroke-dasharray: 4 3;
-    stroke-width: 1;
+    stroke-linecap: round;
     vector-effect: non-scaling-stroke;
+}
+
+.halo {
+    stroke: var(--surface);
+    stroke-width: 3;
+}
+
+.line {
+    stroke: var(--primary-action-color);
+    stroke-width: 1;
 }

@@ -1,5 +1,5 @@
 import { shownShapesIds } from 'src/app/membership';
-import { snapMove, targetLines } from 'src/app/snapping';
+import { snapMarks, snapMove, targetLines } from 'src/app/snapping';
 import { isShapeVisible } from 'src/app/utils';
 import type { Box, ShapeInput } from 'src/app/types';
 import { createTestStore } from './support/store';
@@ -48,6 +48,52 @@ describe('snapping a moved box', () => {
             delta: { x: 50, y: 50 },
             lines: { x: null, y: null }
         });
+    });
+});
+
+describe('marking what a moved box snapped to', () => {
+    // Targets: one at 100 to 200 across and down, and one at 300 to 340 across, 100 to 140 down.
+    const targets = targetLines([box(100, 100, 100, 100), box(300, 100, 40, 40)]);
+
+    it('marks the points of the box and the targets on each line, and spans them', () => {
+        // The moved box's left edge on x 100, below the first target.
+        expect(snapMarks({ x: 100, y: null }, box(100, 250, 40, 40), targets)).toEqual([
+            {
+                from: { x: 100, y: 100 },
+                to: { x: 100, y: 290 },
+                points: [
+                    { x: 100, y: 100 },
+                    { x: 100, y: 150 },
+                    { x: 100, y: 200 },
+                    { x: 100, y: 250 },
+                    { x: 100, y: 270 },
+                    { x: 100, y: 290 }
+                ]
+            }
+        ]);
+    });
+
+    it('marks every target on the line, and a point they share once', () => {
+        // The moved box's top on y 100, between the two targets: both tops are on it.
+        const [mark] = snapMarks({ x: null, y: 100 }, box(220, 100, 40, 40), targets);
+
+        expect(mark.from).toEqual({ x: 100, y: 100 });
+        expect(mark.to).toEqual({ x: 340, y: 100 });
+        expect(mark.points.map((point) => point.x)).toEqual([
+            100, 150, 200, 220, 240, 260, 300, 320, 340
+        ]);
+    });
+
+    it('marks both lines when both snapped, with the corner they meet at', () => {
+        const marks = snapMarks({ x: 200, y: 200 }, box(200, 200, 40, 40), targets);
+
+        expect(marks).toHaveLength(2);
+        expect(marks[0].points).toContainEqual({ x: 200, y: 200 });
+        expect(marks[1].points).toContainEqual({ x: 200, y: 200 });
+    });
+
+    it('marks nothing without a line', () => {
+        expect(snapMarks({ x: null, y: null }, box(0, 0, 10, 10), targets)).toEqual([]);
     });
 });
 

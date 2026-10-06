@@ -1,5 +1,7 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
+    halo: string;
+    line: string;
     snapLines: string;
   }
 }
