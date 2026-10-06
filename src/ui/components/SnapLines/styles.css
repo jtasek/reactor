@@ -30,7 +30,7 @@
 .distanceLabel {
     fill: var(--primary-action-color);
     stroke: var(--surface);
-    stroke-width: 3px;
+    stroke-width: var(--canvas-label-halo-width);
 }
 
 .gapLabel {

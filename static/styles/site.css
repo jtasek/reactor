@@ -24,6 +24,7 @@ body,
   --error-color: #b3312f;
   --text-size: 14px;
   --canvas-label-size: 13px;
+  --canvas-label-halo-width: 3px;
   --text-color: rgba(0, 0, 0, .7);
   --text-color-hover: rgba(0, 0, 0, 1);
   --backdrop-filter: blur(5px);

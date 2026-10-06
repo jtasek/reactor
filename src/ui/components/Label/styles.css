@@ -7,7 +7,7 @@
     dominant-baseline: middle;
     paint-order: stroke;
     stroke: var(--surface);
-    stroke-width: 3px;
+    stroke-width: var(--canvas-label-halo-width);
     stroke-linejoin: round;
     pointer-events: none;
     user-select: none;
