@@ -1,6 +1,6 @@
 import { Box, Corner, Point, ResizeHandlerType, Shape, Size } from '../app/types';
 import type { GroupFrame } from '../app/membership';
-import type { SnapLines } from '../app/snapping';
+import type { Gap, SnapLines } from '../app/snapping';
 
 /** Selection flags captured when a gesture starts, restored if it is canceled. */
 export type SelectionSnapshot = Record<string, boolean>;
@@ -55,6 +55,8 @@ export type Gesture =
                     movedBy: Point;
                     /** The lines the box snapped to, shown while the drag lasts. */
                     snapLines: SnapLines;
+                    /** The gaps in its row equal to the one it snapped to keep. */
+                    equalGaps: Gap[];
                 }
               | {
                     kind: 'resizing';

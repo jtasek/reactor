@@ -251,7 +251,11 @@ only translates DOM events into the gesture actions (`src/events/actions/pointer
   center within 6 screen pixels, on each axis on its own, and the lines it snapped to show
   (`SnapLines`): each from the first to the last point lined up on it, with a cross on
   every corner, edge middle and center of the box and of the other shapes there
-  (`snapMarks`, from where along each line the targets' points lie). Held Ctrl, or Cmd on a Mac, where Ctrl at the press is a right-click
+  (`snapMarks`, from where along each line the targets' points lie), and the distance along
+  it to the nearest other shape on it measured (`snapDistances`). On an axis where it is
+  nearer, the box is pulled instead to be as far from a neighbor in its row as two shapes there
+  are apart, or midway between its two neighbors; the gaps equal to the one it keeps are
+  measured, with their length (the moving gesture's `equalGaps`). Held Ctrl, or Cmd on a Mac, where Ctrl at the press is a right-click
   (`free`), it does not snap. The lines are taken when the drag passes the click's slip, kept
   sorted out of the store (`effects.dragTargets`), and searched by halves on each move.
   A resize snaps too (`snapResize`): the edges its handle moves (`movedEdges`) are pulled onto

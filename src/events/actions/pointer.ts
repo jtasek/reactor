@@ -168,7 +168,8 @@ export const beginGesture = (
             box: null,
             movingIds: [],
             movedBy: { x: 0, y: 0 },
-            snapLines: { x: null, y: null }
+            snapLines: { x: null, y: null },
+            equalGaps: []
         };
 
         return true;
@@ -261,9 +262,9 @@ export const movePointer = (
         const { scale } = state.currentDocument.camera;
         const targets = effects.dragTargets.current();
         const pulled = { x: position.x - pointer.start.x, y: position.y - pointer.start.y };
-        const { delta, lines } =
+        const { delta, lines, gaps } =
             free || !gesture.box || !targets
-                ? { delta: pulled, lines: { x: null, y: null } }
+                ? { delta: pulled, lines: { x: null, y: null }, gaps: [] }
                 : snapMove(json(gesture.box), pulled, targets, SNAP_DISTANCE_PX / scale);
         const step = { x: delta.x - gesture.movedBy.x, y: delta.y - gesture.movedBy.y };
 
@@ -274,6 +275,10 @@ export const movePointer = (
 
         if (gesture.snapLines.x !== lines.x || gesture.snapLines.y !== lines.y) {
             gesture.snapLines = lines;
+        }
+
+        if (JSON.stringify(gesture.equalGaps) !== JSON.stringify(gaps)) {
+            gesture.equalGaps = gaps;
         }
     }
 

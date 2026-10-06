@@ -22,13 +22,15 @@ describe('snapping a moved box', () => {
         // Left edge 97 is 3 short of 100; nothing on y is within 5.
         expect(snapMove(moved, { x: 97, y: 20 }, targets, 5)).toEqual({
             delta: { x: 100, y: 20 },
-            lines: { x: 100, y: null }
+            lines: { x: 100, y: null },
+            gaps: []
         });
         // The left edge 156 is 6 past 150, but the right edge 196 is 4 short of 200,
         // which wins; the bottom 152 is 2 past 150.
         expect(snapMove(moved, { x: 156, y: 112 }, targets, 5)).toEqual({
             delta: { x: 160, y: 110 },
-            lines: { x: 200, y: 150 }
+            lines: { x: 200, y: 150 },
+            gaps: []
         });
     });
 
@@ -48,7 +50,8 @@ describe('snapping a moved box', () => {
     it('leaves the move as it is beyond reach', () => {
         expect(snapMove(moved, { x: 50, y: 50 }, targets, 5)).toEqual({
             delta: { x: 50, y: 50 },
-            lines: { x: null, y: null }
+            lines: { x: null, y: null },
+            gaps: []
         });
     });
 });

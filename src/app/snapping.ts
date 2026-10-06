@@ -15,6 +15,7 @@ export interface SnapTargets {
     ys: number[];
     alongXs: Map<number, number[]>;
     alongYs: Map<number, number[]>;
+    boxes: Box[];
 }
 
 /** The lines a moved box snaps to, where `y` or `x` is null when it snapped to none. */
@@ -74,7 +75,7 @@ export function targetLines(boxes: Box[]): SnapTargets {
 
     const sorted = (along: Map<number, number[]>) => [...along.keys()].sort((a, b) => a - b);
 
-    return { xs: sorted(alongXs), ys: sorted(alongYs), alongXs, alongYs };
+    return { xs: sorted(alongXs), ys: sorted(alongYs), alongXs, alongYs, boxes };
 }
 
 const sortedOnce = (values: number[]) => [...new Set(values)].sort((a, b) => a - b);
@@ -179,24 +180,213 @@ function nearestEdgeShift(start: number, size: number, lines: number[], reach: n
 }
 
 /**
- * Moves `box` by `delta`, then pulls it so the nearest of its edges and center
- * lies on a target line within `reach`, on each axis on its own.
+ * A gap between two boxes along `axis`, from one's edge to the other's, midway across
+ * their overlap.
+ */
+export interface Gap {
+    axis: SnapMark['axis'];
+    from: Point;
+    to: Point;
+}
+
+type Axis = SnapMark['axis'];
+
+const crossAxis = (axis: Axis): Axis => (axis === 'x' ? 'y' : 'x');
+
+const boxStart = (box: Box, axis: Axis) => (axis === 'x' ? box.topLeft.x : box.topLeft.y);
+
+const boxEnd = (box: Box, axis: Axis) => (axis === 'x' ? box.bottomRight.x : box.bottomRight.y);
+
+const shifted = (box: Box, axis: Axis, by: number): Box => {
+    const step = axis === 'x' ? { x: by, y: 0 } : { x: 0, y: by };
+
+    return {
+        topLeft: { x: box.topLeft.x + step.x, y: box.topLeft.y + step.y },
+        bottomRight: { x: box.bottomRight.x + step.x, y: box.bottomRight.y + step.y },
+        width: box.width,
+        height: box.height
+    };
+};
+
+const gapBetween = (before: Box, after: Box, axis: Axis): Gap => {
+    const across = crossAxis(axis);
+    const middle =
+        (Math.max(boxStart(before, across), boxStart(after, across)) +
+            Math.min(boxEnd(before, across), boxEnd(after, across))) /
+        2;
+    const from = boxEnd(before, axis);
+    const to = boxStart(after, axis);
+
+    return axis === 'x'
+        ? { axis, from: { x: from, y: middle }, to: { x: to, y: middle } }
+        : { axis, from: { x: middle, y: from }, to: { x: middle, y: to } };
+};
+
+const gapLength = ({ axis, from, to }: Gap) => (axis === 'x' ? to.x - from.x : to.y - from.y);
+
+const rowBoxes = (box: Box, boxes: Box[], axis: Axis) => {
+    const across = crossAxis(axis);
+
+    return boxes
+        .filter(
+            (other) =>
+                boxStart(other, across) < boxEnd(box, across) &&
+                boxEnd(other, across) > boxStart(box, across)
+        )
+        .sort((a, b) => boxStart(a, axis) - boxStart(b, axis));
+};
+
+const rowGaps = (row: Box[], axis: Axis) =>
+    row.slice(1).flatMap((after, index) => {
+        const before = row[index];
+
+        return boxStart(after, axis) >= boxEnd(before, axis)
+            ? [gapBetween(before, after, axis)]
+            : [];
+    });
+
+const gapStart = (gap: Gap) => (gap.axis === 'x' ? gap.from.x : gap.from.y);
+
+/**
+ * The shifts along `axis`, within `reach` and nearest first, that put `box` as far from
+ * a neighbor in its row as two of the row's boxes are apart, or midway between its two
+ * neighbors, each with the gap's length.
+ */
+function equalGapShifts(box: Box, boxes: Box[], axis: Axis, reach: number) {
+    const row = rowBoxes(box, boxes, axis);
+    const start = boxStart(box, axis);
+    const end = boxEnd(box, axis);
+    const before = row
+        .filter((other) => boxEnd(other, axis) <= start + reach)
+        .sort((a, b) => boxEnd(b, axis) - boxEnd(a, axis))[0];
+    const after = row
+        .filter((other) => boxStart(other, axis) >= end - reach)
+        .sort((a, b) => boxStart(a, axis) - boxStart(b, axis))[0];
+    const shifts = rowGaps(row, axis)
+        .map(gapLength)
+        .flatMap((length) => [
+            ...(before ? [{ shift: boxEnd(before, axis) + length - start, length }] : []),
+            ...(after ? [{ shift: boxStart(after, axis) - length - end, length }] : [])
+        ]);
+
+    if (before && after) {
+        const length = (boxStart(after, axis) - boxEnd(before, axis) - (end - start)) / 2;
+
+        shifts.push({ shift: boxEnd(before, axis) + length - start, length });
+    }
+
+    return shifts
+        .filter(({ shift, length }) => length > 0 && Math.abs(shift) <= reach)
+        .sort((a, b) => Math.abs(a.shift) - Math.abs(b.shift));
+}
+
+/** The gaps of `length` in `box`'s row along `axis`, its own among them, in order. */
+function equalGaps(box: Box, boxes: Box[], axis: Axis, length: number): Gap[] {
+    const row = rowBoxes(box, boxes, axis);
+    const withBox = [...row, box].sort((a, b) => boxStart(a, axis) - boxStart(b, axis));
+    const equal = [...rowGaps(row, axis), ...rowGaps(withBox, axis)].filter(
+        (gap) => Math.abs(gapLength(gap) - length) <= ON_LINE
+    );
+
+    return equal
+        .filter(
+            (gap, index) =>
+                equal.findIndex((other) => Math.abs(gapStart(other) - gapStart(gap)) <= ON_LINE) ===
+                index
+        )
+        .sort((a, b) => gapStart(a) - gapStart(b));
+}
+
+/**
+ * Moves `box` by `delta`, then pulls it, on each axis on its own, so the nearest of
+ * its edges and center lies on a target line within `reach`, or so it is as far from
+ * a neighbor in its row as others there are apart, whichever is nearer; `gaps` are the
+ * gaps it then has equal to others.
  */
 export function snapMove(
     box: Box,
     delta: Point,
     targets: SnapTargets,
     reach: number
-): { delta: Point; lines: SnapLines } {
-    const left = box.topLeft.x + delta.x;
-    const top = box.topLeft.y + delta.y;
-    const across = nearestEdgeShift(left, box.width, targets.xs, reach);
-    const down = nearestEdgeShift(top, box.height, targets.ys, reach);
+): { delta: Point; lines: SnapLines; gaps: Gap[] } {
+    const pulled = shifted(shifted(box, 'x', delta.x), 'y', delta.y);
+    const pull = (axis: Axis) => {
+        const edge = nearestEdgeShift(
+            boxStart(pulled, axis),
+            axis === 'x' ? box.width : box.height,
+            axis === 'x' ? targets.xs : targets.ys,
+            reach
+        );
+        const [spaced] = equalGapShifts(pulled, targets.boxes, axis, reach);
+
+        return spaced && (edge.line === null || Math.abs(spaced.shift) < Math.abs(edge.shift))
+            ? { shift: spaced.shift, line: null, equalGap: spaced.length }
+            : { shift: edge.shift, line: edge.line, equalGap: null };
+    };
+    const across = pull('x');
+    const down = pull('y');
+    const snapped = shifted(shifted(pulled, 'x', across.shift), 'y', down.shift);
 
     return {
         delta: { x: delta.x + across.shift, y: delta.y + down.shift },
-        lines: { x: across.line, y: down.line }
+        lines: { x: across.line, y: down.line },
+        gaps: [
+            ...(across.equalGap === null
+                ? []
+                : equalGaps(snapped, targets.boxes, 'x', across.equalGap)),
+            ...(down.equalGap === null ? [] : equalGaps(snapped, targets.boxes, 'y', down.equalGap))
+        ]
     };
+}
+
+/**
+ * The gap from `box` to the nearest other shape on each of `lines` it snapped to, along
+ * the line, where one lies apart from it there.
+ */
+export function snapDistances(lines: SnapLines, box: Box, targets: SnapTargets): Gap[] {
+    const nearestGapAlong = (axis: Axis, line: number) => {
+        const along = crossAxis(axis);
+        const onLine = targets.boxes.filter((other) =>
+            thirds(other)[axis === 'x' ? 'xs' : 'ys'].some(
+                (third) => Math.abs(third - line) <= ON_LINE
+            )
+        );
+        const gaps = onLine.flatMap((other) => {
+            if (boxEnd(other, along) <= boxStart(box, along)) {
+                return [gapBetween(other, box, along)];
+            }
+
+            return boxStart(other, along) >= boxEnd(box, along)
+                ? [gapBetween(box, other, along)]
+                : [];
+        });
+        const [nearest] = gaps.sort((a, b) => gapLength(a) - gapLength(b));
+
+        if (!nearest) {
+            return [];
+        }
+
+        return axis === 'x'
+            ? [
+                  {
+                      ...nearest,
+                      from: { x: line, y: nearest.from.y },
+                      to: { x: line, y: nearest.to.y }
+                  }
+              ]
+            : [
+                  {
+                      ...nearest,
+                      from: { x: nearest.from.x, y: line },
+                      to: { x: nearest.to.x, y: line }
+                  }
+              ];
+    };
+
+    return [
+        ...(lines.x === null ? [] : nearestGapAlong('x', lines.x)),
+        ...(lines.y === null ? [] : nearestGapAlong('y', lines.y))
+    ];
 }
 
 /** `point` pulled onto the nearest line within `reach` on each of `axes`, and those lines. */

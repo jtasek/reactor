@@ -306,6 +306,14 @@ export const useSnapLines = () =>
         return gesture.kind === 'moving' && gesture.dragged ? gesture.snapLines : null;
     });
 
+/** The gaps a dragged selection snapped to keep, and those in its row equal to them. */
+export const useEqualGaps = () =>
+    useAppState((state) => {
+        const { gesture } = state.events.pointer;
+
+        return gesture.kind === 'moving' && gesture.dragged ? gesture.equalGaps : [];
+    });
+
 /**
  * Where the dragged selection's box, or the resized shape's or group's, is now, while
  * it is snapped to a line; none otherwise.

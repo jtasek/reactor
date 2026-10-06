@@ -1,5 +1,7 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
+    distanceLabel: string;
+    gapLabel: string;
     halo: string;
     line: string;
     snapLines: string;
