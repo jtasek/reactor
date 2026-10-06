@@ -290,7 +290,6 @@ export function shapeGeometryKey(shape: Shape): string {
  * handle controls follow the pointer; the opposite edges stay fixed and the box
  * is clamped so it never collapses past `min`.
  */
-/** Which edges of a box a resize handle moves. */
 export function movedEdges(handlerType: ResizeHandlerType) {
     return {
         left:

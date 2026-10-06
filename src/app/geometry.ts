@@ -253,6 +253,13 @@ function keepFlatSides(box: Box, oldBox: Box): Box {
     };
 }
 
+/** Images never letterbox, text scales with its font size, and circles stay round. */
+export const keepsAspectRatio = (shape: Shape) =>
+    shape.type === 'image' || shape.type === 'text' || shape.type === 'circle';
+
+/** A flat box counts as square. */
+export const aspectRatio = (box: Box) => (box.height > 0 ? box.width / box.height : 1);
+
 /**
  * Resizes a shape in place so the dragged handle follows `pointer`, from the shape
  * as it was when the drag began (`original`), so the result depends only on where
@@ -260,25 +267,6 @@ function keepFlatSides(box: Box, oldBox: Box): Box {
  * geometry stays axis-aligned: the pointer is mapped into that unrotated frame,
  * and the resized box is moved so the opposite handle stays where it was drawn.
  */
-/**
- * The width to height a shape keeps as it is resized, or null when it is resized
- * freely: images keep theirs, so they never letterbox inside their box, text scales
- * with its font size, and circles stay round.
- */
-export function proportionOf(shape: Shape): number | null {
-    if (shape.type === 'circle') {
-        return 1;
-    }
-
-    if (shape.type !== 'image' && shape.type !== 'text') {
-        return null;
-    }
-
-    const box = getShapeBounds(shape);
-
-    return box.height > 0 ? box.width / box.height : 1;
-}
-
 export function resizeShapeFromHandle(
     shape: Shape,
     handlerType: ResizeHandlerType,
@@ -289,14 +277,12 @@ export function resizeShapeFromHandle(
     const center = boxCenter(oldBox);
     const rotation = original.rotation ?? 0;
     const local = rotation ? rotatePoint(pointer, center, -rotation) : pointer;
-    const ratio = proportionOf(original);
     const free = resizeBox(oldBox, handlerType, local);
-    const resized =
-        ratio !== null
-            ? resizeAspectBox(oldBox, handlerType, local, ratio)
-            : original.type === 'line' || original.type === 'pen'
-              ? keepFlatSides(free, oldBox)
-              : free;
+    const resized = keepsAspectRatio(original)
+        ? resizeAspectBox(oldBox, handlerType, local, aspectRatio(oldBox))
+        : original.type === 'line' || original.type === 'pen'
+          ? keepFlatSides(free, oldBox)
+          : free;
     const box = rotation ? keepDrawnPlace(resized, center, rotation) : resized;
     const scaleX = oldBox.width > 0 ? box.width / oldBox.width : 1;
     const scaleY = oldBox.height > 0 ? box.height / oldBox.height : 1;

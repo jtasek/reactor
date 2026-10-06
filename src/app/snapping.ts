@@ -1,4 +1,4 @@
-import { resizeAspectBox } from './geometry';
+import { aspectRatio, resizeAspectBox } from './geometry';
 import type { Box, Point, ResizeHandlerType } from './types';
 import { movedEdges } from './utils';
 
@@ -199,10 +199,7 @@ export function snapMove(
     };
 }
 
-/**
- * `point` pulled onto the nearest target line within `reach` on each axis `axes`
- * names, as a resize handle's edges are, and the lines it was pulled onto.
- */
+/** `point` pulled onto the nearest line within `reach` on each of `axes`, and those lines. */
 export function snapPoint(
     point: Point,
     axes: { x: boolean; y: boolean },
@@ -230,20 +227,18 @@ export function linesOnEdges(lines: SnapLines, box: Box): SnapLines {
 }
 
 /**
- * The corner a handle pulled to `pointer` takes so a box kept in proportion (`ratio`)
- * snaps: such a box is sized by the axis the pointer pulls further, so it is the
- * resized box's moving edges that snap, the nearer one within reach, and the corner
- * becomes the one the box has with that edge on its line.
+ * A box kept in proportion is sized by the axis the pointer pulls further, so its
+ * resized moving edges snap, and the handle takes the corner the box then has.
  */
 function snapProportionalCorner(
     box: Box,
     handle: ResizeHandlerType,
     pointer: Point,
-    ratio: number,
     targets: SnapTargets,
     reach: number
 ): { point: Point; lines: SnapLines } {
     const edges = movedEdges(handle);
+    const ratio = aspectRatio(box);
     const resized = resizeAspectBox(box, handle, pointer, ratio);
     const fixed = {
         x: edges.right ? box.topLeft.x : box.bottomRight.x,
@@ -288,17 +283,14 @@ function snapProportionalCorner(
 }
 
 /**
- * Where a resize handle pulled to `pointer` goes so the edges it moves snap: the
- * pointer pulled onto the lines on those edges' axes, which a quarter or three
- * quarters of a turn (`rotation`) swaps, or, at a corner of a box kept in proportion
- * (`ratio`) and not turned, the corner its snapped edge gives. `box` is the box the
- * resize began from, in its own frame.
+ * Where a resize handle pulled to `pointer` goes so the edges it moves snap. `box` is
+ * the box the resize began from, in its own frame; a quarter turn swaps its axes.
  */
 export function snapResize(
     box: Box,
     handle: ResizeHandlerType,
     pointer: Point,
-    ratio: number | null,
+    proportional: boolean,
     rotation: number,
     targets: SnapTargets,
     reach: number
@@ -307,8 +299,8 @@ export function snapResize(
     const across = edges.left || edges.right;
     const down = edges.top || edges.bottom;
 
-    if (ratio !== null && across && down && rotation % 360 === 0) {
-        return snapProportionalCorner(box, handle, pointer, ratio, targets, reach);
+    if (proportional && across && down && rotation % 360 === 0) {
+        return snapProportionalCorner(box, handle, pointer, targets, reach);
     }
 
     const sideways = Math.abs(rotation % 180) === 90;

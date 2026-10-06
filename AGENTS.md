@@ -256,7 +256,7 @@ only translates DOM events into the gesture actions (`src/events/actions/pointer
   sorted out of the store (`effects.dragTargets`), and searched by halves on each move.
   A resize snaps too (`snapResize`): the edges its handle moves (`movedEdges`) are pulled onto
   those lines within the same reach, swapped across and down for a quarter turn. At a corner
-  of a shape or group kept in proportion (`proportionOf`), whose size follows the axis pulled
+  of a shape or group kept in proportion (`keepsAspectRatio`), whose size follows the axis pulled
   further, the resized box's nearer moving edge snaps instead. The lines an edge then lies on
   show (`linesOnEdges`). A shape or group turned out of upright does not snap, and neither does
   a free resize; the lines are taken on the resize's first move.
