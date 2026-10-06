@@ -344,6 +344,8 @@ export type SaveStatus =
     | { kind: 'notSaving'; reason: string };
 
 export type Configuration = {
+    /** How far an arrow key moves the selection, in canvas units, or pans the canvas, in pixels. */
+    arrowKeyStep: number;
     autoSave: boolean;
     debugMode: boolean;
     panelLayout: Record<string, PanelPlacement>;

@@ -19,6 +19,10 @@ import {
     HighlightLayerCommand,
     LayerCommand,
     LockCommand,
+    MoveDownCommand,
+    MoveLeftCommand,
+    MoveRightCommand,
+    MoveUpCommand,
     PasteCommand,
     RemoveFromGroupCommand,
     ResetDocumentCommand,
@@ -47,6 +51,10 @@ import { registerCommand, registerTool } from 'src/app/actions/startup';
 
 function registerCommands() {
     registerCommand(DeleteCommand);
+    registerCommand(MoveLeftCommand);
+    registerCommand(MoveRightCommand);
+    registerCommand(MoveUpCommand);
+    registerCommand(MoveDownCommand);
     registerCommand(CloneCommand);
     registerCommand(CopyCommand);
     registerCommand(CutCommand);

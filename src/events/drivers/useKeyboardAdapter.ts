@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useActions, useLog } from 'src/app/hooks';
-import { isTextEntry } from './helpers';
+import { isTextEntry, takesArrowKey } from './helpers';
 
 const keys = ({ altKey, code, ctrlKey, key, metaKey, shiftKey }: KeyboardEvent) => ({
     altKey,
@@ -20,7 +20,7 @@ export const useKeyboardAdapter = () => {
             log('keyDown', keys(event));
             keyDown(event);
 
-            if (isTextEntry(event.target)) {
+            if (isTextEntry(event.target) || takesArrowKey(event.target, event.key)) {
                 return;
             }
 

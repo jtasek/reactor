@@ -115,6 +115,14 @@ const NON_TEXT_INPUT_TYPES = new Set([
 ]);
 
 /** Whether key presses on `target` edit text, so keyboard shortcuts must leave them alone. */
+const ARROW_KEY_INPUT_TYPES = new Set(['radio', 'range']);
+
+/** Whether `target` moves its own value with `key`, an arrow key, as a slider does. */
+export const takesArrowKey = (target: EventTarget | null, key: string) =>
+    key.startsWith('Arrow') &&
+    target instanceof HTMLInputElement &&
+    ARROW_KEY_INPUT_TYPES.has(target.type);
+
 export function isTextEntry(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement)) {
         return false;

@@ -3,7 +3,7 @@ import { createDragTargets } from 'src/app/services/dragTargets';
 import { createOvermindMock } from 'overmind';
 import { vi } from 'vitest';
 import { config } from 'src/app';
-import { createApplication, createDocument } from 'src/app/factories';
+import { DEFAULT_ARROW_KEY_STEP, createApplication, createDocument } from 'src/app/factories';
 import { DEFAULT_PANEL_LAYOUT, readPanelLayout } from 'src/app/panelLayout';
 import { Collaboration } from 'src/app/services/collaboration';
 import { createClipboard } from 'src/app/services/clipboard';
@@ -44,6 +44,7 @@ export function createTestStore(
     seed: Record<string, string> = {},
     options: {
         autoSave?: boolean;
+        arrowKeyStep?: number;
         collaboration?: Collaboration;
         indexedDB?: IDBFactory;
         openChannel?: (name?: string) => Channel;
@@ -112,6 +113,7 @@ export function createTestStore(
         currentDocumentId: document.id,
         documents: { [document.id]: document },
         config: {
+            arrowKeyStep: options.arrowKeyStep ?? DEFAULT_ARROW_KEY_STEP,
             autoSave: options.autoSave ?? false,
             debugMode: false,
             panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT),
