@@ -481,6 +481,11 @@ Hidden guides are not drawn and locked ones do not move.
   tool or runs the command; the keyboard adapter skips it while a text field has focus. Keep
   bindings unique (`tests/shortcuts.test.ts` checks) and avoid plain Ctrl/Cmd browser keys,
   except a command's `clipboardEvent` shortcut, which is left to that browser event.
+  The arrow keys move the editable selection by `config.arrowKeyStep` canvas units or, with
+  none, pan the view that many screen pixels towards the arrow, as scrolling does, so the
+  content moves the other way (`src/commands/move`). They are the canvas's only while focus
+  is on the page or in the canvas, not on a control (`takesArrowKey`). A held key's changes
+  are shared once, when it is released (`keyboard.repeating`, `releaseKeys`).
 - **Optional features**: a feature whose control is off by default loads its code when the
   control is turned on (`lazy` behind the control's check), not with the editor; only the
   control's state and the document's data stay in the store.

@@ -72,7 +72,7 @@ export const keyUp: ActionWithParam<KeyboardEvent> = (
  * keep the browser from also acting on the keys. A command a clipboard event runs
  * is left to the browser.
  */
-export const pressShortcut = ({ state, actions }: Context, press: KeyPress): boolean => {
+export const pressShortcut = ({ state, actions, effects }: Context, press: KeyPress): boolean => {
     if (!takesEditorInput(state)) {
         return false;
     }
@@ -95,10 +95,31 @@ export const pressShortcut = ({ state, actions }: Context, press: KeyPress): boo
     }
 
     if (command) {
+        if (press.repeat && !state.events.keyboard.repeating) {
+            state.events.keyboard.repeating = true;
+            effects.collaboration.pause();
+        }
+
         actions.runCommand(command);
 
         return true;
     }
 
     return false;
+};
+
+/** Shares the changes a held key made, once it is released or the window loses focus. */
+export const releaseKeys: Action = ({ state, effects }) => {
+    const { keyboard, pointer } = state.events;
+
+    if (!keyboard.repeating) {
+        return;
+    }
+
+    keyboard.repeating = false;
+
+    // A gesture begun meanwhile holds them until it ends.
+    if (!pointer.dragging) {
+        effects.collaboration.resume();
+    }
 };

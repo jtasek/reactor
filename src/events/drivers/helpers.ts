@@ -115,6 +115,17 @@ const NON_TEXT_INPUT_TYPES = new Set([
 ]);
 
 /** Whether key presses on `target` edit text, so keyboard shortcuts must leave them alone. */
+/**
+ * Whether `target` keeps `key`, an arrow key: the canvas takes the arrow keys only while
+ * focus is on the page itself or in the canvas, not on a control, which may use them.
+ */
+export const takesArrowKey = (target: EventTarget | null, key: string) =>
+    key.startsWith('Arrow') &&
+    target instanceof Element &&
+    target !== target.ownerDocument.body &&
+    target !== target.ownerDocument.documentElement &&
+    target.closest('svg#surface') === null;
+
 export function isTextEntry(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement)) {
         return false;

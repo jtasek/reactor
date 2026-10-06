@@ -126,6 +126,8 @@ export interface Keyboard {
     shiftKey: boolean;
     text: string;
     typing: boolean;
+    /** Whether a held key repeats a shortcut, whose changes are held until it is released. */
+    repeating: boolean;
 }
 
 export interface Events {

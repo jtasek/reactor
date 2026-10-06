@@ -36,6 +36,8 @@ import {
     User
 } from './types';
 
+export const DEFAULT_ARROW_KEY_STEP = 10;
+
 const componentSequence = new Sequence();
 const documentSequence = new Sequence();
 const groupSequence = new Sequence();
@@ -278,6 +280,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         commandsIds,
         config: {
             version: '1.0',
+            arrowKeyStep: DEFAULT_ARROW_KEY_STEP,
             autoSave: true,
             debugMode: false,
             panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT)
