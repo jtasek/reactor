@@ -18,6 +18,10 @@ const SPACING = 30;
 const SIZE = 20;
 const MOVES = 10;
 const LISTED = 12;
+/** On empty canvas, right of and below the pasted shapes in the 1280 by 720 view. */
+const EMPTY_CANVAS = { x: 1200, y: 700 };
+/** Over the top left of the pasted shapes, where the marquee from `EMPTY_CANVAS` ends. */
+const BOX_END = { x: 100, y: 50 };
 
 interface ProfileNode {
     id: number;
@@ -145,13 +149,13 @@ try {
         });
 
     // The paste is centered where the canvas was last pressed, its top left, so
-    // the shapes fill only the top left of the view; the press at (1200, 700),
-    // on empty canvas, then leaves none of them selected.
+    // the shapes fill only the top left of the view; the press on empty canvas
+    // then leaves none of them selected.
     await pointer('pointerdown', 5, 5);
     await pointer('pointerup', 5, 5);
     await pasteShapes(page);
-    await pointer('pointerdown', 1200, 700);
-    await pointer('pointerup', 1200, 700);
+    await pointer('pointerdown', EMPTY_CANVAS.x, EMPTY_CANVAS.y);
+    await pointer('pointerup', EMPTY_CANVAS.x, EMPTY_CANVAS.y);
 
     const shape = (await page
         .locator('svg#surface #shapes > g')
@@ -171,13 +175,28 @@ try {
         }
     });
     await profileStep(page, cdp, 'release', () => pointer('pointerup', x + 50, y + 30));
-    await profileStep(page, cdp, 'box press', () => pointer('pointerdown', 1200, 700));
+    await profileStep(page, cdp, 'box press', () =>
+        pointer('pointerdown', EMPTY_CANVAS.x, EMPTY_CANVAS.y)
+    );
     await profileStep(page, cdp, `${MOVES} box moves`, async () => {
         for (let step = 1; step <= MOVES; step++) {
-            await pointer('pointermove', 1200 - step * 110, 700 - step * 65);
+            await pointer(
+                'pointermove',
+                EMPTY_CANVAS.x + ((BOX_END.x - EMPTY_CANVAS.x) * step) / MOVES,
+                EMPTY_CANVAS.y + ((BOX_END.y - EMPTY_CANVAS.y) * step) / MOVES
+            );
         }
     });
-    await profileStep(page, cdp, 'box release', () => pointer('pointerup', 100, 50));
+    await profileStep(page, cdp, 'box release', () => pointer('pointerup', BOX_END.x, BOX_END.y));
+
+    // A press that missed empty canvas would have dragged a shape, leaving one selected.
+    const boxed = await page.locator('#status-selection').textContent();
+
+    if (Number(/\d+/.exec(boxed ?? '')?.[0] ?? 0) <= 1) {
+        throw new Error(
+            `The marquee boxed no shapes (${boxed}); the box steps timed another gesture.`
+        );
+    }
 } finally {
     await browser.close();
 }
