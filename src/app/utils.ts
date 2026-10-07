@@ -441,7 +441,7 @@ export function overlaps(
 }
 
 export function getPropValue(prop: unknown): string | undefined {
-    if (!prop) {
+    if (prop === undefined || prop === null) {
         return;
     }
 

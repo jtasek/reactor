@@ -2,8 +2,13 @@ import React, { FC } from 'react';
 import styles from './styles.css';
 import { DocumentInfoField } from './DocumentInfoField';
 
+export interface DocumentField {
+    name: string;
+    value: string | undefined;
+}
+
 export interface Props {
-    fields: { name: string; value: string | undefined }[];
+    fields: DocumentField[];
 }
 
 export const DocumentInfo: FC<Props> = ({ fields }) => (

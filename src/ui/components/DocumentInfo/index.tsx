@@ -1,21 +1,25 @@
-import React, { FC } from 'react';
+import React, { FC, useRef } from 'react';
 
-import { useControls, useCurrentDocument } from 'src/app/hooks';
+import { useCurrentDocument, useGestureInProgress } from 'src/app/hooks';
 import { getPropValue } from 'src/app/utils';
-import { DocumentInfo } from './DocumentInfo';
+import { DocumentField, DocumentInfo } from './DocumentInfo';
 
 export const ConnectedDocumentInfo: FC = () => {
-    const { documentInfo } = useControls();
     const document = useCurrentDocument();
+    const gestureInProgress = useGestureInProgress();
+    const held = useRef<DocumentField[]>([]);
 
-    if (!documentInfo.visible || !document) {
+    if (!document) {
         return null;
     }
 
-    const fields = Object.entries(document).map(([name, value]) => ({
-        name,
-        value: getPropValue(value)
-    }));
+    // Read only between gestures, so a drag does not render the panel at every move.
+    if (!gestureInProgress) {
+        held.current = Object.entries(document).map(([name, value]) => ({
+            name,
+            value: getPropValue(value)
+        }));
+    }
 
-    return <DocumentInfo fields={fields} />;
+    return <DocumentInfo fields={held.current} />;
 };

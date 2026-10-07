@@ -14,4 +14,5 @@ test('the document info panel follows the document’s changes', async ({ page }
 
     await drawRect(page, { x: 100, y: 100 }, { x: 140, y: 140 });
     await expect(field('shapesIds')).toContainText('1 item(s)');
+    await expect(field('locked')).toContainText('false');
 });
