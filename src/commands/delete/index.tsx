@@ -1,5 +1,4 @@
 import { Command } from 'src/app/types';
-import { editableSelectedShapesIds } from 'src/app/membership';
 
 import { Context } from 'src/app';
 
@@ -23,6 +22,6 @@ export const DeleteCommand: Command = {
     shortcut: 'delete,backspace',
     scopes: ['shape', 'group', 'selection'],
     menuOrder: 20,
-    canExecute: ({ state }) => editableSelectedShapesIds(state.currentDocument).length > 0,
+    canExecute: ({ state }) => state.currentDocument.editableSelectedShapesIds.length > 0,
     execute: deleteSelectedShapes
 };

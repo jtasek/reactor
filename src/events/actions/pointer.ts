@@ -2,13 +2,7 @@ import { json } from 'overmind';
 import { Context } from 'src/app';
 import { ActionWithParam, Point, Shape } from 'src/app/types';
 import { screenToWorld } from 'src/app/camera';
-import {
-    drawnBox,
-    drawnExtent,
-    editableSelectedShapesIds,
-    groupFrame,
-    shownShapesIds
-} from 'src/app/membership';
+import { drawnBox, drawnExtent, groupFrame, shownShapesIds } from 'src/app/membership';
 import {
     SNAP_DISTANCE_PX,
     linesOnEdges,
@@ -256,7 +250,7 @@ export const movePointer = (
     ) {
         if (!gesture.dragged) {
             gesture.dragged = true;
-            gesture.movingIds = editableSelectedShapesIds(state.currentDocument);
+            gesture.movingIds = state.currentDocument.editableSelectedShapesIds;
             gesture.box = takeSnapTargets({ state, effects }, gesture.movingIds);
         }
 
