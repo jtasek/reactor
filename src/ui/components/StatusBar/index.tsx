@@ -126,7 +126,7 @@ export const StatusBarContainer: FC = () => {
     }
 
     return (
-        <StatusBar>
+        <StatusBar slots={SLOTS.length}>
             {SLOTS.map(({ name, Content }) => (
                 <StatusBarSlot key={name} name={name}>
                     <Content />

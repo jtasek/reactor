@@ -12,5 +12,5 @@ export const GroupPanelContainer: FC = () => {
         return null;
     }
 
-    return <GroupPanel groupsIds={groupsIds} />;
+    return <GroupPanel groupsIds={[...groupsIds]} />;
 };

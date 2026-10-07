@@ -12,5 +12,5 @@ export const LayerPanelContainer: FC = () => {
         return null;
     }
 
-    return <LayerPanel layersIds={layersIds} />;
+    return <LayerPanel layersIds={[...layersIds]} />;
 };

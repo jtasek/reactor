@@ -20,6 +20,6 @@
 
 .statusBarSlot {
   text-align: right;
-  width: calc(100% / 8);
+  width: calc(100% / var(--status-bar-slots));
 }
 

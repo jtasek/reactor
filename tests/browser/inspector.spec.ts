@@ -123,3 +123,28 @@ test('an edit is applied even when selecting another shape removes its field', a
     await expect(field(page, 'Text')).toHaveCount(0);
     await expect(page.locator('svg#surface text[data-cy]')).toHaveText('changed');
 });
+
+test('the inspector holds its values during a gesture and shows the new ones on release', async ({
+    page
+}) => {
+    await openEditor(page, ['Inspector']);
+    await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
+    await expect(field(page, 'X')).toHaveValue('100');
+
+    await pointer(page, 'pointerdown', { x: 125, y: 125 });
+    await pointer(page, 'pointermove', { x: 165, y: 125 });
+    await expect(field(page, 'X')).toHaveValue('100');
+    await pointer(page, 'pointerup', { x: 165, y: 125 });
+    await expect(field(page, 'X')).toHaveValue('140');
+
+    // A click on empty canvas clears the selection, then a marquee boxes the shape.
+    await pointer(page, 'pointerdown', { x: 400, y: 400 });
+    await pointer(page, 'pointerup', { x: 400, y: 400 });
+    await expect(section(page, 'Shape')).toHaveCount(0);
+
+    await pointer(page, 'pointerdown', { x: 120, y: 80 });
+    await pointer(page, 'pointermove', { x: 220, y: 170 });
+    await expect(section(page, 'Shape')).toHaveCount(0);
+    await pointer(page, 'pointerup', { x: 220, y: 170 });
+    await expect(field(page, 'X')).toHaveValue('140');
+});
