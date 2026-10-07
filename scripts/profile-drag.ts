@@ -1,6 +1,7 @@
 /**
  * Profiles pressing, dragging and releasing a shape among 3,000 in a running
- * editor, and prints each step's time and the functions that took longest:
+ * editor, then boxing them with a marquee that takes in more of them at each
+ * move, and prints each step's time and the functions that took longest:
  *
  *   node scripts/profile-drag.ts [address]
  *
@@ -170,6 +171,13 @@ try {
         }
     });
     await profileStep(page, cdp, 'release', () => pointer('pointerup', x + 50, y + 30));
+    await profileStep(page, cdp, 'box press', () => pointer('pointerdown', 1200, 700));
+    await profileStep(page, cdp, `${MOVES} box moves`, async () => {
+        for (let step = 1; step <= MOVES; step++) {
+            await pointer('pointermove', 1200 - step * 110, 700 - step * 65);
+        }
+    });
+    await profileStep(page, cdp, 'box release', () => pointer('pointerup', 100, 50));
 } finally {
     await browser.close();
 }
