@@ -46,6 +46,22 @@ describe('fill', () => {
         expect(() => readEntity('shapes', saved(rectangle('red; display: none')))).toThrow();
     });
 
+    it('is dropped from a shape it does not fill when read', () => {
+        const pen = named(
+            {
+                type: 'pen',
+                points: [
+                    { x: 0, y: 0 },
+                    { x: 10, y: 0 }
+                ]
+            },
+            '#ff0000'
+        );
+
+        expect(readEntity('shapes', saved(pen))).not.toHaveProperty('fill');
+        expect(readClipboard(writeClipboard([pen])).shapes[0]).not.toHaveProperty('fill');
+    });
+
     it('is copied and pasted with the shape', () => {
         const [copied] = readClipboard(writeClipboard([rectangle('#00aa55')])).shapes;
 

@@ -208,7 +208,7 @@ test('fill is picked as a color, drawn inside the shape, and taken off by None',
 
     const rect = shapes(page).first().locator('rect[data-cy]');
     const fill = () => rect.evaluate((element) => getComputedStyle(element).fill);
-    const none = page.getByRole('button', { name: 'None', exact: true });
+    const none = page.getByRole('button', { name: 'No fill', exact: true });
 
     await expect.poll(fill).toBe('none');
     await expect(none).toHaveAttribute('aria-pressed', 'true');
@@ -219,4 +219,33 @@ test('fill is picked as a color, drawn inside the shape, and taken off by None',
 
     await none.click();
     await expect.poll(fill).toBe('none');
+});
+
+test('a color field is disabled on a locked shape and marks no color and mixed colors', async ({
+    page
+}) => {
+    await openEditor(page, ['Inspector']);
+    await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
+
+    const noColor = (label: string) =>
+        field(page, label).evaluate((input) => input.matches('[data-no-color]'));
+
+    expect(await noColor('Fill')).toBe(true);
+    await field(page, 'Fill').fill('#ff8800');
+    expect(await noColor('Fill')).toBe(false);
+    await drawRect(page, { x: 300, y: 100 }, { x: 350, y: 150 });
+
+    // Both with a marquee: one is filled, the other not.
+    await pointer(page, 'pointerdown', { x: 80, y: 80 });
+    await pointer(page, 'pointermove', { x: 380, y: 170 });
+    await pointer(page, 'pointerup', { x: 380, y: 170 });
+    await expect(page.getByText('Mixed', { exact: true })).toBeVisible();
+    expect(await noColor('Fill')).toBe(true);
+
+    // The second alone, then locked.
+    await click(page, 600, 500);
+    await click(page, 325, 125);
+    await field(page, 'Locked').check();
+    await expect(field(page, 'Fill')).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'No fill', exact: true })).toBeDisabled();
 });

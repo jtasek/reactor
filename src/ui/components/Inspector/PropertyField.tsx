@@ -2,8 +2,9 @@ import React, { FC, KeyboardEvent, useCallback, useEffect, useRef, useState } fr
 import type { PropertyRow, PropertyValue } from 'src/app/properties';
 import { Slider } from '../Slider';
 import { SharedOnRelease } from './SharedOnRelease';
+import styles from './styles.css';
 
-/** What a color field shows for no color, or for mixed colors. */
+/** The picker's color for no color, or mixed colors, whose swatch is drawn struck through. */
 const NO_COLOR = '#000000';
 
 interface Props {
@@ -106,18 +107,25 @@ export const PropertyField: FC<Props> = ({ row, shapeIds, onChange }) => {
                     />
                 ) : property.kind === 'color' ? (
                     <>
-                        <input
-                            id={id}
-                            type="color"
-                            value={!mixed && typeof value === 'string' && value ? value : NO_COLOR}
-                            disabled={readOnly}
-                            onChange={(event) =>
-                                onChange(shapeIds, property.key, event.target.value)
-                            }
-                        />
+                        <SharedOnRelease>
+                            <input
+                                id={id}
+                                type="color"
+                                className={styles.color}
+                                data-no-color={mixed || !value ? '' : undefined}
+                                value={
+                                    !mixed && typeof value === 'string' && value ? value : NO_COLOR
+                                }
+                                disabled={readOnly}
+                                onChange={(event) =>
+                                    onChange(shapeIds, property.key, event.target.value)
+                                }
+                            />
+                        </SharedOnRelease>
                         {mixed && <span>Mixed</span>}
                         <button
                             type="button"
+                            aria-label={`No ${property.label.toLowerCase()}`}
                             aria-pressed={!mixed && value === ''}
                             disabled={readOnly}
                             onClick={() => onChange(shapeIds, property.key, '')}

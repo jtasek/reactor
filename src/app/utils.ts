@@ -293,7 +293,7 @@ export function shapeStyle(shape: Shape): Partial<Pick<Shape, 'opacity' | 'fill'
 export const isHexColor = (value: string) => /^#[0-9a-f]{6}$/i.test(value);
 
 /** Whether a shape encloses an area that a fill colors. */
-export function isClosedShape(shape: Shape): boolean {
+export function isClosedShape(shape: Pick<Shape, 'type'>): boolean {
     switch (shape.type) {
         case 'rectangle':
         case 'circle':
@@ -305,7 +305,7 @@ export function isClosedShape(shape: Shape): boolean {
         case 'text':
             return false;
         default:
-            return assertNever(shape);
+            return assertNever(shape.type);
     }
 }
 
