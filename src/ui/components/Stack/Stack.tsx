@@ -1,10 +1,10 @@
 import React, { FC } from 'react';
-import { useTools } from 'src/app/hooks';
+import { useActiveToolsIds } from 'src/app/hooks';
 import { getToolById } from 'src/tools/components';
 import styles from './styles.css';
 
 export const Stack: FC = () => {
-    const { activeToolsIds } = useTools();
+    const activeToolsIds = useActiveToolsIds();
 
     const result =
         activeToolsIds.map((toolId: string) => getToolById(toolId)?.name).join(', ') ||

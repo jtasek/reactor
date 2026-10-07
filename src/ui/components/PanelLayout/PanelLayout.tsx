@@ -10,7 +10,7 @@ import React, {
     useState
 } from 'react';
 import type { PanelPlacement } from 'src/app/types';
-import { useActions, useConfig, useControls } from 'src/app/hooks';
+import { useActions, useControls, usePanelLayout } from 'src/app/hooks';
 import { beyondClickSlip } from 'src/events/gestures';
 import styles from './styles.css';
 import {
@@ -102,7 +102,7 @@ const DockZones: FC<{ activeDock: Dock | undefined }> = ({ activeDock }) => {
 };
 
 export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
-    const { panelLayout } = useConfig();
+    const panelLayout = usePanelLayout();
     const controls = useControls();
     const { setPanelPlacement } = useActions();
     const [drag, setDrag] = useState<Drag>();

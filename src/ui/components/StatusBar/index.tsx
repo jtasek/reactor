@@ -4,10 +4,11 @@ import {
     useAccount,
     useCamera,
     useControls,
-    useCurrentDocument,
+    useDocumentName,
     useKeyboard,
-    usePointer,
-    useSaveStatus
+    usePointerPosition,
+    useSaveStatus,
+    useSelectedShapesIds
 } from 'src/app/hooks';
 import { accountLabel } from 'src/app/services/accounts';
 
@@ -81,11 +82,22 @@ export const AccountInfo: FC = () => {
     );
 };
 
+const MouseInfo: FC = () => {
+    const { x, y } = usePointerPosition();
+
+    return <>{`mouse: [${Math.round(x)}, ${Math.round(y)}]`}</>;
+};
+
+const CameraInfo: FC = () => {
+    const { position, scale } = useCamera();
+
+    return <>{`camera: [${Math.round(position.x)}, ${Math.round(position.y)}, ${scale}]`}</>;
+};
+
 export const StatusBarContainer: FC = () => {
-    const { position: offset, scale } = useCamera();
-    const { name, selectedShapesIds } = useCurrentDocument();
+    const name = useDocumentName();
+    const selectedShapesIds = useSelectedShapesIds();
     const { statusBar } = useControls();
-    const { current } = usePointer();
 
     if (!statusBar.visible) {
         return null;
@@ -106,8 +118,12 @@ export const StatusBarContainer: FC = () => {
             <StatusBarSlot name="keyboard">
                 <KeyboardInfo />
             </StatusBarSlot>
-            <StatusBarSlot name="mouse">{`mouse: [${Math.round(current.x)}, ${Math.round(current.y)}]`}</StatusBarSlot>
-            <StatusBarSlot name="camera">{`camera: [${Math.round(offset.x)}, ${Math.round(offset.y)}, ${scale}]`}</StatusBarSlot>
+            <StatusBarSlot name="mouse">
+                <MouseInfo />
+            </StatusBarSlot>
+            <StatusBarSlot name="camera">
+                <CameraInfo />
+            </StatusBarSlot>
             <StatusBarSlot name="tools">
                 <ZoomSlider />
             </StatusBarSlot>

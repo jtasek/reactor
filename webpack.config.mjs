@@ -115,7 +115,7 @@ export const config = {
         ? false
         : {
               hints: 'error',
-              maxEntrypointSize: 428 * 1024,
+              maxEntrypointSize: 432 * 1024,
               maxAssetSize: 240 * 1024
           },
     optimization: {

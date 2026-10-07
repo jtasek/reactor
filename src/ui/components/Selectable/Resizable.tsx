@@ -7,7 +7,7 @@ import handleStyles from '../Handle/styles.css';
 import { Props } from './Selectable';
 import { getShapeBounds } from 'src/app/utils';
 import { CORNERS, resizeCursor } from 'src/app/geometry';
-import { useCameraScale, usePointer } from 'src/app/hooks';
+import { useCameraScale, useGesture } from 'src/app/hooks';
 import type { HandleOwner } from 'src/events/types';
 
 /** Sizes on screen, in pixels, whatever the zoom. */
@@ -116,7 +116,7 @@ export const Handles: FC<HandlesProps> = ({ box, rotation, owner, activeHandle, 
 };
 
 export const Resizable: FC<Props> = ({ shape }) => {
-    const { gesture } = usePointer();
+    const gesture = useGesture();
     const activeHandle =
         gesture.kind === 'resizing' && gesture.shapeId === shape.id ? gesture.handle : undefined;
     const rotateActive = gesture.kind === 'rotating' && gesture.shapeId === shape.id;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavBarList } from './NavBarList';
 import { NavBarListItem } from './NavBarListItem';
-import { useActions, useCurrentDocument, useLayer } from 'src/app/hooks';
+import { useActions, useLayer, useLayersIds } from 'src/app/hooks';
 
 const LayerListItem = ({ layerId }: { layerId: string }) => {
     const layer = useLayer(layerId);
@@ -23,7 +23,7 @@ const LayerListItem = ({ layerId }: { layerId: string }) => {
 };
 
 export const LayersList = () => {
-    const { layersIds } = useCurrentDocument();
+    const layersIds = useLayersIds();
 
     if (layersIds?.length === 0) {
         return null;

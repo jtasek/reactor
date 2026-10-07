@@ -2,10 +2,10 @@ import React, { FC } from 'react';
 import styles from './styles.css';
 import { Handles } from '../Selectable/Resizable';
 import {
+    useGesture,
     useGroupFrame,
     useGroupLocked,
     useHoveredGroupsIds,
-    usePointer,
     useSelectedGroupsIds
 } from 'src/app/hooks';
 import { boxCenter } from 'src/app/utils';
@@ -18,7 +18,7 @@ interface Props {
 export const GroupSelection: FC<Props> = ({ groupId }) => {
     const frame = useGroupFrame(groupId);
     const locked = useGroupLocked(groupId);
-    const { gesture } = usePointer();
+    const gesture = useGesture();
 
     if (!frame) {
         return null;

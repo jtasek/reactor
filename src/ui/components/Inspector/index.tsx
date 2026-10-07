@@ -1,23 +1,29 @@
 import React, { FC } from 'react';
 
 import { Inspector } from './Inspector';
-import { sharedProperties } from 'src/app/properties';
-import { useActions, useControls, useCurrentDocument } from 'src/app/hooks';
+import {
+    useActions,
+    useControls,
+    useSelectedShapesIds,
+    useSelectedShapesProperties
+} from 'src/app/hooks';
 
-export const InspectorContainer: FC = () => {
-    const currentDocument = useCurrentDocument();
-    const { inspector } = useControls();
+const SelectionInspector: FC = () => {
+    const rows = useSelectedShapesProperties();
+    const selectedShapesIds = useSelectedShapesIds();
     const { setShapesProperty } = useActions();
-
-    if (!inspector.visible) {
-        return null;
-    }
 
     return (
         <Inspector
-            rows={sharedProperties(currentDocument.selectedShapes, currentDocument)}
-            shapeIds={[...currentDocument.selectedShapesIds]}
+            rows={rows}
+            shapeIds={[...selectedShapesIds]}
             onChange={(shapeIds, key, value) => setShapesProperty({ shapeIds, key, value })}
         />
     );
+};
+
+export const InspectorContainer: FC = () => {
+    const { inspector } = useControls();
+
+    return inspector.visible ? <SelectionInspector /> : null;
 };

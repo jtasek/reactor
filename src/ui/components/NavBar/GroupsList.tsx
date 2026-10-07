@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavBarList } from './NavBarList';
 import { NavBarListItem } from './NavBarListItem';
-import { useActions, useCurrentDocument, useGroup, useGroupSelected } from 'src/app/hooks';
+import { useActions, useGroup, useGroupSelected, useGroupsIds } from 'src/app/hooks';
 
 const GroupListItem = ({ groupId }: { groupId: string }) => {
     const group = useGroup(groupId);
@@ -24,7 +24,7 @@ const GroupListItem = ({ groupId }: { groupId: string }) => {
 };
 
 export const GroupsList = () => {
-    const { groupsIds } = useCurrentDocument();
+    const groupsIds = useGroupsIds();
 
     if (groupsIds?.length === 0) {
         return null;
