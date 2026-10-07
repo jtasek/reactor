@@ -250,7 +250,7 @@ export const movePointer = (
     ) {
         if (!gesture.dragged) {
             gesture.dragged = true;
-            gesture.movingIds = state.currentDocument.editableSelectedShapesIds;
+            gesture.movingIds = [...state.currentDocument.editableSelectedShapesIds];
             gesture.box = takeSnapTargets({ state, effects }, gesture.movingIds);
         }
 

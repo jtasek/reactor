@@ -73,7 +73,7 @@ export const movableSelectedItems = derived((currentDocument: Document) =>
     listMovableSelectedItems(currentDocument)
 );
 
-/** The selected shapes commands may change, kept until they change: see `editableSelectedShapesIds`. */
+/** The selected shapes commands may change, kept until they change: see `editableSelectedShapesIds` in `membership.ts`. */
 export const editableSelectedShapesIds = derived((currentDocument: Document) =>
     findEditableSelectedShapesIds(currentDocument)
 );

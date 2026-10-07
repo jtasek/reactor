@@ -663,8 +663,11 @@ export const selectShapes: Action = ({ state }) => {
 
     const boxed = withTheirGroups(document, hits, state.enteredGroupId);
 
+    const hit = new Set(hits);
+
     shapes.forEach((shape) => {
-        const selected = boxed.has(shape.id) && isInteractive(state, shape.id);
+        const selected =
+            boxed.has(shape.id) && (hit.has(shape.id) || isInteractive(state, shape.id));
 
         // Only write when the value actually changes so shapes that stay
         // outside (or inside) the marquee don't re-render every pointer move.
