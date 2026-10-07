@@ -362,8 +362,8 @@ Feature inventory:
 - Started, not working yet: the search box stores what is typed, but no list is
   filtered (the `filtered*` derivations are not used); images are kept in the
   browser only, not uploaded yet.
-- Kept for later, not shown: the `Badge`, `Dialog`, `Cursor`, `Overlay` and
-  `Switch` components, and the stylesheets components do not use yet.
+- Kept for later, not shown: the `Badge`, `Dialog`, `Overlay` and `Switch`
+  components, and the stylesheets components do not use yet.
 - Planned: components (Phase 10), plugins and renderers (Phase 9), image upload,
   moving signed-out documents into an account, organizations, teams and sharing,
   presence, and undo per user (Phase 11).
