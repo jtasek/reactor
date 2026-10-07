@@ -12,6 +12,7 @@ import type {
 } from '../types';
 import { createDocument } from '../factories';
 import { orderAbove, untie, validDrawOrder } from '../drawOrder';
+import { isHexColor } from '../utils';
 
 export const PERSISTENCE_KEY = 'reactor';
 export const SCHEMA_VERSION = 4;
@@ -112,6 +113,16 @@ function number(value: unknown, minimum = -Infinity): number {
     }
 
     return value;
+}
+
+function color(value: unknown): string {
+    const result = text(value);
+
+    if (!isHexColor(result)) {
+        throw new Error('Invalid color');
+    }
+
+    return result;
 }
 
 /** A number from 0 to 1. */
@@ -229,7 +240,10 @@ function readShape(value: unknown, readChild: (child: unknown) => ShapeData): Sh
 export function readShapeStyle(value: unknown) {
     const s = record(value);
 
-    return s.opacity === undefined ? {} : { opacity: fraction(s.opacity) };
+    return {
+        ...(s.opacity === undefined ? {} : { opacity: fraction(s.opacity) }),
+        ...(s.fill === undefined ? {} : { fill: color(s.fill) })
+    };
 }
 
 /**

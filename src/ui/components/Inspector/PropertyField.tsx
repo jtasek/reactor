@@ -2,6 +2,9 @@ import React, { FC, KeyboardEvent, useCallback, useEffect, useRef, useState } fr
 import type { PropertyRow, PropertyValue } from 'src/app/properties';
 import { Slider } from '../Slider';
 
+/** What a color field shows for no color, or for mixed colors. */
+const NO_COLOR = '#000000';
+
 interface Props {
     row: PropertyRow;
     /** The shapes the panel shows. */
@@ -100,6 +103,27 @@ export const PropertyField: FC<Props> = ({ row, shapeIds, onChange }) => {
                         }}
                         onChange={(event) => onChange(shapeIds, property.key, event.target.checked)}
                     />
+                ) : property.kind === 'color' ? (
+                    <>
+                        <input
+                            id={id}
+                            type="color"
+                            value={!mixed && typeof value === 'string' && value ? value : NO_COLOR}
+                            disabled={readOnly}
+                            onChange={(event) =>
+                                onChange(shapeIds, property.key, event.target.value)
+                            }
+                        />
+                        {mixed && <span>Mixed</span>}
+                        <button
+                            type="button"
+                            aria-pressed={!mixed && value === ''}
+                            disabled={readOnly}
+                            onClick={() => onChange(shapeIds, property.key, '')}
+                        >
+                            None
+                        </button>
+                    </>
                 ) : (
                     <input
                         ref={input}

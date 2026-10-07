@@ -172,3 +172,24 @@ test('opacity is set by its field or its slider and draws the shape see-through'
     await expect(drawn).toHaveAttribute('opacity', '0.39');
     await expect(number).toHaveValue('39');
 });
+
+test('fill is picked as a color, drawn inside the shape, and taken off by None', async ({
+    page
+}) => {
+    await openEditor(page, ['Inspector']);
+    await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
+
+    const rect = shapes(page).first().locator('rect[data-cy]');
+    const fill = () => rect.evaluate((element) => getComputedStyle(element).fill);
+    const none = page.getByRole('button', { name: 'None', exact: true });
+
+    await expect.poll(fill).toBe('none');
+    await expect(none).toHaveAttribute('aria-pressed', 'true');
+
+    await field(page, 'Fill').fill('#ff8800');
+    await expect.poll(fill).toBe('rgb(255, 136, 0)');
+    await expect(none).toHaveAttribute('aria-pressed', 'false');
+
+    await none.click();
+    await expect.poll(fill).toBe('none');
+});

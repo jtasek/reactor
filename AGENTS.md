@@ -482,7 +482,9 @@ Hidden guides are not drawn and locked ones do not move.
   says how each property is read, written and typed, and which section (`group`, e.g. Shape,
   Text) lists it; add properties there, not in the inspector. A number property with a
   `range` also gets a slider (`Slider`), as the Style section's Opacity, which is kept as a
-  fraction (`opacity`) and shown in percent. Edits go through `setShapesProperty`, gated by
+  fraction (`opacity`) and shown in percent. A `color` property is a color picker with a None
+  button, as Fill, kept as `#rrggbb` (`isHexColor`) for closed shapes (`isClosedShape`) and drawn
+  through the `--shape-fill` custom property each shape's group sets. Edits go through `setShapesProperty`, gated by
   `canEdit`.
   During a gesture it keeps the values it showed as the gesture began and shows the new
   ones on release (`useSelectedShapesProperties`), so a drag or a marquee does not render it
