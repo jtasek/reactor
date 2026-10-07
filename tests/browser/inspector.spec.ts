@@ -148,3 +148,27 @@ test('the inspector holds its values during a gesture and shows the new ones on 
     await pointer(page, 'pointerup', { x: 220, y: 170 });
     await expect(field(page, 'X')).toHaveValue('140');
 });
+
+test('opacity is set by its field or its slider and draws the shape see-through', async ({
+    page
+}) => {
+    await openEditor(page, ['Inspector']);
+    await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
+
+    const drawn = shapes(page).first().locator('> g').first();
+    const number = page.getByRole('spinbutton', { name: 'Opacity (%)' });
+    const slider = page.getByRole('slider', { name: 'Opacity (%)' });
+
+    await expect(number).toHaveValue('100');
+    await expect(slider).toHaveValue('100');
+
+    await number.fill('40');
+    await number.press('Enter');
+    await expect(drawn).toHaveAttribute('opacity', '0.4');
+    await expect(slider).toHaveValue('40');
+
+    await slider.focus();
+    await page.keyboard.press('ArrowLeft');
+    await expect(drawn).toHaveAttribute('opacity', '0.39');
+    await expect(number).toHaveValue('39');
+});

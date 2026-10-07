@@ -75,6 +75,6 @@ describe('groupRows()', () => {
             ({ group }) => group
         );
 
-        expect(groups).toEqual(['Shape', 'Text']);
+        expect(groups).toEqual(['Shape', 'Style', 'Text']);
     });
 });

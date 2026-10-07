@@ -30,6 +30,8 @@ export type ShapeProperty = {
           kind: 'number';
           read: (shape: Shape, document: Document) => number | undefined;
           write?: (shape: Shape, value: number) => void;
+          /** The values a slider beside the field offers, when it has one. */
+          range?: { min: number; max: number; step: number };
       }
     | {
           kind: 'boolean';
@@ -37,6 +39,9 @@ export type ShapeProperty = {
           write?: (shape: Shape, value: boolean) => void;
       }
 );
+
+/** The opacity of an opaque shape, as the inspector shows it, in percent. */
+const OPAQUE_PERCENT = 100;
 
 // Metadata may change on a locked shape, but not in a locked document.
 const unlessDocumentLocked = (_shape: Shape, document: Document) => !document.locked;
@@ -134,6 +139,17 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         read: (shape, document) => isShapeLocked(document, shape.id),
         write: (shape, value) => {
             shape.locked = value;
+        }
+    },
+    {
+        key: 'opacity',
+        label: 'Opacity (%)',
+        group: 'Style',
+        kind: 'number',
+        range: { min: 0, max: OPAQUE_PERCENT, step: 1 },
+        read: (shape) => Math.round((shape.opacity ?? 1) * OPAQUE_PERCENT),
+        write: (shape, value) => {
+            shape.opacity = Math.min(OPAQUE_PERCENT, Math.max(0, value)) / OPAQUE_PERCENT;
         }
     },
     {

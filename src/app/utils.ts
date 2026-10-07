@@ -281,6 +281,11 @@ export function shapeGeometry(shape: Shape): ShapeInput {
  * shape must be re-measured, so toggling unrelated state such as `selected` does
  * not force an expensive getBBox reflow.
  */
+/** How a shape is drawn beyond its geometry, as it is copied: only what it sets. */
+export function shapeStyle(shape: Shape): Partial<Pick<Shape, 'opacity'>> {
+    return shape.opacity === undefined ? {} : { opacity: shape.opacity };
+}
+
 export function shapeGeometryKey(shape: Shape): string {
     return JSON.stringify(shapeGeometry(shape));
 }

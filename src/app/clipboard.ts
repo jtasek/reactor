@@ -1,5 +1,5 @@
 import type { Group, Shape, ShapeInput } from './types';
-import { shapeGeometry } from './utils';
+import { shapeGeometry, shapeStyle } from './utils';
 import { readCopiedGroup, readCopiedShape } from './services/documentStorage';
 
 /** What a paste did: added shapes, found none in the text, or waited for the editor. */
@@ -38,6 +38,7 @@ export function writeClipboard(shapes: Shape[], groups: Group[] = []): string {
         format: CLIPBOARD_FORMAT,
         shapes: shapes.map((shape) => ({
             ...shapeGeometry(shape),
+            ...shapeStyle(shape),
             name: shape.name,
             rotation: shape.rotation,
             ...(shape.description === undefined ? {} : { description: shape.description })

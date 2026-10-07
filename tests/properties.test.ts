@@ -51,7 +51,8 @@ describe('sharedProperties()', () => {
             cornerRadius: { value: 0, readOnly: false },
             rotation: { value: 0, readOnly: false },
             visible: { value: true, readOnly: false },
-            locked: { value: false, readOnly: false }
+            locked: { value: false, readOnly: false },
+            opacity: { value: 100, readOnly: false }
         });
     });
 

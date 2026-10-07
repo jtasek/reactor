@@ -480,8 +480,10 @@ Hidden guides are not drawn and locked ones do not move.
   sync. The command line submits text through `submitCommandLine`.
 - **Inspector**: fields come from `SHAPE_PROPERTIES` (`src/app/properties.ts`), which
   says how each property is read, written and typed, and which section (`group`, e.g. Shape,
-  Text) lists it; add properties there, not in the inspector. Edits go through
-  `setShapesProperty`, gated by `canEdit`.
+  Text) lists it; add properties there, not in the inspector. A number property with a
+  `range` also gets a slider (`Slider`), as the Style section's Opacity, which is kept as a
+  fraction (`opacity`) and shown in percent. Edits go through `setShapesProperty`, gated by
+  `canEdit`.
   During a gesture it keeps the values it showed as the gesture began and shows the new
   ones on release (`useSelectedShapesProperties`), so a drag or a marquee does not render it
   at every move. Panels are mounted only while shown (`PanelLayout`).
