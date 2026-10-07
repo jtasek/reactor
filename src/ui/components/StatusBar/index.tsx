@@ -94,39 +94,44 @@ const CameraInfo: FC = () => {
     return <>{`camera: [${Math.round(position.x)}, ${Math.round(position.y)}, ${scale}]`}</>;
 };
 
-export const StatusBarContainer: FC = () => {
+const DocumentNameInfo: FC = () => {
     const name = useDocumentName();
-    const selectedShapesIds = useSelectedShapesIds();
+
+    return <>{name}</>;
+};
+
+const SelectionInfo: FC = () => {
+    const { length } = useSelectedShapesIds();
+
+    return <>{`selection: [${length}]`}</>;
+};
+
+/** The status bar's slots, in order; each renders again only when what it shows changes. */
+const SLOTS: { name: string; Content: FC }[] = [
+    { name: 'message', Content: DocumentNameInfo },
+    { name: 'save', Content: SaveStatusInfo },
+    { name: 'account', Content: AccountInfo },
+    { name: 'selection', Content: SelectionInfo },
+    { name: 'keyboard', Content: KeyboardInfo },
+    { name: 'mouse', Content: MouseInfo },
+    { name: 'camera', Content: CameraInfo },
+    { name: 'tools', Content: ZoomSlider }
+];
+
+export const StatusBarContainer: FC = () => {
     const { statusBar } = useControls();
 
     if (!statusBar.visible) {
         return null;
     }
 
-    const selectedShapeCount = selectedShapesIds?.length;
-
     return (
-        <StatusBar>
-            <StatusBarSlot name="message">{name}</StatusBarSlot>
-            <StatusBarSlot name="save">
-                <SaveStatusInfo />
-            </StatusBarSlot>
-            <StatusBarSlot name="account">
-                <AccountInfo />
-            </StatusBarSlot>
-            <StatusBarSlot name="selection">{`selection: [${selectedShapeCount}]`}</StatusBarSlot>
-            <StatusBarSlot name="keyboard">
-                <KeyboardInfo />
-            </StatusBarSlot>
-            <StatusBarSlot name="mouse">
-                <MouseInfo />
-            </StatusBarSlot>
-            <StatusBarSlot name="camera">
-                <CameraInfo />
-            </StatusBarSlot>
-            <StatusBarSlot name="tools">
-                <ZoomSlider />
-            </StatusBarSlot>
+        <StatusBar slots={SLOTS.length}>
+            {SLOTS.map(({ name, Content }) => (
+                <StatusBarSlot key={name} name={name}>
+                    <Content />
+                </StatusBarSlot>
+            ))}
         </StatusBar>
     );
 };

@@ -7,13 +7,14 @@ import {
 } from 'overmind-react';
 import { commandsFor, commandsIn, getCommand, getCommands } from './actions';
 import { Context } from '.';
-import { useCallback, useEffect, useLayoutEffect, useReducer, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
 import { isShapeLocked, isShapeVisible } from './utils';
 import type { Command, CommandPlace, CommandScope } from './types';
 import { takesEditorInput } from '../events/input';
 import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
 import { placeSelectionMenu } from './selectionMenu';
-import { sharedProperties } from './properties';
+import { PropertyRow, sharedProperties } from './properties';
+import { untracked } from './untracked';
 import {
     drawnExtent,
     groupFrame,
@@ -149,10 +150,6 @@ export const useImageUrl = (source: string) => {
     return found?.source === source ? found.url : undefined;
 };
 
-export const useTools = () => {
-    return useAppState((state) => state.tools);
-};
-
 export const useActiveToolsIds = () => {
     return useAppState((state) => state.tools.activeToolsIds);
 };
@@ -181,11 +178,34 @@ export const useSelectedShapesIds = () => {
     return useAppState((state) => state.currentDocument.selectedShapesIds);
 };
 
-/** The properties the selected shapes share, as the inspector lists them. */
+/**
+ * The properties the selected shapes share, as the inspector lists them. During a
+ * gesture the shapes are read untracked, and during a marquee the selection too,
+ * so its moves do not render the inspector again; it shows the new values as the
+ * gesture ends.
+ */
 export const useSelectedShapesProperties = () => {
-    return useAppState((state) =>
-        sharedProperties(state.currentDocument.selectedShapes, state.currentDocument)
-    );
+    const held = useRef<PropertyRow[]>([]);
+
+    return useAppState((state) => {
+        const document = state.currentDocument;
+        const { kind } = state.events.pointer.gesture;
+
+        if (kind === 'marquee') {
+            return held.current;
+        }
+
+        const shapes = untracked(document.shapes);
+
+        held.current = sharedProperties(
+            kind === 'idle'
+                ? document.selectedShapes
+                : document.selectedShapesIds.map((id) => shapes[id]),
+            document
+        );
+
+        return held.current;
+    });
 };
 
 export const useComponentsIds = () => {

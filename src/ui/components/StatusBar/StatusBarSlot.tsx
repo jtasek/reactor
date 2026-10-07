@@ -7,7 +7,7 @@ interface Props {
 }
 
 export const StatusBarSlot: FC<Props> = ({ name, children }) => (
-    <span id={name} className={styles.statusBarSlot}>
+    <span id={`status-${name}`} className={styles.statusBarSlot}>
         {children}
     </span>
 );

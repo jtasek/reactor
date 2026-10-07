@@ -480,6 +480,9 @@ Hidden guides are not drawn and locked ones do not move.
   says how each property is read, written and typed, and which section (`group`, e.g. Shape,
   Text) lists it; add properties there, not in the inspector. Edits go through
   `setShapesProperty`, gated by `canEdit`.
+  During a gesture it keeps the values it showed as the gesture began and shows the new
+  ones on release (`useSelectedShapesProperties`), so a drag or a marquee does not render it
+  at every move. Panels are mounted only while shown (`PanelLayout`).
 - **Shortcuts**: a tool or command declares `shortcut` (`r`, `mod+d`, `delete,backspace`;
   `mod` is Ctrl or Cmd, see `src/events/shortcuts.ts`). `events.pressShortcut` activates the
   tool or runs the command; the keyboard adapter skips it while a text field has focus. Keep

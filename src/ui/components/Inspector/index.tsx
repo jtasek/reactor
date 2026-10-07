@@ -1,14 +1,9 @@
 import React, { FC } from 'react';
 
 import { Inspector } from './Inspector';
-import {
-    useActions,
-    useControls,
-    useSelectedShapesIds,
-    useSelectedShapesProperties
-} from 'src/app/hooks';
+import { useActions, useSelectedShapesIds, useSelectedShapesProperties } from 'src/app/hooks';
 
-const SelectionInspector: FC = () => {
+export const InspectorContainer: FC = () => {
     const rows = useSelectedShapesProperties();
     const selectedShapesIds = useSelectedShapesIds();
     const { setShapesProperty } = useActions();
@@ -20,10 +15,4 @@ const SelectionInspector: FC = () => {
             onChange={(shapeIds, key, value) => setShapesProperty({ shapeIds, key, value })}
         />
     );
-};
-
-export const InspectorContainer: FC = () => {
-    const { inspector } = useControls();
-
-    return inspector.visible ? <SelectionInspector /> : null;
 };
