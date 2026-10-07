@@ -294,7 +294,8 @@ export function readShapeGeometry(value: unknown) {
                 type: s.type,
                 position: point(s.position),
                 value: text(s.value ?? s.text),
-                ...(s.fontSize === undefined ? {} : { fontSize: positive(s.fontSize) })
+                ...(s.fontSize === undefined ? {} : { fontSize: positive(s.fontSize) }),
+                ...(s.fontColor === undefined ? {} : { fontColor: color(s.fontColor) })
             };
         default:
             throw new Error('Unsupported shape type');

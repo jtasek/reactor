@@ -212,6 +212,28 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
                 shape.fontSize = value;
             }
         }
+    },
+    {
+        key: 'fontColor',
+        label: 'Font color',
+        group: 'Text',
+        kind: 'color',
+        read: (shape) => (shape.type === 'text' ? (shape.fontColor ?? '') : undefined),
+        write: (shape, value) => {
+            if (shape.type !== 'text') {
+                return;
+            }
+
+            if (value === '') {
+                delete shape.fontColor;
+
+                return;
+            }
+
+            if (isHexColor(value)) {
+                shape.fontColor = value;
+            }
+        }
     }
 ];
 

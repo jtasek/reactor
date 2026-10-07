@@ -137,6 +137,8 @@ export interface Text extends ShapeBase {
     position: Point;
     value: string;
     fontSize?: number;
+    /** The color its letters are drawn in, as `#rrggbb`; the default when unset. */
+    fontColor?: string;
 }
 
 export type Shape = Rectangle | Image | Circle | Ellipse | Line | Pen | Text;

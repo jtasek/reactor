@@ -269,7 +269,8 @@ export function shapeGeometry(shape: Shape): ShapeInput {
                 type: shape.type,
                 position: { ...shape.position },
                 value: shape.value,
-                fontSize: shape.fontSize
+                fontSize: shape.fontSize,
+                fontColor: shape.fontColor
             };
         default:
             return assertNever(shape);
