@@ -1,6 +1,7 @@
 import React, { FC, KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
 import type { PropertyRow, PropertyValue } from 'src/app/properties';
 import { Slider } from '../Slider';
+import { SharedOnRelease } from './SharedOnRelease';
 
 interface Props {
     row: PropertyRow;
@@ -119,16 +120,18 @@ export const PropertyField: FC<Props> = ({ row, shapeIds, onChange }) => {
                         onKeyDown={handleKeyDown}
                     />
                 )}
-                {property.kind === 'number' && property.range && (
-                    <Slider
-                        label={property.label}
-                        min={property.range.min}
-                        max={property.range.max}
-                        step={property.range.step}
-                        value={typeof value === 'number' ? value : property.range.max}
-                        disabled={readOnly}
-                        onChange={(number) => onChange(shapeIds, property.key, number)}
-                    />
+                {property.kind === 'number' && property.range && !mixed && (
+                    <SharedOnRelease>
+                        <Slider
+                            label={property.label}
+                            min={property.range.min}
+                            max={property.range.max}
+                            step={property.range.step}
+                            value={typeof value === 'number' ? value : property.range.max}
+                            disabled={readOnly}
+                            onChange={(number) => onChange(shapeIds, property.key, number)}
+                        />
+                    </SharedOnRelease>
                 )}
             </td>
         </tr>
