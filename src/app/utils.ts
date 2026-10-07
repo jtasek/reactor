@@ -282,15 +282,33 @@ export function shapeGeometry(shape: Shape): ShapeInput {
  * not force an expensive getBBox reflow.
  */
 /** How a shape is drawn beyond its geometry, as it is copied: only what it sets. */
-export function shapeStyle(shape: Shape): Partial<Pick<Shape, 'opacity' | 'fill'>> {
+export function shapeStyle(shape: Shape): Partial<Pick<Shape, 'opacity' | 'fill' | 'stroke'>> {
     return {
         ...(shape.opacity === undefined ? {} : { opacity: shape.opacity }),
-        ...(shape.fill === undefined ? {} : { fill: shape.fill })
+        ...(shape.fill === undefined ? {} : { fill: shape.fill }),
+        ...(shape.stroke === undefined ? {} : { stroke: shape.stroke })
     };
 }
 
 /** Whether `value` is a color as shapes keep them, `#rrggbb`. */
 export const isHexColor = (value: string) => /^#[0-9a-f]{6}$/i.test(value);
+
+/** Whether a shape is drawn with an outline that a stroke colors. */
+export function isStrokedShape(shape: Shape): boolean {
+    switch (shape.type) {
+        case 'rectangle':
+        case 'circle':
+        case 'ellipse':
+        case 'line':
+        case 'pen':
+            return true;
+        case 'image':
+        case 'text':
+            return false;
+        default:
+            return assertNever(shape);
+    }
+}
 
 /** Whether a shape encloses an area that a fill colors. */
 export function isClosedShape(shape: Shape): boolean {

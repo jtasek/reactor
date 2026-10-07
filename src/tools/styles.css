@@ -1,10 +1,10 @@
 .shape {
     fill: var(--shape-fill, none);
     /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- no design token yet */
-    stroke: rgba(71, 74, 81, 1.0);
+    stroke: var(--shape-stroke, rgba(71, 74, 81, 1.0));
     stroke-width: 2;
 }
 
 .selected {
-    stroke: var(--selection-color);
+    stroke: var(--shape-stroke, var(--selection-color));
 }

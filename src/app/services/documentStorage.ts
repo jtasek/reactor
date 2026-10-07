@@ -242,7 +242,8 @@ export function readShapeStyle(value: unknown) {
 
     return {
         ...(s.opacity === undefined ? {} : { opacity: fraction(s.opacity) }),
-        ...(s.fill === undefined ? {} : { fill: color(s.fill) })
+        ...(s.fill === undefined ? {} : { fill: color(s.fill) }),
+        ...(s.stroke === undefined ? {} : { stroke: color(s.stroke) })
     };
 }
 

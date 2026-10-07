@@ -86,6 +86,8 @@ export interface ShapeBase {
     parentShapeId?: string;
     rotation?: number;
     selected: boolean;
+    /** The color its outline is drawn in, as `#rrggbb`; the default outline when unset. */
+    stroke?: string;
     visible: boolean;
 }
 

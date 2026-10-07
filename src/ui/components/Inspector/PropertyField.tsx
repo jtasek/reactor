@@ -117,6 +117,7 @@ export const PropertyField: FC<Props> = ({ row, shapeIds, onChange }) => {
                         {mixed && <span>Mixed</span>}
                         <button
                             type="button"
+                            aria-label={`No ${property.label.toLowerCase()}`}
                             aria-pressed={!mixed && value === ''}
                             disabled={readOnly}
                             onClick={() => onChange(shapeIds, property.key, '')}

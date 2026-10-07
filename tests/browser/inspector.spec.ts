@@ -181,7 +181,7 @@ test('fill is picked as a color, drawn inside the shape, and taken off by None',
 
     const rect = shapes(page).first().locator('rect[data-cy]');
     const fill = () => rect.evaluate((element) => getComputedStyle(element).fill);
-    const none = page.getByRole('button', { name: 'None', exact: true });
+    const none = page.getByRole('button', { name: 'No fill', exact: true });
 
     await expect.poll(fill).toBe('none');
     await expect(none).toHaveAttribute('aria-pressed', 'true');
@@ -192,4 +192,21 @@ test('fill is picked as a color, drawn inside the shape, and taken off by None',
 
     await none.click();
     await expect.poll(fill).toBe('none');
+});
+
+test('stroke is picked as a color and outlines the shape, also while it is selected', async ({
+    page
+}) => {
+    await openEditor(page, ['Inspector']);
+    await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
+
+    const rect = shapes(page).first().locator('rect[data-cy]');
+    const stroke = () => rect.evaluate((element) => getComputedStyle(element).stroke);
+    const selectionStroke = await stroke();
+
+    await field(page, 'Stroke').fill('#008855');
+    await expect.poll(stroke).toBe('rgb(0, 136, 85)');
+
+    await page.getByRole('button', { name: 'No stroke', exact: true }).click();
+    await expect.poll(stroke).toBe(selectionStroke);
 });

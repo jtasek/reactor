@@ -53,7 +53,8 @@ describe('sharedProperties()', () => {
             visible: { value: true, readOnly: false },
             locked: { value: false, readOnly: false },
             opacity: { value: 100, readOnly: false },
-            fill: { value: '', readOnly: false }
+            fill: { value: '', readOnly: false },
+            stroke: { value: '', readOnly: false }
         });
     });
 
