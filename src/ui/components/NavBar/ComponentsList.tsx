@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavBarList } from './NavBarList';
 import { NavBarListItem } from './NavBarListItem';
-import { useActions, useCurrentDocument, useComponent } from 'src/app/hooks';
+import { useActions, useComponent, useComponentsIds } from 'src/app/hooks';
 
 const ComponentListItem = ({ componentId }: { componentId: string }) => {
     const component = useComponent(componentId);
@@ -23,7 +23,7 @@ const ComponentListItem = ({ componentId }: { componentId: string }) => {
 };
 
 export const ComponentsList = () => {
-    const { componentsIds } = useCurrentDocument();
+    const componentsIds = useComponentsIds();
 
     if (componentsIds?.length === 0) {
         return null;

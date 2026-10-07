@@ -1,12 +1,12 @@
 import React, { FC } from 'react';
 
-import { useActions, useCamera } from 'src/app/hooks';
+import { useActions, useCameraScale } from 'src/app/hooks';
 import { MAX_SCALE, MIN_SCALE, ZOOM_STEP } from 'src/app/camera';
 
 import { Slider } from '../Slider';
 
 export const ZoomSlider: FC = () => {
-    const { scale } = useCamera();
+    const scale = useCameraScale();
     const { tools } = useActions();
 
     return (

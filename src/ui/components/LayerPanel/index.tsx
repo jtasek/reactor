@@ -1,11 +1,11 @@
 import React, { FC } from 'react';
 
-import { useControls, useCurrentDocument } from 'src/app/hooks';
+import { useControls, useLayersIds } from 'src/app/hooks';
 
 import { LayerPanel } from './LayerPanel';
 
 export const LayerPanelContainer: FC = () => {
-    const { layersIds } = useCurrentDocument();
+    const layersIds = useLayersIds();
     const { layerPanel } = useControls();
 
     if (!layerPanel.visible) {

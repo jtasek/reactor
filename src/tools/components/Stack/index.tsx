@@ -1,9 +1,9 @@
 import React, { FC } from 'react';
-import { useTools } from 'src/app/hooks';
+import { useActiveToolsIds } from 'src/app/hooks';
 import { Tool } from './Tool';
 
 export const Stack: FC = () => {
-    const { activeToolsIds } = useTools();
+    const activeToolsIds = useActiveToolsIds();
 
     return (
         <g id="tools">

@@ -13,6 +13,7 @@ import type { Command, CommandPlace, CommandScope } from './types';
 import { takesEditorInput } from '../events/input';
 import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
 import { placeSelectionMenu } from './selectionMenu';
+import { sharedProperties } from './properties';
 import {
     drawnExtent,
     groupFrame,
@@ -110,6 +111,14 @@ export const usePointer = () => {
     return useAppState((state) => state.events.pointer);
 };
 
+export const usePointerPosition = () => {
+    return useAppState((state) => state.events.pointer.current);
+};
+
+export const useGesture = () => {
+    return useAppState((state) => state.events.pointer.gesture);
+};
+
 /** The image the image tool draws, once one is chosen. */
 export const useImageToPlace = () => {
     return useAppState((state) => state.tools.imageToPlace);
@@ -144,12 +153,59 @@ export const useTools = () => {
     return useAppState((state) => state.tools);
 };
 
+export const useActiveToolsIds = () => {
+    return useAppState((state) => state.tools.activeToolsIds);
+};
+
+export const usePanelLayout = () => {
+    return useAppState((state) => state.config.panelLayout);
+};
+
 export const useControls = () => {
     return useAppState((state) => state.ui);
 };
 
 export const useCurrentDocument = () => {
     return useAppState((state) => state.currentDocument);
+};
+
+export const useDocumentName = () => {
+    return useAppState((state) => state.currentDocument.name);
+};
+
+export const useDocumentFilter = () => {
+    return useAppState((state) => state.currentDocument.filter);
+};
+
+export const useSelectedShapesIds = () => {
+    return useAppState((state) => state.currentDocument.selectedShapesIds);
+};
+
+/** The properties the selected shapes share, as the inspector lists them. */
+export const useSelectedShapesProperties = () => {
+    return useAppState((state) =>
+        sharedProperties(state.currentDocument.selectedShapes, state.currentDocument)
+    );
+};
+
+export const useComponentsIds = () => {
+    return useAppState((state) => state.currentDocument.componentsIds);
+};
+
+export const useGuidesIds = () => {
+    return useAppState((state) => state.currentDocument.guidesIds);
+};
+
+export const useLinksIds = () => {
+    return useAppState((state) => state.currentDocument.linksIds);
+};
+
+export const useLayersIds = () => {
+    return useAppState((state) => state.currentDocument.layersIds);
+};
+
+export const useGroupsIds = () => {
+    return useAppState((state) => state.currentDocument.groupsIds);
 };
 
 export const useNotifications = () => {

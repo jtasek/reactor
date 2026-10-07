@@ -1,11 +1,11 @@
 import React, { FC } from 'react';
 
-import { useActions, useControls, useCurrentDocument } from 'src/app/hooks';
+import { useActions, useControls, useDocumentFilter } from 'src/app/hooks';
 import { SearchBox } from './SearchBox';
 
 export const SearchBoxContainer: FC = () => {
     const { searchBox } = useControls();
-    const { filter } = useCurrentDocument();
+    const filter = useDocumentFilter();
     const actions = useActions();
 
     if (!searchBox.visible) {

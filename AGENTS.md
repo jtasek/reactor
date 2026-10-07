@@ -140,8 +140,8 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   (not suppressed). `pnpm lint:baseline` fails on any finding in a file changed relative to
   `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
   recorded counts: fix a touched file's existing findings rather than adding exceptions.
-- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 428 KiB or
-  any file 240 KiB (the budget in `webpack.config.mjs`, measured at 419 and 225 KiB); raise
+- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 432 KiB or
+  any file 240 KiB (the budget in `webpack.config.mjs`, measured at 429 and 225 KiB); raise
   it only for code every page needs as it opens, after checking what grew. Commands and
   tools load with the editor page, which registers them (`src/pages/registerEditor.ts`),
   not at startup: the store keeps only the tools namespace's state and actions
@@ -444,6 +444,10 @@ Hidden guides are not drawn and locked ones do not move.
 - **Access state only through hooks** in `src/app/hooks.ts` (`useAppState`, `useActions`,
   `useEffects`, domain hooks like `useShapes`, `useCurrentDocument`, `useCamera`). Add new
   domain hooks here rather than ad-hoc `useAppState` selectors in components.
+  A component takes what it shows through the narrowest hook (`useLayersIds`, `useGesture`,
+  `usePointerPosition`) rather than a whole store object, and what changes on every pointer
+  move is read by a component of its own, as the status bar's `MouseInfo`, so the rest does
+  not render again.
 - **Async work and state**: in production Overmind, a change an action makes after an
   `await` reaches components only with a later top-level action, and actions called through
   an action's own `actions` never count as top-level. Keep async work (requests, IndexedDB)

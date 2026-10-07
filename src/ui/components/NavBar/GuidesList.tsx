@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavBarList } from './NavBarList';
 import { NavBarListItem } from './NavBarListItem';
-import { useActions, useCurrentDocument, useGuide } from 'src/app/hooks';
+import { useActions, useGuide, useGuidesIds } from 'src/app/hooks';
 
 const GuideListItem = ({ guideId }: { guideId: string }) => {
     const guide = useGuide(guideId);
@@ -19,7 +19,7 @@ const GuideListItem = ({ guideId }: { guideId: string }) => {
 };
 
 export const GuidesList = () => {
-    const { guidesIds } = useCurrentDocument();
+    const guidesIds = useGuidesIds();
 
     if (guidesIds?.length === 0) {
         return null;
