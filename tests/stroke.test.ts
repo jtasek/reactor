@@ -51,6 +51,13 @@ describe('stroke', () => {
         expect(() => readEntity('shapes', saved(rectangle('red; display: none')))).toThrow();
     });
 
+    it('is dropped from a shape without an outline when read', () => {
+        const stroked = { ...text, stroke: '#ff0000' };
+
+        expect(readEntity('shapes', saved(stroked))).not.toHaveProperty('stroke');
+        expect(readClipboard(writeClipboard([stroked])).shapes[0]).not.toHaveProperty('stroke');
+    });
+
     it('is copied and pasted with the shape', () => {
         const [copied] = readClipboard(writeClipboard([rectangle('#00aa55')])).shapes;
 

@@ -1,8 +1,10 @@
 import React, { FC, KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
 import type { PropertyRow, PropertyValue } from 'src/app/properties';
 import { Slider } from '../Slider';
+import { SharedOnRelease } from './SharedOnRelease';
+import styles from './styles.css';
 
-/** What a color field shows for no color, or for mixed colors. */
+/** The picker's color for no color, or mixed colors, whose swatch is drawn struck through. */
 const NO_COLOR = '#000000';
 
 interface Props {
@@ -105,15 +107,21 @@ export const PropertyField: FC<Props> = ({ row, shapeIds, onChange }) => {
                     />
                 ) : property.kind === 'color' ? (
                     <>
-                        <input
-                            id={id}
-                            type="color"
-                            value={!mixed && typeof value === 'string' && value ? value : NO_COLOR}
-                            disabled={readOnly}
-                            onChange={(event) =>
-                                onChange(shapeIds, property.key, event.target.value)
-                            }
-                        />
+                        <SharedOnRelease>
+                            <input
+                                id={id}
+                                type="color"
+                                className={styles.color}
+                                data-no-color={mixed || !value ? '' : undefined}
+                                value={
+                                    !mixed && typeof value === 'string' && value ? value : NO_COLOR
+                                }
+                                disabled={readOnly}
+                                onChange={(event) =>
+                                    onChange(shapeIds, property.key, event.target.value)
+                                }
+                            />
+                        </SharedOnRelease>
                         {mixed && <span>Mixed</span>}
                         <button
                             type="button"
@@ -144,16 +152,18 @@ export const PropertyField: FC<Props> = ({ row, shapeIds, onChange }) => {
                         onKeyDown={handleKeyDown}
                     />
                 )}
-                {property.kind === 'number' && property.range && (
-                    <Slider
-                        label={property.label}
-                        min={property.range.min}
-                        max={property.range.max}
-                        step={property.range.step}
-                        value={typeof value === 'number' ? value : property.range.max}
-                        disabled={readOnly}
-                        onChange={(number) => onChange(shapeIds, property.key, number)}
-                    />
+                {property.kind === 'number' && property.range && !mixed && (
+                    <SharedOnRelease>
+                        <Slider
+                            label={property.label}
+                            min={property.range.min}
+                            max={property.range.max}
+                            step={property.range.step}
+                            value={typeof value === 'number' ? value : property.range.max}
+                            disabled={readOnly}
+                            onChange={(number) => onChange(shapeIds, property.key, number)}
+                        />
+                    </SharedOnRelease>
                 )}
             </td>
         </tr>
