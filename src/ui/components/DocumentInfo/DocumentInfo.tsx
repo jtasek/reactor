@@ -1,29 +1,22 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
-import { Document } from 'src/app/types';
 import { DocumentInfoField } from './DocumentInfoField';
-import { getPropValue } from 'src/app/utils';
 
-export interface Props {
-    document?: Document;
+export interface DocumentField {
+    name: string;
+    value: string | undefined;
 }
 
-export const DocumentInfo: FC<Props> = ({ document }) => {
-    if (!document) {
-        return null;
-    }
+export interface Props {
+    fields: DocumentField[];
+}
 
-    return (
-        <table className={styles.documentInfo}>
-            <tbody>
-                {Object.keys(document).map((name, index) => (
-                    <DocumentInfoField
-                        key={index}
-                        name={name}
-                        value={getPropValue((document as unknown as Record<string, unknown>)[name])}
-                    />
-                ))}
-            </tbody>
-        </table>
-    );
-};
+export const DocumentInfo: FC<Props> = ({ fields }) => (
+    <table className={styles.documentInfo}>
+        <tbody>
+            {fields.map(({ name, value }) => (
+                <DocumentInfoField key={name} name={name} value={value} />
+            ))}
+        </tbody>
+    </table>
+);
