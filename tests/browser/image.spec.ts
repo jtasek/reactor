@@ -29,7 +29,7 @@ test('the image tool asks for a file, draws it, and shows it again after a reloa
     await expect(image).toHaveAttribute('width', '60');
     await expect(image).toHaveAttribute('height', '60');
     await expect(image).toHaveAttribute('href', /^blob:/);
-    await expect(page.locator('#save')).toHaveText('Saved');
+    await expect(page.locator('#status-save')).toHaveText('Saved');
 
     await page.reload();
     await expect(shapes(page).locator('image')).toHaveAttribute('href', /^blob:/);

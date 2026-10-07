@@ -14,6 +14,7 @@ import { takesEditorInput } from '../events/input';
 import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
 import { placeSelectionMenu } from './selectionMenu';
 import { sharedProperties } from './properties';
+import { untracked } from './untracked';
 import {
     drawnExtent,
     groupFrame,
@@ -149,10 +150,6 @@ export const useImageUrl = (source: string) => {
     return found?.source === source ? found.url : undefined;
 };
 
-export const useTools = () => {
-    return useAppState((state) => state.tools);
-};
-
 export const useActiveToolsIds = () => {
     return useAppState((state) => state.tools.activeToolsIds);
 };
@@ -181,11 +178,21 @@ export const useSelectedShapesIds = () => {
     return useAppState((state) => state.currentDocument.selectedShapesIds);
 };
 
-/** The properties the selected shapes share, as the inspector lists them. */
+/**
+ * The properties the selected shapes share, as the inspector lists them. During a
+ * gesture the shapes are read untracked, so its moves do not render the inspector
+ * again; it shows their values as the gesture ends.
+ */
 export const useSelectedShapesProperties = () => {
-    return useAppState((state) =>
-        sharedProperties(state.currentDocument.selectedShapes, state.currentDocument)
-    );
+    return useAppState((state) => {
+        const document = state.currentDocument;
+        const shapes =
+            state.events.pointer.gesture.kind === 'idle'
+                ? document.selectedShapes
+                : document.selectedShapesIds.map((id) => untracked(document.shapes)[id]);
+
+        return sharedProperties(shapes, document);
+    });
 };
 
 export const useComponentsIds = () => {
