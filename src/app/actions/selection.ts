@@ -9,7 +9,7 @@ import {
 } from '../alignment';
 import { translateShape } from '../geometry';
 import { getCommand } from './startup';
-import { drawnExtent, editableSelectedShapesIds, selectedItems, shapeGroup } from '../membership';
+import { drawnExtent, selectedItems, shapeGroup } from '../membership';
 import { isShapeVisible } from '../utils';
 
 const unselect = ({ shapes }: Document, shapeIds: string[]) => {
@@ -21,11 +21,11 @@ const unselect = ({ shapes }: Document, shapeIds: string[]) => {
 };
 
 export const bringSelectionToFront: Action = ({ state, actions }) => {
-    actions.bringShapesToFront(editableSelectedShapesIds(state.currentDocument));
+    actions.bringShapesToFront(state.currentDocument.editableSelectedShapesIds);
 };
 
 export const sendSelectionToBack: Action = ({ state, actions }) => {
-    actions.sendShapesToBack(editableSelectedShapesIds(state.currentDocument));
+    actions.sendShapesToBack(state.currentDocument.editableSelectedShapesIds);
 };
 
 export const hideSelection: Action = ({ state }) => {

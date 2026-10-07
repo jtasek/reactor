@@ -12,7 +12,6 @@ import { aspectRatio, keepDrawnPlace, placeShapeFrom, resizeAspectBox } from '..
 import {
     GROUP_MINIMUM,
     type GroupFrame,
-    editableSelectedShapesIds,
     groupedShapesSelectedAlone,
     putShapesInGroup,
     putShapesOnLayer,
@@ -69,7 +68,7 @@ export const removeGroup: ActionWithParam<string> = ({ state }, groupId) => {
  */
 export const groupSelection: Action = ({ state }) => {
     const { currentDocument } = state;
-    const shapesIds = editableSelectedShapesIds(currentDocument);
+    const shapesIds = currentDocument.editableSelectedShapesIds;
 
     if (shapesIds.length < GROUP_MINIMUM) {
         return;

@@ -1,9 +1,5 @@
 import { Command } from 'src/app/types';
-import {
-    GROUP_MINIMUM,
-    editableSelectedShapesIds,
-    groupedShapesSelectedAlone
-} from 'src/app/membership';
+import { GROUP_MINIMUM, groupedShapesSelectedAlone } from 'src/app/membership';
 
 export const GroupCommand: Command = {
     id: 'group',
@@ -19,7 +15,7 @@ export const GroupCommand: Command = {
     scopes: ['selection'],
     menuOrder: 50,
     canExecute: ({ state }) =>
-        editableSelectedShapesIds(state.currentDocument).length >= GROUP_MINIMUM,
+        state.currentDocument.editableSelectedShapesIds.length >= GROUP_MINIMUM,
     execute: ({ actions }) => actions.groupSelection()
 };
 

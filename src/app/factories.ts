@@ -13,7 +13,8 @@ import {
     selectedShapes,
     selectedShapesIds,
     selectionExtent,
-    movableSelectedItems
+    movableSelectedItems,
+    editableSelectedShapesIds
 } from './computed/shapes';
 import { inDrawingOrder } from './drawOrder';
 import { v4 as newId } from 'uuid';
@@ -246,6 +247,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
         selectedShapesIds,
         selectionExtent,
         movableSelectedItems,
+        editableSelectedShapesIds,
         selectedShapes,
         shapesIds: inDrawingOrder(options.shapes ?? {})
     };

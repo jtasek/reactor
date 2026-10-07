@@ -343,7 +343,8 @@ out of their groups or layers first, Group needs two shapes, and a group these c
 leave with one shape, or a layer left empty, is removed. Deleting one shape keeps its
 groups, so member lists merge as collaboration expects; deleting or cutting a selection
 (`removeShapes`) removes the groups it empties. Commands act on
-`editableSelectedShapesIds`: shown, selected and not locked. Layers only show and hide.
+`editableSelectedShapesIds`: shown, selected and not locked, derived, so their guards share one
+list as the selection changes. Layers only show and hide.
 Hide and Lock act on `selectedItems`: a group selected as one as a group, by its own flag,
 and the other selected shapes by theirs.
 

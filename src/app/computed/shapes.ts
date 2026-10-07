@@ -2,6 +2,7 @@ import { derived } from 'overmind';
 import { Application, Document } from '../types';
 import { isShapeVisible } from '../utils';
 import {
+    editableSelectedShapesIds as findEditableSelectedShapesIds,
     groupFrame,
     listMovableSelectedItems,
     selectedGroupsIdsOf,
@@ -70,6 +71,11 @@ export const selectionExtent = derived((currentDocument: Document) =>
 /** The selected items Align and Space may move, kept until they change: see `listMovableSelectedItems`. */
 export const movableSelectedItems = derived((currentDocument: Document) =>
     listMovableSelectedItems(currentDocument)
+);
+
+/** The selected shapes commands may change, kept until they change: see `editableSelectedShapesIds` in `membership.ts`. */
+export const editableSelectedShapesIds = derived((currentDocument: Document) =>
+    findEditableSelectedShapesIds(currentDocument)
 );
 
 export const selectedShapesIds = derived((currentDocument: Document) => {

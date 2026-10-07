@@ -1,5 +1,5 @@
 import { Command } from 'src/app/types';
-import { editableSelectedShapesIds, selectionLayerId } from 'src/app/membership';
+import { selectionLayerId } from 'src/app/membership';
 
 export const LayerCommand: Command = {
     id: 'layer',
@@ -12,7 +12,7 @@ export const LayerCommand: Command = {
         size: 24
     },
     shortcut: 'mod+alt+l',
-    canExecute: ({ state }) => editableSelectedShapesIds(state.currentDocument).length > 0,
+    canExecute: ({ state }) => state.currentDocument.editableSelectedShapesIds.length > 0,
     execute: ({ actions }) => actions.layerSelection()
 };
 
@@ -35,7 +35,7 @@ export const UnlayerCommand: Command = {
             Object.values(currentDocument.layers).flatMap((layer) => layer.shapesIds)
         );
 
-        return editableSelectedShapesIds(currentDocument).some((id) => layered.has(id));
+        return currentDocument.editableSelectedShapesIds.some((id) => layered.has(id));
     },
     execute: ({ actions }) => actions.unlayerSelection()
 };

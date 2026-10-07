@@ -643,12 +643,14 @@ export const selectShapes: Action = ({ state }) => {
     // so a click that missed must not select a bounding box containing it.
     const isClick = size.width === 0 && size.height === 0;
 
-    const shapes = Object.values(state.currentDocument.shapes);
+    const document = state.currentDocument;
+    // Read without the store's tracking: thousands of shapes are only looked at here.
+    const shapes = Object.values(untracked(document.shapes));
     const hits = isClick
         ? []
         : shapes
               .filter(
-                  (shape) => isInteractive(state, shape.id) && shapeIntersectsBox(shape, source)
+                  (shape) => shapeIntersectsBox(shape, source) && isInteractive(state, shape.id)
               )
               .map((shape) => shape.id);
 
@@ -659,15 +661,18 @@ export const selectShapes: Action = ({ state }) => {
 
     leaveGroupWithout(state, hits);
 
-    const boxed = withTheirGroups(state.currentDocument, hits, state.enteredGroupId);
+    const boxed = withTheirGroups(document, hits, state.enteredGroupId);
+
+    const hit = new Set(hits);
 
     shapes.forEach((shape) => {
-        const selected = boxed.has(shape.id) && isInteractive(state, shape.id);
+        const selected =
+            boxed.has(shape.id) && (hit.has(shape.id) || isInteractive(state, shape.id));
 
         // Only write when the value actually changes so shapes that stay
         // outside (or inside) the marquee don't re-render every pointer move.
         if (shape.selected !== selected) {
-            shape.selected = selected;
+            document.shapes[shape.id].selected = selected;
         }
     });
 };

@@ -1,10 +1,9 @@
 import { Command, Point } from 'src/app/types';
 import { Context } from 'src/app';
-import { editableSelectedShapesIds } from 'src/app/membership';
 
 export const moveSelectionOrPan = ({ state, actions }: Context, direction: Point) => {
     const step = state.config.arrowKeyStep;
-    const shapeIds = editableSelectedShapesIds(state.currentDocument);
+    const shapeIds = state.currentDocument.editableSelectedShapesIds;
 
     if (shapeIds.length === 0) {
         actions.tools.panCamera({ dx: -direction.x * step, dy: -direction.y * step });

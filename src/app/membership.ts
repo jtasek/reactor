@@ -302,7 +302,7 @@ export function groupedShapesSelectedAlone(document: Document): string[] {
             .flatMap((group) => group.shapesIds)
     );
 
-    return editableSelectedShapesIds(document).filter(
+    return document.editableSelectedShapesIds.filter(
         (id) => grouped.has(id) && !wholeGroups.has(id)
     );
 }

@@ -1,11 +1,6 @@
 import { Action, ActionWithParam, Application, Layer } from '../types';
 import { createLayer } from '../factories';
-import {
-    LAYER_MINIMUM,
-    editableSelectedShapesIds,
-    putShapesOnLayer,
-    selectionLayerId
-} from '../membership';
+import { LAYER_MINIMUM, putShapesOnLayer, selectionLayerId } from '../membership';
 import { isShapeLocked } from '../utils';
 
 const getLayer = ({ currentDocument }: Application, layerId: string) => {
@@ -52,7 +47,7 @@ const selectionWithGroups = ({ currentDocument }: Application): string[] => {
         (id) => currentDocument.groups[id].shapesIds
     );
 
-    return [...new Set([...editableSelectedShapesIds(currentDocument), ...grouped])].filter(
+    return [...new Set([...currentDocument.editableSelectedShapesIds, ...grouped])].filter(
         (id) => !isShapeLocked(currentDocument, id)
     );
 };

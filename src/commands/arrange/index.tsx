@@ -1,5 +1,4 @@
 import { Command } from 'src/app/types';
-import { editableSelectedShapesIds } from 'src/app/membership';
 
 export const BringToFrontCommand: Command = {
     id: 'bring-to-front',
@@ -14,7 +13,7 @@ export const BringToFrontCommand: Command = {
     shortcut: ']',
     scopes: ['shape', 'group', 'selection'],
     menuOrder: 30,
-    canExecute: ({ state }) => editableSelectedShapesIds(state.currentDocument).length > 0,
+    canExecute: ({ state }) => state.currentDocument.editableSelectedShapesIds.length > 0,
     execute: ({ actions }) => actions.bringSelectionToFront()
 };
 
@@ -31,6 +30,6 @@ export const SendToBackCommand: Command = {
     shortcut: '[',
     scopes: ['shape', 'group', 'selection'],
     menuOrder: 40,
-    canExecute: ({ state }) => editableSelectedShapesIds(state.currentDocument).length > 0,
+    canExecute: ({ state }) => state.currentDocument.editableSelectedShapesIds.length > 0,
     execute: ({ actions }) => actions.sendSelectionToBack()
 };
