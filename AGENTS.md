@@ -430,7 +430,8 @@ Hidden guides are not drawn and locked ones do not move.
       them with `untracked` (`src/app/untracked.ts`), skipping the store's tracking of each
       access; changes still go through the store.
     - `pnpm profile:drag [address]` times pressing, dragging and releasing a shape among
-      3,000 and prints the functions that took longest; see `scripts/profile-drag.ts`.
+      3,000, then boxing them with a marquee, and prints the functions that took longest;
+      see `scripts/profile-drag.ts`.
     - `setShapeBounds` writes idempotently (epsilon compare) and `selectShapes` only writes
       `selected` when it changes — both avoid render loops / churn. Preserve these guards.
 
