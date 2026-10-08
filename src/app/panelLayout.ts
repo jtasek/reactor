@@ -26,17 +26,22 @@ const docks = new Set([
     'bottom'
 ]);
 
-const isSize = (value: unknown): value is { width: number; height: number } =>
-    typeof value === 'object' &&
-    value !== null &&
-    'width' in value &&
-    'height' in value &&
-    typeof value.width === 'number' &&
-    typeof value.height === 'number' &&
-    value.width > 0 &&
-    value.height > 0 &&
-    Number.isFinite(value.width) &&
-    Number.isFinite(value.height);
+const isLength = (value: unknown): value is number =>
+    typeof value === 'number' && Number.isFinite(value) && value > 0;
+
+const readSize = (value: unknown) => {
+    if (typeof value !== 'object' || value === null || !('width' in value)) {
+        return undefined;
+    }
+
+    const height = 'height' in value ? value.height : undefined;
+
+    if (!isLength(value.width) || (height !== undefined && !isLength(height))) {
+        return undefined;
+    }
+
+    return height === undefined ? { width: value.width } : { width: value.width, height };
+};
 
 export function readPanelLayout(value: unknown): Record<string, PanelPlacement> {
     const layout = { ...DEFAULT_PANEL_LAYOUT };
@@ -65,10 +70,12 @@ export function readPanelLayout(value: unknown): Record<string, PanelPlacement> 
             typeof position.y === 'number' &&
             Number.isFinite(position.y)
         ) {
+            const chosen = readSize(size);
+
             layout[id] = {
                 dock: dock as PanelPlacement['dock'],
                 position: { x: position.x, y: position.y },
-                ...(isSize(size) ? { size: { width: size.width, height: size.height } } : {})
+                ...(chosen ? { size: chosen } : {})
             };
         } else {
             layout[id] = fallback;

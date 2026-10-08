@@ -57,8 +57,10 @@ interface Resize {
     start: { x: number; y: number };
     /** The panel's box when the drag began. */
     from: { x: number; y: number; width: number; height: number };
-    size: { width: number; height: number };
+    size: { width: number; height?: number };
     position: { x: number; y: number };
+    /** Whether the pointer went beyond a click's slip, so the release resizes. */
+    moved: boolean;
 }
 
 /** The corners a panel can be resized by: the one away from the edge it is docked to. */
@@ -282,10 +284,14 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
                         : from.x + from.width
                     : viewport.width
             );
-            const height = clamp(from.height + dy, MIN_PANEL_SIZE.height, viewport.height - from.y);
+            // The height is chosen only once the corner moves up or down, so widening a
+            // panel leaves it growing with its content.
+            const height = beyondClickSlip({ x: 0, y: 0 }, { x: 0, y: dy }, SCREEN_COORDINATE_SCALE)
+                ? clamp(from.height + dy, MIN_PANEL_SIZE.height, viewport.height - from.y)
+                : placement.size?.height;
 
             return {
-                size: { width, height },
+                size: height === undefined ? { width } : { width, height },
                 position: {
                     x: floating && corner === 'left' ? from.x + from.width - width : position.x,
                     y: position.y
@@ -336,14 +342,25 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
                         start: { x: event.clientX, y: event.clientY },
                         from,
                         size: { width: from.width, height: from.height },
-                        position: { x: from.x, y: from.y }
+                        position: { x: from.x, y: from.y },
+                        moved: false
                     });
                 }}
                 onPointerMove={(event) => {
                     if (!resizing || resizing.pointerId !== event.pointerId) return;
                     event.preventDefault();
+                    if (
+                        !resizing.moved &&
+                        !beyondClickSlip(
+                            resizing.start,
+                            { x: event.clientX, y: event.clientY },
+                            SCREEN_COORDINATE_SCALE
+                        )
+                    )
+                        return;
                     setResize({
                         ...resizing,
+                        moved: true,
                         ...resized(
                             corner,
                             resizing.from,
@@ -356,7 +373,7 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
                     if (!resizing || resizing.pointerId !== event.pointerId) return;
                     event.preventDefault();
                     event.stopPropagation();
-                    resizeTo(resizing);
+                    if (resizing.moved) resizeTo(resizing);
                     setResize(undefined);
                 }}
                 onPointerCancel={() => setResize(undefined)}
@@ -466,14 +483,22 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
                 data-panel={id}
                 style={{
                     ...(floating ? { left: shownPosition.x, top: shownPosition.y } : {}),
+                    // A size chosen on a larger window shrinks to fit this one.
                     ...(chosenSize
                         ? {
-                              width: chosenSize.width,
-                              height: chosenSize.height,
-                              maxWidth: 'none',
-                              maxHeight: 'none'
+                              width: Math.min(chosenSize.width, viewport.width),
+                              maxWidth: 'none'
                           }
-                        : {})
+                        : {}),
+                    ...(chosenSize?.height === undefined
+                        ? {}
+                        : {
+                              height: Math.min(
+                                  chosenSize.height,
+                                  viewport.height - STATUS_BAR_HEIGHT_PX
+                              ),
+                              maxHeight: 'none'
+                          })
                 }}
             >
                 <button

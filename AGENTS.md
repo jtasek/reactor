@@ -540,7 +540,8 @@ Hidden guides are not drawn and locked ones do not move.
   `--control-width` wide, its content filling it, except the side bar, which fits its tools;
   the grips in its bottom corners (the one away from the edge it is docked to) resize it
   by drag or arrow keys, Delete or a double click restores the default, and the size is
-  saved with its placement (`PanelPlacement.size`).
+  saved with its placement (`PanelPlacement.size`): the height only once a corner moves up
+  or down, and shrunk to fit a smaller window.
 - **Shortcuts**: a tool or command declares `shortcut` (`r`, `mod+d`, `delete,backspace`;
   `mod` is Ctrl or Cmd, see `src/events/shortcuts.ts`). `events.pressShortcut` activates the
   tool or runs the command; the keyboard adapter skips it while a text field has focus. Keep
