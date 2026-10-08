@@ -1,48 +1,250 @@
+/* The panel draws the glass; each section is a lighter card on it, under its heading. */
 .inspector {
-  backdrop-filter: var(--backdrop-filter);
-  background-color: var(--control-background);
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow);
-  color: var(--text-color);
-  display: block;
-  padding: 10px;
-  position: static;
-  user-select: none;
-  z-index: 100;
+    --inspector-width: 240px;
+    --inspector-inset: 8px;
+    --section-gap: 12px;
+    --card-radius: 8px;
+    --card-padding: 10px;
+    --field-height: 22px;
+    --field-radius: 5px;
+    --row-padding: 3px;
+    --column-gap: 8px;
+    --checkbox-size: 14px;
+    --color-swatch-width: 44px;
+    color: var(--text-color);
+    display: block;
+    max-width: 100%;
+    padding: var(--inspector-inset);
+    user-select: none;
+    width: var(--inspector-width);
 }
 
-.inspector:hover {
-  box-shadow: var(--box-shadow-hover);
+/* The first row is a heading across both columns, so the fixed layout splits them evenly. */
+.inspector table {
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+    width: 100%;
 }
 
-td ~ td {
-  padding-left: 10px;
+/* A section's heading sits on the glass, above its card. */
+.inspector th,
+.heading {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    line-height: 16px;
+    padding: 0 var(--card-padding) 6px;
+    text-align: left;
+    text-transform: uppercase;
 }
 
-.align {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  margin-bottom: 8px;
+.inspector th {
+    padding-top: var(--section-gap);
+}
+
+.inspector tbody:first-of-type th {
+    padding-top: 0;
+}
+
+.inspector td {
+    padding: var(--row-padding) 0;
+    vertical-align: top;
+}
+
+.inspector td:first-child {
+    overflow: hidden;
+    padding-left: var(--card-padding);
+    padding-right: var(--column-gap);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* A label sits on its field's line, also when a slider follows the field. */
+.inspector tbody td:first-child {
+    line-height: var(--field-height);
+}
+
+.inspector td ~ td {
+    padding-right: var(--row-padding);
+}
+
+.inspector tbody td {
+    background-color: var(--control-background);
+}
+
+.inspector tbody tr + tr + tr td {
+    border-top: 1px solid var(--hairline-color);
+}
+
+.inspector tbody tr:nth-child(2) td:first-child {
+    border-top-left-radius: var(--card-radius);
+}
+
+.inspector tbody tr:nth-child(2) td:last-child {
+    border-top-right-radius: var(--card-radius);
+}
+
+.inspector tbody tr:last-child td:first-child {
+    border-bottom-left-radius: var(--card-radius);
+}
+
+.inspector tbody tr:last-child td:last-child {
+    border-bottom-right-radius: var(--card-radius);
+}
+
+.inspector tfoot td {
+    font-size: 0.75rem;
+    line-height: 16px;
+    padding-top: 10px;
+}
+
+.inspector input[type='text'],
+.inspector input[type='number'] {
+    background-color: var(--field-background);
+    border-radius: var(--field-radius);
+    color: var(--text-color-hover);
+    display: block;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    height: var(--field-height);
+    min-width: 0;
+    padding: 0 8px;
+    transition: background-color 150ms;
+    width: 100%;
+}
+
+.inspector input::placeholder {
+    font-weight: 400;
+}
+
+.inspector input[type='text']:focus,
+.inspector input[type='number']:focus {
+    background-color: var(--control-background-active);
+}
+
+.inspector input:focus-visible,
+.inspector button:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 0;
+}
+
+/* A field that cannot change reads as text, not as a well to type in. */
+.inspector input[readonly] {
+    background-color: transparent;
+    color: var(--ink-strong);
+    font-weight: 400;
+}
+
+.inspector input[type='checkbox'] {
+    accent-color: var(--selection-color);
+    display: block;
+    height: var(--checkbox-size);
+    margin: calc((var(--field-height) - var(--checkbox-size)) / 2) 0;
+    width: var(--checkbox-size);
+}
+
+.inspector input[type='checkbox']:focus-visible {
+    outline-offset: 2px;
+}
+
+.inspector input[type='color'] {
+    background-color: var(--field-background);
+    border-radius: var(--field-radius);
+    cursor: pointer;
+    display: inline-block;
+    height: var(--field-height);
+    padding: 3px;
+    vertical-align: top;
+    width: var(--color-swatch-width);
+}
+
+.inspector input[type='color']::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.inspector input[type='color']::-webkit-color-swatch {
+    border: 0;
+    border-radius: 3px;
+}
+
+.inspector input[type='color']::-moz-color-swatch {
+    border: 0;
+    border-radius: 3px;
+}
+
+/* The Mixed text between a color's swatch and its None. */
+.inspector td > span:not(:has(input)) {
+    line-height: var(--field-height);
+    margin-left: 8px;
+}
+
+.inspector td button {
+    background-color: var(--field-background);
+    border-radius: var(--field-radius);
+    color: var(--text-color-hover);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.75rem;
+    height: var(--field-height);
+    margin-left: 8px;
+    padding: 0 10px;
+    vertical-align: top;
+}
+
+.inspector td button[aria-pressed='true'] {
+    background-color: var(--menu-pressed);
+}
+
+.inspector input[type='color']:disabled,
+.inspector td button:disabled {
+    cursor: default;
+    opacity: 0.35;
 }
 
 /* No color, or mixed colors: the picker's swatch is hidden and the field is struck through.
    Each engine's swatch has its own rule, as one it does not know would drop the whole rule. */
-.color[data-no-color] {
-  background-color: var(--surface);
-  background-image: linear-gradient(
-    to top right,
-    transparent calc(50% - 1px),
-    var(--error-color) 50%,
-    transparent calc(50% + 1px)
-  );
+.inspector .color[data-no-color] {
+    background-color: var(--surface);
+    background-image: linear-gradient(
+        to top right,
+        transparent calc(50% - 1px),
+        var(--error-color) 50%,
+        transparent calc(50% + 1px)
+    );
 }
 
-.color[data-no-color]::-webkit-color-swatch {
-  opacity: 0;
+.inspector .color[data-no-color]::-webkit-color-swatch {
+    opacity: 0;
 }
 
-.color[data-no-color]::-moz-color-swatch {
-  opacity: 0;
+.inspector .color[data-no-color]::-moz-color-swatch {
+    opacity: 0;
+}
+
+.align {
+    margin-bottom: var(--section-gap);
+}
+
+.alignRow {
+    align-items: center;
+    background-color: var(--control-background);
+    display: flex;
+    flex-direction: row;
+    padding: var(--row-padding) var(--card-padding);
+}
+
+.alignRow + .alignRow {
+    border-top: 1px solid var(--hairline-color);
+}
+
+.heading + .alignRow {
+    border-top-left-radius: var(--card-radius);
+    border-top-right-radius: var(--card-radius);
+}
+
+.alignRow:last-child {
+    border-bottom-left-radius: var(--card-radius);
+    border-bottom-right-radius: var(--card-radius);
 }

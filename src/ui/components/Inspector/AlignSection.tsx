@@ -31,16 +31,24 @@ export const AlignSection: FC = () => {
 
     return (
         <section className={styles.align} aria-label="Align">
+            <h3 className={styles.heading}>Align</h3>
             {ROWS.map(({ category, name }) => (
-                <ItemMenu
-                    key={category}
-                    itemName={name}
-                    actions={commands.flatMap((command, index) =>
-                        command.category === category
-                            ? [commandAction(command, () => runCommand(command), !enabled[index])]
-                            : []
-                    )}
-                />
+                <div key={category} className={styles.alignRow}>
+                    <ItemMenu
+                        itemName={name}
+                        actions={commands.flatMap((command, index) =>
+                            command.category === category
+                                ? [
+                                      commandAction(
+                                          command,
+                                          () => runCommand(command),
+                                          !enabled[index]
+                                      )
+                                  ]
+                                : []
+                        )}
+                    />
+                </div>
             ))}
         </section>
     );
