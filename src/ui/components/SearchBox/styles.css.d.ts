@@ -1,19 +1,6 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
-    active: string;
-    dropTarget: string;
-    grip: string;
-    hidden: string;
-    icon: string;
-    label: string;
-    layer: string;
-    name: string;
-    outline: string;
-    row: string;
-    selected: string;
-    showAll: string;
-    shown: string;
-    toggle: string;
+    searchBox: string;
   }
 }
 

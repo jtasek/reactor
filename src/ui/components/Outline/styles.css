@@ -91,6 +91,17 @@
     padding: 0 0 4px 10px;
 }
 
+.toggle {
+    background: none;
+    border: 0;
+    color: var(--text-color);
+    cursor: pointer;
+    flex: 0 0 auto;
+    font: inherit;
+    padding: 0;
+    width: 1em;
+}
+
 .grip {
     cursor: grab;
     flex: 0 0 auto;

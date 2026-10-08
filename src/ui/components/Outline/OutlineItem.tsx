@@ -1,6 +1,7 @@
 import React, { DragEvent, FC, ReactNode, useState } from 'react';
 import styles from './styles.css';
 import { ItemMenu, ItemMenuAction } from '../ItemMenu';
+import { useDocumentFilter } from 'src/app/hooks';
 
 /** What is dragged in the outline: a shape, or a group with all its shapes. */
 export interface Dragged {
@@ -55,6 +56,9 @@ export const OutlineItem: FC<Props> = ({
     children
 }) => {
     const [dropTarget, setDropTarget] = useState(false);
+    const [collapsed, setCollapsed] = useState(false);
+    // A search shows everything it finds, also in collapsed items.
+    const searching = useDocumentFilter().trim() !== '';
     const className = [
         kind === 'layer' && styles.layer,
         selected && styles.selected,
@@ -101,6 +105,16 @@ export const OutlineItem: FC<Props> = ({
                         ⠿
                     </span>
                 )}
+                {children && !searching && (
+                    <button
+                        type="button"
+                        className={styles.toggle}
+                        aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${name}`}
+                        onClick={() => setCollapsed(!collapsed)}
+                    >
+                        <span aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
+                    </button>
+                )}
                 {onClick ? (
                     <button
                         type="button"
@@ -115,7 +129,7 @@ export const OutlineItem: FC<Props> = ({
                 )}
                 {menuActions && <ItemMenu itemName={name} actions={menuActions} />}
             </div>
-            {children && <ul>{children}</ul>}
+            {children && (searching || !collapsed) && <ul>{children}</ul>}
         </li>
     );
 };
