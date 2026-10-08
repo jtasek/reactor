@@ -7,7 +7,7 @@ import { useActions } from 'src/app/hooks';
  */
 export const SharedOnRelease: FC<{ children: ReactNode }> = ({ children }) => {
     const { holdSharing, releaseSharing } = useActions();
-    const container = useRef<HTMLDivElement>(null);
+    const container = useRef<HTMLSpanElement>(null);
 
     useEffect(() => {
         const element = container.current;
@@ -22,8 +22,8 @@ export const SharedOnRelease: FC<{ children: ReactNode }> = ({ children }) => {
     }, [releaseSharing]);
 
     return (
-        <div ref={container} onPointerDown={() => holdSharing()} onBlur={() => releaseSharing()}>
+        <span ref={container} onPointerDown={() => holdSharing()} onBlur={() => releaseSharing()}>
             {children}
-        </div>
+        </span>
     );
 };

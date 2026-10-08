@@ -1,4 +1,4 @@
-import React, { FC, memo, useLayoutEffect, useRef } from 'react';
+import React, { CSSProperties, FC, memo, useLayoutEffect, useRef } from 'react';
 import { Active } from '../Active/Active';
 import { Label } from '../Label';
 import { Resizable } from '../Selectable/Resizable';
@@ -96,7 +96,7 @@ export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup }: Props) =
             <g
                 ref={groupRef}
                 opacity={shape.opacity}
-                style={{ pointerEvents: 'all' }}
+                style={{ pointerEvents: 'all', '--shape-fill': shape.fill } as CSSProperties}
                 onPointerEnter={() => activateShape(shapeId)}
                 onPointerLeave={() => deactivateShape(shapeId)}
             >

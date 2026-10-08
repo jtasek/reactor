@@ -3,6 +3,8 @@ import { limitCornerRadius, translateShape } from './geometry';
 import {
     DEFAULT_TEXT_FONT_SIZE,
     getShapeBounds,
+    isClosedShape,
+    isHexColor,
     isShapeLocked,
     isShapeLockedExternally
 } from './utils';
@@ -37,6 +39,12 @@ export type ShapeProperty = {
           kind: 'boolean';
           read: (shape: Shape, document: Document) => boolean | undefined;
           write?: (shape: Shape, value: boolean) => void;
+      }
+    | {
+          /** A `#rrggbb` color, or none as the empty string. */
+          kind: 'color';
+          read: (shape: Shape, document: Document) => string | undefined;
+          write?: (shape: Shape, value: string) => void;
       }
 );
 
@@ -153,6 +161,24 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         }
     },
     {
+        key: 'fill',
+        label: 'Fill',
+        group: 'Style',
+        kind: 'color',
+        read: (shape) => (isClosedShape(shape) ? (shape.fill ?? '') : undefined),
+        write: (shape, value) => {
+            if (value === '') {
+                delete shape.fill;
+
+                return;
+            }
+
+            if (isHexColor(value)) {
+                shape.fill = value;
+            }
+        }
+    },
+    {
         key: 'text',
         label: 'Text',
         group: 'Text',
@@ -230,6 +256,7 @@ export function sharedProperties(shapes: Shape[], document: Document): PropertyR
 export function applyProperty(property: ShapeProperty, shape: Shape, value: PropertyValue) {
     switch (property.kind) {
         case 'text':
+        case 'color':
             if (typeof value === 'string') {
                 property.write?.(shape, value);
             }

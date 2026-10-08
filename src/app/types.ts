@@ -72,6 +72,8 @@ export interface ShapeBase {
     created: Date;
     createdBy: string;
     description?: string;
+    /** The color it is filled with, as `#rrggbb`; unfilled when unset. */
+    fill?: string;
     id: string;
     key: string;
     locked: boolean;
