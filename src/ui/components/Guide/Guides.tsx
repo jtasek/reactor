@@ -39,6 +39,7 @@ export const Guides: FC<Props> = ({ camera }) => {
                             orientation={guide.orientation}
                             at={dragged ? dragged.at : screenOffset(guide, camera ?? view)}
                             removing={dragged?.removing}
+                            position={dragged?.offset}
                         />
                     );
                 })}

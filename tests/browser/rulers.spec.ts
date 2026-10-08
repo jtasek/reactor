@@ -54,6 +54,22 @@ test('the command bar moves below the top ruler, so a guide is dragged out anywh
     await expect(guideLines(page)).toHaveCount(1);
 });
 
+test('a guide stands out from the grid and shows its position while dragged', async ({ page }) => {
+    await openWithRulers(page);
+    const label = page.locator('svg#surface [data-guide-position]');
+
+    await page.mouse.move(100, 10);
+    await page.mouse.down();
+    await page.mouse.move(100, 200, { steps: 6 });
+    await expect(label).toHaveText('200');
+    await page.mouse.up();
+
+    await expect(label).toHaveCount(0);
+    await expect
+        .poll(() => guideLines(page).evaluate((line) => getComputedStyle(line).stroke))
+        .toBe('rgb(234, 2, 130)');
+});
+
 test('moves a guide, removes it dropped on its ruler, and Escape cancels a drag', async ({
     page
 }) => {

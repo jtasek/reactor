@@ -1,8 +1,21 @@
 .line {
     pointer-events: none;
     shape-rendering: crispEdges;
-    stroke: var(--info-color);
+    stroke: var(--primary-action-color);
     stroke-width: 1;
+}
+
+/* A dragged guide's position, upright on a halo so it reads over the grid and shapes. */
+.position {
+    fill: var(--primary-action-color);
+    font-size: var(--canvas-label-size);
+    font-weight: 600;
+    paint-order: stroke;
+    pointer-events: none;
+    stroke: var(--surface);
+    stroke-linejoin: round;
+    stroke-width: var(--canvas-label-halo-width);
+    user-select: none;
 }
 
 .removing {
