@@ -106,16 +106,16 @@ export const config = {
     ],
     // The bundle budget: the production build fails beyond it. Measured on 2026-10-08
     // at 440 KiB for the entry bundle (React DOM, Overmind and React 225 KiB, the
-    // store and services 215 KiB, raised for variables, which documents hold) and
-    // 225 KiB for its largest file; raise it only for code every page needs as it
-    // opens, after checking what grew. The commands and tools load with the editor
-    // page, which registers them (`registerEditor`), so a new command or tool does not
-    // count here; it was lowered from 468 KiB when they moved there.
+    // store and services 215 KiB; raised to 444 KiB for variables, which documents
+    // hold) and 225 KiB for its largest file; raise it only for code every page needs
+    // as it opens, after checking what grew. The commands and tools load with the
+    // editor page, which registers them (`registerEditor`), so a new command or tool
+    // does not count here; it was lowered from 468 KiB when they moved there.
     performance: isDev
         ? false
         : {
               hints: 'error',
-              maxEntrypointSize: 440 * 1024,
+              maxEntrypointSize: 444 * 1024,
               maxAssetSize: 240 * 1024
           },
     optimization: {

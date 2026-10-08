@@ -1,6 +1,6 @@
 import { readClipboard } from 'src/app/clipboard';
 import { readEntity } from 'src/app/services/documentStorage';
-import { variableNamed } from 'src/app/variables';
+import { boundVariable, variableNamed } from 'src/app/variables';
 import type { Variable } from 'src/app/types';
 import {
     createCopies,
@@ -143,6 +143,32 @@ describe('binding a property to a variable', () => {
         expect(shapes()[0]).toMatchObject({ position: { x: 7, y: 0 } });
         expect(shapes()[0].bindings).toBeUndefined();
         expect(shapes()[1].fill).toBe('#00ff00');
+    });
+
+    it('holds through the noise of measuring the shape', () => {
+        const { store, shapes, document } = storeWithShapes();
+        const left = create(store, 'left', 'number', 100)!;
+        const [id] = document().shapesIds;
+
+        store.actions.bindProperty({ shapeIds: [id], key: 'x', variableId: left });
+        store.actions.updateShape({ id, position: { x: 100.0000038, y: 0 } });
+
+        expect(boundVariable(shapes()[0], 'x', document())?.id).toBe(left);
+    });
+
+    it('does not show a value the property refuses, and follows the next one', () => {
+        const { store, shapes, document } = storeWithShapes();
+        const label = create(store, 'label', 'text', 'Hello')!;
+        const [id] = document().shapesIds;
+
+        store.actions.bindProperty({ shapeIds: [id], key: 'name', variableId: label });
+        store.actions.setVariableValue({ variableId: label, value: '' });
+        expect(shapes()[0].name).toBe('Hello');
+        expect(boundVariable(shapes()[0], 'name', document())).toBeUndefined();
+
+        store.actions.setVariableValue({ variableId: label, value: 'World' });
+        expect(shapes()[0].name).toBe('World');
+        expect(boundVariable(shapes()[0], 'name', document())?.id).toBe(label);
     });
 
     it('keeps the value when unbound or when the variable is deleted', () => {

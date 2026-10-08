@@ -71,6 +71,29 @@ export const canBind = (
     variable: Variable
 ): boolean => property.kind === variable.type && property.read(shape, document) !== undefined;
 
+/** Numbers are compared to a thousandth, so the noise of measuring a shape ends no binding. */
+const COMPARED_PRECISION = 1000;
+
+const comparable = (value: unknown) =>
+    JSON.stringify(value, (_, item: unknown) =>
+        typeof item === 'number' ? Math.round(item * COMPARED_PRECISION) : item
+    );
+
+/** Whether `property` takes `variable`'s value, rather than leaving the shape as it is. */
+export function accepts(property: ShapeProperty, variable: Variable): boolean {
+    const value = variable.values.default;
+
+    if (property.kind === 'text' && typeof value === 'string') {
+        return property.accepts?.(value) ?? true;
+    }
+
+    if (property.kind === 'number' && typeof value === 'number') {
+        return property.accepts?.(value) ?? true;
+    }
+
+    return true;
+}
+
 /** Whether writing `variable`'s value to `property` would leave `shape` as it is. */
 export function bindingHolds(property: ShapeProperty, shape: Shape, variable: Variable): boolean {
     const own = json(shape);
@@ -78,19 +101,25 @@ export function bindingHolds(property: ShapeProperty, shape: Shape, variable: Va
 
     applyProperty(property, written, variable.values.default);
 
-    return JSON.stringify(written) === JSON.stringify(own);
+    return comparable(written) === comparable(own);
 }
 
 /**
  * The variable `shape`'s `key` property follows: bound to it, and showing its value.
- * None when the variable is missing, as another copy may delete it.
+ * None when the variable is missing, as another copy may delete it, or holds a
+ * value the property does not take.
  */
 export function boundVariable(shape: Shape, key: string, document: Document): Variable | undefined {
     const variableId = shape.bindings?.[key];
     const variable = variableId === undefined ? undefined : document.variables[variableId];
     const property = bindableProperty(key);
 
-    return variable && property && bindingHolds(property, shape, variable) ? variable : undefined;
+    return variable &&
+        property &&
+        accepts(property, variable) &&
+        bindingHolds(property, shape, variable)
+        ? variable
+        : undefined;
 }
 
 /** Removes `shape`'s binding of `key`, and its bindings once none is left. */

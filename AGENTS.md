@@ -140,7 +140,7 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   (not suppressed). `pnpm lint:baseline` fails on any finding in a file changed relative to
   `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
   recorded counts: fix a touched file's existing findings rather than adding exceptions.
-- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 440 KiB or
+- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 444 KiB or
   any file 240 KiB (the budget in `webpack.config.mjs`, measured at 440 and 225 KiB); raise
   it only for code every page needs as it opens, after checking what grew. Commands and
   tools load with the editor page, which registers them (`src/pages/registerEditor.ts`),
@@ -378,9 +378,11 @@ color, number, text or boolean. A shape property the inspector can change may fo
 its kind (`shape.bindings`, by property key): binding, and every change of the variable
 (`setVariableValue`), writes its value into the shape as if typed into the field, so
 nothing else reads variables. A binding holds while writing the value would leave the shape
-as it is (`bindingHolds`, `src/app/variables.ts`): a drag, Hide or another edit that sets
-the property otherwise ends it, a variable change drops the bindings that no longer hold,
-and the inspector's `setShapesProperty` removes it. Deleting a variable leaves the values.
+as it is, numbers to a thousandth (`bindingHolds`, `src/app/variables.ts`); a value the
+property refuses (`accepts`), as a blank name, is not shown as followed but keeps the
+binding. A drag, Hide or another edit that sets the property otherwise ends it, a variable
+change drops the bindings that no longer hold, and the inspector's `setShapesProperty`
+removes it. Deleting a variable leaves the values.
 Names are unique, trimmed and without `{`, `}` or `$` (`isVariableName`); one shared after
 a merge means the variable with the lowest id (`variableNamed`). Copied shapes carry the
 variables they follow, and a paste uses one of the same name and type or adds it.

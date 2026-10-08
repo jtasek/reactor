@@ -1,6 +1,7 @@
 import type { ActionWithParam, ActionWithParamAndResult, VariableType } from '../types';
 import { applyProperty, canEdit } from '../properties';
 import {
+    accepts,
     bindableProperty,
     bindingHolds,
     buildVariable,
@@ -48,7 +49,8 @@ export const renameVariable: ActionWithParam<{ variableId: string; name: string 
 
 /**
  * Gives a variable a value of its type and writes it into the properties that
- * follow it. A property set otherwise since, as by a drag, no longer follows it.
+ * follow it. A property set otherwise since, as by a drag, no longer follows it;
+ * one that did not take the old value, as a blank text, still does.
  */
 export const setVariableValue: ActionWithParam<{ variableId: string; value: unknown }> = (
     { state },
@@ -66,7 +68,10 @@ export const setVariableValue: ActionWithParam<{ variableId: string; value: unkn
         keys.forEach((key) => {
             const property = bindableProperty(key);
 
-            if (property && bindingHolds(property, shape, variable)) {
+            if (
+                property &&
+                (!accepts(property, variable) || bindingHolds(property, shape, variable))
+            ) {
                 applyProperty(property, shape, next.values.default);
 
                 return;
