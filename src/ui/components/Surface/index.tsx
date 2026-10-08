@@ -1,6 +1,5 @@
 import React, { FC } from 'react';
 import { Camera } from './Camera';
-import { ConnectedOverlay as Overlay } from '../Overlay';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { GridContainer as Grid } from '../Grid';
 import { GuideGrips, Guides } from './Guides';
@@ -25,7 +24,6 @@ export const Canvas: FC = () => (
                     <Stack />
                 </ErrorBoundary>
             </Camera>
-            <Overlay />
             <Guides />
             <Rulers />
         </Surface>
