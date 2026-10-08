@@ -106,3 +106,49 @@ test('a resized shape’s snapped edge measures the distance to the shape on its
 
     await expect(labels).toHaveCount(0);
 });
+
+test('with Alt held over another shape, the distances to it from the selection show', async ({
+    page
+}) => {
+    await openEditor(page);
+    await drawRect(page, { x: 100, y: 100 }, { x: 140, y: 140 });
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    const labels = page.locator('svg#surface [data-measures] text');
+
+    await page.mouse.move(surface.x + 120, surface.y + 120);
+    await expect(labels).toHaveCount(0);
+
+    await page.keyboard.down('Alt');
+    await page.mouse.move(surface.x + 121, surface.y + 121);
+    await expect(labels).toHaveText(['160']);
+
+    await page.keyboard.up('Alt');
+    await expect(labels).toHaveCount(0);
+});
+
+test('a lone Alt over the canvas is kept from the browser, which would focus its menu bar', async ({
+    page
+}) => {
+    await openEditor(page);
+    await page.evaluate(() => (document.activeElement as HTMLElement).blur());
+    await page.evaluate(() => {
+        const prevented: string[] = [];
+
+        (window as unknown as { prevented: string[] }).prevented = prevented;
+        for (const type of ['keydown', 'keyup']) {
+            window.addEventListener(type, (event) => {
+                if (event.defaultPrevented) {
+                    prevented.push(type);
+                }
+            });
+        }
+    });
+
+    await page.keyboard.press('Alt');
+
+    expect(
+        await page.evaluate(() => (window as unknown as { prevented: string[] }).prevented)
+    ).toEqual(['keydown', 'keyup']);
+});

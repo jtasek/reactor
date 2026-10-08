@@ -8,6 +8,7 @@ import { Rulers } from '../Rulers';
 import { SelectionMenu } from '../SelectionMenu';
 import { Shapes } from './Shapes';
 import { SnapLines } from '../SnapLines';
+import { Measures } from '../SnapLines/Measures';
 import { Stack } from 'src/tools/components/Stack';
 import { Surface } from './Surface';
 
@@ -20,6 +21,7 @@ export const Canvas: FC = () => (
                 <ErrorBoundary fallback={<h1>Something went wrong while rendering shapes</h1>}>
                     <Shapes />
                     <SnapLines />
+                    <Measures />
                     <Stack />
                 </ErrorBoundary>
             </Camera>

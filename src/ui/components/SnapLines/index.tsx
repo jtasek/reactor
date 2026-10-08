@@ -14,7 +14,7 @@ import styles from './styles.css';
 /** Sizes on screen, in pixels, whatever the zoom. */
 const LINE_OVERHANG = 6;
 const CROSS_HALF_SIZE = 4;
-const TICK_HALF_SIZE = 4;
+export const TICK_HALF_SIZE = 4;
 const LABEL_OFFSET = 10;
 
 /** A cross on each of `points`, `half` across each way. */
@@ -32,7 +32,7 @@ const linePath = ({ axis, from, to }: SnapMark, overhang: number) =>
         ? `M${from.x} ${from.y - overhang}L${to.x} ${to.y + overhang}`
         : `M${from.x - overhang} ${from.y}L${to.x + overhang} ${to.y}`;
 
-const measurePath = ({ axis, from, to }: Gap, half: number) =>
+export const measurePath = ({ axis, from, to }: Gap, half: number) =>
     axis === 'x'
         ? `M${from.x} ${from.y - half}V${from.y + half}M${from.x} ${from.y}H${to.x}M${to.x} ${to.y - half}V${to.y + half}`
         : `M${from.x - half} ${from.y}H${from.x + half}M${from.x} ${from.y}V${to.y}M${to.x - half} ${to.y}H${to.x + half}`;
@@ -43,7 +43,7 @@ interface GapLabelsProps {
     className: string;
 }
 
-const GapLabels: FC<GapLabelsProps> = ({ gaps, scale, className }) =>
+export const GapLabels: FC<GapLabelsProps> = ({ gaps, scale, className }) =>
     gaps.map((gap) => {
         const { axis, from, to } = gap;
         const x = (from.x + to.x) / 2 + (axis === 'y' ? LABEL_OFFSET / scale : 0);

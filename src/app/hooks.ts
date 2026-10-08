@@ -8,7 +8,8 @@ import {
 import { commandsFor, commandsIn, getCommand, getCommands } from './actions';
 import { Context } from '.';
 import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
-import { isShapeLocked, isShapeVisible } from './utils';
+import { getShapeBounds, isShapeLocked, isShapeVisible } from './utils';
+import { hitTestShape, hitTolerance } from './geometry';
 import type { Command, CommandPlace, CommandScope } from './types';
 import { takesEditorInput } from '../events/input';
 import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
@@ -434,6 +435,37 @@ export const useSnappedBox = () =>
     });
 
 /** Whether a pointer gesture is in progress on the canvas. */
+/**
+ * The selection's box and that of the shape under the pointer, while Alt is held
+ * over a shape outside the selection and no gesture is in progress.
+ */
+export const useMeasuredBoxes = () =>
+    useAppState((state) => {
+        const { keyboard, pointer } = state.events;
+        const document = state.currentDocument;
+        const selection = document.selectionExtent;
+
+        if (!keyboard.altKey || !pointer.inside || pointer.gesture.kind !== 'idle' || !selection) {
+            return null;
+        }
+
+        // Read without the store's tracking: thousands of shapes are only looked at here.
+        const shapes = untracked(document.shapes);
+        const tolerance = hitTolerance(document.camera.scale);
+        const target = [...document.shapesIds]
+            .reverse()
+            .map((id) => shapes[id])
+            .find(
+                (shape) =>
+                    shape &&
+                    !shape.selected &&
+                    hitTestShape(shape, pointer.current, tolerance) &&
+                    isShapeVisible(document, shape.id)
+            );
+
+        return target ? { selection, target: getShapeBounds(target) } : null;
+    });
+
 export const useGestureInProgress = () =>
     useAppState((state) => state.events.pointer.gesture.kind !== 'idle');
 
