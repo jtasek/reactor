@@ -485,7 +485,9 @@ Hidden guides are not drawn and locked ones do not move.
   fraction (`opacity`) and shown in percent. A `color` property is a color picker with a None
   button, as Fill and Stroke (`colorProperty`), kept as `#rrggbb` (`isHexColor`) for closed shapes
   (`isClosedShape`) and outlined ones (`isStrokedShape`), and drawn through the `--shape-fill` and
-  `--shape-stroke` custom properties each shape's group sets; a selected shape keeps its stroke. Edits go through `setShapesProperty`, gated by
+  `--shape-stroke` custom properties each shape's group sets; a selected shape keeps its stroke.
+  A text's fields that change its size sit with its geometry, as `fontSize`; its Font color
+  (`fontColor`, the letters' fill) is a style field, read only for texts, so it is not measured. Edits go through `setShapesProperty`, gated by
   `canEdit`.
   During a gesture it keeps the values it showed as the gesture began and shows the new
   ones on release (`useSelectedShapesProperties`), so a drag or a marquee does not render it

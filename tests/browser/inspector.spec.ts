@@ -238,6 +238,28 @@ test('stroke is picked as a color and outlines the shape, also while it is selec
     await expect.poll(stroke).toBe(selectionStroke);
 });
 
+test('a text’s font color is picked in the text section and colors its letters', async ({
+    page
+}) => {
+    await openEditor(page, ['Inspector']);
+    await selectTool(page, 'Type a text');
+    await pointer(page, 'pointerdown', { x: 100, y: 300 });
+    await pointer(page, 'pointerup', { x: 100, y: 300 });
+    await page.keyboard.type('hello');
+    await page.keyboard.press('Enter');
+    await click(page, 600, 500);
+    await click(page, 110, 295);
+
+    const letters = page.locator('svg#surface text', { hasText: 'hello' });
+    const fill = () => letters.evaluate((element) => getComputedStyle(element).fill);
+
+    await field(page, 'Font color').fill('#cc0000');
+    await expect.poll(fill).toBe('rgb(204, 0, 0)');
+
+    await page.getByRole('button', { name: 'No font color', exact: true }).click();
+    await expect.poll(fill).toBe('rgb(0, 0, 0)');
+});
+
 test('a color field is disabled on a locked shape and marks no color and mixed colors', async ({
     page
 }) => {

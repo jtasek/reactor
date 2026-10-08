@@ -74,6 +74,8 @@ export interface ShapeBase {
     description?: string;
     /** The color it is filled with, as `#rrggbb`; unfilled when unset. */
     fill?: string;
+    /** A text's color for its letters, as `#rrggbb`; the default when unset. */
+    fontColor?: string;
     id: string;
     key: string;
     locked: boolean;

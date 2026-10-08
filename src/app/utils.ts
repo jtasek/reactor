@@ -282,11 +282,14 @@ export function shapeGeometry(shape: Shape): ShapeInput {
  * not force an expensive getBBox reflow.
  */
 /** How a shape is drawn beyond its geometry, as it is copied: only what it sets. */
-export function shapeStyle(shape: Shape): Partial<Pick<Shape, 'opacity' | 'fill' | 'stroke'>> {
+export function shapeStyle(
+    shape: Shape
+): Partial<Pick<Shape, 'opacity' | 'fill' | 'stroke' | 'fontColor'>> {
     return {
         ...(shape.opacity === undefined ? {} : { opacity: shape.opacity }),
         ...(shape.fill === undefined ? {} : { fill: shape.fill }),
-        ...(shape.stroke === undefined ? {} : { stroke: shape.stroke })
+        ...(shape.stroke === undefined ? {} : { stroke: shape.stroke }),
+        ...(shape.fontColor === undefined ? {} : { fontColor: shape.fontColor })
     };
 }
 

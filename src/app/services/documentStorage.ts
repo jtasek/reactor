@@ -248,7 +248,10 @@ export function readShapeStyle(value: unknown, shape: Pick<Shape, 'type'>) {
     return {
         ...(s.opacity === undefined ? {} : { opacity: fraction(s.opacity) }),
         ...(s.fill === undefined || !isClosedShape(shape) ? {} : { fill: color(s.fill) }),
-        ...(s.stroke === undefined || !isStrokedShape(shape) ? {} : { stroke: color(s.stroke) })
+        ...(s.stroke === undefined || !isStrokedShape(shape) ? {} : { stroke: color(s.stroke) }),
+        ...(s.fontColor === undefined || shape.type !== 'text'
+            ? {}
+            : { fontColor: color(s.fontColor) })
     };
 }
 

@@ -55,15 +55,16 @@ const OPAQUE_PERCENT = 100;
 // Metadata may change on a locked shape, but not in a locked document.
 const unlessDocumentLocked = (_shape: Shape, document: Document) => !document.locked;
 
-/** A color of the Style section, for the shapes `applies` to; the empty string takes it off. */
+/** A color of section `group`, for the shapes `applies` to; the empty string takes it off. */
 const colorProperty = (
-    key: 'fill' | 'stroke',
+    key: 'fill' | 'stroke' | 'fontColor',
     label: string,
+    group: string,
     applies: (shape: Shape) => boolean
 ): ShapeProperty => ({
     key,
     label,
-    group: 'Style',
+    group,
     kind: 'color',
     read: (shape) => (applies(shape) ? (shape[key] ?? '') : undefined),
     write: (shape, value) => {
@@ -185,8 +186,8 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
             shape.opacity = Math.min(OPAQUE_PERCENT, Math.max(0, value)) / OPAQUE_PERCENT;
         }
     },
-    colorProperty('fill', 'Fill', isClosedShape),
-    colorProperty('stroke', 'Stroke', isStrokedShape),
+    colorProperty('fill', 'Fill', 'Style', isClosedShape),
+    colorProperty('stroke', 'Stroke', 'Style', isStrokedShape),
     {
         key: 'text',
         label: 'Text',
@@ -212,7 +213,8 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
                 shape.fontSize = value;
             }
         }
-    }
+    },
+    colorProperty('fontColor', 'Font color', 'Text', (shape) => shape.type === 'text')
 ];
 
 /** Whether `property` may be changed on `shape` now. */
