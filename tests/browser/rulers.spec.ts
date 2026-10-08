@@ -38,6 +38,22 @@ test('loads the rulers when they are turned on, and drags guides out of them', a
     await expect(guideLines(page).last()).toHaveAttribute('x1', '400');
 });
 
+test('the command bar moves below the top ruler, so a guide is dragged out anywhere', async ({
+    page
+}) => {
+    await openWithRulers(page);
+    const bar = (await page.getByRole('list', { name: 'Commands' }).boundingBox())!;
+    const ruler = (await page.locator('svg#surface [data-ruler="top"]').boundingBox())!;
+
+    expect(bar.y).toBeGreaterThanOrEqual(ruler.y + ruler.height);
+
+    // Where the command bar is across, on the ruler above it.
+    const across = bar.x + bar.width / 2;
+
+    await drag(page, [across, ruler.y + ruler.height / 2], [across, 300]);
+    await expect(guideLines(page)).toHaveCount(1);
+});
+
 test('a guide stands out from the grid and shows its position while dragged', async ({ page }) => {
     await openWithRulers(page);
     const label = page.locator('svg#surface [data-guide-position]');

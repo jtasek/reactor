@@ -1,6 +1,7 @@
-import React, { FC, Fragment, useState } from 'react';
+import React, { CSSProperties, FC, Fragment, useState } from 'react';
 
-import { usePlacedCommands } from 'src/app/hooks';
+import { useControls, usePlacedCommands } from 'src/app/hooks';
+import { RULER_SIZE_PX } from 'src/app/rulers';
 import type { Command } from 'src/app/types';
 import { shortcutLabel, usesCommandKey } from './shortcutLabel';
 
@@ -25,6 +26,7 @@ function groupCommands(commands: Command[]): Record<string, Command[]> {
 
 export const CommandBar: FC = () => {
     const commands = usePlacedCommands('commandBar');
+    const { rulers } = useControls();
     const [hovered, setHovered] = useState<Command>();
     const [focused, setFocused] = useState<Command>();
     const shown = hovered ?? focused;
@@ -44,7 +46,16 @@ export const CommandBar: FC = () => {
     }
 
     return (
-        <div className={styles.container} style={DOCK_GEOMETRY_STYLE}>
+        <div
+            className={styles.container}
+            style={
+                {
+                    ...DOCK_GEOMETRY_STYLE,
+                    // Below the top ruler while it is shown, so it does not cover the ruler.
+                    '--ruler-size': rulers.visible ? `${RULER_SIZE_PX}px` : undefined
+                } as CSSProperties
+            }
+        >
             <ul
                 className={styles.commandBar}
                 aria-label="Commands"

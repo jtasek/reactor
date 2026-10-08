@@ -20,7 +20,7 @@
     max-width: calc(100vw - var(--command-bar-right) - var(--command-bar-left));
     position: fixed;
     width: max-content;
-    top: var(--command-bar-top);
+    top: calc(var(--command-bar-top) + var(--ruler-size, 0px));
     transition: all 0.2s ease-in-out;
     user-select: none;
     z-index: 100;
