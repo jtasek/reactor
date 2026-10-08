@@ -14,3 +14,4 @@ export * from './startup';
 export * from './notifications';
 export * from './panelLayout';
 export * from './account';
+export * from './variable';

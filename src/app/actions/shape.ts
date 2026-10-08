@@ -8,15 +8,25 @@ import {
     Application,
     Box,
     Corner,
+    Document,
     Group,
     Point,
     ResizeHandlerType,
     Shape,
-    ShapeInput
+    ShapeInput,
+    Variable
 } from '../types';
+import { bindableProperty, buildVariable, unbind, variableNamed } from '../variables';
 import { Context } from 'src/app';
 import { screenToWorld } from '../camera';
-import { copyName, createGroup, createShape, nextShapeName, shapeNamer } from '../factories';
+import {
+    copyName,
+    createGroup,
+    createShape,
+    nextShapeName,
+    numberedName,
+    shapeNamer
+} from '../factories';
 import {
     containersHolding,
     groupAtPoint,
@@ -221,7 +231,9 @@ const selectedGroups = ({ currentDocument }: Application) =>
 export const copySelection: ActionWithResult<string | null> = ({ state }) => {
     const selected = takesEditorInput(state) ? selectedInDrawOrder(state) : [];
 
-    return selected.length > 0 ? writeClipboard(selected, selectedGroups(state)) : null;
+    return selected.length > 0
+        ? writeClipboard(selected, selectedGroups(state), state.currentDocument.variables)
+        : null;
 };
 
 /**
@@ -239,7 +251,7 @@ export const selectionToCut: ActionWithResult<{ text: string; shapeIds: string[]
 
     return cut.length > 0
         ? {
-              text: writeClipboard(cut, selectedGroups(state)),
+              text: writeClipboard(cut, selectedGroups(state), state.currentDocument.variables),
               shapeIds: cut.map((shape) => shape.id)
           }
         : null;
@@ -292,6 +304,61 @@ const pasteTarget = ({ state, effects }: Context): Point | null => {
         : { x: (topLeft.x + bottomRight.x) / 2, y: (topLeft.y + bottomRight.y) / 2 };
 };
 
+/**
+ * The ids of the document's variables pasted shapes follow, by copied id: one of
+ * the same name and type, else the copied one added, renamed as `Brand 2` when
+ * its name is taken.
+ */
+const pasteVariables = ({ state, effects }: Context, copied: Variable[]) => {
+    const { variables } = state.currentDocument;
+
+    return new Map(
+        copied.flatMap((variable) => {
+            const same = variableNamed(variables, variable.name);
+
+            if (same?.type === variable.type) {
+                return [[variable.id, same.id]];
+            }
+
+            const name = same
+                ? numberedName(variable.name, new Set(Object.values(variables).map((v) => v.name)))
+                : variable.name;
+            const added = buildVariable(
+                effects.newId(),
+                name,
+                variable.type,
+                variable.values.default
+            );
+
+            if (!added) {
+                return [];
+            }
+
+            variables[added.id] = added;
+
+            return [[variable.id, added.id]];
+        })
+    );
+};
+
+/** Binds `key` of a shape not yet in the store to a variable of `document`, writing its value. */
+const followVariable = (
+    document: Document,
+    shape: Shape,
+    key: string,
+    variableId: string | undefined
+) => {
+    const property = bindableProperty(key);
+    const variable = variableId === undefined ? undefined : document.variables[variableId];
+
+    if (!property || !variable || variable.type !== property.kind) {
+        return;
+    }
+
+    applyProperty(property, shape, variable.values.default);
+    shape.bindings = { ...shape.bindings, [key]: variable.id };
+};
+
 export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (context, text) => {
     const { state, actions } = context;
 
@@ -305,6 +372,7 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
         return 'noShapes';
     }
 
+    const variableIds = pasteVariables(context, copied.variables);
     let order = topOrder(state);
     const present = Object.values(untracked(state.currentDocument).shapes);
     const taken = new Set(present.map((shape) => shape.name));
@@ -318,7 +386,19 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
 
         taken.add(name);
 
-        return createShape({ ...input, name, order, selected: true });
+        const shape = createShape({
+            ...input,
+            name,
+            order,
+            selected: true,
+            bindings: undefined
+        });
+
+        Object.entries(input.bindings ?? {}).forEach(([key, copiedId]) =>
+            followVariable(state.currentDocument, shape, key, variableIds.get(copiedId))
+        );
+
+        return shape;
     });
     const target = pasteTarget(context);
 
@@ -802,6 +882,7 @@ export const setShapesProperty = (
             return;
         }
 
+        unbind(shape, key);
         applyProperty(property, shape, value);
     });
 };

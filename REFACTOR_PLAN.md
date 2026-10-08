@@ -936,8 +936,12 @@ the user chooses.
 
 ## Phase 12 - Variables
 
-Designed 2026-10-08; not started. Feature work outside the Phase 8 release gate.
+Designed 2026-10-08; in progress. Feature work outside the Phase 8 release gate.
 Steps 1-3 come before Phase 10, whose props can then use variables.
+
+Done: step 1. Documents keep variables, shapes their bindings, and binding,
+changing, renaming and deleting variables, sharing them between copies and
+copying them with shapes work, without a panel yet.
 
 A variable is a named value kept in a document. A shape property, or an
 instance's prop, can use a variable instead of a value of its own, and a text can

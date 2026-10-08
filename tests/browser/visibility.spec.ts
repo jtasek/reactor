@@ -26,6 +26,7 @@ function layeredDocument(): PersistedState {
                 tags: [],
                 camera: { scale: 1, position: { x: 0, y: 0 } },
                 grid: { width: 10, height: 10, factor: 10, visible: true },
+                variables: {},
                 shapes: {
                     box: {
                         ...metadata,
