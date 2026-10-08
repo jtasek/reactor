@@ -2,6 +2,7 @@
     --panel-header-height: 28px;
     --panel-max-height: min(70vh, 700px);
     --panel-max-width: min(90vw, 420px);
+    --panel-grip-size: 14px;
     --dock-zone-opacity: 0.18;
     --dock-active-zone-opacity: 0.38;
     --dock-zone-transition-duration: 0.12s;
@@ -75,7 +76,14 @@
     min-height: var(--panel-header-height);
     overflow: hidden;
     pointer-events: auto;
+    position: relative;
     user-select: none;
+    width: var(--control-width);
+}
+
+/* The side bar fits its tools and the explorer until its corners are dragged. */
+.sideBarPanel {
+    width: auto;
 }
 
 .floating {
@@ -121,8 +129,80 @@
 
 .content {
     display: block;
+    flex: 1 1 auto;
     min-height: 0;
     overflow: auto;
+}
+
+/* The grips are placed against the panel, not this wrapper. */
+.grips {
+    display: contents;
+}
+
+/* A bottom corner that resizes the panel, shown as two short strokes under the pointer. */
+.grip {
+    background: none;
+    border: 0;
+    bottom: 0;
+    height: var(--panel-grip-size);
+    opacity: 0;
+    padding: 0;
+    position: absolute;
+    touch-action: none;
+    transition: opacity 150ms;
+    width: var(--panel-grip-size);
+}
+
+.panel:hover .grip,
+.grip:focus-visible {
+    opacity: 1;
+}
+
+.grip:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: -2px;
+}
+
+.grip::before,
+.grip::after {
+    background-color: var(--hairline-color);
+    content: '';
+    height: 1px;
+    position: absolute;
+}
+
+.grip::before {
+    bottom: 4px;
+    width: 8px;
+}
+
+.grip::after {
+    bottom: 7px;
+    width: 4px;
+}
+
+.gripRight {
+    cursor: nwse-resize;
+    right: 0;
+}
+
+.gripRight::before,
+.gripRight::after {
+    right: 3px;
+    transform: rotate(-45deg);
+    transform-origin: right;
+}
+
+.gripLeft {
+    cursor: nesw-resize;
+    left: 0;
+}
+
+.gripLeft::before,
+.gripLeft::after {
+    left: 3px;
+    transform: rotate(45deg);
+    transform-origin: left;
 }
 
 .dockZones {

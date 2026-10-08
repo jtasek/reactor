@@ -22,4 +22,19 @@ describe('panel layout', () => {
         expect(layout.stats).toEqual({ dock: null, position: { x: 240, y: 180 } });
         expect(layout.sideBar).toEqual({ dock: 'bottom-right', position: { x: 4, y: 8 } });
     });
+
+    it('keeps a size its corners were dragged to, and drops an invalid one', () => {
+        const layout = readPanelLayout({
+            stats: { dock: null, position: { x: 10, y: 20 }, size: { width: 300, height: 200 } },
+            inspector: { dock: null, position: { x: 10, y: 20 }, size: { width: -1, height: 9 } }
+        });
+
+        expect(layout.stats.size).toEqual({ width: 300, height: 200 });
+        expect(
+            readPanelLayout({
+                stats: { dock: null, position: { x: 1, y: 2 }, size: { width: 300 } }
+            }).stats.size
+        ).toEqual({ width: 300 });
+        expect(layout.inspector).toEqual({ dock: null, position: { x: 10, y: 20 } });
+    });
 });

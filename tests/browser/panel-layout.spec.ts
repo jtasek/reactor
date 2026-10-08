@@ -134,3 +134,61 @@ test('growing neighboring zones share space without covering headers', async ({ 
         );
     }
 });
+
+const panelBox = async (page: Page, id: string) =>
+    (await page.locator(`[data-panel="${id}"]`).boundingBox())!;
+
+test('panels share a default width, keep a size dragged by a corner and restore it', async ({
+    page
+}) => {
+    await openEditor(page, ['Inspector']);
+    expect((await panelBox(page, 'inspector')).width).toBe(
+        (await panelBox(page, 'controlPanel')).width
+    );
+
+    const before = await panelBox(page, 'inspector');
+    const corner = page.getByRole('button', { name: /^Resize Inspector/ }).last();
+
+    await page.locator('[data-panel="inspector"]').hover();
+    const grip = (await corner.boundingBox())!;
+
+    const savedSize = () =>
+        page.evaluate(
+            () => JSON.parse(localStorage.getItem('reactor:panel-layout') ?? '{}').inspector?.size
+        );
+
+    // A click on the corner chooses no size.
+    await page.mouse.click(grip.x + grip.width / 2, grip.y + grip.height / 2);
+    expect(await savedSize()).toBeUndefined();
+
+    // Dragged across only, the panel keeps growing with its content.
+    await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(grip.x + grip.width / 2 + 60, grip.y + grip.height / 2);
+    await page.mouse.up();
+    expect(await savedSize()).toEqual({ width: before.width + 60 });
+
+    await expect
+        .poll(async () => (await panelBox(page, 'inspector')).width)
+        .toBe(before.width + 60);
+
+    await page.reload();
+    await openEditor(page, ['Inspector']);
+    await expect
+        .poll(async () => (await panelBox(page, 'inspector')).width)
+        .toBe(before.width + 60);
+
+    await corner.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect
+        .poll(async () => (await panelBox(page, 'inspector')).width)
+        .toBe(before.width + 70);
+
+    // A smaller window shrinks a chosen size to fit.
+    await page.setViewportSize({ width: 300, height: 400 });
+    await expect.poll(async () => (await panelBox(page, 'inspector')).width).toBe(300);
+    await page.setViewportSize({ width: 1280, height: 720 });
+
+    await page.keyboard.press('Delete');
+    await expect.poll(async () => (await panelBox(page, 'inspector')).width).toBe(before.width);
+});

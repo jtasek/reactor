@@ -25,6 +25,8 @@ type Dock = PanelPlacement['dock'];
 type DockZone = Exclude<Dock, null>;
 
 const KEYBOARD_MOVE_STEP_PX = 10;
+/** The smallest a panel is resized to: room for a few rows under its header. */
+const MIN_PANEL_SIZE = { width: 160, height: 80 };
 const UNMEASURED_PANEL_SIZE = { width: 320, height: 200 };
 const SCREEN_COORDINATE_SCALE = 1;
 
@@ -44,6 +46,38 @@ interface Drag {
     dock: Dock;
     title: string;
 }
+
+/** The bottom corner of a panel a resize drags. */
+type Corner = 'left' | 'right';
+
+interface Resize {
+    id: string;
+    pointerId: number;
+    corner: Corner;
+    start: { x: number; y: number };
+    /** The panel's box when the drag began. */
+    from: { x: number; y: number; width: number; height: number };
+    size: { width: number; height?: number };
+    position: { x: number; y: number };
+    /** Whether the pointer went beyond a click's slip, so the release resizes. */
+    moved: boolean;
+}
+
+/** The corners a panel can be resized by: the one away from the edge it is docked to. */
+const RESIZE_CORNERS: Record<Exclude<Dock, null> | 'floating', Corner[]> = {
+    'top-left': ['right'],
+    left: ['right'],
+    'bottom-left': ['right'],
+    'top-right': ['left'],
+    right: ['left'],
+    'bottom-right': ['left'],
+    top: ['left', 'right'],
+    bottom: ['left', 'right'],
+    floating: ['left', 'right']
+};
+
+const clamp = (value: number, min: number, max: number) =>
+    Math.min(Math.max(value, min), Math.max(min, max));
 
 export const DockablePanel: FC<DockablePanelProps> = () => null;
 
@@ -106,6 +140,7 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
     const controls = useControls();
     const { setPanelPlacement } = useActions();
     const [drag, setDrag] = useState<Drag>();
+    const [resize, setResize] = useState<Resize>();
     const [viewport, setViewport] = useState({
         width: window.innerWidth,
         height: window.innerHeight
@@ -144,6 +179,26 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
             window.removeEventListener('contextmenu', reset, true);
         };
     }, [drag]);
+
+    useEffect(() => {
+        if (!resize) return;
+
+        const cancel = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            setResize(undefined);
+        };
+        const reset = () => setResize(undefined);
+
+        window.addEventListener('keydown', cancel, true);
+        window.addEventListener('blur', reset);
+
+        return () => {
+            window.removeEventListener('keydown', cancel, true);
+            window.removeEventListener('blur', reset);
+        };
+    }, [resize]);
 
     const panels = Children.toArray(children) as Array<ReactElement<DockablePanelProps>>;
     const visiblePanels = panels.filter(
@@ -206,10 +261,149 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
             y: Math.max(0, Math.min(placement.position.y, maxY))
         };
         const isDragging = drag?.id === id;
+        const resizing = resize?.id === id ? resize : undefined;
+        const chosenSize = resizing?.size ?? placement.size;
+        const shownPosition = resizing?.position ?? position;
+        const place = (next: Omit<PanelPlacement, 'size'>) =>
+            setPanelPlacement({
+                id,
+                placement: placement.size ? { ...next, size: placement.size } : next
+            });
         const placeWithKeyboard = (next: PanelPlacement) => {
             if (next.dock !== placement.dock) pendingFocus.current = id;
-            setPanelPlacement({ id, placement: next });
+            place(next);
         };
+        /** The box a corner dragged by `dx`, `dy` from `from` leaves the panel. */
+        const resized = (corner: Corner, from: Resize['from'], dx: number, dy: number) => {
+            const width = clamp(
+                from.width + (corner === 'right' ? dx : -dx),
+                MIN_PANEL_SIZE.width,
+                floating
+                    ? corner === 'right'
+                        ? viewport.width - from.x
+                        : from.x + from.width
+                    : viewport.width
+            );
+            // The height is chosen only once the corner moves up or down, so widening a
+            // panel leaves it growing with its content.
+            const height = beyondClickSlip({ x: 0, y: 0 }, { x: 0, y: dy }, SCREEN_COORDINATE_SCALE)
+                ? clamp(from.height + dy, MIN_PANEL_SIZE.height, viewport.height - from.y)
+                : placement.size?.height;
+
+            return {
+                size: height === undefined ? { width } : { width, height },
+                position: {
+                    x: floating && corner === 'left' ? from.x + from.width - width : position.x,
+                    y: position.y
+                }
+            };
+        };
+        const resizeTo = (next: ReturnType<typeof resized>) =>
+            setPanelPlacement({
+                id,
+                placement: {
+                    ...placement,
+                    position: floating ? next.position : placement.position,
+                    size: next.size
+                }
+            });
+        const panelBox = (element: Element) => {
+            const bounds = element.closest('[data-panel]')?.getBoundingClientRect();
+
+            return (
+                bounds && {
+                    x: bounds.left,
+                    y: bounds.top,
+                    width: bounds.width,
+                    height: bounds.height
+                }
+            );
+        };
+        const restoreSize = () =>
+            setPanelPlacement({ id, placement: { dock: placement.dock, position } });
+
+        const grip = (corner: Corner) => (
+            <button
+                key={corner}
+                type="button"
+                className={`${styles.grip} ${corner === 'left' ? styles.gripLeft : styles.gripRight}`}
+                aria-label={`Resize ${title}. Use arrow keys to resize, Delete to restore the default size.`}
+                onPointerDown={(event) => {
+                    const from = panelBox(event.currentTarget);
+
+                    if (event.button !== 0 || drag || resize || !from) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                    setResize({
+                        id,
+                        pointerId: event.pointerId,
+                        corner,
+                        start: { x: event.clientX, y: event.clientY },
+                        from,
+                        size: { width: from.width, height: from.height },
+                        position: { x: from.x, y: from.y },
+                        moved: false
+                    });
+                }}
+                onPointerMove={(event) => {
+                    if (!resizing || resizing.pointerId !== event.pointerId) return;
+                    event.preventDefault();
+                    if (
+                        !resizing.moved &&
+                        !beyondClickSlip(
+                            resizing.start,
+                            { x: event.clientX, y: event.clientY },
+                            SCREEN_COORDINATE_SCALE
+                        )
+                    )
+                        return;
+                    setResize({
+                        ...resizing,
+                        moved: true,
+                        ...resized(
+                            corner,
+                            resizing.from,
+                            event.clientX - resizing.start.x,
+                            event.clientY - resizing.start.y
+                        )
+                    });
+                }}
+                onPointerUp={(event) => {
+                    if (!resizing || resizing.pointerId !== event.pointerId) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (resizing.moved) resizeTo(resizing);
+                    setResize(undefined);
+                }}
+                onPointerCancel={() => setResize(undefined)}
+                onLostPointerCapture={() => setResize(undefined)}
+                onDoubleClick={restoreSize}
+                onKeyDown={(event) => {
+                    const step = {
+                        ArrowLeft: { dx: -KEYBOARD_MOVE_STEP_PX, dy: 0 },
+                        ArrowRight: { dx: KEYBOARD_MOVE_STEP_PX, dy: 0 },
+                        ArrowUp: { dx: 0, dy: -KEYBOARD_MOVE_STEP_PX },
+                        ArrowDown: { dx: 0, dy: KEYBOARD_MOVE_STEP_PX }
+                    }[event.key];
+
+                    if (event.key === 'Delete' || event.key === 'Backspace') {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        restoreSize();
+                        return;
+                    }
+
+                    const from = panelBox(event.currentTarget);
+
+                    if (!step || !from) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    // The arrow keys say which way the panel grows, whichever corner has focus.
+                    resizeTo(resized('right', from, step.dx, step.dy));
+                }}
+            />
+        );
 
         const begin = (event: PointerEvent<HTMLButtonElement>) => {
             if (event.button !== 0 || drag) return;
@@ -270,14 +464,11 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
                 return;
             }
             const nextDock = zoneAt(event.clientX, event.clientY);
-            setPanelPlacement({
-                id,
-                placement: {
-                    dock: nextDock,
-                    position: {
-                        x: Math.max(0, Math.min(event.clientX - drag.offset.x, maxX)),
-                        y: Math.max(0, Math.min(event.clientY - drag.offset.y, maxY))
-                    }
+            place({
+                dock: nextDock,
+                position: {
+                    x: Math.max(0, Math.min(event.clientX - drag.offset.x, maxX)),
+                    y: Math.max(0, Math.min(event.clientY - drag.offset.y, maxY))
                 }
             });
             setDrag(undefined);
@@ -290,7 +481,25 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
                     isDragging && drag.moved ? styles.dragSource : ''
                 } ${id === 'sideBar' ? styles.sideBarPanel : ''}`}
                 data-panel={id}
-                style={floating ? { left: position.x, top: position.y } : undefined}
+                style={{
+                    ...(floating ? { left: shownPosition.x, top: shownPosition.y } : {}),
+                    // A size chosen on a larger window shrinks to fit this one.
+                    ...(chosenSize
+                        ? {
+                              width: Math.min(chosenSize.width, viewport.width),
+                              maxWidth: 'none'
+                          }
+                        : {}),
+                    ...(chosenSize?.height === undefined
+                        ? {}
+                        : {
+                              height: Math.min(
+                                  chosenSize.height,
+                                  viewport.height - STATUS_BAR_HEIGHT_PX
+                              ),
+                              maxHeight: 'none'
+                          })
+                }}
             >
                 <button
                     className={styles.handle}
@@ -361,6 +570,7 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
                     {id === 'sideBar' ? <span aria-hidden="true">☰</span> : title}
                 </button>
                 <div className={styles.content}>{content}</div>
+                <div className={styles.grips}>{RESIZE_CORNERS[dock ?? 'floating'].map(grip)}</div>
             </section>
         );
     };

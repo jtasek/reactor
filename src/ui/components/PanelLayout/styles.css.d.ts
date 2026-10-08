@@ -10,6 +10,10 @@ declare namespace StylesCssNamespace {
     dragPreview: string;
     dragSource: string;
     floating: string;
+    grip: string;
+    gripLeft: string;
+    gripRight: string;
+    grips: string;
     handle: string;
     leftColumn: string;
     panel: string;
