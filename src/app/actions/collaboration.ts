@@ -1,4 +1,4 @@
-import type { ActionWithParam, Box, Document, Shape } from '../types';
+import type { Action, ActionWithParam, Box, Document, Shape } from '../types';
 import { getBoundingBox, mapPointBetweenBoxes } from '../utils';
 import { isRecord, same, type EntityChanges, type RemoteChanges } from '../services/collaboration';
 import { inDrawingOrder } from '../drawOrder';
@@ -187,5 +187,19 @@ export const applyRemoteChanges: ActionWithParam<RemoteChanges> = ({ state }, ch
         if (reordered && collection === 'shapes') {
             document.shapesIds = inDrawingOrder(document.shapes);
         }
+    }
+};
+
+/** Holds this copy's changes while a control is held, as a drag does, so its result is shared once. */
+export const holdSharing: Action = ({ effects }) => {
+    effects.collaboration.pause();
+};
+
+/** Shares what was held since `holdSharing`, unless a gesture or a held key still holds it. */
+export const releaseSharing: Action = ({ state, effects }) => {
+    const { keyboard, pointer } = state.events;
+
+    if (!pointer.dragging && !keyboard.repeating) {
+        effects.collaboration.resume();
     }
 };

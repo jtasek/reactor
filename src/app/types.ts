@@ -78,6 +78,8 @@ export interface ShapeBase {
     modified: Date;
     modifiedBy: string;
     name: string;
+    /** How opaque it is drawn, from 0, clear, to 1, the default. */
+    opacity?: number;
     order: string;
     parentShapeId?: string;
     rotation?: number;

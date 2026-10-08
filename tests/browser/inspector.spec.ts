@@ -148,3 +148,54 @@ test('the inspector holds its values during a gesture and shows the new ones on 
     await pointer(page, 'pointerup', { x: 220, y: 170 });
     await expect(field(page, 'X')).toHaveValue('140');
 });
+
+test('opacity is set by its field or its slider and draws the shape see-through', async ({
+    page
+}) => {
+    await openEditor(page, ['Inspector']);
+    await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
+
+    const drawn = shapes(page).first().locator('> g').first();
+    const number = page.getByRole('spinbutton', { name: 'Opacity (%)' });
+    const slider = page.getByRole('slider', { name: 'Opacity (%)' });
+
+    await expect(number).toHaveValue('100');
+    await expect(slider).toHaveValue('100');
+
+    await number.fill('40');
+    await number.press('Enter');
+    await expect(drawn).toHaveAttribute('opacity', '0.4');
+    await expect(slider).toHaveValue('40');
+
+    await slider.focus();
+    await page.keyboard.press('ArrowLeft');
+    await expect(drawn).toHaveAttribute('opacity', '0.39');
+    await expect(number).toHaveValue('39');
+});
+
+test('the opacity slider is hidden for mixed values and disabled on a locked shape', async ({
+    page
+}) => {
+    await openEditor(page, ['Inspector']);
+    await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
+
+    const number = page.getByRole('spinbutton', { name: 'Opacity (%)' });
+    const slider = page.getByRole('slider', { name: 'Opacity (%)' });
+
+    await number.fill('40');
+    await number.press('Enter');
+    await drawRect(page, { x: 300, y: 100 }, { x: 350, y: 150 });
+
+    // Both with a marquee: their opacities differ.
+    await pointer(page, 'pointerdown', { x: 80, y: 80 });
+    await pointer(page, 'pointermove', { x: 380, y: 170 });
+    await pointer(page, 'pointerup', { x: 380, y: 170 });
+    await expect(number).toHaveAttribute('placeholder', 'Mixed');
+    await expect(slider).toHaveCount(0);
+
+    // The second alone, then locked.
+    await click(page, 600, 500);
+    await click(page, 325, 125);
+    await field(page, 'Locked').check();
+    await expect(slider).toBeDisabled();
+});

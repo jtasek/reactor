@@ -114,6 +114,17 @@ function number(value: unknown, minimum = -Infinity): number {
     return value;
 }
 
+/** A number from 0 to 1. */
+function fraction(value: unknown): number {
+    const result = number(value, 0);
+
+    if (result > 1) {
+        throw new Error('Invalid fraction');
+    }
+
+    return result;
+}
+
 function positive(value: unknown): number {
     const result = number(value, 0);
 
@@ -211,7 +222,14 @@ function readShape(value: unknown, readChild: (child: unknown) => ShapeData): Sh
         ...(s.children === undefined ? {} : { children: list(s.children, readChild) })
     };
 
-    return { ...base, ...readShapeGeometry(value) };
+    return { ...base, ...readShapeGeometry(value), ...readShapeStyle(value) };
+}
+
+/** Reads how a shape is drawn beyond its geometry. Throws when any of it is invalid. */
+export function readShapeStyle(value: unknown) {
+    const s = record(value);
+
+    return s.opacity === undefined ? {} : { opacity: fraction(s.opacity) };
 }
 
 /**
@@ -308,6 +326,7 @@ export function readCopiedShape(value: unknown): ShapeInput {
 
     return {
         ...geometry,
+        ...readShapeStyle(value),
         name: text(s.name),
         rotation: s.rotation === undefined ? 0 : number(s.rotation),
         ...(s.description === undefined ? {} : { description: text(s.description) })

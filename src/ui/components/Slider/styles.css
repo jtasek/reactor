@@ -68,6 +68,7 @@
     border-radius: 3px;
     border: 0;
     display: flex;
+    flex-direction: row;
     height: 3px;
     left: 0;
     /*margin: 0 26px;*/
@@ -91,12 +92,10 @@
 }
 
 .lower {
-    /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- no design token yet */
-    background: rgba(255,255,255, .9);/*rgba(63, 81, 181, .5);*/
+    background: var(--selection-color);
 }
 
 .upper {
-    /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- no design token yet */
-    background: rgba(255,255,255, .5);/*rgba(0, 0, 0, .26);*/
+    background: var(--border-color);
     transition: left .18s cubic-bezier(.4, 0, .2, 1);
 }

@@ -7,9 +7,12 @@ export interface Props {
     step: number;
     value: number;
     onChange: (value: number) => void;
+    /** Its accessible name, where no label element names it. */
+    label?: string;
+    disabled?: boolean;
 }
 
-export const Slider: FC<Props> = ({ min, max, step, value, onChange }) => {
+export const Slider: FC<Props> = ({ min, max, step, value, onChange, label, disabled }) => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         e.preventDefault();
         const newValue = parseFloat(e.target.value);
@@ -22,6 +25,8 @@ export const Slider: FC<Props> = ({ min, max, step, value, onChange }) => {
         <div className={styles.slider}>
             <input
                 type="range"
+                aria-label={label}
+                disabled={disabled}
                 min={min}
                 max={max}
                 step={step}

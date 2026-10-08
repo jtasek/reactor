@@ -95,6 +95,7 @@ export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup }: Props) =
         <g transform={transform}>
             <g
                 ref={groupRef}
+                opacity={shape.opacity}
                 style={{ pointerEvents: 'all' }}
                 onPointerEnter={() => activateShape(shapeId)}
                 onPointerLeave={() => deactivateShape(shapeId)}
