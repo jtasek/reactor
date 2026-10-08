@@ -401,6 +401,8 @@ export type PanelPlacement = {
         | 'bottom'
         | null;
     position: Point;
+    /** The size its corners were dragged to; the default size when unset. */
+    size?: Size;
 };
 
 export type Application = {

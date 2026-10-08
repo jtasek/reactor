@@ -7,7 +7,6 @@
   margin: var(--panel-gap);
   padding: 2px 10px;
   user-select: none;
-  width: var(--control-width);
 }
 
 .groupPanel > li {

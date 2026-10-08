@@ -536,7 +536,11 @@ Hidden guides are not drawn and locked ones do not move.
   `canEdit`.
   During a gesture it keeps the values it showed as the gesture began and shows the new
   ones on release (`useSelectedShapesProperties`), so a drag or a marquee does not render it
-  at every move. Panels are mounted only while shown (`PanelLayout`).
+  at every move. Panels are mounted only while shown (`PanelLayout`). Each opens
+  `--control-width` wide, its content filling it, except the side bar, which fits its tools;
+  the grips in its bottom corners (the one away from the edge it is docked to) resize it
+  by drag or arrow keys, Delete or a double click restores the default, and the size is
+  saved with its placement (`PanelPlacement.size`).
 - **Shortcuts**: a tool or command declares `shortcut` (`r`, `mod+d`, `delete,backspace`;
   `mod` is Ctrl or Cmd, see `src/events/shortcuts.ts`). `events.pressShortcut` activates the
   tool or runs the command; the keyboard adapter skips it while a text field has focus. Keep

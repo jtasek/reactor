@@ -134,3 +134,45 @@ test('growing neighboring zones share space without covering headers', async ({ 
         );
     }
 });
+
+const panelBox = async (page: Page, id: string) =>
+    (await page.locator(`[data-panel="${id}"]`).boundingBox())!;
+
+test('panels share a default width, keep a size dragged by a corner and restore it', async ({
+    page
+}) => {
+    await openEditor(page, ['Inspector']);
+    expect((await panelBox(page, 'inspector')).width).toBe(
+        (await panelBox(page, 'controlPanel')).width
+    );
+
+    const before = await panelBox(page, 'inspector');
+    const corner = page.getByRole('button', { name: /^Resize Inspector/ }).last();
+
+    await page.locator('[data-panel="inspector"]').hover();
+    const grip = (await corner.boundingBox())!;
+
+    await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(grip.x + grip.width / 2 + 60, grip.y + grip.height / 2 + 40);
+    await page.mouse.up();
+
+    await expect
+        .poll(async () => (await panelBox(page, 'inspector')).width)
+        .toBe(before.width + 60);
+
+    await page.reload();
+    await openEditor(page, ['Inspector']);
+    await expect
+        .poll(async () => (await panelBox(page, 'inspector')).width)
+        .toBe(before.width + 60);
+
+    await corner.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect
+        .poll(async () => (await panelBox(page, 'inspector')).width)
+        .toBe(before.width + 70);
+
+    await page.keyboard.press('Delete');
+    await expect.poll(async () => (await panelBox(page, 'inspector')).width).toBe(before.width);
+});

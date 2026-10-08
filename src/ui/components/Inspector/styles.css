@@ -1,6 +1,5 @@
 /* The panel draws the glass; each section is a lighter card on it, under its heading. */
 .inspector {
-    --inspector-width: 240px;
     --inspector-inset: var(--panel-gap);
     --section-gap: 12px;
     --card-radius: var(--radius-md);
@@ -16,7 +15,6 @@
     max-width: 100%;
     padding: var(--inspector-inset);
     user-select: none;
-    width: var(--inspector-width);
 }
 
 /* The first row is a heading across both columns, so the fixed layout splits them evenly. */
