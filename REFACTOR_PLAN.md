@@ -966,10 +966,10 @@ Design:
   typed into the field, when bound and in the same task whenever the variable
   changes, so everything that reads shapes, older builds included, shows it with
   no change of its own. A binding holds while the shape's value is the one the
-  variable would write (`bindingHolds`): a drag or other edit that sets the
-  property otherwise ends it, and a variable change drops the bindings that no
-  longer hold. Setting the property in the inspector, Hide and Lock remove its
-  binding. A bound field shows the variable's name instead of a value, so it
+  variable would write (`bindingHolds`): Hide, Lock, a drag or any other edit
+  that sets the property otherwise ends it, and a variable change drops the
+  bindings that no longer hold. Setting the property in the inspector removes
+  its binding. A bound field shows the variable's name instead of a value, so it
   cannot change other shapes by accident: the value is changed in the Variables
   panel. Unbinding leaves the value as it is.
 - Templates: in a text's content and in a text variable's value, `${Name}` shows
