@@ -13,6 +13,7 @@
     --command-info-gap: 0.25rem;
     color: var(--text-color);
     display: flex;
+    flex-direction: column;
     align-items: flex-start;
     font-size: 0.75rem;
     box-sizing: border-box;
@@ -118,14 +119,10 @@
     background-color: var(--control-background-active);
 }
 
-.commandBarButton button,
-div {
+.commandBarButton button {
     align-items: center;
     display: flex;
     flex-direction: column;
-}
-
-.commandBarButton button {
     background: none;
     border: 0;
     color: inherit;
