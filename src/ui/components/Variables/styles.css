@@ -129,11 +129,6 @@
     opacity: 0.7;
 }
 
-/* A block, though the command bar's stylesheet makes every div a flex column. */
-.group {
-    display: block;
-}
-
 .group + .group,
 .create + .group,
 .problem + .group {
