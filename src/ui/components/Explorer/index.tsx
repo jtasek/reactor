@@ -174,7 +174,7 @@ export const Explorer: FC = () => {
             }}
         >
             <section className={styles.explorer} aria-label="Explorer">
-                <h3>Explorer</h3>
+                <h3 className={styles.heading}>Explorer</h3>
                 <SearchBoxContainer />
                 {shownLayerId && (
                     <button
@@ -186,7 +186,7 @@ export const Explorer: FC = () => {
                     </button>
                 )}
                 {found.length === 0 ? (
-                    <p>No shapes match</p>
+                    <p className={styles.empty}>No shapes match</p>
                 ) : (
                     <ul>
                         {found.map(({ layerId, groups, shapesIds }) =>

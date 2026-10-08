@@ -1,17 +1,8 @@
 .minimap {
-  backdrop-filter: var(--backdrop-filter);
   background-color: var(--control-background);
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow);
-  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- no design token yet */
-  color: #fff;
+  border-radius: var(--radius-md);
+  color: var(--text-color);
   display: block;
-  padding: 10px;
-  position: static;
+  margin: var(--panel-gap);
   user-select: none;
-  z-index: 100;
-}
-
-.minimap:hover {
-  box-shadow: var(--box-shadow-hover);
 }

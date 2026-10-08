@@ -531,6 +531,9 @@ Hidden guides are not drawn and locked ones do not move.
   background or box-shadow is not a variable; a line marked `no design token yet` is debt.
   Never remove an outline without drawing the focus ring (`--focus-ring-width` in
   `--focus-ring-color`) on `:focus-visible`.
+  A panel's frame (`PanelLayout`) draws the glass; its content does not draw it again but
+  sits on lighter cards (`--control-background`, `--radius-md`, `--panel-gap` from the frame)
+  with `--hairline-color` between rows, as the Inspector and the Explorer do.
 - **Style** (Prettier `.prettierrc`): 4-space indent, single quotes, semicolons, `printWidth`
   100, no trailing commas. ESLint enforces these plus `prettier/prettier: error`.
 - TypeScript is `strict`; **avoid `any`**. `console.log` is a lint warning (only

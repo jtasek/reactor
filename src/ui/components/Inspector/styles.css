@@ -1,12 +1,12 @@
 /* The panel draws the glass; each section is a lighter card on it, under its heading. */
 .inspector {
     --inspector-width: 240px;
-    --inspector-inset: 8px;
+    --inspector-inset: var(--panel-gap);
     --section-gap: 12px;
-    --card-radius: 8px;
+    --card-radius: var(--radius-md);
     --card-padding: 10px;
     --field-height: 22px;
-    --field-radius: 5px;
+    --field-radius: var(--radius-sm);
     --row-padding: 3px;
     --column-gap: 8px;
     --checkbox-size: 14px;

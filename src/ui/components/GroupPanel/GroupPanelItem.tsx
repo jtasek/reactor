@@ -6,28 +6,24 @@ import { useActions, useGroup, useGroupSelected } from 'src/app/hooks';
 const visibleIcon = {
     group: 'action',
     name: 'visibility',
-    color: 'rgba(255,255,255)',
     size: 16
 };
 
 const hiddenIcon = {
     group: 'action',
     name: 'visibility_off',
-    color: 'rgba(255,255,255)',
     size: 16
 };
 
 const lockedIcon = {
     group: 'action',
     name: 'lock_outline',
-    color: 'rgba(255,255,255)',
     size: 16
 };
 
 const openIcon = {
     group: 'action',
     name: 'lock_open',
-    color: 'rgba(255,255,255)',
     size: 16
 };
 

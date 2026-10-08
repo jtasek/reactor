@@ -1,13 +1,20 @@
+/* The panel draws the glass; the tree is a lighter card on it, under the search field. */
 .explorer {
-    backdrop-filter: var(--backdrop-filter);
-    background-color: var(--control-background);
-    box-shadow: var(--box-shadow);
     color: var(--text-color);
-    height: 100%;
     overflow: auto;
-    padding: 20px;
+    padding: var(--panel-gap);
     user-select: none;
     width: 250px;
+}
+
+.heading {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    line-height: 16px;
+    margin: 0;
+    padding: 0 10px 6px;
+    text-transform: uppercase;
 }
 
 .explorer ul {
@@ -16,13 +23,31 @@
     padding: 0;
 }
 
+.explorer > ul {
+    background-color: var(--control-background);
+    border-radius: var(--radius-md);
+    margin-top: var(--panel-gap);
+    padding: 4px 6px;
+}
+
+.explorer > ul > li + li {
+    border-top: 1px solid var(--hairline-color);
+}
+
+.empty {
+    font-size: 0.75rem;
+    margin: var(--panel-gap) 10px 0;
+    opacity: 0.7;
+}
+
 .explorer li li {
     padding-left: 10px;
 }
 
 .row {
     align-items: center;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
+    min-height: 26px;
     display: flex;
     flex-direction: row;
     gap: 8px;

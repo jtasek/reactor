@@ -1,20 +1,22 @@
 .documentInfo {
-  backdrop-filter: var(--backdrop-filter);
   background-color: var(--control-background);
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow);
+  border-collapse: separate;
+  border-radius: var(--radius-md);
+  border-spacing: 0;
   color: var(--text-color);
-  display: block;
-  padding: 10px;
-  position: static;
+  margin: var(--panel-gap);
   user-select: none;
-  z-index: 100;
 }
 
-.documentInfo:hover {
-  box-shadow: var(--box-shadow-hover);
+.documentInfo td {
+  line-height: 20px;
+  padding: 3px 10px;
 }
 
-td ~ td {
-  padding-left: 10px;
+.documentInfo td:first-child {
+  opacity: 0.7;
+}
+
+.documentInfo tr + tr td {
+  border-top: 1px solid var(--hairline-color);
 }
