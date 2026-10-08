@@ -2,6 +2,7 @@ import React, { FC, Fragment, useState } from 'react';
 
 import { usePlacedCommands } from 'src/app/hooks';
 import type { Command } from 'src/app/types';
+import { shortcutLabel, usesCommandKey } from './shortcutLabel';
 
 import { CommandBarDelimiter } from './CommandBarDelimiter';
 import { CommandBarGroup } from './CommandBarGroup';
@@ -26,7 +27,9 @@ export const CommandBar: FC = () => {
     const commands = usePlacedCommands('commandBar');
     const [hovered, setHovered] = useState<Command>();
     const [focused, setFocused] = useState<Command>();
-    const description = (hovered ?? focused)?.description;
+    const shown = hovered ?? focused;
+    const description = shown?.description;
+    const shortcut = shown?.shortcut;
     const groupProps = { onHover: setHovered, onFocus: setFocused };
 
     if (commands.length === 0) {
@@ -58,6 +61,11 @@ export const CommandBar: FC = () => {
             {/* Each button says its own description; this repeats it for the eye. */}
             <p className={styles.info} data-cy="command-info" aria-hidden="true">
                 {description}
+                {description && shortcut && (
+                    <kbd className={styles.shortcut}>
+                        {shortcutLabel(shortcut, usesCommandKey())}
+                    </kbd>
+                )}
             </p>
         </div>
     );

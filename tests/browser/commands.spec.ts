@@ -44,7 +44,9 @@ test('icon commands show their name in a tooltip and their description below the
     await expect(clone).toHaveText('');
     await expect(clone.locator('svg')).toBeVisible();
     await clone.locator('..').hover();
-    await expect(info).toHaveText('Clone current selection');
+    await expect(info).toHaveText(/^Clone current selection(Ctrl\+D|⌘D)$/);
+    // The shortcut is a key cap after the description.
+    await expect(info.locator('kbd')).toHaveText(/^(Ctrl\+D|⌘D)$/);
     const bounds = (await bar.boundingBox())!;
     expect((await info.boundingBox())!.y).toBeGreaterThanOrEqual(bounds.y + bounds.height);
     const infoHeight = (await info.boundingBox())!.height;
@@ -54,7 +56,7 @@ test('icon commands show their name in a tooltip and their description below the
         .filter({ hasNot: page.locator('button') })
         .first()
         .hover();
-    await expect(info).toHaveText('Clone current selection');
+    await expect(info).toHaveText(/^Clone current selection(Ctrl\+D|⌘D)$/);
     expect((await info.boundingBox())!.height).toBe(infoHeight);
     await page.mouse.move(600, 500);
     await expect(info).toHaveText('');
