@@ -22,7 +22,6 @@ export interface UI {
     layerPanel: Control;
     menuBar: Control;
     miniMap: Control;
-    navBar: Control;
     outline: Control;
     overlay: Control;
     inspector: Control;

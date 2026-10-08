@@ -2,8 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { SCHEMA_VERSION, type PersistedState } from 'src/app/services/documentStorage';
 import { drawRect, handles, openEditor, pointer, shapes } from './support/editor';
 
-const navBarList = (page: Page, name: string) =>
-    page.locator('li', { has: page.getByRole('heading', { name, exact: true }) });
+const itemMenu = (page: Page, name: string) => page.getByRole('toolbar', { name: `${name} menu` });
 
 /** A saved document with one rectangle at (100, 100) inside a visible layer. */
 function layeredDocument(): PersistedState {
@@ -63,12 +62,12 @@ test('hiding a layer hides its shapes on the canvas and from presses', async ({ 
         (raw) => localStorage.setItem('reactor', raw),
         JSON.stringify(layeredDocument())
     );
-    await openEditor(page, ['Explorer', 'Navigation Bar']);
+    await openEditor(page, ['Explorer', 'Outline']);
     await expect(shapes(page)).toHaveCount(1);
 
-    const layers = navBarList(page, 'Layers');
+    const layer = itemMenu(page, 'Layer');
 
-    await layers.locator('[title="Hide"]').click();
+    await layer.getByRole('button', { name: 'Hide', exact: true }).click();
 
     await expect(shapes(page)).toHaveCount(0);
 
@@ -77,7 +76,7 @@ test('hiding a layer hides its shapes on the canvas and from presses', async ({ 
     await pointer(page, 'pointermove', { x: 160, y: 160 });
     await pointer(page, 'pointerup', { x: 160, y: 160 });
 
-    await layers.locator('[title="Show"]').click();
+    await layer.getByRole('button', { name: 'Show', exact: true }).click();
 
     await expect(shapes(page)).toHaveCount(1);
     await expect(shapes(page).locator('rect[data-cy]')).toHaveAttribute('x', '100');
@@ -85,13 +84,13 @@ test('hiding a layer hides its shapes on the canvas and from presses', async ({ 
 });
 
 test('a locked selected shape offers no resize or rotate handles', async ({ page }) => {
-    await openEditor(page, ['Explorer', 'Navigation Bar']);
+    await openEditor(page, ['Explorer', 'Outline']);
     await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
 
     // Resize and rotate handles, and a rectangle's radius handles.
     await expect(handles(page)).toHaveCount(13);
 
-    await navBarList(page, 'Shapes').locator('[title="Lock"]').click();
+    await itemMenu(page, 'rectangle-1').getByRole('button', { name: 'Lock', exact: true }).click();
 
     await expect(handles(page)).toHaveCount(0);
 });

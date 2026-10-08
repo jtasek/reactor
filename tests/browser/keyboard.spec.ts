@@ -4,7 +4,7 @@ import { drawRect, openEditor, shapes } from './support/editor';
 test('tools, list items and their toggles are buttons that work from the keyboard', async ({
     page
 }) => {
-    await openEditor(page, ['Explorer', 'Navigation Bar']);
+    await openEditor(page, ['Explorer', 'Outline']);
 
     const tools = page.getByRole('list', { name: 'Tools' });
     const rectangle = tools.getByRole('button', { name: 'Draws a rectangle or square' });
@@ -16,16 +16,11 @@ test('tools, list items and their toggles are buttons that work from the keyboar
     await drawRect(page, { x: 400, y: 300 }, { x: 480, y: 360 });
     await expect(shapes(page)).toHaveCount(1);
 
-    // The list's toggle, not the Hide command of the command bar or of a menu.
-    const hide = page.locator(
-        'button[title="Hide"]:not([role="toolbar"] *):not([aria-label="Commands"] *)'
-    );
+    const menu = page.getByRole('toolbar', { name: 'rectangle-1 menu' });
 
-    await hide.focus();
+    await menu.getByRole('button', { name: 'Hide', exact: true }).focus();
     await page.keyboard.press('Space');
-    await expect(
-        page.locator('button[title="Show"]:not([role="toolbar"] *):not([aria-label="Commands"] *)')
-    ).toBeVisible();
+    await expect(menu.getByRole('button', { name: 'Show', exact: true })).toBeVisible();
 
     const shape = page.getByRole('button', { name: 'rectangle-1', exact: true });
 

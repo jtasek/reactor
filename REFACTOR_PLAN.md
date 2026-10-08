@@ -354,7 +354,7 @@ Feature inventory:
   image and move tools; the delete, clone, group, ungroup, layer, unlayer, zoom,
   align and space commands, with shortcuts and the command line; snapping moves to
   other shapes; the inspector; the
-  documents page; the navigation bar, group and layer panels with hide and lock;
+  documents page; the outline, group and layer panels with hide and lock;
   the context menu; copy, cut and paste; saving in the browser and sharing between tabs; accounts,
   syncing with the server, and signing out.
 - Shown but not covered by tests: the minimap, guides, data view, overlay and stats

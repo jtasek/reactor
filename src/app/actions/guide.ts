@@ -36,12 +36,6 @@ export const removeGuide: ActionWithParam<string> = ({ state }, guideId) => {
     deleteGuide(state, guideId);
 };
 
-export const toggleGuideSelected: ActionWithParam<string> = ({ state }, guideId) => {
-    const guide = getGuide(state, guideId);
-
-    guide.selected = !guide.selected;
-};
-
 export const unselectGuide: ActionWithParam<string> = ({ state }, guideId) => {
     const guide = getGuide(state, guideId);
 
