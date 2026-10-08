@@ -947,6 +947,11 @@ Done: step 2. The Variables panel lists variables by group and edits them, and t
 inspector binds and unbinds fields. Commands for variables wait for the application
 menu, since the panel and the inspector already reach every action.
 
+Done: step 3. Texts and text variables hold templates, typed and shown with names
+and kept with ids; names of no variable and loops are noted under their fields.
+A name typed before its variable exists is found by name, so creating the variable
+fills it in; it is held by id once the text is typed again.
+
 A variable is a named value kept in a document. A shape property, or an
 instance's prop, can use a variable instead of a value of its own, and a text can
 show variables in its content as `${Name}`. Changing a variable changes

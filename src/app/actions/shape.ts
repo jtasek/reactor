@@ -16,7 +16,15 @@ import {
     ShapeInput,
     Variable
 } from '../types';
-import { bindableProperty, buildVariable, unbind, variableNamed } from '../variables';
+import {
+    bindableProperty,
+    buildVariable,
+    replaceInTemplate,
+    unbind,
+    variableNamed,
+    variableValue,
+    writeText
+} from '../variables';
 import { Context } from 'src/app';
 import { screenToWorld } from '../camera';
 import {
@@ -305,40 +313,56 @@ const pasteTarget = ({ state, effects }: Context): Point | null => {
 };
 
 /**
- * The ids of the document's variables pasted shapes follow, by copied id: one of
- * the same name and type, else the copied one added, renamed as `Brand 2` when
- * its name is taken.
+ * Gives the document the variables pasted shapes hold: one of the same name and
+ * type, else the copied one added, renamed as `Brand 2` when its name is taken.
+ * Answers the ids they have here, by copied id, and how to hold them in a template.
  */
 const pasteVariables = ({ state, effects }: Context, copied: Variable[]) => {
     const { variables } = state.currentDocument;
+    const taken = new Set(Object.values(variables).map((variable) => variable.name));
+    const ids = new Map<string, string>();
+    const added: Variable[] = [];
 
-    return new Map(
-        copied.flatMap((variable) => {
-            const same = variableNamed(variables, variable.name);
+    copied.forEach((variable) => {
+        const same = variableNamed(variables, variable.name);
 
-            if (same?.type === variable.type) {
-                return [[variable.id, same.id]];
-            }
+        if (same?.type === variable.type) {
+            ids.set(variable.id, same.id);
 
-            const name = same
-                ? numberedName(variable.name, new Set(Object.values(variables).map((v) => v.name)))
-                : variable.name;
-            const added = buildVariable(
-                effects.newId(),
-                name,
-                variable.type,
-                variable.values.default
-            );
+            return;
+        }
 
-            if (!added) {
-                return [];
-            }
+        const name = taken.has(variable.name) ? numberedName(variable.name, taken) : variable.name;
+        const id = effects.newId();
 
-            variables[added.id] = added;
+        taken.add(name);
+        ids.set(variable.id, id);
+        added.push({ ...variable, id, name });
+    });
 
-            return [[variable.id, added.id]];
-        })
-    );
+    const remapTemplate = (template: string) =>
+        replaceInTemplate(template, (inside) => {
+            const id = ids.get(inside);
+
+            return id === undefined ? undefined : `\${${id}}`;
+        });
+
+    added.forEach(({ id, name, type, values }) => {
+        const variable = buildVariable(
+            id,
+            name,
+            type,
+            typeof values.default === 'string' && type === 'text'
+                ? remapTemplate(values.default)
+                : values.default
+        );
+
+        if (variable) {
+            variables[id] = variable;
+        }
+    });
+
+    return { ids, remapTemplate };
 };
 
 /** Binds `key` of a shape not yet in the store to a variable of `document`, writing its value. */
@@ -355,7 +379,7 @@ const followVariable = (
         return;
     }
 
-    applyProperty(property, shape, variable.values.default);
+    applyProperty(property, shape, variableValue(variable, document.variables));
     shape.bindings = { ...shape.bindings, [key]: variable.id };
 };
 
@@ -372,7 +396,7 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
         return 'noShapes';
     }
 
-    const variableIds = pasteVariables(context, copied.variables);
+    const { ids: variableIds, remapTemplate } = pasteVariables(context, copied.variables);
     let order = topOrder(state);
     const present = Object.values(untracked(state.currentDocument).shapes);
     const taken = new Set(present.map((shape) => shape.name));
@@ -391,12 +415,17 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
             name,
             order,
             selected: true,
-            bindings: undefined
+            bindings: undefined,
+            ...(input.type === 'text' ? { template: undefined } : {})
         });
 
         Object.entries(input.bindings ?? {}).forEach(([key, copiedId]) =>
             followVariable(state.currentDocument, shape, key, variableIds.get(copiedId))
         );
+
+        if (shape.type === 'text' && input.type === 'text' && input.template !== undefined) {
+            writeText(shape, remapTemplate(input.template), state.currentDocument.variables);
+        }
 
         return shape;
     });
@@ -883,6 +912,13 @@ export const setShapesProperty = (
         }
 
         unbind(shape, key);
+
+        if (key === 'text' && shape.type === 'text' && typeof value === 'string') {
+            writeText(shape, value, state.currentDocument.variables);
+
+            return;
+        }
+
         applyProperty(property, shape, value);
     });
 };

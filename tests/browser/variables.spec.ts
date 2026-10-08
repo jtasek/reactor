@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { drawRect, openEditor, pointer, shapes } from './support/editor';
+import { drawRect, openEditor, pointer, selectTool, shapes } from './support/editor';
 
 const field = (page: Page, label: string) => page.getByLabel(label, { exact: true });
 const panel = (page: Page) => page.getByRole('region', { name: 'Variables' });
@@ -99,4 +99,48 @@ test('a name that is taken or holds a template mark is refused', async ({ page }
         'A name cannot be blank or hold {, } or $.'
     );
     await expect(panel(page).getByRole('listitem')).toHaveCount(1);
+});
+
+/** Clicks the canvas with the real mouse, which also moves focus like a user would. */
+async function click(page: Page, x: number, y: number) {
+    const box = (await page.locator('svg#surface').boundingBox())!;
+
+    await page.mouse.click(box.x + x, box.y + y);
+}
+
+test('a text shows the variables its template names and follows their changes', async ({
+    page
+}) => {
+    await openEditor(page, ['Inspector', 'Variables']);
+    await addVariable(page, 'first name', 'Text');
+    await field(page, 'Value of first name').fill('Ada');
+    await field(page, 'Value of first name').press('Enter');
+    await addVariable(page, 'full name', 'Text');
+    await field(page, 'Value of full name').fill('${first name} Lovelace');
+    await field(page, 'Value of full name').press('Enter');
+
+    await selectTool(page, 'Type a text');
+    await pointer(page, 'pointerdown', { x: 100, y: 300 });
+    await pointer(page, 'pointerup', { x: 100, y: 300 });
+    await page.keyboard.type('hello');
+    await page.keyboard.press('Enter');
+    await click(page, 600, 500);
+    await click(page, 110, 295);
+
+    await field(page, 'Text').fill('Hi ${full name}');
+    await field(page, 'Text').press('Enter');
+
+    const letters = page.locator('svg#surface text[data-cy]');
+
+    await expect(letters).toHaveText('Hi Ada Lovelace');
+    await expect(field(page, 'Text')).toHaveValue('Hi ${full name}');
+
+    await field(page, 'Value of first name').fill('Grace');
+    await field(page, 'Value of first name').press('Enter');
+    await expect(letters).toHaveText('Hi Grace Lovelace');
+
+    await field(page, 'Text').fill('Hi ${nobody}');
+    await field(page, 'Text').press('Enter');
+    await expect(letters).toHaveText('Hi ${nobody}');
+    await expect(page.getByRole('note')).toHaveText('Cannot show nobody');
 });

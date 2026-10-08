@@ -296,3 +296,12 @@
     padding: 0;
     width: var(--field-height);
 }
+
+/* What a field's value cannot show, as a template naming no variable. */
+.note {
+    color: var(--warning-color);
+    display: block;
+    font-size: 0.75rem;
+    line-height: 16px;
+    padding: 2px 8px 0;
+}

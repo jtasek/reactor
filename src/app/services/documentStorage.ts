@@ -321,6 +321,7 @@ export function readShapeGeometry(value: unknown) {
                 type: s.type,
                 position: point(s.position),
                 value: text(s.value ?? s.text),
+                ...(s.template === undefined ? {} : { template: text(s.template) }),
                 ...(s.fontSize === undefined ? {} : { fontSize: positive(s.fontSize) })
             };
         default:

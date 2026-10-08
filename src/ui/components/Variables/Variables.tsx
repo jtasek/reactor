@@ -2,7 +2,7 @@ import React, { FC, FormEvent, KeyboardEvent, useState } from 'react';
 import type { Variable, VariableType } from 'src/app/types';
 import { useActions } from 'src/app/hooks';
 import { useVariableUses, useVariables } from 'src/app/variableHooks';
-import { isVariableName } from 'src/app/variables';
+import { isVariableName, templateProblems, templateWithNames } from 'src/app/variables';
 import { SharedOnRelease } from '../Inspector/SharedOnRelease';
 import styles from './styles.css';
 
@@ -82,7 +82,10 @@ const DraftField: FC<{
     );
 };
 
-const ValueField: FC<{ variable: Variable }> = ({ variable }) => {
+const ValueField: FC<{ variable: Variable; variables: Record<string, Variable> }> = ({
+    variable,
+    variables
+}) => {
     const { setVariableValue } = useActions();
     const label = `Value of ${variable.name}`;
     const set = (value: unknown) => setVariableValue({ variableId: variable.id, value });
@@ -113,7 +116,13 @@ const ValueField: FC<{ variable: Variable }> = ({ variable }) => {
                 />
             );
         case 'text':
-            return <DraftField label={label} value={variable.values.default} onCommit={set} />;
+            return (
+                <DraftField
+                    label={label}
+                    value={templateWithNames(variable.values.default, variables)}
+                    onCommit={set}
+                />
+            );
         case 'boolean':
             return (
                 <input
@@ -126,9 +135,17 @@ const ValueField: FC<{ variable: Variable }> = ({ variable }) => {
     }
 };
 
-const VariableRow: FC<{ variable: Variable; uses: number }> = ({ variable, uses }) => {
+const VariableRow: FC<{
+    variable: Variable;
+    variables: Record<string, Variable>;
+    uses: number;
+}> = ({ variable, variables, uses }) => {
     const { deleteVariable, renameVariable } = useActions();
     const [confirming, setConfirming] = useState(false);
+    const problems =
+        variable.type === 'text'
+            ? templateProblems(variable.values.default, variables, [variable.id])
+            : [];
 
     return (
         <li className={styles.row}>
@@ -137,7 +154,7 @@ const VariableRow: FC<{ variable: Variable; uses: number }> = ({ variable, uses 
                 value={variable.name}
                 onCommit={(name) => renameVariable({ variableId: variable.id, name: name.trim() })}
             />
-            <ValueField variable={variable} />
+            <ValueField variable={variable} variables={variables} />
             <span className={styles.uses} title={`Used by ${uses} properties`}>
                 {uses}
             </span>
@@ -167,6 +184,11 @@ const VariableRow: FC<{ variable: Variable; uses: number }> = ({ variable, uses 
                     ×
                 </button>
             )}
+            {problems.length > 0 && (
+                <small className={styles.note} role="note">
+                    Cannot show {problems.join(', ')}
+                </small>
+            )}
         </li>
     );
 };
@@ -177,6 +199,7 @@ const VariableRow: FC<{ variable: Variable; uses: number }> = ({ variable, uses 
  */
 export const Variables: FC = () => {
     const variables = useVariables();
+    const byId = Object.fromEntries(variables.map((variable) => [variable.id, variable]));
     const uses = useVariableUses();
     const { createVariable } = useActions();
     const [name, setName] = useState('');
@@ -248,6 +271,7 @@ export const Variables: FC = () => {
                                 <VariableRow
                                     key={variable.id}
                                     variable={variable}
+                                    variables={byId}
                                     uses={uses[variable.id] ?? 0}
                                 />
                             ))}

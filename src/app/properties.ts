@@ -9,6 +9,7 @@ import {
     isShapeLocked,
     isShapeLockedExternally
 } from './utils';
+import { escapeTemplate, templateWithNames } from './variables';
 
 export type PropertyValue = string | number | boolean;
 
@@ -199,9 +200,17 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         label: 'Text',
         group: 'Text',
         kind: 'text',
-        read: (shape) => (shape.type === 'text' ? shape.value : undefined),
-        // Like the text tool, never leave an invisible text shape.
-        accepts: notBlank,
+        // A template shows with its variables' names, and other text with `${` escaped,
+        // so writing back what is shown keeps the text as it is.
+        read: (shape, document) => {
+            if (shape.type !== 'text') {
+                return undefined;
+            }
+
+            return shape.template === undefined
+                ? escapeTemplate(shape.value)
+                : templateWithNames(shape.template, document.variables);
+        },
         write: (shape, value) => {
             if (shape.type === 'text' && notBlank(value)) {
                 shape.value = value;

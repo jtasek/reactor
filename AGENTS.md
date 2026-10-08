@@ -393,6 +393,16 @@ selected shape takes from one variable shows its name with a button that stops u
 so its value changes only in the panel. Their hooks are in `src/app/variableHooks.ts`,
 which loads with the editor page rather than with `hooks.ts`.
 
+A text's content and a text variable's value may be templates: `${Name}` shows that
+variable's value (`renderTemplate`), `\${` stays as written, and a name of no variable or
+a text variable leading back to itself stays as written and is noted under its field
+(`templateProblems`). A template holds variables by id and shows them by name
+(`templateWithIds`, `templateWithNames`), so renaming changes no text. A text keeps its
+template in `template` and the text it makes in `value` (`writeText`); every variable
+change writes again what bindings and templates make (`applyVariableChanges`), dropping a
+template whose text was set otherwise, and deleting a variable writes its value into the
+templates that hold it.
+
 ## The selection's menu
 
 `SelectionMenu` (`src/ui/components/SelectionMenu`) is HTML over the canvas, so the zoom does

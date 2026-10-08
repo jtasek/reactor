@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import type { Document, Shape, Variable } from './types';
 import { useAppState } from './hooks';
-import { bindableProperty, boundVariable } from './variables';
+import { bindableProperty, boundVariable, templateProblems } from './variables';
 
 /**
  * `boundVariable` of a shape in the store, reading the property through the store
@@ -74,5 +74,20 @@ export const useSelectedVariables = () => {
         held.current = Object.fromEntries(found);
 
         return held.current;
+    });
+};
+
+/**
+ * The names a selected text's template cannot fill in, as it names no variable or a
+ * text variable leading back to itself; none unless one text is selected.
+ */
+export const useTextTemplateProblems = () => {
+    return useAppState((state) => {
+        const { selectedShapes, variables } = state.currentDocument;
+        const [shape, ...others] = selectedShapes;
+
+        return shape?.type === 'text' && shape.template !== undefined && others.length === 0
+            ? templateProblems(shape.template, variables)
+            : [];
     });
 };
