@@ -11,7 +11,8 @@ export const DEFAULT_PANEL_LAYOUT: Record<string, PanelPlacement> = {
     miniMap: { dock: null, position: { x: 1030, y: 550 } },
     documentInfo: { dock: null, position: { x: 1050, y: 80 } },
     dataView: { dock: null, position: { x: 600, y: 120 } },
-    stats: { dock: null, position: { x: 900, y: 550 } }
+    stats: { dock: null, position: { x: 900, y: 550 } },
+    variables: { dock: null, position: { x: 380, y: 360 } }
 };
 
 const docks = new Set([

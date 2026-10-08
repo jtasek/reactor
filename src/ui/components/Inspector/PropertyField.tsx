@@ -1,5 +1,6 @@
 import React, { FC, KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
 import type { PropertyRow, PropertyValue } from 'src/app/properties';
+import type { Variable } from 'src/app/types';
 import { Slider } from '../Slider';
 import { SharedOnRelease } from './SharedOnRelease';
 import styles from './styles.css';
@@ -12,6 +13,12 @@ interface Props {
     /** The shapes the panel shows. */
     shapeIds: string[];
     onChange: (shapeIds: string[], key: string, value: PropertyValue) => void;
+    /** The variables of the property's kind, which it may use. */
+    variables: Variable[];
+    /** The variable every shape follows for the property. */
+    variable?: Variable;
+    onBind: (shapeIds: string[], key: string, variableId: string) => void;
+    onUnbind: (shapeIds: string[], key: string) => void;
 }
 
 /**
@@ -20,9 +27,19 @@ interface Props {
  * on Enter, on blur or when the pointer is pressed elsewhere, to the shapes
  * selected when typing began; Escape discards it. The field then shows the
  * shapes' actual value again, so a rejected edit does not linger. Mixed values
- * show an empty input with a "Mixed" placeholder.
+ * show an empty input with a "Mixed" placeholder. A property every shape takes
+ * from one variable shows the variable instead of a field, so it is changed in the
+ * Variables panel, never by accident for every shape using it.
  */
-export const PropertyField: FC<Props> = ({ row, shapeIds, onChange }) => {
+export const PropertyField: FC<Props> = ({
+    row,
+    shapeIds,
+    onChange,
+    variables,
+    variable,
+    onBind,
+    onUnbind
+}) => {
     const { property, value, mixed, readOnly } = row;
     const id = `property-${property.key}`;
     const shown = mixed || value === undefined ? '' : String(value);
@@ -90,9 +107,41 @@ export const PropertyField: FC<Props> = ({ row, shapeIds, onChange }) => {
         <tr>
             <td>
                 <label htmlFor={id}>{property.label}</label>
+                {!variable && property.write && (
+                    <select
+                        className={styles.variablePicker}
+                        aria-label={`Variable for ${property.label}`}
+                        value=""
+                        disabled={readOnly || variables.length === 0}
+                        onChange={(event) => onBind(shapeIds, property.key, event.target.value)}
+                    >
+                        <option value="" disabled>
+                            ◇
+                        </option>
+                        {variables.map((item) => (
+                            <option key={item.id} value={item.id}>
+                                {item.name}
+                            </option>
+                        ))}
+                    </select>
+                )}
             </td>
             <td>
-                {property.kind === 'boolean' ? (
+                {variable ? (
+                    <>
+                        <output id={id} className={styles.bound} title={variable.name}>
+                            ◆ {variable.name}
+                        </output>
+                        <button
+                            type="button"
+                            aria-label={`Stop using ${variable.name} for ${property.label}`}
+                            disabled={readOnly}
+                            onClick={() => onUnbind(shapeIds, property.key)}
+                        >
+                            ×
+                        </button>
+                    </>
+                ) : property.kind === 'boolean' ? (
                     <input
                         id={id}
                         type="checkbox"
@@ -152,7 +201,7 @@ export const PropertyField: FC<Props> = ({ row, shapeIds, onChange }) => {
                         onKeyDown={handleKeyDown}
                     />
                 )}
-                {property.kind === 'number' && property.range && !mixed && (
+                {property.kind === 'number' && property.range && !mixed && !variable && (
                     <SharedOnRelease>
                         <Slider
                             label={property.label}
