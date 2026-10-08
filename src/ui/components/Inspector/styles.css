@@ -26,3 +26,23 @@ td ~ td {
   gap: 4px;
   margin-bottom: 8px;
 }
+
+/* No color, or mixed colors: the picker's swatch is hidden and the field is struck through.
+   Each engine's swatch has its own rule, as one it does not know would drop the whole rule. */
+.color[data-no-color] {
+  background-color: var(--surface);
+  background-image: linear-gradient(
+    to top right,
+    transparent calc(50% - 1px),
+    var(--error-color) 50%,
+    transparent calc(50% + 1px)
+  );
+}
+
+.color[data-no-color]::-webkit-color-swatch {
+  opacity: 0;
+}
+
+.color[data-no-color]::-moz-color-swatch {
+  opacity: 0;
+}

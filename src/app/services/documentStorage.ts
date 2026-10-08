@@ -12,7 +12,7 @@ import type {
 } from '../types';
 import { createDocument } from '../factories';
 import { orderAbove, untie, validDrawOrder } from '../drawOrder';
-import { isHexColor } from '../utils';
+import { isClosedShape, isHexColor, isStrokedShape } from '../utils';
 
 export const PERSISTENCE_KEY = 'reactor';
 export const SCHEMA_VERSION = 4;
@@ -233,17 +233,22 @@ function readShape(value: unknown, readChild: (child: unknown) => ShapeData): Sh
         ...(s.children === undefined ? {} : { children: list(s.children, readChild) })
     };
 
-    return { ...base, ...readShapeGeometry(value), ...readShapeStyle(value) };
+    const geometry = readShapeGeometry(value);
+
+    return { ...base, ...geometry, ...readShapeStyle(value, geometry) };
 }
 
-/** Reads how a shape is drawn beyond its geometry. Throws when any of it is invalid. */
-export function readShapeStyle(value: unknown) {
+/**
+ * Reads how a shape of `shape`'s type is drawn beyond its geometry, leaving out what
+ * does not apply to it. Throws when any of it is invalid.
+ */
+export function readShapeStyle(value: unknown, shape: Pick<Shape, 'type'>) {
     const s = record(value);
 
     return {
         ...(s.opacity === undefined ? {} : { opacity: fraction(s.opacity) }),
-        ...(s.fill === undefined ? {} : { fill: color(s.fill) }),
-        ...(s.stroke === undefined ? {} : { stroke: color(s.stroke) })
+        ...(s.fill === undefined || !isClosedShape(shape) ? {} : { fill: color(s.fill) }),
+        ...(s.stroke === undefined || !isStrokedShape(shape) ? {} : { stroke: color(s.stroke) })
     };
 }
 
@@ -342,7 +347,7 @@ export function readCopiedShape(value: unknown): ShapeInput {
 
     return {
         ...geometry,
-        ...readShapeStyle(value),
+        ...readShapeStyle(value, geometry),
         name: text(s.name),
         rotation: s.rotation === undefined ? 0 : number(s.rotation),
         ...(s.description === undefined ? {} : { description: text(s.description) })

@@ -1,6 +1,7 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
     align: string;
+    color: string;
     inspector: string;
   }
 }
