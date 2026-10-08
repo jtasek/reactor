@@ -14,7 +14,8 @@ import {
     selectedShapesIds,
     selectionExtent,
     movableSelectedItems,
-    editableSelectedShapesIds
+    editableSelectedShapesIds,
+    variablesIds
 } from './computed/shapes';
 import { inDrawingOrder } from './drawOrder';
 import { v4 as newId } from 'uuid';
@@ -86,7 +87,7 @@ export function shapeNamer(shapes: Iterable<Shape>): (type: Shape['type']) => st
  * `name` followed by the lowest number from 2 that `taken` does not have, as `Logo 2`;
  * a number it already ends with is replaced, so `Logo 2` gives `Logo 3`.
  */
-function numberedName(name: string, taken: Set<string>): string {
+export function numberedName(name: string, taken: Set<string>): string {
     const base = name.replace(/ \d+$/, '');
     let number = 2;
 
@@ -235,6 +236,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
         selected: false,
         shapes: {},
         tags: [],
+        variables: {},
         ...options,
         componentsIds,
         selectedGroupsIds,
@@ -249,6 +251,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
         movableSelectedItems,
         editableSelectedShapesIds,
         selectedShapes,
+        variablesIds,
         shapesIds: inDrawingOrder(options.shapes ?? {})
     };
 }

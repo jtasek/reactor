@@ -8,11 +8,13 @@ import type {
     Size,
     Group,
     Link,
-    Guide
+    Guide,
+    Variable
 } from '../types';
 import { createDocument } from '../factories';
 import { orderAbove, untie, validDrawOrder } from '../drawOrder';
 import { isClosedShape, isHexColor, isStrokedShape } from '../utils';
+import { buildVariable, isVariableType } from '../variables';
 
 export const PERSISTENCE_KEY = 'reactor';
 export const SCHEMA_VERSION = 4;
@@ -24,7 +26,15 @@ export const RUNTIME_FIELDS = new Set([
     'selected',
     'shownLayerId'
 ]);
-export const COLLECTIONS = ['shapes', 'groups', 'layers', 'components', 'links', 'guides'] as const;
+export const COLLECTIONS = [
+    'shapes',
+    'groups',
+    'layers',
+    'components',
+    'links',
+    'guides',
+    'variables'
+] as const;
 
 export type Collection = (typeof COLLECTIONS)[number];
 
@@ -68,6 +78,7 @@ export interface SavedEntities {
     components: MemberData;
     links: LinkData;
     guides: GuideData;
+    variables: Variable;
 }
 
 type DocumentData = DocumentFields &
@@ -230,12 +241,20 @@ function readShape(value: unknown, readChild: (child: unknown) => ShapeData): Sh
         rotation: s.rotation === undefined ? 0 : number(s.rotation),
         ...(s.description === undefined ? {} : { description: text(s.description) }),
         ...(s.parentShapeId === undefined ? {} : { parentShapeId: id(s.parentShapeId) }),
-        ...(s.children === undefined ? {} : { children: list(s.children, readChild) })
+        ...(s.children === undefined ? {} : { children: list(s.children, readChild) }),
+        ...(s.bindings === undefined ? {} : { bindings: readBindings(s.bindings) })
     };
 
     const geometry = readShapeGeometry(value);
 
     return { ...base, ...geometry, ...readShapeStyle(value, geometry) };
+}
+
+/** The variable each property follows, by property key. */
+function readBindings(value: unknown): Record<string, string> {
+    return Object.fromEntries(
+        Object.entries(record(value)).map(([key, variableId]) => [id(key), id(variableId)])
+    );
 }
 
 /**
@@ -338,7 +357,7 @@ export function readCopiedGroup(value: unknown, shapeCount: number, taken: Set<n
     };
 }
 
-/** Reads a copied shape: what it draws, its name, description and rotation. */
+/** Reads a copied shape: what it draws, its name, description, rotation and bindings. */
 export function readCopiedShape(value: unknown): ShapeInput {
     const s = record(value);
     const geometry = readShapeGeometry(value);
@@ -352,7 +371,8 @@ export function readCopiedShape(value: unknown): ShapeInput {
         ...readShapeStyle(value, geometry),
         name: text(s.name),
         rotation: s.rotation === undefined ? 0 : number(s.rotation),
-        ...(s.description === undefined ? {} : { description: text(s.description) })
+        ...(s.description === undefined ? {} : { description: text(s.description) }),
+        ...(s.bindings === undefined ? {} : { bindings: readBindings(s.bindings) })
     };
 }
 
@@ -365,6 +385,20 @@ function readLink(value: unknown): LinkData {
         ...(l.source === undefined ? {} : { source: id(l.source) }),
         ...(l.target === undefined ? {} : { target: id(l.target) })
     };
+}
+
+function readVariable(value: unknown): Variable {
+    const v = record(value);
+    const type = text(v.type);
+    const variable = isVariableType(type)
+        ? buildVariable(id(v.id), text(v.name), type, record(v.values).default)
+        : undefined;
+
+    if (!variable) {
+        throw new Error('Invalid variable');
+    }
+
+    return variable;
 }
 
 function readGuide(value: unknown): GuideData {
@@ -394,7 +428,8 @@ const entityReaders: { [C in Collection]: (value: unknown) => SavedEntities[C] }
     layers: readMember,
     components: readMember,
     links: readLink,
-    guides: readGuide
+    guides: readGuide,
+    variables: readVariable
 };
 
 /** Reads one entity's durable form, throwing when it is invalid. */
@@ -428,7 +463,8 @@ const referenceRepairs: {
         [link.source, link.target].every((end) => end === undefined || exists('shapes', end))
             ? link
             : null,
-    guides: (guide) => guide
+    guides: (guide) => guide,
+    variables: (variable) => variable
 };
 
 /**
@@ -588,7 +624,8 @@ function readDocument(value: unknown, onRepair = () => {}): DocumentData {
         layers: repair('layers', table(d.layers, readMember)),
         components: repair('components', components),
         links: repair('links', table(d.links, readLink)),
-        guides: table(d.guides, readGuide)
+        guides: table(d.guides, readGuide),
+        variables: d.variables === undefined ? {} : table(d.variables, readVariable)
     };
 }
 
@@ -696,6 +733,8 @@ export const hydrateLink = (link: LinkData): Link => ({ ...link, selected: false
 
 export const hydrateGuide = (guide: GuideData): Guide => ({ ...guide, selected: false });
 
+const hydrateVariable = (variable: Variable): Variable => structuredClone(variable);
+
 const entityHydrators: {
     [C in Collection]: (entity: SavedEntities[C]) => Document[C][string];
 } = {
@@ -704,7 +743,8 @@ const entityHydrators: {
     layers: hydrateMember,
     components: hydrateMember,
     links: hydrateLink,
-    guides: hydrateGuide
+    guides: hydrateGuide,
+    variables: hydrateVariable
 };
 
 /** One entity as the store holds it, from its durable form. */
@@ -736,7 +776,8 @@ export function hydrateDocument(data: DocumentData): Document {
         layers: hydrateTable(data.layers, hydrateMember),
         components: hydrateTable(data.components, hydrateMember),
         links: hydrateTable(data.links, hydrateLink),
-        guides: hydrateTable(data.guides, hydrateGuide)
+        guides: hydrateTable(data.guides, hydrateGuide),
+        variables: hydrateTable(data.variables, hydrateVariable)
     });
 }
 

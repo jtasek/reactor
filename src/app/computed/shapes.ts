@@ -17,6 +17,12 @@ export const componentsIds = derived((currentDocument: Document) => {
     return Object.keys(currentDocument.components);
 });
 
+export const variablesIds = derived((currentDocument: Document) =>
+    Object.values(currentDocument.variables)
+        .sort((a, b) => a.name.localeCompare(b.name) || (a.id < b.id ? -1 : 1))
+        .map((variable) => variable.id)
+);
+
 export const groupsIds = derived((currentDocument: Document) => {
     return Object.keys(currentDocument.groups);
 });

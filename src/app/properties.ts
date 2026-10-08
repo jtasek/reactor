@@ -16,7 +16,8 @@ export type PropertyValue = string | number | boolean;
  * A property the inspector shows, listed under the section named by
  * `group`. `read` returns undefined when the property does not apply to a shape;
  * without `write` it is read-only. `editable` says whether it may change on a
- * shape now; by default only while the shape is not locked.
+ * shape now; by default only while the shape is not locked. `accepts` says which
+ * values `write` takes; it leaves the shape as it is for others.
  */
 export type ShapeProperty = {
     key: string;
@@ -28,11 +29,13 @@ export type ShapeProperty = {
           kind: 'text';
           read: (shape: Shape, document: Document) => string | undefined;
           write?: (shape: Shape, value: string) => void;
+          accepts?: (value: string) => boolean;
       }
     | {
           kind: 'number';
           read: (shape: Shape, document: Document) => number | undefined;
           write?: (shape: Shape, value: number) => void;
+          accepts?: (value: number) => boolean;
           /** The values a slider beside the field offers, when it has one. */
           range?: { min: number; max: number; step: number };
       }
@@ -51,6 +54,8 @@ export type ShapeProperty = {
 
 /** The opacity of an opaque shape, as the inspector shows it, in percent. */
 const OPAQUE_PERCENT = 100;
+
+const notBlank = (value: string) => value.trim() !== '';
 
 // Metadata may change on a locked shape, but not in a locked document.
 const unlessDocumentLocked = (_shape: Shape, document: Document) => !document.locked;
@@ -89,8 +94,9 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         kind: 'text',
         editable: unlessDocumentLocked,
         read: (shape) => shape.name,
+        accepts: notBlank,
         write: (shape, value) => {
-            if (value.trim()) {
+            if (notBlank(value)) {
                 shape.name = value.trim();
             }
         }
@@ -194,9 +200,10 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         group: 'Text',
         kind: 'text',
         read: (shape) => (shape.type === 'text' ? shape.value : undefined),
+        // Like the text tool, never leave an invisible text shape.
+        accepts: notBlank,
         write: (shape, value) => {
-            // Like the text tool, never leave an invisible text shape.
-            if (shape.type === 'text' && value.trim()) {
+            if (shape.type === 'text' && notBlank(value)) {
                 shape.value = value;
             }
         }
@@ -208,6 +215,7 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         kind: 'number',
         read: (shape) =>
             shape.type === 'text' ? (shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE) : undefined,
+        accepts: (value) => value > 0,
         write: (shape, value) => {
             if (shape.type === 'text' && value > 0) {
                 shape.fontSize = value;

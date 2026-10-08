@@ -57,6 +57,24 @@ export interface Guide {
     visible: boolean;
 }
 
+/** What a variable holds; a property may use a variable of its own kind. */
+export type VariableType = 'color' | 'number' | 'text' | 'boolean';
+
+type VariableOf<T extends VariableType, V> = {
+    id: string;
+    name: string;
+    type: T;
+    /** By mode; only `default` exists yet. */
+    values: { default: V };
+};
+
+/** A named value kept in a document, written into the shape properties bound to it. */
+export type Variable =
+    | VariableOf<'color', string>
+    | VariableOf<'number', number>
+    | VariableOf<'text', string>
+    | VariableOf<'boolean', boolean>;
+
 export interface Grid {
     width: number;
     visible: boolean;
@@ -67,6 +85,8 @@ export interface Grid {
 /** Fields every shape carries, whatever its geometry. */
 export interface ShapeBase {
     active: boolean;
+    /** The variable each property follows, by property key, while it holds its value. */
+    bindings?: Record<string, string>;
     bounds?: Box;
     children?: Shape[];
     created: Date;
@@ -242,6 +262,9 @@ export interface Document {
     /** The one layer this screen shows, with the shapes on no layer; all layers when unset. */
     shownLayerId?: string;
     tags: string[];
+    variables: HashTable<Variable>;
+    /** Sorted by name, then id. */
+    variablesIds: string[];
 }
 
 export interface Icon {
