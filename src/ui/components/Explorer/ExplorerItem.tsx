@@ -1,14 +1,24 @@
-import React, { DragEvent, FC, ReactNode, useState } from 'react';
+import React, { DragEvent, FC, ReactNode, createContext, useContext, useState } from 'react';
 import styles from './styles.css';
 import { ItemMenu, ItemMenuAction } from '../ItemMenu';
+import { useDocumentFilter } from 'src/app/hooks';
 
-/** What is dragged in the outline: a shape, or a group with all its shapes. */
+/** What is dragged in the explorer: a shape, or a group with all its shapes. */
 export interface Dragged {
     kind: 'shape' | 'group';
     id: string;
 }
 
-const DRAG_TYPE = 'application/x-reactor-outline';
+const DRAG_TYPE = 'application/x-reactor-explorer';
+
+/**
+ * The collapsed items, kept by the whole explorer rather than each row, so an item a
+ * search leaves out is still collapsed when it is listed again.
+ */
+export const CollapsedItems = createContext<{
+    collapsed: ReadonlySet<string>;
+    toggle: (collapseId: string) => void;
+}>({ collapsed: new Set(), toggle: () => undefined });
 
 function readDragged(event: DragEvent): Dragged | null {
     try {
@@ -32,6 +42,8 @@ interface Props {
     /** The one layer this screen shows. */
     shown?: boolean;
     visible?: boolean;
+    /** Names the item to collapse, for an item holding rows; it has no toggle without one. */
+    collapseId?: string;
     /** What pressing the name does; the name is plain text without it. */
     onClick?: () => void;
     menuActions?: ItemMenuAction[];
@@ -40,8 +52,8 @@ interface Props {
     children?: ReactNode;
 }
 
-/** A row of the outline: its name, show and lock buttons, and the items under it. */
-export const OutlineItem: FC<Props> = ({
+/** A row of the explorer: its name, show and lock buttons, and the items under it. */
+export const ExplorerItem: FC<Props> = ({
     kind,
     name,
     dragged,
@@ -49,12 +61,17 @@ export const OutlineItem: FC<Props> = ({
     active = false,
     shown = false,
     visible = true,
+    collapseId,
     onClick,
     menuActions,
     onDrop,
     children
 }) => {
     const [dropTarget, setDropTarget] = useState(false);
+    const items = useContext(CollapsedItems);
+    const collapsed = collapseId !== undefined && items.collapsed.has(collapseId);
+    // A search shows everything it finds, also in collapsed items.
+    const searching = useDocumentFilter().trim() !== '';
     const className = [
         kind === 'layer' && styles.layer,
         selected && styles.selected,
@@ -101,6 +118,16 @@ export const OutlineItem: FC<Props> = ({
                         ⠿
                     </span>
                 )}
+                {collapseId && !searching && (
+                    <button
+                        type="button"
+                        className={styles.toggle}
+                        aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${name}`}
+                        onClick={() => items.toggle(collapseId)}
+                    >
+                        <span aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
+                    </button>
+                )}
                 {onClick ? (
                     <button
                         type="button"
@@ -115,7 +142,7 @@ export const OutlineItem: FC<Props> = ({
                 )}
                 {menuActions && <ItemMenu itemName={name} actions={menuActions} />}
             </div>
-            {children && <ul>{children}</ul>}
+            {children && (searching || !collapsed) && <ul>{children}</ul>}
         </li>
     );
 };

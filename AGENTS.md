@@ -355,9 +355,13 @@ and the other selected shapes by theirs.
 A group is on one layer, with all its shapes (`putShapesOnLayer`, `putShapesInGroup`): Group
 puts its shapes on the topmost one's layer, a group moved to a layer moves whole, and a shape
 moved without the rest of its group leaves it. Loading does not repair a group other copies'
-merges left across layers; the outline lists it under its first shape's layer. The outline
-(`outline`, `src/ui/components/Outline`) is the explorer's tree of layers, their groups
-and shapes: dragging a shape or group onto a layer or group moves it there. A row's menu
+merges left across layers; the explorer lists it under its first shape's layer. The explorer
+(`src/ui/components/Explorer`, from `outline`) is the side bar's tree of layers, their groups
+and shapes: dragging a shape or group onto a layer or group moves it there. Its search box
+lists only what has a name containing what is typed (`filterOutline`): a layer or group with
+all it holds, a shape with its group and layer. The text is the document's runtime `filter`,
+neither saved nor shared. Layers and groups holding rows collapse; the explorer keeps which
+are, also through a search that leaves them out, and opens them while a search is typed. A row's menu
 (`ItemMenu`, `src/ui/components/ItemMenu`) fades in under the pointer: hide and lock switch
 the row's item itself, and its commands run for that item, which `runCommandOn` selects
 first. Up to seven buttons are in the bar; More reveals the rest until the pointer or focus
@@ -527,6 +531,9 @@ Hidden guides are not drawn and locked ones do not move.
   background or box-shadow is not a variable; a line marked `no design token yet` is debt.
   Never remove an outline without drawing the focus ring (`--focus-ring-width` in
   `--focus-ring-color`) on `:focus-visible`.
+  A panel's frame (`PanelLayout`) draws the glass; its content does not draw it again but
+  sits on lighter cards (`--control-background`, `--radius-md`, `--panel-gap` from the frame)
+  with `--hairline-color` between rows, as the Inspector and the Explorer do.
 - **Style** (Prettier `.prettierrc`): 4-space indent, single quotes, semicolons, `printWidth`
   100, no trailing commas. ESLint enforces these plus `prettier/prettier: error`.
 - TypeScript is `strict`; **avoid `any`**. `console.log` is a lint warning (only

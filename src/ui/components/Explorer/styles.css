@@ -1,15 +1,138 @@
+/* The panel draws the glass; the tree is a lighter card on it, under the search field. */
 .explorer {
-  backdrop-filter: var(--backdrop-filter);
-  background-color: var(--control-background);
-  box-shadow: var(--box-shadow);
-  color: var(--text-color);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: scroll;
-  padding: 10px;
-  transition: all 0.5s ease-in-out;
-  user-select: none;
-  width: 250px;
-  z-index: 100;
+    color: var(--text-color);
+    overflow: auto;
+    padding: var(--panel-gap);
+    user-select: none;
+    width: 250px;
+}
+
+.heading {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    line-height: 16px;
+    margin: 0;
+    padding: 0 10px 6px;
+    text-transform: uppercase;
+}
+
+.explorer ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.explorer > ul {
+    background-color: var(--control-background);
+    border-radius: var(--radius-md);
+    margin-top: var(--panel-gap);
+    padding: 4px 6px;
+}
+
+.explorer > ul > li + li {
+    border-top: 1px solid var(--hairline-color);
+}
+
+.empty {
+    font-size: 0.75rem;
+    margin: var(--panel-gap) 10px 0;
+    opacity: 0.7;
+}
+
+.explorer li li {
+    padding-left: 10px;
+}
+
+.row {
+    align-items: center;
+    border-radius: var(--radius-sm);
+    min-height: 26px;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    justify-content: space-between;
+}
+
+.row[draggable='true'] {
+    cursor: grab;
+}
+
+.dropTarget {
+    outline: 1px dashed var(--selection-color);
+}
+
+.name,
+.icon {
+    background: none;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+}
+
+.name {
+    flex: 1;
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.label {
+    flex: 1;
+    opacity: 0.7;
+}
+
+.layer > .row > .name,
+.layer > .row > .label {
+    font-weight: 600;
+}
+
+.selected > .row > .name {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.active > .row > .name {
+    color: var(--selection-color);
+}
+
+.shown > .row > .name {
+    color: var(--selection-color);
+}
+
+.hidden > .row > .name {
+    font-style: italic;
+    opacity: 0.5;
+}
+
+.showAll {
+    background: none;
+    border: 0;
+    color: var(--selection-color);
+    cursor: pointer;
+    font: inherit;
+    padding: 0 0 4px 10px;
+}
+
+.toggle {
+    background: none;
+    border: 0;
+    color: var(--text-color);
+    cursor: pointer;
+    flex: 0 0 auto;
+    font: inherit;
+    padding: 0;
+    width: 1em;
+}
+
+.grip {
+    cursor: grab;
+    flex: 0 0 auto;
+    opacity: 0.4;
+}
+
+.grip:hover {
+    opacity: 1;
 }

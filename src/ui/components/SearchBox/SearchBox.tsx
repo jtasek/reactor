@@ -13,17 +13,13 @@ export const SearchBox: FC<Props> = ({ filter, onSearch }) => (
             name="q"
             autoComplete="off"
             type="search"
-            placeholder="Search ..."
+            placeholder="Search shapes"
+            aria-label="Search shapes"
             value={filter}
             onChange={(e) => {
                 e.preventDefault();
                 onSearch(e.target.value);
             }}
         />
-        <span className="input-group-btn">
-            <button className="btn btn-default" type="submit">
-                <span className="glyphicon glyphicon-search"></span>
-            </button>
-        </span>
     </div>
 );

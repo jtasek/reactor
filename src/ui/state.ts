@@ -63,11 +63,6 @@ export const state: UI = {
         name: 'Minimap',
         visible: false
     },
-    outline: {
-        id: 'outline',
-        name: 'Outline',
-        visible: false
-    },
     overlay: {
         id: 'overlay',
         name: 'Overlay',
@@ -86,11 +81,6 @@ export const state: UI = {
     rulers: {
         id: 'rulers',
         name: 'Rulers',
-        visible: false
-    },
-    searchBox: {
-        id: 'searchBox',
-        name: 'Search Box',
         visible: false
     },
     sideBar: {

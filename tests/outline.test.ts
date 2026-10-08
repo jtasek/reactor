@@ -1,5 +1,5 @@
 import { registerCommand } from 'src/app/actions/startup';
-import { outline } from 'src/app/membership';
+import { filterOutline, outline } from 'src/app/membership';
 import { serializePersistedState } from 'src/app/services/documentStorage';
 import type { ShapeInput } from 'src/app/types';
 import { isShapeVisible } from 'src/app/utils';
@@ -132,6 +132,66 @@ it('keeps the shapes on no layer as an entry while there are layers, to drop sha
     layer('walls', ids[0]);
 
     expect(outline(document()).map((entry) => entry.layerId)).toEqual(['walls', null]);
+});
+
+describe('filtering the outline', () => {
+    it('keeps the shapes whose names contain the text, in any case, and what holds them', () => {
+        const { ids, select, run, document, layer } = storeWith(0, 20, 40, 60);
+
+        layer('walls', ids[0], ids[1]);
+        layer('pipes', ids[2]);
+        select(ids[0], ids[1]);
+        run('group');
+
+        const [groupId] = Object.keys(document().groups);
+        const filtered = (text: string) => filterOutline(outline(document()), document(), text);
+
+        expect(filtered('RECTANGLE-2')).toEqual([
+            { layerId: 'walls', groups: [{ groupId, shapesIds: [ids[1]] }], shapesIds: [] }
+        ]);
+        expect(filtered('rectangle-4')).toEqual([
+            { layerId: null, groups: [], shapesIds: [ids[3]] }
+        ]);
+        expect(filtered('door')).toEqual([]);
+        expect(filtered('  ')).toEqual(outline(document()));
+    });
+
+    it('keeps a layer or a group whose own name contains the text with all it holds', () => {
+        const { store, ids, select, run, document, layer } = storeWith(0, 20, 40);
+
+        layer('walls', ...ids);
+        select(ids[1], ids[2]);
+        run('group');
+
+        const [groupId] = Object.keys(document().groups);
+
+        store.actions.updateGroup({ id: groupId, name: 'Door' });
+
+        const filtered = (text: string) => filterOutline(outline(document()), document(), text);
+
+        expect(filtered('WALL')).toEqual([
+            {
+                layerId: 'walls',
+                groups: [{ groupId, shapesIds: [ids[1], ids[2]] }],
+                shapesIds: [ids[0]]
+            }
+        ]);
+        expect(filtered('door')).toEqual([
+            { layerId: 'walls', groups: [{ groupId, shapesIds: [ids[1], ids[2]] }], shapesIds: [] }
+        ]);
+    });
+
+    it('is typed with the search action, and neither saved nor shown to other copies', async () => {
+        const copies = await createCopies(2, (store) => store.actions.addShape(square(0)));
+        const [a, b] = copies;
+
+        edit(a, (actions) => actions.search('rect'));
+        deliver(b);
+
+        expect(shownDocument(a).filter).toBe('rect');
+        expect(shownDocument(b).filter).toBe('');
+        expect(JSON.stringify(serializePersistedState(a.store.state))).not.toContain('"rect"');
+    });
 });
 
 describe('showing only one layer', () => {

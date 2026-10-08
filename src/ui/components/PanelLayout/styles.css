@@ -1,6 +1,5 @@
 .panelLayer {
     --panel-header-height: 28px;
-    --panel-gap: 8px;
     --panel-max-height: min(70vh, 700px);
     --panel-max-width: min(90vw, 420px);
     --dock-zone-opacity: 0.18;
@@ -89,15 +88,16 @@
 
 .handle {
     align-items: center;
-    /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- no design token yet */
-    background: rgba(0, 0, 0, 0.08);
+    background: transparent;
     border: 0;
+    border-bottom: 1px solid var(--hairline-color);
     box-sizing: border-box;
     color: inherit;
     cursor: grab;
     display: flex;
     flex: 0 0 var(--panel-header-height);
     font: inherit;
+    font-weight: 600;
     justify-content: center;
     min-width: 28px;
     min-height: var(--panel-header-height);

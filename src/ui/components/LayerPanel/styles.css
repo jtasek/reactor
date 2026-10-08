@@ -1,22 +1,28 @@
 .layerPanel {
-    backdrop-filter: var(--backdrop-filter);
     background-color: var(--control-background);
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
+    border-radius: var(--radius-md);
     color: var(--text-color);
     display: block;
-    padding: 10px;
-    position: static;
+    list-style: none;
+    margin: var(--panel-gap);
+    padding: 2px 10px;
     user-select: none;
     width: var(--control-width);
-    z-index: 100;
 }
 
-.layerPanel:hover {
-    box-shadow: var(--box-shadow-hover);
+.layerPanel > li {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    min-height: 26px;
+}
+
+.layerPanel > li + li {
+    border-top: 1px solid var(--hairline-color);
 }
 
 .layerPanel input {
+    accent-color: var(--selection-color);
     margin-right: 10px;
 }
 

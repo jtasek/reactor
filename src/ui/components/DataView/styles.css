@@ -1,10 +1,7 @@
-.stats {
+.dataView {
     background-color: var(--control-background);
     border-radius: var(--radius-md);
     color: var(--text-color);
-    font-size: 0.75rem;
-    font-variant-numeric: tabular-nums;
-    line-height: 18px;
     margin: var(--panel-gap);
     padding: 6px 10px;
     user-select: none;

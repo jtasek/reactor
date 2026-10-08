@@ -14,9 +14,7 @@ import {
     Layout,
     MenuBar,
     Minimap,
-    Outline,
     Inspector,
-    SearchBox,
     SideBar,
     Stack,
     StatusBar,
@@ -42,10 +40,7 @@ export const Designer: FC = () => (
             <DockablePanel id="sideBar" title="Side Bar">
                 <SideBar>
                     <ToolBar />
-                    <Explorer>
-                        <SearchBox />
-                        <Outline />
-                    </Explorer>
+                    <Explorer />
                 </SideBar>
             </DockablePanel>
             <DockablePanel id="controlPanel" title="Control Panel">

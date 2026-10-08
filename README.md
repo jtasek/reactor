@@ -77,10 +77,12 @@ bar, side bar, panels and other parts of the editor.
 | `k`, Shift+K | Lock and unlock the selection |
 | `+` or `=`, `-`, `0` | Zoom in, zoom out, reset zoom |
 
-The Outline panel (in the explorer) lists the layers with their groups and shapes as a
+The Explorer (in the side bar) lists the layers with their groups and shapes as a
 tree. Drag a shape or a group onto a layer or a group to move it there. Press a layer's
 name to see only that layer, with the shapes on no layer, on your screen; press it again,
-or Show all layers, to see everything. A group is on one layer, with all its shapes.
+or Show all layers, to see everything. A group is on one layer, with all its shapes. Type in the explorer's search box to list only
+the layers, groups and shapes whose names contain the text. Press the arrow beside a layer or
+group to collapse or expand it.
 
 The image tool asks for a PNG, JPEG, GIF or WebP file of 5 MB or less, then draws it
 at its own proportions where you drag.

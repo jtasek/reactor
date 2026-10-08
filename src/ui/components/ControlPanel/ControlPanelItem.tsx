@@ -7,14 +7,12 @@ import { Icon } from '../Icon';
 const visible = {
     group: 'action',
     name: 'visibility',
-    color: 'rgba(255,255,255)',
     size: 16
 };
 
 const hidden = {
     group: 'action',
     name: 'visibility_off',
-    color: 'rgba(255,255,255)',
     size: 16
 };
 

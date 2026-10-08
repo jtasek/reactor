@@ -62,7 +62,7 @@ test('hiding a layer hides its shapes on the canvas and from presses', async ({ 
         (raw) => localStorage.setItem('reactor', raw),
         JSON.stringify(layeredDocument())
     );
-    await openEditor(page, ['Explorer', 'Outline']);
+    await openEditor(page, ['Explorer']);
     await expect(shapes(page)).toHaveCount(1);
 
     const layer = itemMenu(page, 'Layer');
@@ -84,7 +84,7 @@ test('hiding a layer hides its shapes on the canvas and from presses', async ({ 
 });
 
 test('a locked selected shape offers no resize or rotate handles', async ({ page }) => {
-    await openEditor(page, ['Explorer', 'Outline']);
+    await openEditor(page, ['Explorer']);
     await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
 
     // Resize and rotate handles, and a rectangle's radius handles.
