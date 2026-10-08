@@ -13,6 +13,7 @@
     --color-swatch-width: 44px;
     color: var(--text-color);
     display: block;
+    max-width: 100%;
     padding: var(--inspector-inset);
     user-select: none;
     width: var(--inspector-width);
