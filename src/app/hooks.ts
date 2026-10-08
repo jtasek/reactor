@@ -9,7 +9,7 @@ import { commandsFor, commandsIn, getCommand, getCommands } from './actions';
 import { Context } from '.';
 import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
 import { getShapeBounds, isShapeLocked, isShapeVisible } from './utils';
-import { hitTestShape } from './geometry';
+import { hitTestShape, hitTolerance } from './geometry';
 import type { Command, CommandPlace, CommandScope } from './types';
 import { takesEditorInput } from '../events/input';
 import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
@@ -445,12 +445,13 @@ export const useMeasuredBoxes = () =>
         const document = state.currentDocument;
         const selection = document.selectionExtent;
 
-        if (!keyboard.altKey || pointer.gesture.kind !== 'idle' || !selection) {
+        if (!keyboard.altKey || !pointer.inside || pointer.gesture.kind !== 'idle' || !selection) {
             return null;
         }
 
         // Read without the store's tracking: thousands of shapes are only looked at here.
         const shapes = untracked(document.shapes);
+        const tolerance = hitTolerance(document.camera.scale);
         const target = [...document.shapesIds]
             .reverse()
             .map((id) => shapes[id])
@@ -458,8 +459,8 @@ export const useMeasuredBoxes = () =>
                 (shape) =>
                     shape &&
                     !shape.selected &&
-                    isShapeVisible(document, shape.id) &&
-                    hitTestShape(shape, pointer.current, 0)
+                    hitTestShape(shape, pointer.current, tolerance) &&
+                    isShapeVisible(document, shape.id)
             );
 
         return target ? { selection, target: getShapeBounds(target) } : null;

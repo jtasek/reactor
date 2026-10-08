@@ -127,3 +127,28 @@ test('with Alt held over another shape, the distances to it from the selection s
     await page.keyboard.up('Alt');
     await expect(labels).toHaveCount(0);
 });
+
+test('a lone Alt over the canvas is kept from the browser, which would focus its menu bar', async ({
+    page
+}) => {
+    await openEditor(page);
+    await page.evaluate(() => (document.activeElement as HTMLElement).blur());
+    await page.evaluate(() => {
+        const prevented: string[] = [];
+
+        (window as unknown as { prevented: string[] }).prevented = prevented;
+        for (const type of ['keydown', 'keyup']) {
+            window.addEventListener(type, (event) => {
+                if (event.defaultPrevented) {
+                    prevented.push(type);
+                }
+            });
+        }
+    });
+
+    await page.keyboard.press('Alt');
+
+    expect(
+        await page.evaluate(() => (window as unknown as { prevented: string[] }).prevented)
+    ).toEqual(['keydown', 'keyup']);
+});
