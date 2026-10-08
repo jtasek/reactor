@@ -24,6 +24,21 @@ const printObject = (value: unknown): string => {
     return String(value);
 };
 
+const Section: FC<{ name: string; rows: [string, string][] }> = ({ name, rows }) => (
+    <section className={styles.section} aria-label={name}>
+        <h4 className={styles.heading}>{name}</h4>
+        <dl className={styles.card}>
+            {rows.map(([label, value]) => (
+                <div key={label} className={styles.row}>
+                    <dt>{label}</dt>
+                    <dd>{value}</dd>
+                </div>
+            ))}
+        </dl>
+    </section>
+);
+
+/** What the document holds and what the pointer is doing, for debugging. */
 export const Stats: FC = () => {
     const shapes = useShapes();
     const camera = useCamera();
@@ -31,30 +46,28 @@ export const Stats: FC = () => {
 
     return (
         <div className={styles.stats}>
-            shape count: {Object.keys(shapes).length}
-            <br />
-            scale: {camera.scale}
-            <br />
-            bottomRight: {printObject(pointer.bottomRight)}
-            <br />
-            center: {printObject(pointer.center)}
-            <br />
-            dragging: {printObject(pointer.dragging)}
-            <br />
-            offset: {printObject(pointer.offset)}
-            <br />
-            path: {printObject(pointer.path.length)}
-            <br />
-            current: {printObject(pointer.current)}
-            <br />
-            radius: {printObject(pointer.radius)}
-            <br />
-            size: {printObject(pointer.size)}
-            <br />
-            start: {printObject(pointer.start)}
-            <br />
-            topLeft: {printObject(pointer.topLeft)}
-            <br />
+            <Section
+                name="Document"
+                rows={[
+                    ['Shapes', String(Object.keys(shapes).length)],
+                    ['Scale', String(camera.scale)]
+                ]}
+            />
+            <Section
+                name="Pointer"
+                rows={[
+                    ['Dragging', printObject(pointer.dragging)],
+                    ['Start', printObject(pointer.start)],
+                    ['Current', printObject(pointer.current)],
+                    ['Top left', printObject(pointer.topLeft)],
+                    ['Bottom right', printObject(pointer.bottomRight)],
+                    ['Center', printObject(pointer.center)],
+                    ['Size', printObject(pointer.size)],
+                    ['Offset', printObject(pointer.offset)],
+                    ['Radius', printObject(pointer.radius)],
+                    ['Path', printObject(pointer.path.length)]
+                ]}
+            />
         </div>
     );
 };

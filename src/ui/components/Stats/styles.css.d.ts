@@ -1,5 +1,9 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
+    card: string;
+    heading: string;
+    row: string;
+    section: string;
     stats: string;
   }
 }

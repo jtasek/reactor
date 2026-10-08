@@ -1,11 +1,56 @@
+/* The panel draws the glass; each section is a lighter card on it, under its heading. */
 .stats {
-    background-color: var(--control-background);
-    border-radius: var(--radius-md);
     color: var(--text-color);
     font-size: 0.75rem;
-    font-variant-numeric: tabular-nums;
-    line-height: 18px;
-    margin: var(--panel-gap);
-    padding: 6px 10px;
+    padding: var(--panel-gap);
     user-select: none;
+}
+
+.section + .section {
+    margin-top: 12px;
+}
+
+.heading {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    line-height: 16px;
+    margin: 0;
+    padding: 0 10px 6px;
+    text-transform: uppercase;
+}
+
+.card {
+    background-color: var(--control-background);
+    border-radius: var(--radius-md);
+    margin: 0;
+    padding: 0 10px;
+}
+
+.row {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    line-height: 18px;
+    padding: 4px 0;
+}
+
+.row + .row {
+    border-top: 1px solid var(--hairline-color);
+}
+
+.row dt {
+    flex: 0 0 auto;
+    opacity: 0.7;
+}
+
+.row dd {
+    color: var(--text-color-hover);
+    font-variant-numeric: tabular-nums;
+    margin: 0;
+    min-width: 0;
+    overflow: hidden;
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
