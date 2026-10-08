@@ -11,8 +11,31 @@ import { createSync } from '../../server/sync';
 
 export const ORIGIN = 'http://localhost:4000';
 
+const SECRET = 'a test secret that is long enough to sign sessions';
+
 // Each test starts PostgreSQL in the test process, which takes seconds on a busy machine.
 vi.setConfig({ testTimeout: 20_000 });
+
+/**
+ * Each test takes a copy of one empty database with its tables made, as making
+ * them takes far longer, up to half a minute on a busy machine. They are made
+ * before a file's tests, within this time rather than the first test's.
+ */
+const EMPTY_DATABASE_TIMEOUT = 120_000;
+
+let emptyDatabase: Blob;
+
+beforeAll(async () => {
+    const pglite = new PGlite();
+    const db = new Kysely<Database>({ dialect: new PGliteDialect(pglite) });
+
+    await migrateAuth(
+        createAuth({ db, baseURL: ORIGIN, secret: SECRET, mailer: { send: async () => {} } })
+    );
+    await migrateApp(db);
+    emptyDatabase = await pglite.dumpDataDir('none');
+    await pglite.close();
+}, EMPTY_DATABASE_TIMEOUT);
 
 export interface Email {
     to: string;
@@ -22,21 +45,20 @@ export interface Email {
 
 /** Accounts on an empty in-process database, with email kept in an outbox. */
 export async function startAccounts() {
-    const db = new Kysely<Database>({ dialect: new PGliteDialect(new PGlite()) });
+    const db = new Kysely<Database>({
+        dialect: new PGliteDialect(new PGlite({ loadDataDir: emptyDatabase }))
+    });
     const outbox: Email[] = [];
     const auth = createAuth({
         db,
         baseURL: ORIGIN,
-        secret: 'a test secret that is long enough to sign sessions',
+        secret: SECRET,
         mailer: {
             send: async (email: Email) => {
                 outbox.push(email);
             }
         }
     });
-
-    await migrateAuth(auth);
-    await migrateApp(db);
 
     /** Sends a request as a browser on `origin` would, with the cookies it holds. */
     const request = (
