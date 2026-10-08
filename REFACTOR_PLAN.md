@@ -363,7 +363,7 @@ Feature inventory:
   the `filtered*` derivations are not used.
 - Kept for later, not shown: the `Badge`, `Dialog`, `Overlay` and `Switch`
   components, and the stylesheets components do not use yet.
-- Planned: components (Phase 10), plugins and renderers (Phase 9), image upload,
+- Planned: variables (Phase 12), components (Phase 10), plugins and renderers (Phase 9), image upload,
   moving signed-out documents into an account, organizations, teams and sharing,
   presence, and undo per user (Phase 11).
 
@@ -563,7 +563,8 @@ returns.
 ## Phase 10 - Components
 
 Designed 2026-09-24; not started. This is feature work outside the Phase 8
-release gate. It does not depend on Phase 9 and may be done first.
+release gate. It does not depend on Phase 9 and may be done first. Phase 12's
+steps 1-3 come first, so props can use variables from the start.
 
 A component is a reusable drawing made of shapes and other components. It has
 one source and any number of instances that draw it. Editing the source updates
@@ -586,11 +587,12 @@ Design:
   `position`. An instance is selected, moved, rotated, duplicated and deleted as
   one piece: its parts cannot be selected, it shows only the rotation handle, and
   its width and height are read-only.
-- Props: the source exposes chosen `text`, `fontSize` or `visible` properties of
-  its shapes, each with a label. The source's values are the defaults. An
-  instance stores only the props it overrides and applies them when it draws,
-  never to the source. An overridden prop no longer follows the source until it
-  is reset.
+- Props: the source exposes chosen properties of its shapes, each with a label:
+  any inspector property except name, position, size, rotation and lock, which
+  stay the source's. The source's values are the defaults. An instance stores
+  only the props it overrides, each a value or a variable (Phase 12), and
+  applies them when it draws, never to the source. An overridden prop no longer
+  follows the source until it is reset.
   The inspector lists props in a Component section, shows "Mixed" where the
   selected instances differ, and can reset an override.
 - Propagation: changes to the source's shapes reach every instance, including
@@ -931,6 +933,98 @@ write it, including after their access is revoked mid-session; after sign-out, t
 browser keeps none of that user's documents; an image is readable only through a
 document the user may read; documents made signed out reach an account only when
 the user chooses.
+
+## Phase 12 - Variables
+
+Designed 2026-10-08; not started. Feature work outside the Phase 8 release gate.
+Steps 1-3 come before Phase 10, whose props can then use variables.
+
+A variable is a named value kept in a document. A shape property, or an
+instance's prop, can use a variable instead of a value of its own, and a text can
+show variables in its content as `${Name}`. Changing a variable changes
+everything that uses it.
+
+Decisions: four types, color, number, text and boolean; one value each, no modes
+yet; every inspector property can use a variable of its type; text values and
+text content can hold templates.
+
+Design:
+
+- Variable: `{ id, name, type, values: { default } }` in the document's
+  `variables` table, with `variablesIds` derived and sorted by name. `values` is
+  keyed by mode so modes can come later without a new shape of data; only
+  `default` exists now. The type is fixed once created. A color is `#rrggbb`
+  (`isHexColor`), a number finite, a text any string, a boolean `true` or
+  `false`.
+- Names: unique in the document, trimmed, not blank, and without `{`, `}` or
+  `$`, so a template can always name them. A `/` groups variables in the panel,
+  as `brand/primary`. A name shared after a merge resolves to the variable with
+  the lowest id in every copy.
+- Binding: a shape keeps `bindings`, a map from property key to variable id.
+  A property the inspector can change may use a variable of its kind: color,
+  number, text or boolean. The variable's value is written into the shape as if
+  typed into the field, when bound and in the same task whenever the variable
+  changes, so everything that reads shapes, older builds included, shows it with
+  no change of its own. A binding holds while the shape's value is the one the
+  variable would write (`bindingHolds`): Hide, Lock, a drag or any other edit
+  that sets the property otherwise ends it, and a variable change drops the
+  bindings that no longer hold. Setting the property in the inspector removes
+  its binding. A bound field shows the variable's name instead of a value, so it
+  cannot change other shapes by accident: the value is changed in the Variables
+  panel. Unbinding leaves the value as it is.
+- Templates: in a text's content and in a text variable's value, `${Name}` shows
+  that variable's value. A text keeps its template in `template` and the text it
+  makes in `value`, written as bound values are. A template keeps the variable's id, shown and typed as
+  its name, so renaming a variable changes no text, also in copies editing at
+  the same time. It shows a number as typed and a boolean as `true` or `false`.
+  `\${` keeps the characters as written. A name that does not exist, or a text
+  variable that leads back to itself, stays as written and is marked in the
+  inspector; resolution stops at a depth of 16.
+- Deleting a variable removes the bindings to it and rewrites the templates that
+  name it to its value, in one task, after asking when anything uses it, so every
+  shape looks as it did.
+- Collaboration and saving: variables merge field by field and `values` key by
+  key, like other tables. A copy that changes a variable writes the shapes using
+  it in the same task, so the others receive both. A binding to a variable
+  another copy deleted is ignored, and the shape keeps the value last written; a
+  binding made while another copy changed the variable may not hold after the
+  merge, and then counts as ended. Two variables given the same name by different
+  copies keep it, and the panel marks them until one is renamed. Readers check
+  every field. Older builds keep variables and bindings, since copies write only
+  the fields they change, and show the values written into shapes.
+- Clipboard: copied shapes carry the variables they bind or name. A paste uses a
+  variable of the same name and type in the document, else adds it, under a new
+  name as `copyName` gives shapes when the name is taken, and rebinds to it.
+- Panel: Variables, a dockable panel off by default and loaded when turned on,
+  lists variables by group with a field for each value (the color picker, a
+  number field, a text field, a switch), and creates, renames and deletes them.
+  It shows how many properties use each one. The inspector puts a variable button
+  beside every field: it opens a list of the variables of the field's type, and
+  a bound field shows the variable's name with a button that unbinds it.
+- Commands: Create variable, Use variable, Stop using variable, Rename variable
+  and Delete variable, registered by the editor.
+
+Steps:
+
+1. Data: the `variables` table, `bindings`, readers, collaboration, the
+   clipboard, writing values into bound shapes, and the rename and delete rules.
+   Test the readers, merges that delete a bound variable or repeat a name, and
+   pasting into a document that has or lacks the variables.
+2. The Variables panel and the inspector's variable buttons. Browser tests bind a
+   fill and a font size, change the variables, unbind, delete a used variable,
+   and reload.
+3. Templates: resolution in text content and text variables, the marks for
+   unknown names and loops, renames that keep templates, and measuring a text
+   again when a variable changes its size. Test a two-level template such as
+   `full name = ${first name} ${last name}`.
+4. Later, if wanted: modes such as Light and Dark, variables shared from another
+   document like Phase 10's library copies, and number expressions.
+
+Gate: every property that uses a variable shows its value and follows its
+changes, also in other copies; renaming a variable breaks nothing; deleting one
+leaves every shape looking as it did; a binding to a missing variable never stops
+a document from loading; pasted shapes keep their variables in any document;
+saving and reloading keep variables, bindings and templates.
 
 ## Scope Boundaries
 
