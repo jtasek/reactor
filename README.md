@@ -81,7 +81,8 @@ The Outline panel (in the explorer) lists the layers with their groups and shape
 tree. Drag a shape or a group onto a layer or a group to move it there. Press a layer's
 name to see only that layer, with the shapes on no layer, on your screen; press it again,
 or Show all layers, to see everything. A group is on one layer, with all its shapes. Type in the outline's search box to list only
-the shapes whose names contain the text.
+the layers, groups and shapes whose names contain the text. Press the arrow beside a layer or
+group to collapse or expand it.
 
 The image tool asks for a PNG, JPEG, GIF or WebP file of 5 MB or less, then draws it
 at its own proportions where you drag.

@@ -144,8 +144,7 @@ describe('filtering the outline', () => {
         run('group');
 
         const [groupId] = Object.keys(document().groups);
-        const filtered = (text: string) =>
-            filterOutline(outline(document()), document().shapes, text);
+        const filtered = (text: string) => filterOutline(outline(document()), document(), text);
 
         expect(filtered('RECTANGLE-2')).toEqual([
             { layerId: 'walls', groups: [{ groupId, shapesIds: [ids[1]] }], shapesIds: [] }
@@ -155,6 +154,31 @@ describe('filtering the outline', () => {
         ]);
         expect(filtered('door')).toEqual([]);
         expect(filtered('  ')).toEqual(outline(document()));
+    });
+
+    it('keeps a layer or a group whose own name contains the text with all it holds', () => {
+        const { store, ids, select, run, document, layer } = storeWith(0, 20, 40);
+
+        layer('walls', ...ids);
+        select(ids[1], ids[2]);
+        run('group');
+
+        const [groupId] = Object.keys(document().groups);
+
+        store.actions.updateGroup({ id: groupId, name: 'Door' });
+
+        const filtered = (text: string) => filterOutline(outline(document()), document(), text);
+
+        expect(filtered('WALL')).toEqual([
+            {
+                layerId: 'walls',
+                groups: [{ groupId, shapesIds: [ids[1], ids[2]] }],
+                shapesIds: [ids[0]]
+            }
+        ]);
+        expect(filtered('door')).toEqual([
+            { layerId: 'walls', groups: [{ groupId, shapesIds: [ids[1], ids[2]] }], shapesIds: [] }
+        ]);
     });
 
     it('is typed with the search action, and neither saved nor shown to other copies', async () => {

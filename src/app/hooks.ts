@@ -520,7 +520,7 @@ export const useOutline = () => {
         const document = state.currentDocument;
         const layers = outline(document);
 
-        return { layers, found: filterOutline(layers, document.shapes, document.filter) };
+        return { layers, found: filterOutline(layers, document, document.filter) };
     });
 };
 

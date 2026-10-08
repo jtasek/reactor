@@ -86,6 +86,29 @@ test('the search box filters the outline’s shapes by name, without running sho
     await expect(rows).toHaveCount(2);
 });
 
+test('a layer collapses, and opens while a search finds what it holds', async ({ page }) => {
+    await openEditor(page, ['Explorer', 'Outline']);
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    await page.keyboard.press('ControlOrMeta+Alt+l');
+    await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
+
+    const row = (name: string) => page.getByRole('button', { name, exact: true });
+    const search = page.getByRole('searchbox', { name: 'Search shapes' });
+
+    await page.getByRole('button', { name: 'Collapse layer-1', exact: true }).click();
+    await expect(row('rectangle-1')).toHaveCount(0);
+    await expect(row('rectangle-2')).toBeVisible();
+
+    await search.fill('rectangle-1');
+    await expect(row('rectangle-1')).toBeVisible();
+
+    await search.fill('');
+    await expect(row('rectangle-1')).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Expand layer-1', exact: true }).click();
+    await expect(row('rectangle-1')).toBeVisible();
+});
+
 test('an item’s menu fades in under the pointer and runs commands for that item', async ({
     page
 }) => {
