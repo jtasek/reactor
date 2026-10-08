@@ -1,32 +1,41 @@
+import { json } from 'overmind';
 import type { ActionWithParam, ActionWithParamAndResult, VariableType } from '../types';
 import { applyProperty, canEdit } from '../properties';
 import {
-    accepts,
+    applyVariableChanges,
     bindableProperty,
-    bindingHolds,
     buildVariable,
     canBind,
-    shapesBoundTo,
+    escapeTemplate,
+    replaceInTemplate,
+    templateWithIds,
     unbind,
-    variableNamed
+    variableNamed,
+    variableValue
 } from '../variables';
 
 /**
  * Adds a variable to the current document and answers its id; none when `name` is
- * taken or may not name a variable, or `value` is not of `type`.
+ * taken or may not name a variable, or `value` is not of `type`. Texts naming it
+ * before it existed show its value.
  */
 export const createVariable: ActionWithParamAndResult<
     { name: string; type: VariableType; value: unknown },
     string | undefined
 > = ({ state, effects }, { name, type, value }) => {
-    const { variables } = state.currentDocument;
-    const variable = buildVariable(effects.newId(), name, type, value);
+    const document = state.currentDocument;
+    const { variables } = document;
+    const before = structuredClone(json(variables));
+    const typed =
+        type === 'text' && typeof value === 'string' ? templateWithIds(value, variables) : value;
+    const variable = buildVariable(effects.newId(), name, type, typed);
 
     if (!variable || variableNamed(variables, name)) {
         return undefined;
     }
 
     variables[variable.id] = variable;
+    applyVariableChanges(document, before);
 
     return variable.id;
 };
@@ -48,39 +57,28 @@ export const renameVariable: ActionWithParam<{ variableId: string; name: string 
 };
 
 /**
- * Gives a variable a value of its type and writes it into the properties that
- * follow it. A property set otherwise since, as by a drag, no longer follows it;
- * one that did not take the old value, as a blank text, still does.
+ * Gives a variable a value of its type, a text variable's as typed with names, and
+ * writes into the shapes what it makes them: see `applyVariableChanges`.
  */
 export const setVariableValue: ActionWithParam<{ variableId: string; value: unknown }> = (
     { state },
     { variableId, value }
 ) => {
     const document = state.currentDocument;
-    const variable = document.variables[variableId];
-    const next = variable && buildVariable(variableId, variable.name, variable.type, value);
+    const before = structuredClone(json(document.variables));
+    const variable = before[variableId];
+    const typed =
+        variable?.type === 'text' && typeof value === 'string'
+            ? templateWithIds(value, before)
+            : value;
+    const next = variable && buildVariable(variableId, variable.name, variable.type, typed);
 
     if (!next) {
         return;
     }
 
-    shapesBoundTo(document, variableId).forEach(({ shape, keys }) =>
-        keys.forEach((key) => {
-            const property = bindableProperty(key);
-
-            if (
-                property &&
-                (!accepts(property, variable) || bindingHolds(property, shape, variable))
-            ) {
-                applyProperty(property, shape, next.values.default);
-
-                return;
-            }
-
-            unbind(shape, key);
-        })
-    );
     document.variables[variableId] = next;
+    applyVariableChanges(document, before);
 };
 
 /** Makes a property of the shapes that may change it follow a variable of its kind. */
@@ -108,9 +106,13 @@ export const bindProperty: ActionWithParam<{
             return;
         }
 
-        applyProperty(property, shape, variable.values.default);
+        applyProperty(property, shape, variableValue(variable, document.variables));
         shape.bindings ??= {};
         shape.bindings[key] = variableId;
+
+        if (key === 'text' && shape.type === 'text') {
+            delete shape.template;
+        }
     });
 };
 
@@ -128,12 +130,33 @@ export const unbindProperty: ActionWithParam<{ shapeIds: string[]; key: string }
     });
 };
 
-/** Removes a variable; the properties that followed it keep its value. */
+/**
+ * Removes a variable. The properties that followed it keep its value, and the
+ * templates holding it hold its value instead, so every shape looks as it did.
+ */
 export const deleteVariable: ActionWithParam<string> = ({ state }, variableId) => {
     const document = state.currentDocument;
+    const before = structuredClone(json(document.variables));
+    const variable = before[variableId];
 
-    shapesBoundTo(document, variableId).forEach(({ shape, keys }) =>
-        keys.forEach((key) => unbind(shape, key))
-    );
+    if (!variable) {
+        return;
+    }
+
+    const value = escapeTemplate(String(variableValue(variable, before)));
+    const inline = (template: string) =>
+        replaceInTemplate(template, (inside) => (inside === variableId ? value : undefined));
+
     delete document.variables[variableId];
+    Object.values(document.variables).forEach((other) => {
+        if (other.type === 'text') {
+            other.values.default = inline(other.values.default);
+        }
+    });
+    Object.values(document.shapes).forEach((shape) => {
+        if (shape.type === 'text' && shape.template !== undefined) {
+            shape.template = inline(shape.template);
+        }
+    });
+    applyVariableChanges(document, before);
 };

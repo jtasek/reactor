@@ -1,6 +1,7 @@
 import { readClipboard } from 'src/app/clipboard';
 import { readEntity } from 'src/app/services/documentStorage';
-import { boundVariable, variableNamed } from 'src/app/variables';
+import { variableNamed } from 'src/app/variables';
+import { boundVariable } from 'src/app/editorVariables';
 import type { Variable } from 'src/app/types';
 import {
     createCopies,

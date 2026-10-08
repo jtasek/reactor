@@ -13,6 +13,8 @@ export interface Props {
     variables: Variable[];
     /** The variable every shape follows for a property, by its key. */
     bound: Record<string, Variable>;
+    /** What a field's value cannot show, by property key. */
+    notes: Record<string, string>;
     onBind: (shapeIds: string[], key: string, variableId: string) => void;
     onUnbind: (shapeIds: string[], key: string) => void;
 }
@@ -27,6 +29,7 @@ export const Inspector: FC<Props> = ({
     onChange,
     variables,
     bound,
+    notes,
     onBind,
     onUnbind
 }) => {
@@ -50,6 +53,7 @@ export const Inspector: FC<Props> = ({
                                     (variable) => variable.type === row.property.kind
                                 )}
                                 variable={bound[row.property.key]}
+                                note={notes[row.property.key]}
                                 onBind={onBind}
                                 onUnbind={onUnbind}
                             />

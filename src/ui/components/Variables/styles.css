@@ -22,6 +22,7 @@
 .row {
     align-items: center;
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
 }
 
@@ -133,4 +134,12 @@
 .create + .group,
 .problem + .group {
     margin-top: var(--panel-gap);
+}
+
+/* What a text variable's value cannot show, on a line of its own under the row. */
+.note {
+    color: var(--warning-color);
+    flex-basis: 100%;
+    font-size: 0.75rem;
+    line-height: 16px;
 }

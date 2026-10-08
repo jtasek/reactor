@@ -17,6 +17,8 @@ interface Props {
     variables: Variable[];
     /** The variable every shape follows for the property. */
     variable?: Variable;
+    /** What the value cannot show, under the field. */
+    note?: string;
     onBind: (shapeIds: string[], key: string, variableId: string) => void;
     onUnbind: (shapeIds: string[], key: string) => void;
 }
@@ -37,6 +39,7 @@ export const PropertyField: FC<Props> = ({
     onChange,
     variables,
     variable,
+    note,
     onBind,
     onUnbind
 }) => {
@@ -213,6 +216,11 @@ export const PropertyField: FC<Props> = ({
                             onChange={(number) => onChange(shapeIds, property.key, number)}
                         />
                     </SharedOnRelease>
+                )}
+                {note && (
+                    <small className={styles.note} role="note">
+                        {note}
+                    </small>
                 )}
             </td>
         </tr>
