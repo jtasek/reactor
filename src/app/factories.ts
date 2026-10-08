@@ -220,6 +220,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
         created: new Date(),
         createdBy: getCurrentUserName(),
         description: '',
+        filter: '',
         grid: createGrid(),
         components: {},
         groups: {},

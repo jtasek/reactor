@@ -410,6 +410,34 @@ export function outline(document: Document): OutlineLayer[] {
     return [...layersIds.map(entry), ...(listed ? [unlayered] : [])];
 }
 
+/**
+ * The outline with only the shapes whose names contain `text`, in any case, and the
+ * groups and layers holding them; all of it while `text` is blank.
+ */
+export function filterOutline(
+    layers: OutlineLayer[],
+    shapes: Document['shapes'],
+    text: string
+): OutlineLayer[] {
+    const wanted = text.trim().toLowerCase();
+
+    if (!wanted) {
+        return layers;
+    }
+
+    const matches = (id: string) => shapes[id]?.name.toLowerCase().includes(wanted) ?? false;
+
+    return layers
+        .map(({ layerId, groups, shapesIds }) => ({
+            layerId,
+            groups: groups
+                .map((group) => ({ ...group, shapesIds: group.shapesIds.filter(matches) }))
+                .filter((group) => group.shapesIds.length > 0),
+            shapesIds: shapesIds.filter(matches)
+        }))
+        .filter(({ groups, shapesIds }) => groups.length > 0 || shapesIds.length > 0);
+}
+
 /** The selected groups and the selected shapes outside them: what Hide and Lock act on. */
 export function selectedItems(document: Document) {
     const groups = document.selectedGroupsIds.map((id) => document.groups[id]);

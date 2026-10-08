@@ -20,6 +20,7 @@ import {
     drawnExtent,
     groupFrame,
     hoveredGroupsIds,
+    filterOutline,
     outline,
     selectedGroupsIdsOf,
     selectionScope
@@ -165,6 +166,10 @@ export const useCurrentDocument = () => {
 
 export const useDocumentName = () => {
     return useAppState((state) => state.currentDocument.name);
+};
+
+export const useDocumentFilter = () => {
+    return useAppState((state) => state.currentDocument.filter);
 };
 
 export const useSelectedShapesIds = () => {
@@ -509,9 +514,14 @@ export const useLinks = () => {
     return useCurrentDocument()?.links ?? [];
 };
 
-/** The document as a tree of layers, their groups and shapes. */
+/** The document as a tree of layers, their groups and shapes, and the part of it the search finds. */
 export const useOutline = () => {
-    return useAppState((state) => outline(state.currentDocument));
+    return useAppState((state) => {
+        const document = state.currentDocument;
+        const layers = outline(document);
+
+        return { layers, found: filterOutline(layers, document.shapes, document.filter) };
+    });
 };
 
 /** The one layer this screen shows, if it shows only one. */

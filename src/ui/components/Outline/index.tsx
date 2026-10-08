@@ -1,6 +1,7 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
 import { Dragged, OutlineItem } from './OutlineItem';
+import { SearchBoxContainer } from '../SearchBox';
 import { hideAction, lockAction, toggleAction, useItemCommandActions } from '../ItemMenu';
 import {
     useActions,
@@ -137,7 +138,7 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
  * group onto a layer or a group moves it there.
  */
 export const Outline: FC = () => {
-    const layers = useOutline();
+    const { layers, found } = useOutline();
     const shownLayerId = useShownLayerId();
     const { outline } = useControls();
     const { moveShapesToLayer, showAllLayers } = useActions();
@@ -158,35 +159,43 @@ export const Outline: FC = () => {
     return (
         <section className={styles.outline} aria-label="Outline">
             <h3>Outline</h3>
+            <SearchBoxContainer />
             {shownLayerId && (
                 <button type="button" className={styles.showAll} onClick={() => showAllLayers()}>
                     Show all layers
                 </button>
             )}
-            <ul>
-                {layers.map(({ layerId, groups, shapesIds }) =>
-                    layerId === null ? (
-                        <OutlineItem
-                            key="no-layer"
-                            kind="layer"
-                            name="No layer"
-                            onDrop={(dragged) =>
-                                moveShapesToLayer({ shapeIds: shapesOf(dragged), layerId: null })
-                            }
-                        >
-                            <LayerContents groups={groups} shapesIds={shapesIds} />
-                        </OutlineItem>
-                    ) : (
-                        <LayerItem
-                            key={layerId}
-                            layerId={layerId}
-                            groups={groups}
-                            shapesIds={shapesIds}
-                            shapesOf={shapesOf}
-                        />
-                    )
-                )}
-            </ul>
+            {found.length === 0 ? (
+                <p>No shapes match</p>
+            ) : (
+                <ul>
+                    {found.map(({ layerId, groups, shapesIds }) =>
+                        layerId === null ? (
+                            <OutlineItem
+                                key="no-layer"
+                                kind="layer"
+                                name="No layer"
+                                onDrop={(dragged) =>
+                                    moveShapesToLayer({
+                                        shapeIds: shapesOf(dragged),
+                                        layerId: null
+                                    })
+                                }
+                            >
+                                <LayerContents groups={groups} shapesIds={shapesIds} />
+                            </OutlineItem>
+                        ) : (
+                            <LayerItem
+                                key={layerId}
+                                layerId={layerId}
+                                groups={groups}
+                                shapesIds={shapesIds}
+                                shapesOf={shapesOf}
+                            />
+                        )
+                    )}
+                </ul>
+            )}
         </section>
     );
 };

@@ -354,12 +354,13 @@ Feature inventory:
   image and move tools; the delete, clone, group, ungroup, layer, unlayer, zoom,
   align and space commands, with shortcuts and the command line; snapping moves to
   other shapes; the inspector; the
-  documents page; the outline, group and layer panels with hide and lock;
+  documents page; the outline, filtered by the search box, and the group and layer panels with hide and lock;
   the context menu; copy, cut and paste; saving in the browser and sharing between tabs; accounts,
   syncing with the server, and signing out.
 - Shown but not covered by tests: the minimap, guides, data view, overlay and stats
   panels.
-- Started, not working yet: images are kept in the browser only, not uploaded yet.
+- Started, not working yet: images are kept in the browser only, not uploaded yet;
+  the `filtered*` derivations are not used.
 - Kept for later, not shown: the `Badge`, `Dialog`, `Overlay` and `Switch`
   components, and the stylesheets components do not use yet.
 - Planned: components (Phase 10), plugins and renderers (Phase 9), image upload,

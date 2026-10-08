@@ -59,6 +59,33 @@ test('the outline lists layers as a tree, shows one layer alone, and takes dropp
     await expect(second).toHaveCount(0);
 });
 
+test('the search box filters the outline’s shapes by name, without running shortcuts', async ({
+    page
+}) => {
+    await openEditor(page, ['Explorer', 'Outline']);
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
+
+    const search = page.getByRole('searchbox', { name: 'Search shapes' });
+    const rows = page.getByRole('region', { name: 'Outline' }).getByRole('button', {
+        name: /^rectangle-\d$/
+    });
+
+    await expect(rows).toHaveCount(2);
+
+    await search.fill('Rectangle-2');
+    await expect(rows).toHaveText(['rectangle-2']);
+
+    await search.fill('');
+    await search.pressSequentially('door');
+    await expect(rows).toHaveCount(0);
+    await expect(page.getByText('No shapes match')).toBeVisible();
+    await expect(shapes(page)).toHaveCount(2);
+
+    await search.fill('');
+    await expect(rows).toHaveCount(2);
+});
+
 test('an item’s menu fades in under the pointer and runs commands for that item', async ({
     page
 }) => {
