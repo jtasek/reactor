@@ -63,11 +63,6 @@ export const state: UI = {
         name: 'Minimap',
         visible: false
     },
-    overlay: {
-        id: 'overlay',
-        name: 'Overlay',
-        visible: false
-    },
     inspector: {
         id: 'inspector',
         name: 'Inspector',

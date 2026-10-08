@@ -357,11 +357,11 @@ Feature inventory:
   documents page; the outline, filtered by the search box, and the group and layer panels with hide and lock;
   the context menu; copy, cut and paste; saving in the browser and sharing between tabs; accounts,
   syncing with the server, and signing out.
-- Shown but not covered by tests: the minimap, guides, data view, overlay and stats
+- Shown but not covered by tests: the minimap, guides, data view and stats
   panels.
 - Started, not working yet: images are kept in the browser only, not uploaded yet;
   the `filtered*` derivations are not used.
-- Kept for later, not shown: the `Badge`, `Dialog`, `Overlay` and `Switch`
+- Kept for later, not shown: the `Badge`, `Dialog` and `Switch`
   components, and the stylesheets components do not use yet.
 - Planned: variables (Phase 12), components (Phase 10), plugins and renderers (Phase 9), image upload,
   moving signed-out documents into an account, organizations, teams and sharing,
