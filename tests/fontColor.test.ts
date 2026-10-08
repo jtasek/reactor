@@ -3,6 +3,7 @@ import { createShape } from 'src/app/factories';
 import { SHAPE_PROPERTIES, applyProperty } from 'src/app/properties';
 import { readEntity } from 'src/app/services/documentStorage';
 import type { Shape, Text } from 'src/app/types';
+import { shapeGeometryKey } from 'src/app/utils';
 
 const text = (fontColor?: string) => {
     const shape = createShape({
@@ -52,6 +53,10 @@ describe('font color', () => {
         });
         expect(readEntity('shapes', saved(text()))).not.toHaveProperty('fontColor');
         expect(() => readEntity('shapes', saved(text('url(#x)')))).toThrow();
+    });
+
+    it('leaves the text unmeasured, as it does not change its size', () => {
+        expect(shapeGeometryKey(text('#aa0000'))).toBe(shapeGeometryKey(text()));
     });
 
     it('is copied and pasted with the text', () => {

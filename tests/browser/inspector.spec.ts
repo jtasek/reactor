@@ -258,6 +258,7 @@ test('a text’s font color is picked in the text section and colors its letters
 
     await page.getByRole('button', { name: 'No font color', exact: true }).click();
     await expect.poll(fill).toBe('rgb(0, 0, 0)');
+});
 
 test('a color field is disabled on a locked shape and marks no color and mixed colors', async ({
     page

@@ -248,7 +248,10 @@ export function readShapeStyle(value: unknown, shape: Pick<Shape, 'type'>) {
     return {
         ...(s.opacity === undefined ? {} : { opacity: fraction(s.opacity) }),
         ...(s.fill === undefined || !isClosedShape(shape) ? {} : { fill: color(s.fill) }),
-        ...(s.stroke === undefined || !isStrokedShape(shape) ? {} : { stroke: color(s.stroke) })
+        ...(s.stroke === undefined || !isStrokedShape(shape) ? {} : { stroke: color(s.stroke) }),
+        ...(s.fontColor === undefined || shape.type !== 'text'
+            ? {}
+            : { fontColor: color(s.fontColor) })
     };
 }
 
@@ -299,8 +302,7 @@ export function readShapeGeometry(value: unknown) {
                 type: s.type,
                 position: point(s.position),
                 value: text(s.value ?? s.text),
-                ...(s.fontSize === undefined ? {} : { fontSize: positive(s.fontSize) }),
-                ...(s.fontColor === undefined ? {} : { fontColor: color(s.fontColor) })
+                ...(s.fontSize === undefined ? {} : { fontSize: positive(s.fontSize) })
             };
         default:
             throw new Error('Unsupported shape type');
