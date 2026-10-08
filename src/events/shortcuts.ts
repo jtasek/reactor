@@ -2,7 +2,7 @@
 export type KeyPress = Pick<KeyboardEvent, 'key' | 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'> &
     Partial<Pick<KeyboardEvent, 'code' | 'repeat'>>;
 
-function parseBinding(binding: string) {
+export function parseBinding(binding: string) {
     const lower = binding.trim().toLowerCase();
     // The key itself may be `+`, as in `+` or `mod++`.
     const keyStart = lower.endsWith('+') ? lower.length - 1 : lower.lastIndexOf('+') + 1;

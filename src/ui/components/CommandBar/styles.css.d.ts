@@ -5,6 +5,7 @@ declare namespace StylesCssNamespace {
         container: string;
         delimiter: string;
         info: string;
+        shortcut: string;
     }
 }
 

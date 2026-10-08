@@ -74,6 +74,19 @@
         visibility 0s;
 }
 
+/* The shown command's shortcut, as a key cap after its description. */
+.shortcut {
+    background-color: var(--control-background-active);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-color-hover);
+    font-family: inherit;
+    font-weight: 600;
+    margin-left: 0.5em;
+    padding: 0 0.35em;
+    white-space: nowrap;
+}
+
 .info:empty {
     opacity: 0;
     visibility: hidden;

@@ -497,6 +497,8 @@ Hidden guides are not drawn and locked ones do not move.
   tool or runs the command; the keyboard adapter skips it while a text field has focus. Keep
   bindings unique (`tests/shortcuts.test.ts` checks) and avoid plain Ctrl/Cmd browser keys,
   except a command's `clipboardEvent` shortcut, which is left to that browser event.
+  The command bar's info shows a command's shortcut as a key cap after its description
+  (`shortcutLabel`: `Ctrl+D`, or `⌘D` where `usesCommandKey`).
   The arrow keys move the editable selection by `config.arrowKeyStep` canvas units or, with
   none, pan the view that many screen pixels towards the arrow, as scrolling does, so the
   content moves the other way (`src/commands/move`). They are the canvas's only while focus
