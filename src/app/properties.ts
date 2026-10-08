@@ -211,6 +211,8 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
                 ? escapeTemplate(shape.value)
                 : templateWithNames(shape.template, document.variables);
         },
+        // Like the text tool, never leave an invisible text shape.
+        accepts: notBlank,
         write: (shape, value) => {
             if (shape.type === 'text' && notBlank(value)) {
                 shape.value = value;

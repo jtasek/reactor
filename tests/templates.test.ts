@@ -1,6 +1,7 @@
 import { SHAPE_PROPERTIES } from 'src/app/properties';
-import { buildVariable, renderTemplate, templateProblems, variableNamed } from 'src/app/variables';
+import { buildVariable, renderTemplate, templateWithNames, variableNamed } from 'src/app/variables';
 import type { Text, Variable } from 'src/app/types';
+import { templateProblems } from 'src/app/editorVariables';
 import { createCopies, edit, settle, shownDocument } from './support/collaboration';
 import { createTestStore } from './support/store';
 
@@ -26,6 +27,14 @@ describe('templates', () => {
             'Ada Lovelace has 3 notes: true'
         );
         expect(renderTemplate('${first name}', variables)).toBe('Ada');
+    });
+
+    it('show the name a part keeps once no variable has its id', () => {
+        const kept = 'Hi ${gone$first name} ${gone$dropped}';
+
+        expect(renderTemplate(kept, variables)).toBe('Hi Ada ${dropped}');
+        expect(templateWithNames(kept, variables)).toBe('Hi ${first name} ${dropped}');
+        expect(templateProblems(kept, variables)).toEqual(['dropped']);
     });
 
     it('keep `\\${` and names of no variable as written, and stop at a loop', () => {
@@ -104,6 +113,18 @@ describe('a text with a template', () => {
         expect(text().template).toBeUndefined();
     });
 
+    it('keeps its template while a variable it names is blank', () => {
+        const { store, text, type, create } = storeWithText();
+        const greeting = create('greeting', 'Hi');
+
+        type('${greeting}');
+        store.actions.setVariableValue({ variableId: greeting, value: '' });
+        expect(text().value).toBe('Hi');
+
+        store.actions.setVariableValue({ variableId: greeting, value: 'Hello' });
+        expect(text().value).toBe('Hello');
+    });
+
     it('drops its template once its text is set otherwise', () => {
         const { store, text, type, create } = storeWithText();
         const first = create('first name', 'Ada');
@@ -176,6 +197,28 @@ describe('a text with a template', () => {
 });
 
 describe('templates shared between copies', () => {
+    it('show the name of a variable another copy deletes at the same time', async () => {
+        const copies = await createCopies(2, (store) => {
+            store.actions.addShape({ type: 'text', position: { x: 0, y: 20 }, value: 'Hello' });
+            store.actions.createVariable({ name: 'first name', type: 'text', value: 'Ada' });
+        });
+        const [a, b] = copies;
+        const [id] = shownDocument(a).shapesIds;
+        const [first] = Object.keys(shownDocument(a).variables);
+
+        edit(a, (actions) => actions.deleteVariable(first));
+        edit(b, (actions) =>
+            actions.setShapesProperty({ shapeIds: [id], key: 'text', value: 'Hi ${first name}' })
+        );
+        settle(copies);
+
+        copies.forEach((copy) => {
+            const document = shownDocument(copy);
+
+            expect(textProperty.read(document.shapes[id], document)).toBe('Hi ${first name}');
+        });
+    });
+
     it('keep showing a variable another copy renames at the same time', async () => {
         const copies = await createCopies(2, (store) => {
             store.actions.addShape({ type: 'text', position: { x: 0, y: 20 }, value: 'Hello' });

@@ -2,7 +2,8 @@ import React, { FC, FormEvent, KeyboardEvent, useState } from 'react';
 import type { Variable, VariableType } from 'src/app/types';
 import { useActions } from 'src/app/hooks';
 import { useVariableUses, useVariables } from 'src/app/variableHooks';
-import { isVariableName, templateProblems, templateWithNames } from 'src/app/variables';
+import { isVariableName, templateWithNames } from 'src/app/variables';
+import { templateProblems } from 'src/app/editorVariables';
 import { SharedOnRelease } from '../Inspector/SharedOnRelease';
 import styles from './styles.css';
 
@@ -155,7 +156,7 @@ const VariableRow: FC<{
                 onCommit={(name) => renameVariable({ variableId: variable.id, name: name.trim() })}
             />
             <ValueField variable={variable} variables={variables} />
-            <span className={styles.uses} title={`Used by ${uses} properties`}>
+            <span className={styles.uses} title={`Used ${uses} times`}>
                 {uses}
             </span>
             {confirming ? (

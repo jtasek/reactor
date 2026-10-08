@@ -3,7 +3,8 @@
 import { useRef } from 'react';
 import type { Document, Shape, Variable } from './types';
 import { useAppState } from './hooks';
-import { bindableProperty, boundVariable, templateProblems } from './variables';
+import { bindableProperty, templateVariablesIds } from './variables';
+import { boundVariable, templateProblems } from './editorVariables';
 
 /**
  * `boundVariable` of a shape in the store, reading the property through the store
@@ -25,21 +26,39 @@ export const useVariables = () => {
     });
 };
 
-/** How many shape properties follow each variable, by its id. */
+/**
+ * How many shape properties and templates use each variable, by its id: those of
+ * texts and of other text variables, including through the text variables they hold.
+ */
 export const useVariableUses = () => {
     return useAppState((state) => {
         const document = state.currentDocument;
+        const { variables } = document;
         const uses: Record<string, number> = {};
+        const use = (variableId: string) => {
+            uses[variableId] = (uses[variableId] ?? 0) + 1;
+        };
 
-        Object.values(document.shapes).forEach((shape) =>
+        Object.values(document.shapes).forEach((shape) => {
             Object.keys(shape.bindings ?? {}).forEach((key) => {
                 const variable = trackedBoundVariable(shape, key, document);
 
                 if (variable) {
-                    uses[variable.id] = (uses[variable.id] ?? 0) + 1;
+                    use(variable.id);
                 }
-            })
-        );
+            });
+
+            if (shape.type === 'text' && shape.template !== undefined) {
+                templateVariablesIds(shape.template, variables).forEach(use);
+            }
+        });
+        Object.values(variables).forEach((variable) => {
+            if (variable.type === 'text') {
+                templateVariablesIds(variable.values.default, variables).forEach(
+                    (variableId) => variableId !== variable.id && use(variableId)
+                );
+            }
+        });
 
         return uses;
     });

@@ -341,10 +341,12 @@ const pasteVariables = ({ state, effects }: Context, copied: Variable[]) => {
     });
 
     const remapTemplate = (template: string) =>
-        replaceInTemplate(template, (inside) => {
+        replaceInTemplate(template, (inside, name) => {
             const id = ids.get(inside);
 
-            return id === undefined ? undefined : `\${${id}}`;
+            return id === undefined
+                ? undefined
+                : `\${${id}${name === undefined ? '' : `$${name}`}}`;
         });
 
     added.forEach(({ id, name, type, values }) => {

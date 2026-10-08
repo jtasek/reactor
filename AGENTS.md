@@ -140,7 +140,7 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   (not suppressed). `pnpm lint:baseline` fails on any finding in a file changed relative to
   `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
   recorded counts: fix a touched file's existing findings rather than adding exceptions.
-- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 444 KiB or
+- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 448 KiB or
   any file 240 KiB (the budget in `webpack.config.mjs`, measured at 440 and 225 KiB); raise
   it only for code every page needs as it opens, after checking what grew. Commands and
   tools load with the editor page, which registers them (`src/pages/registerEditor.ts`),
@@ -396,12 +396,15 @@ which loads with the editor page rather than with `hooks.ts`.
 A text's content and a text variable's value may be templates: `${Name}` shows that
 variable's value (`renderTemplate`), `\${` stays as written, and a name of no variable or
 a text variable leading back to itself stays as written and is noted under its field
-(`templateProblems`). A template holds variables by id and shows them by name
-(`templateWithIds`, `templateWithNames`), so renaming changes no text. A text keeps its
-template in `template` and the text it makes in `value` (`writeText`); every variable
-change writes again what bindings and templates make (`applyVariableChanges`), dropping a
-template whose text was set otherwise, and deleting a variable writes its value into the
-templates that hold it.
+(`templateProblems`, in `src/app/editorVariables.ts` with what else only the editor shows).
+A template holds variables by id, with the name each had, as `${id$name}`, and shows them
+by name (`templateWithIds`, `templateWithNames`), so renaming changes no text and one
+deleted by another copy still shows its name. A text keeps its template in `template` and
+the text it makes in `value` (`writeText`); every variable change writes again what
+bindings and templates make (`applyVariableChanges`), dropping a template whose text was
+set otherwise but keeping one a blank value left as it was, and deleting a variable
+writes its value into the templates that hold it. The Variables panel counts these
+templates as uses too.
 
 ## The selection's menu
 

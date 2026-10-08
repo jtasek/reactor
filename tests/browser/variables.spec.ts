@@ -36,7 +36,7 @@ test('a fill follows a color variable until it stops using it, also after a relo
 
     await field(page, 'Value of brand/primary').fill('#ff0000');
     await expect.poll(fill).toBe('rgb(255, 0, 0)');
-    await expect(panel(page).getByTitle('Used by 1 properties')).toBeVisible();
+    await expect(panel(page).getByTitle('Used 1 times')).toBeVisible();
 
     await page.reload();
     await openEditor(page, ['Inspector', 'Variables']);
@@ -143,4 +143,9 @@ test('a text shows the variables its template names and follows their changes', 
     await field(page, 'Text').press('Enter');
     await expect(letters).toHaveText('Hi ${nobody}');
     await expect(page.getByRole('note')).toHaveText('Cannot show nobody');
+
+    await field(page, 'Text').fill('Hi ${full name}');
+    await field(page, 'Text').press('Enter');
+    await page.getByRole('button', { name: 'Delete first name', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Confirm deleting first name' })).toBeVisible();
 });
