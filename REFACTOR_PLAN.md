@@ -958,8 +958,8 @@ Design:
   `false`.
 - Names: unique in the document, trimmed, not blank, and without `{`, `}` or
   `$`, so a template can always name them. A `/` groups variables in the panel,
-  as `brand/primary`. Renaming a variable rewrites the templates that name it in
-  the same task, so nothing that used it breaks.
+  as `brand/primary`. A name shared after a merge resolves to the variable with
+  the lowest id in every copy.
 - Binding: a shape keeps `bindings`, a map from property key to variable id.
   A property may use only a variable of its type: color properties color
   variables, number properties number variables, `text` and `name` text
@@ -970,11 +970,16 @@ Design:
   accident: the value is changed in the Variables panel. Unbinding keeps the
   variable's current value as the shape's own.
 - Resolution: one derivation per shape applies its bindings and templates
-  (`resolveShape`), and drawing, measuring, hit testing, snapping and the
-  inspector read the resolved shape. The measurement key includes resolved text
+  (`resolveShape`), and everything that reads a shape reads the resolved one:
+  drawing, measuring, hit testing, snapping, the inspector, membership
+  (`isShapeVisible`, `isShapeLocked` and what derives from them), the Explorer and
+  its search, and shape naming. Hide and Lock on a bound flag stop using the
+  variable and keep the value they set. The measurement key includes resolved text
   and size, so a variable that changes a text's content measures it again.
 - Templates: in a text's content and in a text variable's value, `${Name}` shows
-  that variable's value, a number as typed and a boolean as `true` or `false`.
+  that variable's value. A template keeps the variable's id, shown and typed as
+  its name, so renaming a variable changes no text, also in copies editing at
+  the same time. It shows a number as typed and a boolean as `true` or `false`.
   `\${` keeps the characters as written. A name that does not exist, or a text
   variable that leads back to itself, stays as written and is marked in the
   inspector; resolution stops at a depth of 16.
@@ -985,11 +990,12 @@ Design:
   key, like other tables. A binding to a variable another copy deleted is dropped
   when read, and the shape draws its own value; two variables given the same name
   by different copies keep it, and the panel marks them until one is renamed.
-  Readers check every field, and the save format version rises, so older builds
-  stop saving rather than drop variables.
+  Readers check every field. The shared document records a content version; a
+  build that finds a newer one stops saving and sharing changes rather than drop
+  variables, over tab sync and server sync too.
 - Clipboard: copied shapes carry the variables they bind or name. A paste uses a
-  variable of the same name and type in the document, else adds it, and rebinds
-  to it.
+  variable of the same name and type in the document, else adds it, under a new
+  name as `copyName` gives shapes when the name is taken, and rebinds to it.
 - Panel: Variables, a dockable panel off by default and loaded when turned on,
   lists variables by group with a field for each value (the color picker, a
   number field, a text field, a switch), and creates, renames and deletes them.
@@ -1001,7 +1007,7 @@ Design:
 
 Steps:
 
-1. Data: the `variables` table, `bindings`, readers and the save format version,
+1. Data: the `variables` table, `bindings`, readers and the content version,
    collaboration, the clipboard, `resolveShape` and the rename and delete rules.
    Test the readers, merges that delete a bound variable or repeat a name, and
    pasting into a document that has or lacks the variables.
@@ -1009,7 +1015,7 @@ Steps:
    fill and a font size, change the variables, unbind, delete a used variable,
    and reload.
 3. Templates: resolution in text content and text variables, the marks for
-   unknown names and loops, renames rewriting templates, and measuring a text
+   unknown names and loops, renames that keep templates, and measuring a text
    again when a variable changes its size. Test a two-level template such as
    `full name = ${first name} ${last name}`.
 4. Later, if wanted: modes such as Light and Dark, variables shared from another
