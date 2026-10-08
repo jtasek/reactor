@@ -36,22 +36,10 @@ export const removeComponent: ActionWithParam<string> = ({ state }, componentId)
     deleteComponent(state, componentId);
 };
 
-export const toggleComponentSelected: ActionWithParam<string> = ({ state }, componentId) => {
-    const component = getComponent(state, componentId);
-
-    component.selected = !component.selected;
-};
-
 export const unselectComponent: ActionWithParam<string> = ({ state }, componentId) => {
     const component = getComponent(state, componentId);
 
     component.selected = false;
-};
-
-export const toggleComponentLocked: ActionWithParam<string> = ({ state }, componentId) => {
-    const component = getComponent(state, componentId);
-
-    component.locked = !component.locked;
 };
 
 export const lockComponent: ActionWithParam<string> = ({ state }, componentId) => {
@@ -76,12 +64,6 @@ export const hideComponent: ActionWithParam<string> = ({ state }, componentId) =
     const component = getComponent(state, componentId);
 
     component.visible = false;
-};
-
-export const toggleComponentVisible: ActionWithParam<string> = ({ state }, componentId) => {
-    const component = getComponent(state, componentId);
-
-    component.visible = !component.visible;
 };
 
 export const updateComponent: ActionWithParam<Partial<Component> & { id: string }> = (

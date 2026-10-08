@@ -93,10 +93,6 @@ export const useCommandEnabled = (command: Command) => {
     return useAppState((state) => command.canExecute({ state }));
 };
 
-export const useComponent = (id: string) => {
-    return useCurrentDocument()?.components[id];
-};
-
 export const useComponents = () => {
     return useCurrentDocument()?.components;
 };
@@ -207,18 +203,6 @@ export const useSelectedShapesProperties = () => {
 
         return held.current;
     });
-};
-
-export const useComponentsIds = () => {
-    return useAppState((state) => state.currentDocument.componentsIds);
-};
-
-export const useGuidesIds = () => {
-    return useAppState((state) => state.currentDocument.guidesIds);
-};
-
-export const useLinksIds = () => {
-    return useAppState((state) => state.currentDocument.linksIds);
 };
 
 export const useLayersIds = () => {
@@ -335,10 +319,6 @@ export const useShapes = () => {
 /** Shape ids in draw order, copied so a render tracks the list rather than each id. */
 export const useShapesIds = () => {
     return useAppState((state) => json(state.currentDocument.shapesIds));
-};
-
-export const useGuide = (id: string) => {
-    return useCurrentDocument()?.guides[id];
 };
 
 export const useGuides = () => {
@@ -527,10 +507,6 @@ export const useShapesInSelectedGroupsIds = () => {
 
 export const useGroups = () => {
     return useCurrentDocument()?.groups ?? [];
-};
-
-export const useLink = (id: string) => {
-    return useCurrentDocument()?.links[id];
 };
 
 export const useLinks = () => {

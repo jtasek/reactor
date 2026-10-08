@@ -63,11 +63,6 @@ export const state: UI = {
         name: 'Minimap',
         visible: false
     },
-    navBar: {
-        id: 'navBar',
-        name: 'Navigation Bar',
-        visible: false
-    },
     outline: {
         id: 'outline',
         name: 'Outline',

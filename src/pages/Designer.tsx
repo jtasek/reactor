@@ -14,7 +14,6 @@ import {
     Layout,
     MenuBar,
     Minimap,
-    NavBar,
     Outline,
     Inspector,
     SearchBox,
@@ -46,7 +45,6 @@ export const Designer: FC = () => (
                     <Explorer>
                         <SearchBox />
                         <Outline />
-                        <NavBar />
                     </Explorer>
                 </SideBar>
             </DockablePanel>
