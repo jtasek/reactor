@@ -22,12 +22,10 @@ export interface UI {
     layerPanel: Control;
     menuBar: Control;
     miniMap: Control;
-    outline: Control;
     overlay: Control;
     inspector: Control;
     guides: Control;
     rulers: Control;
-    searchBox: Control;
     sideBar: Control;
     statusBar: Control;
     surface: Control;

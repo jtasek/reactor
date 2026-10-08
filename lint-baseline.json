@@ -1,9 +1,6 @@
 {
     "description": "Phase 1 remaining lint debt. Do not add entries; remove entries as files are repaired.",
     "files": {
-        "src/ui/components/Explorer/index.tsx": {
-            "[\"@typescript-eslint/no-unused-vars\",2,\"'styles' is defined but never used.\"]": 1
-        },
         "src/ui/components/LayerPanel/index.tsx": {
             "[\"@typescript-eslint/no-unused-vars\",2,\"'styles' is defined but never used.\"]": 1
         },

@@ -1,20 +1,227 @@
-import React, { FC, ReactNode } from 'react';
-
+import React, { FC, useState } from 'react';
 import styles from './styles.css';
+import { CollapsedItems, Dragged, ExplorerItem } from './ExplorerItem';
+import { SearchBoxContainer } from '../SearchBox';
+import { hideAction, lockAction, toggleAction, useItemCommandActions } from '../ItemMenu';
+import {
+    useActions,
+    useControls,
+    useGroup,
+    useGroupSelected,
+    useLayer,
+    useOutline,
+    useShape,
+    useShapeLocked,
+    useScopedCommands,
+    useShownLayerId
+} from 'src/app/hooks';
 
-import { Explorer } from './Explorer';
-import { useControls } from 'src/app/hooks';
+const ShapeItem: FC<{ shapeId: string }> = ({ shapeId }) => {
+    const shape = useShape(shapeId);
+    const { toggleShapeSelected, toggleShapeLocked, toggleShapeVisible } = useActions();
+    const commands = useItemCommandActions([shapeId], useShapeLocked(shapeId) || !shape.visible);
 
-interface Props {
-    children?: ReactNode;
+    return (
+        <ExplorerItem
+            kind="shape"
+            name={shape.name}
+            dragged={{ kind: 'shape', id: shapeId }}
+            selected={shape.selected}
+            active={shape.active}
+            visible={shape.visible}
+            onClick={() => toggleShapeSelected(shapeId)}
+            menuActions={[
+                hideAction(!shape.visible, () => toggleShapeVisible(shapeId)),
+                lockAction(shape.locked, () => toggleShapeLocked(shapeId)),
+                ...commands(useScopedCommands('shape'))
+            ]}
+        />
+    );
+};
+
+const GroupItem: FC<{ groupId: string; shapesIds: string[] }> = ({ groupId, shapesIds }) => {
+    const group = useGroup(groupId);
+    const selected = useGroupSelected(groupId);
+    const { addShapesToGroup, toggleGroupSelected, toggleGroupLocked, toggleGroupVisible } =
+        useActions();
+    const commands = useItemCommandActions(group.shapesIds, group.locked);
+
+    return (
+        <ExplorerItem
+            kind="group"
+            name={group.name}
+            dragged={{ kind: 'group', id: groupId }}
+            collapseId={groupId}
+            selected={selected}
+            visible={group.visible}
+            onClick={() => toggleGroupSelected(groupId)}
+            menuActions={[
+                hideAction(!group.visible, () => toggleGroupVisible(groupId)),
+                lockAction(group.locked, () => toggleGroupLocked(groupId)),
+                ...commands(useScopedCommands('group'))
+            ]}
+            onDrop={({ kind, id }) => {
+                // Only shapes join a group; a group dropped on a group stays as it is.
+                if (kind === 'shape') {
+                    addShapesToGroup({ shapeIds: [id], groupId });
+                }
+            }}
+        >
+            {shapesIds.map((shapeId) => (
+                <ShapeItem key={shapeId} shapeId={shapeId} />
+            ))}
+        </ExplorerItem>
+    );
+};
+
+interface LayerProps {
+    layerId: string | null;
+    groups: { groupId: string; shapesIds: string[] }[];
+    shapesIds: string[];
+    /** The shapes a dragged shape or group stands for. */
+    shapesOf: (dragged: Dragged) => string[];
 }
 
-export const ConnectedExplorer: FC<Props> = ({ children }) => {
-    const { explorer } = useControls();
+const LayerContents: FC<Pick<LayerProps, 'groups' | 'shapesIds'>> = ({ groups, shapesIds }) => (
+    <>
+        {groups.map((group) => (
+            <GroupItem key={group.groupId} {...group} />
+        ))}
+        {shapesIds.map((shapeId) => (
+            <ShapeItem key={shapeId} shapeId={shapeId} />
+        ))}
+    </>
+);
 
-    if (!explorer.visible) {
+const LayerItem: FC<LayerProps & { layerId: string }> = ({
+    layerId,
+    groups,
+    shapesIds,
+    shapesOf
+}) => {
+    const layer = useLayer(layerId);
+    const shown = useShownLayerId() === layerId;
+    const { moveShapesToLayer, showOnlyLayer, toggleLayerLocked, toggleLayerVisible } =
+        useActions();
+    const commands = useItemCommandActions(layer.shapesIds, layer.locked);
+
+    return (
+        <ExplorerItem
+            kind="layer"
+            name={layer.name}
+            collapseId={groups.length + shapesIds.length > 0 ? layerId : undefined}
+            shown={shown}
+            visible={layer.visible}
+            onClick={() => showOnlyLayer(layerId)}
+            menuActions={[
+                toggleAction(
+                    'highlight',
+                    shown,
+                    {
+                        on: { label: 'Show all layers', group: 'toggle', icon: 'star' },
+                        off: { label: 'Highlight layer', group: 'toggle', icon: 'star_border' }
+                    },
+                    () => showOnlyLayer(layerId)
+                ),
+                hideAction(!layer.visible, () => toggleLayerVisible(layerId)),
+                lockAction(layer.locked, () => toggleLayerLocked(layerId)),
+                ...commands(useScopedCommands('layer'))
+            ]}
+            onDrop={(dragged) => moveShapesToLayer({ shapeIds: shapesOf(dragged), layerId })}
+        >
+            <LayerContents groups={groups} shapesIds={shapesIds} />
+        </ExplorerItem>
+    );
+};
+
+/**
+ * The document as a tree: layers, the groups on them and their shapes. Pressing
+ * a layer's name shows only that layer on this screen; dragging a shape or a
+ * group onto a layer or a group moves it there.
+ */
+export const Explorer: FC = () => {
+    const { layers, found } = useOutline();
+    const shownLayerId = useShownLayerId();
+    const { explorer } = useControls();
+    const { moveShapesToLayer, showAllLayers } = useActions();
+    const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+
+    if (!explorer.visible || layers.length === 0) {
         return null;
     }
 
-    return <Explorer>{children}</Explorer>;
+    const shapesOf = ({ kind, id }: Dragged) =>
+        kind === 'shape'
+            ? [id]
+            : layers.flatMap(({ groups }) =>
+                  groups
+                      .filter(({ groupId }) => groupId === id)
+                      .flatMap(({ shapesIds }) => shapesIds)
+              );
+
+    return (
+        <CollapsedItems.Provider
+            value={{
+                collapsed,
+                toggle: (collapseId) => {
+                    const next = new Set(collapsed);
+
+                    if (!next.delete(collapseId)) {
+                        next.add(collapseId);
+                    }
+                    setCollapsed(next);
+                }
+            }}
+        >
+            <section className={styles.explorer} aria-label="Explorer">
+                <h3>Explorer</h3>
+                <SearchBoxContainer />
+                {shownLayerId && (
+                    <button
+                        type="button"
+                        className={styles.showAll}
+                        onClick={() => showAllLayers()}
+                    >
+                        Show all layers
+                    </button>
+                )}
+                {found.length === 0 ? (
+                    <p>No shapes match</p>
+                ) : (
+                    <ul>
+                        {found.map(({ layerId, groups, shapesIds }) =>
+                            layerId === null ? (
+                                <ExplorerItem
+                                    key="no-layer"
+                                    kind="layer"
+                                    name="No layer"
+                                    collapseId={
+                                        groups.length + shapesIds.length > 0
+                                            ? 'no-layer'
+                                            : undefined
+                                    }
+                                    onDrop={(dragged) =>
+                                        moveShapesToLayer({
+                                            shapeIds: shapesOf(dragged),
+                                            layerId: null
+                                        })
+                                    }
+                                >
+                                    <LayerContents groups={groups} shapesIds={shapesIds} />
+                                </ExplorerItem>
+                            ) : (
+                                <LayerItem
+                                    key={layerId}
+                                    layerId={layerId}
+                                    groups={groups}
+                                    shapesIds={shapesIds}
+                                    shapesOf={shapesOf}
+                                />
+                            )
+                        )}
+                    </ul>
+                )}
+            </section>
+        </CollapsedItems.Provider>
+    );
 };
