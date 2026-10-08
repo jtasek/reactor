@@ -19,6 +19,8 @@ export type PlacedDrag = {
     orientation: Orientation;
     guideId: string | null;
     at: number;
+    /** Where it would be released, in canvas units from the canvas's origin. */
+    offset: number;
     /** Whether releasing it here removes it. */
     removing: boolean;
 };
@@ -51,12 +53,13 @@ const placeOnCamera = ({ orientation, pointer }: Drag, { position, scale }: Came
     guidePlace(pointer, orientation === 'horizontal' ? position.y : position.x, scale);
 
 const placeDrag = (drag: Drag, camera: Camera, rulerSize: number): PlacedDrag => {
-    const { at } = placeOnCamera(drag, camera);
+    const { at, offset } = placeOnCamera(drag, camera);
 
     return {
         orientation: drag.orientation,
         guideId: drag.guideId,
         at,
+        offset,
         removing: removesGuide(at, rulerSize, drag.length)
     };
 };

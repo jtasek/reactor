@@ -72,7 +72,12 @@ export const Rulers: FC = () => {
             onDoubleClick={keepToRuler}
         >
             {drag && drag.guideId === null && (
-                <Guide orientation={drag.orientation} at={drag.at} removing={drag.removing} />
+                <Guide
+                    orientation={drag.orientation}
+                    at={drag.at}
+                    removing={drag.removing}
+                    position={drag.offset}
+                />
             )}
             <g
                 className={`${styles.ruler} ${styles.top}`}
