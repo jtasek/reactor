@@ -1,4 +1,4 @@
-.outline {
+.explorer {
     backdrop-filter: var(--backdrop-filter);
     background-color: var(--control-background);
     box-shadow: var(--box-shadow);
@@ -10,13 +10,13 @@
     width: 250px;
 }
 
-.outline ul {
+.explorer ul {
     list-style: none;
     margin: 0;
     padding: 0;
 }
 
-.outline li li {
+.explorer li li {
     padding-left: 10px;
 }
 

@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
-import { Dragged, OutlineItem } from './OutlineItem';
+import { Dragged, ExplorerItem } from './ExplorerItem';
 import { SearchBoxContainer } from '../SearchBox';
 import { hideAction, lockAction, toggleAction, useItemCommandActions } from '../ItemMenu';
 import {
@@ -22,7 +22,7 @@ const ShapeItem: FC<{ shapeId: string }> = ({ shapeId }) => {
     const commands = useItemCommandActions([shapeId], useShapeLocked(shapeId) || !shape.visible);
 
     return (
-        <OutlineItem
+        <ExplorerItem
             kind="shape"
             name={shape.name}
             dragged={{ kind: 'shape', id: shapeId }}
@@ -47,7 +47,7 @@ const GroupItem: FC<{ groupId: string; shapesIds: string[] }> = ({ groupId, shap
     const commands = useItemCommandActions(group.shapesIds, group.locked);
 
     return (
-        <OutlineItem
+        <ExplorerItem
             kind="group"
             name={group.name}
             dragged={{ kind: 'group', id: groupId }}
@@ -69,7 +69,7 @@ const GroupItem: FC<{ groupId: string; shapesIds: string[] }> = ({ groupId, shap
             {shapesIds.map((shapeId) => (
                 <ShapeItem key={shapeId} shapeId={shapeId} />
             ))}
-        </OutlineItem>
+        </ExplorerItem>
     );
 };
 
@@ -105,7 +105,7 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
     const commands = useItemCommandActions(layer.shapesIds, layer.locked);
 
     return (
-        <OutlineItem
+        <ExplorerItem
             kind="layer"
             name={layer.name}
             shown={shown}
@@ -128,7 +128,7 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
             onDrop={(dragged) => moveShapesToLayer({ shapeIds: shapesOf(dragged), layerId })}
         >
             <LayerContents groups={groups} shapesIds={shapesIds} />
-        </OutlineItem>
+        </ExplorerItem>
     );
 };
 
@@ -137,13 +137,13 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
  * a layer's name shows only that layer on this screen; dragging a shape or a
  * group onto a layer or a group moves it there.
  */
-export const Outline: FC = () => {
+export const Explorer: FC = () => {
     const { layers, found } = useOutline();
     const shownLayerId = useShownLayerId();
-    const { outline } = useControls();
+    const { explorer } = useControls();
     const { moveShapesToLayer, showAllLayers } = useActions();
 
-    if (!outline.visible || layers.length === 0) {
+    if (!explorer.visible || layers.length === 0) {
         return null;
     }
 
@@ -157,8 +157,8 @@ export const Outline: FC = () => {
               );
 
     return (
-        <section className={styles.outline} aria-label="Outline">
-            <h3>Outline</h3>
+        <section className={styles.explorer} aria-label="Explorer">
+            <h3>Explorer</h3>
             <SearchBoxContainer />
             {shownLayerId && (
                 <button type="button" className={styles.showAll} onClick={() => showAllLayers()}>
@@ -171,7 +171,7 @@ export const Outline: FC = () => {
                 <ul>
                     {found.map(({ layerId, groups, shapesIds }) =>
                         layerId === null ? (
-                            <OutlineItem
+                            <ExplorerItem
                                 key="no-layer"
                                 kind="layer"
                                 name="No layer"
@@ -183,7 +183,7 @@ export const Outline: FC = () => {
                                 }
                             >
                                 <LayerContents groups={groups} shapesIds={shapesIds} />
-                            </OutlineItem>
+                            </ExplorerItem>
                         ) : (
                             <LayerItem
                                 key={layerId}

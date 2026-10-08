@@ -11,7 +11,7 @@ export { GroupPanelContainer as GroupPanel } from './GroupPanel';
 export { LayerPanelContainer as LayerPanel } from './LayerPanel';
 export { MenuBarContainer as MenuBar } from './MenuBar';
 export { MiniMapContainer as Minimap } from './MiniMap';
-export { Outline } from './Outline';
+export { Explorer } from './Explorer';
 export { DockablePanel, PanelLayout } from './PanelLayout';
 
 export { Canvas } from './Surface';

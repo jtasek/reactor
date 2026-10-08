@@ -3,13 +3,13 @@ import styles from './styles.css';
 import { ItemMenu, ItemMenuAction } from '../ItemMenu';
 import { useDocumentFilter } from 'src/app/hooks';
 
-/** What is dragged in the outline: a shape, or a group with all its shapes. */
+/** What is dragged in the explorer: a shape, or a group with all its shapes. */
 export interface Dragged {
     kind: 'shape' | 'group';
     id: string;
 }
 
-const DRAG_TYPE = 'application/x-reactor-outline';
+const DRAG_TYPE = 'application/x-reactor-explorer';
 
 function readDragged(event: DragEvent): Dragged | null {
     try {
@@ -41,8 +41,8 @@ interface Props {
     children?: ReactNode;
 }
 
-/** A row of the outline: its name, show and lock buttons, and the items under it. */
-export const OutlineItem: FC<Props> = ({
+/** A row of the explorer: its name, show and lock buttons, and the items under it. */
+export const ExplorerItem: FC<Props> = ({
     kind,
     name,
     dragged,

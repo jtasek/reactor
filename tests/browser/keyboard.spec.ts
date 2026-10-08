@@ -4,7 +4,7 @@ import { drawRect, openEditor, shapes } from './support/editor';
 test('tools, list items and their toggles are buttons that work from the keyboard', async ({
     page
 }) => {
-    await openEditor(page, ['Outline']);
+    await openEditor(page, ['Explorer']);
 
     const tools = page.getByRole('list', { name: 'Tools' });
     const rectangle = tools.getByRole('button', { name: 'Draws a rectangle or square' });
