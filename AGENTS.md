@@ -483,8 +483,9 @@ Hidden guides are not drawn and locked ones do not move.
   Text) lists it; add properties there, not in the inspector. A number property with a
   `range` also gets a slider (`Slider`), as the Style section's Opacity, which is kept as a
   fraction (`opacity`) and shown in percent. A `color` property is a color picker with a None
-  button, as Fill, kept as `#rrggbb` (`isHexColor`) for closed shapes (`isClosedShape`) and drawn
-  through the `--shape-fill` custom property each shape's group sets. Edits go through `setShapesProperty`, gated by
+  button, as Fill and Stroke (`colorProperty`), kept as `#rrggbb` (`isHexColor`) for closed shapes
+  (`isClosedShape`) and outlined ones (`isStrokedShape`), and drawn through the `--shape-fill` and
+  `--shape-stroke` custom properties each shape's group sets; a selected shape keeps its stroke. Edits go through `setShapesProperty`, gated by
   `canEdit`.
   During a gesture it keeps the values it showed as the gesture began and shows the new
   ones on release (`useSelectedShapesProperties`), so a drag or a marquee does not render it

@@ -12,7 +12,7 @@ import type {
 } from '../types';
 import { createDocument } from '../factories';
 import { orderAbove, untie, validDrawOrder } from '../drawOrder';
-import { isClosedShape, isHexColor } from '../utils';
+import { isClosedShape, isHexColor, isStrokedShape } from '../utils';
 
 export const PERSISTENCE_KEY = 'reactor';
 export const SCHEMA_VERSION = 4;
@@ -247,7 +247,8 @@ export function readShapeStyle(value: unknown, shape: Pick<Shape, 'type'>) {
 
     return {
         ...(s.opacity === undefined ? {} : { opacity: fraction(s.opacity) }),
-        ...(s.fill === undefined || !isClosedShape(shape) ? {} : { fill: color(s.fill) })
+        ...(s.fill === undefined || !isClosedShape(shape) ? {} : { fill: color(s.fill) }),
+        ...(s.stroke === undefined || !isStrokedShape(shape) ? {} : { stroke: color(s.stroke) })
     };
 }
 

@@ -5,6 +5,7 @@ import {
     getShapeBounds,
     isClosedShape,
     isHexColor,
+    isStrokedShape,
     isShapeLocked,
     isShapeLockedExternally
 } from './utils';
@@ -53,6 +54,30 @@ const OPAQUE_PERCENT = 100;
 
 // Metadata may change on a locked shape, but not in a locked document.
 const unlessDocumentLocked = (_shape: Shape, document: Document) => !document.locked;
+
+/** A color of the Style section, for the shapes `applies` to; the empty string takes it off. */
+const colorProperty = (
+    key: 'fill' | 'stroke',
+    label: string,
+    applies: (shape: Shape) => boolean
+): ShapeProperty => ({
+    key,
+    label,
+    group: 'Style',
+    kind: 'color',
+    read: (shape) => (applies(shape) ? (shape[key] ?? '') : undefined),
+    write: (shape, value) => {
+        if (value === '') {
+            delete shape[key];
+
+            return;
+        }
+
+        if (isHexColor(value)) {
+            shape[key] = value;
+        }
+    }
+});
 
 /** The properties the panel offers, in display order, grouped into sections. */
 export const SHAPE_PROPERTIES: ShapeProperty[] = [
@@ -160,24 +185,8 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
             shape.opacity = Math.min(OPAQUE_PERCENT, Math.max(0, value)) / OPAQUE_PERCENT;
         }
     },
-    {
-        key: 'fill',
-        label: 'Fill',
-        group: 'Style',
-        kind: 'color',
-        read: (shape) => (isClosedShape(shape) ? (shape.fill ?? '') : undefined),
-        write: (shape, value) => {
-            if (value === '') {
-                delete shape.fill;
-
-                return;
-            }
-
-            if (isHexColor(value)) {
-                shape.fill = value;
-            }
-        }
-    },
+    colorProperty('fill', 'Fill', isClosedShape),
+    colorProperty('stroke', 'Stroke', isStrokedShape),
     {
         key: 'text',
         label: 'Text',
