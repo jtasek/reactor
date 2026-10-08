@@ -1,34 +1,55 @@
+/* One pane of glass, centered over the canvas; the field sits on it without a well of its own. */
 .commandLine {
-  /* backdrop-filter: var(--backdrop- filter); */
-  /* background-color: var(--control-background); */
+  --command-line-width: 420px;
+  --command-line-inset: 6px;
+  align-items: center;
+  backdrop-filter: var(--backdrop-filter);
+  background-color: var(--control-background);
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow-hover);
-  border: 2px solid;
-  border-color: var(--border-color);
+  box-sizing: border-box;
   color: var(--text-color);
   display: flex;
-
-  left: 550px;
-
+  flex-wrap: wrap;
+  left: 50%;
+  max-width: calc(100vw - 2 * var(--panel-gap));
+  padding: var(--command-line-inset);
   position: absolute;
   top: 20%;
-  transition: all 0.2s ease-in-out;
+  transform: translateX(-50%);
+  transition: box-shadow 0.2s ease-in-out;
+  width: var(--command-line-width);
   z-index: 100;
 }
 
 .commandLine:focus-within {
-  border-color: var(--focus-ring-color);
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
 }
 
 .commandLine input {
-  /* background-color: var(--control-background);  */
-  /* backdrop-filter: var(--backdrop-filter); */
-
-  border-radius: var(--border-radius);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--text-color-hover);
+  flex: 1 1 auto;
+  font: inherit;
   font-size: 1rem;
   height: 2.5rem;
   line-height: 2.5rem;
-  min-width: 350px;
+  min-width: 0;
   outline: none;
-  padding: 4px 10px;
+  padding: 0 10px;
+}
+
+.commandLine input::placeholder {
+  color: var(--text-color);
+}
+
+/* Why the command could not run, on a line of its own under the field. */
+.commandLine [role='status'] {
+  border-top: 1px solid var(--hairline-color);
+  flex-basis: 100%;
+  font-size: 0.75rem;
+  line-height: 16px;
+  padding: 6px 10px 2px;
 }
