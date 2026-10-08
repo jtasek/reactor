@@ -1,6 +1,13 @@
 .outline {
-    padding: 10px;
+    backdrop-filter: var(--backdrop-filter);
+    background-color: var(--control-background);
+    box-shadow: var(--box-shadow);
+    color: var(--text-color);
+    height: 100%;
+    overflow: auto;
+    padding: 20px;
     user-select: none;
+    width: 250px;
 }
 
 .outline ul {

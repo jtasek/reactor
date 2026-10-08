@@ -9,7 +9,7 @@ async function click(page: Page, x: number, y: number) {
 test('the outline lists layers as a tree, shows one layer alone, and takes dropped shapes', async ({
     page
 }) => {
-    await openEditor(page, ['Explorer', 'Outline']);
+    await openEditor(page, ['Outline']);
 
     // Two squares, each moved to a layer of its own while it is the selection.
     await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
@@ -62,7 +62,7 @@ test('the outline lists layers as a tree, shows one layer alone, and takes dropp
 test('an item’s menu fades in under the pointer and runs commands for that item', async ({
     page
 }) => {
-    await openEditor(page, ['Explorer', 'Outline']);
+    await openEditor(page, ['Outline']);
     await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
     await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
     await click(page, 600, 400);

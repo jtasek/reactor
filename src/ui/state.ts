@@ -30,11 +30,6 @@ export const state: UI = {
         name: 'Document Info',
         visible: false
     },
-    explorer: {
-        id: 'explorer',
-        name: 'Explorer',
-        visible: false
-    },
     grid: {
         id: 'grid',
         name: 'Grid',

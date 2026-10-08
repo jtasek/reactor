@@ -12,7 +12,6 @@ export interface UI {
     controlPanel: Control;
     dataView: Control;
     documentInfo: Control;
-    explorer: Control;
     grid: Control & {
         factor: number;
         height: number;

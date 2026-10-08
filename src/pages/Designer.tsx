@@ -8,7 +8,6 @@ import {
     DataView,
     DockablePanel,
     DocumentInfo,
-    Explorer,
     GroupPanel,
     LayerPanel,
     Layout,
@@ -41,9 +40,7 @@ export const Designer: FC = () => (
             <DockablePanel id="sideBar" title="Side Bar">
                 <SideBar>
                     <ToolBar />
-                    <Explorer>
-                        <Outline />
-                    </Explorer>
+                    <Outline />
                 </SideBar>
             </DockablePanel>
             <DockablePanel id="controlPanel" title="Control Panel">

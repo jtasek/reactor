@@ -356,7 +356,7 @@ A group is on one layer, with all its shapes (`putShapesOnLayer`, `putShapesInGr
 puts its shapes on the topmost one's layer, a group moved to a layer moves whole, and a shape
 moved without the rest of its group leaves it. Loading does not repair a group other copies'
 merges left across layers; the outline lists it under its first shape's layer. The outline
-(`outline`, `src/ui/components/Outline`) is the explorer's tree of layers, their groups
+(`outline`, `src/ui/components/Outline`) is the side bar's tree of layers, their groups
 and shapes: dragging a shape or group onto a layer or group moves it there. A row's menu
 (`ItemMenu`, `src/ui/components/ItemMenu`) fades in under the pointer: hide and lock switch
 the row's item itself, and its commands run for that item, which `runCommandOn` selects

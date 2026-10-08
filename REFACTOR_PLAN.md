@@ -343,7 +343,7 @@ rotation, and entered by a double-click to reach a single shape; a shape is in
 one group and on one layer at most; Group, Ungroup, Layer and Unlayer
 act on the selected shapes, Layer and Unlayer have shortcuts (Ctrl/Cmd+Alt+L, with
 Shift), Clone selects its clones and keeps their layers and groups, and every
-command is unavailable when it would do nothing. Outline: a panel in the explorer lists
+command is unavailable when it would do nothing. Outline: a panel in the side bar lists
 layers, their groups and shapes as a tree, moves a shape or group dropped on a layer
 or group, and shows one layer alone on this screen when its name is pressed; a group
 is on one layer. Remaining: the rest of step 6.
