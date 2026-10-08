@@ -3,6 +3,7 @@ import styles from './styles.css';
 import { Command } from 'src/app/types';
 import { Icon } from '../Icon';
 import { useActions, useCommandEnabled } from 'src/app/hooks';
+import { shortcutKeys, usesCommandKey } from './shortcutLabel';
 
 export interface Props {
     active: boolean;
@@ -30,6 +31,9 @@ export const CommandBarButton: FC<Props> = ({ active, command, onClick, onHover,
                 title={command.name}
                 aria-label={command.name}
                 aria-describedby={command.description ? descriptionId : undefined}
+                aria-keyshortcuts={
+                    command.shortcut ? shortcutKeys(command.shortcut, usesCommandKey()) : undefined
+                }
                 onFocus={() => onFocus(command)}
                 onBlur={() => onFocus(undefined)}
                 onClick={() => {

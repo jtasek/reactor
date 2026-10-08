@@ -41,6 +41,7 @@ test('icon commands show their name in a tooltip and their description below the
     const clone = bar.getByRole('button', { name: 'Clone', exact: true });
     const info = bar.locator('..').locator('[data-cy="command-info"]');
     await expect(clone).toHaveAttribute('title', 'Clone');
+    await expect(clone).toHaveAttribute('aria-keyshortcuts', /^(Control|Meta)\+D$/);
     await expect(clone).toHaveText('');
     await expect(clone.locator('svg')).toBeVisible();
     await clone.locator('..').hover();
