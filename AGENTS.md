@@ -383,7 +383,8 @@ draws a marquee, which skips locked shapes, so a locked item never moves.
 The Rulers and Guides controls are off by default, and their code loads, as one chunk, the
 first time either is turned on (`src/ui/components/Rulers`, `src/ui/components/Guide`).
 The rulers run along the canvas's top and left edges in canvas units (`rulerMarks`,
-`src/app/rulers.ts`). Dragging out of the top ruler places a horizontal guide and out of
+`src/app/rulers.ts`). While they are shown, the command bar sits below the top ruler
+(`--ruler-size`), so a guide can be dragged out of it anywhere along it. Dragging out of the top ruler places a horizontal guide and out of
 the left one a vertical guide, turning the Guides control on; dragging a guide moves it,
 on whole canvas units (`guidePlace`), and dropping it on its ruler or beyond the canvas
 removes it (`removesGuide`). A guide drag (`useGuideDrag`) is not a pointer gesture and
