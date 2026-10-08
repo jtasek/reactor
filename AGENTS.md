@@ -386,7 +386,8 @@ The rulers run along the canvas's top and left edges in canvas units (`rulerMark
 `src/app/rulers.ts`). Dragging out of the top ruler places a horizontal guide and out of
 the left one a vertical guide, turning the Guides control on; dragging a guide moves it,
 on whole canvas units (`guidePlace`), and dropping it on its ruler or beyond the canvas
-removes it (`removesGuide`). A guide drag (`useGuideDrag`) is not a pointer gesture and
+removes it (`removesGuide`). Guides are drawn in `--primary-action-color`, apart from the grid's
+greys, and a dragged guide shows its position in canvas units beside it. A guide drag (`useGuideDrag`) is not a pointer gesture and
 does not start during one or while the context menu is open. One runs at a time; it takes
 its pointer's events and the keys before the canvas does and changes the document once, on
 release, so Escape or a lost pointer leaves it as it was. Guide lines are drawn over the shapes and what grabs

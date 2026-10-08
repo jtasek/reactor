@@ -3,6 +3,7 @@ declare namespace StylesCssNamespace {
     columnGrip: string;
     grips: string;
     line: string;
+    position: string;
     removing: string;
     rowGrip: string;
   }
