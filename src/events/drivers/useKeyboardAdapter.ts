@@ -13,7 +13,7 @@ const keys = ({ altKey, code, ctrlKey, key, metaKey, repeat, shiftKey }: Keyboar
 });
 
 export const useKeyboardAdapter = () => {
-    const { keyDown, keyUp, pressShortcut, releaseKeys } = useActions().events;
+    const { keyDown, keyUp, pressShortcut, releaseKeys, releaseModifiers } = useActions().events;
     const log = useLog();
 
     const handleKeyDown = useCallback(
@@ -41,7 +41,10 @@ export const useKeyboardAdapter = () => {
         [keyUp, log, releaseKeys]
     );
 
-    const handleBlur = useCallback(() => releaseKeys(), [releaseKeys]);
+    const handleBlur = useCallback(() => {
+        releaseKeys();
+        releaseModifiers();
+    }, [releaseKeys, releaseModifiers]);
 
     return { handleKeyDown, handleKeyUp, handleBlur };
 };

@@ -266,6 +266,10 @@ only translates DOM events into the gesture actions (`src/events/actions/pointer
   further, the resized box's nearer moving edge snaps instead. The lines an edge then lies on
   show (`linesOnEdges`). A shape or group turned out of upright does not snap, and neither does
   a free resize; the lines are taken on the resize's first move.
+  With Alt held over a shape outside the selection, and no gesture, the distances between the
+  selection's box and that shape's show as measures (`measuresBetween`, `useMeasuredBoxes`,
+  `Measures`): the gap when they are apart, else the distances between their edges. A window
+  that loses focus lets go of the modifiers (`releaseModifiers`).
 - **pointer up** → `endGesture` applies the release position, runs `executeToolCommands()`
   exactly once for drawing and marquee gestures, then `resetTools()` — **synchronously**.
   React effects flush _after_ this, so anything a tool must persist on release has to happen

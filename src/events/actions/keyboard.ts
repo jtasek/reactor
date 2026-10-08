@@ -123,3 +123,13 @@ export const releaseKeys: Action = ({ state, effects }) => {
         effects.collaboration.resume();
     }
 };
+
+/** Lets go of the modifier keys when the window loses focus, as their release is not seen there. */
+export const releaseModifiers: Action = ({ state }) => {
+    const { keyboard } = state.events;
+
+    keyboard.altKey = false;
+    keyboard.ctrlKey = false;
+    keyboard.metaKey = false;
+    keyboard.shiftKey = false;
+};
