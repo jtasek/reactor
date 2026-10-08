@@ -359,9 +359,7 @@ Feature inventory:
   syncing with the server, and signing out.
 - Shown but not covered by tests: the minimap, guides, data view, overlay and stats
   panels.
-- Started, not working yet: the search box stores what is typed, but no list is
-  filtered (the `filtered*` derivations are not used); images are kept in the
-  browser only, not uploaded yet.
+- Started, not working yet: images are kept in the browser only, not uploaded yet.
 - Kept for later, not shown: the `Badge`, `Dialog`, `Overlay` and `Switch`
   components, and the stylesheets components do not use yet.
 - Planned: components (Phase 10), plugins and renderers (Phase 9), image upload,

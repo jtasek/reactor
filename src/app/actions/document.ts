@@ -72,7 +72,6 @@ export const resetDocument: Action = ({ state }) => {
     document.components = {};
     document.camera = createCamera();
     document.grid = createGrid();
-    document.filter = '';
     document.modified = new Date();
     delete document.shownLayerId;
     state.enteredGroupId = null;

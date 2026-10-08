@@ -16,14 +16,7 @@ import { isClosedShape, isHexColor, isStrokedShape } from '../utils';
 
 export const PERSISTENCE_KEY = 'reactor';
 export const SCHEMA_VERSION = 4;
-export const RUNTIME_FIELDS = new Set([
-    'active',
-    'bounds',
-    'filter',
-    'key',
-    'selected',
-    'shownLayerId'
-]);
+export const RUNTIME_FIELDS = new Set(['active', 'bounds', 'key', 'selected', 'shownLayerId']);
 export const COLLECTIONS = ['shapes', 'groups', 'layers', 'components', 'links', 'guides'] as const;
 
 export type Collection = (typeof COLLECTIONS)[number];

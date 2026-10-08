@@ -88,11 +88,6 @@ export const state: UI = {
         name: 'Rulers',
         visible: false
     },
-    searchBox: {
-        id: 'searchBox',
-        name: 'Search Box',
-        visible: false
-    },
     sideBar: {
         id: 'sideBar',
         name: 'Side Bar',

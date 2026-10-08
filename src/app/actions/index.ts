@@ -7,7 +7,6 @@ export * from './layer';
 export * from './link';
 export * from './routes';
 export * from './guide';
-export * from './search';
 export * from './selection';
 export * from './shape';
 export * from './startup';

@@ -212,7 +212,6 @@ export interface Document {
     created: Date;
     createdBy: string;
     description?: string;
-    filter: string;
     grid: Grid;
     componentsIds: string[];
     components: HashTable<Component>;

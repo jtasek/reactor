@@ -167,10 +167,6 @@ export const useDocumentName = () => {
     return useAppState((state) => state.currentDocument.name);
 };
 
-export const useDocumentFilter = () => {
-    return useAppState((state) => state.currentDocument.filter);
-};
-
 export const useSelectedShapesIds = () => {
     return useAppState((state) => state.currentDocument.selectedShapesIds);
 };
