@@ -961,38 +961,37 @@ Design:
   as `brand/primary`. A name shared after a merge resolves to the variable with
   the lowest id in every copy.
 - Binding: a shape keeps `bindings`, a map from property key to variable id.
-  A property may use only a variable of its type: color properties color
-  variables, number properties number variables, `text` and `name` text
-  variables, `visible` and `locked` boolean variables. The shape keeps its own
-  value and draws the variable's, taken as if typed into the field, so a number
-  is limited to the property's range like a typed one. A bound field shows the
-  variable's name instead of a value, so it cannot change other shapes by
-  accident: the value is changed in the Variables panel. Unbinding keeps the
-  variable's current value as the shape's own.
-- Resolution: one derivation per shape applies its bindings and templates
-  (`resolveShape`), and everything that reads a shape reads the resolved one:
-  drawing, measuring, hit testing, snapping, the inspector, membership
-  (`isShapeVisible`, `isShapeLocked` and what derives from them), the Explorer and
-  its search, and shape naming. Hide and Lock on a bound flag stop using the
-  variable and keep the value they set. The measurement key includes resolved text
-  and size, so a variable that changes a text's content measures it again.
+  A property the inspector can change may use a variable of its kind: color,
+  number, text or boolean. The variable's value is written into the shape as if
+  typed into the field, when bound and in the same task whenever the variable
+  changes, so everything that reads shapes, older builds included, shows it with
+  no change of its own. A binding holds while the shape's value is the one the
+  variable would write (`bindingHolds`): a drag or other edit that sets the
+  property otherwise ends it, and a variable change drops the bindings that no
+  longer hold. Setting the property in the inspector, Hide and Lock remove its
+  binding. A bound field shows the variable's name instead of a value, so it
+  cannot change other shapes by accident: the value is changed in the Variables
+  panel. Unbinding leaves the value as it is.
 - Templates: in a text's content and in a text variable's value, `${Name}` shows
-  that variable's value. A template keeps the variable's id, shown and typed as
+  that variable's value. A text keeps its template in `template` and the text it
+  makes in `value`, written as bound values are. A template keeps the variable's id, shown and typed as
   its name, so renaming a variable changes no text, also in copies editing at
   the same time. It shows a number as typed and a boolean as `true` or `false`.
   `\${` keeps the characters as written. A name that does not exist, or a text
   variable that leads back to itself, stays as written and is marked in the
   inspector; resolution stops at a depth of 16.
-- Deleting a variable writes its value into every property bound to it and
-  rewrites the templates that name it to that value, in one task, after asking
-  when anything uses it.
+- Deleting a variable removes the bindings to it and rewrites the templates that
+  name it to its value, in one task, after asking when anything uses it, so every
+  shape looks as it did.
 - Collaboration and saving: variables merge field by field and `values` key by
-  key, like other tables. A binding to a variable another copy deleted is dropped
-  when read, and the shape draws its own value; two variables given the same name
-  by different copies keep it, and the panel marks them until one is renamed.
-  Readers check every field. The shared document records a content version; a
-  build that finds a newer one stops saving and sharing changes rather than drop
-  variables, over tab sync and server sync too.
+  key, like other tables. A copy that changes a variable writes the shapes using
+  it in the same task, so the others receive both. A binding to a variable
+  another copy deleted is ignored, and the shape keeps the value last written; a
+  binding made while another copy changed the variable may not hold after the
+  merge, and then counts as ended. Two variables given the same name by different
+  copies keep it, and the panel marks them until one is renamed. Readers check
+  every field. Older builds keep variables and bindings, since copies write only
+  the fields they change, and show the values written into shapes.
 - Clipboard: copied shapes carry the variables they bind or name. A paste uses a
   variable of the same name and type in the document, else adds it, under a new
   name as `copyName` gives shapes when the name is taken, and rebinds to it.
@@ -1007,8 +1006,8 @@ Design:
 
 Steps:
 
-1. Data: the `variables` table, `bindings`, readers and the content version,
-   collaboration, the clipboard, `resolveShape` and the rename and delete rules.
+1. Data: the `variables` table, `bindings`, readers, collaboration, the
+   clipboard, writing values into bound shapes, and the rename and delete rules.
    Test the readers, merges that delete a bound variable or repeat a name, and
    pasting into a document that has or lacks the variables.
 2. The Variables panel and the inspector's variable buttons. Browser tests bind a
