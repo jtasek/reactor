@@ -248,3 +248,51 @@
     border-bottom-left-radius: var(--card-radius);
     border-bottom-right-radius: var(--card-radius);
 }
+
+/* A field's variable picker sits at the end of its label's line, showing only its mark. */
+.variablePicker {
+    appearance: none;
+    background: none;
+    border: 0;
+    color: var(--text-color);
+    cursor: pointer;
+    float: right;
+    font: inherit;
+    height: var(--field-height);
+    opacity: 0.6;
+    padding: 0 2px;
+    width: 1.4em;
+}
+
+.variablePicker:hover:not(:disabled) {
+    opacity: 1;
+}
+
+.variablePicker:disabled {
+    cursor: default;
+    opacity: 0.25;
+}
+
+.variablePicker:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+}
+
+/* A property taken from a variable shows the variable's name where its field would be. */
+.bound {
+    color: var(--selection-color);
+    display: inline-block;
+    font-weight: 500;
+    line-height: var(--field-height);
+    max-width: calc(100% - var(--field-height) - 4px);
+    overflow: hidden;
+    padding-left: 8px;
+    text-overflow: ellipsis;
+    vertical-align: top;
+    white-space: nowrap;
+}
+
+.bound + button {
+    margin-left: 4px;
+    padding: 0;
+    width: var(--field-height);
+}

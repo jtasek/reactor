@@ -30,4 +30,5 @@ export interface UI {
     statusBar: Control;
     surface: Control;
     toolBar: Control;
+    variables: Control;
 }

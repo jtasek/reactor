@@ -1,0 +1,136 @@
+/* The panel draws the glass; each group of variables is a lighter card on it. */
+.variables {
+    --field-height: 22px;
+    --swatch-width: 36px;
+    color: var(--text-color);
+    padding: var(--panel-gap);
+    user-select: none;
+    width: 280px;
+}
+
+.groupName {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    line-height: 16px;
+    margin: 0;
+    padding: var(--panel-gap) 10px 6px;
+    text-transform: uppercase;
+}
+
+.create,
+.row {
+    align-items: center;
+    display: flex;
+    gap: 6px;
+}
+
+.create {
+    background-color: var(--control-background);
+    border-radius: var(--radius-md);
+    padding: 6px;
+}
+
+.variables input[type='text'],
+.variables input[type='number'],
+.variables select {
+    background-color: var(--field-background);
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--text-color-hover);
+    flex: 1;
+    font: inherit;
+    height: var(--field-height);
+    min-width: 0;
+    padding: 0 8px;
+}
+
+.variables select {
+    flex: 0 0 auto;
+    padding: 0 4px;
+}
+
+.variables input[type='color'] {
+    background-color: var(--field-background);
+    border: 0;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    flex: 0 0 auto;
+    height: var(--field-height);
+    padding: 3px;
+    width: var(--swatch-width);
+}
+
+.variables input[type='checkbox'] {
+    accent-color: var(--selection-color);
+    flex: 0 0 auto;
+}
+
+.variables button {
+    background-color: var(--field-background);
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--text-color-hover);
+    cursor: pointer;
+    flex: 0 0 auto;
+    font: inherit;
+    font-size: 0.75rem;
+    height: var(--field-height);
+    padding: 0 8px;
+}
+
+.variables input:focus-visible,
+.variables select:focus-visible,
+.variables button:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 0;
+}
+
+.variables ul {
+    background-color: var(--control-background);
+    border-radius: var(--radius-md);
+    list-style: none;
+    margin: 0;
+    padding: 4px 6px;
+}
+
+.row {
+    padding: 3px 0;
+}
+
+.row + .row {
+    border-top: 1px solid var(--hairline-color);
+}
+
+.uses {
+    flex: 0 0 auto;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    min-width: 1.5em;
+    opacity: 0.7;
+    text-align: right;
+}
+
+.confirm {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 4px;
+}
+
+.problem {
+    color: var(--error-color);
+    font-size: 0.75rem;
+    margin: 6px 10px 0;
+}
+
+.empty {
+    font-size: 0.75rem;
+    margin: var(--panel-gap) 10px 0;
+    opacity: 0.7;
+}
+
+.group + .group,
+.create + .group,
+.problem + .group {
+    margin-top: var(--panel-gap);
+}

@@ -943,6 +943,10 @@ Done: step 1. Documents keep variables, shapes their bindings, and binding,
 changing, renaming and deleting variables, sharing them between copies and
 copying them with shapes work, without a panel yet.
 
+Done: step 2. The Variables panel lists variables by group and edits them, and the
+inspector binds and unbinds fields. Commands for variables wait for the application
+menu, since the panel and the inspector already reach every action.
+
 A variable is a named value kept in a document. A shape property, or an
 instance's prop, can use a variable instead of a value of its own, and a text can
 show variables in its content as `${Name}`. Changing a variable changes

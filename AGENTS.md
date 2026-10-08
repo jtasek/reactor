@@ -386,6 +386,12 @@ removes it. Deleting a variable leaves the values.
 Names are unique, trimmed and without `{`, `}` or `$` (`isVariableName`); one shared after
 a merge means the variable with the lowest id (`variableNamed`). Copied shapes carry the
 variables they follow, and a paste uses one of the same name and type or adds it.
+The Variables panel (`src/ui/components/Variables`, off by default and loaded when shown)
+creates, renames, edits and deletes them, asking first when one is used. In the inspector
+each field that can change has a variable picker beside its label, and a field every
+selected shape takes from one variable shows its name with a button that stops using it,
+so its value changes only in the panel. Their hooks are in `src/app/variableHooks.ts`,
+which loads with the editor page rather than with `hooks.ts`.
 
 ## The selection's menu
 

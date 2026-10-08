@@ -102,5 +102,10 @@ export const state: UI = {
         id: 'toolBar',
         name: 'Tool Bar',
         visible: false
+    },
+    variables: {
+        id: 'variables',
+        name: 'Variables',
+        visible: false
     }
 };

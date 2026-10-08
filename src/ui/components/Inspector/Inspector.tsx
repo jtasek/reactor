@@ -4,18 +4,32 @@ import { PropertyField } from './PropertyField';
 import { PropertyGroup } from './PropertyGroup';
 import { AlignSection } from './AlignSection';
 import { groupRows, type PropertyRow, type PropertyValue } from 'src/app/properties';
+import type { Variable } from 'src/app/types';
 
 export interface Props {
     rows: PropertyRow[];
     shapeIds: string[];
     onChange: (shapeIds: string[], key: string, value: PropertyValue) => void;
+    variables: Variable[];
+    /** The variable every shape follows for a property, by its key. */
+    bound: Record<string, Variable>;
+    onBind: (shapeIds: string[], key: string, variableId: string) => void;
+    onUnbind: (shapeIds: string[], key: string) => void;
 }
 
 /**
  * The properties every selected shape shares, in sections; editing one changes
  * all of them.
  */
-export const Inspector: FC<Props> = ({ rows, shapeIds, onChange }) => {
+export const Inspector: FC<Props> = ({
+    rows,
+    shapeIds,
+    onChange,
+    variables,
+    bound,
+    onBind,
+    onUnbind
+}) => {
     if (shapeIds.length === 0) {
         return <div className={styles.inspector}>No shapes selected</div>;
     }
@@ -32,6 +46,12 @@ export const Inspector: FC<Props> = ({ rows, shapeIds, onChange }) => {
                                 row={row}
                                 shapeIds={shapeIds}
                                 onChange={onChange}
+                                variables={variables.filter(
+                                    (variable) => variable.type === row.property.kind
+                                )}
+                                variable={bound[row.property.key]}
+                                onBind={onBind}
+                                onUnbind={onUnbind}
                             />
                         ))}
                     </PropertyGroup>

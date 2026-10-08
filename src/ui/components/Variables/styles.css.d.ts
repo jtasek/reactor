@@ -1,12 +1,14 @@
 declare namespace StylesCssNamespace {
     export interface IStylesCss {
-        align: string;
-        alignRow: string;
-        bound: string;
-        color: string;
-        heading: string;
-        inspector: string;
-        variablePicker: string;
+        confirm: string;
+        create: string;
+        empty: string;
+        group: string;
+        groupName: string;
+        problem: string;
+        row: string;
+        uses: string;
+        variables: string;
     }
 }
 

@@ -21,7 +21,8 @@ import {
     Stats,
     Canvas,
     ToolBar,
-    PanelLayout
+    PanelLayout,
+    Variables
 } from 'src/ui/components';
 import { ResetDocumentDialog } from 'src/ui/components/ResetDocumentDialog';
 import { registerEditor } from './registerEditor';
@@ -66,6 +67,9 @@ export const Designer: FC = () => (
             </DockablePanel>
             <DockablePanel id="stats" title="Stats">
                 <Stats />
+            </DockablePanel>
+            <DockablePanel id="variables" title="Variables">
+                <Variables />
             </DockablePanel>
         </PanelLayout>
         <StatusBar />
