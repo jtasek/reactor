@@ -39,13 +39,13 @@ const Section: FC<{ name: string; rows: [string, string][] }> = ({ name, rows })
 );
 
 /** What the document holds and what the pointer is doing, for debugging. */
-export const Stats: FC = () => {
+export const Stats: FC<{ horizontal?: boolean }> = ({ horizontal = false }) => {
     const shapes = useShapes();
     const camera = useCamera();
     const pointer = usePointer();
 
     return (
-        <div className={styles.stats}>
+        <div className={styles.stats} data-horizontal={horizontal}>
             <Section
                 name="Document"
                 rows={[

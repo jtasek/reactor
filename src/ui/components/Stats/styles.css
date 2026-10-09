@@ -10,6 +10,27 @@
     margin-top: 12px;
 }
 
+.stats[data-horizontal='true'] {
+    display: flex;
+    gap: var(--panel-gap);
+}
+
+.stats[data-horizontal='true'] .section {
+    flex: 0 0 auto;
+    margin-top: 0;
+}
+
+.stats[data-horizontal='true'] .card {
+    display: flex;
+    gap: var(--panel-gap);
+}
+
+.stats[data-horizontal='true'] .row {
+    border-top: 0;
+    flex-direction: column;
+    gap: 0;
+}
+
 .heading {
     font-size: 0.75rem;
     font-weight: 600;

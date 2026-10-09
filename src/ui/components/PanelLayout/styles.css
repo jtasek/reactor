@@ -3,8 +3,6 @@
     --panel-max-height: min(70vh, 700px);
     --panel-max-width: min(90vw, 420px);
     --panel-grip-size: 14px;
-    --dock-zone-opacity: 0.18;
-    --dock-active-zone-opacity: 0.38;
     --dock-zone-transition-duration: 0.12s;
     --panel-drag-opacity: 0.55;
     inset: 0;
@@ -92,6 +90,10 @@
 
 .docked {
     max-width: 100%;
+}
+
+.docked[data-orientation='horizontal'] {
+    width: 100%;
 }
 
 .handle {
@@ -213,20 +215,19 @@
 }
 
 .zone {
-    background: color-mix(in srgb, var(--control-background) 85%, var(--accent));
-    border: 2px dashed var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    border: 3px solid color-mix(in srgb, var(--accent) 60%, var(--surface));
     border-radius: var(--border-radius);
     box-sizing: border-box;
-    opacity: var(--dock-zone-opacity);
     position: absolute;
     transition:
-        opacity var(--dock-zone-transition-duration) ease-in-out,
+        border-color var(--dock-zone-transition-duration) ease-in-out,
         background-color var(--dock-zone-transition-duration) ease-in-out;
 }
 
 .activeZone {
-    background: var(--accent);
-    opacity: var(--dock-active-zone-opacity);
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    border-color: var(--accent);
 }
 
 .zoneTopLeft,
@@ -259,8 +260,8 @@
 
 .zoneLeft,
 .zoneRight {
-    bottom: calc(var(--dock-edge-height) + var(--dock-bottom-inset));
-    top: var(--dock-edge-height);
+    bottom: calc(var(--dock-edge-height) + var(--dock-bottom-inset) + var(--panel-gap));
+    top: calc(var(--dock-edge-height) + var(--panel-gap));
     width: var(--dock-side-width);
 }
 
@@ -275,8 +276,8 @@
 .zoneTop,
 .zoneBottom {
     height: var(--dock-edge-height);
-    left: var(--dock-side-width);
-    right: var(--dock-side-width);
+    left: calc(var(--dock-side-width) + var(--panel-gap));
+    right: calc(var(--dock-side-width) + var(--panel-gap));
 }
 
 .zoneTop {
@@ -303,6 +304,8 @@
     pointer-events: none;
     position: absolute;
     top: 0;
+    /* Keep the dragged panel label above the dock-zone overlay. */
+    z-index: 3;
 }
 
 .dragPreview span {

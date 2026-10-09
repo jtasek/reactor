@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 import type { MouseEvent } from 'react';
 import { Guide } from './Guide';
 import { useGuideDrag } from './useGuideDrag';
-import { useCamera, useGuides, useHoveredGroupsIds } from 'src/app/hooks';
+import { useActiveToolsIds, useCamera, useGuides, useHoveredGroupsIds } from 'src/app/hooks';
 import { Camera, Guide as GuideType } from 'src/app/types';
 
 import styles from './styles.css';
@@ -39,6 +39,7 @@ export const Guides: FC<Props> = ({ camera }) => {
                             orientation={guide.orientation}
                             at={dragged ? dragged.at : screenOffset(guide, camera ?? view)}
                             removing={dragged?.removing}
+                            selected={!camera && guide.selected}
                             position={dragged?.offset}
                         />
                     );
@@ -55,6 +56,7 @@ export const GuideGrips: FC = () => {
     const guides = useGuides();
     const camera = useCamera();
     const hoveredGroups = useHoveredGroupsIds();
+    const activeTools = useActiveToolsIds();
     const { begin } = useGuideDrag();
 
     return (
@@ -74,7 +76,7 @@ export const GuideGrips: FC = () => {
                             x2={horizontal ? '100%' : at}
                             y2={horizontal ? at : '100%'}
                             onPointerDown={(event) => {
-                                if (hoveredGroups.length === 0) {
+                                if (hoveredGroups.length === 0 && activeTools[0] === 'select') {
                                     begin(event, guide.orientation, guide.id);
                                 }
                             }}

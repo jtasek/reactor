@@ -1,4 +1,13 @@
-import React, { DragEvent, FC, ReactNode, createContext, useContext, useState } from 'react';
+import React, {
+    DragEvent,
+    FC,
+    ReactNode,
+    createContext,
+    useContext,
+    useLayoutEffect,
+    useRef,
+    useState
+} from 'react';
 import styles from './styles.css';
 import { ItemMenu, ItemMenuAction } from '../ItemMenu';
 import { useDocumentFilter } from 'src/app/hooks';
@@ -68,6 +77,9 @@ export const ExplorerItem: FC<Props> = ({
     children
 }) => {
     const [dropTarget, setDropTarget] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const row = useRef<HTMLDivElement>(null);
+    const floatingMenu = useRef<HTMLDivElement>(null);
     const items = useContext(CollapsedItems);
     const collapsed = collapseId !== undefined && items.collapsed.has(collapseId);
     // A search shows everything it finds, also in collapsed items.
@@ -84,13 +96,73 @@ export const ExplorerItem: FC<Props> = ({
     const acceptsDrop = (event: DragEvent) =>
         onDrop !== undefined && event.dataTransfer.types.includes(DRAG_TYPE);
 
+    useLayoutEffect(() => {
+        const host = row.current;
+        const menu = floatingMenu.current;
+        if (!menuOpen || !host || !menu) return;
+
+        // The top layer escapes the panel's scrolling/clipping without taking room from its name.
+        menu.showPopover();
+        const place = () => {
+            const bounds = host.getBoundingClientRect();
+            const width = menu.getBoundingClientRect().width;
+            const left =
+                bounds.right + width <= window.innerWidth
+                    ? bounds.right
+                    : Math.max(0, bounds.left - width);
+            menu.style.left = `${left}px`;
+            menu.style.top = `${Math.max(0, Math.min(bounds.top, window.innerHeight - menu.offsetHeight))}px`;
+        };
+        place();
+        const observer = new ResizeObserver(place);
+        observer.observe(menu);
+        observer.observe(host);
+        const explorer = host.closest('section');
+        if (explorer) observer.observe(explorer);
+        const close = () => setMenuOpen(false);
+        const escape = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            event.stopPropagation();
+            host.querySelector<HTMLButtonElement>('button')?.focus();
+            close();
+        };
+        host.addEventListener('keydown', escape);
+        window.addEventListener('scroll', close, true);
+        window.addEventListener('resize', close);
+        window.addEventListener('blur', close);
+
+        return () => {
+            observer.disconnect();
+            host.removeEventListener('keydown', escape);
+            window.removeEventListener('scroll', close, true);
+            window.removeEventListener('resize', close);
+            window.removeEventListener('blur', close);
+            menu.hidePopover();
+        };
+    }, [menuOpen]);
+
     return (
         <li className={className}>
             <div
+                ref={row}
                 className={[styles.row, dropTarget && styles.dropTarget].filter(Boolean).join(' ')}
                 data-menu-host
+                onMouseEnter={() => setMenuOpen(true)}
+                onMouseLeave={(event) => {
+                    if (!event.currentTarget.matches(':has(:focus-visible)')) setMenuOpen(false);
+                }}
+                onFocus={() => setMenuOpen(true)}
+                onBlur={(event) => {
+                    if (
+                        !event.currentTarget.contains(event.relatedTarget) &&
+                        !event.currentTarget.matches(':hover')
+                    )
+                        setMenuOpen(false);
+                }}
                 draggable={dragged !== undefined}
                 onDragStart={(event) => {
+                    setMenuOpen(false);
                     event.dataTransfer.setData(DRAG_TYPE, JSON.stringify(dragged));
                     event.dataTransfer.effectAllowed = 'move';
                 }}
@@ -140,7 +212,11 @@ export const ExplorerItem: FC<Props> = ({
                 ) : (
                     <span className={styles.label}>{name}</span>
                 )}
-                {menuActions && <ItemMenu itemName={name} actions={menuActions} />}
+                {menuActions && (
+                    <div ref={floatingMenu} className={styles.floatingMenu} popover="manual">
+                        <ItemMenu itemName={name} actions={menuActions} />
+                    </div>
+                )}
             </div>
             {children && (searching || !collapsed) && <ul>{children}</ul>}
         </li>

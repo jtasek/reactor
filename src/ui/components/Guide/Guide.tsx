@@ -16,16 +16,24 @@ export interface Props {
     removing?: boolean;
     /** Its position in canvas units, shown beside it while it is dragged. */
     position?: number;
+    selected?: boolean;
 }
 
 /** A guide's line across the canvas. */
-export const Guide: FC<Props> = ({ orientation, at, removing = false, position }) => {
+export const Guide: FC<Props> = ({
+    orientation,
+    at,
+    removing = false,
+    position,
+    selected = false
+}) => {
     const horizontal = orientation === 'horizontal';
 
     return (
         <>
             <line
                 className={removing ? `${styles.line} ${styles.removing}` : styles.line}
+                data-selected={selected}
                 x1={horizontal ? 0 : at}
                 y1={horizontal ? at : 0}
                 x2={horizontal ? '100%' : at}

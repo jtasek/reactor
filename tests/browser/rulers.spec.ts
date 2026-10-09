@@ -38,6 +38,34 @@ test('loads the rulers when they are turned on, and drags guides out of them', a
     await expect(guideLines(page).last()).toHaveAttribute('x1', '400');
 });
 
+test('clicking a guide selects it without moving it; Delete removes only the guide', async ({
+    page
+}) => {
+    await openWithShapeOnGuide(page);
+    await drag(page, [402, 550], [403, 550]);
+    await expect(guideLines(page)).toHaveAttribute('x1', '400');
+    await expect(guideLines(page)).toHaveAttribute('data-selected', 'true');
+    await expect(guideLines(page)).toHaveCSS('stroke-width', '3px');
+    await page.keyboard.press('Delete');
+    await expect(guideLines(page)).toHaveCount(0);
+    await expect(shapes(page)).toHaveCount(1);
+});
+
+test('drawing starts and ends snapped to guides instead of dragging them', async ({ page }) => {
+    await openWithRulers(page);
+    await drag(page, [10, 300], [400, 300]);
+    await drag(page, [100, 10], [100, 400]);
+    await page.keyboard.press('r');
+    await drag(page, [403, 300], [600, 397]);
+    const rectangle = shapes(page).locator('rect').first();
+    await expect(rectangle).toHaveAttribute('x', '400');
+    await expect(rectangle).toHaveAttribute('y', '300');
+    await expect(rectangle).toHaveAttribute('width', '200');
+    await expect(rectangle).toHaveAttribute('height', '100');
+    await expect(guideLines(page).first()).toHaveAttribute('x1', '400');
+    await expect(guideLines(page).last()).toHaveAttribute('y1', '400');
+});
+
 test('the command bar moves below the top ruler, so a guide is dragged out anywhere', async ({
     page
 }) => {

@@ -5,6 +5,10 @@
     stroke-width: 1;
 }
 
+.line[data-selected='true'] {
+    stroke-width: 3;
+}
+
 /* A dragged guide's position, upright on a halo so it reads over the grid and shapes. */
 .position {
     fill: var(--primary-action-color);

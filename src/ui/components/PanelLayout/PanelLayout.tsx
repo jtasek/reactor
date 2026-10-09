@@ -13,16 +13,16 @@ import type { PanelPlacement } from 'src/app/types';
 import { useActions, useControls, usePanelLayout } from 'src/app/hooks';
 import { beyondClickSlip } from 'src/events/gestures';
 import styles from './styles.css';
-import {
-    DOCK_GEOMETRY_STYLE,
-    SIDE_ZONE_WIDTH_RATIO,
-    SIDE_ZONE_MAX_WIDTH_PX,
-    EDGE_ZONE_HEIGHT_RATIO,
-    STATUS_BAR_HEIGHT_PX
-} from './geometry';
+import { DOCK_GEOMETRY_STYLE, EDGE_ZONE_HEIGHT_PX, STATUS_BAR_HEIGHT_PX } from './geometry';
 
 type Dock = PanelPlacement['dock'];
 type DockZone = Exclude<Dock, null>;
+type Docking = 'horizontal' | 'vertical' | 'both';
+
+const orientationOf = (dock: Dock) =>
+    dock === 'top' || dock === 'bottom' ? 'horizontal' : 'vertical';
+const allowsDock = (dock: Dock, docking: Docking) =>
+    dock === null || docking === 'both' || orientationOf(dock) === docking;
 
 const KEYBOARD_MOVE_STEP_PX = 10;
 /** The smallest a panel is resized to: room for a few rows under its header. */
@@ -34,6 +34,10 @@ interface DockablePanelProps {
     id: string;
     title: string;
     children: ReactNode;
+    /** Top/bottom are horizontal; side and corner docks are vertical. Floating is always allowed. */
+    docking?: Docking;
+    /** Optional alternate content for top/bottom docks; children is the vertical/floating view. */
+    horizontalView?: ReactNode;
 }
 
 interface Drag {
@@ -45,6 +49,7 @@ interface Drag {
     offset: { x: number; y: number };
     dock: Dock;
     title: string;
+    docking: Docking;
 }
 
 /** The bottom corner of a panel a resize drags. */
@@ -81,9 +86,8 @@ const clamp = (value: number, min: number, max: number) =>
 
 export const DockablePanel: FC<DockablePanelProps> = () => null;
 
-const zoneAt = (x: number, y: number): Dock => {
-    const sideWidth = Math.min(window.innerWidth * SIDE_ZONE_WIDTH_RATIO, SIDE_ZONE_MAX_WIDTH_PX);
-    const zoneHeight = window.innerHeight * EDGE_ZONE_HEIGHT_RATIO;
+const zoneAt = (x: number, y: number, sideWidth: number, gap: number): Dock => {
+    const zoneHeight = EDGE_ZONE_HEIGHT_PX;
     const bottom = window.innerHeight - STATUS_BAR_HEIGHT_PX;
     const leftEnd = sideWidth;
     const rightStart = window.innerWidth - sideWidth;
@@ -97,10 +101,10 @@ const zoneAt = (x: number, y: number): Dock => {
     if (x >= rightStart && y >= bottomStart) {
         return 'bottom-right';
     }
-    if (x <= leftEnd && y >= zoneHeight && y < bottomStart) return 'left';
-    if (x >= rightStart && y >= zoneHeight && y < bottomStart) return 'right';
-    if (y < topEnd && x > sideWidth && x < window.innerWidth - sideWidth) return 'top';
-    if (y >= bottomStart && x > sideWidth && x < window.innerWidth - sideWidth) return 'bottom';
+    if (x <= leftEnd && y >= zoneHeight + gap && y < bottomStart - gap) return 'left';
+    if (x >= rightStart && y >= zoneHeight + gap && y < bottomStart - gap) return 'right';
+    if (y < topEnd && x > leftEnd + gap && x < rightStart - gap) return 'top';
+    if (y >= bottomStart && x > leftEnd + gap && x < rightStart - gap) return 'bottom';
 
     return null;
 };
@@ -116,21 +120,26 @@ const DOCK_ZONES: Array<{ dock: DockZone; className: string; label: string }> = 
     { dock: 'bottom', className: 'zoneBottom', label: 'Bottom' }
 ];
 
-const DockZones: FC<{ activeDock: Dock | undefined }> = ({ activeDock }) => {
+const DockZones: FC<{ activeDock: Dock | undefined; docking: Docking }> = ({
+    activeDock,
+    docking
+}) => {
     if (activeDock === undefined) return null;
 
     return (
         <div className={styles.dockZones} aria-hidden="true">
-            {DOCK_ZONES.map(({ dock, className, label }) => (
-                <div
-                    key={dock}
-                    className={`${styles.zone} ${styles[className as keyof typeof styles]} ${
-                        dock === activeDock ? styles.activeZone : ''
-                    }`}
-                    data-zone={dock}
-                    title={label}
-                />
-            ))}
+            {DOCK_ZONES.filter(({ dock }) => allowsDock(dock, docking)).map(
+                ({ dock, className, label }) => (
+                    <div
+                        key={dock}
+                        className={`${styles.zone} ${styles[className as keyof typeof styles]} ${
+                            dock === activeDock ? styles.activeZone : ''
+                        }`}
+                        data-zone={dock}
+                        title={label}
+                    />
+                )
+            )}
         </div>
     );
 };
@@ -149,6 +158,22 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
     const handle = useRef<HTMLButtonElement>(null);
     const panelLayer = useRef<HTMLDivElement>(null);
     const pendingFocus = useRef<string | null>(null);
+    const dockAtPointer = (x: number, y: number, docking: Docking) => {
+        // Read the rendered column so hit testing follows the panel-width token and viewport cap.
+        const sideDock = panelLayer.current?.querySelector('[data-dock="left"]');
+        if (!sideDock) return null;
+        const width = sideDock.getBoundingClientRect().width;
+        const gap = Number.parseFloat(getComputedStyle(sideDock).rowGap);
+        const dock = zoneAt(x, y, width, gap);
+
+        return allowsDock(dock, docking) ? dock : null;
+    };
+    const panelDock = ({ props }: ReactElement<DockablePanelProps>): Dock => {
+        const dock = panelLayout[props.id]?.dock ?? null;
+
+        // Old saved placements can predate a panel's docking restrictions.
+        return allowsDock(dock, props.docking ?? 'both') ? dock : null;
+    };
 
     useEffect(() => {
         const resize = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
@@ -205,7 +230,7 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
         ({ props }) => controls[props.id as keyof typeof controls]?.visible ?? props.id === 'stats'
     );
     const visiblePanelLocations = visiblePanels
-        .map(({ props }) => `${props.id}:${panelLayout[props.id]?.dock ?? 'floating'}`)
+        .map((panel) => `${panel.props.id}:${panelDock(panel) ?? 'floating'}`)
         .join('|');
 
     useLayoutEffect(() => {
@@ -250,7 +275,9 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
         return () => observers.forEach((observer) => observer.disconnect());
     }, [visiblePanelLocations]);
     const renderPanel = (panel: ReactElement<DockablePanelProps>, dock: Dock) => {
-        const { id, title, children: content } = panel.props;
+        const { id, title, children, horizontalView, docking = 'both' } = panel.props;
+        const orientation = orientationOf(dock);
+        const content = orientation === 'horizontal' ? (horizontalView ?? children) : children;
         const placement = panelLayout[id] ?? { dock: null, position: { x: 0, y: 0 } };
         const floating = !dock;
         const size = sizes[id] ?? UNMEASURED_PANEL_SIZE;
@@ -270,7 +297,8 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
                 placement: placement.size ? { ...next, size: placement.size } : next
             });
         const placeWithKeyboard = (next: PanelPlacement) => {
-            if (next.dock !== placement.dock) pendingFocus.current = id;
+            if (!allowsDock(next.dock, docking)) return;
+            if (next.dock !== dock) pendingFocus.current = id;
             place(next);
         };
         /** The box a corner dragged by `dx`, `dy` from `from` leaves the panel. */
@@ -419,9 +447,10 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
                 start: { x: event.clientX, y: event.clientY },
                 moved: false,
                 title,
+                docking,
                 position: { x: bounds.left, y: bounds.top },
                 offset: { x: event.clientX - bounds.left, y: event.clientY - bounds.top },
-                dock: zoneAt(event.clientX, event.clientY)
+                dock: dockAtPointer(event.clientX, event.clientY, docking)
             });
         };
 
@@ -444,7 +473,7 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
                     x: Math.max(0, Math.min(event.clientX - drag.offset.x, maxX)),
                     y: Math.max(0, Math.min(event.clientY - drag.offset.y, maxY))
                 },
-                dock: zoneAt(event.clientX, event.clientY)
+                dock: dockAtPointer(event.clientX, event.clientY, docking)
             });
         };
 
@@ -463,7 +492,7 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
                 setDrag(undefined);
                 return;
             }
-            const nextDock = zoneAt(event.clientX, event.clientY);
+            const nextDock = dockAtPointer(event.clientX, event.clientY, docking);
             place({
                 dock: nextDock,
                 position: {
@@ -481,6 +510,7 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
                     isDragging && drag.moved ? styles.dragSource : ''
                 } ${id === 'sideBar' ? styles.sideBarPanel : ''}`}
                 data-panel={id}
+                data-orientation={orientation}
                 style={{
                     ...(floating ? { left: shownPosition.x, top: shownPosition.y } : {}),
                     // A size chosen on a larger window shrinks to fit this one.
@@ -576,7 +606,7 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
     };
 
     const docked = (dock: DockZone) => {
-        const panels = visiblePanels.filter(({ props }) => panelLayout[props.id]?.dock === dock);
+        const panels = visiblePanels.filter((panel) => panelDock(panel) === dock);
 
         return (
             <div
@@ -592,12 +622,15 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
     };
 
     const floats = visiblePanels
-        .filter(({ props }) => panelLayout[props.id]?.dock === null || !panelLayout[props.id])
+        .filter((panel) => panelDock(panel) === null)
         .map((panel) => renderPanel(panel, null));
 
     return (
         <div className={styles.panelLayer} ref={panelLayer} style={DOCK_GEOMETRY_STYLE}>
-            <DockZones activeDock={drag?.moved ? drag.dock : undefined} />
+            <DockZones
+                activeDock={drag?.moved ? drag.dock : undefined}
+                docking={drag?.docking ?? 'both'}
+            />
             <div className={`${styles.column} ${styles.leftColumn}`}>
                 {docked('top-left')}
                 <div className={styles.spacer} />
