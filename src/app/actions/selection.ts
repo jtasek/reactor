@@ -92,6 +92,7 @@ export const runCommandOn: ActionWithParam<{ shapeIds: string[]; commandId: stri
     const { shapes } = state.currentDocument;
     const chosen = new Set(shapeIds);
     const before = {
+        guides: Object.values(state.currentDocument.guides).filter((guide) => guide.selected),
         selected: Object.values(shapes)
             .filter((shape) => shape.selected)
             .map((shape) => shape.id),
@@ -104,6 +105,7 @@ export const runCommandOn: ActionWithParam<{ shapeIds: string[]; commandId: stri
             }
         });
 
+    actions.unselectGuides();
     select(chosen);
     // One shape of a group is selected alone, as inside its group.
     state.enteredGroupId =
@@ -111,6 +113,9 @@ export const runCommandOn: ActionWithParam<{ shapeIds: string[]; commandId: stri
 
     if (!actions.runCommand(command)) {
         select(new Set(before.selected));
+        before.guides.forEach((guide) => {
+            guide.selected = true;
+        });
         state.enteredGroupId = before.enteredGroupId;
     }
 };

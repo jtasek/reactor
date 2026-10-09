@@ -326,6 +326,8 @@ export const useGuides = () => {
     return useCurrentDocument()?.guides ?? [];
 };
 
+export const useDocumentLocked = () => useAppState((state) => state.currentDocument.locked);
+
 export const useGroup = (id: string) => {
     return useCurrentDocument()?.groups[id];
 };

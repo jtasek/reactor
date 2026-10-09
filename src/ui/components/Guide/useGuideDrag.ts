@@ -1,10 +1,19 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { useActions, useCamera, useControls, useGestureInProgress, useGuides } from 'src/app/hooks';
+import {
+    useActions,
+    useCamera,
+    useControls,
+    useCurrentDocumentId,
+    useDocumentLocked,
+    useGestureInProgress,
+    useGuides
+} from 'src/app/hooks';
 import { guidePlace, removesGuide, RULER_SIZE_PX } from 'src/app/rulers';
 import type { Camera, Orientation } from 'src/app/types';
 import { clientToSurface } from 'src/events/drivers/helpers';
 import { tryReleasePointerCapture, trySetPointerCapture } from 'src/events/drivers/pointerCapture';
+import { beyondClickSlip } from 'src/events/gestures';
 
 /**
  * A guide being dragged: a new one out of a ruler (`guideId` null) or an existing
@@ -75,14 +84,22 @@ export function useGuideDrag() {
     const actions = useActions();
     const camera = useCamera();
     const guides = useGuides();
+    const documentId = useCurrentDocumentId();
+    const locked = useDocumentLocked();
     const controls = useControls();
     const gestureInProgress = useGestureInProgress();
     const drag = useSyncExternalStore(subscribe, takeCurrent);
     const rulerSize = controls.rulers.visible ? RULER_SIZE_PX : 0;
-    const latest = useRef({ camera, guides, rulerSize, guidesShown: controls.guides.visible });
+    const latest = useRef({
+        camera,
+        guides,
+        rulerSize,
+        locked,
+        guidesShown: controls.guides.visible
+    });
     const owner = useRef(false);
 
-    latest.current = { camera, guides, rulerSize, guidesShown: controls.guides.visible };
+    latest.current = { camera, guides, rulerSize, locked, guidesShown: controls.guides.visible };
 
     useEffect(
         () => () => {
@@ -90,7 +107,7 @@ export function useGuideDrag() {
                 stopCurrent?.();
             }
         },
-        []
+        [documentId]
     );
 
     const drop = (released: Drag) => {
@@ -98,8 +115,12 @@ export function useGuideDrag() {
         const { orientation, guideId } = released;
         const { offset, at } = placeOnCamera(released, view);
 
-        // Another copy removed it meanwhile.
-        if (guideId !== null && !present[guideId]) {
+        // Another copy removed, hid or locked it meanwhile.
+        if (
+            latest.current.locked ||
+            (guideId !== null &&
+                (!guidesShown || !present[guideId]?.visible || present[guideId].locked))
+        ) {
             return;
         }
 
@@ -115,6 +136,7 @@ export function useGuideDrag() {
 
         if (guideId !== null) {
             actions.updateGuide({ id: guideId, position });
+            actions.selectGuide(guideId);
 
             return;
         }
@@ -135,6 +157,7 @@ export function useGuideDrag() {
 
         if (
             event.button !== 0 ||
+            locked ||
             !surface ||
             stopCurrent ||
             gestureInProgress ||
@@ -159,6 +182,7 @@ export function useGuideDrag() {
         event.stopPropagation();
 
         const length = orientation === 'horizontal' ? bounds.height : bounds.width;
+        let movedBeyondClick = false;
 
         const onPointer = (input: PointerEvent) => {
             if (input.pointerId !== pointerId || !current) {
@@ -168,6 +192,7 @@ export function useGuideDrag() {
             input.stopPropagation();
 
             const moved = { ...current, pointer: along(input) ?? current.pointer };
+            movedBeyondClick ||= beyondClickSlip({ x: start, y: 0 }, { x: moved.pointer, y: 0 }, 1);
 
             if (input.type === 'pointermove') {
                 setCurrent(moved);
@@ -177,9 +202,15 @@ export function useGuideDrag() {
 
             stopCurrent?.();
 
-            if (input.type === 'pointerup') {
-                drop(moved);
+            if (input.type !== 'pointerup') {
+                return;
             }
+            if (guideId !== null && !movedBeyondClick) {
+                actions.selectGuide(guideId);
+
+                return;
+            }
+            drop(moved);
         };
 
         const onKey = (input: KeyboardEvent) => {

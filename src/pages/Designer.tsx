@@ -47,13 +47,13 @@ export const Designer: FC = () => (
             <DockablePanel id="controlPanel" title="Control Panel">
                 <ControlPanel />
             </DockablePanel>
-            <DockablePanel id="inspector" title="Inspector">
+            <DockablePanel id="inspector" title="Inspector" docking="vertical">
                 <Inspector />
             </DockablePanel>
-            <DockablePanel id="layerPanel" title="Layers">
+            <DockablePanel id="layerPanel" title="Layers" docking="vertical">
                 <LayerPanel />
             </DockablePanel>
-            <DockablePanel id="groupPanel" title="Groups">
+            <DockablePanel id="groupPanel" title="Groups" docking="vertical">
                 <GroupPanel />
             </DockablePanel>
             <DockablePanel id="miniMap" title="Minimap">
@@ -62,13 +62,13 @@ export const Designer: FC = () => (
             <DockablePanel id="documentInfo" title="Document Info">
                 <DocumentInfo />
             </DockablePanel>
-            <DockablePanel id="dataView" title="Data View">
+            <DockablePanel id="dataView" title="Data View" docking="vertical">
                 <DataView />
             </DockablePanel>
-            <DockablePanel id="stats" title="Stats">
+            <DockablePanel id="stats" title="Stats" horizontalView={<Stats horizontal />}>
                 <Stats />
             </DockablePanel>
-            <DockablePanel id="variables" title="Variables">
+            <DockablePanel id="variables" title="Variables" docking="vertical">
                 <Variables />
             </DockablePanel>
         </PanelLayout>

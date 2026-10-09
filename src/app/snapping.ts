@@ -1,9 +1,30 @@
 import { aspectRatio, resizeAspectBox } from './geometry';
-import type { Box, Point, ResizeHandlerType } from './types';
+import type { Box, Guide, Point, ResizeHandlerType } from './types';
 import { movedEdges } from './utils';
 
 /** How near on screen, in pixels, a moved box's edge or center is pulled onto a line. */
 export const SNAP_DISTANCE_PX = 6;
+
+/** Snaps a drawing point to the nearest visible guide on each axis, in canvas units. */
+export function snapToGuides(point: Point, guides: Guide[], distance: number): Point {
+    const snapped = { ...point };
+    const nearest = { x: distance, y: distance };
+
+    for (const guide of guides) {
+        if (!guide.visible) {
+            continue;
+        }
+        const axis = guide.orientation === 'vertical' ? 'x' : 'y';
+        const delta = Math.abs(guide.position[axis] - point[axis]);
+
+        if (delta <= nearest[axis]) {
+            nearest[axis] = delta;
+            snapped[axis] = guide.position[axis];
+        }
+    }
+
+    return snapped;
+}
 
 /**
  * The lines a moved box may snap to, across (`xs`) and down (`ys`), and, for each,

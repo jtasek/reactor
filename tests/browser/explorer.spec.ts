@@ -41,8 +41,10 @@ test('the explorer lists layers as a tree, shows one layer alone, and takes drop
     const star = (name: string) =>
         first.locator('xpath=ancestor::li[1]').getByRole('button', { name, exact: true }).first();
 
+    await first.hover();
     await star('Highlight layer').click();
     await expect(shapes(page)).toHaveCount(1);
+    await first.hover();
     await star('Show all layers').click();
     await expect(shapes(page)).toHaveCount(2);
 
@@ -178,9 +180,7 @@ test('an empty layer has nothing to collapse', async ({ page }) => {
     ).toBeVisible();
 });
 
-test('an item’s menu fades in under the pointer and runs commands for that item', async ({
-    page
-}) => {
+test('an item’s menu floats beside its name and runs commands for that item', async ({ page }) => {
     await openEditor(page, ['Explorer']);
     await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
     await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
@@ -190,9 +190,15 @@ test('an item’s menu fades in under the pointer and runs commands for that ite
     const menu = row.getByRole('toolbar', { name: 'rectangle-1 menu' });
     const button = (name: string) => menu.getByRole('button', { name, exact: true });
 
-    await expect(button('Hide')).toHaveCSS('opacity', '0');
+    await expect(menu).toBeHidden();
+    const name = row.getByRole('button', { name: 'rectangle-1', exact: true });
+    const nameBefore = (await name.boundingBox())!;
+    expect(nameBefore.width).toBeGreaterThan(150);
     await row.hover();
     await expect(button('Hide')).toHaveCSS('opacity', '1');
+    expect(await name.boundingBox()).toEqual(nameBefore);
+    const rowBounds = (await row.boundingBox())!;
+    expect((await menu.boundingBox())!.x).toBeGreaterThanOrEqual(rowBounds.x + rowBounds.width);
 
     // All six buttons are in the bar. Nothing is selected: a command runs for the
     // row's shape.
@@ -204,19 +210,35 @@ test('an item’s menu fades in under the pointer and runs commands for that ite
     await expect(shapes(page)).toHaveCount(2);
     await expect(page.getByRole('button', { name: 'rectangle-1', exact: true })).toHaveCount(0);
 
-    // A button switched on stays shown when the pointer leaves.
+    // Leaving closes the floating menu; opening it again keeps the item's state.
     const other = page.getByRole('button', { name: 'rectangle-2', exact: true }).locator('..');
 
     await other.hover();
     await other.getByRole('button', { name: 'Lock', exact: true }).click();
     await page.mouse.move(700, 500);
+    await expect(other.getByRole('toolbar')).toBeHidden();
+    await other.hover();
     await expect(other.getByRole('button', { name: 'Unlock', exact: true })).toHaveCSS(
         'opacity',
         '1'
     );
     await expect(other.getByRole('button', { name: 'Hide', exact: true })).toHaveCSS(
         'opacity',
-        '0'
+        '1'
     );
     await expect(other.getByRole('button', { name: 'Delete', exact: true })).toBeDisabled();
+});
+
+test('the floating item menu is reachable by keyboard and closes with Escape', async ({ page }) => {
+    await openEditor(page, ['Explorer']);
+    await drawRect(page, { x: 400, y: 200 }, { x: 450, y: 250 });
+    const name = page.getByRole('button', { name: 'rectangle-1', exact: true });
+    const menu = name.locator('..').getByRole('toolbar');
+    await name.focus();
+    await expect(menu).toBeVisible();
+    await page.keyboard.press('Tab');
+    await expect(menu.getByRole('button', { name: 'Hide', exact: true })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(name).toBeFocused();
+    await expect(menu).toBeHidden();
 });

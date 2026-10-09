@@ -516,16 +516,21 @@ export const removeShape: ActionWithParam<string> = ({ state }, shapeId) => {
     deleteShape(state, shapeId);
 };
 
-export const toggleShapeSelected: ActionWithParam<string> = ({ state }, shapeId) => {
+export const toggleShapeSelected: ActionWithParam<string> = ({ state, actions }, shapeId) => {
     const shape = getShape(state, shapeId);
 
     shape.selected = !shape.selected;
+    if (!shape.selected) {
+        return;
+    }
+    actions.unselectGuides();
 };
 
-export const selectShape: ActionWithParam<string> = ({ state }, shapeId) => {
+export const selectShape: ActionWithParam<string> = ({ state, actions }, shapeId) => {
     const shape = getShape(state, shapeId);
 
     shape.selected = true;
+    actions.unselectGuides();
 };
 
 export const selectShapeByPoint: Action = ({ state }) => {
@@ -807,7 +812,8 @@ export const setShapeBounds: ActionWithParam<{ id: string; bounds: Box }> = (
     shape.bounds = bounds;
 };
 
-export const unselectShapes: Action = ({ state }) => {
+export const unselectShapes: Action = ({ state, actions }) => {
+    actions.unselectGuides();
     const shapes = Object.values(state.currentDocument.shapes);
     shapes.forEach((shape) => {
         // Only write when it actually changes, so a background click with nothing

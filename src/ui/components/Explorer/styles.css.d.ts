@@ -4,6 +4,7 @@ declare namespace StylesCssNamespace {
     dropTarget: string;
     empty: string;
     explorer: string;
+    floatingMenu: string;
     grip: string;
     heading: string;
     hidden: string;

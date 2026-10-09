@@ -130,6 +130,7 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
             pointerId: event.pointerId,
             position,
             handle: getHandleTarget(event.target),
+            free: event.ctrlKey || event.metaKey,
             touch: event.pointerType === 'touch'
         });
 

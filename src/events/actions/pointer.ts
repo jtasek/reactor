@@ -9,6 +9,7 @@ import {
     sameGaps,
     snapMove,
     snapResize,
+    snapToGuides,
     targetLines
 } from 'src/app/snapping';
 import { untracked } from 'src/app/untracked';
@@ -60,6 +61,7 @@ export const beginGesture = (
         pointerId,
         position,
         handle,
+        free = false,
         touch = false
     }: PointerInput & { handle?: HandleTarget; touch?: boolean }
 ): boolean => {
@@ -137,6 +139,15 @@ export const beginGesture = (
                   };
 
         return true;
+    }
+
+    if (state.tools.activeToolsIds[0] !== 'select' && !free && state.ui.guides.visible) {
+        pointer.start = snapToGuides(
+            position,
+            Object.values(untracked(state.currentDocument.guides)),
+            SNAP_DISTANCE_PX / state.currentDocument.camera.scale
+        );
+        pointer.current = { ...pointer.start };
     }
 
     if (state.tools.activeToolsIds[0] !== 'select') {
@@ -227,8 +238,18 @@ export const movePointer = (
         gesture.moved = true;
     }
 
+    if (gesture.kind === 'drawing' && !free && state.ui.guides.visible) {
+        pointer.current = snapToGuides(
+            position,
+            Object.values(untracked(state.currentDocument.guides)),
+            SNAP_DISTANCE_PX / state.currentDocument.camera.scale
+        );
+    }
+
     if (gesture.kind === 'drawing') {
-        pointer.path.push(position);
+        pointer.path.push({ ...pointer.current });
+
+        return;
     }
 
     // Within a click's slip the box selects nothing yet, so a click keeps the selection.
@@ -392,6 +413,8 @@ export const endGesture = (
     if (!clickedLockedItem && (gesture.kind === 'drawing' || gesture.kind === 'marquee')) {
         actions.tools.executeToolCommands();
     }
+
+    actions.unselectGuides();
 
     effects.dragTargets.clear();
     pointer.gesture = { kind: 'idle' };

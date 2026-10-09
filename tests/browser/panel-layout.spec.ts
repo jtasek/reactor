@@ -138,6 +138,95 @@ test('growing neighboring zones share space without covering headers', async ({ 
 const panelBox = async (page: Page, id: string) =>
     (await page.locator(`[data-panel="${id}"]`).boundingBox())!;
 
+test('dock targets match the default width and highlight the actual drop target', async ({
+    page
+}) => {
+    await openEditor(page);
+    const width = (await panelBox(page, 'controlPanel')).width;
+    const header = page.locator('[data-panel="controlPanel"] > button');
+    const bounds = (await header.boundingBox())!;
+    await page.mouse.move(bounds.x + 20, bounds.y + 14);
+    await page.mouse.down();
+    await page.mouse.move(640, 300, { steps: 5 });
+
+    const left = page.locator('[data-zone="left"]');
+    const top = page.locator('[data-zone="top"]');
+    await expect(left).toBeVisible();
+    expect((await left.boundingBox())!.width).toBe(width);
+    expect((await top.boundingBox())!.height).toBe(56);
+    await expect(left).toHaveCSS('border-top-style', 'solid');
+    await expect(left).toHaveCSS('opacity', '1');
+    const restingColor = await left.evaluate((node) => getComputedStyle(node).borderTopColor);
+
+    const corner = (await page.locator('[data-zone="top-left"]').boundingBox())!;
+    expect((await top.boundingBox())!.x - (corner.x + corner.width)).toBe(8);
+    expect((await left.boundingBox())!.y - (corner.y + corner.height)).toBe(8);
+    for (const point of [
+        { x: width + 4, y: 20 },
+        { x: 20, y: corner.height + 4 }
+    ]) {
+        await page.mouse.move(point.x, point.y);
+        await expect
+            .poll(() =>
+                page
+                    .locator('[data-zone]')
+                    .evaluateAll(
+                        (zones, color) =>
+                            zones.every((zone) => getComputedStyle(zone).borderTopColor === color),
+                        restingColor
+                    )
+            )
+            .toBe(true);
+    }
+
+    // The point just outside the drawn side zone must remain a floating drop.
+    await page.mouse.move(width + 1, 300);
+    await expect(left).toHaveCSS('border-top-color', restingColor);
+    await page.mouse.move(width - 1, 300);
+    await expect(left).not.toHaveCSS('border-top-color', restingColor);
+    await page.mouse.up();
+    await expect(page.locator('[data-dock="left"] [data-panel="controlPanel"]')).toBeVisible();
+});
+
+test('vertical panels reject horizontal docks by keyboard, drag and saved placement', async ({
+    page
+}) => {
+    await setLayout(page, { inspector: 'top' });
+    await openEditor(page, ['Inspector']);
+    const header = page.locator('[data-panel="inspector"] > button');
+    await expect(page.locator('[data-dock] [data-panel="inspector"]')).toHaveCount(0);
+    await header.focus();
+    await page.keyboard.press('Shift+ArrowUp');
+    await expect(page.locator('[data-dock] [data-panel="inspector"]')).toHaveCount(0);
+    await page.keyboard.press('Shift+ArrowRight');
+    await expect(page.locator('[data-dock="right"] [data-panel="inspector"]')).toBeVisible();
+    await expect(header).toBeFocused();
+
+    const bounds = (await header.boundingBox())!;
+    await page.mouse.move(bounds.x + 20, bounds.y + 14);
+    await page.mouse.down();
+    await page.mouse.move(640, 20, { steps: 5 });
+    await expect(page.locator('[data-zone]')).toHaveCount(6);
+    await expect(page.locator('[data-zone="top"], [data-zone="bottom"]')).toHaveCount(0);
+    await page.mouse.up();
+    await expect(page.locator('[data-dock] [data-panel="inspector"]')).toHaveCount(0);
+});
+
+test('Stats switches between horizontal and vertical content when docked', async ({ page }) => {
+    await openEditor(page);
+    const panel = page.locator('[data-panel="stats"]');
+    const header = panel.locator(':scope > button');
+    await header.focus();
+    await page.keyboard.press('Shift+ArrowUp');
+    await expect(panel).toHaveAttribute('data-orientation', 'horizontal');
+    await expect(panel.locator('[data-horizontal="true"]')).toBeVisible();
+    const horizontalHeight = (await panel.boundingBox())!.height;
+    await page.keyboard.press('Shift+ArrowRight');
+    await expect(panel).toHaveAttribute('data-orientation', 'vertical');
+    await expect(panel.locator('[data-horizontal="false"]')).toBeVisible();
+    expect((await panel.boundingBox())!.height).toBeGreaterThan(horizontalHeight);
+});
+
 test('panels share a default width, keep a size dragged by a corner and restore it', async ({
     page
 }) => {
