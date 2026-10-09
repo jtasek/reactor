@@ -128,7 +128,7 @@ export const removeSelectionFromGroups: Action = ({ state }) => {
 };
 
 /** Selects a group's shown shapes, or unselects them when it is selected. */
-export const toggleGroupSelected: ActionWithParam<string> = ({ state }, groupId) => {
+export const toggleGroupSelected: ActionWithParam<string> = ({ state, actions }, groupId) => {
     const { currentDocument } = state;
     const group = getGroup(state, groupId);
     const selected = !currentDocument.selectedGroupsIds.includes(groupId);
@@ -142,6 +142,11 @@ export const toggleGroupSelected: ActionWithParam<string> = ({ state }, groupId)
         .forEach((id) => {
             currentDocument.shapes[id].selected = selected;
         });
+
+    if (!selected) {
+        return;
+    }
+    actions.unselectGuides();
 };
 
 export const unselectGroup: ActionWithParam<string> = ({ state }, groupId) => {

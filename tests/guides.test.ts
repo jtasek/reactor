@@ -92,6 +92,28 @@ it('selects and deletes a guide without deleting the previously selected shape',
     expect(store.state.currentDocument.shapesIds).toHaveLength(1);
 });
 
+it('selecting a group clears guide selection so Delete removes only the group', () => {
+    const store = setup();
+    for (const x of [10, 50]) {
+        store.actions.addShape({
+            type: 'rectangle',
+            position: { x, y: 10 },
+            size: { width: 20, height: 20 }
+        });
+    }
+    const shapeIds = [...store.state.currentDocument.shapesIds];
+    store.actions.addGroup({ id: 'group', shapesIds: shapeIds });
+    store.actions.selectGuide('vertical');
+
+    store.actions.toggleGroupSelected('group');
+    expect(store.state.currentDocument.selectedShapesIds).toEqual(shapeIds);
+    expect(store.state.currentDocument.guides.vertical.selected).toBe(false);
+    expect(store.actions.runCommand(DeleteCommand)).toBe(true);
+    expect(store.state.currentDocument.shapesIds).toHaveLength(0);
+    expect(store.state.currentDocument.groups.group).toBeUndefined();
+    expect(store.state.currentDocument.guides.vertical).toBeDefined();
+});
+
 it.each([false, true])(
     'a shape-menu delete keeps a previously selected guide (shape locked: %s)',
     (locked) => {
