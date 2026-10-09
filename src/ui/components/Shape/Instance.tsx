@@ -42,6 +42,9 @@ export const Instance: FC<Props> = ({ instance, source, ancestors = new Set() })
                 const shape = component
                     ? instanceMember(member, instance, component, document)
                     : member;
+                if (!shape.visible) {
+                    return null;
+                }
                 const center = boxCenter(getShapeBounds(shape));
                 const transform = shape.rotation
                     ? `rotate(${shape.rotation} ${center.x} ${center.y})`

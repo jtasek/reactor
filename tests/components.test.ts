@@ -125,6 +125,93 @@ it('detaches an instance into independent shapes at its placed position', () => 
     expect(document.shapes[detachedId ?? '']).toMatchObject({ position: { x: 200, y: 300 } });
 });
 
+it.each([false, true])(
+    'keeps detached members in their outer source (extra member: %s)',
+    (extra) => {
+        const { store, componentId } = setup();
+        store.actions.insertComponentAt({ componentId, position: { x: 200, y: 300 } });
+        const document = store.state.currentDocument;
+        const nestedId = document.shapesIds[1];
+        const members = [nestedId];
+
+        if (extra) {
+            store.actions.addShape({
+                type: 'rectangle',
+                position: { x: 250, y: 300 },
+                size: { width: 20, height: 20 }
+            });
+            members.push(document.shapesIds[2]);
+        }
+        store.actions.addComponent({ id: 'outer', shapesIds: members });
+        store.actions.insertComponentAt({ componentId: 'outer', position: { x: 400, y: 300 } });
+        const before = componentSource(document, 'outer')?.box;
+
+        store.actions.detachInstances([nestedId]);
+
+        expect(document.shapes[nestedId]).toBeUndefined();
+        expect(document.components.outer.shapesIds).toHaveLength(members.length);
+        expect(document.components.outer.shapesIds).not.toContain(nestedId);
+        expect(componentSource(document, 'outer')?.box).toEqual(before);
+        expect(
+            componentSource(document, 'outer')?.shapes.every((shape) => shape.type === 'rectangle')
+        ).toBe(true);
+    }
+);
+
+it('keeps library draw order and offers an update after only the order changes', () => {
+    const { store, sourceId, componentId } = setup();
+    const origin = store.state.currentDocumentId;
+    store.actions.addShape({
+        type: 'rectangle',
+        position: { x: 10, y: 20 },
+        size: { width: 30, height: 40 }
+    });
+    const secondId = store.state.currentDocument.shapesIds[1];
+    store.actions.addShapesToComponent({ componentId, shapeIds: [secondId] });
+    const hash = componentFingerprint(store.state.currentDocument, componentId);
+    store.actions.bringShapesToFront([sourceId]);
+    expect(componentFingerprint(store.state.currentDocument, componentId)).not.toBe(hash);
+
+    store.actions.addDocument({ id: 'copy' });
+    store.actions.openDocument('copy');
+    store.actions.importLibraryComponent({ documentId: origin, componentId });
+    const order = () =>
+        componentSource(store.state.currentDocument, componentId)?.shapes.map((shape) => shape.id);
+    expect(order()).toEqual([secondId, sourceId]);
+
+    store.actions.openDocument(origin);
+    store.actions.bringShapesToFront([secondId]);
+    store.actions.openDocument('copy');
+    expect(order()).toEqual([secondId, sourceId]);
+    store.actions.updateLibraryComponent(componentId);
+    expect(order()).toEqual([sourceId, secondId]);
+});
+
+it('invalidates instance measurement when source bounds change, including nested sources', () => {
+    const { store, sourceId, componentId } = setup();
+    const document = store.state.currentDocument;
+    store.actions.insertComponentAt({ componentId, position: { x: 200, y: 300 } });
+    store.actions.addComponent({ id: 'outer', shapesIds: [document.shapesIds[1]] });
+    const directKey = componentSource(document, componentId)?.key;
+    const nestedKey = componentSource(document, 'outer')?.key;
+
+    store.actions.setShapeBounds({
+        id: sourceId,
+        bounds: {
+            topLeft: { x: 12, y: 23 },
+            bottomRight: { x: 39, y: 59 },
+            width: 27,
+            height: 36
+        }
+    });
+    expect(componentSource(document, componentId)?.key).not.toBe(directKey);
+    expect(componentSource(document, 'outer')?.key).not.toBe(nestedKey);
+
+    const measuredKey = componentSource(document, componentId)?.key;
+    store.actions.selectShape(sourceId);
+    expect(componentSource(document, componentId)?.key).toBe(measuredKey);
+});
+
 it('copies a library source, updates it on request, and works after its origin is deleted', () => {
     const { store, sourceId, componentId } = setup();
     const firstId = store.state.currentDocumentId;

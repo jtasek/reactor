@@ -26,6 +26,7 @@ export function componentFingerprint(
         props: component.props,
         shapes: members.map((shape: Shape) => ({
             id: shape.id,
+            order: shape.order,
             geometry: shapeGeometry(shape),
             style: shapeStyle(shape),
             rotation: shape.rotation,

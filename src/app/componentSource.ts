@@ -2,6 +2,7 @@ import type { Box, Document, InstanceShape, Shape } from './types';
 import { drawnBox } from './membership';
 import { getShapeBounds, rectToBox, shapeGeometryKey } from './utils';
 import { variableValue } from './variables';
+import { inDrawingOrder } from './drawOrder';
 
 export interface ComponentSource {
     /** Bounds in the source's canvas coordinates. */
@@ -28,16 +29,18 @@ export function componentSource(
 
     const next = new Set(ancestors).add(componentId);
     const members = new Set(component.shapesIds);
-    const ordered = component.sourceShapes
-        ? component.shapesIds
-        : document.shapesIds.filter((id) => members.has(id));
+    const ordered = (
+        component.sourceShapes ? inDrawingOrder(component.sourceShapes) : document.shapesIds
+    ).filter((id) => members.has(id));
     const shapes = ordered
         .map((id) => component.sourceShapes?.[id] ?? document.shapes[id])
-        .filter((shape) => shape?.visible);
+        .filter((shape) => Boolean(shape));
     const boxes: Box[] = [];
     const keys: string[] = [];
 
     for (const shape of shapes) {
+        // Keep hidden members in the frame: an instance may expose them through an override.
+        const geometryKey = `${shape.id}:${shapeGeometryKey(shape)}:${JSON.stringify(getShapeBounds(shape))}:${shape.visible}`;
         if (shape.type === 'instance') {
             const nested = componentSource(document, shape.componentId, next);
 
@@ -59,16 +62,14 @@ export function componentSource(
 
                 return variable ? [variableValue(variable, document.variables)] : [];
             });
-            keys.push(
-                `${shape.id}:${shapeGeometryKey(shape)}:${JSON.stringify(variables)}:${nested.key}`
-            );
+            keys.push(`${geometryKey}:${JSON.stringify(variables)}:${nested.key}`);
 
             continue;
         }
 
         boxes.push(drawnBox({ ...shape, bounds: getShapeBounds(shape) }));
         keys.push(
-            `${shape.id}:${shapeGeometryKey(shape)}:${shape.rotation}:${shape.opacity}:${shape.fill}:${shape.stroke}:${shape.fontColor}`
+            `${geometryKey}:${shape.rotation}:${shape.opacity}:${shape.fill}:${shape.stroke}:${shape.fontColor}`
         );
     }
 

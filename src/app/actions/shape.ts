@@ -320,7 +320,7 @@ export const removeShapes: ActionWithParam<string[]> = ({ state, actions }, shap
 };
 
 /** Replaces live instances with independent shapes in the same place. */
-export const detachInstances: ActionWithParam<string[]> = ({ state, actions }, instanceIds) => {
+export const detachInstances: ActionWithParam<string[]> = ({ state }, instanceIds) => {
     const document = state.currentDocument;
 
     for (const id of instanceIds) {
@@ -335,18 +335,7 @@ export const detachInstances: ActionWithParam<string[]> = ({ state, actions }, i
         if (!source || !component) {
             continue;
         }
-        const protectedSource = Object.values(document.components).some(
-            (item) =>
-                item.shapesIds.length === 1 &&
-                item.shapesIds[0] === id &&
-                hasComponentInstances(document, item.id)
-        );
-
-        if (protectedSource) {
-            actions.displayWarning('A component with instances must keep at least one shape.');
-
-            continue;
-        }
+        const sources = containersHolding(document.components, [id]);
         const groups = containersHolding(document.groups, [id]);
         const layers = containersHolding(document.layers, [id]);
         const copyIds: string[] = [];
@@ -378,6 +367,11 @@ export const detachInstances: ActionWithParam<string[]> = ({ state, actions }, i
             copyIds.push(copy.id);
         }
 
+        sources.forEach((source) => {
+            source.shapesIds = source.shapesIds.flatMap((memberId) =>
+                memberId === id ? copyIds : [memberId]
+            );
+        });
         deleteShape(state, id);
         layers.forEach((layer) => {
             layer.shapesIds.push(...copyIds);
