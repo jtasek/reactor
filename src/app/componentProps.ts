@@ -1,6 +1,7 @@
 import type { Component, Document, InstanceShape, PropertyValue, Shape } from './types';
-import { SHAPE_PROPERTIES, applyProperty } from './properties';
+import { SHAPE_PROPERTIES, applyProperty, type ShapeProperty } from './properties';
 import { variableValue } from './variables';
+import { isHexColor } from './utils';
 
 const SOURCE_ONLY = new Set(['name', 'x', 'y', 'width', 'height', 'rotation', 'locked']);
 
@@ -12,21 +13,61 @@ export const exposableProperties = (shape: Shape, document: Document) =>
             property.read(shape, document) !== undefined
     );
 
+export function resolveComponentProp(
+    component: Component | undefined,
+    propId: string,
+    document: Document
+) {
+    const prop = component?.props?.find((item) => item.id === propId);
+
+    if (!component || !prop) {
+        return undefined;
+    }
+    const source = component.sourceShapes?.[prop.shapeId] ?? document.shapes[prop.shapeId];
+    const property = SHAPE_PROPERTIES.find((item) => item.key === prop.key);
+
+    if (!source || !property) {
+        return undefined;
+    }
+
+    return { prop, source, property };
+}
+
+export function acceptsComponentValue(property: ShapeProperty, value: PropertyValue): boolean {
+    switch (property.kind) {
+        case 'number':
+            return (
+                typeof value === 'number' &&
+                Number.isFinite(value) &&
+                (property.accepts?.(value) ?? true)
+            );
+        case 'text':
+            return typeof value === 'string' && (property.accepts?.(value) ?? true);
+        case 'boolean':
+            return typeof value === 'boolean';
+        case 'color':
+            return typeof value === 'string' && (value === '' || isHexColor(value));
+    }
+}
+
+export function invalidOverrideIds(instance: InstanceShape, component: Component): string[] {
+    const valid = new Set(component.props?.map((prop) => prop.id) ?? []);
+
+    return Object.keys(instance.overrides).filter((id) => !valid.has(id));
+}
+
 export function componentPropValue(
     instance: InstanceShape,
     component: Component,
     propId: string,
     document: Document
 ): PropertyValue | undefined {
-    const prop = component.props?.find((item) => item.id === propId);
-    const source =
-        prop && (component.sourceShapes?.[prop.shapeId] ?? document.shapes[prop.shapeId]);
-    const property = prop && SHAPE_PROPERTIES.find((item) => item.key === prop.key);
+    const resolved = resolveComponentProp(component, propId, document);
 
-    if (!source || !property) {
+    if (!resolved) {
         return undefined;
     }
-
+    const { source, property } = resolved;
     const override = instance.overrides[propId];
 
     if (typeof override === 'object') {

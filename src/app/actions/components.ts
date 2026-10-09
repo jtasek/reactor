@@ -2,8 +2,13 @@ import { Action, ActionWithParam, Application, Component, Point, PropertyValue }
 import { createComponent } from '../factories';
 import { componentSource } from '../componentSource';
 import { componentFingerprint, librarySnapshot } from '../componentLibrary';
-import { exposableProperties } from '../componentProps';
-import { isHexColor, isShapeLocked } from '../utils';
+import {
+    exposableProperties,
+    resolveComponentProp,
+    acceptsComponentValue,
+    invalidOverrideIds
+} from '../componentProps';
+import { isShapeLocked } from '../utils';
 
 /** A source cannot be emptied while a live instance refers to it. */
 export const hasComponentInstances = (document: Application['currentDocument'], id: string) =>
@@ -151,15 +156,12 @@ export const removeShapesFromComponent: ActionWithParam<{
     }
     component.shapesIds = remaining;
     component.props = component.props?.filter((prop) => remaining.includes(prop.shapeId));
-    const validProps = new Set(component.props?.map((prop) => prop.id) ?? []);
     Object.values(state.currentDocument.shapes).forEach((shape) => {
         if (shape.type !== 'instance' || shape.componentId !== componentId) {
             return;
         }
-        Object.keys(shape.overrides).forEach((id) => {
-            if (!validProps.has(id)) {
-                delete shape.overrides[id];
-            }
+        invalidOverrideIds(shape, component).forEach((id) => {
+            delete shape.overrides[id];
         });
     });
 };
@@ -224,36 +226,17 @@ export const setInstanceOverride: ActionWithParam<{
             return;
         }
         const component = state.currentDocument.components[shape.componentId];
-        const prop = component?.props?.find((item) => item.id === propId);
+        const resolved = resolveComponentProp(component, propId, state.currentDocument);
 
-        if (!prop) {
+        if (!resolved) {
             return;
         }
-        const source =
-            component.sourceShapes?.[prop.shapeId] ?? state.currentDocument.shapes[prop.shapeId];
-        const property =
-            source &&
-            exposableProperties(source, state.currentDocument).find(
-                (item) => item.key === prop.key
-            );
+        const { source, property } = resolved;
 
-        if (
-            !property ||
-            (property.kind === 'number') !== (typeof value === 'number') ||
-            (property.kind === 'boolean') !== (typeof value === 'boolean') ||
-            (typeof value === 'number' && !Number.isFinite(value)) ||
-            (property.kind === 'color' &&
-                value !== '' &&
-                (typeof value !== 'string' || !isHexColor(value))) ||
-            (property.kind === 'number' &&
-                typeof value === 'number' &&
-                property.accepts &&
-                !property.accepts(value)) ||
-            (property.kind === 'text' &&
-                typeof value === 'string' &&
-                property.accepts &&
-                !property.accepts(value))
-        ) {
+        if (!exposableProperties(source, state.currentDocument).includes(property)) {
+            return;
+        }
+        if (!acceptsComponentValue(property, value)) {
             return;
         }
         shape.overrides[propId] = value;
@@ -277,17 +260,17 @@ export const bindInstanceOverride: ActionWithParam<{
             return;
         }
         const component = state.currentDocument.components[shape.componentId];
-        const prop = component?.props?.find((item) => item.id === propId);
-        const source =
-            prop &&
-            (component.sourceShapes?.[prop.shapeId] ?? state.currentDocument.shapes[prop.shapeId]);
-        const property =
-            source &&
-            exposableProperties(source, state.currentDocument).find(
-                (item) => item.key === prop?.key
-            );
+        const resolved = resolveComponentProp(component, propId, state.currentDocument);
 
-        if (!property || property.kind !== variable.type) {
+        if (!resolved) {
+            return;
+        }
+        const { source, property } = resolved;
+
+        if (!exposableProperties(source, state.currentDocument).includes(property)) {
+            return;
+        }
+        if (property.kind !== variable.type) {
             return;
         }
         shape.overrides[propId] = { variableId };
@@ -406,16 +389,13 @@ export const updateLibraryComponent: ActionWithParam<string> = (
     }
     copies.forEach((component) => {
         target.components[component.id] = component;
-        const validProps = new Set(component.props?.map((prop) => prop.id) ?? []);
 
         Object.values(target.shapes).forEach((shape) => {
             if (shape.type !== 'instance' || shape.componentId !== component.id) {
                 return;
             }
-            Object.keys(shape.overrides).forEach((id) => {
-                if (!validProps.has(id)) {
-                    delete shape.overrides[id];
-                }
+            invalidOverrideIds(shape, component).forEach((id) => {
+                delete shape.overrides[id];
             });
         });
     });

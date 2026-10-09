@@ -1,4 +1,5 @@
 import type { Document, Shape } from './types';
+import { invalidOverrideIds } from './componentProps';
 
 /** Makes merged component membership safe and deterministic on every copy. */
 export function repairComponents(document: Document): void {
@@ -70,11 +71,8 @@ export function repairComponents(document: Document): void {
         if (!components[shape.componentId]) {
             continue;
         }
-        const valid = new Set(components[shape.componentId]?.props?.map((prop) => prop.id) ?? []);
-        Object.keys(shape.overrides).forEach((id) => {
-            if (!valid.has(id)) {
-                delete shape.overrides[id];
-            }
+        invalidOverrideIds(shape, components[shape.componentId]).forEach((id) => {
+            delete shape.overrides[id];
         });
     }
 }

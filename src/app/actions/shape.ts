@@ -63,13 +63,12 @@ import {
     shapeGeometryKey,
     boxCenter,
     angleBetween,
-    rotatePoint,
     shapeStyle,
     getBoundingBox
 } from '../utils';
 import { hasComponentInstances } from './components';
-import { componentSource, instanceBox } from '../componentSource';
-import { instanceMember } from '../componentProps';
+import { componentSource } from '../componentSource';
+import { detachedMembers } from '../componentDetach';
 
 const getShape = ({ currentDocument }: Application, shapeId: string) => {
     const shape = currentDocument.shapes[shapeId];
@@ -339,11 +338,8 @@ export const detachInstances: ActionWithParam<string[]> = ({ state }, instanceId
         const groups = containersHolding(document.groups, [id]);
         const layers = containersHolding(document.layers, [id]);
         const copyIds: string[] = [];
-        const ownBox = instanceBox(instance, source);
-        const center = boxCenter(ownBox);
 
-        for (const member of source.shapes) {
-            const shown = instanceMember(member, instance, component, document);
+        for (const shown of detachedMembers(document, instance, source)) {
             const copy = createShape({
                 ...shapeGeometry(shown),
                 ...shapeStyle(shown),
@@ -355,14 +351,6 @@ export const detachInstances: ActionWithParam<string[]> = ({ state }, instanceId
                 locked: shown.locked,
                 selected: true
             });
-            translateShape(copy, {
-                x: instance.position.x - source.box.topLeft.x,
-                y: instance.position.y - source.box.topLeft.y
-            });
-            const from = boxCenter(getShapeBounds(copy));
-            const to = rotatePoint(from, center, instance.rotation ?? 0);
-            translateShape(copy, { x: to.x - from.x, y: to.y - from.y });
-            copy.rotation = (shown.rotation ?? 0) + (instance.rotation ?? 0);
             putOnTop(state, copy);
             copyIds.push(copy.id);
         }

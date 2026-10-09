@@ -55,6 +55,15 @@ test('an exposed fill changes one instance without changing its source', async (
     await page.getByLabel('rectangle-1: Fill', { exact: true }).fill('#ff0000');
     await expect.poll(() => fill(1)).toBe('rgb(255, 0, 0)');
     expect(await fill(0)).toBe(original);
+
+    const properties = page.getByRole('region', { name: 'Component properties' });
+    await properties.getByRole('button', { name: 'Reset', exact: true }).click();
+    await expect.poll(() => fill(1)).toBe(original);
+    await page.getByLabel('rectangle-1: Fill', { exact: true }).fill('#0000ff');
+    await expect.poll(() => fill(1)).toBe('rgb(0, 0, 255)');
+    await panel.getByRole('button', { name: 'Remove property', exact: true }).click();
+    await expect(properties).toHaveCount(0);
+    await expect.poll(() => fill(1)).toBe(original);
 });
 
 for (const visible of [true, false]) {

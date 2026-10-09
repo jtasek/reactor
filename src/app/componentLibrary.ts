@@ -2,39 +2,22 @@ import type { Component, Document, Shape } from './types';
 import { json } from 'overmind';
 import { shapeGeometry, shapeStyle } from './utils';
 
-/** A stable fingerprint of the source content, including nested sources. */
-export function componentFingerprint(
-    document: Document,
-    componentId: string,
-    visiting = new Set<string>()
-): string | null {
-    const component = document.components[componentId];
-
-    if (!component || visiting.has(componentId)) {
-        return null;
-    }
-    const next = new Set(visiting).add(componentId);
-    const members = component.shapesIds.map(
-        (id) => component.sourceShapes?.[id] ?? document.shapes[id]
-    );
-
-    if (members.some((shape) => !shape)) {
-        return null;
-    }
+function fingerprint(
+    component: Component,
+    members: Shape[],
+    records: ReadonlyMap<string, { hash: string }>
+): string {
     const payload = JSON.stringify({
         name: component.name,
         props: component.props,
-        shapes: members.map((shape: Shape) => ({
+        shapes: members.map((shape) => ({
             id: shape.id,
             order: shape.order,
             geometry: shapeGeometry(shape),
             style: shapeStyle(shape),
             rotation: shape.rotation,
             visible: shape.visible,
-            nested:
-                shape.type === 'instance'
-                    ? componentFingerprint(document, shape.componentId, next)
-                    : undefined
+            nested: shape.type === 'instance' ? records.get(shape.componentId)?.hash : undefined
         }))
     });
     let first = 2166136261;
@@ -48,63 +31,77 @@ export function componentFingerprint(
     return `${(first >>> 0).toString(16).padStart(8, '0')}${(second >>> 0).toString(16).padStart(8, '0')}`;
 }
 
+/** Collect dependencies before their parents, visiting shared sources only once. */
+function libraryRecords(document: Document, componentId: string) {
+    const records = new Map<string, { component: Component; members: Shape[]; hash: string }>();
+    const visiting = new Set<string>();
+    const visit = (id: string): boolean => {
+        if (records.has(id)) {
+            return true;
+        }
+        const component = document.components[id];
+
+        if (!component || visiting.has(id)) {
+            return false;
+        }
+        visiting.add(id);
+        const members: Shape[] = [];
+
+        for (const memberId of component.shapesIds) {
+            const shape = component.sourceShapes?.[memberId] ?? document.shapes[memberId];
+
+            if (!shape) {
+                return false;
+            }
+            if (shape.type === 'instance' && !visit(shape.componentId)) {
+                return false;
+            }
+            members.push(shape);
+        }
+        const hash = fingerprint(component, members, records);
+        records.set(id, { component, members, hash });
+        visiting.delete(id);
+
+        return true;
+    };
+
+    if (!visit(componentId)) {
+        return null;
+    }
+
+    return records;
+}
+
+/** A stable fingerprint of the source content, including nested sources. */
+export function componentFingerprint(document: Document, componentId: string): string | null {
+    return libraryRecords(document, componentId)?.get(componentId)?.hash ?? null;
+}
+
 /** Copies a source and the nested sources it needs into portable records. */
 export function librarySnapshot(
     document: Document,
     componentId: string,
-    destination: Document,
-    visiting = new Set<string>()
+    destination: Document
 ): Component[] | null {
-    const component = document.components[componentId];
-    const hash = componentFingerprint(document, componentId);
+    const records = libraryRecords(document, componentId);
 
-    if (!component || !hash || visiting.has(componentId)) {
+    if (!records) {
         return null;
     }
-    const next = new Set(visiting).add(componentId);
-    const shapes = Object.fromEntries(
-        component.shapesIds.flatMap((id) => {
-            const shape = component.sourceShapes?.[id] ?? document.shapes[id];
+    for (const id of records.keys()) {
+        const existing = destination.components[id];
 
-            return shape ? [[id, structuredClone(json(shape))]] : [];
-        })
-    );
-
-    if (Object.keys(shapes).length !== component.shapesIds.length) {
-        return null;
-    }
-
-    const nested: Component[] = [];
-
-    for (const shape of Object.values(shapes)) {
-        if (shape.type !== 'instance') {
-            continue;
-        }
-        const copies = librarySnapshot(document, shape.componentId, destination, next);
-
-        if (!copies) {
+        if (existing && (!existing.library || existing.library.documentId !== document.id)) {
             return null;
         }
-        nested.push(...copies);
     }
 
-    if (
-        [componentId, ...nested.map((item) => item.id)].some((id) => {
-            const existing = destination.components[id];
-
-            return existing && (!existing.library || existing.library.documentId !== document.id);
-        })
-    ) {
-        return null;
-    }
-
-    return [
-        ...nested,
-        {
-            ...structuredClone(json(component)),
-            sourceShapes: shapes,
-            library: { documentId: document.id, hash },
-            selected: false
-        }
-    ];
+    return [...records.values()].map(({ component, members, hash }) => ({
+        ...structuredClone(json(component)),
+        sourceShapes: Object.fromEntries(
+            members.map((shape) => [shape.id, structuredClone(json(shape))])
+        ),
+        library: { documentId: document.id, hash },
+        selected: false
+    }));
 }
