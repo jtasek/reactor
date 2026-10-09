@@ -63,8 +63,13 @@ import {
     shapeGeometryKey,
     boxCenter,
     angleBetween,
+    rotatePoint,
+    shapeStyle,
     getBoundingBox
 } from '../utils';
+import { hasComponentInstances } from './components';
+import { componentSource, instanceBox } from '../componentSource';
+import { instanceMember } from '../componentProps';
 
 const getShape = ({ currentDocument }: Application, shapeId: string) => {
     const shape = currentDocument.shapes[shapeId];
@@ -110,6 +115,23 @@ const deleteShape = ({ currentDocument }: Application, shapeId: string) => {
         for (const member of Object.values(table)) {
             member.shapesIds = member.shapesIds.filter((id) => id !== shapeId);
         }
+    }
+
+    for (const component of Object.values(currentDocument.components)) {
+        const removedProps = component.props?.filter((prop) => prop.shapeId === shapeId) ?? [];
+
+        if (removedProps.length === 0) {
+            continue;
+        }
+        component.props = component.props?.filter((prop) => prop.shapeId !== shapeId);
+        Object.values(currentDocument.shapes).forEach((shape) => {
+            if (shape.type !== 'instance' || shape.componentId !== component.id) {
+                return;
+            }
+            removedProps.forEach((prop) => {
+                delete shape.overrides[prop.id];
+            });
+        });
     }
 
     for (const link of Object.values(currentDocument.links)) {
@@ -177,6 +199,7 @@ export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shape
 
         const clone = createShape({
             ...shapeGeometry(original),
+            ...(original.type === 'instance' ? { bounds: original.bounds } : {}),
             order,
             name: nameShape(original.type),
             description: original.description,
@@ -269,17 +292,103 @@ export const selectionToCut: ActionWithResult<{ text: string; shapeIds: string[]
  * Removes the shapes that still exist and are not locked, and the groups this
  * empties, as deleting or cutting a whole group removes it.
  */
-export const removeShapes: ActionWithParam<string[]> = ({ state }, shapeIds) => {
+export const removeShapes: ActionWithParam<string[]> = ({ state, actions }, shapeIds) => {
     const { currentDocument } = state;
-    const removed = shapeIds.filter(
+    const requested = shapeIds.filter(
         (id) => currentDocument.shapes[id] && !isShapeLocked(currentDocument, id)
     );
+    const blocked = new Set<string>();
+
+    for (const component of Object.values(currentDocument.components)) {
+        if (!hasComponentInstances(currentDocument, component.id)) {
+            continue;
+        }
+        if (component.shapesIds.every((id) => requested.includes(id))) {
+            component.shapesIds.forEach((id) => blocked.add(id));
+        }
+    }
+    if (blocked.size > 0) {
+        actions.displayWarning('A component with instances must keep at least one shape.');
+    }
+    const removed = requested.filter((id) => !blocked.has(id));
     const groups = containersHolding(currentDocument.groups, removed);
 
     removed.forEach((id) => deleteShape(state, id));
     groups
         .filter((group) => group.shapesIds.length === 0)
         .forEach((group) => delete currentDocument.groups[group.id]);
+};
+
+/** Replaces live instances with independent shapes in the same place. */
+export const detachInstances: ActionWithParam<string[]> = ({ state, actions }, instanceIds) => {
+    const document = state.currentDocument;
+
+    for (const id of instanceIds) {
+        const instance = document.shapes[id];
+
+        if (instance?.type !== 'instance' || isShapeLocked(document, id)) {
+            continue;
+        }
+        const source = componentSource(document, instance.componentId);
+        const component = document.components[instance.componentId];
+
+        if (!source || !component) {
+            continue;
+        }
+        const protectedSource = Object.values(document.components).some(
+            (item) =>
+                item.shapesIds.length === 1 &&
+                item.shapesIds[0] === id &&
+                hasComponentInstances(document, item.id)
+        );
+
+        if (protectedSource) {
+            actions.displayWarning('A component with instances must keep at least one shape.');
+
+            continue;
+        }
+        const groups = containersHolding(document.groups, [id]);
+        const layers = containersHolding(document.layers, [id]);
+        const copyIds: string[] = [];
+        const ownBox = instanceBox(instance, source);
+        const center = boxCenter(ownBox);
+
+        for (const member of source.shapes) {
+            const shown = instanceMember(member, instance, component, document);
+            const copy = createShape({
+                ...shapeGeometry(shown),
+                ...shapeStyle(shown),
+                name: nextShapeName(Object.values(untracked(document).shapes), shown.type),
+                order: orderAbove(topOrder(state)),
+                rotation: shown.rotation,
+                bounds: shown.bounds,
+                visible: shown.visible,
+                locked: shown.locked,
+                selected: true
+            });
+            translateShape(copy, {
+                x: instance.position.x - source.box.topLeft.x,
+                y: instance.position.y - source.box.topLeft.y
+            });
+            const from = boxCenter(getShapeBounds(copy));
+            const to = rotatePoint(from, center, instance.rotation ?? 0);
+            translateShape(copy, { x: to.x - from.x, y: to.y - from.y });
+            copy.rotation = (shown.rotation ?? 0) + (instance.rotation ?? 0);
+            putOnTop(state, copy);
+            copyIds.push(copy.id);
+        }
+
+        deleteShape(state, id);
+        layers.forEach((layer) => {
+            layer.shapesIds.push(...copyIds);
+        });
+        if (groups.length > 0) {
+            groups.forEach((group) => group.shapesIds.push(...copyIds));
+        } else if (copyIds.length > 1) {
+            const group = createGroup({ shapesIds: copyIds });
+            document.groups[group.id] = group;
+        }
+    }
 };
 
 /**
@@ -508,8 +617,21 @@ export const sendShapesToBack: ActionWithParam<string[]> = ({ state }, shapeIds)
     moveToEdge(state, shapeIds, 'back');
 };
 
-export const removeShape: ActionWithParam<string> = ({ state }, shapeId) => {
+export const removeShape: ActionWithParam<string> = ({ state, actions }, shapeId) => {
     if (isShapeLocked(state.currentDocument, shapeId)) {
+        return;
+    }
+
+    const lastSource = Object.values(state.currentDocument.components).some(
+        (component) =>
+            component.shapesIds.length === 1 &&
+            component.shapesIds[0] === shapeId &&
+            hasComponentInstances(state.currentDocument, component.id)
+    );
+
+    if (lastSource) {
+        actions.displayWarning('A component with instances must keep at least one shape.');
+
         return;
     }
 

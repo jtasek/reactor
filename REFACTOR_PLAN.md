@@ -363,7 +363,7 @@ Feature inventory:
   the `filtered*` derivations are not used.
 - Kept for later, not shown: the `Badge`, `Dialog` and `Switch`
   components, and the stylesheets components do not use yet.
-- Planned: variables (Phase 12), components (Phase 10), plugins and renderers (Phase 9), image upload,
+- Planned: plugins and renderers (Phase 9), image upload,
   moving signed-out documents into an account, organizations, teams and sharing,
   presence, and undo per user (Phase 11).
 
@@ -562,7 +562,8 @@ returns.
 
 ## Phase 10 - Components
 
-Designed 2026-09-24; not started. This is feature work outside the Phase 8
+Designed 2026-09-24; stages 1-4 implemented 2026-10-09. Shared merge repair
+remains with Phase 11; cyclic drawing is bounded. This is feature work outside the Phase 8
 release gate. It does not depend on Phase 9 and may be done first. Phase 12's
 steps 1-3 come first, so props can use variables from the start.
 

@@ -68,6 +68,10 @@ test('hiding a layer hides its shapes on the canvas and from presses', async ({ 
 
     const layer = itemMenu(page, 'Layer');
 
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Layer', exact: true })
+        .hover();
     await layer.getByRole('button', { name: 'Hide', exact: true }).click();
 
     await expect(shapes(page)).toHaveCount(0);
@@ -77,6 +81,10 @@ test('hiding a layer hides its shapes on the canvas and from presses', async ({ 
     await pointer(page, 'pointermove', { x: 160, y: 160 });
     await pointer(page, 'pointerup', { x: 160, y: 160 });
 
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Layer', exact: true })
+        .hover();
     await layer.getByRole('button', { name: 'Show', exact: true }).click();
 
     await expect(shapes(page)).toHaveCount(1);
@@ -91,6 +99,7 @@ test('a locked selected shape offers no resize or rotate handles', async ({ page
     // Resize and rotate handles, and a rectangle's radius handles.
     await expect(handles(page)).toHaveCount(13);
 
+    await page.getByRole('button', { name: 'rectangle-1', exact: true }).hover();
     await itemMenu(page, 'rectangle-1').getByRole('button', { name: 'Lock', exact: true }).click();
 
     await expect(handles(page)).toHaveCount(0);

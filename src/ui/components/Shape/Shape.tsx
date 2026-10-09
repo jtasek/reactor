@@ -1,12 +1,17 @@
-import React, { CSSProperties, FC, memo, useLayoutEffect, useRef } from 'react';
+import React, { CSSProperties, FC, createElement, memo, useLayoutEffect, useRef } from 'react';
 import { Active } from '../Active/Active';
 import { Label } from '../Label';
 import { Resizable } from '../Selectable/Resizable';
 import { Selectable } from '../Selectable/Selectable';
 import { getComponentByType } from 'src/tools/components';
+import { Instance } from './Instance';
+import type { Shape as ShapeType } from 'src/app/types';
+import { variableValue } from 'src/app/variables';
 import { rectToBox, shapeGeometryKey, getShapeBounds, boxCenter } from 'src/app/utils';
 import {
     useActions,
+    useAppState,
+    useComponentSource,
     useMeasuringShape,
     useShape,
     useShapeLocked,
@@ -19,9 +24,10 @@ interface Props {
     inSelectedGroup: boolean;
     /** In a group not double-clicked into, so the pointer does not highlight it alone. */
     inClosedGroup: boolean;
+    minimap?: boolean;
 }
 
-export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup }: Props) => {
+export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup, minimap = false }: Props) => {
     const shape = useShape(shapeId);
     const visible = useShapeVisible(shapeId);
     const locked = useShapeLocked(shapeId);
@@ -30,8 +36,27 @@ export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup }: Props) =
     const measuredGeometry = useRef<string | null>(null);
     const groupRef = useRef<SVGGElement>(null);
     // The component of this shape's type, which takes this shape's fields.
-    const Component = getComponentByType(shape.type) as FC<Omit<typeof shape, 'key'>>;
-    const geometryKey = shapeGeometryKey(shape);
+    const source = useComponentSource(shape.type === 'instance' ? shape.componentId : null);
+    const variableKey = useAppState((state) => {
+        if (shape.type !== 'instance') {
+            return '';
+        }
+        const values = Object.values(shape.overrides).flatMap((override) => {
+            if (typeof override !== 'object') {
+                return [];
+            }
+            const variable = state.currentDocument.variables[override.variableId];
+
+            return variable ? [variableValue(variable, state.currentDocument.variables)] : [];
+        });
+
+        return JSON.stringify(values);
+    });
+    const Component =
+        shape.type === 'instance'
+            ? null
+            : (getComponentByType(shape.type) as FC<Omit<ShapeType, 'key'>>);
+    const geometryKey = `${shapeGeometryKey(shape)}:${source?.key ?? ''}:${variableKey}`;
 
     // Measure the actual rendered geometry so the selection box, handles and
     // label match exactly. getBBox returns local (canvas) coordinates, so it is
@@ -67,7 +92,7 @@ export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup }: Props) =
         }
     }, [geometryKey, shapeId, setShapeBounds, measuring, visible]);
 
-    if (!Component) {
+    if (!Component && shape.type !== 'instance') {
         console.error(`Component ${shape.type} not found`);
         return null;
     }
@@ -75,6 +100,19 @@ export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup }: Props) =
     // Hidden by its own flag or by a hidden group or layer.
     if (!visible) {
         return null;
+    }
+
+    if (minimap && shape.type === 'instance') {
+        return (
+            <rect
+                x={shape.position.x}
+                y={shape.position.y}
+                width={source?.box.width ?? 24}
+                height={source?.box.height ?? 24}
+                fill="none"
+                stroke="currentColor"
+            />
+        );
     }
 
     // The selection overlays (box, resize handles, label) are only relevant for
@@ -106,7 +144,11 @@ export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup }: Props) =
                 onPointerEnter={() => activateShape(shapeId)}
                 onPointerLeave={() => deactivateShape(shapeId)}
             >
-                <Component key={key} {...props} />
+                {shape.type === 'instance' ? (
+                    <Instance instance={shape} source={source} />
+                ) : (
+                    Component && createElement(Component, { ...props, key })
+                )}
             </g>
             {shape.active && !shape.selected && !inClosedGroup && (
                 <Active key={`active-${shape.type}-${shape.id}`} shape={shape} />

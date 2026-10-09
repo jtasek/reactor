@@ -24,6 +24,7 @@ export const toggleControlVisibility: ActionWithParam<string> = ({ state }, cont
 
 export const distractionFreeMode: Action = ({ state }) => {
     state.ui.commandLine.visible = false;
+    state.ui.components.visible = false;
     state.ui.contextMenu.visible = false;
     state.ui.controlPanel.visible = false;
     state.ui.groupPanel.visible = false;

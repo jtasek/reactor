@@ -35,6 +35,7 @@ export function translateShape(shape: Shape, delta: Point): void {
         case 'circle':
         case 'ellipse':
         case 'text':
+        case 'instance':
             shape.position = add(shape.position, delta);
             break;
         default:
@@ -121,6 +122,11 @@ export function placeShapeFrom(
                     1,
                     (original.fontSize ?? DEFAULT_TEXT_FONT_SIZE) * factor
                 );
+            }
+            break;
+        case 'instance':
+            if (original.type === 'instance') {
+                shape.position = at(original.position);
             }
             break;
         default:
@@ -333,6 +339,9 @@ export function resizeShapeFromHandle(
             }
             break;
 
+        case 'instance':
+            break;
+
         default:
             assertNever(shape);
     }
@@ -435,6 +444,7 @@ export function hitTestShape(shape: Shape, point: Point, tolerance: number): boo
         case 'rectangle':
         case 'image':
         case 'text':
+        case 'instance':
             return distanceToBox(local, bounds) <= tolerance;
         case 'circle':
             return getDistance(local, shape.position) <= shape.radius + tolerance;

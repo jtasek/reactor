@@ -1,4 +1,5 @@
 import { Tool } from '../types';
+export { InstanceTool } from './Instance';
 import { getTool, getTools } from 'src/app/actions';
 
 export function getToolById(toolId: string): Tool | undefined {

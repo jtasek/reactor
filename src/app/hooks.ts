@@ -16,6 +16,7 @@ import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
 import { placeSelectionMenu } from './selectionMenu';
 import { PropertyRow, sharedProperties } from './properties';
 import { untracked } from './untracked';
+import { componentSource } from './componentSource';
 import {
     drawnExtent,
     groupFrame,
@@ -97,6 +98,11 @@ export const useCommandEnabled = (command: Command) => {
 export const useComponents = () => {
     return useCurrentDocument()?.components;
 };
+
+export const useComponentSource = (componentId: string | null) =>
+    useAppState((state) =>
+        componentId === null ? null : componentSource(state.currentDocument, componentId)
+    );
 
 export const useEvents = () => {
     return useAppState((state) => state.events);
@@ -298,11 +304,15 @@ export const useShape = (id: string) => {
  * reads the gesture, and does not render again as gestures begin and end.
  */
 export const useMeasuringShape = (id: string) =>
-    useAppState(
-        (state) =>
-            !state.currentDocument.shapes[id]?.selected ||
-            !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind]
-    );
+    useAppState((state) => {
+        const shape = state.currentDocument.shapes[id];
+
+        if (shape?.type === 'instance') {
+            return !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind];
+        }
+
+        return !shape?.selected || !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind];
+    });
 
 export const useShapeVisible = (id: string) => {
     return useAppState((state) => isShapeVisible(state.currentDocument, id));

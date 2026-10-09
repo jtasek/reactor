@@ -8,6 +8,7 @@ export interface Control {
 
 export interface UI {
     commandLine: Control;
+    components: Control;
     contextMenu: Control & { position: Point };
     controlPanel: Control;
     dataView: Control;

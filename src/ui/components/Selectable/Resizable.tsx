@@ -50,10 +50,18 @@ interface HandlesProps {
     owner: HandleOwner;
     activeHandle?: ResizeHandlerType;
     rotateActive: boolean;
+    resizeHandles?: boolean;
 }
 
 /** Resize and rotate handles around `box`, drawn in its turned frame. */
-export const Handles: FC<HandlesProps> = ({ box, rotation, owner, activeHandle, rotateActive }) => {
+export const Handles: FC<HandlesProps> = ({
+    box,
+    rotation,
+    owner,
+    activeHandle,
+    rotateActive,
+    resizeHandles = true
+}) => {
     const scale = useCameraScale();
     const points = calcBoundingPoints(box);
     const { middleTop } = points;
@@ -66,10 +74,9 @@ export const Handles: FC<HandlesProps> = ({ box, rotation, owner, activeHandle, 
     const longSides = [box.width, box.height].filter(
         (side) => side * scale >= MIN_HANDLED_SIDE
     ).length;
-    const shown: ResizeHandlerType[] = [
-        ...(longSides > 0 ? CORNERS : []),
-        ...(longSides > 1 ? MIDDLES : [])
-    ];
+    const shown: ResizeHandlerType[] = resizeHandles
+        ? [...(longSides > 0 ? CORNERS : []), ...(longSides > 1 ? MIDDLES : [])]
+        : [];
 
     if (activeHandle && !shown.includes(activeHandle)) {
         shown.push(activeHandle);
@@ -141,6 +148,7 @@ export const Resizable: FC<Props> = ({ shape }) => {
                 owner={{ shapeId: shape.id }}
                 activeHandle={activeHandle}
                 rotateActive={rotateActive}
+                resizeHandles={shape.type !== 'instance'}
             />
             {shape.type === 'rectangle' && (
                 <RadiusHandles rectangle={shape} activeCorner={activeCorner} />

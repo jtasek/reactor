@@ -79,7 +79,7 @@ test('each command button carries its own description, and a disabled one looks 
     // With the pointer on Clone, the focused Delete is still described as itself.
     await clone.locator('..').hover();
     await remove.focus();
-    await expect(remove).toHaveAccessibleDescription('Delete selected shapes');
+    await expect(remove).toHaveAccessibleDescription('Delete selected shapes or guides');
     await expect(bar.locator('..').locator('[data-cy="command-info"]')).toHaveAttribute(
         'aria-hidden',
         'true'

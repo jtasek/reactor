@@ -59,7 +59,7 @@ export const MiniMapContainer: FC = () => {
     return (
         <MiniMap size={{ width: 200, height: 200 }} viewBox={viewBox}>
             <Guides key="minimap-guides" camera={STATIC_CAMERA} />
-            <Shapes />
+            <Shapes minimap />
         </MiniMap>
     );
 };

@@ -7,6 +7,7 @@ import type {
     Point,
     Size,
     Group,
+    Component,
     Link,
     Guide,
     Variable
@@ -15,6 +16,7 @@ import { createDocument } from '../factories';
 import { orderAbove, untie, validDrawOrder } from '../drawOrder';
 import { isClosedShape, isHexColor, isStrokedShape } from '../utils';
 import { buildVariable, isVariableType } from '../variables';
+import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
 export const SCHEMA_VERSION = 4;
@@ -50,6 +52,9 @@ type ShapeData = DistributiveOmit<
     children?: ShapeData[];
 };
 type MemberData = Omit<Group, 'selected'> & { parentId?: string };
+type ComponentData = Omit<Component, 'selected' | 'sourceShapes'> & {
+    sourceShapes?: Record<string, ShapeData | Shape>;
+};
 type LinkData = Omit<Link, 'selected'>;
 type GuideData = Omit<Guide, 'selected'>;
 
@@ -75,7 +80,7 @@ export interface SavedEntities {
     shapes: ShapeData;
     groups: MemberData;
     layers: MemberData;
-    components: MemberData;
+    components: ComponentData;
     links: LinkData;
     guides: GuideData;
     variables: Variable;
@@ -229,6 +234,39 @@ function readMember(value: unknown): MemberData {
     };
 }
 
+function readComponent(value: unknown): ComponentData {
+    const c = record(value);
+
+    return {
+        ...readMember(value),
+        ...(c.sourceShapes === undefined
+            ? {}
+            : { sourceShapes: table(c.sourceShapes, readOrderedShape) }),
+        ...(c.library === undefined
+            ? {}
+            : {
+                  library: {
+                      documentId: id(record(c.library).documentId),
+                      hash: text(record(c.library).hash)
+                  }
+              }),
+        ...(c.props === undefined
+            ? {}
+            : {
+                  props: list(c.props, (entry) => {
+                      const prop = record(entry);
+
+                      return {
+                          id: id(prop.id),
+                          label: text(prop.label),
+                          shapeId: id(prop.shapeId),
+                          key: id(prop.key)
+                      };
+                  })
+              })
+    };
+}
+
 function readShape(value: unknown, readChild: (child: unknown) => ShapeData): ShapeData {
     const s = record(value);
     const base = {
@@ -323,6 +361,27 @@ export function readShapeGeometry(value: unknown) {
                 value: text(s.value ?? s.text),
                 ...(s.template === undefined ? {} : { template: text(s.template) }),
                 ...(s.fontSize === undefined ? {} : { fontSize: positive(s.fontSize) })
+            };
+        case 'instance':
+            return {
+                type: s.type,
+                componentId: id(s.componentId),
+                position: point(s.position),
+                overrides: Object.fromEntries(
+                    Object.entries(record(s.overrides ?? {})).map(([key, value]) => {
+                        if (value && typeof value === 'object' && !Array.isArray(value)) {
+                            return [id(key), { variableId: id(record(value).variableId) }];
+                        }
+                        if (
+                            typeof value !== 'string' &&
+                            typeof value !== 'number' &&
+                            typeof value !== 'boolean'
+                        ) {
+                            throw new Error('Invalid component override');
+                        }
+                        return [id(key), value];
+                    })
+                )
             };
         default:
             throw new Error('Unsupported shape type');
@@ -427,7 +486,7 @@ const entityReaders: { [C in Collection]: (value: unknown) => SavedEntities[C] }
     shapes: readOrderedShape,
     groups: readMember,
     layers: readMember,
-    components: readMember,
+    components: readComponent,
     links: readLink,
     guides: readGuide,
     variables: readVariable
@@ -454,11 +513,19 @@ const referenceRepairs: {
     groups: withoutMissingMembers,
     layers: withoutMissingMembers,
     components: (component, exists) => {
-        const members = withoutMissingMembers(component, exists);
+        const members = component.sourceShapes
+            ? {
+                  ...component,
+                  shapesIds: component.shapesIds.filter((id) =>
+                      Object.hasOwn(component.sourceShapes ?? {}, id)
+                  )
+              }
+            : withoutMissingMembers(component, exists);
+        const props = members.props?.filter((prop) => members.shapesIds.includes(prop.shapeId));
 
         return members.parentId === undefined || exists('components', members.parentId)
-            ? members
-            : { ...members, parentId: undefined };
+            ? { ...members, props }
+            : { ...members, props, parentId: undefined };
     },
     links: (link, exists) =>
         [link.source, link.target].every((end) => end === undefined || exists('shapes', end))
@@ -611,7 +678,7 @@ export function readView(value: unknown): View {
 function readDocument(value: unknown, onRepair = () => {}): DocumentData {
     const d = record(value);
     const shapes = readShapes(d.shapes, onRepair);
-    const components = table(d.components, readMember);
+    const components = table(d.components, readComponent);
     const exists: Exists = (collection, entityId) =>
         Object.hasOwn(collection === 'shapes' ? shapes : components, entityId);
     const repair = <C extends Collection>(collection: C, items: Record<string, SavedEntities[C]>) =>
@@ -730,6 +797,18 @@ export const hydrateMember = (member: MemberData) => ({
     selected: false
 });
 
+export const hydrateComponent = (component: ComponentData): Component => ({
+    ...hydrateMember(component),
+    sourceShapes: component.sourceShapes
+        ? Object.fromEntries(
+              Object.entries(component.sourceShapes).map(([id, shape]) => [
+                  id,
+                  hydrateShape(readOrderedShape(shape))
+              ])
+          )
+        : undefined
+});
+
 export const hydrateLink = (link: LinkData): Link => ({ ...link, selected: false });
 
 export const hydrateGuide = (guide: GuideData): Guide => ({ ...guide, selected: false });
@@ -742,7 +821,7 @@ const entityHydrators: {
     shapes: hydrateShape,
     groups: hydrateMember,
     layers: hydrateMember,
-    components: hydrateMember,
+    components: hydrateComponent,
     links: hydrateLink,
     guides: hydrateGuide,
     variables: hydrateVariable
@@ -769,17 +848,20 @@ function hydrateTable<T, R>(items: Record<string, T>, hydrate: (item: T) => R) {
 export function hydrateDocument(data: DocumentData): Document {
     data = readDocument(data);
 
-    return createDocument({
+    const document = createDocument({
         ...data,
         ...hydrateDocumentFields(data),
         shapes: hydrateTable(data.shapes, hydrateShape),
         groups: hydrateTable(data.groups, hydrateMember),
         layers: hydrateTable(data.layers, hydrateMember),
-        components: hydrateTable(data.components, hydrateMember),
+        components: hydrateTable(data.components, hydrateComponent),
         links: hydrateTable(data.links, hydrateLink),
         guides: hydrateTable(data.guides, hydrateGuide),
         variables: hydrateTable(data.variables, hydrateVariable)
     });
+    repairComponents(document);
+
+    return document;
 }
 
 export function restoreDocuments(data: PersistedState): Record<string, Document> {

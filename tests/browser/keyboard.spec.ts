@@ -17,12 +17,12 @@ test('tools, list items and their toggles are buttons that work from the keyboar
     await expect(shapes(page)).toHaveCount(1);
 
     const menu = page.getByRole('toolbar', { name: 'rectangle-1 menu' });
+    const shape = page.getByRole('button', { name: 'rectangle-1', exact: true });
 
+    await shape.focus();
     await menu.getByRole('button', { name: 'Hide', exact: true }).focus();
     await page.keyboard.press('Space');
     await expect(menu.getByRole('button', { name: 'Show', exact: true })).toBeVisible();
-
-    const shape = page.getByRole('button', { name: 'rectangle-1', exact: true });
 
     await shape.focus();
     await expect(shape).toBeFocused();
