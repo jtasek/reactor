@@ -99,7 +99,9 @@ export const ExplorerItem: FC<Props> = ({
     useLayoutEffect(() => {
         const host = row.current;
         const menu = floatingMenu.current;
-        if (!menuOpen || !host || !menu) return;
+        if (!menuOpen || !host || !menu) {
+            return;
+        }
 
         // The top layer escapes the panel's scrolling/clipping without taking room from its name.
         menu.showPopover();
@@ -118,10 +120,14 @@ export const ExplorerItem: FC<Props> = ({
         observer.observe(menu);
         observer.observe(host);
         const explorer = host.closest('section');
-        if (explorer) observer.observe(explorer);
+        if (explorer) {
+            observer.observe(explorer);
+        }
         const close = () => setMenuOpen(false);
         const escape = (event: KeyboardEvent) => {
-            if (event.key !== 'Escape') return;
+            if (event.key !== 'Escape') {
+                return;
+            }
             event.preventDefault();
             event.stopPropagation();
             host.querySelector<HTMLButtonElement>('button')?.focus();
@@ -150,15 +156,20 @@ export const ExplorerItem: FC<Props> = ({
                 data-menu-host
                 onMouseEnter={() => setMenuOpen(true)}
                 onMouseLeave={(event) => {
-                    if (!event.currentTarget.matches(':has(:focus-visible)')) setMenuOpen(false);
+                    if (event.currentTarget.matches(':has(:focus-visible)')) {
+                        return;
+                    }
+                    setMenuOpen(false);
                 }}
                 onFocus={() => setMenuOpen(true)}
                 onBlur={(event) => {
                     if (
-                        !event.currentTarget.contains(event.relatedTarget) &&
-                        !event.currentTarget.matches(':hover')
-                    )
-                        setMenuOpen(false);
+                        event.currentTarget.contains(event.relatedTarget) ||
+                        event.currentTarget.matches(':hover')
+                    ) {
+                        return;
+                    }
+                    setMenuOpen(false);
                 }}
                 draggable={dragged !== undefined}
                 onDragStart={(event) => {

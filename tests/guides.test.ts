@@ -57,7 +57,9 @@ it('uses a screen-pixel snap distance at zoom', () => {
 
 it.each(['hidden', 'free'])('does not snap when guides are %s', (mode) => {
     const store = setup();
-    if (mode === 'hidden') store.actions.ui.hideControl('guides');
+    if (mode === 'hidden') {
+        store.actions.ui.hideControl('guides');
+    }
     store.actions.tools.activateTool('rectangle');
     store.actions.events.beginGesture({
         pointerId: 1,
@@ -114,10 +116,18 @@ it.each(['guide lock', 'document lock', 'hidden control', 'hidden guide'])(
     (reason) => {
         const store = setup();
         store.actions.selectGuide('vertical');
-        if (reason === 'guide lock') store.actions.lockGuide('vertical');
-        if (reason === 'document lock') store.actions.lockDocument(store.state.currentDocumentId);
-        if (reason === 'hidden control') store.actions.ui.hideControl('guides');
-        if (reason === 'hidden guide') store.actions.hideGuide('vertical');
+        if (reason === 'guide lock') {
+            store.actions.lockGuide('vertical');
+        }
+        if (reason === 'document lock') {
+            store.actions.lockDocument(store.state.currentDocumentId);
+        }
+        if (reason === 'hidden control') {
+            store.actions.ui.hideControl('guides');
+        }
+        if (reason === 'hidden guide') {
+            store.actions.hideGuide('vertical');
+        }
         expect(store.actions.runCommand(DeleteCommand)).toBe(false);
         expect(store.state.currentDocument.guides.vertical).toBeDefined();
     }

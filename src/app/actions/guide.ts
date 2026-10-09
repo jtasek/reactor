@@ -21,7 +21,9 @@ const deleteGuide = ({ currentDocument }: Application, guideId: string) =>
     delete currentDocument.guides[guideId];
 
 export const addGuide: ActionWithParam<Partial<Guide>> = ({ state }, options) => {
-    if (state.currentDocument.locked) return;
+    if (state.currentDocument.locked) {
+        return;
+    }
     const guide = createGuide(options);
 
     setGuide(state, guide);
@@ -35,14 +37,18 @@ export const cloneGuide: ActionWithParam<string> = ({ state, effects }, guideId)
 
 export const removeGuide: ActionWithParam<string> = ({ state }, guideId) => {
     const guide = state.currentDocument.guides[guideId];
-    if (!guide || guide.locked || state.currentDocument.locked) return;
+    if (!guide || guide.locked || state.currentDocument.locked) {
+        return;
+    }
     deleteGuide(state, guideId);
 };
 
 /** Selects one guide, replacing the canvas selection. */
 export const selectGuide: ActionWithParam<string> = ({ state, actions }, guideId) => {
     const guide = state.currentDocument.guides[guideId];
-    if (!guide?.visible || !state.ui.guides.visible) return;
+    if (!guide?.visible || !state.ui.guides.visible) {
+        return;
+    }
     actions.unselectShapes();
     state.enteredGroupId = null;
     guide.selected = true;
@@ -50,14 +56,22 @@ export const selectGuide: ActionWithParam<string> = ({ state, actions }, guideId
 
 export const unselectGuides: Action = ({ state }) => {
     Object.values(state.currentDocument.guides).forEach((guide) => {
-        if (guide.selected) guide.selected = false;
+        if (!guide.selected) {
+            return;
+        }
+        guide.selected = false;
     });
 };
 
 export const removeSelectedGuides: Action = ({ state, actions }) => {
-    if (!state.ui.guides.visible || state.currentDocument.locked) return;
+    if (!state.ui.guides.visible || state.currentDocument.locked) {
+        return;
+    }
     Object.values(state.currentDocument.guides).forEach((guide) => {
-        if (guide.selected && guide.visible && !guide.locked) actions.removeGuide(guide.id);
+        if (!guide.selected || !guide.visible || guide.locked) {
+            return;
+        }
+        actions.removeGuide(guide.id);
     });
 };
 
@@ -97,7 +111,9 @@ export const updateGuide: ActionWithParam<Partial<Guide> & { id: string }> = (
 ) => {
     const guide = getGuide(state, options.id);
 
-    if (guide.locked || state.currentDocument.locked) return;
+    if (guide.locked || state.currentDocument.locked) {
+        return;
+    }
 
     setGuide(state, { ...guide, ...options });
 };

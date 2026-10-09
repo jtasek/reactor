@@ -76,9 +76,10 @@ export const GuideGrips: FC = () => {
                             x2={horizontal ? '100%' : at}
                             y2={horizontal ? at : '100%'}
                             onPointerDown={(event) => {
-                                if (hoveredGroups.length === 0 && activeTools[0] === 'select') {
-                                    begin(event, guide.orientation, guide.id);
+                                if (hoveredGroups.length > 0 || activeTools[0] !== 'select') {
+                                    return;
                                 }
+                                begin(event, guide.orientation, guide.id);
                             }}
                             onDoubleClick={keepToGuide}
                         />

@@ -11,7 +11,9 @@ export function snapToGuides(point: Point, guides: Guide[], distance: number): P
     const nearest = { x: distance, y: distance };
 
     for (const guide of guides) {
-        if (!guide.visible) continue;
+        if (!guide.visible) {
+            continue;
+        }
         const axis = guide.orientation === 'vertical' ? 'x' : 'y';
         const delta = Math.abs(guide.position[axis] - point[axis]);
 

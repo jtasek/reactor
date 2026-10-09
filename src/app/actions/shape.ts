@@ -520,7 +520,10 @@ export const toggleShapeSelected: ActionWithParam<string> = ({ state, actions },
     const shape = getShape(state, shapeId);
 
     shape.selected = !shape.selected;
-    if (shape.selected) actions.unselectGuides();
+    if (!shape.selected) {
+        return;
+    }
+    actions.unselectGuides();
 };
 
 export const selectShape: ActionWithParam<string> = ({ state, actions }, shapeId) => {

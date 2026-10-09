@@ -141,15 +141,16 @@ export const beginGesture = (
         return true;
     }
 
+    if (state.tools.activeToolsIds[0] !== 'select' && !free && state.ui.guides.visible) {
+        pointer.start = snapToGuides(
+            position,
+            Object.values(untracked(state.currentDocument.guides)),
+            SNAP_DISTANCE_PX / state.currentDocument.camera.scale
+        );
+        pointer.current = { ...pointer.start };
+    }
+
     if (state.tools.activeToolsIds[0] !== 'select') {
-        if (!free && state.ui.guides.visible) {
-            pointer.start = snapToGuides(
-                position,
-                Object.values(untracked(state.currentDocument.guides)),
-                SNAP_DISTANCE_PX / state.currentDocument.camera.scale
-            );
-            pointer.current = { ...pointer.start };
-        }
         pointer.gesture = { ...owner, kind: 'drawing' };
 
         return true;
@@ -237,15 +238,18 @@ export const movePointer = (
         gesture.moved = true;
     }
 
+    if (gesture.kind === 'drawing' && !free && state.ui.guides.visible) {
+        pointer.current = snapToGuides(
+            position,
+            Object.values(untracked(state.currentDocument.guides)),
+            SNAP_DISTANCE_PX / state.currentDocument.camera.scale
+        );
+    }
+
     if (gesture.kind === 'drawing') {
-        if (!free && state.ui.guides.visible) {
-            pointer.current = snapToGuides(
-                position,
-                Object.values(untracked(state.currentDocument.guides)),
-                SNAP_DISTANCE_PX / state.currentDocument.camera.scale
-            );
-        }
         pointer.path.push({ ...pointer.current });
+
+        return;
     }
 
     // Within a click's slip the box selects nothing yet, so a click keeps the selection.

@@ -202,13 +202,15 @@ export function useGuideDrag() {
 
             stopCurrent?.();
 
-            if (input.type === 'pointerup') {
-                if (guideId !== null && !movedBeyondClick) {
-                    actions.selectGuide(guideId);
-                } else {
-                    drop(moved);
-                }
+            if (input.type !== 'pointerup') {
+                return;
             }
+            if (guideId !== null && !movedBeyondClick) {
+                actions.selectGuide(guideId);
+
+                return;
+            }
+            drop(moved);
         };
 
         const onKey = (input: KeyboardEvent) => {

@@ -101,10 +101,18 @@ const zoneAt = (x: number, y: number, sideWidth: number, gap: number): Dock => {
     if (x >= rightStart && y >= bottomStart) {
         return 'bottom-right';
     }
-    if (x <= leftEnd && y >= zoneHeight + gap && y < bottomStart - gap) return 'left';
-    if (x >= rightStart && y >= zoneHeight + gap && y < bottomStart - gap) return 'right';
-    if (y < topEnd && x > leftEnd + gap && x < rightStart - gap) return 'top';
-    if (y >= bottomStart && x > leftEnd + gap && x < rightStart - gap) return 'bottom';
+    if (x <= leftEnd && y >= zoneHeight + gap && y < bottomStart - gap) {
+        return 'left';
+    }
+    if (x >= rightStart && y >= zoneHeight + gap && y < bottomStart - gap) {
+        return 'right';
+    }
+    if (y < topEnd && x > leftEnd + gap && x < rightStart - gap) {
+        return 'top';
+    }
+    if (y >= bottomStart && x > leftEnd + gap && x < rightStart - gap) {
+        return 'bottom';
+    }
 
     return null;
 };
@@ -161,7 +169,9 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
     const dockAtPointer = (x: number, y: number, docking: Docking) => {
         // Read the rendered column so hit testing follows the panel-width token and viewport cap.
         const sideDock = panelLayer.current?.querySelector('[data-dock="left"]');
-        if (!sideDock) return null;
+        if (!sideDock) {
+            return null;
+        }
         const width = sideDock.getBoundingClientRect().width;
         const gap = Number.parseFloat(getComputedStyle(sideDock).rowGap);
         const dock = zoneAt(x, y, width, gap);
@@ -297,8 +307,12 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
                 placement: placement.size ? { ...next, size: placement.size } : next
             });
         const placeWithKeyboard = (next: PanelPlacement) => {
-            if (!allowsDock(next.dock, docking)) return;
-            if (next.dock !== dock) pendingFocus.current = id;
+            if (!allowsDock(next.dock, docking)) {
+                return;
+            }
+            if (next.dock !== dock) {
+                pendingFocus.current = id;
+            }
             place(next);
         };
         /** The box a corner dragged by `dx`, `dy` from `from` leaves the panel. */
