@@ -31,7 +31,7 @@ export const Instance: FC<Props> = ({ instance, source, ancestors = new Set() })
         );
     }
 
-    const next = new Set(ancestors).add(instance.componentId);
+    const ancestorComponentIds = new Set(ancestors).add(instance.componentId);
     const component = document.components[instance.componentId];
     const offsetX = instance.position.x - source.box.topLeft.x;
     const offsetY = instance.position.y - source.box.topLeft.y;
@@ -55,8 +55,12 @@ export const Instance: FC<Props> = ({ instance, source, ancestors = new Set() })
                         <g key={shape.id} transform={transform} opacity={shape.opacity}>
                             <Instance
                                 instance={shape}
-                                source={componentSource(document, shape.componentId, next)}
-                                ancestors={next}
+                                source={componentSource(
+                                    document,
+                                    shape.componentId,
+                                    ancestorComponentIds
+                                )}
+                                ancestors={ancestorComponentIds}
                             />
                         </g>
                     );

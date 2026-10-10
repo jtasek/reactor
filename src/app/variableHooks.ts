@@ -35,7 +35,7 @@ export const useVariableUses = () => {
         const document = state.currentDocument;
         const { variables } = document;
         const uses: Record<string, number> = {};
-        const use = (variableId: string) => {
+        const countVariableUse = (variableId: string) => {
             uses[variableId] = (uses[variableId] ?? 0) + 1;
         };
 
@@ -44,18 +44,18 @@ export const useVariableUses = () => {
                 const variable = trackedBoundVariable(shape, key, document);
 
                 if (variable) {
-                    use(variable.id);
+                    countVariableUse(variable.id);
                 }
             });
 
             if (shape.type === 'text' && shape.template !== undefined) {
-                templateVariablesIds(shape.template, variables).forEach(use);
+                templateVariablesIds(shape.template, variables).forEach(countVariableUse);
             }
         });
         Object.values(variables).forEach((variable) => {
             if (variable.type === 'text') {
                 templateVariablesIds(variable.values.default, variables).forEach(
-                    (variableId) => variableId !== variable.id && use(variableId)
+                    (variableId) => variableId !== variable.id && countVariableUse(variableId)
                 );
             }
         });

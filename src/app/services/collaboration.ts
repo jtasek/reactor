@@ -120,12 +120,12 @@ const touch = (changes: Changes, collection: Collection, id: string) => {
     changes.entities.set(collection, ids);
 };
 
-export const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+export const sameJsonValue = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
 /** The fields that differ between two durable values. */
 const changedFields = (previous: object, next: object) =>
     [...new Set([...Object.keys(previous), ...Object.keys(next)])].filter(
-        (key) => !same(Reflect.get(previous, key), Reflect.get(next, key))
+        (key) => !sameJsonValue(Reflect.get(previous, key), Reflect.get(next, key))
     );
 
 /** Removes the members `previous` has and `next` lacks, wherever they are, and appends new ones. */
@@ -523,7 +523,7 @@ export class Collaboration {
             const value: unknown = Reflect.get(values, key);
             const before: unknown = Reflect.get(previous, key);
 
-            if (same(before, value)) {
+            if (sameJsonValue(before, value)) {
                 continue;
             }
 

@@ -1,6 +1,11 @@
 import type { Action, ActionWithParam, Box, Document, Shape } from '../types';
 import { getBoundingBox, mapPointBetweenBoxes } from '../utils';
-import { isRecord, same, type EntityChanges, type RemoteChanges } from '../services/collaboration';
+import {
+    isRecord,
+    sameJsonValue,
+    type EntityChanges,
+    type RemoteChanges
+} from '../services/collaboration';
 import { inDrawingOrder } from '../drawOrder';
 import {
     COLLECTIONS,
@@ -14,7 +19,7 @@ const copyForStore = <T>(value: T): T =>
     typeof value === 'object' && value !== null ? structuredClone(value) : value;
 
 /** Gives `target` the `changed` fields of `next`, removing the ones `next` lacks. */
-function assign(target: object, next: object, changed: string[]) {
+function assignChangedFields(target: object, next: object, changed: string[]) {
     for (const key of changed) {
         const value: unknown = Reflect.get(next, key);
 
@@ -31,18 +36,23 @@ function assign(target: object, next: object, changed: string[]) {
  * Gives `base` the values that `next` changes from `previous`, down to the fields
  * of objects as the shared document merges them.
  */
-function rebase(base: object, previous: object, next: object, keys: Iterable<string>) {
+function rebaseChangedFields(base: object, previous: object, next: object, keys: Iterable<string>) {
     for (const key of keys) {
         const value: unknown = Reflect.get(next, key);
         const before: unknown = Reflect.get(previous, key);
         const held: unknown = Reflect.get(base, key);
 
         if (isRecord(value) && isRecord(before) && isRecord(held)) {
-            rebase(held, before, value, new Set([...Object.keys(before), ...Object.keys(value)]));
+            rebaseChangedFields(
+                held,
+                before,
+                value,
+                new Set([...Object.keys(before), ...Object.keys(value)])
+            );
             continue;
         }
 
-        if (same(value, before)) {
+        if (sameJsonValue(value, before)) {
             continue;
         }
 
@@ -100,7 +110,7 @@ function rebaseGesture(
             const snapshot = snapshots[id];
             const before = getBoundingBox(snapshot);
 
-            rebase(
+            rebaseChangedFields(
                 snapshot,
                 hydrateEntity('shapes', change.previous),
                 hydrateEntity('shapes', change.view),
@@ -143,7 +153,7 @@ function applyChanges<C extends Collection>(
             continue;
         }
 
-        assign(current, next, change.changed);
+        assignChangedFields(current, next, change.changed);
         reordered ||= change.changed.includes('order');
     }
 
@@ -178,7 +188,7 @@ export const applyRemoteChanges: ActionWithParam<RemoteChanges> = ({ state }, ch
     }
 
     if (fields) {
-        assign(document, hydrateDocumentFields(fields.view), fields.changed);
+        assignChangedFields(document, hydrateDocumentFields(fields.view), fields.changed);
     }
 
     for (const collection of COLLECTIONS) {

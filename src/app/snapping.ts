@@ -88,7 +88,7 @@ export function targetLines(boxes: Box[]): SnapTargets {
     const alongYs = new Map<number, number[]>();
     const boxesByX = new Map<number, Box[]>();
     const boxesByY = new Map<number, Box[]>();
-    const add = <T>(byLine: Map<number, T[]>, line: number, items: T[]) => {
+    const addItemsByLine = <T>(byLine: Map<number, T[]>, line: number, items: T[]) => {
         const held = byLine.get(line);
 
         if (held) {
@@ -104,12 +104,12 @@ export function targetLines(boxes: Box[]): SnapTargets {
         const { xs, ys } = thirds(box);
 
         xs.forEach((x) => {
-            add(alongXs, x, ys);
-            add(boxesByX, x, [box]);
+            addItemsByLine(alongXs, x, ys);
+            addItemsByLine(boxesByX, x, [box]);
         });
         ys.forEach((y) => {
-            add(alongYs, y, xs);
-            add(boxesByY, y, [box]);
+            addItemsByLine(alongYs, y, xs);
+            addItemsByLine(boxesByY, y, [box]);
         });
     }
 
