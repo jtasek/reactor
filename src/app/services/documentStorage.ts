@@ -13,7 +13,7 @@ import type {
     Variable
 } from '../types';
 import { createDocument } from '../factories';
-import { orderAbove, untie, validDrawOrder } from '../drawOrder';
+import { orderAbove, resolveDrawOrderTies, validDrawOrder } from '../drawOrder';
 import { isClosedShape, isHexColor, isStrokedShape } from '../utils';
 import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
@@ -620,7 +620,7 @@ function readShapes(value: unknown, onRepair: () => void): Record<string, ShapeD
     onRepair();
 
     if (tied) {
-        untie(ordered);
+        resolveDrawOrderTies(ordered);
     }
 
     let top = ordered.reduce<string | null>(

@@ -42,7 +42,13 @@ import {
     shownGroupShapesIds,
     withTheirGroups
 } from '../membership';
-import { orderAbove, ordersAbove, ordersBelow, ordersBetween, untie } from '../drawOrder';
+import {
+    orderAbove,
+    ordersAbove,
+    ordersBelow,
+    ordersBetween,
+    resolveDrawOrderTies
+} from '../drawOrder';
 import { PropertyValue, SHAPE_PROPERTIES, applyProperty, canEdit } from '../properties';
 import { PasteResult, readClipboard, writeClipboard } from '../clipboard';
 import { takesEditorInput } from 'src/events/input';
@@ -348,7 +354,7 @@ export const detachInstances: ActionWithParam<string[]> = ({ state }, instanceId
         const layers = containersHolding(document.layers, [id]);
         const copyIds: string[] = [];
         // Merged orders can tie; separate them before inserting between neighbors.
-        untie(document.shapesIds.map((shapeId) => document.shapes[shapeId]));
+        resolveDrawOrderTies(document.shapesIds.map((shapeId) => document.shapes[shapeId]));
         const index = document.shapesIds.indexOf(id);
         const next = document.shapes[document.shapesIds[index + 1]];
         const members = detachedMembers(document, instance, source);

@@ -35,7 +35,7 @@ function fingerprint(
 function libraryRecords(document: Document, componentId: string) {
     const records = new Map<string, { component: Component; members: Shape[]; hash: string }>();
     const visiting = new Set<string>();
-    const visit = (id: string): boolean => {
+    const collectComponentDependencies = (id: string): boolean => {
         if (records.has(id)) {
             return true;
         }
@@ -53,7 +53,7 @@ function libraryRecords(document: Document, componentId: string) {
             if (!shape) {
                 return false;
             }
-            if (shape.type === 'instance' && !visit(shape.componentId)) {
+            if (shape.type === 'instance' && !collectComponentDependencies(shape.componentId)) {
                 return false;
             }
             members.push(shape);
@@ -65,7 +65,7 @@ function libraryRecords(document: Document, componentId: string) {
         return true;
     };
 
-    if (!visit(componentId)) {
+    if (!collectComponentDependencies(componentId)) {
         return null;
     }
 

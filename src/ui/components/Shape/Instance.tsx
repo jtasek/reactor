@@ -2,7 +2,7 @@ import React, { CSSProperties, FC } from 'react';
 import type { InstanceShape, Shape } from 'src/app/types';
 import type { ComponentSource } from 'src/app/componentSource';
 import { componentSource } from 'src/app/componentSource';
-import { instanceMember } from 'src/app/componentProps';
+import { applyInstanceOverrides } from 'src/app/componentProps';
 import { boxCenter, getShapeBounds } from 'src/app/utils';
 import { useCurrentDocument } from 'src/app/hooks';
 import { getComponentByType } from 'src/tools/components';
@@ -40,7 +40,7 @@ export const Instance: FC<Props> = ({ instance, source, ancestors = new Set() })
         <g transform={`translate(${offsetX} ${offsetY})`}>
             {source.shapes.map((member: Shape) => {
                 const shape = component
-                    ? instanceMember(member, instance, component, document)
+                    ? applyInstanceOverrides(member, instance, component, document)
                     : member;
                 if (!shape.visible) {
                     return null;

@@ -18,17 +18,20 @@ const STROKE_HALF_WIDTH = 1;
 /** Extra reach of a press, in screen pixels, so thin strokes stay easy to hit. */
 const HIT_SLOP_PX = 4;
 
-const add = (point: Point, delta: Point): Point => ({ x: point.x + delta.x, y: point.y + delta.y });
+const translatePoint = (point: Point, delta: Point): Point => ({
+    x: point.x + delta.x,
+    y: point.y + delta.y
+});
 
 /** Moves a shape's geometry, and its measured bounds, by `delta` in place. */
 export function translateShape(shape: Shape, delta: Point): void {
     switch (shape.type) {
         case 'line':
-            shape.start = add(shape.start, delta);
-            shape.end = add(shape.end, delta);
+            shape.start = translatePoint(shape.start, delta);
+            shape.end = translatePoint(shape.end, delta);
             break;
         case 'pen':
-            shape.points = shape.points.map((point) => add(point, delta));
+            shape.points = shape.points.map((point) => translatePoint(point, delta));
             break;
         case 'rectangle':
         case 'image':
@@ -36,7 +39,7 @@ export function translateShape(shape: Shape, delta: Point): void {
         case 'ellipse':
         case 'text':
         case 'instance':
-            shape.position = add(shape.position, delta);
+            shape.position = translatePoint(shape.position, delta);
             break;
         default:
             assertNever(shape);
@@ -46,8 +49,8 @@ export function translateShape(shape: Shape, delta: Point): void {
     // shape immediately, without waiting for the next getBBox measurement.
     if (shape.bounds) {
         shape.bounds = {
-            topLeft: add(shape.bounds.topLeft, delta),
-            bottomRight: add(shape.bounds.bottomRight, delta),
+            topLeft: translatePoint(shape.bounds.topLeft, delta),
+            bottomRight: translatePoint(shape.bounds.bottomRight, delta),
             width: shape.bounds.width,
             height: shape.bounds.height
         };
@@ -71,7 +74,8 @@ export function placeShapeFrom(
     factor: number,
     delta: Point
 ): void {
-    const scaleAndTranslatePoint = (point: Point) => add(scaleAbout(point, origin, factor), delta);
+    const scaleAndTranslatePoint = (point: Point) =>
+        translatePoint(scaleAbout(point, origin, factor), delta);
 
     switch (shape.type) {
         case 'rectangle':
@@ -233,8 +237,8 @@ export function keepDrawnPlace(box: Box, oldCenter: Point, rotation: number): Bo
     const shift = { x: drawn.x - center.x, y: drawn.y - center.y };
 
     return {
-        topLeft: add(box.topLeft, shift),
-        bottomRight: add(box.bottomRight, shift),
+        topLeft: translatePoint(box.topLeft, shift),
+        bottomRight: translatePoint(box.bottomRight, shift),
         width: box.width,
         height: box.height
     };

@@ -10,7 +10,7 @@ import {
 } from '../services/documentStorage';
 
 /** A copy for the store to own, so its later edits never reach the shared document's views. */
-const own = <T>(value: T): T =>
+const copyForStore = <T>(value: T): T =>
     typeof value === 'object' && value !== null ? structuredClone(value) : value;
 
 /** Gives `target` the `changed` fields of `next`, removing the ones `next` lacks. */
@@ -23,7 +23,7 @@ function assign(target: object, next: object, changed: string[]) {
             continue;
         }
 
-        Reflect.set(target, key, own(value));
+        Reflect.set(target, key, copyForStore(value));
     }
 }
 
@@ -51,7 +51,7 @@ function rebase(base: object, previous: object, next: object, keys: Iterable<str
             continue;
         }
 
-        Reflect.set(base, key, own(value));
+        Reflect.set(base, key, copyForStore(value));
     }
 }
 
@@ -138,7 +138,7 @@ function applyChanges<C extends Collection>(
         const next = hydrateEntity(collection, change.view);
 
         if (current === undefined) {
-            table[id] = own(next);
+            table[id] = copyForStore(next);
             reordered = true;
             continue;
         }

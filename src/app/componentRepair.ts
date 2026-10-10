@@ -28,16 +28,16 @@ export function repairComponents(document: Document): void {
 
     const visited = new Set<string>();
     const visiting = new Set<string>();
-    const member = (componentId: string, id: string): Shape | undefined =>
+    const sourceMember = (componentId: string, id: string): Shape | undefined =>
         components[componentId].sourceShapes?.[id] ?? document.shapes[id];
-    const visit = (componentId: string) => {
+    const repairComponentMembers = (componentId: string) => {
         if (visited.has(componentId)) {
             return;
         }
         visiting.add(componentId);
         const component = components[componentId];
         const members = component.shapesIds.filter((id) => {
-            const shape = member(componentId, id);
+            const shape = sourceMember(componentId, id);
 
             if (shape?.type !== 'instance') {
                 return true;
@@ -45,7 +45,7 @@ export function repairComponents(document: Document): void {
             if (!components[shape.componentId] || visiting.has(shape.componentId)) {
                 return false;
             }
-            visit(shape.componentId);
+            repairComponentMembers(shape.componentId);
 
             return components[shape.componentId].shapesIds.length > 0;
         });
@@ -56,7 +56,7 @@ export function repairComponents(document: Document): void {
         visited.add(componentId);
     };
 
-    componentIds.forEach(visit);
+    componentIds.forEach(repairComponentMembers);
 
     for (const component of Object.values(components)) {
         const props = component.props?.filter((prop) => component.shapesIds.includes(prop.shapeId));

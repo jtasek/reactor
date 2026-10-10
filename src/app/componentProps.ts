@@ -86,7 +86,7 @@ export function componentPropValue(
 }
 
 /** Applies only the props exposed by this source to one drawn copy. */
-export function instanceMember(
+export function applyInstanceOverrides(
     source: Shape,
     instance: InstanceShape,
     component: Component,

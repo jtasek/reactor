@@ -1,5 +1,5 @@
 import { componentSource } from 'src/app/componentSource';
-import { componentPropValue, instanceMember } from 'src/app/componentProps';
+import { componentPropValue, applyInstanceOverrides } from 'src/app/componentProps';
 import { componentFingerprint } from 'src/app/componentLibrary';
 import { isShapeVisible } from 'src/app/utils';
 import {
@@ -97,9 +97,9 @@ it('changes an exposed value only on the instance and can reset it', () => {
         return;
     }
     const component = document.components[componentId];
-    expect(instanceMember(document.shapes[sourceId], instance, component, document).fill).toBe(
-        '#ff0000'
-    );
+    expect(
+        applyInstanceOverrides(document.shapes[sourceId], instance, component, document).fill
+    ).toBe('#ff0000');
     expect(document.shapes[sourceId].fill).toBeUndefined();
 
     store.actions.updateShape({ id: sourceId, fill: '#0000ff' });
@@ -323,7 +323,8 @@ it('keeps resolved source text and evaluates text overrides without changing the
     if (instance.type !== 'instance' || !variableId) {
         throw new Error('Expected an instance and variable');
     }
-    const rendered = () => instanceMember(document.shapes[sourceId], instance, component, document);
+    const rendered = () =>
+        applyInstanceOverrides(document.shapes[sourceId], instance, component, document);
     expect(rendered()).toMatchObject({ value: 'Hello Joe' });
     store.actions.setInstanceOverride({
         instanceIds: [instance.id],
@@ -433,7 +434,9 @@ it.each(['copy', 'cut'])(
         if (!member) {
             throw new Error('Expected a copied source member');
         }
-        expect(instanceMember(member, nested, leaf, target)).toMatchObject({ fill: '#ff0000' });
+        expect(applyInstanceOverrides(member, nested, leaf, target)).toMatchObject({
+            fill: '#ff0000'
+        });
         expect(componentSource(target, 'outer')?.box).toMatchObject({ width: 30, height: 40 });
         store.actions.removeDocument(document.id);
         expect(componentSource(target, 'outer')?.box.width).toBe(30);
@@ -480,7 +483,7 @@ it('remaps templates in pasted text overrides when a variable name is taken', ()
     if (instance.type !== 'instance' || !member) {
         throw new Error('Expected a pasted instance');
     }
-    expect(instanceMember(member, instance, component, document)).toMatchObject({
+    expect(applyInstanceOverrides(member, instance, component, document)).toMatchObject({
         value: 'Hello Joe'
     });
     expect(componentPropValue(instance, component, propId, document)).toBe('Hello ${Name 2}');

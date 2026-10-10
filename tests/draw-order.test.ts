@@ -1,5 +1,5 @@
 import { CloneCommand } from 'src/commands/clone';
-import { byDrawingOrder, untie } from 'src/app/drawOrder';
+import { byDrawingOrder, resolveDrawOrderTies } from 'src/app/drawOrder';
 import { createDocument, createShape } from 'src/app/factories';
 import { getShapeBounds } from 'src/app/utils';
 import {
@@ -92,7 +92,7 @@ describe('draw order', () => {
             { id: 'd', order: 'a2' }
         ];
 
-        untie(items);
+        resolveDrawOrderTies(items);
 
         expect(items.find(({ id }) => id === 'a')?.order).toBe('a1');
         expect([...items].sort(byDrawingOrder).map(({ id }) => id)).toEqual(['a', 'b', 'c', 'd']);

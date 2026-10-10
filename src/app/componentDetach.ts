@@ -1,6 +1,6 @@
 import type { Document, InstanceShape, Shape } from './types';
 import { instanceBox, type ComponentSource } from './componentSource';
-import { instanceMember } from './componentProps';
+import { applyInstanceOverrides } from './componentProps';
 import { translateShape } from './geometry';
 import { boxCenter, getShapeBounds, rotatePoint } from './utils';
 
@@ -18,7 +18,7 @@ export function detachedMembers(
     };
 
     return source.shapes.map((member) => {
-        const copy = { ...instanceMember(member, instance, component, document) };
+        const copy = { ...applyInstanceOverrides(member, instance, component, document) };
         translateShape(copy, offset);
         const from = boxCenter(getShapeBounds(copy));
         const to = rotatePoint(from, center, instance.rotation ?? 0);
