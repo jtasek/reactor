@@ -154,3 +154,64 @@ test('an instance selection follows text bounds measured after the first render'
         )
         .toBeLessThan(0.1);
 });
+
+test('nested instance opacity and its exposed override affect rendering', async ({ page }) => {
+    const rectangle = createShape({
+        type: 'rectangle',
+        name: 'Source',
+        order: 'a0',
+        position: { x: 0, y: 0 },
+        size: { width: 40, height: 40 },
+        fill: '#ff0000'
+    });
+    const leaf = createComponent({ shapesIds: [rectangle.id] });
+    const nested = createShape({
+        type: 'instance',
+        name: 'Nested',
+        order: 'a1',
+        componentId: leaf.id,
+        position: { x: 100, y: 100 },
+        overrides: {},
+        opacity: 0.5
+    });
+    const outer = createComponent({
+        shapesIds: [nested.id],
+        props: [{ id: 'opacity', shapeId: nested.id, key: 'opacity', label: 'Nested opacity' }]
+    });
+    const instance = createShape({
+        type: 'instance',
+        name: 'Outer instance',
+        order: 'a2',
+        componentId: outer.id,
+        position: { x: 300, y: 300 },
+        overrides: {}
+    });
+    const document = createDocument({
+        shapes: { [rectangle.id]: rectangle, [nested.id]: nested, [instance.id]: instance },
+        components: { [leaf.id]: leaf, [outer.id]: outer }
+    });
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await openEditor(page, ['Inspector']);
+    const drawn = shapes(page).last();
+    const opacity = () =>
+        drawn.locator('rect[data-cy]').evaluate((element) => {
+            let value = 1;
+            let parent = element.parentElement;
+
+            while (parent instanceof SVGElement) {
+                value *= Number(getComputedStyle(parent).opacity);
+                parent = parent.parentElement;
+            }
+
+            return value;
+        });
+    await expect.poll(opacity).toBeCloseTo(0.5);
+    const bounds = (await drawn.locator('rect[data-cy]').boundingBox())!;
+    await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+    await page.getByLabel('Nested opacity', { exact: true }).fill('20');
+    await expect.poll(opacity).toBeCloseTo(0.2);
+});

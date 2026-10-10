@@ -127,7 +127,19 @@ export const config = {
         minimize: !isDev,
         minimizer: ['...', new CssMinimizerPlugin()],
         runtimeChunk: isDev ? false : 'single',
-        splitChunks: isDev ? false : { chunks: 'all' }
+        splitChunks: isDev
+            ? false
+            : {
+                  chunks: 'all',
+                  cacheGroups: {
+                      // Cache clipboard transfers separately without raising the entry or file size budgets.
+                      clipboard: {
+                          test: /[\\/]src[\\/]app[\\/](clipboard|componentLibrary)\.ts$/,
+                          name: 'clipboard',
+                          enforce: true
+                      }
+                  }
+              }
     },
     resolve: {
         alias: {

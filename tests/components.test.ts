@@ -2,7 +2,11 @@ import { componentSource } from 'src/app/componentSource';
 import { componentPropValue, instanceMember } from 'src/app/componentProps';
 import { componentFingerprint } from 'src/app/componentLibrary';
 import { isShapeVisible } from 'src/app/utils';
-import { restoreDocuments, serializePersistedState } from 'src/app/services/documentStorage';
+import {
+    readEntity,
+    restoreDocuments,
+    serializePersistedState
+} from 'src/app/services/documentStorage';
 import { createTestStore } from './support/store';
 
 function setup() {
@@ -289,4 +293,208 @@ it('repairs a cycle and duplicate source membership when reloading a merged docu
     expect(document.components.b.shapesIds).not.toContain(aInB);
     expect(document.components.b.shapesIds).not.toContain(sourceId);
     expect(componentSource(document, 'a')).not.toBeNull();
+});
+
+it('keeps resolved source text and evaluates text overrides without changing the source', () => {
+    const { store } = createTestStore();
+    const variableId = store.actions.createVariable({ name: 'Name', type: 'text', value: 'Joe' });
+    store.actions.addShape({
+        type: 'text',
+        position: { x: 0, y: 0 },
+        value: 'Hello',
+        fontSize: 20
+    });
+    const document = store.state.currentDocument;
+    const sourceId = document.shapesIds[0];
+    store.actions.setShapesProperty({ shapeIds: [sourceId], key: 'text', value: 'Hello ${Name}' });
+    store.actions.createComponentFromSelection();
+    const componentId = document.componentsIds[0];
+    store.actions.exposeComponentProp({
+        componentId,
+        shapeId: sourceId,
+        key: 'text',
+        label: 'Text'
+    });
+    store.actions.insertComponentAt({ componentId, position: { x: 100, y: 100 } });
+    const instance = document.shapes[document.shapesIds[1]];
+    const component = document.components[componentId];
+    const propId = component.props?.[0].id ?? '';
+
+    if (instance.type !== 'instance' || !variableId) {
+        throw new Error('Expected an instance and variable');
+    }
+    const rendered = () => instanceMember(document.shapes[sourceId], instance, component, document);
+    expect(rendered()).toMatchObject({ value: 'Hello Joe' });
+    store.actions.setInstanceOverride({
+        instanceIds: [instance.id],
+        propId,
+        value: 'Welcome ${Name}'
+    });
+    expect(rendered()).toMatchObject({ value: 'Welcome Joe' });
+    store.actions.setInstanceOverride({ instanceIds: [instance.id], propId, value: '\\${Name}' });
+    expect(rendered()).toMatchObject({ value: '${Name}' });
+    store.actions.bindInstanceOverride({ instanceIds: [instance.id], propId, variableId });
+    expect(rendered()).toMatchObject({ value: 'Joe' });
+    store.actions.resetInstanceOverrides({ instanceIds: [instance.id] });
+    expect(rendered()).toMatchObject({ value: 'Hello Joe' });
+    expect(document.shapes[sourceId]).toMatchObject({ value: 'Hello Joe' });
+});
+
+it.each([false, true])('detaches at the original stacking position (tied order: %s)', (tied) => {
+    const { store, sourceId, componentId } = setup();
+    store.actions.insertComponentAt({ componentId, position: { x: 200, y: 300 } });
+    const document = store.state.currentDocument;
+    const instanceId = document.shapesIds[1];
+    store.actions.addShape({
+        type: 'rectangle',
+        position: { x: 200, y: 300 },
+        size: { width: 30, height: 40 }
+    });
+    const coverId = document.shapesIds[2];
+
+    if (tied) {
+        // Tie with the source below; both copies must remain below the covering shape.
+        const view = readEntity('shapes', {
+            ...JSON.parse(JSON.stringify(document.shapes[instanceId])),
+            order: document.shapes[sourceId].order
+        });
+        store.actions.applyRemoteChanges({
+            documentId: document.id,
+            entities: {
+                shapes: { [instanceId]: { view, changed: ['order'] } },
+                groups: {},
+                layers: {},
+                components: {},
+                links: {},
+                guides: {},
+                variables: {}
+            }
+        });
+    }
+    store.actions.detachInstances([instanceId]);
+    const copiedId = document.shapesIds.find((id) => id !== sourceId && id !== coverId) ?? '';
+    expect(document.shapesIds.indexOf(copiedId)).toBeLessThan(document.shapesIds.indexOf(coverId));
+    expect(document.shapes[copiedId].order < document.shapes[coverId].order).toBe(true);
+    expect(document.shapes[instanceId]).toBeUndefined();
+});
+
+it.each(['copy', 'cut'])(
+    'transfers nested component dependencies and override variables on %s',
+    (mode) => {
+        const { store, sourceId, componentId } = setup();
+        const document = store.state.currentDocument;
+        const variableId = store.actions.createVariable({
+            name: 'Brand',
+            type: 'color',
+            value: '#ff0000'
+        });
+        store.actions.exposeComponentProp({
+            componentId,
+            shapeId: sourceId,
+            key: 'fill',
+            label: 'Fill'
+        });
+        store.actions.insertComponentAt({ componentId, position: { x: 200, y: 300 } });
+        const nestedId = document.shapesIds[1];
+        const propId = document.components[componentId].props?.[0].id ?? '';
+        store.actions.bindInstanceOverride({
+            instanceIds: [nestedId],
+            propId,
+            variableId: variableId ?? ''
+        });
+        store.actions.addComponent({ id: 'outer', shapesIds: [nestedId] });
+        store.actions.insertComponentAt({ componentId: 'outer', position: { x: 400, y: 300 } });
+        const originalId = document.shapesIds[2];
+        const text = store.actions.copySelection();
+
+        if (mode === 'cut') {
+            const cut = store.actions.selectionToCut();
+            expect(cut?.text).toBe(text);
+            store.actions.removeShapes(cut?.shapeIds ?? []);
+            expect(document.shapes[originalId]).toBeUndefined();
+        }
+        store.actions.newDocument();
+        expect(store.actions.pasteShapes(text ?? '')).toBe('pasted');
+        const target = store.state.currentDocument;
+        expect(target.shapesIds).toHaveLength(1);
+        expect(Object.keys(target.components).sort()).toEqual([componentId, 'outer'].sort());
+        const source = componentSource(target, 'outer');
+        const nested = source?.shapes[0];
+
+        if (nested?.type !== 'instance') {
+            throw new Error('Expected the nested instance');
+        }
+        const newVariable = Object.values(target.variables)[0];
+        expect(newVariable.id).not.toBe(variableId);
+        expect(nested.overrides[propId]).toEqual({ variableId: newVariable.id });
+        const leaf = target.components[componentId];
+        const member = leaf.sourceShapes?.[sourceId];
+
+        if (!member) {
+            throw new Error('Expected a copied source member');
+        }
+        expect(instanceMember(member, nested, leaf, target)).toMatchObject({ fill: '#ff0000' });
+        expect(componentSource(target, 'outer')?.box).toMatchObject({ width: 30, height: 40 });
+        store.actions.removeDocument(document.id);
+        expect(componentSource(target, 'outer')?.box.width).toBe(30);
+    }
+);
+
+it('remaps templates in pasted text overrides when a variable name is taken', () => {
+    const { store } = createTestStore();
+    store.actions.createVariable({ name: 'Name', type: 'text', value: 'Joe' });
+    store.actions.addShape({
+        type: 'text',
+        position: { x: 0, y: 0 },
+        value: 'Default',
+        fontSize: 20
+    });
+    const source = store.state.currentDocument;
+    const sourceId = source.shapesIds[0];
+    store.actions.createComponentFromSelection();
+    const componentId = source.componentsIds[0];
+    store.actions.exposeComponentProp({
+        componentId,
+        shapeId: sourceId,
+        key: 'text',
+        label: 'Text'
+    });
+    store.actions.insertComponentAt({ componentId, position: { x: 100, y: 100 } });
+    const instanceId = source.shapesIds[1];
+    const propId = source.components[componentId].props?.[0].id ?? '';
+    store.actions.setInstanceOverride({
+        instanceIds: [instanceId],
+        propId,
+        value: 'Hello ${Name}'
+    });
+    const text = store.actions.copySelection();
+    expect(source.shapes[instanceId]).toMatchObject({ overrides: { [propId]: 'Hello ${Name}' } });
+    store.actions.newDocument();
+    store.actions.createVariable({ name: 'Name', type: 'color', value: '#ff0000' });
+    expect(store.actions.pasteShapes(text ?? '')).toBe('pasted');
+    const document = store.state.currentDocument;
+    const instance = document.shapes[document.shapesIds[0]];
+    const component = document.components[componentId];
+    const member = component.sourceShapes?.[sourceId];
+
+    if (instance.type !== 'instance' || !member) {
+        throw new Error('Expected a pasted instance');
+    }
+    expect(instanceMember(member, instance, component, document)).toMatchObject({
+        value: 'Hello Joe'
+    });
+    expect(componentPropValue(instance, component, propId, document)).toBe('Hello ${Name 2}');
+    const restored = restoreDocuments(serializePersistedState(store.state));
+    expect(componentSource(restored[document.id], componentId)).not.toBeNull();
+});
+
+it('pastes a same-document instance without replacing its live source', () => {
+    const { store, sourceId, componentId } = setup();
+    store.actions.insertComponentAt({ componentId, position: { x: 200, y: 300 } });
+    const copied = store.actions.copySelection();
+    store.actions.updateShape({ id: sourceId, fill: '#00ff00' });
+    expect(store.actions.pasteShapes(copied ?? '')).toBe('pasted');
+    const document = store.state.currentDocument;
+    expect(document.components[componentId].sourceShapes).toBeUndefined();
+    expect(componentSource(document, componentId)?.shapes[0].fill).toBe('#00ff00');
 });

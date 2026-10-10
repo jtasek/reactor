@@ -81,7 +81,7 @@ export function componentFingerprint(document: Document, componentId: string): s
 export function librarySnapshot(
     document: Document,
     componentId: string,
-    destination: Document
+    destination: Pick<Document, 'components'>
 ): Component[] | null {
     const records = libraryRecords(document, componentId);
 

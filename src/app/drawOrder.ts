@@ -18,6 +18,13 @@ export const ordersAbove = (order: string | null, count: number): string[] =>
 export const ordersBelow = (order: string | null, count: number): string[] =>
     generateNKeysBetween(null, order, count);
 
+/** Ascending orders between two neighbors, or at either end when null. */
+export const ordersBetween = (
+    below: string | null,
+    above: string | null,
+    count: number
+): string[] => generateNKeysBetween(below, above, count);
+
 /** Returns `value` when it is a draw order the library can build on, otherwise undefined. */
 export function validDrawOrder(value: unknown): string | undefined {
     if (typeof value !== 'string' || value.length > MAX_ORDER_LENGTH || !ORDER_KEY.test(value)) {

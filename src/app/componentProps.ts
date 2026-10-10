@@ -1,6 +1,6 @@
 import type { Component, Document, InstanceShape, PropertyValue, Shape } from './types';
 import { SHAPE_PROPERTIES, applyProperty, type ShapeProperty } from './properties';
-import { variableValue } from './variables';
+import { escapeTemplate, templateWithNames, variableValue, writeText } from './variables';
 import { isHexColor } from './utils';
 
 const SOURCE_ONLY = new Set(['name', 'x', 'y', 'width', 'height', 'rotation', 'locked']);
@@ -78,6 +78,10 @@ export function componentPropValue(
             : property.read(source, document);
     }
 
+    if (property.key === 'text' && typeof override === 'string') {
+        return templateWithNames(override, document.variables);
+    }
+
     return override ?? property.read(source, document);
 }
 
@@ -97,12 +101,28 @@ export function instanceMember(
     const copy = { ...source };
 
     for (const prop of props) {
+        const override = instance.overrides[prop.id];
+
+        if (override === undefined) {
+            continue;
+        }
+        if (typeof override === 'object' && !document.variables[override.variableId]) {
+            continue;
+        }
         const value = componentPropValue(instance, component, prop.id, document);
         const property = SHAPE_PROPERTIES.find((item) => item.key === prop.key);
 
-        if (value !== undefined && property) {
-            applyProperty(property, copy, value);
+        if (value === undefined || !property) {
+            continue;
         }
+        if (copy.type === 'text' && prop.key === 'text' && typeof value === 'string') {
+            // A variable's value is already rendered; literal overrides may be templates.
+            const text = typeof override === 'string' ? override : escapeTemplate(value);
+            writeText(copy, text, document.variables);
+
+            continue;
+        }
+        applyProperty(property, copy, value);
     }
 
     return copy;

@@ -71,13 +71,13 @@ export function placeShapeFrom(
     factor: number,
     delta: Point
 ): void {
-    const at = (point: Point) => add(scaleAbout(point, origin, factor), delta);
+    const scaleAndTranslatePoint = (point: Point) => add(scaleAbout(point, origin, factor), delta);
 
     switch (shape.type) {
         case 'rectangle':
         case 'image':
             if (original.type === shape.type) {
-                shape.position = at(original.position);
+                shape.position = scaleAndTranslatePoint(original.position);
                 shape.size = {
                     width: original.size.width * factor,
                     height: original.size.height * factor
@@ -94,30 +94,30 @@ export function placeShapeFrom(
             break;
         case 'circle':
             if (original.type === 'circle') {
-                shape.position = at(original.position);
+                shape.position = scaleAndTranslatePoint(original.position);
                 shape.radius = original.radius * factor;
             }
             break;
         case 'ellipse':
             if (original.type === 'ellipse') {
-                shape.position = at(original.position);
+                shape.position = scaleAndTranslatePoint(original.position);
                 shape.radius = { x: original.radius.x * factor, y: original.radius.y * factor };
             }
             break;
         case 'line':
             if (original.type === 'line') {
-                shape.start = at(original.start);
-                shape.end = at(original.end);
+                shape.start = scaleAndTranslatePoint(original.start);
+                shape.end = scaleAndTranslatePoint(original.end);
             }
             break;
         case 'pen':
             if (original.type === 'pen') {
-                shape.points = original.points.map(at);
+                shape.points = original.points.map(scaleAndTranslatePoint);
             }
             break;
         case 'text':
             if (original.type === 'text') {
-                shape.position = at(original.position);
+                shape.position = scaleAndTranslatePoint(original.position);
                 shape.fontSize = Math.max(
                     1,
                     (original.fontSize ?? DEFAULT_TEXT_FONT_SIZE) * factor
@@ -126,7 +126,7 @@ export function placeShapeFrom(
             break;
         case 'instance':
             if (original.type === 'instance') {
-                shape.position = at(original.position);
+                shape.position = scaleAndTranslatePoint(original.position);
             }
             break;
         default:
@@ -140,8 +140,8 @@ export function placeShapeFrom(
     }
 
     {
-        const topLeft = at(original.bounds.topLeft);
-        const bottomRight = at(original.bounds.bottomRight);
+        const topLeft = scaleAndTranslatePoint(original.bounds.topLeft);
+        const bottomRight = scaleAndTranslatePoint(original.bounds.bottomRight);
 
         shape.bounds = {
             topLeft,

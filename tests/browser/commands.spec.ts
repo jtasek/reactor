@@ -298,17 +298,17 @@ test('a group is selected and dragged by its box, between its shapes', async ({ 
     await page.keyboard.press('ControlOrMeta+g');
 
     const surface = (await page.locator('svg#surface').boundingBox())!;
-    const at = (x: number, y: number) => [surface.x + x, surface.y + y] as const;
+    const toPageCoordinates = (x: number, y: number) => [surface.x + x, surface.y + y] as const;
 
-    await page.mouse.click(...at(700, 500));
+    await page.mouse.click(...toPageCoordinates(700, 500));
     await expect(page.locator('[data-handle][data-group-id]')).toHaveCount(0);
 
     // Hovering the gap highlights the group; pressing there selects it and drags it.
-    await page.mouse.move(...at(370, 120));
+    await page.mouse.move(...toPageCoordinates(370, 120));
     await expect(page.locator('#group-selections > rect')).toHaveCount(1);
 
     await page.mouse.down();
-    await page.mouse.move(...at(370, 220), { steps: 5 });
+    await page.mouse.move(...toPageCoordinates(370, 220), { steps: 5 });
     await page.mouse.up();
 
     const rects = shapes(page).locator('rect[data-cy]');

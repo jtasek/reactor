@@ -52,7 +52,7 @@ export const Instance: FC<Props> = ({ instance, source, ancestors = new Set() })
 
                 if (shape.type === 'instance') {
                     return (
-                        <g key={shape.id} transform={transform}>
+                        <g key={shape.id} transform={transform} opacity={shape.opacity}>
                             <Instance
                                 instance={shape}
                                 source={componentSource(document, shape.componentId, next)}
