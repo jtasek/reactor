@@ -5,9 +5,10 @@ import {
     useShapesInSelectedGroupsIds
 } from 'src/app/hooks';
 import { Shape } from '../Shape/Shape';
+import { ComponentOutlines } from '../Shape/ComponentOutlines';
 import { GroupSelections } from '../GroupSelection';
 
-export const Shapes = memo(() => {
+export const Shapes = memo(({ minimap = false }: { minimap?: boolean }) => {
     const shapesIds = useShapesIds();
     const grouped = new Set(useShapesInSelectedGroupsIds());
     const closed = new Set(useShapesInClosedGroupsIds());
@@ -21,10 +22,12 @@ export const Shapes = memo(() => {
                         shapeId={shapeId}
                         inSelectedGroup={grouped.has(shapeId)}
                         inClosedGroup={closed.has(shapeId)}
+                        minimap={minimap}
                     />
                 ))}
             </g>
             <GroupSelections />
+            {!minimap && <ComponentOutlines />}
         </>
     );
 });

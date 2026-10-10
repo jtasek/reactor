@@ -12,6 +12,12 @@ export {
 } from './align';
 export { BringToFrontCommand, SendToBackCommand } from './arrange';
 export { CloneCommand } from './clone';
+export {
+    CreateComponentCommand,
+    SelectComponentSourceCommand,
+    ResetComponentOverridesCommand,
+    DetachInstanceCommand
+} from './component';
 export { CopyCommand, CutCommand, PasteCommand } from './clipboard';
 export { DeleteCommand } from './delete';
 export { MoveDownCommand, MoveLeftCommand, MoveRightCommand, MoveUpCommand } from './move';

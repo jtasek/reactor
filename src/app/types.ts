@@ -163,7 +163,24 @@ export interface Text extends ShapeBase {
     fontSize?: number;
 }
 
-export type Shape = Rectangle | Image | Circle | Ellipse | Line | Pen | Text;
+/** A live reference to a component's source shapes. */
+export interface InstanceShape extends ShapeBase {
+    type: 'instance';
+    componentId: string;
+    position: Point;
+    overrides: Record<string, PropertyValue | { variableId: string }>;
+}
+
+export type PropertyValue = string | number | boolean;
+
+export interface ComponentProp {
+    id: string;
+    label: string;
+    shapeId: string;
+    key: string;
+}
+
+export type Shape = Rectangle | Image | Circle | Ellipse | Line | Pen | Text | InstanceShape;
 
 type ShapeMetadata = Exclude<
     keyof ShapeBase,
@@ -219,6 +236,10 @@ export interface Component {
     name: string;
     selected: boolean;
     shapesIds: string[];
+    props?: ComponentProp[];
+    /** Imported library source shapes live here rather than on the canvas. */
+    sourceShapes?: HashTable<Shape>;
+    library?: { documentId: string; hash: string };
     visible: boolean;
 }
 

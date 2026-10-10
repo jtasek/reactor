@@ -42,7 +42,13 @@ import {
     shownGroupShapesIds,
     withTheirGroups
 } from '../membership';
-import { orderAbove, ordersAbove, ordersBelow } from '../drawOrder';
+import {
+    orderAbove,
+    ordersAbove,
+    ordersBelow,
+    ordersBetween,
+    resolveDrawOrderTies
+} from '../drawOrder';
 import { PropertyValue, SHAPE_PROPERTIES, applyProperty, canEdit } from '../properties';
 import { PasteResult, readClipboard, writeClipboard } from '../clipboard';
 import { takesEditorInput } from 'src/events/input';
@@ -63,8 +69,11 @@ import {
     shapeGeometryKey,
     boxCenter,
     angleBetween,
-    getBoundingBox
+    shapeStyle
 } from '../utils';
+import { hasComponentInstances } from './components';
+import { componentSource, instanceBox } from '../componentSource';
+import { detachedMembers } from '../componentDetach';
 
 const getShape = ({ currentDocument }: Application, shapeId: string) => {
     const shape = currentDocument.shapes[shapeId];
@@ -110,6 +119,23 @@ const deleteShape = ({ currentDocument }: Application, shapeId: string) => {
         for (const member of Object.values(table)) {
             member.shapesIds = member.shapesIds.filter((id) => id !== shapeId);
         }
+    }
+
+    for (const component of Object.values(currentDocument.components)) {
+        const removedProps = component.props?.filter((prop) => prop.shapeId === shapeId) ?? [];
+
+        if (removedProps.length === 0) {
+            continue;
+        }
+        component.props = component.props?.filter((prop) => prop.shapeId !== shapeId);
+        Object.values(currentDocument.shapes).forEach((shape) => {
+            if (shape.type !== 'instance' || shape.componentId !== component.id) {
+                return;
+            }
+            removedProps.forEach((prop) => {
+                delete shape.overrides[prop.id];
+            });
+        });
     }
 
     for (const link of Object.values(currentDocument.links)) {
@@ -177,6 +203,7 @@ export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shape
 
         const clone = createShape({
             ...shapeGeometry(original),
+            ...(original.type === 'instance' ? { bounds: original.bounds } : {}),
             order,
             name: nameShape(original.type),
             description: original.description,
@@ -240,7 +267,12 @@ export const copySelection: ActionWithResult<string | null> = ({ state }) => {
     const selected = takesEditorInput(state) ? selectedInDrawOrder(state) : [];
 
     return selected.length > 0
-        ? writeClipboard(selected, selectedGroups(state), state.currentDocument.variables)
+        ? writeClipboard(
+              selected,
+              selectedGroups(state),
+              state.currentDocument.variables,
+              state.currentDocument
+          )
         : null;
 };
 
@@ -259,7 +291,12 @@ export const selectionToCut: ActionWithResult<{ text: string; shapeIds: string[]
 
     return cut.length > 0
         ? {
-              text: writeClipboard(cut, selectedGroups(state), state.currentDocument.variables),
+              text: writeClipboard(
+                  cut,
+                  selectedGroups(state),
+                  state.currentDocument.variables,
+                  state.currentDocument
+              ),
               shapeIds: cut.map((shape) => shape.id)
           }
         : null;
@@ -269,17 +306,93 @@ export const selectionToCut: ActionWithResult<{ text: string; shapeIds: string[]
  * Removes the shapes that still exist and are not locked, and the groups this
  * empties, as deleting or cutting a whole group removes it.
  */
-export const removeShapes: ActionWithParam<string[]> = ({ state }, shapeIds) => {
+export const removeShapes: ActionWithParam<string[]> = ({ state, actions }, shapeIds) => {
     const { currentDocument } = state;
-    const removed = shapeIds.filter(
+    const requested = shapeIds.filter(
         (id) => currentDocument.shapes[id] && !isShapeLocked(currentDocument, id)
     );
+    const blocked = new Set<string>();
+
+    for (const component of Object.values(currentDocument.components)) {
+        if (!hasComponentInstances(currentDocument, component.id)) {
+            continue;
+        }
+        if (component.shapesIds.every((id) => requested.includes(id))) {
+            component.shapesIds.forEach((id) => blocked.add(id));
+        }
+    }
+    if (blocked.size > 0) {
+        actions.displayWarning('A component with instances must keep at least one shape.');
+    }
+    const removed = requested.filter((id) => !blocked.has(id));
     const groups = containersHolding(currentDocument.groups, removed);
 
     removed.forEach((id) => deleteShape(state, id));
     groups
         .filter((group) => group.shapesIds.length === 0)
         .forEach((group) => delete currentDocument.groups[group.id]);
+};
+
+/** Replaces live instances with independent shapes in the same place. */
+export const detachInstances: ActionWithParam<string[]> = ({ state }, instanceIds) => {
+    const document = state.currentDocument;
+
+    for (const id of instanceIds) {
+        const instance = document.shapes[id];
+
+        if (instance?.type !== 'instance' || isShapeLocked(document, id)) {
+            continue;
+        }
+        const source = componentSource(document, instance.componentId);
+        const component = document.components[instance.componentId];
+
+        if (!source || !component) {
+            continue;
+        }
+        const sources = containersHolding(document.components, [id]);
+        const groups = containersHolding(document.groups, [id]);
+        const layers = containersHolding(document.layers, [id]);
+        const copyIds: string[] = [];
+        // Merged orders can tie; separate them before inserting between neighbors.
+        resolveDrawOrderTies(document.shapesIds.map((shapeId) => document.shapes[shapeId]));
+        const index = document.shapesIds.indexOf(id);
+        const next = document.shapes[document.shapesIds[index + 1]];
+        const members = detachedMembers(document, instance, source);
+        const orders = ordersBetween(instance.order, next?.order ?? null, members.length);
+
+        for (const [memberIndex, shown] of members.entries()) {
+            const copy = createShape({
+                ...shapeGeometry(shown),
+                ...shapeStyle(shown),
+                name: nextShapeName(Object.values(untracked(document).shapes), shown.type),
+                order: orders[memberIndex],
+                rotation: shown.rotation,
+                bounds: shown.bounds,
+                visible: shown.visible,
+                locked: shown.locked,
+                selected: true
+            });
+            document.shapes[copy.id] = copy;
+            copyIds.push(copy.id);
+        }
+
+        sources.forEach((source) => {
+            source.shapesIds = source.shapesIds.flatMap((memberId) =>
+                memberId === id ? copyIds : [memberId]
+            );
+        });
+        deleteShape(state, id);
+        document.shapesIds.splice(index, 0, ...copyIds);
+        layers.forEach((layer) => {
+            layer.shapesIds.push(...copyIds);
+        });
+        if (groups.length > 0) {
+            groups.forEach((group) => group.shapesIds.push(...copyIds));
+        } else if (copyIds.length > 1) {
+            const group = createGroup({ shapesIds: copyIds });
+            document.groups[group.id] = group;
+        }
+    }
 };
 
 /**
@@ -398,7 +511,57 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
         return 'noShapes';
     }
 
+    const available = new Set([
+        ...Object.keys(state.currentDocument.components),
+        ...(copied.components ?? []).map((component) => component.id)
+    ]);
+
+    if (
+        copied.shapes.some(
+            (shape) => shape.type === 'instance' && !available.has(shape.componentId)
+        )
+    ) {
+        return 'noShapes';
+    }
+
     const { ids: variableIds, remapTemplate } = pasteVariables(context, copied.variables);
+    const document = state.currentDocument;
+    const remapOverrides = (shape: Shape) => {
+        if (shape.type !== 'instance') {
+            return;
+        }
+        shape.overrides = Object.fromEntries(
+            Object.entries(shape.overrides).map(([id, value]) => {
+                if (typeof value === 'object') {
+                    return [
+                        id,
+                        { variableId: variableIds.get(value.variableId) ?? value.variableId }
+                    ];
+                }
+                if (typeof value === 'string') {
+                    return [id, remapTemplate(value)];
+                }
+
+                return [id, value];
+            })
+        );
+    };
+
+    for (const component of copied.components ?? []) {
+        if (document.components[component.id]) {
+            continue;
+        }
+        for (const shape of Object.values(component.sourceShapes ?? {})) {
+            Object.entries(shape.bindings ?? {}).forEach(([key, id]) =>
+                followVariable(document, shape, key, variableIds.get(id))
+            );
+            if (shape.type === 'text' && shape.template !== undefined) {
+                writeText(shape, remapTemplate(shape.template), document.variables);
+            }
+            remapOverrides(shape);
+        }
+        document.components[component.id] = component;
+    }
     let order = topOrder(state);
     const present = Object.values(untracked(state.currentDocument).shapes);
     const taken = new Set(present.map((shape) => shape.name));
@@ -429,13 +592,22 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
             writeText(shape, remapTemplate(input.template), state.currentDocument.variables);
         }
 
+        remapOverrides(shape);
+        if (shape.type === 'instance') {
+            const source = componentSource(document, shape.componentId);
+
+            if (source) {
+                shape.bounds = instanceBox(shape, source);
+            }
+        }
+
         return shape;
     });
     const target = pasteTarget(context);
 
     // Centered on the target; without one, where they were copied.
     if (target) {
-        const boxes = pasted.map(getBoundingBox);
+        const boxes = pasted.map(getShapeBounds);
         const left = Math.min(...boxes.map((box) => box.topLeft.x));
         const top = Math.min(...boxes.map((box) => box.topLeft.y));
         const right = Math.max(...boxes.map((box) => box.bottomRight.x));
@@ -508,8 +680,21 @@ export const sendShapesToBack: ActionWithParam<string[]> = ({ state }, shapeIds)
     moveToEdge(state, shapeIds, 'back');
 };
 
-export const removeShape: ActionWithParam<string> = ({ state }, shapeId) => {
+export const removeShape: ActionWithParam<string> = ({ state, actions }, shapeId) => {
     if (isShapeLocked(state.currentDocument, shapeId)) {
+        return;
+    }
+
+    const lastSource = Object.values(state.currentDocument.components).some(
+        (component) =>
+            component.shapesIds.length === 1 &&
+            component.shapesIds[0] === shapeId &&
+            hasComponentInstances(state.currentDocument, component.id)
+    );
+
+    if (lastSource) {
+        actions.displayWarning('A component with instances must keep at least one shape.');
+
         return;
     }
 

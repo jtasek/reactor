@@ -1,6 +1,7 @@
 import {
     Box,
     Circle,
+    Component,
     Document,
     Ellipse,
     Group,
@@ -200,6 +201,8 @@ export function getBoundingBox(shape: Shape): Box {
         case 'rectangle':
         case 'image':
             return getRectBoundingBox(shape);
+        case 'instance':
+            return rectToBox({ x: shape.position.x, y: shape.position.y, width: 0, height: 0 });
         default:
             return assertNever(shape);
     }
@@ -271,6 +274,13 @@ export function shapeGeometry(shape: Shape): ShapeInput {
                 value: shape.value,
                 fontSize: shape.fontSize
             };
+        case 'instance':
+            return {
+                type: shape.type,
+                componentId: shape.componentId,
+                position: { ...shape.position },
+                overrides: { ...shape.overrides }
+            };
         default:
             return assertNever(shape);
     }
@@ -307,6 +317,7 @@ export function isStrokedShape(shape: Pick<Shape, 'type'>): boolean {
             return true;
         case 'image':
         case 'text':
+        case 'instance':
             return false;
         default:
             return assertNever(shape.type);
@@ -324,6 +335,7 @@ export function isClosedShape(shape: Pick<Shape, 'type'>): boolean {
         case 'line':
         case 'pen':
         case 'text':
+        case 'instance':
             return false;
         default:
             return assertNever(shape.type);
@@ -520,18 +532,19 @@ export function dot(u: Point, v: Point): number {
     return u.x * v.x + u.y * v.y;
 }
 
-/** Whether a group or layer containing `shapeId` matches `predicate`. */
+/** Whether a group, layer or component containing `shapeId` matches `predicate`. */
 function inContainer(
     document: Document,
     shapeId: string,
-    predicate: (container: Group | Layer) => boolean
+    predicate: (container: Group | Layer | Component) => boolean
 ): boolean {
-    const matches = (container: Group | Layer | undefined) =>
+    const matches = (container: Group | Layer | Component | undefined) =>
         Boolean(container && predicate(container) && container.shapesIds?.includes(shapeId));
 
     return (
         Boolean(document.groupsIds?.some((id) => matches(document.groups?.[id]))) ||
-        Boolean(document.layersIds?.some((id) => matches(document.layers?.[id])))
+        Boolean(document.layersIds?.some((id) => matches(document.layers?.[id]))) ||
+        Boolean(document.componentsIds?.some((id) => matches(document.components?.[id])))
     );
 }
 

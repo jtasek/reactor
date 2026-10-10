@@ -2,6 +2,7 @@ export { CommandBar } from './CommandBar';
 export { ConnectedCommandLine as CommandLine } from './CommandLine';
 export { ConnectedContextMenu as ContextMenu } from './ContextMenu';
 export { ConnectedControlPanel as ControlPanel } from './ControlPanel';
+export { Components } from './Components';
 export { ConnectedDataView as DataView } from './DataView';
 export { ConnectedDocumentInfo as DocumentInfo } from './DocumentInfo';
 export { DocumentListContainer as DocumentList } from './DocumentList';

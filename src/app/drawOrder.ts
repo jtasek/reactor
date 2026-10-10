@@ -18,6 +18,13 @@ export const ordersAbove = (order: string | null, count: number): string[] =>
 export const ordersBelow = (order: string | null, count: number): string[] =>
     generateNKeysBetween(null, order, count);
 
+/** Ascending orders between two neighbors, or at either end when null. */
+export const ordersBetween = (
+    below: string | null,
+    above: string | null,
+    count: number
+): string[] => generateNKeysBetween(below, above, count);
+
 /** Returns `value` when it is a draw order the library can build on, otherwise undefined. */
 export function validDrawOrder(value: unknown): string | undefined {
     if (typeof value !== 'string' || value.length > MAX_ORDER_LENGTH || !ORDER_KEY.test(value)) {
@@ -50,7 +57,7 @@ export const inDrawingOrder = (items: Record<string, Ordered>) =>
  * Gives every item that shares its order with the one drawn below it a new order
  * between the shared one and the next, so the stacking stays and orders are unique.
  */
-export function untie(items: Ordered[]): void {
+export function resolveDrawOrderTies(items: Ordered[]): void {
     const sorted = [...items].sort(byDrawingOrder);
     let start = 0;
 

@@ -3,6 +3,7 @@ import styles from './styles.css';
 import { PropertyField } from './PropertyField';
 import { PropertyGroup } from './PropertyGroup';
 import { AlignSection } from './AlignSection';
+import { InstanceProps } from './InstanceProps';
 import { groupRows, type PropertyRow, type PropertyValue } from 'src/app/properties';
 import type { Variable } from 'src/app/types';
 
@@ -67,6 +68,7 @@ export const Inspector: FC<Props> = ({
                     </tr>
                 </tfoot>
             </table>
+            <InstanceProps />
         </div>
     );
 };

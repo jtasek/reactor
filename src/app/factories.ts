@@ -263,7 +263,7 @@ export function createComponent(options: Partial<Component> = {}): Component {
         name: newComponentName(),
         selected: false,
         shapesIds: [],
-        visible: false,
+        visible: true,
         ...options
     };
 }

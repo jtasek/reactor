@@ -5,6 +5,7 @@ import {
     CommandLine,
     ContextMenu,
     ControlPanel,
+    Components,
     DataView,
     DockablePanel,
     DocumentInfo,
@@ -46,6 +47,9 @@ export const Designer: FC = () => (
             </DockablePanel>
             <DockablePanel id="controlPanel" title="Control Panel">
                 <ControlPanel />
+            </DockablePanel>
+            <DockablePanel id="components" title="Components" docking="vertical">
+                <Components />
             </DockablePanel>
             <DockablePanel id="inspector" title="Inspector" docking="vertical">
                 <Inspector />

@@ -18,24 +18,28 @@ const STROKE_HALF_WIDTH = 1;
 /** Extra reach of a press, in screen pixels, so thin strokes stay easy to hit. */
 const HIT_SLOP_PX = 4;
 
-const add = (point: Point, delta: Point): Point => ({ x: point.x + delta.x, y: point.y + delta.y });
+const translatePoint = (point: Point, delta: Point): Point => ({
+    x: point.x + delta.x,
+    y: point.y + delta.y
+});
 
 /** Moves a shape's geometry, and its measured bounds, by `delta` in place. */
 export function translateShape(shape: Shape, delta: Point): void {
     switch (shape.type) {
         case 'line':
-            shape.start = add(shape.start, delta);
-            shape.end = add(shape.end, delta);
+            shape.start = translatePoint(shape.start, delta);
+            shape.end = translatePoint(shape.end, delta);
             break;
         case 'pen':
-            shape.points = shape.points.map((point) => add(point, delta));
+            shape.points = shape.points.map((point) => translatePoint(point, delta));
             break;
         case 'rectangle':
         case 'image':
         case 'circle':
         case 'ellipse':
         case 'text':
-            shape.position = add(shape.position, delta);
+        case 'instance':
+            shape.position = translatePoint(shape.position, delta);
             break;
         default:
             assertNever(shape);
@@ -45,8 +49,8 @@ export function translateShape(shape: Shape, delta: Point): void {
     // shape immediately, without waiting for the next getBBox measurement.
     if (shape.bounds) {
         shape.bounds = {
-            topLeft: add(shape.bounds.topLeft, delta),
-            bottomRight: add(shape.bounds.bottomRight, delta),
+            topLeft: translatePoint(shape.bounds.topLeft, delta),
+            bottomRight: translatePoint(shape.bounds.bottomRight, delta),
             width: shape.bounds.width,
             height: shape.bounds.height
         };
@@ -70,13 +74,14 @@ export function placeShapeFrom(
     factor: number,
     delta: Point
 ): void {
-    const at = (point: Point) => add(scaleAbout(point, origin, factor), delta);
+    const scaleAndTranslatePoint = (point: Point) =>
+        translatePoint(scaleAbout(point, origin, factor), delta);
 
     switch (shape.type) {
         case 'rectangle':
         case 'image':
             if (original.type === shape.type) {
-                shape.position = at(original.position);
+                shape.position = scaleAndTranslatePoint(original.position);
                 shape.size = {
                     width: original.size.width * factor,
                     height: original.size.height * factor
@@ -93,34 +98,39 @@ export function placeShapeFrom(
             break;
         case 'circle':
             if (original.type === 'circle') {
-                shape.position = at(original.position);
+                shape.position = scaleAndTranslatePoint(original.position);
                 shape.radius = original.radius * factor;
             }
             break;
         case 'ellipse':
             if (original.type === 'ellipse') {
-                shape.position = at(original.position);
+                shape.position = scaleAndTranslatePoint(original.position);
                 shape.radius = { x: original.radius.x * factor, y: original.radius.y * factor };
             }
             break;
         case 'line':
             if (original.type === 'line') {
-                shape.start = at(original.start);
-                shape.end = at(original.end);
+                shape.start = scaleAndTranslatePoint(original.start);
+                shape.end = scaleAndTranslatePoint(original.end);
             }
             break;
         case 'pen':
             if (original.type === 'pen') {
-                shape.points = original.points.map(at);
+                shape.points = original.points.map(scaleAndTranslatePoint);
             }
             break;
         case 'text':
             if (original.type === 'text') {
-                shape.position = at(original.position);
+                shape.position = scaleAndTranslatePoint(original.position);
                 shape.fontSize = Math.max(
                     1,
                     (original.fontSize ?? DEFAULT_TEXT_FONT_SIZE) * factor
                 );
+            }
+            break;
+        case 'instance':
+            if (original.type === 'instance') {
+                shape.position = scaleAndTranslatePoint(original.position);
             }
             break;
         default:
@@ -134,8 +144,8 @@ export function placeShapeFrom(
     }
 
     {
-        const topLeft = at(original.bounds.topLeft);
-        const bottomRight = at(original.bounds.bottomRight);
+        const topLeft = scaleAndTranslatePoint(original.bounds.topLeft);
+        const bottomRight = scaleAndTranslatePoint(original.bounds.bottomRight);
 
         shape.bounds = {
             topLeft,
@@ -227,8 +237,8 @@ export function keepDrawnPlace(box: Box, oldCenter: Point, rotation: number): Bo
     const shift = { x: drawn.x - center.x, y: drawn.y - center.y };
 
     return {
-        topLeft: add(box.topLeft, shift),
-        bottomRight: add(box.bottomRight, shift),
+        topLeft: translatePoint(box.topLeft, shift),
+        bottomRight: translatePoint(box.bottomRight, shift),
         width: box.width,
         height: box.height
     };
@@ -333,6 +343,9 @@ export function resizeShapeFromHandle(
             }
             break;
 
+        case 'instance':
+            break;
+
         default:
             assertNever(shape);
     }
@@ -435,6 +448,7 @@ export function hitTestShape(shape: Shape, point: Point, tolerance: number): boo
         case 'rectangle':
         case 'image':
         case 'text':
+        case 'instance':
             return distanceToBox(local, bounds) <= tolerance;
         case 'circle':
             return getDistance(local, shape.position) <= shape.radius + tolerance;

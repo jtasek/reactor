@@ -12,6 +12,8 @@ import {
     BringToFrontCommand,
     CloneCommand,
     CopyCommand,
+    CreateComponentCommand,
+    DetachInstanceCommand,
     CutCommand,
     DeleteCommand,
     GroupCommand,
@@ -27,6 +29,8 @@ import {
     RemoveFromGroupCommand,
     ResetDocumentCommand,
     SendToBackCommand,
+    SelectComponentSourceCommand,
+    ResetComponentOverridesCommand,
     ShowAllCommand,
     UngroupCommand,
     UnlayerCommand,
@@ -40,6 +44,7 @@ import {
     CircleTool,
     EllipseTool,
     ImageTool,
+    InstanceTool,
     LineTool,
     MoveTool,
     PenTool,
@@ -56,6 +61,10 @@ function registerCommands() {
     registerCommand(MoveUpCommand);
     registerCommand(MoveDownCommand);
     registerCommand(CloneCommand);
+    registerCommand(CreateComponentCommand);
+    registerCommand(SelectComponentSourceCommand);
+    registerCommand(ResetComponentOverridesCommand);
+    registerCommand(DetachInstanceCommand);
     registerCommand(CopyCommand);
     registerCommand(CutCommand);
     registerCommand(PasteCommand);
@@ -91,6 +100,7 @@ function registerTools() {
     registerTool(CircleTool);
     registerTool(EllipseTool);
     registerTool(ImageTool);
+    registerTool(InstanceTool);
     registerTool(LineTool);
     registerTool(MoveTool);
     registerTool(PenTool);

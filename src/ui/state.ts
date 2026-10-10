@@ -6,6 +6,11 @@ export const state: UI = {
         name: 'Command Line',
         visible: false
     },
+    components: {
+        id: 'components',
+        name: 'Components',
+        visible: false
+    },
     contextMenu: {
         id: 'contextMenu',
         name: 'Context Menu',

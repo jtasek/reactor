@@ -12,6 +12,7 @@ export interface Tool extends Command {
 }
 export interface Tools {
     activeToolsIds: string[];
+    componentToPlace?: string;
     /** The image the image tool draws, once one is chosen. */
     imageToPlace?: ImageToPlace;
 }

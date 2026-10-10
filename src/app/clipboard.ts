@@ -1,11 +1,26 @@
-import type { Group, Shape, ShapeInput, Variable } from './types';
+import type {
+    Component,
+    Document,
+    Group,
+    InstanceShape,
+    Shape,
+    ShapeInput,
+    Variable
+} from './types';
 import { shapeGeometry, shapeStyle } from './utils';
-import { readCopiedGroup, readCopiedShape, readEntity } from './services/documentStorage';
+import { librarySnapshot } from './componentLibrary';
+import {
+    hydrateComponent,
+    readCopiedGroup,
+    readCopiedShape,
+    readEntity
+} from './services/documentStorage';
 import {
     bindableProperty,
     bindingHolds,
     renderTemplate,
     templateVariablesIds,
+    templateWithIds,
     variableValue
 } from './variables';
 
@@ -20,6 +35,7 @@ export interface Copied {
     shapes: ShapeInput[];
     groups: CopiedGroup[];
     variables: Variable[];
+    components?: Component[];
 }
 
 /** Marks clipboard text as shapes copied from the editor. */
@@ -46,6 +62,15 @@ const holdingTemplate = (shape: Shape, variables: Record<string, Variable>) =>
         ? shape.template
         : undefined;
 
+/** Store template references by id so a paste can remap renamed variables. */
+const copiedOverrides = (shape: InstanceShape, variables: Record<string, Variable>) =>
+    Object.fromEntries(
+        Object.entries(shape.overrides).map(([id, value]) => [
+            id,
+            typeof value === 'string' ? templateWithIds(value, variables) : value
+        ])
+    );
+
 /**
  * Copied shapes as clipboard text: what each draws, its name, description,
  * rotation, the properties that follow one of `variables` and a text's template,
@@ -55,8 +80,25 @@ const holdingTemplate = (shape: Shape, variables: Record<string, Variable>) =>
 export function writeClipboard(
     shapes: Shape[],
     groups: Group[] = [],
-    variables: Record<string, Variable> = {}
+    variables: Record<string, Variable> = {},
+    document?: Document
 ): string {
+    const components = new Map<string, Component>();
+
+    for (const shape of shapes) {
+        if (shape.type !== 'instance' || !document || components.has(shape.componentId)) {
+            continue;
+        }
+        const sources = librarySnapshot(document, shape.componentId, { components: {} });
+        sources?.forEach((source) => {
+            for (const member of Object.values(source.sourceShapes ?? {})) {
+                if (member.type === 'instance') {
+                    member.overrides = copiedOverrides(member, variables);
+                }
+            }
+            components.set(source.id, source);
+        });
+    }
     const positions = new Map(shapes.map((shape, index) => [shape.id, index]));
     const copiedGroups = groups
         .filter(
@@ -72,24 +114,50 @@ export function writeClipboard(
     const bindings = shapes.map((shape) => holdingBindings(shape, variables));
     const templates = shapes.map((shape) => holdingTemplate(shape, variables));
     const held = new Set<string>();
-
-    bindings.flat().forEach(([, variableId]) => {
+    const dependencyShapes = [
+        ...shapes,
+        ...[...components.values()].flatMap((component) =>
+            Object.values(component.sourceShapes ?? {})
+        )
+    ];
+    const holdVariable = (variableId: string) => {
         const variable = variables[variableId];
 
+        if (!variable) {
+            return;
+        }
         held.add(variableId);
-
         if (variable.type === 'text') {
             templateVariablesIds(variable.values.default, variables, held);
         }
-    });
-    templates.forEach(
-        (template) => template !== undefined && templateVariablesIds(template, variables, held)
-    );
+    };
+
+    for (const shape of dependencyShapes) {
+        holdingBindings(shape, variables).forEach(([, id]) => holdVariable(id));
+        const template = holdingTemplate(shape, variables);
+
+        if (template !== undefined) {
+            templateVariablesIds(template, variables, held);
+        }
+        if (shape.type !== 'instance') {
+            continue;
+        }
+        for (const override of Object.values(shape.overrides)) {
+            if (typeof override === 'object') {
+                holdVariable(override.variableId);
+            }
+            if (typeof override === 'string') {
+                templateVariablesIds(templateWithIds(override, variables), variables, held);
+            }
+        }
+    }
 
     return JSON.stringify({
         format: CLIPBOARD_FORMAT,
+        ...(components.size > 0 ? { components: [...components.values()] } : {}),
         shapes: shapes.map((shape, index) => ({
             ...shapeGeometry(shape),
+            ...(shape.type === 'instance' ? { overrides: copiedOverrides(shape, variables) } : {}),
             ...shapeStyle(shape),
             name: shape.name,
             rotation: shape.rotation,
@@ -149,12 +217,38 @@ export function readClipboard(text: string): Copied {
             return nothing;
         }
 
+        const componentsData = 'components' in data ? data.components : [];
+
+        if (!Array.isArray(componentsData)) {
+            return nothing;
+        }
+        const components = componentsData.map((component) =>
+            hydrateComponent(readEntity('components', component))
+        );
+        const componentIds = new Set(components.map((component) => component.id));
+
+        if (
+            components.some((component) =>
+                component.shapesIds.some((id) => {
+                    const shape = component.sourceShapes?.[id];
+
+                    return (
+                        !shape ||
+                        (shape.type === 'instance' && !componentIds.has(shape.componentId))
+                    );
+                })
+            )
+        ) {
+            return nothing;
+        }
+
         const taken = new Set<number>();
 
         return {
             shapes,
             groups: groupsData.map((group) => readCopiedGroup(group, shapes.length, taken)),
-            variables
+            variables,
+            ...(components.length > 0 ? { components } : {})
         };
     } catch {
         return nothing;
