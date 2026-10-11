@@ -32,7 +32,6 @@ declare namespace StylesCssNamespace {
     instanceTitle: string;
     instanceValue: string;
     note: string;
-    "property-rotation": string;
     sourceChildHeading: string;
     sourceLink: string;
     variablePicker: string;

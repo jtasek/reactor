@@ -46,6 +46,9 @@ test('places and reloads a live component instance', async ({ page }) => {
     const layoutWidth = (await layout.boundingBox())?.width ?? 0;
     const tableWidth = (await layout.locator('xpath=ancestor::table[1]').boundingBox())?.width ?? 0;
     expect(layoutWidth).toBeGreaterThan(tableWidth * 0.9);
+    const rotationWidth =
+        (await layout.locator('tr[data-property="rotation"]').boundingBox())?.width ?? 0;
+    expect(rotationWidth).toBeGreaterThan(layoutWidth * 0.9);
     await expect(page.getByText('Selected', { exact: true })).toHaveCount(0);
 
     await expect(shapes(page)).toHaveCount(2);

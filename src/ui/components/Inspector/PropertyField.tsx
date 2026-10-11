@@ -114,7 +114,7 @@ export const PropertyField: FC<Props> = ({
     };
 
     return (
-        <tr>
+        <tr data-property={property.key}>
             <td>
                 <label htmlFor={id}>{property.label}</label>
                 {exposure && (

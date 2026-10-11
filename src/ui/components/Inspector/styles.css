@@ -602,11 +602,11 @@
     padding: 5px 8px;
 }
 
-.instanceInspector > table > tbody:first-of-type > tr:has(#property-rotation) {
+.instanceInspector > table > tbody:first-of-type > tr[data-property='rotation'] {
     grid-column: 1 / -1;
 }
 
-.instanceInspector > table > tbody:first-of-type > tr:has(#property-rotation) > td:first-child {
+.instanceInspector > table > tbody:first-of-type > tr[data-property='rotation'] > td:first-child {
     flex-basis: 62px;
 }
 
