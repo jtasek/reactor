@@ -101,6 +101,13 @@ export const useComponents = () => {
 
 export const useEditingComponentId = () => useAppState((state) => state.enteredComponentId);
 
+export const useEditingComponentName = () =>
+    useAppState((state) =>
+        state.enteredComponentId
+            ? state.currentDocument.components[state.enteredComponentId]?.name
+            : undefined
+    );
+
 export const useComponent = (componentId: string) =>
     useAppState((state) => state.currentDocument.components[componentId]);
 

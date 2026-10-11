@@ -525,6 +525,21 @@ export const editComponentSource: ActionWithParam<string> = ({ state, actions },
     if (!component || component.library) {
         return;
     }
+    if (
+        state.enteredComponentId === null ||
+        state.componentEditingReturn?.documentId !== state.currentDocumentId
+    ) {
+        const document = state.currentDocument;
+        state.componentEditingReturn = {
+            documentId: document.id,
+            shapeIds: document.selectedShapesIds.filter((id) => {
+                const shape = document.shapes[id];
+
+                return shape.type === 'instance' && shape.componentId === componentId;
+            }),
+            camera: { position: { ...document.camera.position }, scale: document.camera.scale }
+        };
+    }
     actions.unselectShapes();
     state.enteredGroupId = null;
     state.enteredComponentId = componentId;
@@ -536,6 +551,23 @@ export const leaveComponentSource: Action = ({ state, actions }) => {
 
     if (!componentId) {
         return;
+    }
+    const previous = state.componentEditingReturn;
+    state.componentEditingReturn = null;
+    if (previous?.documentId === state.currentDocumentId) {
+        actions.unselectShapes();
+        state.currentDocument.camera = {
+            position: { ...previous.camera.position },
+            scale: previous.camera.scale
+        };
+        const shapeIds = previous.shapeIds.filter(
+            (id) => state.currentDocument.shapes[id] && isShapeVisible(state.currentDocument, id)
+        );
+        if (shapeIds.length > 0) {
+            shapeIds.forEach((id) => actions.selectShape(id));
+
+            return;
+        }
     }
     if (state.currentDocument.components[componentId]?.sourceOnly) {
         actions.unselectShapes();
@@ -563,6 +595,9 @@ export const selectComponentChild: ActionWithParam<{
 
     if (!component?.shapesIds.includes(shapeId) || !state.currentDocument.shapes[shapeId]) {
         return;
+    }
+    if (state.enteredComponentId !== componentId) {
+        actions.editComponentSource(componentId);
     }
     actions.unselectShapes();
     actions.selectShape(shapeId);

@@ -1,5 +1,5 @@
 import React, { FC, ReactNode } from 'react';
-import { useActions, useAppState, useSourceSelected } from 'src/app/hooks';
+import { useActions, useAppState, useEditingComponentId, useSourceSelected } from 'src/app/hooks';
 import { canAddShapesToComponent } from 'src/app/actions/components';
 import { Icon } from '../Icon';
 import { hideAction, lockAction } from '../ItemMenu';
@@ -15,6 +15,7 @@ interface Props {
 export const SourceItem: FC<Props> = ({ componentId, shapesIds, children }) => {
     const component = useAppState((state) => state.currentDocument.components[componentId]);
     const selected = useSourceSelected(componentId);
+    const editing = useEditingComponentId() === componentId;
     const selectedShapesIds = useAppState((state) => state.currentDocument.selectedShapesIds);
     const canAddSelection = useAppState((state) =>
         canAddShapesToComponent(state.currentDocument, componentId, selectedShapesIds)
@@ -39,6 +40,7 @@ export const SourceItem: FC<Props> = ({ componentId, shapesIds, children }) => {
             icon={<Icon icon={{ group: 'reactor', name: 'component', size: 16 }} />}
             collapseId={shapesIds.length > 0 ? `component:${componentId}` : undefined}
             selected={selected}
+            active={editing}
             visible={component.visible}
             onClick={() => selectComponentSource(componentId)}
             onDoubleClick={() => editComponentSource(componentId)}

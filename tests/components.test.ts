@@ -100,6 +100,79 @@ it('replaces selected artwork with a first instance in the same layer', () => {
     expect(isShapeVisible(restored, sourceId)).toBe(false);
 });
 
+it('returns to the original instance and camera after editing different source children', () => {
+    const { store } = createTestStore();
+    store.actions.addShape({
+        type: 'rectangle',
+        position: { x: 10, y: 20 },
+        size: { width: 30, height: 40 }
+    });
+    store.actions.createComponentFromSelection();
+    const document = store.state.currentDocument;
+    const componentId = document.componentsIds[0];
+    store.actions.insertComponentAt({ componentId, position: { x: 200, y: 300 } });
+    const instanceId = document.selectedShapesIds[0];
+    store.actions.tools.panCamera({ dx: 30, dy: -40 });
+    store.actions.tools.zoom({ scale: 1.5 });
+    const camera = { position: { ...document.camera.position }, scale: document.camera.scale };
+
+    store.actions.selectComponentSource(componentId);
+    store.actions.selectComponentChild({
+        componentId,
+        shapeId: document.components[componentId].shapesIds[0]
+    });
+    store.actions.drawShape({
+        type: 'rectangle',
+        position: { x: 50, y: 20 },
+        size: { width: 20, height: 20 }
+    });
+    store.actions.selectComponentSource(componentId);
+    store.actions.tools.panCamera({ dx: 100, dy: 200 });
+    store.actions.tools.zoom({ scale: 2 });
+    store.actions.leaveComponentSource();
+
+    expect(document.selectedShapesIds).toEqual([instanceId]);
+    expect(document.camera).toEqual(camera);
+    expect(store.state.enteredComponentId).toBeNull();
+    expect(store.state.componentEditingReturn).toBeNull();
+});
+
+it('keeps the original canvas context when switching between component sources', () => {
+    const { store } = createTestStore();
+    const document = store.state.currentDocument;
+    for (const x of [10, 200]) {
+        store.actions.drawShape({
+            type: 'rectangle',
+            position: { x, y: 20 },
+            size: { width: 30, height: 40 }
+        });
+        store.actions.createComponentFromSelection();
+    }
+    const [firstComponentId, secondComponentId] = document.componentsIds;
+    store.actions.insertComponentAt({
+        componentId: firstComponentId,
+        position: { x: 400, y: 300 }
+    });
+    const instanceId = document.selectedShapesIds[0];
+    const camera = { position: { ...document.camera.position }, scale: document.camera.scale };
+
+    store.actions.selectComponentSource(firstComponentId);
+    store.actions.tools.panCamera({ dx: 100, dy: 200 });
+    store.actions.tools.zoom({ scale: 2 });
+    store.actions.selectComponentSource(secondComponentId);
+    store.actions.selectComponentChild({
+        componentId: secondComponentId,
+        shapeId: document.components[secondComponentId].shapesIds[0]
+    });
+    store.actions.tools.panCamera({ dx: 50, dy: 60 });
+    store.actions.leaveComponentSource();
+
+    expect(document.selectedShapesIds).toEqual([instanceId]);
+    expect(document.camera).toEqual(camera);
+    expect(store.state.enteredComponentId).toBeNull();
+    expect(store.state.componentEditingReturn).toBeNull();
+});
+
 it('adds a newly drawn shape to the focused definition', () => {
     const { store } = createTestStore();
     store.actions.addShape({

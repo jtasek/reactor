@@ -41,6 +41,25 @@ function storeWithRect(selected: boolean) {
 }
 
 describe('keyboard shortcuts', () => {
+    it('leaves component editing on Escape only while idle and not typing', () => {
+        const store = storeWithRect(true);
+        store.actions.createComponentFromSelection();
+        const componentId = store.state.currentDocument.componentsIds[0];
+        store.actions.selectComponentSource(componentId);
+        store.actions.events.startTyping();
+        store.actions.events.pressShortcut(press('Escape'));
+        expect(store.state.enteredComponentId).toBe(componentId);
+
+        store.actions.events.endTyping();
+        store.actions.events.beginGesture({ pointerId: 1, position: { x: 100, y: 100 } });
+        store.actions.events.pressShortcut(press('Escape'));
+        expect(store.state.enteredComponentId).toBe(componentId);
+
+        store.actions.events.cancelGesture();
+        store.actions.events.pressShortcut(press('Escape'));
+        expect(store.state.enteredComponentId).toBeNull();
+    });
+
     it('gives every tool and command its own binding', () => {
         const bindings = everything.flatMap(({ shortcut }) =>
             (shortcut ?? '')

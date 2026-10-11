@@ -19,7 +19,6 @@ declare namespace StylesCssNamespace {
     instanceColor: string;
     instanceEmpty: string;
     instanceFields: string;
-    instanceFooter: string;
     instanceIdentity: string;
     instanceInspector: string;
     instanceName: string;

@@ -209,8 +209,8 @@ test('the tree separates scene layers from component sources and focuses source 
     await expect(components.getByRole('button', { name: 'Background', exact: true })).toBeVisible();
 
     await components.getByRole('button', { name: 'Card', exact: true }).dblclick();
-    await expect(explorer.getByText('Editing Card')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Component editing' })).toContainText('Card');
     await expect(page.locator('svg#surface #shapes > g')).toHaveCount(2);
-    await explorer.getByRole('button', { name: 'Done' }).click();
+    await page.getByRole('button', { name: 'Back to canvas' }).click();
     await expect(page.locator('svg#surface #shapes > g')).toHaveCount(7);
 });

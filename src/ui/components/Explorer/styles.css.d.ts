@@ -3,7 +3,6 @@ declare namespace StylesCssNamespace {
     active: string;
     component: string;
     dropTarget: string;
-    editing: string;
     empty: string;
     explorer: string;
     grip: string;

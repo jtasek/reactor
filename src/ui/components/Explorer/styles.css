@@ -66,27 +66,6 @@
     padding-left: 0;
 }
 
-.editing {
-    align-items: center;
-    color: var(--component-color);
-    display: flex;
-    font-size: 0.75rem;
-    justify-content: space-between;
-    padding: 4px 10px;
-}
-
-.editing button {
-    background: none;
-    border: 0;
-    color: var(--component-color);
-    cursor: pointer;
-    font: inherit;
-}
-
-.editing button:focus-visible {
-    outline: var(--focus-ring-width) solid var(--focus-ring-color);
-}
-
 .empty {
     color: var(--text-secondary-color);
     font-size: 0.75rem;
@@ -234,6 +213,10 @@
 
 .component.selected > .row {
     background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.component.active > .row {
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 .component.selected > .row > .name {

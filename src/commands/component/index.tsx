@@ -1,4 +1,19 @@
 import type { Command } from 'src/app/types';
+import { takesEditorInput } from 'src/events/input';
+
+export const LeaveComponentSourceCommand: Command = {
+    id: 'leave-component-source',
+    name: 'Back to canvas',
+    category: 'groups',
+    shortcut: 'escape',
+    places: [],
+    canExecute: ({ state }) =>
+        state.enteredComponentId !== null &&
+        takesEditorInput(state) &&
+        state.events.pointer.gesture.kind === 'idle' &&
+        !state.ui.contextMenu.visible,
+    execute: ({ actions }) => actions.leaveComponentSource()
+};
 
 export const CreateComponentCommand: Command = {
     id: 'create-component',

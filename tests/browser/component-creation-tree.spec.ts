@@ -46,12 +46,14 @@ test('creating a component leaves an instance in Layers and opens its source in 
     await expect(page.locator('svg#surface #shapes > g')).toHaveCount(1);
 
     await components.getByRole('button', { name: 'component-1', exact: true }).click();
-    await expect(explorer.getByText('Editing component-1')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Component editing' })).toContainText(
+        'component-1'
+    );
     await expect(page.locator('svg#surface #shapes > g')).toHaveCount(1);
     await page.keyboard.press('ControlOrMeta+c');
     const copied = await page.evaluate(() => navigator.clipboard.readText());
     expect(JSON.parse(copied)).toMatchObject({ shapes: [{ type: 'instance' }] });
-    await explorer.getByRole('button', { name: 'Done' }).click();
+    await page.getByRole('button', { name: 'Back to canvas' }).click();
     await expect(layers.getByRole('button', { name: 'component-1', exact: true })).toHaveAttribute(
         'aria-pressed',
         'true'
