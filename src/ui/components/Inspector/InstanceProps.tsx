@@ -21,7 +21,10 @@ export const InstanceProps: FC<{ nameField?: ReactNode }> = ({ nameField }) => {
     return (
         <section className={styles.instanceProps} aria-label="Component properties">
             <div className={styles.instanceIdentity}>
-                {nameField}
+                <div className={styles.instanceTitle}>
+                    <Icon icon={{ group: 'reactor', name: 'component', size: 20 }} />
+                    {nameField}
+                </div>
                 <button
                     type="button"
                     className={styles.sourceLink}
@@ -36,7 +39,10 @@ export const InstanceProps: FC<{ nameField?: ReactNode }> = ({ nameField }) => {
                 <span>{changedCount ? `${changedCount} changed` : 'All from source'}</span>
             </div>
             {data.rows.length === 0 && (
-                <p>Select a source shape to make its properties editable in instances.</p>
+                <p className={styles.instanceEmpty}>
+                    No editable properties yet. Edit the component and select a shape to expose its
+                    fields.
+                </p>
             )}
             {children.map(([shapeId, shapeName]) => (
                 <div className={styles.instanceChild} key={shapeId}>

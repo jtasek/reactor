@@ -28,6 +28,29 @@ test('places and reloads a live component instance', async ({ page }) => {
     await pointer(page, 'pointerdown', { x: 250, y: 250 });
     await pointer(page, 'pointerup', { x: 250, y: 250 });
 
+    const inspector = page.getByRole('region', { name: 'Component properties' });
+    const empty = inspector.getByText('No editable properties yet.');
+    await expect(empty).toBeVisible();
+    const regionBox = (await inspector.boundingBox())!;
+    const emptyBox = (await empty.boundingBox())!;
+    expect(emptyBox.x).toBeGreaterThan(regionBox.x);
+    expect(emptyBox.x + emptyBox.width).toBeLessThan(regionBox.x + regionBox.width);
+    const nameBox = (await inspector.getByRole('textbox', { name: 'Name' }).boundingBox())!;
+    const actionBox = (await inspector
+        .getByRole('button', { name: 'Edit component' })
+        .boundingBox())!;
+    expect(Math.abs(nameBox.x - actionBox.x)).toBeLessThan(1);
+    const layout = page
+        .getByRole('columnheader', { name: 'Layout' })
+        .locator('xpath=ancestor::tbody[1]');
+    const layoutWidth = (await layout.boundingBox())?.width ?? 0;
+    const tableWidth = (await layout.locator('xpath=ancestor::table[1]').boundingBox())?.width ?? 0;
+    expect(layoutWidth).toBeGreaterThan(tableWidth * 0.9);
+    const rotationWidth =
+        (await layout.locator('tr[data-property="rotation"]').boundingBox())?.width ?? 0;
+    expect(rotationWidth).toBeGreaterThan(layoutWidth * 0.9);
+    await expect(page.getByText('Selected', { exact: true })).toHaveCount(0);
+
     await expect(shapes(page)).toHaveCount(2);
     await expect(shapes(page).last().locator('rect[data-cy]')).toBeVisible();
     const before = await shapes(page).last().locator('rect[data-cy]').boundingBox();
@@ -43,6 +66,88 @@ test('places and reloads a live component instance', async ({ page }) => {
     await page.reload();
     await expect(shapes(page)).toHaveCount(2);
     await expect(shapes(page).last().locator('rect[data-cy]')).toBeVisible();
+});
+
+test('instance fields stay usable at default and minimum panel widths', async ({ page }) => {
+    const rectangle = createShape({
+        type: 'rectangle',
+        name: 'Source',
+        order: 'a0',
+        position: { x: 100, y: 100 },
+        size: { width: 50, height: 50 }
+    });
+    const component = createComponent({ shapesIds: [rectangle.id] });
+    const instance = createShape({
+        type: 'instance',
+        name: 'Instance',
+        overrides: {},
+        order: 'a1',
+        componentId: component.id,
+        position: { x: 300, y: 300 },
+        bindings: { visible: 'show', locked: 'lock' }
+    });
+    const document = createDocument({
+        shapes: { [rectangle.id]: rectangle, [instance.id]: instance },
+        components: { [component.id]: component },
+        variables: {
+            show: { id: 'show', name: 'Show details', type: 'boolean', values: { default: true } },
+            lock: {
+                id: 'lock',
+                name: 'Prevent accidental edits',
+                type: 'boolean',
+                values: { default: false }
+            }
+        }
+    });
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await openEditor(page, ['Inspector']);
+    await pointer(page, 'pointerdown', { x: 325, y: 325 });
+    await pointer(page, 'pointerup', { x: 325, y: 325 });
+
+    const panel = page.locator('[data-panel="inspector"]');
+    const resize = page.getByRole('button', { name: /^Resize Inspector/ }).last();
+    const x = panel.getByRole('spinbutton', { name: 'X', exact: true });
+    const y = panel.getByRole('spinbutton', { name: 'Y', exact: true });
+    const show = panel.getByRole('button', { name: 'Stop using Show details for Visible' });
+    const lock = panel.getByRole('button', {
+        name: 'Stop using Prevent accidental edits for Locked'
+    });
+
+    for (const width of [260, 160]) {
+        await expect.poll(async () => (await panel.boundingBox())!.width).toBe(width);
+        const panelBox = (await panel.boundingBox())!;
+        for (const control of [
+            show,
+            lock,
+            panel.getByLabel('Visible', { exact: true }),
+            panel.getByLabel('Locked', { exact: true })
+        ]) {
+            const box = (await control.boundingBox())!;
+            expect(box.width).toBeGreaterThan(0);
+            expect(box.x).toBeGreaterThanOrEqual(panelBox.x);
+            expect(box.x + box.width).toBeLessThanOrEqual(panelBox.x + panelBox.width);
+        }
+        const xBox = (await x.boundingBox())!;
+        const yBox = (await y.boundingBox())!;
+        expect(xBox.width).toBeGreaterThan(50);
+        if (width === 160) {
+            expect(yBox.y).toBeGreaterThan(xBox.y);
+            continue;
+        }
+        expect(xBox.y).toBe(yBox.y);
+        await resize.focus();
+        for (let step = 0; step < 10; step += 1) {
+            await resize.press('ArrowLeft');
+        }
+    }
+    await lock.click();
+    await show.click();
+    await expect(panel.getByRole('checkbox', { name: 'Visible', exact: true })).toBeChecked();
+    await expect(panel.getByRole('checkbox', { name: 'Locked', exact: true })).not.toBeChecked();
 });
 
 test('an exposed fill changes one instance without changing its source', async ({ page }) => {

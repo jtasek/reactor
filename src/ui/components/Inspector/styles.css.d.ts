@@ -17,7 +17,9 @@ declare namespace StylesCssNamespace {
     inspector: string;
     instanceChild: string;
     instanceColor: string;
+    instanceEmpty: string;
     instanceFields: string;
+    instanceFooter: string;
     instanceIdentity: string;
     instanceInspector: string;
     instanceName: string;
@@ -27,6 +29,7 @@ declare namespace StylesCssNamespace {
     instanceRow: string;
     instanceSectionHeading: string;
     instanceStatus: string;
+    instanceTitle: string;
     instanceValue: string;
     note: string;
     sourceChildHeading: string;

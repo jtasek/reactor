@@ -109,7 +109,17 @@ export const Inspector: FC<Props> = ({
 
     const instance = componentContext?.kind === 'instance';
     const nameRow = instance ? rows.find((row) => row.property.key === 'name') : undefined;
-    const shownRows = instance ? rows.filter((row) => row.property.key !== 'name') : rows;
+    const statusRows = instance
+        ? rows.filter((row) => row.property.key === 'visible' || row.property.key === 'locked')
+        : [];
+    const shownRows = instance
+        ? rows.filter(
+              (row) =>
+                  row.property.key !== 'name' &&
+                  row.property.key !== 'visible' &&
+                  row.property.key !== 'locked'
+          )
+        : rows;
 
     return (
         <div className={`${styles.inspector} ${instance ? styles.instanceInspector : ''}`}>
@@ -140,13 +150,22 @@ export const Inspector: FC<Props> = ({
                         {grouped.map(propertyField)}
                     </PropertyGroup>
                 ))}
-                <tfoot>
-                    <tr>
-                        <td>Selected</td>
-                        <td>{shapeIds.length}</td>
-                    </tr>
-                </tfoot>
+                {(!instance || shapeIds.length > 1) && (
+                    <tfoot>
+                        <tr>
+                            <td>Selected</td>
+                            <td>{shapeIds.length}</td>
+                        </tr>
+                    </tfoot>
+                )}
             </table>
+            {statusRows.length > 0 && (
+                <div className={styles.instanceFooter}>
+                    <table>
+                        <tbody>{statusRows.map(propertyField)}</tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 };

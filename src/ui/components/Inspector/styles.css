@@ -458,25 +458,58 @@
 
 .instanceIdentity {
     display: grid;
-    gap: 2px;
+    gap: 8px;
     padding: 14px var(--inspector-inset) 12px;
 }
 
-.instanceInspector .instanceName {
-    table-layout: auto;
-    width: 100%;
+.instanceTitle {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    min-width: 0;
 }
 
-.instanceInspector .instanceName td:first-child {
-    color: var(--text-secondary-color);
-    font-size: 0.75rem;
-    width: 43px;
+.instanceTitle > svg {
+    color: var(--component-color);
+    flex: 0 0 auto;
+}
+
+.instanceInspector .instanceName {
+    display: block;
+    flex: 1;
+    min-width: 0;
+}
+
+.instanceInspector .instanceName tbody,
+.instanceInspector .instanceName tr {
+    align-items: center;
+    display: flex;
+    flex-direction: row-reverse;
+    width: 100%;
 }
 
 .instanceInspector .instanceName td {
     background: transparent;
     border: 0;
     padding: 0;
+}
+
+.instanceInspector .instanceName td:first-child {
+    overflow: visible;
+}
+
+.instanceInspector .instanceName td:last-child {
+    flex: 1;
+    min-width: 0;
+}
+
+.instanceInspector .instanceName label {
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
 }
 
 .instanceInspector .instanceName input {
@@ -488,10 +521,20 @@
     padding-left: 0;
 }
 
+.instanceInspector .variablePicker:disabled {
+    display: none;
+}
+
+.instanceInspector .instanceName .variablePicker {
+    float: none;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
 .instanceInspector .sourceLink {
     color: var(--component-color);
     font-size: 0.75rem;
-    margin-top: 2px;
+    margin-left: 28px;
 }
 
 .instanceSectionHeading {
@@ -523,9 +566,131 @@
 }
 
 .instanceFields {
-    background: var(--panel-content-background);
+    background: var(--control-background);
     border-radius: var(--radius-md);
     padding: 0 9px;
+}
+
+.instanceProps .instanceEmpty {
+    background: var(--control-background);
+    border-radius: var(--radius-md);
+    margin: 0 var(--inspector-inset) 12px;
+    padding: 10px;
+}
+
+.instanceInspector {
+    container-type: inline-size;
+}
+
+.instanceInspector > table {
+    display: block;
+}
+
+.instanceInspector > table > tbody:first-of-type {
+    display: grid;
+    gap: 6px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+}
+
+/* Keep room for a numeric value beside each label in a narrow panel. */
+@container (width < 230px) {
+    .instanceInspector > table > tbody:first-of-type {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.instanceInspector > table > tbody:first-of-type > tr:first-child {
+    grid-column: 1 / -1;
+}
+
+.instanceInspector > table > tbody:first-of-type > tr:not(:first-child) {
+    align-items: center;
+    background: var(--control-background);
+    border-radius: var(--radius-md);
+    display: flex;
+    min-width: 0;
+    padding: 5px 8px;
+}
+
+.instanceInspector > table > tbody:first-of-type > tr[data-property='rotation'] {
+    grid-column: 1 / -1;
+}
+
+.instanceInspector > table > tbody:first-of-type > tr[data-property='rotation'] > td:first-child {
+    flex-basis: 62px;
+}
+
+.instanceInspector > table > tbody:first-of-type > tr > td {
+    background: transparent;
+    border: 0;
+    padding: 0;
+}
+
+.instanceInspector > table > tbody:first-of-type > tr > td:first-child {
+    color: var(--text-secondary-color);
+    flex: 0 0 42px;
+    font-size: 0.75rem;
+    line-height: var(--field-height);
+    overflow: visible;
+    white-space: nowrap;
+}
+
+.instanceInspector > table > tbody:first-of-type > tr > td:last-child {
+    flex: 1;
+    min-height: var(--field-height);
+    min-width: 0;
+}
+
+.instanceInspector > table > tbody:first-of-type input[type='text'],
+.instanceInspector > table > tbody:first-of-type input[type='number'] {
+    background: transparent;
+    padding: 0;
+}
+
+.instanceFooter {
+    border-top: 1px solid var(--hairline-color);
+    margin: 12px calc(-1 * var(--inspector-inset)) calc(-1 * var(--inspector-inset));
+    padding: 10px var(--inspector-inset);
+}
+
+.instanceFooter tbody {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.instanceFooter tr {
+    align-items: center;
+    display: flex;
+    flex-direction: row-reverse;
+    gap: 5px;
+    max-width: 100%;
+}
+
+.instanceInspector .instanceFooter td {
+    background: transparent;
+    border: 0;
+    padding: 0;
+}
+
+.instanceInspector .instanceFooter td:first-child {
+    flex-shrink: 0;
+    overflow: visible;
+}
+
+.instanceInspector .instanceFooter td:last-child {
+    display: flex;
+    min-width: 0;
+}
+
+.instanceFooter .bound {
+    max-width: none;
+    min-width: 0;
+}
+
+.instanceFooter .bound + button {
+    flex-shrink: 0;
 }
 
 .instanceRow {
