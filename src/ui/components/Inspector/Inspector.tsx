@@ -8,12 +8,14 @@ import { ComponentDetails, SourceChildHeading } from './ComponentDetails';
 import { InspectorHeader } from './InspectorHeader';
 import { useComponentExposure, useSelectedComponentContext } from 'src/app/componentHooks';
 import { useActions } from 'src/app/hooks';
+import type { SelectionIdentity } from '../selectionIdentity';
 import { groupRows, type PropertyRow, type PropertyValue } from 'src/app/properties';
 import type { Variable } from 'src/app/types';
 
 export interface Props {
     rows: PropertyRow[];
     shapeIds: string[];
+    identity: SelectionIdentity | null;
     onChange: (shapeIds: string[], key: string, value: PropertyValue) => void;
     variables: Variable[];
     /** The variable every shape follows for a property, by its key. */
@@ -31,6 +33,7 @@ export interface Props {
 export const Inspector: FC<Props> = ({
     rows,
     shapeIds,
+    identity,
     onChange,
     variables,
     bound,
@@ -96,14 +99,29 @@ export const Inspector: FC<Props> = ({
     if (componentContext?.kind === 'source') {
         return (
             <div key={`source-${componentContext.componentId}`} className={styles.inspector}>
-                <InspectorHeader source componentId={componentContext.componentId} />
+                <InspectorHeader
+                    source
+                    componentId={componentContext.componentId}
+                    objectType="component"
+                />
                 <ComponentDetails componentId={componentContext.componentId} />
             </div>
         );
     }
 
     if (shapeIds.length === 0) {
-        return <div className={styles.inspector}>No shapes selected</div>;
+        if (!identity) {
+            return <div className={styles.inspector}>No shapes selected</div>;
+        }
+
+        return (
+            <div className={styles.inspector}>
+                <InspectorHeader
+                    objectType={identity.type}
+                    nameField={<strong>{identity.name}</strong>}
+                />
+            </div>
+        );
     }
 
     const instance = componentContext?.kind === 'instance';
@@ -111,8 +129,21 @@ export const Inspector: FC<Props> = ({
     const visibleRow = rows.find((row) => row.property.key === 'visible');
     const lockedRow = rows.find((row) => row.property.key === 'locked');
     const shownRows = rows.filter(
-        (row) => !['name', 'visible', 'locked'].includes(row.property.key)
+        (row) =>
+            !['visible', 'locked'].includes(row.property.key) &&
+            (row.property.key !== 'name' || shapeIds.length > 1)
     );
+    let nameField: React.ReactNode = null;
+
+    if (identity?.type === 'group') {
+        nameField = <strong>{identity.name}</strong>;
+    } else if (nameRow && shapeIds.length === 1) {
+        nameField = (
+            <table className={styles.headerName}>
+                <tbody>{propertyField(nameRow)}</tbody>
+            </table>
+        );
+    }
 
     return (
         <div
@@ -120,14 +151,9 @@ export const Inspector: FC<Props> = ({
             className={`${styles.inspector} ${instance ? styles.instanceInspector : ''}`}
         >
             <InspectorHeader
-                nameField={
-                    nameRow && (
-                        <table className={styles.headerName}>
-                            <tbody>{propertyField(nameRow)}</tbody>
-                        </table>
-                    )
-                }
-                count={shapeIds.length}
+                objectType={identity?.type}
+                nameField={nameField}
+                count={identity?.type === 'group' ? 1 : shapeIds.length}
                 componentId={componentContext?.componentId}
                 shapeIds={shapeIds}
                 visibleRow={visibleRow}

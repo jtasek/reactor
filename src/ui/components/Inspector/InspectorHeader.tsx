@@ -3,12 +3,14 @@ import { useActions, useComponent, useCurrentDocument } from 'src/app/hooks';
 import type { PropertyRow, PropertyValue } from 'src/app/properties';
 import type { Variable } from 'src/app/types';
 import { Icon } from '../Icon';
+import { ObjectTypeSymbol, type ObjectType } from '../ObjectTypeSymbol';
 import styles from './styles.css';
 
 interface Props {
     nameField?: ReactNode;
     count?: number;
     componentId?: string;
+    objectType?: ObjectType;
     source?: boolean;
     shapeIds?: string[];
     visibleRow?: PropertyRow;
@@ -27,6 +29,7 @@ export const InspectorHeader: FC<Props> = ({
     nameField,
     count,
     componentId,
+    objectType,
     source,
     shapeIds = [],
     visibleRow,
@@ -82,7 +85,7 @@ export const InspectorHeader: FC<Props> = ({
     return (
         <header className={styles.inspectorHeader}>
             <div className={styles.headerIdentity}>
-                {componentId && <Icon icon={{ group: 'reactor', name: 'component', size: 20 }} />}
+                {objectType && <ObjectTypeSymbol type={objectType} size={20} />}
                 {source && component ? (
                     <input
                         aria-label="Name"
@@ -109,26 +112,26 @@ export const InspectorHeader: FC<Props> = ({
                 )}
             </div>
             <div className={styles.headerActions}>
-                {visible !== undefined && (
+                {(source ? visible !== undefined : Boolean(visibleRow)) && (
                     <button
                         type="button"
                         className={styles.iconButton}
-                        aria-label={visible === false ? 'Show' : 'Hide'}
+                        aria-label={visible === true ? 'Hide' : 'Show'}
                         aria-pressed={visible === true}
-                        title={visible === false ? 'Show' : 'Hide'}
+                        title={visible === true ? 'Hide' : 'Show'}
                         disabled={!canChangeVisible || Boolean(bound.visible)}
                         onClick={() => changeState('visible', visible !== true)}
                     >
                         <Icon
                             icon={{
                                 group: 'action',
-                                name: visible === false ? 'visibility_off' : 'visibility',
+                                name: visible === true ? 'visibility' : 'visibility_off',
                                 size: 16
                             }}
                         />
                     </button>
                 )}
-                {locked !== undefined && (
+                {(source ? locked !== undefined : Boolean(lockedRow)) && (
                     <button
                         type="button"
                         className={styles.iconButton}

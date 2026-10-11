@@ -176,8 +176,16 @@
 }
 
 .label {
+    align-items: center;
     color: var(--text-secondary-color);
+    display: flex;
     flex: 1;
+    gap: 6px;
+    min-width: 0;
+}
+
+.label svg {
+    flex: 0 0 auto;
 }
 
 .layer > .row > .name,

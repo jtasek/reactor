@@ -43,8 +43,13 @@
 }
 
 .headerIdentity > svg {
-    color: var(--component-color);
+    color: var(--text-secondary-color);
     flex: 0 0 auto;
+}
+
+.headerIdentity > svg[data-object-type='component'],
+.headerIdentity > svg[data-object-type='instance'] {
+    color: var(--component-color);
 }
 
 .headerIdentity strong {

@@ -35,12 +35,17 @@ test('the inspector shows shared and mixed values and edits every selected shape
 
     await expect(section(page, 'Layout')).toBeVisible();
     await expect(section(page, 'Appearance')).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: 'Identity' })).toHaveCount(0);
+    await expect(section(page, 'Identity')).toBeVisible();
     await expect(section(page, 'Text')).toHaveCount(0);
     await expect(field(page, 'X')).toHaveValue('');
     await expect(field(page, 'X')).toHaveAttribute('placeholder', 'Mixed');
     await expect(field(page, 'Y')).toHaveValue('100');
     await expect(field(page, 'Width')).toHaveValue('50');
+
+    await expect(field(page, 'Name')).toHaveAttribute('placeholder', 'Mixed');
+    await field(page, 'Name').fill('Shared');
+    await field(page, 'Name').press('Enter');
+    await expect(shapes(page).locator('rect[data-cy="Shared"]')).toHaveCount(2);
 
     await field(page, 'X').fill('400');
     await field(page, 'X').press('Enter');
@@ -63,6 +68,26 @@ test('the inspector shows shared and mixed values and edits every selected shape
     await expect(field(page, 'X')).toHaveAttribute('readonly', '');
 });
 
+test('a mixed lock selection keeps the Lock action available', async ({ page }) => {
+    const [first, second] = await twoRects(page);
+    await page.getByRole('checkbox', { name: 'Explorer', exact: true }).check();
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    const inspector = page.locator('[data-panel="inspector"]');
+
+    await explorer.getByRole('button', { name: first, exact: true }).click();
+    await inspector.getByRole('button', { name: 'Lock', exact: true }).click();
+    await explorer.getByRole('button', { name: second, exact: true }).click();
+    await explorer
+        .getByRole('button', { name: first, exact: true })
+        .click({ modifiers: ['Shift'] });
+
+    const lock = inspector.getByRole('button', { name: 'Lock', exact: true });
+
+    await expect(lock).toBeVisible();
+    await lock.click();
+    await expect(inspector.getByRole('button', { name: 'Unlock', exact: true })).toBeVisible();
+});
+
 test('an edit applies to the shapes it was typed for, even after clicking another shape', async ({
     page
 }) => {
@@ -78,7 +103,7 @@ test('an edit applies to the shapes it was typed for, even after clicking anothe
     await expect(field(page, 'Y')).toHaveValue('100');
 });
 
-test('Enter keeps focus, and a rejected edit shows the actual value again', async ({ page }) => {
+test('Enter leaves name editing, while other fields keep focus', async ({ page }) => {
     const [first] = await twoRects(page);
 
     await click(page, 600, 500);
@@ -97,13 +122,19 @@ test('Enter keeps focus, and a rejected edit shows the actual value again', asyn
     await name.press('Enter');
 
     await expect(name).toHaveValue(first);
-    await expect(name).toBeFocused();
+    await expect(name).not.toBeFocused();
+
+    await name.fill('Renamed shape');
+    await name.press('Enter');
+
+    await expect(name).toHaveValue('Renamed shape');
+    await expect(name).not.toBeFocused();
 
     // Enter that confirms an input method composition does not apply the edit.
     await x.fill('500');
     await x.dispatchEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true });
 
-    await expect.poll(() => rectAttribute(page, first, 'x')).toBe('160');
+    await expect.poll(() => rectAttribute(page, 'Renamed shape', 'x')).toBe('160');
     await expect(x).toHaveValue('500');
 });
 
@@ -150,6 +181,7 @@ test('the inspector holds its values during a gesture and shows the new ones on 
     await pointer(page, 'pointerdown', { x: 120, y: 80 });
     await pointer(page, 'pointermove', { x: 220, y: 170 });
     await expect(section(page, 'Layout')).toHaveCount(0);
+    await expect(page.locator('[data-panel="inspector"]')).toContainText('No shapes selected');
     await pointer(page, 'pointerup', { x: 220, y: 170 });
     await expect(field(page, 'X')).toHaveValue('140');
 });

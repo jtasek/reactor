@@ -1,7 +1,7 @@
 import React, { FC, ReactNode } from 'react';
 import { useActions, useAppState, useEditingComponentId, useSourceSelected } from 'src/app/hooks';
 import { canAddShapesToComponent } from 'src/app/actions/components';
-import { Icon } from '../Icon';
+import { ObjectTypeSymbol } from '../ObjectTypeSymbol';
 import { hideAction, lockAction } from '../ItemMenu';
 import { ExplorerItem } from './ExplorerItem';
 
@@ -37,7 +37,7 @@ export const SourceItem: FC<Props> = ({ componentId, shapesIds, children }) => {
         <ExplorerItem
             kind="component"
             name={component.name}
-            icon={<Icon icon={{ group: 'reactor', name: 'component', size: 16 }} />}
+            icon={<ObjectTypeSymbol type="component" />}
             collapseId={shapesIds.length > 0 ? `component:${componentId}` : undefined}
             selected={selected}
             active={editing}

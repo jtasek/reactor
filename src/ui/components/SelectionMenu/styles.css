@@ -7,6 +7,32 @@
     z-index: 50;
 }
 
+.selectionBadge {
+    align-items: center;
+    background: var(--panel-content-background);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--box-shadow-hover);
+    color: var(--text-color);
+    display: flex;
+    gap: 6px;
+    max-width: 180px;
+    padding: 4px 8px;
+    pointer-events: none;
+    position: absolute;
+    z-index: 49;
+}
+
+.selectionBadge svg {
+    flex: 0 0 auto;
+}
+
+.selectionBadge span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .selectionMenu[data-shown='true'],
 .selectionMenu:hover,
 .selectionMenu:has(:focus-visible) {

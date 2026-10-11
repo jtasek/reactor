@@ -97,7 +97,7 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
                 </svg>
             )}
             <div>
-                <h3 className={styles.heading}>Editable in instances</h3>
+                <h3 className={styles.heading}>Editable properties</h3>
                 {component.props?.length ? (
                     <ul className={styles.componentProps}>
                         {component.props.map((prop) => (

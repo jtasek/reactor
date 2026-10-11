@@ -5,6 +5,7 @@ import { GridContainer as Grid } from '../Grid';
 import { GuideGrips, Guides } from './Guides';
 import { Rulers } from '../Rulers';
 import { SelectionMenu } from '../SelectionMenu';
+import { SelectionBadge } from '../SelectionMenu/SelectionBadge';
 import { Shapes } from './Shapes';
 import { SnapLines } from '../SnapLines';
 import { Measures } from '../SnapLines/Measures';
@@ -28,5 +29,6 @@ export const Canvas: FC = () => (
             <Rulers />
         </Surface>
         <SelectionMenu />
+        <SelectionBadge />
     </>
 );

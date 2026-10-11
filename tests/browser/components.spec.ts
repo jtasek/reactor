@@ -21,6 +21,7 @@ test('the Inspector header renames a component source without a duplicate Name f
     await expect(name).toHaveCount(1);
     await name.fill('Card');
     await name.press('Enter');
+    await expect(name).not.toBeFocused();
     await expect(explorer.getByRole('button', { name: 'Card', exact: true })).toBeVisible();
     await expect(panel.getByRole('columnheader', { name: 'Identity' })).toHaveCount(0);
 });
@@ -226,7 +227,7 @@ test('an exposed fill changes one instance without changing its source', async (
     await expect.poll(async () => (await fillIcon.boundingBox())!.width).toBe(16);
     await fillIcon.click();
     const stopExposing = page.getByRole('button', { name: 'Stop exposing Fill', exact: true });
-    const exposureStatus = page.getByText('Editable in instances', { exact: true });
+    const exposureStatus = page.getByText('Editable properties', { exact: true });
     await expect(stopExposing).toHaveAttribute('aria-pressed', 'true');
     await expect(exposureStatus).toBeVisible();
     await stopExposing.click();
