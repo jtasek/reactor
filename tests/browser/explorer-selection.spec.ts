@@ -101,7 +101,7 @@ test('object symbols identify selections, with canvas name labels only for compo
             continue;
         }
 
-        await expect(badge.locator('svg[data-object-type="component"]')).toHaveCount(1);
+        await expect(badge.locator(`svg[data-object-type="${type}"]`)).toHaveCount(1);
         await expect(badge).toContainText(name);
     }
 

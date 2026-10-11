@@ -55,7 +55,7 @@ export const SelectionBadge: FC = () => {
             }}
             title={identity.name}
         >
-            <ObjectTypeSymbol type="component" />
+            <ObjectTypeSymbol type={identity.type} />
             <span>{identity.name}</span>
         </div>
     );
