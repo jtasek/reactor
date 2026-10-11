@@ -207,6 +207,54 @@ test('dock targets match the default width and highlight the actual drop target'
     await expect(page.locator('[data-dock="left"] [data-panel="controlPanel"]')).toBeVisible();
 });
 
+test('a tall panel’s drag bubble follows the pointer on both axes', async ({ page }) => {
+    await page.addInitScript(() => {
+        localStorage.setItem(
+            'reactor:panel-layout',
+            JSON.stringify({
+                explorer: {
+                    dock: null,
+                    position: { x: 20, y: 20 },
+                    size: { width: 600, height: 695 }
+                }
+            })
+        );
+    });
+    await openEditor(page, ['Explorer']);
+    const header = page.locator('[data-panel="explorer"] > button');
+    const bounds = (await header.boundingBox())!;
+    await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(700, 250);
+
+    const bubble = page.locator('[aria-hidden="true"]').filter({ hasText: 'Explorer' });
+    await expect(bubble).toBeVisible();
+    const first = (await bubble.boundingBox())!;
+
+    await page.mouse.move(800, 450);
+    await expect
+        .poll(async () => {
+            const next = (await bubble.boundingBox())!;
+
+            return { x: next.x - first.x, y: next.y - first.y };
+        })
+        .toEqual({ x: 100, y: 200 });
+
+    await page.mouse.move(650, 350);
+    await expect
+        .poll(async () => {
+            const next = (await bubble.boundingBox())!;
+
+            return { x: next.x - first.x, y: next.y - first.y };
+        })
+        .toEqual({ x: -50, y: 100 });
+    await page.mouse.up();
+    await expect(bubble).toHaveCount(0);
+
+    const dropped = await panelBox(page, 'explorer');
+    expect(dropped.y + dropped.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+});
+
 test('vertical panels reject horizontal docks by keyboard, drag and saved placement', async ({
     page
 }) => {

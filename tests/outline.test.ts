@@ -104,7 +104,7 @@ describe('a group is on one layer', () => {
         expect(layers()).toEqual({ walls: [ids[0], ids[1], ids[2]], none: [ids[3]] });
     });
 
-    it('lists layers, their groups and shapes as a tree, with shapes on no layer last', () => {
+    it('lists layers, their groups and shapes as a tree, with Surface first', () => {
         const { ids, select, run, document, layer } = storeWith(0, 20, 40, 60);
 
         layer('walls', ids[0], ids[1], ids[2]);
@@ -114,12 +114,12 @@ describe('a group is on one layer', () => {
         const [groupId] = Object.keys(document().groups);
 
         expect(outline(document())).toEqual([
+            { layerId: null, groups: [], shapesIds: [ids[3]] },
             {
                 layerId: 'walls',
                 groups: [{ groupId, shapesIds: [ids[0], ids[1]] }],
                 shapesIds: [ids[2]]
-            },
-            { layerId: null, groups: [], shapesIds: [ids[3]] }
+            }
         ]);
     });
 });
@@ -131,7 +131,45 @@ it('keeps the shapes on no layer as an entry while there are layers, to drop sha
 
     layer('walls', ids[0]);
 
-    expect(outline(document()).map((entry) => entry.layerId)).toEqual(['walls', null]);
+    expect(outline(document()).map((entry) => entry.layerId)).toEqual([null, 'walls']);
+});
+
+it('draws consecutive shapes into the selected layer until Surface is selected', () => {
+    const { store, document, layer } = storeWith();
+    layer('walls');
+    layer('pipes');
+
+    store.actions.selectExplorerLayer('walls');
+    store.actions.drawShape(square(0));
+    store.actions.drawShape(square(20));
+    const [first, second] = document().shapesIds;
+    expect(document().layers.walls.shapesIds).toEqual([first, second]);
+    expect(document().selectedShapesIds).toEqual([second]);
+    expect(document().layers.walls.selected).toBe(true);
+
+    store.actions.selectExplorerLayer('pipes');
+    store.actions.drawShape(square(40));
+    const third = document().shapesIds[2];
+    expect(document().layers.pipes.shapesIds).toEqual([third]);
+    expect(document().layers.walls.shapesIds).toEqual([first, second]);
+
+    store.actions.selectExplorerLayer(null);
+    store.actions.drawShape(square(60));
+    const fourth = document().shapesIds[3];
+    expect(outline(document())[0].shapesIds).toEqual([fourth]);
+    expect(document().layers.pipes.shapesIds).toEqual([third]);
+});
+
+it('does not draw into a locked selected layer', () => {
+    const { store, document, layer } = storeWith();
+    layer('walls');
+    store.actions.selectExplorerLayer('walls');
+    store.actions.lockLayer('walls');
+
+    store.actions.drawShape(square(0));
+
+    expect(document().shapesIds).toEqual([]);
+    expect(document().layers.walls.shapesIds).toEqual([]);
 });
 
 describe('filtering the outline', () => {

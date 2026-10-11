@@ -128,11 +128,6 @@
     outline-offset: -2px;
 }
 
-.explorerPanel .handle {
-    padding: 2px;
-    width: 24px;
-}
-
 .content {
     display: block;
     flex: 1 1 auto;

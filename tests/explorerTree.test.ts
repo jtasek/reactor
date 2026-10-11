@@ -1,5 +1,6 @@
 import { sceneLayers } from 'src/app/componentTree';
 import { outline } from 'src/app/membership';
+import { serializePersistedState } from 'src/app/services/documentStorage';
 import { isShapeVisible } from 'src/app/utils';
 import { createTestStore } from './support/store';
 
@@ -56,6 +57,28 @@ it('selecting a layer leaves layer isolation to its separate control', () => {
     expect(document.layers.walls.selected).toBe(true);
     store.actions.unselectShapes();
     expect(document.layers.walls.selected).toBe(false);
+});
+
+it('selects Surface without creating or saving a layer', () => {
+    const { store } = createTestStore();
+    const document = store.state.currentDocument;
+
+    store.actions.selectExplorerLayer(null);
+    expect(document.surfaceSelected).toBe(true);
+    expect(document.layers).toEqual({});
+    const saved = serializePersistedState(store.state);
+    expect(saved.documents[document.id]).not.toHaveProperty('surfaceSelected');
+
+    store.actions.addLayer({ id: 'walls', name: 'Walls' });
+    store.actions.selectExplorerLayer('walls');
+    expect(document.surfaceSelected).not.toBe(true);
+    expect(document.layers.walls.selected).toBe(true);
+
+    store.actions.selectExplorerLayer(null);
+    expect(document.surfaceSelected).toBe(true);
+    expect(document.layers.walls.selected).toBe(false);
+    store.actions.unselectShapes();
+    expect(document.surfaceSelected).not.toBe(true);
 });
 
 it('keeps existing canvas sources in their layer tree', () => {

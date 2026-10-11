@@ -25,6 +25,7 @@ const allowsDock = (dock: Dock, docking: Docking) =>
     dock === null || docking === 'both' || orientationOf(dock) === docking;
 
 const KEYBOARD_MOVE_STEP_PX = 10;
+const DRAG_PREVIEW_OFFSET_PX = 12;
 /** The smallest a panel is resized to: room for a few rows under its header. */
 const MIN_PANEL_SIZE = { width: 160, height: 80 };
 const UNMEASURED_PANEL_SIZE = { width: 320, height: 200 };
@@ -45,7 +46,7 @@ interface Drag {
     pointerId: number;
     start: { x: number; y: number };
     moved: boolean;
-    position: { x: number; y: number };
+    pointer: { x: number; y: number };
     offset: { x: number; y: number };
     dock: Dock;
     title: string;
@@ -466,7 +467,7 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
                 moved: false,
                 title,
                 docking,
-                position: { x: bounds.left, y: bounds.top },
+                pointer: { x: event.clientX, y: event.clientY },
                 offset: { x: event.clientX - bounds.left, y: event.clientY - bounds.top },
                 dock: dockAtPointer(event.clientX, event.clientY, docking)
             });
@@ -487,10 +488,7 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
             setDrag({
                 ...drag,
                 moved: true,
-                position: {
-                    x: Math.max(0, Math.min(event.clientX - drag.offset.x, maxX)),
-                    y: Math.max(0, Math.min(event.clientY - drag.offset.y, maxY))
-                },
+                pointer: { x: event.clientX, y: event.clientY },
                 dock: dockAtPointer(event.clientX, event.clientY, docking)
             });
         };
@@ -672,7 +670,10 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
             {drag?.moved && (
                 <div
                     className={styles.dragPreview}
-                    style={{ left: drag.position.x, top: drag.position.y }}
+                    style={{
+                        left: drag.pointer.x + DRAG_PREVIEW_OFFSET_PX,
+                        top: drag.pointer.y + DRAG_PREVIEW_OFFSET_PX
+                    }}
                     aria-hidden="true"
                 >
                     {drag.title}

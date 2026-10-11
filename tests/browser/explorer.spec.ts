@@ -30,6 +30,91 @@ test('tree heading actions create a layer and a component in their own roots', a
     ).toBeVisible();
 });
 
+test('drawn shapes appear beneath the selected layer and switch back to Surface', async ({
+    page
+}) => {
+    await openEditor(page, ['Explorer']);
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    await explorer.getByRole('button', { name: 'New layer', exact: true }).click();
+    const layer = explorer.getByRole('button', { name: 'layer-1', exact: true });
+    await layer.click();
+
+    await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
+    await drawRect(page, { x: 500, y: 100 }, { x: 540, y: 140 });
+    const layerTree = layer.locator('xpath=ancestor::li[1]');
+    await expect(layerTree.getByRole('button', { name: /^rectangle-/ })).toHaveText([
+        'rectangle-2',
+        'rectangle-1'
+    ]);
+
+    const surface = explorer.getByRole('button', { name: 'Surface', exact: true });
+    await surface.click();
+    await drawRect(page, { x: 600, y: 100 }, { x: 640, y: 140 });
+    await expect(
+        surface.locator('xpath=ancestor::li[1]').getByRole('button', { name: 'rectangle-3' })
+    ).toBeVisible();
+    await expect(layerTree.getByRole('button', { name: /^rectangle-/ })).toHaveCount(2);
+    await expect(shapes(page)).toHaveCount(3);
+});
+
+test('Surface selects like a layer, including when it is empty', async ({ page }) => {
+    await openEditor(page, ['Explorer']);
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    const surface = explorer.getByRole('button', { name: 'Surface', exact: true });
+
+    await surface.click();
+    await expect(surface).toHaveAttribute('aria-pressed', 'true');
+
+    await explorer.getByRole('button', { name: 'New layer', exact: true }).click();
+    const layer = explorer.getByRole('button', { name: 'layer-1', exact: true });
+    await layer.click();
+    await expect(surface).toHaveAttribute('aria-pressed', 'false');
+    await expect(layer).toHaveAttribute('aria-pressed', 'true');
+
+    await surface.focus();
+    await page.keyboard.press('Enter');
+    await expect(surface).toHaveAttribute('aria-pressed', 'true');
+    await expect(layer).toHaveAttribute('aria-pressed', 'false');
+
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    const shape = explorer.getByRole('button', { name: 'rectangle-1', exact: true });
+    await expect(surface).toHaveAttribute('aria-pressed', 'false');
+    await surface.click();
+    await expect(surface).toHaveAttribute('aria-pressed', 'true');
+    await expect(shape).toHaveAttribute('aria-pressed', 'false');
+    await shape.click();
+    await expect(surface).toHaveAttribute('aria-pressed', 'false');
+    await expect(shape).toHaveAttribute('aria-pressed', 'true');
+
+    await surface.click();
+    await click(page, 600, 400);
+    await expect(surface).toHaveAttribute('aria-pressed', 'false');
+    await expect(shapes(page)).toHaveCount(1);
+});
+
+test('deleting a layer from its row moves its shapes to Surface', async ({ page }) => {
+    await openEditor(page, ['Explorer']);
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    await page.keyboard.press('ControlOrMeta+Alt+l');
+
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    const layer = explorer.getByRole('button', { name: 'layer-1', exact: true });
+    const row = layer.locator('..');
+
+    await row.hover();
+    await row.getByRole('button', { name: 'Highlight layer' }).click();
+    await expect(explorer.getByText('Show all layers', { exact: true })).toBeVisible();
+    await row.hover();
+    await row.getByRole('button', { name: 'More' }).click();
+    await row.getByRole('button', { name: 'Delete layer' }).click();
+
+    await expect(layer).toHaveCount(0);
+    await expect(explorer.getByText('Show all layers', { exact: true })).toHaveCount(0);
+    const surface = explorer.getByText('Surface', { exact: true }).locator('xpath=ancestor::li[1]');
+    await expect(surface.getByRole('button', { name: 'rectangle-1' })).toBeVisible();
+    await expect(shapes(page)).toHaveCount(1);
+});
+
 test('the explorer lists layers as a tree, shows one layer alone, and takes dropped shapes', async ({
     page
 }) => {

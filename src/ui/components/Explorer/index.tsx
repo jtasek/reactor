@@ -209,9 +209,11 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
     shapesOf
 }) => {
     const layer = useLayer(layerId);
+    const documentLocked = useCurrentDocument().locked;
     const shown = useShownLayerId() === layerId;
     const {
         moveShapesToLayer,
+        removeLayer,
         showOnlyLayer,
         selectExplorerLayer,
         toggleLayerLocked,
@@ -240,6 +242,13 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
                 ),
                 hideAction(!layer.visible, () => toggleLayerVisible(layerId)),
                 lockAction(layer.locked, () => toggleLayerLocked(layerId)),
+                {
+                    id: 'delete-layer',
+                    label: 'Delete layer',
+                    icon: { group: 'action', name: 'delete', size: 16 },
+                    disabled: layer.locked || documentLocked,
+                    onRun: () => removeLayer(layerId)
+                },
                 ...commands(useScopedCommands('layer'))
             ]}
             onDrop={(dragged) => moveShapesToLayer({ shapeIds: shapesOf(dragged), layerId })}
@@ -294,8 +303,10 @@ export const Explorer: FC = () => {
     });
     const shownLayerId = useShownLayerId();
     const { explorer } = useControls();
-    const { moveShapesToLayer, showAllLayers, leaveComponentSource } = useActions();
+    const { moveShapesToLayer, selectExplorerLayer, showAllLayers, leaveComponentSource } =
+        useActions();
     const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+    const handleSurfaceSelect = () => selectExplorerLayer(null);
 
     if (!explorer.visible) {
         return null;
@@ -325,7 +336,6 @@ export const Explorer: FC = () => {
             }}
         >
             <section className={styles.explorer} aria-label="Explorer">
-                <h3 className={styles.heading}>Explorer</h3>
                 <SearchBoxContainer />
                 {editingComponent && (
                     <div className={styles.editing}>
@@ -356,6 +366,8 @@ export const Explorer: FC = () => {
                                             key="surface"
                                             kind="layer"
                                             name="Surface"
+                                            selected={document.surfaceSelected ?? false}
+                                            onClick={handleSurfaceSelect}
                                             collapseId={
                                                 groups.length + shapesIds.length > 0
                                                     ? 'surface'
@@ -384,6 +396,8 @@ export const Explorer: FC = () => {
                                     <ExplorerItem
                                         kind="layer"
                                         name="Surface"
+                                        selected={document.surfaceSelected ?? false}
+                                        onClick={handleSurfaceSelect}
                                         onDrop={(dragged) =>
                                             moveShapesToLayer({
                                                 shapeIds: shapesOf(dragged),

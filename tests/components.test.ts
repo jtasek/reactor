@@ -2,6 +2,7 @@ import { componentSource } from 'src/app/componentSource';
 import { readClipboard } from 'src/app/clipboard';
 import { componentPropValue, applyInstanceOverrides } from 'src/app/componentProps';
 import { componentFingerprint } from 'src/app/componentLibrary';
+import { instanceProperties } from 'src/app/computed/componentPanels';
 import { isShapeVisible } from 'src/app/utils';
 import {
     readEntity,
@@ -110,6 +111,7 @@ it('adds a newly drawn shape to the focused definition', () => {
     const document = store.state.currentDocument;
     const componentId = document.componentsIds[0];
     store.actions.selectComponentSource(componentId);
+    store.actions.addLayer({ id: 'scene', selected: true });
     store.actions.drawShape({
         type: 'rectangle',
         position: { x: 50, y: 20 },
@@ -118,6 +120,7 @@ it('adds a newly drawn shape to the focused definition', () => {
     const newId = document.shapesIds.at(-1) ?? '';
 
     expect(document.components[componentId].shapesIds).toContain(newId);
+    expect(document.layers.scene.shapesIds).toEqual([]);
     expect(isShapeVisible(document, newId)).toBe(true);
     expect(componentSource(document, componentId)?.shapes).toHaveLength(2);
     const shapeCount = document.shapesIds.length;
@@ -413,6 +416,10 @@ it('copies a library source, updates it on request, and works after its origin i
     expect(store.state.currentDocument.shapes[sourceId]).toBeUndefined();
     store.actions.insertComponentAt({ componentId, position: { x: 200, y: 300 } });
     const instanceId = store.state.currentDocument.shapesIds[0];
+    expect(instanceProperties(store.state.currentDocument)?.rows[0]).toMatchObject({
+        shapeName: copy.sourceShapes?.[sourceId].name,
+        fieldLabel: 'Background'
+    });
     store.actions.setInstanceOverride({ instanceIds: [instanceId], propId, value: '#ff0000' });
     const oldHash = copy.library?.hash;
 

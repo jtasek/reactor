@@ -72,6 +72,7 @@ export const beginGesture = (
     }
 
     state.selectedComponent = null;
+    delete state.currentDocument.surfaceSelected;
     effects.collaboration.pause();
 
     const owner = { pointerId, touch, moved: false };

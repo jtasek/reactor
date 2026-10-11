@@ -5,7 +5,7 @@ export const CreateComponentCommand: Command = {
     name: 'Create component',
     category: 'groups',
     description: 'Replace selected shapes with an instance of a new component',
-    icon: { group: 'content', name: 'library_add', size: 24 },
+    icon: { group: 'content', name: 'add', size: 24 },
     shortcut: 'mod+alt+c',
     scopes: ['shape', 'group', 'selection', 'components'],
     menuOrder: 25,

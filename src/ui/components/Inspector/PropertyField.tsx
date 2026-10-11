@@ -49,6 +49,10 @@ export const PropertyField: FC<Props> = ({
     const { property, value, mixed, readOnly } = row;
     const id = `property-${property.key}`;
     const shown = mixed || value === undefined ? '' : String(value);
+    const variableHint =
+        variables.length > 0
+            ? `Use a variable for ${property.label}`
+            : 'No compatible variables. Create one in the Variables panel.';
     const [edit, setEdit] = useState<{ text: string; shapeIds: string[] } | null>(null);
     const input = useRef<HTMLInputElement>(null);
 
@@ -118,7 +122,9 @@ export const PropertyField: FC<Props> = ({
                         type="button"
                         className={styles.exposeButton}
                         title={
-                            exposure.active ? 'Stop editing in instances' : 'Editable in instances'
+                            exposure.active
+                                ? 'Use the source value in every instance'
+                                : 'Let instances change this property'
                         }
                         aria-label={
                             exposure.active
@@ -142,6 +148,7 @@ export const PropertyField: FC<Props> = ({
                     <select
                         className={styles.variablePicker}
                         aria-label={`Variable for ${property.label}`}
+                        title={readOnly ? 'This property is read-only' : variableHint}
                         value=""
                         disabled={readOnly || variables.length === 0}
                         onChange={(event) => onBind(shapeIds, property.key, event.target.value)}
@@ -248,6 +255,11 @@ export const PropertyField: FC<Props> = ({
                 {note && (
                     <small className={styles.note} role="note">
                         {note}
+                    </small>
+                )}
+                {exposure?.active && (
+                    <small className={styles.exposureStatus} role="status">
+                        Editable in instances
                     </small>
                 )}
             </td>

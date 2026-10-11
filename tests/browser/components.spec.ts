@@ -52,7 +52,19 @@ test('an exposed fill changes one instance without changing its source', async (
 
     await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
     await explorer.getByRole('button', { name: 'rectangle-1' }).click();
-    await page.getByRole('button', { name: 'Expose Fill to instances' }).click();
+    const exposeFill = page.getByRole('button', { name: 'Expose Fill to instances' });
+    const fillIcon = exposeFill.locator('svg');
+    await expect.poll(async () => (await fillIcon.boundingBox())!.width).toBe(16);
+    await fillIcon.click();
+    const stopExposing = page.getByRole('button', { name: 'Stop exposing Fill', exact: true });
+    const exposureStatus = page.getByText('Editable in instances', { exact: true });
+    await expect(stopExposing).toHaveAttribute('aria-pressed', 'true');
+    await expect(exposureStatus).toBeVisible();
+    await stopExposing.click();
+    await expect(exposureStatus).toHaveCount(0);
+    await expect(exposeFill).toHaveAttribute('aria-pressed', 'false');
+    await exposeFill.click();
+    await expect(exposureStatus).toBeVisible();
     await page.getByRole('button', { name: /Select component-\d+ source/ }).click();
     await page
         .getByRole('region', { name: 'Component source' })
@@ -74,13 +86,16 @@ test('an exposed fill changes one instance without changing its source', async (
     expect(await fill(0)).toBe(original);
 
     const properties = page.getByRole('region', { name: 'Component properties' });
+    await expect(properties.getByRole('heading', { name: 'rectangle-1' })).toBeVisible();
+    await expect(properties.getByText('1 changed')).toBeVisible();
     await properties
         .getByRole('button', { name: 'Reset rectangle-1: Fill to source value' })
         .click();
+    await expect(properties.getByText('All from source')).toBeVisible();
     await expect.poll(() => fill(1)).toBe(original);
     await page.getByLabel('rectangle-1: Fill', { exact: true }).fill('#0000ff');
     await expect.poll(() => fill(1)).toBe('rgb(0, 0, 255)');
-    await properties.getByRole('button', { name: 'Go to source' }).click();
+    await properties.getByRole('button', { name: 'Edit component' }).click();
     await page
         .getByRole('region', { name: 'Component source' })
         .getByRole('button', {
