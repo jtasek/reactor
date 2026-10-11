@@ -7,7 +7,6 @@ declare namespace StylesCssNamespace {
     empty: string;
     explorer: string;
     grip: string;
-    heading: string;
     hidden: string;
     icon: string;
     inlineMenu: string;

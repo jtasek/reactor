@@ -76,6 +76,7 @@ export const resetDocument: Action = ({ state }) => {
     document.filter = '';
     document.modified = new Date();
     delete document.shownLayerId;
+    delete document.surfaceSelected;
     state.enteredGroupId = null;
     state.enteredComponentId = null;
 };

@@ -194,7 +194,7 @@ export const SourceChildHeading: FC<{ componentId: string; shapeId: string }> = 
                 <Icon icon={FIND_ICON} />
                 {component.name}
             </button>
-            <p>Use the icon beside a property to make it editable in instances.</p>
+            <p>Use + beside a property to let instances change it.</p>
         </div>
     );
 };

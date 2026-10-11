@@ -166,20 +166,27 @@ export const addShape: ActionWithParam<ShapeInput> = ({ state }, options) => {
 };
 
 /**
- * Adds a shape a tool drew, selected alone: what was selected no longer is, and
- * a group that was entered is left.
+ * Adds a tool's shape to the entered component or selected layer, selects the
+ * new shape alone, and leaves the entered group. The layer stays selected for
+ * consecutive drawings.
  */
 export const drawShape: ActionWithParam<ShapeInput> = ({ state, actions }, options) => {
+    const document = state.currentDocument;
     const componentId = state.enteredComponentId;
-    const component = componentId && state.currentDocument.components[componentId];
+    const component = componentId && document.components[componentId];
+    const layerId = document.selectedLayersIds[0];
+    const layer = !component && layerId ? document.layers[layerId] : undefined;
 
     if (componentId && (!component || component.library || component.locked)) {
+        return;
+    }
+    if (layer?.locked) {
         return;
     }
     if (
         component &&
         options.type === 'instance' &&
-        reachesComponent(state.currentDocument, options.componentId, component.id)
+        reachesComponent(document, options.componentId, component.id)
     ) {
         return;
     }
@@ -187,12 +194,16 @@ export const drawShape: ActionWithParam<ShapeInput> = ({ state, actions }, optio
     state.enteredGroupId = null;
     state.enteredComponentId = null;
     actions.addShape(options);
-    if (!component) {
-        return;
-    }
-    const shapeId = state.currentDocument.shapesIds.at(-1);
+    const shapeId = document.shapesIds.at(-1);
 
     if (!shapeId) {
+        return;
+    }
+    if (layer) {
+        layer.shapesIds.push(shapeId);
+        layer.selected = true;
+    }
+    if (!component) {
         return;
     }
     component.shapesIds.push(shapeId);
@@ -1164,6 +1175,7 @@ export const setShapeBounds: ActionWithParam<{ id: string; bounds: Box }> = (
 export const unselectShapes: Action = ({ state, actions }) => {
     state.selectedComponent = null;
     state.enteredComponentId = null;
+    delete state.currentDocument.surfaceSelected;
     actions.unselectGuides();
     Object.values(state.currentDocument.layers).forEach((layer) => {
         layer.selected = false;

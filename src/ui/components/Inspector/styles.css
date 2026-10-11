@@ -408,12 +408,26 @@
     opacity: 0.35;
 }
 
-.exposeButton {
+.inspector td .exposeButton {
     float: right;
+    margin-left: 4px;
+    padding: 0;
+}
+
+.exposeButton svg {
+    flex-shrink: 0;
 }
 
 .exposeButton[aria-pressed='true'] {
-    color: var(--selection-color);
+    color: var(--component-color);
+}
+
+.exposureStatus {
+    color: var(--component-color);
+    display: block;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    margin-top: 4px;
 }
 
 .sourceChildHeading button,

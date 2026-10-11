@@ -11,6 +11,7 @@ declare namespace StylesCssNamespace {
     componentPreview: string;
     componentProps: string;
     exposeButton: string;
+    exposureStatus: string;
     heading: string;
     iconButton: string;
     inspector: string;

@@ -293,6 +293,8 @@ export interface Document {
     shapesIds: string[];
     /** The one layer this screen shows, with the shapes on no layer; all layers when unset. */
     shownLayerId?: string;
+    /** Runtime selection of the built-in layer for shapes on no named layer. */
+    surfaceSelected?: boolean;
     tags: string[];
     variables: HashTable<Variable>;
     /** Sorted by name, then id. */

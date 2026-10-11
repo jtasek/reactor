@@ -35,6 +35,15 @@ export const cloneLayer: ActionWithParam<string> = ({ state, effects }, layerId)
 };
 
 export const removeLayer: ActionWithParam<string> = ({ state }, layerId) => {
+    const document = state.currentDocument;
+    const layer = document.layers[layerId];
+
+    if (!layer || layer.locked || document.locked) {
+        return;
+    }
+    if (document.shownLayerId === layerId) {
+        delete document.shownLayerId;
+    }
     deleteLayer(state, layerId);
 };
 
@@ -135,16 +144,23 @@ export const toggleLayerSelected: ActionWithParam<string> = ({ state }, layerId)
 };
 
 /** A row press selects this layer; isolation stays on its separate star action. */
-export const selectExplorerLayer: ActionWithParam<string> = ({ state, actions }, layerId) => {
-    const layer = state.currentDocument.layers[layerId];
+export const selectExplorerLayer: ActionWithParam<string | null> = (
+    { state, actions },
+    layerId
+) => {
+    const document = state.currentDocument;
 
-    if (!layer) {
+    if (layerId !== null && !document.layers[layerId]) {
         return;
     }
     actions.unselectShapes();
-    Object.values(state.currentDocument.layers).forEach((item) => {
-        item.selected = item.id === layerId;
-    });
+
+    if (layerId === null) {
+        document.surfaceSelected = true;
+
+        return;
+    }
+    document.layers[layerId].selected = true;
 };
 
 export const unselectLayer: ActionWithParam<string> = ({ state }, layerId) => {

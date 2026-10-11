@@ -110,6 +110,7 @@ it('adds a newly drawn shape to the focused definition', () => {
     const document = store.state.currentDocument;
     const componentId = document.componentsIds[0];
     store.actions.selectComponentSource(componentId);
+    store.actions.addLayer({ id: 'scene', selected: true });
     store.actions.drawShape({
         type: 'rectangle',
         position: { x: 50, y: 20 },
@@ -118,6 +119,7 @@ it('adds a newly drawn shape to the focused definition', () => {
     const newId = document.shapesIds.at(-1) ?? '';
 
     expect(document.components[componentId].shapesIds).toContain(newId);
+    expect(document.layers.scene.shapesIds).toEqual([]);
     expect(isShapeVisible(document, newId)).toBe(true);
     expect(componentSource(document, componentId)?.shapes).toHaveLength(2);
     const shapeCount = document.shapesIds.length;

@@ -52,7 +52,19 @@ test('an exposed fill changes one instance without changing its source', async (
 
     await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
     await explorer.getByRole('button', { name: 'rectangle-1' }).click();
-    await page.getByRole('button', { name: 'Expose Fill to instances' }).click();
+    const exposeFill = page.getByRole('button', { name: 'Expose Fill to instances' });
+    const fillIcon = exposeFill.locator('svg');
+    await expect.poll(async () => (await fillIcon.boundingBox())!.width).toBe(16);
+    await fillIcon.click();
+    const stopExposing = page.getByRole('button', { name: 'Stop exposing Fill', exact: true });
+    const exposureStatus = page.getByText('Editable in instances', { exact: true });
+    await expect(stopExposing).toHaveAttribute('aria-pressed', 'true');
+    await expect(exposureStatus).toBeVisible();
+    await stopExposing.click();
+    await expect(exposureStatus).toHaveCount(0);
+    await expect(exposeFill).toHaveAttribute('aria-pressed', 'false');
+    await exposeFill.click();
+    await expect(exposureStatus).toBeVisible();
     await page.getByRole('button', { name: /Select component-\d+ source/ }).click();
     await page
         .getByRole('region', { name: 'Component source' })
