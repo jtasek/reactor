@@ -11,7 +11,13 @@ export const Icon: FC<Props> = ({ icon }) => {
     }
 
     return (
-        <svg stroke={icon.color} fill={icon.color} height={icon.size} width={icon.size}>
+        <svg
+            color={icon.color}
+            fill="currentColor"
+            stroke="none"
+            height={icon.size}
+            width={icon.size}
+        >
             <use
                 xlinkHref={`/icons/svg-sprite-${icon.group}-symbol.svg#ic_${icon.name}_24px`}
                 fill="currentColor"

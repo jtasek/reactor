@@ -1,6 +1,25 @@
 import { expect, test, type Page } from '@playwright/test';
 import { openEditor } from './support/editor';
 
+test('tools and explorer show their shared panel without a separate switch', async ({ page }) => {
+    await page.goto('/');
+    const panel = page.locator('[data-panel="explorer"]');
+    const tools = page.getByRole('checkbox', { name: 'Tool Bar', exact: true });
+    const explorer = page.getByRole('checkbox', { name: 'Explorer', exact: true });
+
+    await expect(page.getByRole('checkbox', { name: 'Side Bar', exact: true })).toHaveCount(0);
+    await expect(panel).toBeVisible();
+    await explorer.uncheck();
+    await expect(panel).toHaveCount(0);
+    await explorer.check();
+    await expect(panel).toBeVisible();
+    await tools.check();
+    await explorer.uncheck();
+    await expect(panel).toBeVisible();
+    await tools.uncheck();
+    await expect(panel).toHaveCount(0);
+});
+
 test('clicking or slightly moving a header preserves its placement', async ({ page }) => {
     await openEditor(page);
     const header = page.locator('[data-panel="controlPanel"] > button');
@@ -82,7 +101,7 @@ for (const dock of [
 ]) {
     test(`${dock} grows for stacked panels and keeps their headers reachable`, async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 720 });
-        await setLayout(page, { sideBar: dock, controlPanel: dock, stats: dock });
+        await setLayout(page, { explorer: dock, controlPanel: dock, stats: dock });
         await openEditor(page);
 
         const zone = page.locator(`[data-dock="${dock}"]`);
@@ -119,7 +138,7 @@ for (const dock of [
 
 test('growing neighboring zones share space without covering headers', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 420 });
-    await setLayout(page, { sideBar: 'top-right', controlPanel: 'right', stats: 'bottom-right' });
+    await setLayout(page, { explorer: 'top-right', controlPanel: 'right', stats: 'bottom-right' });
     await openEditor(page);
     await expectReachableHeaders(page);
 

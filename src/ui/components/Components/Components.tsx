@@ -1,141 +1,87 @@
-import React, { FC, MouseEvent } from 'react';
-import { useActions, useAppState, useComponents, useSelectedShapesIds } from 'src/app/hooks';
+import React, { FC } from 'react';
+import { useActions, useComponents } from 'src/app/hooks';
 import { useComponentLibraries } from 'src/app/componentHooks';
-import { PropertyPicker } from './PropertyPicker';
+import { Icon } from '../Icon';
+import styles from './styles.css';
 
-/** Source controls; Insert arms the canvas for one placement. */
+const COPY_ICON = { group: 'content', name: 'content_copy', size: 16 };
+const INSERT_ICON = { group: 'content', name: 'add_box', size: 16 };
+const SOURCE_ICON = { group: 'action', name: 'find_in_page', size: 16 };
+
+/** Imported sources and sources in other documents, without the editor's source controls. */
 export const Components: FC = () => {
-    const components = Object.values(useComponents() ?? {});
-    const selected = useSelectedShapesIds();
-    const actions = useActions();
+    const imported = Object.values(useComponents() ?? {}).filter((component) => component.library);
     const libraries = useComponentLibraries();
-    const handleCreate = () => actions.createComponentFromSelection();
+    const { chooseComponentToPlace, selectComponentSource, importLibraryComponent } = useActions();
 
     return (
-        <section aria-label="Components">
-            <button type="button" disabled={selected.length === 0} onClick={handleCreate}>
-                Create component
-            </button>
-            {components.length === 0 && <p>No components yet</p>}
-            <ul>
-                {components.map((component) => (
-                    <ComponentRow
-                        key={component.id}
-                        componentId={component.id}
-                        updateAvailable={Boolean(
-                            component.library &&
-                            libraries.some(
-                                (item) =>
-                                    item.documentId === component.library?.documentId &&
-                                    item.componentId === component.id &&
-                                    item.hash !== component.library?.hash
-                            )
-                        )}
-                    />
-                ))}
-            </ul>
-            {libraries.length > 0 && (
-                <section aria-label="Other documents">
-                    <h3>Other documents</h3>
-                    {libraries.map((item) => (
-                        <LibraryRow key={`${item.documentId}:${item.componentId}`} item={item} />
+        <section className={styles.components} aria-label="Library">
+            <h3 className={styles.heading}>In this document</h3>
+            {imported.length === 0 ? (
+                <p className={styles.empty}>No library components copied here</p>
+            ) : (
+                <ul className={styles.list}>
+                    {imported.map((component) => (
+                        <li className={styles.row} key={component.id}>
+                            <div className={styles.label}>
+                                <strong>{component.name}</strong>
+                                <small>Imported source</small>
+                            </div>
+                            <button
+                                type="button"
+                                className={styles.iconButton}
+                                title={`Inspect ${component.name}`}
+                                aria-label={`Inspect ${component.name}`}
+                                onClick={() => selectComponentSource(component.id)}
+                            >
+                                <Icon icon={SOURCE_ICON} />
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.iconButton}
+                                title={`Place instance of ${component.name}`}
+                                aria-label={`Place instance of ${component.name}`}
+                                onClick={() => chooseComponentToPlace(component.id)}
+                            >
+                                <Icon icon={INSERT_ICON} />
+                            </button>
+                        </li>
                     ))}
-                </section>
+                </ul>
+            )}
+            <h3 className={styles.heading}>Other documents</h3>
+            {libraries.length === 0 ? (
+                <p className={styles.empty}>Components in other documents appear here</p>
+            ) : (
+                <ul className={styles.list}>
+                    {libraries.map((item) => (
+                        <li className={styles.row} key={`${item.documentId}:${item.componentId}`}>
+                            <div className={styles.label}>
+                                <strong>{item.name}</strong>
+                                <small>{item.documentName}</small>
+                            </div>
+                            {item.imported ? (
+                                <small>Copied</small>
+                            ) : (
+                                <button
+                                    type="button"
+                                    className={styles.iconButton}
+                                    title={`Copy ${item.name} here`}
+                                    aria-label={`Copy ${item.name} here`}
+                                    onClick={() =>
+                                        importLibraryComponent({
+                                            documentId: item.documentId,
+                                            componentId: item.componentId
+                                        })
+                                    }
+                                >
+                                    <Icon icon={COPY_ICON} />
+                                </button>
+                            )}
+                        </li>
+                    ))}
+                </ul>
             )}
         </section>
-    );
-};
-
-const ComponentRow: FC<{ componentId: string; updateAvailable: boolean }> = ({
-    componentId,
-    updateAvailable
-}) => {
-    const component = useAppState((state) => state.currentDocument.components[componentId]);
-    const selected = useSelectedShapesIds();
-    const actions = useActions();
-    const handleUpdate = () => actions.updateLibraryComponent(componentId);
-    const handleInsert = () => actions.chooseComponentToPlace(componentId);
-    const handleSelect = () => actions.selectComponentSource(componentId);
-    const handleAddSelection = () =>
-        actions.addShapesToComponent({ componentId, shapeIds: [...selected] });
-    const handleRemoveSelection = () =>
-        actions.removeShapesFromComponent({ componentId, shapeIds: [...selected] });
-    const handleToggleVisibility = () =>
-        actions.updateComponent({ id: componentId, visible: !component.visible });
-    const handleToggleLock = () =>
-        actions.updateComponent({ id: componentId, locked: !component.locked });
-    const handleRemoveProperty = (event: MouseEvent<HTMLButtonElement>) =>
-        actions.removeComponentProp({ componentId, propId: event.currentTarget.value });
-
-    return (
-        <li>
-            <span>{component.name}</span>
-            {updateAvailable && (
-                <button type="button" onClick={handleUpdate}>
-                    Update library copy
-                </button>
-            )}
-            <button type="button" onClick={handleInsert}>
-                Insert
-            </button>
-            <button type="button" disabled={Boolean(component.library)} onClick={handleSelect}>
-                Select source
-            </button>
-            <button
-                type="button"
-                disabled={selected.length === 0 || Boolean(component.library)}
-                onClick={handleAddSelection}
-            >
-                Add selection
-            </button>
-            <button
-                type="button"
-                disabled={selected.length === 0 || Boolean(component.library)}
-                onClick={handleRemoveSelection}
-            >
-                Remove selection
-            </button>
-            <button
-                type="button"
-                disabled={Boolean(component.library)}
-                onClick={handleToggleVisibility}
-            >
-                {component.visible ? 'Hide source' : 'Show source'}
-            </button>
-            <button type="button" disabled={Boolean(component.library)} onClick={handleToggleLock}>
-                {component.locked ? 'Unlock source' : 'Lock source'}
-            </button>
-            {!component.library && (
-                <PropertyPicker componentId={component.id} name={component.name} />
-            )}
-            {component.props?.map((prop) => (
-                <div key={prop.id}>
-                    {prop.label}
-                    {!component.library && (
-                        <button type="button" value={prop.id} onClick={handleRemoveProperty}>
-                            Remove property
-                        </button>
-                    )}
-                </div>
-            ))}
-        </li>
-    );
-};
-
-const LibraryRow: FC<{ item: ReturnType<typeof useComponentLibraries>[number] }> = ({ item }) => {
-    const actions = useActions();
-    const handleImport = () =>
-        actions.importLibraryComponent({
-            documentId: item.documentId,
-            componentId: item.componentId
-        });
-
-    return (
-        <div>
-            {item.documentName} / {item.name}
-            <button type="button" disabled={item.imported} onClick={handleImport}>
-                {item.imported ? 'Copied' : 'Copy here'}
-            </button>
-        </div>
     );
 };

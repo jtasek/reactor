@@ -26,7 +26,6 @@ export interface UI {
     inspector: Control;
     guides: Control;
     rulers: Control;
-    sideBar: Control;
     statusBar: Control;
     surface: Control;
     toolBar: Control;

@@ -1,35 +1,109 @@
-import React, { FC, useState } from 'react';
+import React, { FC, MouseEvent, useState } from 'react';
 import styles from './styles.css';
 import { CollapsedItems, Dragged, ExplorerItem } from './ExplorerItem';
 import { SearchBoxContainer } from '../SearchBox';
 import { hideAction, lockAction, toggleAction, useItemCommandActions } from '../ItemMenu';
+import { Icon } from '../Icon';
+import { SourceItem } from './SourceItem';
+import { sceneLayers } from 'src/app/componentTree';
+import { byDrawingOrder } from 'src/app/drawOrder';
+import type { CommandScope } from 'src/app/types';
 import {
     useActions,
+    useComponents,
+    useCommandsEnabled,
     useControls,
+    useCurrentDocument,
+    useDocumentFilter,
+    useEditingComponentId,
     useGroup,
     useGroupSelected,
     useLayer,
     useOutline,
     useShape,
     useShapeLocked,
+    useShapesIds,
+    useSourceSelected,
     useScopedCommands,
     useShownLayerId
 } from 'src/app/hooks';
 
-const ShapeItem: FC<{ shapeId: string }> = ({ shapeId }) => {
-    const shape = useShape(shapeId);
-    const { toggleShapeSelected, toggleShapeLocked, toggleShapeVisible } = useActions();
-    const commands = useItemCommandActions([shapeId], useShapeLocked(shapeId) || !shape.visible);
+const RootItem: FC<{
+    scope: Extract<CommandScope, 'layers' | 'components'>;
+    name: string;
+    children: React.ReactNode;
+}> = ({ scope, name, children }) => {
+    const commands = useScopedCommands(scope);
+    const enabled = useCommandsEnabled(commands);
+    const { runCommand } = useActions();
 
     return (
         <ExplorerItem
-            kind="shape"
+            kind="root"
+            name={name}
+            collapseId={`root:${scope}`}
+            rootButtons={commands.map((command, index) => (
+                <button
+                    key={command.id}
+                    type="button"
+                    className={styles.rootAction}
+                    data-scope={scope}
+                    title={command.description ?? command.name}
+                    aria-label={command.name}
+                    disabled={!enabled[index]}
+                    onClick={() => runCommand(command)}
+                >
+                    <Icon icon={{ group: 'action', name: 'help', ...command.icon, size: 16 }} />
+                </button>
+            ))}
+        >
+            {children}
+        </ExplorerItem>
+    );
+};
+
+const ShapeItem: FC<{ shapeId: string; sourceId?: string }> = ({ shapeId, sourceId }) => {
+    const shape = useShape(shapeId);
+    const sourceSelected = useSourceSelected(sourceId ?? null);
+    const {
+        selectShape,
+        unselectShapes,
+        toggleShapeSelected,
+        toggleShapeLocked,
+        toggleShapeVisible,
+        selectComponentChild
+    } = useActions();
+    const commands = useItemCommandActions([shapeId], useShapeLocked(shapeId) || !shape.visible);
+
+    const handleSelect = ({ shiftKey }: MouseEvent<HTMLButtonElement>) => {
+        if (shiftKey) {
+            toggleShapeSelected(shapeId);
+
+            return;
+        }
+        if (sourceId) {
+            selectComponentChild({ componentId: sourceId, shapeId });
+
+            return;
+        }
+        unselectShapes();
+        selectShape(shapeId);
+    };
+
+    return (
+        <ExplorerItem
+            kind={shape.type === 'instance' ? 'instance' : 'shape'}
             name={shape.name}
-            dragged={{ kind: 'shape', id: shapeId }}
-            selected={shape.selected}
+            icon={
+                shape.type === 'instance' ? (
+                    <Icon icon={{ group: 'reactor', name: 'instance', size: 16 }} />
+                ) : undefined
+            }
+            dragged={sourceId ? undefined : { kind: 'shape', id: shapeId }}
+            selected={shape.selected && !sourceSelected}
             active={shape.active}
             visible={shape.visible}
-            onClick={() => toggleShapeSelected(shapeId)}
+            onClick={handleSelect}
             menuActions={[
                 hideAction(!shape.visible, () => toggleShapeVisible(shapeId)),
                 lockAction(shape.locked, () => toggleShapeLocked(shapeId)),
@@ -39,12 +113,27 @@ const ShapeItem: FC<{ shapeId: string }> = ({ shapeId }) => {
     );
 };
 
-const GroupItem: FC<{ groupId: string; shapesIds: string[] }> = ({ groupId, shapesIds }) => {
+const GroupItem: FC<{
+    groupId: string;
+    shapesIds: string[];
+}> = ({ groupId, shapesIds }) => {
     const group = useGroup(groupId);
     const selected = useGroupSelected(groupId);
-    const { addShapesToGroup, toggleGroupSelected, toggleGroupLocked, toggleGroupVisible } =
-        useActions();
+    const {
+        addShapesToGroup,
+        unselectShapes,
+        toggleGroupSelected,
+        toggleGroupLocked,
+        toggleGroupVisible
+    } = useActions();
     const commands = useItemCommandActions(group.shapesIds, group.locked);
+
+    const handleSelect = ({ shiftKey }: MouseEvent<HTMLButtonElement>) => {
+        if (!shiftKey) {
+            unselectShapes();
+        }
+        toggleGroupSelected(groupId);
+    };
 
     return (
         <ExplorerItem
@@ -54,7 +143,7 @@ const GroupItem: FC<{ groupId: string; shapesIds: string[] }> = ({ groupId, shap
             collapseId={groupId}
             selected={selected}
             visible={group.visible}
-            onClick={() => toggleGroupSelected(groupId)}
+            onClick={handleSelect}
             menuActions={[
                 hideAction(!group.visible, () => toggleGroupVisible(groupId)),
                 lockAction(group.locked, () => toggleGroupLocked(groupId)),
@@ -82,16 +171,36 @@ interface LayerProps {
     shapesOf: (dragged: Dragged) => string[];
 }
 
-const LayerContents: FC<Pick<LayerProps, 'groups' | 'shapesIds'>> = ({ groups, shapesIds }) => (
-    <>
-        {groups.map((group) => (
-            <GroupItem key={group.groupId} {...group} />
-        ))}
-        {shapesIds.map((shapeId) => (
-            <ShapeItem key={shapeId} shapeId={shapeId} />
-        ))}
-    </>
-);
+const LayerContents: FC<Pick<LayerProps, 'groups' | 'shapesIds'>> = ({ groups, shapesIds }) => {
+    const drawOrder = new Map(useShapesIds().map((id, index) => [id, index]));
+    const items = [
+        ...groups.map((group) => ({
+            kind: 'group' as const,
+            id: group.groupId,
+            shapesIds: [...group.shapesIds].sort(
+                (a, b) => (drawOrder.get(b) ?? -1) - (drawOrder.get(a) ?? -1)
+            ),
+            rank: Math.max(...group.shapesIds.map((id) => drawOrder.get(id) ?? -1))
+        })),
+        ...shapesIds.map((id) => ({
+            kind: 'shape' as const,
+            id,
+            rank: drawOrder.get(id) ?? -1
+        }))
+    ].sort((a, b) => b.rank - a.rank);
+
+    return (
+        <>
+            {items.map((item) =>
+                item.kind === 'group' ? (
+                    <GroupItem key={item.id} groupId={item.id} shapesIds={item.shapesIds} />
+                ) : (
+                    <ShapeItem key={item.id} shapeId={item.id} />
+                )
+            )}
+        </>
+    );
+};
 
 const LayerItem: FC<LayerProps & { layerId: string }> = ({
     layerId,
@@ -101,8 +210,13 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
 }) => {
     const layer = useLayer(layerId);
     const shown = useShownLayerId() === layerId;
-    const { moveShapesToLayer, showOnlyLayer, toggleLayerLocked, toggleLayerVisible } =
-        useActions();
+    const {
+        moveShapesToLayer,
+        showOnlyLayer,
+        selectExplorerLayer,
+        toggleLayerLocked,
+        toggleLayerVisible
+    } = useActions();
     const commands = useItemCommandActions(layer.shapesIds, layer.locked);
 
     return (
@@ -111,8 +225,9 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
             name={layer.name}
             collapseId={groups.length + shapesIds.length > 0 ? layerId : undefined}
             shown={shown}
+            selected={layer.selected}
             visible={layer.visible}
-            onClick={() => showOnlyLayer(layerId)}
+            onClick={() => selectExplorerLayer(layerId)}
             menuActions={[
                 toggleAction(
                     'highlight',
@@ -134,19 +249,55 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
     );
 };
 
-/**
- * The document as a tree: layers, the groups on them and their shapes. Pressing
- * a layer's name shows only that layer on this screen; dragging a shape or a
- * group onto a layer or a group moves it there.
- */
+/** Scene layers and component definitions have separate, stable homes. */
 export const Explorer: FC = () => {
     const { layers, found } = useOutline();
+    const document = useCurrentDocument();
+    const components = useComponents() ?? {};
+    const filter = useDocumentFilter().trim().toLowerCase();
+    const drawOrder = new Map(useShapesIds().map((id, index) => [id, index]));
+    const editingComponentId = useEditingComponentId();
+    const editingComponent = editingComponentId && components[editingComponentId];
+    const scene = sceneLayers(found, document).filter(
+        ({ layerId, groups, shapesIds }) =>
+            !filter ||
+            (layerId !== null && document.layers[layerId]?.name.toLowerCase().includes(filter)) ||
+            groups.length > 0 ||
+            shapesIds.length > 0
+    );
+    const sources = Object.values(components).flatMap((component) => {
+        const member = (id: string) => component.sourceShapes?.[id] ?? document.shapes[id];
+        const members = component.shapesIds.filter((id) => member(id));
+
+        members.sort((a, b) => {
+            if (!component.library) {
+                return (drawOrder.get(b) ?? -1) - (drawOrder.get(a) ?? -1);
+            }
+            const first = member(a);
+            const second = member(b);
+
+            return first && second ? byDrawingOrder(second, first) : 0;
+        });
+        const matching = members.filter((id) => member(id)?.name.toLowerCase().includes(filter));
+
+        if (filter && !component.name.toLowerCase().includes(filter) && matching.length === 0) {
+            return [];
+        }
+
+        return [
+            {
+                component,
+                shapesIds:
+                    !filter || component.name.toLowerCase().includes(filter) ? members : matching
+            }
+        ];
+    });
     const shownLayerId = useShownLayerId();
     const { explorer } = useControls();
-    const { moveShapesToLayer, showAllLayers } = useActions();
+    const { moveShapesToLayer, showAllLayers, leaveComponentSource } = useActions();
     const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
 
-    if (!explorer.visible || layers.length === 0) {
+    if (!explorer.visible) {
         return null;
     }
 
@@ -176,6 +327,14 @@ export const Explorer: FC = () => {
             <section className={styles.explorer} aria-label="Explorer">
                 <h3 className={styles.heading}>Explorer</h3>
                 <SearchBoxContainer />
+                {editingComponent && (
+                    <div className={styles.editing}>
+                        <span>Editing {editingComponent.name}</span>
+                        <button type="button" onClick={() => leaveComponentSource()}>
+                            Done
+                        </button>
+                    </div>
+                )}
                 {shownLayerId && (
                     <button
                         type="button"
@@ -185,39 +344,90 @@ export const Explorer: FC = () => {
                         Show all layers
                     </button>
                 )}
-                {found.length === 0 ? (
+                {filter && scene.length === 0 && sources.length === 0 ? (
                     <p className={styles.empty}>No shapes match</p>
                 ) : (
                     <ul>
-                        {found.map(({ layerId, groups, shapesIds }) =>
-                            layerId === null ? (
-                                <ExplorerItem
-                                    key="no-layer"
-                                    kind="layer"
-                                    name="No layer"
-                                    collapseId={
-                                        groups.length + shapesIds.length > 0
-                                            ? 'no-layer'
-                                            : undefined
-                                    }
-                                    onDrop={(dragged) =>
-                                        moveShapesToLayer({
-                                            shapeIds: shapesOf(dragged),
-                                            layerId: null
-                                        })
-                                    }
-                                >
-                                    <LayerContents groups={groups} shapesIds={shapesIds} />
-                                </ExplorerItem>
-                            ) : (
-                                <LayerItem
-                                    key={layerId}
-                                    layerId={layerId}
-                                    groups={groups}
-                                    shapesIds={shapesIds}
-                                    shapesOf={shapesOf}
-                                />
-                            )
+                        {(!filter || scene.length > 0) && (
+                            <RootItem scope="layers" name="Layers">
+                                {scene.map(({ layerId, groups, shapesIds }) =>
+                                    layerId === null ? (
+                                        <ExplorerItem
+                                            key="surface"
+                                            kind="layer"
+                                            name="Surface"
+                                            collapseId={
+                                                groups.length + shapesIds.length > 0
+                                                    ? 'surface'
+                                                    : undefined
+                                            }
+                                            onDrop={(dragged) =>
+                                                moveShapesToLayer({
+                                                    shapeIds: shapesOf(dragged),
+                                                    layerId: null
+                                                })
+                                            }
+                                        >
+                                            <LayerContents groups={groups} shapesIds={shapesIds} />
+                                        </ExplorerItem>
+                                    ) : (
+                                        <LayerItem
+                                            key={layerId}
+                                            layerId={layerId}
+                                            groups={groups}
+                                            shapesIds={shapesIds}
+                                            shapesOf={shapesOf}
+                                        />
+                                    )
+                                )}
+                                {!filter && !scene.some(({ layerId }) => layerId === null) && (
+                                    <ExplorerItem
+                                        kind="layer"
+                                        name="Surface"
+                                        onDrop={(dragged) =>
+                                            moveShapesToLayer({
+                                                shapeIds: shapesOf(dragged),
+                                                layerId: null
+                                            })
+                                        }
+                                    />
+                                )}
+                            </RootItem>
+                        )}
+                        {(!filter || sources.length > 0) && (
+                            <RootItem scope="components" name="Components">
+                                {sources.map(({ component, shapesIds }) => (
+                                    <SourceItem
+                                        key={component.id}
+                                        componentId={component.id}
+                                        shapesIds={shapesIds}
+                                    >
+                                        {shapesIds.map((shapeId) =>
+                                            component.library ? (
+                                                <ExplorerItem
+                                                    key={shapeId}
+                                                    kind={
+                                                        component.sourceShapes?.[shapeId]?.type ===
+                                                        'instance'
+                                                            ? 'instance'
+                                                            : 'shape'
+                                                    }
+                                                    name={
+                                                        component.sourceShapes?.[shapeId]?.name ??
+                                                        shapeId
+                                                    }
+                                                />
+                                            ) : (
+                                                <ShapeItem
+                                                    key={shapeId}
+                                                    shapeId={shapeId}
+                                                    sourceId={component.id}
+                                                />
+                                            )
+                                        )}
+                                    </SourceItem>
+                                ))}
+                            </RootItem>
                         )}
                     </ul>
                 )}

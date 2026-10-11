@@ -13,7 +13,7 @@ import {
     targetLines
 } from 'src/app/snapping';
 import { untracked } from 'src/app/untracked';
-import { getShapeBounds } from 'src/app/utils';
+import { getShapeBounds, isShapeLocked } from 'src/app/utils';
 import { keepsAspectRatio } from 'src/app/geometry';
 import { beyondClickSlip } from '../gestures';
 import { HandleTarget, SelectionSnapshot, ShapesSnapshot, TouchContact } from '../types';
@@ -71,6 +71,7 @@ export const beginGesture = (
         return false;
     }
 
+    state.selectedComponent = null;
     effects.collaboration.pause();
 
     const owner = { pointerId, touch, moved: false };
@@ -79,6 +80,44 @@ export const beginGesture = (
     pointer.lastPress = { documentId: state.currentDocumentId, position };
     pointer.current = position;
     pointer.path = [];
+
+    if (handle && 'componentId' in handle) {
+        const component = state.currentDocument.components[handle.componentId];
+        const frame = component ? groupFrame(state.currentDocument, component) : null;
+
+        if (
+            !component ||
+            !frame ||
+            component.library ||
+            component.shapesIds.some((id) => isShapeLocked(state.currentDocument, id))
+        ) {
+            effects.collaboration.resume();
+            return false;
+        }
+        const shapes = snapshotShapes(
+            component.shapesIds
+                .map((id) => state.currentDocument.shapes[id])
+                .filter((shape) => shape !== undefined)
+        );
+        state.selectedComponent = {
+            documentId: state.currentDocumentId,
+            componentId: component.id
+        };
+        pointer.gesture =
+            handle.type === 'rotate'
+                ? { ...owner, kind: 'rotatingComponent', componentId: component.id, shapes, frame }
+                : {
+                      ...owner,
+                      kind: 'resizingComponent',
+                      componentId: component.id,
+                      handle: handle.type,
+                      shapes,
+                      frame,
+                      snapLines: { x: null, y: null }
+                  };
+
+        return true;
+    }
 
     const handleGroup =
         handle && 'groupId' in handle && state.currentDocument.groups[handle.groupId];
@@ -201,7 +240,9 @@ const takeSnapTargets = (
     const changing = new Set(changingIds);
     // Read without the store's tracking: thousands of shapes are only looked at here.
     const document = untracked(state.currentDocument);
-    const others = [...shownShapesIds(document)].filter((id) => !changing.has(id));
+    const others = [...shownShapesIds(document, state.enteredComponentId)].filter(
+        (id) => !changing.has(id)
+    );
 
     effects.dragTargets.take(targetLines(others.map((id) => drawnBox(document.shapes[id]))));
 
@@ -298,19 +339,20 @@ export const movePointer = (
         }
     }
 
-    if (gesture.kind === 'resizing' || gesture.kind === 'resizingGroup') {
+    if (
+        gesture.kind === 'resizing' ||
+        gesture.kind === 'resizingGroup' ||
+        gesture.kind === 'resizingComponent'
+    ) {
         const resizing = gesture.kind === 'resizing';
         const original = resizing ? gesture.shapes[gesture.shapeId] : undefined;
         const changingIds = resizing ? [gesture.shapeId] : Object.keys(gesture.shapes);
         const rotation = resizing ? (original?.rotation ?? 0) : gesture.frame.rotation;
         const upright = rotation % 90 === 0;
         const startBox =
-            gesture.kind === 'resizingGroup'
-                ? gesture.frame.box
-                : original && getShapeBounds(original);
+            gesture.kind !== 'resizing' ? gesture.frame.box : original && getShapeBounds(original);
         const proportional =
-            gesture.kind === 'resizingGroup' ||
-            (original !== undefined && keepsAspectRatio(original));
+            gesture.kind !== 'resizing' || (original !== undefined && keepsAspectRatio(original));
 
         if (!free && upright && !effects.dragTargets.current()) {
             takeSnapTargets({ state, effects }, changingIds);
@@ -337,6 +379,15 @@ export const movePointer = (
                 handlerType: gesture.handle,
                 position: snapped.point,
                 original: gesture.shapes[gesture.shapeId]
+            });
+        } else if (gesture.kind === 'resizingComponent') {
+            const { componentId, handle, shapes, frame } = gesture;
+            actions.resizeComponent({
+                componentId,
+                handle,
+                position: snapped.point,
+                shapes,
+                frame
             });
         } else {
             const { groupId, handle, shapes, frame } = gesture;
@@ -375,6 +426,10 @@ export const movePointer = (
         const { groupId, shapes, frame } = gesture;
 
         actions.rotateGroup({ groupId, position, shapes, frame });
+    }
+    if (gesture.kind === 'rotatingComponent') {
+        const { componentId, shapes, frame } = gesture;
+        actions.rotateComponent({ componentId, position, shapes, frame });
     }
 };
 
@@ -468,7 +523,10 @@ export const cancelGesture = (
     }
 
     if ('frame' in gesture) {
-        const group = state.currentDocument.groups[gesture.groupId];
+        const group =
+            'componentId' in gesture
+                ? state.currentDocument.components[gesture.componentId]
+                : state.currentDocument.groups[gesture.groupId];
 
         if (group) {
             group.rotation = gesture.frame.rotation;
@@ -476,6 +534,7 @@ export const cancelGesture = (
     }
 
     if ('selection' in gesture) {
+        state.selectedComponent = null;
         Object.entries(gesture.selection).forEach(([id, selected]) => {
             const shape = state.currentDocument.shapes[id];
 

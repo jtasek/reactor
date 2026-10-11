@@ -1,10 +1,11 @@
 import React, {
     DragEvent,
     FC,
+    MouseEventHandler,
+    PointerEventHandler,
     ReactNode,
     createContext,
     useContext,
-    useLayoutEffect,
     useRef,
     useState
 } from 'react';
@@ -42,8 +43,10 @@ function readDragged(event: DragEvent): Dragged | null {
 }
 
 interface Props {
-    kind: 'layer' | 'group' | 'shape';
+    kind: 'root' | 'layer' | 'group' | 'shape' | 'component' | 'instance';
     name: string;
+    icon?: ReactNode;
+    secondary?: string;
     /** What dragging the item moves; a layer is not dragged. */
     dragged?: Dragged;
     selected?: boolean;
@@ -54,8 +57,10 @@ interface Props {
     /** Names the item to collapse, for an item holding rows; it has no toggle without one. */
     collapseId?: string;
     /** What pressing the name does; the name is plain text without it. */
-    onClick?: () => void;
+    onClick?: MouseEventHandler<HTMLButtonElement>;
+    onDoubleClick?: MouseEventHandler<HTMLButtonElement>;
     menuActions?: ItemMenuAction[];
+    rootButtons?: ReactNode;
     /** Takes a shape or group dropped on the item. */
     onDrop?: (dragged: Dragged) => void;
     children?: ReactNode;
@@ -65,6 +70,8 @@ interface Props {
 export const ExplorerItem: FC<Props> = ({
     kind,
     name,
+    icon,
+    secondary,
     dragged,
     selected = false,
     active = false,
@@ -72,20 +79,23 @@ export const ExplorerItem: FC<Props> = ({
     visible = true,
     collapseId,
     onClick,
+    onDoubleClick,
     menuActions,
+    rootButtons,
     onDrop,
     children
 }) => {
     const [dropTarget, setDropTarget] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
-    const row = useRef<HTMLDivElement>(null);
-    const floatingMenu = useRef<HTMLDivElement>(null);
+    const nameButton = useRef<HTMLButtonElement>(null);
     const items = useContext(CollapsedItems);
     const collapsed = collapseId !== undefined && items.collapsed.has(collapseId);
     // A search shows everything it finds, also in collapsed items.
     const searching = useDocumentFilter().trim() !== '';
     const className = [
         kind === 'layer' && styles.layer,
+        kind === 'root' && styles.root,
+        (kind === 'component' || kind === 'instance') && styles.component,
         selected && styles.selected,
         active && !selected && styles.active,
         shown && styles.shown,
@@ -95,63 +105,23 @@ export const ExplorerItem: FC<Props> = ({
         .join(' ');
     const acceptsDrop = (event: DragEvent) =>
         onDrop !== undefined && event.dataTransfer.types.includes(DRAG_TYPE);
-
-    useLayoutEffect(() => {
-        const host = row.current;
-        const menu = floatingMenu.current;
-        if (!menuOpen || !host || !menu) {
+    // The row menu can appear after a press and cover the name before click fires.
+    const handleNamePointerDown: PointerEventHandler<HTMLButtonElement> = (event) => {
+        if (event.button !== 0) {
             return;
         }
-
-        // The top layer escapes the panel's scrolling/clipping without taking room from its name.
-        menu.showPopover();
-        const place = () => {
-            const bounds = host.getBoundingClientRect();
-            const width = menu.getBoundingClientRect().width;
-            const left =
-                bounds.right + width <= window.innerWidth
-                    ? bounds.right
-                    : Math.max(0, bounds.left - width);
-            menu.style.left = `${left}px`;
-            menu.style.top = `${Math.max(0, Math.min(bounds.top, window.innerHeight - menu.offsetHeight))}px`;
-        };
-        place();
-        const observer = new ResizeObserver(place);
-        observer.observe(menu);
-        observer.observe(host);
-        const explorer = host.closest('section');
-        if (explorer) {
-            observer.observe(explorer);
+        onClick?.(event);
+    };
+    const handleNameClick: MouseEventHandler<HTMLButtonElement> = (event) => {
+        if (event.detail !== 0) {
+            return;
         }
-        const close = () => setMenuOpen(false);
-        const escape = (event: KeyboardEvent) => {
-            if (event.key !== 'Escape') {
-                return;
-            }
-            event.preventDefault();
-            event.stopPropagation();
-            host.querySelector<HTMLButtonElement>('button')?.focus();
-            close();
-        };
-        host.addEventListener('keydown', escape);
-        window.addEventListener('scroll', close, true);
-        window.addEventListener('resize', close);
-        window.addEventListener('blur', close);
-
-        return () => {
-            observer.disconnect();
-            host.removeEventListener('keydown', escape);
-            window.removeEventListener('scroll', close, true);
-            window.removeEventListener('resize', close);
-            window.removeEventListener('blur', close);
-            menu.hidePopover();
-        };
-    }, [menuOpen]);
+        onClick?.(event);
+    };
 
     return (
         <li className={className}>
             <div
-                ref={row}
                 className={[styles.row, dropTarget && styles.dropTarget].filter(Boolean).join(' ')}
                 data-menu-host
                 onMouseEnter={() => setMenuOpen(true)}
@@ -201,7 +171,7 @@ export const ExplorerItem: FC<Props> = ({
                         ⠿
                     </span>
                 )}
-                {collapseId && !searching && (
+                {collapseId && !searching ? (
                     <button
                         type="button"
                         className={styles.toggle}
@@ -210,22 +180,41 @@ export const ExplorerItem: FC<Props> = ({
                     >
                         <span aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
                     </button>
+                ) : (
+                    <span className={styles.toggleSpacer} aria-hidden="true" />
                 )}
                 {onClick ? (
                     <button
+                        ref={nameButton}
                         type="button"
                         className={styles.name}
-                        aria-pressed={kind === 'layer' ? shown : selected}
-                        onClick={onClick}
+                        aria-pressed={selected}
+                        onPointerDown={handleNamePointerDown}
+                        onClick={handleNameClick}
+                        onDoubleClick={onDoubleClick}
                     >
-                        {name}
+                        {icon}
+                        <span className={styles.itemText}>
+                            <span className={styles.itemName}>{name}</span>
+                            {secondary && <small>{secondary}</small>}
+                        </span>
                     </button>
                 ) : (
                     <span className={styles.label}>{name}</span>
                 )}
+                {rootButtons}
                 {menuActions && (
-                    <div ref={floatingMenu} className={styles.floatingMenu} popover="manual">
-                        <ItemMenu itemName={name} actions={menuActions} />
+                    <div className={styles.inlineMenu} data-open={menuOpen}>
+                        <ItemMenu
+                            key={menuOpen ? 'open' : 'closed'}
+                            itemName={name}
+                            actions={menuActions}
+                            compact
+                            onEscape={() => {
+                                nameButton.current?.focus();
+                                setMenuOpen(false);
+                            }}
+                        />
                     </div>
                 )}
             </div>

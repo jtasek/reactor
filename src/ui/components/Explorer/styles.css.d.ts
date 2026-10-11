@@ -1,22 +1,29 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
     active: string;
+    component: string;
     dropTarget: string;
+    editing: string;
     empty: string;
     explorer: string;
-    floatingMenu: string;
     grip: string;
     heading: string;
     hidden: string;
     icon: string;
+    inlineMenu: string;
+    itemName: string;
+    itemText: string;
     label: string;
     layer: string;
     name: string;
+    root: string;
+    rootAction: string;
     row: string;
     selected: string;
     showAll: string;
     shown: string;
     toggle: string;
+    toggleSpacer: string;
   }
 }
 

@@ -68,7 +68,7 @@
 }
 
 .inspector tbody td {
-    background-color: var(--control-background);
+    background-color: var(--panel-content-background);
 }
 
 .inspector tbody tr + tr + tr td {
@@ -227,7 +227,7 @@
 
 .alignRow {
     align-items: center;
-    background-color: var(--control-background);
+    background-color: var(--panel-content-background);
     display: flex;
     flex-direction: row;
     padding: var(--row-padding) var(--card-padding);
@@ -302,4 +302,165 @@
     font-size: 0.75rem;
     line-height: 16px;
     padding: 2px 8px 0;
+}
+
+.componentDetails,
+.instanceProps,
+.sourceChildHeading {
+    background: var(--panel-content-background);
+    border-radius: var(--radius-md);
+    display: grid;
+    gap: var(--panel-gap);
+    min-width: 0;
+    padding: 10px;
+}
+
+.componentHeading,
+.componentProps li,
+.instanceRow {
+    align-items: center;
+    display: flex;
+    gap: var(--panel-gap);
+    justify-content: space-between;
+    min-width: 0;
+}
+
+.componentHeading strong,
+.sourceChildHeading strong,
+.instanceProps strong {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.componentHeading small,
+.sourceChildHeading small,
+.instanceProps p,
+.componentHint {
+    color: var(--text-secondary-color);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    margin: 0;
+}
+
+.componentPreview {
+    background: var(--field-background);
+    border-radius: var(--radius-sm);
+    height: 96px;
+    width: 100%;
+}
+
+.componentName {
+    display: grid;
+    font-size: 0.75rem;
+    gap: 4px;
+}
+
+.componentDetails .heading,
+.instanceProps .heading {
+    margin: 4px 0 0;
+    padding: 0;
+}
+
+.componentProps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.componentProps li + li {
+    border-top: 1px solid var(--hairline-color);
+}
+
+.componentProps li span {
+    font-size: 0.75rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.componentProps li div {
+    display: flex;
+    flex: 0 0 auto;
+}
+
+.iconButton,
+.exposeButton {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--text-color);
+    cursor: pointer;
+    display: inline-flex;
+    height: 24px;
+    justify-content: center;
+    padding: 0;
+    width: 24px;
+}
+
+.iconButton:hover:not(:disabled),
+.exposeButton:hover:not(:disabled) {
+    background: var(--control-background-active);
+}
+
+.iconButton:disabled,
+.exposeButton:disabled {
+    cursor: default;
+    opacity: 0.35;
+}
+
+.exposeButton {
+    float: right;
+}
+
+.exposeButton[aria-pressed='true'] {
+    color: var(--selection-color);
+}
+
+.sourceChildHeading button,
+.sourceLink {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: var(--selection-color);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    gap: 4px;
+    justify-self: start;
+    padding: 0;
+}
+
+.sourceChildHeading p {
+    font-size: 0.75rem;
+    margin: 0;
+}
+
+.instanceProps {
+    margin-bottom: var(--panel-gap);
+}
+
+.instanceRow {
+    border-top: 1px solid var(--hairline-color);
+    flex-wrap: wrap;
+    padding-top: var(--panel-gap);
+}
+
+.instanceRow label {
+    flex-basis: 100%;
+    font-size: 0.75rem;
+}
+
+.instanceRow input,
+.instanceRow select {
+    min-width: 0;
+}
+
+.instanceRow input[type='text'],
+.instanceRow input[type='number'] {
+    flex: 1;
+    width: auto;
+}
+
+.instanceRow select {
+    max-width: 80px;
 }

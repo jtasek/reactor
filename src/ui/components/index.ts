@@ -17,7 +17,6 @@ export { DockablePanel, PanelLayout } from './PanelLayout';
 export { Canvas } from './Surface';
 export { Layout } from './Layout';
 export { InspectorContainer as Inspector } from './Inspector';
-export { SideBar } from './SideBar';
 export { Stack } from './Stack/Stack';
 export { Stats } from './Stats/Stats';
 export { StatusBarContainer as StatusBar } from './StatusBar';

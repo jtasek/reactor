@@ -1,0 +1,80 @@
+/* PanelLayout draws the glass behind these quiet library lists. */
+.components {
+    color: var(--text-color);
+    display: grid;
+    gap: var(--panel-gap);
+    padding: var(--panel-gap);
+    user-select: none;
+}
+
+.heading {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    margin: 0;
+    padding: 4px 10px 0;
+    text-transform: uppercase;
+}
+
+.list {
+    background: var(--panel-content-background);
+    border-radius: var(--radius-md);
+    list-style: none;
+    margin: 0;
+    padding: 4px 8px;
+}
+
+.row {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+    min-height: 34px;
+}
+
+.row + .row {
+    border-top: 1px solid var(--hairline-color);
+}
+
+.label {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.label strong {
+    color: var(--text-color-hover);
+    font-weight: 500;
+}
+
+.label small,
+.empty {
+    color: var(--text-secondary-color);
+    font-size: 0.75rem;
+}
+
+.empty {
+    margin: 0 10px;
+}
+
+.iconButton {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--text-color);
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 24px;
+    height: 24px;
+    justify-content: center;
+    padding: 0;
+}
+
+.iconButton:hover {
+    background: var(--control-background-active);
+}
+
+.iconButton:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+}

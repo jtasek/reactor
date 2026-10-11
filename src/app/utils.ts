@@ -595,6 +595,16 @@ export function isShapeVisible(document: Document | undefined, shapeId: string):
         return false;
     }
 
+    if (document.editingComponentId) {
+        return Boolean(
+            document.components[document.editingComponentId]?.shapesIds.includes(shapeId)
+        );
+    }
+
+    if (document.sourceOnlyShapesIds.has(shapeId)) {
+        return false;
+    }
+
     if (hiddenByShownLayer(document, shapeId)) {
         return false;
     }

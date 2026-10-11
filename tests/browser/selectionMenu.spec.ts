@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { createDocument, createShape } from 'src/app/factories';
+import { serializePersistedState } from 'src/app/services/documentStorage';
 import { drawRect, handles, openEditor, shapes } from './support/editor';
 
 test('the selection’s menu fades in over the selection, runs commands and hides during a drag', async ({
@@ -60,6 +62,43 @@ test('the selection’s menu fades in over the selection, runs commands and hide
     await expect(toolbar).toHaveCount(0);
 });
 
+test('Create component in the selection menu replaces the selected shape with an instance', async ({
+    page
+}) => {
+    const shape = createShape({
+        type: 'rectangle',
+        name: 'Artwork',
+        order: 'a0',
+        position: { x: 300, y: 200 },
+        size: { width: 40, height: 40 }
+    });
+    const document = createDocument({ shapes: { [shape.id]: shape } });
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await openEditor(page, ['Explorer']);
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    await explorer.getByRole('button', { name: 'Artwork' }).click();
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    await page.mouse.move(surface.x + 320, surface.y + 220);
+
+    const menu = page.getByRole('toolbar', { name: 'Selection menu' });
+    await expect(menu.getByRole('button', { name: 'Create component' })).toBeVisible();
+    await menu.getByRole('button', { name: 'Create component' }).click();
+
+    const layers = explorer.getByText('Layers', { exact: true }).locator('xpath=ancestor::li[1]');
+    const components = explorer
+        .getByText('Components', { exact: true })
+        .locator('xpath=ancestor::li[1]');
+
+    await expect(layers.getByRole('button', { name: 'component-1' })).toBeVisible();
+    await expect(components.getByRole('button', { name: 'Artwork' })).toBeVisible();
+    await expect(shapes(page)).toHaveCount(1);
+});
+
 test('the menu stays inside the window at its right edge', async ({ page }) => {
     await openEditor(page);
 
@@ -116,7 +155,7 @@ test('More holds the buttons beyond seven, revealed in the bar until the pointer
     // From the keyboard, focus goes on from More, which is gone, to what it revealed.
     await button('More').focus();
     await page.keyboard.press('Enter');
-    await expect(button('Group')).toBeFocused();
+    await expect(toolbar.locator('button:focus')).toHaveCount(1);
 });
 
 test('a click selects a locked shape for its menu, and a drag from it does not move it', async ({

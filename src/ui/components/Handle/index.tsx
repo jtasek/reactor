@@ -34,6 +34,7 @@ export const Handle: FC<Props> = ({
             data-handle
             data-shape-id={'shapeId' in owner ? owner.shapeId : undefined}
             data-group-id={'groupId' in owner ? owner.groupId : undefined}
+            data-component-id={'componentId' in owner ? owner.componentId : undefined}
             data-type={handlerType}
             onPointerDown={(e) => e.preventDefault()}
         />

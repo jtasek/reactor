@@ -2,19 +2,35 @@ import React, { ChangeEvent, FC, useCallback } from 'react';
 import { useActions } from 'src/app/hooks';
 import { useInstanceProperties } from 'src/app/componentHooks';
 import { InstancePropertyField } from './InstancePropertyField';
+import { Icon } from '../Icon';
+import styles from './styles.css';
 import type { PropertyValue } from 'src/app/types';
 
 /** The values exposed by one source, shared across selected instances. */
 export const InstanceProps: FC = () => {
     const data = useInstanceProperties();
+    const { selectComponentSource } = useActions();
 
-    if (!data || data.rows.length === 0) {
+    if (!data) {
         return null;
     }
 
     return (
-        <section aria-label="Component properties">
-            <h3>Component</h3>
+        <section className={styles.instanceProps} aria-label="Component properties">
+            <strong>Instance of {data.componentName}</strong>
+            <p>Changes here affect only the selected instance.</p>
+            <button
+                type="button"
+                className={styles.sourceLink}
+                onClick={() => selectComponentSource(data.componentId)}
+            >
+                <Icon icon={{ group: 'action', name: 'find_in_page', size: 16 }} />
+                Go to source
+            </button>
+            <h3 className={styles.heading}>Editable properties</h3>
+            {data.rows.length === 0 && (
+                <p>Select a source shape to make its properties editable in instances.</p>
+            )}
             {data.rows.map((row) => (
                 <InstancePropertyRow
                     key={row.prop.id}
@@ -52,7 +68,7 @@ const InstancePropertyRow: FC<{
     const handleReset = () => actions.resetInstanceOverrides({ instanceIds, propId: prop.id });
 
     return (
-        <div>
+        <div className={styles.instanceRow}>
             <label htmlFor={`component-prop-${prop.id}`}>{prop.label}</label>
             <InstancePropertyField
                 id={`component-prop-${prop.id}`}
@@ -75,8 +91,15 @@ const InstancePropertyRow: FC<{
                         </option>
                     ))}
             </select>
-            <button type="button" disabled={!overridden} onClick={handleReset}>
-                Reset
+            <button
+                type="button"
+                className={styles.iconButton}
+                title={`Reset ${prop.label} to source value`}
+                aria-label={`Reset ${prop.label} to source value`}
+                disabled={!overridden}
+                onClick={handleReset}
+            >
+                <Icon icon={{ group: 'action', name: 'restore', size: 16 }} />
             </button>
         </div>
     );

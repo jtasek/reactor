@@ -23,6 +23,7 @@ export const RotateHandle: FC<Props> = ({ owner, position, size = 5, active = fa
             data-handle
             data-shape-id={'shapeId' in owner ? owner.shapeId : undefined}
             data-group-id={'groupId' in owner ? owner.groupId : undefined}
+            data-component-id={'componentId' in owner ? owner.componentId : undefined}
             data-type="rotate"
             onPointerDown={(e) => e.preventDefault()}
         />

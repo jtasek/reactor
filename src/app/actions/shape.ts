@@ -35,13 +35,14 @@ import {
     numberedName,
     shapeNamer
 } from '../factories';
+import { containersHolding, groupAtPoint, shapeGroup, shownGroupShapesIds } from '../membership';
 import {
-    containersHolding,
-    groupAtPoint,
-    shapeGroup,
-    shownGroupShapesIds,
-    withTheirGroups
-} from '../membership';
+    componentAtPoint,
+    focusedSourceOnlyId,
+    selectionMembers,
+    shapeComponent,
+    shownComponentShapesIds
+} from '../componentSelection';
 import {
     orderAbove,
     ordersAbove,
@@ -71,7 +72,7 @@ import {
     angleBetween,
     shapeStyle
 } from '../utils';
-import { hasComponentInstances } from './components';
+import { hasComponentInstances, reachesComponent } from './components';
 import { componentSource, instanceBox } from '../componentSource';
 import { detachedMembers } from '../componentDetach';
 
@@ -169,9 +170,38 @@ export const addShape: ActionWithParam<ShapeInput> = ({ state }, options) => {
  * a group that was entered is left.
  */
 export const drawShape: ActionWithParam<ShapeInput> = ({ state, actions }, options) => {
+    const componentId = state.enteredComponentId;
+    const component = componentId && state.currentDocument.components[componentId];
+
+    if (componentId && (!component || component.library || component.locked)) {
+        return;
+    }
+    if (
+        component &&
+        options.type === 'instance' &&
+        reachesComponent(state.currentDocument, options.componentId, component.id)
+    ) {
+        return;
+    }
     actions.unselectShapes();
     state.enteredGroupId = null;
+    state.enteredComponentId = null;
     actions.addShape(options);
+    if (!component) {
+        return;
+    }
+    const shapeId = state.currentDocument.shapesIds.at(-1);
+
+    if (!shapeId) {
+        return;
+    }
+    component.shapesIds.push(shapeId);
+    state.enteredComponentId = component.id;
+    state.selectedComponent = {
+        documentId: state.currentDocumentId,
+        componentId: component.id,
+        shapeId
+    };
 };
 
 /** How far a clone is offset from its original so it does not cover it. */
@@ -262,9 +292,65 @@ const selectedGroups = ({ currentDocument }: Application) =>
         return { ...group, shapesIds: shownGroupShapesIds(currentDocument, group) };
     });
 
-/** The selected shapes as clipboard text, or null when there are none to copy. */
+/** Copy a selected source as one live instance, alongside any other selected shapes. */
+const selectedForCopy = (state: Application) => {
+    const document = state.currentDocument;
+    const focusedSourceId = focusedSourceOnlyId(state);
+    const sourceInstance = (componentId: string, order: string) => {
+        const source = componentSource(document, componentId);
+
+        if (!source) {
+            return null;
+        }
+
+        return createShape({
+            type: 'instance',
+            componentId,
+            position: source.box.topLeft,
+            overrides: {},
+            name: document.components[componentId].name,
+            order
+        });
+    };
+    const sources = new Map(
+        document.selectedComponentsIds.flatMap((id) =>
+            document.components[id].shapesIds.map((shapeId) => [shapeId, id] as const)
+        )
+    );
+    const copiedSources = new Set<string>();
+
+    const selected = selectedInDrawOrder(state).flatMap((shape) => {
+        const componentId = sources.get(shape.id);
+
+        if (!componentId) {
+            return [shape];
+        }
+        if (copiedSources.has(componentId)) {
+            return [];
+        }
+        copiedSources.add(componentId);
+        const instance = sourceInstance(componentId, shape.order);
+
+        return instance ? [instance] : [];
+    });
+
+    if (!focusedSourceId) {
+        return selected;
+    }
+    const firstId = document.components[focusedSourceId].shapesIds[0];
+    const firstShape = document.shapes[firstId];
+
+    if (!firstShape) {
+        return selected;
+    }
+    const instance = sourceInstance(focusedSourceId, firstShape.order);
+
+    return instance ? [instance, ...selected] : selected;
+};
+
+/** The selected items as clipboard text, or null when there are none to copy. */
 export const copySelection: ActionWithResult<string | null> = ({ state }) => {
-    const selected = takesEditorInput(state) ? selectedInDrawOrder(state) : [];
+    const selected = takesEditorInput(state) ? selectedForCopy(state) : [];
 
     return selected.length > 0
         ? writeClipboard(
@@ -622,8 +708,25 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
             .filter((shape) => shape.type === pasted[0].type)
             .map(shapeGeometryKey)
     );
+    const coversLiveSource = () =>
+        pasted.some((shape) => {
+            if (shape.type !== 'instance') {
+                return false;
+            }
+            const component = document.components[shape.componentId];
 
-    while (drawn.has(shapeGeometryKey(pasted[0]))) {
+            if (!component?.shapesIds.some((id) => document.shapes[id])) {
+                return false;
+            }
+            const source = componentSource(document, shape.componentId);
+
+            return (
+                source?.box.topLeft.x === shape.position.x &&
+                source.box.topLeft.y === shape.position.y
+            );
+        });
+
+    while (drawn.has(shapeGeometryKey(pasted[0])) || coversLiveSource()) {
         pasted.forEach((shape) => translateShape(shape, CLONE_OFFSET));
     }
 
@@ -702,6 +805,7 @@ export const removeShape: ActionWithParam<string> = ({ state, actions }, shapeId
 };
 
 export const toggleShapeSelected: ActionWithParam<string> = ({ state, actions }, shapeId) => {
+    state.selectedComponent = null;
     const shape = getShape(state, shapeId);
 
     shape.selected = !shape.selected;
@@ -712,6 +816,7 @@ export const toggleShapeSelected: ActionWithParam<string> = ({ state, actions },
 };
 
 export const selectShape: ActionWithParam<string> = ({ state, actions }, shapeId) => {
+    state.selectedComponent = null;
     const shape = getShape(state, shapeId);
 
     shape.selected = true;
@@ -762,6 +867,35 @@ const leaveGroupWithout = (state: Context['state'], shapeIds: string[]) => {
     ) {
         state.enteredGroupId = null;
     }
+    const component =
+        state.enteredComponentId && state.currentDocument.components[state.enteredComponentId];
+
+    if (
+        state.enteredComponentId !== null &&
+        (!component || shapeIds.some((id) => !component.shapesIds.includes(id)))
+    ) {
+        state.enteredComponentId = null;
+    }
+};
+
+const enterComponentUnderPointer = (
+    { state, actions }: Context,
+    wasSelected: (shapeId: string) => boolean
+): boolean => {
+    const hitId = shapeAtPointer(state);
+    const component = hitId === null ? undefined : shapeComponent(state.currentDocument, hitId);
+
+    if (
+        !hitId ||
+        !component ||
+        component.id === state.enteredComponentId ||
+        !shownComponentShapesIds(state.currentDocument, component).every(wasSelected)
+    ) {
+        return false;
+    }
+    actions.selectComponentChild({ componentId: component.id, shapeId: hitId });
+
+    return true;
 };
 
 /**
@@ -777,6 +911,9 @@ const enterGroupUnderPointer = (
     const hitId = shapeAtPointer(state);
     const group = hitId === null ? undefined : shapeGroup(state.currentDocument, hitId);
 
+    if (hitId && shapeComponent(state.currentDocument, hitId)) {
+        return false;
+    }
     if (hitId === null || !group || !wasSelected(group)) {
         return false;
     }
@@ -796,6 +933,10 @@ export const enterGroupAtPointer: ActionGuard = (context) => {
         return false;
     }
 
+    if (enterComponentUnderPointer(context, (id) => state.currentDocument.shapes[id].selected)) {
+        return true;
+    }
+
     return enterGroupUnderPointer(context, (group) =>
         state.currentDocument.selectedGroupsIds.includes(group.id)
     );
@@ -807,6 +948,10 @@ export const enterGroupAtPointer: ActionGuard = (context) => {
  */
 export const enterClickedGroup: ActionWithParam<Record<string, boolean>> = (context, selection) => {
     const { state } = context;
+
+    if (enterComponentUnderPointer(context, (id) => selection[id])) {
+        return;
+    }
 
     enterGroupUnderPointer(
         context,
@@ -834,7 +979,12 @@ const selectPressed = (
     }
 
     // A group is selected as one.
-    const hit = withTheirGroups(state.currentDocument, pressed, state.enteredGroupId);
+    const hit = selectionMembers(
+        state.currentDocument,
+        pressed,
+        state.enteredGroupId,
+        state.enteredComponentId
+    );
     const plain = untracked(state.currentDocument).shapes;
 
     shapesIds.forEach((id: string) => {
@@ -847,6 +997,15 @@ const selectPressed = (
     });
 };
 
+const boxMembersAtPointer = (state: Context['state']) =>
+    (
+        componentAtPoint(
+            state.currentDocument,
+            state.events.pointer.current,
+            state.enteredComponentId
+        ) ?? groupAtPoint(state.currentDocument, state.events.pointer.current, state.enteredGroupId)
+    )?.shapesIds ?? [];
+
 /**
  * Resolves the shape under the pointer and updates the selection so a move can
  * begin, returning whether a shape was hit. Iterates shapesIds in z-order so the
@@ -858,23 +1017,29 @@ const selectPressed = (
  */
 export const selectShapeAtPointer: ActionGuard = ({ state }) => {
     const hitId = shapeAtPointer(state);
-    // A press in a group's box, between its shapes, presses the group.
+    // A press between a container's shapes selects the container.
     const pressed =
         hitId !== null
             ? [hitId]
-            : (
-                  groupAtPoint(
-                      state.currentDocument,
-                      state.events.pointer.current,
-                      state.enteredGroupId
-                  )?.shapesIds ?? []
-              ).filter((id) => isInteractive(state, id));
+            : boxMembersAtPointer(state).filter((id) => isInteractive(state, id));
 
     if (pressed.length === 0) {
         return false;
     }
 
     selectPressed(state, pressed, (id) => isInteractive(state, id));
+
+    const component = shapeComponent(state.currentDocument, pressed[0]);
+    if (
+        component &&
+        component.id !== state.enteredComponentId &&
+        state.currentDocument.selectedShapesIds.every((id) => component.shapesIds.includes(id))
+    ) {
+        state.selectedComponent = {
+            documentId: state.currentDocumentId,
+            componentId: component.id
+        };
+    }
 
     return true;
 };
@@ -915,9 +1080,7 @@ const shapesClickSelects = (state: Context['state']): string[] => {
         return [hitId];
     }
 
-    const group = groupAtPoint(document, state.events.pointer.current, state.enteredGroupId);
-
-    return group ? shownGroupShapesIds(document, group) : [];
+    return boxMembersAtPointer(state).filter((id) => isShapeVisible(document, id));
 };
 
 /**
@@ -958,11 +1121,12 @@ export const selectShapes: Action = ({ state }) => {
     // A click leaves the group double-clicked into; a box leaves it once it reaches a shape outside it.
     if (isClick) {
         state.enteredGroupId = null;
+        state.enteredComponentId = null;
     }
 
     leaveGroupWithout(state, hits);
 
-    const boxed = withTheirGroups(document, hits, state.enteredGroupId);
+    const boxed = selectionMembers(document, hits, state.enteredGroupId, state.enteredComponentId);
 
     const hit = new Set(hits);
 
@@ -998,7 +1162,12 @@ export const setShapeBounds: ActionWithParam<{ id: string; bounds: Box }> = (
 };
 
 export const unselectShapes: Action = ({ state, actions }) => {
+    state.selectedComponent = null;
+    state.enteredComponentId = null;
     actions.unselectGuides();
+    Object.values(state.currentDocument.layers).forEach((layer) => {
+        layer.selected = false;
+    });
     const shapes = Object.values(state.currentDocument.shapes);
     shapes.forEach((shape) => {
         // Only write when it actually changes, so a background click with nothing

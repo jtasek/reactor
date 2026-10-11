@@ -1,0 +1,22 @@
+.selected,
+.highlight {
+    fill: var(--component-color);
+    fill-opacity: 0.05;
+    stroke: var(--component-color);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+}
+
+.selected {
+    stroke-dasharray: 6 3;
+}
+
+.highlight,
+.label {
+    pointer-events: none;
+}
+
+.label {
+    fill: var(--component-color);
+    font-size: var(--canvas-label-size);
+}

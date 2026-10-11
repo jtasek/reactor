@@ -4,14 +4,27 @@ import { createComponent, createDocument, createShape } from 'src/app/factories'
 import { serializePersistedState } from 'src/app/services/documentStorage';
 
 test('places and reloads a live component instance', async ({ page }) => {
-    await openEditor(page, ['Components']);
+    await openEditor(page, ['Explorer', 'Inspector']);
     await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
 
-    const panel = page.getByRole('region', { name: 'Components' });
-    await panel.getByRole('button', { name: 'Create component' }).click();
-    await expect(panel.getByRole('button', { name: 'Insert' })).toBeVisible();
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
+    const sources = explorer
+        .getByText('Components', { exact: true })
+        .locator('xpath=ancestor::li[1]');
+    await expect(sources.getByRole('button', { name: /^component-\d+$/ })).toBeVisible();
+    await sources.getByRole('button', { name: 'Collapse component-1' }).click();
+    await expect(explorer.getByRole('button', { name: 'rectangle-1' })).toHaveCount(0);
+    await sources.getByRole('button', { name: 'Expand component-1' }).click();
+    await expect(explorer.getByRole('button', { name: 'rectangle-1' })).toBeVisible();
+    await sources.getByRole('button', { name: 'component-1', exact: true }).click();
 
-    await panel.getByRole('button', { name: 'Insert' }).click();
+    await page
+        .getByRole('region', { name: 'Component source' })
+        .getByRole('button', {
+            name: 'Place instance'
+        })
+        .click();
     await pointer(page, 'pointerdown', { x: 250, y: 250 });
     await pointer(page, 'pointerup', { x: 250, y: 250 });
 
@@ -33,16 +46,20 @@ test('places and reloads a live component instance', async ({ page }) => {
 });
 
 test('an exposed fill changes one instance without changing its source', async ({ page }) => {
-    await openEditor(page, ['Components', 'Inspector']);
+    await openEditor(page, ['Explorer', 'Inspector']);
     await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
-    const panel = page.getByRole('region', { name: 'Components' });
+    const explorer = page.getByRole('region', { name: 'Explorer' });
 
-    await panel.getByRole('button', { name: 'Create component' }).click();
-    await panel.getByRole('combobox', { name: /Property to expose/ }).selectOption({
-        label: 'rectangle-1: Fill'
-    });
-    await panel.getByRole('button', { name: 'Expose property' }).click();
-    await panel.getByRole('button', { name: 'Insert' }).click();
+    await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
+    await explorer.getByRole('button', { name: 'rectangle-1' }).click();
+    await page.getByRole('button', { name: 'Expose Fill to instances' }).click();
+    await page.getByRole('button', { name: /Select component-\d+ source/ }).click();
+    await page
+        .getByRole('region', { name: 'Component source' })
+        .getByRole('button', {
+            name: 'Place instance'
+        })
+        .click();
     await pointer(page, 'pointerdown', { x: 250, y: 250 });
     await pointer(page, 'pointerup', { x: 250, y: 250 });
 
@@ -57,12 +74,21 @@ test('an exposed fill changes one instance without changing its source', async (
     expect(await fill(0)).toBe(original);
 
     const properties = page.getByRole('region', { name: 'Component properties' });
-    await properties.getByRole('button', { name: 'Reset', exact: true }).click();
+    await properties
+        .getByRole('button', { name: 'Reset rectangle-1: Fill to source value' })
+        .click();
     await expect.poll(() => fill(1)).toBe(original);
     await page.getByLabel('rectangle-1: Fill', { exact: true }).fill('#0000ff');
     await expect.poll(() => fill(1)).toBe('rgb(0, 0, 255)');
-    await panel.getByRole('button', { name: 'Remove property', exact: true }).click();
+    await properties.getByRole('button', { name: 'Go to source' }).click();
+    await page
+        .getByRole('region', { name: 'Component source' })
+        .getByRole('button', {
+            name: 'Stop exposing rectangle-1: Fill'
+        })
+        .click();
     await expect(properties).toHaveCount(0);
+    await explorer.getByRole('button', { name: 'Done' }).click();
     await expect.poll(() => fill(1)).toBe(original);
 });
 
@@ -70,18 +96,25 @@ for (const visible of [true, false]) {
     test(`visibility overrides work with a ${visible ? 'visible' : 'hidden'} source`, async ({
         page
     }) => {
-        await openEditor(page, ['Components', 'Inspector']);
+        await openEditor(page, ['Explorer', 'Inspector']);
         await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
-        const panel = page.getByRole('region', { name: 'Components' });
-        await panel.getByRole('button', { name: 'Create component' }).click();
-        await panel.getByRole('combobox', { name: /Property to expose/ }).selectOption({
-            label: 'rectangle-1: Visible'
-        });
-        await panel.getByRole('button', { name: 'Expose property' }).click();
+        const explorer = page.getByRole('region', { name: 'Explorer' });
+        await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
+        await explorer.getByRole('button', { name: 'rectangle-1' }).click();
+        await page.getByRole('button', { name: 'Expose Visible to instances' }).click();
         if (!visible) {
             await page.getByRole('checkbox', { name: 'Visible', exact: true }).click();
         }
-        await panel.getByRole('button', { name: 'Insert', exact: true }).click();
+        const sources = explorer
+            .getByText('Components', { exact: true })
+            .locator('xpath=ancestor::li[1]');
+        await sources.getByRole('button', { name: /^component-\d+$/ }).click();
+        await page
+            .getByRole('region', { name: 'Component source' })
+            .getByRole('button', {
+                name: 'Place instance'
+            })
+            .click();
         await pointer(page, 'pointerdown', { x: 250, y: 250 });
         await pointer(page, 'pointerup', { x: 250, y: 250 });
 

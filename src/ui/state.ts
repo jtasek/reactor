@@ -8,7 +8,7 @@ export const state: UI = {
     },
     components: {
         id: 'components',
-        name: 'Components',
+        name: 'Library',
         visible: false
     },
     contextMenu: {
@@ -38,7 +38,7 @@ export const state: UI = {
     explorer: {
         id: 'explorer',
         name: 'Explorer',
-        visible: false
+        visible: true
     },
     grid: {
         id: 'grid',
@@ -71,7 +71,7 @@ export const state: UI = {
     inspector: {
         id: 'inspector',
         name: 'Inspector',
-        visible: false
+        visible: true
     },
     guides: {
         id: 'guides',
@@ -81,11 +81,6 @@ export const state: UI = {
     rulers: {
         id: 'rulers',
         name: 'Rulers',
-        visible: false
-    },
-    sideBar: {
-        id: 'sideBar',
-        name: 'Side Bar',
         visible: false
     },
     surface: {

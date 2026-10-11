@@ -39,8 +39,13 @@ export async function openEditor(page: Page, controls: string[] = []) {
     await page.goto('/');
     await expect(page.locator('svg#surface')).toBeVisible();
 
-    // The drawing tools live in the side bar, which is hidden by default.
-    for (const control of ['Side Bar', 'Tool Bar', ...controls]) {
+    if (!controls.includes('Inspector')) {
+        await page.getByRole('checkbox', { name: 'Inspector', exact: true }).uncheck();
+    }
+    if (!controls.includes('Explorer')) {
+        await page.getByRole('checkbox', { name: 'Explorer', exact: true }).uncheck();
+    }
+    for (const control of ['Tool Bar', ...controls]) {
         await page.getByRole('checkbox', { name: control, exact: true }).check();
     }
 }

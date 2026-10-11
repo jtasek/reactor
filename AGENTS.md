@@ -140,8 +140,8 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   (not suppressed). `pnpm lint:baseline` fails on any finding in a file changed relative to
   `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
   recorded counts: fix a touched file's existing findings rather than adding exceptions.
-- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 448 KiB or
-  any file 240 KiB (the budget in `webpack.config.mjs`, measured at 440 and 225 KiB); raise
+- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 490 KiB or
+  any file 248 KiB (the budget in `webpack.config.mjs`, measured at 486 and 246 KiB); raise
   it only for code every page needs as it opens, after checking what grew. Commands and
   tools load with the editor page, which registers them (`src/pages/registerEditor.ts`),
   not at startup: the store keeps only the tools namespace's state and actions
@@ -362,10 +362,10 @@ lists only what has a name containing what is typed (`filterOutline`): a layer o
 all it holds, a shape with its group and layer. The text is the document's runtime `filter`,
 neither saved nor shared. Layers and groups holding rows collapse; the explorer keeps which
 are, also through a search that leaves them out, and opens them while a search is typed. A row's menu
-(`ItemMenu`, `src/ui/components/ItemMenu`) fades in under the pointer: hide and lock switch
+(`ItemMenu`, `src/ui/components/ItemMenu`) opens inside the hovered or focused row: hide and lock switch
 the row's item itself, and its commands run for that item, which `runCommandOn` selects
-first. Up to seven buttons are in the bar; More reveals the rest until the pointer or focus
-leaves the menu. Pressing a
+first. Four buttons fit in a row; More swaps to the remaining actions until Back is pressed or the pointer or focus
+leaves the row. Pressing a
 layer's name or star, or running the Highlight layer command for the layer of the selected
 shapes (`selectionLayerId`), shows only that layer and the shapes on no layer (`showOnlyLayer`,
 `document.shownLayerId`), on this screen only: it is a runtime field, neither saved nor

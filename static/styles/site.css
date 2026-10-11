@@ -18,6 +18,8 @@ body,
 :root {
   --primary-action-color: rgb(234, 2, 130);
   --selection-color: #1a5ddb;
+  --component-color: #6a47a8;
+  --accent: #9370db;
   --warning-background: #f6ecd0;
   --warning-color: #8a6100;
   --error-background: #f6dcdc;
@@ -27,6 +29,7 @@ body,
   --canvas-label-halo-width: 3px;
   --text-color: rgba(0, 0, 0, .7);
   --text-color-hover: rgba(0, 0, 0, 1);
+  --text-secondary-color: #59616d;
   --backdrop-filter: blur(5px);
   --border-color: rgba(0, 0, 0, .3);
   --border-radius: 10px;
@@ -37,6 +40,7 @@ body,
   --box-shadow-hover: 0 4px 5px 0 rgba(0, 0, 0, .14), 0 1px 10px 0 rgba(0, 0, 0, .12),
     0 2px 4px -1px rgba(0, 0, 0, .2);
   --control-background: rgba(255, 255, 255, .7);
+  --panel-content-background: #fff;
   --control-background-active: rgba(255, 255, 255, 1);
   --control-background-disabled: rgba(255, 255, 255, .3);
   --control-width: 260px;
@@ -49,7 +53,6 @@ body,
   --surface: #fff;
   --ink-strong: #1f1f1f;
   --backdrop: rgb(0 0 0 / 35%);
-  --accent: #9370db;
   --handle-active: #f08080;
   --menu-icon: #444;
   --menu-hover: #ececec;

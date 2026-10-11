@@ -163,6 +163,19 @@ describe('dragging shapes', () => {
         expect(store.state.events.pointer.gesture.kind).toBe('idle');
     });
 
+    it('does not snap to a hidden component source', () => {
+        const { store, events, position } = twoSquares();
+        const sourceId = store.state.currentDocument.shapesIds[1];
+        store.actions.addComponent({ id: 'source', shapesIds: [sourceId], sourceOnly: true });
+
+        events.beginGesture({ pointerId: 1, position: { x: 20, y: 20 } });
+        events.movePointer({ pointerId: 1, position: { x: 217, y: 50 } });
+
+        expect(position()).toEqual({ x: 197, y: 30 });
+        const { gesture } = store.state.events.pointer;
+        expect(gesture.kind === 'moving' && gesture.snapLines).toEqual({ x: null, y: null });
+    });
+
     it('puts the shapes back exactly when a snapped drag is canceled', () => {
         const { store, events, position } = twoSquares();
 
@@ -232,7 +245,7 @@ describe('the shapes shown, taken at once', () => {
         const ids = [...store.state.currentDocument.shapesIds];
         const document = () => store.state.currentDocument;
         const agree = () =>
-            expect([...shownShapesIds(document())]).toEqual(
+            expect([...shownShapesIds(document(), store.state.enteredComponentId)]).toEqual(
                 ids.filter((id) => isShapeVisible(document(), id))
             );
 
@@ -253,6 +266,27 @@ describe('the shapes shown, taken at once', () => {
 
         store.actions.showOnlyLayer('pipes');
         agree();
+    });
+
+    it('excludes source-only shapes except while editing their source', () => {
+        const { store } = createTestStore();
+        const square = (x: number): ShapeInput => ({
+            type: 'rectangle',
+            position: { x, y: 0 },
+            size: { width: 10, height: 10 }
+        });
+        store.actions.addShape(square(0));
+        store.actions.addShape(square(40));
+        const [sourceId, sceneId] = store.state.currentDocument.shapesIds;
+        store.actions.addComponent({ id: 'source', shapesIds: [sourceId], sourceOnly: true });
+
+        expect([
+            ...shownShapesIds(store.state.currentDocument, store.state.enteredComponentId)
+        ]).toEqual([sceneId]);
+        store.actions.editComponentSource('source');
+        expect([
+            ...shownShapesIds(store.state.currentDocument, store.state.enteredComponentId)
+        ]).toEqual([sourceId]);
     });
 });
 

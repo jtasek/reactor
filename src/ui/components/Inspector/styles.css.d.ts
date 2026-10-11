@@ -4,9 +4,21 @@ declare namespace StylesCssNamespace {
     alignRow: string;
     bound: string;
     color: string;
+    componentDetails: string;
+    componentHeading: string;
+    componentHint: string;
+    componentName: string;
+    componentPreview: string;
+    componentProps: string;
+    exposeButton: string;
     heading: string;
+    iconButton: string;
     inspector: string;
+    instanceProps: string;
+    instanceRow: string;
     note: string;
+    sourceChildHeading: string;
+    sourceLink: string;
     variablePicker: string;
   }
 }

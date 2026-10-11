@@ -27,12 +27,12 @@ export const distractionFreeMode: Action = ({ state }) => {
     state.ui.components.visible = false;
     state.ui.contextMenu.visible = false;
     state.ui.controlPanel.visible = false;
+    state.ui.explorer.visible = false;
     state.ui.groupPanel.visible = false;
+    state.ui.inspector.visible = false;
     state.ui.layerPanel.visible = false;
     state.ui.menuBar.visible = false;
     state.ui.miniMap.visible = false;
-    state.ui.inspector.visible = false;
-    state.ui.sideBar.visible = false;
     state.ui.statusBar.visible = false;
     state.ui.surface.visible = false;
     state.ui.toolBar.visible = false;

@@ -38,6 +38,7 @@ export const newDocument: Action = ({ state, effects }) => {
 
     setDocument(state, document);
     state.currentDocumentId = document.id;
+    state.enteredComponentId = null;
     effects.navigate('/');
 };
 
@@ -76,6 +77,7 @@ export const resetDocument: Action = ({ state }) => {
     document.modified = new Date();
     delete document.shownLayerId;
     state.enteredGroupId = null;
+    state.enteredComponentId = null;
 };
 
 export const cloneDocument: ActionWithParam<string> = ({ state, effects }, documentId) => {
@@ -98,6 +100,8 @@ export const removeDocument: ActionWithParam<string> = ({ state }, documentId) =
         return;
     }
 
+    state.enteredComponentId = null;
+
     const nextId = Object.keys(state.documents)[0];
 
     if (nextId) {
@@ -116,6 +120,7 @@ export const openDocument: ActionWithParam<string> = ({ state }, documentId) => 
     getDocument(state, documentId);
 
     state.currentDocumentId = documentId;
+    state.enteredComponentId = null;
     state.resetDocumentId = null;
 };
 
