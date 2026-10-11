@@ -21,7 +21,10 @@ export const InstanceProps: FC<{ nameField?: ReactNode }> = ({ nameField }) => {
     return (
         <section className={styles.instanceProps} aria-label="Component properties">
             <div className={styles.instanceIdentity}>
-                {nameField}
+                <div className={styles.instanceTitle}>
+                    <Icon icon={{ group: 'reactor', name: 'component', size: 20 }} />
+                    {nameField}
+                </div>
                 <button
                     type="button"
                     className={styles.sourceLink}

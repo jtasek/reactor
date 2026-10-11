@@ -29,7 +29,17 @@ test('places and reloads a live component instance', async ({ page }) => {
     await pointer(page, 'pointerup', { x: 250, y: 250 });
 
     const inspector = page.getByRole('region', { name: 'Component properties' });
-    await expect(inspector.getByText('No editable properties yet.')).toBeVisible();
+    const empty = inspector.getByText('No editable properties yet.');
+    await expect(empty).toBeVisible();
+    const regionBox = (await inspector.boundingBox())!;
+    const emptyBox = (await empty.boundingBox())!;
+    expect(emptyBox.x).toBeGreaterThan(regionBox.x);
+    expect(emptyBox.x + emptyBox.width).toBeLessThan(regionBox.x + regionBox.width);
+    const nameBox = (await inspector.getByRole('textbox', { name: 'Name' }).boundingBox())!;
+    const actionBox = (await inspector
+        .getByRole('button', { name: 'Edit component' })
+        .boundingBox())!;
+    expect(Math.abs(nameBox.x - actionBox.x)).toBeLessThan(1);
     const layout = page
         .getByRole('columnheader', { name: 'Layout' })
         .locator('xpath=ancestor::tbody[1]');
