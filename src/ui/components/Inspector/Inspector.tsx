@@ -4,7 +4,7 @@ import { PropertyField } from './PropertyField';
 import { PropertyGroup } from './PropertyGroup';
 import { AlignSection } from './AlignSection';
 import { InstanceProps } from './InstanceProps';
-import { ComponentDetails, SourceChildHeading } from './ComponentDetails';
+import { ComponentDetails, SourceChildBreadcrumb } from './ComponentDetails';
 import { InspectorHeader } from './InspectorHeader';
 import { useComponentExposure, useSelectedComponentContext } from 'src/app/componentHooks';
 import { useActions } from 'src/app/hooks';
@@ -150,6 +150,9 @@ export const Inspector: FC<Props> = ({
             key="selection"
             className={`${styles.inspector} ${instance ? styles.instanceInspector : ''}`}
         >
+            {componentContext?.kind === 'child' && (
+                <SourceChildBreadcrumb componentId={componentContext.componentId} />
+            )}
             <InspectorHeader
                 objectType={identity?.type}
                 nameField={nameField}
@@ -166,9 +169,6 @@ export const Inspector: FC<Props> = ({
                 visibleExposure={exposureFor('visible')}
                 lockedExposure={exposureFor('locked')}
             />
-            {componentContext?.kind === 'child' && (
-                <SourceChildHeading componentId={componentContext.componentId} />
-            )}
             {instance && <InstanceProps />}
             <AlignSection />
             <table>

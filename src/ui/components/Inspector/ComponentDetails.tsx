@@ -2,6 +2,7 @@ import React, { FC } from 'react';
 import { useActions, useComponent, useComponentSource, useCurrentDocument } from 'src/app/hooks';
 import type { InstanceShape } from 'src/app/types';
 import { Icon } from '../Icon';
+import { ObjectTypeSymbol } from '../ObjectTypeSymbol';
 import { Instance } from '../Shape/Instance';
 import { useComponentLibraries } from 'src/app/componentHooks';
 import styles from './styles.css';
@@ -147,23 +148,22 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
     );
 };
 
-export const SourceChildHeading: FC<{ componentId: string }> = ({ componentId }) => {
+export const SourceChildBreadcrumb: FC<{ componentId: string }> = ({ componentId }) => {
     const component = useComponent(componentId);
     const { selectComponentSource } = useActions();
 
     return (
-        <div className={styles.sourceChildHeading}>
-            <small>Source shape · changes update instances</small>
+        <nav className={styles.sourceChildBreadcrumb} aria-label="Component hierarchy">
             <button
                 type="button"
                 title={`Select ${component.name} source`}
                 aria-label={`Select ${component.name} source`}
                 onClick={() => selectComponentSource(componentId)}
             >
-                <Icon icon={FIND_ICON} />
-                {component.name}
+                <Icon icon={{ group: 'navigation', name: 'chevron_left', size: 16 }} />
+                <ObjectTypeSymbol type="component" />
+                <span>{component.name}</span>
             </button>
-            <p>Use + beside a property to let instances change it.</p>
-        </div>
+        </nav>
     );
 };

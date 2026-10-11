@@ -26,6 +26,37 @@ test('the Inspector header renames a component source without a duplicate Name f
     await expect(panel.getByRole('columnheader', { name: 'Identity' })).toHaveCount(0);
 });
 
+test('a long component breadcrumb stays within the Inspector', async ({ page }) => {
+    await openEditor(page, ['Explorer', 'Inspector']);
+    await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
+
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
+    await explorer
+        .getByText('Components', { exact: true })
+        .locator('xpath=ancestor::li[1]')
+        .getByRole('button', { name: 'component-1', exact: true })
+        .click();
+
+    const panel = page.locator('[data-panel="inspector"]');
+    const name = `Component-${'a'.repeat(200)}`;
+    await panel.getByRole('textbox', { name: 'Name', exact: true }).fill(name);
+    await panel.getByRole('textbox', { name: 'Name', exact: true }).press('Enter');
+    await explorer.getByRole('button', { name: 'rectangle-1' }).click();
+
+    const breadcrumb = panel.getByRole('navigation', { name: 'Component hierarchy' });
+    const link = breadcrumb.getByRole('button', { name: `Select ${name} source` });
+    const linkBox = (await link.boundingBox())!;
+    const panelBox = (await panel.boundingBox())!;
+    expect(linkBox.x).toBeGreaterThanOrEqual(panelBox.x);
+    expect(linkBox.x + linkBox.width).toBeLessThanOrEqual(panelBox.x + panelBox.width);
+    expect(await link.locator('span').evaluate((element) => element.scrollWidth)).toBeGreaterThan(
+        await link.locator('span').evaluate((element) => element.clientWidth)
+    );
+    await link.click();
+    await expect(panel.getByRole('region', { name: 'Component source' })).toBeVisible();
+});
+
 test('places and reloads a live component instance', async ({ page }) => {
     await openEditor(page, ['Explorer', 'Inspector']);
     await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
