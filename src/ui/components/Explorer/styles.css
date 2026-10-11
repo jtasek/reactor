@@ -206,12 +206,6 @@
     width: 20px;
 }
 
-.inlineMenu [role='toolbar'] svg use {
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1px;
-}
-
 .label {
     color: var(--text-secondary-color);
     flex: 1;
