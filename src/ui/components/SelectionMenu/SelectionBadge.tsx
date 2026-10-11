@@ -4,6 +4,8 @@ import { ObjectTypeSymbol } from '../ObjectTypeSymbol';
 import { selectionIdentity } from '../selectionIdentity';
 import styles from './styles.css';
 
+const BADGE_OFFSET = 24;
+
 /** The selected object's name stays visible even when its action menu is hidden. */
 export const SelectionBadge: FC = () => {
     const selection = useAppState((state) => {
@@ -21,6 +23,11 @@ export const SelectionBadge: FC = () => {
     }
 
     const { identity, camera } = selection;
+
+    if (identity.type !== 'component' && identity.type !== 'instance') {
+        return null;
+    }
+
     const top = identity.extent ? identity.extent.topLeft.y * camera.scale + camera.position.y : 0;
     const bottom = identity.extent
         ? identity.extent.bottomRight.y * camera.scale + camera.position.y
@@ -31,20 +38,24 @@ export const SelectionBadge: FC = () => {
     let badgeTop = 12;
 
     if (identity.extent) {
-        badgeTop = top >= 72 ? top - 72 : Math.min(bottom + 46, window.innerHeight - 30);
+        badgeTop =
+            top >= BADGE_OFFSET
+                ? top - BADGE_OFFSET
+                : Math.min(bottom + 6, window.innerHeight - BADGE_OFFSET);
     }
 
     return (
         <div
             className={styles.selectionBadge}
             data-selection-badge
+            data-object-type={identity.type}
             style={{
                 left: Math.max(4, Math.min(left, window.innerWidth - 180)),
                 top: badgeTop
             }}
             title={identity.name}
         >
-            <ObjectTypeSymbol type={identity.type} />
+            <ObjectTypeSymbol type="component" />
             <span>{identity.name}</span>
         </div>
     );

@@ -74,7 +74,7 @@ test('a normal Explorer click replaces selection and Shift-click toggles shapes 
     await expect(second).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('object symbols identify selections in the Explorer, Inspector, and on the canvas', async ({
+test('object symbols identify selections, with canvas name labels only for components', async ({
     page
 }) => {
     await page.getByRole('checkbox', { name: 'Inspector', exact: true }).check();
@@ -95,26 +95,23 @@ test('object symbols identify selections in the Explorer, Inspector, and on the 
         await expect(item.locator(`svg[data-object-type="${type}"]`)).toHaveCount(1);
         await item.click();
         await expect(inspector.locator(`header svg[data-object-type="${type}"]`)).toHaveCount(1);
-        await expect(badge.locator(`svg[data-object-type="${type}"]`)).toHaveCount(1);
-        await expect(badge).toContainText(name);
 
-        if (type === 'rectangle') {
-            const shapeBox = await page.locator('svg#surface rect[data-cy]').first().boundingBox();
-            const badgeBox = await badge.boundingBox();
-
-            expect(badgeBox!.y + badgeBox!.height).toBeLessThan(shapeBox!.y);
+        if (type !== 'component' && type !== 'instance') {
+            await expect(badge).toHaveCount(0);
+            continue;
         }
+
+        await expect(badge.locator('svg[data-object-type="component"]')).toHaveCount(1);
+        await expect(badge).toContainText(name);
     }
 
     await explorer.getByRole('button', { name: 'New layer' }).click();
     const layer = explorer.getByRole('button', { name: /^layer-\d+$/ }).first();
-    const layerName = await layer.textContent();
 
     await expect(layer.locator('svg[data-object-type="layer"]')).toHaveCount(1);
     await layer.click();
     await expect(inspector.locator('header svg[data-object-type="layer"]')).toHaveCount(1);
-    await expect(badge.locator('svg[data-object-type="layer"]')).toHaveCount(1);
-    await expect(badge).toContainText(layerName ?? '');
+    await expect(badge).toHaveCount(0);
 });
 
 test('component children support the same selection and Shift-click behavior', async ({ page }) => {
