@@ -449,8 +449,7 @@
 }
 
 .componentDetails,
-.instanceProps,
-.sourceChildHeading {
+.instanceProps {
     background: var(--panel-content-background);
     border-radius: var(--radius-md);
     display: grid;
@@ -470,7 +469,6 @@
 }
 
 .componentHeading small,
-.sourceChildHeading small,
 .instanceProps p,
 .componentHint {
     color: var(--text-secondary-color);
@@ -561,22 +559,42 @@
     margin-top: 4px;
 }
 
-.sourceChildHeading button {
+.sourceChildBreadcrumb button {
     align-items: center;
     background: transparent;
     border: 0;
-    color: var(--selection-color);
+    border-radius: var(--radius-sm);
+    color: var(--component-color);
     cursor: pointer;
     display: inline-flex;
     font: inherit;
     gap: 4px;
-    justify-self: start;
-    padding: 0;
+    max-width: 100%;
+    min-width: 0;
+    padding: 2px 0;
+    text-align: left;
 }
 
-.sourceChildHeading p {
-    font-size: 0.75rem;
-    margin: 0;
+.sourceChildBreadcrumb button svg {
+    flex-shrink: 0;
+}
+
+.sourceChildBreadcrumb button span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sourceChildBreadcrumb {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 6px;
+    min-width: 0;
+}
+
+.sourceChildBreadcrumb button:hover {
+    background: var(--control-background-active);
 }
 
 .instanceProps {
