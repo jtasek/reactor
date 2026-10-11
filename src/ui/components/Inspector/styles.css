@@ -594,7 +594,7 @@
     align-items: baseline;
     display: flex;
     justify-content: space-between;
-    padding: 12px var(--inspector-inset) 8px;
+    padding: 12px calc(var(--inspector-inset) + var(--card-padding)) 8px;
 }
 
 .instanceSectionHeading .heading {

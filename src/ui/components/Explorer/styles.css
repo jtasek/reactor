@@ -266,6 +266,10 @@
     width: 16px;
 }
 
+.row[draggable='true'] > .toggleSpacer {
+    display: none;
+}
+
 .name:focus-visible,
 .toggle:focus-visible {
     border-radius: var(--radius-sm);
