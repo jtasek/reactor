@@ -280,6 +280,11 @@
     width: 16px;
 }
 
+.toggleSpacer {
+    flex: 0 0 16px;
+    width: 16px;
+}
+
 .name:focus-visible,
 .toggle:focus-visible {
     border-radius: var(--radius-sm);

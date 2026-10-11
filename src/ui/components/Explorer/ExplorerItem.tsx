@@ -157,7 +157,7 @@ export const ExplorerItem: FC<Props> = ({
                         ⠿
                     </span>
                 )}
-                {collapseId && !searching && (
+                {collapseId && !searching ? (
                     <button
                         type="button"
                         className={styles.toggle}
@@ -166,6 +166,8 @@ export const ExplorerItem: FC<Props> = ({
                     >
                         <span aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
                     </button>
+                ) : (
+                    <span className={styles.toggleSpacer} aria-hidden="true" />
                 )}
                 {onClick ? (
                     <button

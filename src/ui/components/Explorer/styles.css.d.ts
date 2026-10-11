@@ -23,6 +23,7 @@ declare namespace StylesCssNamespace {
     showAll: string;
     shown: string;
     toggle: string;
+    toggleSpacer: string;
   }
 }
 
