@@ -578,6 +578,10 @@
     padding: 10px;
 }
 
+.instanceInspector {
+    container-type: inline-size;
+}
+
 .instanceInspector > table {
     display: block;
 }
@@ -587,6 +591,13 @@
     gap: 6px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
+}
+
+/* Keep room for a numeric value beside each label in a narrow panel. */
+@container (width < 230px) {
+    .instanceInspector > table > tbody:first-of-type {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 .instanceInspector > table > tbody:first-of-type > tr:first-child {
@@ -645,6 +656,7 @@
 
 .instanceFooter tbody {
     display: flex;
+    flex-wrap: wrap;
     gap: 14px;
 }
 
@@ -653,6 +665,7 @@
     display: flex;
     flex-direction: row-reverse;
     gap: 5px;
+    max-width: 100%;
 }
 
 .instanceInspector .instanceFooter td {
@@ -662,7 +675,22 @@
 }
 
 .instanceInspector .instanceFooter td:first-child {
+    flex-shrink: 0;
     overflow: visible;
+}
+
+.instanceInspector .instanceFooter td:last-child {
+    display: flex;
+    min-width: 0;
+}
+
+.instanceFooter .bound {
+    max-width: none;
+    min-width: 0;
+}
+
+.instanceFooter .bound + button {
+    flex-shrink: 0;
 }
 
 .instanceRow {
