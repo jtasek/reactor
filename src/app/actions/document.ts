@@ -38,6 +38,7 @@ export const newDocument: Action = ({ state, effects }) => {
 
     setDocument(state, document);
     state.currentDocumentId = document.id;
+    state.enteredComponentId = null;
     effects.navigate('/');
 };
 
@@ -98,6 +99,8 @@ export const removeDocument: ActionWithParam<string> = ({ state }, documentId) =
     if (state.documents[state.currentDocumentId]) {
         return;
     }
+
+    state.enteredComponentId = null;
 
     const nextId = Object.keys(state.documents)[0];
 

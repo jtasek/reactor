@@ -257,12 +257,26 @@ export function drawnExtent(document: Document, shapeIds: string[]): Box | null 
  * The shapes shown, in drawing order, taken in one pass over the containers: as
  * `isShapeVisible` says of each, without searching the containers for each shape.
  */
-export function shownShapesIds(document: Document): Set<string> {
+export function shownShapesIds(document: Document, editingComponentId: string | null): Set<string> {
+    if (editingComponentId) {
+        const members = new Set(document.components[editingComponentId]?.shapesIds ?? []);
+
+        return new Set(
+            document.shapesIds.filter((id) => members.has(id) && document.shapes[id]?.visible)
+        );
+    }
+
     const shownLayer = document.shownLayerId ? document.layers[document.shownLayerId] : undefined;
     const onShownLayer = new Set(shownLayer?.shapesIds ?? []);
     const onLayers = new Set(Object.values(document.layers).flatMap((layer) => layer.shapesIds));
+    const components = Object.values(document.components);
+    const sourceOnly = new Set(
+        components
+            .filter((component) => component.sourceOnly && !component.library)
+            .flatMap((component) => component.shapesIds)
+    );
     const inHiddenContainer = new Set(
-        [...Object.values(document.groups), ...Object.values(document.layers)]
+        [...Object.values(document.groups), ...Object.values(document.layers), ...components]
             .filter((container) => !container.visible && container !== shownLayer)
             .flatMap((container) => container.shapesIds)
     );
@@ -271,6 +285,7 @@ export function shownShapesIds(document: Document): Set<string> {
         document.shapesIds.filter(
             (id) =>
                 document.shapes[id]?.visible &&
+                !sourceOnly.has(id) &&
                 !inHiddenContainer.has(id) &&
                 !(shownLayer && onLayers.has(id) && !onShownLayer.has(id))
         )

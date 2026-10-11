@@ -240,7 +240,9 @@ const takeSnapTargets = (
     const changing = new Set(changingIds);
     // Read without the store's tracking: thousands of shapes are only looked at here.
     const document = untracked(state.currentDocument);
-    const others = [...shownShapesIds(document)].filter((id) => !changing.has(id));
+    const others = [...shownShapesIds(document, state.enteredComponentId)].filter(
+        (id) => !changing.has(id)
+    );
 
     effects.dragTargets.take(targetLines(others.map((id) => drawnBox(document.shapes[id]))));
 

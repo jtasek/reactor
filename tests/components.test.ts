@@ -25,6 +25,36 @@ function setup() {
     return { store, sourceId, componentId };
 }
 
+it.each(['new', 'removed'] as const)(
+    'leaves component source editing when the current document is %s',
+    (transition) => {
+        const { store } = createTestStore();
+        store.actions.addShape({
+            type: 'rectangle',
+            position: { x: 10, y: 20 },
+            size: { width: 30, height: 40 }
+        });
+        const sourceId = store.state.currentDocument.shapesIds[0];
+        store.actions.addComponent({ id: 'source', shapesIds: [sourceId], sourceOnly: true });
+        store.actions.editComponentSource('source');
+
+        if (transition === 'new') {
+            store.actions.newDocument();
+        } else {
+            store.actions.addDocument({ id: 'next' });
+            store.actions.removeDocument(store.state.currentDocumentId);
+        }
+
+        expect(store.state.enteredComponentId).toBeNull();
+        store.actions.drawShape({
+            type: 'rectangle',
+            position: { x: 50, y: 60 },
+            size: { width: 20, height: 20 }
+        });
+        expect(store.state.currentDocument.shapesIds).toHaveLength(1);
+    }
+);
+
 it('replaces selected artwork with a first instance in the same layer', () => {
     const { store } = createTestStore();
     store.actions.addShape({
