@@ -44,9 +44,11 @@ const ComponentSelection: FC<{ componentId: string; selected: boolean }> = ({
                 width={box.width}
                 height={box.height}
             />
-            <text className={styles.label} x={box.topLeft.x} y={box.topLeft.y - 6}>
-                {component.name}
-            </text>
+            {!selected && (
+                <text className={styles.label} x={box.topLeft.x} y={box.topLeft.y - 6}>
+                    {component.name}
+                </text>
+            )}
             {selected && !locked && (
                 <Handles
                     box={box}

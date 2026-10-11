@@ -1,4 +1,4 @@
-import React, { FC, useState } from 'react';
+import React, { FC } from 'react';
 import { useActions, useComponent, useComponentSource, useCurrentDocument } from 'src/app/hooks';
 import type { InstanceShape } from 'src/app/types';
 import { Icon } from '../Icon';
@@ -17,9 +17,7 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
     const document = useCurrentDocument();
     const source = useComponentSource(componentId);
     const libraries = useComponentLibraries();
-    const [name, setName] = useState(component.name);
     const {
-        updateComponent,
         chooseComponentToPlace,
         selectComponentChild,
         removeComponentProp,
@@ -38,15 +36,6 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
         (shape) => shape.type === 'instance' && shape.componentId === componentId
     ).length;
     const readOnly = Boolean(component.library || component.locked || document.locked);
-    const handleRename = () => {
-        const next = name.trim();
-        if (!next || readOnly) {
-            setName(component.name);
-
-            return;
-        }
-        updateComponent({ id: componentId, name: next });
-    };
     const preview: InstanceShape = {
         id: 'component-preview',
         key: 'component-preview',
@@ -70,8 +59,9 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
         <section className={styles.componentDetails} aria-label="Component source">
             <div className={styles.componentHeading}>
                 <div>
-                    <strong>{component.name}</strong>
-                    <small>Source · used by {instances} instances</small>
+                    <small>
+                        Used by {instances} {instances === 1 ? 'instance' : 'instances'}
+                    </small>
                 </div>
                 {updateAvailable && (
                     <button
@@ -106,23 +96,8 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
                     <Instance instance={preview} source={source} />
                 </svg>
             )}
-            <label className={styles.componentName}>
-                Name
-                <input
-                    type="text"
-                    value={name}
-                    readOnly={readOnly}
-                    onChange={(event) => setName(event.target.value)}
-                    onBlur={handleRename}
-                    onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                            event.currentTarget.blur();
-                        }
-                    }}
-                />
-            </label>
             <div>
-                <h3 className={styles.heading}>Editable in instances</h3>
+                <h3 className={styles.heading}>Editable properties</h3>
                 {component.props?.length ? (
                     <ul className={styles.componentProps}>
                         {component.props.map((prop) => (
@@ -172,18 +147,12 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
     );
 };
 
-export const SourceChildHeading: FC<{ componentId: string; shapeId: string }> = ({
-    componentId,
-    shapeId
-}) => {
+export const SourceChildHeading: FC<{ componentId: string }> = ({ componentId }) => {
     const component = useComponent(componentId);
-    const document = useCurrentDocument();
-    const shape = document.shapes[shapeId];
     const { selectComponentSource } = useActions();
 
     return (
         <div className={styles.sourceChildHeading}>
-            <strong>{shape?.name}</strong>
             <small>Source shape · changes update instances</small>
             <button
                 type="button"

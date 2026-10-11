@@ -33,7 +33,8 @@ interface Props {
  * shapes' actual value again, so a rejected edit does not linger. Mixed values
  * show an empty input with a "Mixed" placeholder. A property every shape takes
  * from one variable shows the variable instead of a field, so it is changed in the
- * Variables panel, never by accident for every shape using it.
+ * Variables panel, never by accident for every shape using it. Enter also leaves
+ * the Name field.
  */
 export const PropertyField: FC<Props> = ({
     row,
@@ -105,6 +106,11 @@ export const PropertyField: FC<Props> = ({
         }
 
         if (event.key === 'Enter') {
+            if (property.key === 'name') {
+                event.currentTarget.blur();
+                return;
+            }
+
             apply();
         }
 
@@ -259,7 +265,7 @@ export const PropertyField: FC<Props> = ({
                 )}
                 {exposure?.active && (
                     <small className={styles.exposureStatus} role="status">
-                        Editable in instances
+                        Editable properties
                     </small>
                 )}
             </td>

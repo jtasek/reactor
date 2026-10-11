@@ -4,6 +4,7 @@ import { CollapsedItems, Dragged, ExplorerItem } from './ExplorerItem';
 import { SearchBoxContainer } from '../SearchBox';
 import { hideAction, lockAction, toggleAction, useItemCommandActions } from '../ItemMenu';
 import { Icon } from '../Icon';
+import { ObjectTypeSymbol } from '../ObjectTypeSymbol';
 import { SourceItem } from './SourceItem';
 import { sceneLayers } from 'src/app/componentTree';
 import { byDrawingOrder } from 'src/app/drawOrder';
@@ -93,11 +94,7 @@ const ShapeItem: FC<{ shapeId: string; sourceId?: string }> = ({ shapeId, source
         <ExplorerItem
             kind={shape.type === 'instance' ? 'instance' : 'shape'}
             name={shape.name}
-            icon={
-                shape.type === 'instance' ? (
-                    <Icon icon={{ group: 'reactor', name: 'instance', size: 16 }} />
-                ) : undefined
-            }
+            icon={<ObjectTypeSymbol type={shape.type} />}
             dragged={sourceId ? undefined : { kind: 'shape', id: shapeId }}
             selected={shape.selected && !sourceSelected}
             active={shape.active}
@@ -138,6 +135,7 @@ const GroupItem: FC<{
         <ExplorerItem
             kind="group"
             name={group.name}
+            icon={<ObjectTypeSymbol type="group" />}
             dragged={{ kind: 'group', id: groupId }}
             collapseId={groupId}
             selected={selected}
@@ -224,6 +222,7 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
         <ExplorerItem
             kind="layer"
             name={layer.name}
+            icon={<ObjectTypeSymbol type="layer" />}
             collapseId={groups.length + shapesIds.length > 0 ? layerId : undefined}
             shown={shown}
             selected={layer.selected}
@@ -354,6 +353,7 @@ export const Explorer: FC = () => {
                                             key="surface"
                                             kind="layer"
                                             name="Surface"
+                                            icon={<ObjectTypeSymbol type="surface" />}
                                             selected={document.surfaceSelected ?? false}
                                             onClick={handleSurfaceSelect}
                                             collapseId={
@@ -384,6 +384,7 @@ export const Explorer: FC = () => {
                                     <ExplorerItem
                                         kind="layer"
                                         name="Surface"
+                                        icon={<ObjectTypeSymbol type="surface" />}
                                         selected={document.surfaceSelected ?? false}
                                         onClick={handleSurfaceSelect}
                                         onDrop={(dragged) =>
@@ -417,6 +418,16 @@ export const Explorer: FC = () => {
                                                     name={
                                                         component.sourceShapes?.[shapeId]?.name ??
                                                         shapeId
+                                                    }
+                                                    icon={
+                                                        component.sourceShapes?.[shapeId] && (
+                                                            <ObjectTypeSymbol
+                                                                type={
+                                                                    component.sourceShapes[shapeId]
+                                                                        .type
+                                                                }
+                                                            />
+                                                        )
                                                     }
                                                 />
                                             ) : (

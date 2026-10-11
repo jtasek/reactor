@@ -66,7 +66,8 @@ describe('groupRows()', () => {
 
         expect(sections).toEqual([
             ['Text', ['text', 'fontSize']],
-            ['Shape', ['name', 'x']]
+            ['Identity', ['name']],
+            ['Layout', ['x']]
         ]);
     });
 
@@ -75,6 +76,6 @@ describe('groupRows()', () => {
             ({ group }) => group
         );
 
-        expect(groups).toEqual(['Shape', 'Style', 'Text']);
+        expect(groups).toEqual(['Identity', 'Layout', 'Appearance', 'State', 'Text']);
     });
 });

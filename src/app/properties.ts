@@ -91,7 +91,7 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
     {
         key: 'name',
         label: 'Name',
-        group: 'Shape',
+        group: 'Identity',
         kind: 'text',
         editable: unlessDocumentLocked,
         read: (shape) => shape.name,
@@ -105,7 +105,7 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
     {
         key: 'x',
         label: 'X',
-        group: 'Shape',
+        group: 'Layout',
         kind: 'number',
         read: (shape) => getShapeBounds(shape).topLeft.x,
         write: (shape, value) =>
@@ -114,7 +114,7 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
     {
         key: 'y',
         label: 'Y',
-        group: 'Shape',
+        group: 'Layout',
         kind: 'number',
         read: (shape) => getShapeBounds(shape).topLeft.y,
         write: (shape, value) =>
@@ -123,21 +123,31 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
     {
         key: 'width',
         label: 'Width',
-        group: 'Shape',
+        group: 'Layout',
         kind: 'number',
         read: (shape) => getShapeBounds(shape).width
     },
     {
         key: 'height',
         label: 'Height',
-        group: 'Shape',
+        group: 'Layout',
         kind: 'number',
         read: (shape) => getShapeBounds(shape).height
     },
     {
+        key: 'rotation',
+        label: 'Rotation',
+        group: 'Layout',
+        kind: 'number',
+        read: (shape) => shape.rotation ?? 0,
+        write: (shape, value) => {
+            shape.rotation = value;
+        }
+    },
+    {
         key: 'cornerRadius',
         label: 'Radius',
-        group: 'Shape',
+        group: 'Appearance',
         kind: 'number',
         read: (shape) =>
             shape.type === 'rectangle'
@@ -150,19 +160,22 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         }
     },
     {
-        key: 'rotation',
-        label: 'Rotation',
-        group: 'Shape',
+        key: 'opacity',
+        label: 'Opacity (%)',
+        group: 'Appearance',
         kind: 'number',
-        read: (shape) => shape.rotation ?? 0,
+        range: { min: 0, max: OPAQUE_PERCENT, step: 1 },
+        read: (shape) => Math.round((shape.opacity ?? 1) * OPAQUE_PERCENT),
         write: (shape, value) => {
-            shape.rotation = value;
+            shape.opacity = Math.min(OPAQUE_PERCENT, Math.max(0, value)) / OPAQUE_PERCENT;
         }
     },
+    colorProperty('fill', 'Fill', 'Appearance', isClosedShape),
+    colorProperty('stroke', 'Stroke', 'Appearance', isStrokedShape),
     {
         key: 'visible',
         label: 'Visible',
-        group: 'Shape',
+        group: 'State',
         kind: 'boolean',
         editable: unlessDocumentLocked,
         read: (shape) => shape.visible,
@@ -173,7 +186,7 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
     {
         key: 'locked',
         label: 'Locked',
-        group: 'Shape',
+        group: 'State',
         kind: 'boolean',
         // Shows every lock, but only the shape's own lock can be changed here.
         editable: (shape, document) => !isShapeLockedExternally(document, shape.id),
@@ -182,19 +195,6 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
             shape.locked = value;
         }
     },
-    {
-        key: 'opacity',
-        label: 'Opacity (%)',
-        group: 'Style',
-        kind: 'number',
-        range: { min: 0, max: OPAQUE_PERCENT, step: 1 },
-        read: (shape) => Math.round((shape.opacity ?? 1) * OPAQUE_PERCENT),
-        write: (shape, value) => {
-            shape.opacity = Math.min(OPAQUE_PERCENT, Math.max(0, value)) / OPAQUE_PERCENT;
-        }
-    },
-    colorProperty('fill', 'Fill', 'Style', isClosedShape),
-    colorProperty('stroke', 'Stroke', 'Style', isStrokedShape),
     {
         key: 'text',
         label: 'Text',

@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FC, ReactNode, useCallback } from 'react';
+import React, { ChangeEvent, FC, useCallback } from 'react';
 import { useActions } from 'src/app/hooks';
 import { useInstanceProperties } from 'src/app/componentHooks';
 import { InstancePropertyField } from './InstancePropertyField';
@@ -7,9 +7,8 @@ import styles from './styles.css';
 import type { PropertyValue } from 'src/app/types';
 
 /** The values exposed by one source, shared across selected instances. */
-export const InstanceProps: FC<{ nameField?: ReactNode }> = ({ nameField }) => {
+export const InstanceProps: FC = () => {
     const data = useInstanceProperties();
-    const { selectComponentSource } = useActions();
 
     if (!data) {
         return null;
@@ -20,20 +19,6 @@ export const InstanceProps: FC<{ nameField?: ReactNode }> = ({ nameField }) => {
 
     return (
         <section className={styles.instanceProps} aria-label="Component properties">
-            <div className={styles.instanceIdentity}>
-                <div className={styles.instanceTitle}>
-                    <Icon icon={{ group: 'reactor', name: 'component', size: 20 }} />
-                    {nameField}
-                </div>
-                <button
-                    type="button"
-                    className={styles.sourceLink}
-                    title={`Edit ${data.componentName}`}
-                    onClick={() => selectComponentSource(data.componentId)}
-                >
-                    Edit component ↗
-                </button>
-            </div>
             <div className={styles.instanceSectionHeading}>
                 <h3 className={styles.heading}>Properties</h3>
                 <span>{changedCount ? `${changedCount} changed` : 'All from source'}</span>

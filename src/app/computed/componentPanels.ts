@@ -23,8 +23,6 @@ export function instanceProperties(document: Document) {
     }
 
     return {
-        componentId,
-        componentName: component.name,
         ids: selected.map((shape) => shape.id),
         rows: (component.props ?? []).flatMap((prop) => {
             const property = SHAPE_PROPERTIES.find((item) => item.key === prop.key);

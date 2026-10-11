@@ -200,7 +200,10 @@ export const ExplorerItem: FC<Props> = ({
                         </span>
                     </button>
                 ) : (
-                    <span className={styles.label}>{name}</span>
+                    <span className={styles.label}>
+                        {icon}
+                        {name}
+                    </span>
                 )}
                 {rootButtons}
                 {menuActions && (

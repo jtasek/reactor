@@ -1,7 +1,30 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 import { drawRect, openEditor, pointer, selectTool, shapes } from './support/editor';
 import { createComponent, createDocument, createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
+
+const editComponent = async (panel: Locator) => {
+    await panel.getByLabel('More inspector actions').click();
+    await panel.getByRole('button', { name: 'Edit component' }).click();
+};
+
+test('the Inspector header renames a component source without a duplicate Name field', async ({
+    page
+}) => {
+    await openEditor(page, ['Explorer', 'Inspector']);
+    await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
+
+    const panel = page.locator('[data-panel="inspector"]');
+    const name = panel.getByRole('textbox', { name: 'Name', exact: true });
+    await expect(name).toHaveCount(1);
+    await name.fill('Card');
+    await name.press('Enter');
+    await expect(name).not.toBeFocused();
+    await expect(explorer.getByRole('button', { name: 'Card', exact: true })).toBeVisible();
+    await expect(panel.getByRole('columnheader', { name: 'Identity' })).toHaveCount(0);
+});
 
 test('places and reloads a live component instance', async ({ page }) => {
     await openEditor(page, ['Explorer', 'Inspector']);
@@ -35,11 +58,10 @@ test('places and reloads a live component instance', async ({ page }) => {
     const emptyBox = (await empty.boundingBox())!;
     expect(emptyBox.x).toBeGreaterThan(regionBox.x);
     expect(emptyBox.x + emptyBox.width).toBeLessThan(regionBox.x + regionBox.width);
-    const nameBox = (await inspector.getByRole('textbox', { name: 'Name' }).boundingBox())!;
-    const actionBox = (await inspector
-        .getByRole('button', { name: 'Edit component' })
-        .boundingBox())!;
-    expect(Math.abs(nameBox.x - actionBox.x)).toBeLessThan(1);
+    const panel = page.locator('[data-panel="inspector"]');
+    const nameBox = (await panel.getByRole('textbox', { name: 'Name' }).boundingBox())!;
+    const actionBox = (await panel.getByLabel('More inspector actions').boundingBox())!;
+    expect(Math.abs(nameBox.y - actionBox.y)).toBeLessThan(8);
     const layout = page
         .getByRole('columnheader', { name: 'Layout' })
         .locator('xpath=ancestor::tbody[1]');
@@ -112,32 +134,15 @@ test('instance fields stay usable at default and minimum panel widths', async ({
     const resize = page.getByRole('button', { name: /^Resize Inspector/ }).last();
     const x = panel.getByRole('spinbutton', { name: 'X', exact: true });
     const y = panel.getByRole('spinbutton', { name: 'Y', exact: true });
-    const show = panel.getByRole('button', { name: 'Stop using Show details for Visible' });
-    const lock = panel.getByRole('button', {
-        name: 'Stop using Prevent accidental edits for Locked'
-    });
+    const show = panel.getByRole('button', { name: 'Hide', exact: true });
+    const lock = panel.getByRole('button', { name: 'Lock', exact: true });
 
     for (const width of [260, 160]) {
         await expect.poll(async () => (await panel.boundingBox())!.width).toBe(width);
         const panelBox = (await panel.boundingBox())!;
         const rotation = panel.locator('tr[data-property="rotation"]');
-        const cardBackground = await rotation.evaluate(
-            (element) => getComputedStyle(element).backgroundColor
-        );
-        for (const property of ['visible', 'locked', 'opacity']) {
-            const row = panel.locator(`tr[data-property="${property}"]`);
-            await expect(row).toHaveCSS('background-color', cardBackground);
-            const rowBox = (await row.boundingBox())!;
-            const rotationBox = (await rotation.boundingBox())!;
-            expect(rowBox.x).toBe(rotationBox.x);
-            expect(rowBox.width).toBe(rotationBox.width);
-        }
-        for (const control of [
-            show,
-            lock,
-            panel.getByLabel('Visible', { exact: true }),
-            panel.getByLabel('Locked', { exact: true })
-        ]) {
+        await expect(rotation).toBeVisible();
+        for (const control of [show, lock, panel.getByLabel('More inspector actions')]) {
             const box = (await control.boundingBox())!;
             expect(box.width).toBeGreaterThan(0);
             expect(box.x).toBeGreaterThanOrEqual(panelBox.x);
@@ -156,10 +161,15 @@ test('instance fields stay usable at default and minimum panel widths', async ({
             await resize.press('ArrowLeft');
         }
     }
-    await lock.click();
-    await show.click();
-    await expect(panel.getByRole('checkbox', { name: 'Visible', exact: true })).toBeChecked();
-    await expect(panel.getByRole('checkbox', { name: 'Locked', exact: true })).not.toBeChecked();
+    await expect(show).toBeDisabled();
+    await expect(lock).toBeDisabled();
+    await panel.getByLabel('More inspector actions').click();
+    await expect(panel.getByLabel('Visible variable')).toHaveValue('show');
+    await expect(panel.getByLabel('Locked variable')).toHaveValue('lock');
+    await panel.getByLabel('Visible variable').selectOption('');
+    await panel.getByLabel('Locked variable').selectOption('');
+    await expect(show).toBeEnabled();
+    await expect(lock).toBeEnabled();
 });
 
 test('component navigation works with Explorer closed and Escape leaves text editing alone', async ({
@@ -169,18 +179,19 @@ test('component navigation works with Explorer closed and Escape leaves text edi
     await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
     const explorer = page.getByRole('region', { name: 'Explorer' });
     await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
-    const properties = page.getByRole('region', { name: 'Component properties' });
-    await properties.getByRole('button', { name: 'Edit component' }).click();
+    await editComponent(page.locator('[data-panel="inspector"]'));
     await page
         .getByRole('region', { name: 'Component source' })
         .getByRole('button', { name: 'Place instance' })
         .click();
     await pointer(page, 'pointerdown', { x: 250, y: 250 });
     await pointer(page, 'pointerup', { x: 250, y: 250 });
-    const name = properties.getByRole('textbox', { name: 'Name', exact: true });
+    const name = page
+        .locator('[data-panel="inspector"]')
+        .getByRole('textbox', { name: 'Name', exact: true });
     await name.fill('Second instance');
     await name.press('Enter');
-    await properties.getByRole('button', { name: 'Edit component' }).click();
+    await editComponent(page.locator('[data-panel="inspector"]'));
 
     const navigation = page.getByRole('navigation', { name: 'Component editing' });
     await expect(navigation).toContainText('component-1');
@@ -198,7 +209,7 @@ test('component navigation works with Explorer closed and Escape leaves text edi
     await expect(navigation).toHaveCount(0);
     await expect(name).toHaveValue('Second instance');
 
-    await properties.getByRole('button', { name: 'Edit component' }).click();
+    await editComponent(page.locator('[data-panel="inspector"]'));
     await page.keyboard.press('Escape');
     await expect(navigation).toHaveCount(0);
     await expect(name).toHaveValue('Second instance');
@@ -216,7 +227,7 @@ test('an exposed fill changes one instance without changing its source', async (
     await expect.poll(async () => (await fillIcon.boundingBox())!.width).toBe(16);
     await fillIcon.click();
     const stopExposing = page.getByRole('button', { name: 'Stop exposing Fill', exact: true });
-    const exposureStatus = page.getByText('Editable in instances', { exact: true });
+    const exposureStatus = page.getByText('Editable properties', { exact: true });
     await expect(stopExposing).toHaveAttribute('aria-pressed', 'true');
     await expect(exposureStatus).toBeVisible();
     await stopExposing.click();
@@ -254,7 +265,7 @@ test('an exposed fill changes one instance without changing its source', async (
     await expect.poll(() => fill(1)).toBe(original);
     await page.getByLabel('rectangle-1: Fill', { exact: true }).fill('#0000ff');
     await expect.poll(() => fill(1)).toBe('rgb(0, 0, 255)');
-    await properties.getByRole('button', { name: 'Edit component' }).click();
+    await editComponent(page.locator('[data-panel="inspector"]'));
     await page
         .getByRole('region', { name: 'Component source' })
         .getByRole('button', {
@@ -275,9 +286,13 @@ for (const visible of [true, false]) {
         const explorer = page.getByRole('region', { name: 'Explorer' });
         await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
         await explorer.getByRole('button', { name: 'rectangle-1' }).click();
+        await page.locator('[data-panel="inspector"]').getByLabel('More inspector actions').click();
         await page.getByRole('button', { name: 'Expose Visible to instances' }).click();
         if (!visible) {
-            await page.getByRole('checkbox', { name: 'Visible', exact: true }).click();
+            await page
+                .locator('[data-panel="inspector"]')
+                .getByRole('button', { name: 'Hide', exact: true })
+                .click();
         }
         const sources = explorer
             .getByText('Components', { exact: true })
