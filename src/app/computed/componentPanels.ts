@@ -37,10 +37,17 @@ export function instanceProperties(document: Document) {
             );
             const bindings = selected.map((shape) => shape.overrides[prop.id]);
             const binding = bindings[0];
+            const shapeName = document.shapes[prop.shapeId]?.name ?? 'Shape';
+            const prefix = `${shapeName}: `;
 
             return [
                 {
                     prop: { id: prop.id, label: prop.label },
+                    shapeId: prop.shapeId,
+                    shapeName,
+                    fieldLabel: prop.label.startsWith(prefix)
+                        ? prop.label.slice(prefix.length)
+                        : prop.label,
                     kind: property.kind,
                     value: values[0],
                     mixed: values.some((value) => value !== values[0]),
