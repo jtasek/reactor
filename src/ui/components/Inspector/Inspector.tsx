@@ -140,12 +140,14 @@ export const Inspector: FC<Props> = ({
                         {grouped.map(propertyField)}
                     </PropertyGroup>
                 ))}
-                <tfoot>
-                    <tr>
-                        <td>Selected</td>
-                        <td>{shapeIds.length}</td>
-                    </tr>
-                </tfoot>
+                {(!instance || shapeIds.length > 1) && (
+                    <tfoot>
+                        <tr>
+                            <td>Selected</td>
+                            <td>{shapeIds.length}</td>
+                        </tr>
+                    </tfoot>
+                )}
             </table>
         </div>
     );

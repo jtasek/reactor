@@ -36,7 +36,10 @@ export const InstanceProps: FC<{ nameField?: ReactNode }> = ({ nameField }) => {
                 <span>{changedCount ? `${changedCount} changed` : 'All from source'}</span>
             </div>
             {data.rows.length === 0 && (
-                <p>Select a source shape to make its properties editable in instances.</p>
+                <p className={styles.instanceEmpty}>
+                    No editable properties yet. Edit the component and select a shape to expose its
+                    fields.
+                </p>
             )}
             {children.map(([shapeId, shapeName]) => (
                 <div className={styles.instanceChild} key={shapeId}>

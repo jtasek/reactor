@@ -28,6 +28,16 @@ test('places and reloads a live component instance', async ({ page }) => {
     await pointer(page, 'pointerdown', { x: 250, y: 250 });
     await pointer(page, 'pointerup', { x: 250, y: 250 });
 
+    const inspector = page.getByRole('region', { name: 'Component properties' });
+    await expect(inspector.getByText('No editable properties yet.')).toBeVisible();
+    const layout = page
+        .getByRole('columnheader', { name: 'Layout' })
+        .locator('xpath=ancestor::tbody[1]');
+    const layoutWidth = (await layout.boundingBox())?.width ?? 0;
+    const tableWidth = (await layout.locator('xpath=ancestor::table[1]').boundingBox())?.width ?? 0;
+    expect(layoutWidth).toBeGreaterThan(tableWidth * 0.9);
+    await expect(page.getByText('Selected', { exact: true })).toHaveCount(0);
+
     await expect(shapes(page)).toHaveCount(2);
     await expect(shapes(page).last().locator('rect[data-cy]')).toBeVisible();
     const before = await shapes(page).last().locator('rect[data-cy]').boundingBox();

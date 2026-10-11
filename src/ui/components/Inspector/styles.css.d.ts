@@ -17,6 +17,7 @@ declare namespace StylesCssNamespace {
     inspector: string;
     instanceChild: string;
     instanceColor: string;
+    instanceEmpty: string;
     instanceFields: string;
     instanceIdentity: string;
     instanceInspector: string;
@@ -29,6 +30,7 @@ declare namespace StylesCssNamespace {
     instanceStatus: string;
     instanceValue: string;
     note: string;
+    "property-rotation": string;
     sourceChildHeading: string;
     sourceLink: string;
     variablePicker: string;

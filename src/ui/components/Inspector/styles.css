@@ -470,7 +470,9 @@
 .instanceInspector .instanceName td:first-child {
     color: var(--text-secondary-color);
     font-size: 0.75rem;
-    width: 43px;
+    overflow: visible;
+    white-space: nowrap;
+    width: 68px;
 }
 
 .instanceInspector .instanceName td {
@@ -486,6 +488,16 @@
     font-weight: 600;
     height: 30px;
     padding-left: 0;
+}
+
+.instanceInspector .variablePicker:disabled {
+    display: none;
+}
+
+.instanceInspector .instanceName .variablePicker {
+    float: none;
+    margin-left: 4px;
+    vertical-align: middle;
 }
 
 .instanceInspector .sourceLink {
@@ -523,9 +535,68 @@
 }
 
 .instanceFields {
-    background: var(--panel-content-background);
+    background: var(--control-background);
     border-radius: var(--radius-md);
     padding: 0 9px;
+}
+
+.instanceEmpty {
+    background: var(--control-background);
+    border-radius: var(--radius-md);
+    margin: 0 var(--inspector-inset) 10px;
+    padding: 10px;
+}
+
+.instanceInspector > table {
+    display: block;
+}
+
+.instanceInspector > table > tbody:first-of-type {
+    display: grid;
+    gap: 6px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+}
+
+.instanceInspector > table > tbody:first-of-type > tr:first-child {
+    grid-column: 1 / -1;
+}
+
+.instanceInspector > table > tbody:first-of-type > tr:not(:first-child) {
+    background: var(--control-background);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 5px 8px;
+}
+
+.instanceInspector > table > tbody:first-of-type > tr:has(#property-rotation) {
+    grid-column: 1 / -1;
+}
+
+.instanceInspector > table > tbody:first-of-type > tr > td {
+    background: transparent;
+    border: 0;
+    padding: 0;
+}
+
+.instanceInspector > table > tbody:first-of-type > tr > td:first-child {
+    color: var(--text-secondary-color);
+    font-size: 0.75rem;
+    line-height: 18px;
+    overflow: visible;
+    white-space: nowrap;
+}
+
+.instanceInspector > table > tbody:first-of-type > tr > td:last-child {
+    min-height: var(--field-height);
+}
+
+.instanceInspector > table > tbody:first-of-type input[type='text'],
+.instanceInspector > table > tbody:first-of-type input[type='number'] {
+    background: transparent;
+    padding: 0;
 }
 
 .instanceRow {
