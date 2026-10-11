@@ -77,7 +77,7 @@ test('the explorer lists layers as a tree, shows one layer alone, and takes drop
     await click(page, 600, 400);
 
     // Dropping a shape on a layer moves it there; the layer left empty goes.
-    await shapesOn(second).dragTo(first);
+    await shapesOn(second).locator('xpath=..').locator('span[draggable]').dragTo(first);
     await expect(shapesOn(first)).toHaveCount(2);
     await expect(second).toHaveCount(0);
 });

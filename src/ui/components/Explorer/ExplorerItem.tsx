@@ -2,6 +2,7 @@ import React, {
     DragEvent,
     FC,
     MouseEventHandler,
+    PointerEventHandler,
     ReactNode,
     createContext,
     useContext,
@@ -104,6 +105,19 @@ export const ExplorerItem: FC<Props> = ({
         .join(' ');
     const acceptsDrop = (event: DragEvent) =>
         onDrop !== undefined && event.dataTransfer.types.includes(DRAG_TYPE);
+    // The row menu can appear after a press and cover the name before click fires.
+    const handleNamePointerDown: PointerEventHandler<HTMLButtonElement> = (event) => {
+        if (event.button !== 0) {
+            return;
+        }
+        onClick?.(event);
+    };
+    const handleNameClick: MouseEventHandler<HTMLButtonElement> = (event) => {
+        if (event.detail !== 0) {
+            return;
+        }
+        onClick?.(event);
+    };
 
     return (
         <li className={className}>
@@ -175,7 +189,8 @@ export const ExplorerItem: FC<Props> = ({
                         type="button"
                         className={styles.name}
                         aria-pressed={selected}
-                        onClick={onClick}
+                        onPointerDown={handleNamePointerDown}
+                        onClick={handleNameClick}
                         onDoubleClick={onDoubleClick}
                     >
                         {icon}
