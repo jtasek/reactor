@@ -5,6 +5,7 @@ import { PropertyGroup } from './PropertyGroup';
 import { AlignSection } from './AlignSection';
 import { InstanceProps } from './InstanceProps';
 import { ComponentDetails, SourceChildHeading } from './ComponentDetails';
+import { InspectorHeader } from './InspectorHeader';
 import { useComponentExposure, useSelectedComponentContext } from 'src/app/componentHooks';
 import { useActions } from 'src/app/hooks';
 import { groupRows, type PropertyRow, type PropertyValue } from 'src/app/properties';
@@ -94,11 +95,9 @@ export const Inspector: FC<Props> = ({
 
     if (componentContext?.kind === 'source') {
         return (
-            <div className={styles.inspector}>
-                <ComponentDetails
-                    key={componentContext.componentId}
-                    componentId={componentContext.componentId}
-                />
+            <div key={`source-${componentContext.componentId}`} className={styles.inspector}>
+                <InspectorHeader source componentId={componentContext.componentId} />
+                <ComponentDetails componentId={componentContext.componentId} />
             </div>
         );
     }
@@ -108,46 +107,50 @@ export const Inspector: FC<Props> = ({
     }
 
     const instance = componentContext?.kind === 'instance';
-    const nameRow = instance ? rows.find((row) => row.property.key === 'name') : undefined;
-    const shownRows = instance ? rows.filter((row) => row.property.key !== 'name') : rows;
+    const nameRow = rows.find((row) => row.property.key === 'name');
+    const visibleRow = rows.find((row) => row.property.key === 'visible');
+    const lockedRow = rows.find((row) => row.property.key === 'locked');
+    const shownRows = rows.filter(
+        (row) => !['name', 'visible', 'locked'].includes(row.property.key)
+    );
 
     return (
-        <div className={`${styles.inspector} ${instance ? styles.instanceInspector : ''}`}>
+        <div
+            key="selection"
+            className={`${styles.inspector} ${instance ? styles.instanceInspector : ''}`}
+        >
+            <InspectorHeader
+                nameField={
+                    nameRow && (
+                        <table className={styles.headerName}>
+                            <tbody>{propertyField(nameRow)}</tbody>
+                        </table>
+                    )
+                }
+                count={shapeIds.length}
+                componentId={componentContext?.componentId}
+                shapeIds={shapeIds}
+                visibleRow={visibleRow}
+                lockedRow={lockedRow}
+                variables={variables}
+                bound={bound}
+                onChange={onChange}
+                onBind={onBind}
+                onUnbind={onUnbind}
+                visibleExposure={exposureFor('visible')}
+                lockedExposure={exposureFor('locked')}
+            />
             {componentContext?.kind === 'child' && (
-                <SourceChildHeading
-                    componentId={componentContext.componentId}
-                    shapeId={componentContext.shapeId}
-                />
+                <SourceChildHeading componentId={componentContext.componentId} />
             )}
-            {instance && (
-                <InstanceProps
-                    nameField={
-                        nameRow && (
-                            <table className={styles.instanceName}>
-                                <tbody>{propertyField(nameRow)}</tbody>
-                            </table>
-                        )
-                    }
-                />
-            )}
+            {instance && <InstanceProps />}
             <AlignSection />
             <table>
                 {groupRows(shownRows).map(({ group, rows: grouped }) => (
-                    <PropertyGroup
-                        key={group}
-                        name={instance && group === 'Shape' ? 'Layout' : group}
-                    >
+                    <PropertyGroup key={group} name={group}>
                         {grouped.map(propertyField)}
                     </PropertyGroup>
                 ))}
-                {(!instance || shapeIds.length > 1) && (
-                    <tfoot>
-                        <tr>
-                            <td>Selected</td>
-                            <td>{shapeIds.length}</td>
-                        </tr>
-                    </tfoot>
-                )}
             </table>
         </div>
     );

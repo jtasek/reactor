@@ -23,7 +23,7 @@ describe('fill', () => {
     it('is a color edited in the style section, for closed shapes only', () => {
         const shape = rectangle();
 
-        expect(fillProperty).toMatchObject({ group: 'Style', kind: 'color' });
+        expect(fillProperty).toMatchObject({ group: 'Appearance', kind: 'color' });
         expect(fillProperty.read(shape, {} as never)).toBe('');
         expect(fillProperty.read(line, {} as never)).toBeUndefined();
 

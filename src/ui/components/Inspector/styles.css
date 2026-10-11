@@ -15,6 +15,151 @@
     max-width: 100%;
     padding: var(--inspector-inset);
     user-select: none;
+    container-type: inline-size;
+}
+
+.inspectorHeader {
+    align-items: center;
+    background: var(--panel-content-background);
+    border-radius: var(--card-radius);
+    display: flex;
+    gap: 6px;
+    justify-content: space-between;
+    margin-bottom: var(--section-gap);
+    min-width: 0;
+    padding: 8px var(--card-padding);
+}
+
+.headerIdentity,
+.headerActions {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+    min-width: 0;
+}
+
+.headerIdentity {
+    flex: 1;
+}
+
+.headerIdentity > svg {
+    color: var(--component-color);
+    flex: 0 0 auto;
+}
+
+.headerIdentity strong {
+    color: var(--ink-strong);
+    font-size: 0.9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.headerActions {
+    flex: 0 0 auto;
+}
+
+.inspector .inspectorHeader .headerSourceName,
+.inspector .inspectorHeader .headerName input {
+    background: transparent;
+    color: var(--ink-strong);
+    font-size: 0.9rem;
+    font-weight: 600;
+    height: 28px;
+    padding: 0 3px;
+}
+
+.headerName {
+    flex: 1;
+    min-width: 0;
+}
+
+.headerName tbody,
+.headerName tr {
+    align-items: center;
+    display: flex;
+    flex-direction: row-reverse;
+    width: 100%;
+}
+
+.inspector .headerName td {
+    background: transparent;
+    border: 0;
+    padding: 0;
+}
+
+.inspector .headerName td:first-child {
+    overflow: visible;
+}
+
+.headerName td:last-child {
+    flex: 1;
+    min-width: 0;
+}
+
+.headerName label {
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
+.headerName .variablePicker {
+    float: none;
+}
+
+.headerMenu {
+    position: relative;
+}
+
+.headerMenu summary {
+    list-style: none;
+}
+
+.headerMenu summary::-webkit-details-marker {
+    display: none;
+}
+
+.headerMenuContents {
+    background: var(--panel-content-background);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--box-shadow-hover);
+    min-width: min(170px, calc(100cqw - 20px));
+    padding: 6px;
+    position: absolute;
+    right: 0;
+    top: 28px;
+    z-index: 3;
+}
+
+.headerMenuContents > button {
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--component-color);
+    cursor: pointer;
+    font: inherit;
+    padding: 6px;
+    text-align: left;
+    width: 100%;
+}
+
+.headerMenuContents > button:hover {
+    background: var(--field-background);
+}
+
+.headerBinding {
+    display: grid;
+    font-size: 0.75rem;
+    gap: 4px;
+    padding: 6px;
+}
+
+.headerBinding select {
+    min-width: 0;
 }
 
 /* The first row is a heading across both columns, so the fixed layout splits them evenly. */
@@ -89,12 +234,6 @@
 
 .inspector tbody tr:last-child td:last-child {
     border-bottom-right-radius: var(--card-radius);
-}
-
-.inspector tfoot td {
-    font-size: 0.75rem;
-    line-height: 16px;
-    padding-top: 10px;
 }
 
 .inspector input[type='text'],
@@ -325,13 +464,6 @@
     min-width: 0;
 }
 
-.componentHeading strong,
-.sourceChildHeading strong,
-.instanceProps strong {
-    display: block;
-    overflow-wrap: anywhere;
-}
-
 .componentHeading small,
 .sourceChildHeading small,
 .instanceProps p,
@@ -347,12 +479,6 @@
     border-radius: var(--radius-sm);
     height: 96px;
     width: 100%;
-}
-
-.componentName {
-    display: grid;
-    font-size: 0.75rem;
-    gap: 4px;
 }
 
 .componentDetails .heading,
@@ -430,8 +556,7 @@
     margin-top: 4px;
 }
 
-.sourceChildHeading button,
-.sourceLink {
+.sourceChildHeading button {
     align-items: center;
     background: transparent;
     border: 0;
@@ -452,94 +577,16 @@
 .instanceProps {
     background: transparent;
     gap: 0;
-    margin: calc(-1 * var(--inspector-inset)) calc(-1 * var(--inspector-inset)) var(--panel-gap);
+    margin: 0 calc(-1 * var(--inspector-inset)) var(--panel-gap);
     padding: 0;
-}
-
-.instanceIdentity {
-    display: grid;
-    gap: 8px;
-    padding: 14px var(--inspector-inset) 12px;
-}
-
-.instanceTitle {
-    align-items: center;
-    display: flex;
-    gap: 8px;
-    min-width: 0;
-}
-
-.instanceTitle > svg {
-    color: var(--component-color);
-    flex: 0 0 auto;
-}
-
-.instanceInspector .instanceName {
-    display: block;
-    flex: 1;
-    min-width: 0;
-}
-
-.instanceInspector .instanceName tbody,
-.instanceInspector .instanceName tr {
-    align-items: center;
-    display: flex;
-    flex-direction: row-reverse;
-    width: 100%;
-}
-
-.instanceInspector .instanceName td {
-    background: transparent;
-    border: 0;
-    padding: 0;
-}
-
-.instanceInspector .instanceName td:first-child {
-    overflow: visible;
-}
-
-.instanceInspector .instanceName td:last-child {
-    flex: 1;
-    min-width: 0;
-}
-
-.instanceInspector .instanceName label {
-    clip-path: inset(50%);
-    height: 1px;
-    overflow: hidden;
-    position: absolute;
-    white-space: nowrap;
-    width: 1px;
-}
-
-.instanceInspector .instanceName input {
-    background: transparent;
-    color: var(--ink-strong);
-    font-size: 1rem;
-    font-weight: 600;
-    height: 30px;
-    padding-left: 0;
 }
 
 .instanceInspector .variablePicker:disabled {
     display: none;
 }
 
-.instanceInspector .instanceName .variablePicker {
-    float: none;
-    margin-left: 4px;
-    vertical-align: middle;
-}
-
-.instanceInspector .sourceLink {
-    color: var(--component-color);
-    font-size: 0.75rem;
-    margin-left: 28px;
-}
-
 .instanceSectionHeading {
     align-items: baseline;
-    border-top: 1px solid var(--hairline-color);
     display: flex;
     justify-content: space-between;
     padding: 12px var(--inspector-inset) 8px;
@@ -578,10 +625,6 @@
     padding: 10px;
 }
 
-.instanceInspector {
-    container-type: inline-size;
-}
-
 .instanceInspector > table {
     display: block;
 }
@@ -599,6 +642,18 @@
 
 /* Keep room for a numeric value beside each label in a narrow panel. */
 @container (width < 230px) {
+    .inspectorHeader {
+        flex-wrap: wrap;
+    }
+
+    .headerIdentity {
+        flex-basis: 100%;
+    }
+
+    .headerActions {
+        margin-left: auto;
+    }
+
     .instanceInspector > table > tbody:first-of-type {
         grid-template-columns: minmax(0, 1fr);
     }
@@ -620,7 +675,7 @@
 .instanceInspector
     > table
     > tbody
-    > tr:is([data-property='rotation'], [data-property='visible'], [data-property='locked']) {
+    > tr[data-property='rotation'] {
     grid-column: 1 / -1;
 }
 
@@ -642,7 +697,7 @@
 .instanceInspector
     > table
     > tbody
-    > tr:is([data-property='rotation'], [data-property='visible'], [data-property='locked'])
+    > tr[data-property='rotation']
     > td:first-child,
 .instanceInspector > table > tbody:not(:first-of-type) > tr > td:first-child {
     flex-basis: 72px;

@@ -25,7 +25,7 @@ describe('opacity', () => {
     it('is edited in the inspector as a percentage, from clear to opaque', () => {
         const shape = rectangle();
 
-        expect(opacityProperty.group).toBe('Style');
+        expect(opacityProperty.group).toBe('Appearance');
         expect(opacityProperty.read(shape, {} as never)).toBe(100);
 
         applyProperty(opacityProperty, shape, 40);

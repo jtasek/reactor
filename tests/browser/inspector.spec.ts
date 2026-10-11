@@ -33,7 +33,9 @@ test('the inspector shows shared and mixed values and edits every selected shape
     await pointer(page, 'pointermove', { x: 380, y: 170 });
     await pointer(page, 'pointerup', { x: 380, y: 170 });
 
-    await expect(section(page, 'Shape')).toBeVisible();
+    await expect(section(page, 'Layout')).toBeVisible();
+    await expect(section(page, 'Appearance')).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Identity' })).toHaveCount(0);
     await expect(section(page, 'Text')).toHaveCount(0);
     await expect(field(page, 'X')).toHaveValue('');
     await expect(field(page, 'X')).toHaveAttribute('placeholder', 'Mixed');
@@ -52,7 +54,10 @@ test('the inspector shows shared and mixed values and edits every selected shape
 
     await expect(field(page, 'X')).toHaveValue('410');
 
-    await field(page, 'Locked').check();
+    await page
+        .locator('[data-panel="inspector"]')
+        .getByRole('button', { name: 'Lock', exact: true })
+        .click();
 
     await expect(handles(page)).toHaveCount(0);
     await expect(field(page, 'X')).toHaveAttribute('readonly', '');
@@ -140,11 +145,11 @@ test('the inspector holds its values during a gesture and shows the new ones on 
     // A click on empty canvas clears the selection, then a marquee boxes the shape.
     await pointer(page, 'pointerdown', { x: 400, y: 400 });
     await pointer(page, 'pointerup', { x: 400, y: 400 });
-    await expect(section(page, 'Shape')).toHaveCount(0);
+    await expect(section(page, 'Layout')).toHaveCount(0);
 
     await pointer(page, 'pointerdown', { x: 120, y: 80 });
     await pointer(page, 'pointermove', { x: 220, y: 170 });
-    await expect(section(page, 'Shape')).toHaveCount(0);
+    await expect(section(page, 'Layout')).toHaveCount(0);
     await pointer(page, 'pointerup', { x: 220, y: 170 });
     await expect(field(page, 'X')).toHaveValue('140');
 });
@@ -196,7 +201,10 @@ test('the opacity slider is hidden for mixed values and disabled on a locked sha
     // The second alone, then locked.
     await click(page, 600, 500);
     await click(page, 325, 125);
-    await field(page, 'Locked').check();
+    await page
+        .locator('[data-panel="inspector"]')
+        .getByRole('button', { name: 'Lock', exact: true })
+        .click();
     await expect(slider).toBeDisabled();
 });
 
@@ -284,7 +292,10 @@ test('a color field is disabled on a locked shape and marks no color and mixed c
     // The second alone, then locked.
     await click(page, 600, 500);
     await click(page, 325, 125);
-    await field(page, 'Locked').check();
+    await page
+        .locator('[data-panel="inspector"]')
+        .getByRole('button', { name: 'Lock', exact: true })
+        .click();
     await expect(field(page, 'Fill')).toBeDisabled();
     await expect(page.getByRole('button', { name: 'No fill', exact: true })).toBeDisabled();
 });
