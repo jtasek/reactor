@@ -1,5 +1,5 @@
 import { Action, ActionWithParam, Application, Component, Point, PropertyValue } from '../types';
-import { createComponent } from '../factories';
+import { createComponent, createShape } from '../factories';
 import { componentSource } from '../componentSource';
 import { componentFingerprint, librarySnapshot } from '../componentLibrary';
 import {
@@ -8,7 +8,48 @@ import {
     acceptsComponentValue,
     invalidOverrideIds
 } from '../componentProps';
-import { isShapeLocked } from '../utils';
+import { isShapeLocked, isShapeVisible } from '../utils';
+import type { GroupDrag } from './group';
+import type { ResizeHandlerType } from '../types';
+import { resizeContainerShapes, rotateContainerShapes } from '../containerTransforms';
+import { ordersBetween, resolveDrawOrderTies } from '../drawOrder';
+import { putShapesOnLayer, shapeLayer } from '../membership';
+
+type ComponentDrag = Omit<GroupDrag, 'groupId'> & { componentId: string };
+
+export const rotateComponent: ActionWithParam<ComponentDrag> = (
+    { state },
+    { componentId, position, shapes, frame }
+) => {
+    const document = state.currentDocument;
+    const component = document.components[componentId];
+
+    if (
+        !component ||
+        component.library ||
+        component.shapesIds.some((id) => isShapeLocked(document, id))
+    ) {
+        return;
+    }
+    component.rotation = rotateContainerShapes(document, position, shapes, frame);
+};
+
+export const resizeComponent: ActionWithParam<ComponentDrag & { handle: ResizeHandlerType }> = (
+    { state },
+    { componentId, position, shapes, frame, handle }
+) => {
+    const document = state.currentDocument;
+    const component = document.components[componentId];
+
+    if (
+        !component ||
+        component.library ||
+        component.shapesIds.some((id) => isShapeLocked(document, id))
+    ) {
+        return;
+    }
+    resizeContainerShapes(document, handle, position, shapes, frame);
+};
 
 /** A source cannot be emptied while a live instance refers to it. */
 export const hasComponentInstances = (document: Application['currentDocument'], id: string) =>
@@ -17,7 +58,7 @@ export const hasComponentInstances = (document: Application['currentDocument'], 
     );
 
 /** Whether adding a nested instance would make its containing source recursive. */
-function reachesComponent(
+export function reachesComponent(
     document: Application['currentDocument'],
     from: string,
     target: string,
@@ -106,8 +147,8 @@ export const removeComponent: ActionWithParam<string> = ({ state, actions }, com
 };
 
 export const createComponentFromSelection: Action = ({ state, actions }) => {
-    const ids = [...state.currentDocument.editableSelectedShapesIds];
     const document = state.currentDocument;
+    const ids = [...document.editableSelectedShapesIds];
 
     if (
         document.locked ||
@@ -119,9 +160,53 @@ export const createComponentFromSelection: Action = ({ state, actions }) => {
         return;
     }
 
-    const component = createComponent({ shapesIds: ids });
+    const component = createComponent({ shapesIds: ids, sourceOnly: true });
     setComponent(state, component);
-    actions.ui.showControl('components');
+    const source = componentSource(document, component.id);
+
+    if (!source) {
+        deleteComponent(state, component.id);
+
+        return;
+    }
+
+    const topId = ids[ids.length - 1];
+    const layerId = shapeLayer(document, topId)?.id ?? null;
+    resolveDrawOrderTies(document.shapesIds.map((id) => document.shapes[id]));
+    const index = document.shapesIds.indexOf(topId);
+    const nextId = document.shapesIds[index + 1];
+    const order = ordersBetween(
+        document.shapes[topId].order,
+        document.shapes[nextId]?.order ?? null,
+        1
+    )[0];
+    const position = { ...source.box.topLeft };
+
+    actions.unselectShapes();
+    state.enteredGroupId = null;
+    const instance = createShape({
+        type: 'instance',
+        componentId: component.id,
+        name: component.name,
+        order,
+        position,
+        overrides: {},
+        bounds: {
+            topLeft: position,
+            bottomRight: {
+                x: position.x + source.box.width,
+                y: position.y + source.box.height
+            },
+            width: source.box.width,
+            height: source.box.height
+        }
+    });
+    document.shapes[instance.id] = instance;
+    document.shapesIds.splice(index + 1, 0, instance.id);
+    putShapesOnLayer(document, [instance.id], layerId);
+    putShapesOnLayer(document, ids, null);
+    actions.ui.showControl('explorer');
+    actions.ui.showControl('inspector');
 };
 
 export const addShapesToComponent: ActionWithParam<{ componentId: string; shapeIds: string[] }> = (
@@ -136,6 +221,9 @@ export const addShapesToComponent: ActionWithParam<{ componentId: string; shapeI
 
     const component = getComponent(state, componentId);
     component.shapesIds.push(...shapeIds);
+    if (component.sourceOnly) {
+        putShapesOnLayer(state.currentDocument, shapeIds, null);
+    }
 };
 
 export const removeShapesFromComponent: ActionWithParam<{
@@ -337,6 +425,9 @@ export const chooseComponentToPlace: ActionWithParam<string> = (
     if (!state.currentDocument.components[componentId]) {
         return;
     }
+    if (state.enteredComponentId === componentId) {
+        actions.leaveComponentSource();
+    }
     state.tools.componentToPlace = componentId;
     actions.tools.activateTool('instance');
 };
@@ -407,13 +498,78 @@ export const selectComponentSource: ActionWithParam<string> = ({ state, actions 
     if (!component) {
         return;
     }
+    if (component.sourceOnly) {
+        actions.editComponentSource(componentId);
+
+        return;
+    }
     actions.unselectShapes();
     state.enteredGroupId = null;
+    state.enteredComponentId = null;
     component.shapesIds.forEach((id) => {
         if (state.currentDocument.shapes[id]) {
             state.currentDocument.shapes[id].selected = true;
         }
     });
+    state.selectedComponent = {
+        documentId: state.currentDocumentId,
+        componentId
+    };
+    actions.ui.showControl('inspector');
+};
+
+/** Opens the definition on the canvas, isolating its children for direct editing. */
+export const editComponentSource: ActionWithParam<string> = ({ state, actions }, componentId) => {
+    const component = state.currentDocument.components[componentId];
+
+    if (!component || component.library) {
+        return;
+    }
+    actions.unselectShapes();
+    state.enteredGroupId = null;
+    state.enteredComponentId = componentId;
+    state.selectedComponent = { documentId: state.currentDocumentId, componentId };
+};
+
+export const leaveComponentSource: Action = ({ state, actions }) => {
+    const componentId = state.enteredComponentId;
+
+    if (!componentId) {
+        return;
+    }
+    if (state.currentDocument.components[componentId]?.sourceOnly) {
+        actions.unselectShapes();
+        const instance = state.currentDocument.shapesIds.find(
+            (id) =>
+                state.currentDocument.shapes[id].type === 'instance' &&
+                state.currentDocument.shapes[id].componentId === componentId &&
+                isShapeVisible(state.currentDocument, id)
+        );
+
+        if (instance) {
+            actions.selectShape(instance);
+        }
+
+        return;
+    }
+    actions.selectComponentSource(componentId);
+};
+
+export const selectComponentChild: ActionWithParam<{
+    componentId: string;
+    shapeId: string;
+}> = ({ state, actions }, { componentId, shapeId }) => {
+    const component = state.currentDocument.components[componentId];
+
+    if (!component?.shapesIds.includes(shapeId) || !state.currentDocument.shapes[shapeId]) {
+        return;
+    }
+    actions.unselectShapes();
+    actions.selectShape(shapeId);
+    state.enteredComponentId = componentId;
+    state.enteredGroupId = null;
+    state.selectedComponent = { documentId: state.currentDocumentId, componentId, shapeId };
+    actions.ui.showControl('inspector');
 };
 
 export const unselectComponent: ActionWithParam<string> = ({ state }, componentId) => {

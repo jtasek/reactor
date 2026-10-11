@@ -16,7 +16,6 @@ import {
     MenuBar,
     Minimap,
     Inspector,
-    SideBar,
     Stack,
     StatusBar,
     Stats,
@@ -39,16 +38,14 @@ export const Designer: FC = () => (
         <Canvas />
         <ContextMenu />
         <PanelLayout>
-            <DockablePanel id="sideBar" title="Side Bar">
-                <SideBar>
-                    <ToolBar />
-                    <Explorer />
-                </SideBar>
+            <DockablePanel id="explorer" title="Explorer">
+                <ToolBar />
+                <Explorer />
             </DockablePanel>
             <DockablePanel id="controlPanel" title="Control Panel">
                 <ControlPanel />
             </DockablePanel>
-            <DockablePanel id="components" title="Components" docking="vertical">
+            <DockablePanel id="components" title="Library" docking="vertical">
                 <Components />
             </DockablePanel>
             <DockablePanel id="inspector" title="Inspector" docking="vertical">

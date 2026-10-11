@@ -3,6 +3,7 @@ import type { PropertyRow, PropertyValue } from 'src/app/properties';
 import type { Variable } from 'src/app/types';
 import { Slider } from '../Slider';
 import { SharedOnRelease } from './SharedOnRelease';
+import { Icon } from '../Icon';
 import styles from './styles.css';
 
 /** The picker's color for no color, or mixed colors, whose swatch is drawn struck through. */
@@ -21,6 +22,7 @@ interface Props {
     note?: string;
     onBind: (shapeIds: string[], key: string, variableId: string) => void;
     onUnbind: (shapeIds: string[], key: string) => void;
+    exposure?: { active: boolean; disabled: boolean; onToggle: () => void };
 }
 
 /**
@@ -41,7 +43,8 @@ export const PropertyField: FC<Props> = ({
     variable,
     note,
     onBind,
-    onUnbind
+    onUnbind,
+    exposure
 }) => {
     const { property, value, mixed, readOnly } = row;
     const id = `property-${property.key}`;
@@ -110,6 +113,31 @@ export const PropertyField: FC<Props> = ({
         <tr>
             <td>
                 <label htmlFor={id}>{property.label}</label>
+                {exposure && (
+                    <button
+                        type="button"
+                        className={styles.exposeButton}
+                        title={
+                            exposure.active ? 'Stop editing in instances' : 'Editable in instances'
+                        }
+                        aria-label={
+                            exposure.active
+                                ? `Stop exposing ${property.label}`
+                                : `Expose ${property.label} to instances`
+                        }
+                        aria-pressed={exposure.active}
+                        disabled={exposure.disabled}
+                        onClick={exposure.onToggle}
+                    >
+                        <Icon
+                            icon={{
+                                group: 'content',
+                                name: exposure.active ? 'remove_circle' : 'add_circle',
+                                size: 16
+                            }}
+                        />
+                    </button>
+                )}
                 {!variable && property.write && (
                     <select
                         className={styles.variablePicker}

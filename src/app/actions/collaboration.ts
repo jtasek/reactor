@@ -178,12 +178,14 @@ export const applyRemoteChanges: ActionWithParam<RemoteChanges> = ({ state }, ch
         rebaseGesture(gesture.shapes, changes);
     }
 
-    // A group drag restores the group's rotation if canceled, as another copy left it.
+    // A container drag restores its rotation if canceled, as another copy left it.
     if ('frame' in gesture && documentId === state.currentDocumentId) {
-        const change = entities.groups[gesture.groupId];
+        const collection = 'componentId' in gesture ? 'components' : 'groups';
+        const id = 'componentId' in gesture ? gesture.componentId : gesture.groupId;
+        const change = entities[collection][id];
 
         if (change?.changed.includes('rotation')) {
-            gesture.frame.rotation = hydrateEntity('groups', change.view).rotation ?? 0;
+            gesture.frame.rotation = hydrateEntity(collection, change.view).rotation ?? 0;
         }
     }
 

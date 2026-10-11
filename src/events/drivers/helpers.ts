@@ -81,6 +81,7 @@ export function getHandleTarget(target: EventTarget | null): HandleTarget | unde
     const handle = target instanceof Element ? target.closest('[data-handle]') : null;
     const shapeId = handle?.getAttribute('data-shape-id');
     const groupId = handle?.getAttribute('data-group-id');
+    const componentId = handle?.getAttribute('data-component-id');
     const type = handle?.getAttribute('data-type');
 
     if (type === 'radius') {
@@ -95,6 +96,9 @@ export function getHandleTarget(target: EventTarget | null): HandleTarget | unde
 
     if (groupId) {
         return { groupId, type };
+    }
+    if (componentId) {
+        return { componentId, type };
     }
 
     return shapeId ? { shapeId, type } : undefined;

@@ -1,6 +1,12 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
-    sidebar: string;
+    components: string;
+    empty: string;
+    heading: string;
+    iconButton: string;
+    label: string;
+    list: string;
+    row: string;
   }
 }
 

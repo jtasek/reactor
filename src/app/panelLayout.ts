@@ -3,7 +3,7 @@ import type { PanelPlacement } from './types';
 export const PANEL_LAYOUT_KEY = 'reactor:panel-layout';
 
 export const DEFAULT_PANEL_LAYOUT: Record<string, PanelPlacement> = {
-    sideBar: { dock: 'left', position: { x: 12, y: 12 } },
+    explorer: { dock: 'left', position: { x: 12, y: 12 } },
     controlPanel: { dock: 'top-right', position: { x: 1012, y: 8 } },
     inspector: { dock: null, position: { x: 700, y: 80 } },
     layerPanel: { dock: null, position: { x: 700, y: 60 } },

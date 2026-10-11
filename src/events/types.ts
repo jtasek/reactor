@@ -83,13 +83,27 @@ export type Gesture =
                     shapes: ShapesSnapshot;
                     frame: GroupFrame;
                 }
+              | {
+                    kind: 'resizingComponent';
+                    componentId: string;
+                    handle: ResizeHandlerType;
+                    shapes: ShapesSnapshot;
+                    frame: GroupFrame;
+                    snapLines: SnapLines;
+                }
+              | {
+                    kind: 'rotatingComponent';
+                    componentId: string;
+                    shapes: ShapesSnapshot;
+                    frame: GroupFrame;
+                }
           ));
 
 /** A touch contact in surface-local SVG units. */
 export type TouchContact = { id: number; point: Point };
 
 /** What a handle resizes or rotates: a shape, or a group as one. */
-export type HandleOwner = { shapeId: string } | { groupId: string };
+export type HandleOwner = { shapeId: string } | { groupId: string } | { componentId: string };
 
 /** A resize, rotate or radius handle under the pointer when a gesture starts. */
 export type HandleTarget =

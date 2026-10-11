@@ -76,6 +76,7 @@ export const resetDocument: Action = ({ state }) => {
     document.modified = new Date();
     delete document.shownLayerId;
     state.enteredGroupId = null;
+    state.enteredComponentId = null;
 };
 
 export const cloneDocument: ActionWithParam<string> = ({ state, effects }, documentId) => {
@@ -116,6 +117,7 @@ export const openDocument: ActionWithParam<string> = ({ state }, documentId) => 
     getDocument(state, documentId);
 
     state.currentDocumentId = documentId;
+    state.enteredComponentId = null;
     state.resetDocumentId = null;
 };
 

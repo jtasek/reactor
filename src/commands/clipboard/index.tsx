@@ -1,5 +1,6 @@
 import { Command } from 'src/app/types';
 import { isShapeLocked } from 'src/app/utils';
+import { focusedSourceOnlyId } from 'src/app/componentSelection';
 import { takesEditorInput } from 'src/events/input';
 
 export const CopyCommand: Command = {
@@ -15,7 +16,9 @@ export const CopyCommand: Command = {
     shortcut: 'mod+c',
     clipboardEvent: 'copy',
     canExecute: ({ state }) =>
-        takesEditorInput(state) && state.currentDocument?.selectedShapesIds.length > 0,
+        takesEditorInput(state) &&
+        (state.currentDocument?.selectedShapesIds.length > 0 ||
+            focusedSourceOnlyId(state) !== null),
     execute: ({ actions, effects }) => {
         const text = actions.copySelection();
 

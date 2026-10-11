@@ -1,46 +1,77 @@
 import React, { FC } from 'react';
-import { useAppState } from 'src/app/hooks';
-import { componentSource } from 'src/app/componentSource';
+import {
+    useComponent,
+    useComponentFrame,
+    useComponentLocked,
+    useGesture,
+    useHoveredComponentsIds,
+    useSelectedComponentsIds
+} from 'src/app/hooks';
+import { boxCenter } from 'src/app/utils';
+import { Handles } from '../Selectable/Resizable';
+import styles from './componentSelection.css';
 
-/** Names a source while one of its shapes is selected. */
-export const ComponentOutlines: FC = () => {
-    const outlines = useAppState((state) => {
-        const document = state.currentDocument;
+const ComponentSelection: FC<{ componentId: string; selected: boolean }> = ({
+    componentId,
+    selected
+}) => {
+    const component = useComponent(componentId);
+    const frame = useComponentFrame(componentId);
+    const locked = useComponentLocked(componentId);
+    const gesture = useGesture();
 
-        return Object.values(document.components).flatMap((component) => {
-            if (
-                component.library ||
-                !component.shapesIds.some((id) => document.shapes[id]?.selected)
-            ) {
-                return [];
-            }
-            const source = componentSource(document, component.id);
-
-            return source ? [{ id: component.id, name: component.name, box: source.box }] : [];
-        });
-    });
+    if (!frame) {
+        return null;
+    }
+    const { box, rotation } = frame;
+    const center = boxCenter(box);
+    const activeHandle =
+        gesture.kind === 'resizingComponent' && gesture.componentId === componentId
+            ? gesture.handle
+            : undefined;
+    const rotateActive =
+        gesture.kind === 'rotatingComponent' && gesture.componentId === componentId;
 
     return (
-        <g pointerEvents="none">
-            {outlines.map(({ id, name, box }) => (
-                <g key={id}>
-                    <rect
-                        x={box.topLeft.x}
-                        y={box.topLeft.y}
-                        width={box.width}
-                        height={box.height}
-                        fill="none"
-                        stroke="var(--primary-action-color)"
-                        strokeDasharray="5 4"
-                    />
-                    <text
-                        x={box.topLeft.x}
-                        y={box.topLeft.y - 6}
-                        fill="var(--primary-action-color)"
-                    >
-                        {name}
-                    </text>
-                </g>
+        <g
+            data-component-selection={componentId}
+            transform={`rotate(${rotation} ${center.x} ${center.y})`}
+        >
+            <rect
+                className={selected ? styles.selected : styles.highlight}
+                x={box.topLeft.x}
+                y={box.topLeft.y}
+                width={box.width}
+                height={box.height}
+            />
+            <text className={styles.label} x={box.topLeft.x} y={box.topLeft.y - 6}>
+                {component.name}
+            </text>
+            {selected && !locked && (
+                <Handles
+                    box={box}
+                    rotation={rotation}
+                    owner={{ componentId }}
+                    activeHandle={activeHandle}
+                    rotateActive={rotateActive}
+                />
+            )}
+        </g>
+    );
+};
+
+/** One bounding box and handle set per component, rather than one per source member. */
+export const ComponentOutlines: FC = () => {
+    const selectedIds = useSelectedComponentsIds();
+    const hoveredIds = useHoveredComponentsIds();
+
+    return (
+        <g id="component-selections">
+            {hoveredIds.map((componentId) => (
+                <ComponentSelection key={componentId} componentId={componentId} selected={false} />
+            ))}
+            {selectedIds.map((componentId) => (
+                <ComponentSelection key={componentId} componentId={componentId} selected />
             ))}
         </g>
     );

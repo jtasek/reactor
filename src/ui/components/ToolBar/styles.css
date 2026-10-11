@@ -3,6 +3,7 @@
     border-right: 1px solid var(--hairline-color);
     color: var(--text-color);
     display: flex;
+    flex: 0 0 50px;
     flex-direction: column;
     height: 100%;
     justify-content: flex-start;
@@ -29,7 +30,7 @@
 }
 
 .toolBarButton[data-active='true'] :before {
-    background-color: var(--accent);
+    background-color: var(--selection-color);
     border-radius: 50%;
     content: '';
     height: 5px;

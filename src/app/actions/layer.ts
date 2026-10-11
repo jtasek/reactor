@@ -134,6 +134,19 @@ export const toggleLayerSelected: ActionWithParam<string> = ({ state }, layerId)
     layer.selected = !layer.selected;
 };
 
+/** A row press selects this layer; isolation stays on its separate star action. */
+export const selectExplorerLayer: ActionWithParam<string> = ({ state, actions }, layerId) => {
+    const layer = state.currentDocument.layers[layerId];
+
+    if (!layer) {
+        return;
+    }
+    actions.unselectShapes();
+    Object.values(state.currentDocument.layers).forEach((item) => {
+        item.selected = item.id === layerId;
+    });
+};
+
 export const unselectLayer: ActionWithParam<string> = ({ state }, layerId) => {
     const layer = getLayer(state, layerId);
 

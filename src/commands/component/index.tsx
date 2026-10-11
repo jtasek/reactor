@@ -4,9 +4,11 @@ export const CreateComponentCommand: Command = {
     id: 'create-component',
     name: 'Create component',
     category: 'groups',
-    description: 'Make the selected shapes a reusable component',
+    description: 'Replace selected shapes with an instance of a new component',
     icon: { group: 'content', name: 'library_add', size: 24 },
     shortcut: 'mod+alt+c',
+    scopes: ['shape', 'group', 'selection', 'components'],
+    menuOrder: 25,
     canExecute: ({ state }) => {
         const document = state.currentDocument;
         const selected = document.editableSelectedShapesIds;

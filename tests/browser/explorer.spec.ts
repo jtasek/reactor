@@ -7,6 +7,29 @@ async function click(page: Page, x: number, y: number) {
     await pointer(page, 'pointerup', { x, y });
 }
 
+test('tree heading actions create a layer and a component in their own roots', async ({ page }) => {
+    await openEditor(page, ['Explorer']);
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    const layers = explorer.getByText('Layers', { exact: true }).locator('xpath=ancestor::li[1]');
+    const components = explorer
+        .getByText('Components', { exact: true })
+        .locator('xpath=ancestor::li[1]');
+    const newLayer = layers.getByRole('button', { name: 'New layer' });
+    const createComponent = components.getByRole('button', { name: 'Create component' });
+
+    await expect(newLayer).toBeVisible();
+    await expect(createComponent).toBeDisabled();
+    await newLayer.click();
+    await expect(layers.getByRole('button', { name: 'layer-1' })).toBeVisible();
+
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    await expect(createComponent).toBeEnabled();
+    await createComponent.click();
+    await expect(
+        components.getByRole('button', { name: 'component-1', exact: true })
+    ).toBeVisible();
+});
+
 test('the explorer lists layers as a tree, shows one layer alone, and takes dropped shapes', async ({
     page
 }) => {
@@ -29,11 +52,9 @@ test('the explorer lists layers as a tree, shows one layer alone, and takes drop
     await expect(shapesOn(first)).toHaveCount(1);
     await expect(shapesOn(second)).toHaveCount(1);
 
-    // Pressing a layer's name shows only that layer; pressing it again shows all.
+    // A layer row selects; its star controls isolation.
     await first.click();
     await expect(first).toHaveAttribute('aria-pressed', 'true');
-    await expect(shapes(page)).toHaveCount(1);
-    await first.click();
     await expect(shapes(page)).toHaveCount(2);
 
     // The layer's star does the same, and so does the Highlight layer command, by
@@ -50,7 +71,6 @@ test('the explorer lists layers as a tree, shows one layer alone, and takes drop
 
     await click(page, 420, 120);
     await page.keyboard.press('h');
-    await expect(second).toHaveAttribute('aria-pressed', 'true');
     await expect(shapes(page)).toHaveCount(1);
     await page.keyboard.press('h');
     await expect(shapes(page)).toHaveCount(2);
@@ -175,12 +195,10 @@ test('an empty layer has nothing to collapse', async ({ page }) => {
 
     await expect(page.getByRole('button', { name: 'Walls', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Collapse Walls', exact: true })).toHaveCount(0);
-    await expect(
-        page.getByRole('button', { name: 'Collapse No layer', exact: true })
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Collapse Surface', exact: true })).toBeVisible();
 });
 
-test('an item’s menu floats beside its name and runs commands for that item', async ({ page }) => {
+test('an item’s menu stays in its row and runs commands for that item', async ({ page }) => {
     await openEditor(page, ['Explorer']);
     await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
     await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
@@ -193,24 +211,32 @@ test('an item’s menu floats beside its name and runs commands for that item', 
     await expect(menu).toBeHidden();
     const name = row.getByRole('button', { name: 'rectangle-1', exact: true });
     const nameBefore = (await name.boundingBox())!;
-    expect(nameBefore.width).toBeGreaterThan(150);
+    expect(nameBefore.width).toBeGreaterThan(100);
     await row.hover();
     await expect(button('Hide')).toHaveCSS('opacity', '1');
     expect(await name.boundingBox()).toEqual(nameBefore);
     const rowBounds = (await row.boundingBox())!;
-    expect((await menu.boundingBox())!.x).toBeGreaterThanOrEqual(rowBounds.x + rowBounds.width);
+    const menuBounds = (await menu.boundingBox())!;
+    expect(menuBounds.x + menuBounds.width).toBeLessThanOrEqual(rowBounds.x + rowBounds.width);
+    expect(
+        Math.abs(menuBounds.y + menuBounds.height / 2 - rowBounds.y - rowBounds.height / 2)
+    ).toBeLessThan(1);
 
-    // All six buttons are in the bar. Nothing is selected: a command runs for the
-    // row's shape.
-    await expect(button('More')).toHaveCount(0);
+    // The most common actions stay in the row, with the others behind More.
+    // Nothing is selected: a command runs for the row's shape.
+    await expect(button('More')).toHaveCount(1);
+    await button('More').click();
     await button('Clone').click();
     await expect(shapes(page)).toHaveCount(3);
 
+    await page.mouse.move(700, 500);
+    await row.hover();
+    await button('More').click();
     await button('Delete').click();
     await expect(shapes(page)).toHaveCount(2);
     await expect(page.getByRole('button', { name: 'rectangle-1', exact: true })).toHaveCount(0);
 
-    // Leaving closes the floating menu; opening it again keeps the item's state.
+    // Leaving closes the row menu; opening it again keeps the item's state.
     const other = page.getByRole('button', { name: 'rectangle-2', exact: true }).locator('..');
 
     await other.hover();
@@ -226,10 +252,11 @@ test('an item’s menu floats beside its name and runs commands for that item', 
         'opacity',
         '1'
     );
+    await other.getByRole('button', { name: 'More', exact: true }).click();
     await expect(other.getByRole('button', { name: 'Delete', exact: true })).toBeDisabled();
 });
 
-test('the floating item menu is reachable by keyboard and closes with Escape', async ({ page }) => {
+test('the inline item menu is reachable by keyboard and closes with Escape', async ({ page }) => {
     await openEditor(page, ['Explorer']);
     await drawRect(page, { x: 400, y: 200 }, { x: 450, y: 250 });
     const name = page.getByRole('button', { name: 'rectangle-1', exact: true });

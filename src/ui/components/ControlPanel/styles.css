@@ -1,5 +1,5 @@
 .controlPanel {
-  background-color: var(--control-background);
+  background-color: var(--panel-content-background);
   border-radius: var(--radius-md);
   color: var(--text-color);
   display: block;

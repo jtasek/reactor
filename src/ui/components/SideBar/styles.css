@@ -1,9 +1,0 @@
-.sidebar {
-  align-items: flex-start;
-  color: var(--text-color);
-  display: flex;
-  flex-direction: row;
-  height: auto;
-  min-height: 100%;
-  user-select: none;
-}

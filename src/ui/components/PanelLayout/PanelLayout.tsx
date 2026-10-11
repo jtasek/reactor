@@ -236,9 +236,13 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
     }, [resize]);
 
     const panels = Children.toArray(children) as Array<ReactElement<DockablePanelProps>>;
-    const visiblePanels = panels.filter(
-        ({ props }) => controls[props.id as keyof typeof controls]?.visible ?? props.id === 'stats'
-    );
+    const visiblePanels = panels.filter(({ props }) => {
+        if (props.id === 'explorer') {
+            return controls.toolBar.visible || controls.explorer.visible;
+        }
+
+        return controls[props.id as keyof typeof controls]?.visible ?? props.id === 'stats';
+    });
     const visiblePanelLocations = visiblePanels
         .map((panel) => `${panel.props.id}:${panelDock(panel) ?? 'floating'}`)
         .join('|');
@@ -522,7 +526,7 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
                 key={id}
                 className={`${styles.panel} ${floating ? styles.floating : styles.docked} ${
                     isDragging && drag.moved ? styles.dragSource : ''
-                } ${id === 'sideBar' ? styles.sideBarPanel : ''}`}
+                } ${id === 'explorer' ? styles.explorerPanel : ''}`}
                 data-panel={id}
                 data-orientation={orientation}
                 style={{

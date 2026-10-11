@@ -4,6 +4,9 @@ import { PropertyField } from './PropertyField';
 import { PropertyGroup } from './PropertyGroup';
 import { AlignSection } from './AlignSection';
 import { InstanceProps } from './InstanceProps';
+import { ComponentDetails, SourceChildHeading } from './ComponentDetails';
+import { useComponentExposure, useSelectedComponentContext } from 'src/app/componentHooks';
+import { useActions } from 'src/app/hooks';
 import { groupRows, type PropertyRow, type PropertyValue } from 'src/app/properties';
 import type { Variable } from 'src/app/types';
 
@@ -34,12 +37,71 @@ export const Inspector: FC<Props> = ({
     onBind,
     onUnbind
 }) => {
+    const componentContext = useSelectedComponentContext();
+    const exposure = useComponentExposure(
+        componentContext?.kind === 'child' ? componentContext.componentId : null,
+        componentContext?.kind === 'child' ? componentContext.shapeId : null
+    );
+    const { exposeComponentProp, removeComponentProp } = useActions();
+    const exposureFor = (key: string) => {
+        if (!exposure || componentContext?.kind !== 'child') {
+            return undefined;
+        }
+        const candidate = exposure.candidates.find((item) => item.key === key);
+
+        if (!candidate) {
+            return undefined;
+        }
+        const prop = exposure.props.find(
+            (item) => item.shapeId === componentContext.shapeId && item.key === candidate.key
+        );
+
+        return {
+            active: Boolean(prop),
+            disabled: exposure.disabled,
+            onToggle: () => {
+                if (prop) {
+                    removeComponentProp({
+                        componentId: componentContext.componentId,
+                        propId: prop.id
+                    });
+
+                    return;
+                }
+                exposeComponentProp({
+                    componentId: componentContext.componentId,
+                    shapeId: componentContext.shapeId,
+                    key: candidate.key,
+                    label: candidate.label
+                });
+            }
+        };
+    };
+
+    if (componentContext?.kind === 'source') {
+        return (
+            <div className={styles.inspector}>
+                <ComponentDetails
+                    key={componentContext.componentId}
+                    componentId={componentContext.componentId}
+                />
+            </div>
+        );
+    }
+
     if (shapeIds.length === 0) {
         return <div className={styles.inspector}>No shapes selected</div>;
     }
 
     return (
         <div className={styles.inspector}>
+            {componentContext?.kind === 'child' && (
+                <SourceChildHeading
+                    componentId={componentContext.componentId}
+                    shapeId={componentContext.shapeId}
+                />
+            )}
+            {componentContext?.kind === 'instance' && <InstanceProps />}
             <AlignSection />
             <table>
                 {groupRows(rows).map(({ group, rows: grouped }) => (
@@ -57,6 +119,7 @@ export const Inspector: FC<Props> = ({
                                 note={notes[row.property.key]}
                                 onBind={onBind}
                                 onUnbind={onUnbind}
+                                exposure={exposureFor(row.property.key)}
                             />
                         ))}
                     </PropertyGroup>
@@ -68,7 +131,6 @@ export const Inspector: FC<Props> = ({
                     </tr>
                 </tfoot>
             </table>
-            <InstanceProps />
         </div>
     );
 };

@@ -1,6 +1,18 @@
 import { Command } from 'src/app/types';
 import { selectionLayerId } from 'src/app/membership';
 
+export const NewLayerCommand: Command = {
+    id: 'new-layer',
+    name: 'New layer',
+    category: 'layers',
+    description: 'Create an empty layer',
+    icon: { group: 'content', name: 'add', size: 24 },
+    places: [],
+    scopes: ['layers'],
+    canExecute: ({ state }) => !state.currentDocument.locked,
+    execute: ({ actions }) => actions.addLayer({})
+};
+
 export const LayerCommand: Command = {
     id: 'layer',
     name: 'Layer',

@@ -25,6 +25,7 @@ import {
     MoveLeftCommand,
     MoveRightCommand,
     MoveUpCommand,
+    NewLayerCommand,
     PasteCommand,
     RemoveFromGroupCommand,
     ResetDocumentCommand,
@@ -72,6 +73,7 @@ function registerCommands() {
     registerCommand(UngroupCommand);
     registerCommand(RemoveFromGroupCommand);
     registerCommand(LayerCommand);
+    registerCommand(NewLayerCommand);
     registerCommand(UnlayerCommand);
     registerCommand(HighlightLayerCommand);
     registerCommand(AlignLeftCommand);

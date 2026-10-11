@@ -11,11 +11,18 @@ const idsFor = (scope: Parameters<typeof commandsFor>[0]) => commandsFor(scope).
 
 describe('commands for an item', () => {
     it('are the registered commands of its scope, most used first', () => {
-        expect(idsFor('shape')).toEqual(['clone', 'delete', 'bring-to-front', 'send-to-back']);
+        expect(idsFor('shape')).toEqual([
+            'clone',
+            'delete',
+            'create-component',
+            'bring-to-front',
+            'send-to-back'
+        ]);
         expect(idsFor('group')).toEqual([
             'ungroup',
             'clone',
             'delete',
+            'create-component',
             'bring-to-front',
             'send-to-back'
         ]);
@@ -24,6 +31,7 @@ describe('commands for an item', () => {
             'ungroup',
             'clone',
             'delete',
+            'create-component',
             'bring-to-front',
             'send-to-back',
             'group'

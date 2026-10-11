@@ -19,7 +19,9 @@ export const KEEPS_SHAPE_BOUNDS: Record<Gesture['kind'], boolean> = {
     // Rounding the corners leaves the box they are drawn in as it is.
     rounding: true,
     resizingGroup: true,
-    rotatingGroup: true
+    rotatingGroup: true,
+    resizingComponent: true,
+    rotatingComponent: true
 };
 
 /** How far a pressed pointer may slip, in screen pixels, and still click rather than drag. */

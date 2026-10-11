@@ -17,13 +17,13 @@ import { placeSelectionMenu } from './selectionMenu';
 import { PropertyRow, sharedProperties } from './properties';
 import { untracked } from './untracked';
 import { componentSource } from './componentSource';
+import { hoveredComponentsIds, localComponents } from './componentSelection';
 import {
     drawnExtent,
     groupFrame,
     hoveredGroupsIds,
     filterOutline,
     outline,
-    selectedGroupsIdsOf,
     selectionScope
 } from './membership';
 
@@ -98,6 +98,21 @@ export const useCommandEnabled = (command: Command) => {
 export const useComponents = () => {
     return useCurrentDocument()?.components;
 };
+
+export const useEditingComponentId = () => useAppState((state) => state.enteredComponentId);
+
+export const useComponent = (componentId: string) =>
+    useAppState((state) => state.currentDocument.components[componentId]);
+
+export const useSourceSelected = (componentId: string | null) =>
+    useAppState(
+        (state) =>
+            componentId !== null &&
+            (state.currentDocument.selectedComponentsIds.includes(componentId) ||
+                (state.selectedComponent?.documentId === state.currentDocumentId &&
+                    state.selectedComponent.componentId === componentId &&
+                    !state.selectedComponent.shapeId))
+    );
 
 export const useComponentSource = (componentId: string | null) =>
     useAppState((state) =>
@@ -344,7 +359,7 @@ export const useGroup = (id: string) => {
 
 /** The groups selected as one. */
 export const useSelectedGroupsIds = () => {
-    return useAppState((state) => selectedGroupsIdsOf(state.currentDocument, state.enteredGroupId));
+    return useAppState((state) => state.currentDocument.selectedGroupsIds);
 };
 
 /** Where the selection's menu goes; none without a selection or during a drag. */
@@ -369,7 +384,11 @@ export const useSnapLines = () =>
     useAppState((state) => {
         const { gesture } = state.events.pointer;
 
-        if (gesture.kind === 'resizing' || gesture.kind === 'resizingGroup') {
+        if (
+            gesture.kind === 'resizing' ||
+            gesture.kind === 'resizingGroup' ||
+            gesture.kind === 'resizingComponent'
+        ) {
             return gesture.snapLines;
         }
 
@@ -393,7 +412,9 @@ export const useSnappedBox = () =>
         const { gesture } = state.events.pointer;
 
         if (
-            (gesture.kind === 'resizing' || gesture.kind === 'resizingGroup') &&
+            (gesture.kind === 'resizing' ||
+                gesture.kind === 'resizingGroup' ||
+                gesture.kind === 'resizingComponent') &&
             (gesture.snapLines.x !== null || gesture.snapLines.y !== null)
         ) {
             const document = state.currentDocument;
@@ -464,16 +485,21 @@ export const useGestureInProgress = () =>
 
 /** The groups the pointer highlights: see `hoveredGroupsIds`. */
 export const useHoveredGroupsIds = () => {
-    return useAppState((state) =>
-        hoveredGroupsIds(state.currentDocument, state.enteredGroupId, state.events.pointer)
-    );
+    return useAppState((state) => {
+        const document = state.currentDocument;
+        const componentMembers = new Set(
+            localComponents(document).flatMap((component) => component.shapesIds)
+        );
+
+        return hoveredGroupsIds(document, state.enteredGroupId, state.events.pointer).filter(
+            (id) => !document.groups[id].shapesIds.every((shapeId) => componentMembers.has(shapeId))
+        );
+    });
 };
 
 /** Whether the group is selected as one. */
 export const useGroupSelected = (id: string) => {
-    return useAppState((state) =>
-        selectedGroupsIdsOf(state.currentDocument, state.enteredGroupId).includes(id)
-    );
+    return useAppState((state) => state.currentDocument.selectedGroupsIds.includes(id));
 };
 
 /** Where a group is drawn: its box and rotation, none when no shape of it is shown. */
@@ -500,11 +526,19 @@ export const useGroupLocked = (id: string) => {
  * one by one under the pointer, as a press there selects their group.
  */
 export const useShapesInClosedGroupsIds = () => {
-    return useAppState((state) =>
-        Object.values(state.currentDocument.groups)
-            .filter((group) => group.id !== state.enteredGroupId)
-            .flatMap((group) => group.shapesIds)
-    );
+    return useAppState((state) => {
+        const document = state.currentDocument;
+        const entered = state.enteredComponentId && document.components[state.enteredComponentId];
+        return [
+            ...Object.values(document.groups)
+                .filter((group) => group.id !== state.enteredGroupId)
+                .flatMap((group) => group.shapesIds)
+                .filter((id) => !entered || !entered.shapesIds.includes(id)),
+            ...localComponents(document)
+                .filter((component) => component.id !== state.enteredComponentId)
+                .flatMap((component) => component.shapesIds)
+        ];
+    });
 };
 
 /** The shapes of the groups selected as one, which draw one selection for them. */
@@ -512,11 +546,36 @@ export const useShapesInSelectedGroupsIds = () => {
     return useAppState((state) => {
         const { groups } = state.currentDocument;
 
-        return selectedGroupsIdsOf(state.currentDocument, state.enteredGroupId).flatMap(
-            (id) => groups[id].shapesIds
-        );
+        const document = state.currentDocument;
+        const entered = state.enteredComponentId && document.components[state.enteredComponentId];
+        return [
+            ...document.selectedGroupsIds
+                .flatMap((id) => groups[id].shapesIds)
+                .filter((id) => !entered || !entered.shapesIds.includes(id)),
+            ...document.selectedComponentsIds.flatMap((id) => document.components[id].shapesIds)
+        ];
     });
 };
+
+export const useSelectedComponentsIds = () =>
+    useAppState((state) => state.currentDocument.selectedComponentsIds);
+
+export const useHoveredComponentsIds = () =>
+    useAppState((state) =>
+        hoveredComponentsIds(state.currentDocument, state.enteredComponentId, state.events.pointer)
+    );
+
+export const useComponentFrame = (id: string) =>
+    useAppState((state) => state.currentDocument.componentFrames[id]);
+
+export const useComponentLocked = (id: string) =>
+    useAppState((state) => {
+        const document = state.currentDocument;
+        const component = document.components[id];
+        return (
+            !component || component.shapesIds.some((shapeId) => isShapeLocked(document, shapeId))
+        );
+    });
 
 export const useGroups = () => {
     return useCurrentDocument()?.groups ?? [];

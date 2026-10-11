@@ -78,13 +78,17 @@ export const useItemCommandActions = (shapeIds: string[], disabled: boolean) => 
 
 interface Props {
     itemName: string;
-    /** Most used first: the first `SHOWN_BUTTONS` are in the bar, the rest behind More. */
+    /** Most used first: the rest are behind More. Compact menus swap pages inside a row. */
     actions: ItemMenuAction[];
+    compact?: boolean;
+    onEscape?: () => void;
 }
 
 const SHOWN_BUTTONS = 7;
+const COMPACT_BUTTONS = 2;
 
 const MORE_ICON = { group: 'navigation', name: 'chevron_right', size: ICON_SIZE };
+const BACK_ICON = { group: 'navigation', name: 'chevron_left', size: ICON_SIZE };
 
 const MenuButton: FC<{ action: ItemMenuAction }> = ({
     action: { label, icon, pressed, disabled, onRun }
@@ -108,12 +112,15 @@ const MenuButton: FC<{ action: ItemMenuAction }> = ({
  * Its More button reveals the rest in its own place, until the pointer or the focus
  * leaves the menu.
  */
-export const ItemMenu: FC<Props> = ({ itemName, actions }) => {
+export const ItemMenu: FC<Props> = ({ itemName, actions, compact = false, onEscape }) => {
     const [revealed, setRevealed] = useState(false);
     const menu = useRef<HTMLDivElement>(null);
     const more = useRef<HTMLButtonElement>(null);
-    const shownActions = actions.slice(0, SHOWN_BUTTONS);
-    const moreActions = actions.slice(SHOWN_BUTTONS);
+    const shownButtons = compact ? COMPACT_BUTTONS : SHOWN_BUTTONS;
+    const shownActions = actions.slice(0, shownButtons);
+    const moreActions = actions.slice(shownButtons);
+    const visibleActions = compact && revealed ? moreActions : shownActions;
+    const expandedActions = !compact && revealed ? moreActions : [];
 
     useLayoutEffect(() => {
         if (!revealed) {
@@ -123,12 +130,15 @@ export const ItemMenu: FC<Props> = ({ itemName, actions }) => {
         // Focus goes on from the More button, which is gone, to what it revealed,
         // or to the bar's last button that may be pressed when none of that may.
         const enabled = [...(menu.current?.querySelectorAll('button') ?? [])]
-            .map((button, index) => ({ button, revealed: index >= shownActions.length }))
+            .map((button, index) => ({
+                button,
+                revealed: index >= (compact ? 0 : shownActions.length)
+            }))
             .filter(({ button }) => !button.disabled);
         const target = (enabled.find(({ revealed }) => revealed) ?? enabled.at(-1))?.button;
 
         target?.focus();
-    }, [revealed, shownActions.length]);
+    }, [compact, revealed, shownActions.length]);
 
     return (
         <div
@@ -136,6 +146,14 @@ export const ItemMenu: FC<Props> = ({ itemName, actions }) => {
             className={styles.menu}
             role="toolbar"
             aria-label={`${itemName} menu`}
+            onKeyDown={(event) => {
+                if (event.key !== 'Escape' || !onEscape) {
+                    return;
+                }
+                event.preventDefault();
+                event.stopPropagation();
+                onEscape();
+            }}
             onMouseLeave={() => setRevealed(false)}
             onBlur={(event) => {
                 // Losing the More button itself is not leaving the menu.
@@ -147,24 +165,26 @@ export const ItemMenu: FC<Props> = ({ itemName, actions }) => {
                 }
             }}
         >
-            {shownActions.map((action) => (
+            {visibleActions.map((action) => (
                 <MenuButton key={action.id} action={action} />
             ))}
-            {revealed
-                ? moreActions.map((action) => <MenuButton key={action.id} action={action} />)
-                : moreActions.length > 0 && (
-                      <button
-                          ref={more}
-                          type="button"
-                          className={styles.button}
-                          title="More"
-                          aria-label="More"
-                          aria-expanded={false}
-                          onClick={() => setRevealed(true)}
-                      >
-                          <Icon icon={MORE_ICON} />
-                      </button>
-                  )}
+            {expandedActions.map((action) => (
+                <MenuButton key={action.id} action={action} />
+            ))}
+            {moreActions.length > 0 && (compact || !revealed) && (
+                <button
+                    key="more"
+                    ref={more}
+                    type="button"
+                    className={styles.button}
+                    title={compact && revealed ? 'Back' : 'More'}
+                    aria-label={compact && revealed ? 'Back' : 'More'}
+                    aria-expanded={revealed}
+                    onClick={() => setRevealed(!revealed)}
+                >
+                    <Icon icon={compact && revealed ? BACK_ICON : MORE_ICON} />
+                </button>
+            )}
         </div>
     );
 };

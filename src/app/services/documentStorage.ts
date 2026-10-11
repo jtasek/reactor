@@ -26,6 +26,7 @@ export const RUNTIME_FIELDS = new Set([
     'filter',
     'key',
     'selected',
+    'sourceOnlyShapesIds',
     'shownLayerId'
 ]);
 export const COLLECTIONS = [
@@ -239,6 +240,7 @@ function readComponent(value: unknown): ComponentData {
 
     return {
         ...readMember(value),
+        ...(c.sourceOnly === undefined ? {} : { sourceOnly: bool(c.sourceOnly) }),
         ...(c.sourceShapes === undefined
             ? {}
             : { sourceShapes: table(c.sourceShapes, readOrderedShape) }),

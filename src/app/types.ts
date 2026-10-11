@@ -231,6 +231,10 @@ export interface Layer {
 
 export interface Component {
     id: string;
+    /** Rotation of the source's selection frame; its shapes carry their own geometry. */
+    rotation?: number;
+    /** Source members live only in the definition; the canvas shows instances. */
+    sourceOnly?: boolean;
     parentId?: string;
     locked: boolean;
     name: string;
@@ -259,6 +263,11 @@ export interface Document {
     grid: Grid;
     componentsIds: string[];
     components: HashTable<Component>;
+    sourceOnlyShapesIds: ReadonlySet<string>;
+    selectedComponentsIds: string[];
+    componentFrames: Record<string, GroupFrame | undefined>;
+    /** Runtime source editing context; other scene shapes are hidden while it is open. */
+    editingComponentId: string | null;
     groupsIds: string[];
     selectedGroupsIds: string[];
     groupFrames: Record<string, GroupFrame | undefined>;
@@ -314,7 +323,7 @@ export type CommandGuard = (context: Pick<Context, 'state'>) => boolean;
 export type CommandPlace = 'commandBar' | 'inspector';
 
 /** What a command acts on: one shape, a group selected as one, a layer, or several items. */
-export type CommandScope = 'shape' | 'group' | 'layer' | 'selection';
+export type CommandScope = 'shape' | 'group' | 'layer' | 'selection' | 'layers' | 'components';
 
 export interface Command {
     id: string;
@@ -434,9 +443,12 @@ export type Application = {
     config: Configuration;
     currentDocumentId: string;
     currentDocument: Document;
+    /** The source or child being inspected, on this screen only. */
+    selectedComponent?: { documentId: string; componentId: string; shapeId?: string } | null;
     currentPage: string;
     /** The group double-clicked into, whose shapes are selected one by one. */
     enteredGroupId: string | null;
+    enteredComponentId: string | null;
     resetDocumentId: string | null;
     devices: HashTable<Device>;
     documents: HashTable<Document>;

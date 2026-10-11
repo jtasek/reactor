@@ -9,6 +9,7 @@ declare namespace StylesCssNamespace {
     docked: string;
     dragPreview: string;
     dragSource: string;
+    explorerPanel: string;
     floating: string;
     grip: string;
     gripLeft: string;
@@ -19,7 +20,6 @@ declare namespace StylesCssNamespace {
     panel: string;
     panelLayer: string;
     rightColumn: string;
-    sideBarPanel: string;
     spacer: string;
     zone: string;
     zoneBottom: string;

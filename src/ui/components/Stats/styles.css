@@ -42,7 +42,7 @@
 }
 
 .card {
-    background-color: var(--control-background);
+    background-color: var(--panel-content-background);
     border-radius: var(--radius-md);
     margin: 0;
     padding: 0 10px;
@@ -61,8 +61,8 @@
 }
 
 .row dt {
+    color: var(--text-secondary-color);
     flex: 0 0 auto;
-    opacity: 0.7;
 }
 
 .row dd {

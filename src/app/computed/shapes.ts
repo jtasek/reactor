@@ -1,6 +1,7 @@
 import { derived } from 'overmind';
 import { Application, Document } from '../types';
 import { isShapeVisible } from '../utils';
+import { localComponents, selectedComponentsIdsOf } from '../componentSelection';
 import {
     editableSelectedShapesIds as findEditableSelectedShapesIds,
     groupFrame,
@@ -17,6 +18,33 @@ export const componentsIds = derived((currentDocument: Document) => {
     return Object.keys(currentDocument.components);
 });
 
+export const sourceOnlyShapesIds = derived(
+    (document: Document) =>
+        new Set(
+            Object.values(document.components)
+                .filter((component) => component.sourceOnly && !component.library)
+                .flatMap((component) => component.shapesIds)
+        )
+);
+
+export const selectedComponentsIds = derived(
+    (document: Document, { enteredComponentId }: Application) =>
+        selectedComponentsIdsOf(document, enteredComponentId)
+);
+
+export const editingComponentId = derived(
+    (_document: Document, { enteredComponentId }: Application) => enteredComponentId
+);
+
+export const componentFrames = derived((document: Document) =>
+    Object.fromEntries(
+        localComponents(document).map((component) => [
+            component.id,
+            groupFrame(document, component) ?? undefined
+        ])
+    )
+);
+
 export const variablesIds = derived((currentDocument: Document) =>
     Object.values(currentDocument.variables)
         .sort((a, b) => a.name.localeCompare(b.name) || (a.id < b.id ? -1 : 1))
@@ -29,8 +57,22 @@ export const groupsIds = derived((currentDocument: Document) => {
 
 /** The groups selected as one: see `selectedGroupsIdsOf`. */
 export const selectedGroupsIds = derived(
-    (currentDocument: Document, { enteredGroupId }: Application) =>
-        selectedGroupsIdsOf(currentDocument, enteredGroupId)
+    (currentDocument: Document, { enteredGroupId, enteredComponentId }: Application) => {
+        const componentMembers = new Set(
+            localComponents(currentDocument).flatMap((component) =>
+                component.id === enteredComponentId ||
+                currentDocument.selectedComponentsIds.includes(component.id)
+                    ? component.shapesIds
+                    : []
+            )
+        );
+        return selectedGroupsIdsOf(currentDocument, enteredGroupId).filter(
+            (id) =>
+                !currentDocument.groups[id].shapesIds.every((shapeId) =>
+                    componentMembers.has(shapeId)
+                )
+        );
+    }
 );
 
 /** Each group's box and rotation, kept until its shapes change; none without a shown shape. */

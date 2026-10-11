@@ -22,7 +22,7 @@ export { CopyCommand, CutCommand, PasteCommand } from './clipboard';
 export { DeleteCommand } from './delete';
 export { MoveDownCommand, MoveLeftCommand, MoveRightCommand, MoveUpCommand } from './move';
 export { GroupCommand, RemoveFromGroupCommand, UngroupCommand } from './group';
-export { HighlightLayerCommand, LayerCommand, UnlayerCommand } from './layer';
+export { HighlightLayerCommand, LayerCommand, NewLayerCommand, UnlayerCommand } from './layer';
 export { ZoomInCommand, ZoomOutCommand, ZoomResetCommand } from './zoom';
 export { HideCommand, LockCommand, ShowAllCommand, UnlockCommand } from './visibility';
 export { ResetDocumentCommand } from './document';

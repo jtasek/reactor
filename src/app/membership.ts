@@ -417,7 +417,7 @@ export function outline(document: Document): OutlineLayer[] {
  */
 export function filterOutline(
     layers: OutlineLayer[],
-    document: Pick<Document, 'shapes' | 'groups' | 'layers'>,
+    document: Pick<Document, 'shapes' | 'groups' | 'layers' | 'components'>,
     text: string
 ): OutlineLayer[] {
     const wanted = text.trim().toLowerCase();
@@ -428,7 +428,13 @@ export function filterOutline(
 
     const named = (item: { name: string } | undefined) =>
         item?.name.toLowerCase().includes(wanted) ?? false;
-    const shapeMatches = (id: string) => named(document.shapes[id]);
+    const sourceOf = new Map(
+        Object.values(document.components).flatMap((component) =>
+            component.shapesIds.map((id): [string, string] => [id, component.name])
+        )
+    );
+    const shapeMatches = (id: string) =>
+        named(document.shapes[id]) || (sourceOf.get(id)?.toLowerCase().includes(wanted) ?? false);
 
     return layers
         .map((layer) =>

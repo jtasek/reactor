@@ -1,5 +1,5 @@
 .documentInfo {
-  background-color: var(--control-background);
+  background-color: var(--panel-content-background);
   border-collapse: separate;
   border-radius: var(--radius-md);
   border-spacing: 0;
@@ -14,7 +14,7 @@
 }
 
 .documentInfo td:first-child {
-  opacity: 0.7;
+  color: var(--text-secondary-color);
 }
 
 .documentInfo tr + tr td {

@@ -1,4 +1,5 @@
 import { componentSource } from 'src/app/componentSource';
+import { readClipboard } from 'src/app/clipboard';
 import { componentPropValue, applyInstanceOverrides } from 'src/app/componentProps';
 import { componentFingerprint } from 'src/app/componentLibrary';
 import { isShapeVisible } from 'src/app/utils';
@@ -17,11 +18,159 @@ function setup() {
         size: { width: 30, height: 40 }
     });
     const sourceId = store.state.currentDocument.shapesIds[0];
-    store.actions.createComponentFromSelection();
+    store.actions.addComponent({ shapesIds: [sourceId] });
     const componentId = store.state.currentDocument.componentsIds[0];
+    store.actions.selectComponentSource(componentId);
 
     return { store, sourceId, componentId };
 }
+
+it('replaces selected artwork with a first instance in the same layer', () => {
+    const { store } = createTestStore();
+    store.actions.addShape({
+        type: 'rectangle',
+        position: { x: 10, y: 20 },
+        size: { width: 30, height: 40 }
+    });
+    const document = store.state.currentDocument;
+    const sourceId = document.shapesIds[0];
+    store.actions.addLayer({ id: 'artwork', name: 'Artwork', shapesIds: [sourceId] });
+
+    store.actions.createComponentFromSelection();
+
+    const componentId = document.componentsIds[0];
+    const instanceId = document.shapesIds[1];
+    expect(document.components[componentId]).toMatchObject({
+        sourceOnly: true,
+        shapesIds: [sourceId]
+    });
+    expect(document.shapes[instanceId]).toMatchObject({
+        type: 'instance',
+        componentId,
+        position: { x: 10, y: 20 },
+        selected: true
+    });
+    expect(document.layers.artwork.shapesIds).toEqual([instanceId]);
+    expect(isShapeVisible(document, sourceId)).toBe(false);
+    expect(isShapeVisible(document, instanceId)).toBe(true);
+
+    store.actions.selectComponentSource(componentId);
+    expect(readClipboard(store.actions.copySelection() ?? '').shapes).toMatchObject([
+        { type: 'instance', componentId }
+    ]);
+    expect(isShapeVisible(document, sourceId)).toBe(true);
+    expect(isShapeVisible(document, instanceId)).toBe(false);
+    store.actions.leaveComponentSource();
+    expect(document.selectedShapesIds).toEqual([instanceId]);
+
+    const restored = restoreDocuments(serializePersistedState(store.state))[document.id];
+    expect(restored.components[componentId].sourceOnly).toBe(true);
+    expect(restored.layers.artwork.shapesIds).toEqual([instanceId]);
+    expect(isShapeVisible(restored, sourceId)).toBe(false);
+});
+
+it('adds a newly drawn shape to the focused definition', () => {
+    const { store } = createTestStore();
+    store.actions.addShape({
+        type: 'rectangle',
+        position: { x: 10, y: 20 },
+        size: { width: 30, height: 40 }
+    });
+    store.actions.createComponentFromSelection();
+    const document = store.state.currentDocument;
+    const componentId = document.componentsIds[0];
+    store.actions.selectComponentSource(componentId);
+    store.actions.drawShape({
+        type: 'rectangle',
+        position: { x: 50, y: 20 },
+        size: { width: 20, height: 20 }
+    });
+    const newId = document.shapesIds.at(-1) ?? '';
+
+    expect(document.components[componentId].shapesIds).toContain(newId);
+    expect(isShapeVisible(document, newId)).toBe(true);
+    expect(componentSource(document, componentId)?.shapes).toHaveLength(2);
+    const shapeCount = document.shapesIds.length;
+    store.actions.drawShape({
+        type: 'instance',
+        componentId,
+        position: { x: 100, y: 20 },
+        overrides: {}
+    });
+    expect(document.shapesIds).toHaveLength(shapeCount);
+    store.actions.leaveComponentSource();
+    expect(isShapeVisible(document, newId)).toBe(false);
+});
+
+it('copies a selected component source as one live instance', () => {
+    const { store, sourceId, componentId } = setup();
+    const document = store.state.currentDocument;
+    const sourcePosition = componentSource(document, componentId)?.box.topLeft;
+    const copied = store.actions.copySelection();
+
+    expect(readClipboard(copied ?? '').shapes).toMatchObject([
+        { type: 'instance', componentId, position: sourcePosition }
+    ]);
+    expect(store.actions.pasteShapes(copied ?? '')).toBe('pasted');
+    expect(document.shapesIds).toHaveLength(2);
+    const instance = document.shapes[document.shapesIds[1]];
+    expect(instance).toMatchObject({
+        type: 'instance',
+        componentId,
+        position: { x: 20, y: 30 }
+    });
+    store.actions.updateShape({ id: sourceId, fill: '#00ff00' });
+    expect(componentSource(document, componentId)?.shapes[0].fill).toBe('#00ff00');
+    expect(document.components[componentId].sourceShapes).toBeUndefined();
+});
+
+it('copies a multi-shape source once alongside other selected shapes', () => {
+    const { store } = createTestStore();
+    for (const x of [10, 80]) {
+        store.actions.addShape({
+            type: 'rectangle',
+            position: { x, y: 20 },
+            size: { width: 30, height: 40 }
+        });
+    }
+    store.actions.addComponent({ shapesIds: [...store.state.currentDocument.shapesIds] });
+    store.actions.selectComponentSource(store.state.currentDocument.componentsIds[0]);
+    const componentId = store.state.currentDocument.componentsIds[0];
+    store.actions.addShape({
+        type: 'circle',
+        position: { x: 200, y: 200 },
+        radius: 15
+    });
+
+    expect(readClipboard(store.actions.copySelection() ?? '').shapes).toMatchObject([
+        { type: 'instance', componentId },
+        { type: 'circle' }
+    ]);
+});
+
+it('copies a source into another document with its component definition', () => {
+    const { store, componentId } = setup();
+    const copied = store.actions.copySelection();
+
+    store.actions.newDocument();
+    expect(store.actions.pasteShapes(copied ?? '')).toBe('pasted');
+    const document = store.state.currentDocument;
+    expect(document.shapes[document.shapesIds[0]]).toMatchObject({
+        type: 'instance',
+        componentId,
+        position: { x: 10, y: 20 }
+    });
+    expect(componentSource(document, componentId)?.shapes).toHaveLength(1);
+});
+
+it('still copies a child shape when editing inside a component', () => {
+    const { store, sourceId, componentId } = setup();
+    store.actions.selectComponentChild({ componentId, shapeId: sourceId });
+
+    expect(readClipboard(store.actions.copySelection() ?? '').shapes).toMatchObject([
+        { type: 'rectangle' }
+    ]);
+});
 
 it('keeps an instance in place while source geometry changes and after reload', () => {
     const { store, sourceId, componentId } = setup();
@@ -307,8 +456,9 @@ it('keeps resolved source text and evaluates text overrides without changing the
     const document = store.state.currentDocument;
     const sourceId = document.shapesIds[0];
     store.actions.setShapesProperty({ shapeIds: [sourceId], key: 'text', value: 'Hello ${Name}' });
-    store.actions.createComponentFromSelection();
+    store.actions.addComponent({ shapesIds: [sourceId] });
     const componentId = document.componentsIds[0];
+    store.actions.selectComponentSource(componentId);
     store.actions.exposeComponentProp({
         componentId,
         shapeId: sourceId,
@@ -454,8 +604,9 @@ it('remaps templates in pasted text overrides when a variable name is taken', ()
     });
     const source = store.state.currentDocument;
     const sourceId = source.shapesIds[0];
-    store.actions.createComponentFromSelection();
+    store.actions.addComponent({ shapesIds: [sourceId] });
     const componentId = source.componentsIds[0];
+    store.actions.selectComponentSource(componentId);
     store.actions.exposeComponentProp({
         componentId,
         shapeId: sourceId,
