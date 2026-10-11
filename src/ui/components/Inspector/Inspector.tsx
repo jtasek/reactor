@@ -109,17 +109,7 @@ export const Inspector: FC<Props> = ({
 
     const instance = componentContext?.kind === 'instance';
     const nameRow = instance ? rows.find((row) => row.property.key === 'name') : undefined;
-    const statusRows = instance
-        ? rows.filter((row) => row.property.key === 'visible' || row.property.key === 'locked')
-        : [];
-    const shownRows = instance
-        ? rows.filter(
-              (row) =>
-                  row.property.key !== 'name' &&
-                  row.property.key !== 'visible' &&
-                  row.property.key !== 'locked'
-          )
-        : rows;
+    const shownRows = instance ? rows.filter((row) => row.property.key !== 'name') : rows;
 
     return (
         <div className={`${styles.inspector} ${instance ? styles.instanceInspector : ''}`}>
@@ -159,13 +149,6 @@ export const Inspector: FC<Props> = ({
                     </tfoot>
                 )}
             </table>
-            {statusRows.length > 0 && (
-                <div className={styles.instanceFooter}>
-                    <table>
-                        <tbody>{statusRows.map(propertyField)}</tbody>
-                    </table>
-                </div>
-            )}
         </div>
     );
 };

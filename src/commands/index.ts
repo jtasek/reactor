@@ -14,6 +14,7 @@ export { BringToFrontCommand, SendToBackCommand } from './arrange';
 export { CloneCommand } from './clone';
 export {
     CreateComponentCommand,
+    LeaveComponentSourceCommand,
     SelectComponentSourceCommand,
     ResetComponentOverridesCommand,
     DetachInstanceCommand

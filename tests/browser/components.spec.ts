@@ -120,6 +120,18 @@ test('instance fields stay usable at default and minimum panel widths', async ({
     for (const width of [260, 160]) {
         await expect.poll(async () => (await panel.boundingBox())!.width).toBe(width);
         const panelBox = (await panel.boundingBox())!;
+        const rotation = panel.locator('tr[data-property="rotation"]');
+        const cardBackground = await rotation.evaluate(
+            (element) => getComputedStyle(element).backgroundColor
+        );
+        for (const property of ['visible', 'locked', 'opacity']) {
+            const row = panel.locator(`tr[data-property="${property}"]`);
+            await expect(row).toHaveCSS('background-color', cardBackground);
+            const rowBox = (await row.boundingBox())!;
+            const rotationBox = (await rotation.boundingBox())!;
+            expect(rowBox.x).toBe(rotationBox.x);
+            expect(rowBox.width).toBe(rotationBox.width);
+        }
         for (const control of [
             show,
             lock,
@@ -148,6 +160,48 @@ test('instance fields stay usable at default and minimum panel widths', async ({
     await show.click();
     await expect(panel.getByRole('checkbox', { name: 'Visible', exact: true })).toBeChecked();
     await expect(panel.getByRole('checkbox', { name: 'Locked', exact: true })).not.toBeChecked();
+});
+
+test('component navigation works with Explorer closed and Escape leaves text editing alone', async ({
+    page
+}) => {
+    await openEditor(page, ['Explorer', 'Inspector']);
+    await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
+    const properties = page.getByRole('region', { name: 'Component properties' });
+    await properties.getByRole('button', { name: 'Edit component' }).click();
+    await page
+        .getByRole('region', { name: 'Component source' })
+        .getByRole('button', { name: 'Place instance' })
+        .click();
+    await pointer(page, 'pointerdown', { x: 250, y: 250 });
+    await pointer(page, 'pointerup', { x: 250, y: 250 });
+    const name = properties.getByRole('textbox', { name: 'Name', exact: true });
+    await name.fill('Second instance');
+    await name.press('Enter');
+    await properties.getByRole('button', { name: 'Edit component' }).click();
+
+    const navigation = page.getByRole('navigation', { name: 'Component editing' });
+    await expect(navigation).toContainText('component-1');
+    const navigationBox = (await navigation.boundingBox())!;
+    const commandsBox = (await page.getByRole('list', { name: 'Commands' }).boundingBox())!;
+    expect(navigationBox.y + navigationBox.height).toBeLessThan(commandsBox.y);
+    await expect(explorer.getByRole('button', { name: 'Done', exact: true })).toHaveCount(0);
+    const search = explorer.getByRole('searchbox');
+    await search.focus();
+    await search.press('Escape');
+    await expect(navigation).toBeVisible();
+
+    await page.getByRole('checkbox', { name: 'Explorer', exact: true }).uncheck();
+    await navigation.getByRole('button', { name: 'Back to canvas' }).click();
+    await expect(navigation).toHaveCount(0);
+    await expect(name).toHaveValue('Second instance');
+
+    await properties.getByRole('button', { name: 'Edit component' }).click();
+    await page.keyboard.press('Escape');
+    await expect(navigation).toHaveCount(0);
+    await expect(name).toHaveValue('Second instance');
 });
 
 test('an exposed fill changes one instance without changing its source', async ({ page }) => {
@@ -208,7 +262,7 @@ test('an exposed fill changes one instance without changing its source', async (
         })
         .click();
     await expect(properties).toHaveCount(0);
-    await explorer.getByRole('button', { name: 'Done' }).click();
+    await page.getByRole('button', { name: 'Back to canvas' }).click();
     await expect.poll(() => fill(1)).toBe(original);
 });
 

@@ -451,6 +451,12 @@ export type Application = {
     /** The group double-clicked into, whose shapes are selected one by one. */
     enteredGroupId: string | null;
     enteredComponentId: string | null;
+    /** Canvas context to restore after editing a component, on this screen only. */
+    componentEditingReturn?: {
+        documentId: string;
+        shapeIds: string[];
+        camera: Camera;
+    } | null;
     resetDocumentId: string | null;
     devices: HashTable<Device>;
     documents: HashTable<Document>;

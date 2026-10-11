@@ -29,7 +29,12 @@ export const useKeyboardAdapter = () => {
             keyDown(event);
             keepLoneAlt(event);
 
-            if (isTextEntry(event.target) || takesArrowKey(event.target, event.key)) {
+            if (
+                event.defaultPrevented ||
+                event.isComposing ||
+                isTextEntry(event.target) ||
+                takesArrowKey(event.target, event.key)
+            ) {
                 return;
             }
 

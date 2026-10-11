@@ -586,11 +586,15 @@
     display: block;
 }
 
-.instanceInspector > table > tbody:first-of-type {
+.instanceInspector > table > tbody {
     display: grid;
     gap: 6px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     width: 100%;
+}
+
+.instanceInspector > table > tbody:first-of-type {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 /* Keep room for a numeric value beside each label in a narrow panel. */
@@ -600,11 +604,11 @@
     }
 }
 
-.instanceInspector > table > tbody:first-of-type > tr:first-child {
+.instanceInspector > table > tbody > tr:first-child {
     grid-column: 1 / -1;
 }
 
-.instanceInspector > table > tbody:first-of-type > tr:not(:first-child) {
+.instanceInspector > table > tbody > tr:not(:first-child) {
     align-items: center;
     background: var(--control-background);
     border-radius: var(--radius-md);
@@ -613,21 +617,20 @@
     padding: 5px 8px;
 }
 
-.instanceInspector > table > tbody:first-of-type > tr[data-property='rotation'] {
+.instanceInspector
+    > table
+    > tbody
+    > tr:is([data-property='rotation'], [data-property='visible'], [data-property='locked']) {
     grid-column: 1 / -1;
 }
 
-.instanceInspector > table > tbody:first-of-type > tr[data-property='rotation'] > td:first-child {
-    flex-basis: 62px;
-}
-
-.instanceInspector > table > tbody:first-of-type > tr > td {
+.instanceInspector > table > tbody > tr:not(:first-child) > td {
     background: transparent;
     border: 0;
     padding: 0;
 }
 
-.instanceInspector > table > tbody:first-of-type > tr > td:first-child {
+.instanceInspector > table > tbody > tr > td:first-child {
     color: var(--text-secondary-color);
     flex: 0 0 42px;
     font-size: 0.75rem;
@@ -636,60 +639,38 @@
     white-space: nowrap;
 }
 
-.instanceInspector > table > tbody:first-of-type > tr > td:last-child {
+.instanceInspector
+    > table
+    > tbody
+    > tr:is([data-property='rotation'], [data-property='visible'], [data-property='locked'])
+    > td:first-child,
+.instanceInspector > table > tbody:not(:first-of-type) > tr > td:first-child {
+    flex-basis: 72px;
+}
+
+.instanceInspector > table > tbody > tr > td:last-child {
     flex: 1;
     min-height: var(--field-height);
     min-width: 0;
 }
 
-.instanceInspector > table > tbody:first-of-type input[type='text'],
-.instanceInspector > table > tbody:first-of-type input[type='number'] {
+.instanceInspector > table > tbody input[type='text'],
+.instanceInspector > table > tbody input[type='number'] {
     background: transparent;
     padding: 0;
 }
 
-.instanceFooter {
-    border-top: 1px solid var(--hairline-color);
-    margin: 12px calc(-1 * var(--inspector-inset)) calc(-1 * var(--inspector-inset));
-    padding: 10px var(--inspector-inset);
-}
-
-.instanceFooter tbody {
+.instanceInspector > table > tbody > tr > td:has(> .bound) {
     display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
 }
 
-.instanceFooter tr {
-    align-items: center;
-    display: flex;
-    flex-direction: row-reverse;
-    gap: 5px;
-    max-width: 100%;
-}
-
-.instanceInspector .instanceFooter td {
-    background: transparent;
-    border: 0;
-    padding: 0;
-}
-
-.instanceInspector .instanceFooter td:first-child {
-    flex-shrink: 0;
-    overflow: visible;
-}
-
-.instanceInspector .instanceFooter td:last-child {
-    display: flex;
-    min-width: 0;
-}
-
-.instanceFooter .bound {
+.instanceInspector > table .bound {
     max-width: none;
     min-width: 0;
+    padding-left: 0;
 }
 
-.instanceFooter .bound + button {
+.instanceInspector > table .bound + button {
     flex-shrink: 0;
 }
 

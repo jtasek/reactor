@@ -13,6 +13,7 @@ import {
     CloneCommand,
     CopyCommand,
     CreateComponentCommand,
+    LeaveComponentSourceCommand,
     DetachInstanceCommand,
     CutCommand,
     DeleteCommand,
@@ -63,6 +64,7 @@ function registerCommands() {
     registerCommand(MoveDownCommand);
     registerCommand(CloneCommand);
     registerCommand(CreateComponentCommand);
+    registerCommand(LeaveComponentSourceCommand);
     registerCommand(SelectComponentSourceCommand);
     registerCommand(ResetComponentOverridesCommand);
     registerCommand(DetachInstanceCommand);

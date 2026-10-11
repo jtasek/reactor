@@ -7,6 +7,7 @@ import { shortcutLabel, usesCommandKey } from './shortcutLabel';
 
 import { CommandBarDelimiter } from './CommandBarDelimiter';
 import { CommandBarGroup } from './CommandBarGroup';
+import { ComponentNavigation } from './ComponentNavigation';
 import styles from './styles.css';
 import { DOCK_GEOMETRY_STYLE } from '../PanelLayout/geometry';
 
@@ -56,6 +57,7 @@ export const CommandBar: FC = () => {
                 } as CSSProperties
             }
         >
+            <ComponentNavigation />
             <ul
                 className={styles.commandBar}
                 aria-label="Commands"

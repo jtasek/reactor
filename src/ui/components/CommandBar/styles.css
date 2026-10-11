@@ -54,6 +54,64 @@
     width: max-content;
 }
 
+.componentNavigation {
+    align-items: center;
+    backdrop-filter: var(--backdrop-filter);
+    background-color: var(--control-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    display: flex;
+    gap: 8px;
+    margin-bottom: var(--panel-gap);
+    max-width: 100%;
+    padding: 6px 10px;
+}
+
+.componentNavigation button {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--text-color);
+    cursor: pointer;
+    display: flex;
+    flex-shrink: 0;
+    font: inherit;
+    gap: 6px;
+    padding: 3px 0;
+}
+
+.componentNavigation button:hover:not(:disabled) {
+    color: var(--text-color-hover);
+}
+
+.componentNavigation button:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+}
+
+.componentNavigation button:disabled {
+    cursor: default;
+    opacity: 0.5;
+}
+
+.componentName {
+    align-items: center;
+    color: var(--component-color);
+    display: flex;
+    gap: 6px;
+    min-width: 0;
+}
+
+.componentName svg {
+    flex-shrink: 0;
+}
+
+.componentName span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .info {
     backdrop-filter: var(--backdrop-filter);
     background-color: var(--control-background);

@@ -15,7 +15,6 @@ import {
     useControls,
     useCurrentDocument,
     useDocumentFilter,
-    useEditingComponentId,
     useGroup,
     useGroupSelected,
     useLayer,
@@ -265,8 +264,6 @@ export const Explorer: FC = () => {
     const components = useComponents() ?? {};
     const filter = useDocumentFilter().trim().toLowerCase();
     const drawOrder = new Map(useShapesIds().map((id, index) => [id, index]));
-    const editingComponentId = useEditingComponentId();
-    const editingComponent = editingComponentId && components[editingComponentId];
     const scene = sceneLayers(found, document).filter(
         ({ layerId, groups, shapesIds }) =>
             !filter ||
@@ -303,8 +300,7 @@ export const Explorer: FC = () => {
     });
     const shownLayerId = useShownLayerId();
     const { explorer } = useControls();
-    const { moveShapesToLayer, selectExplorerLayer, showAllLayers, leaveComponentSource } =
-        useActions();
+    const { moveShapesToLayer, selectExplorerLayer, showAllLayers } = useActions();
     const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
     const handleSurfaceSelect = () => selectExplorerLayer(null);
 
@@ -337,14 +333,6 @@ export const Explorer: FC = () => {
         >
             <section className={styles.explorer} aria-label="Explorer">
                 <SearchBoxContainer />
-                {editingComponent && (
-                    <div className={styles.editing}>
-                        <span>Editing {editingComponent.name}</span>
-                        <button type="button" onClick={() => leaveComponentSource()}>
-                            Done
-                        </button>
-                    </div>
-                )}
                 {shownLayerId && (
                     <button
                         type="button"
