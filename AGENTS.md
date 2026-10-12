@@ -357,7 +357,7 @@ puts its shapes on the topmost one's layer, a group moved to a layer moves whole
 moved without the rest of its group leaves it. Loading does not repair a group other copies'
 merges left across layers; the explorer lists it under its first shape's layer. The explorer
 (`src/ui/components/Explorer`, from `outline`) is the side bar's tree under a Canvas root:
-the shapes on no layer, then the layers with their groups and shapes. Pressing Canvas selects
+the layers with their groups and shapes, then the shapes on no layer. Pressing Canvas selects
 the canvas (`surfaceSelected`), and dragging a shape or group onto it takes it off its layer,
 as dragging onto a layer or group moves it there. Its search box
 lists only what has a name containing what is typed (`filterOutline`): a layer or group with

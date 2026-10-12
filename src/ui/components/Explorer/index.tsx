@@ -366,7 +366,10 @@ export const Explorer: FC = () => {
                                     })
                                 }
                             >
-                                {scene.map(({ layerId, groups, shapesIds }) =>
+                                {[
+                                    ...scene.filter(({ layerId }) => layerId !== null),
+                                    ...scene.filter(({ layerId }) => layerId === null)
+                                ].map(({ layerId, groups, shapesIds }) =>
                                     layerId === null ? (
                                         <LayerContents
                                             key="canvas"

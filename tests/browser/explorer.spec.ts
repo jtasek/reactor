@@ -56,6 +56,11 @@ test('drawn shapes appear beneath the selected layer and switch back to the canv
         canvas.locator('xpath=ancestor::li[1]').getByRole('button', { name: 'rectangle-3' })
     ).toBeVisible();
     await expect(layerTree.getByRole('button', { name: 'rectangle-3' })).toHaveCount(0);
+
+    // The shapes on no layer come after the layers.
+    const rows = canvas.locator('xpath=ancestor::li[1]').locator('> ul > li');
+    await expect(rows.first()).toContainText('layer-1');
+    await expect(rows.last()).toContainText('rectangle-3');
     await expect(layerTree.getByRole('button', { name: /^rectangle-/ })).toHaveCount(2);
     await expect(shapes(page)).toHaveCount(3);
 });
