@@ -292,3 +292,44 @@ test('the canvas menu zooms and shows the rulers', async ({ page }) => {
     await menu.getByRole('menuitemcheckbox', { name: 'Show rulers' }).click();
     await expect(page.locator('svg#surface [data-ruler="top"]')).toBeVisible();
 });
+
+test.describe('with the clipboard', () => {
+    test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
+
+    test('copies, cuts and pastes where the menu was opened', async ({ page }) => {
+        await openEditor(page);
+        await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+
+        const surface = (await page.locator('svg#surface').boundingBox())!;
+        const menu = page.locator('[data-cy="context-menu"]');
+        const openAt = (x: number, y: number) =>
+            page.mouse.click(surface.x + x, surface.y + y, { button: 'right' });
+        const copied = shapes(page).nth(0).locator('rect[data-cy]');
+        const pasted = shapes(page).nth(1).locator('rect[data-cy]');
+        const placeOf = async (rect: typeof pasted) => ({
+            x: Number(await rect.getAttribute('x')),
+            y: Number(await rect.getAttribute('y'))
+        });
+
+        await openAt(320, 120);
+        await menu.getByRole('menuitem', { name: /^Copy/ }).click();
+
+        // On a shape, the paste is centered where the menu was opened, over that shape.
+        await openAt(320, 120);
+        await menu.getByRole('menuitem', { name: /^Paste/ }).click();
+        await expect(shapes(page)).toHaveCount(2);
+        const [original, first] = [await placeOf(copied), await placeOf(pasted)];
+        expect(Math.abs(first.x - original.x)).toBeLessThan(20);
+        expect(Math.abs(first.y - original.y)).toBeLessThan(20);
+
+        await openAt(320, 120);
+        await menu.getByRole('menuitem', { name: /^Cut/ }).click();
+        await expect(shapes(page)).toHaveCount(1);
+
+        await openAt(500, 300);
+        await menu.getByRole('menuitem', { name: /^Paste/ }).click();
+        await expect(shapes(page)).toHaveCount(2);
+        await expect(pasted).toHaveAttribute('x', '480');
+        await expect(pasted).toHaveAttribute('y', '280');
+    });
+});

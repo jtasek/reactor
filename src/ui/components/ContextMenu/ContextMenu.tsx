@@ -2,7 +2,6 @@ import React, { FC, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Command, Icon as IconType, Point } from 'src/app/types';
 import {
     useActions,
-    useAppState,
     useCommandEnabled,
     useControls,
     useCommandsEnabled,
@@ -10,6 +9,11 @@ import {
     useScopedCommands,
     useSelectionScope
 } from 'src/app/hooks';
+import {
+    useCanMoveSelectionToLayer,
+    useContextMenuTarget,
+    useLayerChoices
+} from 'src/app/contextMenuHooks';
 import {
     BringToFrontCommand,
     CopyCommand,
@@ -34,7 +38,7 @@ import {
 import { useRegisteredTools } from 'src/tools/components';
 import { Icon } from '../Icon';
 import { shortcutLabel, usesCommandKey } from '../CommandBar/shortcutLabel';
-import { ObjectTypeSymbol, ObjectType } from '../ObjectTypeSymbol';
+import { ObjectTypeSymbol } from '../ObjectTypeSymbol';
 import styles from './styles.css';
 
 type Submenu = 'layers' | 'align' | 'arrange' | 'draw' | null;
@@ -48,12 +52,11 @@ const SUBMENU_TITLES = {
 /** The categories of the inspector's commands the Align submenu offers. */
 const ALIGN_CATEGORIES = new Set(['align', 'space']);
 
-interface MenuTarget {
-    name: string;
-    type: ObjectType;
-    ids: string[];
-    rename?: { kind: 'component' | 'group' | 'shape'; id: string; readOnly: boolean };
-}
+const INSTANCE_COMMANDS = [
+    SelectComponentSourceCommand,
+    ResetComponentOverridesCommand,
+    DetachInstanceCommand
+];
 
 interface RowProps {
     label: string;
@@ -68,6 +71,7 @@ interface RowProps {
 }
 
 const icon = (group: string, name: string): IconType => ({ group, name, size: 16 });
+const mac = usesCommandKey();
 
 const MenuRow: FC<RowProps> = ({
     label,
@@ -116,7 +120,7 @@ const CommandRow: FC<{
     <MenuRow
         label={label}
         icon={command.icon ?? icon('action', 'help')}
-        shortcut={command.shortcut && shortcutLabel(command.shortcut, usesCommandKey())}
+        shortcut={command.shortcut && shortcutLabel(command.shortcut, mac)}
         danger={danger}
         component={component}
         disabled={!useCommandEnabled(command)}
@@ -144,71 +148,9 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
     const { contextMenu, grid, guides, rulers } = useControls();
     const actions = useActions();
     const tools = useRegisteredTools().filter((tool) => tool.category === 'shapes');
-    const target = useAppState((state): MenuTarget => {
-        const document = state.currentDocument;
-        const ids = document.selectedShapesIds;
-        const moveIds = [
-            ...new Set([
-                ...ids,
-                ...document.selectedGroupsIds.flatMap((id) => document.groups[id].shapesIds)
-            ])
-        ];
-        const selectedComponent = state.selectedComponent;
-        const component = selectedComponent && document.components[selectedComponent.componentId];
-        const groupId = document.selectedGroupsIds[0];
-        const group = groupId && document.groups[groupId];
-        const shape = ids.length === 1 ? document.shapes[ids[0]] : null;
-
-        if (contextMenu.target === 'canvas') {
-            return { name: 'Canvas', type: 'surface', ids: [] };
-        }
-        if (component) {
-            return {
-                name: component.name,
-                type: 'component',
-                ids: moveIds,
-                rename: {
-                    kind: 'component',
-                    id: component.id,
-                    readOnly: Boolean(component.library || component.locked || document.locked)
-                }
-            };
-        }
-        if (
-            group &&
-            document.selectedGroupsIds.length === 1 &&
-            ids.every((id) => group.shapesIds.includes(id))
-        ) {
-            return {
-                name: group.name,
-                type: 'group',
-                ids: moveIds,
-                rename: { kind: 'group', id: group.id, readOnly: group.locked || document.locked }
-            };
-        }
-        if (shape) {
-            return {
-                name: shape.name,
-                type: shape.type,
-                ids: moveIds,
-                rename: { kind: 'shape', id: shape.id, readOnly: document.locked }
-            };
-        }
-
-        return { name: `${ids.length} selected`, type: 'selection', ids: moveIds };
-    });
-    const layers = useAppState((state) =>
-        Object.values(state.currentDocument.layers).map(({ id, name }) => ({ id, name }))
-    );
-    const canMoveToLayer = useAppState((state) => {
-        const { componentMembersIds, editableSelectedShapesIds, selectedShapesIds } =
-            state.currentDocument;
-
-        return (
-            editableSelectedShapesIds.length > 0 &&
-            selectedShapesIds.every((id) => !componentMembersIds.has(id))
-        );
-    });
+    const target = useContextMenuTarget();
+    const layers = useLayerChoices();
+    const canMoveToLayer = useCanMoveSelectionToLayer();
     const canUnlock = useCommandEnabled(UnlockCommand);
     // The selection's commands come from the registry, in menu order: arranging ones in
     // their own submenu and Delete last, apart from the rest.
@@ -222,6 +164,7 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
     );
     const canAlign = useCommandsEnabled(aligning).some(Boolean);
     const canRemoveFromGroup = useCommandEnabled(RemoveFromGroupCommand);
+    const showsInstanceCommands = useCommandsEnabled(INSTANCE_COMMANDS).some(Boolean);
 
     useLayoutEffect(() => {
         const width = menu.current?.offsetWidth ?? 0;
@@ -451,13 +394,10 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                 aligning.map((command) => (
                     <CommandRow key={command.id} command={command} onRun={run} />
                 ))}
-            {submenu === 'arrange' && (
-                <>
-                    {arranging.map((command) => (
-                        <CommandRow key={command.id} command={command} onRun={run} />
-                    ))}
-                </>
-            )}
+            {submenu === 'arrange' &&
+                arranging.map((command) => (
+                    <CommandRow key={command.id} command={command} onRun={run} />
+                ))}
             {submenu === 'draw' &&
                 tools.map((tool) => (
                     <MenuRow
@@ -487,12 +427,12 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                     {canRemoveFromGroup && (
                         <CommandRow command={RemoveFromGroupCommand} onRun={run} />
                     )}
-                    {target.type === 'instance' && (
+                    {showsInstanceCommands && (
                         <>
                             <Divider />
-                            <CommandRow command={SelectComponentSourceCommand} onRun={run} />
-                            <CommandRow command={ResetComponentOverridesCommand} onRun={run} />
-                            <CommandRow command={DetachInstanceCommand} onRun={run} />
+                            {INSTANCE_COMMANDS.map((command) => (
+                                <CommandRow key={command.id} command={command} onRun={run} />
+                            ))}
                         </>
                     )}
                     <Divider />

@@ -501,7 +501,8 @@ Hidden guides are not drawn and locked ones do not move.
   `useEffects`, domain hooks like `useShapes`, `useCurrentDocument`, `useCamera`). Add new
   domain hooks here rather than ad-hoc `useAppState` selectors in components. Hooks only the
   editor page uses go in a module that loads with it, so they stay out of the startup bundle:
-  `src/app/componentHooks.ts` for components and `src/app/variableHooks.ts` for variables.
+  `src/app/componentHooks.ts` for components, `src/app/variableHooks.ts` for variables and
+  `src/app/contextMenuHooks.ts` for the context menu.
   A component takes what it shows through the narrowest hook (`useLayersIds`, `useGesture`,
   `usePointerPosition`) rather than a whole store object, and what changes on every pointer
   move is read by a component of its own, as the status bar's `MouseInfo`, so the rest does
