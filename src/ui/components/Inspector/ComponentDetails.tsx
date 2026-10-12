@@ -12,7 +12,6 @@ const FIND_ICON = { group: 'action', name: 'find_in_page', size: 16 };
 const REMOVE_ICON = { group: 'content', name: 'remove_circle', size: 16 };
 const UPDATE_ICON = { group: 'action', name: 'update', size: 16 };
 
-/** A source has one name and one set of exposed properties for all its instances. */
 export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) => {
     const component = useComponent(componentId);
     const document = useCurrentDocument();

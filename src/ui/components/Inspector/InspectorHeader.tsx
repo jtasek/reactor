@@ -24,7 +24,6 @@ interface Props {
     lockedExposure?: { active: boolean; disabled: boolean; onToggle: () => void };
 }
 
-/** One place for the selection's name, state, and contextual actions. */
 export const InspectorHeader: FC<Props> = ({
     nameField,
     count,
