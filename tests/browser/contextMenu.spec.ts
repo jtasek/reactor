@@ -190,6 +190,7 @@ test('a component instance can be renamed from its context menu header', async (
     const menu = page.locator('[data-cy="context-menu"]');
     await page.mouse.click(surface.x + 320, surface.y + 120, { button: 'right' });
     await expect(menu).toHaveAttribute('aria-label', 'component-1 actions');
+    await expect(menu.getByRole('menuitem', { name: 'Detach instance' })).toBeEnabled();
 
     await menu.getByRole('button', { name: 'Rename instance' }).click();
     const name = menu.getByRole('textbox', { name: 'Name' });
@@ -247,4 +248,47 @@ test('Escape dismisses the menu and it stays in the viewport', async ({ page }) 
     const viewport = page.viewportSize()!;
     expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
     expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+});
+
+test('a selection can be aligned and its clipboard used from its context menu', async ({
+    page
+}) => {
+    await openEditor(page);
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    await drawRect(page, { x: 400, y: 200 }, { x: 440, y: 240 });
+    await pointer(page, 'pointerdown', { x: 280, y: 80 });
+    await pointer(page, 'pointermove', { x: 460, y: 260 });
+    await pointer(page, 'pointerup', { x: 460, y: 260 });
+
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    const menu = page.locator('[data-cy="context-menu"]');
+    await page.mouse.click(surface.x + 320, surface.y + 120, { button: 'right' });
+    await expect(menu.getByRole('menuitem', { name: /^Cut/ })).toBeEnabled();
+    await expect(menu.getByRole('menuitem', { name: /^Copy/ })).toBeEnabled();
+    await expect(menu.getByRole('menuitem', { name: 'Remove from group' })).toHaveCount(0);
+
+    await menu.getByRole('menuitem', { name: 'Align', exact: true }).click();
+    await menu.getByRole('menuitem', { name: /^Align left/ }).click();
+    await expect(menu).toBeHidden();
+    const [first, second] = await Promise.all([
+        shapes(page).nth(0).boundingBox(),
+        shapes(page).nth(1).boundingBox()
+    ]);
+    expect(second!.x).toBeCloseTo(first!.x, 0);
+});
+
+test('the canvas menu zooms and shows the rulers', async ({ page }) => {
+    await openEditor(page);
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    const menu = page.locator('[data-cy="context-menu"]');
+    const camera = page.locator('svg#surface #camera');
+
+    await page.mouse.click(surface.x + 500, surface.y + 300, { button: 'right' });
+    await menu.getByRole('menuitem', { name: /^Zoom in/ }).click();
+    await expect(camera).toHaveAttribute('transform', /scale\(1\.1\)/);
+
+    await page.mouse.click(surface.x + 500, surface.y + 300, { button: 'right' });
+    await expect(menu.getByRole('menuitem', { name: /^Align/ })).toHaveCount(0);
+    await menu.getByRole('menuitemcheckbox', { name: 'Show rulers' }).click();
+    await expect(page.locator('svg#surface [data-ruler="top"]')).toBeVisible();
 });

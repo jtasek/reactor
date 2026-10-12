@@ -527,7 +527,9 @@ Hidden guides are not drawn and locked ones do not move.
   shows those its selection (`selectionScope`) can run now. The context menu
   (`src/ui/components/ContextMenu`) lists all of them, greyed out when they cannot run, with
   the `arrange` category in an Arrange submenu and Delete last; a row takes its name, icon
-  and shortcut (`shortcutLabel`) from its command.
+  and shortcut (`shortcutLabel`) from its command. It adds the clipboard, Remove from group,
+  an instance's commands, the inspector's align and space commands in an Align submenu, and,
+  on the canvas, zoom and the grid, guides and rulers controls.
 - **Commands and tools are registered by the editor page** as it loads (`registerEditor`,
   `src/pages/registerEditor.ts`), not at startup, so they stay out of the entry bundle; add
   a new one there. Until then the registry is empty (`getCommands`, `getTools`), so code

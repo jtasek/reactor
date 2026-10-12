@@ -5,18 +5,31 @@ import {
     useAppState,
     useCommandEnabled,
     useControls,
+    useCommandsEnabled,
+    usePlacedCommands,
     useScopedCommands,
     useSelectionScope
 } from 'src/app/hooks';
 import {
     BringToFrontCommand,
+    CopyCommand,
     CreateComponentCommand,
+    CutCommand,
     DeleteCommand,
+    DetachInstanceCommand,
     HideCommand,
+    LayerCommand,
     LockCommand,
     NewLayerCommand,
     PasteCommand,
-    UnlockCommand
+    RemoveFromGroupCommand,
+    ResetComponentOverridesCommand,
+    SelectComponentSourceCommand,
+    ShowAllCommand,
+    UnlockCommand,
+    ZoomInCommand,
+    ZoomOutCommand,
+    ZoomResetCommand
 } from 'src/commands';
 import { useRegisteredTools } from 'src/tools/components';
 import { Icon } from '../Icon';
@@ -24,8 +37,16 @@ import { shortcutLabel, usesCommandKey } from '../CommandBar/shortcutLabel';
 import { ObjectTypeSymbol, ObjectType } from '../ObjectTypeSymbol';
 import styles from './styles.css';
 
-type Submenu = 'layers' | 'arrange' | 'draw' | null;
-const SUBMENU_TITLES = { layers: 'Move to layer', arrange: 'Arrange', draw: 'Draw shape' };
+type Submenu = 'layers' | 'align' | 'arrange' | 'draw' | null;
+const SUBMENU_TITLES = {
+    layers: 'Move to layer',
+    align: 'Align',
+    arrange: 'Arrange',
+    draw: 'Draw shape'
+};
+
+/** The categories of the inspector's commands the Align submenu offers. */
+const ALIGN_CATEGORIES = new Set(['align', 'space']);
 
 interface MenuTarget {
     name: string;
@@ -120,7 +141,7 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
     const [submenu, setSubmenu] = useState<Submenu>(null);
     const [editingName, setEditingName] = useState(false);
     const [draftName, setDraftName] = useState('');
-    const { contextMenu, grid, guides } = useControls();
+    const { contextMenu, grid, guides, rulers } = useControls();
     const actions = useActions();
     const tools = useRegisteredTools().filter((tool) => tool.category === 'shapes');
     const target = useAppState((state): MenuTarget => {
@@ -196,6 +217,11 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
     const general = scoped.filter(
         (command) => command.category !== 'arrange' && command !== DeleteCommand
     );
+    const aligning = usePlacedCommands('inspector').filter(({ category }) =>
+        ALIGN_CATEGORIES.has(category)
+    );
+    const canAlign = useCommandsEnabled(aligning).some(Boolean);
+    const canRemoveFromGroup = useCommandEnabled(RemoveFromGroupCommand);
 
     useLayoutEffect(() => {
         const width = menu.current?.offsetWidth ?? 0;
@@ -242,7 +268,7 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
         onPressOutside();
         actions.moveShapesToLayer({ shapeIds: target.ids, layerId });
     };
-    const toggle = (controlId: 'grid' | 'guides') => {
+    const toggle = (controlId: 'grid' | 'guides' | 'rulers') => {
         onPressOutside();
         actions.ui.toggleControlVisibility(controlId);
     };
@@ -404,6 +430,8 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
             <Divider />
             {submenu === 'layers' && (
                 <>
+                    <CommandRow command={LayerCommand} label="New layer" onRun={run} />
+                    <Divider />
                     <MenuRow
                         label="Canvas"
                         icon={icon('action', 'view_agenda')}
@@ -419,6 +447,10 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                     ))}
                 </>
             )}
+            {submenu === 'align' &&
+                aligning.map((command) => (
+                    <CommandRow key={command.id} command={command} onRun={run} />
+                ))}
             {submenu === 'arrange' && (
                 <>
                     {arranging.map((command) => (
@@ -440,6 +472,10 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                 ))}
             {!submenu && contextMenu.target === 'selection' && (
                 <>
+                    <CommandRow command={CutCommand} onRun={run} />
+                    <CommandRow command={CopyCommand} onRun={run} />
+                    <CommandRow command={PasteCommand} onRun={run} />
+                    <Divider />
                     {general.map((command) => (
                         <CommandRow
                             key={command.id}
@@ -448,6 +484,17 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                             onRun={run}
                         />
                     ))}
+                    {canRemoveFromGroup && (
+                        <CommandRow command={RemoveFromGroupCommand} onRun={run} />
+                    )}
+                    {target.type === 'instance' && (
+                        <>
+                            <Divider />
+                            <CommandRow command={SelectComponentSourceCommand} onRun={run} />
+                            <CommandRow command={ResetComponentOverridesCommand} onRun={run} />
+                            <CommandRow command={DetachInstanceCommand} onRun={run} />
+                        </>
+                    )}
                     <Divider />
                     <MenuRow
                         label="Move to layer"
@@ -455,6 +502,13 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                         submenu
                         disabled={!canMoveToLayer}
                         onClick={() => setSubmenu('layers')}
+                    />
+                    <MenuRow
+                        label="Align"
+                        icon={icon('editor', 'format_align_left')}
+                        submenu
+                        disabled={!canAlign}
+                        onClick={() => setSubmenu('align')}
                     />
                     {arranging.length > 0 && (
                         <MenuRow
@@ -484,6 +538,11 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                         onClick={() => setSubmenu('draw')}
                     />
                     <CommandRow command={NewLayerCommand} onRun={run} />
+                    <CommandRow command={ShowAllCommand} onRun={run} />
+                    <Divider />
+                    <CommandRow command={ZoomInCommand} onRun={run} />
+                    <CommandRow command={ZoomOutCommand} onRun={run} />
+                    <CommandRow command={ZoomResetCommand} onRun={run} />
                     <Divider />
                     <MenuRow
                         label="Show grid"
@@ -496,6 +555,12 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                         icon={icon('image', 'straighten')}
                         checked={guides.visible}
                         onClick={() => toggle('guides')}
+                    />
+                    <MenuRow
+                        label="Show rulers"
+                        icon={icon('editor', 'border_top')}
+                        checked={rulers.visible}
+                        onClick={() => toggle('rulers')}
                     />
                 </>
             )}
