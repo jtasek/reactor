@@ -121,6 +121,13 @@ export function copyName(
     return SEQUENCE_NAME.test(name) ? nameShape(type) : numberedName(name, taken);
 }
 
+/**
+ * A name for an instance of the component named `componentName`, one `taken` does
+ * not have: the component's own while it is free, else with a number, as `Card 2`.
+ */
+export const instanceName = (componentName: string, taken: Set<string>): string =>
+    taken.has(componentName) ? numberedName(componentName, taken) : componentName;
+
 /** The next name in a document's sequence for shapes of `type`: see `shapeNamer`. */
 export const nextShapeName = (shapes: Iterable<Shape>, type: Shape['type']): string =>
     shapeNamer(shapes)(type);
