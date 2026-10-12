@@ -1,22 +1,76 @@
 import { expect, test, type Page } from '@playwright/test';
 import { openEditor } from './support/editor';
 
-test('tools and explorer show their shared panel without a separate switch', async ({ page }) => {
+test('the application rail switches left sections and the tool picker stays at the bottom', async ({
+    page
+}) => {
     await page.goto('/');
+    const applicationBar = page.getByRole('navigation', { name: 'Application' });
+    const explorer = page.locator('[data-panel="explorer"]');
+    const tools = page.getByRole('list', { name: 'Tools' });
+    const rail = (await applicationBar.boundingBox())!;
+    const explorerBox = (await explorer.boundingBox())!;
+    const toolsBox = (await tools.boundingBox())!;
+
+    expect(explorerBox.x).toBeGreaterThanOrEqual(rail.x + rail.width);
+    expect(toolsBox.y + toolsBox.height).toBeLessThanOrEqual(page.viewportSize()!.height - 25);
+    expect(toolsBox.x + toolsBox.width / 2).toBeGreaterThan(explorerBox.x + explorerBox.width);
+
+    await applicationBar.getByRole('button', { name: 'Library' }).click();
+    await expect(explorer).toHaveCount(0);
+    await expect(page.locator('[data-panel="components"]')).toBeVisible();
+    await applicationBar.getByRole('button', { name: 'Library' }).click();
+    await expect(page.locator('[data-panel="components"]')).toHaveCount(0);
+    await applicationBar.getByRole('button', { name: 'Explorer' }).click();
+    await expect(explorer).toBeVisible();
+    await applicationBar.getByRole('button', { name: 'Inspector' }).click();
+    await expect(page.locator('[data-panel="inspector"]')).toHaveCount(0);
+    await applicationBar.getByRole('button', { name: 'Inspector' }).click();
+    await expect(page.locator('[data-panel="inspector"]')).toBeVisible();
+});
+
+test('a bottom-docked panel pushes the tool picker upward', async ({ page }) => {
+    await setLayout(page, { stats: 'bottom' });
+    await openEditor(page);
+
+    const tools = (await page.getByRole('list', { name: 'Tools' }).boundingBox())!;
+    const bottomPanel = (await page.locator('[data-panel="stats"]').boundingBox())!;
+    expect(tools.y + tools.height).toBeLessThanOrEqual(bottomPanel.y);
+});
+
+test('tool icons use the glass bar color in both states', async ({ page }) => {
+    await page.goto('/');
+    const tools = page.getByRole('list', { name: 'Tools' });
+    const rectangle = tools.getByRole('button', { name: 'Draws a rectangle or square' });
+    const iconColor = (button: typeof rectangle) =>
+        button.evaluate((element) => ({
+            button: getComputedStyle(element).color,
+            icon: getComputedStyle(element.querySelector('svg')!).color
+        }));
+
+    expect((await iconColor(rectangle)).icon).toBe((await iconColor(rectangle)).button);
+    await rectangle.click();
+    expect((await iconColor(rectangle)).icon).toBe((await iconColor(rectangle)).button);
+});
+
+test('tools and explorer can be shown independently', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'More panels' }).click();
     const panel = page.locator('[data-panel="explorer"]');
     const tools = page.getByRole('checkbox', { name: 'Tool Bar', exact: true });
     const explorer = page.getByRole('checkbox', { name: 'Explorer', exact: true });
+    const toolbar = page.getByRole('list', { name: 'Tools' });
 
-    await expect(page.getByRole('checkbox', { name: 'Side Bar', exact: true })).toHaveCount(0);
     await expect(panel).toBeVisible();
+    await expect(toolbar).toBeVisible();
     await explorer.uncheck();
     await expect(panel).toHaveCount(0);
     await explorer.check();
     await expect(panel).toBeVisible();
-    await tools.check();
-    await explorer.uncheck();
-    await expect(panel).toBeVisible();
     await tools.uncheck();
+    await expect(toolbar).toHaveCount(0);
+    await expect(panel).toBeVisible();
+    await explorer.uncheck();
     await expect(panel).toHaveCount(0);
 });
 
@@ -102,7 +156,7 @@ for (const dock of [
     test(`${dock} grows for stacked panels and keeps their headers reachable`, async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 720 });
         await setLayout(page, { explorer: dock, controlPanel: dock, stats: dock });
-        await openEditor(page);
+        await openEditor(page, ['Explorer']);
 
         const zone = page.locator(`[data-dock="${dock}"]`);
         const panels = zone.locator('[data-panel]');
@@ -111,7 +165,7 @@ for (const dock of [
 
         for (const panel of await panels.all()) {
             const bounds = (await panel.boundingBox())!;
-            if (dock.includes('left')) expect(bounds.x).toBeCloseTo(0, 0);
+            if (dock.includes('left')) expect(bounds.x).toBeCloseTo(64, 0);
             if (dock.includes('right')) expect(bounds.x + bounds.width).toBeCloseTo(1280, 0);
         }
         await expectReachableHeaders(page);
@@ -139,7 +193,7 @@ for (const dock of [
 test('growing neighboring zones share space without covering headers', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 420 });
     await setLayout(page, { explorer: 'top-right', controlPanel: 'right', stats: 'bottom-right' });
-    await openEditor(page);
+    await openEditor(page, ['Explorer']);
     await expectReachableHeaders(page);
 
     const panels = await page.locator('[data-panel]').all();
@@ -181,8 +235,8 @@ test('dock targets match the default width and highlight the actual drop target'
     expect((await top.boundingBox())!.x - (corner.x + corner.width)).toBe(8);
     expect((await left.boundingBox())!.y - (corner.y + corner.height)).toBe(8);
     for (const point of [
-        { x: width + 4, y: 20 },
-        { x: 20, y: corner.height + 4 }
+        { x: corner.x + width + 4, y: 20 },
+        { x: corner.x + 20, y: corner.height + 4 }
     ]) {
         await page.mouse.move(point.x, point.y);
         await expect
@@ -199,9 +253,9 @@ test('dock targets match the default width and highlight the actual drop target'
     }
 
     // The point just outside the drawn side zone must remain a floating drop.
-    await page.mouse.move(width + 1, 300);
+    await page.mouse.move(corner.x + width + 1, 300);
     await expect(left).toHaveCSS('border-top-color', restingColor);
-    await page.mouse.move(width - 1, 300);
+    await page.mouse.move(corner.x + width - 1, 300);
     await expect(left).not.toHaveCSS('border-top-color', restingColor);
     await page.mouse.up();
     await expect(page.locator('[data-dock="left"] [data-panel="controlPanel"]')).toBeVisible();

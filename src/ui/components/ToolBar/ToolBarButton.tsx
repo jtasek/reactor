@@ -11,6 +11,13 @@ interface Props {
     onClick: (toolId: string) => void;
 }
 
+const toolBarIcon = (tool: Tool) => {
+    if (!tool.icon) return undefined;
+
+    // Tool metadata may color an icon; the glass bar uses one legible icon color.
+    return { ...tool.icon, color: undefined };
+};
+
 export const ToolBarButton: FC<Props> = ({ tool, active, onClick }) => (
     <li className={styles.toolBarButton} data-active={active}>
         <button
@@ -19,7 +26,7 @@ export const ToolBarButton: FC<Props> = ({ tool, active, onClick }) => (
             onClick={() => onClick(tool.id)}
             title={tool.description}
         >
-            <Icon icon={tool.icon} />
+            <Icon icon={toolBarIcon(tool)} />
         </button>
     </li>
 );

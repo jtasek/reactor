@@ -29,7 +29,10 @@ test('the status bar’s slots follow the document, the selection, the pointer a
     await page.mouse.wheel(40, 80);
     await expect(slot('camera')).toHaveText('camera: [-40, -80, 1]');
 
-    await page.getByRole('link', { name: 'Documents' }).dispatchEvent('click');
+    await page
+        .getByRole('navigation', { name: 'Application' })
+        .getByRole('link', { name: 'Documents' })
+        .dispatchEvent('click');
     await page.getByRole('button', { name: 'New document', exact: true }).click();
     await expect(slot('message')).toHaveText('document-2');
 });

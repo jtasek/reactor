@@ -12,6 +12,7 @@ async function openWithRulers(page: Page) {
     await expect(page.locator('svg#surface')).toBeVisible();
     expect(loaded.filter((url) => url.includes('/guides.'))).toEqual([]);
 
+    await page.getByRole('button', { name: 'More panels' }).click();
     await page.getByRole('checkbox', { name: 'Explorer', exact: true }).uncheck();
     await page.getByRole('checkbox', { name: 'Rulers', exact: true }).check();
     await expect(page.locator('svg#surface [data-ruler="top"]')).toBeVisible();

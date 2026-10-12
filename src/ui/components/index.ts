@@ -1,4 +1,5 @@
 export { CommandBar } from './CommandBar';
+export { ApplicationBar } from './ApplicationBar';
 export { ConnectedCommandLine as CommandLine } from './CommandLine';
 export { ConnectedContextMenu as ContextMenu } from './ContextMenu';
 export { ConnectedControlPanel as ControlPanel } from './ControlPanel';

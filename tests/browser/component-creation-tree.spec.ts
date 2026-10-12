@@ -30,6 +30,7 @@ test('creating a component leaves an instance in Layers and opens its source in 
 
     await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
     await page.goto('/');
+    await page.getByRole('button', { name: 'More panels' }).click();
     await page.getByRole('checkbox', { name: 'Explorer', exact: true }).check();
 
     const explorer = page.getByRole('region', { name: 'Explorer' });

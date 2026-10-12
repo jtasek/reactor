@@ -10,7 +10,8 @@ test('arrow keys move the selection by the step, or pan the canvas without one',
     const rect = firstShape(page).locator('rect[data-cy]');
     const camera = page.locator('svg#surface #camera');
 
-    // Focus is still on the control panel's checkbox, which keeps the arrow keys.
+    // A focused control keeps the arrow keys instead of moving the selection.
+    await page.getByRole('checkbox', { name: 'Tool Bar', exact: true }).focus();
     await expect(page.getByRole('checkbox', { name: 'Tool Bar', exact: true })).toBeFocused();
     await page.keyboard.press('ArrowRight');
     await expect(rect).toHaveAttribute('x', '100');

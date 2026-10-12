@@ -13,7 +13,12 @@ import type { PanelPlacement } from 'src/app/types';
 import { useActions, useControls, usePanelLayout } from 'src/app/hooks';
 import { beyondClickSlip } from 'src/events/gestures';
 import styles from './styles.css';
-import { DOCK_GEOMETRY_STYLE, EDGE_ZONE_HEIGHT_PX, STATUS_BAR_HEIGHT_PX } from './geometry';
+import {
+    APPLICATION_BAR_SPACE_PX,
+    DOCK_GEOMETRY_STYLE,
+    EDGE_ZONE_HEIGHT_PX,
+    STATUS_BAR_HEIGHT_PX
+} from './geometry';
 
 type Dock = PanelPlacement['dock'];
 type DockZone = Exclude<Dock, null>;
@@ -90,7 +95,7 @@ export const DockablePanel: FC<DockablePanelProps> = () => null;
 const zoneAt = (x: number, y: number, sideWidth: number, gap: number): Dock => {
     const zoneHeight = EDGE_ZONE_HEIGHT_PX;
     const bottom = window.innerHeight - STATUS_BAR_HEIGHT_PX;
-    const leftEnd = sideWidth;
+    const leftEnd = APPLICATION_BAR_SPACE_PX + sideWidth;
     const rightStart = window.innerWidth - sideWidth;
     const topEnd = zoneHeight;
     const bottomStart = bottom - zoneHeight;
@@ -153,7 +158,10 @@ const DockZones: FC<{ activeDock: Dock | undefined; docking: Docking }> = ({
     );
 };
 
-export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
+export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
+    children,
+    toolbar
+}) => {
     const panelLayout = usePanelLayout();
     const controls = useControls();
     const { setPanelPlacement } = useActions();
@@ -237,13 +245,9 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
     }, [resize]);
 
     const panels = Children.toArray(children) as Array<ReactElement<DockablePanelProps>>;
-    const visiblePanels = panels.filter(({ props }) => {
-        if (props.id === 'explorer') {
-            return controls.toolBar.visible || controls.explorer.visible;
-        }
-
-        return controls[props.id as keyof typeof controls]?.visible ?? props.id === 'stats';
-    });
+    const visiblePanels = panels.filter(
+        ({ props }) => controls[props.id as keyof typeof controls]?.visible ?? props.id === 'stats'
+    );
     const visiblePanelLocations = visiblePanels
         .map((panel) => `${panel.props.id}:${panelDock(panel) ?? 'floating'}`)
         .join('|');
@@ -524,7 +528,7 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
                 key={id}
                 className={`${styles.panel} ${floating ? styles.floating : styles.docked} ${
                     isDragging && drag.moved ? styles.dragSource : ''
-                } ${id === 'explorer' ? styles.explorerPanel : ''}`}
+                }`}
                 data-panel={id}
                 data-orientation={orientation}
                 style={{
@@ -664,6 +668,7 @@ export const PanelLayout: FC<{ children: ReactNode }> = ({ children }) => {
             <div className={`${styles.column} ${styles.centerColumn}`}>
                 {docked('top')}
                 <div className={styles.spacer} />
+                <div className={styles.toolbar}>{toolbar}</div>
                 {docked('bottom')}
             </div>
             {floats}

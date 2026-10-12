@@ -38,6 +38,7 @@ export async function pointer(
 export async function openEditor(page: Page, controls: string[] = []) {
     await page.goto('/');
     await expect(page.locator('svg#surface')).toBeVisible();
+    await page.getByRole('button', { name: 'More panels' }).click();
 
     if (!controls.includes('Inspector')) {
         await page.getByRole('checkbox', { name: 'Inspector', exact: true }).uncheck();

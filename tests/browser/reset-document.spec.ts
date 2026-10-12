@@ -9,7 +9,7 @@ test('reset document asks for confirmation before clearing the current document'
     await expect(shapes(page)).toHaveCount(1);
 
     const reset = page
-        .getByRole('list', { name: 'Tools', exact: true })
+        .getByRole('list', { name: 'Commands', exact: true })
         .getByRole('button', { name: 'Reset document', exact: true });
     await expect(reset.locator('use')).toHaveAttribute(
         'xlink:href',
