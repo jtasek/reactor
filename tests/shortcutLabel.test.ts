@@ -6,6 +6,7 @@ describe('a shortcut as shown', () => {
         expect(shortcutLabel('mod+alt+shift+l', false)).toBe('Ctrl+Alt+Shift+L');
         expect(shortcutLabel('alt+shift+h', false)).toBe('Alt+Shift+H');
         expect(shortcutLabel('delete,backspace', false)).toBe('Delete');
+        expect(shortcutLabel('delete,backspace', true)).toBe('⌫');
         expect(shortcutLabel('+,=', false)).toBe('+');
         expect(shortcutLabel(']', false)).toBe(']');
         expect(shortcutLabel('arrowleft', false)).toBe('←');

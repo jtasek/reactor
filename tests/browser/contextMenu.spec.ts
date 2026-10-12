@@ -51,13 +51,13 @@ test('right-clicking a shape offers actions for that shape', async ({ page }) =>
     // Shortcuts come from the commands, labeled for this platform.
     const mac = await page.evaluate(() => /Mac|iPhone|iPad/.test(navigator.userAgent));
 
-    await expect(menu.getByRole('menuitem', { name: 'Duplicate' })).toContainText(
+    await expect(menu.getByRole('menuitem', { name: 'Clone' })).toContainText(
         mac ? '⌘D' : 'Ctrl+D'
     );
     await expect(menu.getByRole('menuitem', { name: 'Create component' })).toContainText(
         mac ? '⌥⌘C' : 'Ctrl+Alt+C'
     );
-    await menu.getByRole('menuitem', { name: 'Duplicate' }).click();
+    await menu.getByRole('menuitem', { name: 'Clone' }).click();
     await expect(shapes(page)).toHaveCount(2);
     await expect(menu).toBeHidden();
 });
@@ -95,6 +95,8 @@ test('a group can be renamed from its context menu header', async ({ page }) => 
     const menu = page.locator('[data-cy="context-menu"]');
     await page.mouse.click(surface.x + 320, surface.y + 120, { button: 'right' });
     await expect(menu).toHaveAttribute('aria-label', 'group-1 actions');
+    // A group's commands come from the registry, as its own menus' do.
+    await expect(menu.getByRole('menuitem', { name: 'Ungroup' })).toBeEnabled();
     await menu.getByRole('button', { name: 'Rename group' }).click();
     await menu.getByRole('textbox', { name: 'Name' }).fill('Card parts');
     await menu.getByRole('textbox', { name: 'Name' }).press('Enter');
@@ -128,6 +130,8 @@ test('a mixed selection does not offer to rename its selected group', async ({ p
 
     await expect(menu).toHaveAttribute('aria-label', '3 selected actions');
     await expect(menu.getByRole('button', { name: 'Rename group' })).toHaveCount(0);
+    await expect(menu.locator('svg[data-object-type="selection"]')).toHaveCount(1);
+    await expect(menu.getByRole('menuitem', { name: /^Group/ })).toBeVisible();
 });
 
 test('moving a group also moves its hidden member', async ({ page }) => {
@@ -217,6 +221,12 @@ test('Escape dismisses the menu and it stays in the viewport', async ({ page }) 
     await expect(menu.getByRole('menuitem', { name: 'Draw shape' })).toBeVisible();
 
     await page.keyboard.press('Escape');
+    await expect(menu).toBeHidden();
+
+    // Tab leaves the menu too.
+    await page.mouse.click(surface.x + 500, surface.y + 300, { button: 'right' });
+    await expect(menu).toBeVisible();
+    await page.keyboard.press('Tab');
     await expect(menu).toBeHidden();
 
     await page.locator('svg#surface').evaluate(

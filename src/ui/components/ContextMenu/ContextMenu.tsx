@@ -1,16 +1,21 @@
 import React, { FC, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Command, Icon as IconType, Point } from 'src/app/types';
-import { useActions, useAppState, useCommandEnabled, useControls } from 'src/app/hooks';
+import {
+    useActions,
+    useAppState,
+    useCommandEnabled,
+    useControls,
+    useScopedCommands,
+    useSelectionScope
+} from 'src/app/hooks';
 import {
     BringToFrontCommand,
-    CloneCommand,
     CreateComponentCommand,
     DeleteCommand,
     HideCommand,
     LockCommand,
     NewLayerCommand,
     PasteCommand,
-    SendToBackCommand,
     UnlockCommand
 } from 'src/commands';
 import { useRegisteredTools } from 'src/tools/components';
@@ -169,7 +174,7 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
             };
         }
 
-        return { name: `${ids.length} selected`, type: 'group', ids: moveIds };
+        return { name: `${ids.length} selected`, type: 'selection', ids: moveIds };
     });
     const layers = useAppState((state) =>
         Object.values(state.currentDocument.layers).map(({ id, name }) => ({ id, name }))
@@ -184,6 +189,13 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
         );
     });
     const canUnlock = useCommandEnabled(UnlockCommand);
+    // The selection's commands come from the registry, in menu order: arranging ones in
+    // their own submenu and Delete last, apart from the rest.
+    const scoped = useScopedCommands(useSelectionScope());
+    const arranging = scoped.filter((command) => command.category === 'arrange');
+    const general = scoped.filter(
+        (command) => command.category !== 'arrange' && command !== DeleteCommand
+    );
 
     useLayoutEffect(() => {
         const width = menu.current?.offsetWidth ?? 0;
@@ -313,7 +325,8 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                 if (event.target instanceof HTMLInputElement) {
                     return;
                 }
-                if (event.key === 'Escape') {
+                // Tab leaves the menu as Escape does, rather than moving focus behind it.
+                if (event.key === 'Escape' || event.key === 'Tab') {
                     event.preventDefault();
                     onPressOutside();
                     if (opener.current instanceof HTMLElement) {
@@ -408,8 +421,9 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
             )}
             {submenu === 'arrange' && (
                 <>
-                    <CommandRow command={BringToFrontCommand} onRun={run} />
-                    <CommandRow command={SendToBackCommand} onRun={run} />
+                    {arranging.map((command) => (
+                        <CommandRow key={command.id} command={command} onRun={run} />
+                    ))}
                 </>
             )}
             {submenu === 'draw' &&
@@ -426,8 +440,14 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                 ))}
             {!submenu && contextMenu.target === 'selection' && (
                 <>
-                    <CommandRow command={CloneCommand} label="Duplicate" onRun={run} />
-                    <CommandRow command={CreateComponentCommand} component onRun={run} />
+                    {general.map((command) => (
+                        <CommandRow
+                            key={command.id}
+                            command={command}
+                            component={command === CreateComponentCommand}
+                            onRun={run}
+                        />
+                    ))}
                     <Divider />
                     <MenuRow
                         label="Move to layer"
@@ -436,16 +456,22 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                         disabled={!canMoveToLayer}
                         onClick={() => setSubmenu('layers')}
                     />
-                    <MenuRow
-                        label="Arrange"
-                        icon={BringToFrontCommand.icon!}
-                        submenu
-                        onClick={() => setSubmenu('arrange')}
-                    />
+                    {arranging.length > 0 && (
+                        <MenuRow
+                            label="Arrange"
+                            icon={BringToFrontCommand.icon!}
+                            submenu
+                            onClick={() => setSubmenu('arrange')}
+                        />
+                    )}
                     <CommandRow command={HideCommand} onRun={run} />
                     <CommandRow command={canUnlock ? UnlockCommand : LockCommand} onRun={run} />
-                    <Divider />
-                    <CommandRow command={DeleteCommand} danger onRun={run} />
+                    {scoped.includes(DeleteCommand) && (
+                        <>
+                            <Divider />
+                            <CommandRow command={DeleteCommand} danger onRun={run} />
+                        </>
+                    )}
                 </>
             )}
             {!submenu && contextMenu.target === 'canvas' && (

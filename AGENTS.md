@@ -523,8 +523,11 @@ Hidden guides are not drawn and locked ones do not move.
 - **Commands in menus**: a command lists the items whose menus offer it in `scopes`
   (`shape`, `group`, `layer`, or `selection` for several items) and its place there in
   `menuOrder`. Menus take them from the registry with `commandsFor(scope)`
-  (`useScopedCommands`), so a new command needs no change to the menus; the canvas menu
-  shows those its selection (`selectionScope`) can run now.
+  (`useScopedCommands`), so a new command needs no change to the menus; the selection menu
+  shows those its selection (`selectionScope`) can run now. The context menu
+  (`src/ui/components/ContextMenu`) lists all of them, greyed out when they cannot run, with
+  the `arrange` category in an Arrange submenu and Delete last; a row takes its name, icon
+  and shortcut (`shortcutLabel`) from its command.
 - **Commands and tools are registered by the editor page** as it loads (`registerEditor`,
   `src/pages/registerEditor.ts`), not at startup, so they stay out of the entry bundle; add
   a new one there. Until then the registry is empty (`getCommands`, `getTools`), so code

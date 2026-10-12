@@ -71,10 +71,13 @@ export const usePlacedCommands = (place: CommandPlace) => commandsIn(place);
 export const useScopedCommands = (scope: CommandScope | null) =>
     scope === null ? [] : commandsFor(scope);
 
+/** What the selection is, for its menus' commands: see `selectionScope`. */
+export const useSelectionScope = () =>
+    useAppState((state) => selectionScope(state.currentDocument));
+
 /** The commands the selection takes, those that can run now, in menu order. */
 export const useSelectionCommands = () => {
-    const scope = useAppState((state) => selectionScope(state.currentDocument));
-    const commands = useScopedCommands(scope);
+    const commands = useScopedCommands(useSelectionScope());
     const enabled = useAppState((state) =>
         commands.map((command) => command.canExecute({ state }))
     );
