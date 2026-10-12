@@ -29,11 +29,8 @@
 
 @media (max-width: 700px) {
     .container {
-        --command-bar-left: var(--command-bar-edge);
-        --command-bar-right: max(
-            var(--dock-side-width),
-            calc(var(--control-width) + 2 * var(--command-bar-edge))
-        );
+        --command-bar-left: var(--application-bar-space);
+        --command-bar-right: var(--dock-side-width);
     }
 }
 

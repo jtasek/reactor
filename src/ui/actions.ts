@@ -28,6 +28,16 @@ export const toggleControlVisibility: ActionWithParam<string> = ({ state }, cont
     control.visible = !control.visible;
 };
 
+export const toggleApplicationSection: ActionWithParam<'explorer' | 'components'> = (
+    { state },
+    section
+) => {
+    const visible = state.ui[section].visible;
+    state.ui.explorer.visible = false;
+    state.ui.components.visible = false;
+    state.ui[section].visible = !visible;
+};
+
 export const distractionFreeMode: Action = ({ state }) => {
     state.ui.commandLine.visible = false;
     state.ui.components.visible = false;

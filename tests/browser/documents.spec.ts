@@ -2,7 +2,10 @@ import { expect, test, type Page } from '@playwright/test';
 import { drawRect, openEditor, shapes } from './support/editor';
 
 const showDocuments = (page: Page) =>
-    page.getByRole('link', { name: 'Documents' }).dispatchEvent('click');
+    page
+        .getByRole('navigation', { name: 'Application' })
+        .getByRole('link', { name: 'Documents' })
+        .dispatchEvent('click');
 const rows = (page: Page) => page.locator('main tbody tr');
 const shapeCount = (page: Page, row: number) => rows(page).nth(row).locator('td').first();
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });

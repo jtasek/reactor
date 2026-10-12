@@ -1,6 +1,7 @@
 import React, { FC } from 'react';
 
 import {
+    ApplicationBar,
     CommandBar,
     CommandLine,
     ContextMenu,
@@ -31,15 +32,15 @@ registerEditor();
 
 export const Designer: FC = () => (
     <Layout>
+        <ApplicationBar />
         <CommandBar />
         <CommandLine />
         <MenuBar />
         <Stack />
         <Canvas />
         <ContextMenu />
-        <PanelLayout>
+        <PanelLayout toolbar={<ToolBar />}>
             <DockablePanel id="explorer" title="Explorer">
-                <ToolBar />
                 <Explorer />
             </DockablePanel>
             <DockablePanel id="controlPanel" title="Control Panel">

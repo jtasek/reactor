@@ -24,7 +24,7 @@ export const state: UI = {
     controlPanel: {
         id: 'controlPanel',
         name: 'Control Panel',
-        visible: true
+        visible: false
     },
     dataView: {
         id: 'dataView',
@@ -97,7 +97,7 @@ export const state: UI = {
     toolBar: {
         id: 'toolBar',
         name: 'Tool Bar',
-        visible: false
+        visible: true
     },
     variables: {
         id: 'variables',

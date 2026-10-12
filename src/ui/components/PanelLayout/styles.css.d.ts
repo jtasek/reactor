@@ -21,6 +21,7 @@ declare namespace StylesCssNamespace {
     panelLayer: string;
     rightColumn: string;
     spacer: string;
+    toolbar: string;
     zone: string;
     zoneBottom: string;
     zoneBottomLeft: string;

@@ -42,6 +42,7 @@ test.beforeEach(async ({ page }) => {
     });
     await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
     await page.goto('/');
+    await page.getByRole('button', { name: 'More panels' }).click();
     await page.getByRole('checkbox', { name: 'Explorer', exact: true }).check();
 });
 

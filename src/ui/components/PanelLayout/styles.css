@@ -27,7 +27,7 @@
 }
 
 .leftColumn {
-    left: 0;
+    left: var(--application-bar-space);
 }
 
 .rightColumn {
@@ -52,7 +52,7 @@
 }
 
 .centerColumn {
-    left: var(--dock-side-width);
+    left: calc(var(--application-bar-space) + var(--dock-side-width));
     right: var(--dock-side-width);
 }
 
@@ -77,15 +77,6 @@
     position: relative;
     user-select: none;
     width: var(--control-width);
-}
-
-/* Tools and the explorer share the panel without squeezing the tree. */
-.explorerPanel:has([aria-label='Tools']) {
-    width: calc(var(--control-width) + 50px);
-}
-
-.explorerPanel:not(:has([aria-label='Explorer'])) {
-    width: 50px;
 }
 
 .floating {
@@ -254,7 +245,7 @@
 
 .zoneTopLeft,
 .zoneBottomLeft {
-    left: 0;
+    left: var(--application-bar-space);
 }
 
 .zoneTopRight,
@@ -270,7 +261,7 @@
 }
 
 .zoneLeft {
-    left: 0;
+    left: var(--application-bar-space);
 }
 
 .zoneRight {
@@ -280,7 +271,7 @@
 .zoneTop,
 .zoneBottom {
     height: var(--dock-edge-height);
-    left: calc(var(--dock-side-width) + var(--panel-gap));
+    left: calc(var(--application-bar-space) + var(--dock-side-width) + var(--panel-gap));
     right: calc(var(--dock-side-width) + var(--panel-gap));
 }
 
@@ -290,6 +281,13 @@
 
 .zoneBottom {
     bottom: var(--dock-bottom-inset);
+}
+
+.toolbar {
+    align-self: center;
+    max-width: 100%;
+    pointer-events: auto;
+    z-index: 1;
 }
 
 .dragSource {
