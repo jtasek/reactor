@@ -477,6 +477,11 @@ Hidden guides are not drawn and locked ones do not move.
     - `pnpm profile:drag [address]` times pressing, dragging and releasing a shape among
       3,000, then boxing them with a marquee, and prints the functions that took longest;
       see `scripts/profile-drag.ts`.
+    - `document.componentMembersIds` (derived) holds the shapes of the document's own
+      components, so hover and selection need not gather them on every pointer move. Each
+      instance works out its own component's source (`useComponentSource`): a component
+      reading a derived value subscribes to every path that value read, so a source shared
+      in one derived record would render every instance again when any component changed.
     - `setShapeBounds` writes idempotently (epsilon compare) and `selectShapes` only writes
       `selected` when it changes — both avoid render loops / churn. Preserve these guards.
 
@@ -490,7 +495,9 @@ Hidden guides are not drawn and locked ones do not move.
   is not reliably tracked for any component, so it may not render again when it changes.
 - **Access state only through hooks** in `src/app/hooks.ts` (`useAppState`, `useActions`,
   `useEffects`, domain hooks like `useShapes`, `useCurrentDocument`, `useCamera`). Add new
-  domain hooks here rather than ad-hoc `useAppState` selectors in components.
+  domain hooks here rather than ad-hoc `useAppState` selectors in components. Hooks only the
+  editor page uses go in a module that loads with it, so they stay out of the startup bundle:
+  `src/app/componentHooks.ts` for components and `src/app/variableHooks.ts` for variables.
   A component takes what it shows through the narrowest hook (`useLayersIds`, `useGesture`,
   `usePointerPosition`) rather than a whole store object, and what changes on every pointer
   move is read by a component of its own, as the status bar's `MouseInfo`, so the rest does

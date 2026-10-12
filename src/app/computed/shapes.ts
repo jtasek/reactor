@@ -45,6 +45,11 @@ export const componentFrames = derived((document: Document) =>
     )
 );
 
+export const componentMembersIds = derived(
+    (document: Document) =>
+        new Set(localComponents(document).flatMap((component) => component.shapesIds))
+);
+
 export const variablesIds = derived((currentDocument: Document) =>
     Object.values(currentDocument.variables)
         .sort((a, b) => a.name.localeCompare(b.name) || (a.id < b.id ? -1 : 1))
@@ -58,10 +63,10 @@ export const groupsIds = derived((currentDocument: Document) => {
 /** The groups selected as one: see `selectedGroupsIdsOf`. */
 export const selectedGroupsIds = derived(
     (currentDocument: Document, { enteredGroupId, enteredComponentId }: Application) => {
+        const selectedComponents = new Set(currentDocument.selectedComponentsIds);
         const componentMembers = new Set(
             localComponents(currentDocument).flatMap((component) =>
-                component.id === enteredComponentId ||
-                currentDocument.selectedComponentsIds.includes(component.id)
+                component.id === enteredComponentId || selectedComponents.has(component.id)
                     ? component.shapesIds
                     : []
             )

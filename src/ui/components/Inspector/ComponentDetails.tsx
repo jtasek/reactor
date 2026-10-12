@@ -1,10 +1,10 @@
 import React, { FC } from 'react';
-import { useActions, useComponent, useComponentSource, useCurrentDocument } from 'src/app/hooks';
+import { useActions, useCurrentDocument, useComponentSource } from 'src/app/hooks';
 import type { InstanceShape } from 'src/app/types';
 import { Icon } from '../Icon';
 import { ObjectTypeSymbol } from '../ObjectTypeSymbol';
 import { Instance } from '../Shape/Instance';
-import { useComponentLibraries } from 'src/app/componentHooks';
+import { useComponent, useLibraryUpdateAvailable } from 'src/app/componentHooks';
 import styles from './styles.css';
 
 const ACTION_ICON = { group: 'content', name: 'add_box', size: 16 };
@@ -16,22 +16,13 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
     const component = useComponent(componentId);
     const document = useCurrentDocument();
     const source = useComponentSource(componentId);
-    const libraries = useComponentLibraries();
     const {
         chooseComponentToPlace,
         selectComponentChild,
         removeComponentProp,
         updateLibraryComponent
     } = useActions();
-    const updateAvailable = Boolean(
-        component.library &&
-        libraries.some(
-            (item) =>
-                item.documentId === component.library?.documentId &&
-                item.componentId === componentId &&
-                item.hash !== component.library?.hash
-        )
-    );
+    const updateAvailable = useLibraryUpdateAvailable(componentId);
     const instances = Object.values(document.shapes).filter(
         (shape) => shape.type === 'instance' && shape.componentId === componentId
     ).length;

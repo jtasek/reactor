@@ -1,15 +1,23 @@
+// Only the editor page shows components, so these hooks load with it rather than
+// with `hooks.ts`, which every page needs as it opens.
 import { useAppState } from './hooks';
+import { hoveredComponentsIds } from './componentSelection';
+import { isShapeLocked } from './utils';
 import { selectedComponentContext } from './componentTree';
 import {
     componentCandidates,
     componentLibraries,
-    instanceProperties
+    instanceProperties,
+    libraryUpdateAvailable
 } from './computed/componentPanels';
 
 export const useInstanceProperties = () =>
     useAppState((state) => instanceProperties(state.currentDocument));
 
 export const useComponentLibraries = () => useAppState(componentLibraries);
+
+export const useLibraryUpdateAvailable = (componentId: string) =>
+    useAppState((state) => libraryUpdateAvailable(state, componentId));
 
 export const useComponentCandidates = (componentId: string) =>
     useAppState((state) => componentCandidates(state.currentDocument, componentId));
@@ -44,4 +52,46 @@ export const useComponentExposure = (componentId: string | null, shapeId: string
             props: component.props ?? [],
             disabled: Boolean(document.locked || component.locked || component.library)
         };
+    });
+
+export const useEditingComponentId = () => useAppState((state) => state.enteredComponentId);
+
+export const useEditingComponentName = () =>
+    useAppState((state) =>
+        state.enteredComponentId
+            ? state.currentDocument.components[state.enteredComponentId]?.name
+            : undefined
+    );
+
+export const useComponent = (componentId: string) =>
+    useAppState((state) => state.currentDocument.components[componentId]);
+
+export const useSourceSelected = (componentId: string | null) =>
+    useAppState(
+        (state) =>
+            componentId !== null &&
+            (state.currentDocument.selectedComponentsIds.includes(componentId) ||
+                (state.selectedComponent?.documentId === state.currentDocumentId &&
+                    state.selectedComponent.componentId === componentId &&
+                    !state.selectedComponent.shapeId))
+    );
+
+export const useSelectedComponentsIds = () =>
+    useAppState((state) => state.currentDocument.selectedComponentsIds);
+
+export const useHoveredComponentsIds = () =>
+    useAppState((state) =>
+        hoveredComponentsIds(state.currentDocument, state.enteredComponentId, state.events.pointer)
+    );
+
+export const useComponentFrame = (id: string) =>
+    useAppState((state) => state.currentDocument.componentFrames[id]);
+
+export const useComponentLocked = (id: string) =>
+    useAppState((state) => {
+        const document = state.currentDocument;
+        const component = document.components[id];
+        return (
+            !component || component.shapesIds.some((shapeId) => isShapeLocked(document, shapeId))
+        );
     });

@@ -1,5 +1,6 @@
 import React, { FC, ReactNode, useEffect, useState } from 'react';
-import { useActions, useComponent, useCurrentDocument } from 'src/app/hooks';
+import { useActions, useCurrentDocument } from 'src/app/hooks';
+import { useComponent } from 'src/app/componentHooks';
 import type { PropertyRow, PropertyValue } from 'src/app/properties';
 import type { Variable } from 'src/app/types';
 import { Icon } from '../Icon';

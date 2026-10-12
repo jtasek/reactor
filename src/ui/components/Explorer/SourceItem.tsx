@@ -1,5 +1,6 @@
 import React, { FC, ReactNode } from 'react';
-import { useActions, useAppState, useEditingComponentId, useSourceSelected } from 'src/app/hooks';
+import { useActions, useAppState } from 'src/app/hooks';
+import { useEditingComponentId, useSourceSelected } from 'src/app/componentHooks';
 import { canAddShapesToComponent } from 'src/app/actions/components';
 import { ObjectTypeSymbol } from '../ObjectTypeSymbol';
 import { hideAction, lockAction } from '../ItemMenu';

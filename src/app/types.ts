@@ -266,6 +266,8 @@ export interface Document {
     sourceOnlyShapesIds: ReadonlySet<string>;
     selectedComponentsIds: string[];
     componentFrames: Record<string, GroupFrame | undefined>;
+    /** The shapes of the document's own components. */
+    componentMembersIds: ReadonlySet<string>;
     /** Runtime source editing context; other scene shapes are hidden while it is open. */
     editingComponentId: string | null;
     groupsIds: string[];

@@ -23,10 +23,10 @@ import {
     useShape,
     useShapeLocked,
     useShapesIds,
-    useSourceSelected,
     useScopedCommands,
     useShownLayerId
 } from 'src/app/hooks';
+import { useSourceSelected } from 'src/app/componentHooks';
 
 const RootItem: FC<{
     scope: Extract<CommandScope, 'layers' | 'components'>;

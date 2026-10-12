@@ -1,12 +1,12 @@
 import React, { FC } from 'react';
+import { useGesture } from 'src/app/hooks';
 import {
     useComponent,
     useComponentFrame,
     useComponentLocked,
-    useGesture,
     useHoveredComponentsIds,
     useSelectedComponentsIds
-} from 'src/app/hooks';
+} from 'src/app/componentHooks';
 import { boxCenter } from 'src/app/utils';
 import { Handles } from '../Selectable/Resizable';
 import styles from './componentSelection.css';
