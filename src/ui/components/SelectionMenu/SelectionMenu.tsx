@@ -3,6 +3,7 @@ import type { Command } from 'src/app/types';
 import {
     useActions,
     useCommandEnabled,
+    useControls,
     useSelectionCommands,
     useSelectionMenuPlacement
 } from 'src/app/hooks';
@@ -25,6 +26,7 @@ const useCommandAction = (command: Command) => {
 export const SelectionMenu: FC = () => {
     const shownBefore = useRef(false);
     const placement = useSelectionMenuPlacement(shownBefore.current);
+    const { contextMenu } = useControls();
     const hide = useCommandAction(HideCommand);
     const lock = useCommandAction(LockCommand);
     const unlock = useCommandAction(UnlockCommand);
@@ -37,7 +39,7 @@ export const SelectionMenu: FC = () => {
         shownBefore.current = placement?.shown ?? false;
     });
 
-    if (!placement) {
+    if (!placement || contextMenu.visible) {
         return null;
     }
 

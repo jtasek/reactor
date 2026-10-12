@@ -18,6 +18,7 @@ export const state: UI = {
             x: 0,
             y: 0
         },
+        target: 'canvas',
         visible: false
     },
     controlPanel: {

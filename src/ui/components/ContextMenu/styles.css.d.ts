@@ -1,7 +1,17 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
+    back: string;
+    component: string;
     contextMenu: string;
-    contextMenuButton: string;
+    danger: string;
+    divider: string;
+    editButton: string;
+    header: string;
+    nameButton: string;
+    nameInput: string;
+    row: string;
+    rowLabel: string;
+    trailing: string;
   }
 }
 

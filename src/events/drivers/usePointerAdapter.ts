@@ -289,9 +289,19 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
         (event: MouseEvent<SVGSVGElement>) => {
             event.preventDefault();
             cancelGesture();
-            actions.ui.displayContextMenu({ x: event.clientX, y: event.clientY });
+            const svgEl = getSvgElement(event);
+            const canvasPoint = svgEl && screenToCanvas(event.nativeEvent, svgEl, camera);
+
+            if (!canvasPoint) {
+                return;
+            }
+
+            actions.ui.displayContextMenu({
+                position: { x: event.clientX, y: event.clientY },
+                canvasPoint
+            });
         },
-        [actions, cancelGesture]
+        [actions, camera, cancelGesture, getSvgElement]
     );
 
     // The release before it left the pointer where the shape was double-clicked.

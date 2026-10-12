@@ -1,7 +1,13 @@
 import { ActionWithParam, Action, Point } from 'src/app/types';
 
-export const displayContextMenu: ActionWithParam<Point> = ({ state }, position) => {
+export const displayContextMenu: ActionWithParam<{ position: Point; canvasPoint: Point }> = (
+    { state, actions },
+    { position, canvasPoint }
+) => {
+    const hit = actions.selectContextMenuTarget(canvasPoint);
+
     state.ui.contextMenu.position = position;
+    state.ui.contextMenu.target = hit ? 'selection' : 'canvas';
     state.ui.contextMenu.visible = true;
 };
 

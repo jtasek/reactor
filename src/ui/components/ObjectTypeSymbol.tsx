@@ -1,7 +1,7 @@
 import React, { FC, ReactNode } from 'react';
 import type { Shape } from 'src/app/types';
 
-export type ObjectType = Shape['type'] | 'group' | 'layer' | 'surface' | 'component';
+export type ObjectType = Shape['type'] | 'group' | 'layer' | 'surface' | 'component' | 'selection';
 
 const GLYPHS: Record<ObjectType, ReactNode> = {
     rectangle: <rect x="3" y="5" width="18" height="14" rx="1" />,
@@ -33,7 +33,8 @@ const GLYPHS: Record<ObjectType, ReactNode> = {
     component: (
         <path d="m12 2 4 4-4 4-4-4 4-4ZM6 8l4 4-4 4-4-4 4-4Zm12 0 4 4-4 4-4-4 4-4Zm-6 6 4 4-4 4-4-4 4-4Z" />
     ),
-    instance: <path d="m12 2 10 10-10 10L2 12 12 2Zm0 3L5 12l7 7 7-7-7-7Z" />
+    instance: <path d="m12 2 10 10-10 10L2 12 12 2Zm0 3L5 12l7 7 7-7-7-7Z" />,
+    selection: <rect x="3" y="4" width="18" height="16" rx="1" strokeDasharray="3 3" />
 };
 
 export const ObjectTypeSymbol: FC<{ type: ObjectType; size?: number }> = ({ type, size = 16 }) => (

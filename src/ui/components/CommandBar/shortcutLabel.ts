@@ -16,6 +16,12 @@ const KEY_LABELS: Record<string, string> = {
     arrowdown: '↓'
 };
 
+/** The keys a Mac labels with a symbol, where others spell the key out. */
+const MAC_KEY_LABELS: Record<string, string> = {
+    backspace: '⌫',
+    delete: '⌫'
+};
+
 /** Whether this device shows shortcuts with the Command key's symbols, as Apple's do. */
 export const usesCommandKey = (userAgent = navigator.userAgent) =>
     /Mac|iPhone|iPad/.test(userAgent);
@@ -33,7 +39,7 @@ export function shortcutLabel(shortcut: string, mac: boolean): string {
         ...MODIFIER_ORDER[platform]
             .filter((modifier) => modifiers.includes(modifier))
             .map((modifier) => MODIFIER_LABELS[modifier][platform]),
-        KEY_LABELS[key] ?? capitalized(key)
+        (mac ? MAC_KEY_LABELS[key] : undefined) ?? KEY_LABELS[key] ?? capitalized(key)
     ];
 
     return labels.join(mac ? '' : '+');
