@@ -47,6 +47,16 @@ test('right-clicking a shape offers actions for that shape', async ({ page }) =>
     await page.mouse.click(surface.x + 320, surface.y + 120, { button: 'right' });
     await expect(menu).toHaveAttribute('aria-label', 'rectangle-1 actions');
     await expect(menu.getByRole('menuitem', { name: 'Create component' })).toBeEnabled();
+
+    // Shortcuts come from the commands, labeled for this platform.
+    const mac = await page.evaluate(() => /Mac|iPhone|iPad/.test(navigator.userAgent));
+
+    await expect(menu.getByRole('menuitem', { name: 'Duplicate' })).toContainText(
+        mac ? '⌘D' : 'Ctrl+D'
+    );
+    await expect(menu.getByRole('menuitem', { name: 'Create component' })).toContainText(
+        mac ? '⌥⌘C' : 'Ctrl+Alt+C'
+    );
     await menu.getByRole('menuitem', { name: 'Duplicate' }).click();
     await expect(shapes(page)).toHaveCount(2);
     await expect(menu).toBeHidden();
@@ -155,6 +165,7 @@ test('moving a group also moves its hidden member', async ({ page }) => {
     await page.mouse.click(surface.x + 320, surface.y + 120, { button: 'right' });
     await expect(menu).toHaveAttribute('aria-label', 'Pair actions');
     await menu.getByRole('menuitem', { name: 'Move to layer' }).click();
+    await expect(menu.getByRole('menuitem', { name: 'Canvas', exact: true })).toBeVisible();
     await menu.getByRole('menuitem', { name: 'Target' }).click();
 
     const explorer = page.getByRole('region', { name: 'Explorer' });

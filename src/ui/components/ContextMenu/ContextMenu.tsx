@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Command, Icon as IconType, Point } from 'src/app/types';
-import { useActions, useAppState, useControls } from 'src/app/hooks';
+import { useActions, useAppState, useCommandEnabled, useControls } from 'src/app/hooks';
 import {
     BringToFrontCommand,
     CloneCommand,
@@ -15,6 +15,7 @@ import {
 } from 'src/commands';
 import { useRegisteredTools } from 'src/tools/components';
 import { Icon } from '../Icon';
+import { shortcutLabel, usesCommandKey } from '../CommandBar/shortcutLabel';
 import { ObjectTypeSymbol, ObjectType } from '../ObjectTypeSymbol';
 import styles from './styles.css';
 
@@ -78,6 +79,25 @@ const MenuRow: FC<RowProps> = ({
     </button>
 );
 
+/** A row that runs `command`, showing its icon, shortcut and whether it can run now. */
+const CommandRow: FC<{
+    command: Command;
+    label?: string;
+    danger?: boolean;
+    component?: boolean;
+    onRun: (command: Command) => void;
+}> = ({ command, label = command.name, danger, component, onRun }) => (
+    <MenuRow
+        label={label}
+        icon={command.icon ?? icon('action', 'help')}
+        shortcut={command.shortcut && shortcutLabel(command.shortcut, usesCommandKey())}
+        danger={danger}
+        component={component}
+        disabled={!useCommandEnabled(command)}
+        onClick={() => onRun(command)}
+    />
+);
+
 const Divider: FC = () => <div className={styles.divider} role="separator" />;
 
 interface Props {
@@ -88,6 +108,8 @@ interface Props {
 /** A compact, viewport-bound menu with submenus in the same glass surface. */
 export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
     const menu = useRef<HTMLDivElement>(null);
+    // Escape gives focus back to where it was, so the keyboard carries on from there.
+    const opener = useRef(document.activeElement);
     const nameInput = useRef<HTMLInputElement>(null);
     const [placement, setPlacement] = useState(position);
     const [submenu, setSubmenu] = useState<Submenu>(null);
@@ -112,7 +134,7 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
         const shape = ids.length === 1 ? document.shapes[ids[0]] : null;
 
         if (contextMenu.target === 'canvas') {
-            return { name: 'Canvas', type: 'surface' as ObjectType, ids: [] as string[] };
+            return { name: 'Canvas', type: 'surface', ids: [] };
         }
         if (component) {
             return {
@@ -141,36 +163,27 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
         if (shape) {
             return {
                 name: shape.name,
-                type: shape.type as ObjectType,
+                type: shape.type,
                 ids: moveIds,
                 rename: { kind: 'shape', id: shape.id, readOnly: document.locked }
             };
         }
 
-        return { name: `${ids.length} selected`, type: 'group' as ObjectType, ids: moveIds };
+        return { name: `${ids.length} selected`, type: 'group', ids: moveIds };
     });
     const layers = useAppState((state) =>
         Object.values(state.currentDocument.layers).map(({ id, name }) => ({ id, name }))
     );
-    const enabled = useAppState((state) => ({
-        clone: CloneCommand.canExecute({ state }),
-        createComponent: CreateComponentCommand.canExecute({ state }),
-        delete: DeleteCommand.canExecute({ state }),
-        hide: HideCommand.canExecute({ state }),
-        lock: LockCommand.canExecute({ state }),
-        unlock: UnlockCommand.canExecute({ state }),
-        front: BringToFrontCommand.canExecute({ state }),
-        back: SendToBackCommand.canExecute({ state }),
-        moveToLayer:
-            state.currentDocument.editableSelectedShapesIds.length > 0 &&
-            state.currentDocument.selectedShapesIds.every((id) =>
-                Object.values(state.currentDocument.components).every(
-                    (component) => !component.shapesIds.includes(id)
-                )
-            ),
-        paste: PasteCommand.canExecute({ state }),
-        newLayer: NewLayerCommand.canExecute({ state })
-    }));
+    const canMoveToLayer = useAppState((state) => {
+        const { componentMembersIds, editableSelectedShapesIds, selectedShapesIds } =
+            state.currentDocument;
+
+        return (
+            editableSelectedShapesIds.length > 0 &&
+            selectedShapesIds.every((id) => !componentMembersIds.has(id))
+        );
+    });
+    const canUnlock = useCommandEnabled(UnlockCommand);
 
     useLayoutEffect(() => {
         const width = menu.current?.offsetWidth ?? 0;
@@ -303,6 +316,9 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                 if (event.key === 'Escape') {
                     event.preventDefault();
                     onPressOutside();
+                    if (opener.current instanceof HTMLElement) {
+                        opener.current.focus({ preventScroll: true });
+                    }
                     return;
                 }
                 if (event.key === 'ArrowLeft' && submenu) {
@@ -376,7 +392,7 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
             {submenu === 'layers' && (
                 <>
                     <MenuRow
-                        label="Surface"
+                        label="Canvas"
                         icon={icon('action', 'view_agenda')}
                         onClick={() => moveToLayer(null)}
                     />
@@ -392,18 +408,8 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
             )}
             {submenu === 'arrange' && (
                 <>
-                    <MenuRow
-                        label="Bring to front"
-                        icon={BringToFrontCommand.icon!}
-                        disabled={!enabled.front}
-                        onClick={() => run(BringToFrontCommand)}
-                    />
-                    <MenuRow
-                        label="Send to back"
-                        icon={SendToBackCommand.icon!}
-                        disabled={!enabled.back}
-                        onClick={() => run(SendToBackCommand)}
-                    />
+                    <CommandRow command={BringToFrontCommand} onRun={run} />
+                    <CommandRow command={SendToBackCommand} onRun={run} />
                 </>
             )}
             {submenu === 'draw' &&
@@ -420,26 +426,14 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                 ))}
             {!submenu && contextMenu.target === 'selection' && (
                 <>
-                    <MenuRow
-                        label="Duplicate"
-                        icon={CloneCommand.icon!}
-                        shortcut="⌘D"
-                        disabled={!enabled.clone}
-                        onClick={() => run(CloneCommand)}
-                    />
-                    <MenuRow
-                        label="Create component"
-                        icon={icon('content', 'add')}
-                        component
-                        disabled={!enabled.createComponent}
-                        onClick={() => run(CreateComponentCommand)}
-                    />
+                    <CommandRow command={CloneCommand} label="Duplicate" onRun={run} />
+                    <CommandRow command={CreateComponentCommand} component onRun={run} />
                     <Divider />
                     <MenuRow
                         label="Move to layer"
                         icon={icon('action', 'view_agenda')}
                         submenu
-                        disabled={!enabled.moveToLayer}
+                        disabled={!canMoveToLayer}
                         onClick={() => setSubmenu('layers')}
                     />
                     <MenuRow
@@ -448,50 +442,22 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                         submenu
                         onClick={() => setSubmenu('arrange')}
                     />
-                    <MenuRow
-                        label="Hide"
-                        icon={HideCommand.icon!}
-                        disabled={!enabled.hide}
-                        onClick={() => run(HideCommand)}
-                    />
-                    <MenuRow
-                        label={enabled.unlock ? 'Unlock' : 'Lock'}
-                        icon={enabled.unlock ? UnlockCommand.icon! : LockCommand.icon!}
-                        disabled={!enabled.unlock && !enabled.lock}
-                        onClick={() => run(enabled.unlock ? UnlockCommand : LockCommand)}
-                    />
+                    <CommandRow command={HideCommand} onRun={run} />
+                    <CommandRow command={canUnlock ? UnlockCommand : LockCommand} onRun={run} />
                     <Divider />
-                    <MenuRow
-                        label="Delete"
-                        icon={DeleteCommand.icon!}
-                        shortcut="⌫"
-                        danger
-                        disabled={!enabled.delete}
-                        onClick={() => run(DeleteCommand)}
-                    />
+                    <CommandRow command={DeleteCommand} danger onRun={run} />
                 </>
             )}
             {!submenu && contextMenu.target === 'canvas' && (
                 <>
-                    <MenuRow
-                        label="Paste"
-                        icon={PasteCommand.icon!}
-                        shortcut="⌘V"
-                        disabled={!enabled.paste}
-                        onClick={() => run(PasteCommand)}
-                    />
+                    <CommandRow command={PasteCommand} onRun={run} />
                     <MenuRow
                         label="Draw shape"
                         icon={icon('image', 'crop_square')}
                         submenu
                         onClick={() => setSubmenu('draw')}
                     />
-                    <MenuRow
-                        label="New layer"
-                        icon={icon('content', 'add')}
-                        disabled={!enabled.newLayer}
-                        onClick={() => run(NewLayerCommand)}
-                    />
+                    <CommandRow command={NewLayerCommand} onRun={run} />
                     <Divider />
                     <MenuRow
                         label="Show grid"
