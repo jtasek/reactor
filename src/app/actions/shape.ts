@@ -29,6 +29,7 @@ import { Context } from 'src/app';
 import { screenToWorld } from '../camera';
 import {
     copyName,
+    instanceName,
     createGroup,
     createShape,
     nextShapeName,
@@ -157,9 +158,14 @@ const deleteShape = ({ currentDocument }: Application, shapeId: string) => {
 };
 
 export const addShape: ActionWithParam<ShapeInput> = ({ state }, options) => {
+    const shapes = Object.values(untracked(state.currentDocument).shapes);
+    const component =
+        options.type === 'instance' ? state.currentDocument.components[options.componentId] : null;
     const name =
         options.name ??
-        nextShapeName(Object.values(untracked(state.currentDocument).shapes), options.type);
+        (component
+            ? instanceName(component.name, new Set(shapes.map((shape) => shape.name)))
+            : nextShapeName(shapes, options.type));
     const shape = createShape({ ...options, name, order: orderAbove(topOrder(state)) });
 
     putOnTop(state, shape);
@@ -233,7 +239,9 @@ export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shape
     const clonesIds = new Map<string, string>();
     let order = topOrder(state);
 
-    const nameShape = shapeNamer(Object.values(untracked(currentDocument).shapes));
+    const present = Object.values(untracked(currentDocument).shapes);
+    const nameShape = shapeNamer(present);
+    const taken = new Set(present.map((shape) => shape.name));
 
     actions.unselectShapes();
 
@@ -242,11 +250,17 @@ export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shape
 
         order = orderAbove(order);
 
+        const component =
+            original.type === 'instance' ? currentDocument.components[original.componentId] : null;
+        const name = component ? instanceName(component.name, taken) : nameShape(original.type);
+
+        taken.add(name);
+
         const clone = createShape({
             ...shapeGeometry(original),
             ...(original.type === 'instance' ? { bounds: original.bounds } : {}),
             order,
-            name: nameShape(original.type),
+            name,
             description: original.description,
             parentShapeId: original.parentShapeId,
             rotation: original.rotation,
@@ -668,7 +682,9 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
         const name =
             input.name === undefined
                 ? nameShape(input.type)
-                : copyName(input.name, input.type, taken, nameShape);
+                : input.type === 'instance'
+                  ? instanceName(input.name, taken)
+                  : copyName(input.name, input.type, taken, nameShape);
 
         taken.add(name);
 

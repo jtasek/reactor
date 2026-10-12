@@ -287,7 +287,9 @@ rest of the selection as it is. A shape added without a name is named `type-N`, 
 one past the highest that type's names have, so tools leave the name to the store, and a
 clone takes the next one too (`shapeNamer`). A pasted shape keeps its name unless the
 document has it already; then a name in a type's sequence goes on in it, and any other
-name takes the next free number, as `Logo 2` (`copyName`).
+name takes the next free number, as `Logo 2` (`copyName`). An instance is named after its
+component instead, when added, cloned or pasted: the component's name while it is free, else
+with the next free number, as `Card 2` (`instanceName`).
 
 `executeToolCommands` (`src/tools/actions.ts`) runs `execute(context)` for each active tool
 when `canExecute(context)` is true. `resetTools` deactivates a tool when its

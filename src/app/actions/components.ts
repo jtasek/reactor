@@ -1,5 +1,5 @@
 import { Action, ActionWithParam, Application, Component, Point, PropertyValue } from '../types';
-import { createComponent, createShape } from '../factories';
+import { createComponent, createShape, instanceName } from '../factories';
 import { componentSource } from '../componentSource';
 import { componentFingerprint, librarySnapshot } from '../componentLibrary';
 import {
@@ -189,7 +189,10 @@ export const createComponentFromSelection: Action = ({ state, actions }) => {
     const instance = createShape({
         type: 'instance',
         componentId: component.id,
-        name: component.name,
+        name: instanceName(
+            component.name,
+            new Set(Object.values(document.shapes).map((shape) => shape.name))
+        ),
         order,
         position,
         overrides: {},
