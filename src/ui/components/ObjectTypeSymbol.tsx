@@ -31,7 +31,6 @@ const GLYPHS: Record<ObjectType, ReactNode> = {
     instance: <path d="m12 2 10 10-10 10L2 12 12 2Zm0 3L5 12l7 7 7-7-7-7Z" />
 };
 
-/** A small, consistent outline for an object wherever its name is shown. */
 export const ObjectTypeSymbol: FC<{ type: ObjectType; size?: number }> = ({ type, size = 16 }) => (
     <svg
         aria-hidden="true"

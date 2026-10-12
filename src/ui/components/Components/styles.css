@@ -1,4 +1,4 @@
-/* PanelLayout draws the glass behind these quiet library lists. */
+/* The panel draws the glass; these lists sit on it without one of their own. */
 .components {
     color: var(--text-color);
     display: grid;

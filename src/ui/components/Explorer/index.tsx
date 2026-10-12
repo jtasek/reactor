@@ -256,7 +256,6 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
     );
 };
 
-/** Scene layers and component definitions have separate, stable homes. */
 export const Explorer: FC = () => {
     const { layers, found } = useOutline();
     const document = useCurrentDocument();
