@@ -175,6 +175,15 @@ test('the explorer lists layers as a tree, shows one layer alone, and takes drop
     await shapesOn(second).locator('xpath=..').locator('span[draggable]').dragTo(first);
     await expect(shapesOn(first)).toHaveCount(2);
     await expect(second).toHaveCount(0);
+
+    // Dropping a shape on the canvas takes it off its layer.
+    const canvas = page.getByRole('button', { name: 'Canvas', exact: true });
+
+    await shapesOn(first).first().locator('xpath=..').locator('span[draggable]').dragTo(canvas);
+    await expect(shapesOn(first)).toHaveCount(1);
+    await expect(canvas.locator('xpath=ancestor::li[1]').locator('> ul > li').last()).toContainText(
+        /rectangle-/
+    );
 });
 
 test('the search box filters the explorer’s shapes by name, without running shortcuts', async ({
