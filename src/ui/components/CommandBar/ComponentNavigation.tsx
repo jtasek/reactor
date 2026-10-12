@@ -1,5 +1,6 @@
 import React, { FC } from 'react';
-import { useActions, useCommandEnabled, useEditingComponentName } from 'src/app/hooks';
+import { useActions, useCommandEnabled } from 'src/app/hooks';
+import { useEditingComponentName } from 'src/app/componentHooks';
 import { LeaveComponentSourceCommand } from 'src/commands/component';
 import { Icon } from '../Icon';
 import styles from './styles.css';

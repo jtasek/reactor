@@ -113,9 +113,8 @@ export function hoveredComponentsIds(
     if (!component || document.selectedComponentsIds.includes(component.id)) {
         return [];
     }
-    const covered = document.shapesIds.some(
-        (id) => document.shapes[id].active && !component.shapesIds.includes(id)
-    );
+    const members = new Set(component.shapesIds);
+    const covered = document.shapesIds.some((id) => document.shapes[id].active && !members.has(id));
 
     return covered ? [] : [component.id];
 }

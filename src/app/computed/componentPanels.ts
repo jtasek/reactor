@@ -81,10 +81,18 @@ export function componentLibraries(state: Application) {
                 documentName: document.name,
                 componentId: component.id,
                 name: component.name,
-                hash: componentFingerprint(document, component.id),
                 imported: Boolean(state.currentDocument.components[component.id])
             }))
         );
+}
+
+/** Whether the document an imported component came from now holds a different version of it. */
+export function libraryUpdateAvailable(state: Application, componentId: string) {
+    const library = state.currentDocument.components[componentId]?.library;
+    const source = library && state.documents[library.documentId];
+    const hash = source ? componentFingerprint(source, componentId) : null;
+
+    return Boolean(hash && hash !== library?.hash);
 }
 
 export function componentCandidates(document: Document, componentId: string) {

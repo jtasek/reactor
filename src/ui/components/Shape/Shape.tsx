@@ -11,11 +11,11 @@ import { rectToBox, shapeGeometryKey, getShapeBounds, boxCenter } from 'src/app/
 import {
     useActions,
     useAppState,
-    useComponentSource,
     useMeasuringShape,
     useShape,
     useShapeLocked,
-    useShapeVisible
+    useShapeVisible,
+    useComponentSource
 } from 'src/app/hooks';
 
 interface Props {

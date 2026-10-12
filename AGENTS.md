@@ -477,6 +477,10 @@ Hidden guides are not drawn and locked ones do not move.
     - `pnpm profile:drag [address]` times pressing, dragging and releasing a shape among
       3,000, then boxing them with a marquee, and prints the functions that took longest;
       see `scripts/profile-drag.ts`.
+    - Instances draw their component from `document.componentSources` (derived), worked out
+      once for all of them and kept while its content key is unchanged; read it there rather
+      than calling `componentSource` while rendering. `componentMembersIds` holds the shapes of
+      the document's own components for the same reason.
     - `setShapeBounds` writes idempotently (epsilon compare) and `selectShapes` only writes
       `selected` when it changes — both avoid render loops / churn. Preserve these guards.
 

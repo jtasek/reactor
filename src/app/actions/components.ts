@@ -82,29 +82,36 @@ export function reachesComponent(
     });
 }
 
+/** The shapes in any component, imported ones included. */
+const anyComponentMembers = (document: Application['currentDocument']) =>
+    new Set(Object.values(document.components).flatMap((component) => component.shapesIds));
+
 export const canAddShapesToComponent = (
     document: Application['currentDocument'],
     componentId: string,
     shapeIds: string[]
-) =>
-    !document.locked &&
-    Boolean(document.components[componentId]) &&
-    !document.components[componentId].library &&
-    !document.components[componentId].locked &&
-    shapeIds.length > 0 &&
-    shapeIds.every((id) => {
-        const shape = document.shapes[id];
+) => {
+    const members = anyComponentMembers(document);
 
-        return (
-            shape &&
-            !isShapeLocked(document, id) &&
-            !Object.values(document.components).some((component) =>
-                component.shapesIds.includes(id)
-            ) &&
-            (shape.type !== 'instance' ||
-                !reachesComponent(document, shape.componentId, componentId))
-        );
-    });
+    return (
+        !document.locked &&
+        Boolean(document.components[componentId]) &&
+        !document.components[componentId].library &&
+        !document.components[componentId].locked &&
+        shapeIds.length > 0 &&
+        shapeIds.every((id) => {
+            const shape = document.shapes[id];
+
+            return (
+                shape &&
+                !isShapeLocked(document, id) &&
+                !members.has(id) &&
+                (shape.type !== 'instance' ||
+                    !reachesComponent(document, shape.componentId, componentId))
+            );
+        })
+    );
+};
 
 const getComponent = ({ currentDocument }: Application, componentId: string) => {
     const component = currentDocument.components[componentId];
@@ -149,14 +156,9 @@ export const removeComponent: ActionWithParam<string> = ({ state, actions }, com
 export const createComponentFromSelection: Action = ({ state, actions }) => {
     const document = state.currentDocument;
     const ids = [...document.editableSelectedShapesIds];
+    const members = anyComponentMembers(document);
 
-    if (
-        document.locked ||
-        ids.length === 0 ||
-        ids.some((id) =>
-            Object.values(document.components).some((component) => component.shapesIds.includes(id))
-        )
-    ) {
+    if (document.locked || ids.length === 0 || ids.some((id) => members.has(id))) {
         return;
     }
 

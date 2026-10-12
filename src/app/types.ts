@@ -1,5 +1,6 @@
 import { Context } from './index';
 import type { GroupFrame } from './membership';
+import type { ComponentSource } from './componentSource';
 
 export type Orientation = 'horizontal' | 'vertical';
 
@@ -266,6 +267,10 @@ export interface Document {
     sourceOnlyShapesIds: ReadonlySet<string>;
     selectedComponentsIds: string[];
     componentFrames: Record<string, GroupFrame | undefined>;
+    /** Each component's source, shared by its instances; none for one that draws nothing. */
+    componentSources: Record<string, ComponentSource | null>;
+    /** The shapes of the document's own components. */
+    componentMembersIds: ReadonlySet<string>;
     /** Runtime source editing context; other scene shapes are hidden while it is open. */
     editingComponentId: string | null;
     groupsIds: string[];

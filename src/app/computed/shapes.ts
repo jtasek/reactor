@@ -2,6 +2,7 @@ import { derived } from 'overmind';
 import { Application, Document } from '../types';
 import { isShapeVisible } from '../utils';
 import { localComponents, selectedComponentsIdsOf } from '../componentSelection';
+import { componentSource, type ComponentSource } from '../componentSource';
 import {
     editableSelectedShapesIds as findEditableSelectedShapesIds,
     groupFrame,
@@ -45,6 +46,33 @@ export const componentFrames = derived((document: Document) =>
     )
 );
 
+/** Each document's last component sources, by component id. */
+const keptSources = new Map<string, Map<string, ComponentSource | null>>();
+
+/**
+ * Each component's source, worked out once for all its instances. A source whose
+ * content did not change keeps its record, so its instances do not render again.
+ */
+export const componentSources = derived((document: Document) => {
+    const previous = keptSources.get(document.id);
+    const kept = new Map<string, ComponentSource | null>();
+
+    for (const id of Object.keys(document.components)) {
+        const next = componentSource(document, id);
+        const last = previous?.get(id);
+
+        kept.set(id, last && next && last.key === next.key ? last : next);
+    }
+    keptSources.set(document.id, kept);
+
+    return Object.fromEntries(kept);
+});
+
+export const componentMembersIds = derived(
+    (document: Document) =>
+        new Set(localComponents(document).flatMap((component) => component.shapesIds))
+);
+
 export const variablesIds = derived((currentDocument: Document) =>
     Object.values(currentDocument.variables)
         .sort((a, b) => a.name.localeCompare(b.name) || (a.id < b.id ? -1 : 1))
@@ -58,10 +86,10 @@ export const groupsIds = derived((currentDocument: Document) => {
 /** The groups selected as one: see `selectedGroupsIdsOf`. */
 export const selectedGroupsIds = derived(
     (currentDocument: Document, { enteredGroupId, enteredComponentId }: Application) => {
+        const selectedComponents = new Set(currentDocument.selectedComponentsIds);
         const componentMembers = new Set(
             localComponents(currentDocument).flatMap((component) =>
-                component.id === enteredComponentId ||
-                currentDocument.selectedComponentsIds.includes(component.id)
+                component.id === enteredComponentId || selectedComponents.has(component.id)
                     ? component.shapesIds
                     : []
             )
