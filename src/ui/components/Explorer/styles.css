@@ -62,6 +62,13 @@
     text-transform: uppercase;
 }
 
+/* The canvas row can be pressed, and its name keeps the heading's look. */
+.root > .row > .name {
+    font-weight: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+}
+
 .root > ul {
     padding-left: 0;
 }

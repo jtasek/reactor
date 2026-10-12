@@ -64,7 +64,7 @@ export function selectionIdentity(document: Document): SelectionIdentity | null 
 
         return {
             type: 'surface',
-            name: 'Surface',
+            name: 'Canvas',
             extent: drawnExtent(
                 document,
                 document.shapesIds.filter((id) => shown.has(id) && !onLayers.has(id))

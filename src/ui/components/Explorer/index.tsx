@@ -31,8 +31,12 @@ import { useSourceSelected } from 'src/app/componentHooks';
 const RootItem: FC<{
     scope: Extract<CommandScope, 'layers' | 'components'>;
     name: string;
+    icon?: React.ReactNode;
+    selected?: boolean;
+    onClick?: () => void;
+    onDrop?: (dragged: Dragged) => void;
     children: React.ReactNode;
-}> = ({ scope, name, children }) => {
+}> = ({ scope, name, icon, selected, onClick, onDrop, children }) => {
     const commands = useScopedCommands(scope);
     const enabled = useCommandsEnabled(commands);
     const { runCommand } = useActions();
@@ -41,6 +45,10 @@ const RootItem: FC<{
         <ExplorerItem
             kind="root"
             name={name}
+            icon={icon}
+            selected={selected}
+            onClick={onClick}
+            onDrop={onDrop}
             collapseId={`root:${scope}`}
             rootButtons={commands.map((command, index) => (
                 <button
@@ -300,7 +308,7 @@ export const Explorer: FC = () => {
     const { explorer } = useControls();
     const { moveShapesToLayer, selectExplorerLayer, showAllLayers } = useActions();
     const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
-    const handleSurfaceSelect = () => selectExplorerLayer(null);
+    const handleCanvasSelect = () => selectExplorerLayer(null);
 
     if (!explorer.visible) {
         return null;
@@ -345,30 +353,26 @@ export const Explorer: FC = () => {
                 ) : (
                     <ul>
                         {(!filter || scene.length > 0) && (
-                            <RootItem scope="layers" name="Layers">
+                            <RootItem
+                                scope="layers"
+                                name="Canvas"
+                                icon={<ObjectTypeSymbol type="surface" />}
+                                selected={document.surfaceSelected ?? false}
+                                onClick={handleCanvasSelect}
+                                onDrop={(dragged) =>
+                                    moveShapesToLayer({
+                                        shapeIds: shapesOf(dragged),
+                                        layerId: null
+                                    })
+                                }
+                            >
                                 {scene.map(({ layerId, groups, shapesIds }) =>
                                     layerId === null ? (
-                                        <ExplorerItem
-                                            key="surface"
-                                            kind="layer"
-                                            name="Surface"
-                                            icon={<ObjectTypeSymbol type="surface" />}
-                                            selected={document.surfaceSelected ?? false}
-                                            onClick={handleSurfaceSelect}
-                                            collapseId={
-                                                groups.length + shapesIds.length > 0
-                                                    ? 'surface'
-                                                    : undefined
-                                            }
-                                            onDrop={(dragged) =>
-                                                moveShapesToLayer({
-                                                    shapeIds: shapesOf(dragged),
-                                                    layerId: null
-                                                })
-                                            }
-                                        >
-                                            <LayerContents groups={groups} shapesIds={shapesIds} />
-                                        </ExplorerItem>
+                                        <LayerContents
+                                            key="canvas"
+                                            groups={groups}
+                                            shapesIds={shapesIds}
+                                        />
                                     ) : (
                                         <LayerItem
                                             key={layerId}
@@ -378,21 +382,6 @@ export const Explorer: FC = () => {
                                             shapesOf={shapesOf}
                                         />
                                     )
-                                )}
-                                {!filter && !scene.some(({ layerId }) => layerId === null) && (
-                                    <ExplorerItem
-                                        kind="layer"
-                                        name="Surface"
-                                        icon={<ObjectTypeSymbol type="surface" />}
-                                        selected={document.surfaceSelected ?? false}
-                                        onClick={handleSurfaceSelect}
-                                        onDrop={(dragged) =>
-                                            moveShapesToLayer({
-                                                shapeIds: shapesOf(dragged),
-                                                layerId: null
-                                            })
-                                        }
-                                    />
                                 )}
                             </RootItem>
                         )}
