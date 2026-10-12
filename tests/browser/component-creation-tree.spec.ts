@@ -36,7 +36,9 @@ test('creating a component leaves an instance in Layers and opens its source in 
     await explorer.getByRole('button', { name: 'Artwork', exact: true }).click();
     await page.keyboard.press('ControlOrMeta+Alt+c');
 
-    const layers = explorer.getByText('Layers', { exact: true }).locator('xpath=ancestor::li[1]');
+    const layers = explorer
+        .getByRole('button', { name: 'Canvas', exact: true })
+        .locator('xpath=ancestor::li[1]');
     const components = explorer
         .getByText('Components', { exact: true })
         .locator('xpath=ancestor::li[1]');

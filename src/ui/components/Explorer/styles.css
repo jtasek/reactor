@@ -62,6 +62,19 @@
     text-transform: uppercase;
 }
 
+/* The canvas row can be pressed, and its name keeps the heading's look, selected too. */
+.root > .row > .name,
+.root.selected > .row > .name {
+    font-weight: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+}
+
+/* Only a heading that can be pressed, as the canvas's, lights up under the pointer. */
+.root > .row:hover:not(:has(> .name)) {
+    background: none;
+}
+
 .root > ul {
     padding-left: 0;
 }

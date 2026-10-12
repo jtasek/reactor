@@ -86,7 +86,7 @@ test('object symbols identify selections, with canvas name labels only for compo
         { name: 'Pair', type: 'group' },
         { name: 'Card', type: 'component' },
         { name: 'Card copy', type: 'instance' },
-        { name: 'Surface', type: 'surface' }
+        { name: 'Canvas', type: 'surface' }
     ];
 
     for (const { name, type } of selections) {
@@ -119,7 +119,9 @@ test('component children support the same selection and Shift-click behavior', a
     const components = explorer
         .getByText('Components', { exact: true })
         .locator('xpath=ancestor::li[1]');
-    const layers = explorer.getByText('Layers', { exact: true }).locator('xpath=ancestor::li[1]');
+    const layers = explorer
+        .getByRole('button', { name: 'Canvas', exact: true })
+        .locator('xpath=ancestor::li[1]');
     const source = components.getByRole('button', { name: 'Card', exact: true });
     const first = components.getByRole('button', { name: 'Background', exact: true });
     const second = components.getByRole('button', { name: 'Border', exact: true });
@@ -238,7 +240,9 @@ test('the tree separates scene layers from component sources and focuses source 
     page
 }) => {
     const explorer = page.getByRole('region', { name: 'Explorer' });
-    const layers = explorer.getByText('Layers', { exact: true }).locator('xpath=ancestor::li[1]');
+    const layers = explorer
+        .getByRole('button', { name: 'Canvas', exact: true })
+        .locator('xpath=ancestor::li[1]');
     const components = explorer
         .getByText('Components', { exact: true })
         .locator('xpath=ancestor::li[1]');

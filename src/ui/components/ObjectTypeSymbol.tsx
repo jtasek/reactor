@@ -24,7 +24,12 @@ const GLYPHS: Record<ObjectType, ReactNode> = {
         </>
     ),
     layer: <path d="m12 3 9 5-9 5-9-5 9-5Zm-9 10 9 5 9-5M3 17l9 5 9-5" />,
-    surface: <path d="m12 3 9 5-9 5-9-5 9-5Zm-9 10 9 5 9-5M3 17l9 5 9-5" />,
+    surface: (
+        <>
+            <rect x="5" y="5" width="14" height="14" rx="1" />
+            <path d="M2 9h3M2 15h3M19 9h3M19 15h3M9 2v3M15 2v3M9 19v3M15 19v3" />
+        </>
+    ),
     component: (
         <path d="m12 2 4 4-4 4-4-4 4-4ZM6 8l4 4-4 4-4-4 4-4Zm12 0 4 4-4 4-4-4 4-4Zm-6 6 4 4-4 4-4-4 4-4Z" />
     ),

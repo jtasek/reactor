@@ -10,7 +10,9 @@ async function click(page: Page, x: number, y: number) {
 test('tree heading actions create a layer and a component in their own roots', async ({ page }) => {
     await openEditor(page, ['Explorer']);
     const explorer = page.getByRole('region', { name: 'Explorer' });
-    const layers = explorer.getByText('Layers', { exact: true }).locator('xpath=ancestor::li[1]');
+    const layers = explorer
+        .getByRole('button', { name: 'Canvas', exact: true })
+        .locator('xpath=ancestor::li[1]');
     const components = explorer
         .getByText('Components', { exact: true })
         .locator('xpath=ancestor::li[1]');
@@ -30,7 +32,7 @@ test('tree heading actions create a layer and a component in their own roots', a
     ).toBeVisible();
 });
 
-test('drawn shapes appear beneath the selected layer and switch back to Surface', async ({
+test('drawn shapes appear beneath the selected layer and switch back to the canvas', async ({
     page
 }) => {
     await openEditor(page, ['Explorer']);
@@ -47,20 +49,26 @@ test('drawn shapes appear beneath the selected layer and switch back to Surface'
         'rectangle-1'
     ]);
 
-    const surface = explorer.getByRole('button', { name: 'Surface', exact: true });
-    await surface.click();
+    const canvas = explorer.getByRole('button', { name: 'Canvas', exact: true });
+    await canvas.click();
     await drawRect(page, { x: 600, y: 100 }, { x: 640, y: 140 });
     await expect(
-        surface.locator('xpath=ancestor::li[1]').getByRole('button', { name: 'rectangle-3' })
+        canvas.locator('xpath=ancestor::li[1]').getByRole('button', { name: 'rectangle-3' })
     ).toBeVisible();
+    await expect(layerTree.getByRole('button', { name: 'rectangle-3' })).toHaveCount(0);
+
+    // The shapes on no layer come after the layers.
+    const rows = canvas.locator('xpath=ancestor::li[1]').locator('> ul > li');
+    await expect(rows.first()).toContainText('layer-1');
+    await expect(rows.last()).toContainText('rectangle-3');
     await expect(layerTree.getByRole('button', { name: /^rectangle-/ })).toHaveCount(2);
     await expect(shapes(page)).toHaveCount(3);
 });
 
-test('Surface selects like a layer, including when it is empty', async ({ page }) => {
+test('the canvas selects like a layer, including when it is empty', async ({ page }) => {
     await openEditor(page, ['Explorer']);
     const explorer = page.getByRole('region', { name: 'Explorer' });
-    const surface = explorer.getByRole('button', { name: 'Surface', exact: true });
+    const surface = explorer.getByRole('button', { name: 'Canvas', exact: true });
 
     await surface.click();
     await expect(surface).toHaveAttribute('aria-pressed', 'true');
@@ -92,7 +100,7 @@ test('Surface selects like a layer, including when it is empty', async ({ page }
     await expect(shapes(page)).toHaveCount(1);
 });
 
-test('deleting a layer from its row moves its shapes to Surface', async ({ page }) => {
+test('deleting a layer from its row moves its shapes to the canvas', async ({ page }) => {
     await openEditor(page, ['Explorer']);
     await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
     await page.keyboard.press('ControlOrMeta+Alt+l');
@@ -110,8 +118,10 @@ test('deleting a layer from its row moves its shapes to Surface', async ({ page 
 
     await expect(layer).toHaveCount(0);
     await expect(explorer.getByText('Show all layers', { exact: true })).toHaveCount(0);
-    const surface = explorer.getByText('Surface', { exact: true }).locator('xpath=ancestor::li[1]');
-    await expect(surface.getByRole('button', { name: 'rectangle-1' })).toBeVisible();
+    const canvas = explorer
+        .getByRole('button', { name: 'Canvas', exact: true })
+        .locator('xpath=ancestor::li[1]');
+    await expect(canvas.getByRole('button', { name: 'rectangle-1' })).toBeVisible();
     await expect(shapes(page)).toHaveCount(1);
 });
 
@@ -165,6 +175,15 @@ test('the explorer lists layers as a tree, shows one layer alone, and takes drop
     await shapesOn(second).locator('xpath=..').locator('span[draggable]').dragTo(first);
     await expect(shapesOn(first)).toHaveCount(2);
     await expect(second).toHaveCount(0);
+
+    // Dropping a shape on the canvas takes it off its layer.
+    const canvas = page.getByRole('button', { name: 'Canvas', exact: true });
+
+    await shapesOn(first).first().locator('xpath=..').locator('span[draggable]').dragTo(canvas);
+    await expect(shapesOn(first)).toHaveCount(1);
+    await expect(canvas.locator('xpath=ancestor::li[1]').locator('> ul > li').last()).toContainText(
+        /rectangle-/
+    );
 });
 
 test('the search box filters the explorer’s shapes by name, without running shortcuts', async ({
@@ -280,7 +299,7 @@ test('an empty layer has nothing to collapse', async ({ page }) => {
 
     await expect(page.getByRole('button', { name: 'Walls', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Collapse Walls', exact: true })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Collapse Surface', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Collapse Canvas', exact: true })).toBeVisible();
 });
 
 test('an item’s menu stays in its row and runs commands for that item', async ({ page }) => {
