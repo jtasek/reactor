@@ -4,14 +4,16 @@ import {
     isRecord,
     sameJsonValue,
     type EntityChanges,
-    type RemoteChanges
+    type RemoteChanges,
+    type ViewChange
 } from '../services/collaboration';
 import { inDrawingOrder } from '../drawOrder';
 import {
     COLLECTIONS,
     hydrateDocumentFields,
     hydrateEntity,
-    type Collection
+    type Collection,
+    type SavedEntities
 } from '../services/documentStorage';
 
 /** A copy for the store to own, so its later edits never reach the shared document's views. */
@@ -94,12 +96,9 @@ function followBox(box: Box, from: Box, to: Box): Box {
  * Gives what a gesture restores if canceled other copies' changes, so canceling
  * undoes only the gesture's own changes, even where they override another copy's.
  */
-function rebaseGesture(
-    snapshots: Record<string, Shape>,
-    { entities, unwritten = {} }: RemoteChanges
-) {
+function rebaseGesture(snapshots: Record<string, Shape>, { entities, unwritten }: RemoteChanges) {
     for (const id of Object.keys(snapshots)) {
-        const change = Object.hasOwn(unwritten, id) ? unwritten[id] : entities.shapes[id];
+        const change = unwrittenOrMerged(entities, unwritten, 'shapes', id);
 
         if (change === null) {
             delete snapshots[id];
@@ -122,6 +121,21 @@ function rebaseGesture(
             }
         }
     }
+}
+
+/**
+ * Another copy's change to an entity, as it was before merging with this copy's
+ * unshared change when there is one, since the merge may override it.
+ */
+function unwrittenOrMerged<C extends Collection>(
+    entities: EntityChanges,
+    unwritten: RemoteChanges['unwritten'],
+    collection: C,
+    id: string
+): ViewChange<SavedEntities[C]> | null | undefined {
+    const held = unwritten?.[collection];
+
+    return held && Object.hasOwn(held, id) ? held[id] : entities[collection][id];
 }
 
 /** Applies one collection's changes; returns whether an entity came, went or was reordered. */
@@ -182,7 +196,7 @@ export const applyRemoteChanges: ActionWithParam<RemoteChanges> = ({ state }, ch
     if ('frame' in gesture && documentId === state.currentDocumentId) {
         const collection = 'componentId' in gesture ? 'components' : 'groups';
         const id = 'componentId' in gesture ? gesture.componentId : gesture.groupId;
-        const change = entities[collection][id];
+        const change = unwrittenOrMerged(entities, changes.unwritten, collection, id);
 
         if (change?.changed.includes('rotation')) {
             gesture.frame.rotation = hydrateEntity(collection, change.view).rotation ?? 0;
