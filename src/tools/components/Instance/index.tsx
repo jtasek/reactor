@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 import type { Tool } from 'src/tools/types';
-import { usePointer, useAppState, useComponentSource } from 'src/app/hooks';
+import { useComponentSource, usePointer, useAppState } from 'src/app/hooks';
 
 const DesignInstance: FC = () => {
     const pointer = usePointer();

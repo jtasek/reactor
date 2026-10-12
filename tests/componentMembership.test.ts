@@ -22,24 +22,7 @@ function setup() {
     return { store, sourceId, otherId };
 }
 
-describe('component sources', () => {
-    it('are worked out once and kept while their content does not change', () => {
-        const { store, sourceId, otherId } = setup();
-        const sources = () => store.state.currentDocument.componentSources;
-        const first = sources().source;
-
-        expect(first?.shapes.map((shape) => shape.id)).toEqual([sourceId]);
-
-        // A second component works the sources out again; this one did not change.
-        store.actions.addComponent({ id: 'other', shapesIds: [otherId] });
-        expect(sources().other).toBeDefined();
-        expect(sources().source).toBe(first);
-
-        store.actions.updateShape({ id: sourceId, position: { x: 50, y: 20 } });
-        expect(sources().source).not.toBe(first);
-        expect(sources().source?.box.topLeft.x).toBe(50);
-    });
-
+describe('component members', () => {
     it('list the shapes of the document’s own components', () => {
         const { store, sourceId, otherId } = setup();
         const members = store.state.currentDocument.componentMembersIds;

@@ -16,6 +16,7 @@ import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
 import { placeSelectionMenu } from './selectionMenu';
 import { PropertyRow, sharedProperties } from './properties';
 import { untracked } from './untracked';
+import { componentSource } from './componentSource';
 import { localComponents } from './componentSelection';
 import {
     drawnExtent,
@@ -100,7 +101,7 @@ export const useComponents = () => {
 
 export const useComponentSource = (componentId: string | null) =>
     useAppState((state) =>
-        componentId === null ? null : (state.currentDocument.componentSources[componentId] ?? null)
+        componentId === null ? null : componentSource(state.currentDocument, componentId)
     );
 
 export const useEvents = () => {

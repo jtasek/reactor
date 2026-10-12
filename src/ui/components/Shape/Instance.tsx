@@ -1,6 +1,7 @@
 import React, { CSSProperties, FC } from 'react';
 import type { InstanceShape, Shape } from 'src/app/types';
 import type { ComponentSource } from 'src/app/componentSource';
+import { componentSource } from 'src/app/componentSource';
 import { applyInstanceOverrides } from 'src/app/componentProps';
 import { boxCenter, getShapeBounds } from 'src/app/utils';
 import { useCurrentDocument } from 'src/app/hooks';
@@ -54,11 +55,11 @@ export const Instance: FC<Props> = ({ instance, source, ancestors = new Set() })
                         <g key={shape.id} transform={transform} opacity={shape.opacity}>
                             <Instance
                                 instance={shape}
-                                source={
-                                    ancestorComponentIds.has(shape.componentId)
-                                        ? null
-                                        : (document.componentSources[shape.componentId] ?? null)
-                                }
+                                source={componentSource(
+                                    document,
+                                    shape.componentId,
+                                    ancestorComponentIds
+                                )}
                                 ancestors={ancestorComponentIds}
                             />
                         </g>
