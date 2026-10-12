@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
-import { drawRect, openEditor, shapes } from './support/editor';
+import { createDocument, createGroup, createLayer, createShape } from 'src/app/factories';
+import { serializePersistedState } from 'src/app/services/documentStorage';
+import { drawRect, openEditor, pointer, shapes } from './support/editor';
 
 test('a press outside the context menu closes it, and does nothing else', async ({ page }) => {
     await openEditor(page);
@@ -7,7 +9,7 @@ test('a press outside the context menu closes it, and does nothing else', async 
 
     const surface = (await page.locator('svg#surface').boundingBox())!;
     const menu = page.locator('[data-cy="context-menu"]');
-    const menuItem = menu.getByRole('button', { name: 'Draws a circle shape' });
+    const drawShape = menu.getByRole('menuitem', { name: 'Draw shape' });
     const handles = page.locator('svg#surface [data-handle]');
 
     await page.mouse.click(surface.x + 500, surface.y + 300, { button: 'right' });
@@ -26,10 +28,202 @@ test('a press outside the context menu closes it, and does nothing else', async 
     await page.getByText('Saved', { exact: true }).click();
     await expect(menu).toBeHidden();
 
-    // A press on the menu itself still picks its tool.
+    // A press on a menu action still picks its tool.
     await page.mouse.click(surface.x + 500, surface.y + 300, { button: 'right' });
-    await menuItem.click();
+    await drawShape.click();
+    await menu.getByRole('menuitem', { name: 'Circle' }).click();
     await expect(
         page.getByRole('list', { name: 'Tools' }).getByRole('button', { pressed: true })
     ).toHaveAttribute('title', 'Draws a circle shape');
+});
+
+test('right-clicking a shape offers actions for that shape', async ({ page }) => {
+    await openEditor(page);
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    const menu = page.locator('[data-cy="context-menu"]');
+
+    await page.mouse.click(surface.x + 320, surface.y + 120, { button: 'right' });
+    await expect(menu).toHaveAttribute('aria-label', 'rectangle-1 actions');
+    await expect(menu.getByRole('menuitem', { name: 'Create component' })).toBeEnabled();
+    await menu.getByRole('menuitem', { name: 'Duplicate' }).click();
+    await expect(shapes(page)).toHaveCount(2);
+    await expect(menu).toBeHidden();
+});
+
+test('a shape can be renamed from its context menu header', async ({ page }) => {
+    await openEditor(page, ['Explorer']);
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    const menu = page.locator('[data-cy="context-menu"]');
+
+    await page.mouse.click(surface.x + 320, surface.y + 120, { button: 'right' });
+    await menu.getByRole('button', { name: 'Rename rectangle' }).click();
+    await menu.getByRole('textbox', { name: 'Name' }).fill('Card background');
+    await menu.getByRole('textbox', { name: 'Name' }).press('Enter');
+
+    await expect(menu).toHaveAttribute('aria-label', 'Card background actions');
+    await expect(
+        page.getByRole('region', { name: 'Explorer' }).getByRole('button', {
+            name: 'Card background',
+            exact: true
+        })
+    ).toBeVisible();
+});
+
+test('a group can be renamed from its context menu header', async ({ page }) => {
+    await openEditor(page, ['Explorer']);
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
+    await pointer(page, 'pointerdown', { x: 280, y: 80 });
+    await pointer(page, 'pointermove', { x: 460, y: 160 });
+    await pointer(page, 'pointerup', { x: 460, y: 160 });
+    await page.keyboard.press('ControlOrMeta+g');
+
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    const menu = page.locator('[data-cy="context-menu"]');
+    await page.mouse.click(surface.x + 320, surface.y + 120, { button: 'right' });
+    await expect(menu).toHaveAttribute('aria-label', 'group-1 actions');
+    await menu.getByRole('button', { name: 'Rename group' }).click();
+    await menu.getByRole('textbox', { name: 'Name' }).fill('Card parts');
+    await menu.getByRole('textbox', { name: 'Name' }).press('Enter');
+
+    await expect(menu).toHaveAttribute('aria-label', 'Card parts actions');
+    await expect(
+        page.getByRole('region', { name: 'Explorer' }).getByRole('button', {
+            name: 'Card parts',
+            exact: true
+        })
+    ).toBeVisible();
+});
+
+test('a mixed selection does not offer to rename its selected group', async ({ page }) => {
+    await openEditor(page, ['Explorer']);
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
+    await drawRect(page, { x: 500, y: 100 }, { x: 540, y: 140 });
+    await pointer(page, 'pointerdown', { x: 280, y: 80 });
+    await pointer(page, 'pointermove', { x: 460, y: 160 });
+    await pointer(page, 'pointerup', { x: 460, y: 160 });
+    await page.keyboard.press('ControlOrMeta+g');
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'rectangle-3', exact: true })
+        .click({ modifiers: ['Shift'] });
+
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    const menu = page.locator('[data-cy="context-menu"]');
+    await page.mouse.click(surface.x + 320, surface.y + 120, { button: 'right' });
+
+    await expect(menu).toHaveAttribute('aria-label', '3 selected actions');
+    await expect(menu.getByRole('button', { name: 'Rename group' })).toHaveCount(0);
+});
+
+test('moving a group also moves its hidden member', async ({ page }) => {
+    const visible = createShape({
+        type: 'rectangle',
+        name: 'Visible',
+        order: 'a0',
+        position: { x: 300, y: 100 },
+        size: { width: 40, height: 40 }
+    });
+    const hidden = createShape({
+        type: 'rectangle',
+        name: 'Hidden',
+        order: 'a1',
+        position: { x: 400, y: 100 },
+        size: { width: 40, height: 40 },
+        visible: false
+    });
+    const group = createGroup({ name: 'Pair', shapesIds: [visible.id, hidden.id] });
+    const layer = createLayer({ name: 'Target' });
+    const document = createDocument({
+        shapes: { [visible.id]: visible, [hidden.id]: hidden },
+        groups: { [group.id]: group },
+        layers: { [layer.id]: layer }
+    });
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await openEditor(page, ['Explorer']);
+
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    const menu = page.locator('[data-cy="context-menu"]');
+    await page.mouse.click(surface.x + 320, surface.y + 120, { button: 'right' });
+    await expect(menu).toHaveAttribute('aria-label', 'Pair actions');
+    await menu.getByRole('menuitem', { name: 'Move to layer' }).click();
+    await menu.getByRole('menuitem', { name: 'Target' }).click();
+
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    const targetLayer = explorer
+        .getByRole('button', { name: 'Target', exact: true })
+        .locator('xpath=ancestor::li[1]');
+    await expect(targetLayer.getByRole('button', { name: 'Pair', exact: true })).toBeVisible();
+    await expect(targetLayer.getByRole('button', { name: 'Hidden', exact: true })).toBeVisible();
+});
+
+test('a component instance can be renamed from its context menu header', async ({ page }) => {
+    await openEditor(page, ['Explorer']);
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
+
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    const menu = page.locator('[data-cy="context-menu"]');
+    await page.mouse.click(surface.x + 320, surface.y + 120, { button: 'right' });
+    await expect(menu).toHaveAttribute('aria-label', 'component-1 actions');
+
+    await menu.getByRole('button', { name: 'Rename instance' }).click();
+    const name = menu.getByRole('textbox', { name: 'Name' });
+    await expect(name).toBeFocused();
+    await name.fill('Discarded');
+    await name.press('Escape');
+    await expect(menu.getByRole('button', { name: 'component-1', exact: true })).toBeVisible();
+
+    await menu.getByRole('button', { name: 'component-1', exact: true }).click();
+    await name.fill('Card');
+    await name.press('Enter');
+    await expect(name).toHaveCount(0);
+    await expect(menu).toHaveAttribute('aria-label', 'Card actions');
+    await expect(explorer.getByRole('button', { name: 'Card', exact: true })).toBeVisible();
+});
+
+test('Escape dismisses the menu and it stays in the viewport', async ({ page }) => {
+    await openEditor(page);
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    await page.mouse.click(surface.x + 500, surface.y + 300, { button: 'right' });
+
+    const menu = page.locator('[data-cy="context-menu"]');
+    await expect(menu).toBeVisible();
+
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowRight');
+    await expect(menu.getByRole('menuitem', { name: 'Circle' })).toBeVisible();
+    await page.keyboard.press('ArrowLeft');
+    await expect(menu.getByRole('menuitem', { name: 'Draw shape' })).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(menu).toBeHidden();
+
+    await page.locator('svg#surface').evaluate(
+        (element, { x, y }) => {
+            element.dispatchEvent(
+                new MouseEvent('contextmenu', {
+                    clientX: x,
+                    clientY: y,
+                    bubbles: true,
+                    cancelable: true
+                })
+            );
+        },
+        { x: surface.x + surface.width - 12, y: surface.y + surface.height - 12 }
+    );
+    await expect(menu).toBeVisible();
+    const box = (await menu.boundingBox())!;
+    const viewport = page.viewportSize()!;
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
 });

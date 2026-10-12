@@ -1033,6 +1033,25 @@ const boxMembersAtPointer = (state: Context['state']) =>
         ) ?? groupAtPoint(state.currentDocument, state.events.pointer.current, state.enteredGroupId)
     )?.shapesIds ?? [];
 
+/** Uses the same hit and selection rules as a canvas press for a context menu. */
+export const selectContextMenuTarget: ActionWithParamAndResult<Point, boolean> = (
+    { state, actions },
+    position
+) => {
+    state.events.pointer.current = position;
+    state.events.pointer.lastPress = { documentId: state.currentDocumentId, position };
+    const previousComponent = state.selectedComponent;
+    state.selectedComponent = null;
+
+    const hit = actions.selectShapeAtPointer() || actions.selectClickedShapes();
+
+    if (!hit) {
+        state.selectedComponent = previousComponent;
+    }
+
+    return hit;
+};
+
 /**
  * Resolves the shape under the pointer and updates the selection so a move can
  * begin, returning whether a shape was hit. Iterates shapesIds in z-order so the

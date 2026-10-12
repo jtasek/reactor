@@ -9,7 +9,7 @@ export interface Control {
 export interface UI {
     commandLine: Control;
     components: Control;
-    contextMenu: Control & { position: Point };
+    contextMenu: Control & { position: Point; target: 'canvas' | 'selection' };
     controlPanel: Control;
     dataView: Control;
     documentInfo: Control;
