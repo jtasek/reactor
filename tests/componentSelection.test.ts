@@ -3,7 +3,14 @@ import { componentAtPoint } from 'src/app/componentSelection';
 import { restoreDocuments, serializePersistedState } from 'src/app/services/documentStorage';
 import { SelectTool } from 'src/tools';
 import { createTestStore } from './support/store';
-import { createCopies, deliver, edit, shownDocument } from './support/collaboration';
+import {
+    createCopies,
+    deliver,
+    edit,
+    settle,
+    shownDocument,
+    type Copy
+} from './support/collaboration';
 
 registerTool(SelectTool);
 
@@ -139,17 +146,21 @@ it('cancel keeps a component rotation received from another copy', async () => {
         });
         store.actions.addComponent({ shapesIds: [...store.state.currentDocument.shapesIds] });
     });
-    const [first, second] = copies;
-    const componentId = shownDocument(first).componentsIds[0];
-    const { events } = first.store.actions;
-    try {
+    const componentId = shownDocument(copies[0]).componentsIds[0];
+    const rotation = (copy: Copy) => shownDocument(copy).components[componentId].rotation;
+    // Yjs keeps one of two concurrent rotations by its random client ids, so each
+    // copy takes the canceled gesture's turn once: one of them wins the merge.
+    const rotateWhileTheOtherCancels = (rotating: Copy, canceling: Copy) => {
+        const { events } = canceling.store.actions;
+        const before = rotation(canceling);
+
         events.beginGesture({
             pointerId: 1,
             position: { x: 120, y: 80 },
             handle: { componentId, type: 'rotate' }
         });
         events.movePointer({ pointerId: 1, position: { x: 160, y: 120 } });
-        edit(second, (actions) => {
+        edit(rotating, (actions) => {
             actions.events.beginGesture({
                 pointerId: 2,
                 position: { x: 120, y: 80 },
@@ -157,12 +168,19 @@ it('cancel keeps a component rotation received from another copy', async () => {
             });
             actions.events.endGesture({ pointerId: 2, position: { x: 160, y: 80 } });
         });
-        expect(shownDocument(second).components[componentId].rotation).toBe(45);
-        expect(first.inbox.length).toBeGreaterThan(0);
-        deliver(first);
-        expect(shownDocument(first).components[componentId].rotation).toBe(45);
+        const received = rotation(rotating);
+
+        expect(received).not.toBe(before);
+        expect(received).not.toBe(rotation(canceling));
+        deliver(canceling);
         events.cancelGesture();
-        expect(shownDocument(first).components[componentId].rotation).toBe(45);
+        expect(rotation(canceling)).toBe(received);
+        settle(copies);
+        expect(copies.map(rotation)).toEqual([received, received]);
+    };
+    try {
+        rotateWhileTheOtherCancels(copies[1], copies[0]);
+        rotateWhileTheOtherCancels(copies[0], copies[1]);
     } finally {
         copies.forEach(({ collaboration }) => collaboration.dispose());
     }
