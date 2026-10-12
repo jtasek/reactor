@@ -33,10 +33,10 @@ export interface RemoteChanges {
     fields?: ViewChange<DocumentFields>;
     entities: EntityChanges;
     /**
-     * Other copies' changes to shapes this copy changed and has not shared yet, as
+     * Other copies' changes to entities this copy changed and has not shared yet, as
      * they were before merging with this copy's changes, which may override them.
      */
-    unwritten?: EntityChanges['shapes'];
+    unwritten?: Partial<EntityChanges>;
 }
 
 interface Mutation {
@@ -84,8 +84,8 @@ interface Binding {
     fieldsView?: DocumentFields;
     /** Entities left out of the store because they failed validation. */
     invalid: Record<Collection, Set<string>>;
-    /** Changes to shapes this copy has not shared, from the update being received. */
-    unwritten?: EntityChanges['shapes'];
+    /** Changes to entities this copy has not shared, from the update being received. */
+    unwritten?: Partial<EntityChanges>;
 }
 
 const LOCAL = Symbol('local change');
@@ -712,13 +712,11 @@ export class Collaboration {
     }
 
     /**
-     * What `update` changes of the shapes this copy changed and has not written, as
+     * What `update` changes of the entities this copy changed and has not written, as
      * merged into a copy of the shared document without this copy's changes.
      */
     private unwrittenChanges(binding: Binding, update: Uint8Array) {
-        const ids = binding.local.entities.get('shapes');
-
-        if (!ids) {
+        if (binding.local.entities.size === 0) {
             return undefined;
         }
 
@@ -728,36 +726,44 @@ export class Collaboration {
         yjs.applyUpdate(doc, yjs.encodeStateAsUpdate(binding.doc));
         yjs.applyUpdate(doc, update);
 
-        const table = doc.getMap('shapes');
         const exists: Exists = (collection, id) => doc.getMap(collection).has(id);
-        const changes: EntityChanges['shapes'] = {};
+        const changes: Partial<EntityChanges> = {};
+        const collect = <C extends Collection>(collection: C, ids: Set<string>) => {
+            const table = doc.getMap(collection);
+            const collected: Record<string, ViewChange<SavedEntities[C]> | null> = {};
 
-        for (const id of ids) {
-            const previous = binding.views.shapes.get(id);
-            const entity = table.get(id);
-            const saved =
-                entity instanceof yjs.Map
-                    ? orUndefined(() => readEntity('shapes', entity.toJSON()))
-                    : undefined;
-            const view =
-                saved?.id === id ? withoutDanglingReferences('shapes', saved, exists) : null;
+            for (const id of ids) {
+                const previous = binding.views[collection].get(id);
+                const entity = table.get(id);
+                const saved =
+                    entity instanceof yjs.Map
+                        ? orUndefined(() => readEntity(collection, entity.toJSON()))
+                        : undefined;
+                const view =
+                    saved?.id === id ? withoutDanglingReferences(collection, saved, exists) : null;
 
-            if (!previous) {
-                continue;
+                if (!previous) {
+                    continue;
+                }
+
+                if (!view) {
+                    collected[id] = null;
+                    continue;
+                }
+
+                const changed = changedFields(previous, view);
+
+                if (changed.length > 0) {
+                    collected[id] = { view, changed, previous };
+                }
             }
 
-            if (!view) {
-                changes[id] = null;
-                continue;
+            if (!isEmpty(collected)) {
+                changes[collection] = collected as EntityChanges[C];
             }
+        };
 
-            const changed = changedFields(previous, view);
-
-            if (changed.length > 0) {
-                changes[id] = { view, changed, previous };
-            }
-        }
-
+        binding.local.entities.forEach((ids, collection) => collect(collection, ids));
         doc.destroy();
 
         return changes;
