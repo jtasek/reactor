@@ -231,6 +231,98 @@ describe('document modification dates', () => {
         }
     );
 
+    it.each(['cancel', 'commit'] as const)(
+        'dates only the surviving local coordinate when a merged drag ends with %s',
+        async (ending) => {
+            const indexedDB = new IDBFactory();
+            const first = await start(indexedDB);
+
+            first.store.actions.addShape(rectangle);
+            first.effects.collaboration.flush();
+            const second = await start(indexedDB);
+            const { id, shapesIds } = first.store.state.currentDocument;
+            const { events } = first.store.actions;
+
+            events.beginGesture({ pointerId: 1, position: { x: 5, y: 5 } });
+            events.movePointer({ pointerId: 1, position: { x: 15, y: 5 } });
+
+            vi.setSystemTime(edited);
+            second.store.actions.updateShape({
+                id: shapesIds[0],
+                position: { x: 0, y: 10 }
+            });
+            second.effects.collaboration.flush();
+
+            vi.setSystemTime(later);
+            first.effects.collaboration.receive(id, second.effects.collaboration.state(id));
+            expect(first.store.state.currentDocument.shapes[shapesIds[0]]).toMatchObject({
+                position: { x: 10, y: 10 }
+            });
+            expect(first.store.state.currentDocument.modified).toEqual(edited);
+
+            if (ending === 'cancel') {
+                events.cancelGesture();
+            } else {
+                events.endGesture({ pointerId: 1, position: { x: 15, y: 5 } });
+            }
+            first.effects.collaboration.flush();
+
+            expect(first.store.state.currentDocument.shapes[shapesIds[0]]).toMatchObject({
+                position: { x: ending === 'cancel' ? 0 : 10, y: 10 }
+            });
+            const modified = ending === 'cancel' ? edited : later;
+
+            expect(first.store.state.currentDocument.modified).toEqual(modified);
+            second.effects.collaboration.receive(id, first.effects.collaboration.state(id));
+            expect(second.store.state.currentDocument.modified).toEqual(modified);
+        }
+    );
+
+    it.each(['cancel', 'commit'] as const)(
+        'keeps the remote date when a fully overwritten drag ends with %s',
+        async (ending) => {
+            const indexedDB = new IDBFactory();
+            const first = await start(indexedDB);
+
+            first.store.actions.addShape(rectangle);
+            first.effects.collaboration.flush();
+            const second = await start(indexedDB);
+            const { id, shapesIds } = first.store.state.currentDocument;
+            const { events } = first.store.actions;
+
+            events.beginGesture({ pointerId: 1, position: { x: 5, y: 5 } });
+            events.movePointer({ pointerId: 1, position: { x: 15, y: 5 } });
+            // Receiving an update writes the held move so another copy can overwrite it.
+            first.effects.collaboration.receive(id, second.effects.collaboration.state(id));
+            second.effects.collaboration.receive(id, first.effects.collaboration.state(id));
+
+            vi.setSystemTime(edited);
+            second.store.actions.updateShape({
+                id: shapesIds[0],
+                position: { x: 20, y: 0 }
+            });
+            second.effects.collaboration.flush();
+
+            vi.setSystemTime(later);
+            first.effects.collaboration.receive(id, second.effects.collaboration.state(id));
+            expect(first.store.state.currentDocument.modified).toEqual(edited);
+
+            if (ending === 'cancel') {
+                events.cancelGesture();
+            } else {
+                events.endGesture({ pointerId: 1, position: { x: 15, y: 5 } });
+            }
+            first.effects.collaboration.flush();
+
+            expect(first.store.state.currentDocument.shapes[shapesIds[0]]).toMatchObject({
+                position: { x: 20, y: 0 }
+            });
+            expect(first.store.state.currentDocument.modified).toEqual(edited);
+            second.effects.collaboration.receive(id, first.effects.collaboration.state(id));
+            expect(second.store.state.currentDocument.modified).toEqual(edited);
+        }
+    );
+
     it('dates a reset in the same saved update without writing a later date', async () => {
         const indexedDB = new IDBFactory();
         const { store, effects } = await start(indexedDB);
