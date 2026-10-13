@@ -68,7 +68,7 @@ interface Resize {
     start: { x: number; y: number };
     /** The panel's box when the drag began. */
     from: { x: number; y: number; width: number; height: number };
-    size?: { width: number; height?: number };
+    size: NonNullable<PanelPlacement['size']>;
     position: { x: number; y: number };
     /** Whether the pointer went beyond a click's slip, so the release resizes. */
     moved: boolean;
@@ -299,8 +299,9 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
         const content = orientation === 'horizontal' ? (horizontalView ?? children) : children;
         const placement = panelLayout[id] ?? { dock: null, position: { x: 0, y: 0 } };
         const floating = !dock;
-        // A panel docked to a side fills its column; its own width waits until it floats again.
-        const fillsColumn = !floating && orientation === 'vertical';
+        // A panel docked to a side fills its column, so only its height resizes there; its own
+        // width waits until it floats again.
+        const resizesWidth = floating || orientation === 'horizontal';
         const size = sizes[id] ?? UNMEASURED_PANEL_SIZE;
         const maxX = Math.max(0, viewport.width - size.width);
         const maxY = Math.max(0, viewport.height - size.height);
@@ -326,10 +327,10 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
             }
             place(next);
         };
-        /** The box a corner dragged by `dx`, `dy` from `from` leaves the panel. */
+        /** The box a corner dragged by `dx`, `dy` from `from` leaves the panel, if it changes. */
         const resized = (corner: Corner, from: Resize['from'], dx: number, dy: number) => {
-            const width = fillsColumn
-                ? (placement.size?.width ?? from.width)
+            const width = !resizesWidth
+                ? placement.size?.width
                 : clamp(
                       from.width + (corner === 'right' ? dx : -dx),
                       MIN_PANEL_SIZE.width,
@@ -345,14 +346,20 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                 ? clamp(from.height + dy, MIN_PANEL_SIZE.height, viewport.height - from.y)
                 : placement.size?.height;
 
-            if (fillsColumn && height === undefined) {
-                return { size: placement.size, position };
+            if (!resizesWidth && height === placement.size?.height) {
+                return undefined;
             }
 
             return {
-                size: height === undefined ? { width } : { width, height },
+                size: {
+                    ...(width === undefined ? {} : { width }),
+                    ...(height === undefined ? {} : { height })
+                },
                 position: {
-                    x: floating && corner === 'left' ? from.x + from.width - width : position.x,
+                    x:
+                        floating && corner === 'left'
+                            ? from.x + from.width - (width ?? from.width)
+                            : position.x,
                     y: position.y
                 }
             };
@@ -378,15 +385,24 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                 }
             );
         };
+        // Docked to a side, only the height shown is restored; the width waits for floating.
+        const keptWidth = resizesWidth ? undefined : placement.size?.width;
         const restoreSize = () =>
-            setPanelPlacement({ id, placement: { dock: placement.dock, position } });
+            setPanelPlacement({
+                id,
+                placement: {
+                    dock: placement.dock,
+                    position,
+                    ...(keptWidth === undefined ? {} : { size: { width: keptWidth } })
+                }
+            });
 
         const grip = (corner: Corner) => (
             <button
                 key={corner}
                 type="button"
                 className={`${styles.grip} ${corner === 'left' ? styles.gripLeft : styles.gripRight}`}
-                aria-label={`Resize ${title}. Use arrow keys to resize, Delete to restore the default size.`}
+                aria-label={`Resize ${title}. Use ${resizesWidth ? 'arrow keys' : 'the up and down arrow keys'} to resize, Delete to restore the default size.`}
                 onPointerDown={(event) => {
                     const from = panelBox(event.currentTarget);
 
@@ -417,16 +433,14 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                         )
                     )
                         return;
-                    setResize({
-                        ...resizing,
-                        moved: true,
-                        ...resized(
-                            corner,
-                            resizing.from,
-                            event.clientX - resizing.start.x,
-                            event.clientY - resizing.start.y
-                        )
-                    });
+                    const next = resized(
+                        corner,
+                        resizing.from,
+                        event.clientX - resizing.start.x,
+                        event.clientY - resizing.start.y
+                    );
+
+                    if (next) setResize({ ...resizing, moved: true, ...next });
                 }}
                 onPointerUp={(event) => {
                     if (!resizing || resizing.pointerId !== event.pointerId) return;
@@ -455,11 +469,13 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
 
                     const from = panelBox(event.currentTarget);
 
-                    if (!step || !from) return;
+                    if (!step || !from || (step.dx && !resizesWidth)) return;
                     event.preventDefault();
                     event.stopPropagation();
                     // The arrow keys say which way the panel grows, whichever corner has focus.
-                    resizeTo(resized('right', from, step.dx, step.dy));
+                    const next = resized('right', from, step.dx, step.dy);
+
+                    if (next) resizeTo(next);
                 }}
             />
         );
@@ -542,7 +558,7 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                 style={{
                     ...(floating ? { left: shownPosition.x, top: shownPosition.y } : {}),
                     // A size chosen on a larger window shrinks to fit this one.
-                    ...(chosenSize && !fillsColumn
+                    ...(chosenSize?.width !== undefined && resizesWidth
                         ? {
                               width: Math.min(chosenSize.width, viewport.width),
                               maxWidth: 'none'

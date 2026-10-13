@@ -428,13 +428,15 @@ test('a panel docked to a side fills its column, and keeps its width for when it
         .poll(async () => (await panelBox(page, 'inspector')).width)
         .toBe((await panelBox(page, 'controlPanel')).width);
 
-    // Docked, its corners change only its height.
+    // Docked, its corners change only its height, and Delete restores only that.
     await corner.focus();
     await page.keyboard.press('ArrowLeft');
-    expect(await savedSize()).toEqual({ width: before.width + 10 });
+    await expect.poll(savedSize).toEqual({ width: before.width + 10 });
     await page.keyboard.press('ArrowDown');
+    await expect.poll(async () => (await savedSize())?.height).toBeGreaterThan(0);
     expect((await savedSize()).width).toBe(before.width + 10);
-    expect((await savedSize()).height).toBeGreaterThan(0);
+    await page.keyboard.press('Delete');
+    await expect.poll(savedSize).toEqual({ width: before.width + 10 });
 
     await header.focus();
     await page.keyboard.press('Enter');
@@ -442,4 +444,44 @@ test('a panel docked to a side fills its column, and keeps its width for when it
     await expect
         .poll(async () => (await panelBox(page, 'inspector')).width)
         .toBe(before.width + 10);
+});
+
+test('dragging a docked panel’s corner keeps the default width for when it floats', async ({
+    page
+}) => {
+    await page.setViewportSize({ width: 600, height: 720 });
+    await openEditor(page, ['Explorer']);
+    const explorer = page.locator('[data-panel="explorer"]');
+    const corner = page.getByRole('button', { name: /^Resize Explorer/ }).last();
+    const savedSize = () =>
+        page.evaluate(
+            () => JSON.parse(localStorage.getItem('reactor:panel-layout') ?? '{}').explorer?.size
+        );
+    const column = await panelBox(page, 'explorer');
+    const drag = async (dx: number, dy: number) => {
+        await explorer.hover();
+        const grip = (await corner.boundingBox())!;
+        const x = grip.x + grip.width / 2;
+        const y = grip.y + grip.height / 2;
+
+        await page.mouse.move(x, y);
+        await page.mouse.down();
+        await page.mouse.move(x + dx, y + dy, { steps: 4 });
+        await page.mouse.up();
+    };
+
+    await drag(60, 0);
+    expect(await savedSize()).toBeUndefined();
+    expect((await panelBox(page, 'explorer')).width).toBe(column.width);
+
+    await drag(0, -40);
+    await expect.poll(savedSize).toEqual({ height: expect.any(Number) });
+
+    await explorer.locator('> button').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('[data-dock] [data-panel="explorer"]')).toHaveCount(0);
+    // It floats at the default width, not the narrower column's.
+    await expect
+        .poll(async () => (await panelBox(page, 'explorer')).width)
+        .toBeGreaterThan(column.width);
 });

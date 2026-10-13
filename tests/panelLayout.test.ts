@@ -37,6 +37,11 @@ describe('panel layout', () => {
                 stats: { dock: null, position: { x: 1, y: 2 }, size: { width: 300 } }
             }).stats.size
         ).toEqual({ width: 300 });
+        expect(
+            readPanelLayout({
+                stats: { dock: 'left', position: { x: 1, y: 2 }, size: { height: 200 } }
+            }).stats.size
+        ).toEqual({ height: 200 });
         expect(layout.inspector).toEqual({ dock: null, position: { x: 10, y: 20 } });
     });
 });
