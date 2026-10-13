@@ -453,3 +453,43 @@ test('document search, filter typography and tag actions use consistent styling'
     // The date filter's name holds its visible label.
     await expect(date).toHaveAccessibleName('Last edited: Any time');
 });
+
+test('a tag keeps the color picked for it on every document and after reloading', async ({
+    page
+}) => {
+    await openDocumentExamples(page);
+
+    const card = rows(page).filter({ has: button(page, 'Open Interface kit') });
+    const clientTags = page
+        .getByRole('list', { name: 'Documents' })
+        .getByRole('button', { name: /^client project$/i });
+
+    // Mobile onboarding shows its third tag, Client project, behind +1.
+    await expect(clientTags).toHaveCount(2);
+    await card.getByRole('button', { name: 'Edit tags', exact: true }).click();
+    const picker = page.getByRole('dialog', { name: 'Edit tags' });
+    const color = picker.getByRole('button', { name: 'Color of Client project' });
+
+    await color.click();
+    await picker
+        .getByRole('radiogroup', { name: 'Colors for Client project' })
+        .getByRole('radio', { name: 'purple' })
+        .click();
+    await expect(color).toBeFocused();
+    await expect(color).toHaveAttribute('data-tone', 'purple');
+    for (const tag of await clientTags.all()) {
+        await expect(tag).toHaveAttribute('data-tone', 'purple');
+    }
+    // Picking a color is not an edit: the documents keep their order and dates.
+    await expect(card.locator('time')).toHaveText('Today');
+    await page.keyboard.press('Escape');
+
+    await button(page, 'Open Interface kit').click();
+    await expect(page.locator('#status-save')).toHaveText('Saved');
+    await showDocuments(page);
+    await page.reload();
+    await expect(clientTags).toHaveCount(2);
+    for (const tag of await clientTags.all()) {
+        await expect(tag).toHaveAttribute('data-tone', 'purple');
+    }
+});

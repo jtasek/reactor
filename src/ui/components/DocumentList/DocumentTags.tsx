@@ -1,19 +1,29 @@
 import React, { FC, MouseEvent, useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { documentTagTone, normalizeTags } from 'src/app/documentList';
+import type { TagTone } from 'src/app/tagTones';
 import { TagPicker } from './TagPicker';
 import styles from './tags.css';
 
 interface Props {
     tags: string[];
     availableTags: string[];
+    tagTones: Readonly<Record<string, TagTone>>;
     onChange: (tags: string[]) => void;
+    onTone: (tag: string, tone: TagTone) => void;
     onFilter?: (tag: string) => void;
 }
 
 const COLLAPSED_TAG_COUNT = 2;
 
-export const DocumentTags: FC<Props> = ({ tags, availableTags, onChange, onFilter }) => {
+export const DocumentTags: FC<Props> = ({
+    tags,
+    availableTags,
+    tagTones,
+    onChange,
+    onTone,
+    onFilter
+}) => {
     const [expanded, setExpanded] = useState(false);
     const [editing, setEditing] = useState(false);
     const editButton = useRef<HTMLButtonElement>(null);
@@ -34,7 +44,7 @@ export const DocumentTags: FC<Props> = ({ tags, availableTags, onChange, onFilte
                         key={tag}
                         type="button"
                         className={styles.pill}
-                        data-tone={documentTagTone(tag)}
+                        data-tone={documentTagTone(tag, tagTones)}
                         title={`Filter by ${tag}`}
                         value={tag}
                         onClick={filterTag}
@@ -42,7 +52,11 @@ export const DocumentTags: FC<Props> = ({ tags, availableTags, onChange, onFilte
                         {tag}
                     </button>
                 ) : (
-                    <span key={tag} className={styles.pill} data-tone={documentTagTone(tag)}>
+                    <span
+                        key={tag}
+                        className={styles.pill}
+                        data-tone={documentTagTone(tag, tagTones)}
+                    >
                         {tag}
                     </span>
                 )
@@ -74,8 +88,10 @@ export const DocumentTags: FC<Props> = ({ tags, availableTags, onChange, onFilte
                     anchor={editButton.current}
                     title="Edit tags"
                     availableTags={availableTags}
+                    tagTones={tagTones}
                     selectedTags={tags}
                     onChange={onChange}
+                    onTone={onTone}
                     onClose={closePicker}
                     allowCreate
                 />

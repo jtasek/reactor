@@ -1,4 +1,5 @@
 import type { Document } from './types';
+import { TAG_TONES, tagKey, type TagTone } from './tagTones';
 
 export type DocumentDateFilter = 'all' | 'today' | 'week' | 'month';
 
@@ -9,9 +10,6 @@ export interface DocumentListFilters {
 }
 
 const FILTER_DAYS = { today: 1, week: 7, month: 30 };
-const TAG_TONES = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'gray'] as const;
-
-const tagKey = (tag: string) => tag.trim().toLowerCase();
 
 export const normalizeTags = (tags: string[]): string[] => {
     const seen = new Set<string>();
@@ -81,13 +79,46 @@ export function documentModifiedLabel(
     });
 }
 
-/** A tag's tone, from its name alone, so adding or removing other tags never changes it. */
-export function documentTagTone(name: string): (typeof TAG_TONES)[number] {
+/**
+ * A tag's tone: the one chosen for it, else one from its name alone, so adding or
+ * removing other tags never changes it.
+ */
+export function documentTagTone(
+    name: string,
+    chosen: Readonly<Record<string, TagTone>> = {}
+): TagTone {
+    const key = tagKey(name);
+
+    if (chosen[key]) {
+        return chosen[key];
+    }
+
     let hash = 0;
 
-    for (const character of tagKey(name)) {
+    for (const character of key) {
         hash = (hash * 31 + (character.codePointAt(0) ?? 0)) >>> 0;
     }
 
     return TAG_TONES[hash % TAG_TONES.length];
+}
+
+/** The tone chosen for each tag across documents, the latest edited document's winning. */
+export function chosenTagTones(
+    documents: readonly Pick<Document, 'modified' | 'tags' | 'tagTones'>[]
+): Record<string, TagTone> {
+    const chosen: Record<string, TagTone> = {};
+
+    [...documents]
+        .sort((first, second) => first.modified.getTime() - second.modified.getTime())
+        .forEach(({ tags, tagTones }) =>
+            tags.forEach((tag) => {
+                const tone = tagTones[tagKey(tag)];
+
+                if (tone) {
+                    chosen[tagKey(tag)] = tone;
+                }
+            })
+        );
+
+    return chosen;
 }

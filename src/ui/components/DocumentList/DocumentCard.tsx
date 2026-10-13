@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import { useActions, useDocument } from 'src/app/hooks';
 import { documentModifiedLabel } from 'src/app/documentList';
+import { tagKey, type TagTone } from 'src/app/tagTones';
 import { Dialog } from '../Dialog';
 import { Copy, Pencil, Trash2 } from 'lucide-react';
 import { DocumentTags } from './DocumentTags';
@@ -19,6 +20,7 @@ interface Props {
     documentId: string;
     current: boolean;
     availableTags: string[];
+    tagTones: Readonly<Record<string, TagTone>>;
     onFilterTag: (tag: string) => void;
     now: Date;
 }
@@ -27,11 +29,13 @@ export const DocumentCard: FC<Props> = ({
     documentId,
     current,
     availableTags,
+    tagTones,
     onFilterTag,
     now
 }) => {
     const document = useDocument(documentId);
-    const { editDocument, cloneDocument, removeDocument, updateDocument } = useActions();
+    const { editDocument, cloneDocument, removeDocument, setTagTone, updateDocument } =
+        useActions();
     const [confirming, setConfirming] = useState(false);
     const [editingName, setEditingName] = useState(false);
     const [draftName, setDraftName] = useState('');
@@ -107,7 +111,23 @@ export const DocumentCard: FC<Props> = ({
     const confirmDelete = () => setConfirming(true);
     const cancelDelete = () => setConfirming(false);
     const remove = () => removeDocument(documentId);
-    const changeTags = (tags: string[]) => updateDocument({ id: documentId, tags });
+    // A tag added here keeps the tone it has on other documents.
+    const changeTags = (tags: string[]) =>
+        updateDocument({
+            id: documentId,
+            tags,
+            tagTones: {
+                ...document.tagTones,
+                ...Object.fromEntries(
+                    tags.flatMap((tag) => {
+                        const tone = tagTones[tagKey(tag)];
+
+                        return tone ? [[tagKey(tag), tone]] : [];
+                    })
+                )
+            }
+        });
+    const changeTone = (tag: string, tone: TagTone) => setTagTone({ tag, tone });
 
     return (
         <li className={styles.card} aria-current={current || undefined} onDoubleClick={openCard}>
@@ -157,7 +177,9 @@ export const DocumentCard: FC<Props> = ({
                 <DocumentTags
                     tags={[...document.tags]}
                     availableTags={availableTags}
+                    tagTones={tagTones}
                     onChange={changeTags}
+                    onTone={changeTone}
                     onFilter={onFilterTag}
                 />
                 <div

@@ -99,6 +99,8 @@ const LOCAL = Symbol('local change');
 const MEMBERS = 'shapesIds';
 const isLocalOnly = (field: string) =>
     RUNTIME_FIELDS.has(field) || field === 'camera' || field === 'shapesIds';
+/** Document fields whose changes are shared and saved but do not date the document. */
+const UNDATED_FIELDS = new Set(['tagTones']);
 /** Collections whose shared form can differ from what this copy wrote, as by members it hides. */
 const REFERRING = new Set<Collection>(['groups', 'layers', 'components', 'links']);
 /** Collections other entities refer to. */
@@ -467,12 +469,19 @@ export class Collaboration {
             return;
         }
 
-        binding.doc.transact((transaction) => {
+        binding.doc.transact(() => {
+            const holding = this.paused && dateEdit;
+            let edited = false;
+
             if (local.fields) {
                 const fields = readDocumentFields(document);
+                const changed = changedFields(binding.fieldsView ?? {}, fields).filter(
+                    (field) => !UNDATED_FIELDS.has(field)
+                );
 
-                if (this.paused && dateEdit) {
-                    changedFields(binding.fieldsView ?? {}, fields).forEach((field) =>
+                edited = changed.length > 0;
+                if (holding) {
+                    changed.forEach((field) =>
                         binding.deferred.push(['document', documentId, field])
                     );
                 }
@@ -483,24 +492,16 @@ export class Collaboration {
 
             local.entities.forEach((ids, collection) =>
                 ids.forEach((id) => {
-                    const changed = this.writeEntity(
-                        binding,
-                        document,
-                        collection,
-                        id,
-                        this.paused && dateEdit
-                    );
+                    const changed = this.writeEntity(binding, document, collection, id);
 
-                    changed.forEach((field) => binding.deferred.push([collection, id, field]));
+                    edited ||= changed.length > 0;
+                    if (holding) {
+                        changed.forEach((field) => binding.deferred.push([collection, id, field]));
+                    }
                 })
             );
 
-            if (
-                dateEdit &&
-                !this.paused &&
-                (transaction.changed.size > 0 || heldEdit) &&
-                options.documentChanged
-            ) {
+            if (dateEdit && !this.paused && (edited || heldEdit) && options.documentChanged) {
                 options.documentChanged(documentId);
 
                 const fields = readDocumentFields(document);
@@ -519,8 +520,7 @@ export class Collaboration {
         binding: Binding,
         document: Document,
         collection: C,
-        id: string,
-        dateLater: boolean
+        id: string
     ) {
         const table = binding.tables[collection];
         const views = binding.views[collection];
@@ -534,7 +534,7 @@ export class Collaboration {
                 views.delete(id);
             }
 
-            return dateLater && previous ? Object.keys(previous) : [];
+            return previous ? Object.keys(previous) : [];
         }
 
         const values = readEntity(collection, json(entities[id]));
@@ -550,7 +550,7 @@ export class Collaboration {
             touch(binding.remote, collection, id);
         }
 
-        return dateLater ? changedFields(previous ?? {}, values) : [];
+        return changedFields(previous ?? {}, values);
     }
 
     private entityOf(table: Yjs.Map<unknown>, id: string): YEntity {

@@ -1,4 +1,5 @@
 import {
+    chosenTagTones,
     documentModifiedLabel,
     documentTagTone,
     matchesDocument,
@@ -211,5 +212,30 @@ describe('documentTagTone', () => {
         for (const tone of tones) {
             expect(['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'gray']).toContain(tone);
         }
+    });
+});
+
+describe('chosen tag tones', () => {
+    it("uses a chosen tone over the name's", () => {
+        const fromName = documentTagTone('Client project');
+        const chosen = fromName === 'red' ? 'blue' : 'red';
+
+        expect(documentTagTone(' client PROJECT ', { 'client project': chosen })).toBe(chosen);
+    });
+
+    it("takes each tag's tone from the latest edited document that chose one", () => {
+        const older = {
+            modified: new Date(2026, 9, 1),
+            tags: ['UI kit', 'Draft'],
+            tagTones: { 'ui kit': 'green', draft: 'gray' } as const
+        };
+        const newer = {
+            modified: new Date(2026, 9, 2),
+            tags: ['UI kit'],
+            tagTones: { 'ui kit': 'purple', draft: 'red' } as const
+        };
+
+        // A tone kept for a tag the document no longer has does not count.
+        expect(chosenTagTones([newer, older])).toEqual({ 'ui kit': 'purple', draft: 'gray' });
     });
 });

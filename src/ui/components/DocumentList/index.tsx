@@ -8,7 +8,8 @@ export const DocumentListContainer: FC = () => {
         id,
         name: byId[id].name,
         modified: byId[id].modified,
-        tags: [...byId[id].tags]
+        tags: [...byId[id].tags],
+        tagTones: { ...byId[id].tagTones }
     }));
     const currentDocumentId = useCurrentDocumentId();
     const { newDocument } = useActions();

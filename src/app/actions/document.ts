@@ -2,6 +2,7 @@ import { Action, ActionWithParam, Application, Document } from '../types';
 import { createCamera, createDocument, createGrid, newDocumentName } from '../factories';
 import { takesEditorInput } from 'src/events/input';
 import { copyDocument } from '../services/documentStorage';
+import { tagKey, type TagTone } from '../tagTones';
 
 const getDocument = ({ documents }: Application, documentId: string) => {
     const document = documents[documentId];
@@ -93,6 +94,20 @@ export const cloneDocument: ActionWithParam<string> = ({ state, effects }, docum
 /** Records the time of a local edit before it is saved and shared. */
 export const markDocumentModified: ActionWithParam<string> = ({ state }, documentId) => {
     getDocument(state, documentId).modified = new Date();
+};
+
+/** Gives a tag a tone on every document that has it; a tone does not date them. */
+export const setTagTone: ActionWithParam<{ tag: string; tone: TagTone }> = (
+    { state },
+    { tag, tone }
+) => {
+    const key = tagKey(tag);
+
+    Object.values(state.documents).forEach((document) => {
+        if (document.tags.some((name) => tagKey(name) === key)) {
+            document.tagTones[key] = tone;
+        }
+    });
 };
 
 /** Removes a document added only to hold saved or shared content that could not be read. */

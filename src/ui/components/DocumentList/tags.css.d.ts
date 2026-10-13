@@ -8,11 +8,15 @@ declare namespace TagsCssNamespace {
     heading: string;
     more: string;
     option: string;
+    optionRow: string;
     options: string;
     picker: string;
     pill: string;
     search: string;
     tags: string;
+    toneButton: string;
+    toneSwatch: string;
+    tones: string;
   }
 }
 

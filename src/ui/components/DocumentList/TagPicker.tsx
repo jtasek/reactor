@@ -1,5 +1,6 @@
-import React, { ChangeEvent, FC, FormEvent, useRef, useState } from 'react';
+import React, { ChangeEvent, FC, FormEvent, MouseEvent, useRef, useState } from 'react';
 import { documentTagTone, normalizeTags } from 'src/app/documentList';
+import { TAG_TONES, type TagTone } from 'src/app/tagTones';
 import { createPortal } from 'react-dom';
 import { Check, Plus } from 'lucide-react';
 import menuStyles from '../ContextMenu/styles.css';
@@ -10,8 +11,10 @@ interface Props {
     anchor: HTMLButtonElement;
     title: string;
     availableTags: string[];
+    tagTones: Readonly<Record<string, TagTone>>;
     selectedTags: string[];
     onChange: (tags: string[]) => void;
+    onTone: (tag: string, tone: TagTone) => void;
     onClose: () => void;
     allowCreate?: boolean;
 }
@@ -20,12 +23,15 @@ export const TagPicker: FC<Props> = ({
     anchor,
     title,
     availableTags,
+    tagTones,
     selectedTags,
     onChange,
+    onTone,
     onClose,
     allowCreate = false
 }) => {
     const [search, setSearch] = useState('');
+    const [coloring, setColoring] = useState<string | null>(null);
     const popup = useRef<HTMLDivElement>(null);
     useAnchoredPopup(popup, anchor, onClose);
     const searchInput = useRef<HTMLInputElement>(null);
@@ -49,6 +55,16 @@ export const TagPicker: FC<Props> = ({
             return;
         }
         onChange(selected.filter((tag) => tag.toLowerCase() !== value.toLowerCase()));
+    };
+    const toggleColoring = (tag: string) => setColoring(coloring === tag ? null : tag);
+    const chooseTone = (event: MouseEvent<HTMLButtonElement>, tag: string, tone: TagTone) => {
+        // Focus goes back to the tag's color button as the swatches close.
+        event.currentTarget
+            .closest(`.${styles.optionRow}`)
+            ?.querySelector<HTMLButtonElement>(`.${styles.toneButton}`)
+            ?.focus();
+        onTone(tag, tone);
+        setColoring(null);
     };
     const createTag = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -84,24 +100,60 @@ export const TagPicker: FC<Props> = ({
                     onChange={changeSearch}
                 />
                 <div className={styles.options}>
-                    {matches.map((tag) => (
-                        <label key={tag} className={`${menuStyles.row} ${styles.option}`}>
-                            <input
-                                type="checkbox"
-                                value={tag}
-                                checked={selectedKeys.has(tag.toLowerCase())}
-                                onChange={changeSelection}
-                            />
-                            <span className={styles.pill} data-tone={documentTagTone(tag)}>
-                                {tag}
-                            </span>
-                            <span className={styles.check} aria-hidden="true">
-                                {selectedKeys.has(tag.toLowerCase()) && (
-                                    <Check size={16} strokeWidth={1.5} />
+                    {matches.map((tag) => {
+                        const tone = documentTagTone(tag, tagTones);
+
+                        return (
+                            <div key={tag} className={styles.optionRow}>
+                                <label className={`${menuStyles.row} ${styles.option}`}>
+                                    <input
+                                        type="checkbox"
+                                        value={tag}
+                                        checked={selectedKeys.has(tag.toLowerCase())}
+                                        onChange={changeSelection}
+                                    />
+                                    <span className={styles.pill} data-tone={tone}>
+                                        {tag}
+                                    </span>
+                                    <span className={styles.check} aria-hidden="true">
+                                        {selectedKeys.has(tag.toLowerCase()) && (
+                                            <Check size={16} strokeWidth={1.5} />
+                                        )}
+                                    </span>
+                                </label>
+                                <button
+                                    type="button"
+                                    className={styles.toneButton}
+                                    data-tone={tone}
+                                    aria-label={`Color of ${tag}`}
+                                    title={`Color of ${tag}`}
+                                    aria-expanded={coloring === tag}
+                                    onClick={() => toggleColoring(tag)}
+                                />
+                                {coloring === tag && (
+                                    <div
+                                        className={styles.tones}
+                                        role="radiogroup"
+                                        aria-label={`Colors for ${tag}`}
+                                    >
+                                        {TAG_TONES.map((option) => (
+                                            <button
+                                                key={option}
+                                                type="button"
+                                                role="radio"
+                                                className={styles.toneSwatch}
+                                                data-tone={option}
+                                                aria-checked={option === tone}
+                                                aria-label={option}
+                                                title={option}
+                                                onClick={(event) => chooseTone(event, tag, option)}
+                                            />
+                                        ))}
+                                    </div>
                                 )}
-                            </span>
-                        </label>
-                    ))}
+                            </div>
+                        );
+                    })}
                     {matches.length === 0 && !canCreate && (
                         <p className={styles.empty}>
                             {options.length === 0 ? 'No tags yet.' : 'No matching tags.'}

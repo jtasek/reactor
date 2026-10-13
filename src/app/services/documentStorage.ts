@@ -17,6 +17,7 @@ import { orderAbove, resolveDrawOrderTies, validDrawOrder } from '../drawOrder';
 import { isClosedShape, isHexColor, isStrokedShape } from '../utils';
 import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
+import { isTagTone, type TagTone } from '../tagTones';
 
 export const PERSISTENCE_KEY = 'reactor';
 export const SCHEMA_VERSION = 4;
@@ -73,6 +74,7 @@ export type DocumentFields = Pick<
     | 'locked'
     | 'grid'
     | 'tags'
+    | 'tagTones'
 > & {
     created: string;
     modified: string;
@@ -193,6 +195,19 @@ function size(value: unknown): Size {
     const s = record(value);
 
     return { width: number(s.width, 0), height: number(s.height, 0) };
+}
+
+/** Chosen tag tones, leaving out any that is not a tone; none when absent. */
+function tones(value: unknown): Record<string, TagTone> {
+    if (value === undefined) {
+        return {};
+    }
+
+    return Object.fromEntries(
+        Object.entries(record(value)).filter((entry): entry is [string, TagTone] =>
+            isTagTone(entry[1])
+        )
+    );
 }
 
 function list<T>(value: unknown, read: (item: unknown) => T): T[] {
@@ -588,6 +603,7 @@ function readFields(d: Record<string, unknown>): DocumentFields {
         modifiedBy: text(d.modifiedBy),
         ...(d.description === undefined ? {} : { description: text(d.description) }),
         tags: list(d.tags, text),
+        tagTones: tones(d.tagTones),
         grid: {
             width: positive(grid.width),
             height: positive(grid.height),

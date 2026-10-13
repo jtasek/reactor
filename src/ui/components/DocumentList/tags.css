@@ -27,37 +27,51 @@
     text-align: left;
 }
 
-.pill[data-tone='red'] {
+.pill[data-tone='red'],
+.toneButton[data-tone='red'],
+.toneSwatch[data-tone='red'] {
     --tag-background: var(--tag-red-background);
     --tag-color: var(--tag-red-color);
 }
 
-.pill[data-tone='orange'] {
+.pill[data-tone='orange'],
+.toneButton[data-tone='orange'],
+.toneSwatch[data-tone='orange'] {
     --tag-background: var(--tag-orange-background);
     --tag-color: var(--tag-orange-color);
 }
 
-.pill[data-tone='yellow'] {
+.pill[data-tone='yellow'],
+.toneButton[data-tone='yellow'],
+.toneSwatch[data-tone='yellow'] {
     --tag-background: var(--tag-yellow-background);
     --tag-color: var(--tag-yellow-color);
 }
 
-.pill[data-tone='green'] {
+.pill[data-tone='green'],
+.toneButton[data-tone='green'],
+.toneSwatch[data-tone='green'] {
     --tag-background: var(--tag-green-background);
     --tag-color: var(--tag-green-color);
 }
 
-.pill[data-tone='blue'] {
+.pill[data-tone='blue'],
+.toneButton[data-tone='blue'],
+.toneSwatch[data-tone='blue'] {
     --tag-background: var(--tag-blue-background);
     --tag-color: var(--tag-blue-color);
 }
 
-.pill[data-tone='purple'] {
+.pill[data-tone='purple'],
+.toneButton[data-tone='purple'],
+.toneSwatch[data-tone='purple'] {
     --tag-background: var(--tag-purple-background);
     --tag-color: var(--tag-purple-color);
 }
 
-.pill[data-tone='gray'] {
+.pill[data-tone='gray'],
+.toneButton[data-tone='gray'],
+.toneSwatch[data-tone='gray'] {
     --tag-background: var(--tag-gray-background);
     --tag-color: var(--tag-gray-color);
 }
@@ -149,6 +163,67 @@
     position: relative;
     justify-content: space-between;
     padding: 0 6px;
+}
+
+.optionRow {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.optionRow .option {
+    flex: 1;
+    min-width: 0;
+}
+
+/* A tag's color, as a dot that opens the swatches. */
+.picker .toneButton {
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    flex: none;
+    height: 24px;
+    padding: 0;
+    position: relative;
+    width: 24px;
+}
+
+.picker .toneButton::before {
+    background: var(--tag-color);
+    border-radius: 50%;
+    content: '';
+    height: 10px;
+    left: 7px;
+    position: absolute;
+    top: 7px;
+    width: 10px;
+}
+
+.picker .toneButton:hover {
+    background: var(--menu-hover);
+}
+
+.tones {
+    display: flex;
+    flex-basis: 100%;
+    gap: 6px;
+    padding: 4px 6px 6px;
+}
+
+.picker .toneSwatch {
+    background: var(--tag-background);
+    border: 2px solid var(--tag-color);
+    border-radius: 50%;
+    cursor: pointer;
+    height: 20px;
+    padding: 0;
+    width: 20px;
+}
+
+.picker .toneSwatch[aria-checked='true'] {
+    outline: var(--focus-ring-width) solid var(--tag-color);
+    outline-offset: 2px;
 }
 
 .option input {

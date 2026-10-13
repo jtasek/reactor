@@ -255,6 +255,27 @@ describe('document modification dates', () => {
         database.close();
     });
 
+    it('saves and shares a tag tone without dating the documents that have the tag', async () => {
+        const indexedDB = new IDBFactory();
+        const first = await start(indexedDB);
+        const id = first.store.state.currentDocumentId;
+
+        first.store.actions.updateDocument({ id, tags: ['Design'] });
+        first.effects.collaboration.flush();
+
+        vi.setSystemTime(later);
+        first.store.actions.setTagTone({ tag: ' design ', tone: 'purple' });
+        first.effects.collaboration.flush();
+
+        expect(first.store.state.documents[id].tagTones).toEqual({ design: 'purple' });
+        expect(first.store.state.documents[id].modified).toEqual(created);
+
+        const second = await start(indexedDB);
+
+        expect(second.store.state.documents[id].tagTones).toEqual({ design: 'purple' });
+        expect(second.store.state.documents[id].modified).toEqual(created);
+    });
+
     it('gives a clone fresh dates and preserves its source dates', async () => {
         const { store, effects } = await start();
         const sourceId = store.state.currentDocumentId;

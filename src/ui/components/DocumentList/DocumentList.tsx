@@ -3,6 +3,7 @@ import type { Document } from 'src/app/types';
 import { ChevronDown, LayoutGrid, List, Plus, Search, Tag, X } from 'lucide-react';
 import {
     DocumentDateFilter,
+    chosenTagTones,
     documentTagTone,
     matchesDocument,
     normalizeTags
@@ -13,7 +14,7 @@ import tagStyles from './tags.css';
 import styles from './styles.css';
 
 interface Props {
-    documents: Pick<Document, 'id' | 'name' | 'modified' | 'tags'>[];
+    documents: Pick<Document, 'id' | 'name' | 'modified' | 'tags' | 'tagTones'>[];
     currentDocumentId: string;
     onCreate: () => void;
 }
@@ -34,6 +35,7 @@ export const DocumentList: FC<Props> = ({ documents, currentDocumentId, onCreate
     const dateButton = useRef<HTMLButtonElement>(null);
     const tagsButton = useRef<HTMLButtonElement>(null);
     const [now, setNow] = useState(() => new Date());
+    const tagTones = chosenTagTones(documents);
     const availableTags = normalizeTags(documents.flatMap((document) => document.tags)).sort(
         (first, second) => first.localeCompare(second)
     );
@@ -151,7 +153,7 @@ export const DocumentList: FC<Props> = ({ documents, currentDocumentId, onCreate
                         <button
                             key={tag}
                             className={tagStyles.pill}
-                            data-tone={documentTagTone(tag)}
+                            data-tone={documentTagTone(tag, tagTones)}
                             type="button"
                             aria-label={`Remove ${tag} filter`}
                             onClick={() => setTags(tags.filter((selected) => selected !== tag))}
@@ -181,6 +183,7 @@ export const DocumentList: FC<Props> = ({ documents, currentDocumentId, onCreate
                             documentId={id}
                             current={id === currentDocumentId}
                             availableTags={availableTags}
+                            tagTones={tagTones}
                             onFilterTag={filterTag}
                             now={now}
                         />
@@ -201,7 +204,7 @@ export const DocumentList: FC<Props> = ({ documents, currentDocumentId, onCreate
                         options={availableTags.map((tag) => ({
                             value: tag,
                             label: tag,
-                            tone: documentTagTone(tag)
+                            tone: documentTagTone(tag, tagTones)
                         }))}
                         selected={tags}
                         multiple
