@@ -80,6 +80,19 @@ describe('assets', () => {
         expect(headers.get('x-content-type-options')).toBe('nosniff');
     });
 
+    it('answers whether it keeps an image without sending it', async () => {
+        const { call, ada, path, upload } = await serveDocument();
+        const ask = () => call('HEAD', path(PNG), { cookie: ada.cookie });
+
+        expect((await ask()).status).toBe(404);
+        await upload(PNG);
+
+        const kept = await ask();
+
+        expect(kept.status).toBe(200);
+        expect((await kept.arrayBuffer()).byteLength).toBe(0);
+    });
+
     it('answers an upload repeated as already kept', async () => {
         const { upload } = await serveDocument();
 

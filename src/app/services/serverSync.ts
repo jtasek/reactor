@@ -91,7 +91,7 @@ export class ServerSync {
         if (options.images) {
             this.images = createAssetSync(
                 { ...options.images, document: options.events.document },
-                options.transport.assets
+                options.images.server
             );
             options.images.use(this.images);
         }
@@ -199,7 +199,10 @@ export class ServerSync {
     send(documentId: string, update: Uint8Array): void {
         const link = this.links.get(documentId);
 
-        this.images?.changed(documentId);
+        // Images go only with a document the server has; one it lacks would refuse them.
+        if (link) {
+            this.images?.changed(documentId);
+        }
         if (link?.held) {
             Yjs.applyUpdate(link.doc, update, OUTGOING);
         }

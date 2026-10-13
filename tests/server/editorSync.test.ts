@@ -465,4 +465,72 @@ describe('images when signed in', () => {
             )
         );
     });
+
+    it('uploads an image added to another document for that document too', async () => {
+        const served = await serve();
+        const { cookie } = await served.user('ada@example.com');
+        const first = await device(served, cookie);
+        const source = await addImage(first);
+
+        // The server takes only UUIDs as document ids.
+        first.effects.newId.mockImplementation(() => crypto.randomUUID());
+        first.store.actions.newDocument();
+        const otherId = first.store.state.currentDocumentId;
+
+        first.store.actions.addShape({
+            type: 'image',
+            position: { x: 0, y: 0 },
+            size: { width: 20, height: 10 },
+            source
+        });
+
+        await vi.waitFor(async () =>
+            expect((await served.call('HEAD', assetPath(otherId, source), { cookie })).status).toBe(
+                200
+            )
+        );
+    });
+
+    it('says once that the workspace has no room for more images', async () => {
+        const served = await serve({ assetQuota: 4 });
+        const { cookie } = await served.user('ada@example.com');
+        const first = await device(served, cookie);
+        const notices = () =>
+            first.store.state.notifications.filter(({ type }) => type === 'error').length;
+
+        await addImage(first);
+        await vi.waitFor(() => expect(notices()).toBe(1));
+
+        const { source } = await first.effects.assets.add(new Blob([new Uint8Array([...png, 4])]));
+
+        first.store.actions.addShape({
+            type: 'image',
+            position: { x: 40, y: 0 },
+            size: { width: 20, height: 10 },
+            source
+        });
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        expect(notices()).toBe(1);
+    });
+
+    it('uploads an image again with the next change once the server can be reached', async () => {
+        const served = await serve();
+        const { cookie } = await served.user('ada@example.com');
+        let online = true;
+        const first = await device(served, cookie, { online: () => online });
+        const [documentId] = documentIds(first);
+
+        online = false;
+        const source = await addImage(first);
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        online = true;
+        first.store.actions.addShape(rectangle);
+
+        await vi.waitFor(async () =>
+            expect(
+                (await served.call('HEAD', assetPath(documentId, source), { cookie })).status
+            ).toBe(200)
+        );
+    });
 });

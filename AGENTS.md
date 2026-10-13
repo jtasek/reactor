@@ -312,11 +312,13 @@ Examples worth modelling new tools on:
   set as `state.tools.imageToPlace` with its measured ratio. The shape's `source` is
   `asset:<hash>`, never image data, and `useImageUrl` (`src/app/imageHooks.ts`) shows it
   through a blob URL (`src/app/services/assets.ts`). Signed in, server sync shares images
-  (`src/app/services/assetSync.ts`, loaded with it): each time a document changes or links,
-  it uploads the images the document's shapes show that the server lacks for it, so a pasted
-  or cloned shape's image is uploaded for its new document too, and an image this browser
-  lacks is fetched for its document, asked for again a few times while another copy has not
-  uploaded it, and kept.
+  (`src/app/services/assetSync.ts`, loaded with it): each time a document the server has
+  changes or links, it uploads, three at a time, the images its shapes and imported library
+  components show that the server lacks for it, so a pasted or cloned shape's image is
+  uploaded for its new document too; the images found on the server are remembered on the
+  device. An image this browser lacks is fetched for its document and kept, asked for again
+  a few times, and every 30 seconds while its shape shows, as another copy may upload it
+  later.
 - `Text` — two-phase: select tool → click canvas to place + enter typing mode → type → Enter
   to commit (Escape cancels). The placement click starts typing inside `execute` (synchronous).
 - `Select` — marquee: press + drag draws the dashed rect; `selectShapes` selects shapes whose

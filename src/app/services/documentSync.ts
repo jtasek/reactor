@@ -422,6 +422,7 @@ export async function startDocumentSync(
             },
             signedIn: async () => (await effects.accounts.session())?.id === owner,
             images: {
+                server: effects.assetServer(),
                 database: () => database,
                 displayError: instance.actions.displayError,
                 use: effects.assets.useSync

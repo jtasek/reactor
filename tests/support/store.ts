@@ -99,10 +99,8 @@ export function createTestStore(
         openChannel: options.openChannel ?? quietChannel,
         accounts: options.accounts ?? noAccounts,
         api: options.api ?? offline,
-        serverTransport: () => ({
-            ...(options.serverTransport ?? { url: 'ws://127.0.0.1:9/sync' }),
-            assets: options.assetServer
-        }),
+        serverTransport: () => options.serverTransport ?? { url: 'ws://127.0.0.1:9/sync' },
+        assetServer: () => options.assetServer,
         clipboard: createClipboard(systemClipboard),
         viewSize: () => ({ width: 1000, height: 800 }),
         dragTargets: createDragTargets(),

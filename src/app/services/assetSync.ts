@@ -88,8 +88,51 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 /** How long to wait, in turn, before asking again for an image not uploaded yet. */
 const DOWNLOAD_RETRIES_MS = [1000, 3000, 10000];
 
+/** How many images are looked for or uploaded at once. */
+const MAX_UPLOADS = 3;
+
+/** Where this device remembers the images the server has, as `documentId/hash`, between starts. */
+const KNOWN_KEY = 'reactor:shared-images';
+
+/** How many of those it remembers; the oldest are forgotten, to be looked for again. */
+const MAX_KNOWN = 5000;
+
+/** The images the server has, as this device remembers them; none where storage is unavailable. */
+function loadKnown(): string[] {
+    try {
+        const known: unknown = JSON.parse(localStorage.getItem(KNOWN_KEY) ?? '[]');
+
+        return Array.isArray(known) ? known.filter((key) => typeof key === 'string') : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveKnown(known: Set<string>) {
+    try {
+        localStorage.setItem(KNOWN_KEY, JSON.stringify([...known].slice(-MAX_KNOWN)));
+    } catch {
+        // Without storage, images are looked for again on the next start.
+    }
+}
+
+/** The image sources a document's shapes show, imported library components' included. */
+const imageSources = (document: Document | undefined) =>
+    [
+        ...Object.values(document?.shapes ?? {}),
+        ...Object.values(document?.components ?? {}).flatMap((component) =>
+            Object.values(component.sourceShapes ?? {})
+        )
+    ].flatMap((shape) =>
+        shape.type === 'image' && shape.source.startsWith(ASSET_PREFIX)
+            ? [shape.source.slice(ASSET_PREFIX.length)]
+            : []
+    );
+
 /** What image sharing reads of the editor, and how it hands the editor its downloads. */
 export interface AssetSyncSource {
+    /** The server's calls for images; its own over HTTP without. */
+    server?: AssetServer;
     document(documentId: string): Document | undefined;
     database(): DocumentDatabase | undefined;
     displayError(message: string): void;
@@ -101,9 +144,34 @@ export interface AssetSyncSource {
  * that the server lacks for it, and fetches the ones this browser lacks.
  */
 export function createAssetSync(editor: AssetSyncSource, server = assetApi): AssetSync {
-    /** The images, as `documentId/hash`, the server has or is being given for a document. */
-    const shared = new Set<string>();
+    /** The images, as `documentId/hash`, the server has. */
+    const known = new Set(loadKnown());
+    /** Those it has or is being given, or that are another copy's to upload. */
+    const shared = new Set(known);
     const changed = new Set<string>();
+    const waiting: Array<() => void> = [];
+    let running = 0;
+    let toldNoRoom = false;
+
+    /** Runs `task` once fewer than `MAX_UPLOADS` others run. */
+    const queued = async (task: () => Promise<void>) => {
+        if (running >= MAX_UPLOADS) {
+            await new Promise<void>((resolve) => waiting.push(resolve));
+        }
+
+        running++;
+        try {
+            await task();
+        } finally {
+            running--;
+            waiting.shift()?.();
+        }
+    };
+    const remember = (key: string) => {
+        known.delete(key);
+        known.add(key);
+        saveKnown(known);
+    };
 
     /**
      * Uploads a document's images that the server lacks for it. One kept only by
@@ -118,19 +186,29 @@ export function createAssetSync(editor: AssetSyncSource, server = assetApi): Ass
         }
 
         shared.add(key);
-        try {
-            if (await server.hasAsset(documentId, hash)) {
-                return;
-            }
+        await queued(async () => {
+            try {
+                if (await server.hasAsset(documentId, hash)) {
+                    remember(key);
+                    return;
+                }
 
-            const asset = await editor.database()?.asset(hash);
+                const asset = await editor.database()?.asset(hash);
+                const uploaded = asset && (await server.uploadAsset(documentId, hash, asset));
 
-            if (asset && (await server.uploadAsset(documentId, hash, asset)) === 'noRoom') {
-                editor.displayError(NO_ROOM);
+                if (uploaded === 'kept') {
+                    remember(key);
+                }
+
+                // Once a session says it; the next images would only repeat it.
+                if (uploaded === 'noRoom' && !toldNoRoom) {
+                    toldNoRoom = true;
+                    editor.displayError(NO_ROOM);
+                }
+            } catch {
+                shared.delete(key);
             }
-        } catch {
-            shared.delete(key);
-        }
+        });
     };
 
     return {
@@ -139,14 +217,8 @@ export function createAssetSync(editor: AssetSyncSource, server = assetApi): Ass
             if (changed.size === 0) {
                 queueMicrotask(() => {
                     changed.forEach((id) =>
-                        new Set(
-                            Object.values(editor.document(id)?.shapes ?? {}).map((shape) =>
-                                shape.type === 'image' ? shape.source : ''
-                            )
-                        ).forEach(
-                            (source) =>
-                                source.startsWith(ASSET_PREFIX) &&
-                                void share(id, source.slice(ASSET_PREFIX.length))
+                        new Set(imageSources(editor.document(id))).forEach(
+                            (hash) => void share(id, hash)
                         )
                     );
                     changed.clear();

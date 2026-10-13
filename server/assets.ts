@@ -181,8 +181,17 @@ export async function addDocumentAsset(
     });
 }
 
-/** An image a document uses, or undefined when it uses none by that hash. */
-export async function documentAsset(db: Db, blobs: BlobStorage, documentId: string, hash: string) {
+/**
+ * An image a document uses, or undefined when it uses none by that hash; without
+ * `withBytes`, its bytes are left in storage and come back empty.
+ */
+export async function documentAsset(
+    db: Db,
+    blobs: BlobStorage,
+    documentId: string,
+    hash: string,
+    withBytes = true
+) {
     const asset = await db
         .selectFrom('document_assets')
         .innerJoin('assets', 'assets.hash', 'document_assets.hash')
@@ -190,7 +199,7 @@ export async function documentAsset(db: Db, blobs: BlobStorage, documentId: stri
         .where('document_assets.document_id', '=', documentId)
         .where('document_assets.hash', '=', hash)
         .executeTakeFirst();
-    const bytes = asset && (await blobs.get(hash));
+    const bytes = asset && (withBytes ? await blobs.get(hash) : new Uint8Array());
 
     return bytes && { type: asset.type, bytes };
 }
