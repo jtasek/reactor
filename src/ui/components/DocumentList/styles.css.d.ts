@@ -1,9 +1,23 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
     actions: string;
+    card: string;
+    cardBody: string;
+    cardTitle: string;
     current: string;
     documentList: string;
+    grid: string;
     header: string;
+    iconActions: string;
+    iconButton: string;
+    meta: string;
+    nameButton: string;
+    nameInput: string;
+    newButton: string;
+    panel: string;
+    thumbnail: string;
+    thumbnailEmpty: string;
+    thumbnailSvg: string;
   }
 }
 
