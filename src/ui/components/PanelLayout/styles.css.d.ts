@@ -5,10 +5,12 @@ declare namespace StylesCssNamespace {
     column: string;
     content: string;
     dock: string;
+    dockGap: string;
     dockZones: string;
     docked: string;
     dragPreview: string;
     dragSource: string;
+    dropMarker: string;
     explorerPanel: string;
     floating: string;
     grip: string;

@@ -442,6 +442,8 @@ export type PanelPlacement = {
     position: Point;
     /** The size its corners were dragged to: the default width without `width`, its content's height without `height`. */
     size?: { width?: number; height?: number };
+    /** Its place among the panels docked with it, the lowest first. */
+    order?: number;
 };
 
 export type Application = {

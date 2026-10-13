@@ -56,6 +56,21 @@
     right: var(--dock-side-width);
 }
 
+/* Where a dragged panel would go among the panels of the dock under the pointer. */
+.dropMarker {
+    align-self: stretch;
+    background: var(--accent);
+    border-radius: 2px;
+    flex: none;
+    height: 3px;
+    pointer-events: none;
+}
+
+/* Panels docked to a side sit at the top of its zone, just under its top corner's. */
+.dockGap {
+    flex: 0 0 var(--panel-gap);
+}
+
 .spacer {
     flex: 1 0 var(--panel-gap);
 }

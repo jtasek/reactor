@@ -44,4 +44,14 @@ describe('panel layout', () => {
         ).toEqual({ height: 200 });
         expect(layout.inspector).toEqual({ dock: null, position: { x: 10, y: 20 } });
     });
+
+    it("keeps a docked panel's place among the others, and drops an invalid one", () => {
+        const layout = readPanelLayout({
+            stats: { dock: 'right', position: { x: 1, y: 2 }, order: 1 },
+            explorer: { dock: 'right', position: { x: 1, y: 2 }, order: 'first' }
+        });
+
+        expect(layout.stats.order).toBe(1);
+        expect(layout.explorer).toEqual({ dock: 'right', position: { x: 1, y: 2 } });
+    });
 });

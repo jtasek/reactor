@@ -54,6 +54,8 @@ interface Drag {
     pointer: { x: number; y: number };
     offset: { x: number; y: number };
     dock: Dock;
+    /** Where among the other panels in `dock` the panel would go. */
+    index: number;
     title: string;
     docking: Docking;
 }
@@ -175,6 +177,8 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
     const handle = useRef<HTMLButtonElement>(null);
     const panelLayer = useRef<HTMLDivElement>(null);
     const pendingFocus = useRef<string | null>(null);
+    /** The docked panels' middles as a drag began; only the drop marker moves them meanwhile. */
+    const dockedMiddles = useRef<Array<{ dock?: string; id?: string; middle: number }>>([]);
     const dockAtPointer = (x: number, y: number, docking: Docking) => {
         // Read the rendered column so hit testing follows the panel-width token and viewport cap.
         const sideDock = panelLayer.current?.querySelector('[data-dock="left"]');
@@ -187,12 +191,26 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
 
         return allowsDock(dock, docking) ? dock : null;
     };
+    /** How many of the other panels docked in `dock` lie above `y`, where a drop lands. */
+    const dropIndex = (dock: Dock, id: string, y: number) =>
+        dockedMiddles.current.filter(
+            (panel) => panel.dock === dock && panel.id !== id && panel.middle < y
+        ).length;
     const panelDock = ({ props }: ReactElement<DockablePanelProps>): Dock => {
         const dock = panelLayout[props.id]?.dock ?? null;
 
         // Old saved placements can predate a panel's docking restrictions.
         return allowsDock(dock, props.docking ?? 'both') ? dock : null;
     };
+    /** The panels docked in `dock`, in the order they were placed there. */
+    const dockedPanels = (dock: DockZone) =>
+        visiblePanels
+            .filter((panel) => panelDock(panel) === dock)
+            .sort(
+                (first, second) =>
+                    (panelLayout[first.props.id]?.order ?? Infinity) -
+                        (panelLayout[second.props.id]?.order ?? Infinity) || 0
+            );
 
     useEffect(() => {
         const resize = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
@@ -313,13 +331,50 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
         const resizing = resize?.id === id ? resize : undefined;
         const chosenSize = resizing?.size ?? placement.size;
         const shownPosition = resizing?.position ?? position;
-        const place = (next: Omit<PanelPlacement, 'size'>) =>
-            setPanelPlacement({
-                id,
-                placement: placement.size ? { ...next, size: placement.size } : next
+        /** Places the panel; docked, it goes at `index` among the other panels there. */
+        const place = (next: Omit<PanelPlacement, 'size' | 'order'>, index = Infinity) => {
+            const sized = placement.size ? { ...next, size: placement.size } : next;
+
+            if (!next.dock) {
+                setPanelPlacement({ id, placement: sized });
+                return;
+            }
+
+            const others = dockedPanels(next.dock)
+                .map((panel) => panel.props.id)
+                .filter((other) => other !== id);
+            const orders = others
+                .map((other) => panelLayout[other]?.order)
+                .filter((order): order is number => order !== undefined);
+
+            // With every other panel ordered, the panel alone takes a place between its neighbors.
+            if (orders.length === others.length) {
+                const at = Math.min(index, others.length);
+                const above = orders[at - 1];
+                const below = orders[at];
+                const order =
+                    above === undefined
+                        ? (below ?? 1) - 1
+                        : below === undefined
+                          ? above + 1
+                          : (above + below) / 2;
+
+                setPanelPlacement({ id, placement: { ...sized, order } });
+                return;
+            }
+
+            [...others.slice(0, index), id, ...others.slice(index)].forEach((panelId, order) => {
+                const current: PanelPlacement | undefined =
+                    panelId === id ? sized : panelLayout[panelId];
+
+                if (current && (panelId === id || current.order !== order)) {
+                    setPanelPlacement({ id: panelId, placement: { ...current, order } });
+                }
             });
+        };
         const placeWithKeyboard = (next: PanelPlacement) => {
-            if (!allowsDock(next.dock, docking)) {
+            // Docking where it already is would move it to the end of its dock.
+            if (!allowsDock(next.dock, docking) || (next.dock !== null && next.dock === dock)) {
                 return;
             }
             if (next.dock !== dock) {
@@ -393,6 +448,7 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                 placement: {
                     dock: placement.dock,
                     position,
+                    ...(placement.order === undefined ? {} : { order: placement.order }),
                     ...(keptWidth === undefined ? {} : { size: { width: keptWidth } })
                 }
             });
@@ -488,6 +544,19 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
             event.stopPropagation();
             event.currentTarget.setPointerCapture(event.pointerId);
             handle.current = event.currentTarget;
+            dockedMiddles.current = [
+                ...(panelLayer.current?.querySelectorAll<HTMLElement>(
+                    '[data-dock] > [data-panel]'
+                ) ?? [])
+            ].map((element) => {
+                const panel = element.getBoundingClientRect();
+
+                return {
+                    dock: element.parentElement?.dataset.dock,
+                    id: element.dataset.panel,
+                    middle: panel.top + panel.height / 2
+                };
+            });
             setDrag({
                 id,
                 pointerId: event.pointerId,
@@ -497,7 +566,8 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                 docking,
                 pointer: { x: event.clientX, y: event.clientY },
                 offset: { x: event.clientX - bounds.left, y: event.clientY - bounds.top },
-                dock: dockAtPointer(event.clientX, event.clientY, docking)
+                dock: null,
+                index: 0
             });
         };
 
@@ -513,11 +583,14 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                 )
             )
                 return;
+            const dock = dockAtPointer(event.clientX, event.clientY, docking);
+
             setDrag({
                 ...drag,
                 moved: true,
                 pointer: { x: event.clientX, y: event.clientY },
-                dock: dockAtPointer(event.clientX, event.clientY, docking)
+                dock,
+                index: dropIndex(dock, id, event.clientY)
             });
         };
 
@@ -537,13 +610,16 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                 return;
             }
             const nextDock = dockAtPointer(event.clientX, event.clientY, docking);
-            place({
-                dock: nextDock,
-                position: {
-                    x: Math.max(0, Math.min(event.clientX - drag.offset.x, maxX)),
-                    y: Math.max(0, Math.min(event.clientY - drag.offset.y, maxY))
-                }
-            });
+            place(
+                {
+                    dock: nextDock,
+                    position: {
+                        x: Math.max(0, Math.min(event.clientX - drag.offset.x, maxX)),
+                        y: Math.max(0, Math.min(event.clientY - drag.offset.y, maxY))
+                    }
+                },
+                dropIndex(nextDock, id, event.clientY)
+            );
             setDrag(undefined);
         };
 
@@ -578,7 +654,7 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                 <button
                     className={styles.handle}
                     type="button"
-                    aria-label={`Move ${title}. Use arrow keys to move, Shift and arrow keys to dock, Enter to float.`}
+                    aria-label={`Move ${title}. Use arrow keys to move, Shift and arrow keys to dock, Alt and up or down to reorder it in its dock, Enter to float.`}
                     title={id === 'sideBar' ? title : undefined}
                     onPointerDown={begin}
                     onPointerMove={move}
@@ -611,6 +687,21 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                         }
                         if (event.key.startsWith('Arrow')) {
                             event.preventDefault();
+                            if (
+                                event.altKey &&
+                                dock &&
+                                (event.key === 'ArrowUp' || event.key === 'ArrowDown')
+                            ) {
+                                const at = dockedPanels(dock)
+                                    .map((panel) => panel.props.id)
+                                    .indexOf(id);
+
+                                place(
+                                    { dock, position },
+                                    Math.max(0, at + (event.key === 'ArrowUp' ? -1 : 1))
+                                );
+                                return;
+                            }
                             if (event.shiftKey) {
                                 const dock =
                                     event.key === 'ArrowLeft'
@@ -650,7 +741,19 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
     };
 
     const docked = (dock: DockZone) => {
-        const panels = visiblePanels.filter((panel) => panelDock(panel) === dock);
+        const panels = dockedPanels(dock);
+        // While a panel is dragged here, a line shows where among the others it would go.
+        const marker =
+            drag?.moved && drag.dock === dock ? (
+                <div key="drop" className={styles.dropMarker} data-drop-marker />
+            ) : null;
+        const children = panels.map((panel) => renderPanel(panel, dock));
+
+        if (marker && drag) {
+            const next = panels.filter((panel) => panel.props.id !== drag.id)[drag.index];
+
+            children.splice(next ? panels.indexOf(next) : panels.length, 0, marker);
+        }
 
         return (
             <div
@@ -660,7 +763,7 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                     minHeight: `calc(${panels.length} * var(--panel-header-height) + ${Math.max(0, panels.length - 1)} * var(--panel-gap))`
                 }}
             >
-                {panels.map((panel) => renderPanel(panel, dock))}
+                {children}
             </div>
         );
     };
@@ -677,14 +780,14 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
             />
             <div className={`${styles.column} ${styles.leftColumn}`}>
                 {docked('top-left')}
-                <div className={styles.spacer} />
+                <div className={styles.dockGap} />
                 {docked('left')}
                 <div className={styles.spacer} />
                 {docked('bottom-left')}
             </div>
             <div className={`${styles.column} ${styles.rightColumn}`}>
                 {docked('top-right')}
-                <div className={styles.spacer} />
+                <div className={styles.dockGap} />
                 {docked('right')}
                 <div className={styles.spacer} />
                 {docked('bottom-right')}

@@ -64,11 +64,11 @@ test('right-clicking a shape offers actions for that shape', async ({ page }) =>
 
 test('a shape can be renamed from its context menu header', async ({ page }) => {
     await openEditor(page, ['Explorer']);
-    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    await drawRect(page, { x: 600, y: 100 }, { x: 640, y: 140 });
     const surface = (await page.locator('svg#surface').boundingBox())!;
     const menu = page.locator('[data-cy="context-menu"]');
 
-    await page.mouse.click(surface.x + 320, surface.y + 120, { button: 'right' });
+    await page.mouse.click(surface.x + 620, surface.y + 120, { button: 'right' });
     await menu.getByRole('button', { name: 'Rename rectangle' }).click();
     await menu.getByRole('textbox', { name: 'Name' }).fill('Card background');
     await menu.getByRole('textbox', { name: 'Name' }).press('Enter');
@@ -84,16 +84,16 @@ test('a shape can be renamed from its context menu header', async ({ page }) => 
 
 test('a group can be renamed from its context menu header', async ({ page }) => {
     await openEditor(page, ['Explorer']);
-    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
-    await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
-    await pointer(page, 'pointerdown', { x: 280, y: 80 });
-    await pointer(page, 'pointermove', { x: 460, y: 160 });
-    await pointer(page, 'pointerup', { x: 460, y: 160 });
+    await drawRect(page, { x: 600, y: 100 }, { x: 640, y: 140 });
+    await drawRect(page, { x: 700, y: 100 }, { x: 740, y: 140 });
+    await pointer(page, 'pointerdown', { x: 580, y: 80 });
+    await pointer(page, 'pointermove', { x: 760, y: 160 });
+    await pointer(page, 'pointerup', { x: 760, y: 160 });
     await page.keyboard.press('ControlOrMeta+g');
 
     const surface = (await page.locator('svg#surface').boundingBox())!;
     const menu = page.locator('[data-cy="context-menu"]');
-    await page.mouse.click(surface.x + 320, surface.y + 120, { button: 'right' });
+    await page.mouse.click(surface.x + 620, surface.y + 120, { button: 'right' });
     await expect(menu).toHaveAttribute('aria-label', 'group-1 actions');
     // A group's commands come from the registry, as its own menus' do.
     await expect(menu.getByRole('menuitem', { name: 'Ungroup' })).toBeEnabled();
@@ -112,12 +112,12 @@ test('a group can be renamed from its context menu header', async ({ page }) => 
 
 test('a mixed selection does not offer to rename its selected group', async ({ page }) => {
     await openEditor(page, ['Explorer']);
-    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
-    await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
-    await drawRect(page, { x: 500, y: 100 }, { x: 540, y: 140 });
-    await pointer(page, 'pointerdown', { x: 280, y: 80 });
-    await pointer(page, 'pointermove', { x: 460, y: 160 });
-    await pointer(page, 'pointerup', { x: 460, y: 160 });
+    await drawRect(page, { x: 600, y: 100 }, { x: 640, y: 140 });
+    await drawRect(page, { x: 700, y: 100 }, { x: 740, y: 140 });
+    await drawRect(page, { x: 800, y: 100 }, { x: 840, y: 140 });
+    await pointer(page, 'pointerdown', { x: 580, y: 80 });
+    await pointer(page, 'pointermove', { x: 760, y: 160 });
+    await pointer(page, 'pointerup', { x: 760, y: 160 });
     await page.keyboard.press('ControlOrMeta+g');
     await page
         .getByRole('region', { name: 'Explorer' })
@@ -126,7 +126,7 @@ test('a mixed selection does not offer to rename its selected group', async ({ p
 
     const surface = (await page.locator('svg#surface').boundingBox())!;
     const menu = page.locator('[data-cy="context-menu"]');
-    await page.mouse.click(surface.x + 320, surface.y + 120, { button: 'right' });
+    await page.mouse.click(surface.x + 620, surface.y + 120, { button: 'right' });
 
     await expect(menu).toHaveAttribute('aria-label', '3 selected actions');
     await expect(menu.getByRole('button', { name: 'Rename group' })).toHaveCount(0);
@@ -139,14 +139,14 @@ test('moving a group also moves its hidden member', async ({ page }) => {
         type: 'rectangle',
         name: 'Visible',
         order: 'a0',
-        position: { x: 300, y: 100 },
+        position: { x: 600, y: 100 },
         size: { width: 40, height: 40 }
     });
     const hidden = createShape({
         type: 'rectangle',
         name: 'Hidden',
         order: 'a1',
-        position: { x: 400, y: 100 },
+        position: { x: 700, y: 100 },
         size: { width: 40, height: 40 },
         visible: false
     });
@@ -166,7 +166,7 @@ test('moving a group also moves its hidden member', async ({ page }) => {
 
     const surface = (await page.locator('svg#surface').boundingBox())!;
     const menu = page.locator('[data-cy="context-menu"]');
-    await page.mouse.click(surface.x + 320, surface.y + 120, { button: 'right' });
+    await page.mouse.click(surface.x + 620, surface.y + 120, { button: 'right' });
     await expect(menu).toHaveAttribute('aria-label', 'Pair actions');
     await menu.getByRole('menuitem', { name: 'Move to layer' }).click();
     await expect(menu.getByRole('menuitem', { name: 'Canvas', exact: true })).toBeVisible();
@@ -182,13 +182,13 @@ test('moving a group also moves its hidden member', async ({ page }) => {
 
 test('a component instance can be renamed from its context menu header', async ({ page }) => {
     await openEditor(page, ['Explorer']);
-    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    await drawRect(page, { x: 600, y: 100 }, { x: 640, y: 140 });
     const explorer = page.getByRole('region', { name: 'Explorer' });
     await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
 
     const surface = (await page.locator('svg#surface').boundingBox())!;
     const menu = page.locator('[data-cy="context-menu"]');
-    await page.mouse.click(surface.x + 320, surface.y + 120, { button: 'right' });
+    await page.mouse.click(surface.x + 620, surface.y + 120, { button: 'right' });
     await expect(menu).toHaveAttribute('aria-label', 'component-1 actions');
     await expect(menu.getByRole('menuitem', { name: 'Detach instance' })).toBeEnabled();
 
