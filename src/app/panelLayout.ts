@@ -66,7 +66,7 @@ export function readPanelLayout(value: unknown): Record<string, PanelPlacement> 
             return;
         }
 
-        const { dock, position, size } = saved as Record<string, unknown>;
+        const { dock, position, size, order } = saved as Record<string, unknown>;
 
         if (
             (dock === null || (typeof dock === 'string' && docks.has(dock))) &&
@@ -84,7 +84,8 @@ export function readPanelLayout(value: unknown): Record<string, PanelPlacement> 
             layout[id] = {
                 dock: dock as PanelPlacement['dock'],
                 position: { x: position.x, y: position.y },
-                ...(chosen ? { size: chosen } : {})
+                ...(chosen ? { size: chosen } : {}),
+                ...(typeof order === 'number' && Number.isFinite(order) ? { order } : {})
             };
         } else {
             layout[id] = fallback;

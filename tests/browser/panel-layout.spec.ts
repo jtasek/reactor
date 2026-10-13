@@ -485,3 +485,40 @@ test('dragging a docked panel’s corner keeps the default width for when it flo
         .poll(async () => (await panelBox(page, 'explorer')).width)
         .toBeGreaterThan(column.width);
 });
+
+test('a panel goes where it is dropped among the panels docked with it, and is saved', async ({
+    page
+}) => {
+    await setLayout(page, { explorer: 'right', controlPanel: 'right' });
+    await openEditor(page, ['Explorer']);
+    const right = page.locator('[data-dock="right"]');
+    const order = () =>
+        right
+            .locator(':scope > [data-panel]')
+            .evaluateAll((panels) => panels.map((panel) => panel.getAttribute('data-panel')));
+    const [upper, lower] = (await order()) as [string, string];
+
+    await expect(right.locator(':scope > [data-panel]')).toHaveCount(2);
+    const header = page.locator(`[data-panel="${lower}"] > button`);
+    const from = (await header.boundingBox())!;
+    const target = await panelBox(page, upper);
+
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    // Over the upper part of the panel, which reaches into the top-right dock's band.
+    await page.mouse.move(target.x + target.width / 2, target.y + 12, { steps: 8 });
+    // A line shows where it would go: above the panel under the pointer.
+    const marker = right.locator('[data-drop-marker]');
+    await expect(marker).toHaveCount(1);
+    expect((await marker.boundingBox())!.y).toBeLessThan((await panelBox(page, upper)).y);
+    await page.mouse.up();
+
+    await expect(marker).toHaveCount(0);
+    await expect.poll(order).toEqual([lower, upper]);
+
+    // The order is saved with the layout, to be kept on the next load.
+    const saved = await page.evaluate(() =>
+        JSON.parse(localStorage.getItem('reactor:panel-layout') ?? '{}')
+    );
+    expect(saved[lower].order).toBeLessThan(saved[upper].order);
+});
