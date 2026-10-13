@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { sql } from 'kysely';
 import type { Db } from './schema.ts';
 
 /** The largest image taken, in bytes. */
@@ -45,6 +46,8 @@ export function imageType(bytes: Uint8Array): string | null {
 export interface BlobStorage {
     put(hash: string, bytes: Uint8Array): Promise<void>;
     get(hash: string): Promise<Uint8Array | undefined>;
+    /** Removes the bytes no asset names that were last stored before `before`. */
+    removeUnused(before: Date): Promise<void>;
 }
 
 export const postgresBlobs = (db: Db): BlobStorage => ({
@@ -52,7 +55,18 @@ export const postgresBlobs = (db: Db): BlobStorage => ({
         await db
             .insertInto('asset_blobs')
             .values({ hash, bytes: Buffer.from(bytes) })
-            .onConflict((conflict) => conflict.column('hash').doNothing())
+            // Stored again, they count as new, so a cleanup running meanwhile spares them.
+            .onConflict((conflict) =>
+                conflict.column('hash').doUpdateSet({ created_at: sql`now()` })
+            )
+            .execute();
+    },
+
+    async removeUnused(before) {
+        await db
+            .deleteFrom('asset_blobs')
+            .where('created_at', '<', before)
+            .where('hash', 'not in', (select) => select.selectFrom('assets').select('hash'))
             .execute();
     },
 
@@ -157,7 +171,9 @@ export async function addDocumentAsset(
         await trx
             .insertInto('assets')
             .values({ hash, type, size: bytes.length })
-            .onConflict((conflict) => conflict.column('hash').doNothing())
+            .onConflict((conflict) =>
+                conflict.column('hash').doUpdateSet({ created_at: sql`now()` })
+            )
             .execute();
         await trx.insertInto('document_assets').values({ document_id: documentId, hash }).execute();
 
@@ -165,8 +181,28 @@ export async function addDocumentAsset(
     });
 }
 
-/** An image a document uses, or undefined when it uses none by that hash. */
-export async function documentAsset(db: Db, blobs: BlobStorage, documentId: string, hash: string) {
+/** The hashes of the images a document uses. */
+export async function documentAssetHashes(db: Db, documentId: string) {
+    const rows = await db
+        .selectFrom('document_assets')
+        .select('hash')
+        .where('document_id', '=', documentId)
+        .execute();
+
+    return rows.map(({ hash }) => hash);
+}
+
+/**
+ * An image a document uses, or undefined when it uses none by that hash; without
+ * `withBytes`, its bytes are left in storage and come back empty.
+ */
+export async function documentAsset(
+    db: Db,
+    blobs: BlobStorage,
+    documentId: string,
+    hash: string,
+    withBytes = true
+) {
     const asset = await db
         .selectFrom('document_assets')
         .innerJoin('assets', 'assets.hash', 'document_assets.hash')
@@ -174,7 +210,20 @@ export async function documentAsset(db: Db, blobs: BlobStorage, documentId: stri
         .where('document_assets.document_id', '=', documentId)
         .where('document_assets.hash', '=', hash)
         .executeTakeFirst();
-    const bytes = asset && (await blobs.get(hash));
+    const bytes = asset && (withBytes ? await blobs.get(hash) : new Uint8Array());
 
     return bytes && { type: asset.type, bytes };
+}
+
+/** How long an image no document uses is kept, so an upload linking it is never undone. */
+export const UNUSED_ASSET_GRACE_MS = 60 * 60 * 1000;
+
+/** Deletes the images no document uses that were last added before `before`, and their bytes. */
+export async function deleteUnusedAssets(db: Db, blobs: BlobStorage, before: Date) {
+    await db
+        .deleteFrom('assets')
+        .where('created_at', '<', before)
+        .where('hash', 'not in', (select) => select.selectFrom('document_assets').select('hash'))
+        .execute();
+    await blobs.removeUnused(before);
 }

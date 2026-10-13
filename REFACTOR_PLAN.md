@@ -359,8 +359,7 @@ Feature inventory:
   syncing with the server, and signing out.
 - Shown but not covered by tests: the minimap, guides, data view and stats
   panels.
-- Started, not working yet: images are kept in the browser only, not uploaded yet;
-  the `filtered*` derivations are not used.
+- Started, not working yet: the `filtered*` derivations are not used.
 - Kept for later, not shown: the `Badge`, `Dialog` and `Switch`
   components, and the stylesheets components do not use yet.
 - Planned: plugins and renderers (Phase 9), image upload,
@@ -761,8 +760,11 @@ under the SHA-256 of its bytes. The shape's `source` is `asset:<hash>` and is sh
 through a blob URL, which the content security policy allows. On the server: an
 editor uploads an image's bytes for a document and a viewer reads it, at
 `/api/documents/:documentId/assets/:hash`; bytes are stored once by hash, linked
-to the documents using them, within 500 MB per workspace. Remaining: uploads when
-signed in and for pasted and cloned shapes, and the cleanup job.
+to the documents using them, within 500 MB per workspace. Signed in, the editor
+uploads the images each document uses as it changes or links, pasted and cloned
+shapes' too, and fetches and keeps the ones it lacks; an hourly job deletes images
+no document uses. Images reach other copies after their shapes, so a copy asks
+again for an image not uploaded yet.
 
 Decisions: documents become CRDT documents (Yjs, starting on the stable v13.6
 line), so concurrent changes merge instead of one overwriting another; each user

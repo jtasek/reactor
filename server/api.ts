@@ -6,6 +6,7 @@ import {
     addDocumentAsset,
     assetHash,
     documentAsset,
+    documentAssetHashes,
     imageType,
     isAssetHash,
     postgresBlobs,
@@ -240,10 +241,22 @@ export function createApi({
         }
     );
 
+    api.get('/documents/:documentId/assets', async (req, res) => {
+        const role = await documentRole(db, req.userId, req.params.documentId);
+
+        if (!allows(role, 'viewer')) {
+            return refuse(res, 404, 'NOT_FOUND');
+        }
+
+        res.json(await documentAssetHashes(db, req.params.documentId));
+    });
+
     api.get(ASSET, async (req, res) => {
+        // Asked only whether the image is kept, the server does not read its bytes.
+        const head = req.method === 'HEAD';
         const role = await documentRole(db, req.userId, req.params.documentId);
         const asset = allows(role, 'viewer')
-            ? await documentAsset(db, blobs, req.params.documentId, req.params.hash)
+            ? await documentAsset(db, blobs, req.params.documentId, req.params.hash, !head)
             : undefined;
 
         if (!asset) {
@@ -256,7 +269,7 @@ export function createApi({
             'Cache-Control': 'private, max-age=31536000, immutable',
             'X-Content-Type-Options': 'nosniff'
         });
-        res.end(asset.bytes);
+        res.end(head ? undefined : asset.bytes);
     });
 
     api.use(

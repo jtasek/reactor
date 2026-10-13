@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { sql } from 'kysely';
-import { MAX_ASSET_BYTES } from '../../server/assets';
+import { MAX_ASSET_BYTES, deleteUnusedAssets, postgresBlobs } from '../../server/assets';
 import { serve, type DocumentSummary } from './support';
 
 type Served = Awaited<ReturnType<typeof serve>>;
@@ -78,6 +78,30 @@ describe('assets', () => {
 
         expect(headers.get('cache-control')).toBe('private, max-age=31536000, immutable');
         expect(headers.get('x-content-type-options')).toBe('nosniff');
+    });
+
+    it('lists the images a document uses, for its readers only', async () => {
+        const { call, ada, plan, upload } = await serveDocument();
+        const list = (cookie = ada.cookie) =>
+            call('GET', `/documents/${plan.id}/assets`, { cookie });
+
+        expect(await (await list()).json()).toEqual([]);
+        await upload(PNG);
+        expect(await (await list()).json()).toEqual([hashOf(PNG)]);
+        expect((await list('')).status).toBe(401);
+    });
+
+    it('answers whether it keeps an image without sending it', async () => {
+        const { call, ada, path, upload } = await serveDocument();
+        const ask = () => call('HEAD', path(PNG), { cookie: ada.cookie });
+
+        expect((await ask()).status).toBe(404);
+        await upload(PNG);
+
+        const kept = await ask();
+
+        expect(kept.status).toBe(200);
+        expect((await kept.arrayBuffer()).byteLength).toBe(0);
     });
 
     it('answers an upload repeated as already kept', async () => {
@@ -209,6 +233,30 @@ describe('assets', () => {
 
         expect((await read(PNG)).status).toBe(404);
         expect((await sql`select 1 from document_assets`.execute(db)).rows).toEqual([]);
+    });
+
+    it('deletes images no document uses once their grace has passed, and keeps the rest', async () => {
+        const { db, call, ada, plan, createDocument, upload, read } = await serveDocument();
+        const other = await createDocument('Other');
+        const counts = async () =>
+            (
+                await sql<{ assets: number; blobs: number }>`
+                    select (select count(*)::int from assets) as assets,
+                           (select count(*)::int from asset_blobs) as blobs`.execute(db)
+            ).rows[0];
+
+        await upload(PNG);
+        await upload(JPEG);
+        await upload(JPEG, { documentId: other.id });
+        await call('DELETE', `/documents/${plan.id}`, { cookie: ada.cookie });
+
+        // Within their grace, unused images stay.
+        await deleteUnusedAssets(db, postgresBlobs(db), new Date(Date.now() - 60_000));
+        expect(await counts()).toEqual({ assets: 2, blobs: 2 });
+
+        await deleteUnusedAssets(db, postgresBlobs(db), new Date(Date.now() + 60_000));
+        expect(await counts()).toEqual({ assets: 1, blobs: 1 });
+        expect((await read(JPEG, { documentId: other.id })).status).toBe(200);
     });
 
     it('refuses images beyond the workspace’s quota, counting each image once', async () => {

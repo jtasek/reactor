@@ -4,7 +4,8 @@ import styles from '../../styles.css';
 import type { Command, Point, Size } from 'src/app/types';
 import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
-import { useImageToPlace, useImageUrl, usePointer } from 'src/app/hooks';
+import { useCurrentDocumentId, useImageToPlace, usePointer } from 'src/app/hooks';
+import { useImageUrl } from 'src/app/imageHooks';
 import type { ImageToPlace } from 'src/app/services/assets';
 import { Context } from 'src/app';
 
@@ -82,7 +83,7 @@ export const createImageProps = (
 
 export const Image: FC<Props> = ({ name, position, size, source, selected }) => {
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
-    const url = useImageUrl(source);
+    const url = useImageUrl(source, useCurrentDocumentId());
 
     return (
         <image
