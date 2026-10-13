@@ -13,6 +13,13 @@ import type { Accounts } from 'src/app/services/accounts';
 import type { Api, Transport } from 'src/app/services/api';
 import type { AssetServer } from 'src/app/services/assetSync';
 import type { Channel } from 'src/app/services/tabSync';
+import * as alignment from 'src/app/alignment';
+import * as clipboard from 'src/app/clipboard';
+import { provideEditorHelpers } from 'src/app/editorHelpers';
+import * as snapping from 'src/app/snapping';
+
+// Store tests run the editor's actions, as the editor page does once loaded.
+provideEditorHelpers({ alignment, clipboard, snapping });
 
 /** A server without accounts. */
 const noAccounts: Accounts = {

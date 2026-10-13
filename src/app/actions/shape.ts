@@ -52,7 +52,8 @@ import {
     resolveDrawOrderTies
 } from '../drawOrder';
 import { PropertyValue, SHAPE_PROPERTIES, applyProperty, canEdit } from '../properties';
-import { PasteResult, readClipboard, writeClipboard } from '../clipboard';
+import type { PasteResult } from '../clipboard';
+import { editorHelpers } from '../editorHelpers';
 import { takesEditorInput } from 'src/events/input';
 import {
     cornerRadiusAfterDrag,
@@ -76,6 +77,9 @@ import {
 import { hasComponentInstances, reachesComponent } from './components';
 import { componentSource, instanceBox } from '../componentSource';
 import { detachedMembers } from '../componentDetach';
+
+/** The clipboard's format, which the editor provides as it loads. */
+const clipboardFormat = () => editorHelpers().clipboard;
 
 const getShape = ({ currentDocument }: Application, shapeId: string) => {
     const shape = currentDocument.shapes[shapeId];
@@ -378,7 +382,7 @@ export const copySelection: ActionWithResult<string | null> = ({ state }) => {
     const selected = takesEditorInput(state) ? selectedForCopy(state) : [];
 
     return selected.length > 0
-        ? writeClipboard(
+        ? clipboardFormat().writeClipboard(
               selected,
               selectedGroups(state),
               state.currentDocument.variables,
@@ -402,7 +406,7 @@ export const selectionToCut: ActionWithResult<{ text: string; shapeIds: string[]
 
     return cut.length > 0
         ? {
-              text: writeClipboard(
+              text: clipboardFormat().writeClipboard(
                   cut,
                   selectedGroups(state),
                   state.currentDocument.variables,
@@ -616,7 +620,7 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
         return 'notNow';
     }
 
-    const copied = readClipboard(text);
+    const copied = clipboardFormat().readClipboard(text);
 
     if (copied.shapes.length === 0) {
         return 'noShapes';
