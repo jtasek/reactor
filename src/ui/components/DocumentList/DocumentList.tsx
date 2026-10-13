@@ -1,5 +1,6 @@
 import React, { FC } from 'react';
-import { DocumentRow } from './DocumentRow';
+import { Icon } from '../Icon';
+import { DocumentCard } from './DocumentCard';
 import styles from './styles.css';
 
 interface Props {
@@ -10,30 +11,23 @@ interface Props {
 
 export const DocumentList: FC<Props> = ({ documentsIds, currentDocumentId, onCreate }) => (
     <main className={styles.documentList}>
-        <header className={styles.header}>
-            <h1>Documents</h1>
-            <button type="button" onClick={onCreate}>
-                New document
-            </button>
-        </header>
-        <table>
-            <thead>
-                <tr>
-                    <th scope="col">Name</th>
-                    <th scope="col">Shapes</th>
-                    <th scope="col">Created</th>
-                    <th scope="col">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
+        <div className={styles.panel}>
+            <header className={styles.header}>
+                <h1>Documents</h1>
+                <button className={styles.newButton} type="button" onClick={onCreate}>
+                    <Icon icon={{ group: 'content', name: 'add', size: 18 }} />
+                    New document
+                </button>
+            </header>
+            <ul className={styles.grid} aria-label="Documents">
                 {documentsIds.map((documentId) => (
-                    <DocumentRow
+                    <DocumentCard
                         key={documentId}
                         documentId={documentId}
                         current={documentId === currentDocumentId}
                     />
                 ))}
-            </tbody>
-        </table>
+            </ul>
+        </div>
     </main>
 );
