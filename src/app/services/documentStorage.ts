@@ -17,7 +17,6 @@ import { orderAbove, resolveDrawOrderTies, validDrawOrder } from '../drawOrder';
 import { isClosedShape, isHexColor, isStrokedShape } from '../utils';
 import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
-import { isTagTone, type TagTone } from '../tagTones';
 
 export const PERSISTENCE_KEY = 'reactor';
 export const SCHEMA_VERSION = 4;
@@ -197,15 +196,15 @@ function size(value: unknown): Size {
     return { width: number(s.width, 0), height: number(s.height, 0) };
 }
 
-/** Chosen tag tones, leaving out any that is not a tone; none when absent. */
-function tones(value: unknown): Record<string, TagTone> {
+/** Picked tag tones by name, checked where they are shown; none when absent. */
+function tones(value: unknown): Record<string, string> {
     if (value === undefined) {
         return {};
     }
 
     return Object.fromEntries(
-        Object.entries(record(value)).filter((entry): entry is [string, TagTone] =>
-            isTagTone(entry[1])
+        Object.entries(record(value)).filter(
+            (entry): entry is [string, string] => typeof entry[1] === 'string'
         )
     );
 }

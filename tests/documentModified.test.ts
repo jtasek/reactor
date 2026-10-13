@@ -356,7 +356,7 @@ describe('document modification dates', () => {
         first.effects.collaboration.flush();
 
         vi.setSystemTime(later);
-        first.store.actions.setTagTone({ tag: ' design ', tone: 'purple' });
+        first.store.actions.updateDocument({ id, tagTones: { design: 'purple' } });
         first.effects.collaboration.flush();
 
         expect(first.store.state.documents[id].tagTones).toEqual({ design: 'purple' });

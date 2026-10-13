@@ -1,5 +1,5 @@
 import type { Document } from './types';
-import { TAG_TONES, tagKey, type TagTone } from './tagTones';
+import { isTagTone, TAG_TONES, tagKey, type TagTone } from './tagTones';
 
 export type DocumentDateFilter = 'all' | 'today' | 'week' | 'month';
 
@@ -85,12 +85,13 @@ export function documentModifiedLabel(
  */
 export function documentTagTone(
     name: string,
-    chosen: Readonly<Record<string, TagTone>> = {}
+    chosen: Readonly<Record<string, string>> = {}
 ): TagTone {
     const key = tagKey(name);
+    const picked = chosen[key];
 
-    if (chosen[key]) {
-        return chosen[key];
+    if (isTagTone(picked)) {
+        return picked;
     }
 
     let hash = 0;
@@ -105,8 +106,8 @@ export function documentTagTone(
 /** The tone chosen for each tag across documents, the latest edited document's winning. */
 export function chosenTagTones(
     documents: readonly Pick<Document, 'modified' | 'tags' | 'tagTones'>[]
-): Record<string, TagTone> {
-    const chosen: Record<string, TagTone> = {};
+): Record<string, string> {
+    const chosen: Record<string, string> = {};
 
     [...documents]
         .sort((first, second) => first.modified.getTime() - second.modified.getTime())

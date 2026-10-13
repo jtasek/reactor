@@ -11,7 +11,7 @@ interface Props {
     anchor: HTMLButtonElement;
     title: string;
     availableTags: string[];
-    tagTones: Readonly<Record<string, TagTone>>;
+    tagTones: Readonly<Record<string, string>>;
     selectedTags: string[];
     onChange: (tags: string[]) => void;
     onTone: (tag: string, tone: TagTone) => void;

@@ -8,7 +8,7 @@ import styles from './tags.css';
 interface Props {
     tags: string[];
     availableTags: string[];
-    tagTones: Readonly<Record<string, TagTone>>;
+    tagTones: Readonly<Record<string, string>>;
     onChange: (tags: string[]) => void;
     onTone: (tag: string, tone: TagTone) => void;
     onFilter?: (tag: string) => void;

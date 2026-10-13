@@ -1,5 +1,6 @@
 import React, { ChangeEvent, FC, useCallback, useEffect, useRef, useState } from 'react';
 import type { Document } from 'src/app/types';
+import type { TagTone } from 'src/app/tagTones';
 import { ChevronDown, LayoutGrid, List, Plus, Search, Tag, X } from 'lucide-react';
 import {
     DocumentDateFilter,
@@ -17,6 +18,7 @@ interface Props {
     documents: Pick<Document, 'id' | 'name' | 'modified' | 'tags' | 'tagTones'>[];
     currentDocumentId: string;
     onCreate: () => void;
+    onTagTone: (tag: string, tone: TagTone) => void;
 }
 
 const DATE_OPTIONS: { value: DocumentDateFilter; label: string }[] = [
@@ -26,7 +28,7 @@ const DATE_OPTIONS: { value: DocumentDateFilter; label: string }[] = [
     { value: 'month', label: 'Past 30 days' }
 ];
 
-export const DocumentList: FC<Props> = ({ documents, currentDocumentId, onCreate }) => {
+export const DocumentList: FC<Props> = ({ documents, currentDocumentId, onCreate, onTagTone }) => {
     const [layout, setLayout] = useState<'cards' | 'list'>('cards');
     const [query, setQuery] = useState('');
     const [date, setDate] = useState<DocumentDateFilter>('all');
@@ -185,6 +187,7 @@ export const DocumentList: FC<Props> = ({ documents, currentDocumentId, onCreate
                             availableTags={availableTags}
                             tagTones={tagTones}
                             onFilterTag={filterTag}
+                            onTagTone={onTagTone}
                             now={now}
                         />
                     ))}

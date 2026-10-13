@@ -20,8 +20,9 @@ interface Props {
     documentId: string;
     current: boolean;
     availableTags: string[];
-    tagTones: Readonly<Record<string, TagTone>>;
+    tagTones: Readonly<Record<string, string>>;
     onFilterTag: (tag: string) => void;
+    onTagTone: (tag: string, tone: TagTone) => void;
     now: Date;
 }
 
@@ -31,11 +32,11 @@ export const DocumentCard: FC<Props> = ({
     availableTags,
     tagTones,
     onFilterTag,
+    onTagTone,
     now
 }) => {
     const document = useDocument(documentId);
-    const { editDocument, cloneDocument, removeDocument, setTagTone, updateDocument } =
-        useActions();
+    const { editDocument, cloneDocument, removeDocument, updateDocument } = useActions();
     const [confirming, setConfirming] = useState(false);
     const [editingName, setEditingName] = useState(false);
     const [draftName, setDraftName] = useState('');
@@ -127,7 +128,6 @@ export const DocumentCard: FC<Props> = ({
                 )
             }
         });
-    const changeTone = (tag: string, tone: TagTone) => setTagTone({ tag, tone });
 
     return (
         <li className={styles.card} aria-current={current || undefined} onDoubleClick={openCard}>
@@ -179,7 +179,7 @@ export const DocumentCard: FC<Props> = ({
                     availableTags={availableTags}
                     tagTones={tagTones}
                     onChange={changeTags}
-                    onTone={changeTone}
+                    onTone={onTagTone}
                     onFilter={onFilterTag}
                 />
                 <div
