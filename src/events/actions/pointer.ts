@@ -15,6 +15,7 @@ import {
 import { untracked } from 'src/app/untracked';
 import { getShapeBounds, isShapeLocked } from 'src/app/utils';
 import { keepsAspectRatio } from 'src/app/geometry';
+import type { RestoredEntity } from 'src/app/services/collaboration';
 import { beyondClickSlip } from '../gestures';
 import { HandleTarget, SelectionSnapshot, ShapesSnapshot, TouchContact } from '../types';
 
@@ -506,6 +507,8 @@ export const cancelGesture = (
         return null;
     }
 
+    const restoredEntities: RestoredEntity[] = [];
+
     if ('shapes' in gesture) {
         Object.entries(gesture.shapes).forEach(([id, snapshot]) => {
             const shape = state.currentDocument.shapes[id];
@@ -519,6 +522,7 @@ export const cancelGesture = (
                     .filter((key) => !(key in restored))
                     .forEach((key) => Reflect.deleteProperty(shape, key));
                 Object.assign(shape, restored, { active: shape.active });
+                restoredEntities.push(['shapes', id]);
             }
         });
     }
@@ -531,6 +535,11 @@ export const cancelGesture = (
 
         if (group) {
             group.rotation = gesture.frame.rotation;
+            restoredEntities.push([
+                'componentId' in gesture ? 'components' : 'groups',
+                group.id,
+                'rotation'
+            ]);
         }
     }
 
@@ -550,7 +559,10 @@ export const cancelGesture = (
 
     pointer.gesture = { kind: 'idle' };
     actions.tools.resetTools();
-    effects.collaboration.resume();
+    effects.collaboration.resume({
+        documentId: state.currentDocumentId,
+        restored: restoredEntities
+    });
 
     return owner;
 };

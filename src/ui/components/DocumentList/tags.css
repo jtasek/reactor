@@ -1,0 +1,213 @@
+.tags {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    min-width: 0;
+}
+
+.tags .pill,
+.picker .pill,
+.pill[data-tone] {
+    align-items: center;
+    background: var(--tag-background);
+    border: 0;
+    border-radius: 100px;
+    box-sizing: border-box;
+    color: var(--tag-color);
+    display: inline-flex;
+    font: inherit;
+    font-size: 12px;
+    gap: 4px;
+    line-height: 16px;
+    max-width: 100%;
+    min-height: 22px;
+    overflow-wrap: anywhere;
+    padding: 3px 8px;
+    text-align: left;
+}
+
+.pill[data-tone='red'] {
+    --tag-background: var(--tag-red-background);
+    --tag-color: var(--tag-red-color);
+}
+
+.pill[data-tone='orange'] {
+    --tag-background: var(--tag-orange-background);
+    --tag-color: var(--tag-orange-color);
+}
+
+.pill[data-tone='yellow'] {
+    --tag-background: var(--tag-yellow-background);
+    --tag-color: var(--tag-yellow-color);
+}
+
+.pill[data-tone='green'] {
+    --tag-background: var(--tag-green-background);
+    --tag-color: var(--tag-green-color);
+}
+
+.pill[data-tone='blue'] {
+    --tag-background: var(--tag-blue-background);
+    --tag-color: var(--tag-blue-color);
+}
+
+.pill[data-tone='purple'] {
+    --tag-background: var(--tag-purple-background);
+    --tag-color: var(--tag-purple-color);
+}
+
+.pill[data-tone='gray'] {
+    --tag-background: var(--tag-gray-background);
+    --tag-color: var(--tag-gray-color);
+}
+
+.tags button {
+    cursor: pointer;
+}
+
+.tags .more,
+.tags .add {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 100px;
+    color: var(--text-secondary-color);
+    display: inline-flex;
+    flex: none;
+    font: inherit;
+    font-size: 12px;
+    justify-content: center;
+    min-height: 24px;
+    min-width: 24px;
+    padding: 0 4px;
+}
+
+.tags button:hover {
+    background: var(--menu-hover);
+    color: var(--text-color-hover);
+}
+
+.tags button:focus-visible,
+.picker input:focus-visible,
+.picker button:focus-visible,
+.pickerActions button:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 2px;
+}
+
+.editor {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    padding: 10px;
+}
+
+.editor .heading {
+    font-weight: 500;
+    min-height: 26px;
+    padding: 0 2px;
+    margin-bottom: 6px;
+}
+
+.editor * {
+    font-family: inherit;
+}
+
+.picker {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    min-width: 0;
+}
+
+.picker .search {
+    background: var(--field-background);
+    border: 0;
+    border-radius: var(--radius-md);
+    box-sizing: border-box;
+    color: var(--ink-strong);
+    font: inherit;
+    font-size: 13px;
+    line-height: 20px;
+    min-height: 32px;
+    min-width: 0;
+    padding: 6px 10px;
+    width: 100%;
+    margin-bottom: 4px;
+}
+
+.picker .search:focus-visible {
+    outline-offset: -2px;
+}
+
+.options {
+    max-height: min(45vh, 18rem);
+    overflow-y: auto;
+    padding: 2px 0;
+}
+
+.picker .option {
+    position: relative;
+    justify-content: space-between;
+    padding: 0 6px;
+}
+
+.option input {
+    position: absolute;
+    opacity: 0;
+    width: 16px;
+    height: 16px;
+}
+
+.option:has(input:focus-visible) {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: -2px;
+}
+
+.check {
+    align-items: center;
+    display: flex;
+    flex: 0 0 16px;
+    color: var(--selection-color);
+}
+
+.empty {
+    color: var(--text-secondary-color);
+    margin: 8px 0;
+}
+
+.picker .create {
+    overflow-wrap: anywhere;
+}
+
+.pickerActions {
+    --dialog-button-padding: 6px 12px;
+    display: flex;
+    justify-content: flex-end;
+    padding: 6px 0 0;
+}
+
+.pickerActions button {
+    background: var(--control-background);
+    color: var(--ink-strong);
+    min-height: 32px;
+    width: auto;
+}
+
+@media (pointer: coarse) {
+    .tags button.pill,
+    .tags .more,
+    .tags .add,
+    .picker .search,
+    .picker .create,
+    .editor button,
+    .editor .option {
+        min-height: 44px;
+    }
+
+    .tags button.pill,
+    .tags .more,
+    .tags .add {
+        min-width: 44px;
+    }
+}

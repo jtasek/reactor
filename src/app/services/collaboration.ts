@@ -52,6 +52,8 @@ export interface CollaborationOptions {
     applyRemoteChanges(changes: RemoteChanges): void;
     /** Reports every store mutation, to find the changes this copy makes. */
     addMutationListener(listener: (mutation: Mutation) => void): () => void;
+    /** Records a local edit once its durable content changes, before that change is shared. */
+    documentChanged?(documentId: string): void;
     /** Sends this copy's changes to the other copies. */
     sendUpdate?(documentId: string, update: Uint8Array): void;
 }
@@ -59,6 +61,9 @@ export interface CollaborationOptions {
 type YEntity = Yjs.Map<unknown>;
 type Views = { [C in Collection]: Map<string, SavedEntities[C]> };
 type Reads = { [C in Collection]: Map<string, SavedEntities[C] | null> };
+
+/** An entity, or one of its fields, restored when a held edit is canceled. */
+export type RestoredEntity = [collection: Collection, id: string, field?: string];
 
 interface Changes {
     fields: boolean;
@@ -86,6 +91,8 @@ interface Binding {
     invalid: Record<Collection, Set<string>>;
     /** Changes to entities this copy has not shared, from the update being received. */
     unwritten?: Partial<EntityChanges>;
+    /** Edits written to merge an update during a hold, which are dated only on commit. */
+    deferred: Array<[collection: Collection | 'document', id: string, field: string]>;
 }
 
 const LOCAL = Symbol('local change');
@@ -200,6 +207,7 @@ export class Collaboration {
             tables: perCollection((collection) => doc.getMap(collection)),
             local: noChanges(),
             remote: noChanges(),
+            deferred: [],
             views: perCollection(() => new Map()),
             invalid: perCollection(() => new Set())
         };
@@ -217,7 +225,7 @@ export class Collaboration {
 
         this.observe(documentId, binding);
         this.everything(documentId, binding, binding.local);
-        this.write(documentId, binding);
+        this.write(documentId, binding, false);
     }
 
     /**
@@ -305,8 +313,23 @@ export class Collaboration {
         this.paused = true;
     }
 
-    /** Shares the changes held since `pause`. */
-    resume(): void {
+    /** Shares held changes, excluding a canceled edit's restorations from its date. */
+    resume(canceled?: { documentId: string; restored: RestoredEntity[] }): void {
+        if (canceled) {
+            const binding = this.bindings.get(canceled.documentId);
+
+            if (binding) {
+                this.write(canceled.documentId, binding);
+                const restored = new Set(canceled.restored.map((entity) => JSON.stringify(entity)));
+
+                binding.deferred = binding.deferred.filter(
+                    ([collection, id, field]) =>
+                        !restored.has(JSON.stringify([collection, id])) &&
+                        !restored.has(JSON.stringify([collection, id, field]))
+                );
+            }
+        }
+
         this.paused = false;
         this.queueFlush();
     }
@@ -427,32 +450,68 @@ export class Collaboration {
     }
 
     /** Writes the store's pending changes to the shared document, in one transaction. */
-    private write(documentId: string, binding: Binding) {
+    private write(documentId: string, binding: Binding, dateEdit = true) {
         const { local } = binding;
+        const heldEdit = binding.deferred.length > 0;
 
-        if (!local.fields && local.entities.size === 0) {
+        if (!local.fields && local.entities.size === 0 && (this.paused || !heldEdit)) {
             return;
         }
 
         binding.local = noChanges();
 
-        const document = this.ready().options.getDocument(documentId);
+        const { options } = this.ready();
+        const document = options.getDocument(documentId);
 
         if (!document) {
             return;
         }
 
-        binding.doc.transact(() => {
+        binding.doc.transact((transaction) => {
             if (local.fields) {
                 const fields = readDocumentFields(document);
+
+                if (this.paused && dateEdit) {
+                    changedFields(binding.fieldsView ?? {}, fields).forEach((field) =>
+                        binding.deferred.push(['document', documentId, field])
+                    );
+                }
 
                 this.writeValues(binding.fields, fields, binding.fieldsView);
                 binding.fieldsView = fields;
             }
 
             local.entities.forEach((ids, collection) =>
-                ids.forEach((id) => this.writeEntity(binding, document, collection, id))
+                ids.forEach((id) => {
+                    const changed = this.writeEntity(
+                        binding,
+                        document,
+                        collection,
+                        id,
+                        this.paused && dateEdit
+                    );
+
+                    changed.forEach((field) => binding.deferred.push([collection, id, field]));
+                })
             );
+
+            if (
+                dateEdit &&
+                !this.paused &&
+                (transaction.changed.size > 0 || heldEdit) &&
+                options.documentChanged
+            ) {
+                options.documentChanged(documentId);
+
+                const fields = readDocumentFields(document);
+
+                this.writeValues(binding.fields, fields, binding.fieldsView);
+                binding.fieldsView = fields;
+            }
+
+            if (dateEdit && !this.paused) {
+                binding.deferred = [];
+            }
         }, LOCAL);
     }
 
@@ -460,7 +519,8 @@ export class Collaboration {
         binding: Binding,
         document: Document,
         collection: C,
-        id: string
+        id: string,
+        dateLater: boolean
     ) {
         const table = binding.tables[collection];
         const views = binding.views[collection];
@@ -474,7 +534,7 @@ export class Collaboration {
                 views.delete(id);
             }
 
-            return;
+            return dateLater && previous ? Object.keys(previous) : [];
         }
 
         const values = readEntity(collection, json(entities[id]));
@@ -489,6 +549,8 @@ export class Collaboration {
         if (REFERRING.has(collection)) {
             touch(binding.remote, collection, id);
         }
+
+        return dateLater ? changedFields(previous ?? {}, values) : [];
     }
 
     private entityOf(table: Yjs.Map<unknown>, id: string): YEntity {
@@ -632,6 +694,16 @@ export class Collaboration {
 
         const fields = remote.fields ? this.fieldsChange(documentId, binding, document) : undefined;
         const entities = this.entityChanges(binding, document, remote);
+
+        binding.deferred = binding.deferred.filter(([collection, id, field]) => {
+            if (collection === 'document') {
+                return !fields?.changed.includes(field);
+            }
+
+            const change = entities[collection][id];
+
+            return change !== null && !change?.changed.includes(field);
+        });
 
         if (
             !fields &&

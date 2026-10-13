@@ -1,26 +1,24 @@
 .documentList {
     /* Clears the menu bar, when shown, which floats over the page's top right. */
     --documents-top: 72px;
-    --documents-max-width: 900px;
-    --document-card-min-width: 240px;
-    --thumbnail-grid-size: 18px;
-    background: var(--canvas);
+    --documents-max-width: 1120px;
+    --document-card-min-width: 280px;
+    background: var(--documents-background);
     box-sizing: border-box;
-    color: var(--text-color);
+    color: var(--document-title-color);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     height: 100%;
     overflow: auto;
-    padding: var(--documents-top) 32px 32px;
+    padding: var(--documents-top) 32px 40px;
+}
+
+.documentList * {
+    font-family: inherit;
 }
 
 .panel {
-    backdrop-filter: var(--backdrop-filter);
-    background: var(--control-background);
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    box-sizing: border-box;
     margin: 0 auto;
     max-width: var(--documents-max-width);
-    padding: 16px;
 }
 
 .header {
@@ -29,19 +27,21 @@
     flex-wrap: wrap;
     gap: 16px;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 28px;
 }
 
 .header h1 {
-    font-size: 1.5rem;
+    font-size: 32px;
     font-weight: 500;
+    letter-spacing: -1px;
+    line-height: 40px;
     margin: 0;
 }
 
 .documentList button {
-    background: var(--field-background);
+    background: transparent;
     border: 0;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     color: inherit;
     cursor: pointer;
     font: inherit;
@@ -49,28 +49,137 @@
 }
 
 .documentList button:hover {
-    background: var(--control-background-active);
-    color: var(--text-color-hover);
+    background: var(--field-background);
 }
 
 .documentList button:focus-visible,
-.nameInput:focus-visible {
+.documentList input:not([type='search']):focus-visible,
+.documentList select:focus-visible {
     outline: var(--focus-ring-width) solid var(--focus-ring-color);
     outline-offset: 2px;
 }
 
 .documentList .newButton {
     align-items: center;
-    background: var(--panel-content-background);
+    backdrop-filter: var(--backdrop-filter);
+    background: var(--control-background);
+    border: 1px solid var(--glass-highlight);
+    border-radius: 22px;
     box-shadow: var(--box-shadow);
     display: inline-flex;
+    font-weight: 500;
     gap: 6px;
-    padding: 8px 12px;
+    min-height: 40px;
+    padding: 8px 16px;
+}
+
+.browseControls {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.search {
+    align-items: center;
+    background: var(--field-background);
+    border-radius: 20px;
+    color: var(--document-secondary-color);
+    display: flex;
+    flex: 1;
+    gap: 8px;
+    min-width: 160px;
+    padding: 0 12px;
+}
+
+.search:has(input:focus-visible) {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 2px;
+}
+
+.search input:focus-visible {
+    outline: none;
+}
+
+.search svg {
+    flex: none;
+}
+
+.search input {
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-md);
+    color: var(--document-title-color);
+    font: inherit;
+    min-height: 40px;
+    min-width: 0;
+    padding: 8px 0;
+    width: 100%;
+}
+
+.search input::placeholder {
+    color: var(--document-secondary-color);
+}
+
+.documentList .dateFilter,
+.documentList .tagFilter {
+    align-items: center;
+    display: inline-flex;
+    gap: 6px;
+    background: var(--control-background);
+    border: 0;
+    border-radius: 18px;
+    color: var(--document-secondary-color);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 20px;
+    min-height: 32px;
+    padding: 4px 10px;
+}
+
+
+.layoutToggle {
+    backdrop-filter: var(--backdrop-filter);
+    background: var(--control-background);
+    border: 1px solid var(--glass-highlight);
+    border-radius: 22px;
+    box-shadow: var(--box-shadow);
+    display: flex;
+    gap: 2px;
+    margin-left: auto;
+    padding: 3px;
+}
+
+.layoutToggle button[aria-pressed='true'] {
+    background: var(--surface);
+    box-shadow: var(--box-shadow);
+    color: var(--selection-color);
+}
+
+.filterSummary {
+    align-items: center;
+    color: var(--document-secondary-color);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 12px;
+    gap: 6px;
+    margin: 10px 0 24px;
+    min-height: 24px;
+}
+
+.documentList .clearFilters {
+    font-size: 12px;
+}
+
+.resultCount {
+    margin-left: auto;
+    white-space: nowrap;
 }
 
 .grid {
     display: grid;
-    gap: 12px;
+    gap: 28px 24px;
     grid-template-columns: repeat(
         auto-fill,
         minmax(min(100%, var(--document-card-min-width)), 1fr)
@@ -81,24 +190,77 @@
 }
 
 .card {
-    background: var(--panel-content-background);
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-md);
+    min-width: 0;
+    position: relative;
+}
+
+.cardHeader {
+    align-items: baseline;
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 0 2px;
+}
+
+.cardTitle {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+}
+
+.documentList .nameButton {
+    background: transparent;
+    color: var(--document-title-color);
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: -0.15px;
+    line-height: 20px;
     min-width: 0;
     overflow: hidden;
+    padding: 2px 0;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.documentList .nameButton:hover {
+    background: transparent;
+    color: var(--selection-color);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.nameInput {
+    background: var(--surface);
+    border: 1px solid var(--selection-color);
+    border-radius: var(--radius-sm);
+    color: var(--document-title-color);
+    font: inherit;
+    min-width: 0;
+    padding: 2px 4px;
+    width: 100%;
+}
+
+.date {
+    color: var(--document-secondary-color);
+    flex: none;
+    font-size: 12px;
+    line-height: 18px;
+    white-space: nowrap;
 }
 
 .thumbnail {
     align-items: center;
-    aspect-ratio: 16 / 10;
-    background-color: var(--canvas);
-    background-image:
-        linear-gradient(var(--hairline-color) 1px, transparent 1px),
-        linear-gradient(90deg, var(--hairline-color) 1px, transparent 1px);
-    background-size: var(--thumbnail-grid-size) var(--thumbnail-grid-size);
+    aspect-ratio: 16 / 9;
+    background: var(--panel-content-background);
+    border: 1px solid var(--document-thumbnail-border);
+    border-radius: 16px;
+    box-shadow: var(--box-shadow);
     display: flex;
     justify-content: center;
     overflow: hidden;
+    position: relative;
 }
 
 .thumbnailSvg {
@@ -108,111 +270,218 @@
 }
 
 .thumbnailEmpty {
-    color: var(--text-secondary-color);
-    font-size: 0.85rem;
-}
-
-.cardBody {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 12px;
-}
-
-.cardTitle {
-    align-items: center;
-    display: flex;
-    gap: 6px;
-    min-width: 0;
-}
-
-.documentList .nameButton {
-    background: transparent;
-    color: var(--text-color-hover);
-    font-weight: 600;
-    min-width: 0;
-    overflow: hidden;
-    padding: 0;
-    text-align: left;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.documentList .nameButton:hover {
-    background: transparent;
-    text-decoration: underline;
-}
-
-.nameInput {
-    background: var(--field-background);
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-sm);
-    box-sizing: border-box;
-    color: var(--text-color);
-    font: inherit;
-    min-width: 0;
-    padding: 4px 6px;
-    width: 100%;
+    color: var(--document-secondary-color);
+    font-size: 12px;
 }
 
 .current {
-    background: var(--info-background);
-    border-radius: var(--radius-sm);
-    color: var(--info-color);
-    flex: none;
-    font-size: 0.8em;
+    background: var(--control-background);
+    border-radius: 12px;
+    color: var(--selection-color);
+    font-size: 11px;
+    left: 8px;
     padding: 1px 6px;
+    position: absolute;
+    top: 8px;
 }
 
-.meta {
-    color: var(--text-secondary-color);
-    display: flex;
-    font-size: 0.85rem;
-    gap: 8px;
-    justify-content: space-between;
-}
-
-.actions {
+.cardFooter {
     align-items: center;
-    border-top: 1px solid var(--hairline-color);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    justify-content: flex-end;
-    padding-top: 8px;
+    display: grid;
+    gap: 4px 8px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    margin-top: 8px;
+    padding: 0 2px;
 }
 
 .iconActions {
+    align-items: center;
+    border: 1px solid transparent;
+    border-radius: 20px;
     display: flex;
-    gap: 2px;
+    gap: 0;
+    padding: 2px;
+}
+
+.iconActions:hover,
+.iconActions:focus-within {
+    backdrop-filter: var(--backdrop-filter);
+    background: var(--control-background);
+    border-color: var(--glass-highlight);
+    box-shadow: var(--box-shadow);
 }
 
 .documentList .iconButton {
     align-items: center;
     background: transparent;
-    box-sizing: border-box;
+    border-radius: 50%;
+    color: var(--document-secondary-color);
     display: inline-flex;
+    flex: none;
     height: 32px;
     justify-content: center;
     padding: 0;
     width: 32px;
 }
 
+.documentList .iconButton:hover {
+    background: var(--field-background);
+    color: var(--document-title-color);
+}
+
+.documentList .iconButton[data-action='delete']:hover {
+    color: var(--error-color);
+}
+
+.shapeCount {
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
+.empty {
+    padding: 48px 16px;
+    text-align: center;
+}
+
+.empty h2 {
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 12px;
+}
+
+.grid[data-layout='list'] {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.grid[data-layout='list'] .card {
+    align-items: center;
+    border-bottom: 1px solid var(--hairline-color);
+    display: grid;
+    gap: 4px 20px;
+    grid-template-columns: 72px minmax(0, 1fr) 120px auto;
+    padding: 16px 0;
+}
+
+.grid[data-layout='list'] .cardHeader,
+.grid[data-layout='list'] .cardFooter {
+    display: contents;
+}
+
+.grid[data-layout='list'] .thumbnail {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    height: 52px;
+    border-radius: var(--border-radius);
+    width: 72px;
+}
+
+.grid[data-layout='list'] .current {
+    display: none;
+}
+
+.grid[data-layout='list'] .cardTitle {
+    align-self: end;
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.grid[data-layout='list'] .cardFooter > :first-child {
+    align-self: start;
+    grid-column: 2;
+    grid-row: 2;
+}
+
+.grid[data-layout='list'] .date {
+    grid-column: 3;
+    grid-row: 1 / 3;
+}
+
+.grid[data-layout='list'] .iconActions {
+    grid-column: 4;
+    grid-row: 1 / 3;
+}
+
+@media (max-width: 700px) {
+    .documentList {
+        padding: var(--documents-top) 16px 24px;
+    }
+
+    .search {
+        flex-basis: 100%;
+    }
+
+    .grid[data-layout='list'] .card {
+        gap: 4px 12px;
+        grid-template-columns: 48px minmax(0, 1fr);
+        padding: 12px 0;
+    }
+
+    .grid[data-layout='list'] .thumbnail {
+        align-self: start;
+        height: 40px;
+        width: 48px;
+    }
+
+    .grid[data-layout='list'] .date {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    .grid[data-layout='list'] .cardFooter > :first-child {
+        grid-row: 3;
+    }
+
+    .grid[data-layout='list'] .iconActions {
+        grid-column: 2;
+        grid-row: 4;
+        justify-self: end;
+    }
+}
+
+@media (pointer: coarse) {
+    .documentList button,
+    .documentList select,
+    .documentList .iconButton {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    .documentList input,
+    .documentList select {
+        font-size: 16px;
+    }
+
+    .cardFooter {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .iconActions {
+        justify-self: end;
+    }
+}
+
 @supports not (backdrop-filter: blur(1px)) {
-    .panel {
+    .documentList .newButton,
+    .layoutToggle,
+    .iconActions:hover,
+    .iconActions:focus-within {
         background: var(--surface);
     }
 }
 
 @media (prefers-reduced-transparency: reduce) {
-    .panel {
+    .documentList .newButton,
+    .layoutToggle,
+    .iconActions:hover,
+    .iconActions:focus-within {
         backdrop-filter: none;
         background: var(--surface);
-    }
-}
-
-@media (max-width: 700px) {
-    .documentList {
-        padding: var(--documents-top) 12px 12px;
     }
 }

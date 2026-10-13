@@ -74,7 +74,6 @@ export const resetDocument: Action = ({ state }) => {
     document.camera = createCamera();
     document.grid = createGrid();
     document.filter = '';
-    document.modified = new Date();
     delete document.shownLayerId;
     delete document.surfaceSelected;
     state.enteredGroupId = null;
@@ -86,7 +85,14 @@ export const cloneDocument: ActionWithParam<string> = ({ state, effects }, docum
     const copy = copyDocument(document, effects.newId());
 
     copy.name = `${document.name} copy`;
+    copy.created = new Date();
+    copy.modified = new Date(copy.created);
     setDocument(state, copy);
+};
+
+/** Records the time of a local edit before it is saved and shared. */
+export const markDocumentModified: ActionWithParam<string> = ({ state }, documentId) => {
+    getDocument(state, documentId).modified = new Date();
 };
 
 /** Removes a document added only to hold saved or shared content that could not be read. */

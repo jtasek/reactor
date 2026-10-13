@@ -16,6 +16,25 @@ body,
 }
 
 :root {
+  --documents-background: #f3f4f6;
+  --document-thumbnail-border: #e7e8ed;
+  --document-title-color: #25262b;
+  --document-secondary-color: #696d77;
+  --glass-highlight: rgba(255, 255, 255, 0.85);
+  --tag-red-background: #ffebe9;
+  --tag-red-color: #a52a23;
+  --tag-orange-background: #fff0dc;
+  --tag-orange-color: #8b4b00;
+  --tag-yellow-background: #fff7d6;
+  --tag-yellow-color: #756000;
+  --tag-green-background: #e7f7eb;
+  --tag-green-color: #236e36;
+  --tag-blue-background: #e5f0ff;
+  --tag-blue-color: #175da8;
+  --tag-purple-background: #f3e8fa;
+  --tag-purple-color: #77389b;
+  --tag-gray-background: #ededf0;
+  --tag-gray-color: #57575c;
   --primary-action-color: rgb(234, 2, 130);
   --selection-color: #1a5ddb;
   --component-color: #6a47a8;

@@ -2,15 +2,9 @@
     --dialog-max-width: 26.25rem;
     --dialog-padding: 1.25rem;
     --dialog-heading-gap: 0.75rem;
-    --dialog-action-gap: 0.5rem;
-    --dialog-button-padding: 0.5rem 0.75rem;
-    --dialog-button-radius: 100rem;
-    --dialog-radius: 0.625rem;
-    --dialog-primary-background: var(--primary-action-color);
-    --dialog-primary-hover-background: color-mix(in srgb, var(--primary-action-color) 90%, black);
-    --dialog-primary-text: white;
-    --dialog-text-color: var(--ink-strong);
     --dialog-emphasis-weight: 600;
+    --dialog-radius: 0.625rem;
+    --dialog-text-color: var(--ink-strong);
     background: var(--surface);
     backdrop-filter: var(--backdrop-filter);
     border: 0;
@@ -38,6 +32,13 @@
 }
 
 .actions {
+    --dialog-action-gap: 0.5rem;
+    --dialog-button-padding: 0.5rem 0.75rem;
+    --dialog-button-radius: 100rem;
+    --dialog-primary-background: var(--primary-action-color);
+    --dialog-primary-hover-background: color-mix(in srgb, var(--primary-action-color) 90%, black);
+    --dialog-primary-text: white;
+    --dialog-emphasis-weight: 600;
     display: flex;
     flex-direction: row;
     gap: var(--dialog-action-gap);
