@@ -92,7 +92,7 @@ interface Binding {
     /** Changes to entities this copy has not shared, from the update being received. */
     unwritten?: Partial<EntityChanges>;
     /** Edits written to merge an update during a hold, which are dated only on commit. */
-    deferred: Array<[collection: Collection | 'document', id: string, field: string]>;
+    deferred: Array<[collection: Collection | 'document', id: string, path: string[]]>;
 }
 
 const LOCAL = Symbol('local change');
@@ -136,6 +136,22 @@ const changedFields = (previous: object, next: object) =>
     [...new Set([...Object.keys(previous), ...Object.keys(next)])].filter(
         (key) => !sameJsonValue(Reflect.get(previous, key), Reflect.get(next, key))
     );
+
+/** Tracks the nested fields that merge independently, such as position.x and position.y. */
+const changedFieldPaths = (previous: object, next: object): string[][] =>
+    changedFields(previous, next).flatMap((key) => {
+        const before: unknown = Reflect.get(previous, key);
+        const after: unknown = Reflect.get(next, key);
+
+        if (isRecord(before) && isRecord(after)) {
+            return changedFieldPaths(before, after).map((path) => [key, ...path]);
+        }
+
+        return [[key]];
+    });
+
+const valueAtPath = (value: unknown, path: string[]) =>
+    path.reduce<unknown>((current, key) => (isRecord(current) ? current[key] : undefined), value);
 
 /** Removes the members `previous` has and `next` lacks, wherever they are, and appends new ones. */
 function writeMembers(members: Yjs.Array<unknown>, next: string[], previous: unknown[]) {
@@ -325,9 +341,9 @@ export class Collaboration {
                 const restored = new Set(canceled.restored.map((entity) => JSON.stringify(entity)));
 
                 binding.deferred = binding.deferred.filter(
-                    ([collection, id, field]) =>
+                    ([collection, id, path]) =>
                         !restored.has(JSON.stringify([collection, id])) &&
-                        !restored.has(JSON.stringify([collection, id, field]))
+                        !restored.has(JSON.stringify([collection, id, path[0]]))
                 );
             }
         }
@@ -475,14 +491,14 @@ export class Collaboration {
 
             if (local.fields) {
                 const fields = readDocumentFields(document);
-                const changed = changedFields(binding.fieldsView ?? {}, fields).filter(
-                    (field) => !UNDATED_FIELDS.has(field)
+                const changed = changedFieldPaths(binding.fieldsView ?? {}, fields).filter(
+                    ([field]) => !UNDATED_FIELDS.has(field)
                 );
 
                 edited = changed.length > 0;
                 if (holding) {
-                    changed.forEach((field) =>
-                        binding.deferred.push(['document', documentId, field])
+                    changed.forEach((path) =>
+                        binding.deferred.push(['document', documentId, path])
                     );
                 }
 
@@ -496,7 +512,7 @@ export class Collaboration {
 
                     edited ||= changed.length > 0;
                     if (holding) {
-                        changed.forEach((field) => binding.deferred.push([collection, id, field]));
+                        changed.forEach((path) => binding.deferred.push([collection, id, path]));
                     }
                 })
             );
@@ -534,7 +550,7 @@ export class Collaboration {
                 views.delete(id);
             }
 
-            return previous ? Object.keys(previous) : [];
+            return previous ? Object.keys(previous).map((key) => [key]) : [];
         }
 
         const values = readEntity(collection, json(entities[id]));
@@ -550,7 +566,7 @@ export class Collaboration {
             touch(binding.remote, collection, id);
         }
 
-        return changedFields(previous ?? {}, values);
+        return changedFieldPaths(previous ?? {}, values);
     }
 
     private entityOf(table: Yjs.Map<unknown>, id: string): YEntity {
@@ -695,14 +711,17 @@ export class Collaboration {
         const fields = remote.fields ? this.fieldsChange(documentId, binding, document) : undefined;
         const entities = this.entityChanges(binding, document, remote);
 
-        binding.deferred = binding.deferred.filter(([collection, id, field]) => {
-            if (collection === 'document') {
-                return !fields?.changed.includes(field);
+        binding.deferred = binding.deferred.filter(([collection, id, path]) => {
+            const change = collection === 'document' ? fields : entities[collection][id];
+
+            if (change === null) {
+                return false;
             }
 
-            const change = entities[collection][id];
-
-            return change !== null && !change?.changed.includes(field);
+            return (
+                !change ||
+                sameJsonValue(valueAtPath(change.previous, path), valueAtPath(change.view, path))
+            );
         });
 
         if (
@@ -733,11 +752,12 @@ export class Collaboration {
             return undefined;
         }
 
-        const changed = changedFields(binding.fieldsView ?? readDocumentFields(document), view);
+        const previous = binding.fieldsView ?? readDocumentFields(document);
+        const changed = changedFields(previous, view);
 
         binding.fieldsView = view;
 
-        return changed.length > 0 ? { view, changed } : undefined;
+        return changed.length > 0 ? { view, changed, previous } : undefined;
     }
 
     /** Changes for the entities read, and for every entity referring to one that came or went. */
