@@ -402,3 +402,44 @@ test('panels share a default width, keep a size dragged by a corner and restore 
     await page.keyboard.press('Delete');
     await expect.poll(async () => (await panelBox(page, 'inspector')).width).toBe(before.width);
 });
+
+test('a panel docked to a side fills its column, and keeps its width for when it floats', async ({
+    page
+}) => {
+    await openEditor(page, ['Inspector']);
+    const before = await panelBox(page, 'inspector');
+    const corner = page.getByRole('button', { name: /^Resize Inspector/ }).last();
+    const header = page.locator('[data-panel="inspector"] > button');
+    const savedSize = () =>
+        page.evaluate(
+            () => JSON.parse(localStorage.getItem('reactor:panel-layout') ?? '{}').inspector?.size
+        );
+
+    await corner.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect
+        .poll(async () => (await panelBox(page, 'inspector')).width)
+        .toBe(before.width + 10);
+
+    await header.focus();
+    await page.keyboard.press('Shift+ArrowRight');
+    await expect(page.locator('[data-dock="right"] [data-panel="inspector"]')).toBeVisible();
+    await expect
+        .poll(async () => (await panelBox(page, 'inspector')).width)
+        .toBe((await panelBox(page, 'controlPanel')).width);
+
+    // Docked, its corners change only its height.
+    await corner.focus();
+    await page.keyboard.press('ArrowLeft');
+    expect(await savedSize()).toEqual({ width: before.width + 10 });
+    await page.keyboard.press('ArrowDown');
+    expect((await savedSize()).width).toBe(before.width + 10);
+    expect((await savedSize()).height).toBeGreaterThan(0);
+
+    await header.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('[data-dock] [data-panel="inspector"]')).toHaveCount(0);
+    await expect
+        .poll(async () => (await panelBox(page, 'inspector')).width)
+        .toBe(before.width + 10);
+});
