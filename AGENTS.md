@@ -560,6 +560,7 @@ Hidden guides are not drawn and locked ones do not move.
   saved with its placement (`PanelPlacement.size`): the height only once a corner moves up
   or down, and shrunk to fit a smaller window. A panel docked to a side takes its column's
   width, and its grips change only its height; its own width applies again once it floats.
+  Panels docked to a side sit at the top of their zone, under the corner dock above them.
   Panels docked together keep the order they were dropped in (`PanelPlacement.order`): a drop
   goes above the first panel whose middle is below the pointer, a line shows where while
   dragging, and over a panel in a side column the drop goes into that panel's dock.

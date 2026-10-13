@@ -766,14 +766,14 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
             />
             <div className={`${styles.column} ${styles.leftColumn}`}>
                 {docked('top-left')}
-                <div className={styles.spacer} />
+                <div className={styles.dockGap} />
                 {docked('left')}
                 <div className={styles.spacer} />
                 {docked('bottom-left')}
             </div>
             <div className={`${styles.column} ${styles.rightColumn}`}>
                 {docked('top-right')}
-                <div className={styles.spacer} />
+                <div className={styles.dockGap} />
                 {docked('right')}
                 <div className={styles.spacer} />
                 {docked('bottom-right')}

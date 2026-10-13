@@ -522,3 +522,17 @@ test('a panel goes where it is dropped among the panels docked with it, and is s
     );
     expect(saved[lower].order).toBeLessThan(saved[upper].order);
 });
+
+test('a panel docked to a side sits at the top of its zone, under its corner’s panels', async ({
+    page
+}) => {
+    await setLayout(page, { controlPanel: 'top-right', explorer: 'right' });
+    await openEditor(page, ['Explorer']);
+    const corner = await panelBox(page, 'controlPanel');
+    const side = await panelBox(page, 'explorer');
+    const gap = await page
+        .locator('[data-dock="right"]')
+        .evaluate((element) => Number.parseFloat(getComputedStyle(element).rowGap));
+
+    expect(side.y).toBeCloseTo(corner.y + corner.height + gap, 0);
+});
