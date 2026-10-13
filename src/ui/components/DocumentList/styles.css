@@ -3,12 +3,17 @@
     --documents-top: 72px;
     --documents-max-width: 1120px;
     --document-card-min-width: 280px;
-    background: var(--canvas);
+    background: var(--documents-background);
     box-sizing: border-box;
-    color: var(--ink-strong);
+    color: var(--document-title-color);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     height: 100%;
     overflow: auto;
     padding: var(--documents-top) 32px 40px;
+}
+
+.documentList * {
+    font-family: inherit;
 }
 
 .panel {
@@ -26,16 +31,17 @@
 }
 
 .header h1 {
-    font-size: 1.5rem;
+    font-size: 32px;
     font-weight: 500;
-    line-height: 2.5rem;
+    letter-spacing: -1px;
+    line-height: 40px;
     margin: 0;
 }
 
 .documentList button {
     background: transparent;
     border: 0;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     color: inherit;
     cursor: pointer;
     font: inherit;
@@ -58,7 +64,7 @@
     backdrop-filter: var(--backdrop-filter);
     background: var(--control-background);
     border: 1px solid var(--glass-highlight);
-    border-radius: var(--border-radius);
+    border-radius: 22px;
     box-shadow: var(--box-shadow);
     display: inline-flex;
     font-weight: 500;
@@ -77,8 +83,8 @@
 .search {
     align-items: center;
     background: var(--field-background);
-    border-radius: var(--radius-sm);
-    color: var(--text-secondary-color);
+    border-radius: 20px;
+    color: var(--document-secondary-color);
     display: flex;
     flex: 1;
     gap: 8px;
@@ -103,7 +109,7 @@
     background: transparent;
     border: 0;
     border-radius: var(--radius-md);
-    color: var(--ink-strong);
+    color: var(--document-title-color);
     font: inherit;
     min-height: 40px;
     min-width: 0;
@@ -112,7 +118,7 @@
 }
 
 .search input::placeholder {
-    color: var(--text-secondary-color);
+    color: var(--document-secondary-color);
 }
 
 .documentList .dateFilter,
@@ -122,8 +128,8 @@
     gap: 6px;
     background: var(--control-background);
     border: 0;
-    border-radius: var(--radius-sm);
-    color: var(--text-secondary-color);
+    border-radius: 18px;
+    color: var(--document-secondary-color);
     font: inherit;
     font-size: 13px;
     font-weight: 400;
@@ -136,7 +142,7 @@
     backdrop-filter: var(--backdrop-filter);
     background: var(--control-background);
     border: 1px solid var(--glass-highlight);
-    border-radius: var(--border-radius);
+    border-radius: 22px;
     box-shadow: var(--box-shadow);
     display: flex;
     gap: 2px;
@@ -145,14 +151,14 @@
 }
 
 .layoutToggle button[aria-pressed='true'] {
-    background: var(--control-background-active);
+    background: var(--surface);
     box-shadow: var(--box-shadow);
-    color: var(--text-color-hover);
+    color: var(--selection-color);
 }
 
 .filterSummary {
     align-items: center;
-    color: var(--text-secondary-color);
+    color: var(--document-secondary-color);
     display: flex;
     flex-wrap: wrap;
     font-size: 12px;
@@ -196,14 +202,16 @@
 }
 
 .cardTitle {
+    align-items: center;
     display: flex;
     flex: 1;
+    gap: 8px;
     min-width: 0;
 }
 
 .documentList .nameButton {
     background: transparent;
-    color: var(--ink-strong);
+    color: var(--document-title-color);
     font-size: 15px;
     font-weight: 500;
     letter-spacing: -0.15px;
@@ -214,21 +222,20 @@
     text-align: left;
     text-overflow: ellipsis;
     white-space: nowrap;
-    width: 100%;
 }
 
 .documentList .nameButton:hover {
     background: transparent;
-    color: var(--text-color-hover);
+    color: var(--selection-color);
     text-decoration: underline;
     text-underline-offset: 3px;
 }
 
 .nameInput {
     background: var(--surface);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--selection-color);
     border-radius: var(--radius-sm);
-    color: var(--ink-strong);
+    color: var(--document-title-color);
     font: inherit;
     min-width: 0;
     padding: 2px 4px;
@@ -236,7 +243,7 @@
 }
 
 .meta {
-    color: var(--text-secondary-color);
+    color: var(--document-secondary-color);
     flex: none;
     font-size: 12px;
     line-height: 18px;
@@ -247,8 +254,8 @@
     align-items: center;
     aspect-ratio: 16 / 9;
     background: var(--panel-content-background);
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-md);
+    border: 1px solid var(--document-thumbnail-border);
+    border-radius: 16px;
     box-shadow: var(--box-shadow);
     display: flex;
     justify-content: center;
@@ -264,7 +271,7 @@
 
 .thumbnailEmpty {
     align-items: center;
-    color: var(--text-secondary-color);
+    color: var(--document-secondary-color);
     display: flex;
     flex-direction: column;
     font-size: 12px;
@@ -272,13 +279,14 @@
 }
 
 .current {
-    background: var(--info-background);
-    border-radius: var(--radius-sm);
-    color: var(--info-color);
+    background: var(--control-background-active);
+    border-radius: 12px;
+    box-shadow: var(--box-shadow);
+    color: var(--selection-color);
     flex: none;
     font-size: 11px;
     line-height: 16px;
-    padding: 1px 6px;
+    padding: 1px 8px;
 }
 
 .cardFooter {
@@ -293,7 +301,7 @@
 .iconActions {
     align-items: center;
     border: 1px solid transparent;
-    border-radius: var(--border-radius);
+    border-radius: 20px;
     display: flex;
     gap: 0;
     padding: 2px;
@@ -311,7 +319,7 @@
     align-items: center;
     background: transparent;
     border-radius: 50%;
-    color: var(--text-secondary-color);
+    color: var(--document-secondary-color);
     display: inline-flex;
     flex: none;
     height: 32px;
@@ -322,7 +330,7 @@
 
 .documentList .iconButton:hover {
     background: var(--field-background);
-    color: var(--ink-strong);
+    color: var(--document-title-color);
 }
 
 .documentList .iconButton[data-action='delete']:hover {

@@ -16,6 +16,10 @@ body,
 }
 
 :root {
+  --documents-background: #f3f4f6;
+  --document-thumbnail-border: #e7e8ed;
+  --document-title-color: #25262b;
+  --document-secondary-color: #696d77;
   --glass-highlight: rgba(255, 255, 255, 0.85);
   --tag-red-background: #ffebe9;
   --tag-red-color: #a52a23;

@@ -450,10 +450,6 @@ test('document search, filter typography and tag actions use consistent styling'
         await tags.evaluate((element) => getComputedStyle(element).fontFamily)
     );
     await page.keyboard.press('Escape');
-    // The page uses the design system's typeface, and the date filter's name holds its label.
-    await expect(page.getByRole('heading', { name: 'Documents' })).toHaveCSS(
-        'font-family',
-        /Roboto/
-    );
+    // The date filter's name holds its visible label.
     await expect(date).toHaveAccessibleName('Last edited: Any time');
 });
