@@ -80,6 +80,17 @@ describe('assets', () => {
         expect(headers.get('x-content-type-options')).toBe('nosniff');
     });
 
+    it('lists the images a document uses, for its readers only', async () => {
+        const { call, ada, plan, upload } = await serveDocument();
+        const list = (cookie = ada.cookie) =>
+            call('GET', `/documents/${plan.id}/assets`, { cookie });
+
+        expect(await (await list()).json()).toEqual([]);
+        await upload(PNG);
+        expect(await (await list()).json()).toEqual([hashOf(PNG)]);
+        expect((await list('')).status).toBe(401);
+    });
+
     it('answers whether it keeps an image without sending it', async () => {
         const { call, ada, path, upload } = await serveDocument();
         const ask = () => call('HEAD', path(PNG), { cookie: ada.cookie });

@@ -3,14 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useEffects } from './hooks';
 
-/** How long a shape whose image is missing waits before asking for it again. */
+/** How long a shape whose image is missing waits before asking for it again, then twice as long each time, at most. */
 const MISSING_IMAGE_RETRY_MS = 30_000;
+const MISSING_IMAGE_RETRY_MOST_MS = 10 * 60_000;
 
 /**
  * An address to show an image shape's `source` from: asked from the kept images
  * for an asset, then from the server's for `documentId`, so none until it is found.
- * One still missing is asked for again while the shape shows, as another copy may
- * upload it later.
+ * One still missing is asked for again, less and less often, while the shape shows,
+ * as another copy may upload it later; shapes showing one image share each ask.
  */
 export const useImageUrl = (source: string, documentId?: string) => {
     const { assets } = useEffects();
@@ -28,7 +29,10 @@ export const useImageUrl = (source: string, documentId?: string) => {
 
             setFound({ source, url });
             if (!url) {
-                retry = setTimeout(() => setAttempt((count) => count + 1), MISSING_IMAGE_RETRY_MS);
+                retry = setTimeout(
+                    () => setAttempt((count) => count + 1),
+                    Math.min(MISSING_IMAGE_RETRY_MS * 2 ** attempt, MISSING_IMAGE_RETRY_MOST_MS)
+                );
             }
         });
 

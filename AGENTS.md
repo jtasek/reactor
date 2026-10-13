@@ -131,8 +131,8 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   `PUT /api/documents/:documentId/assets/:hash` and a viewer reads it there. The server
   checks the type by content and the hash, stores the bytes once (`BlobStorage`), links them
   to the document (`document_assets`) and counts each workspace's images against a quota.
-  Every hour it deletes the images no document links to any more, an hour after they were
-  last added (`deleteUnusedAssets`). `tests/server/support.ts` `serve()` runs all of it over HTTP.
+  A minute after it starts and then every hour it deletes the images no document links to
+  any more, an hour after they were last added (`deleteUnusedAssets`). `tests/server/support.ts` `serve()` runs all of it over HTTP.
 
 ### Verification baseline (do not treat as regressions)
 
@@ -313,12 +313,13 @@ Examples worth modelling new tools on:
   `asset:<hash>`, never image data, and `useImageUrl` (`src/app/imageHooks.ts`) shows it
   through a blob URL (`src/app/services/assets.ts`). Signed in, server sync shares images
   (`src/app/services/assetSync.ts`, loaded with it): each time a document the server has
-  changes or links, it uploads, three at a time, the images its shapes and imported library
-  components show that the server lacks for it, so a pasted or cloned shape's image is
-  uploaded for its new document too; the images found on the server are remembered on the
-  device. An image this browser lacks is fetched for its document and kept, asked for again
-  a few times, and every 30 seconds while its shape shows, as another copy may upload it
-  later.
+  changes or links, a second after, it uploads the images its shapes and imported library
+  components show that the server lacks for it (`GET /api/documents/:documentId/assets` lists
+  them, once a session), so a pasted or cloned shape's image is uploaded for its new
+  document too; one refused is offered again ten minutes later. An image this browser lacks
+  is fetched for its document and kept, asked for again a few times, and then less and less
+  often while its shape shows, as another copy may upload it later. Uploads and downloads run
+  three at a time.
 - `Text` — two-phase: select tool → click canvas to place + enter typing mode → type → Enter
   to commit (Escape cancels). The placement click starts typing inside `execute` (synchronous).
 - `Select` — marquee: press + drag draws the dashed rect; `selectShapes` selects shapes whose

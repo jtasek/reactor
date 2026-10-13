@@ -181,6 +181,17 @@ export async function addDocumentAsset(
     });
 }
 
+/** The hashes of the images a document uses. */
+export async function documentAssetHashes(db: Db, documentId: string) {
+    const rows = await db
+        .selectFrom('document_assets')
+        .select('hash')
+        .where('document_id', '=', documentId)
+        .execute();
+
+    return rows.map(({ hash }) => hash);
+}
+
 /**
  * An image a document uses, or undefined when it uses none by that hash; without
  * `withBytes`, its bytes are left in storage and come back empty.

@@ -12,8 +12,8 @@ export type AssetUpload = 'kept' | 'noRoom' | 'refused';
 
 /** The server's calls for the images of documents. */
 export interface AssetServer {
-    /** Whether the server keeps an image for a document. */
-    hasAsset(documentId: string, hash: string): Promise<boolean>;
+    /** The hashes of the images the server keeps for a document. */
+    assetHashes(documentId: string): Promise<string[]>;
     /** Uploads an image for a document; a request that may succeed when sent again throws. */
     uploadAsset(documentId: string, hash: string, asset: AssetBytes): Promise<AssetUpload>;
     /** An image a document uses, or undefined when the server keeps none by that hash for it. */
@@ -36,14 +36,16 @@ const send = (method: string, documentId: string, hash: string, bytes?: Uint8Arr
 
 /** The images of the signed-in user's documents on the server. */
 export const assetApi: AssetServer = {
-    async hasAsset(documentId, hash) {
-        const response = await send('HEAD', documentId, hash);
+    async assetHashes(documentId) {
+        const response = await fetch(`/api/documents/${encodeURIComponent(documentId)}/assets`, {
+            credentials: 'same-origin'
+        });
 
-        if (response.ok || response.status === 404) {
-            return response.ok;
+        if (!response.ok) {
+            throw new Error(`The images of ${documentId} could not be listed: ${response.status}`);
         }
 
-        throw new Error(`The image ${hash} could not be looked for: ${response.status}`);
+        return (await response.json()) as string[];
     },
     async uploadAsset(documentId, hash, { bytes }) {
         const response = await send('PUT', documentId, hash, bytes);
@@ -88,45 +90,28 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 /** How long to wait, in turn, before asking again for an image not uploaded yet. */
 const DOWNLOAD_RETRIES_MS = [1000, 3000, 10000];
 
-/** How many images are looked for or uploaded at once. */
-const MAX_UPLOADS = 3;
+/** How many images are uploaded or fetched at once. */
+const MAX_TRANSFERS = 3;
 
-/** Where this device remembers the images the server has, as `documentId/hash`, between starts. */
-const KNOWN_KEY = 'reactor:shared-images';
+/** How long changes to a document gather before its images are looked over. */
+const SHARE_DELAY_MS = 1000;
 
-/** How many of those it remembers; the oldest are forgotten, to be looked for again. */
-const MAX_KNOWN = 5000;
+/** How long an image the server refused waits before it is offered again, as room may free up. */
+const REFUSAL_RETRY_MS = 10 * 60 * 1000;
 
-/** The images the server has, as this device remembers them; none where storage is unavailable. */
-function loadKnown(): string[] {
-    try {
-        const known: unknown = JSON.parse(localStorage.getItem(KNOWN_KEY) ?? '[]');
-
-        return Array.isArray(known) ? known.filter((key) => typeof key === 'string') : [];
-    } catch {
-        return [];
-    }
-}
-
-function saveKnown(known: Set<string>) {
-    try {
-        localStorage.setItem(KNOWN_KEY, JSON.stringify([...known].slice(-MAX_KNOWN)));
-    } catch {
-        // Without storage, images are looked for again on the next start.
-    }
-}
-
-/** The image sources a document's shapes show, imported library components' included. */
-const imageSources = (document: Document | undefined) =>
-    [
-        ...Object.values(document?.shapes ?? {}),
-        ...Object.values(document?.components ?? {}).flatMap((component) =>
-            Object.values(component.sourceShapes ?? {})
+/** The image hashes a document's shapes show, imported library components' included. */
+export const imageHashes = (document: Document | undefined) =>
+    new Set(
+        [
+            ...Object.values(document?.shapes ?? {}),
+            ...Object.values(document?.components ?? {}).flatMap((component) =>
+                Object.values(component.sourceShapes ?? {})
+            )
+        ].flatMap((shape) =>
+            shape.type === 'image' && shape.source.startsWith(ASSET_PREFIX)
+                ? [shape.source.slice(ASSET_PREFIX.length)]
+                : []
         )
-    ].flatMap((shape) =>
-        shape.type === 'image' && shape.source.startsWith(ASSET_PREFIX)
-            ? [shape.source.slice(ASSET_PREFIX.length)]
-            : []
     );
 
 /** What image sharing reads of the editor, and how it hands the editor its downloads. */
@@ -141,63 +126,71 @@ export interface AssetSyncSource {
 
 /**
  * Shares images with the server once signed in: uploads the ones a document uses
- * that the server lacks for it, and fetches the ones this browser lacks.
+ * that the server lacks for it, and fetches the ones this browser lacks. What the
+ * server keeps for a document is asked once a session, as the list of its images.
  */
 export function createAssetSync(editor: AssetSyncSource, server = assetApi): AssetSync {
-    /** The images, as `documentId/hash`, the server has. */
-    const known = new Set(loadKnown());
-    /** Those it has or is being given, or that are another copy's to upload. */
-    const shared = new Set(known);
-    const changed = new Set<string>();
+    /** Per document, the images the server keeps or is being given; a list that fails is asked again. */
+    const onServer = new Map<string, Promise<Set<string>>>();
+    /** When the server last refused an image, by `documentId/hash`. */
+    const refused = new Map<string, number>();
+    const changed = new Map<string, ReturnType<typeof setTimeout>>();
     const waiting: Array<() => void> = [];
     let running = 0;
     let toldNoRoom = false;
 
-    /** Runs `task` once fewer than `MAX_UPLOADS` others run. */
-    const queued = async (task: () => Promise<void>) => {
-        if (running >= MAX_UPLOADS) {
+    /** Runs `task` once fewer than `MAX_TRANSFERS` others run; an ending task hands its turn on. */
+    const queued = async <T>(task: () => Promise<T>) => {
+        if (running < MAX_TRANSFERS) {
+            running++;
+        } else {
             await new Promise<void>((resolve) => waiting.push(resolve));
         }
 
-        running++;
         try {
-            await task();
+            return await task();
         } finally {
-            running--;
-            waiting.shift()?.();
+            const next = waiting.shift();
+
+            if (next) {
+                next();
+            } else {
+                running--;
+            }
         }
     };
-    const remember = (key: string) => {
-        known.delete(key);
-        known.add(key);
-        saveKnown(known);
+    const kept = (documentId: string) => {
+        const known =
+            onServer.get(documentId) ??
+            server.assetHashes(documentId).then((hashes) => new Set(hashes));
+
+        onServer.set(documentId, known);
+        known.catch(() => onServer.delete(documentId));
+
+        return known;
     };
 
     /**
-     * Uploads a document's images that the server lacks for it. One kept only by
-     * another copy is that copy's to upload; one that fails is tried again with the
-     * document's next change or link.
+     * Uploads an image a document uses that the server lacks for it. One kept only
+     * by another copy is that copy's to upload; one that fails is tried again with
+     * the document's next change or link, and one refused some minutes later.
      */
-    const share = async (documentId: string, hash: string) => {
+    const share = async (documentId: string, hash: string, known: Set<string>) => {
         const key = `${documentId}/${hash}`;
 
-        if (shared.has(key)) {
+        if (known.has(hash) || (refused.get(key) ?? 0) > Date.now() - REFUSAL_RETRY_MS) {
             return;
         }
 
-        shared.add(key);
+        known.add(hash);
         await queued(async () => {
             try {
-                if (await server.hasAsset(documentId, hash)) {
-                    remember(key);
-                    return;
-                }
-
                 const asset = await editor.database()?.asset(hash);
                 const uploaded = asset && (await server.uploadAsset(documentId, hash, asset));
 
-                if (uploaded === 'kept') {
-                    remember(key);
+                if (uploaded && uploaded !== 'kept') {
+                    known.delete(hash);
+                    refused.set(key, Date.now());
                 }
 
                 // Once a session says it; the next images would only repeat it.
@@ -206,25 +199,31 @@ export function createAssetSync(editor: AssetSyncSource, server = assetApi): Ass
                     editor.displayError(NO_ROOM);
                 }
             } catch {
-                shared.delete(key);
+                known.delete(hash);
             }
         });
     };
 
     return {
-        /** Shares a document's images once the task's changes to it end. */
+        /** Shares a document's images once its changes have gathered for a moment. */
         changed(documentId: string) {
-            if (changed.size === 0) {
-                queueMicrotask(() => {
-                    changed.forEach((id) =>
-                        new Set(imageSources(editor.document(id))).forEach(
-                            (hash) => void share(id, hash)
-                        )
-                    );
-                    changed.clear();
-                });
+            if (changed.has(documentId)) {
+                return;
             }
-            changed.add(documentId);
+
+            changed.set(
+                documentId,
+                setTimeout(() => {
+                    changed.delete(documentId);
+                    void kept(documentId).then(
+                        (known) =>
+                            imageHashes(editor.document(documentId)).forEach(
+                                (hash) => void share(documentId, hash, known)
+                            ),
+                        () => {}
+                    );
+                }, SHARE_DELAY_MS)
+            );
         },
 
         /**
@@ -244,7 +243,9 @@ export function createAssetSync(editor: AssetSyncSource, server = assetApi): Ass
             for (const delay of [0, ...DOWNLOAD_RETRIES_MS]) {
                 await wait(delay);
 
-                const found = await server.asset(documentId, hash).catch(() => undefined);
+                const found = await queued(() =>
+                    server.asset(documentId, hash).catch(() => undefined)
+                );
 
                 if (found) {
                     await database?.putAsset({ hash, ...found }).catch(() => {});

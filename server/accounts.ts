@@ -22,8 +22,9 @@ const required = (env: NodeJS.ProcessEnv, name: string) => {
  * HTTP server. On shutdown, close the sync first, then the rest once it is done. Without it, the editor is used signed out only. Production sends email
  * over SMTP; development without `SMTP_URL` writes it to the log.
  */
-/** How often images no document uses are looked for and deleted. */
+/** How often images no document uses are looked for and deleted, the first time soon after start. */
 const ASSET_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
+const FIRST_ASSET_CLEANUP_MS = 60 * 1000;
 
 export async function startAccounts(
     env: NodeJS.ProcessEnv,
@@ -64,9 +65,12 @@ export async function startAccounts(
         deleteUnusedAssets(db, blobs, new Date(Date.now() - UNUSED_ASSET_GRACE_MS)).catch(
             (error: unknown) => log.error(error)
         );
+    // Soon after start as well, so a server restarted within the hour still cleans up.
+    const firstCleanup = setTimeout(cleanUp, FIRST_ASSET_CLEANUP_MS);
     const cleanups = setInterval(cleanUp, ASSET_CLEANUP_INTERVAL_MS);
 
-    // It does not keep the process running.
+    // Neither keeps the process running.
+    firstCleanup.unref();
     cleanups.unref();
 
     return {
@@ -74,6 +78,7 @@ export async function startAccounts(
         api: createApi({ db, auth, origin, onDeleted: sync.closeDocument, blobs }),
         sync,
         close: () => {
+            clearTimeout(firstCleanup);
             clearInterval(cleanups);
 
             return db.destroy();

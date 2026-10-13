@@ -79,8 +79,15 @@ function assetServerFor({ call }: Served, cookie: string, online = () => true): 
     };
 
     return {
-        hasAsset: async (documentId, hash) =>
-            (await send('HEAD', `/documents/${documentId}/assets/${hash}`)).ok,
+        assetHashes: async (documentId) => {
+            const response = await send('GET', `/documents/${documentId}/assets`);
+
+            if (!response.ok) {
+                throw new Error(`The images could not be listed: ${response.status}`);
+            }
+
+            return (await response.json()) as string[];
+        },
         uploadAsset: async (documentId, hash, { bytes }) => {
             const response = await send('PUT', `/documents/${documentId}/assets/${hash}`, bytes);
 
@@ -389,6 +396,15 @@ describe('images when signed in', () => {
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
     const assetPath = (documentId: string, source: string) =>
         `/documents/${documentId}/assets/${source.slice('asset:'.length)}`;
+    /** Waits for the server to keep `source` for a document; a change's images wait a moment first. */
+    const uploaded = (served: Served, cookie: string, documentId: string, source: string) =>
+        vi.waitFor(
+            async () =>
+                expect(
+                    (await served.call('HEAD', assetPath(documentId, source), { cookie })).status
+                ).toBe(200),
+            { timeout: 5000 }
+        );
 
     /** Adds an image shape showing `png` to the device's document. */
     async function addImage({ store, effects }: Device) {
@@ -411,11 +427,7 @@ describe('images when signed in', () => {
         const [documentId] = documentIds(first);
         const source = await addImage(first);
 
-        await vi.waitFor(async () =>
-            expect(
-                (await served.call('HEAD', assetPath(documentId, source), { cookie })).status
-            ).toBe(200)
-        );
+        await uploaded(served, cookie, documentId, source);
 
         const second = await device(served, cookie);
 
@@ -459,11 +471,7 @@ describe('images when signed in', () => {
         first.store.actions.cloneDocument(documentId);
         const cloneId = documentIds(first).find((id) => id !== documentId)!;
 
-        await vi.waitFor(async () =>
-            expect((await served.call('HEAD', assetPath(cloneId, source), { cookie })).status).toBe(
-                200
-            )
-        );
+        await uploaded(served, cookie, cloneId, source);
     });
 
     it('uploads an image added to another document for that document too', async () => {
@@ -484,11 +492,7 @@ describe('images when signed in', () => {
             source
         });
 
-        await vi.waitFor(async () =>
-            expect((await served.call('HEAD', assetPath(otherId, source), { cookie })).status).toBe(
-                200
-            )
-        );
+        await uploaded(served, cookie, otherId, source);
     });
 
     it('says once that the workspace has no room for more images', async () => {
@@ -499,7 +503,7 @@ describe('images when signed in', () => {
             first.store.state.notifications.filter(({ type }) => type === 'error').length;
 
         await addImage(first);
-        await vi.waitFor(() => expect(notices()).toBe(1));
+        await vi.waitFor(() => expect(notices()).toBe(1), { timeout: 5000 });
 
         const { source } = await first.effects.assets.add(new Blob([new Uint8Array([...png, 4])]));
 
@@ -509,7 +513,7 @@ describe('images when signed in', () => {
             size: { width: 20, height: 10 },
             source
         });
-        await new Promise((resolve) => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 1500));
         expect(notices()).toBe(1);
     });
 
