@@ -1,12 +1,15 @@
 import * as Yjs from 'yjs';
 import * as Hocuspocus from '@hocuspocus/provider';
 import type { Api, ServerRecord, SyncStatus, Transport } from './api';
+import type { Document } from '../types';
 import type { Collaboration } from './collaboration';
+import { createAssetSync, type AssetSync, type AssetSyncSource } from './assetSync';
 
 export interface ServerEvents {
     /** The documents this copy holds. */
     documentIds(): string[];
-    documentName(documentId: string): string;
+    /** A document this copy holds, by id. */
+    document(documentId: string): Document | undefined;
     /** A document on the server this copy lacks, with its whole state; false when it cannot be read. */
     opened(documentId: string, update: Uint8Array): boolean;
     /** A document this copy holds was deleted on the server. */
@@ -29,6 +32,8 @@ export interface ServerSyncOptions {
      * throws when that cannot be told, as offline.
      */
     signedIn(): Promise<boolean>;
+    /** The documents' images, shared with the server as each document changes or links. */
+    images?: Omit<AssetSyncSource, 'document'>;
 }
 
 const union = (ids: string[], more: string[]) => [...new Set([...ids, ...more])];
@@ -80,7 +85,17 @@ export class ServerSync {
     private retryDelay = RETRY_FIRST;
     private stopped = false;
 
+    private readonly images?: AssetSync;
+
     constructor(private readonly options: ServerSyncOptions) {
+        if (options.images) {
+            this.images = createAssetSync(
+                { ...options.images, document: options.events.document },
+                options.transport.assets
+            );
+            options.images.use(this.images);
+        }
+
         // Documents this device held before it first synced the account were made here.
         if (!options.record.load()) {
             options.record.save({ unsent: options.events.documentIds(), deleting: [] });
@@ -184,6 +199,7 @@ export class ServerSync {
     send(documentId: string, update: Uint8Array): void {
         const link = this.links.get(documentId);
 
+        this.images?.changed(documentId);
         if (link?.held) {
             Yjs.applyUpdate(link.doc, update, OUTGOING);
         }
@@ -297,7 +313,7 @@ export class ServerSync {
         const creation = this.options.api
             .createDocument(workspaceId, {
                 id: documentId,
-                name: this.options.events.documentName(documentId)
+                name: this.options.events.document(documentId)?.name ?? ''
             })
             .then(
                 (created) => {
@@ -378,6 +394,7 @@ export class ServerSync {
                 awareness: null,
                 onSynced: () => {
                     this.refused.delete(documentId);
+                    this.images?.changed(documentId);
 
                     if (!link.held) {
                         this.arrived(link, documentId);

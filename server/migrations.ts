@@ -120,6 +120,17 @@ const migrations: Record<string, Migration> = {
                 .column('hash')
                 .execute();
         }
+    },
+    '0004_asset_blob_times': {
+        async up(db) {
+            // When bytes were last stored, so a cleanup spares those an upload is linking.
+            await db.schema
+                .alterTable('asset_blobs')
+                .addColumn('created_at', 'timestamptz', (column) =>
+                    column.notNull().defaultTo(sql`now()`)
+                )
+                .execute();
+        }
     }
 };
 

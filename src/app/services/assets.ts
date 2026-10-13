@@ -1,3 +1,4 @@
+import type { AssetSync } from './assetSync';
 import type { DocumentDatabase } from './documentDatabase';
 
 /** The largest image taken, in bytes. */
@@ -107,6 +108,7 @@ interface AssetActions {
 export function createAssets({ pick = pickFile, measure = measureImage } = {}) {
     let database: Promise<DocumentDatabase | undefined> = Promise.resolve(undefined);
     let actions: AssetActions | undefined;
+    let sync: AssetSync | undefined;
     const urls = new Map<string, Promise<string | undefined>>();
 
     /** Keeps a file as an image to draw; throws `ImageRefused` saying why it cannot. */
@@ -146,6 +148,11 @@ export function createAssets({ pick = pickFile, measure = measureImage } = {}) {
             actions = root;
         },
 
+        /** Fetches images this browser lacks through the server's `next` sync once signed in. */
+        useSync(next: AssetSync) {
+            sync = next;
+        },
+
         add,
 
         /**
@@ -172,10 +179,11 @@ export function createAssets({ pick = pickFile, measure = measureImage } = {}) {
 
         /**
          * An address the browser can show an image shape's `source` from: one
-         * made from the kept bytes for an asset, none when it is not kept here,
-         * and the source itself for anything else.
+         * made from the kept bytes for an asset, else from the server's for
+         * `documentId`, none when neither has it, and the source itself for
+         * anything else.
          */
-        url(source: string): Promise<string | undefined> {
+        url(source: string, documentId?: string): Promise<string | undefined> {
             if (!source.startsWith(ASSET_PREFIX)) {
                 return Promise.resolve(source);
             }
@@ -188,7 +196,10 @@ export function createAssets({ pick = pickFile, measure = measureImage } = {}) {
             }
 
             const created = database
-                .then((opened) => opened?.asset(hash))
+                .then(
+                    async (opened) =>
+                        (await opened?.asset(hash)) ?? sync?.download(documentId, hash, opened)
+                )
                 .then((asset) =>
                     asset
                         ? URL.createObjectURL(new Blob([asset.bytes], { type: asset.type }))

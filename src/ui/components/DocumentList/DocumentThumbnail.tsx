@@ -11,7 +11,7 @@ import {
     getShapeBounds,
     rectToBox
 } from 'src/app/utils';
-import { useImageUrl } from 'src/app/hooks';
+import { useImageUrl } from 'src/app/imageHooks';
 import styles from './styles.css';
 
 /** The size of the mark drawn for an instance whose component is missing. */
@@ -30,8 +30,8 @@ const imageFallback = (shape: Image) => (
     />
 );
 
-const PreviewImage: FC<{ shape: Image }> = ({ shape }) => {
-    const url = useImageUrl(shape.source);
+const PreviewImage: FC<{ shape: Image; documentId: string }> = ({ shape, documentId }) => {
+    const url = useImageUrl(shape.source, documentId);
 
     if (!url) {
         return imageFallback(shape);
@@ -192,7 +192,7 @@ function geometry(document: Document, shape: Shape, ancestors: ReadonlySet<strin
                 </text>
             );
         case 'image':
-            return <PreviewImage shape={shape} />;
+            return <PreviewImage shape={shape} documentId={document.id} />;
         case 'instance':
             return <PreviewInstance document={document} shape={shape} ancestors={ancestors} />;
         default:

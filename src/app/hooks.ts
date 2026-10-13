@@ -7,7 +7,7 @@ import {
 } from 'overmind-react';
 import { commandsFor, commandsIn, getCommand, getCommands } from './actions';
 import { Context } from '.';
-import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useReducer, useRef } from 'react';
 import { getShapeBounds, isShapeLocked, isShapeVisible } from './utils';
 import { hitTestShape, hitTolerance } from './geometry';
 import type { Command, CommandPlace, CommandScope } from './types';
@@ -130,31 +130,6 @@ export const useGesture = () => {
 /** The image the image tool draws, once one is chosen. */
 export const useImageToPlace = () => {
     return useAppState((state) => state.tools.imageToPlace);
-};
-
-/**
- * An address to show an image shape's `source` from: asked from the kept images
- * for an asset, so none until it is found.
- */
-export const useImageUrl = (source: string) => {
-    const { assets } = useEffects();
-    const [found, setFound] = useState<{ source: string; url?: string }>();
-
-    useEffect(() => {
-        let current = true;
-
-        void assets.url(source).then((url) => {
-            if (current) {
-                setFound({ source, url });
-            }
-        });
-
-        return () => {
-            current = false;
-        };
-    }, [assets, source]);
-
-    return found?.source === source ? found.url : undefined;
 };
 
 export const useActiveToolsIds = () => {

@@ -42,6 +42,7 @@ export interface Database {
     asset_blobs: {
         hash: string;
         bytes: Buffer;
+        created_at: Generated<Date>;
     };
     document_assets: {
         document_id: string;

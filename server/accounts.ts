@@ -1,4 +1,5 @@
 import { createApi } from './api.ts';
+import { UNUSED_ASSET_GRACE_MS, deleteUnusedAssets, postgresBlobs } from './assets.ts';
 import { authHandler, createAuth, migrateAuth } from './auth.ts';
 import { openDatabase } from './database.ts';
 import { logMailer, smtpMailer } from './mailer.ts';
@@ -21,6 +22,9 @@ const required = (env: NodeJS.ProcessEnv, name: string) => {
  * HTTP server. On shutdown, close the sync first, then the rest once it is done. Without it, the editor is used signed out only. Production sends email
  * over SMTP; development without `SMTP_URL` writes it to the log.
  */
+/** How often images no document uses are looked for and deleted. */
+const ASSET_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
+
 export async function startAccounts(
     env: NodeJS.ProcessEnv,
     { production, log }: { production: boolean; log: Log }
@@ -55,11 +59,24 @@ export async function startAccounts(
 
     const origin = new URL(baseURL).origin;
     const sync = createSync({ db, auth, origin, log });
+    const blobs = postgresBlobs(db);
+    const cleanUp = () =>
+        deleteUnusedAssets(db, blobs, new Date(Date.now() - UNUSED_ASSET_GRACE_MS)).catch(
+            (error: unknown) => log.error(error)
+        );
+    const cleanups = setInterval(cleanUp, ASSET_CLEANUP_INTERVAL_MS);
+
+    // It does not keep the process running.
+    cleanups.unref();
 
     return {
         handler: authHandler(auth),
-        api: createApi({ db, auth, origin, onDeleted: sync.closeDocument }),
+        api: createApi({ db, auth, origin, onDeleted: sync.closeDocument, blobs }),
         sync,
-        close: () => db.destroy()
+        close: () => {
+            clearInterval(cleanups);
+
+            return db.destroy();
+        }
     };
 }

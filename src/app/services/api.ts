@@ -1,3 +1,5 @@
+import type { AssetServer } from './assetSync';
+
 /** A workspace the signed-in user belongs to. */
 export interface Workspace {
     id: string;
@@ -6,10 +8,14 @@ export interface Workspace {
     role: 'viewer' | 'editor' | 'admin';
 }
 
-/** Where documents sync, and the WebSocket class to open it with where the browser's is missing. */
+/**
+ * Where documents sync, the WebSocket class to open it with where the browser's is
+ * missing, and the calls for their images where not the server's own.
+ */
 export interface Transport {
     url: string;
     WebSocketPolyfill?: unknown;
+    assets?: AssetServer;
 }
 
 /** The server's `/sync` endpoint, on the address the editor was loaded from. */

@@ -421,9 +421,14 @@ export async function startDocumentSync(
                 }
             },
             signedIn: async () => (await effects.accounts.session())?.id === owner,
+            images: {
+                database: () => database,
+                displayError: instance.actions.displayError,
+                use: effects.assets.useSync
+            },
             events: {
                 documentIds: () => collaboration.documentIds(),
-                documentName: (documentId) => instance.state.documents[documentId]?.name ?? '',
+                document: (documentId) => instance.state.documents[documentId],
                 opened: openFromServer,
                 deleted: removeDeleted,
                 received: append,

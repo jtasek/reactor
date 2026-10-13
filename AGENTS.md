@@ -131,7 +131,8 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   `PUT /api/documents/:documentId/assets/:hash` and a viewer reads it there. The server
   checks the type by content and the hash, stores the bytes once (`BlobStorage`), links them
   to the document (`document_assets`) and counts each workspace's images against a quota.
-  `tests/server/support.ts` `serve()` runs all of it over HTTP.
+  Every hour it deletes the images no document links to any more, an hour after they were
+  last added (`deleteUnusedAssets`). `tests/server/support.ts` `serve()` runs all of it over HTTP.
 
 ### Verification baseline (do not treat as regressions)
 
@@ -309,8 +310,13 @@ Examples worth modelling new tools on:
   tool runs its `activate`, which asks for a file (`effects.assets.pickImage`); the image is
   checked by its content, kept in the document database under the SHA-256 of its bytes, and
   set as `state.tools.imageToPlace` with its measured ratio. The shape's `source` is
-  `asset:<hash>`, never image data, and `useImageUrl` shows it through a blob URL
-  (`src/app/services/assets.ts`).
+  `asset:<hash>`, never image data, and `useImageUrl` (`src/app/imageHooks.ts`) shows it
+  through a blob URL (`src/app/services/assets.ts`). Signed in, server sync shares images
+  (`src/app/services/assetSync.ts`, loaded with it): each time a document changes or links,
+  it uploads the images the document's shapes show that the server lacks for it, so a pasted
+  or cloned shape's image is uploaded for its new document too, and an image this browser
+  lacks is fetched for its document, asked for again a few times while another copy has not
+  uploaded it, and kept.
 - `Text` — two-phase: select tool → click canvas to place + enter typing mode → type → Enter
   to commit (Escape cancels). The placement click starts typing inside `execute` (synchronous).
 - `Select` — marquee: press + drag draws the dashed rect; `selectShapes` selects shapes whose
@@ -501,8 +507,8 @@ Hidden guides are not drawn and locked ones do not move.
   `useEffects`, domain hooks like `useShapes`, `useCurrentDocument`, `useCamera`). Add new
   domain hooks here rather than ad-hoc `useAppState` selectors in components. Hooks only the
   editor page uses go in a module that loads with it, so they stay out of the startup bundle:
-  `src/app/componentHooks.ts` for components, `src/app/variableHooks.ts` for variables and
-  `src/app/contextMenuHooks.ts` for the context menu.
+  `src/app/componentHooks.ts` for components, `src/app/variableHooks.ts` for variables,
+  `src/app/contextMenuHooks.ts` for the context menu and `src/app/imageHooks.ts` for images.
   A component takes what it shows through the narrowest hook (`useLayersIds`, `useGesture`,
   `usePointerPosition`) rather than a whole store object, and what changes on every pointer
   move is read by a component of its own, as the status bar's `MouseInfo`, so the rest does
