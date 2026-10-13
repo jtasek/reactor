@@ -563,7 +563,7 @@ Hidden guides are not drawn and locked ones do not move.
   Panels docked to a side sit at the top of their zone, under the corner dock above them.
   Panels docked together keep the order they were dropped in (`PanelPlacement.order`): a drop
   goes above the first panel whose middle is below the pointer, a line shows where while
-  dragging, and over a panel in a side column the drop goes into that panel's dock.
+  dragging, and Alt with an up or down arrow on a docked panel's header moves it among them.
 - **Shortcuts**: a tool or command declares `shortcut` (`r`, `mod+d`, `delete,backspace`;
   `mod` is Ctrl or Cmd, see `src/events/shortcuts.ts`). `events.pressShortcut` activates the
   tool or runs the command; the keyboard adapter skips it while a text field has focus. Keep

@@ -486,41 +486,84 @@ test('dragging a docked panel’s corner keeps the default width for when it flo
         .toBeGreaterThan(column.width);
 });
 
-test('a panel goes where it is dropped among the panels docked with it, and is saved', async ({
+/** Saves a layout once, before the editor loads, so a reload keeps what the page changes. */
+async function saveLayout(page: Page, layout: Record<string, string | null>) {
+    await page.goto('/');
+    await page.evaluate((layout) => {
+        localStorage.setItem(
+            'reactor:panel-layout',
+            JSON.stringify(
+                Object.fromEntries(
+                    Object.entries(layout).map(([id, dock]) => [
+                        id,
+                        { dock, position: { x: 0, y: 0 } }
+                    ])
+                )
+            )
+        );
+    }, layout);
+}
+
+const dockOrder = (page: Page, dock: string) =>
+    page
+        .locator(`[data-dock="${dock}"] > [data-panel]`)
+        .evaluateAll((panels) => panels.map((panel) => panel.getAttribute('data-panel')));
+
+test('a panel goes where it is dropped among the panels docked with it, also after reloading', async ({
     page
 }) => {
-    await setLayout(page, { explorer: 'right', controlPanel: 'right' });
+    await saveLayout(page, { explorer: 'right', controlPanel: 'right' });
     await openEditor(page, ['Explorer']);
-    const right = page.locator('[data-dock="right"]');
-    const order = () =>
-        right
-            .locator(':scope > [data-panel]')
-            .evaluateAll((panels) => panels.map((panel) => panel.getAttribute('data-panel')));
-    const [upper, lower] = (await order()) as [string, string];
-
-    await expect(right.locator(':scope > [data-panel]')).toHaveCount(2);
-    const header = page.locator(`[data-panel="${lower}"] > button`);
+    const [upper, lower] = (await dockOrder(page, 'right')) as [string, string];
+    const header = page.locator(`[data-panel="${upper}"] > button`);
     const from = (await header.boundingBox())!;
-    const target = await panelBox(page, upper);
+    const target = await panelBox(page, lower);
 
     await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
     await page.mouse.down();
-    // Over the upper part of the panel, which reaches into the top-right dock's band.
-    await page.mouse.move(target.x + target.width / 2, target.y + 12, { steps: 8 });
-    // A line shows where it would go: above the panel under the pointer.
-    const marker = right.locator('[data-drop-marker]');
+    await page.mouse.move(target.x + target.width / 2, target.y + target.height - 2, {
+        steps: 8
+    });
+    // A line shows where it would go: below the panel under the pointer.
+    const marker = page.locator('[data-dock="right"] [data-drop-marker]');
     await expect(marker).toHaveCount(1);
-    expect((await marker.boundingBox())!.y).toBeLessThan((await panelBox(page, upper)).y);
+    expect((await marker.boundingBox())!.y).toBeGreaterThan((await panelBox(page, lower)).y);
     await page.mouse.up();
 
     await expect(marker).toHaveCount(0);
-    await expect.poll(order).toEqual([lower, upper]);
+    await expect.poll(() => dockOrder(page, 'right')).toEqual([lower, upper]);
 
-    // The order is saved with the layout, to be kept on the next load.
-    const saved = await page.evaluate(() =>
-        JSON.parse(localStorage.getItem('reactor:panel-layout') ?? '{}')
-    );
-    expect(saved[lower].order).toBeLessThan(saved[upper].order);
+    await page.reload();
+    await expect(page.locator('svg#surface')).toBeVisible();
+    await page.getByRole('button', { name: 'More panels' }).click();
+    for (const control of ['Control Panel', 'Explorer']) {
+        await page.getByRole('checkbox', { name: control, exact: true }).check();
+    }
+    await expect.poll(() => dockOrder(page, 'right')).toEqual([lower, upper]);
+});
+
+test('the keyboard reorders a docked panel, docks one at the end and keeps its place', async ({
+    page
+}) => {
+    await saveLayout(page, { explorer: 'right', controlPanel: 'right' });
+    await openEditor(page, ['Explorer', 'Inspector']);
+    const [upper, lower] = (await dockOrder(page, 'right')) as [string, string];
+
+    await page.locator(`[data-panel="${lower}"] > button`).focus();
+    await page.keyboard.press('Alt+ArrowUp');
+    await expect.poll(() => dockOrder(page, 'right')).toEqual([lower, upper]);
+    await expect(page.locator(`[data-panel="${lower}"] > button`)).toBeFocused();
+
+    await page.locator('[data-panel="inspector"] > button').focus();
+    await page.keyboard.press('Shift+ArrowRight');
+    await expect.poll(() => dockOrder(page, 'right')).toEqual([lower, upper, 'inspector']);
+
+    // Restoring a panel's size keeps its place in its dock.
+    const corner = page.getByRole('button', { name: /^Resize Inspector/ }).last();
+    await corner.focus();
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Delete');
+    await expect.poll(() => dockOrder(page, 'right')).toEqual([lower, upper, 'inspector']);
 });
 
 test('a panel docked to a side sits at the top of its zone, under its corner’s panels', async ({
@@ -535,4 +578,21 @@ test('a panel docked to a side sits at the top of its zone, under its corner’s
         .evaluate((element) => Number.parseFloat(getComputedStyle(element).rowGap));
 
     expect(side.y).toBeCloseTo(corner.y + corner.height + gap, 0);
+});
+
+test('the corner dock stays a target while a side panel reaches its band', async ({ page }) => {
+    await saveLayout(page, { explorer: 'left', inspector: null });
+    await openEditor(page, ['Explorer', 'Inspector']);
+    const explorer = await panelBox(page, 'explorer');
+    const header = page.locator('[data-panel="inspector"] > button');
+    const from = (await header.boundingBox())!;
+
+    // The left panel starts inside the top-left band; a drop there still docks top left.
+    expect(explorer.y).toBeLessThan(20);
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(explorer.x + explorer.width / 2, 20, { steps: 8 });
+    await page.mouse.up();
+
+    await expect(page.locator('[data-dock="top-left"] [data-panel="inspector"]')).toBeVisible();
 });
