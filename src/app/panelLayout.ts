@@ -31,17 +31,25 @@ const isLength = (value: unknown): value is number =>
     typeof value === 'number' && Number.isFinite(value) && value > 0;
 
 const readSize = (value: unknown) => {
-    if (typeof value !== 'object' || value === null || !('width' in value)) {
+    if (typeof value !== 'object' || value === null) {
         return undefined;
     }
 
+    const width = 'width' in value ? value.width : undefined;
     const height = 'height' in value ? value.height : undefined;
 
-    if (!isLength(value.width) || (height !== undefined && !isLength(height))) {
+    if (
+        (width === undefined && height === undefined) ||
+        (width !== undefined && !isLength(width)) ||
+        (height !== undefined && !isLength(height))
+    ) {
         return undefined;
     }
 
-    return height === undefined ? { width: value.width } : { width: value.width, height };
+    return {
+        ...(width === undefined ? {} : { width }),
+        ...(height === undefined ? {} : { height })
+    };
 };
 
 export function readPanelLayout(value: unknown): Record<string, PanelPlacement> {

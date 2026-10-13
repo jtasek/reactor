@@ -190,6 +190,11 @@
     transform-origin: right;
 }
 
+/* A panel docked to a side takes its column's width, so its corners change only its height. */
+.docked[data-orientation='vertical'] .grip {
+    cursor: ns-resize;
+}
+
 .gripLeft {
     cursor: nesw-resize;
     left: 0;
