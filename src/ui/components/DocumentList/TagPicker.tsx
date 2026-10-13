@@ -1,9 +1,8 @@
-import React, { ChangeEvent, FC, FormEvent, useEffect, useRef, useState } from 'react';
+import React, { ChangeEvent, FC, FormEvent, useRef, useState } from 'react';
 import { documentTagTone, normalizeTags } from 'src/app/documentList';
 import { createPortal } from 'react-dom';
 import { Check, Plus } from 'lucide-react';
 import menuStyles from '../ContextMenu/styles.css';
-import dialogStyles from '../Dialog/styles.css';
 import { useAnchoredPopup } from './useAnchoredPopup';
 import styles from './tags.css';
 
@@ -29,24 +28,12 @@ export const TagPicker: FC<Props> = ({
     const [search, setSearch] = useState('');
     const popup = useRef<HTMLDivElement>(null);
     useAnchoredPopup(popup, anchor, onClose);
-    const close = () => {
-        anchor.focus();
-        onClose();
-    };
     const searchInput = useRef<HTMLInputElement>(null);
-    const incoming = normalizeTags(selectedTags);
-    const source = JSON.stringify(incoming);
-    const [draft, setDraft] = useState({ source, tags: incoming });
-    const selected = draft.tags;
-    useEffect(() => {
-        setDraft((current) => {
-            const tags = normalizeTags(selectedTags);
-            const source = JSON.stringify(tags);
-            return current.source === source ? current : { source, tags };
-        });
-    }, [selectedTags]);
+    const selected = normalizeTags(selectedTags);
+    // Tags stay listed while the picker is open, also one just taken off its last document.
+    const [listed, setListed] = useState(() => normalizeTags([...availableTags, ...selected]));
 
-    const options = normalizeTags([...availableTags, ...selected]);
+    const options = normalizeTags([...listed, ...availableTags, ...selected]);
     const selectedKeys = new Set(selected.map((tag) => tag.toLowerCase()));
     const name = search.trim();
     const query = name.toLowerCase();
@@ -55,27 +42,21 @@ export const TagPicker: FC<Props> = ({
         allowCreate && name !== '' && !options.some((tag) => tag.toLowerCase() === query);
     const changeSearch = (event: ChangeEvent<HTMLInputElement>) =>
         setSearch(event.currentTarget.value);
-    const saveSelection = () => {
-        onChange(selected);
-        close();
-    };
     const changeSelection = (event: ChangeEvent<HTMLInputElement>) => {
         const { value, checked } = event.currentTarget;
         if (checked) {
-            setDraft({ source, tags: normalizeTags([...selected, value]) });
+            onChange(normalizeTags([...selected, value]));
             return;
         }
-        setDraft({
-            source,
-            tags: selected.filter((tag) => tag.toLowerCase() !== value.toLowerCase())
-        });
+        onChange(selected.filter((tag) => tag.toLowerCase() !== value.toLowerCase()));
     };
     const createTag = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (!canCreate) {
             return;
         }
-        setDraft({ source, tags: normalizeTags([...selected, name]) });
+        setListed(normalizeTags([...listed, name]));
+        onChange(normalizeTags([...selected, name]));
         setSearch('');
         searchInput.current?.focus();
     };
@@ -111,7 +92,7 @@ export const TagPicker: FC<Props> = ({
                                 checked={selectedKeys.has(tag.toLowerCase())}
                                 onChange={changeSelection}
                             />
-                            <span className={styles.pill} data-tone={documentTagTone(tag, options)}>
+                            <span className={styles.pill} data-tone={documentTagTone(tag)}>
                                 {tag}
                             </span>
                             <span className={styles.check} aria-hidden="true">
@@ -134,15 +115,6 @@ export const TagPicker: FC<Props> = ({
                     </button>
                 )}
             </form>
-            <div className={menuStyles.divider} />
-            <div className={`${dialogStyles.actions} ${styles.pickerActions}`}>
-                <button type="button" onClick={close}>
-                    Cancel
-                </button>
-                <button type="button" data-variant="primary" onClick={saveSelection}>
-                    Done
-                </button>
-            </div>
         </div>,
         document.body
     );

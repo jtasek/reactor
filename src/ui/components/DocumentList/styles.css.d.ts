@@ -7,7 +7,6 @@ declare namespace StylesCssNamespace {
     cardTitle: string;
     clearFilters: string;
     current: string;
-    date: string;
     dateFilter: string;
     documentList: string;
     empty: string;
@@ -17,13 +16,13 @@ declare namespace StylesCssNamespace {
     iconActions: string;
     iconButton: string;
     layoutToggle: string;
+    meta: string;
     nameButton: string;
     nameInput: string;
     newButton: string;
     panel: string;
     resultCount: string;
     search: string;
-    shapeCount: string;
     tagFilter: string;
     thumbnail: string;
     thumbnailEmpty: string;

@@ -181,32 +181,35 @@ describe('documentModifiedLabel', () => {
 });
 
 describe('documentTagTone', () => {
-    const tags = [
-        'Client project',
-        'UI kit',
-        'Prototype',
-        'Research',
-        'Mobile',
-        'Draft',
-        'Archive'
-    ];
+    it("keeps a tag's tone however other tags change", () => {
+        const tone = documentTagTone('Client project');
 
-    it('uses seven distinct colors before repeating the palette', () => {
-        expect(new Set(tags.map((tag) => documentTagTone(tag, tags))).size).toBe(7);
+        expect(documentTagTone(' client PROJECT ')).toBe(tone);
+        expect(['Alpha', 'Zeta', 'UI kit'].map(() => documentTagTone('Client project'))).toEqual([
+            tone,
+            tone,
+            tone
+        ]);
     });
 
-    it('normalizes spelling and ignores catalog order and duplicates', () => {
-        const tone = documentTagTone('Client project', tags);
-        expect(documentTagTone(' Client PROJECT ', [...tags].reverse())).toBe(tone);
-        expect(documentTagTone('Client project', [...tags, ' client PROJECT '])).toBe(tone);
-    });
+    it('spreads tags over the palette and uses only its colors', () => {
+        const names = [
+            'Client project',
+            'UI kit',
+            'Prototype',
+            'Research',
+            'Mobile',
+            'Draft',
+            'Archive',
+            'Výzkum',
+            '新しい企画',
+            'x'.repeat(1000)
+        ];
+        const tones = names.map((name) => documentTagTone(name));
 
-    it('reuses only the palette colors when more tags exist', () => {
-        const names = [...tags, 'Výzkum', '新しい企画', 'x'.repeat(1000)];
-        for (const name of names) {
-            expect(['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'gray']).toContain(
-                documentTagTone(name, names)
-            );
+        expect(new Set(tones).size).toBeGreaterThan(3);
+        for (const tone of tones) {
+            expect(['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'gray']).toContain(tone);
         }
     });
 });

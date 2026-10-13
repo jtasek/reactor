@@ -1,11 +1,3 @@
-.filterMenu {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
-
-.filterMenu * {
-    font-family: inherit;
-}
-
 .check {
     align-items: center;
     display: flex;

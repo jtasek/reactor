@@ -127,7 +127,15 @@ const setStaticCache = (res: ServerResponse, filePath: string) => {
 const assetOptions = { maxAge: '1d', index: false, redirect: false };
 app.use('/icons', express.static(path.join(STATIC_DIR, 'icons'), assetOptions));
 app.use('/images', express.static(path.join(STATIC_DIR, 'images'), assetOptions));
-app.use('/styles', express.static(path.join(STATIC_DIR, 'styles'), assetOptions));
+// The hashed bundles use the design tokens these stylesheets define, so a browser checks
+// them again on every load rather than pairing new bundles with yesterday's tokens.
+app.use(
+    '/styles',
+    express.static(path.join(STATIC_DIR, 'styles'), {
+        ...assetOptions,
+        setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache')
+    })
+);
 
 // Hashed build output (JS/CSS) and index.html.
 app.use(

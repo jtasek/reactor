@@ -81,8 +81,13 @@ export function documentModifiedLabel(
     });
 }
 
-/** Assign distinct tones from the full tag catalog, independent of filtering or document order. */
-export function documentTagTone(name: string, availableTags: string[]): (typeof TAG_TONES)[number] {
-    const names = [...new Set([...availableTags, name].map(tagKey))].sort();
-    return TAG_TONES[names.indexOf(tagKey(name)) % TAG_TONES.length];
+/** A tag's tone, from its name alone, so adding or removing other tags never changes it. */
+export function documentTagTone(name: string): (typeof TAG_TONES)[number] {
+    let hash = 0;
+
+    for (const character of tagKey(name)) {
+        hash = (hash * 31 + (character.codePointAt(0) ?? 0)) >>> 0;
+    }
+
+    return TAG_TONES[hash % TAG_TONES.length];
 }

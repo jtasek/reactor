@@ -34,7 +34,7 @@ export const DocumentTags: FC<Props> = ({ tags, availableTags, onChange, onFilte
                         key={tag}
                         type="button"
                         className={styles.pill}
-                        data-tone={documentTagTone(tag, availableTags)}
+                        data-tone={documentTagTone(tag)}
                         title={`Filter by ${tag}`}
                         value={tag}
                         onClick={filterTag}
@@ -42,11 +42,7 @@ export const DocumentTags: FC<Props> = ({ tags, availableTags, onChange, onFilte
                         {tag}
                     </button>
                 ) : (
-                    <span
-                        key={tag}
-                        className={styles.pill}
-                        data-tone={documentTagTone(tag, availableTags)}
-                    >
+                    <span key={tag} className={styles.pill} data-tone={documentTagTone(tag)}>
                         {tag}
                     </span>
                 )

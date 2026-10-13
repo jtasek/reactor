@@ -24,7 +24,6 @@ const DATE_OPTIONS: { value: DocumentDateFilter; label: string }[] = [
     { value: 'week', label: 'Past 7 days' },
     { value: 'month', label: 'Past 30 days' }
 ];
-const CLOCK_REFRESH_MS = 60_000;
 
 export const DocumentList: FC<Props> = ({ documents, currentDocumentId, onCreate }) => {
     const [layout, setLayout] = useState<'cards' | 'list'>('cards');
@@ -38,16 +37,23 @@ export const DocumentList: FC<Props> = ({ documents, currentDocumentId, onCreate
     const availableTags = normalizeTags(documents.flatMap((document) => document.tags)).sort(
         (first, second) => first.localeCompare(second)
     );
-    const visibleDocuments = documents.filter((document) =>
-        matchesDocument(document, { query, date, tags }, now)
-    );
+    const visibleDocuments = documents
+        .filter((document) => matchesDocument(document, { query, date, tags }, now))
+        .sort(
+            (first, second) =>
+                second.modified.getTime() - first.modified.getTime() ||
+                first.name.localeCompare(second.name)
+        );
+    const dateLabel = DATE_OPTIONS.find(({ value }) => value === date)?.label;
     const filtered = query !== '' || date !== 'all' || tags.length > 0;
 
+    // The labels and date filters change only as a day begins.
     useEffect(() => {
-        const timer = window.setInterval(() => setNow(new Date()), CLOCK_REFRESH_MS);
+        const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        const timer = window.setTimeout(() => setNow(new Date()), midnight.getTime() - Date.now());
 
-        return () => window.clearInterval(timer);
-    }, []);
+        return () => window.clearTimeout(timer);
+    }, [now]);
 
     const search = (event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value);
     const changeDate = (selected: string) => {
@@ -96,12 +102,12 @@ export const DocumentList: FC<Props> = ({ documents, currentDocumentId, onCreate
                         ref={dateButton}
                         type="button"
                         className={styles.dateFilter}
-                        aria-label="Last edited"
+                        aria-label={`Last edited: ${dateLabel}`}
                         aria-haspopup="menu"
                         aria-expanded={filterMenu === 'date'}
                         onClick={() => setFilterMenu(filterMenu === 'date' ? null : 'date')}
                     >
-                        {DATE_OPTIONS.find(({ value }) => value === date)?.label}
+                        {dateLabel}
                         <ChevronDown size={14} strokeWidth={1.5} aria-hidden="true" />
                     </button>
                     <button
@@ -145,7 +151,7 @@ export const DocumentList: FC<Props> = ({ documents, currentDocumentId, onCreate
                         <button
                             key={tag}
                             className={tagStyles.pill}
-                            data-tone={documentTagTone(tag, availableTags)}
+                            data-tone={documentTagTone(tag)}
                             type="button"
                             aria-label={`Remove ${tag} filter`}
                             onClick={() => setTags(tags.filter((selected) => selected !== tag))}
@@ -195,7 +201,7 @@ export const DocumentList: FC<Props> = ({ documents, currentDocumentId, onCreate
                         options={availableTags.map((tag) => ({
                             value: tag,
                             label: tag,
-                            tone: documentTagTone(tag, availableTags)
+                            tone: documentTagTone(tag)
                         }))}
                         selected={tags}
                         multiple

@@ -134,18 +134,24 @@ export const DocumentCard: FC<Props> = ({
                             {document.name}
                         </button>
                     )}
+                    {current && <span className={styles.current}>Current</span>}
                 </div>
-                <time
-                    className={styles.date}
-                    dateTime={document.modified.toISOString()}
-                    title={`Last edited ${document.modified.toLocaleString()}`}
-                >
-                    {documentModifiedLabel(document.modified, now)}
-                </time>
+                <span className={styles.meta}>
+                    <time
+                        dateTime={document.modified.toISOString()}
+                        title={`Last edited ${document.modified.toLocaleString()}`}
+                    >
+                        {documentModifiedLabel(document.modified, now)}
+                    </time>
+                    {' · '}
+                    <span>
+                        {document.shapesIds.length}{' '}
+                        {document.shapesIds.length === 1 ? 'shape' : 'shapes'}
+                    </span>
+                </span>
             </header>
             <div className={styles.thumbnail}>
                 <DocumentThumbnail document={document} />
-                {current && <span className={styles.current}>Current</span>}
             </div>
             <div className={styles.cardFooter}>
                 <DocumentTags
@@ -190,9 +196,6 @@ export const DocumentCard: FC<Props> = ({
                     </button>
                 </div>
             </div>
-            <span className={styles.shapeCount}>
-                {document.shapesIds.length} {document.shapesIds.length === 1 ? 'shape' : 'shapes'}
-            </span>
             <Dialog
                 title="Delete this document?"
                 description={`“${document.name}” and everything on it will be removed.`}

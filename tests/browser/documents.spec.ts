@@ -83,7 +83,8 @@ test('documents can be listed, cloned, deleted, created and opened', async ({ pa
 
     await button(page, 'Clone document-1').click();
     await expect(rows(page)).toHaveCount(2);
-    await expect(rows(page).nth(1)).toContainText('document-1 copy');
+    // The newest edit comes first.
+    await expect(rows(page).first()).toContainText('document-1 copy');
 
     await button(page, 'Delete document-1 copy').click();
     const confirmation = page.getByRole('dialog', { name: 'Delete this document?' });
@@ -107,9 +108,9 @@ test('documents can be listed, cloned, deleted, created and opened', async ({ pa
 
     await showDocuments(page);
     await expect(rows(page)).toHaveCount(2);
-    await expect(rows(page).nth(1)).toContainText('document-2');
-    await expect(rows(page).nth(1)).toContainText('Current');
-    await expect(rows(page).nth(1)).toContainText('Empty canvas');
+    await expect(rows(page).first()).toContainText('document-2');
+    await expect(rows(page).first()).toContainText('Current');
+    await expect(rows(page).first()).toContainText('Empty canvas');
 
     await expect(button(page, 'Open document-1')).toHaveText('document-1');
     await button(page, 'Open document-1').click();
@@ -132,7 +133,7 @@ test('double-clicking a card opens it without intercepting controls or dialogs',
     const tags = page.getByRole('dialog', { name: 'Edit tags' });
     await tags.getByRole('heading', { name: 'Edit tags' }).dblclick();
     await expect(page).toHaveURL(/\/documents$/);
-    await tags.getByRole('button', { name: 'Cancel' }).click();
+    await page.keyboard.press('Escape');
 
     const preview = page.getByRole('img', { name: 'Preview of Interface kit' });
     await preview.click();
@@ -244,7 +245,7 @@ test('documents created or deleted in one tab are in the others', async ({ page 
 
     await button(page, 'Clone document-1').click();
     await expect(rows(otherTab)).toHaveCount(2);
-    await expect(rows(otherTab).nth(1)).toContainText('document-1 copy');
+    await expect(rows(otherTab).first()).toContainText('document-1 copy');
 
     await button(page, 'Delete document-1 copy').click();
     await page
@@ -258,6 +259,14 @@ test('document cards keep their title and date above the preview and switch to a
     page
 }) => {
     await openDocumentExamples(page);
+
+    // Newest edits first.
+    await expect(rows(page).getByRole('button', { name: /^Open / })).toHaveText([
+        'Interface kit',
+        'Checkout flow',
+        'Mobile onboarding',
+        'Archive'
+    ]);
 
     const card = rows(page).filter({ has: button(page, 'Open Interface kit') });
     const preview = card.getByRole('img', { name: 'Preview of Interface kit' });
@@ -286,6 +295,13 @@ test('document cards keep their title and date above the preview and switch to a
 
     expect(listPreview!.height).toBeLessThan(cardPreview!.height);
     expect(listPreview!.x + listPreview!.width).toBeLessThan(listTitle!.x);
+    // The list marks the current document and keeps an empty preview's text out of its tile.
+    await expect(card.getByText('Current', { exact: true })).toBeVisible();
+    await expect(
+        rows(page)
+            .filter({ has: button(page, 'Open Archive') })
+            .getByText('Empty canvas')
+    ).toBeHidden();
 
     await button(page, 'Card view').click();
     await expect(button(page, 'Card view')).toHaveAttribute('aria-pressed', 'true');
@@ -357,7 +373,7 @@ test('new tags persist and +N expands all document tags inline', async ({ page }
     await picker.getByRole('searchbox', { name: 'Search tags' }).fill('Design review');
     await picker.getByRole('button', { name: 'Create “Design review”' }).click();
     await expect(picker.getByRole('checkbox', { name: 'Design review' })).toBeChecked();
-    await picker.getByRole('button', { name: 'Done', exact: true }).click();
+    await page.keyboard.press('Escape');
     await expect(card.getByRole('button', { name: 'Design review', exact: true })).toHaveCount(0);
     await card.getByRole('button', { name: '+1', exact: true }).click();
     await expect(card.getByRole('button', { name: 'Less', exact: true })).toHaveAttribute(
@@ -377,24 +393,38 @@ test('new tags persist and +N expands all document tags inline', async ({ page }
     await expect(card.getByRole('button', { name: 'Design review', exact: true })).toBeVisible();
 });
 
-test('cancelling tag edits keeps the original tags', async ({ page }) => {
+test('tag edits apply at once, keep the focus where it was and stay as the picker closes', async ({
+    page
+}) => {
     await openDocumentExamples(page);
 
     const card = rows(page).filter({ has: button(page, 'Open Interface kit') });
+    const edit = card.getByRole('button', { name: 'Edit tags', exact: true });
 
-    await card.getByRole('button', { name: 'Edit tags', exact: true }).click();
+    await edit.click();
     const picker = page.getByRole('dialog', { name: 'Edit tags' });
+    const uiKit = picker.getByRole('checkbox', { name: 'UI kit', exact: true });
 
-    await picker.getByRole('checkbox', { name: 'UI kit', exact: true }).uncheck();
-    await picker.getByRole('searchbox', { name: 'Search tags' }).fill('Discarded tag');
-    await picker.getByRole('button', { name: 'Create “Discarded tag”' }).click();
-    await page.keyboard.press('Escape');
+    await uiKit.uncheck();
+    await expect(card.getByRole('button', { name: 'UI kit', exact: true })).toHaveCount(0);
+    // The card renders again with its new tags; the focus stays on the tag.
+    await expect(uiKit).toBeFocused();
+    // Taken off its only document, the tag stays listed to be put back.
+    await expect(uiKit).not.toBeChecked();
+
+    await picker.getByRole('searchbox', { name: 'Search tags' }).fill('Fresh tag');
+    await picker.getByRole('button', { name: 'Create “Fresh tag”' }).click();
+    await expect(card.getByRole('button', { name: 'Fresh tag', exact: true })).toBeVisible();
+
+    await page.getByRole('heading', { name: 'Documents' }).click();
     await expect(picker).not.toBeVisible();
-    await expect(card.getByRole('button', { name: 'UI kit', exact: true })).toBeVisible();
-    await expect(card.getByRole('button', { name: 'Client project', exact: true })).toBeVisible();
-    await card.getByRole('button', { name: 'Edit tags', exact: true }).click();
-    await expect(picker.getByRole('checkbox', { name: 'UI kit', exact: true })).toBeChecked();
-    await expect(picker.getByRole('checkbox', { name: 'Discarded tag' })).toHaveCount(0);
+    await expect(card.getByRole('button', { name: 'Fresh tag', exact: true })).toBeVisible();
+
+    // Focus leaving the picker closes it.
+    await edit.click();
+    await picker.getByRole('searchbox', { name: 'Search tags' }).focus();
+    await page.keyboard.press('Shift+Tab');
+    await expect(picker).not.toBeVisible();
 });
 
 test('document search, filter typography and tag actions use consistent styling', async ({
@@ -405,7 +435,7 @@ test('document search, filter typography and tag actions use consistent styling'
     await search.focus();
     await expect(search).toHaveCSS('outline-style', 'none');
     await expect(search.locator('..')).toHaveCSS('outline-style', 'solid');
-    const date = button(page, 'Last edited');
+    const date = page.getByRole('button', { name: /^Last edited/ });
     const tags = button(page, 'Filter by tags');
     const typography = (element: HTMLElement) => {
         const style = getComputedStyle(element);
@@ -420,15 +450,10 @@ test('document search, filter typography and tag actions use consistent styling'
         await tags.evaluate((element) => getComputedStyle(element).fontFamily)
     );
     await page.keyboard.press('Escape');
-    await rows(page).first().getByRole('button', { name: 'Edit tags' }).click();
-    const editor = page.getByRole('dialog', { name: 'Edit tags' });
-    const done = editor.getByRole('button', { name: 'Done', exact: true });
-    const cancel = editor.getByRole('button', { name: 'Cancel', exact: true });
-    await expect(done).toHaveCSS('background-color', 'rgb(234, 2, 130)');
-    await expect(done).toHaveCSS('color', 'rgb(255, 255, 255)');
-    await expect(done).toHaveCSS('font-weight', '600');
-    await expect(cancel).toHaveCSS(
-        'border-radius',
-        await done.evaluate((element) => getComputedStyle(element).borderRadius)
+    // The page uses the design system's typeface, and the date filter's name holds its label.
+    await expect(page.getByRole('heading', { name: 'Documents' })).toHaveCSS(
+        'font-family',
+        /Roboto/
     );
+    await expect(date).toHaveAccessibleName('Last edited: Any time');
 });

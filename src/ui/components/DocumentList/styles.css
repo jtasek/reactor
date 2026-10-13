@@ -3,17 +3,12 @@
     --documents-top: 72px;
     --documents-max-width: 1120px;
     --document-card-min-width: 280px;
-    background: var(--documents-background);
+    background: var(--canvas);
     box-sizing: border-box;
-    color: var(--document-title-color);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--ink-strong);
     height: 100%;
     overflow: auto;
     padding: var(--documents-top) 32px 40px;
-}
-
-.documentList * {
-    font-family: inherit;
 }
 
 .panel {
@@ -31,17 +26,16 @@
 }
 
 .header h1 {
-    font-size: 32px;
+    font-size: 1.5rem;
     font-weight: 500;
-    letter-spacing: -1px;
-    line-height: 40px;
+    line-height: 2.5rem;
     margin: 0;
 }
 
 .documentList button {
     background: transparent;
     border: 0;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     color: inherit;
     cursor: pointer;
     font: inherit;
@@ -64,7 +58,7 @@
     backdrop-filter: var(--backdrop-filter);
     background: var(--control-background);
     border: 1px solid var(--glass-highlight);
-    border-radius: 22px;
+    border-radius: var(--border-radius);
     box-shadow: var(--box-shadow);
     display: inline-flex;
     font-weight: 500;
@@ -83,8 +77,8 @@
 .search {
     align-items: center;
     background: var(--field-background);
-    border-radius: 20px;
-    color: var(--document-secondary-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary-color);
     display: flex;
     flex: 1;
     gap: 8px;
@@ -109,7 +103,7 @@
     background: transparent;
     border: 0;
     border-radius: var(--radius-md);
-    color: var(--document-title-color);
+    color: var(--ink-strong);
     font: inherit;
     min-height: 40px;
     min-width: 0;
@@ -118,7 +112,7 @@
 }
 
 .search input::placeholder {
-    color: var(--document-secondary-color);
+    color: var(--text-secondary-color);
 }
 
 .documentList .dateFilter,
@@ -128,8 +122,8 @@
     gap: 6px;
     background: var(--control-background);
     border: 0;
-    border-radius: 18px;
-    color: var(--document-secondary-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary-color);
     font: inherit;
     font-size: 13px;
     font-weight: 400;
@@ -138,12 +132,11 @@
     padding: 4px 10px;
 }
 
-
 .layoutToggle {
     backdrop-filter: var(--backdrop-filter);
     background: var(--control-background);
     border: 1px solid var(--glass-highlight);
-    border-radius: 22px;
+    border-radius: var(--border-radius);
     box-shadow: var(--box-shadow);
     display: flex;
     gap: 2px;
@@ -152,14 +145,14 @@
 }
 
 .layoutToggle button[aria-pressed='true'] {
-    background: var(--surface);
+    background: var(--control-background-active);
     box-shadow: var(--box-shadow);
-    color: var(--selection-color);
+    color: var(--text-color-hover);
 }
 
 .filterSummary {
     align-items: center;
-    color: var(--document-secondary-color);
+    color: var(--text-secondary-color);
     display: flex;
     flex-wrap: wrap;
     font-size: 12px;
@@ -210,7 +203,7 @@
 
 .documentList .nameButton {
     background: transparent;
-    color: var(--document-title-color);
+    color: var(--ink-strong);
     font-size: 15px;
     font-weight: 500;
     letter-spacing: -0.15px;
@@ -226,24 +219,24 @@
 
 .documentList .nameButton:hover {
     background: transparent;
-    color: var(--selection-color);
+    color: var(--text-color-hover);
     text-decoration: underline;
     text-underline-offset: 3px;
 }
 
 .nameInput {
     background: var(--surface);
-    border: 1px solid var(--selection-color);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
-    color: var(--document-title-color);
+    color: var(--ink-strong);
     font: inherit;
     min-width: 0;
     padding: 2px 4px;
     width: 100%;
 }
 
-.date {
-    color: var(--document-secondary-color);
+.meta {
+    color: var(--text-secondary-color);
     flex: none;
     font-size: 12px;
     line-height: 18px;
@@ -254,8 +247,8 @@
     align-items: center;
     aspect-ratio: 16 / 9;
     background: var(--panel-content-background);
-    border: 1px solid var(--document-thumbnail-border);
-    border-radius: 16px;
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-md);
     box-shadow: var(--box-shadow);
     display: flex;
     justify-content: center;
@@ -270,19 +263,22 @@
 }
 
 .thumbnailEmpty {
-    color: var(--document-secondary-color);
+    align-items: center;
+    color: var(--text-secondary-color);
+    display: flex;
+    flex-direction: column;
     font-size: 12px;
+    gap: 4px;
 }
 
 .current {
-    background: var(--control-background);
-    border-radius: 12px;
-    color: var(--selection-color);
+    background: var(--info-background);
+    border-radius: var(--radius-sm);
+    color: var(--info-color);
+    flex: none;
     font-size: 11px;
-    left: 8px;
+    line-height: 16px;
     padding: 1px 6px;
-    position: absolute;
-    top: 8px;
 }
 
 .cardFooter {
@@ -297,7 +293,7 @@
 .iconActions {
     align-items: center;
     border: 1px solid transparent;
-    border-radius: 20px;
+    border-radius: var(--border-radius);
     display: flex;
     gap: 0;
     padding: 2px;
@@ -315,7 +311,7 @@
     align-items: center;
     background: transparent;
     border-radius: 50%;
-    color: var(--document-secondary-color);
+    color: var(--text-secondary-color);
     display: inline-flex;
     flex: none;
     height: 32px;
@@ -326,20 +322,11 @@
 
 .documentList .iconButton:hover {
     background: var(--field-background);
-    color: var(--document-title-color);
+    color: var(--ink-strong);
 }
 
 .documentList .iconButton[data-action='delete']:hover {
     color: var(--error-color);
-}
-
-.shapeCount {
-    clip-path: inset(50%);
-    height: 1px;
-    overflow: hidden;
-    position: absolute;
-    white-space: nowrap;
-    width: 1px;
 }
 
 .empty {
@@ -381,7 +368,7 @@
     width: 72px;
 }
 
-.grid[data-layout='list'] .current {
+.grid[data-layout='list'] .thumbnailEmpty span {
     display: none;
 }
 
@@ -397,7 +384,7 @@
     grid-row: 2;
 }
 
-.grid[data-layout='list'] .date {
+.grid[data-layout='list'] .meta {
     grid-column: 3;
     grid-row: 1 / 3;
 }
@@ -428,7 +415,7 @@
         width: 48px;
     }
 
-    .grid[data-layout='list'] .date {
+    .grid[data-layout='list'] .meta {
         grid-column: 2;
         grid-row: 2;
     }

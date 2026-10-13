@@ -12,7 +12,7 @@
     align-items: center;
     background: var(--tag-background);
     border: 0;
-    border-radius: 100px;
+    border-radius: 100rem;
     box-sizing: border-box;
     color: var(--tag-color);
     display: inline-flex;
@@ -71,7 +71,7 @@
     align-items: center;
     background: transparent;
     border: 0;
-    border-radius: 100px;
+    border-radius: 100rem;
     color: var(--text-secondary-color);
     display: inline-flex;
     flex: none;
@@ -90,14 +90,12 @@
 
 .tags button:focus-visible,
 .picker input:focus-visible,
-.picker button:focus-visible,
-.pickerActions button:focus-visible {
+.picker button:focus-visible {
     outline: var(--focus-ring-width) solid var(--focus-ring-color);
     outline-offset: 2px;
 }
 
 .editor {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     padding: 10px;
 }
 
@@ -106,10 +104,6 @@
     min-height: 26px;
     padding: 0 2px;
     margin-bottom: 6px;
-}
-
-.editor * {
-    font-family: inherit;
 }
 
 .picker {
@@ -180,24 +174,7 @@
     overflow-wrap: anywhere;
 }
 
-.pickerActions {
-    --dialog-button-padding: 6px 12px;
-    display: flex;
-    justify-content: flex-end;
-    padding: 6px 0 0;
-}
-
-.pickerActions button {
-    background: var(--control-background);
-    color: var(--ink-strong);
-    min-height: 32px;
-    width: auto;
-}
-
 @media (pointer: coarse) {
-    .tags button.pill,
-    .tags .more,
-    .tags .add,
     .picker .search,
     .picker .create,
     .editor button,
@@ -205,9 +182,18 @@
         min-height: 44px;
     }
 
+    /* The pills keep their size; an invisible margin around them takes the touch. */
     .tags button.pill,
     .tags .more,
     .tags .add {
-        min-width: 44px;
+        position: relative;
+    }
+
+    .tags button.pill::after,
+    .tags .more::after,
+    .tags .add::after {
+        content: '';
+        inset: -11px -4px;
+        position: absolute;
     }
 }

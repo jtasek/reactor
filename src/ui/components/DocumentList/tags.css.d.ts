@@ -10,7 +10,6 @@ declare namespace TagsCssNamespace {
     option: string;
     options: string;
     picker: string;
-    pickerActions: string;
     pill: string;
     search: string;
     tags: string;
