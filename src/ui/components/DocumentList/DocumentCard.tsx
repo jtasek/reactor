@@ -1,16 +1,40 @@
-import React, { FC, useEffect, useRef, useState } from 'react';
+import React, {
+    ChangeEvent,
+    FC,
+    KeyboardEvent,
+    MouseEvent,
+    useEffect,
+    useRef,
+    useState
+} from 'react';
 import { useActions, useDocument } from 'src/app/hooks';
+import { documentModifiedLabel } from 'src/app/documentList';
+import { tagKey, type TagTone } from 'src/app/tagTones';
 import { Dialog } from '../Dialog';
-import { Icon } from '../Icon';
+import { Copy, Pencil, Trash2 } from 'lucide-react';
+import { DocumentTags } from './DocumentTags';
 import { DocumentThumbnail } from './DocumentThumbnail';
 import styles from './styles.css';
 
 interface Props {
     documentId: string;
     current: boolean;
+    availableTags: string[];
+    tagTones: Readonly<Record<string, string>>;
+    onFilterTag: (tag: string) => void;
+    onTagTone: (tag: string, tone: TagTone) => void;
+    now: Date;
 }
 
-export const DocumentCard: FC<Props> = ({ documentId, current }) => {
+export const DocumentCard: FC<Props> = ({
+    documentId,
+    current,
+    availableTags,
+    tagTones,
+    onFilterTag,
+    onTagTone,
+    now
+}) => {
     const document = useDocument(documentId);
     const { editDocument, cloneDocument, removeDocument, updateDocument } = useActions();
     const [confirming, setConfirming] = useState(false);
@@ -50,18 +74,64 @@ export const DocumentCard: FC<Props> = ({ documentId, current }) => {
 
         setEditingName(false);
     };
-
     const beginRename = () => {
+        discardingName.current = false;
         setDraftName(document.name);
         setEditingName(true);
     };
+    const changeName = (event: ChangeEvent<HTMLInputElement>) => setDraftName(event.target.value);
+    const finishName = (event: KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            restoreRenameFocus.current = true;
+            saveName();
+            return;
+        }
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            restoreRenameFocus.current = true;
+            discardingName.current = true;
+            setEditingName(false);
+        }
+    };
+    const open = () => editDocument(documentId);
+    const openCard = (event: MouseEvent<HTMLLIElement>) => {
+        const target = event.target;
+
+        if (
+            !(target instanceof Element) ||
+            !event.currentTarget.contains(target) ||
+            target.closest('button, input, select, textarea, a, label')
+        ) {
+            return;
+        }
+
+        open();
+    };
+    const clone = () => cloneDocument(documentId);
+    const confirmDelete = () => setConfirming(true);
+    const cancelDelete = () => setConfirming(false);
+    const remove = () => removeDocument(documentId);
+    // A tag added here keeps the tone it has on other documents.
+    const changeTags = (tags: string[]) =>
+        updateDocument({
+            id: documentId,
+            tags,
+            tagTones: {
+                ...document.tagTones,
+                ...Object.fromEntries(
+                    tags.flatMap((tag) => {
+                        const tone = tagTones[tagKey(tag)];
+
+                        return tone ? [[tagKey(tag), tone]] : [];
+                    })
+                )
+            }
+        });
 
     return (
-        <li className={styles.card} aria-current={current || undefined}>
-            <div className={styles.thumbnail}>
-                <DocumentThumbnail document={document} />
-            </div>
-            <div className={styles.cardBody}>
+        <li className={styles.card} aria-current={current || undefined} onDoubleClick={openCard}>
+            <header className={styles.cardHeader}>
                 <div className={styles.cardTitle}>
                     {editingName ? (
                         <input
@@ -69,21 +139,9 @@ export const DocumentCard: FC<Props> = ({ documentId, current }) => {
                             className={styles.nameInput}
                             aria-label={`Name for ${document.name}`}
                             value={draftName}
-                            onChange={(event) => setDraftName(event.target.value)}
+                            onChange={changeName}
                             onBlur={saveName}
-                            onKeyDown={(event) => {
-                                if (event.key === 'Enter') {
-                                    event.preventDefault();
-                                    restoreRenameFocus.current = true;
-                                    saveName();
-                                }
-                                if (event.key === 'Escape') {
-                                    event.preventDefault();
-                                    restoreRenameFocus.current = true;
-                                    discardingName.current = true;
-                                    setEditingName(false);
-                                }
-                            }}
+                            onKeyDown={finishName}
                         />
                     ) : (
                         <button
@@ -91,70 +149,86 @@ export const DocumentCard: FC<Props> = ({ documentId, current }) => {
                             className={styles.nameButton}
                             aria-label={`Open ${document.name}`}
                             title={`Open ${document.name}`}
-                            onClick={() => editDocument(documentId)}
+                            onClick={open}
                         >
                             {document.name}
                         </button>
                     )}
                     {current && <span className={styles.current}>Current</span>}
                 </div>
-                <div className={styles.meta}>
+                <span className={styles.meta}>
+                    <time
+                        dateTime={document.modified.toISOString()}
+                        title={`Last edited ${document.modified.toLocaleString()}`}
+                    >
+                        {documentModifiedLabel(document.modified, now)}
+                    </time>
+                    {' · '}
                     <span>
                         {document.shapesIds.length}{' '}
                         {document.shapesIds.length === 1 ? 'shape' : 'shapes'}
                     </span>
-                    <time dateTime={document.created.toISOString()}>
-                        {document.created.toLocaleDateString()}
-                    </time>
-                </div>
-                <div className={styles.actions}>
-                    <div className={styles.iconActions}>
-                        <button
-                            ref={renameButton}
-                            className={styles.iconButton}
-                            type="button"
-                            aria-label={`Rename ${document.name}`}
-                            title={`Rename ${document.name}`}
-                            onClick={beginRename}
-                        >
-                            <Icon icon={{ group: 'image', name: 'edit', size: 18 }} />
-                        </button>
-                        <button
-                            className={styles.iconButton}
-                            type="button"
-                            aria-label={`Clone ${document.name}`}
-                            title={`Clone ${document.name}`}
-                            onClick={() => cloneDocument(documentId)}
-                        >
-                            <Icon icon={{ group: 'content', name: 'content_copy', size: 18 }} />
-                        </button>
-                        <button
-                            className={styles.iconButton}
-                            type="button"
-                            aria-label={`Delete ${document.name}`}
-                            title={`Delete ${document.name}`}
-                            onClick={() => setConfirming(true)}
-                        >
-                            <Icon icon={{ group: 'action', name: 'delete', size: 18 }} />
-                        </button>
-                    </div>
+                </span>
+            </header>
+            <div className={styles.thumbnail}>
+                <DocumentThumbnail document={document} />
+            </div>
+            <div className={styles.cardFooter}>
+                <DocumentTags
+                    tags={[...document.tags]}
+                    availableTags={availableTags}
+                    tagTones={tagTones}
+                    onChange={changeTags}
+                    onTone={onTagTone}
+                    onFilter={onFilterTag}
+                />
+                <div
+                    className={styles.iconActions}
+                    role="group"
+                    aria-label={`Actions for ${document.name}`}
+                >
+                    <button
+                        ref={renameButton}
+                        className={styles.iconButton}
+                        type="button"
+                        aria-label={`Rename ${document.name}`}
+                        title={`Rename ${document.name}`}
+                        onClick={beginRename}
+                    >
+                        <Pencil size={16} strokeWidth={1.5} aria-hidden="true" />
+                    </button>
+                    <button
+                        className={styles.iconButton}
+                        type="button"
+                        aria-label={`Clone ${document.name}`}
+                        title={`Clone ${document.name}`}
+                        onClick={clone}
+                    >
+                        <Copy size={16} strokeWidth={1.5} aria-hidden="true" />
+                    </button>
+                    <button
+                        className={styles.iconButton}
+                        type="button"
+                        data-action="delete"
+                        aria-label={`Delete ${document.name}`}
+                        title={`Delete ${document.name}`}
+                        onClick={confirmDelete}
+                    >
+                        <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />
+                    </button>
                 </div>
             </div>
             <Dialog
                 title="Delete this document?"
                 description={`“${document.name}” and everything on it will be removed.`}
                 visible={confirming}
-                onClose={() => setConfirming(false)}
+                onClose={cancelDelete}
                 actions={
                     <>
-                        <button type="button" onClick={() => setConfirming(false)}>
+                        <button type="button" onClick={cancelDelete}>
                             Cancel
                         </button>
-                        <button
-                            type="button"
-                            data-variant="primary"
-                            onClick={() => removeDocument(documentId)}
-                        >
+                        <button type="button" data-variant="primary" onClick={remove}>
                             Delete document
                         </button>
                     </>

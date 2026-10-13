@@ -73,6 +73,7 @@ export type DocumentFields = Pick<
     | 'locked'
     | 'grid'
     | 'tags'
+    | 'tagTones'
 > & {
     created: string;
     modified: string;
@@ -193,6 +194,19 @@ function size(value: unknown): Size {
     const s = record(value);
 
     return { width: number(s.width, 0), height: number(s.height, 0) };
+}
+
+/** Picked tag tones by name, checked where they are shown; none when absent. */
+function tones(value: unknown): Record<string, string> {
+    if (value === undefined) {
+        return {};
+    }
+
+    return Object.fromEntries(
+        Object.entries(record(value)).filter(
+            (entry): entry is [string, string] => typeof entry[1] === 'string'
+        )
+    );
 }
 
 function list<T>(value: unknown, read: (item: unknown) => T): T[] {
@@ -588,6 +602,7 @@ function readFields(d: Record<string, unknown>): DocumentFields {
         modifiedBy: text(d.modifiedBy),
         ...(d.description === undefined ? {} : { description: text(d.description) }),
         tags: list(d.tags, text),
+        tagTones: tones(d.tagTones),
         grid: {
             width: positive(grid.width),
             height: positive(grid.height),

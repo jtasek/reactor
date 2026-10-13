@@ -88,6 +88,7 @@
     "fractional-indexing": "^4.0.0",
     "helmet": "^8.2.0",
     "kysely": "^0.29.6",
+    "lucide-react": "^1.55.0",
     "nodemailer": "^10.0.12",
     "overmind": "^28.2.1",
     "overmind-react": "^29.2.1",

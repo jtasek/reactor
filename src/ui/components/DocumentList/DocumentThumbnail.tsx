@@ -1,4 +1,5 @@
 import React, { FC, ReactNode, useLayoutEffect, useRef } from 'react';
+import { SquareDashed } from 'lucide-react';
 import type { Box, Document, Image, InstanceShape, Shape } from 'src/app/types';
 import { applyInstanceOverrides } from 'src/app/componentProps';
 import { componentSource, instanceBox } from 'src/app/componentSource';
@@ -241,7 +242,12 @@ export const DocumentThumbnail: FC<{ document: Document }> = ({ document }) => {
     });
 
     if (shapes.length === 0) {
-        return <div className={styles.thumbnailEmpty}>Empty canvas</div>;
+        return (
+            <div className={styles.thumbnailEmpty}>
+                <SquareDashed size={20} strokeWidth={1.5} aria-hidden="true" />
+                <span>Empty canvas</span>
+            </div>
+        );
     }
 
     const boxes = shapes.map((shape) => previewBox(document, shape));

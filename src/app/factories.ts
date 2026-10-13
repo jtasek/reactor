@@ -248,6 +248,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
         selected: false,
         shapes: {},
         tags: [],
+        tagTones: {},
         variables: {},
         ...options,
         componentsIds,

@@ -298,6 +298,11 @@ export interface Document {
     /** Runtime selection of the built-in layer for shapes on no named layer. */
     surfaceSelected?: boolean;
     tags: string[];
+    /**
+     * The tone picked for a tag, by its `tagKey`; a tag without one, or with a value that
+     * is not a tone, takes its name's.
+     */
+    tagTones: Record<string, string>;
     variables: HashTable<Variable>;
     /** Sorted by name, then id. */
     variablesIds: string[];
