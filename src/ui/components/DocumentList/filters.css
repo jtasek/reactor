@@ -6,13 +6,6 @@
     font-family: inherit;
 }
 
-.check {
-    align-items: center;
-    display: flex;
-    flex: 0 0 16px;
-    color: var(--selection-color);
-}
-
 @media (pointer: coarse) {
     .filterMenu button {
         min-height: 44px;

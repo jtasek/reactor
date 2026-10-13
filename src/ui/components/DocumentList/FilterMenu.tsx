@@ -61,14 +61,13 @@ export function FilterMenu({
     return createPortal(
         <div
             ref={menu}
-            className={`${menuStyles.contextMenu} ${styles.filterMenu}`}
+            className={`${menuStyles.contextMenu} ${tagStyles.editor} ${styles.filterMenu}`}
             role="menu"
             tabIndex={-1}
             aria-label={title}
             onKeyDown={navigate}
         >
-            <div className={menuStyles.header}>{title}</div>
-            <div className={menuStyles.divider} />
+            <div className={`${menuStyles.header} ${tagStyles.heading}`}>{title}</div>
             {options.map(({ value, label, tone }) => (
                 <button
                     key={value}
@@ -77,16 +76,16 @@ export function FilterMenu({
                     aria-checked={selected.some(
                         (item) => item.toLowerCase() === value.toLowerCase()
                     )}
-                    className={menuStyles.row}
+                    className={`${menuStyles.row} ${tagStyles.option}`}
                     onClick={() => choose(value)}
                 >
-                    <span className={styles.check}>
+                    <span className={tone ? tagStyles.pill : menuStyles.rowLabel} data-tone={tone}>
+                        {label}
+                    </span>
+                    <span className={tagStyles.check}>
                         {selected.some((item) => item.toLowerCase() === value.toLowerCase()) && (
                             <Check size={16} strokeWidth={1.5} aria-hidden="true" />
                         )}
-                    </span>
-                    <span className={tone ? tagStyles.pill : menuStyles.rowLabel} data-tone={tone}>
-                        {label}
                     </span>
                 </button>
             ))}

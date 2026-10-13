@@ -159,7 +159,8 @@
     padding: 2px 0;
 }
 
-.picker .option {
+/* A tag's row, in the tag picker and the tag filter alike: its label left, its tick right. */
+.option {
     position: relative;
     justify-content: space-between;
     padding: 0 6px;
@@ -176,32 +177,22 @@
     min-width: 0;
 }
 
-/* A tag's color, as a dot that opens the swatches. */
-.picker .toneButton {
-    background: transparent;
-    border: 0;
-    border-radius: 50%;
+/* A tag's color, as a square in the tag's own colors that opens the swatches. */
+.picker .toneButton,
+.picker .toneSwatch {
+    background: var(--tag-background);
+    border: 1px solid var(--tag-color);
+    border-radius: var(--radius-sm);
+    box-sizing: border-box;
     cursor: pointer;
     flex: none;
-    height: 24px;
+    height: 18px;
     padding: 0;
-    position: relative;
-    width: 24px;
+    width: 18px;
 }
 
-.picker .toneButton::before {
-    background: var(--tag-color);
-    border-radius: 50%;
-    content: '';
-    height: 10px;
-    left: 7px;
-    position: absolute;
-    top: 7px;
-    width: 10px;
-}
-
-.picker .toneButton:hover {
-    background: var(--menu-hover);
+.picker .toneButton {
+    margin: 0 6px;
 }
 
 .tones {
@@ -209,16 +200,6 @@
     flex-basis: 100%;
     gap: 6px;
     padding: 4px 6px 6px;
-}
-
-.picker .toneSwatch {
-    background: var(--tag-background);
-    border: 2px solid var(--tag-color);
-    border-radius: 50%;
-    cursor: pointer;
-    height: 20px;
-    padding: 0;
-    width: 20px;
 }
 
 .picker .toneSwatch[aria-checked='true'] {
