@@ -237,7 +237,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
         grid: createGrid(),
         components: {},
         groups: {},
-        //history: [],
+        history: { canUndo: false, canRedo: false },
         layers: {},
         links: {},
         locked: false,

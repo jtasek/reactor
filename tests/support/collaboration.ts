@@ -23,7 +23,8 @@ export async function createCopies(count: number, setup: (store: TestStore) => v
     const copies: Copy[] = [];
 
     for (let index = 0; index < count; index++) {
-        const collaboration = new Collaboration();
+        // Each change is its own step to undo, however quickly the test makes the next.
+        const collaboration = new Collaboration(0);
         const { store } = createTestStore({}, { collaboration });
         const copy: Copy = { store, collaboration, inbox: [] };
 
@@ -31,6 +32,8 @@ export async function createCopies(count: number, setup: (store: TestStore) => v
             getDocument: (documentId) => store.state.documents[documentId],
             applyRemoteChanges: store.actions.applyRemoteChanges,
             addMutationListener: store.addMutationListener,
+            historyChanged: (documentId, history) =>
+                store.actions.setDocumentHistory({ documentId, history }),
             sendUpdate: (_, update) =>
                 copies.filter((other) => other !== copy).forEach(({ inbox }) => inbox.push(update))
         });

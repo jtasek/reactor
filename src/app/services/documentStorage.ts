@@ -24,6 +24,7 @@ export const RUNTIME_FIELDS = new Set([
     'active',
     'bounds',
     'filter',
+    'history',
     'key',
     'selected',
     'sourceOnlyShapesIds',

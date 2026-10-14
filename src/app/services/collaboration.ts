@@ -1,6 +1,6 @@
 import { json } from 'overmind';
 import type * as Yjs from 'yjs';
-import type { Document } from '../types';
+import type { Document, UndoHistory } from '../types';
 import {
     COLLECTIONS,
     RUNTIME_FIELDS,
@@ -56,6 +56,8 @@ export interface CollaborationOptions {
     documentChanged?(documentId: string): void;
     /** Sends this copy's changes to the other copies. */
     sendUpdate?(documentId: string, update: Uint8Array): void;
+    /** Reports what this copy can undo and redo of a document, whenever that changes. */
+    historyChanged?(documentId: string, history: UndoHistory): void;
 }
 
 type YEntity = Yjs.Map<unknown>;
@@ -93,9 +95,13 @@ interface Binding {
     unwritten?: Partial<EntityChanges>;
     /** Edits written to merge an update during a hold, which are dated only on commit. */
     deferred: Array<[collection: Collection | 'document', id: string, path: string[]]>;
+    /** Undoes and redoes this copy's changes to the entities, never other copies'. */
+    history?: Yjs.UndoManager;
 }
 
 const LOCAL = Symbol('local change');
+/** This copy's changes this close together, as typing into a field, undo as one. */
+const UNDO_MERGE_MS = 500;
 const MEMBERS = 'shapesIds';
 const isLocalOnly = (field: string) =>
     RUNTIME_FIELDS.has(field) || field === 'camera' || field === 'shapesIds';
@@ -191,6 +197,9 @@ export class Collaboration {
     private flushQueued = false;
     private paused = false;
 
+    /** `undoMergeMs`: how close together this copy's changes are to undo as one. */
+    constructor(private readonly undoMergeMs = UNDO_MERGE_MS) {}
+
     async initialize(options: CollaborationOptions): Promise<void> {
         this.yjs = await import('yjs');
         this.options = options;
@@ -237,6 +246,7 @@ export class Collaboration {
             this.observe(documentId, binding);
             this.everything(documentId, binding, binding.remote);
             this.applyRemote(documentId, binding);
+            this.track(documentId, binding);
 
             return;
         }
@@ -244,6 +254,7 @@ export class Collaboration {
         this.observe(documentId, binding);
         this.everything(documentId, binding, binding.local);
         this.write(documentId, binding, false);
+        this.track(documentId, binding);
     }
 
     /**
@@ -352,6 +363,20 @@ export class Collaboration {
         this.queueFlush();
     }
 
+    /**
+     * Undoes this copy's last change to a document, leaving other copies' changes as
+     * they are. Pending changes are written first, so they are the change undone;
+     * nothing is undone while changes are held.
+     */
+    undo(documentId: string): void {
+        this.step(documentId, (history) => history.undo());
+    }
+
+    /** Redoes the change this copy last undid in a document, as `undo` undoes it. */
+    redo(documentId: string): void {
+        this.step(documentId, (history) => history.redo());
+    }
+
     /** Writes this copy's pending changes, one Yjs transaction per document, unless paused. */
     flush(): void {
         this.flushQueued = false;
@@ -381,6 +406,43 @@ export class Collaboration {
         }
 
         return binding;
+    }
+
+    /** Records this copy's changes to a document's entities from now on, to undo them. */
+    private track(documentId: string, binding: Binding) {
+        const { yjs, options } = this.ready();
+        const history = new yjs.UndoManager(Object.values(binding.tables), {
+            captureTimeout: this.undoMergeMs,
+            trackedOrigins: new Set([LOCAL])
+        });
+        const report = () =>
+            options.historyChanged?.(documentId, {
+                canUndo: history.canUndo(),
+                canRedo: history.canRedo()
+            });
+
+        history.on('stack-item-added', report);
+        history.on('stack-item-popped', report);
+        history.on('stack-cleared', report);
+        binding.history = history;
+    }
+
+    /** Undoes or redoes a change, sharing and dating it as this copy's edit. */
+    private step(documentId: string, apply: (history: Yjs.UndoManager) => unknown) {
+        const binding = this.bindings.get(documentId);
+
+        if (!binding?.history || this.paused) {
+            return;
+        }
+
+        this.write(documentId, binding);
+
+        if (!apply(binding.history)) {
+            return;
+        }
+
+        this.ready().options.documentChanged?.(documentId);
+        this.write(documentId, binding, false);
     }
 
     private record({ path, delimiter, hasChangedValue }: Mutation) {
@@ -680,7 +742,8 @@ export class Collaboration {
 
         binding.doc.on('afterTransaction', () => this.applyRemote(documentId, binding));
         binding.doc.on('update', (update: Uint8Array, origin: unknown) => {
-            if (origin === LOCAL) {
+            // An undo's origin is the history that made it; other copies' changes have their own.
+            if (origin === LOCAL || origin === binding.history) {
                 this.ready().options.sendUpdate?.(documentId, update);
             }
         });

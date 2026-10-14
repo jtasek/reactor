@@ -32,12 +32,14 @@ import {
     MoveUpCommand,
     NewLayerCommand,
     PasteCommand,
+    RedoCommand,
     RemoveFromGroupCommand,
     ResetDocumentCommand,
     SendToBackCommand,
     SelectComponentSourceCommand,
     ResetComponentOverridesCommand,
     ShowAllCommand,
+    UndoCommand,
     UngroupCommand,
     UnlayerCommand,
     UnlockCommand,
@@ -61,6 +63,8 @@ import {
 import { registerCommand, registerTool } from 'src/app/actions/startup';
 
 function registerCommands() {
+    registerCommand(UndoCommand);
+    registerCommand(RedoCommand);
     registerCommand(DeleteCommand);
     registerCommand(MoveLeftCommand);
     registerCommand(MoveRightCommand);
