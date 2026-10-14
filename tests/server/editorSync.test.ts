@@ -181,7 +181,19 @@ const serverDocuments = ({ call }: Served, cookie: string, workspaceId: string) 
         (response) => response.json() as Promise<DocumentSummary[]>
     );
 
-describe('editor sync', () => {
+/**
+ * How long a test waits for images to be shared. A change's images wait a second before
+ * they are looked over, which a busy machine stretches.
+ */
+const SHARING_MS = 10_000;
+
+/**
+ * Above the default, for tests that wait seconds: on a document connecting again, or on
+ * an image another device has not uploaded yet, which is asked for again after seconds.
+ */
+const SLOW_TEST_MS = 30_000;
+
+describe('editor sync', { timeout: SLOW_TEST_MS }, () => {
     it('shows an account’s documents on each device and syncs changes both ways', async () => {
         const served = await serve();
         const { cookie, personal } = await served.user('ada@example.com');
@@ -392,16 +404,7 @@ describe('editor sync', () => {
     });
 });
 
-/**
- * How long a test waits for images to be shared. A change's images wait a second before
- * they are looked over, which a busy machine stretches.
- */
-const SHARING_MS = 10_000;
-
-/** Above the default, as an image another device has not uploaded yet is asked for again after seconds. */
-const IMAGE_TEST_MS = 30_000;
-
-describe('images when signed in', { timeout: IMAGE_TEST_MS }, () => {
+describe('images when signed in', { timeout: SLOW_TEST_MS }, () => {
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
     const assetPath = (documentId: string, source: string) =>
         `/documents/${documentId}/assets/${source.slice('asset:'.length)}`;
@@ -514,6 +517,7 @@ describe('images when signed in', { timeout: IMAGE_TEST_MS }, () => {
         await addImage(first);
         await vi.waitFor(() => expect(notices()).toBe(1), { timeout: SHARING_MS });
 
+        const uploads = vi.spyOn(first.effects.assetServer()!, 'uploadAsset');
         const { source } = await first.effects.assets.add(new Blob([new Uint8Array([...png, 4])]));
 
         first.store.actions.addShape({
@@ -522,7 +526,9 @@ describe('images when signed in', { timeout: IMAGE_TEST_MS }, () => {
             size: { width: 20, height: 10 },
             source
         });
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        await vi.waitFor(() => expect(uploads).toHaveResolvedWith('noRoom'), {
+            timeout: SHARING_MS
+        });
         expect(notices()).toBe(1);
     });
 
