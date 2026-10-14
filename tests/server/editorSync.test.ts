@@ -392,18 +392,27 @@ describe('editor sync', () => {
     });
 });
 
-describe('images when signed in', () => {
+/**
+ * How long a test waits for images to be shared. A change's images wait a second before
+ * they are looked over, which a busy machine stretches.
+ */
+const SHARING_MS = 10_000;
+
+/** Above the default, as an image another device has not uploaded yet is asked for again after seconds. */
+const IMAGE_TEST_MS = 30_000;
+
+describe('images when signed in', { timeout: IMAGE_TEST_MS }, () => {
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
     const assetPath = (documentId: string, source: string) =>
         `/documents/${documentId}/assets/${source.slice('asset:'.length)}`;
-    /** Waits for the server to keep `source` for a document; a change's images wait a moment first. */
+    /** Waits for the server to keep `source` for a document. */
     const uploaded = (served: Served, cookie: string, documentId: string, source: string) =>
         vi.waitFor(
             async () =>
                 expect(
                     (await served.call('HEAD', assetPath(documentId, source), { cookie })).status
                 ).toBe(200),
-            { timeout: 5000 }
+            { timeout: SHARING_MS }
         );
 
     /** Adds an image shape showing `png` to the device's document. */
@@ -503,7 +512,7 @@ describe('images when signed in', () => {
             first.store.state.notifications.filter(({ type }) => type === 'error').length;
 
         await addImage(first);
-        await vi.waitFor(() => expect(notices()).toBe(1), { timeout: 5000 });
+        await vi.waitFor(() => expect(notices()).toBe(1), { timeout: SHARING_MS });
 
         const { source } = await first.effects.assets.add(new Blob([new Uint8Array([...png, 4])]));
 
@@ -523,18 +532,19 @@ describe('images when signed in', () => {
         let online = true;
         const first = await device(served, cookie, { online: () => online });
         const [documentId] = documentIds(first);
+        const server = first.effects.assetServer()!;
 
         online = false;
         const source = await addImage(first);
+        const tries = [vi.spyOn(server, 'assetHashes'), vi.spyOn(server, 'uploadAsset')];
 
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // The image's first try fails while the server cannot be reached.
+        await vi.waitFor(() => expect(tries.some(({ mock }) => mock.calls.length)).toBe(true), {
+            timeout: SHARING_MS
+        });
         online = true;
         first.store.actions.addShape(rectangle);
 
-        await vi.waitFor(async () =>
-            expect(
-                (await served.call('HEAD', assetPath(documentId, source), { cookie })).status
-            ).toBe(200)
-        );
+        await uploaded(served, cookie, documentId, source);
     });
 });
