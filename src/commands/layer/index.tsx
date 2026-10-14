@@ -1,3 +1,4 @@
+import { LayersPlus, Layers, LayersMinus, Star } from 'lucide-react';
 import { Command } from 'src/app/types';
 import { selectionLayerId } from 'src/app/membership';
 
@@ -6,7 +7,7 @@ export const NewLayerCommand: Command = {
     name: 'New layer',
     category: 'layers',
     description: 'Create an empty layer',
-    icon: { group: 'content', name: 'add', size: 24 },
+    icon: { component: LayersPlus, size: 24 },
     places: [],
     scopes: ['layers'],
     canExecute: ({ state }) => !state.currentDocument.locked,
@@ -19,8 +20,7 @@ export const LayerCommand: Command = {
     category: 'layers',
     description: 'Move selected shapes to a new layer',
     icon: {
-        group: 'action',
-        name: 'tab',
+        component: Layers,
         size: 24
     },
     shortcut: 'mod+alt+l',
@@ -34,8 +34,7 @@ export const UnlayerCommand: Command = {
     category: 'layers',
     description: 'Take selected shapes off their layers',
     icon: {
-        group: 'action',
-        name: 'tab_unselected',
+        component: LayersMinus,
         size: 24
     },
     shortcut: 'mod+alt+shift+l',
@@ -58,8 +57,7 @@ export const HighlightLayerCommand: Command = {
     category: 'layers',
     description: 'Show only the layer of the selected shapes, or every layer again',
     icon: {
-        group: 'toggle',
-        name: 'star',
+        component: Star,
         size: 24
     },
     shortcut: 'h',

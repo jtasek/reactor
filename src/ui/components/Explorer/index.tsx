@@ -1,4 +1,5 @@
 import React, { FC, MouseEvent, useState } from 'react';
+import { CircleHelp, Star, Trash2 } from 'lucide-react';
 import styles from './styles.css';
 import { CollapsedItems, Dragged, ExplorerItem } from './ExplorerItem';
 import { SearchBoxContainer } from '../SearchBox';
@@ -61,7 +62,7 @@ const RootItem: FC<{
                     disabled={!enabled[index]}
                     onClick={() => runCommand(command)}
                 >
-                    <Icon icon={{ group: 'action', name: 'help', ...command.icon, size: 16 }} />
+                    <Icon icon={{ component: CircleHelp, ...command.icon, size: 16 }} />
                 </button>
             ))}
         >
@@ -241,8 +242,8 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
                     'highlight',
                     shown,
                     {
-                        on: { label: 'Show all layers', group: 'toggle', icon: 'star' },
-                        off: { label: 'Highlight layer', group: 'toggle', icon: 'star_border' }
+                        on: { label: 'Show all layers', component: Star, fill: 'currentColor' },
+                        off: { label: 'Highlight layer', component: Star }
                     },
                     () => showOnlyLayer(layerId)
                 ),
@@ -251,7 +252,7 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
                 {
                     id: 'delete-layer',
                     label: 'Delete layer',
-                    icon: { group: 'action', name: 'delete', size: 16 },
+                    icon: { component: Trash2, size: 16 },
                     disabled: layer.locked || documentLocked,
                     onRun: () => removeLayer(layerId)
                 },

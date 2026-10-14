@@ -1,3 +1,4 @@
+import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { Command } from 'src/app/types';
 import { zoomIn, zoomOut, zoomReset } from './actions';
 import { DEFAULT_SCALE, MAX_SCALE, MIN_SCALE } from 'src/app/camera';
@@ -8,8 +9,7 @@ export const ZoomInCommand: Command = {
     category: 'surface',
     description: 'Zoom in',
     icon: {
-        group: 'action',
-        name: 'zoom_in',
+        component: ZoomIn,
         size: 24
     },
     regex: /(?<toolCode>zoomin)\((?<factor>[\d]+)\)/,
@@ -24,8 +24,7 @@ export const ZoomOutCommand: Command = {
     category: 'surface',
     description: 'Zoom out',
     icon: {
-        group: 'action',
-        name: 'zoom_out',
+        component: ZoomOut,
         size: 24
     },
     regex: /(?<toolCode>zoomout)\((?<factor>[\d]+)\)/,
@@ -40,8 +39,7 @@ export const ZoomResetCommand: Command = {
     category: 'surface',
     description: 'Zoom reset',
     icon: {
-        group: 'action',
-        name: 'youtube_searched_for',
+        component: RotateCcw,
         size: 24
     },
     regex: /(?<toolCode>zoomreset)\((?<factor>[\d]+)\)/,

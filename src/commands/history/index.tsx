@@ -1,5 +1,6 @@
-import { Command } from 'src/app/types';
-import { Context } from 'src/app';
+import { Undo2, Redo2 } from 'lucide-react';
+import type { Command } from 'src/app/types';
+import type { Context } from 'src/app';
 import { takesEditorInput } from 'src/events/input';
 
 const canChange = (state: Context['state']) =>
@@ -11,8 +12,7 @@ export const UndoCommand: Command = {
     category: 'history',
     description: 'Undo your last change, leaving other people’s',
     icon: {
-        group: 'content',
-        name: 'undo',
+        component: Undo2,
         size: 24
     },
     shortcut: 'mod+z',
@@ -26,8 +26,7 @@ export const RedoCommand: Command = {
     category: 'history',
     description: 'Redo the change you last undid',
     icon: {
-        group: 'content',
-        name: 'redo',
+        component: Redo2,
         size: 24
     },
     shortcut: 'mod+shift+z',

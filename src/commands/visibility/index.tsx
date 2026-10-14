@@ -1,3 +1,4 @@
+import { EyeOff, Eye, Lock, LockOpen } from 'lucide-react';
 import { Command, CommandGuard } from 'src/app/types';
 import { hasHidden, selectedItems } from 'src/app/membership';
 
@@ -15,8 +16,7 @@ export const HideCommand: Command = {
     category: 'visibility',
     description: 'Hide selected shapes and groups',
     icon: {
-        group: 'action',
-        name: 'visibility_off',
+        component: EyeOff,
         size: 24
     },
     shortcut: 'shift+h',
@@ -30,8 +30,7 @@ export const ShowAllCommand: Command = {
     category: 'visibility',
     description: 'Show every hidden shape, group and layer',
     icon: {
-        group: 'action',
-        name: 'visibility',
+        component: Eye,
         size: 24
     },
     shortcut: 'alt+shift+h',
@@ -45,8 +44,7 @@ export const LockCommand: Command = {
     category: 'visibility',
     description: 'Lock selected shapes and groups, so they cannot be changed',
     icon: {
-        group: 'action',
-        name: 'lock',
+        component: Lock,
         size: 24
     },
     shortcut: 'k',
@@ -60,8 +58,7 @@ export const UnlockCommand: Command = {
     category: 'visibility',
     description: 'Unlock selected shapes and groups',
     icon: {
-        group: 'action',
-        name: 'lock_open',
+        component: LockOpen,
         size: 24
     },
     shortcut: 'shift+k',

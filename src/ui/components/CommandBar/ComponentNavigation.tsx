@@ -1,4 +1,5 @@
 import React, { FC } from 'react';
+import { ArrowLeft, Component } from 'lucide-react';
 import { useActions, useCommandEnabled } from 'src/app/hooks';
 import { useEditingComponentName } from 'src/app/componentHooks';
 import { LeaveComponentSourceCommand } from 'src/commands/component';
@@ -23,12 +24,12 @@ export const ComponentNavigation: FC = () => {
                 disabled={!enabled}
                 aria-keyshortcuts="Escape"
             >
-                <Icon icon={{ group: 'navigation', name: 'arrow_back', size: 16 }} />
+                <Icon icon={{ component: ArrowLeft, size: 16 }} />
                 Back to canvas
             </button>
             <span aria-hidden="true">/</span>
             <span className={styles.componentName} aria-current="page" title={name}>
-                <Icon icon={{ group: 'reactor', name: 'component', size: 16 }} />
+                <Icon icon={{ component: Component, size: 16 }} />
                 <span>{name}</span>
             </span>
         </nav>

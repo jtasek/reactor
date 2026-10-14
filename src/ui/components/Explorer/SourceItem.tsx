@@ -1,4 +1,5 @@
 import React, { FC, ReactNode } from 'react';
+import { SquarePlus, CirclePlus, CircleMinus } from 'lucide-react';
 import { useActions, useAppState } from 'src/app/hooks';
 import { useEditingComponentId, useSourceSelected } from 'src/app/componentHooks';
 import { canAddShapesToComponent } from 'src/app/actions/components';
@@ -49,7 +50,7 @@ export const SourceItem: FC<Props> = ({ componentId, shapesIds, children }) => {
                 {
                     id: 'insert',
                     label: 'Place instance',
-                    icon: { group: 'content', name: 'add_box', size: 16 },
+                    icon: { component: SquarePlus, size: 16 },
                     onRun: () => chooseComponentToPlace(componentId)
                 },
                 {
@@ -67,7 +68,7 @@ export const SourceItem: FC<Props> = ({ componentId, shapesIds, children }) => {
                 {
                     id: 'add-shapes',
                     label: 'Add selected shapes',
-                    icon: { group: 'content', name: 'add_circle', size: 16 },
+                    icon: { component: CirclePlus, size: 16 },
                     disabled: !canAddSelection,
                     onRun: () =>
                         addShapesToComponent({ componentId, shapeIds: [...selectedShapesIds] })
@@ -75,7 +76,7 @@ export const SourceItem: FC<Props> = ({ componentId, shapesIds, children }) => {
                 {
                     id: 'remove-shapes',
                     label: 'Remove selected shapes',
-                    icon: { group: 'content', name: 'remove_circle', size: 16 },
+                    icon: { component: CircleMinus, size: 16 },
                     disabled: !canRemoveSelection,
                     onRun: () =>
                         removeShapesFromComponent({ componentId, shapeIds: [...selectedShapesIds] })

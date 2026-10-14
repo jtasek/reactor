@@ -1,29 +1,26 @@
 import React, { FC } from 'react';
+import { Eye, EyeOff, Lock, LockOpen } from 'lucide-react';
 import styles from './styles.css';
 import { Icon } from '../Icon';
 import { useActions, useGroup, useGroupSelected } from 'src/app/hooks';
 
 const visibleIcon = {
-    group: 'action',
-    name: 'visibility',
+    component: Eye,
     size: 16
 };
 
 const hiddenIcon = {
-    group: 'action',
-    name: 'visibility_off',
+    component: EyeOff,
     size: 16
 };
 
 const lockedIcon = {
-    group: 'action',
-    name: 'lock_outline',
+    component: Lock,
     size: 16
 };
 
 const openIcon = {
-    group: 'action',
-    name: 'lock_open',
+    component: LockOpen,
     size: 16
 };
 

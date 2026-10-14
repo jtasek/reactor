@@ -1,4 +1,5 @@
 import React, { ChangeEvent, FC, useCallback } from 'react';
+import { RotateCcw } from 'lucide-react';
 import { useActions } from 'src/app/hooks';
 import { useInstanceProperties } from 'src/app/componentHooks';
 import { InstancePropertyField } from './InstancePropertyField';
@@ -114,7 +115,7 @@ const InstancePropertyRow: FC<{
                         aria-label={`Reset ${prop.label} to source value`}
                         onClick={handleReset}
                     >
-                        <Icon icon={{ group: 'action', name: 'restore', size: 14 }} />
+                        <Icon icon={{ component: RotateCcw, size: 14 }} />
                         Reset
                     </button>
                 )}

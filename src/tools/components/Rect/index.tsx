@@ -1,3 +1,4 @@
+import { RectangleHorizontal } from 'lucide-react';
 import React, { FC, useRef } from 'react';
 
 import styles from '../../styles.css';
@@ -80,8 +81,7 @@ export const RectCommand: Command = {
     category: 'shapes',
     description: 'Draws a rectangle or square',
     icon: {
-        group: 'image',
-        name: 'crop_square',
+        component: RectangleHorizontal,
         color: 'rgba(255,255,255)',
         size: 24
     },

@@ -1,3 +1,4 @@
+import { Group, Ungroup, CircleMinus } from 'lucide-react';
 import { Command } from 'src/app/types';
 import { GROUP_MINIMUM, groupedShapesSelectedAlone } from 'src/app/membership';
 
@@ -7,8 +8,7 @@ export const GroupCommand: Command = {
     category: 'groups',
     description: 'Group selected shapes',
     icon: {
-        group: 'av',
-        name: 'library_add',
+        component: Group,
         size: 24
     },
     shortcut: 'mod+g',
@@ -25,8 +25,7 @@ export const UngroupCommand: Command = {
     category: 'groups',
     description: 'Ungroup selected groups',
     icon: {
-        group: 'av',
-        name: 'library_books',
+        component: Ungroup,
         size: 24
     },
     shortcut: 'mod+shift+g',
@@ -45,8 +44,7 @@ export const RemoveFromGroupCommand: Command = {
     category: 'groups',
     description: 'Remove selected shapes from their group',
     icon: {
-        group: 'content',
-        name: 'remove_circle_outline',
+        component: CircleMinus,
         size: 24
     },
     shortcut: 'mod+alt+g',

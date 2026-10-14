@@ -1,4 +1,5 @@
 import React, { FC, useLayoutEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, CircleHelp, Eye, EyeOff, Lock, LockOpen } from 'lucide-react';
 import { useActions } from 'src/app/hooks';
 import type { Command, Icon as IconType } from 'src/app/types';
 import { Icon } from '../Icon';
@@ -22,7 +23,7 @@ export const commandAction = (
 ): ItemMenuAction => ({
     id: command.id,
     label: command.name,
-    icon: { group: 'action', name: 'help', ...command.icon, size: ICON_SIZE },
+    icon: { component: CircleHelp, ...command.icon, size: ICON_SIZE },
     disabled,
     onRun
 });
@@ -30,12 +31,12 @@ export const commandAction = (
 export const toggleAction = (
     id: string,
     pressed: boolean,
-    { on, off }: Record<'on' | 'off', { label: string; group?: string; icon: string }>,
+    { on, off }: Record<'on' | 'off', { label: string } & Pick<IconType, 'component' | 'fill'>>,
     onRun: () => void
 ): ItemMenuAction => {
-    const { label, group = 'action', icon } = pressed ? on : off;
+    const { label, component, fill } = pressed ? on : off;
 
-    return { id, label, icon: { group, name: icon, size: ICON_SIZE }, pressed, onRun };
+    return { id, label, icon: { component, fill, size: ICON_SIZE }, pressed, onRun };
 };
 
 /** Hides an item, or shows it again. */
@@ -44,8 +45,8 @@ export const hideAction = (isHidden: boolean, onRun: () => void) =>
         'hide',
         isHidden,
         {
-            on: { label: 'Show', icon: 'visibility_off' },
-            off: { label: 'Hide', icon: 'visibility' }
+            on: { label: 'Show', component: EyeOff },
+            off: { label: 'Hide', component: Eye }
         },
         onRun
     );
@@ -56,8 +57,8 @@ export const lockAction = (isLocked: boolean, onRun: () => void) =>
         'lock',
         isLocked,
         {
-            on: { label: 'Unlock', icon: 'lock_outline' },
-            off: { label: 'Lock', icon: 'lock_open' }
+            on: { label: 'Unlock', component: Lock },
+            off: { label: 'Lock', component: LockOpen }
         },
         onRun
     );
@@ -87,8 +88,8 @@ interface Props {
 const SHOWN_BUTTONS = 7;
 const COMPACT_BUTTONS = 2;
 
-const MORE_ICON = { group: 'navigation', name: 'chevron_right', size: ICON_SIZE };
-const BACK_ICON = { group: 'navigation', name: 'chevron_left', size: ICON_SIZE };
+const MORE_ICON = { component: ChevronRight, size: ICON_SIZE };
+const BACK_ICON = { component: ChevronLeft, size: ICON_SIZE };
 
 const MenuButton: FC<{ action: ItemMenuAction }> = ({
     action: { label, icon, pressed, disabled, onRun }

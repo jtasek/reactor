@@ -1,3 +1,4 @@
+import { Image as ImageIcon } from 'lucide-react';
 import React, { FC } from 'react';
 
 import styles from '../../styles.css';
@@ -118,8 +119,7 @@ export const ImageCommand: Command = {
     category: 'shapes',
     description: 'Draws an image shape',
     icon: {
-        group: 'image',
-        name: 'image',
+        component: ImageIcon,
         color: 'rgb(234, 2, 130)',
         size: 24
     },

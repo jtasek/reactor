@@ -1,3 +1,16 @@
+import {
+    AlignStartVertical,
+    AlignCenterVertical,
+    AlignEndVertical,
+    AlignStartHorizontal,
+    AlignCenterHorizontal,
+    AlignEndHorizontal,
+    AlignHorizontalSpaceBetween,
+    AlignVerticalSpaceBetween,
+    AlignHorizontalDistributeCenter,
+    AlignVerticalDistributeCenter
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { Command, Orientation } from 'src/app/types';
 import { ALIGN_MINIMUM, AlignTo, SPACE_MINIMUM, Spacing } from 'src/app/alignment';
 
@@ -5,7 +18,7 @@ const alignCommand = (
     id: string,
     name: string,
     to: AlignTo,
-    icon: string,
+    icon: LucideIcon,
     shortcut: string
 ): Command => ({
     id,
@@ -13,7 +26,7 @@ const alignCommand = (
     category: 'align',
     places: ['inspector'],
     description: `${name}: line the selected items up on their box`,
-    icon: { group: 'editor', name: icon, size: 24 },
+    icon: { component: icon, size: 24 },
     shortcut,
     canExecute: ({ state }) => state.currentDocument.movableSelectedItems.length >= ALIGN_MINIMUM,
     execute: ({ actions }) => actions.alignSelection(to)
@@ -24,6 +37,7 @@ const spaceCommand = (
     name: string,
     axis: Orientation,
     spacing: Spacing,
+    icon: LucideIcon,
     shortcut?: string
 ): Command => ({
     id,
@@ -34,7 +48,7 @@ const spaceCommand = (
         spacing === 'between'
             ? `${name}: equal gaps between the selected items, the outermost staying`
             : `${name}: equal distances between the selected items' centers, the outermost staying`,
-    icon: { group: 'reactor', name: `space_${spacing}_${axis}`, size: 24 },
+    icon: { component: icon, size: 24 },
     shortcut,
     canExecute: ({ state }) => state.currentDocument.movableSelectedItems.length >= SPACE_MINIMUM,
     execute: ({ actions }) => actions.spaceSelection({ axis, spacing })
@@ -44,42 +58,42 @@ export const AlignLeftCommand = alignCommand(
     'align-left',
     'Align left',
     'left',
-    'format_align_left',
+    AlignStartVertical,
     'shift+a'
 );
 export const AlignCenterCommand = alignCommand(
     'align-center',
     'Align center',
     'center',
-    'format_align_center',
+    AlignCenterVertical,
     'shift+c'
 );
 export const AlignRightCommand = alignCommand(
     'align-right',
     'Align right',
     'right',
-    'format_align_right',
+    AlignEndVertical,
     'shift+d'
 );
 export const AlignTopCommand = alignCommand(
     'align-top',
     'Align top',
     'top',
-    'vertical_align_top',
+    AlignStartHorizontal,
     'shift+w'
 );
 export const AlignMiddleCommand = alignCommand(
     'align-middle',
     'Align middle',
     'middle',
-    'vertical_align_center',
+    AlignCenterHorizontal,
     'shift+m'
 );
 export const AlignBottomCommand = alignCommand(
     'align-bottom',
     'Align bottom',
     'bottom',
-    'vertical_align_bottom',
+    AlignEndHorizontal,
     'shift+s'
 );
 
@@ -88,6 +102,7 @@ export const SpaceBetweenHorizontallyCommand = spaceCommand(
     'Space between horizontally',
     'horizontal',
     'between',
+    AlignHorizontalSpaceBetween,
     'shift+x'
 );
 export const SpaceBetweenVerticallyCommand = spaceCommand(
@@ -95,17 +110,20 @@ export const SpaceBetweenVerticallyCommand = spaceCommand(
     'Space between vertically',
     'vertical',
     'between',
+    AlignVerticalSpaceBetween,
     'shift+y'
 );
 export const SpaceEquallyHorizontallyCommand = spaceCommand(
     'space-equally-horizontally',
     'Space equally horizontally',
     'horizontal',
-    'centers'
+    'centers',
+    AlignHorizontalDistributeCenter
 );
 export const SpaceEquallyVerticallyCommand = spaceCommand(
     'space-equally-vertically',
     'Space equally vertically',
     'vertical',
-    'centers'
+    'centers',
+    AlignVerticalDistributeCenter
 );

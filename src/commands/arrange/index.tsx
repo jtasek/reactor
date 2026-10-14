@@ -1,3 +1,4 @@
+import { BringToFront, SendToBack } from 'lucide-react';
 import { Command } from 'src/app/types';
 
 export const BringToFrontCommand: Command = {
@@ -6,8 +7,7 @@ export const BringToFrontCommand: Command = {
     category: 'arrange',
     description: 'Draw selected shapes over all others',
     icon: {
-        group: 'action',
-        name: 'flip_to_front',
+        component: BringToFront,
         size: 24
     },
     shortcut: ']',
@@ -23,8 +23,7 @@ export const SendToBackCommand: Command = {
     category: 'arrange',
     description: 'Draw selected shapes under all others',
     icon: {
-        group: 'action',
-        name: 'flip_to_back',
+        component: SendToBack,
         size: 24
     },
     shortcut: '[',

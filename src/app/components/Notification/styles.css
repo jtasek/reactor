@@ -57,8 +57,6 @@
 .icon svg,
 .dismiss svg {
     display: block;
-    fill: currentColor;
-    stroke: none;
 }
 
 .message {

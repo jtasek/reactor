@@ -1,3 +1,4 @@
+import { Component, FileSearch, RotateCcw, Unlink } from 'lucide-react';
 import type { Command } from 'src/app/types';
 import { takesEditorInput } from 'src/events/input';
 
@@ -20,7 +21,7 @@ export const CreateComponentCommand: Command = {
     name: 'Create component',
     category: 'groups',
     description: 'Replace selected shapes with an instance of a new component',
-    icon: { group: 'content', name: 'add', size: 24 },
+    icon: { component: Component, size: 24 },
     shortcut: 'mod+alt+c',
     scopes: ['shape', 'group', 'selection', 'components'],
     menuOrder: 25,
@@ -46,7 +47,7 @@ export const SelectComponentSourceCommand: Command = {
     name: 'Select component source',
     category: 'groups',
     description: 'Select the shapes that define this instance',
-    icon: { group: 'action', name: 'find_in_page', size: 24 },
+    icon: { component: FileSearch, size: 24 },
     canExecute: ({ state }) =>
         state.currentDocument.selectedShapes.some((shape) => shape.type === 'instance'),
     execute: ({ state, actions }) => {
@@ -66,7 +67,7 @@ export const ResetComponentOverridesCommand: Command = {
     name: 'Reset component overrides',
     category: 'groups',
     description: 'Use the source values for selected instances',
-    icon: { group: 'action', name: 'restore', size: 24 },
+    icon: { component: RotateCcw, size: 24 },
     canExecute: ({ state }) =>
         state.currentDocument.selectedShapes.some(
             (shape) => shape.type === 'instance' && Object.keys(shape.overrides).length > 0
@@ -82,7 +83,7 @@ export const DetachInstanceCommand: Command = {
     name: 'Detach instance',
     category: 'groups',
     description: 'Replace the selected instance with independent shapes',
-    icon: { group: 'content', name: 'content_copy', size: 24 },
+    icon: { component: Unlink, size: 24 },
     canExecute: ({ state }) =>
         state.currentDocument.editableSelectedShapesIds.some(
             (id) => state.currentDocument.shapes[id]?.type === 'instance'

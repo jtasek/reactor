@@ -1,3 +1,4 @@
+import { Slash } from 'lucide-react';
 import React, { FC } from 'react';
 
 import styles from '../../styles.css';
@@ -63,8 +64,7 @@ export const LineCommand: Command = {
     category: 'shapes',
     description: 'Draw a straight line',
     icon: {
-        group: 'action',
-        name: 'timeline',
+        component: Slash,
         color: 'rgb(95, 216, 240)',
         size: 24
     },

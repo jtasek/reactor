@@ -1,3 +1,4 @@
+import { Type } from 'lucide-react';
 import React, { ChangeEvent, FC, KeyboardEvent, SubmitEvent, useEffect, useRef } from 'react';
 
 import styles from './styles.css';
@@ -141,8 +142,7 @@ export const TextCommand: Command = {
     category: 'shapes',
     description: 'Type a text',
     icon: {
-        group: 'editor',
-        name: 'title',
+        component: Type,
         color: 'rgba(255,255,255)',
         size: 24
     },

@@ -11,10 +11,7 @@ test('reset document asks for confirmation before clearing the current document'
     const reset = page
         .getByRole('list', { name: 'Commands', exact: true })
         .getByRole('button', { name: 'Reset document', exact: true });
-    await expect(reset.locator('use')).toHaveAttribute(
-        'xlink:href',
-        /svg-sprite-action-symbol\.svg#ic_delete_24px$/
-    );
+    await expect(reset.locator('svg.lucide-trash-2')).toBeVisible();
     await reset.click();
     const dialog = page.getByRole('dialog', { name: 'Reset document?' });
     await expect(dialog).toBeVisible();
@@ -58,7 +55,7 @@ test('the command menu also asks for confirmation and Escape cancels', async ({ 
     const reset = page
         .getByRole('list', { name: 'Commands' })
         .getByRole('button', { name: 'Reset document', exact: true });
-    await expect(reset.locator('use')).toHaveAttribute('xlink:href', /#ic_delete_24px$/);
+    await expect(reset.locator('svg.lucide-trash-2')).toBeVisible();
     await reset.click();
     await expect(page.getByRole('dialog', { name: 'Reset document?' })).toBeVisible();
     await page.keyboard.press('Escape');

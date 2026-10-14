@@ -1,4 +1,5 @@
 import React, { FC, ReactNode, useEffect, useState } from 'react';
+import { Ellipsis, Eye, EyeOff, Lock, LockOpen } from 'lucide-react';
 import { useActions, useCurrentDocument } from 'src/app/hooks';
 import { useComponent } from 'src/app/componentHooks';
 import type { PropertyRow, PropertyValue } from 'src/app/properties';
@@ -124,8 +125,7 @@ export const InspectorHeader: FC<Props> = ({
                     >
                         <Icon
                             icon={{
-                                group: 'action',
-                                name: visible === true ? 'visibility' : 'visibility_off',
+                                component: visible === true ? Eye : EyeOff,
                                 size: 16
                             }}
                         />
@@ -143,8 +143,7 @@ export const InspectorHeader: FC<Props> = ({
                     >
                         <Icon
                             icon={{
-                                group: 'action',
-                                name: locked === true ? 'lock_outline' : 'lock_open',
+                                component: locked === true ? Lock : LockOpen,
                                 size: 16
                             }}
                         />
@@ -162,7 +161,7 @@ export const InspectorHeader: FC<Props> = ({
                             aria-label="More inspector actions"
                             title="More actions"
                         >
-                            <Icon icon={{ group: 'navigation', name: 'more_horiz', size: 16 }} />
+                            <Icon icon={{ component: Ellipsis, size: 16 }} />
                         </summary>
                         <div className={styles.headerMenuContents}>
                             {componentId && !source && (

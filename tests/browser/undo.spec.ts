@@ -12,6 +12,10 @@ test('undoes and redoes a drawing from the keyboard and the command bar', async 
     const undo = commandButton(page, 'Undo');
     const redo = commandButton(page, 'Redo');
 
+    await expect(undo.locator('svg.lucide')).toBeVisible();
+    await expect(redo.locator('svg.lucide')).toBeVisible();
+    await expect(undo.locator('svg')).toHaveAttribute('aria-hidden', 'true');
+    expect(await undo.locator('svg').innerHTML()).not.toBe(await redo.locator('svg').innerHTML());
     await expect(undo).toBeDisabled();
     await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
     await expect(shapes(page)).toHaveCount(1);

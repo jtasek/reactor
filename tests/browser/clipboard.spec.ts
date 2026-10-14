@@ -124,3 +124,33 @@ test('the command bar and the command line copy, cut and paste', async ({ page }
     await input.press('Enter');
     await expect(shapes(page)).toHaveCount(2);
 });
+
+test('a first notice stays usable when its icons cannot load', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await openEditor(page);
+    await page.route(/\.js$/, (route) => route.abort());
+    const failedScript = page.waitForEvent(
+        'requestfailed',
+        (request) => request.resourceType() === 'script'
+    );
+    await page.evaluate(() => navigator.clipboard.writeText('not shapes'));
+    await page
+        .getByRole('list', { name: 'Commands', exact: true })
+        .getByRole('button', { name: 'Paste', exact: true })
+        .click();
+    await failedScript;
+
+    const notice = page.getByRole('alert').filter({
+        hasText: 'The clipboard holds no shapes to paste.'
+    });
+    await expect(notice).toBeVisible();
+    await expect(notice.getByRole('button', { name: 'Dismiss' })).toHaveText('Dismiss');
+    await expect(page.locator('svg#surface')).toBeVisible();
+    await drawRect(page, { x: 100, y: 100 }, { x: 160, y: 140 });
+    await expect(shapes(page)).toHaveCount(1);
+    await expect(notice).toBeVisible();
+    await notice.getByRole('button', { name: 'Dismiss' }).click();
+    await expect(notice).toHaveCount(0);
+    expect(errors).toEqual([]);
+});
