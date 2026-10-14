@@ -33,9 +33,11 @@ stays; nothing below replaces the editor surface.
 ## Rules for every milestone
 
 - Existing documents open, edit, save, copy and sync. Signed-out drawing works without a server.
-- Until the public beta (R7), durable formats change freely: bump the schema version and
-  update readers and fixtures, with no migrations or fallbacks. From then on, only published
-  apps' public contracts, their API names and package format, get compatibility rules.
+- Until the public beta (R7), saved document formats change freely: bump the schema version
+  and update readers and fixtures, with no migrations or fallbacks. From the beta on, a format
+  change migrates saved documents, and published apps' public contracts, their API names and
+  package format, stay compatible. Server tables always change through new migrations in
+  `server/migrations.ts`; released ones are never edited.
 - A new kind of durable record joins the readers, factories, copy and paste, collaboration and
   the merge repair in the same change: references to missing records are dropped, as deleting
   them would. A two-copy test covers a concurrent delete and reference.
@@ -67,6 +69,11 @@ apart from the store's `Application` type. IDs are stable and scoped to their do
 Copying records into another document remaps everything they depend on, and a name is a label
 that never changes a reference.
 
+A slice is what one view needs: a screen, or the selection, with every record it depends on
+(components, variables, images and entities), read through the graph reader. The application
+projection is the validated slice of an app's screens as plain data: frames, controls, layout,
+data bindings and actions, with no store objects.
+
 ### Operations and undo
 
 Undo works on the shared Yjs documents and tracks only this copy's own changes, so it covers
@@ -84,23 +91,32 @@ Changes that arrive as data (AI proposals, imports, pastes) are typed operations
 
 ### Screens
 
-A component, an instance or a group may declare a role (text, input, button, list, image) and
-the props that role takes; there is no second tree of controls beside the drawing. "Make
-interactive" sets a role by hand or from an AI suggestion; nothing infers roles silently. A
-screen is a top-level group marked as a screen, and a button's role may navigate to a screen.
+A component or an instance may declare a role (text, input, button, list, image) and the props
+that role takes; there is no second tree of controls beside the drawing. "Make interactive"
+sets a role by hand or from an AI suggestion; nothing infers roles silently.
 
-A group may be a stack:
+Screens and stacks are frames, a new kind of record, because groups hold only shapes and are
+selected whole. A frame has its own box and holds shapes and other frames, so frames nest. A
+press inside a frame takes the shape under it, and a frame is selected by its edge, its name or
+the explorer. A screen is a top-level frame, and a button's role may navigate to a screen.
+
+A frame may be a stack:
 
 - direction: row or column;
 - gap, padding and alignment;
 - each child's width and height: hug, fill or fixed, with a minimum and maximum.
 
-The editor lays a stack out as part of the change that alters it, so every copy shows the same
-positions. The preview and exported apps apply the same rules with the browser's layout.
+The editor lays a stack out as part of the change that alters it, and again once other copies'
+changes reach it. Layout depends only on the merged rules and sizes, so every copy writes the
+same positions, and a merge never leaves a mix that no layout made. The preview and exported
+apps apply the same rules with the browser's layout.
 
 The preview runs in an iframe sandboxed without same-origin access, and receives the validated
 application projection, never the store. Shared previews and published apps are served from a
-separate registrable domain, one subdomain per app, without the editor's cookies.
+separate registrable domain, one subdomain per app, without the editor's cookies. The editor's
+preview frame loads from that domain too, so the editor's content security policy gains a
+`frame-src` for it alone; a `srcdoc` or blob frame would inherit the editor's policy, which
+blocks the runtime's scripts.
 
 ### Data
 
@@ -216,7 +232,7 @@ Done when, on 40 eval cases:
 
 - at least 90% of runs give valid operations on the first try, and at least 97% after one repair;
 - no invalid write reaches the document;
-- the first change shows within 1.5 s at p50, and the whole one within 5 s at p95;
+- the first change shows within 2 s at p50, and the whole one within 5 s at p95;
 - one undo reverts it, and cancelling midway changes nothing;
 - another copy sees nothing before acceptance;
 - without AI, the entry is hidden and the entry bundle is unchanged.
@@ -232,12 +248,16 @@ The user shares a document and sees who else is in it.
 2. Presence: names, colors, pointers and selections.
 3. Comments on the canvas, in a change of their own.
 
+Done when `tests/server/sharing.test.ts` (invited roles, read-only viewer links) and
+`tests/browser/presence.spec.ts` (two pages see each other's pointers and selections) pass.
+
 ### R4 Interactive screens (XL)
 
 The user turns a drawing into screens that navigate and take input, and sends a link to them.
 
-1. Roles, props and stacks on components and groups, set in the inspector, with keyboard
-   access. A spike first proves stacks laid out by the change across two copies.
+1. Frames for screens and stacks, and roles and props on components and instances, set in the
+   inspector, with keyboard access. A spike first proves stacks laid out again after merges
+   across two copies.
 2. The sandboxed preview, with navigation, input state, diagnostics and the last valid preview.
 3. Preview links: read-only, on the separate domain.
 4. SVG export of a screen or a selection, reusing geometry, order, visibility and overrides.
@@ -249,6 +269,10 @@ The user turns a drawing into screens that navigate and take input, and sends a 
     - when the document has a matching component, at least 70% of controls are its instances;
     - a color within ΔE 2 of a color variable is bound to it;
     - it finishes within 20 s at p95.
+
+Steps 1 to 5 are done when `tests/frames.test.ts` (nesting, selection, layout after merges by
+two copies) and `tests/browser/screens.spec.ts` (build two screens, navigate and type in the
+preview, open the preview link, export SVG) pass.
 
 Gate: people outside the team send preview links to others.
 
@@ -269,6 +293,10 @@ prototype.
     - every record passes validation;
     - renaming a field keeps its bindings.
 
+Steps 1 to 4 are done when `tests/data.test.ts` (schemas, expressions, list keys by record ID)
+and `tests/browser/dataForms.spec.ts` (list, details, rejected and saved edits, the exported
+package behaving as the preview) pass.
+
 Afterward, agent mode: the AI plans, proposes, previews and asks for acceptance in rounds with
 the user.
 
@@ -280,9 +308,13 @@ The user switches a prototype between Light and Dark, and checks it for accessib
 2. Export of the supported subset in the DTCG format.
 3. Audits in the preview: contrast, labels and focus order, with fixes the AI can propose.
 
+Done when `tests/themes.test.ts` (aliases, cycles, two copies in different modes changing no
+shared value) and `tests/browser/themes.spec.ts` pass.
+
 ### R7 Public beta (S)
 
-Anyone can sign up. Compatibility rules for published apps begin here. Track two measures:
+Anyone can sign up. Compatibility rules begin here: saved documents migrate, and published
+apps' contracts stay compatible. Track two measures:
 
 - how many new people share a preview with at least two screens within a day;
 - how many prototype sessions each week are run by someone other than the author.
@@ -296,6 +328,10 @@ and falls back to sample records for offline work. The source runs through the s
 with the connector rules above. Pagination, filtering and sorting follow, as the source needs
 them.
 
+Done when `tests/server/connector.test.ts` (allowlist, private addresses and DNS rebinding
+refused, time and size limits, no credentials in exports) and `tests/browser/liveData.spec.ts`
+(each state, a stale request canceled, the offline fallback) pass.
+
 ### R9 Workflows (L)
 
 The user sees and edits what a screen does as a diagram of the same events and actions.
@@ -303,6 +339,9 @@ The user sees and edits what a screen does as a diagram of the same events and a
 - Conditions, success and error branches, and a bounded interpreter with cancellation.
 - Traces stay local, and reloading never replays an action.
 - Moving a node in the diagram never changes behavior.
+
+Done when `tests/workflows.test.ts` (branches, cancellation, run bounds, no replay on reload,
+moved nodes) and `tests/browser/workflows.spec.ts` pass.
 
 ### R10 Hosted runtime and generated API (XL)
 
@@ -313,6 +352,9 @@ The user publishes the prototype, and it reads and writes real records.
    isolated from each other.
 3. Generated list, create and update operations, described in OpenAPI from the entity schemas,
    with server validation, transactions and idempotent retries.
+
+Done when `tests/server/runtime.test.ts` (atomic activation, isolation between apps and users,
+refused invalid and forbidden requests, retries that change nothing twice) passes.
 
 ### Later, on evidence
 
@@ -335,8 +377,8 @@ Revisit only when users ask for them.
 
 | Decision               | Default                                                                                                                                                                                  | Decide by |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| Semantics              | Roles, props and stacks on components, instances and groups                                                                                                                              | Before R4 |
-| Stack positions        | Written by the change that alters the stack                                                                                                                                              | R4 step 1 |
+| Semantics              | Roles and props on components and instances; screens and stacks are frames, which nest                                                                                                   | Before R4 |
+| Stack positions        | Written by the change that alters the stack, and again after merges                                                                                                                      | R4 step 1 |
 | Where apps run         | Hosted previews and apps, with the exported web package as the exit; self-hosting later                                                                                                  | R4 step 3 |
 | Models                 | Claude Opus 5.5 for screens from screenshots and for agent mode, and Claude Haiku 5.5 for edits and audits. Claude Sonnet 5.5 is evaluated for generation, chosen by eval score per cost | Before R2 |
 | AI in shared documents | Proposals that a person accepts                                                                                                                                                          | R2        |

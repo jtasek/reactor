@@ -87,12 +87,12 @@ group to collapse or expand it.
 The image tool asks for a PNG, JPEG, GIF or WebP file of 5 MB or less, then draws it
 at its own proportions where you drag.
 
-Create component (Ctrl/Cmd+Alt+C) turns the selected shapes into a component and puts
-an instance of it in their place. Editing the component's source changes every
-instance; an instance can override the props its source exposes, reset them, or be
-detached into plain shapes. The Library control lists the components to place, and
-copies another document's component here; a copy shows when its source has changed
-and is updated on request.
+Create component, in the selection's menu and the context menu, turns the selected
+shapes into a component and puts an instance of it in their place. Editing the
+component's source changes every instance; an instance can override the props its
+source exposes, reset them, or be detached into plain shapes. The Library control
+copies another document's component here and lists the copies, to place or inspect;
+a copy shows when its source has changed and is updated on request.
 
 Shortcuts do nothing while a text field has focus. The command line runs a command
 by name.
