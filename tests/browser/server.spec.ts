@@ -19,6 +19,9 @@ const CLEARED = {
  */
 const SERVER_START_MS = 15_000;
 
+/** How long one health check may take, so a stalled one does not hide that the server exited. */
+const HEALTH_CHECK_MS = 1_000;
+
 test.afterEach(() => {
     started.splice(0).forEach((server) => server.kill());
 });
@@ -67,14 +70,18 @@ test('renders every page within its content security policy', async ({ page }) =
 });
 
 test('stops at once with a clear message when misconfigured', async () => {
-    for (const [env, message] of [
+    const misconfigurations = [
         [{ PORT: 'abc' }, 'Invalid PORT: abc'],
         [{ PORT: '4174', TRUST_PROXY: 'yes' }, 'Invalid TRUST_PROXY: yes'],
         [
             { PORT: '4174', DATABASE_URL: 'postgres://localhost/reactor' },
             'BETTER_AUTH_URL is required'
         ]
-    ] as const) {
+    ] as const;
+
+    test.setTimeout(misconfigurations.length * SERVER_START_MS);
+
+    for (const [env, message] of misconfigurations) {
         const { exited, output } = startServer(env);
 
         expect(await exited).toBe(1);
@@ -83,18 +90,17 @@ test('stops at once with a clear message when misconfigured', async () => {
 });
 
 test('shuts down cleanly when asked to stop', async ({ request }) => {
-    const { server, exited } = startServer({ PORT: '4175' });
+    const { server, exited, output } = startServer({ PORT: '4175' });
+    const health = () =>
+        server.exitCode === null
+            ? request.get('http://127.0.0.1:4175/healthz', { timeout: HEALTH_CHECK_MS }).then(
+                  (response) => (response.ok() ? 'answering' : 'starting'),
+                  () => 'starting'
+              )
+            : `exited with ${server.exitCode}:\n${output()}`;
 
-    await expect
-        .poll(
-            () =>
-                request.get('http://127.0.0.1:4175/healthz').then(
-                    (response) => response.ok(),
-                    () => false
-                ),
-            { timeout: SERVER_START_MS }
-        )
-        .toBe(true);
+    await expect.poll(health, { timeout: SERVER_START_MS }).not.toBe('starting');
+    expect(await health()).toBe('answering');
 
     server.kill('SIGTERM');
 
