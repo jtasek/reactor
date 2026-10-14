@@ -1,5 +1,11 @@
 import path from 'node:path';
-import type { NextFunction, Request, RequestHandler, Response } from 'express';
+import type { ServerResponse } from 'node:http';
+import express, {
+    type NextFunction,
+    type Request,
+    type RequestHandler,
+    type Response
+} from 'express';
 
 /**
  * Serves the editor's page for its routes, such as `/documents`, with `sendPage`.
@@ -25,6 +31,40 @@ export function pageFallback(
 
         sendPage(req, res, next);
     };
+}
+
+const setStaticCache = (res: ServerResponse, filePath: string) => {
+    if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache');
+    } else {
+        // dist assets carry a content hash in the filename, so they are immutable.
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+};
+
+/**
+ * Serves the build output in `directory`: its files, and its page, `index.html`, for the
+ * editor's routes, which are left to the not-found handler while the page is missing, as
+ * during a rebuild. Both are sent with `directory` as their root, since Express refuses a
+ * path through a dot-directory, as a checkout under `.claude/worktrees` has, unless it lies
+ * above the root.
+ */
+export function serveBuild(directory: string): RequestHandler {
+    const files = express.static(directory, {
+        index: false,
+        redirect: false,
+        setHeaders: setStaticCache
+    });
+
+    return express
+        .Router()
+        .use(files)
+        .use(
+            pageFallback((req, res, next) => {
+                req.url = '/index.html';
+                files(req, res, next);
+            })
+        );
 }
 
 /** Answers what nothing else did. */
