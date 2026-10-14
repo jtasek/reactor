@@ -3,21 +3,16 @@ import { Context } from 'src/app';
 import { ActionWithParam, Point, Shape } from 'src/app/types';
 import { screenToWorld } from 'src/app/camera';
 import { drawnBox, drawnExtent, groupFrame, shownShapesIds } from 'src/app/membership';
-import {
-    SNAP_DISTANCE_PX,
-    linesOnEdges,
-    sameGaps,
-    snapMove,
-    snapResize,
-    snapToGuides,
-    targetLines
-} from 'src/app/snapping';
+import { editorHelpers } from 'src/app/editorHelpers';
 import { untracked } from 'src/app/untracked';
 import { getShapeBounds, isShapeLocked } from 'src/app/utils';
 import { keepsAspectRatio } from 'src/app/geometry';
 import type { RestoredEntity } from 'src/app/services/collaboration';
 import { beyondClickSlip } from '../gestures';
 import { HandleTarget, SelectionSnapshot, ShapesSnapshot, TouchContact } from '../types';
+
+/** Snapping, which the editor provides as it loads. */
+const snapping = () => editorHelpers().snapping;
 
 /** A pointer's input; `free` moves without snapping, as while Ctrl or Cmd is held. */
 type PointerInput = { pointerId: number; position: Point; free?: boolean };
@@ -66,6 +61,7 @@ export const beginGesture = (
         touch = false
     }: PointerInput & { handle?: HandleTarget; touch?: boolean }
 ): boolean => {
+    const { SNAP_DISTANCE_PX, snapToGuides } = snapping();
     const pointer = state.events.pointer;
 
     if (pointer.gesture.kind !== 'idle') {
@@ -239,6 +235,7 @@ const takeSnapTargets = (
     { state, effects }: Pick<Context, 'state' | 'effects'>,
     changingIds: string[]
 ) => {
+    const { targetLines } = snapping();
     const changing = new Set(changingIds);
     // Read without the store's tracking: thousands of shapes are only looked at here.
     const document = untracked(state.currentDocument);
@@ -257,6 +254,8 @@ export const movePointer = (
 ) => {
     const pointer = state.events.pointer;
     const { gesture } = pointer;
+    const { SNAP_DISTANCE_PX, linesOnEdges, sameGaps, snapMove, snapResize, snapToGuides } =
+        snapping();
 
     if (
         gesture.kind === 'pinching' ||

@@ -1,3 +1,7 @@
+import * as alignment from 'src/app/alignment';
+import * as clipboard from 'src/app/clipboard';
+import { provideEditorHelpers } from 'src/app/editorHelpers';
+import * as snapping from 'src/app/snapping';
 import {
     AlignBottomCommand,
     AlignCenterCommand,
@@ -115,10 +119,12 @@ function registerTools() {
 
 /**
  * Registers the editor's commands and tools, in the order the command bar and the
- * tool bar list them. They load with the editor page, not at startup, so the other
- * pages open without them; registering again changes nothing.
+ * tool bar list them, and provides the helpers its actions run. They load with the
+ * editor page, not at startup, so the other pages open without them; registering
+ * again changes nothing.
  */
 export function registerEditor() {
     registerCommands();
     registerTools();
+    provideEditorHelpers({ alignment, clipboard, snapping });
 }

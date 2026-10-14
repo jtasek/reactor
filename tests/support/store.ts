@@ -13,6 +13,10 @@ import type { Accounts } from 'src/app/services/accounts';
 import type { Api, Transport } from 'src/app/services/api';
 import type { AssetServer } from 'src/app/services/assetSync';
 import type { Channel } from 'src/app/services/tabSync';
+import * as alignment from 'src/app/alignment';
+import * as clipboard from 'src/app/clipboard';
+import { provideEditorHelpers } from 'src/app/editorHelpers';
+import * as snapping from 'src/app/snapping';
 
 /** A server without accounts. */
 const noAccounts: Accounts = {
@@ -58,8 +62,14 @@ export function createTestStore(
         storage?: Map<string, string>;
         /** The file chosen when the image tool asks for one; none by default. */
         pickImage?: () => Promise<Blob | null>;
+        /** Whether the editor's code has loaded, as it has by default once the editor shows. */
+        editorLoaded?: boolean;
     } = {}
 ) {
+    // Store tests run the editor's actions, as the editor page does once loaded.
+    provideEditorHelpers(
+        options.editorLoaded === false ? undefined : { alignment, clipboard, snapping }
+    );
     const storage = options.storage ?? new Map(Object.entries(seed));
     const indexedDB = options.indexedDB ?? new IDBFactory();
     let copied = '';

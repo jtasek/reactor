@@ -142,7 +142,7 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
   recorded counts: fix a touched file's existing findings rather than adding exceptions.
 - `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 491 KiB or
-  any file 248 KiB (the budget in `webpack.config.mjs`, measured at 490.7 and 234 KiB); raise
+  any file 248 KiB (the budget in `webpack.config.mjs`, measured at 479.3 and 223 KiB); raise
   it only for code every page needs as it opens, after checking what grew. Commands and
   tools load with the editor page, which registers them (`src/pages/registerEditor.ts`),
   not at startup: the store keeps only the tools namespace's state and actions
@@ -543,7 +543,12 @@ Hidden guides are not drawn and locked ones do not move.
 - **Commands and tools are registered by the editor page** as it loads (`registerEditor`,
   `src/pages/registerEditor.ts`), not at startup, so they stay out of the entry bundle; add
   a new one there. Until then the registry is empty (`getCommands`, `getTools`), so code
-  outside the editor must not count on them. Registering one again replaces it in place,
+  outside the editor must not count on them. So with the code only the editor's actions
+  run: snapping, aligning and the clipboard's format are provided by `registerEditor`
+  (`provideEditorHelpers`, `src/app/editorHelpers.ts`), and actions reach them through
+  `editorHelpers()`; `createTestStore` provides them for store tests. The editor takes no
+  input before they are provided (`editorLoaded`, in `takesEditorInput`), and a lint rule
+  keeps the store's code from importing these modules again. Registering one again replaces it in place,
   as a hot update does.
 - **Commands**: run a command with `runCommand(command)` (`actions/commands.ts`), which checks
   its `canExecute` guard first; never call `execute` directly. Guards are `CommandGuard`s that

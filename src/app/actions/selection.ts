@@ -1,16 +1,13 @@
 import { Action, ActionWithParam, Application, Document, Orientation, Point } from '../types';
-import {
-    ALIGN_MINIMUM,
-    AlignTo,
-    SPACE_MINIMUM,
-    Spacing,
-    alignOffsets,
-    spaceOffsets
-} from '../alignment';
+import type { AlignTo, Spacing } from '../alignment';
+import { editorHelpers } from '../editorHelpers';
 import { translateShape } from '../geometry';
 import { getCommand } from './startup';
 import { drawnExtent, selectedItems, shapeGroup } from '../membership';
 import { isShapeVisible } from '../utils';
+
+/** Aligning, which the editor provides as it loads. */
+const alignment = () => editorHelpers().alignment;
 
 const unselect = ({ shapes }: Document, shapeIds: string[]) => {
     shapeIds.forEach((id) => {
@@ -153,11 +150,11 @@ export const alignSelection: ActionWithParam<AlignTo> = ({ state }, to) => {
     const { currentDocument } = state;
     const items = placedItems(currentDocument);
 
-    if (items.length >= ALIGN_MINIMUM) {
+    if (items.length >= alignment().ALIGN_MINIMUM) {
         moveItems(
             currentDocument,
             items,
-            alignOffsets(
+            alignment().alignOffsets(
                 items.map(({ box }) => box),
                 to
             )
@@ -173,11 +170,11 @@ export const spaceSelection: ActionWithParam<{ axis: Orientation; spacing: Spaci
     const { currentDocument } = state;
     const items = placedItems(currentDocument);
 
-    if (items.length >= SPACE_MINIMUM) {
+    if (items.length >= alignment().SPACE_MINIMUM) {
         moveItems(
             currentDocument,
             items,
-            spaceOffsets(
+            alignment().spaceOffsets(
                 items.map(({ box }) => box),
                 axis,
                 spacing
