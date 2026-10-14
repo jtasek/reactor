@@ -1,3 +1,4 @@
+import { PenTool as PenIcon } from 'lucide-react';
 import React, { FC } from 'react';
 
 import styles from '../../styles.css';
@@ -57,8 +58,7 @@ export const PenCommand: Command = {
     category: 'shapes',
     description: 'Draws a line',
     icon: {
-        group: 'content',
-        name: 'create',
+        component: PenIcon,
         color: 'rgba(255,255,255)',
         size: 24
     },

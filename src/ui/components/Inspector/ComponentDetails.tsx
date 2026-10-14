@@ -1,4 +1,5 @@
 import React, { FC } from 'react';
+import { SquarePlus, FileSearch, CircleMinus, RefreshCw, ChevronLeft } from 'lucide-react';
 import { useActions, useCurrentDocument, useComponentSource } from 'src/app/hooks';
 import type { InstanceShape } from 'src/app/types';
 import { Icon } from '../Icon';
@@ -7,10 +8,10 @@ import { Instance } from '../Shape/Instance';
 import { useComponent, useLibraryUpdateAvailable } from 'src/app/componentHooks';
 import styles from './styles.css';
 
-const ACTION_ICON = { group: 'content', name: 'add_box', size: 16 };
-const FIND_ICON = { group: 'action', name: 'find_in_page', size: 16 };
-const REMOVE_ICON = { group: 'content', name: 'remove_circle', size: 16 };
-const UPDATE_ICON = { group: 'action', name: 'update', size: 16 };
+const ACTION_ICON = { component: SquarePlus, size: 16 };
+const FIND_ICON = { component: FileSearch, size: 16 };
+const REMOVE_ICON = { component: CircleMinus, size: 16 };
+const UPDATE_ICON = { component: RefreshCw, size: 16 };
 
 export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) => {
     const component = useComponent(componentId);
@@ -150,7 +151,7 @@ export const SourceChildBreadcrumb: FC<{ componentId: string }> = ({ componentId
                 aria-label={`Select ${component.name} source`}
                 onClick={() => selectComponentSource(componentId)}
             >
-                <Icon icon={{ group: 'navigation', name: 'chevron_left', size: 16 }} />
+                <Icon icon={{ component: ChevronLeft, size: 16 }} />
                 <ObjectTypeSymbol type="component" />
                 <span>{component.name}</span>
             </button>

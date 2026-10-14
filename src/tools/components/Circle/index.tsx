@@ -1,3 +1,4 @@
+import { Circle as CircleIcon } from 'lucide-react';
 import React, { FC, useRef } from 'react';
 
 import styles from '../../styles.css';
@@ -74,8 +75,7 @@ export const CircleCommand: Command = {
     category: 'shapes',
     description: 'Draws a circle shape',
     icon: {
-        group: 'image',
-        name: 'panorama_fish_eye',
+        component: CircleIcon,
         color: 'rgb(144, 254, 214)',
         size: 24
     },

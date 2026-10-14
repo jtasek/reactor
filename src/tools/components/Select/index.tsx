@@ -1,3 +1,4 @@
+import { MousePointer2 } from 'lucide-react';
 import React, { FC } from 'react';
 
 import styles from './styles.css';
@@ -64,8 +65,7 @@ export const SelectCommand: Command = {
     category: 'tools',
     description: 'Selects shapes and groups ',
     icon: {
-        group: 'action',
-        name: 'pan_tool',
+        component: MousePointer2,
         color: 'rgba(255,255,255)',
         size: 24
     },

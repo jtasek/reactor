@@ -43,7 +43,6 @@
 
 .button svg {
     display: block;
-    fill: currentColor;
 }
 
 [data-menu-host]:not(:hover):not(:has(:focus-visible)) .menu {

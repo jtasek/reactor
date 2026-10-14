@@ -1,5 +1,6 @@
 import { Context } from './index';
 import type { GroupFrame } from './membership';
+import type { LucideIcon } from 'lucide-react';
 
 export type Orientation = 'horizontal' | 'vertical';
 
@@ -308,10 +309,11 @@ export interface Document {
     variablesIds: string[];
 }
 
+/** Runtime metadata kept in the plain command/tool registries, never document or store state. */
 export interface Icon {
+    component: LucideIcon;
     color?: string;
-    group: string;
-    name: string;
+    fill?: string;
     size: number;
 }
 

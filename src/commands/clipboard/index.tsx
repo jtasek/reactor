@@ -1,3 +1,4 @@
+import { Copy, Scissors, ClipboardPaste } from 'lucide-react';
 import { Command } from 'src/app/types';
 import { isShapeLocked } from 'src/app/utils';
 import { focusedSourceOnlyId } from 'src/app/componentSelection';
@@ -9,8 +10,7 @@ export const CopyCommand: Command = {
     category: 'clipboard',
     description: 'Copy selected shapes',
     icon: {
-        group: 'content',
-        name: 'content_copy',
+        component: Copy,
         size: 24
     },
     shortcut: 'mod+c',
@@ -34,8 +34,7 @@ export const CutCommand: Command = {
     category: 'clipboard',
     description: 'Cut selected shapes',
     icon: {
-        group: 'content',
-        name: 'content_cut',
+        component: Scissors,
         size: 24
     },
     shortcut: 'mod+x',
@@ -60,8 +59,7 @@ export const PasteCommand: Command = {
     category: 'clipboard',
     description: 'Paste copied shapes',
     icon: {
-        group: 'content',
-        name: 'content_paste',
+        component: ClipboardPaste,
         size: 24
     },
     shortcut: 'mod+v',

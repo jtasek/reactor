@@ -36,9 +36,35 @@ test('the inspector aligns and spaces the selection, which its keys do too', asy
     ).toHaveCount(0);
 });
 
-test('the spacing icons are served', async ({ request }) => {
-    const sprite = await request.get('/icons/svg-sprite-reactor-symbol.svg');
+test('alignment and spacing show distinct icons without loading sprites', async ({ page }) => {
+    const spriteRequests: string[] = [];
+    page.on('request', (request) => {
+        if (request.url().includes('/icons/svg-sprite-')) {
+            spriteRequests.push(request.url());
+        }
+    });
+    await openEditor(page, ['Inspector']);
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    await drawRect(page, { x: 400, y: 200 }, { x: 460, y: 260 });
+    await pointer(page, 'pointerdown', { x: 280, y: 80 });
+    await pointer(page, 'pointermove', { x: 480, y: 280 });
+    await pointer(page, 'pointerup', { x: 480, y: 280 });
 
-    expect(sprite.ok()).toBe(true);
-    expect(await sprite.text()).toContain('id="ic_space_between_horizontal_24px"');
+    const align = page.getByRole('toolbar', { name: 'Align menu' });
+    await expect(align.locator('button svg.lucide')).toHaveCount(6);
+    const space = page.getByRole('toolbar', { name: 'Space menu' });
+    for (const axis of ['horizontally', 'vertically']) {
+        const between = space
+            .getByRole('button', { name: `Space between ${axis}`, exact: true })
+            .locator('svg');
+        const centers = space
+            .getByRole('button', { name: `Space equally ${axis}`, exact: true })
+            .locator('svg');
+
+        await expect(between).toBeVisible();
+        await expect(centers).toBeVisible();
+        expect(await between.innerHTML()).not.toBe(await centers.innerHTML());
+        await expect(between).toHaveAttribute('aria-hidden', 'true');
+    }
+    expect(spriteRequests).toEqual([]);
 });

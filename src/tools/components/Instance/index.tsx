@@ -1,3 +1,4 @@
+import { CopyPlus } from 'lucide-react';
 import React, { FC } from 'react';
 import type { Tool } from 'src/tools/types';
 import { useComponentSource, usePointer, useAppState } from 'src/app/hooks';
@@ -30,7 +31,7 @@ export const InstanceTool: Tool = {
     name: 'Insert instance',
     category: 'shapes',
     description: 'Place an instance of the chosen component',
-    icon: { group: 'content', name: 'library_add', size: 24 },
+    icon: { component: CopyPlus, size: 24 },
     designComponent: DesignInstance,
     canExecute: ({ state }) =>
         Boolean(

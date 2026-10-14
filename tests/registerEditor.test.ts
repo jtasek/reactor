@@ -4,6 +4,9 @@ import { editorHelpers, editorLoaded } from 'src/app/editorHelpers';
 import { takesEditorInput } from 'src/events/input';
 import { registerEditor } from 'src/pages/registerEditor';
 import { createTestStore } from './support/store';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { Icon } from 'src/ui/components/Icon';
 
 describe('the editor’s commands and tools', () => {
     it('are not registered at startup, but by the editor page, once', async () => {
@@ -52,5 +55,25 @@ describe('the editor’s commands and tools', () => {
 
         expect(editorHelpers().snapping).toBe(snapping);
         expect(takesEditorInput(store.state)).toBe(true);
+    });
+
+    it('keeps icon components renderable outside store state after commands and tools run', () => {
+        registerEditor();
+        const { store } = createTestStore();
+
+        store.actions.tools.activateTool('ellipse');
+        store.actions.runCommand(getCommand('zoom-in'));
+
+        for (const { icon } of [...getCommands(), ...getTools()]) {
+            if (!icon) {
+                continue;
+            }
+            const markup = renderToStaticMarkup(createElement(Icon, { icon }));
+
+            expect(markup).toContain('<svg');
+            expect(markup).toContain('aria-hidden="true"');
+            expect(markup).toContain('stroke-width="1.5"');
+        }
+        expect(store.state.commands).toEqual({});
     });
 });

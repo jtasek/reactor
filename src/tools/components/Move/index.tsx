@@ -1,3 +1,4 @@
+import { Move as MoveIcon } from 'lucide-react';
 import { FC } from 'react';
 
 import type { Command } from 'src/app/types';
@@ -15,8 +16,7 @@ export const MoveCommand: Command = {
     category: 'tools',
     description: 'Move the selected shapes',
     icon: {
-        group: 'action',
-        name: 'open_with',
+        component: MoveIcon,
         color: 'rgba(255,255,255)',
         size: 24
     },

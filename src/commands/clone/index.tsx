@@ -1,3 +1,4 @@
+import { Copy } from 'lucide-react';
 import { Command } from 'src/app/types';
 import { Context } from 'src/app';
 
@@ -11,8 +12,7 @@ export const CloneCommand: Command = {
     category: 'tools',
     description: 'Clone current selection',
     icon: {
-        group: 'content',
-        name: 'content_copy',
+        component: Copy,
         size: 24
     },
     regex: /(?<toolCode>clone)\('(?<shapeName>\w+)'\)/,

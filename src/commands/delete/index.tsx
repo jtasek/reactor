@@ -1,3 +1,4 @@
+import { Trash2 } from 'lucide-react';
 import { Command } from 'src/app/types';
 
 import { Context } from 'src/app';
@@ -15,8 +16,7 @@ export const DeleteCommand: Command = {
     category: 'tools',
     description: 'Delete selected shapes or guides',
     icon: {
-        group: 'action',
-        name: 'delete',
+        component: Trash2,
         size: 24
     },
     regex: /(?<toolCode>delete)\('(?<shapeName>\w+)'\)/,

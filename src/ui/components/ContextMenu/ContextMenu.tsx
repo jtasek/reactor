@@ -1,4 +1,15 @@
 import React, { FC, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+    AlignStartHorizontal,
+    CircleHelp,
+    Grid2X2,
+    Layers,
+    Pencil,
+    Ruler,
+    RulerDimensionLine,
+    Square,
+    type LucideIcon
+} from 'lucide-react';
 import type { Command, Icon as IconType, Point } from 'src/app/types';
 import {
     useActions,
@@ -70,7 +81,7 @@ interface RowProps {
     component?: boolean;
 }
 
-const icon = (group: string, name: string): IconType => ({ group, name, size: 16 });
+const icon = (component: LucideIcon): IconType => ({ component, size: 16 });
 const mac = usesCommandKey();
 
 const MenuRow: FC<RowProps> = ({
@@ -119,7 +130,7 @@ const CommandRow: FC<{
 }> = ({ command, label = command.name, danger, component, onRun }) => (
     <MenuRow
         label={label}
-        icon={command.icon ?? icon('action', 'help')}
+        icon={command.icon ?? icon(CircleHelp)}
         shortcut={command.shortcut && shortcutLabel(command.shortcut, mac)}
         danger={danger}
         component={component}
@@ -366,7 +377,7 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                         title={`Rename ${target.type}`}
                         onClick={beginRename}
                     >
-                        <Icon icon={icon('image', 'edit')} />
+                        <Icon icon={icon(Pencil)} />
                     </button>
                 )}
             </div>
@@ -375,16 +386,12 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                 <>
                     <CommandRow command={LayerCommand} label="New layer" onRun={run} />
                     <Divider />
-                    <MenuRow
-                        label="Canvas"
-                        icon={icon('action', 'view_agenda')}
-                        onClick={() => moveToLayer(null)}
-                    />
+                    <MenuRow label="Canvas" icon={icon(Layers)} onClick={() => moveToLayer(null)} />
                     {layers.map((layer) => (
                         <MenuRow
                             key={layer.id}
                             label={layer.name}
-                            icon={icon('action', 'view_agenda')}
+                            icon={icon(Layers)}
                             onClick={() => moveToLayer(layer.id)}
                         />
                     ))}
@@ -438,14 +445,14 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                     <Divider />
                     <MenuRow
                         label="Move to layer"
-                        icon={icon('action', 'view_agenda')}
+                        icon={icon(Layers)}
                         submenu
                         disabled={!canMoveToLayer}
                         onClick={() => setSubmenu('layers')}
                     />
                     <MenuRow
                         label="Align"
-                        icon={icon('editor', 'format_align_left')}
+                        icon={icon(AlignStartHorizontal)}
                         submenu
                         disabled={!canAlign}
                         onClick={() => setSubmenu('align')}
@@ -473,7 +480,7 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                     <CommandRow command={PasteCommand} onRun={run} />
                     <MenuRow
                         label="Draw shape"
-                        icon={icon('image', 'crop_square')}
+                        icon={icon(Square)}
                         submenu
                         onClick={() => setSubmenu('draw')}
                     />
@@ -486,19 +493,19 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
                     <Divider />
                     <MenuRow
                         label="Show grid"
-                        icon={icon('image', 'grid_on')}
+                        icon={icon(Grid2X2)}
                         checked={grid.visible}
                         onClick={() => toggle('grid')}
                     />
                     <MenuRow
                         label="Show guides"
-                        icon={icon('image', 'straighten')}
+                        icon={icon(Ruler)}
                         checked={guides.visible}
                         onClick={() => toggle('guides')}
                     />
                     <MenuRow
                         label="Show rulers"
-                        icon={icon('editor', 'border_top')}
+                        icon={icon(RulerDimensionLine)}
                         checked={rulers.visible}
                         onClick={() => toggle('rulers')}
                     />

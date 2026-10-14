@@ -1,18 +1,17 @@
 import React, { FC } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { Control } from 'src/ui/types';
 import styles from './styles.css';
 
 import { Icon } from '../Icon';
 
 const visible = {
-    group: 'action',
-    name: 'visibility',
+    component: Eye,
     size: 16
 };
 
 const hidden = {
-    group: 'action',
-    name: 'visibility_off',
+    component: EyeOff,
     size: 16
 };
 
@@ -32,6 +31,6 @@ export const ControlPanelItem: FC<Props> = ({ control, onChange }) => (
             />
             {control.name}
         </label>
-        {control.visible ? <Icon {...visible} key="visible" /> : <Icon {...hidden} key="hidden" />}
+        <Icon icon={control.visible ? visible : hidden} />
     </li>
 );

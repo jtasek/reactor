@@ -1,3 +1,4 @@
+import { Ellipse as EllipseIcon } from 'lucide-react';
 import React, { FC } from 'react';
 
 import styles from '../../styles.css';
@@ -70,8 +71,7 @@ export const EllipseCommand: Command = {
     category: 'shapes',
     description: 'Draws an elliptic shape',
     icon: {
-        group: 'image',
-        name: 'panorama_fish_eye',
+        component: EllipseIcon,
         color: 'rgb(144, 254, 214)',
         size: 24
     },

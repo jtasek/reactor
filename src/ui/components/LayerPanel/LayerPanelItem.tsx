@@ -1,4 +1,5 @@
 import React, { FC } from 'react';
+import { Eye, EyeOff, Lock, LockOpen } from 'lucide-react';
 import styles from './styles.css';
 import { Icon } from '../Icon';
 import { useActions, useLayer } from 'src/app/hooks';
@@ -6,26 +7,22 @@ import { useActions, useLayer } from 'src/app/hooks';
 const LAYER_ICON_SIZE = 16;
 
 const visibleIcon = {
-    group: 'action',
-    name: 'visibility',
+    component: Eye,
     size: LAYER_ICON_SIZE
 };
 
 const hiddenIcon = {
-    group: 'action',
-    name: 'visibility_off',
+    component: EyeOff,
     size: LAYER_ICON_SIZE
 };
 
 const lockedIcon = {
-    group: 'action',
-    name: 'lock_outline',
+    component: Lock,
     size: LAYER_ICON_SIZE
 };
 
 const openIcon = {
-    group: 'action',
-    name: 'lock_open',
+    component: LockOpen,
     size: LAYER_ICON_SIZE
 };
 

@@ -1,4 +1,5 @@
 import React, { FC, KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { CircleMinus, CirclePlus } from 'lucide-react';
 import type { PropertyRow, PropertyValue } from 'src/app/properties';
 import type { Variable } from 'src/app/types';
 import { Slider } from '../Slider';
@@ -143,8 +144,7 @@ export const PropertyField: FC<Props> = ({
                     >
                         <Icon
                             icon={{
-                                group: 'content',
-                                name: exposure.active ? 'remove_circle' : 'add_circle',
+                                component: exposure.active ? CircleMinus : CirclePlus,
                                 size: 16
                             }}
                         />

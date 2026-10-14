@@ -1,12 +1,13 @@
 import React, { FC } from 'react';
+import { Copy, SquarePlus, FileSearch } from 'lucide-react';
 import { useActions, useComponents } from 'src/app/hooks';
 import { useComponentLibraries } from 'src/app/componentHooks';
 import { Icon } from '../Icon';
 import styles from './styles.css';
 
-const COPY_ICON = { group: 'content', name: 'content_copy', size: 16 };
-const INSERT_ICON = { group: 'content', name: 'add_box', size: 16 };
-const SOURCE_ICON = { group: 'action', name: 'find_in_page', size: 16 };
+const COPY_ICON = { component: Copy, size: 16 };
+const INSERT_ICON = { component: SquarePlus, size: 16 };
+const SOURCE_ICON = { component: FileSearch, size: 16 };
 
 /** Imported sources and sources in other documents, without the editor's source controls. */
 export const Components: FC = () => {

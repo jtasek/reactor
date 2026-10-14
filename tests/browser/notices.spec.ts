@@ -16,6 +16,12 @@ test('tells a signed-out user once that documents are kept only in this browser'
     await expect(notice).toHaveAttribute('data-type', 'info');
     await expect(notice).toHaveCSS('background-color', 'rgb(228, 223, 243)');
     await expect(notice).toHaveCSS('color', 'rgb(106, 85, 194)');
+    const icon = notice.locator('svg.lucide-info');
+    await expect(icon).toBeVisible();
+    await expect(icon).toHaveAttribute('aria-hidden', 'true');
+    await expect(icon).toHaveCSS('fill', 'none');
+    await expect(icon).toHaveCSS('stroke', 'rgb(106, 85, 194)');
+    await expect(notice.getByRole('button', { name: 'Dismiss' }).locator('svg')).toBeVisible();
     // This server has no accounts, so there is no sign-in to offer.
     await expect(notice.getByRole('link')).toHaveCount(0);
 

@@ -1,0 +1,639 @@
+{
+  "before": {
+    "stage": "before",
+    "method": "Chromium 1440x1000, isolated fresh context; Documents then editor with toolbar/Inspector/Explorer, three rectangles and context menu. Warm reload uses same HTTP cache. Menu timing is synthetic click to two animation frames; no CPU/network throttling.",
+    "cold": {
+      "icons": [
+        {
+          "url": "/icons/svg-sprite-file-symbol.svg",
+          "bytes": 2042,
+          "cached": false,
+          "status": 200
+        },
+        {
+          "url": "/icons/svg-sprite-action-symbol.svg",
+          "bytes": 18697,
+          "cached": false,
+          "status": 200
+        },
+        {
+          "url": "/icons/svg-sprite-image-symbol.svg",
+          "bytes": 13823,
+          "cached": false,
+          "status": 200
+        },
+        {
+          "url": "/icons/svg-sprite-navigation-symbol.svg",
+          "bytes": 2294,
+          "cached": false,
+          "status": 200
+        },
+        {
+          "url": "/icons/svg-sprite-content-symbol.svg",
+          "bytes": 3819,
+          "cached": false,
+          "status": 200
+        },
+        {
+          "url": "/icons/svg-sprite-av-symbol.svg",
+          "bytes": 6403,
+          "cached": false,
+          "status": 200
+        },
+        {
+          "url": "/icons/svg-sprite-toggle-symbol.svg",
+          "bytes": 1604,
+          "cached": false,
+          "status": 200
+        },
+        {
+          "url": "/icons/svg-sprite-editor-symbol.svg",
+          "bytes": 6083,
+          "cached": false,
+          "status": 200
+        },
+        {
+          "url": "/icons/svg-sprite-reactor-symbol.svg",
+          "bytes": 1982,
+          "cached": false,
+          "status": 200
+        }
+      ],
+      "iconRequests": 9,
+      "iconNetworkRequests": 9,
+      "iconTransferBytes": 56747,
+      "codeTransferBytes": 263361,
+      "totalCodeAndIconTransferBytes": 320108
+    },
+    "warm": {
+      "icons": [
+        {
+          "url": "/icons/svg-sprite-file-symbol.svg",
+          "bytes": 0,
+          "cached": true,
+          "status": 200
+        },
+        {
+          "url": "/icons/svg-sprite-action-symbol.svg",
+          "bytes": 0,
+          "cached": true,
+          "status": 200
+        },
+        {
+          "url": "/icons/svg-sprite-image-symbol.svg",
+          "bytes": 0,
+          "cached": true,
+          "status": 200
+        },
+        {
+          "url": "/icons/svg-sprite-navigation-symbol.svg",
+          "bytes": 0,
+          "cached": true,
+          "status": 200
+        },
+        {
+          "url": "/icons/svg-sprite-content-symbol.svg",
+          "bytes": 0,
+          "cached": true,
+          "status": 200
+        },
+        {
+          "url": "/icons/svg-sprite-av-symbol.svg",
+          "bytes": 0,
+          "cached": true,
+          "status": 200
+        },
+        {
+          "url": "/icons/svg-sprite-toggle-symbol.svg",
+          "bytes": 0,
+          "cached": true,
+          "status": 200
+        },
+        {
+          "url": "/icons/svg-sprite-editor-symbol.svg",
+          "bytes": 0,
+          "cached": true,
+          "status": 200
+        }
+      ],
+      "iconRequests": 8,
+      "iconNetworkRequests": 0,
+      "iconTransferBytes": 0,
+      "codeTransferBytes": 1874,
+      "totalCodeAndIconTransferBytes": 1874
+    },
+    "iconMarkup": {
+      "spriteUses": 71,
+      "lucideSvgs": 0
+    },
+    "menuPaint": {
+      "samples": 15,
+      "medianMs": 32.200000047683716,
+      "minMs": 31,
+      "maxMs": 32.89999997615814
+    },
+    "entrypoints": {
+      "main": {
+        "bytes": 502573,
+        "assets": [
+          "runtime.4c2ec902ee507d48ad6b.js",
+          "clipboard.1cb0eea1a31ce51d4dea.js",
+          "collaboration.6b12a17403fa00209413.js",
+          "832.3b0d9b2cc324471f695f.js",
+          "main.89a1180bcbbbbcfef132.css",
+          "main.3e2f8ab2c65be2609a81.js"
+        ]
+      }
+    },
+    "assets": [
+      {
+        "name": "main.3e2f8ab2c65be2609a81.js",
+        "bytes": 239713,
+        "gzip": 60201,
+        "brotli": 49057
+      },
+      {
+        "name": "832.3b0d9b2cc324471f695f.js",
+        "bytes": 230504,
+        "gzip": 72000,
+        "brotli": 61871
+      },
+      {
+        "name": "139.90e0f51ee15562989b1c.js",
+        "bytes": 208165,
+        "gzip": 51503,
+        "brotli": 43644
+      },
+      {
+        "name": "825.00082e8e796c953629eb.js",
+        "bytes": 96906,
+        "gzip": 29145,
+        "brotli": 26120
+      },
+      {
+        "name": "139.81da70bdb9a92b6c6ff6.css",
+        "bytes": 65257,
+        "gzip": 13876,
+        "brotli": 12404
+      },
+      {
+        "name": "989.742e25829587114ce6b3.js",
+        "bytes": 33977,
+        "gzip": 5213,
+        "brotli": 4468
+      },
+      {
+        "name": "887.c477d5f14924308a06ea.js",
+        "bytes": 28529,
+        "gzip": 7383,
+        "brotli": 6649
+      },
+      {
+        "name": "544.4b6667a6120d625ee0d9.js",
+        "bytes": 18119,
+        "gzip": 5209,
+        "brotli": 4683
+      },
+      {
+        "name": "collaboration.6b12a17403fa00209413.js",
+        "bytes": 16193,
+        "gzip": 5506,
+        "brotli": 4971
+      },
+      {
+        "name": "521.5c75f5900ed75a3e208e.js",
+        "bytes": 9922,
+        "gzip": 3408,
+        "brotli": 3008
+      },
+      {
+        "name": "clipboard.1cb0eea1a31ce51d4dea.js",
+        "bytes": 9907,
+        "gzip": 3117,
+        "brotli": 2771
+      },
+      {
+        "name": "guides.e7a3f742679e4c40ae13.js",
+        "bytes": 8337,
+        "gzip": 3441,
+        "brotli": 3099
+      },
+      {
+        "name": "variables.f6369b592cd75cf5c3d1.js",
+        "bytes": 5853,
+        "gzip": 2408,
+        "brotli": 2159
+      },
+      {
+        "name": "runtime.4c2ec902ee507d48ad6b.js",
+        "bytes": 4788,
+        "gzip": 2318,
+        "brotli": 2021
+      },
+      {
+        "name": "variables.7b6f04c9a6edf6e3a5e7.css",
+        "bytes": 2532,
+        "gzip": 878,
+        "brotli": 731
+      },
+      {
+        "name": "components.1b88ab0d47ab2ff579c3.js",
+        "bytes": 2302,
+        "gzip": 909,
+        "brotli": 806
+      },
+      {
+        "name": "main.89a1180bcbbbbcfef132.css",
+        "bytes": 1468,
+        "gzip": 681,
+        "brotli": 558
+      },
+      {
+        "name": "components.aae04d81f687fe20e120.css",
+        "bytes": 1234,
+        "gzip": 600,
+        "brotli": 478
+      },
+      {
+        "name": "guides.a921888682a8f238dec0.css",
+        "bytes": 1056,
+        "gzip": 542,
+        "brotli": 468
+      },
+      {
+        "name": "989.5b77e5465cf797a43096.css",
+        "bytes": 492,
+        "gzip": 297,
+        "brotli": 243
+      },
+      {
+        "name": "521.c6cefc23df3c06afa10a.css",
+        "bytes": 427,
+        "gzip": 293,
+        "brotli": 223
+      },
+      {
+        "name": "522.75e19c950216b39cbfcc.js",
+        "bytes": 244,
+        "gzip": 197,
+        "brotli": 164
+      }
+    ],
+    "errors": 0,
+    "warnings": 0
+  },
+  "after": {
+    "stage": "after",
+    "method": "Chromium 1440x1000, isolated fresh context; Documents then editor with toolbar/Inspector/Explorer, three rectangles and context menu. Warm reload uses same HTTP cache. Menu timing is synthetic click to two animation frames; no CPU/network throttling.",
+    "cold": {
+      "icons": [],
+      "iconRequests": 0,
+      "iconNetworkRequests": 0,
+      "iconTransferBytes": 0,
+      "codeTransferBytes": 269159,
+      "totalCodeAndIconTransferBytes": 269159
+    },
+    "warm": {
+      "icons": [],
+      "iconRequests": 0,
+      "iconNetworkRequests": 0,
+      "iconTransferBytes": 0,
+      "codeTransferBytes": 1874,
+      "totalCodeAndIconTransferBytes": 1874
+    },
+    "iconMarkup": {
+      "spriteUses": 0,
+      "lucideSvgs": 71
+    },
+    "menuPaint": {
+      "samples": 15,
+      "medianMs": 32.299999952316284,
+      "minMs": 19.5,
+      "maxMs": 33.39999997615814
+    },
+    "entrypoints": {
+      "main": {
+        "bytes": 501530,
+        "assets": [
+          "runtime.bf0b620feaf90e6cd3a0.js",
+          "clipboard.1cb0eea1a31ce51d4dea.js",
+          "collaboration.6b12a17403fa00209413.js",
+          "832.3b0d9b2cc324471f695f.js",
+          "main.b38268633eeba2dfc1d2.css",
+          "main.62d91de3b2e203bde96e.js"
+        ]
+      }
+    },
+    "assets": [
+      {
+        "name": "main.62d91de3b2e203bde96e.js",
+        "bytes": 238621,
+        "gzip": 59750,
+        "brotli": 48720
+      },
+      {
+        "name": "832.3b0d9b2cc324471f695f.js",
+        "bytes": 230504,
+        "gzip": 72000,
+        "brotli": 61871
+      },
+      {
+        "name": "502.9276830673b5a4e2eada.js",
+        "bytes": 201130,
+        "gzip": 49421,
+        "brotli": 41837
+      },
+      {
+        "name": "825.00082e8e796c953629eb.js",
+        "bytes": 96906,
+        "gzip": 29145,
+        "brotli": 26120
+      },
+      {
+        "name": "502.ee53377e56606d5090ab.css",
+        "bytes": 65239,
+        "gzip": 13873,
+        "brotli": 12343
+      },
+      {
+        "name": "666.a79016649fd6abed9a63.js",
+        "bytes": 36833,
+        "gzip": 6370,
+        "brotli": 5446
+      },
+      {
+        "name": "887.c477d5f14924308a06ea.js",
+        "bytes": 28529,
+        "gzip": 7383,
+        "brotli": 6649
+      },
+      {
+        "name": "806.7d996a6bf39b81967d54.js",
+        "bytes": 21643,
+        "gzip": 6135,
+        "brotli": 5290
+      },
+      {
+        "name": "544.4b6667a6120d625ee0d9.js",
+        "bytes": 18119,
+        "gzip": 5209,
+        "brotli": 4683
+      },
+      {
+        "name": "collaboration.6b12a17403fa00209413.js",
+        "bytes": 16193,
+        "gzip": 5506,
+        "brotli": 4971
+      },
+      {
+        "name": "521.5c75f5900ed75a3e208e.js",
+        "bytes": 9922,
+        "gzip": 3408,
+        "brotli": 3008
+      },
+      {
+        "name": "clipboard.1cb0eea1a31ce51d4dea.js",
+        "bytes": 9907,
+        "gzip": 3117,
+        "brotli": 2771
+      },
+      {
+        "name": "guides.e7a3f742679e4c40ae13.js",
+        "bytes": 8337,
+        "gzip": 3441,
+        "brotli": 3099
+      },
+      {
+        "name": "variables.f6369b592cd75cf5c3d1.js",
+        "bytes": 5853,
+        "gzip": 2408,
+        "brotli": 2159
+      },
+      {
+        "name": "runtime.bf0b620feaf90e6cd3a0.js",
+        "bytes": 4867,
+        "gzip": 2370,
+        "brotli": 2052
+      },
+      {
+        "name": "notification-icons.0e056c8d2a278d8401be.js",
+        "bytes": 4810,
+        "gzip": 2163,
+        "brotli": 1962
+      },
+      {
+        "name": "variables.7b6f04c9a6edf6e3a5e7.css",
+        "bytes": 2532,
+        "gzip": 878,
+        "brotli": 731
+      },
+      {
+        "name": "components.e6615beeb99d67569c11.js",
+        "bytes": 2272,
+        "gzip": 900,
+        "brotli": 801
+      },
+      {
+        "name": "main.b38268633eeba2dfc1d2.css",
+        "bytes": 1438,
+        "gzip": 664,
+        "brotli": 537
+      },
+      {
+        "name": "components.aae04d81f687fe20e120.css",
+        "bytes": 1234,
+        "gzip": 600,
+        "brotli": 478
+      },
+      {
+        "name": "guides.a921888682a8f238dec0.css",
+        "bytes": 1056,
+        "gzip": 542,
+        "brotli": 468
+      },
+      {
+        "name": "666.5b77e5465cf797a43096.css",
+        "bytes": 492,
+        "gzip": 297,
+        "brotli": 243
+      },
+      {
+        "name": "521.c6cefc23df3c06afa10a.css",
+        "bytes": 427,
+        "gzip": 293,
+        "brotli": 223
+      },
+      {
+        "name": "522.41e91f423ea3c190f0a2.js",
+        "bytes": 244,
+        "gzip": 196,
+        "brotli": 163
+      }
+    ],
+    "errors": 0,
+    "warnings": 0
+  },
+  "comparisonBase": "dc64e21957dcde1cc614815297465f8361c32a83",
+  "rebasedProductionBuild": {
+    "base": "dc8f55e949328ba919c6a939fba5cbf9bcde6840",
+    "entry": {
+      "bytes": 489849,
+      "gzip": 140889,
+      "brotli": 118846
+    },
+    "largest": {
+      "name": "832.3b0d9b2cc324471f695f.js",
+      "bytes": 230504,
+      "gzip": 72000,
+      "brotli": 61871
+    },
+    "assets": [
+      {
+        "name": "832.3b0d9b2cc324471f695f.js",
+        "bytes": 230504,
+        "gzip": 72000,
+        "brotli": 61871
+      },
+      {
+        "name": "main.f52d995c68747f93c471.js",
+        "bytes": 226908,
+        "gzip": 57215,
+        "brotli": 46627
+      },
+      {
+        "name": "502.ed5561066f77b99ec7f3.js",
+        "bytes": 213671,
+        "gzip": 53179,
+        "brotli": 44854
+      },
+      {
+        "name": "825.00082e8e796c953629eb.js",
+        "bytes": 96906,
+        "gzip": 29145,
+        "brotli": 26120
+      },
+      {
+        "name": "502.ee53377e56606d5090ab.css",
+        "bytes": 65239,
+        "gzip": 13873,
+        "brotli": 12343
+      },
+      {
+        "name": "666.7042a6f135701eda177b.js",
+        "bytes": 36929,
+        "gzip": 6425,
+        "brotli": 5515
+      },
+      {
+        "name": "887.c477d5f14924308a06ea.js",
+        "bytes": 28529,
+        "gzip": 7383,
+        "brotli": 6649
+      },
+      {
+        "name": "806.7d996a6bf39b81967d54.js",
+        "bytes": 21643,
+        "gzip": 6135,
+        "brotli": 5290
+      },
+      {
+        "name": "544.4b6667a6120d625ee0d9.js",
+        "bytes": 18119,
+        "gzip": 5209,
+        "brotli": 4683
+      },
+      {
+        "name": "collaboration.6b12a17403fa00209413.js",
+        "bytes": 16193,
+        "gzip": 5506,
+        "brotli": 4971
+      },
+      {
+        "name": "clipboard.797263a5ec26fb46f74b.js",
+        "bytes": 9939,
+        "gzip": 3135,
+        "brotli": 2789
+      },
+      {
+        "name": "521.5c75f5900ed75a3e208e.js",
+        "bytes": 9922,
+        "gzip": 3408,
+        "brotli": 3008
+      },
+      {
+        "name": "guides.e7a3f742679e4c40ae13.js",
+        "bytes": 8337,
+        "gzip": 3441,
+        "brotli": 3099
+      },
+      {
+        "name": "variables.f6369b592cd75cf5c3d1.js",
+        "bytes": 5853,
+        "gzip": 2408,
+        "brotli": 2159
+      },
+      {
+        "name": "runtime.2fb7e50a06d8747f0497.js",
+        "bytes": 4867,
+        "gzip": 2369,
+        "brotli": 2051
+      },
+      {
+        "name": "notification-icons.0e056c8d2a278d8401be.js",
+        "bytes": 4810,
+        "gzip": 2163,
+        "brotli": 1962
+      },
+      {
+        "name": "variables.7b6f04c9a6edf6e3a5e7.css",
+        "bytes": 2532,
+        "gzip": 878,
+        "brotli": 731
+      },
+      {
+        "name": "components.e6615beeb99d67569c11.js",
+        "bytes": 2272,
+        "gzip": 900,
+        "brotli": 801
+      },
+      {
+        "name": "main.b38268633eeba2dfc1d2.css",
+        "bytes": 1438,
+        "gzip": 664,
+        "brotli": 537
+      },
+      {
+        "name": "components.aae04d81f687fe20e120.css",
+        "bytes": 1234,
+        "gzip": 600,
+        "brotli": 478
+      },
+      {
+        "name": "guides.a921888682a8f238dec0.css",
+        "bytes": 1056,
+        "gzip": 542,
+        "brotli": 468
+      },
+      {
+        "name": "666.5b77e5465cf797a43096.css",
+        "bytes": 492,
+        "gzip": 297,
+        "brotli": 243
+      },
+      {
+        "name": "521.c6cefc23df3c06afa10a.css",
+        "bytes": 427,
+        "gzip": 293,
+        "brotli": 223
+      },
+      {
+        "name": "522.41e91f423ea3c190f0a2.js",
+        "bytes": 244,
+        "gzip": 196,
+        "brotli": 163
+      }
+    ],
+    "errors": 0,
+    "warnings": 0
+  }
+}
