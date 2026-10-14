@@ -548,7 +548,9 @@ Hidden guides are not drawn and locked ones do not move.
   (`provideEditorHelpers`, `src/app/editorHelpers.ts`), and actions reach them through
   `editorHelpers()`; `createTestStore` provides them for store tests. The editor takes no
   input before they are provided (`editorLoaded`, in `takesEditorInput`), and a lint rule
-  keeps the store's code from importing these modules again. Registering one again replaces it in place,
+  keeps the store's code from importing these modules again. The store does not track
+  `editorLoaded`, so a hook reading it renders again when they are provided
+  (`subscribeToEditorHelpers`), as `useTakesEditorInput` does. Registering one again replaces it in place,
   as a hot update does.
 - **Commands**: run a command with `runCommand(command)` (`actions/commands.ts`), which checks
   its `canExecute` guard first; never call `execute` directly. Guards are `CommandGuard`s that
