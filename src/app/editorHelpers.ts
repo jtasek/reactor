@@ -16,9 +16,13 @@ export interface EditorHelpers {
 
 let provided: EditorHelpers | undefined;
 
-export const provideEditorHelpers = (helpers: EditorHelpers) => {
+/** Provides the helpers, or, with none, takes them away again, as before the editor loads. */
+export const provideEditorHelpers = (helpers: EditorHelpers | undefined) => {
     provided = helpers;
 };
+
+/** Whether the editor has loaded and provided its helpers, so its actions can run. */
+export const editorLoaded = () => provided !== undefined;
 
 export function editorHelpers(): EditorHelpers {
     if (!provided) {

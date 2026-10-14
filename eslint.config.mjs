@@ -102,6 +102,35 @@ export default [
         languageOptions: { globals: globals.node }
     },
     {
+        // The store loads at startup; the editor provides these as it loads (`editorHelpers`).
+        files: [
+            'src/app/actions/**',
+            'src/app/computed/**',
+            'src/app/services/**',
+            'src/events/actions/**',
+            'src/app/{effects,hooks,index,state}.ts'
+        ],
+        rules: {
+            '@typescript-eslint/no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: [
+                                '**/snapping',
+                                '**/alignment',
+                                '**/app/clipboard',
+                                '../clipboard'
+                            ],
+                            allowTypeImports: true,
+                            message: 'Only the editor runs it: reach it through editorHelpers().'
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
         // Node runs the server's TypeScript as it is, so its imports name the files.
         files: ['server/**/*.ts', 'server*.ts'],
         rules: { 'import/extensions': ['error', 'ignorePackages'] }

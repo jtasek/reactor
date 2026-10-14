@@ -61,6 +61,7 @@ export const beginGesture = (
         touch = false
     }: PointerInput & { handle?: HandleTarget; touch?: boolean }
 ): boolean => {
+    const { SNAP_DISTANCE_PX, snapToGuides } = snapping();
     const pointer = state.events.pointer;
 
     if (pointer.gesture.kind !== 'idle') {
@@ -178,10 +179,10 @@ export const beginGesture = (
     }
 
     if (state.tools.activeToolsIds[0] !== 'select' && !free && state.ui.guides.visible) {
-        pointer.start = snapping().snapToGuides(
+        pointer.start = snapToGuides(
             position,
             Object.values(untracked(state.currentDocument.guides)),
-            snapping().SNAP_DISTANCE_PX / state.currentDocument.camera.scale
+            SNAP_DISTANCE_PX / state.currentDocument.camera.scale
         );
         pointer.current = { ...pointer.start };
     }
@@ -234,6 +235,7 @@ const takeSnapTargets = (
     { state, effects }: Pick<Context, 'state' | 'effects'>,
     changingIds: string[]
 ) => {
+    const { targetLines } = snapping();
     const changing = new Set(changingIds);
     // Read without the store's tracking: thousands of shapes are only looked at here.
     const document = untracked(state.currentDocument);
@@ -241,9 +243,7 @@ const takeSnapTargets = (
         (id) => !changing.has(id)
     );
 
-    effects.dragTargets.take(
-        snapping().targetLines(others.map((id) => drawnBox(document.shapes[id])))
-    );
+    effects.dragTargets.take(targetLines(others.map((id) => drawnBox(document.shapes[id]))));
 
     return drawnExtent(document, changingIds);
 };
@@ -254,6 +254,8 @@ export const movePointer = (
 ) => {
     const pointer = state.events.pointer;
     const { gesture } = pointer;
+    const { SNAP_DISTANCE_PX, linesOnEdges, sameGaps, snapMove, snapResize, snapToGuides } =
+        snapping();
 
     if (
         gesture.kind === 'pinching' ||
@@ -279,10 +281,10 @@ export const movePointer = (
     }
 
     if (gesture.kind === 'drawing' && !free && state.ui.guides.visible) {
-        pointer.current = snapping().snapToGuides(
+        pointer.current = snapToGuides(
             position,
             Object.values(untracked(state.currentDocument.guides)),
-            snapping().SNAP_DISTANCE_PX / state.currentDocument.camera.scale
+            SNAP_DISTANCE_PX / state.currentDocument.camera.scale
         );
     }
 
@@ -321,12 +323,7 @@ export const movePointer = (
         const { delta, lines, gaps } =
             free || !gesture.box || !targets
                 ? { delta: pulled, lines: { x: null, y: null }, gaps: [] }
-                : snapping().snapMove(
-                      json(gesture.box),
-                      pulled,
-                      targets,
-                      snapping().SNAP_DISTANCE_PX / scale
-                  );
+                : snapMove(json(gesture.box), pulled, targets, SNAP_DISTANCE_PX / scale);
         const step = { x: delta.x - gesture.movedBy.x, y: delta.y - gesture.movedBy.y };
 
         if (step.x !== 0 || step.y !== 0) {
@@ -338,7 +335,7 @@ export const movePointer = (
             gesture.snapLines = lines;
         }
 
-        if (!snapping().sameGaps(json(gesture.equalGaps), gaps)) {
+        if (!sameGaps(json(gesture.equalGaps), gaps)) {
             gesture.equalGaps = gaps;
         }
     }
@@ -366,14 +363,14 @@ export const movePointer = (
         const { scale } = state.currentDocument.camera;
         const snapped =
             targets && startBox
-                ? snapping().snapResize(
+                ? snapResize(
                       startBox,
                       gesture.handle,
                       position,
                       proportional,
                       rotation,
                       targets,
-                      snapping().SNAP_DISTANCE_PX / scale
+                      SNAP_DISTANCE_PX / scale
                   )
                 : { point: position, lines: { x: null, y: null } };
 
@@ -405,7 +402,7 @@ export const movePointer = (
             document,
             changingIds.filter((id) => document.shapes[id]?.visible)
         );
-        const lines = box ? snapping().linesOnEdges(snapped.lines, box) : { x: null, y: null };
+        const lines = box ? linesOnEdges(snapped.lines, box) : { x: null, y: null };
 
         if (gesture.snapLines.x !== lines.x || gesture.snapLines.y !== lines.y) {
             gesture.snapLines = lines;

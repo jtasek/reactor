@@ -546,7 +546,9 @@ Hidden guides are not drawn and locked ones do not move.
   outside the editor must not count on them. So with the code only the editor's actions
   run: snapping, aligning and the clipboard's format are provided by `registerEditor`
   (`provideEditorHelpers`, `src/app/editorHelpers.ts`), and actions reach them through
-  `editorHelpers()`; `createTestStore` provides them for store tests. Registering one again replaces it in place,
+  `editorHelpers()`; `createTestStore` provides them for store tests. The editor takes no
+  input before they are provided (`editorLoaded`, in `takesEditorInput`), and a lint rule
+  keeps the store's code from importing these modules again. Registering one again replaces it in place,
   as a hot update does.
 - **Commands**: run a command with `runCommand(command)` (`actions/commands.ts`), which checks
   its `canExecute` guard first; never call `execute` directly. Guards are `CommandGuard`s that
