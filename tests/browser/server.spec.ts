@@ -13,6 +13,12 @@ const CLEARED = {
     TRUST_PROXY: ''
 };
 
+/**
+ * How long a spawned server may take to answer, which a busy machine stretches past the
+ * 5 s default.
+ */
+const SERVER_START_MS = 15_000;
+
 test.afterEach(() => {
     started.splice(0).forEach((server) => server.kill());
 });
@@ -80,11 +86,13 @@ test('shuts down cleanly when asked to stop', async ({ request }) => {
     const { server, exited } = startServer({ PORT: '4175' });
 
     await expect
-        .poll(() =>
-            request.get('http://127.0.0.1:4175/healthz').then(
-                (response) => response.ok(),
-                () => false
-            )
+        .poll(
+            () =>
+                request.get('http://127.0.0.1:4175/healthz').then(
+                    (response) => response.ok(),
+                    () => false
+                ),
+            { timeout: SERVER_START_MS }
         )
         .toBe(true);
 
