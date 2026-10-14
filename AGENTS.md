@@ -189,7 +189,11 @@ re-renders.** Components never mutate state directly.
   Gestures `pause` sharing until they end, so a drag is shared once. Every copy shows the same merged content: invalid entities are
   left out and references to missing shapes are dropped, as a local delete would, without
   writing these repairs back. `tests/support/collaboration.ts` runs copies over a network the
-  test controls.
+  test controls. Undo and Redo (`undo`, `redo`, `src/commands/history`) revert only this
+  copy's own changes to a document's entities, through a Yjs undo manager started once the
+  document is open, so opening it is never undone and other copies' changes stay; an undo is
+  shared, saved and dated as an edit. Changes within half a second undo as one, as typing
+  into a field, and `document.history` says what can be undone and redone.
 - **Server sync** (`src/app/services/serverSync.ts`, loaded only when signed in): syncs each
   document over one Hocuspocus socket through a Yjs document that mirrors the shared one, and
   passes the server's changes to `Collaboration.receive`, so they merge like any other copy's.

@@ -653,6 +653,8 @@ export async function startDocumentSync(
             applyRemoteChanges,
             addMutationListener: instance.addMutationListener,
             documentChanged: instance.actions.markDocumentModified,
+            historyChanged: (documentId, history) =>
+                instance.actions.setDocumentHistory({ documentId, history }),
             sendUpdate: (documentId, update) => {
                 sync?.send(documentId, update);
                 server?.send(documentId, update);

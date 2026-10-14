@@ -22,7 +22,7 @@ Planning date: 2026-10-14. This roadmap proposes work; it does not mark it imple
 | Saving and collaboration   | Implemented: IndexedDB, tab sync, Yjs merges, server sync when signed in.                                                                                                                  |
 | Images                     | Implemented: content-addressed, shared with the server when signed in ([assetSync.ts](src/app/services/assetSync.ts)).                                                                     |
 | Accounts                   | Implemented: workspaces and document roles. People cannot yet share with others, and presence is off ([serverSync.ts](src/app/services/serverSync.ts) passes no awareness).                |
-| Undo and redo              | Absent. Only an interrupted gesture is undone.                                                                                                                                             |
+| Undo and redo              | Implemented: each person undoes and redoes their own changes to a document's records, also while others edit (R1 steps 1 and 2, [collaboration.ts](src/app/services/collaboration.ts)).    |
 | Screens, data and behavior | Absent. Links have loose endpoints and types without meaning, and the data view is a placeholder.                                                                                          |
 | Export and runtime         | Absent. The editor's content security policy lets the page connect only to its own server and the sync server ([server.prod.ts](server.prod.ts)).                                          |
 
