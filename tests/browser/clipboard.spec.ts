@@ -83,6 +83,24 @@ test('leaves the clipboard as it was when nothing is selected', async ({ page })
     );
 });
 
+test('the clipboard keys select the hidden field in an editor opened from the documents', async ({
+    page
+}) => {
+    await page.goto('/documents');
+    await page.getByRole('button', { name: 'Open document-1', exact: true }).click();
+    await expect(page.locator('svg#surface')).toBeVisible();
+
+    // Safari sends no clipboard event without selected text, so the keys select this field's.
+    const field = page.locator('textarea[aria-label="Clipboard"]');
+
+    await field.evaluate((element) =>
+        element.addEventListener('focus', () => element.setAttribute('data-focused', ''))
+    );
+    await press(page, 'c');
+
+    await expect(field).toHaveAttribute('data-focused');
+});
+
 test('the command bar and the command line copy, cut and paste', async ({ page }) => {
     await openEditor(page, ['Command Line']);
 

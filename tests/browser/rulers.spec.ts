@@ -145,6 +145,7 @@ test('a guide dragged beyond the canvas is removed', async ({ page }) => {
 /** Opens the editor with a rectangle from (400, 300) to (500, 400), selected, and a vertical guide on its left edge. */
 async function openWithShapeOnGuide(page: Page) {
     await openEditor(page, ['Rulers']);
+    await expect(page.locator('svg#surface [data-ruler="left"]')).toBeVisible();
     await drawRect(page, { x: 400, y: 300 }, { x: 500, y: 400 });
     await page.getByRole('checkbox', { name: 'Tool Bar', exact: true }).uncheck();
     await drag(page, [10, 600], [400, 600]);

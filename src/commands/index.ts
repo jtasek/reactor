@@ -21,6 +21,7 @@ export {
 } from './component';
 export { CopyCommand, CutCommand, PasteCommand } from './clipboard';
 export { DeleteCommand } from './delete';
+export { RedoCommand, UndoCommand } from './history';
 export { MoveDownCommand, MoveLeftCommand, MoveRightCommand, MoveUpCommand } from './move';
 export { GroupCommand, RemoveFromGroupCommand, UngroupCommand } from './group';
 export { HighlightLayerCommand, LayerCommand, NewLayerCommand, UnlayerCommand } from './layer';

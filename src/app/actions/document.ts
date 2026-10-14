@@ -1,4 +1,4 @@
-import { Action, ActionWithParam, Application, Document } from '../types';
+import { Action, ActionWithParam, Application, Document, UndoHistory } from '../types';
 import { createCamera, createDocument, createGrid, newDocumentName } from '../factories';
 import { takesEditorInput } from 'src/events/input';
 import { copyDocument } from '../services/documentStorage';
@@ -93,6 +93,20 @@ export const cloneDocument: ActionWithParam<string> = ({ state, effects }, docum
 /** Records the time of a local edit before it is saved and shared. */
 export const markDocumentModified: ActionWithParam<string> = ({ state }, documentId) => {
     getDocument(state, documentId).modified = new Date();
+};
+
+/** Shows what this copy can undo and redo of a document. */
+export const setDocumentHistory: ActionWithParam<{ documentId: string; history: UndoHistory }> = (
+    { state },
+    { documentId, history }
+) => {
+    const document = state.documents[documentId];
+
+    if (!document) {
+        return;
+    }
+
+    document.history = history;
 };
 
 /** Removes a document added only to hold saved or shared content that could not be read. */

@@ -248,6 +248,12 @@ export interface Component {
     visible: boolean;
 }
 
+/** Whether this copy has changes of a document to undo or redo. */
+export interface UndoHistory {
+    canUndo: boolean;
+    canRedo: boolean;
+}
+
 export interface Camera {
     position: Point;
     scale: number;
@@ -286,6 +292,8 @@ export interface Document {
     name: string;
     guides: HashTable<Guide>;
     guidesIds: string[];
+    /** Runtime: what this copy can undo and redo of the document. */
+    history: UndoHistory;
     selected: boolean;
     selectedShapes: Shape[];
     selectedShapesIds: string[];

@@ -7,11 +7,12 @@ import {
 } from 'overmind-react';
 import { commandsFor, commandsIn, getCommand, getCommands } from './actions';
 import { Context } from '.';
-import { useCallback, useLayoutEffect, useReducer, useRef } from 'react';
+import { useCallback, useLayoutEffect, useReducer, useRef, useSyncExternalStore } from 'react';
 import { getShapeBounds, isShapeLocked, isShapeVisible } from './utils';
 import { hitTestShape, hitTolerance } from './geometry';
 import type { Command, CommandPlace, CommandScope } from './types';
 import { takesEditorInput } from '../events/input';
+import { editorLoaded, subscribeToEditorHelpers } from './editorHelpers';
 import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
 import { placeSelectionMenu } from './selectionMenu';
 import { PropertyRow, sharedProperties } from './properties';
@@ -208,6 +209,9 @@ export const useCurrentPage = () => {
 
 /** Whether the editor takes shortcuts and the clipboard now. */
 export const useTakesEditorInput = () => {
+    // The store does not track whether the editor has loaded: render again once it has.
+    useSyncExternalStore(subscribeToEditorHelpers, editorLoaded);
+
     return useAppState(takesEditorInput);
 };
 

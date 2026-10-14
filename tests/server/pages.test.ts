@@ -3,7 +3,15 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { AddressInfo } from 'net';
-import { notFound, pageFallback, parsePort, serveBuild } from '../../server/pages';
+import {
+    healthCheck,
+    IMMUTABLE_CACHE_CONTROL,
+    notFound,
+    PAGE_FILE,
+    pageFallback,
+    parsePort,
+    serveBuild
+} from '../../server/pages';
 
 /**
  * A server answering with `handler`, by default with one file, `/app.js`, and the page for
@@ -45,7 +53,7 @@ function createBuild() {
 
     onTestFinished(() => fs.rmSync(parent, { recursive: true }));
     fs.mkdirSync(directory, { recursive: true });
-    fs.writeFileSync(path.join(directory, 'index.html'), '<div id="app"></div>');
+    fs.writeFileSync(path.join(directory, PAGE_FILE), '<div id="app"></div>');
     fs.writeFileSync(path.join(directory, 'main.0123abcd.js'), 'run()');
 
     return directory;
@@ -78,20 +86,41 @@ describe('pages', () => {
         const file = await request('/main.0123abcd.js');
 
         expect(await file.text()).toBe('run()');
-        expect(file.headers.get('cache-control')).toBe('public, max-age=31536000, immutable');
+        expect(file.headers.get('cache-control')).toBe(IMMUTABLE_CACHE_CONTROL);
         expect((await request('/missing.js')).status).toBe(404);
     });
 
-    it('answers the editor’s routes as missing while the build has no page', async () => {
+    it('leaves the editor’s routes, as asked and not to be stored, while the build has no page', async () => {
         const directory = createBuild();
-        const request = await serve(serveBuild(directory));
+        const request = await serve(
+            express.Router().use(serveBuild(directory), (req, res) => {
+                res.status(404).send(req.url);
+            })
+        );
 
-        fs.rmSync(path.join(directory, 'index.html'));
+        fs.rmSync(path.join(directory, PAGE_FILE));
 
-        const response = await request('/documents');
+        const response = await request('/documents?tab=recent');
 
         expect(response.status).toBe(404);
-        expect(await response.text()).toBe('Not Found');
+        expect(await response.text()).toBe('/documents?tab=recent');
+        expect(response.headers.get('cache-control')).toBe('no-store');
+    });
+
+    it('reports the server healthy only while the build has its page', async () => {
+        const directory = createBuild();
+        const request = await serve(express.Router().get('/healthz', healthCheck(directory)));
+        const healthy = await request('/healthz');
+
+        expect(healthy.status).toBe(200);
+        expect(await healthy.json()).toMatchObject({ status: 'ok' });
+
+        fs.rmSync(path.join(directory, PAGE_FILE));
+
+        const unhealthy = await request('/healthz');
+
+        expect(unhealthy.status).toBe(503);
+        expect(await unhealthy.json()).toMatchObject({ status: 'missing page' });
     });
 
     it('answers a missing file as missing rather than with the page', async () => {

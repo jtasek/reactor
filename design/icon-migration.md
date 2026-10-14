@@ -20,6 +20,8 @@ All named exports were verified against the installed package. Repeated consumer
 | `content/content_copy` | `Unlink` | Detach instance |
 | `content/content_cut` | `Scissors` | Cut |
 | `content/content_paste` | `ClipboardPaste` | Paste |
+| `content/undo` | `Undo2` | Undo this copy's last change |
+| `content/redo` | `Redo2` | Redo the change last undone |
 | `action/delete` | `Trash2` | Delete, Reset document, delete layer |
 | `content/add` | `Component` | Create component |
 | `content/add` | `LayersPlus` | New empty layer |
@@ -131,11 +133,17 @@ The inspected flows made no sprite requests and rendered no sprite `<use>` eleme
 
 The lint baseline gate, CSS lint, application/test/server type-checks, all 79 unit/server test files with 846 tests and all 202 browser tests pass. The focused clipboard and notice browser run also passes all nine tests, including the unavailable-icon regression. Unit/server and full browser suites run separately with two workers after concurrent full-suite runs hit unrelated timeouts; both reruns pass without changing timeouts or repository test configuration. Browser verification uses a temporary configuration against the production server at port 4187 because the normal test port is occupied by another process. The existing two recorded lint findings remain outside touched files; there are no unresolved test failures. `git diff --check` passes.
 
-## Verification on current master
+## Verification after the first update to master
 
-The PR branch is rebased onto `dc8f55e949328ba919c6a939fba5cbf9bcde6840`. The single conflict in `tests/registerEditor.test.ts` retains both the upstream editor-readiness check and the migration's icon-rendering check; all four tests in that file pass. The rebased production entry is 489,849 bytes (478.37 KiB), 140,889 gzip bytes or 118,846 Brotli bytes. Its largest file is 230,504 bytes (225.10 KiB). Both existing budgets pass with no webpack errors or warnings. These build sizes also include upstream startup-loading improvements and are separate from the icon-only comparison above.
+Before the subsequent CI integration, the PR branch was rebased onto `dc8f55e949328ba919c6a939fba5cbf9bcde6840`. The single conflict in `tests/registerEditor.test.ts` retains both the upstream editor-readiness check and the migration's icon-rendering check; all four tests in that file pass. The rebased production entry is 489,849 bytes (478.37 KiB), 140,889 gzip bytes or 118,846 Brotli bytes. Its largest file is 230,504 bytes (225.10 KiB). Both existing budgets pass with no webpack errors or warnings. These build sizes also include upstream startup-loading improvements and are separate from the icon-only comparison above.
 
-On the rebased branch, application/test/server type-checks, the lint baseline gate, CSS lint, all 849 unit/server tests and all 202 browser tests pass. The complete suites run separately with two workers; browser tests use the same isolated production server on port 4187. No repository test configuration or timeout was changed.
+On that rebased branch, application/test/server type-checks, the lint baseline gate, CSS lint, all 849 unit/server tests and all 202 browser tests pass. The complete suites run separately with two workers; browser tests use the same isolated production server on port 4187. No repository test configuration or timeout was changed.
+
+## CI integration with Undo and Redo
+
+Master later added Undo/Redo using the old sprite descriptors, so the PR merge failed type-checking. Integrating master at `9a0c35f4` also migrates those commands to `Undo2` and `Redo2` and adds browser assertions that both icons are visible, decorative and distinct. Their sizes, shortcuts and behavior are preserved.
+
+Application/test/server type-checks, the PR lint gate against `origin/master`, CSS lint, 13 focused registry/history unit tests and 13 Undo/Redo/clipboard/notification browser tests pass. The production entry is 491,294 bytes (479.78 KiB), 141,294 gzip bytes or 119,154 Brotli bytes; its largest file remains 230,504 bytes (225.10 KiB). Both existing budgets pass without webpack errors or warnings.
 
 ## Asset and license cleanup
 

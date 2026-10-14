@@ -635,5 +635,21 @@
     ],
     "errors": 0,
     "warnings": 0
+  },
+  "ciIntegrationBuild": {
+    "base": "9a0c35f4",
+    "entry": {
+      "bytes": 491294,
+      "gzip": 141294,
+      "brotli": 119154
+    },
+    "largest": {
+      "name": "832.3b0d9b2cc324471f695f.js",
+      "bytes": 230504,
+      "gzip": 72000,
+      "brotli": 61871
+    },
+    "errors": 0,
+    "warnings": 0
   }
 }

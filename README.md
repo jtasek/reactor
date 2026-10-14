@@ -62,6 +62,7 @@ bar, side bar, panels and other parts of the editor.
 | `s` | Select tool: click a shape, or drag to select shapes a box touches |
 | `r`, `c`, `e`, `l`, `p`, `t`, `i` | Rectangle, circle, ellipse, line, pen, text and image tools |
 | Delete or Backspace | Delete the selection |
+| Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z | Undo and redo your own changes; other people's stay as they are |
 | Ctrl/Cmd+D | Clone the selection; the clones become the selection |
 | Ctrl/Cmd+C, Ctrl/Cmd+X, Ctrl/Cmd+V | Copy, cut and paste the selection, also between documents and tabs. A paste is centered where you last pressed on the canvas, or in the middle of the view when that place is out of sight |
 | Ctrl/Cmd+G, Ctrl/Cmd+Shift+G | Group and ungroup the selection. A group is selected, moved, turned and scaled as one; click a shape in a selected group, or double-click it, to select that shape alone |
@@ -209,7 +210,6 @@ the current pan position. Touchscreen pinch zooms the same way; see Input above.
 - Moving documents made signed out into an account
 - Organizations, teams and sharing documents with others
 - Seeing other people's pointers and selections
-- Undo and redo
 - Exporting a drawing, and running a prototype
 
 [APPLICATION_PLAN.md](./APPLICATION_PLAN.md) describes the work ahead and its order;
