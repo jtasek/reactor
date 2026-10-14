@@ -1,6 +1,8 @@
 # Repository Audit and Refactoring Plan
 
-Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phase 6 in progress; Phase 7 proposed (steps 1 and 3 done, step 2 partly done); Phase 8 proposed (steps 1-3 and 5 done, step 4 partly done); Phases 9-10 designed; Phase 11 in progress.
+Audit date: 2026-09-22. Status: Phases 1-3 implemented; Phase 4 implemented pending a physical touch-device check; Phase 5 implemented; Phase 6 in progress; Phase 7 proposed (steps 1 and 3 done, step 2 partly done); Phase 8 proposed (steps 1-3 and 5 done, step 4 partly done); Phase 9 designed; Phase 10 stages 1-4 implemented; Phase 11 in progress.
+
+New feature work, and the order it comes in, is planned in [APPLICATION_PLAN.md](APPLICATION_PLAN.md); this audit keeps its dated findings and phases.
 
 ## Verified Baseline
 
@@ -356,13 +358,14 @@ Feature inventory:
   other shapes; the inspector; the
   documents page; the outline, filtered by the search box, and the group and layer panels with hide and lock;
   the context menu; copy, cut and paste; saving in the browser and sharing between tabs; accounts,
-  syncing with the server, and signing out.
+  syncing with the server, sharing images with it, and signing out; components with
+  instances, overrides and copies from other documents; variables and templates.
 - Shown but not covered by tests: the minimap, guides, data view and stats
   panels.
 - Started, not working yet: the `filtered*` derivations are not used.
 - Kept for later, not shown: the `Badge`, `Dialog` and `Switch`
   components, and the stylesheets components do not use yet.
-- Planned: plugins and renderers (Phase 9), image upload,
+- Planned: plugins and renderers (Phase 9),
   moving signed-out documents into an account, organizations, teams and sharing,
   presence, and undo per user (Phase 11).
 
@@ -568,9 +571,9 @@ steps 1-3 come first, so props can use variables from the start.
 
 A component is a reusable drawing made of shapes and other components. It has
 one source and any number of instances that draw it. Editing the source updates
-every instance in the document. Today `Component` is only a saved list of shape
-ids (`shapesIds`) with an unused `parentId`, and its lock and visibility toggles
-do nothing.
+every instance in the document. When this was designed, `Component` was only a saved
+list of shape ids (`shapesIds`) with an unused `parentId`, and its lock and visibility
+toggles did nothing.
 
 Decisions: the source stays on the canvas; instances can override the props the
 source exposes; instances can be moved and rotated but not resized; other

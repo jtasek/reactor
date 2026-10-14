@@ -87,6 +87,13 @@ group to collapse or expand it.
 The image tool asks for a PNG, JPEG, GIF or WebP file of 5 MB or less, then draws it
 at its own proportions where you drag.
 
+Create component (Ctrl/Cmd+Alt+C) turns the selected shapes into a component and puts
+an instance of it in their place. Editing the component's source changes every
+instance; an instance can override the props its source exposes, reset them, or be
+detached into plain shapes. The Library control lists the components to place, and
+copies another document's component here; a copy shows when its source has changed
+and is updated on request.
+
 Shortcuts do nothing while a text field has focus. The command line runs a command
 by name.
 
@@ -167,7 +174,9 @@ changes and when the server stops. Deleting a document disconnects everyone from
 it, and a socket closes within a minute of its session ending. Signed in, the
 editor syncs every document over one socket: a new device shows the account's
 documents, documents made or deleted offline are sent once the server can be
-reached, and one deleted elsewhere is removed.
+reached, and one deleted elsewhere is removed. It uploads the images a document
+shows that the server lacks for it, and fetches the ones the browser lacks, so a
+document shows its images on every device.
 
 | Variable | Meaning |
 |---|---|
@@ -196,16 +205,15 @@ the current pan position. Touchscreen pinch zooms the same way; see Input above.
 
 ## Not yet available
 
-- Images on other devices: an image is kept in this browser only, so a document
-  opened elsewhere shows an empty box in its place. The server takes and serves
-  images already; the editor does not upload them yet
+- Images on other devices when signed out: an image is kept in this browser only
 - Moving documents made signed out into an account
 - Organizations, teams and sharing documents with others
 - Seeing other people's pointers and selections
-- Components (reusable drawings) and plugins with other renderers (SVG, PNG, PDF)
+- Undo and redo
+- Exporting a drawing, and running a prototype
 
-[REFACTOR_PLAN.md](./REFACTOR_PLAN.md) describes each of these and the order they
-come in.
+[APPLICATION_PLAN.md](./APPLICATION_PLAN.md) describes the work ahead and its order;
+[REFACTOR_PLAN.md](./REFACTOR_PLAN.md) keeps the earlier audit and its phases.
 
 ## Development
 
