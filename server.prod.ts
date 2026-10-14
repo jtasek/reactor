@@ -8,7 +8,7 @@ import compression from 'compression';
 import { pinoHttp } from 'pino-http';
 
 import { startAccounts } from './server/accounts.ts';
-import { notFound, parsePort, serveBuild } from './server/pages.ts';
+import { healthCheck, notFound, PAGE_FILE, parsePort, serveBuild } from './server/pages.ts';
 import { parseTrustProxy } from './server/trustProxy.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -19,7 +19,7 @@ const LOG_LEVEL = process.env.LOG_LEVEL ?? 'info';
 
 const DIST_DIR = path.join(__dirname, 'dist');
 const STATIC_DIR = path.join(__dirname, 'static');
-const INDEX_HTML = path.join(DIST_DIR, 'index.html');
+const INDEX_HTML = path.join(DIST_DIR, PAGE_FILE);
 
 let PORT = 4000;
 // The reverse proxies in front of this server, as `parseTrustProxy` reads them. Required
@@ -89,9 +89,7 @@ app.use(
 app.use(compression());
 app.use(logger);
 
-app.get('/healthz', (_req, res) => {
-    res.json({ status: 'ok', uptime: process.uptime() });
-});
+app.get('/healthz', healthCheck(DIST_DIR));
 
 let accounts: Awaited<ReturnType<typeof startAccounts>>;
 
