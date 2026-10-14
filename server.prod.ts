@@ -6,10 +6,9 @@ import express, { type NextFunction, type Request, type Response } from 'express
 import helmet from 'helmet';
 import compression from 'compression';
 import { pinoHttp } from 'pino-http';
-import type { ServerResponse } from 'node:http';
 
 import { startAccounts } from './server/accounts.ts';
-import { notFound, pageFallback, parsePort } from './server/pages.ts';
+import { notFound, parsePort, serveBuild } from './server/pages.ts';
 import { parseTrustProxy } from './server/trustProxy.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -114,15 +113,6 @@ app.all('/api/*splat', (_req, res) => {
     res.status(404).json({ code: 'NOT_FOUND' });
 });
 
-const setStaticCache = (res: ServerResponse, filePath: string) => {
-    if (filePath.endsWith('.html')) {
-        res.setHeader('Cache-Control', 'no-cache');
-    } else {
-        // dist assets carry a content hash in the filename, so they are immutable.
-        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    }
-};
-
 // Static asset folders referenced by absolute URLs in the app (not content-hashed).
 const assetOptions = { maxAge: '1d', index: false, redirect: false };
 app.use('/icons', express.static(path.join(STATIC_DIR, 'icons'), assetOptions));
@@ -137,21 +127,7 @@ app.use(
     })
 );
 
-// Hashed build output (JS/CSS) and index.html.
-app.use(
-    express.static(DIST_DIR, {
-        index: false,
-        redirect: false,
-        setHeaders: setStaticCache
-    })
-);
-
-app.use(
-    pageFallback((_req, res) => {
-        res.setHeader('Cache-Control', 'no-cache');
-        res.sendFile(INDEX_HTML);
-    })
-);
+app.use(serveBuild(DIST_DIR));
 app.use(notFound);
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
