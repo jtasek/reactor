@@ -34,7 +34,8 @@ const offline: Api = {
     workspaces: unreachable,
     documents: unreachable,
     createDocument: unreachable,
-    deleteDocument: unreachable
+    deleteDocument: unreachable,
+    aiAvailable: async () => false
 };
 
 /** A channel no other copy listens on. */

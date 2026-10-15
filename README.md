@@ -186,6 +186,26 @@ document shows its images on every device.
 | `BETTER_AUTH_SECRET` | At least 32 random characters, used to sign sessions |
 | `SMTP_URL` | SMTP server for email, such as `smtps://user:password@smtp.example.com`; required in production |
 | `MAIL_FROM` | Sender address; defaults to `no-reply` at the editor's host |
+| `AI_PROVIDER` | Turns AI on for people signed in: `anthropic`, or `openai` for any server speaking OpenAI's Chat Completions API (OpenAI, Mistral, OpenRouter, Ollama, vLLM) |
+| `AI_API_KEY` | The provider's key, kept on the server; required for `anthropic` |
+| `AI_BASE_URL` | Where the `openai` provider's API is; defaults to `https://api.openai.com/v1` |
+| `AI_EDIT_MODEL` | The model for edits; defaults to `claude-haiku-5-5` for `anthropic`, required for `openai` |
+
+The original `ANTHROPIC_API_KEY` setup still works: without `AI_PROVIDER` it selects
+Anthropic. An explicit `AI_PROVIDER` takes precedence, and `AI_API_KEY` overrides the
+legacy key for Anthropic.
+
+For an OpenAI-compatible endpoint, set `AI_PROVIDER=openai`, `AI_BASE_URL` to its
+API base (including `/v1` when required), and `AI_EDIT_MODEL` to its model ID.
+Set `AI_API_KEY` if the endpoint needs one; local endpoints may leave it empty.
+The endpoint must support streamed Chat Completions with function tools, and the
+chosen model must support images when a request attaches one.
+
+With `AI_PROVIDER`, the API's `/api/ai` gateway sends a request to change a
+document, by someone who may edit it, to the model and streams back the operations it
+proposes, which the editor checks before showing; a problem goes back to the model once.
+Each person may make 100 requests a day, and use 2 million tokens, and each workspace 500
+requests and 10 million tokens, one request of a person at a time.
 
 Without `SMTP_URL`, the development server writes email to its log instead.
 `compose.yaml` runs the editor with a PostgreSQL database: set `POSTGRES_PASSWORD`,

@@ -44,6 +44,11 @@ export interface Batch {
     operations: Operation[];
 }
 
+/** Whether a batch would apply, or why not: the operation, by its place in the batch, and the problem. */
+export type OperationsCheck =
+    | { valid: true }
+    | { valid: false; operation?: number; problem: string };
+
 /** The IDs of the records a batch added, by key, or why none of it was applied. */
 export type BatchResult =
     | { applied: true; ids: Record<string, string> }

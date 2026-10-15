@@ -1,0 +1,272 @@
+{
+    "provider": "openai",
+    "model": "example-model",
+    "rounds": [
+        [
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "role": "assistant",
+                            "content": ""
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "content": "I will add a rounded button below the titl"
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "content": "e, filled with Brand, with a white label."
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 0,
+                                    "id": "call_1",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "addShape",
+                                        "arguments": ""
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 0,
+                                    "function": {
+                                        "arguments": "{\"key\":\"button\",\"shape\":{\"type\":\"rectangle\",\"name\":\"Sign in button\",\"position\":{\"x\":40,"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 0,
+                                    "function": {
+                                        "arguments": "\"y\":90},\"size\":{\"width\":160,\"height\":44},\"cornerRadius\":8,\"bindings\":{\"fill\":\"brand\"}}}"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 1,
+                                    "id": "call_2",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "addShape",
+                                        "arguments": ""
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 1,
+                                    "function": {
+                                        "arguments": "{\"key\":\"label\",\"shape\":{\"type\":\"text\",\"name\":\"Sign in label\",\"position\":"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 1,
+                                    "function": {
+                                        "arguments": "{\"x\":92,\"y\":102},\"value\":\"Sign in\",\"fontSize\":16,\"fontColor\":\"#ffffff\"}}"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 2,
+                                    "id": "call_3",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "addGroup",
+                                        "arguments": ""
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 2,
+                                    "function": {
+                                        "arguments": "{\"name\":\"Sign in button\",\"s"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 2,
+                                    "function": {
+                                        "arguments": "hapes\":[\"button\",\"label\"]}"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {},
+                        "finish_reason": "tool_calls"
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [],
+                "usage": {
+                    "prompt_tokens": 2310,
+                    "completion_tokens": 286,
+                    "total_tokens": 2596
+                }
+            }
+        ]
+    ]
+}

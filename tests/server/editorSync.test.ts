@@ -64,7 +64,8 @@ function apiFor(
             (await send('POST', `/workspaces/${workspaceId}/documents`, document)).ok,
         deleteDocument: async (documentId) => {
             await send('DELETE', `/documents/${documentId}`);
-        }
+        },
+        aiAvailable: async () => false
     };
 }
 

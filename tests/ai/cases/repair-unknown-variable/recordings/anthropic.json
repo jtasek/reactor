@@ -1,0 +1,308 @@
+{
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "rounds": [
+        [
+            {
+                "type": "message_start",
+                "message": {
+                    "id": "msg_recorded",
+                    "type": "message",
+                    "role": "assistant",
+                    "model": "claude-haiku-5-5",
+                    "content": [],
+                    "stop_reason": null,
+                    "usage": {
+                        "input_tokens": 2240,
+                        "output_tokens": 1
+                    }
+                }
+            },
+            {
+                "type": "content_block_start",
+                "content_block": {
+                    "type": "thinking",
+                    "thinking": "",
+                    "signature": ""
+                },
+                "index": 0
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "signature_delta",
+                    "signature": "c2ln"
+                },
+                "index": 0
+            },
+            {
+                "type": "content_block_stop",
+                "index": 0
+            },
+            {
+                "type": "content_block_start",
+                "content_block": {
+                    "type": "tool_use",
+                    "id": "toolu_1",
+                    "name": "addShape",
+                    "input": {}
+                },
+                "index": 1
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "{\"key\":\"card\",\"shape\":{\"type\":\"rectangle\",\"name\":\"Card\",\"position\":{\"x\":40,\"y\":40},\"s"
+                },
+                "index": 1
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "ize\":{\"width\":240,\"height\":160},\"cornerRadius\":12,\"bindings\":{\"fill\":\"accentColor\"}}}"
+                },
+                "index": 1
+            },
+            {
+                "type": "content_block_stop",
+                "index": 1
+            },
+            {
+                "type": "content_block_start",
+                "content_block": {
+                    "type": "tool_use",
+                    "id": "toolu_2",
+                    "name": "addShape",
+                    "input": {}
+                },
+                "index": 2
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "{\"key\":\"heading\",\"shape\":{\"type\":\"text\",\"name\":\"Heading\",\""
+                },
+                "index": 2
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "position\":{\"x\":60,\"y\":60},\"value\":\"Plans\",\"fontSize\":20}}"
+                },
+                "index": 2
+            },
+            {
+                "type": "content_block_stop",
+                "index": 2
+            },
+            {
+                "type": "content_block_start",
+                "content_block": {
+                    "type": "tool_use",
+                    "id": "toolu_3",
+                    "name": "addGroup",
+                    "input": {}
+                },
+                "index": 3
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "{\"name\":\"Card\",\"shapes"
+                },
+                "index": 3
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "\":[\"card\",\"heading\"]}"
+                },
+                "index": 3
+            },
+            {
+                "type": "content_block_stop",
+                "index": 3
+            },
+            {
+                "type": "message_delta",
+                "delta": {
+                    "stop_reason": "tool_use",
+                    "stop_sequence": null
+                },
+                "usage": {
+                    "output_tokens": 240
+                }
+            },
+            {
+                "type": "message_stop"
+            }
+        ],
+        [
+            {
+                "type": "message_start",
+                "message": {
+                    "id": "msg_recorded",
+                    "type": "message",
+                    "role": "assistant",
+                    "model": "claude-haiku-5-5",
+                    "content": [],
+                    "stop_reason": null,
+                    "usage": {
+                        "input_tokens": 2690,
+                        "output_tokens": 1
+                    }
+                }
+            },
+            {
+                "type": "content_block_start",
+                "content_block": {
+                    "type": "thinking",
+                    "thinking": "",
+                    "signature": ""
+                },
+                "index": 0
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "signature_delta",
+                    "signature": "c2ln"
+                },
+                "index": 0
+            },
+            {
+                "type": "content_block_stop",
+                "index": 0
+            },
+            {
+                "type": "content_block_start",
+                "content_block": {
+                    "type": "text",
+                    "text": ""
+                },
+                "index": 1
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "text_delta",
+                    "text": "The variable is accent; here is the card again."
+                },
+                "index": 1
+            },
+            {
+                "type": "content_block_stop",
+                "index": 1
+            },
+            {
+                "type": "content_block_start",
+                "content_block": {
+                    "type": "tool_use",
+                    "id": "toolu_1",
+                    "name": "addShape",
+                    "input": {}
+                },
+                "index": 2
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "{\"key\":\"card\",\"shape\":{\"type\":\"rectangle\",\"name\":\"Card\",\"position\":{\"x\":40,\"y\":40},"
+                },
+                "index": 2
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "\"size\":{\"width\":240,\"height\":160},\"cornerRadius\":12,\"bindings\":{\"fill\":\"accent\"}}}"
+                },
+                "index": 2
+            },
+            {
+                "type": "content_block_stop",
+                "index": 2
+            },
+            {
+                "type": "content_block_start",
+                "content_block": {
+                    "type": "tool_use",
+                    "id": "toolu_2",
+                    "name": "addShape",
+                    "input": {}
+                },
+                "index": 3
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "{\"key\":\"heading\",\"shape\":{\"type\":\"text\",\"name\":\"Heading\",\""
+                },
+                "index": 3
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "position\":{\"x\":60,\"y\":60},\"value\":\"Plans\",\"fontSize\":20}}"
+                },
+                "index": 3
+            },
+            {
+                "type": "content_block_stop",
+                "index": 3
+            },
+            {
+                "type": "content_block_start",
+                "content_block": {
+                    "type": "tool_use",
+                    "id": "toolu_3",
+                    "name": "addGroup",
+                    "input": {}
+                },
+                "index": 4
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "{\"name\":\"Card\",\"shapes"
+                },
+                "index": 4
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "\":[\"card\",\"heading\"]}"
+                },
+                "index": 4
+            },
+            {
+                "type": "content_block_stop",
+                "index": 4
+            },
+            {
+                "type": "message_delta",
+                "delta": {
+                    "stop_reason": "tool_use",
+                    "stop_sequence": null
+                },
+                "usage": {
+                    "output_tokens": 251
+                }
+            },
+            {
+                "type": "message_stop"
+            }
+        ]
+    ]
+}

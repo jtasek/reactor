@@ -418,6 +418,9 @@ export type Account =
     | { kind: 'signedOut' }
     | { kind: 'signedIn'; id: string; name: string; email: string };
 
+/** Whether the server offers AI to the person signed in; never signed out or without a provider. */
+export type AiAvailability = 'available' | 'unavailable';
+
 /** Whether this copy's documents are saved, and signed in synced; `reason` says why they are not saved. */
 export type SaveStatus =
     | { kind: 'saved' }
@@ -459,6 +462,7 @@ export type PanelPlacement = {
 export type Application = {
     id: string;
     account: Account;
+    ai: AiAvailability;
     commands: HashTable<Command>;
     commandsIds: string[];
     config: Configuration;

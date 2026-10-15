@@ -3,6 +3,8 @@ import express from 'express';
 import type { AddressInfo } from 'net';
 import { Kysely } from 'kysely';
 import { PGliteDialect } from 'kysely-pglite-dialect';
+import type { AiLimits } from '../../server/ai';
+import type { AiProvider } from '../../server/aiTasks';
 import { createApi } from '../../server/api';
 import { authHandler, createAuth, migrateAuth } from '../../server/auth';
 import { migrateApp } from '../../server/migrations';
@@ -136,14 +138,27 @@ const sentBody = (body: unknown) => {
 /** Sign-ins so far; each is a client of its own, as sign-in's rate limit is kept across tests. */
 let clients = 0;
 
+export interface ServeOptions {
+    sessionCheck?: number;
+    assetQuota?: number;
+    /** Where AI requests go, and their limits; without it, AI is off. */
+    ai?: { provider: AiProvider; limits?: AiLimits };
+}
+
 /**
  * Accounts, the API and document sync served over HTTP as the servers do, on an
- * empty database.
+ * empty database, until the test ends.
  */
-export async function serve({
-    sessionCheck,
-    assetQuota
-}: { sessionCheck?: number; assetQuota?: number } = {}) {
+export async function serve(options: ServeOptions = {}) {
+    const served = await startServer(options);
+
+    onTestFinished(served.close);
+
+    return served;
+}
+
+/** As `serve`, until `close` is called, so one server may last for several tests. */
+export async function startServer({ sessionCheck, assetQuota, ai }: ServeOptions = {}) {
     const accounts = await startAccounts();
     const app = express();
     const log = { error: () => {}, warn: () => {} };
@@ -163,7 +178,8 @@ export async function serve({
             auth: accounts.auth,
             origin: ORIGIN,
             onDeleted: sync.closeDocument,
-            assetQuota
+            assetQuota,
+            ai
         })
     );
 
@@ -171,10 +187,6 @@ export async function serve({
 
     sync.attach(server);
     await new Promise((resolve) => server.once('listening', resolve));
-    onTestFinished(async () => {
-        await sync.close();
-        server.close();
-    });
 
     const { port } = server.address() as AddressInfo;
 
@@ -208,11 +220,18 @@ export async function serve({
         {
             cookie,
             body,
-            headers = {}
-        }: { cookie?: string; body?: unknown; headers?: Record<string, string> } = {}
+            headers = {},
+            signal
+        }: {
+            cookie?: string;
+            body?: unknown;
+            headers?: Record<string, string>;
+            signal?: AbortSignal;
+        } = {}
     ) =>
         fetch(`http://127.0.0.1:${port}/api${path}`, {
             method,
+            signal,
             headers: {
                 origin: ORIGIN,
                 ...(body === undefined ? {} : { 'content-type': contentType(body) }),
@@ -232,5 +251,16 @@ export async function serve({
         return { cookie, personal };
     };
 
-    return { db: accounts.db, call, json, user, sync, syncURL: `ws://127.0.0.1:${port}/sync` };
+    return {
+        db: accounts.db,
+        call,
+        json,
+        user,
+        sync,
+        syncURL: `ws://127.0.0.1:${port}/sync`,
+        close: async () => {
+            await sync.close();
+            server.close();
+        }
+    };
 }

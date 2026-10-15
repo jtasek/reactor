@@ -79,6 +79,14 @@ export const api = {
 
         throw new Error(`The document ${document.id} could not be created: ${response.status}`);
     },
+    /** Whether the server offers AI to the person signed in; not when it cannot be asked. */
+    async aiAvailable(): Promise<boolean> {
+        try {
+            return (await request('GET', '/ai')).ok;
+        } catch {
+            return false;
+        }
+    },
     /** Deletes a document; one already gone counts as deleted. */
     async deleteDocument(documentId: string): Promise<void> {
         const response = await request('DELETE', `/documents/${encodeURIComponent(documentId)}`);

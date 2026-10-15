@@ -1,6 +1,7 @@
 import type { Context } from 'src/app';
 import { NOTICES_KEY } from '../services/accounts';
 import { createNotification } from '../factories';
+import type { ActionWithParam, AiAvailability } from '../types';
 
 /** From this many documents on, signed-out users are told again. */
 const MANY_DOCUMENTS = 3;
@@ -16,6 +17,10 @@ const noticesShown = ({ effects }: Context): string[] => {
     } catch {
         return [];
     }
+};
+
+export const setAiAvailability: ActionWithParam<AiAvailability> = ({ state }, availability) => {
+    state.ai = availability;
 };
 
 /**
