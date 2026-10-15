@@ -11,6 +11,7 @@ import type {
 import type { AddGroup, AddShape, Batch, BatchResult, Operation } from '../operations';
 import { createGroup, createShape, instanceName, shapeNamer } from '../factories';
 import { orderAbove } from '../drawOrder';
+import { shapeLayer } from '../membership';
 import { applyProperty } from '../properties';
 import { untracked } from '../untracked';
 import {
@@ -177,6 +178,9 @@ function stageOperations(document: Document, operations: Operation[], newId: () 
         const shape = createShape({ ...input, name, order, selected: false });
 
         linkShape(shape, input, index);
+        if (shape.parentShapeId !== undefined) {
+            shape.parentShapeId = reference(shape.parentShapeId, 'shapes', index);
+        }
         readEntity('shapes', shape);
         taken.add(name);
         ids.set(key, shape.id);
@@ -207,6 +211,9 @@ function stageOperations(document: Document, operations: Operation[], newId: () 
         }
         if (shapesIds.some((id) => grouped.has(id))) {
             throw new Error('a shape is in another group already.');
+        }
+        if (new Set(shapesIds.map((id) => shapeLayer(document, id)?.id)).size > 1) {
+            throw new Error('a group needs shapes on the same layer.');
         }
         const group = createGroup({ name, rotation, shapesIds });
 
@@ -285,6 +292,8 @@ export const applyOperations: ActionWithParamAndResult<Batch, BatchResult> = (
             shape.bounds = instanceBox(shape, source);
         }
     });
+
+    effects.collaboration.flush();
 
     return { applied: true, ids: staged.ids };
 };

@@ -14,6 +14,7 @@ import { librarySnapshot } from './componentLibrary';
 import { componentSource, instanceBox } from './componentSource';
 import { copyName, createShape, instanceName, numberedName, shapeNamer } from './factories';
 import { CLONE_OFFSET, translateShape } from './geometry';
+import { applyProperty } from './properties';
 import {
     hydrateComponent,
     readCopiedGroup,
@@ -28,7 +29,8 @@ import {
     templateVariablesIds,
     templateWithIds,
     variableNamed,
-    variableValue
+    variableValue,
+    writeText
 } from './variables';
 
 /** What a paste did: added shapes, found none in the text, or waited for the editor. */
@@ -303,7 +305,18 @@ function pasteVariables(copied: Variable[], document: Document) {
             : operation
     );
 
-    return { operations, references, remapTemplate };
+    const values = { ...document.variables };
+
+    operations.forEach((operation) => {
+        values[operation.key] = readEntity('variables', {
+            id: operation.key,
+            name: operation.name,
+            type: operation.type,
+            values: { default: operation.value }
+        });
+    });
+
+    return { operations, references, remapTemplate, values };
 }
 
 /**
@@ -356,6 +369,19 @@ export function pasteOperations(
         );
     };
 
+    const writeVariables = (shape: Shape) => {
+        Object.entries(shape.bindings ?? {}).forEach(([key, id]) => {
+            const property = bindableProperty(key);
+            const variable = variables.values[id];
+
+            if (property && variable && property.kind === variable.type) {
+                applyProperty(property, shape, variableValue(variable, variables.values));
+            }
+        });
+        if (shape.type === 'text' && shape.template !== undefined) {
+            writeText(shape, shape.template, variables.values);
+        }
+    };
     const components = (copied.components ?? []).filter(
         (component) => !Object.hasOwn(document.components, component.id)
     );
@@ -363,15 +389,20 @@ export function pasteOperations(
     components.forEach((component) =>
         Object.values(component.sourceShapes ?? {}).forEach(remapShape)
     );
+    const measuredComponents = structuredClone(components);
+
+    measuredComponents.forEach((component) =>
+        Object.values(component.sourceShapes ?? {}).forEach(writeVariables)
+    );
 
     const sources = {
         components: {
             ...document.components,
-            ...Object.fromEntries(components.map((component) => [component.id, component]))
+            ...Object.fromEntries(measuredComponents.map((component) => [component.id, component]))
         },
         shapes: document.shapes,
         shapesIds: document.shapesIds,
-        variables: document.variables
+        variables: variables.values
     };
     const present = Object.values(document.shapes);
     const taken = new Set(present.map((shape) => shape.name));
@@ -388,6 +419,8 @@ export function pasteOperations(
         remapShape(input);
 
         const shape = createShape({ ...input, name, order: '' });
+
+        writeVariables(shape);
         const source =
             shape.type === 'instance' ? componentSource(sources, shape.componentId) : null;
 
