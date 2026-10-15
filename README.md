@@ -186,6 +186,13 @@ document shows its images on every device.
 | `BETTER_AUTH_SECRET` | At least 32 random characters, used to sign sessions |
 | `SMTP_URL` | SMTP server for email, such as `smtps://user:password@smtp.example.com`; required in production |
 | `MAIL_FROM` | Sender address; defaults to `no-reply` at the editor's host |
+| `ANTHROPIC_API_KEY` | Turns AI on for people signed in; the key stays on the server |
+
+With `ANTHROPIC_API_KEY`, the API's `/api/ai` gateway sends a request to change a
+document, by someone who may edit it, to the model and streams back the operations it
+proposes, which the editor checks before showing; a problem goes back to the model once.
+Each person may make 100 requests a day, and use 2 million tokens, and each workspace 500
+requests and 10 million tokens, one request of a person at a time.
 
 Without `SMTP_URL`, the development server writes email to its log instead.
 `compose.yaml` runs the editor with a PostgreSQL database: set `POSTGRES_PASSWORD`,

@@ -8,7 +8,14 @@ import type {
     ShapeInput,
     Variable
 } from '../types';
-import type { AddGroup, AddShape, Batch, BatchResult, Operation } from '../operations';
+import type {
+    AddGroup,
+    AddShape,
+    Batch,
+    BatchResult,
+    Operation,
+    OperationsCheck
+} from '../operations';
 import { createGroup, createShape, instanceName, shapeNamer } from '../factories';
 import { orderAbove } from '../drawOrder';
 import { shapeLayer } from '../membership';
@@ -46,8 +53,11 @@ const declaredKey = (operation: Exclude<Operation, AddGroup>): [string, Referabl
 
 const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
+/** Why an operation of a batch is invalid, with the operation's place in the batch. */
 const problem = (index: number, error: unknown) =>
-    new Error(`Operation ${index + 1}: ${errorMessage(error)}`);
+    Object.assign(new Error(`Operation ${index + 1}: ${errorMessage(error)}`), {
+        operation: index
+    });
 
 /**
  * The records a batch would add to `document`, each read back as saved documents
@@ -73,7 +83,7 @@ function stageOperations(
         const [key, collection] = declaredKey(operation);
 
         if (declared.has(key) || Object.hasOwn(document[collection], key)) {
-            throw new Error(`Operation ${index + 1}: the key ${key} is taken.`);
+            throw problem(index, `the key ${key} is taken.`);
         }
         declared.set(key, { index, collection });
         if (operation.op !== 'addShape') {
@@ -327,4 +337,31 @@ export const applyOperations: ActionWithParamAndResult<Batch, BatchResult> = (
     effects.collaboration.flush();
 
     return { applied: true, ids: staged.ids };
+};
+
+/** Whether a batch would apply to its document, without applying it; else the first problem. */
+export const checkOperations: ActionWithParamAndResult<Omit<Batch, 'by'>, OperationsCheck> = (
+    { state },
+    { documentId, operations }
+) => {
+    const document = state.documents[documentId];
+    let checked = 0;
+
+    if (!document) {
+        return { valid: false, problem: `There is no document ${documentId}.` };
+    }
+
+    try {
+        stageOperations(untracked(document), operations, () => `checked-${checked++}`);
+    } catch (error) {
+        const operation: unknown = Reflect.get(Object(error), 'operation');
+
+        return {
+            valid: false,
+            problem: errorMessage(error),
+            ...(typeof operation === 'number' ? { operation } : {})
+        };
+    }
+
+    return { valid: true };
 };

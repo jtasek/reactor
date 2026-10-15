@@ -22,6 +22,8 @@ import {
     documentRole,
     listWorkspaces
 } from './workspaces.ts';
+import { createAi, sendsAiRequest, type AiLimits } from './ai.ts';
+import type { AiProvider } from './anthropic.ts';
 import type { Auth } from './auth.ts';
 import type { Db, Log } from './schema.ts';
 
@@ -72,7 +74,8 @@ export function createApi({
     origin,
     onDeleted = () => {},
     blobs = postgresBlobs(db),
-    assetQuota = WORKSPACE_ASSET_BYTES
+    assetQuota = WORKSPACE_ASSET_BYTES,
+    ai
 }: {
     db: Db;
     auth: Auth;
@@ -81,6 +84,8 @@ export function createApi({
     blobs?: BlobStorage;
     /** The bytes of images a workspace's documents may use together. */
     assetQuota?: number;
+    /** The provider AI requests go to and the limits on them; without it, AI is off. */
+    ai?: { provider: AiProvider; limits?: AiLimits };
 }) {
     const api = express.Router();
 
@@ -107,7 +112,10 @@ export function createApi({
 
         return next();
     });
-    api.use(express.json({ limit: '16kb' }));
+    const readJson = express.json({ limit: '16kb' });
+
+    // An AI request reads its larger body once the user may make one.
+    api.use((req, res, next) => (sendsAiRequest(req) ? next() : readJson(req, res, next)));
     api.use(async (req, res, next) => {
         const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
 
@@ -271,6 +279,10 @@ export function createApi({
         });
         res.end(head ? undefined : asset.bytes);
     });
+
+    if (ai) {
+        api.use('/ai', createAi({ db, ...ai }));
+    }
 
     api.use(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars

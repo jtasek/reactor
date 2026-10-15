@@ -1,0 +1,105 @@
+{
+    "rounds": [
+        [
+            {
+                "type": "message_start",
+                "message": {
+                    "id": "msg_recorded",
+                    "type": "message",
+                    "role": "assistant",
+                    "model": "claude-haiku-5-5",
+                    "content": [],
+                    "stop_reason": null,
+                    "usage": {
+                        "input_tokens": 2150,
+                        "output_tokens": 1
+                    }
+                }
+            },
+            {
+                "type": "content_block_start",
+                "content_block": {
+                    "type": "thinking",
+                    "thinking": "",
+                    "signature": ""
+                },
+                "index": 0
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "signature_delta",
+                    "signature": "c2ln"
+                },
+                "index": 0
+            },
+            {
+                "type": "content_block_stop",
+                "index": 0
+            },
+            {
+                "type": "content_block_start",
+                "content_block": {
+                    "type": "text",
+                    "text": ""
+                },
+                "index": 1
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "text_delta",
+                    "text": "The screenshot is a solid blue, #1e88e5."
+                },
+                "index": 1
+            },
+            {
+                "type": "content_block_stop",
+                "index": 1
+            },
+            {
+                "type": "content_block_start",
+                "content_block": {
+                    "type": "tool_use",
+                    "id": "toolu_1",
+                    "name": "addVariable",
+                    "input": {}
+                },
+                "index": 2
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "{\"key\":\"primary\",\"name\":\"Primary\","
+                },
+                "index": 2
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "\"type\":\"color\",\"value\":\"#1e88e5\"}"
+                },
+                "index": 2
+            },
+            {
+                "type": "content_block_stop",
+                "index": 2
+            },
+            {
+                "type": "message_delta",
+                "delta": {
+                    "stop_reason": "tool_use",
+                    "stop_sequence": null
+                },
+                "usage": {
+                    "output_tokens": 96
+                }
+            },
+            {
+                "type": "message_stop"
+            }
+        ]
+    ]
+}

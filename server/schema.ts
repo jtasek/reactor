@@ -48,6 +48,17 @@ export interface Database {
         document_id: string;
         hash: string;
     };
+    ai_requests: {
+        id: string;
+        workspace_id: string;
+        user_id: string;
+        document_id: string | null;
+        task: string;
+        model: string;
+        input_tokens: Generated<number>;
+        output_tokens: Generated<number>;
+        created_at: Generated<Date>;
+    };
 }
 
 export type Db = Kysely<Database>;

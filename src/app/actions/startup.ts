@@ -125,6 +125,14 @@ export const onInitializeOvermind = async (
         return;
     }
 
+    if (state.account.kind === 'signedIn') {
+        void effects.api
+            .aiAvailable()
+            .then((available) =>
+                instance.actions.setAiAvailability(available ? 'available' : 'unavailable')
+            );
+    }
+
     // Once startup has ended; an action run while it runs counts as part of it.
     setTimeout(instance.actions.noticeLocalDocuments);
     addMutationListener(({ path, delimiter }) => {

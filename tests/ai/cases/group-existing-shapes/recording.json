@@ -1,0 +1,85 @@
+{
+    "rounds": [
+        [
+            {
+                "type": "message_start",
+                "message": {
+                    "id": "msg_recorded",
+                    "type": "message",
+                    "role": "assistant",
+                    "model": "claude-haiku-5-5",
+                    "content": [],
+                    "stop_reason": null,
+                    "usage": {
+                        "input_tokens": 2420,
+                        "output_tokens": 1
+                    }
+                }
+            },
+            {
+                "type": "content_block_start",
+                "content_block": {
+                    "type": "thinking",
+                    "thinking": "",
+                    "signature": ""
+                },
+                "index": 0
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "signature_delta",
+                    "signature": "c2ln"
+                },
+                "index": 0
+            },
+            {
+                "type": "content_block_stop",
+                "index": 0
+            },
+            {
+                "type": "content_block_start",
+                "content_block": {
+                    "type": "tool_use",
+                    "id": "toolu_1",
+                    "name": "addGroup",
+                    "input": {}
+                },
+                "index": 1
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "{\"name\":\"Profile\",\"shapes"
+                },
+                "index": 1
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "\":[\"avatar\",\"fullName\"]}"
+                },
+                "index": 1
+            },
+            {
+                "type": "content_block_stop",
+                "index": 1
+            },
+            {
+                "type": "message_delta",
+                "delta": {
+                    "stop_reason": "tool_use",
+                    "stop_sequence": null
+                },
+                "usage": {
+                    "output_tokens": 74
+                }
+            },
+            {
+                "type": "message_stop"
+            }
+        ]
+    ]
+}

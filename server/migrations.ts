@@ -131,6 +131,42 @@ const migrations: Record<string, Migration> = {
                 )
                 .execute();
         }
+    },
+    '0005_ai_requests': {
+        async up(db) {
+            // One row per AI request and the tokens it used, counted against each day's limits.
+            await db.schema
+                .createTable('ai_requests')
+                .addColumn('id', 'text', (column) => column.primaryKey())
+                .addColumn('workspace_id', 'text', (column) =>
+                    column.notNull().references('workspaces.id').onDelete('cascade')
+                )
+                .addColumn('user_id', 'text', (column) =>
+                    column.notNull().references('auth.user.id').onDelete('cascade')
+                )
+                // Kept when the document is deleted, as its requests still count.
+                .addColumn('document_id', 'text', (column) =>
+                    column.references('documents.id').onDelete('set null')
+                )
+                .addColumn('task', 'text', (column) => column.notNull())
+                .addColumn('model', 'text', (column) => column.notNull())
+                .addColumn('input_tokens', 'integer', (column) => column.notNull().defaultTo(0))
+                .addColumn('output_tokens', 'integer', (column) => column.notNull().defaultTo(0))
+                .addColumn('created_at', 'timestamptz', (column) =>
+                    column.notNull().defaultTo(sql`now()`)
+                )
+                .execute();
+            await db.schema
+                .createIndex('ai_requests_workspace_time')
+                .on('ai_requests')
+                .columns(['workspace_id', 'created_at'])
+                .execute();
+            await db.schema
+                .createIndex('ai_requests_user_time')
+                .on('ai_requests')
+                .columns(['user_id', 'created_at'])
+                .execute();
+        }
     }
 };
 

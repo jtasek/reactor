@@ -142,7 +142,7 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
   recorded counts: fix a touched file's existing findings rather than adding exceptions.
 - `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 491 KiB or
-  any file 248 KiB (the budget in `webpack.config.mjs`, measured at 479.3 and 223 KiB); raise
+  any file 248 KiB (the budget in `webpack.config.mjs`, measured at 489.4 and 225.1 KiB); raise
   it only for code every page needs as it opens, after checking what grew. Commands and
   tools load with the editor page, which registers them (`src/pages/registerEditor.ts`),
   not at startup: the store keeps only the tools namespace's state and actions
@@ -202,6 +202,24 @@ re-renders.** Components never mutate state directly.
   answers the new IDs by key or the problem, naming the operation. A batch is one undo step
   of its own (`Collaboration.startBatch`), which records who made it, a person or an AI
   request (`undoAuthors`). Paste builds its batch in `pasteOperations` (`src/app/clipboard.ts`).
+  `checkOperations` answers whether a batch would apply, naming the operation, without
+  applying it.
+- **AI** (`server/ai.ts`, `server/anthropic.ts`, `src/ai/`): with `ANTHROPIC_API_KEY`, the
+  API's `/ai` gateway sends a person's request on a document they may edit to the model of
+  its task (`TASKS`; edits run on Claude Haiku 5.5) through `anthropicProvider`, a plain module
+  calling the provider with fetch. Models answer only by calling one tool per operation; each
+  finished call streams back as one JSON line. The editor reads them as untrusted
+  (`readOperation`), checks them with `checkOperations` and sends the problem back once
+  (`/ai/requests/:requestId/repairs`, which the server answers from the conversation it kept);
+  `propose` (`src/ai/client.ts`) returns the proposal, nothing applied, and aborting it stops
+  the model. Each request is a row of `ai_requests` with its tokens, counted against a day's
+  limits per person and per workspace (`AI_LIMITS`), one request of a person at a time.
+  `state.ai` is `available` only signed in on a server with AI. `src/ai/` loads only with
+  what uses it, never at startup. Eval cases are folders of `tests/ai/cases/`: a fixture
+  document with IDs of its own, a prompt, an optional image, checks of the document after
+  applying, and the provider's recorded events (`recording.json`), which the tests replay
+  through the server and the editor's code; `pnpm ai:record` asks the model again and records
+  its answers, with `ANTHROPIC_API_KEY` set.
 - **Server sync** (`src/app/services/serverSync.ts`, loaded only when signed in): syncs each
   document over one Hocuspocus socket through a Yjs document that mirrors the shared one, and
   passes the server's changes to `Collaboration.receive`, so they merge like any other copy's.

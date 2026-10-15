@@ -24,6 +24,7 @@ Planning date: 2026-10-14. This roadmap proposes work; it does not mark it imple
 | Accounts                   | Implemented: workspaces and document roles. People cannot yet share with others, and presence is off ([serverSync.ts](src/app/services/serverSync.ts) passes no awareness).                |
 | Undo and redo              | Implemented: each person undoes and redoes their own changes to a document's records, also while others edit ([collaboration.ts](src/app/services/collaboration.ts)).                      |
 | Operations                 | Implemented: paste goes through `applyOperations`, applied whole as one undo step that records its author ([#177](https://github.com/jtasek/reactor/pull/177)).                            |
+| AI                         | Gateway implemented: `/api/ai` streams operations from Claude Haiku 5.5, checked and repaired once, with daily limits, and recorded eval cases replayed in CI. Edit with words is absent.  |
 | Screens, data and behavior | Absent. Links have loose endpoints and types without meaning, and the data view is a placeholder.                                                                                          |
 | Export and runtime         | Absent. The editor's content security policy lets the page connect only to its own server and the sync server ([server.prod.ts](server.prod.ts)).                                          |
 

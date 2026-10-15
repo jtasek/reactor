@@ -1,3 +1,4 @@
+import { anthropicProvider } from './anthropic.ts';
 import { createApi } from './api.ts';
 import { UNUSED_ASSET_GRACE_MS, deleteUnusedAssets, postgresBlobs } from './assets.ts';
 import { authHandler, createAuth, migrateAuth } from './auth.ts';
@@ -19,7 +20,7 @@ const required = (env: NodeJS.ProcessEnv, name: string) => {
  * Starts accounts when `DATABASE_URL` is set: brings the account and app tables
  * up to date, and returns the handler to mount at `/api/auth/*splat`, before any
  * body parser, the API to mount at `/api`, and the document sync to attach to the
- * HTTP server. On shutdown, close the sync first, then the rest once it is done. Without it, the editor is used signed out only. Production sends email
+ * HTTP server. On shutdown, close the sync first, then the rest once it is done. Without it, the editor is used signed out only. With `ANTHROPIC_API_KEY`, the API's `/ai` gateway is on. Production sends email
  * over SMTP; development without `SMTP_URL` writes it to the log.
  */
 /** How often images no document uses are looked for and deleted, the first time soon after start. */
@@ -75,7 +76,16 @@ export async function startAccounts(
 
     return {
         handler: authHandler(auth),
-        api: createApi({ db, auth, origin, onDeleted: sync.closeDocument, blobs }),
+        api: createApi({
+            db,
+            auth,
+            origin,
+            onDeleted: sync.closeDocument,
+            blobs,
+            ai: env.ANTHROPIC_API_KEY
+                ? { provider: anthropicProvider({ apiKey: env.ANTHROPIC_API_KEY }) }
+                : undefined
+        }),
         sync,
         close: () => {
             clearTimeout(firstCleanup);
