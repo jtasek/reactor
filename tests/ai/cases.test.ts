@@ -1,8 +1,9 @@
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { propose } from 'src/ai/client';
 import { documentContext } from 'src/ai/context';
 import type { Provenance } from 'src/app/operations';
-import { readEvents } from '../../server/anthropic';
+import { providerFromEnv } from '../../server/ai';
+import { readEvents } from '../../server/aiTasks';
 import {
     DOCUMENT_ID,
     createCopies,
@@ -12,12 +13,15 @@ import {
     type Copy
 } from '../support/collaboration';
 import { fixtureDocument, startHarness, type AiCase } from './harness';
-import { replay, type Recording, type Sent, type StreamEvent } from './replay';
+import { replay, type ProviderName, type Recording, type Sent, type StreamEvent } from './replay';
 
 const CASES = new URL('./cases/', import.meta.url);
 
-/** With `AI_RECORD=1` and a provider key, the cases ask the model and record its answers. */
-const RECORDING = process.env.AI_RECORD === '1' && Boolean(process.env.ANTHROPIC_API_KEY);
+/**
+ * With `AI_RECORD=1`, the cases ask the provider the environment configures, as
+ * the server's is (`AI_PROVIDER` and the rest), and record its answers.
+ */
+const RECORDING = process.env.AI_RECORD === '1';
 
 const LIVE_TIMEOUT_MS = 120_000;
 
@@ -29,19 +33,24 @@ const cases = await Promise.all(
     }))
 );
 
-/** The provider's fetch with the key, keeping each round of events it answers. */
+/** Each case once for each provider it has a recording of, or for the one recorded now. */
+const runs = cases.flatMap((run) =>
+    (RECORDING
+        ? [String(process.env.AI_PROVIDER)]
+        : readdirSync(new URL('recordings/', run.folder)).map((file) => file.replace(/\.json$/, ''))
+    ).map((provider) => ({ ...run, provider: provider as ProviderName }))
+);
+
+/** The configured provider, keeping what is sent and each round of events it answers. */
 function record(rounds: StreamEvent[][]) {
     const sent: Sent[] = [];
     const fetch = async (url: string | URL | Request, init?: RequestInit) => {
-        const headers = new Headers(init?.headers);
-
-        headers.set('x-api-key', String(process.env.ANTHROPIC_API_KEY));
         sent.push({
             body: JSON.parse(String(init?.body)) as Sent['body'],
             signal: init?.signal ?? new AbortController().signal
         });
 
-        const response = await globalThis.fetch(url, { ...init, headers });
+        const response = await globalThis.fetch(url, init);
         const text = await response.text();
 
         if (response.ok) {
@@ -56,7 +65,7 @@ function record(rounds: StreamEvent[][]) {
         return new Response(text, { status: response.status, headers: response.headers });
     };
 
-    return { fetch, sent };
+    return { sent, provider: providerFromEnv(process.env, fetch) };
 }
 
 /** What a copy shares of the document, apart from when it was last changed. */
@@ -75,14 +84,17 @@ describe('AI eval cases', () => {
     });
     afterAll(() => harness.close());
 
-    it.each(cases)(
-        '$name: a proposal applied as one step, shared once accepted, undone whole',
-        async ({ folder, test }) => {
-            const recordingFile = new URL('recording.json', folder);
-            const rounds = RECORDING
-                ? []
-                : (JSON.parse(readFileSync(recordingFile, 'utf8')) as Recording).rounds;
-            const provider = RECORDING ? record(rounds) : replay(rounds);
+    it.each(runs)(
+        '$name ($provider): a proposal applied as one step, shared once accepted, undone whole',
+        async ({ folder, test, provider: name }) => {
+            const recordingFile = new URL(`recordings/${name}.json`, folder);
+            const recording: Recording = RECORDING
+                ? { provider: name, model: '', rounds: [] }
+                : (JSON.parse(readFileSync(recordingFile, 'utf8')) as Recording);
+            const { rounds } = recording;
+            const provider = RECORDING
+                ? record(rounds)
+                : replay(rounds, { provider: recording.provider, model: recording.model });
             const copies = await createCopies(2, (store) =>
                 store.actions.addDocument(fixtureDocument(test.fixture))
             );
@@ -91,7 +103,7 @@ describe('AI eval cases', () => {
             const image =
                 test.image && readFileSync(new URL(test.image, folder)).toString('base64');
 
-            harness.answerWith(provider.fetch);
+            harness.answerWith(provider.provider);
 
             const result = await propose({
                 send: harness.send,
@@ -108,14 +120,13 @@ describe('AI eval cases', () => {
             });
 
             if (RECORDING) {
-                writeFileSync(recordingFile, `${JSON.stringify({ rounds }, null, 4)}\n`);
+                recording.model = provider.provider.model('edit');
+                mkdirSync(new URL('recordings/', folder), { recursive: true });
+                writeFileSync(recordingFile, `${JSON.stringify(recording, null, 4)}\n`);
             }
             expect(provider.sent).toHaveLength(rounds.length);
             if (image) {
-                expect(provider.sent[0].body.messages[0].content).toContainEqual({
-                    type: 'image',
-                    source: { type: 'base64', media_type: 'image/png', data: image }
-                });
+                expect(JSON.stringify(provider.sent[0].body.messages)).toContain(image);
             }
             if (result.kind !== 'proposed') {
                 throw new Error(`Nothing was proposed: ${JSON.stringify(result)}`);

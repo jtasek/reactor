@@ -23,7 +23,7 @@ import {
     listWorkspaces
 } from './workspaces.ts';
 import { createAi, sendsAiRequest, type AiLimits } from './ai.ts';
-import type { AiProvider } from './anthropic.ts';
+import type { AiProvider } from './aiTasks.ts';
 import type { Auth } from './auth.ts';
 import type { Db, Log } from './schema.ts';
 

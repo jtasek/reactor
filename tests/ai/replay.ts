@@ -1,8 +1,17 @@
-/** One event of the provider's stream, as it sends it. */
-export type StreamEvent = { type: string } & Record<string, unknown>;
+import { providerFromEnv } from '../../server/ai';
 
-/** A model's recorded answers to one request: the provider's events for each round. */
+/** One event of the provider's stream, as it sends it. */
+export type StreamEvent = Record<string, unknown>;
+
+export type ProviderName = 'anthropic' | 'openai';
+
+/**
+ * A model's recorded answers to one request: the provider and model that gave
+ * them, and the provider's events for each round.
+ */
 export interface Recording {
+    provider: ProviderName;
+    model: string;
     rounds: StreamEvent[][];
 }
 
@@ -15,15 +24,34 @@ export interface Sent {
     signal: AbortSignal;
 }
 
-const serverSentEvent = (event: StreamEvent) =>
-    `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`;
+/** The model each provider's recordings are made with by default. */
+export const MODELS: Record<ProviderName, string> = {
+    anthropic: 'claude-haiku-5-5',
+    openai: 'example-model'
+};
+
+/** A round as the provider streams it: Anthropic names each event, OpenAI ends with `[DONE]`. */
+const serverSentEvents = (provider: ProviderName, events: StreamEvent[], ended: boolean) =>
+    provider === 'anthropic'
+        ? events.map((event) => `event: ${String(event.type)}\ndata: ${JSON.stringify(event)}\n\n`)
+        : [
+              ...events.map((event) => `data: ${JSON.stringify(event)}\n\n`),
+              ...(ended ? ['data: [DONE]\n\n'] : [])
+          ];
 
 /**
- * A provider's fetch that answers each request with the next recorded round and
+ * A provider whose fetch answers each request with the next recorded round and
  * keeps what was sent. With `holdAfter`, a round stops after that many events
  * until its request is aborted, as a model still answering does.
  */
-export function replay(rounds: StreamEvent[][], { holdAfter }: { holdAfter?: number } = {}) {
+export function replay(
+    rounds: StreamEvent[][],
+    {
+        holdAfter,
+        provider = 'anthropic',
+        model = MODELS[provider]
+    }: { holdAfter?: number; provider?: ProviderName; model?: string } = {}
+) {
     const sent: Sent[] = [];
     const encoder = new TextEncoder();
 
@@ -38,9 +66,11 @@ export function replay(rounds: StreamEvent[][], { holdAfter }: { holdAfter?: num
 
         const body = new ReadableStream<Uint8Array>({
             start(controller) {
-                round
-                    .slice(0, holdAfter)
-                    .forEach((event) => controller.enqueue(encoder.encode(serverSentEvent(event))));
+                serverSentEvents(
+                    provider,
+                    round.slice(0, holdAfter),
+                    holdAfter === undefined
+                ).forEach((event) => controller.enqueue(encoder.encode(event)));
                 if (holdAfter === undefined) {
                     controller.close();
 
@@ -55,7 +85,14 @@ export function replay(rounds: StreamEvent[][], { holdAfter }: { holdAfter?: num
         return new Response(body, { headers: { 'content-type': 'text/event-stream' } });
     };
 
-    return { fetch, sent };
+    return {
+        fetch,
+        sent,
+        provider: providerFromEnv(
+            { AI_PROVIDER: provider, AI_API_KEY: 'test', AI_EDIT_MODEL: model },
+            fetch
+        )
+    };
 }
 
 interface Answer {
@@ -67,7 +104,7 @@ interface Answer {
     outputTokens?: number;
 }
 
-/** A round of events as the provider streams them: thinking, then text, then each tool call. */
+/** A round of events as Anthropic streams them: thinking, then text, then each tool call. */
 export function answer({
     calls = [],
     text,
@@ -131,5 +168,58 @@ export function answer({
             usage: { output_tokens: outputTokens }
         },
         { type: 'message_stop' }
+    ];
+}
+
+/** A round of chunks as an OpenAI-compatible server streams them: text, then each tool call. */
+export function chatAnswer({
+    calls = [],
+    text,
+    stopReason = calls.length > 0 ? 'tool_calls' : 'stop',
+    inputTokens = 1200,
+    outputTokens = 300
+}: Answer): StreamEvent[] {
+    const chunk = (delta: object, finishReason: string | null = null) => ({
+        id: 'chatcmpl-recorded',
+        object: 'chat.completion.chunk',
+        model: MODELS.openai,
+        choices: [{ index: 0, delta, finish_reason: finishReason }]
+    });
+    const halves = (value: string) => {
+        const middle = Math.ceil(value.length / 2);
+
+        return [value.slice(0, middle), value.slice(middle)];
+    };
+
+    return [
+        chunk({ role: 'assistant', content: '' }),
+        ...(text === undefined ? [] : halves(text).map((content) => chunk({ content }))),
+        ...calls.flatMap(({ name, input }, index) => [
+            chunk({
+                tool_calls: [
+                    {
+                        index,
+                        id: `call_${index + 1}`,
+                        type: 'function',
+                        function: { name, arguments: '' }
+                    }
+                ]
+            }),
+            ...halves(JSON.stringify(input)).map((part) =>
+                chunk({ tool_calls: [{ index, function: { arguments: part } }] })
+            )
+        ]),
+        chunk({}, stopReason),
+        {
+            id: 'chatcmpl-recorded',
+            object: 'chat.completion.chunk',
+            model: MODELS.openai,
+            choices: [],
+            usage: {
+                prompt_tokens: inputTokens,
+                completion_tokens: outputTokens,
+                total_tokens: inputTokens + outputTokens
+            }
+        }
     ];
 }

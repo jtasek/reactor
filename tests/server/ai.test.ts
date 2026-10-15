@@ -32,8 +32,11 @@ async function setup(
     rounds: StreamEvent[][],
     { aiLimits, ...options }: Omit<ServeOptions, 'ai'> & { aiLimits?: AiLimits } = {}
 ) {
-    const provider = replay(rounds);
-    const server = await serve({ ...options, ai: { fetch: provider.fetch, limits: aiLimits } });
+    const replayed = replay(rounds);
+    const server = await serve({
+        ...options,
+        ai: { provider: replayed.provider, limits: aiLimits }
+    });
     const ada = await server.user('ada@example.com');
     const document = await server.json<DocumentSummary>(
         server.call('POST', `/workspaces/${ada.personal.id}/documents`, {
@@ -47,7 +50,7 @@ async function setup(
         server.call('POST', `/ai/requests/${requestId}/repairs`, { cookie, body });
     const requests = () => server.db.selectFrom('ai_requests').selectAll().execute();
 
-    return { ...server, provider, ada, document, ask, repair, requests, userId: userId(server) };
+    return { ...server, replayed, ada, document, ask, repair, requests, userId: userId(server) };
 }
 
 /** The id of the person whose personal workspace `workspace` is. */
@@ -84,7 +87,7 @@ describe('the AI gateway', () => {
     });
 
     it('streams the operations of a request, as the model finishes each, and records its use', async () => {
-        const { ask, provider, requests, ada, document } = await setup([
+        const { ask, replayed, requests, ada, document } = await setup([
             answer({
                 calls: [rectangle, label],
                 text: 'Added.',
@@ -105,7 +108,7 @@ describe('the AI gateway', () => {
             { type: 'done' }
         ]);
 
-        const [{ body }] = provider.sent;
+        const [{ body }] = replayed.sent;
         const [message] = body.messages;
 
         expect(body.model).toBe('claude-haiku-5-5');
@@ -158,16 +161,16 @@ describe('the AI gateway', () => {
         expect(await refused({ ...EDIT, context: [] })).toBe('INVALID_CONTEXT');
         expect(await refused({ ...EDIT, image: { data: btoa('<svg/>') } })).toBe('INVALID_IMAGE');
         expect(await refused({ ...EDIT, image: { data: 'not base64!' } })).toBe('INVALID_IMAGE');
-        expect(server.provider.sent).toHaveLength(0);
+        expect(server.replayed.sent).toHaveLength(0);
         expect(await server.requests()).toEqual([]);
     });
 
     it('sends an image checked by its content', async () => {
-        const { ask, provider } = await setup([answer({ calls: [rectangle] })]);
+        const { ask, replayed } = await setup([answer({ calls: [rectangle] })]);
 
         await (await ask({ ...EDIT, image: { data: PNG } })).text();
 
-        expect(provider.sent[0].body.messages[0].content[1]).toEqual({
+        expect(replayed.sent[0].body.messages[0].content[1]).toEqual({
             type: 'image',
             source: { type: 'base64', media_type: 'image/png', data: PNG }
         });
@@ -175,7 +178,7 @@ describe('the AI gateway', () => {
 
     it('sends the editor’s problem back once, after the answer as the model gave it', async () => {
         const first = answer({ calls: [rectangle, label] });
-        const { ask, repair, provider, requests, user } = await setup([
+        const { ask, repair, replayed, requests, user } = await setup([
             first,
             answer({ calls: [rectangle], inputTokens: 100, outputTokens: 10 })
         ]);
@@ -195,7 +198,7 @@ describe('the AI gateway', () => {
         expect(events.map(({ type }) => type)).toEqual(['start', 'operation', 'done']);
         expect(events[0].requestId).toBe(requestId);
 
-        const [, assistant, results] = provider.sent[1].body.messages;
+        const [, assistant, results] = replayed.sent[1].body.messages;
 
         expect(assistant.role).toBe('assistant');
         expect(assistant.content.map(({ type }) => type)).toEqual([
@@ -231,8 +234,8 @@ describe('the AI gateway', () => {
             workspaceRequests: 3,
             workspaceTokens: 1_000_000
         };
-        const provider = replay(Array.from({ length: 5 }, () => answer({ calls: [rectangle] })));
-        const server = await serve({ ai: { fetch: provider.fetch, limits } });
+        const replayed = replay(Array.from({ length: 5 }, () => answer({ calls: [rectangle] })));
+        const server = await serve({ ai: { provider: replayed.provider, limits } });
         const ada = await server.user('ada@example.com');
         const bob = await server.user('bob@example.com');
         await server.db
@@ -264,7 +267,7 @@ describe('the AI gateway', () => {
         expect(await ask(ada.cookie)).toBe('AI_LIMIT_REACHED');
         expect(await ask(bob.cookie)).toBe('answered');
         expect(await ask(bob.cookie)).toBe('AI_LIMIT_REACHED');
-        expect(provider.sent).toHaveLength(3);
+        expect(replayed.sent).toHaveLength(3);
     });
 
     it('limits the tokens a person uses in a day', async () => {
@@ -286,8 +289,8 @@ describe('the AI gateway', () => {
     });
 
     it('runs one request of a person at a time, and stops the model when the editor goes', async () => {
-        const provider = replay([answer({ calls: [rectangle, label] })], { holdAfter: 9 });
-        const server = await serve({ ai: { fetch: provider.fetch } });
+        const replayed = replay([answer({ calls: [rectangle, label] })], { holdAfter: 9 });
+        const server = await serve({ ai: { provider: replayed.provider } });
         const ada = await server.user('ada@example.com');
         const { id } = await server.json<DocumentSummary>(
             server.call('POST', `/workspaces/${ada.personal.id}/documents`, {
@@ -313,7 +316,7 @@ describe('the AI gateway', () => {
         ).toEqual({ code: 'AI_BUSY' });
 
         cancel.abort();
-        await vi.waitFor(() => expect(provider.sent[0].signal.aborted).toBe(true));
+        await vi.waitFor(() => expect(replayed.sent[0].signal.aborted).toBe(true));
         await vi.waitFor(async () =>
             expect(
                 await server.db.selectFrom('ai_requests').select('input_tokens').execute()

@@ -3,6 +3,7 @@ import { createDocument } from 'src/app/factories';
 import { hydrateDocument } from 'src/app/services/documentStorage';
 import type { Document } from 'src/app/types';
 import type { Send } from 'src/ai/client';
+import type { AiProvider } from '../../server/aiTasks';
 import { DOCUMENT_ID } from '../support/collaboration';
 import { startServer, type DocumentSummary } from '../server/support';
 
@@ -77,12 +78,26 @@ export function fixtureDocument({ variables = {}, shapes = {}, groups = {} }: Fi
 
 /**
  * The server, with accounts on an empty database, whose AI requests go to the
- * fetch given to `answerWith`, and a person signed in. `send` posts to its AI
+ * provider given to `answerWith`, and a person signed in. `send` posts to its AI
  * gateway as the editor does, for the server's copy of a document.
  */
 export async function startHarness() {
-    let answer: typeof fetch = () => Promise.reject(new Error('No answer to give'));
-    const server = await startServer({ ai: { fetch: (url, init) => answer(url, init) } });
+    let answering: AiProvider | undefined;
+    const answerer = () => {
+        if (!answering) {
+            throw new Error('No provider to answer with');
+        }
+
+        return answering;
+    };
+    const server = await startServer({
+        ai: {
+            provider: {
+                model: (task) => answerer().model(task),
+                turn: (conversation, signal, on) => answerer().turn(conversation, signal, on)
+            }
+        }
+    });
     const { cookie, personal } = await server.user('ada@example.com');
 
     /** Makes a document on the server, which AI requests name. */
@@ -103,8 +118,8 @@ export async function startHarness() {
         db: server.db,
         send,
         createServerDocument,
-        answerWith: (fetch: typeof answer) => {
-            answer = fetch;
+        answerWith: (provider: AiProvider) => {
+            answering = provider;
         },
         close: server.close
     };

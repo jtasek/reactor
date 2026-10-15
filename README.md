@@ -186,9 +186,12 @@ document shows its images on every device.
 | `BETTER_AUTH_SECRET` | At least 32 random characters, used to sign sessions |
 | `SMTP_URL` | SMTP server for email, such as `smtps://user:password@smtp.example.com`; required in production |
 | `MAIL_FROM` | Sender address; defaults to `no-reply` at the editor's host |
-| `ANTHROPIC_API_KEY` | Turns AI on for people signed in; the key stays on the server |
+| `AI_PROVIDER` | Turns AI on for people signed in: `anthropic`, or `openai` for any server speaking OpenAI's Chat Completions API (OpenAI, Mistral, OpenRouter, Ollama, vLLM) |
+| `AI_API_KEY` | The provider's key, kept on the server; required for `anthropic` |
+| `AI_BASE_URL` | Where the `openai` provider's API is; defaults to `https://api.openai.com/v1` |
+| `AI_EDIT_MODEL` | The model for edits; defaults to `claude-haiku-5-5` for `anthropic`, required for `openai` |
 
-With `ANTHROPIC_API_KEY`, the API's `/api/ai` gateway sends a request to change a
+With `AI_PROVIDER`, the API's `/api/ai` gateway sends a request to change a
 document, by someone who may edit it, to the model and streams back the operations it
 proposes, which the editor checks before showing; a problem goes back to the model once.
 Each person may make 100 requests a day, and use 2 million tokens, and each workspace 500

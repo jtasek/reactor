@@ -204,11 +204,14 @@ re-renders.** Components never mutate state directly.
   request (`undoAuthors`). Paste builds its batch in `pasteOperations` (`src/app/clipboard.ts`).
   `checkOperations` answers whether a batch would apply, naming the operation, without
   applying it.
-- **AI** (`server/ai.ts`, `server/anthropic.ts`, `src/ai/`): with `ANTHROPIC_API_KEY`, the
-  API's `/ai` gateway sends a person's request on a document they may edit to the model of
-  its task (`TASKS`; edits run on Claude Haiku 5.5) through `anthropicProvider`, a plain module
-  calling the provider with fetch. Models answer only by calling one tool per operation; each
-  finished call streams back as one JSON line. The editor reads them as untrusted
+- **AI** (`server/ai.ts`, `server/aiTasks.ts`, `src/ai/`): with `AI_PROVIDER`, the API's `/ai`
+  gateway sends a person's request on a document they may edit to the model of its task
+  through the provider the environment names (`providerFromEnv`): `anthropic`
+  (`server/anthropic.ts`; edits default to Claude Haiku 5.5) or `openai`, any server speaking
+  OpenAI's Chat Completions API (`server/openai.ts`). Each implements `AiProvider` with plain
+  fetch, from a provider-neutral `Conversation` and the shared instructions and `TOOLS`, and
+  sends a refused answer back as the model gave it. Models answer only by calling one tool per
+  operation; each finished call streams back as one JSON line. The editor reads them as untrusted
   (`readOperation`), checks them with `checkOperations` and sends the problem back once
   (`/ai/requests/:requestId/repairs`, which the server answers from the conversation it kept);
   `propose` (`src/ai/client.ts`) returns the proposal, nothing applied, and aborting it stops
@@ -217,9 +220,10 @@ re-renders.** Components never mutate state directly.
   `state.ai` is `available` only signed in on a server with AI. `src/ai/` loads only with
   what uses it, never at startup. Eval cases are folders of `tests/ai/cases/`: a fixture
   document with IDs of its own, a prompt, an optional image, checks of the document after
-  applying, and the provider's recorded events (`recording.json`), which the tests replay
-  through the server and the editor's code; `pnpm ai:record` asks the model again and records
-  its answers, with `ANTHROPIC_API_KEY` set.
+  applying, and a provider's recorded events for each provider (`recordings/anthropic.json`,
+  `recordings/openai.json`), which the tests replay through that provider's adapter, the server
+  and the editor's code; `pnpm ai:record` asks the provider `AI_PROVIDER` and the rest configure
+  and records its answers.
 - **Server sync** (`src/app/services/serverSync.ts`, loaded only when signed in): syncs each
   document over one Hocuspocus socket through a Yjs document that mirrors the shared one, and
   passes the server's changes to `Collaboration.receive`, so they merge like any other copy's.

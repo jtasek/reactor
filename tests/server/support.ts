@@ -4,7 +4,7 @@ import type { AddressInfo } from 'net';
 import { Kysely } from 'kysely';
 import { PGliteDialect } from 'kysely-pglite-dialect';
 import type { AiLimits } from '../../server/ai';
-import { anthropicProvider } from '../../server/anthropic';
+import type { AiProvider } from '../../server/aiTasks';
 import { createApi } from '../../server/api';
 import { authHandler, createAuth, migrateAuth } from '../../server/auth';
 import { migrateApp } from '../../server/migrations';
@@ -141,8 +141,8 @@ let clients = 0;
 export interface ServeOptions {
     sessionCheck?: number;
     assetQuota?: number;
-    /** Where AI requests go, as the provider's fetch, and their limits; without it, AI is off. */
-    ai?: { fetch: typeof fetch; limits?: AiLimits };
+    /** Where AI requests go, and their limits; without it, AI is off. */
+    ai?: { provider: AiProvider; limits?: AiLimits };
 }
 
 /**
@@ -179,10 +179,7 @@ export async function startServer({ sessionCheck, assetQuota, ai }: ServeOptions
             origin: ORIGIN,
             onDeleted: sync.closeDocument,
             assetQuota,
-            ai: ai && {
-                provider: anthropicProvider({ apiKey: 'test', fetch: ai.fetch }),
-                limits: ai.limits
-            }
+            ai
         })
     );
 

@@ -1,0 +1,140 @@
+{
+    "provider": "openai",
+    "model": "example-model",
+    "rounds": [
+        [
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "role": "assistant",
+                            "content": ""
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "content": "The screenshot is a "
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "content": "solid blue, #1e88e5."
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 0,
+                                    "id": "call_1",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "addVariable",
+                                        "arguments": ""
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 0,
+                                    "function": {
+                                        "arguments": "{\"key\":\"primary\",\"name\":\"Primary\","
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 0,
+                                    "function": {
+                                        "arguments": "\"type\":\"color\",\"value\":\"#1e88e5\"}"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {},
+                        "finish_reason": "tool_calls"
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [],
+                "usage": {
+                    "prompt_tokens": 2150,
+                    "completion_tokens": 96,
+                    "total_tokens": 2246
+                }
+            }
+        ]
+    ]
+}

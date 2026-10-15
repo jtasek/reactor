@@ -13,7 +13,10 @@ services:
             BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET}
             SMTP_URL: ${SMTP_URL:?Set SMTP_URL}
             MAIL_FROM: ${MAIL_FROM:-}
-            ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+            AI_PROVIDER: ${AI_PROVIDER:-}
+            AI_API_KEY: ${AI_API_KEY:-}
+            AI_BASE_URL: ${AI_BASE_URL:-}
+            AI_EDIT_MODEL: ${AI_EDIT_MODEL:-}
             TRUST_PROXY: ${TRUST_PROXY:-false}
         read_only: true
         depends_on:

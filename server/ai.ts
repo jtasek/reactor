@@ -2,17 +2,17 @@ import { randomUUID } from 'node:crypto';
 import express, { type Request, type Response } from 'express';
 import {
     isAiTask,
-    repairConversation,
-    startConversation,
-    taskModel,
     type AiProvider,
     type AiRequest,
-    type Block,
+    type AiTask,
+    type Answer,
     type Conversation,
     type Problem,
     type Usage
-} from './anthropic.ts';
+} from './aiTasks.ts';
+import { anthropicProvider } from './anthropic.ts';
 import { imageType } from './assets.ts';
+import { openAiProvider } from './openai.ts';
 import { allows, workspaceRole } from './workspaces.ts';
 import type { Db } from './schema.ts';
 
@@ -180,7 +180,7 @@ interface Kept {
     userId: string;
     documentId: string;
     conversation: Conversation;
-    content: Block[];
+    answer: Answer;
     until: number;
 }
 
@@ -240,7 +240,7 @@ export function createAi({
             'Content-Type': 'application/x-ndjson',
             'Cache-Control': 'no-store, no-transform'
         });
-        send({ type: 'start', requestId, model: taskModel(conversation.task) });
+        send({ type: 'start', requestId, model: provider.model(conversation.request.task) });
 
         try {
             const turn = await provider.turn(
@@ -255,21 +255,21 @@ export function createAi({
                 }
             );
 
-            if (turn.stopReason === 'refusal' || turn.stopReason === 'max_tokens') {
+            if (turn.stop !== 'done') {
                 send({
                     type: 'error',
-                    code: turn.stopReason === 'refusal' ? 'AI_REFUSED' : 'AI_INCOMPLETE'
+                    code: turn.stop === 'refused' ? 'AI_REFUSED' : 'AI_INCOMPLETE'
                 });
 
                 return;
             }
 
-            if (repairable && turn.content.some(({ type }) => type === 'tool_use')) {
+            if (repairable && turn.answer.calls.length > 0) {
                 keep(requestId, {
                     userId: req.userId,
                     documentId,
                     conversation,
-                    content: turn.content,
+                    answer: turn.answer,
                     until: Date.now() + REPAIR_WINDOW_MS
                 });
             }
@@ -344,7 +344,7 @@ export function createAi({
                         user_id: req.userId,
                         document_id: req.params.documentId,
                         task: request.task,
-                        model: taskModel(request.task)
+                        model: provider.model(request.task)
                     })
                     .execute();
                 await streamTurn(
@@ -352,7 +352,7 @@ export function createAi({
                     res,
                     requestId,
                     req.params.documentId,
-                    startConversation(request),
+                    { request, repairs: [] },
                     true
                 );
             });
@@ -380,7 +380,10 @@ export function createAi({
                     res,
                     requestId,
                     entry.documentId,
-                    repairConversation(entry.conversation, entry.content, problem),
+                    {
+                        ...entry.conversation,
+                        repairs: [...entry.conversation.repairs, { answer: entry.answer, problem }]
+                    },
                     false
                 )
             );
@@ -388,4 +391,46 @@ export function createAi({
     );
 
     return router;
+}
+
+const PROVIDERS = ['anthropic', 'openai'] as const;
+
+const required = (env: NodeJS.ProcessEnv, name: string) => {
+    if (!env[name]) {
+        throw new Error(`${name} is required when AI_PROVIDER is ${env.AI_PROVIDER}`);
+    }
+
+    return env[name];
+};
+
+/** Whether the environment turns AI on, by naming its provider. */
+export const configuresAi = (env: NodeJS.ProcessEnv) => Boolean(env.AI_PROVIDER);
+
+/**
+ * The provider `AI_PROVIDER` names: `anthropic`, which takes `AI_API_KEY`, or
+ * `openai`, any server speaking OpenAI's Chat Completions API, at `AI_BASE_URL`
+ * with an optional `AI_API_KEY`. `AI_EDIT_MODEL` names the model for edits; the
+ * `openai` provider has no default. Throws when the configuration is incomplete.
+ */
+export function providerFromEnv(
+    env: NodeJS.ProcessEnv,
+    fetch: typeof globalThis.fetch = globalThis.fetch
+): AiProvider {
+    const models: Partial<Record<AiTask, string>> = env.AI_EDIT_MODEL
+        ? { edit: env.AI_EDIT_MODEL }
+        : {};
+
+    switch (env.AI_PROVIDER) {
+        case 'anthropic':
+            return anthropicProvider({ apiKey: required(env, 'AI_API_KEY'), models, fetch });
+        case 'openai':
+            return openAiProvider({
+                baseUrl: env.AI_BASE_URL || 'https://api.openai.com/v1',
+                apiKey: env.AI_API_KEY,
+                models: { edit: required(env, 'AI_EDIT_MODEL') },
+                fetch
+            });
+        default:
+            throw new Error(`AI_PROVIDER is one of ${PROVIDERS.join(', ')}`);
+    }
 }

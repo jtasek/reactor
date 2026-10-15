@@ -1,0 +1,510 @@
+{
+    "provider": "openai",
+    "model": "example-model",
+    "rounds": [
+        [
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "role": "assistant",
+                            "content": ""
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 0,
+                                    "id": "call_1",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "addShape",
+                                        "arguments": ""
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 0,
+                                    "function": {
+                                        "arguments": "{\"key\":\"card\",\"shape\":{\"type\":\"rectangle\",\"name\":\"Card\",\"position\":{\"x\":40,\"y\":40},\"s"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 0,
+                                    "function": {
+                                        "arguments": "ize\":{\"width\":240,\"height\":160},\"cornerRadius\":12,\"bindings\":{\"fill\":\"accentColor\"}}}"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 1,
+                                    "id": "call_2",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "addShape",
+                                        "arguments": ""
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 1,
+                                    "function": {
+                                        "arguments": "{\"key\":\"heading\",\"shape\":{\"type\":\"text\",\"name\":\"Heading\",\""
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 1,
+                                    "function": {
+                                        "arguments": "position\":{\"x\":60,\"y\":60},\"value\":\"Plans\",\"fontSize\":20}}"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 2,
+                                    "id": "call_3",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "addGroup",
+                                        "arguments": ""
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 2,
+                                    "function": {
+                                        "arguments": "{\"name\":\"Card\",\"shapes"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 2,
+                                    "function": {
+                                        "arguments": "\":[\"card\",\"heading\"]}"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {},
+                        "finish_reason": "tool_calls"
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [],
+                "usage": {
+                    "prompt_tokens": 2240,
+                    "completion_tokens": 240,
+                    "total_tokens": 2480
+                }
+            }
+        ],
+        [
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "role": "assistant",
+                            "content": ""
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "content": "The variable is accent; "
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "content": "here is the card again."
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 0,
+                                    "id": "call_1",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "addShape",
+                                        "arguments": ""
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 0,
+                                    "function": {
+                                        "arguments": "{\"key\":\"card\",\"shape\":{\"type\":\"rectangle\",\"name\":\"Card\",\"position\":{\"x\":40,\"y\":40},"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 0,
+                                    "function": {
+                                        "arguments": "\"size\":{\"width\":240,\"height\":160},\"cornerRadius\":12,\"bindings\":{\"fill\":\"accent\"}}}"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 1,
+                                    "id": "call_2",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "addShape",
+                                        "arguments": ""
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 1,
+                                    "function": {
+                                        "arguments": "{\"key\":\"heading\",\"shape\":{\"type\":\"text\",\"name\":\"Heading\",\""
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 1,
+                                    "function": {
+                                        "arguments": "position\":{\"x\":60,\"y\":60},\"value\":\"Plans\",\"fontSize\":20}}"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 2,
+                                    "id": "call_3",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "addGroup",
+                                        "arguments": ""
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 2,
+                                    "function": {
+                                        "arguments": "{\"name\":\"Card\",\"shapes"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 2,
+                                    "function": {
+                                        "arguments": "\":[\"card\",\"heading\"]}"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {},
+                        "finish_reason": "tool_calls"
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [],
+                "usage": {
+                    "prompt_tokens": 2690,
+                    "completion_tokens": 251,
+                    "total_tokens": 2941
+                }
+            }
+        ]
+    ]
+}
