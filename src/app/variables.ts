@@ -127,7 +127,10 @@ export function unbind(shape: Shape, key: string) {
  * drag or typing set the property otherwise, is removed, as is a binding to a
  * deleted variable; one whose value the property refused is kept.
  */
-export function applyVariableChanges(document: Document, before: Record<string, Variable>) {
+export function applyVariableChanges(
+    document: Pick<Document, 'variables' | 'shapes'>,
+    before: Record<string, Variable>
+) {
     const { variables } = document;
 
     Object.values(document.shapes).forEach((shape) => {
@@ -324,7 +327,10 @@ export const replaceTemplateIds = (template: string, idFor: (id: string) => stri
  * Removes a variable, the templates holding it holding its value instead, without
  * writing into the shapes what that changes: see `applyVariableChanges`.
  */
-export function removeVariable(document: Document, variableId: string) {
+export function removeVariable(
+    document: Pick<Document, 'variables' | 'shapes'>,
+    variableId: string
+) {
     const { variables } = document;
     const value = escapeTemplate(String(variableValue(variables[variableId], variables)));
     const inline = (template: string) =>

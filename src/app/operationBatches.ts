@@ -25,7 +25,7 @@ import {
 } from './variables';
 import { componentSource, instanceBox } from './componentSource';
 import { hydrateComponent, readEntity } from './services/documentStorage';
-import { hasComponentInstances } from './actions/components';
+import { shapeGeometryKey } from './utils';
 
 type Referable = 'variables' | 'components' | 'shapes';
 
@@ -139,9 +139,11 @@ function stage(document: Document, operations: Operation[], newId: () => string)
     const shapeLocked = (id: string) =>
         document.locked ||
         document.shapes[id].locked ||
-        [...Object.values(document.groups), ...Object.values(document.layers)].some(
-            (container) => container.locked && container.shapesIds.includes(id)
-        );
+        [
+            ...Object.values(document.groups),
+            ...Object.values(document.layers),
+            ...Object.values(document.components)
+        ].some((container) => container.locked && container.shapesIds.includes(id));
 
     /** Notes the records an operation changes, each the document's, unlocked and changed once. */
     const change = (operation: Operation, index: number) => {
@@ -220,7 +222,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             declared.get(key)?.collection === 'variables' ? ids.get(key) : undefined
         );
 
-    const variables: Record<string, Variable> = { ...document.variables };
+    let variables: Record<string, Variable> = { ...document.variables };
     const components: Record<string, Component> = { ...document.components };
     const staged: Staged = {
         variables: [],
@@ -341,6 +343,29 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         }
     });
 
+    // Project only the shapes being updated; validation must not mutate the document.
+    let projected: Pick<Document, 'variables' | 'shapes'> | undefined;
+
+    if (staged.updatedVariables.length > 0 || staged.deletedVariables.length > 0) {
+        projected = {
+            variables: structuredClone(json(document.variables)),
+            shapes: Object.fromEntries(
+                operations
+                    .filter((operation) => operation.op === 'updateShape')
+                    .map(({ shape }) => [shape, structuredClone(json(document.shapes[shape]))])
+            )
+        };
+        writeVariables(
+            projected,
+            structuredClone({
+                variables: staged.variables,
+                updatedVariables: staged.updatedVariables,
+                deletedVariables: staged.deletedVariables
+            })
+        );
+        variables = projected.variables;
+    }
+
     let namer: { taken: Set<string>; nameShape: (type: Shape['type']) => string } | undefined;
     let grouped: Set<string> | undefined;
     const top = document.shapesIds[document.shapesIds.length - 1];
@@ -384,7 +409,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
 
     /**
      * Stages the fields an update leaves different from the shape, keeping the
-     * bindings that still hold with their variable's value before the batch.
+     * bindings that still hold after the batch's variables have changed.
      */
     const stageShapeUpdate = ({ shape: id, changes }: UpdateShape, index: number) => {
         const fields = Object.keys(changes);
@@ -396,16 +421,16 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         if (fixed) {
             throw new Error(`its ${fixed} cannot change.`);
         }
-        const current = document.shapes[id];
+        const current = projected?.shapes[id] ?? document.shapes[id];
         const shape = { ...structuredClone(json(current)), ...structuredClone(changes) } as Shape;
         const kept = Object.entries(current.bindings ?? {}).filter(([key, variableId]) => {
             const property = bindableProperty(key);
-            const variable = document.variables[variableId];
+            const variable = variables[variableId];
 
-            if (!property || !variable || !variables[variableId]) {
+            if (!property || !variable) {
                 return false;
             }
-            const value = variableValue(variable, document.variables);
+            const value = variableValue(variable, variables);
 
             return !accepts(property, value) || bindingHolds(property, shape, value);
         });
@@ -439,22 +464,6 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             id,
             fields: Object.fromEntries(written.map((field) => [field, read[field]]))
         });
-    };
-
-    const stageDeletion = (shapesIds: string[]) => {
-        staged.deletedShapes.push(...shapesIds);
-
-        const gone = new Set(staged.deletedShapes);
-        const emptied = Object.values(document.components).find(
-            (component) =>
-                component.shapesIds.some((id) => shapesIds.includes(id)) &&
-                component.shapesIds.every((id) => gone.has(id)) &&
-                hasComponentInstances(document, component.id)
-        );
-
-        if (emptied) {
-            throw new Error(`the component ${emptied.id} has instances, so it keeps a shape.`);
-        }
     };
 
     const stageComponent = (component: Component, index: number) => {
@@ -511,7 +520,8 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                 case 'updateShape':
                     return stageShapeUpdate(operation, index);
                 case 'deleteShapes':
-                    return stageDeletion(operation.shapes);
+                    staged.deletedShapes.push(...operation.shapes);
+                    return;
                 case 'deleteGroup':
                     staged.deletedGroups.push(operation.group);
                     return;
@@ -524,6 +534,30 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             }
         } catch (error) {
             throw problem(index, error);
+        }
+    });
+
+    const gone = new Set(staged.deletedShapes);
+    const instantiated = new Set(
+        [...Object.values(document.shapes), ...staged.shapes].flatMap((shape) =>
+            shape.type === 'instance' && !gone.has(shape.id) ? [shape.componentId] : []
+        )
+    );
+
+    Object.values(document.components).forEach((component) => {
+        if (
+            component.shapesIds.length > 0 &&
+            component.shapesIds.every((id) => gone.has(id)) &&
+            instantiated.has(component.id)
+        ) {
+            const index = Math.max(
+                ...component.shapesIds.map((id) => deleted.get(record('shapes', id))!)
+            );
+
+            throw problem(
+                index,
+                `the component ${component.id} has instances, so it keeps a shape.`
+            );
         }
     });
 
@@ -552,12 +586,11 @@ export function stageBatch(
     }
 }
 
-/**
- * Writes a staged batch into its document. Variables change first, writing into
- * the shapes what they make them, as in the editor; then shapes change, records
- * are added, and then deleted. Added shapes go on top.
- */
-export function writeBatch(document: Document, staged: Staged) {
+/** Applies the same variable changes to a projection as to the accepted document. */
+function writeVariables(
+    document: Pick<Document, 'variables' | 'shapes'>,
+    staged: Pick<Staged, 'variables' | 'updatedVariables' | 'deletedVariables'>
+) {
     const variablesChange =
         staged.updatedVariables.length > 0 || staged.deletedVariables.length > 0;
     const before = variablesChange ? structuredClone(json(document.variables)) : {};
@@ -572,11 +605,21 @@ export function writeBatch(document: Document, staged: Staged) {
     if (variablesChange) {
         applyVariableChanges(document, before);
     }
+}
+
+/**
+ * Writes a staged batch into its document. Variables change first, writing into
+ * the shapes what they make them, as in the editor; then shapes change, records
+ * are added, and then deleted. Added shapes go on top.
+ */
+export function writeBatch(document: Document, staged: Staged) {
+    writeVariables(document, staged);
     staged.components.forEach((component) => {
         document.components[component.id] = component;
     });
     staged.updatedShapes.forEach(({ id, fields }) => {
         const shape = document.shapes[id];
+        const geometry = shapeGeometryKey(shape);
 
         Object.entries(fields).forEach(([field, value]) => {
             if (value === undefined) {
@@ -586,6 +629,9 @@ export function writeBatch(document: Document, staged: Staged) {
             }
             Reflect.set(shape, field, value);
         });
+        if (shapeGeometryKey(shape) !== geometry) {
+            delete shape.bounds;
+        }
     });
     staged.shapes.forEach((shape) => {
         document.shapes[shape.id] = shape;
