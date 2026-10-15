@@ -194,6 +194,14 @@ re-renders.** Components never mutate state directly.
   document is open, so opening it is never undone and other copies' changes stay; an undo is
   shared, saved and dated as an edit. Changes within half a second undo as one, as typing
   into a field, and `document.history` says what can be undone and redone.
+- **Operations** (`src/app/operations.ts`, `src/app/actions/operations.ts`): changes that
+  arrive as data, as a paste, go through `applyOperations`, a batch of typed operations that
+  add variables, components, shapes and groups. A reference names an ID the document has or
+  the key of a record an earlier operation adds; every record is read back with the durable
+  readers before anything is written, so a batch applies whole or not at all, and the result
+  answers the new IDs by key or the problem, naming the operation. A batch is one undo step
+  of its own (`Collaboration.startBatch`), which records who made it, a person or an AI
+  request (`undoAuthors`). Paste builds its batch in `pasteOperations` (`src/app/clipboard.ts`).
 - **Server sync** (`src/app/services/serverSync.ts`, loaded only when signed in): syncs each
   document over one Hocuspocus socket through a Yjs document that mirrors the shared one, and
   passes the server's changes to `Collaboration.receive`, so they merge like any other copy's.

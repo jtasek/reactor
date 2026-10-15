@@ -1,6 +1,7 @@
 import { json } from 'overmind';
 import type * as Yjs from 'yjs';
 import type { Document, UndoHistory } from '../types';
+import type { Provenance } from '../operations';
 import {
     COLLECTIONS,
     RUNTIME_FIELDS,
@@ -97,9 +98,12 @@ interface Binding {
     deferred: Array<[collection: Collection | 'document', id: string, path: string[]]>;
     /** Undoes and redoes this copy's changes to the entities, never other copies'. */
     history?: Yjs.UndoManager;
+    /** Who made the batch the next write holds, which is an undo step of its own. */
+    batch?: Provenance;
 }
 
 const LOCAL = Symbol('local change');
+const PERSON: Provenance = { kind: 'person' };
 /** This copy's changes this close together, as typing into a field, undo as one. */
 const UNDO_MERGE_MS = 500;
 const MEMBERS = 'shapesIds';
@@ -196,6 +200,8 @@ export class Collaboration {
     private applyingRemote = false;
     private flushQueued = false;
     private paused = false;
+    /** Who made each undo step that holds a batch; the person made the others. */
+    private readonly authors = new WeakMap<object, Provenance>();
 
     /** `undoMergeMs`: how close together this copy's changes are to undo as one. */
     constructor(private readonly undoMergeMs = UNDO_MERGE_MS) {}
@@ -377,6 +383,29 @@ export class Collaboration {
         this.step(documentId, (history) => history.redo());
     }
 
+    /**
+     * Makes the changes written next to a document one undo step of their own, made
+     * by `by`. While changes are held, they join the held step instead.
+     */
+    startBatch(documentId: string, by: Provenance): void {
+        const binding = this.bindings.get(documentId);
+
+        if (!binding?.history || this.paused) {
+            return;
+        }
+
+        this.write(documentId, binding);
+        binding.history.stopCapturing();
+        binding.batch = by;
+    }
+
+    /** Who made each change this copy can undo in a document, oldest first. */
+    undoAuthors(documentId: string): Provenance[] {
+        const history = this.bindings.get(documentId)?.history;
+
+        return history?.undoStack.map((step) => this.authors.get(step) ?? PERSON) ?? [];
+    }
+
     /** Writes this copy's pending changes, one Yjs transaction per document, unless paused. */
     flush(): void {
         this.flushQueued = false;
@@ -421,8 +450,22 @@ export class Collaboration {
                 canRedo: history.canRedo()
             });
 
-        history.on('stack-item-added', report);
-        history.on('stack-item-popped', report);
+        history.on('stack-item-added', ({ stackItem, type }) => {
+            if (type === 'undo' && binding.batch) {
+                this.authors.set(stackItem, binding.batch);
+            }
+            report();
+        });
+        // Undoing a step adds a new one to redo it, and redoing adds one to undo it again.
+        history.on('stack-item-popped', ({ stackItem, type }) => {
+            const author = this.authors.get(stackItem);
+            const added = (type === 'undo' ? history.redoStack : history.undoStack).at(-1);
+
+            if (author && added) {
+                this.authors.set(added, author);
+            }
+            report();
+        });
         history.on('stack-cleared', report);
         binding.history = history;
     }
@@ -592,6 +635,11 @@ export class Collaboration {
                 binding.deferred = [];
             }
         }, LOCAL);
+
+        if (binding.batch) {
+            binding.batch = undefined;
+            binding.history?.stopCapturing();
+        }
     }
 
     private writeEntity<C extends Collection>(

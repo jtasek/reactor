@@ -8,34 +8,16 @@ import {
     Application,
     Box,
     Corner,
-    Document,
     Group,
     Point,
     ResizeHandlerType,
     Shape,
-    ShapeInput,
-    Variable
+    ShapeInput
 } from '../types';
-import {
-    bindableProperty,
-    buildVariable,
-    replaceInTemplate,
-    unbind,
-    variableNamed,
-    variableValue,
-    writeText
-} from '../variables';
+import { unbind, writeText } from '../variables';
 import { Context } from 'src/app';
 import { screenToWorld } from '../camera';
-import {
-    copyName,
-    instanceName,
-    createGroup,
-    createShape,
-    nextShapeName,
-    numberedName,
-    shapeNamer
-} from '../factories';
+import { instanceName, createGroup, createShape, nextShapeName, shapeNamer } from '../factories';
 import { containersHolding, groupAtPoint, shapeGroup, shownGroupShapesIds } from '../membership';
 import {
     componentAtPoint,
@@ -56,6 +38,7 @@ import type { PasteResult } from '../clipboard';
 import { editorHelpers } from '../editorHelpers';
 import { takesEditorInput } from 'src/events/input';
 import {
+    CLONE_OFFSET,
     cornerRadiusAfterDrag,
     hitTestShape,
     hitTolerance,
@@ -69,13 +52,12 @@ import {
     isShapeLocked,
     isShapeVisible,
     shapeGeometry,
-    shapeGeometryKey,
     boxCenter,
     angleBetween,
     shapeStyle
 } from '../utils';
 import { hasComponentInstances, reachesComponent } from './components';
-import { componentSource, instanceBox } from '../componentSource';
+import { componentSource } from '../componentSource';
 import { detachedMembers } from '../componentDetach';
 
 /** The clipboard's format, which the editor provides as it loads. */
@@ -224,9 +206,6 @@ export const drawShape: ActionWithParam<ShapeInput> = ({ state, actions }, optio
         shapeId
     };
 };
-
-/** How far a clone is offset from its original so it does not cover it. */
-const CLONE_OFFSET: Point = { x: 10, y: 10 };
 
 /**
  * Adds an independent copy of each shape, offset by `CLONE_OFFSET`, above all
@@ -511,13 +490,6 @@ export const detachInstances: ActionWithParam<string[]> = ({ state }, instanceId
 };
 
 /**
- * Adds the shapes clipboard text holds above all others, selected in place of the
- * selection, centered on `pasteTarget`. Where the first already
- * has a shape drawn exactly like it, as when pasting twice, they are offset like
- * clones until it has not. Pastes nothing while the editor takes no input, or when the text holds no
- * shapes.
- */
-/**
  * Where a paste is centered: where this document's canvas was last pressed, or
  * the middle of the view once that place is out of sight. None before any press.
  */
@@ -541,78 +513,10 @@ const pasteTarget = ({ state, effects }: Context): Point | null => {
 };
 
 /**
- * Gives the document the variables pasted shapes hold: one of the same name and
- * type, else the copied one added, renamed as `Brand 2` when its name is taken.
- * Answers the ids they have here, by copied id, and how to hold them in a template.
+ * Adds the shapes clipboard text holds, through `applyOperations`, selected in
+ * place of the selection. Pastes nothing while the editor takes no input, or when
+ * the text holds no shapes it can add.
  */
-const pasteVariables = ({ state, effects }: Context, copied: Variable[]) => {
-    const { variables } = state.currentDocument;
-    const taken = new Set(Object.values(variables).map((variable) => variable.name));
-    const ids = new Map<string, string>();
-    const added: Variable[] = [];
-
-    copied.forEach((variable) => {
-        const same = variableNamed(variables, variable.name);
-
-        if (same?.type === variable.type) {
-            ids.set(variable.id, same.id);
-
-            return;
-        }
-
-        const name = taken.has(variable.name) ? numberedName(variable.name, taken) : variable.name;
-        const id = effects.newId();
-
-        taken.add(name);
-        ids.set(variable.id, id);
-        added.push({ ...variable, id, name });
-    });
-
-    const remapTemplate = (template: string) =>
-        replaceInTemplate(template, (inside, name) => {
-            const id = ids.get(inside);
-
-            return id === undefined
-                ? undefined
-                : `\${${id}${name === undefined ? '' : `$${name}`}}`;
-        });
-
-    added.forEach(({ id, name, type, values }) => {
-        const variable = buildVariable(
-            id,
-            name,
-            type,
-            typeof values.default === 'string' && type === 'text'
-                ? remapTemplate(values.default)
-                : values.default
-        );
-
-        if (variable) {
-            variables[id] = variable;
-        }
-    });
-
-    return { ids, remapTemplate };
-};
-
-/** Binds `key` of a shape not yet in the store to a variable of `document`, writing its value. */
-const followVariable = (
-    document: Document,
-    shape: Shape,
-    key: string,
-    variableId: string | undefined
-) => {
-    const property = bindableProperty(key);
-    const variable = variableId === undefined ? undefined : document.variables[variableId];
-
-    if (!property || !variable || variable.type !== property.kind) {
-        return;
-    }
-
-    applyProperty(property, shape, variableValue(variable, document.variables));
-    shape.bindings = { ...shape.bindings, [key]: variable.id };
-};
-
 export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (context, text) => {
     const { state, actions } = context;
 
@@ -620,158 +524,34 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
         return 'notNow';
     }
 
-    const copied = clipboardFormat().readClipboard(text);
+    const { readClipboard, pasteOperations } = clipboardFormat();
+    const copied = readClipboard(text);
 
     if (copied.shapes.length === 0) {
         return 'noShapes';
     }
 
-    const available = new Set([
-        ...Object.keys(state.currentDocument.components),
-        ...(copied.components ?? []).map((component) => component.id)
-    ]);
-
-    if (
-        copied.shapes.some(
-            (shape) => shape.type === 'instance' && !available.has(shape.componentId)
-        )
-    ) {
-        return 'noShapes';
-    }
-
-    const { ids: variableIds, remapTemplate } = pasteVariables(context, copied.variables);
-    const document = state.currentDocument;
-    const remapOverrides = (shape: Shape) => {
-        if (shape.type !== 'instance') {
-            return;
-        }
-        shape.overrides = Object.fromEntries(
-            Object.entries(shape.overrides).map(([id, value]) => {
-                if (typeof value === 'object') {
-                    return [
-                        id,
-                        { variableId: variableIds.get(value.variableId) ?? value.variableId }
-                    ];
-                }
-                if (typeof value === 'string') {
-                    return [id, remapTemplate(value)];
-                }
-
-                return [id, value];
-            })
-        );
-    };
-
-    for (const component of copied.components ?? []) {
-        if (document.components[component.id]) {
-            continue;
-        }
-        for (const shape of Object.values(component.sourceShapes ?? {})) {
-            Object.entries(shape.bindings ?? {}).forEach(([key, id]) =>
-                followVariable(document, shape, key, variableIds.get(id))
-            );
-            if (shape.type === 'text' && shape.template !== undefined) {
-                writeText(shape, remapTemplate(shape.template), document.variables);
-            }
-            remapOverrides(shape);
-        }
-        document.components[component.id] = component;
-    }
-    let order = topOrder(state);
-    const present = Object.values(untracked(state.currentDocument).shapes);
-    const taken = new Set(present.map((shape) => shape.name));
-    const nameShape = shapeNamer(present);
-    const pasted = copied.shapes.map((input) => {
-        order = orderAbove(order);
-        const name =
-            input.name === undefined
-                ? nameShape(input.type)
-                : input.type === 'instance'
-                  ? instanceName(input.name, taken)
-                  : copyName(input.name, input.type, taken, nameShape);
-
-        taken.add(name);
-
-        const shape = createShape({
-            ...input,
-            name,
-            order,
-            selected: true,
-            bindings: undefined,
-            ...(input.type === 'text' ? { template: undefined } : {})
-        });
-
-        Object.entries(input.bindings ?? {}).forEach(([key, copiedId]) =>
-            followVariable(state.currentDocument, shape, key, variableIds.get(copiedId))
-        );
-
-        if (shape.type === 'text' && input.type === 'text' && input.template !== undefined) {
-            writeText(shape, remapTemplate(input.template), state.currentDocument.variables);
-        }
-
-        remapOverrides(shape);
-        if (shape.type === 'instance') {
-            const source = componentSource(document, shape.componentId);
-
-            if (source) {
-                shape.bounds = instanceBox(shape, source);
-            }
-        }
-
-        return shape;
-    });
-    const target = pasteTarget(context);
-
-    // Centered on the target; without one, where they were copied.
-    if (target) {
-        const boxes = pasted.map(getShapeBounds);
-        const left = Math.min(...boxes.map((box) => box.topLeft.x));
-        const top = Math.min(...boxes.map((box) => box.topLeft.y));
-        const right = Math.max(...boxes.map((box) => box.bottomRight.x));
-        const bottom = Math.max(...boxes.map((box) => box.bottomRight.y));
-        const delta = { x: target.x - (left + right) / 2, y: target.y - (top + bottom) / 2 };
-
-        pasted.forEach((shape) => translateShape(shape, delta));
-    }
-
-    const drawn = new Set(
-        Object.values(state.currentDocument.shapes)
-            .filter((shape) => shape.type === pasted[0].type)
-            .map(shapeGeometryKey)
+    const operations = pasteOperations(
+        copied,
+        untracked(state.currentDocument),
+        pasteTarget(context)
     );
-    const coversLiveSource = () =>
-        pasted.some((shape) => {
-            if (shape.type !== 'instance') {
-                return false;
-            }
-            const component = document.components[shape.componentId];
+    const result = actions.applyOperations({
+        documentId: state.currentDocumentId,
+        by: { kind: 'person' },
+        operations
+    });
 
-            if (!component?.shapesIds.some((id) => document.shapes[id])) {
-                return false;
-            }
-            const source = componentSource(document, shape.componentId);
-
-            return (
-                source?.box.topLeft.x === shape.position.x &&
-                source.box.topLeft.y === shape.position.y
-            );
-        });
-
-    while (drawn.has(shapeGeometryKey(pasted[0])) || coversLiveSource()) {
-        pasted.forEach((shape) => translateShape(shape, CLONE_OFFSET));
+    if (!result.applied) {
+        return 'noShapes';
     }
 
     actions.unselectShapes();
     state.enteredGroupId = null;
-    pasted.forEach((shape) => putOnTop(state, shape));
-    copied.groups.forEach(({ name, rotation, members }) => {
-        const group = createGroup({
-            name,
-            rotation,
-            shapesIds: members.map((index) => pasted[index].id)
-        });
-
-        state.currentDocument.groups[group.id] = group;
+    operations.forEach((operation) => {
+        if (operation.op === 'addShape') {
+            state.currentDocument.shapes[result.ids[operation.key]].selected = true;
+        }
     });
 
     return 'pasted';
