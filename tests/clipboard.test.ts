@@ -1,7 +1,7 @@
 import { registerCommand } from 'src/app/actions/startup';
 import type { ShapeInput } from 'src/app/types';
 import { CopyCommand, CutCommand, PasteCommand } from 'src/commands';
-import { shapeGeometry } from 'src/app/utils';
+import { getShapeBounds, shapeGeometry } from 'src/app/utils';
 import { createTestStore } from './support/store';
 
 const shapes: ShapeInput[] = [
@@ -117,6 +117,209 @@ describe('pasting where the canvas was last pressed', () => {
             { type: 'rectangle', position: { x: 210, y: 120 } },
             { type: 'circle', position: { x: 250, y: 150 } }
         ]);
+    });
+
+    it('centers text using the destination variable’s font size', () => {
+        const { store, ordered } = storeWith({
+            type: 'text',
+            position: { x: 10, y: 20 },
+            value: 'Hello',
+            fontSize: 10
+        });
+        const font = store.actions.createVariable({
+            name: 'Font size',
+            type: 'number',
+            value: 10
+        })!;
+
+        store.actions.bindProperty({
+            shapeIds: [ordered()[0].id],
+            key: 'fontSize',
+            variableId: font
+        });
+        const copied = store.actions.copySelection()!;
+
+        store.actions.newDocument();
+        const destinationFont = store.actions.createVariable({
+            name: 'Font size',
+            type: 'number',
+            value: 100
+        })!;
+        press(store, 235, 140);
+
+        expect(store.actions.pasteShapes(copied)).toBe('pasted');
+        expect(ordered()[0]).toMatchObject({
+            fontSize: 100,
+            bindings: { fontSize: destinationFont }
+        });
+        expect(getShapeBounds(ordered()[0])).toMatchObject({
+            topLeft: { x: 85, y: 90 },
+            width: 300,
+            height: 100
+        });
+    });
+
+    it('centers text using the destination variable’s bound text', () => {
+        const { store, ordered } = storeWith({
+            type: 'text',
+            position: { x: 10, y: 20 },
+            value: 'Ada',
+            fontSize: 20
+        });
+        const name = store.actions.createVariable({ name: 'Name', type: 'text', value: 'Ada' })!;
+
+        store.actions.bindProperty({ shapeIds: [ordered()[0].id], key: 'text', variableId: name });
+        const copied = store.actions.copySelection()!;
+
+        store.actions.newDocument();
+        store.actions.createVariable({ name: 'Name', type: 'text', value: 'Alexandria' });
+        press(store, 235, 140);
+
+        expect(store.actions.pasteShapes(copied)).toBe('pasted');
+        expect(ordered()[0]).toMatchObject({ value: 'Alexandria' });
+        expect(getShapeBounds(ordered()[0])).toMatchObject({
+            topLeft: { x: 175, y: 130 },
+            width: 120,
+            height: 20
+        });
+    });
+
+    it('centers templates after resolving added and reused variables', () => {
+        const { store, ordered } = storeWith({
+            type: 'text',
+            position: { x: 10, y: 20 },
+            value: 'Hello',
+            fontSize: 20
+        });
+        store.actions.createVariable({ name: 'Name', type: 'text', value: 'Ada' });
+        store.actions.createVariable({ name: 'Greeting', type: 'text', value: 'Hi ${Name}' });
+        store.actions.setShapesProperty({
+            shapeIds: [ordered()[0].id],
+            key: 'text',
+            value: '${Greeting}!'
+        });
+        const copied = store.actions.copySelection()!;
+
+        store.actions.newDocument();
+        store.actions.createVariable({ name: 'Name', type: 'text', value: 'Alexandria' });
+        press(store, 235, 140);
+
+        expect(store.actions.pasteShapes(copied)).toBe('pasted');
+        expect(ordered()[0]).toMatchObject({ value: 'Hi Alexandria!' });
+        expect(getShapeBounds(ordered()[0])).toMatchObject({
+            topLeft: { x: 151, y: 130 },
+            width: 168,
+            height: 20
+        });
+    });
+
+    it('centers instances using their imported source’s destination font size', () => {
+        const { store, document, ordered } = storeWith({
+            type: 'text',
+            position: { x: 10, y: 20 },
+            value: 'Hello',
+            fontSize: 10
+        });
+        const font = store.actions.createVariable({
+            name: 'Font size',
+            type: 'number',
+            value: 10
+        })!;
+
+        store.actions.bindProperty({
+            shapeIds: [ordered()[0].id],
+            key: 'fontSize',
+            variableId: font
+        });
+        store.actions.addComponent({ shapesIds: [ordered()[0].id] });
+        const componentId = document().componentsIds[0];
+
+        store.actions.insertComponentAt({ componentId, position: { x: 100, y: 100 } });
+        const copied = store.actions.copySelection()!;
+
+        store.actions.newDocument();
+        store.actions.createVariable({ name: 'Font size', type: 'number', value: 100 });
+        press(store, 235, 140);
+
+        expect(store.actions.pasteShapes(copied)).toBe('pasted');
+        expect(getShapeBounds(ordered()[0])).toMatchObject({
+            topLeft: { x: 85, y: 90 },
+            width: 300,
+            height: 100
+        });
+    });
+
+    it('measures imported sources without applying their coordinate bindings twice', () => {
+        const { store, document, ordered } = storeWith(
+            {
+                type: 'text',
+                position: { x: 0, y: 8 },
+                value: 'Hello',
+                fontSize: 10
+            },
+            { type: 'rectangle', position: { x: 0, y: 200 }, size: { width: 10, height: 10 } }
+        );
+        const y = store.actions.createVariable({ name: 'Y', type: 'number', value: 0 })!;
+        const font = store.actions.createVariable({ name: 'Font', type: 'number', value: 10 })!;
+        const textId = ordered()[0].id;
+
+        store.actions.bindProperty({ shapeIds: [textId], key: 'y', variableId: y });
+        store.actions.bindProperty({ shapeIds: [textId], key: 'fontSize', variableId: font });
+        store.actions.addComponent({ shapesIds: [...document().shapesIds] });
+        const componentId = document().componentsIds[0];
+
+        store.actions.insertComponentAt({ componentId, position: { x: 100, y: 100 } });
+        const copied = store.actions.copySelection()!;
+
+        store.actions.newDocument();
+        store.actions.createVariable({ name: 'Y', type: 'number', value: 0 });
+        store.actions.createVariable({ name: 'Font', type: 'number', value: 100 });
+        press(store, 235, 140);
+
+        expect(store.actions.pasteShapes(copied)).toBe('pasted');
+        const bounds = getShapeBounds(ordered()[0]);
+
+        expect(bounds.topLeft.x + bounds.width / 2).toBe(235);
+        expect(bounds.topLeft.y + bounds.height / 2).toBe(140);
+    });
+
+    it('keeps bound coordinates when placing text with a different font size', () => {
+        const { store, ordered } = storeWith({
+            type: 'text',
+            position: { x: 10, y: 20 },
+            value: 'Hello',
+            fontSize: 10
+        });
+        const font = store.actions.createVariable({
+            name: 'Font size',
+            type: 'number',
+            value: 10
+        })!;
+        const x = store.actions.createVariable({ name: 'X', type: 'number', value: 10 })!;
+
+        store.actions.bindProperty({
+            shapeIds: [ordered()[0].id],
+            key: 'fontSize',
+            variableId: font
+        });
+        store.actions.bindProperty({ shapeIds: [ordered()[0].id], key: 'x', variableId: x });
+        const copied = store.actions.copySelection()!;
+
+        store.actions.newDocument();
+        store.actions.createVariable({ name: 'Font size', type: 'number', value: 100 });
+        const destinationX = store.actions.createVariable({
+            name: 'X',
+            type: 'number',
+            value: 50
+        })!;
+        press(store, 235, 140);
+
+        expect(store.actions.pasteShapes(copied)).toBe('pasted');
+        expect(ordered()[0]).toMatchObject({
+            position: { x: 50, y: 170 },
+            fontSize: 100,
+            bindings: { x: destinationX }
+        });
     });
 
     it('centers them in the view instead once the press is out of sight', () => {
@@ -259,6 +462,27 @@ it.each([
     expect(store.actions.pasteShapes(text)).toBe('noShapes');
     expect(document().shapesIds).toHaveLength(1);
     expect(document().shapes[document().shapesIds[0]].selected).toBe(true);
+});
+
+it('answers why a paste was refused, naming the operation', () => {
+    const { store, document } = storeWith(shapes[0]);
+    const text = JSON.stringify({
+        format: 'reactor/shapes',
+        shapes: [
+            {
+                type: 'instance',
+                componentId: 'gone',
+                position: { x: 0, y: 0 },
+                overrides: {},
+                name: 'Card'
+            }
+        ]
+    });
+
+    expect(store.actions.pasteShapes(text)).toEqual({
+        problem: expect.stringMatching(/^Operation 1: gone /)
+    });
+    expect(document().shapesIds).toHaveLength(1);
 });
 
 it('leaves the clipboard alone while typing, dragging or away from the designer', () => {

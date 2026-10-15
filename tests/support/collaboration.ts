@@ -17,14 +17,19 @@ export interface Copy {
 
 /**
  * Copies of one document, each with its own store and collaboration effect. The
- * first copy's document, after `setup`, is where every copy starts.
+ * first copy's document, after `setup`, is where every copy starts. A copy's
+ * changes made within `undoMergeMs` of each other undo as one; by default each
+ * change is its own step, however quickly the test makes the next.
  */
-export async function createCopies(count: number, setup: (store: TestStore) => void = () => {}) {
+export async function createCopies(
+    count: number,
+    setup: (store: TestStore) => void = () => {},
+    undoMergeMs = 0
+) {
     const copies: Copy[] = [];
 
     for (let index = 0; index < count; index++) {
-        // Each change is its own step to undo, however quickly the test makes the next.
-        const collaboration = new Collaboration(0);
+        const collaboration = new Collaboration(undoMergeMs);
         const { store } = createTestStore({}, { collaboration });
         const copy: Copy = { store, collaboration, inbox: [] };
 

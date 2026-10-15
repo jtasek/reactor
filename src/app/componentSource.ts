@@ -17,7 +17,7 @@ const MAX_COMPONENT_DEPTH = 16;
 
 /** Reads a source independently of its own visibility, layer and group. */
 export function componentSource(
-    document: Document,
+    document: Pick<Document, 'components' | 'shapes' | 'shapesIds' | 'variables'>,
     componentId: string,
     ancestors: ReadonlySet<string> = new Set()
 ): ComponentSource | null {

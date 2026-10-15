@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { drawRect, openEditor, shapes } from './support/editor';
+import { drawRect, openEditor, pointer, shapes } from './support/editor';
 
 /** Longer than the time within which a copy's changes undo as one. */
 const APART_MS = 600;
@@ -69,4 +69,32 @@ test('undoes only this tab’s change, in every tab', async ({ page, context }) 
         await expect(shapes(tab).locator('rect[data-cy]')).toHaveAttribute('x', '200');
     }
     await expect(commandButton(other, 'Undo')).toBeEnabled();
+});
+
+test.describe('with the clipboard', () => {
+    test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
+
+    test('undoes a paste as one step, apart from the drawing just before it', async ({ page }) => {
+        // With the time standing still, every change is within the time that joins them.
+        await page.clock.setFixedTime(new Date('2026-10-15T12:00:00Z'));
+        await openEditor(page);
+        await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
+        await drawRect(page, { x: 200, y: 100 }, { x: 250, y: 150 });
+        await pointer(page, 'pointerdown', { x: 80, y: 80 });
+        await pointer(page, 'pointermove', { x: 300, y: 170 });
+        await pointer(page, 'pointerup', { x: 300, y: 170 });
+        await page.keyboard.press('ControlOrMeta+c');
+        await page.keyboard.press('ControlOrMeta+v');
+        await expect(shapes(page)).toHaveCount(4);
+
+        await page.keyboard.press('ControlOrMeta+z');
+        await expect(shapes(page)).toHaveCount(2);
+
+        await page.keyboard.press('ControlOrMeta+Shift+z');
+        await expect(shapes(page)).toHaveCount(4);
+
+        await page.keyboard.press('ControlOrMeta+z');
+        await page.keyboard.press('ControlOrMeta+z');
+        await expect(shapes(page)).toHaveCount(0);
+    });
 });

@@ -3,12 +3,18 @@ import type {
     Document,
     Group,
     InstanceShape,
+    Point,
     Shape,
     ShapeInput,
     Variable
 } from './types';
-import { shapeGeometry, shapeStyle } from './utils';
+import type { AddComponent, AddGroup, AddShape, AddVariable, Operation } from './operations';
+import { getShapeBounds, shapeGeometry, shapeGeometryKey, shapeStyle } from './utils';
 import { librarySnapshot } from './componentLibrary';
+import { componentSource, instanceBox } from './componentSource';
+import { copyName, createShape, instanceName, numberedName, shapeNamer } from './factories';
+import { CLONE_OFFSET, translateShape } from './geometry';
+import { applyProperty } from './properties';
 import {
     hydrateComponent,
     readCopiedGroup,
@@ -19,13 +25,16 @@ import {
     bindableProperty,
     bindingHolds,
     renderTemplate,
+    replaceTemplateIds,
     templateVariablesIds,
     templateWithIds,
-    variableValue
+    variableNamed,
+    variableValue,
+    writeText
 } from './variables';
 
-/** What a paste did: added shapes, found none in the text, or waited for the editor. */
-export type PasteResult = 'pasted' | 'noShapes' | 'notNow';
+/** What a paste did: added shapes, found none in the text, waited for the editor, or was refused. */
+export type PasteResult = 'pasted' | 'noShapes' | 'notNow' | { problem: string };
 
 /** A copied group: its name, rotation and the positions of its shapes among the copied ones. */
 export type CopiedGroup = ReturnType<typeof readCopiedGroup>;
@@ -253,4 +262,235 @@ export function readClipboard(text: string): Copied {
     } catch {
         return nothing;
     }
+}
+
+/**
+ * The variables `copied` holds as the document gets them: one of the same name and
+ * type is used, else the copied one is added, renamed as `Brand 2` when its name is
+ * taken. Answers the operations adding them and each copied variable's reference.
+ */
+function pasteVariables(copied: Variable[], document: Document) {
+    const taken = new Set(Object.values(document.variables).map((variable) => variable.name));
+    const references = new Map<string, string>();
+    const added: AddVariable[] = [];
+
+    copied.forEach((variable, index) => {
+        const same = variableNamed(document.variables, variable.name);
+
+        if (same?.type === variable.type) {
+            references.set(variable.id, same.id);
+
+            return;
+        }
+
+        const name = taken.has(variable.name) ? numberedName(variable.name, taken) : variable.name;
+        const key = `variable:${index}`;
+
+        taken.add(name);
+        references.set(variable.id, key);
+        added.push({
+            op: 'addVariable',
+            key,
+            name,
+            type: variable.type,
+            value: variable.values.default
+        });
+    });
+
+    const remapTemplate = (template: string) =>
+        replaceTemplateIds(template, (id) => references.get(id));
+    const operations = added.map((operation) =>
+        operation.type === 'text' && typeof operation.value === 'string'
+            ? { ...operation, value: remapTemplate(operation.value) }
+            : operation
+    );
+
+    const values = { ...document.variables };
+
+    operations.forEach((operation) => {
+        values[operation.key] = readEntity('variables', {
+            id: operation.key,
+            name: operation.name,
+            type: operation.type,
+            values: { default: operation.value }
+        });
+    });
+
+    return { operations, references, remapTemplate, values };
+}
+
+/**
+ * Operations that paste `copied` into `document`: its shapes above all others,
+ * centered on `target`, or where they were copied without one. Where the first
+ * has a shape drawn exactly like it, as when pasting twice, they are offset like
+ * clones until it has not. A component the document has already is not added
+ * again, and a reference to a variable neither copied nor in the document is left out.
+ */
+export function pasteOperations(
+    copied: Copied,
+    document: Document,
+    target: Point | null
+): Operation[] {
+    const variables = pasteVariables(copied.variables, document);
+    const remapShape = (shape: Shape | ShapeInput) => {
+        if (shape.bindings) {
+            shape.bindings = Object.fromEntries(
+                Object.entries(shape.bindings).flatMap(([key, id]) => {
+                    const reference = variables.references.get(id);
+
+                    return reference === undefined ? [] : [[key, reference]];
+                })
+            );
+        }
+        if (shape.type === 'text' && shape.template !== undefined) {
+            shape.template = variables.remapTemplate(shape.template);
+        }
+        if (shape.type !== 'instance') {
+            return;
+        }
+        const component =
+            document.components[shape.componentId] ??
+            copied.components?.find(({ id }) => id === shape.componentId);
+        const props = component?.props ?? [];
+
+        shape.overrides = Object.fromEntries(
+            Object.entries(shape.overrides).flatMap(
+                ([id, value]): Array<[string, InstanceShape['overrides'][string]]> => {
+                    if (!props.some((prop) => prop.id === id)) {
+                        return [];
+                    }
+                    if (typeof value === 'string') {
+                        return [[id, variables.remapTemplate(value)]];
+                    }
+                    if (typeof value !== 'object') {
+                        return [[id, value]];
+                    }
+                    const reference =
+                        variables.references.get(value.variableId) ??
+                        (Object.hasOwn(document.variables, value.variableId)
+                            ? value.variableId
+                            : undefined);
+
+                    return reference === undefined ? [] : [[id, { variableId: reference }]];
+                }
+            )
+        );
+    };
+
+    const writeVariables = (shape: Shape) => {
+        Object.entries(shape.bindings ?? {}).forEach(([key, id]) => {
+            const property = bindableProperty(key);
+            const variable = variables.values[id];
+
+            if (property && variable && property.kind === variable.type) {
+                applyProperty(property, shape, variableValue(variable, variables.values));
+            }
+        });
+        if (shape.type === 'text' && shape.template !== undefined) {
+            writeText(shape, shape.template, variables.values);
+        }
+    };
+    const components = (copied.components ?? []).filter(
+        (component) => !Object.hasOwn(document.components, component.id)
+    );
+
+    components.forEach((component) =>
+        Object.values(component.sourceShapes ?? {}).forEach(remapShape)
+    );
+    const measuredComponents = structuredClone(components);
+
+    measuredComponents.forEach((component) =>
+        Object.values(component.sourceShapes ?? {}).forEach(writeVariables)
+    );
+
+    const sources = {
+        components: {
+            ...document.components,
+            ...Object.fromEntries(measuredComponents.map((component) => [component.id, component]))
+        },
+        shapes: document.shapes,
+        shapesIds: document.shapesIds,
+        variables: variables.values
+    };
+    const present = Object.values(document.shapes);
+    const taken = new Set(present.map((shape) => shape.name));
+    const nameShape = shapeNamer(present);
+    const pasted = copied.shapes.map((input) => {
+        const name =
+            input.name === undefined
+                ? nameShape(input.type)
+                : input.type === 'instance'
+                  ? instanceName(input.name, taken)
+                  : copyName(input.name, input.type, taken, nameShape);
+
+        taken.add(name);
+        remapShape(input);
+
+        const shape = createShape({ ...input, name, order: '' });
+
+        writeVariables(shape);
+        const source =
+            shape.type === 'instance' ? componentSource(sources, shape.componentId) : null;
+
+        if (shape.type === 'instance' && source) {
+            shape.bounds = instanceBox(shape, source);
+        }
+
+        return shape;
+    });
+
+    if (target) {
+        const boxes = pasted.map(getShapeBounds);
+        const left = Math.min(...boxes.map((box) => box.topLeft.x));
+        const top = Math.min(...boxes.map((box) => box.topLeft.y));
+        const right = Math.max(...boxes.map((box) => box.bottomRight.x));
+        const bottom = Math.max(...boxes.map((box) => box.bottomRight.y));
+        const delta = { x: target.x - (left + right) / 2, y: target.y - (top + bottom) / 2 };
+
+        pasted.forEach((shape) => translateShape(shape, delta));
+    }
+
+    const drawn = new Set(
+        present.filter((shape) => shape.type === pasted[0].type).map(shapeGeometryKey)
+    );
+    const coversLiveSource = () =>
+        pasted.some((shape) => {
+            if (shape.type !== 'instance') {
+                return false;
+            }
+            const component = document.components[shape.componentId];
+
+            if (!component?.shapesIds.some((id) => document.shapes[id])) {
+                return false;
+            }
+            const source = componentSource(document, shape.componentId);
+
+            return (
+                source?.box.topLeft.x === shape.position.x &&
+                source.box.topLeft.y === shape.position.y
+            );
+        });
+
+    while (drawn.has(shapeGeometryKey(pasted[0])) || coversLiveSource()) {
+        pasted.forEach((shape) => translateShape(shape, CLONE_OFFSET));
+    }
+
+    const shapeOperations: AddShape[] = copied.shapes.map((input, index) => ({
+        op: 'addShape',
+        key: `shape:${index}`,
+        shape: { ...input, ...shapeGeometry(pasted[index]), name: pasted[index].name }
+    }));
+    const groupOperations: AddGroup[] = copied.groups.map(({ name, rotation, members }) => ({
+        op: 'addGroup',
+        name,
+        rotation,
+        shapes: members.map((index) => shapeOperations[index].key)
+    }));
+
+    return [
+        ...variables.operations,
+        ...components.map((component): AddComponent => ({ op: 'addComponent', component })),
+        ...shapeOperations,
+        ...groupOperations
+    ];
 }

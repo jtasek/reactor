@@ -311,3 +311,11 @@ export const replaceInTemplate = (
         (part, inside: string | undefined, name: string | undefined) =>
             (inside === undefined ? undefined : replace(inside, name)) ?? part
     );
+
+/** `template` holding, for each id `idFor` gives another for, that other id instead. */
+export const replaceTemplateIds = (template: string, idFor: (id: string) => string | undefined) =>
+    replaceInTemplate(template, (inside, name) => {
+        const id = idFor(inside);
+
+        return id === undefined ? undefined : `\${${id}${name === undefined ? '' : `$${name}`}}`;
+    });
