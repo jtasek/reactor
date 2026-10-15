@@ -403,8 +403,9 @@ const required = (env: NodeJS.ProcessEnv, name: string) => {
     return env[name];
 };
 
-/** Whether the environment turns AI on, by naming its provider. */
-export const configuresAi = (env: NodeJS.ProcessEnv) => Boolean(env.AI_PROVIDER);
+/** Whether the environment names a provider, or uses the original Anthropic configuration. */
+export const configuresAi = (env: NodeJS.ProcessEnv) =>
+    Boolean(env.AI_PROVIDER || env.ANTHROPIC_API_KEY);
 
 /**
  * The provider `AI_PROVIDER` names: `anthropic`, which takes `AI_API_KEY`, or
@@ -420,9 +421,13 @@ export function providerFromEnv(
         ? { edit: env.AI_EDIT_MODEL }
         : {};
 
-    switch (env.AI_PROVIDER) {
+    switch (env.AI_PROVIDER || (env.ANTHROPIC_API_KEY ? 'anthropic' : undefined)) {
         case 'anthropic':
-            return anthropicProvider({ apiKey: required(env, 'AI_API_KEY'), models, fetch });
+            return anthropicProvider({
+                apiKey: env.AI_API_KEY || env.ANTHROPIC_API_KEY || required(env, 'AI_API_KEY'),
+                models,
+                fetch
+            });
         case 'openai':
             return openAiProvider({
                 baseUrl: env.AI_BASE_URL || 'https://api.openai.com/v1',

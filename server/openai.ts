@@ -84,7 +84,12 @@ const toolCall = ({ id, name, arguments: json }: StreamedCall): ToolCall => ({
     input: toolInput(json)
 });
 
-const STOPS: Record<string, Turn['stop']> = { length: 'incomplete', content_filter: 'refused' };
+const STOPS: Record<string, Turn['stop']> = {
+    stop: 'done',
+    tool_calls: 'done',
+    length: 'incomplete',
+    content_filter: 'refused'
+};
 
 /**
  * Calls a server speaking the OpenAI Chat Completions API at `baseUrl`, as
@@ -133,17 +138,27 @@ export function openAiProvider({
             let refused = false;
             let finishReason = '';
 
-            /** Tells the message once, before the first call, as the model wrote it first. */
             const tellMessage = () => {
                 if (!told && text.trim()) {
                     on.message(text);
                 }
                 told = true;
             };
-            /** Tells each call before `count`, as a later one has begun or the answer ended. */
-            const finishCalls = (count: number) => {
-                for (; finished < count; finished++) {
-                    on.operation(callOperation(toolCall(calls[finished])));
+            /** Calls can interleave; emit them in order only once their JSON is complete. */
+            const finishCalls = (ended = false) => {
+                for (; finished < calls.length; finished++) {
+                    const call = calls[finished];
+
+                    if (!call) {
+                        return;
+                    }
+                    const input = toolInput(call.arguments);
+
+                    if (!ended && (!call.name || Object.keys(input).length === 0)) {
+                        return;
+                    }
+                    tellMessage();
+                    on.operation(callOperation({ id: call.id, name: call.name, input }));
                 }
             };
 
@@ -163,17 +178,16 @@ export function openAiProvider({
                 text += choice?.delta?.content ?? '';
                 refused ||= Boolean(choice?.delta?.refusal);
                 (choice?.delta?.tool_calls ?? []).forEach(({ index, id, function: call }) => {
-                    tellMessage();
-                    finishCalls(index);
                     calls[index] ??= { id: id ?? `call_${index}`, name: '', arguments: '' };
                     calls[index].id = id ?? calls[index].id;
                     calls[index].name += call?.name ?? '';
                     calls[index].arguments += call?.arguments ?? '';
                 });
+                finishCalls();
                 if (choice?.finish_reason) {
                     finishReason = choice.finish_reason;
                     tellMessage();
-                    finishCalls(calls.length);
+                    finishCalls(true);
                 }
             }
 
@@ -194,7 +208,7 @@ export function openAiProvider({
                             : {})
                     }
                 },
-                stop: refused ? 'refused' : (STOPS[finishReason] ?? 'done')
+                stop: refused ? 'refused' : (STOPS[finishReason] ?? 'incomplete')
             };
         }
     };

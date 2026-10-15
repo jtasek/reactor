@@ -17,6 +17,7 @@ services:
             AI_API_KEY: ${AI_API_KEY:-}
             AI_BASE_URL: ${AI_BASE_URL:-}
             AI_EDIT_MODEL: ${AI_EDIT_MODEL:-}
+            ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
             TRUST_PROXY: ${TRUST_PROXY:-false}
         read_only: true
         depends_on:

@@ -115,7 +115,12 @@ const toolCall = (block: Block): ToolCall => ({
     input: block.input as Record<string, unknown>
 });
 
-const STOPS: Record<string, Turn['stop']> = { refusal: 'refused', max_tokens: 'incomplete' };
+const STOPS: Record<string, Turn['stop']> = {
+    end_turn: 'done',
+    tool_use: 'done',
+    refusal: 'refused',
+    max_tokens: 'incomplete'
+};
 
 /** Calls Anthropic's Messages API with plain fetch, holding the key. */
 export function anthropicProvider({
@@ -164,6 +169,7 @@ export function anthropicProvider({
             const json = new Map<number, string>();
             const usage = { inputTokens: 0, outputTokens: 0 };
             let stopReason = '';
+            let complete = false;
 
             for await (const event of readEvents(body) as AsyncGenerator<StreamEvent>) {
                 const index = event.index ?? 0;
@@ -218,6 +224,9 @@ export function anthropicProvider({
                         break;
                     case 'error':
                         throw new Error(`The provider failed: ${event.error?.type ?? 'unknown'}`);
+                    case 'message_stop':
+                        complete = true;
+                        break;
                 }
             }
 
@@ -226,7 +235,7 @@ export function anthropicProvider({
                     calls: content.filter((block) => block.type === 'tool_use').map(toolCall),
                     message: content
                 },
-                stop: STOPS[stopReason] ?? 'done'
+                stop: complete ? (STOPS[stopReason] ?? 'incomplete') : 'incomplete'
             };
         }
     };
