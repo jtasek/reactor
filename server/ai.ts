@@ -349,12 +349,17 @@ export function createAi({
                     await sql`select pg_advisory_xact_lock(hashtextextended(${`ai:person:${req.userId}`}, 0))`.execute(
                         trx
                     );
-                    await trx
+                    const workspace = await trx
                         .selectFrom('workspaces')
                         .select('id')
                         .where('id', '=', workspaceId)
                         .forUpdate()
-                        .executeTakeFirstOrThrow();
+                        .executeTakeFirst();
+
+                    // The workspace may have been deleted since the document was checked.
+                    if (!workspace) {
+                        throw new Refusal(404, 'NOT_FOUND');
+                    }
 
                     if (await reachedLimits(trx, limits, req.userId, workspaceId)) {
                         throw new Refusal(429, 'AI_LIMIT_REACHED');
