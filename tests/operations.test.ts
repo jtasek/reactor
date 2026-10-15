@@ -1,6 +1,8 @@
-import type { AddShape, Operation } from 'src/app/operations';
+import type { AddShape, Operation, UpdateShape } from 'src/app/operations';
 import type { Component } from 'src/app/types';
 import { createComponent, createShape } from 'src/app/factories';
+import { componentSource } from 'src/app/componentSource';
+import { getShapeBounds, rectToBox } from 'src/app/utils';
 import { COLLECTIONS, readEntity } from 'src/app/services/documentStorage';
 import { createTestStore } from './support/store';
 
@@ -352,5 +354,408 @@ describe('applying operations', () => {
             expect(apply(operations)).toMatchObject({ applied: false });
             expect(content()).toEqual(before);
         });
+    });
+});
+
+describe('changing and deleting with operations', () => {
+    /** A document with two rectangles and a text, the first rectangle filled by Brand. */
+    function setupDocument() {
+        const test = setup();
+        const brand = test.store.actions.createVariable({
+            name: 'Brand',
+            type: 'color',
+            value: '#3366ff'
+        })!;
+
+        test.apply([
+            { ...rectangle(), shape: { ...rectangle().shape, bindings: { fill: brand } } },
+            rectangle(40),
+            {
+                op: 'addShape',
+                key: 'label',
+                shape: { type: 'text', position: { x: 0, y: 20 }, value: 'Hi' }
+            }
+        ]);
+        const [first, second, label] = test.document().shapesIds;
+
+        return { ...test, brand, first, second, label };
+    }
+
+    it('changes only the fields given, and what a set property followed stops', () => {
+        const { document, apply, brand, first, second } = setupDocument();
+
+        expect(
+            apply([
+                { op: 'updateShape', shape: first, changes: { position: { x: 5, y: 6 } } },
+                { op: 'updateShape', shape: second, changes: { fill: '#ff0000', opacity: 0.5 } }
+            ])
+        ).toMatchObject({ applied: true });
+        expect(document().shapes[first]).toMatchObject({
+            position: { x: 5, y: 6 },
+            size: { width: 20, height: 10 },
+            fill: '#3366ff',
+            bindings: { fill: brand }
+        });
+        expect(document().shapes[second]).toMatchObject({ fill: '#ff0000', opacity: 0.5 });
+
+        expect(
+            apply([{ op: 'updateShape', shape: first, changes: { fill: '#00ff00' } }])
+        ).toMatchObject({ applied: true });
+        expect(document().shapes[first].fill).toBe('#00ff00');
+        expect(document().shapes[first].bindings).toBeUndefined();
+    });
+
+    it('binds a changed shape, and writes a text over its template', () => {
+        const { store, document, apply, brand, second, label } = setupDocument();
+
+        store.actions.setShapesProperty({ shapeIds: [label], key: 'text', value: '${Brand}' });
+        expect(document().shapes[label]).toMatchObject({ value: '#3366ff' });
+
+        expect(
+            apply([
+                { op: 'updateShape', shape: second, changes: { bindings: { fill: brand } } },
+                { op: 'updateShape', shape: label, changes: { value: 'Bye' } }
+            ])
+        ).toMatchObject({ applied: true });
+        expect(document().shapes[second]).toMatchObject({
+            fill: '#3366ff',
+            bindings: { fill: brand }
+        });
+        expect(document().shapes[label]).toMatchObject({ value: 'Bye' });
+        expect(document().shapes[label]).not.toHaveProperty('template');
+    });
+
+    it('changes a variable, which the shapes following it take, and the shapes changed with it', () => {
+        const { document, apply, brand, first, second } = setupDocument();
+
+        expect(
+            apply([
+                { op: 'updateVariable', variable: brand, name: 'Accent', value: '#ff6600' },
+                { op: 'updateShape', shape: first, changes: { position: { x: 5, y: 6 } } },
+                { op: 'updateShape', shape: second, changes: { bindings: { fill: brand } } }
+            ])
+        ).toMatchObject({ applied: true });
+        expect(document().variables[brand]).toMatchObject({
+            name: 'Accent',
+            values: { default: '#ff6600' }
+        });
+        expect(document().shapes[first]).toMatchObject({
+            fill: '#ff6600',
+            position: { x: 5, y: 6 },
+            bindings: { fill: brand }
+        });
+        expect(document().shapes[second]).toMatchObject({ fill: '#ff6600' });
+    });
+
+    it('deletes a variable, leaving its value where it was followed', () => {
+        const { document, apply, brand, first } = setupDocument();
+
+        expect(apply([{ op: 'deleteVariable', variable: brand }])).toMatchObject({
+            applied: true
+        });
+        expect(document().variables).toEqual({});
+        expect(document().shapes[first].fill).toBe('#3366ff');
+        expect(document().shapes[first].bindings).toBeUndefined();
+    });
+
+    it('deletes shapes and the groups this empties, and ungroups keeping the shapes', () => {
+        const { store, document, apply, first, second, label } = setupDocument();
+
+        store.actions.addGroup({ id: 'pair', shapesIds: [first, second] });
+        store.actions.addGroup({ id: 'labelled', shapesIds: [label] });
+
+        expect(
+            apply([
+                { op: 'deleteGroup', group: 'pair' },
+                { op: 'addGroup', name: 'Other', rotation: 0, shapes: [first, second] },
+                { op: 'deleteShapes', shapes: [label] }
+            ])
+        ).toMatchObject({ applied: true });
+        expect(document().shapesIds).toEqual([first, second]);
+        expect(Object.values(document().groups)).toEqual([
+            expect.objectContaining({ name: 'Other', shapesIds: [first, second] })
+        ]);
+    });
+
+    it.each<[string, (ids: ReturnType<typeof setupDocument>) => Operation[]]>([
+        [
+            'a change to a key rather than an ID',
+            () => [
+                rectangle(80),
+                { op: 'updateShape', shape: 'rectangle at 80', changes: { name: 'Box' } }
+            ]
+        ],
+        [
+            'a change to a locked shape',
+            ({ store, first }) => {
+                store.actions.lockShape(first);
+
+                return [{ op: 'deleteShapes', shapes: [first] }];
+            }
+        ],
+        [
+            'a shape changed twice',
+            ({ first }) => [
+                { op: 'updateShape', shape: first, changes: { name: 'Box' } },
+                { op: 'deleteShapes', shapes: [first] }
+            ]
+        ],
+        [
+            'a reference to a record the batch deletes',
+            ({ brand, first, second }) => [
+                { op: 'addGroup', name: 'Pair', rotation: 0, shapes: [first, second] },
+                { op: 'deleteShapes', shapes: [second] },
+                { op: 'deleteVariable', variable: brand }
+            ]
+        ],
+        [
+            'a binding to a variable the batch deletes',
+            ({ brand, second }) => [
+                { op: 'updateShape', shape: second, changes: { bindings: { fill: brand } } },
+                { op: 'deleteVariable', variable: brand }
+            ]
+        ],
+        [
+            'a change of type',
+            ({ first }) => [
+                {
+                    op: 'updateShape',
+                    shape: first,
+                    changes: { type: 'circle' } as UpdateShape['changes']
+                }
+            ]
+        ],
+        [
+            'a field the shape lacks',
+            ({ first }) => [{ op: 'updateShape', shape: first, changes: { radius: 4 } }]
+        ],
+        [
+            'a value the readers refuse',
+            ({ first }) => [{ op: 'updateShape', shape: first, changes: { fill: 'red' } }]
+        ],
+        [
+            'an update changing nothing',
+            ({ first }) => [{ op: 'updateShape', shape: first, changes: {} }]
+        ],
+        [
+            'a variable renamed to a name taken',
+            ({ store, brand }) => {
+                store.actions.createVariable({ name: 'Other', type: 'color', value: '#000000' });
+
+                return [{ op: 'updateVariable', variable: brand, name: 'Other' }];
+            }
+        ],
+        [
+            'a variable given a value of another type',
+            ({ brand }) => [{ op: 'updateVariable', variable: brand, value: 4 }]
+        ],
+        ['a group the document lacks', () => [{ op: 'deleteGroup', group: 'missing' }]]
+    ])('changes nothing for %s, and says why', (_, operations) => {
+        const test = setupDocument();
+        const batch = operations(test);
+        const before = test.content();
+
+        expect(test.apply(batch)).toMatchObject({
+            applied: false,
+            problem: expect.stringMatching(/^Operation \d+:/)
+        });
+        expect(test.content()).toEqual(before);
+    });
+
+    it.each(['update', 'delete'])('refuses to %s a locked component member', (change) => {
+        const { store, document, apply, content, first } = setupDocument();
+
+        store.actions.addComponent({ id: 'card', shapesIds: [first], locked: true });
+        const before = content();
+        const operations: Operation[] = [
+            change === 'update'
+                ? { op: 'updateShape', shape: first, changes: { fill: '#ff0000' } }
+                : { op: 'deleteShapes', shapes: [first] }
+        ];
+
+        expect(store.actions.checkOperations({ documentId: document().id, operations })).toEqual({
+            valid: false,
+            operation: 0,
+            problem: `Operation 1: ${first} is locked.`
+        });
+        expect(apply(operations)).toMatchObject({ applied: false });
+        expect(content()).toEqual(before);
+    });
+
+    it('updates the frame of a hidden, measured component source', () => {
+        const { store, document, apply, first } = setupDocument();
+
+        store.actions.addComponent({ id: 'card', shapesIds: [first], sourceOnly: true });
+        store.actions.setShapeBounds({
+            id: first,
+            bounds: rectToBox({ x: 0, y: 0, width: 20, height: 10 })
+        });
+        expect(
+            apply([{ op: 'updateShape', shape: first, changes: { opacity: 0.5 } }])
+        ).toMatchObject({
+            applied: true
+        });
+        expect(document().shapes[first].bounds).toBeDefined();
+        expect(
+            apply([
+                {
+                    op: 'updateShape',
+                    shape: first,
+                    changes: { position: { x: 100, y: 80 }, size: { width: 200, height: 100 } }
+                }
+            ])
+        ).toMatchObject({ applied: true });
+        const box = rectToBox({ x: 100, y: 80, width: 200, height: 100 });
+
+        expect(getShapeBounds(document().shapes[first])).toEqual(box);
+        expect(componentSource(document(), 'card')?.box).toEqual(box);
+    });
+
+    it.each([false, true])(
+        'checks instances added with source deletion (delete first: %s)',
+        (deleteFirst) => {
+            const { store, document, apply, content, first } = setupDocument();
+
+            store.actions.addComponent({ id: 'card', shapesIds: [first] });
+            const addition: Operation = {
+                op: 'addShape',
+                key: 'instance',
+                shape: {
+                    type: 'instance',
+                    componentId: 'card',
+                    position: { x: 0, y: 90 },
+                    overrides: {}
+                }
+            };
+            const deletion: Operation = { op: 'deleteShapes', shapes: [first] };
+            const operations = deleteFirst ? [deletion, addition] : [addition, deletion];
+            const before = content();
+
+            expect(
+                store.actions.checkOperations({ documentId: document().id, operations })
+            ).toMatchObject({
+                valid: false,
+                operation: deleteFirst ? 0 : 1
+            });
+            expect(apply(operations)).toMatchObject({ applied: false });
+            expect(content()).toEqual(before);
+        }
+    );
+
+    it('allows deleting a component source with all its instances', () => {
+        const { store, document, apply, first } = setupDocument();
+
+        store.actions.addComponent({ id: 'card', shapesIds: [first] });
+        const added = apply([
+            {
+                op: 'addShape',
+                key: 'instance',
+                shape: {
+                    type: 'instance',
+                    componentId: 'card',
+                    position: { x: 0, y: 90 },
+                    overrides: {}
+                }
+            }
+        ]);
+
+        expect(added.applied).toBe(true);
+        if (!added.applied) {
+            return;
+        }
+        expect(
+            apply([
+                { op: 'deleteShapes', shapes: [first] },
+                { op: 'deleteShapes', shapes: [added.ids.instance] }
+            ])
+        ).toMatchObject({ applied: true });
+        expect(document().components.card.shapesIds).toEqual([]);
+    });
+
+    it('stages dependent text using the value inlined by a variable deletion', () => {
+        const { store, document, apply, content, first, label } = setupDocument();
+        const name = store.actions.createVariable({ name: 'Name', type: 'text', value: 'Ada' })!;
+        const greeting = store.actions.createVariable({
+            name: 'Greeting',
+            type: 'text',
+            value: 'Hi ${Name}'
+        })!;
+
+        store.actions.bindProperty({ shapeIds: [label], key: 'text', variableId: greeting });
+        const operations: Operation[] = [
+            { op: 'deleteVariable', variable: name },
+            { op: 'updateShape', shape: label, changes: { position: { x: 5, y: 6 } } }
+        ];
+        const before = content();
+
+        expect(store.actions.checkOperations({ documentId: document().id, operations })).toEqual({
+            valid: true
+        });
+        expect(content()).toEqual(before);
+        expect(
+            apply([...operations, { op: 'updateShape', shape: first, changes: { fill: 'red' } }])
+        ).toMatchObject({ applied: false });
+        expect(content()).toEqual(before);
+        expect(apply(operations)).toMatchObject({ applied: true });
+        expect(document().variables[greeting].values.default).toBe('Hi Ada');
+        expect(document().shapes[label]).toMatchObject({
+            value: 'Hi Ada',
+            position: { x: 5, y: 6 },
+            bindings: { text: greeting }
+        });
+    });
+
+    it('keeps an explicitly requested text value after its variable changes', () => {
+        const { store, document, apply, label } = setupDocument();
+        const title = store.actions.createVariable({ name: 'Title', type: 'text', value: 'old' })!;
+
+        store.actions.setShapesProperty({ shapeIds: [label], key: 'text', value: '${Title}' });
+        expect(
+            apply([
+                { op: 'updateVariable', variable: title, value: 'new' },
+                { op: 'updateShape', shape: label, changes: { value: 'old' } }
+            ])
+        ).toMatchObject({ applied: true });
+        expect(document().shapes[label]).toMatchObject({ value: 'old' });
+        expect(document().shapes[label]).not.toHaveProperty('template');
+    });
+
+    it('keeps an explicit old color while changing the variable it followed', () => {
+        const { document, apply, brand, first } = setupDocument();
+
+        expect(
+            apply([
+                { op: 'updateVariable', variable: brand, value: '#ff6600' },
+                { op: 'updateShape', shape: first, changes: { fill: '#3366ff' } }
+            ])
+        ).toMatchObject({ applied: true });
+        expect(document().shapes[first].fill).toBe('#3366ff');
+        expect(document().shapes[first].bindings).toBeUndefined();
+    });
+
+    it('keeps a shape of a component with instances', () => {
+        const { store, document, apply, first } = setupDocument();
+
+        store.actions.addComponent({ id: 'card', name: 'Card', shapesIds: [first] });
+        expect(
+            apply([
+                {
+                    op: 'addShape',
+                    key: 'instance',
+                    shape: {
+                        type: 'instance',
+                        componentId: 'card',
+                        position: { x: 0, y: 90 },
+                        overrides: {}
+                    }
+                }
+            ])
+        ).toMatchObject({ applied: true });
+
+        expect(apply([{ op: 'deleteShapes', shapes: [first] }])).toMatchObject({
+            applied: false,
+            problem: 'Operation 1: the component card has instances, so it keeps a shape.'
+        });
+        expect(document().shapes[first]).toBeDefined();
     });
 });

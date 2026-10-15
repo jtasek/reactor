@@ -6,8 +6,7 @@ import {
     bindableProperty,
     buildVariable,
     canBind,
-    escapeTemplate,
-    replaceInTemplate,
+    removeVariable,
     templateWithIds,
     unbind,
     variableNamed,
@@ -137,26 +136,11 @@ export const unbindProperty: ActionWithParam<{ shapeIds: string[]; key: string }
 export const deleteVariable: ActionWithParam<string> = ({ state }, variableId) => {
     const document = state.currentDocument;
     const before = structuredClone(json(document.variables));
-    const variable = before[variableId];
 
-    if (!variable) {
+    if (!before[variableId]) {
         return;
     }
 
-    const value = escapeTemplate(String(variableValue(variable, before)));
-    const inline = (template: string) =>
-        replaceInTemplate(template, (inside) => (inside === variableId ? value : undefined));
-
-    delete document.variables[variableId];
-    Object.values(document.variables).forEach((other) => {
-        if (other.type === 'text') {
-            other.values.default = inline(other.values.default);
-        }
-    });
-    Object.values(document.shapes).forEach((shape) => {
-        if (shape.type === 'text' && shape.template !== undefined) {
-            shape.template = inline(shape.template);
-        }
-    });
+    removeVariable(document, variableId);
     applyVariableChanges(document, before);
 };

@@ -1,9 +1,26 @@
-import type { AddGroup, AddShape, AddVariable } from 'src/app/operations';
+import type {
+    AddGroup,
+    AddShape,
+    AddVariable,
+    DeleteGroup,
+    DeleteShapes,
+    DeleteVariable,
+    UpdateShape,
+    UpdateVariable
+} from 'src/app/operations';
 import { readCopiedShape } from 'src/app/services/documentStorage';
 import { isVariableType } from 'src/app/variables';
 
 /** The operations a model may propose. */
-export type ProposedOperation = AddVariable | AddShape | AddGroup;
+export type ProposedOperation =
+    | AddVariable
+    | AddShape
+    | AddGroup
+    | UpdateVariable
+    | DeleteVariable
+    | UpdateShape
+    | DeleteShapes
+    | DeleteGroup;
 
 function fields(value: unknown, what: string): Record<string, unknown> {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -19,6 +36,14 @@ function text(value: unknown, what: string) {
     }
 
     return value;
+}
+
+function list(value: unknown, what: string, each: string) {
+    if (!Array.isArray(value)) {
+        throw new Error(`${what} are not a list.`);
+    }
+
+    return value.map((item) => text(item, each));
 }
 
 /**
@@ -60,20 +85,38 @@ export function readOperation(value: unknown): ProposedOperation {
 
             return { op: 'addShape', key: text(operation.key, 'Its key'), shape: input };
         }
-        case 'addGroup': {
-            const shapes = operation.shapes;
-
-            if (!Array.isArray(shapes)) {
-                throw new Error('Its shapes are not a list.');
-            }
-
+        case 'addGroup':
             return {
                 op: 'addGroup',
                 name: text(operation.name, 'Its name'),
                 rotation: typeof operation.rotation === 'number' ? operation.rotation : 0,
-                shapes: shapes.map((shape) => text(shape, 'A shape'))
+                shapes: list(operation.shapes, 'Its shapes', 'A shape')
             };
+        case 'updateVariable':
+            return {
+                op: 'updateVariable',
+                variable: text(operation.variable, 'Its variable'),
+                ...(operation.name === undefined ? {} : { name: text(operation.name, 'Its name') }),
+                ...(operation.value === undefined ? {} : { value: operation.value })
+            };
+        case 'deleteVariable':
+            return { op: 'deleteVariable', variable: text(operation.variable, 'Its variable') };
+        case 'updateShape': {
+            const changes = fields(operation.changes, 'Its changes');
+
+            if (changes.bindings !== undefined) {
+                Object.values(fields(changes.bindings, 'Its bindings')).forEach((variable) =>
+                    text(variable, 'A variable')
+                );
+            }
+
+            // Checked against the shape it changes, which the document holds.
+            return { op: 'updateShape', shape: text(operation.shape, 'Its shape'), changes };
         }
+        case 'deleteShapes':
+            return { op: 'deleteShapes', shapes: list(operation.shapes, 'Its shapes', 'A shape') };
+        case 'deleteGroup':
+            return { op: 'deleteGroup', group: text(operation.group, 'Its group') };
         default:
             throw new Error(`${String(operation.op)} is not an operation.`);
     }

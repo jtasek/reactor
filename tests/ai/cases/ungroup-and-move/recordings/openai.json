@@ -1,0 +1,178 @@
+{
+    "provider": "openai",
+    "model": "example-model",
+    "rounds": [
+        [
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "role": "assistant",
+                            "content": ""
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 0,
+                                    "id": "call_1",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "deleteGroup",
+                                        "arguments": ""
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 0,
+                                    "function": {
+                                        "arguments": "{\"group\":\""
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 0,
+                                    "function": {
+                                        "arguments": "profile\"}"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 1,
+                                    "id": "call_2",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "updateShape",
+                                        "arguments": ""
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 1,
+                                    "function": {
+                                        "arguments": "{\"shape\":\"fullName\",\"changes\":"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [
+                                {
+                                    "index": 1,
+                                    "function": {
+                                        "arguments": "{\"position\":{\"x\":90,\"y\":70}}}"
+                                    }
+                                }
+                            ]
+                        },
+                        "finish_reason": null
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {},
+                        "finish_reason": "tool_calls"
+                    }
+                ]
+            },
+            {
+                "id": "chatcmpl-recorded",
+                "object": "chat.completion.chunk",
+                "model": "example-model",
+                "choices": [],
+                "usage": {
+                    "prompt_tokens": 2400,
+                    "completion_tokens": 120,
+                    "total_tokens": 2520
+                }
+            }
+        ]
+    ]
+}
