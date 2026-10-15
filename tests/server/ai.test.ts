@@ -68,6 +68,7 @@ const userId =
         );
 
 const EDIT = { task: 'edit', prompt: 'Add a box', context: { shapes: {} } };
+const QUOTA_READ_DELAY_MS = 100;
 
 describe('the AI gateway', () => {
     it('is off without a provider', async () => {
@@ -286,6 +287,125 @@ describe('the AI gateway', () => {
         await (await ask(EDIT)).text();
 
         expect(await (await ask(EDIT)).json()).toEqual({ code: 'AI_LIMIT_REACHED' });
+    });
+
+    it('reserves the last workspace request for only one of its editors', async () => {
+        const server = await setup(
+            [answer({ calls: [rectangle] }), answer({ calls: [rectangle] })],
+            {
+                databasePlugins: [
+                    {
+                        transformQuery: ({ node }) => node,
+                        async transformResult({ result }) {
+                            if (result.rows.some((row) => 'personRequests' in row)) {
+                                // Leave time for another quota read before returning this one.
+                                // A reservation must stay locked across this gap and its insert.
+                                await new Promise((resolve) =>
+                                    setTimeout(resolve, QUOTA_READ_DELAY_MS)
+                                );
+                            }
+
+                            return result;
+                        }
+                    }
+                ],
+                aiLimits: {
+                    personRequests: 100,
+                    personTokens: 1_000_000,
+                    workspaceRequests: 1,
+                    workspaceTokens: 1_000_000
+                }
+            }
+        );
+        const bob = await server.user('bob@example.com');
+
+        await server.db
+            .insertInto('workspace_members')
+            .values({
+                workspace_id: server.ada.personal.id,
+                user_id: await server.userId(bob.personal),
+                role: 'editor'
+            })
+            .execute();
+
+        const responses = await Promise.all([server.ask(EDIT), server.ask(EDIT, bob.cookie)]);
+        const bodies = await Promise.all(responses.map((response) => response.text()));
+
+        expect(responses.map(({ status }) => status).sort()).toEqual([200, 429]);
+        expect(bodies).toContain(JSON.stringify({ code: 'AI_LIMIT_REACHED' }));
+        expect(await server.requests()).toHaveLength(1);
+        expect(server.replayed.sent).toHaveLength(1);
+    });
+
+    it.each(['personTokens', 'workspaceTokens'] as const)(
+        'checks %s again before a repair, without consuming the repair',
+        async (tokenLimit) => {
+            const server = await setup(
+                [
+                    answer({ calls: [rectangle], inputTokens: 900, outputTokens: 200 }),
+                    answer({ calls: [rectangle] })
+                ],
+                {
+                    aiLimits: {
+                        personRequests: 1,
+                        personTokens: 1_000_000,
+                        workspaceRequests: 1,
+                        workspaceTokens: 1_000_000,
+                        [tokenLimit]: 1000
+                    }
+                }
+            );
+            const [start] = await readEvents(await server.ask(EDIT));
+            const requestId = String(start.requestId);
+
+            expect(
+                await (await server.repair(requestId, { problem: 'Try again.' })).json()
+            ).toEqual({ code: 'AI_LIMIT_REACHED' });
+            expect(server.replayed.sent).toHaveLength(1);
+
+            // Usage is corrected; the original request still takes the sole request slot.
+            await server.db
+                .updateTable('ai_requests')
+                .set({ input_tokens: 0, output_tokens: 0 })
+                .execute();
+
+            expect(
+                (await readEvents(await server.repair(requestId, { problem: 'Try again.' }))).at(-1)
+            ).toEqual({ type: 'done' });
+            expect(server.replayed.sent).toHaveLength(2);
+            expect(await server.requests()).toHaveLength(1);
+            expect((await server.repair(requestId, { problem: 'Again.' })).status).toBe(404);
+        }
+    );
+
+    it('keeps a repair available when another request of the person is busy', async () => {
+        const server = await setup(Array.from({ length: 3 }, () => answer({ calls: [rectangle] })));
+        const [start] = await readEvents(await server.ask(EDIT));
+        const requestId = String(start.requestId);
+        const turn = server.replayed.provider.turn;
+        const gate = Promise.withResolvers<void>();
+
+        vi.spyOn(server.replayed.provider, 'turn').mockImplementationOnce(async (...args) => {
+            await gate.promise;
+
+            return turn(...args);
+        });
+        const running = await server.ask(EDIT);
+
+        try {
+            expect(
+                await (await server.repair(requestId, { problem: 'Try again.' })).json()
+            ).toEqual({ code: 'AI_BUSY' });
+        } finally {
+            gate.resolve();
+            await running.text();
+        }
+
+        expect(
+            (await readEvents(await server.repair(requestId, { problem: 'Try again.' }))).at(-1)
+        ).toEqual({ type: 'done' });
+        expect((await server.repair(requestId, { problem: 'Again.' })).status).toBe(404);
+        expect(server.replayed.sent).toHaveLength(3);
     });
 
     it('runs one request of a person at a time, and stops the model when the editor goes', async () => {

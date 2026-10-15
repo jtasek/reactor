@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import express, { type Request, type Response } from 'express';
+import { sql } from 'kysely';
 import {
     isAiTask,
     type AiProvider,
@@ -148,7 +149,13 @@ async function editableDocument(db: Db, userId: string, documentId: string) {
 }
 
 /** Whether the person or the workspace used up a day's requests or tokens. */
-async function reachedLimits(db: Db, limits: AiLimits, userId: string, workspaceId: string) {
+async function reachedLimits(
+    db: Db,
+    limits: AiLimits,
+    userId: string,
+    workspaceId: string,
+    countsRequests = true
+) {
     const used = await db
         .selectFrom('ai_requests')
         .where('created_at', '>', new Date(Date.now() - LIMIT_WINDOW_MS))
@@ -171,8 +178,12 @@ async function reachedLimits(db: Db, limits: AiLimits, userId: string, workspace
         })
         .executeTakeFirstOrThrow();
 
-    return (Object.keys(limits) as Array<keyof AiLimits>).some(
-        (limit) => Number(used[limit] ?? 0) >= limits[limit]
+    return (
+        Number(used.personTokens ?? 0) >= limits.personTokens ||
+        Number(used.workspaceTokens ?? 0) >= limits.workspaceTokens ||
+        (countsRequests &&
+            (Number(used.personRequests) >= limits.personRequests ||
+                Number(used.workspaceRequests) >= limits.workspaceRequests))
     );
 }
 
@@ -330,23 +341,37 @@ export function createAi({
             const request = readRequest(req.body);
 
             await oneAtATime(req.userId, async () => {
-                if (await reachedLimits(db, limits, req.userId, workspaceId)) {
-                    throw new Refusal(429, 'AI_LIMIT_REACHED');
-                }
-
                 const requestId = randomUUID();
 
-                await db
-                    .insertInto('ai_requests')
-                    .values({
-                        id: requestId,
-                        workspace_id: workspaceId,
-                        user_id: req.userId,
-                        document_id: req.params.documentId,
-                        task: request.task,
-                        model: provider.model(request.task)
-                    })
-                    .execute();
+                await db.transaction().execute(async (trx) => {
+                    // Serialize reservations per person across servers, then per workspace.
+                    // Release both locks before calling the model.
+                    await sql`select pg_advisory_xact_lock(hashtextextended(${`ai:person:${req.userId}`}, 0))`.execute(
+                        trx
+                    );
+                    await trx
+                        .selectFrom('workspaces')
+                        .select('id')
+                        .where('id', '=', workspaceId)
+                        .forUpdate()
+                        .executeTakeFirstOrThrow();
+
+                    if (await reachedLimits(trx, limits, req.userId, workspaceId)) {
+                        throw new Refusal(429, 'AI_LIMIT_REACHED');
+                    }
+
+                    await trx
+                        .insertInto('ai_requests')
+                        .values({
+                            id: requestId,
+                            workspace_id: workspaceId,
+                            user_id: req.userId,
+                            document_id: req.params.documentId,
+                            task: request.task,
+                            model: provider.model(request.task)
+                        })
+                        .execute();
+                });
                 await streamTurn(
                     req,
                     res,
@@ -371,11 +396,20 @@ export function createAi({
 
             const problem = readProblem(req.body);
 
-            // A request is repaired once.
-            kept.delete(requestId);
-            await editableDocument(db, req.userId, entry.documentId);
-            await oneAtATime(req.userId, () =>
-                streamTurn(
+            const workspaceId = await editableDocument(db, req.userId, entry.documentId);
+            await oneAtATime(req.userId, async () => {
+                if (kept.get(requestId) !== entry || entry.until < Date.now()) {
+                    throw new Refusal(404, 'NOT_FOUND');
+                }
+
+                // A repair uses more tokens, but belongs to the same counted request.
+                if (await reachedLimits(db, limits, req.userId, workspaceId, false)) {
+                    throw new Refusal(429, 'AI_LIMIT_REACHED');
+                }
+
+                // Consume the one repair only when it may actually start.
+                kept.delete(requestId);
+                await streamTurn(
                     req,
                     res,
                     requestId,
@@ -385,8 +419,8 @@ export function createAi({
                         repairs: [...entry.conversation.repairs, { answer: entry.answer, problem }]
                     },
                     false
-                )
-            );
+                );
+            });
         })
     );
 

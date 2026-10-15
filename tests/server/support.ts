@@ -1,7 +1,7 @@
 import { PGlite } from '@electric-sql/pglite';
 import express from 'express';
 import type { AddressInfo } from 'net';
-import { Kysely } from 'kysely';
+import { Kysely, type KyselyPlugin } from 'kysely';
 import { PGliteDialect } from 'kysely-pglite-dialect';
 import type { AiLimits } from '../../server/ai';
 import type { AiProvider } from '../../server/aiTasks';
@@ -46,9 +46,10 @@ export interface Email {
 }
 
 /** Accounts on an empty in-process database, with email kept in an outbox. */
-export async function startAccounts() {
+export async function startAccounts(plugins: KyselyPlugin[] = []) {
     const db = new Kysely<Database>({
-        dialect: new PGliteDialect(new PGlite({ loadDataDir: emptyDatabase }))
+        dialect: new PGliteDialect(new PGlite({ loadDataDir: emptyDatabase })),
+        plugins
     });
     const outbox: Email[] = [];
     const auth = createAuth({
@@ -139,6 +140,7 @@ const sentBody = (body: unknown) => {
 let clients = 0;
 
 export interface ServeOptions {
+    databasePlugins?: KyselyPlugin[];
     sessionCheck?: number;
     assetQuota?: number;
     /** Where AI requests go, and their limits; without it, AI is off. */
@@ -158,8 +160,13 @@ export async function serve(options: ServeOptions = {}) {
 }
 
 /** As `serve`, until `close` is called, so one server may last for several tests. */
-export async function startServer({ sessionCheck, assetQuota, ai }: ServeOptions = {}) {
-    const accounts = await startAccounts();
+export async function startServer({
+    sessionCheck,
+    assetQuota,
+    ai,
+    databasePlugins
+}: ServeOptions = {}) {
+    const accounts = await startAccounts(databasePlugins);
     const app = express();
     const log = { error: () => {}, warn: () => {} };
     const sync = createSync({

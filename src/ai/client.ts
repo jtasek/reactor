@@ -81,7 +81,8 @@ async function* readLines(body: ReadableStream<Uint8Array>): AsyncGenerator<Gate
 /** Reads a streamed answer, telling `onEvent` each operation and message; refuses a failed one. */
 async function receive(
     response: Response,
-    onEvent: (event: ProposalEvent) => void
+    onEvent: (event: ProposalEvent) => void,
+    signal: AbortSignal
 ): Promise<Answer> {
     if (!response.ok || !response.body) {
         const { code } = (await response.json().catch(() => ({}))) as { code?: string };
@@ -92,6 +93,7 @@ async function receive(
     const answer: Answer = { requestId: '', model: '', readings: [], messages: [] };
 
     for await (const event of readLines(response.body)) {
+        signal.throwIfAborted();
         switch (event.type) {
             case 'start':
                 answer.requestId = event.requestId;
@@ -179,13 +181,20 @@ export async function propose({
     signal: AbortSignal;
     onEvent?: (event: ProposalEvent) => void;
 }): Promise<ProposalResult> {
-    const ask = async (path: string, body: object) =>
-        receive(await send(path, body, signal), onEvent);
+    const ask = async (path: string, body: object) => {
+        signal.throwIfAborted();
+        const answer = await receive(await send(path, body, signal), onEvent, signal);
+
+        signal.throwIfAborted();
+
+        return answer;
+    };
 
     try {
         const first = await ask(`/documents/${encodeURIComponent(documentId)}/requests`, request);
         const firstCheck = examine(first, check);
 
+        signal.throwIfAborted();
         if (firstCheck.valid || first.readings.length === 0) {
             return conclude(first, firstCheck);
         }
@@ -199,7 +208,11 @@ export async function propose({
             problem
         });
 
-        return conclude(repaired, examine(repaired, check));
+        const repairedCheck = examine(repaired, check);
+
+        signal.throwIfAborted();
+
+        return conclude(repaired, repairedCheck);
     } catch (error) {
         if (signal.aborted) {
             return { kind: 'cancelled' };
