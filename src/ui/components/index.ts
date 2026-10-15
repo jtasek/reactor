@@ -24,3 +24,4 @@ export { StatusBarContainer as StatusBar } from './StatusBar';
 export { Switch } from './Switch';
 export { ToolBarContainer as ToolBar } from './ToolBar';
 export { Variables } from './Variables';
+export { EditWithWords } from './EditWithWords';

@@ -1,6 +1,14 @@
 import React, { FC } from 'react';
-import { FolderOpen, ListTree, LibraryBig, SlidersHorizontal, Ellipsis } from 'lucide-react';
+import {
+    FolderOpen,
+    ListTree,
+    LibraryBig,
+    SlidersHorizontal,
+    Ellipsis,
+    Sparkles
+} from 'lucide-react';
 
+import { useAiAvailable } from 'src/app/aiHooks';
 import { useActions, useControls } from 'src/app/hooks';
 import { Icon } from '../Icon';
 import { DOCK_GEOMETRY_STYLE } from '../PanelLayout/geometry';
@@ -8,7 +16,8 @@ import styles from './styles.css';
 
 export const ApplicationBar: FC = () => {
     const { explorer, components, inspector, controlPanel } = useControls();
-    const { ui } = useActions();
+    const { ui, requestAiEdit } = useActions();
+    const aiAvailable = useAiAvailable();
 
     return (
         <nav className={styles.applicationBar} aria-label="Application" style={DOCK_GEOMETRY_STYLE}>
@@ -57,6 +66,20 @@ export const ApplicationBar: FC = () => {
             >
                 <Icon icon={{ component: Ellipsis, size: 20 }} />
             </button>
+            {aiAvailable && (
+                <>
+                    <span className={styles.divider} aria-hidden="true" />
+                    <button
+                        className={styles.button}
+                        type="button"
+                        aria-label="Edit with words"
+                        title="Edit with words"
+                        onClick={() => requestAiEdit()}
+                    >
+                        <Icon icon={{ component: Sparkles, size: 20 }} />
+                    </button>
+                </>
+            )}
         </nav>
     );
 };
