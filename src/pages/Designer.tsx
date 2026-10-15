@@ -10,6 +10,7 @@ import {
     DataView,
     DockablePanel,
     DocumentInfo,
+    EditWithWords,
     Explorer,
     GroupPanel,
     LayerPanel,
@@ -76,5 +77,6 @@ export const Designer: FC = () => (
         </PanelLayout>
         <StatusBar />
         <ResetDocumentDialog />
+        <EditWithWords />
     </Layout>
 );

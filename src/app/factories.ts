@@ -314,6 +314,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         enteredGroupId: null,
         enteredComponentId: null,
         resetDocumentId: null,
+        aiEditDocumentId: null,
         devices: {},
         notifications: [],
         providers: {},

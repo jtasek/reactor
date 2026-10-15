@@ -28,3 +28,4 @@ export { HighlightLayerCommand, LayerCommand, NewLayerCommand, UnlayerCommand } 
 export { ZoomInCommand, ZoomOutCommand, ZoomResetCommand } from './zoom';
 export { HideCommand, LockCommand, ShowAllCommand, UnlockCommand } from './visibility';
 export { ResetDocumentCommand } from './document';
+export { EditWithWordsCommand } from './ai';

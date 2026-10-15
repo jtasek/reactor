@@ -21,6 +21,7 @@ import {
     DetachInstanceCommand,
     CutCommand,
     DeleteCommand,
+    EditWithWordsCommand,
     GroupCommand,
     HideCommand,
     HighlightLayerCommand,
@@ -106,6 +107,7 @@ function registerCommands() {
     registerCommand(ZoomOutCommand);
     registerCommand(ZoomResetCommand);
     registerCommand(ResetDocumentCommand);
+    registerCommand(EditWithWordsCommand);
 }
 
 function registerTools() {
