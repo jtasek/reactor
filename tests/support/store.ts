@@ -15,6 +15,7 @@ import type { AssetServer } from 'src/app/services/assetSync';
 import type { Channel } from 'src/app/services/tabSync';
 import * as alignment from 'src/app/alignment';
 import * as clipboard from 'src/app/clipboard';
+import * as operations from 'src/app/operationBatches';
 import { provideEditorHelpers } from 'src/app/editorHelpers';
 import * as snapping from 'src/app/snapping';
 
@@ -69,7 +70,7 @@ export function createTestStore(
 ) {
     // Store tests run the editor's actions, as the editor page does once loaded.
     provideEditorHelpers(
-        options.editorLoaded === false ? undefined : { alignment, clipboard, snapping }
+        options.editorLoaded === false ? undefined : { alignment, clipboard, operations, snapping }
     );
     const storage = options.storage ?? new Map(Object.entries(seed));
     const indexedDB = options.indexedDB ?? new IDBFactory();

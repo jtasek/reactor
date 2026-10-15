@@ -151,7 +151,9 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
                             {turn.operations.length > 0 && (
                                 <ol className={styles.operations}>
                                     {turn.operations.map((operation, index) => (
-                                        <li key={index}>{describeOperation(operation)}</li>
+                                        <li key={index}>
+                                            {describeOperation(operation, document)}
+                                        </li>
                                     ))}
                                 </ol>
                             )}

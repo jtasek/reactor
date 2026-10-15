@@ -196,12 +196,15 @@ re-renders.** Components never mutate state directly.
   into a field, and `document.history` says what can be undone and redone.
 - **Operations** (`src/app/operations.ts`, `src/app/actions/operations.ts`): changes that
   arrive as data, as a paste, go through `applyOperations`, a batch of typed operations that
-  add variables, components, shapes and groups. A reference names an ID the document has or
-  the key of a record an earlier operation adds; every record is read back with the durable
-  readers before anything is written, so a batch applies whole or not at all, and the result
-  answers the new IDs by key or the problem, naming the operation. A batch is one undo step
-  of its own (`Collaboration.startBatch`), which records who made it, a person or an AI
-  request (`undoAuthors`). Paste builds its batch in `pasteOperations` (`src/app/clipboard.ts`).
+  add variables, components, shapes and groups, and change or delete variables, shapes and
+  groups the document has, each record in one operation at most and never a locked one.
+  Variables change first, as in the editor, then shapes, and deletions come last
+  (`removeVariable`, `deleteShape`). A reference names an ID the document has or the key of a
+  record an earlier operation adds, never one the batch deletes; every record is read back
+  with the durable readers before anything is written, so a batch applies whole or not at
+  all, and the result answers the new IDs by key or the problem, naming the operation. A
+  batch is one undo step of its own (`Collaboration.startBatch`), which records who made it,
+  a person or an AI request (`undoAuthors`). Paste builds its batch in `pasteOperations` (`src/app/clipboard.ts`).
   `checkOperations` answers whether a batch would apply, naming the operation, without
   applying it.
 - **AI** (`server/ai.ts`, `server/aiTasks.ts`, `src/ai/`): with `AI_PROVIDER`, the API's `/ai`
@@ -222,8 +225,8 @@ re-renders.** Components never mutate state directly.
   on the application bar only where AI is available) opens a non-modal chat for the current
   document (`state.aiEditDocumentId`) that loads with the AI client
   (`src/ui/components/EditWithWords`): it streams the proposal as a
-  list of what each operation adds (`describeOperation`) and the model's words, keeps it out of
-  the document until Accept applies it as one undo step by the AI request, and Stop, New chat,
+  list of what each operation adds, changes or deletes (`describeOperation`) and the model's
+  words, keeps it out of the document until Accept applies it as one undo step by the AI request, and Stop, New chat,
   Escape or closing aborts the request. The chat leaves the canvas editable. Its conversation and
   controller stay local in `src/ai/chat.ts`, surviving panel docking but cleared on close;
   keys stay in the chat only while it has focus. `documentContext` sends the selection with
@@ -589,7 +592,8 @@ Hidden guides are not drawn and locked ones do not move.
   `src/pages/registerEditor.ts`), not at startup, so they stay out of the entry bundle; add
   a new one there. Until then the registry is empty (`getCommands`, `getTools`), so code
   outside the editor must not count on them. So with the code only the editor's actions
-  run: snapping, aligning and the clipboard's format are provided by `registerEditor`
+  run: snapping, aligning, the clipboard's format and applying operations
+  (`src/app/operationBatches.ts`) are provided by `registerEditor`
   (`provideEditorHelpers`, `src/app/editorHelpers.ts`), and actions reach them through
   `editorHelpers()`; `createTestStore` provides them for store tests. The editor takes no
   input before they are provided (`editorLoaded`, in `takesEditorInput`), and a lint rule
