@@ -36,7 +36,60 @@ export interface AddGroup {
     shapes: string[];
 }
 
-export type Operation = AddVariable | AddComponent | AddShape | AddGroup;
+/**
+ * Changes a variable the document has: its name, its value, or both. A text
+ * variable's value is a template, as when added.
+ */
+export interface UpdateVariable {
+    op: 'updateVariable';
+    variable: string;
+    name?: string;
+    value?: unknown;
+}
+
+/** Deletes a variable; what followed it keeps its value, as deleting it in the editor does. */
+export interface DeleteVariable {
+    op: 'deleteVariable';
+    variable: string;
+}
+
+/**
+ * Changes fields of a shape the document has, each as `addShape` takes it; a
+ * property it sets otherwise stops following its variable. Its type cannot change.
+ */
+export interface UpdateShape {
+    op: 'updateShape';
+    shape: string;
+    changes: Partial<ShapeInput>;
+}
+
+/** Deletes shapes the document has, and the groups this empties. */
+export interface DeleteShapes {
+    op: 'deleteShapes';
+    shapes: string[];
+}
+
+/** Deletes a group the document has, keeping its shapes. */
+export interface DeleteGroup {
+    op: 'deleteGroup';
+    group: string;
+}
+
+/**
+ * Operations that change or delete a record name one the document has, not a
+ * key, and each record changes in one operation of a batch at most. Nothing else
+ * of the batch may refer to a record it deletes.
+ */
+export type Operation =
+    | AddVariable
+    | AddComponent
+    | AddShape
+    | AddGroup
+    | UpdateVariable
+    | DeleteVariable
+    | UpdateShape
+    | DeleteShapes
+    | DeleteGroup;
 
 export interface Batch {
     documentId: string;

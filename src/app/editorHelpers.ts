@@ -1,16 +1,18 @@
 import type * as Alignment from './alignment';
 import type * as Clipboard from './clipboard';
+import type * as OperationBatches from './operationBatches';
 import type * as Snapping from './snapping';
 
 /**
- * Code only the editor's gestures and commands run: snapping, aligning and the
- * clipboard's format. The editor page provides it as it loads (`registerEditor`),
+ * Code only the editor's gestures and commands run: snapping, aligning, the
+ * clipboard's format and applying operations. The editor page provides it as it loads (`registerEditor`),
  * so startup and the other pages go without it; actions reach it through
  * `editorHelpers`, which only runs once the editor has loaded.
  */
 export interface EditorHelpers {
     alignment: typeof Alignment;
     clipboard: typeof Clipboard;
+    operations: typeof OperationBatches;
     snapping: typeof Snapping;
 }
 

@@ -120,7 +120,8 @@ export default [
                                 '**/snapping',
                                 '**/alignment',
                                 '**/app/clipboard',
-                                '../clipboard'
+                                '../clipboard',
+                                '**/operationBatches'
                             ],
                             allowTypeImports: true,
                             message: 'Only the editor runs it: reach it through editorHelpers().'

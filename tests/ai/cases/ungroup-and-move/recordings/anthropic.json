@@ -1,0 +1,117 @@
+{
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "rounds": [
+        [
+            {
+                "type": "message_start",
+                "message": {
+                    "id": "msg_recorded",
+                    "type": "message",
+                    "role": "assistant",
+                    "model": "claude-haiku-5-5",
+                    "content": [],
+                    "stop_reason": null,
+                    "usage": {
+                        "input_tokens": 2400,
+                        "output_tokens": 1
+                    }
+                }
+            },
+            {
+                "type": "content_block_start",
+                "content_block": {
+                    "type": "thinking",
+                    "thinking": "",
+                    "signature": ""
+                },
+                "index": 0
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "signature_delta",
+                    "signature": "c2ln"
+                },
+                "index": 0
+            },
+            {
+                "type": "content_block_stop",
+                "index": 0
+            },
+            {
+                "type": "content_block_start",
+                "content_block": {
+                    "type": "tool_use",
+                    "id": "toolu_1",
+                    "name": "deleteGroup",
+                    "input": {}
+                },
+                "index": 1
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "{\"group\":\""
+                },
+                "index": 1
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "profile\"}"
+                },
+                "index": 1
+            },
+            {
+                "type": "content_block_stop",
+                "index": 1
+            },
+            {
+                "type": "content_block_start",
+                "content_block": {
+                    "type": "tool_use",
+                    "id": "toolu_2",
+                    "name": "updateShape",
+                    "input": {}
+                },
+                "index": 2
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "{\"shape\":\"fullName\",\"changes\":"
+                },
+                "index": 2
+            },
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": "{\"position\":{\"x\":90,\"y\":70}}}"
+                },
+                "index": 2
+            },
+            {
+                "type": "content_block_stop",
+                "index": 2
+            },
+            {
+                "type": "message_delta",
+                "delta": {
+                    "stop_reason": "tool_use",
+                    "stop_sequence": null
+                },
+                "usage": {
+                    "output_tokens": 120
+                }
+            },
+            {
+                "type": "message_stop"
+            }
+        ]
+    ]
+}

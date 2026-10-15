@@ -319,3 +319,26 @@ export const replaceTemplateIds = (template: string, idFor: (id: string) => stri
 
         return id === undefined ? undefined : `\${${id}${name === undefined ? '' : `$${name}`}}`;
     });
+
+/**
+ * Removes a variable, the templates holding it holding its value instead, without
+ * writing into the shapes what that changes: see `applyVariableChanges`.
+ */
+export function removeVariable(document: Document, variableId: string) {
+    const { variables } = document;
+    const value = escapeTemplate(String(variableValue(variables[variableId], variables)));
+    const inline = (template: string) =>
+        replaceInTemplate(template, (inside) => (inside === variableId ? value : undefined));
+
+    delete variables[variableId];
+    Object.values(variables).forEach((other) => {
+        if (other.type === 'text') {
+            other.values.default = inline(other.values.default);
+        }
+    });
+    Object.values(document.shapes).forEach((shape) => {
+        if (shape.type === 'text' && shape.template !== undefined) {
+            shape.template = inline(shape.template);
+        }
+    });
+}

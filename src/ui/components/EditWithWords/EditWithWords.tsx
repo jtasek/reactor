@@ -210,7 +210,7 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
                     {phase.operations.length > 0 && (
                         <ol className={styles.operations}>
                             {phase.operations.map((operation, index) => (
-                                <li key={index}>{describeOperation(operation)}</li>
+                                <li key={index}>{describeOperation(operation, document)}</li>
                             ))}
                         </ol>
                     )}

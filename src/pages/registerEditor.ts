@@ -1,5 +1,6 @@
 import * as alignment from 'src/app/alignment';
 import * as clipboard from 'src/app/clipboard';
+import * as operations from 'src/app/operationBatches';
 import { provideEditorHelpers } from 'src/app/editorHelpers';
 import * as snapping from 'src/app/snapping';
 import {
@@ -132,5 +133,5 @@ function registerTools() {
 export function registerEditor() {
     registerCommands();
     registerTools();
-    provideEditorHelpers({ alignment, clipboard, snapping });
+    provideEditorHelpers({ alignment, clipboard, operations, snapping });
 }

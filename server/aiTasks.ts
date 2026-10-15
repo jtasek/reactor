@@ -80,8 +80,11 @@ each under its ID.
 - Make the whole change in one answer, calling the tools in order. An operation may refer only to
   an ID the document has, or to the key of a record an earlier call of this answer adds.
 - Give each new shape and variable a short key of your own; later calls use it as an ID.
+- To change or delete what the document has, name it by its ID. Change each record in one call at
+  most, giving only the fields that change, and refer to nothing you delete. Locked records stay.
 - Colors are #rrggbb. A shape's property may follow a variable of its kind: its bindings map the
-  property's key, such as fill, to the variable's ID or key.
+  property's key, such as fill, to the variable's ID or key. Setting the property otherwise stops it
+  following the variable; changing the variable changes every shape following it.
 - A group needs two or more shapes, each in no other group.
 - Do only what was asked, and leave the rest of the document as it is.
 - When the tools cannot make the change, say why in one sentence and call none.`;
@@ -201,6 +204,20 @@ const SHAPE = {
     ]
 };
 
+/** Every field an update may change, of any type of shape, each as when adding one. */
+const SHAPE_CHANGES: Record<string, object> = {};
+
+SHAPE.anyOf.forEach(({ properties }) =>
+    Object.entries(properties).forEach(([field, schema]) => {
+        const known = SHAPE_CHANGES[field];
+
+        if (field === 'type' || field === 'componentId' || known === schema) {
+            return;
+        }
+        SHAPE_CHANGES[field] = known ? { anyOf: [known, schema] } : schema;
+    })
+);
+
 /** One tool per kind of operation, each with a JSON schema of its input. */
 export const TOOLS = [
     {
@@ -241,6 +258,70 @@ export const TOOLS = [
                 rotation: { type: 'number' }
             },
             required: ['name', 'shapes']
+        }
+    },
+    {
+        name: 'updateShape',
+        description: 'Changes fields of a shape the document has. Its type cannot change.',
+        parameters: {
+            type: 'object',
+            properties: {
+                shape: { type: 'string', description: 'The shape’s ID.' },
+                changes: {
+                    type: 'object',
+                    description:
+                        'Only the fields that change, each as when adding a shape of its type.',
+                    properties: SHAPE_CHANGES
+                }
+            },
+            required: ['shape', 'changes']
+        }
+    },
+    {
+        name: 'deleteShapes',
+        description: 'Deletes shapes the document has, and the groups this leaves empty.',
+        parameters: {
+            type: 'object',
+            properties: {
+                shapes: {
+                    type: 'array',
+                    items: { type: 'string', description: 'A shape ID.' },
+                    minItems: 1
+                }
+            },
+            required: ['shapes']
+        }
+    },
+    {
+        name: 'deleteGroup',
+        description: 'Ungroups a group the document has, keeping its shapes.',
+        parameters: {
+            type: 'object',
+            properties: { group: { type: 'string', description: 'The group’s ID.' } },
+            required: ['group']
+        }
+    },
+    {
+        name: 'updateVariable',
+        description:
+            'Renames a variable the document has or changes its value, which the shapes following it take.',
+        parameters: {
+            type: 'object',
+            properties: {
+                variable: { type: 'string', description: 'The variable’s ID.' },
+                name: { type: 'string', description: 'Unique, without {, } or $.' },
+                value: { description: 'A value of its type; a color is #rrggbb.' }
+            },
+            required: ['variable']
+        }
+    },
+    {
+        name: 'deleteVariable',
+        description: 'Deletes a variable the document has; what followed it keeps its value.',
+        parameters: {
+            type: 'object',
+            properties: { variable: { type: 'string', description: 'The variable’s ID.' } },
+            required: ['variable']
         }
     }
 ];
