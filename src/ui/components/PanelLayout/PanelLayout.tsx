@@ -10,6 +10,8 @@ import React, {
     useState
 } from 'react';
 import type { PanelPlacement } from 'src/app/types';
+import { X } from 'lucide-react';
+import { Icon } from '../Icon';
 import { useActions, useControls, usePanelLayout } from 'src/app/hooks';
 import { beyondClickSlip } from 'src/events/gestures';
 import styles from './styles.css';
@@ -40,6 +42,8 @@ interface DockablePanelProps {
     id: string;
     title: string;
     children: ReactNode;
+    visible?: boolean;
+    onClose?: () => void;
     /** Top/bottom are horizontal; side and corner docks are vertical. Floating is always allowed. */
     docking?: Docking;
     /** Optional alternate content for top/bottom docks; children is the vertical/floating view. */
@@ -264,7 +268,10 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
 
     const panels = Children.toArray(children) as Array<ReactElement<DockablePanelProps>>;
     const visiblePanels = panels.filter(
-        ({ props }) => controls[props.id as keyof typeof controls]?.visible ?? props.id === 'stats'
+        ({ props }) =>
+            props.visible ??
+            controls[props.id as keyof typeof controls]?.visible ??
+            props.id === 'stats'
     );
     const visiblePanelLocations = visiblePanels
         .map((panel) => `${panel.props.id}:${panelDock(panel) ?? 'floating'}`)
@@ -312,7 +319,7 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
         return () => observers.forEach((observer) => observer.disconnect());
     }, [visiblePanelLocations]);
     const renderPanel = (panel: ReactElement<DockablePanelProps>, dock: Dock) => {
-        const { id, title, children, horizontalView, docking = 'both' } = panel.props;
+        const { id, title, children, horizontalView, onClose, docking = 'both' } = panel.props;
         const orientation = orientationOf(dock);
         const content = orientation === 'horizontal' ? (horizontalView ?? children) : children;
         const placement = panelLayout[id] ?? { dock: null, position: { x: 0, y: 0 } };
@@ -626,10 +633,11 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
         return (
             <section
                 key={id}
-                className={`${styles.panel} ${floating ? styles.floating : styles.docked} ${
+                className={`${styles.panel} ${onClose ? styles.closable : ''} ${floating ? styles.floating : styles.docked} ${
                     isDragging && drag.moved ? styles.dragSource : ''
                 }`}
                 data-panel={id}
+                aria-label={onClose ? title : undefined}
                 data-orientation={orientation}
                 style={{
                     ...(floating ? { left: shownPosition.x, top: shownPosition.y } : {}),
@@ -734,6 +742,16 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                 >
                     {id === 'sideBar' ? <span aria-hidden="true">☰</span> : title}
                 </button>
+                {onClose && (
+                    <button
+                        type="button"
+                        className={styles.close}
+                        aria-label={`Close ${title}`}
+                        onClick={onClose}
+                    >
+                        <Icon icon={{ component: X, size: 16 }} />
+                    </button>
+                )}
                 <div className={styles.content}>{content}</div>
                 <div className={styles.grips}>{RESIZE_CORNERS[dock ?? 'floating'].map(grip)}</div>
             </section>

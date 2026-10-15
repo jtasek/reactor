@@ -129,6 +129,34 @@
     cursor: grabbing;
 }
 
+.closable .handle {
+    padding-inline: var(--panel-header-height);
+}
+
+.close {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    height: var(--panel-header-height);
+    justify-content: center;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: var(--panel-header-height);
+}
+
+.close:hover {
+    background: var(--control-background-active);
+}
+
+.close:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: -2px;
+}
+
 .handle:focus-visible {
     outline: 2px solid currentColor;
     outline-offset: -2px;

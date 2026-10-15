@@ -7,7 +7,7 @@ const LoadedEditWithWords = lazy(() =>
     }))
 );
 
-/** The Edit with words dialog, whose code and the AI client load the first time it opens. */
+/** The Edit with words chat, whose code and the AI client load the first time it opens. */
 export const EditWithWords: FC = () => {
     const documentId = useAiEdit();
 

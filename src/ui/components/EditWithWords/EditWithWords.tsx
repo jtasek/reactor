@@ -1,227 +1,247 @@
-import React, { FC, KeyboardEvent, useEffect, useId, useRef, useState } from 'react';
-import { propose, type ProposalEvent } from 'src/ai/client';
-import { documentContext } from 'src/ai/context';
+import React, { FC, KeyboardEvent, useEffect, useRef, useSyncExternalStore } from 'react';
+import { chatFor } from 'src/ai/chat';
+import { ContextTooLarge, documentContext } from 'src/ai/context';
 import { describeOperation } from 'src/ai/describe';
-import type { ProposedOperation } from 'src/ai/operations';
-import { useActions, useCurrentDocument } from 'src/app/hooks';
-import { Dialog } from '../Dialog';
+import { useActions, useCurrentDocument, useSelectedShapesIds } from 'src/app/hooks';
 import styles from './styles.css';
 
-/** What the model said and proposed so far, and what it is fixing. */
-interface Proposal {
-    operations: ProposedOperation[];
-    messages: string[];
-    repairing?: string;
-}
+const SCROLL_BOTTOM_REACH_PX = 32;
+const MAX_PROMPT_LENGTH = 2000;
 
-type Phase =
-    | { kind: 'asking'; problem?: string }
-    | ({ kind: 'proposing' } & Proposal)
-    | ({ kind: 'proposed'; requestId: string; model: string } & Proposal);
-
-/** The proposal as `event` changes it: a repair starts the operations again. */
-function receive(proposal: Proposal, event: ProposalEvent): Proposal {
-    switch (event.type) {
-        case 'operation':
-            return { ...proposal, operations: [...proposal.operations, event.operation] };
-        case 'message':
-            return { ...proposal, messages: [...proposal.messages, event.text] };
-        case 'repairing':
-            return { ...proposal, operations: [], repairing: event.problem };
-    }
-}
-
-/**
- * Asks AI for a change to a document in words and shows what it proposes as it
- * streams. Nothing changes until the person accepts, which applies the proposal
- * as one undo step; cancelling or closing stops the model.
- */
+/** A local chat whose proposed edits reach the document only after Accept. */
 export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
     const document = useCurrentDocument();
+    const selected = useSelectedShapesIds();
     const { applyOperations, checkOperations, closeAiEdit } = useActions();
-    const [prompt, setPrompt] = useState('');
-    const [phase, setPhase] = useState<Phase>({ kind: 'asking' });
-    const request = useRef<AbortController>(null);
+    const chat = chatFor(documentId);
+    const { draft, turns, problem } = useSyncExternalStore(chat.subscribe, chat.getSnapshot);
+    const current = turns.at(-1);
+    const pending = current?.status === 'proposing' || current?.status === 'proposed';
     const promptField = useRef<HTMLTextAreaElement>(null);
-    const formId = useId();
+    const chatRoot = useRef<HTMLDivElement>(null);
+    const conversation = useRef<HTMLDivElement>(null);
+    const followsBottom = useRef(true);
+    const wasPending = useRef(pending);
 
-    useEffect(() => () => request.current?.abort(), []);
+    useEffect(
+        () =>
+            chat.retain(() => {
+                if (window.document.activeElement === window.document.body) {
+                    window.document
+                        .querySelector<HTMLButtonElement>('button[aria-label="Edit with words"]')
+                        ?.focus();
+                }
+            }),
+        [chat]
+    );
     useEffect(() => {
-        if (phase.kind === 'asking') {
+        const root = chatRoot.current;
+        const keepKeys = (event: globalThis.KeyboardEvent) => {
+            event.stopPropagation();
+            if (event.key === 'Escape') {
+                closeAiEdit();
+            }
+        };
+
+        root?.addEventListener('keydown', keepKeys);
+
+        return () => root?.removeEventListener('keydown', keepKeys);
+    }, [closeAiEdit]);
+    useEffect(() => {
+        // Keyboard docking already focused the panel's header; keep it there.
+        if (!window.document.activeElement?.closest('[data-panel="aiEdit"]')) {
             promptField.current?.focus();
         }
-    }, [phase.kind]);
+    }, []);
+    useEffect(() => {
+        if (wasPending.current && !pending) {
+            promptField.current?.focus();
+        }
+        wasPending.current = pending;
+    }, [pending]);
+    useEffect(() => {
+        if (followsBottom.current && conversation.current) {
+            conversation.current.scrollTop = conversation.current.scrollHeight;
+        }
+    }, [turns]);
 
-    const ask = async () => {
-        const words = prompt.trim();
-
-        if (!words) {
+    const ask = () => {
+        if (pending || !draft.trim()) {
             return;
         }
+        let context: ReturnType<typeof documentContext>;
 
-        const controller = new AbortController();
+        try {
+            context = documentContext(document);
+        } catch (error) {
+            if (!(error instanceof ContextTooLarge)) {
+                throw error;
+            }
+            chat.setProblem(error.message);
 
-        request.current = controller;
-        setPhase({ kind: 'proposing', operations: [], messages: [] });
-
-        const result = await propose({
-            documentId,
-            request: { task: 'edit', prompt: words, context: documentContext(document) },
-            check: (operations) => checkOperations({ documentId, operations }),
-            signal: controller.signal,
-            onEvent: (event) =>
-                setPhase((current) =>
-                    current.kind === 'proposing'
-                        ? { ...receive(current, event), kind: 'proposing' }
-                        : current
-                )
+            return;
+        }
+        followsBottom.current = true;
+        void chat.send({
+            context,
+            check: (operations) => checkOperations({ documentId, operations })
         });
-
-        if (controller.signal.aborted) {
-            return;
-        }
-
-        switch (result.kind) {
-            case 'proposed':
-                setPhase((current) => ({
-                    kind: 'proposed',
-                    requestId: result.requestId,
-                    model: result.model,
-                    operations: result.operations,
-                    messages: current.kind === 'proposing' ? current.messages : []
-                }));
-                return;
-            case 'failed':
-                setPhase({ kind: 'asking', problem: result.problem });
-                return;
-            case 'cancelled':
-                setPhase({ kind: 'asking' });
-        }
     };
-
-    const cancel = () => {
-        request.current?.abort();
-        setPhase({ kind: 'asking' });
-    };
-
-    const accept = () => {
-        if (phase.kind !== 'proposed') {
-            return;
-        }
-
-        const result = applyOperations({
-            documentId,
-            by: { kind: 'ai', model: phase.model, requestId: phase.requestId },
-            operations: phase.operations
-        });
-
-        if (!result.applied) {
-            setPhase({ kind: 'asking', problem: result.problem });
-            return;
-        }
-
-        closeAiEdit();
-    };
-
-    const close = () => {
-        request.current?.abort();
-        closeAiEdit();
-    };
-
     const submitOnEnter = (event: KeyboardEvent<HTMLTextAreaElement>) => {
         if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
             event.preventDefault();
-            void ask();
+            ask();
         }
     };
+    const accept = () =>
+        chat.accept((proposal) =>
+            applyOperations({
+                documentId,
+                by: { kind: 'ai', model: proposal.model, requestId: proposal.requestId },
+                operations: proposal.operations
+            })
+        );
 
     return (
-        <Dialog
-            title="Edit with words"
-            description="Describe a change. Nothing changes until you accept what AI proposes."
-            visible
-            onClose={close}
-            actions={
-                <>
-                    {phase.kind === 'asking' && (
-                        <>
-                            <button type="button" onClick={close}>
-                                Close
-                            </button>
-                            <button
-                                type="submit"
-                                form={formId}
-                                data-variant="primary"
-                                disabled={!prompt.trim()}
-                            >
-                                Propose
-                            </button>
-                        </>
-                    )}
-                    {phase.kind === 'proposing' && (
-                        <button type="button" onClick={cancel}>
-                            Cancel
-                        </button>
-                    )}
-                    {phase.kind === 'proposed' && (
-                        <>
-                            <button type="button" onClick={cancel}>
-                                Discard
-                            </button>
-                            <button type="button" data-variant="primary" onClick={accept}>
-                                Accept
-                            </button>
-                        </>
-                    )}
-                </>
-            }
-        >
+        <div className={styles.chat} ref={chatRoot} role="group" aria-label="Chat controls">
+            <div className={styles.toolbar}>
+                <span>Review each change before applying it.</span>
+                <button
+                    type="button"
+                    onClick={() => {
+                        chat.clear();
+                        followsBottom.current = true;
+                        promptField.current?.focus();
+                    }}
+                >
+                    New chat
+                </button>
+            </div>
+            <div
+                className={styles.conversation}
+                role="log"
+                aria-label="AI conversation"
+                aria-live="polite"
+                ref={conversation}
+                onScroll={(event) => {
+                    const element = event.currentTarget;
+                    followsBottom.current =
+                        element.scrollHeight - element.scrollTop - element.clientHeight <=
+                        SCROLL_BOTTOM_REACH_PX;
+                }}
+            >
+                {turns.length === 0 && (
+                    <p className={styles.status}>
+                        Describe a change to get a proposal. Your canvas stays editable.
+                    </p>
+                )}
+                {turns.map((turn) => (
+                    <article key={turn.id} className={styles.turn}>
+                        <p className={styles.userMessage}>
+                            <span className={styles.speaker}>You</span>
+                            {turn.prompt}
+                        </p>
+                        <section className={styles.proposal} aria-label="Proposal">
+                            <span className={styles.speaker}>AI</span>
+                            {turn.messages.map((message, index) => (
+                                <p key={index} className={styles.message}>
+                                    {message}
+                                </p>
+                            ))}
+                            {turn.operations.length > 0 && (
+                                <ol className={styles.operations}>
+                                    {turn.operations.map((operation, index) => (
+                                        <li key={index}>
+                                            {describeOperation(operation, document)}
+                                        </li>
+                                    ))}
+                                </ol>
+                            )}
+                            {turn.status === 'proposing' && (
+                                <p className={styles.status}>
+                                    {turn.repairing
+                                        ? `Fixing a problem: ${turn.repairing}`
+                                        : 'Waiting for AI…'}
+                                </p>
+                            )}
+                            {turn.status === 'failed' && (
+                                <p className={styles.problem} role="alert">
+                                    {turn.problem}
+                                </p>
+                            )}
+                            {turn.status === 'accepted' && (
+                                <p className={styles.status}>Applied. You can undo this change.</p>
+                            )}
+                            {turn.status === 'discarded' && (
+                                <p className={styles.status}>Discarded. Nothing changed.</p>
+                            )}
+                            {turn.status === 'cancelled' && (
+                                <p className={styles.status}>Cancelled. Nothing changed.</p>
+                            )}
+                            {turn.status === 'proposed' && (
+                                <div className={styles.actions}>
+                                    <button type="button" onClick={chat.discard}>
+                                        Discard
+                                    </button>
+                                    <button type="button" data-variant="primary" onClick={accept}>
+                                        Accept
+                                    </button>
+                                </div>
+                            )}
+                        </section>
+                    </article>
+                ))}
+            </div>
             <form
-                id={formId}
                 className={styles.form}
                 onSubmit={(event) => {
                     event.preventDefault();
-                    void ask();
+                    ask();
                 }}
             >
+                <p className={styles.status}>
+                    {selected.length > 0
+                        ? 'Using selected items, their groups and the variables and components they use.'
+                        : 'Using this document. Select items first to share a smaller part.'}
+                </p>
+                {problem && (
+                    <p className={styles.problem} role="alert">
+                        {problem}
+                    </p>
+                )}
                 <textarea
                     ref={promptField}
                     className={styles.prompt}
                     aria-label="Change to make"
-                    placeholder="Add a sign-in button under the title"
-                    value={prompt}
-                    readOnly={phase.kind !== 'asking'}
-                    onChange={(event) => setPrompt(event.target.value)}
-                    // The dialog keeps keys from reaching the editor's shortcuts as they
-                    // bubble, so React sees them only as they are captured.
+                    placeholder="Describe a change…"
+                    value={draft}
+                    readOnly={pending}
+                    maxLength={MAX_PROMPT_LENGTH}
+                    onChange={(event) => chat.setDraft(event.target.value)}
                     onKeyDownCapture={submitOnEnter}
                 />
+                <div className={styles.actions}>
+                    {current?.status === 'proposing' ? (
+                        <button
+                            type="button"
+                            onClick={(event) => {
+                                event.preventDefault();
+                                chat.stop();
+                            }}
+                        >
+                            Stop
+                        </button>
+                    ) : (
+                        <button
+                            type="submit"
+                            data-variant="primary"
+                            disabled={pending || !draft.trim()}
+                        >
+                            Send
+                        </button>
+                    )}
+                </div>
             </form>
-            {phase.kind === 'asking' && phase.problem && (
-                <p className={styles.problem} role="alert">
-                    {phase.problem}
-                </p>
-            )}
-            {phase.kind !== 'asking' && (
-                <section className={styles.proposal} aria-label="Proposal" aria-live="polite">
-                    {phase.repairing && (
-                        <p className={styles.status}>Fixing a problem: {phase.repairing}</p>
-                    )}
-                    {phase.operations.length > 0 && (
-                        <ol className={styles.operations}>
-                            {phase.operations.map((operation, index) => (
-                                <li key={index}>{describeOperation(operation, document)}</li>
-                            ))}
-                        </ol>
-                    )}
-                    {phase.messages.map((message, index) => (
-                        <p key={index} className={styles.message}>
-                            {message}
-                        </p>
-                    ))}
-                    {phase.kind === 'proposing' && <p className={styles.status}>Waiting for AI…</p>}
-                </section>
-            )}
-        </Dialog>
+        </div>
     );
 };

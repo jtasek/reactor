@@ -222,13 +222,18 @@ re-renders.** Components never mutate state directly.
   limits per person and per workspace (`AI_LIMITS`), one request of a person at a time.
   `state.ai` is `available` only signed in on a server with AI. `src/ai/` loads only with
   what uses it, never at startup. Edit with words (`EditWithWordsCommand`, `w`, and a button
-  on the application bar only where AI is available) opens a dialog for the current document
-  (`state.aiEditDocumentId`, which keeps shortcuts and the clipboard from the editor) that
-  loads with the AI client (`src/ui/components/EditWithWords`): it streams the proposal as a
+  on the application bar only where AI is available) opens a non-modal chat for the current
+  document (`state.aiEditDocumentId`) that loads with the AI client
+  (`src/ui/components/EditWithWords`): it streams the proposal as a
   list of what each operation adds, changes or deletes (`describeOperation`) and the model's
-  words, keeps it out of the document until Accept applies it as one undo step by the AI
-  request, and Cancel, Escape or closing aborts the request. Eval cases are folders of `tests/ai/cases/`: a fixture
-  document with IDs of its own, a prompt, an optional image, checks of the document after
+  words, keeps it out of the document until Accept applies it as one undo step by the AI request, and Stop, New chat,
+  Escape or closing aborts the request. The chat leaves the canvas editable. Its conversation and
+  controller stay local in `src/ai/chat.ts`, surviving panel docking but cleared on close;
+  keys stay in the chat only while it has focus. `documentContext` sends the selection with
+  its group, variable and component dependencies, or the document without a selection,
+  bounded to 32 KiB of UTF-8 JSON and 300 records before sending. Eval cases are folders of
+  `tests/ai/cases/`: a fixture document with IDs of its own, a prompt, an optional image,
+  checks of the document after
   applying, and a provider's recorded events for each provider (`recordings/anthropic.json`,
   `recordings/openai.json`), which the tests replay through that provider's adapter, the server
   and the editor's code; `pnpm ai:record` asks the provider `AI_PROVIDER` and the rest configure
