@@ -75,9 +75,10 @@ test.describe('with the clipboard', () => {
     test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
 
     test('undoes a paste as one step, apart from the drawing just before it', async ({ page }) => {
+        // With the time standing still, every change is within the time that joins them.
+        await page.clock.setFixedTime(new Date('2026-10-15T12:00:00Z'));
         await openEditor(page);
         await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
-        await page.waitForTimeout(APART_MS);
         await drawRect(page, { x: 200, y: 100 }, { x: 250, y: 150 });
         await pointer(page, 'pointerdown', { x: 80, y: 80 });
         await pointer(page, 'pointermove', { x: 300, y: 170 });
@@ -91,5 +92,9 @@ test.describe('with the clipboard', () => {
 
         await page.keyboard.press('ControlOrMeta+Shift+z');
         await expect(shapes(page)).toHaveCount(4);
+
+        await page.keyboard.press('ControlOrMeta+z');
+        await page.keyboard.press('ControlOrMeta+z');
+        await expect(shapes(page)).toHaveCount(0);
     });
 });

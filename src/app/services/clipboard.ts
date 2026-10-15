@@ -19,7 +19,7 @@ interface ClipboardActions {
     displayError: (message: string) => void;
 }
 
-const PASTE_ERRORS: Record<Exclude<PasteResult, 'pasted'>, string> = {
+const PASTE_ERRORS: Record<Exclude<Extract<PasteResult, string>, 'pasted'>, string> = {
     noShapes: 'The clipboard holds no shapes to paste.',
     notNow: 'Nothing was pasted, as the editor was busy. Paste again.'
 };
@@ -59,9 +59,14 @@ export function createClipboard(system: SystemClipboard | undefined) {
     const apply = (text: string) => {
         const result = actions?.pasteShapes(text);
 
-        if (actions && result && result !== 'pasted') {
-            actions.displayError(PASTE_ERRORS[result]);
+        if (!actions || !result || result === 'pasted') {
+            return;
         }
+        actions.displayError(
+            typeof result === 'string'
+                ? PASTE_ERRORS[result]
+                : `Nothing was pasted. ${result.problem}`
+        );
     };
 
     return {

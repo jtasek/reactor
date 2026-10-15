@@ -464,6 +464,27 @@ it.each([
     expect(document().shapes[document().shapesIds[0]].selected).toBe(true);
 });
 
+it('answers why a paste was refused, naming the operation', () => {
+    const { store, document } = storeWith(shapes[0]);
+    const text = JSON.stringify({
+        format: 'reactor/shapes',
+        shapes: [
+            {
+                type: 'instance',
+                componentId: 'gone',
+                position: { x: 0, y: 0 },
+                overrides: {},
+                name: 'Card'
+            }
+        ]
+    });
+
+    expect(store.actions.pasteShapes(text)).toEqual({
+        problem: expect.stringMatching(/^Operation 1: gone /)
+    });
+    expect(document().shapesIds).toHaveLength(1);
+});
+
 it('leaves the clipboard alone while typing, dragging or away from the designer', () => {
     const { store, document } = storeWith(shapes[0]);
     const copied = store.actions.copySelection()!;

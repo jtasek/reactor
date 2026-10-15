@@ -1,4 +1,5 @@
 import type { AddShape, Operation } from 'src/app/operations';
+import type { Component } from 'src/app/types';
 import { createComponent, createShape } from 'src/app/factories';
 import { COLLECTIONS, readEntity } from 'src/app/services/documentStorage';
 import { createTestStore } from './support/store';
@@ -286,5 +287,70 @@ describe('applying operations', () => {
                 { op: 'addGroup', name: 'Other', rotation: 0, shapes: [first, 'rectangle at 80'] }
             ])
         ).toMatchObject({ applied: false });
+    });
+
+    it('resolves an existing ID that a key of another kind repeats', () => {
+        const { store, document, apply } = setup();
+        const brand = store.actions.createVariable({
+            name: 'Brand',
+            type: 'color',
+            value: '#3366ff'
+        })!;
+
+        expect(
+            apply([
+                { ...rectangle(), key: brand },
+                {
+                    ...rectangle(40),
+                    shape: { ...rectangle(40).shape, bindings: { fill: brand } }
+                }
+            ])
+        ).toMatchObject({ applied: true });
+        expect(document().shapes[document().shapesIds[1]].fill).toBe('#3366ff');
+    });
+
+    describe('with a component', () => {
+        const source = createShape({ ...rectangle().shape, name: 'Box', order: 'a0' });
+        const component = (props: NonNullable<Component['props']>) =>
+            createComponent({
+                id: 'card',
+                shapesIds: [source.id],
+                sourceShapes: { [source.id]: source },
+                props
+            });
+        const instance = (overrides: Record<string, string>): Operation => ({
+            op: 'addShape',
+            key: 'instance',
+            shape: { type: 'instance', componentId: 'card', position: { x: 0, y: 0 }, overrides }
+        });
+        const label = { id: 'label', label: 'Label', shapeId: source.id, key: 'name' };
+
+        it('takes an instance overriding its props', () => {
+            const { apply } = setup();
+
+            expect(
+                apply([
+                    { op: 'addComponent', component: component([label]) },
+                    instance({ label: 'Hi' })
+                ])
+            ).toMatchObject({ applied: true });
+        });
+
+        it.each<[string, Operation[]]>([
+            [
+                'an override of a prop the component lacks',
+                [{ op: 'addComponent', component: component([label]) }, instance({ other: 'Hi' })]
+            ],
+            [
+                'a prop naming a shape outside the component',
+                [{ op: 'addComponent', component: component([{ ...label, shapeId: 'missing' }]) }]
+            ]
+        ])('refuses %s', (_, operations) => {
+            const { apply, content } = setup();
+            const before = content();
+
+            expect(apply(operations)).toMatchObject({ applied: false });
+            expect(content()).toEqual(before);
+        });
     });
 });

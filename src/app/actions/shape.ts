@@ -514,8 +514,8 @@ const pasteTarget = ({ state, effects }: Context): Point | null => {
 
 /**
  * Adds the shapes clipboard text holds, through `applyOperations`, selected in
- * place of the selection. Pastes nothing while the editor takes no input, or when
- * the text holds no shapes it can add.
+ * place of the selection. Pastes nothing while the editor takes no input, when the
+ * text holds no shapes, or when the batch is refused, answering why.
  */
 export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (context, text) => {
     const { state, actions } = context;
@@ -543,7 +543,7 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
     });
 
     if (!result.applied) {
-        return 'noShapes';
+        return { problem: result.problem };
     }
 
     actions.unselectShapes();

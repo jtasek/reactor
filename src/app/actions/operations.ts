@@ -31,7 +31,6 @@ interface Staged {
     components: Component[];
     shapes: Shape[];
     groups: Group[];
-    ids: Record<string, string>;
 }
 
 const declaredKey = (operation: Exclude<Operation, AddGroup>): [string, Referable] => {
@@ -45,15 +44,21 @@ const declaredKey = (operation: Exclude<Operation, AddGroup>): [string, Referabl
     }
 };
 
+const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
 const problem = (index: number, error: unknown) =>
-    new Error(`Operation ${index + 1}: ${error instanceof Error ? error.message : String(error)}`);
+    new Error(`Operation ${index + 1}: ${errorMessage(error)}`);
 
 /**
  * The records a batch would add to `document`, each read back as saved documents
  * are, with its references resolved. Throws, naming the operation, at the first
  * that is invalid.
  */
-function stageOperations(document: Document, operations: Operation[], newId: () => string): Staged {
+function stageOperations(
+    document: Document,
+    operations: Operation[],
+    newId: () => string
+): Staged & { ids: Record<string, string> } {
     if (operations.length === 0) {
         throw new Error('The batch has no operations.');
     }
@@ -79,7 +84,7 @@ function stageOperations(document: Document, operations: Operation[], newId: () 
     const reference = (ref: string, collection: Referable, index: number) => {
         const entry = declared.get(ref);
 
-        if (!entry) {
+        if (entry?.collection !== collection) {
             if (Object.hasOwn(document[collection], ref)) {
                 return ref;
             }
@@ -88,7 +93,7 @@ function stageOperations(document: Document, operations: Operation[], newId: () 
 
         const id = ids.get(ref);
 
-        if (entry.collection !== collection || entry.index >= index || id === undefined) {
+        if (entry.index >= index || id === undefined) {
             throw new Error(`${ref} is not one of the batch's earlier ${collection}.`);
         }
 
@@ -100,7 +105,8 @@ function stageOperations(document: Document, operations: Operation[], newId: () 
         );
 
     const variables: Record<string, Variable> = { ...document.variables };
-    const staged: Staged = { variables: [], components: [], shapes: [], groups: [], ids: {} };
+    const components: Record<string, Component> = { ...document.components };
+    const staged: Staged = { variables: [], components: [], shapes: [], groups: [] };
 
     /** Writes into `shape` the variables it follows and its template, and resolves its references. */
     const linkShape = (shape: Shape, input: ShapeInput, index: number) => {
@@ -124,8 +130,13 @@ function stageOperations(document: Document, operations: Operation[], newId: () 
             return;
         }
         shape.componentId = reference(shape.componentId, 'components', index);
+        const props = components[shape.componentId].props ?? [];
+
         shape.overrides = Object.fromEntries(
             Object.entries(shape.overrides).map(([id, value]) => {
+                if (!props.some((prop) => prop.id === id)) {
+                    throw new Error(`${id} is not a prop of the component ${shape.componentId}.`);
+                }
                 if (typeof value === 'object') {
                     return [id, { variableId: reference(value.variableId, 'variables', index) }];
                 }
@@ -161,18 +172,33 @@ function stageOperations(document: Document, operations: Operation[], newId: () 
         }
     });
 
-    const shapes = Object.values(document.shapes);
-    const taken = new Set(shapes.map((shape) => shape.name));
-    const nameShape = shapeNamer(shapes);
-    const components: Record<string, Component> = { ...document.components };
-    const grouped = new Set(Object.values(document.groups).flatMap((group) => group.shapesIds));
+    let namer: { taken: Set<string>; nameShape: (type: Shape['type']) => string } | undefined;
+    let grouped: Set<string> | undefined;
     const top = document.shapesIds[document.shapesIds.length - 1];
     let order = top ? document.shapes[top].order : null;
 
-    const stageShape = ({ key, shape: input }: AddShape, index: number) => {
+    /** Names a shape added without one, as `addShape` does; only such shapes need the names. */
+    const nameShape = (input: ShapeInput) => {
+        if (!namer) {
+            const shapes = [...Object.values(document.shapes), ...staged.shapes];
+
+            namer = {
+                taken: new Set(shapes.map(({ name }) => name)),
+                nameShape: shapeNamer(shapes)
+            };
+        }
         const component = input.type === 'instance' ? components[input.componentId] : undefined;
-        const name =
-            input.name ?? (component ? instanceName(component.name, taken) : nameShape(input.type));
+        const name = component
+            ? instanceName(component.name, namer.taken)
+            : namer.nameShape(input.type);
+
+        namer.taken.add(name);
+
+        return name;
+    };
+
+    const stageShape = ({ key, shape: input }: AddShape, index: number) => {
+        const name = input.name ?? nameShape(input);
 
         order = orderAbove(order);
         const shape = createShape({ ...input, name, order, selected: false });
@@ -182,7 +208,7 @@ function stageOperations(document: Document, operations: Operation[], newId: () 
             shape.parentShapeId = reference(shape.parentShapeId, 'shapes', index);
         }
         readEntity('shapes', shape);
-        taken.add(name);
+        namer?.taken.add(name);
         ids.set(key, shape.id);
         staged.shapes.push(shape);
     };
@@ -197,6 +223,9 @@ function stageOperations(document: Document, operations: Operation[], newId: () 
         if (copy.parentId !== undefined) {
             reference(copy.parentId, 'components', index);
         }
+        if (copy.props?.some((prop) => !copy.shapesIds.includes(prop.shapeId))) {
+            throw new Error('a prop names a shape outside the component.');
+        }
         Object.values(sourceShapes).forEach((shape) => linkShape(shape, { ...shape }, index));
         readEntity('components', copy);
         components[copy.id] = copy;
@@ -209,7 +238,11 @@ function stageOperations(document: Document, operations: Operation[], newId: () 
         if (shapesIds.length < 2) {
             throw new Error('a group needs two shapes.');
         }
-        if (shapesIds.some((id) => grouped.has(id))) {
+        const inGroups = (grouped ??= new Set(
+            Object.values(document.groups).flatMap((group) => group.shapesIds)
+        ));
+
+        if (shapesIds.some((id) => inGroups.has(id))) {
             throw new Error('a shape is in another group already.');
         }
         if (new Set(shapesIds.map((id) => shapeLayer(document, id)?.id)).size > 1) {
@@ -218,7 +251,7 @@ function stageOperations(document: Document, operations: Operation[], newId: () 
         const group = createGroup({ name, rotation, shapesIds });
 
         readEntity('groups', group);
-        shapesIds.forEach((id) => grouped.add(id));
+        shapesIds.forEach((id) => inGroups.add(id));
         staged.groups.push(group);
     };
 
@@ -239,9 +272,7 @@ function stageOperations(document: Document, operations: Operation[], newId: () 
         }
     });
 
-    staged.ids = Object.fromEntries(ids);
-
-    return staged;
+    return { ...staged, ids: Object.fromEntries(ids) };
 }
 
 /**
@@ -258,12 +289,12 @@ export const applyOperations: ActionWithParamAndResult<Batch, BatchResult> = (
         return { applied: false, problem: `There is no document ${batch.documentId}.` };
     }
 
-    let staged: Staged;
+    let staged: ReturnType<typeof stageOperations>;
 
     try {
         staged = stageOperations(untracked(document), batch.operations, effects.newId);
     } catch (error) {
-        return { applied: false, problem: error instanceof Error ? error.message : String(error) };
+        return { applied: false, problem: errorMessage(error) };
     }
 
     effects.collaboration.startBatch(batch.documentId, batch.by);

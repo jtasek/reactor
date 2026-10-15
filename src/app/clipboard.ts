@@ -33,8 +33,8 @@ import {
     writeText
 } from './variables';
 
-/** What a paste did: added shapes, found none in the text, or waited for the editor. */
-export type PasteResult = 'pasted' | 'noShapes' | 'notNow';
+/** What a paste did: added shapes, found none in the text, waited for the editor, or was refused. */
+export type PasteResult = 'pasted' | 'noShapes' | 'notNow' | { problem: string };
 
 /** A copied group: its name, rotation and the positions of its shapes among the copied ones. */
 export type CopiedGroup = ReturnType<typeof readCopiedGroup>;
@@ -348,9 +348,17 @@ export function pasteOperations(
         if (shape.type !== 'instance') {
             return;
         }
+        const component =
+            document.components[shape.componentId] ??
+            copied.components?.find(({ id }) => id === shape.componentId);
+        const props = component?.props ?? [];
+
         shape.overrides = Object.fromEntries(
             Object.entries(shape.overrides).flatMap(
                 ([id, value]): Array<[string, InstanceShape['overrides'][string]]> => {
+                    if (!props.some((prop) => prop.id === id)) {
+                        return [];
+                    }
                     if (typeof value === 'string') {
                         return [[id, variables.remapTemplate(value)]];
                     }
