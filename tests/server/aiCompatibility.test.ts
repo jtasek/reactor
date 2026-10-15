@@ -68,6 +68,30 @@ describe('provider compatibility', () => {
         expect(result.answer.calls.map(({ input }) => input)).toEqual([label.input, box.input]);
     });
 
+    it('reads calls from a server that sends them without an index', async () => {
+        const chunk = (toolCalls: object[], finishReason: string | null = null) => ({
+            choices: [{ index: 0, delta: { tool_calls: toolCalls }, finish_reason: finishReason }]
+        });
+        const { result, operations } = await turn('openai', [
+            chunk([{ id: 'label-call', function: { name: label.name, arguments: '' } }]),
+            chunk([{ function: { arguments: JSON.stringify(label.input) } }]),
+            chunk([
+                {
+                    id: 'box-call',
+                    function: { name: box.name, arguments: JSON.stringify(box.input) }
+                }
+            ]),
+            chunk([], 'tool_calls')
+        ]);
+
+        expect(result.stop).toBe('done');
+        expect(operations).toEqual([
+            { op: label.name, ...label.input },
+            { op: box.name, ...box.input }
+        ]);
+        expect(result.answer.calls.map(({ id }) => id)).toEqual(['label-call', 'box-call']);
+    });
+
     it.each(['anthropic', 'openai'] as const)(
         'does not accept %s ending before its completion events',
         async (provider) => {

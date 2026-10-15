@@ -21,7 +21,8 @@ interface Chunk {
             content?: string | null;
             refusal?: string | null;
             tool_calls?: Array<{
-                index: number;
+                /** Left out by some compatible servers, which send each call whole. */
+                index?: number;
                 id?: string;
                 function?: { name?: string; arguments?: string };
             }>;
@@ -144,6 +145,14 @@ export function openAiProvider({
                 }
                 told = true;
             };
+            /** Without an index, a delta continues the last call unless it brings a new ID. */
+            const callWithoutIndex = (id: string | undefined) => {
+                const last = calls.at(-1);
+
+                return last && (id === undefined || id === last.id)
+                    ? calls.length - 1
+                    : calls.length;
+            };
             /** Calls can interleave; emit them in order only once their JSON is complete. */
             const finishCalls = (ended = false) => {
                 for (; finished < calls.length; finished++) {
@@ -178,10 +187,12 @@ export function openAiProvider({
                 text += choice?.delta?.content ?? '';
                 refused ||= Boolean(choice?.delta?.refusal);
                 (choice?.delta?.tool_calls ?? []).forEach(({ index, id, function: call }) => {
-                    calls[index] ??= { id: id ?? `call_${index}`, name: '', arguments: '' };
-                    calls[index].id = id ?? calls[index].id;
-                    calls[index].name += call?.name ?? '';
-                    calls[index].arguments += call?.arguments ?? '';
+                    const slot = index ?? callWithoutIndex(id);
+
+                    calls[slot] ??= { id: id ?? `call_${slot}`, name: '', arguments: '' };
+                    calls[slot].id = id ?? calls[slot].id;
+                    calls[slot].name += call?.name ?? '';
+                    calls[slot].arguments += call?.arguments ?? '';
                 });
                 finishCalls();
                 if (choice?.finish_reason) {
