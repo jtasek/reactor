@@ -1,43 +1,180 @@
-import type { Document } from 'src/app/types';
+import type { Document, Shape } from 'src/app/types';
 import { readEntity } from 'src/app/services/documentStorage';
+import { inDrawingOrder } from 'src/app/drawOrder';
+import { TEMPLATE_PART, templateVariable } from 'src/app/variables';
+
+/** A transport-size budget, not a provider-specific token count. */
+export const MAX_CONTEXT_BYTES = 32 * 1024;
+const MAX_CONTEXT_RECORDS = 300;
 
 /** What a shape keeps for the editor alone, or names elsewhere, as its ID. */
-const EDITOR_FIELDS = new Set(['id', 'created', 'modified', 'createdBy', 'modifiedBy', 'order']);
+const EDITOR_FIELDS = new Set([
+    'id',
+    'created',
+    'modified',
+    'createdBy',
+    'modifiedBy',
+    'order',
+    'children'
+]);
+
+export class ContextTooLarge extends Error {
+    constructor() {
+        super(
+            'This context is too large. Select fewer items or shorten their text, then try again.'
+        );
+    }
+}
+
+const shapeContext = (shape: Shape) =>
+    Object.fromEntries(
+        Object.entries(readEntity('shapes', shape)).filter(([field]) => !EDITOR_FIELDS.has(field))
+    );
+
+type ShapeContext = ReturnType<typeof shapeContext>;
+interface ComponentContext {
+    name: string;
+    props: Array<{ id: string; label: string }>;
+    shapes: Record<string, ShapeContext>;
+}
 
 /**
- * What a model is told of a document: its shapes in drawing order, groups,
- * variables with their values, and components with their props, each under its
- * ID, without what only the editor uses.
+ * The selection, its groups and dependencies, in drawing order. With no
+ * selection, a small document and its design system remain available. Nothing
+ * is silently truncated: oversized context is refused before sending it.
  */
 export function documentContext(document: Document) {
-    return {
-        shapes: Object.fromEntries(
-            document.shapesIds.map((id) => [
-                id,
-                Object.fromEntries(
-                    Object.entries(readEntity('shapes', document.shapes[id])).filter(
-                        ([field]) => !EDITOR_FIELDS.has(field)
-                    )
-                )
-            ])
-        ),
-        groups: Object.fromEntries(
-            Object.values(document.groups).map(({ id, name, shapesIds }) => [
-                id,
-                { name, shapes: shapesIds }
-            ])
-        ),
-        variables: Object.fromEntries(
-            Object.values(document.variables).map(({ id, name, type, values }) => [
-                id,
-                { name, type, value: values.default }
-            ])
-        ),
-        components: Object.fromEntries(
-            Object.values(document.components).map(({ id, name, props = [] }) => [
-                id,
-                { name, props: props.map((prop) => ({ id: prop.id, label: prop.label })) }
-            ])
-        )
+    const selection = [...document.selectedShapesIds];
+    const selected = new Set(selection);
+    const whole = selection.length === 0;
+    const shapeIds = new Set(whole ? document.shapesIds : selection);
+    const groups = new Map<string, { name: string; shapes: string[] }>();
+    const variables = new Map<string, { name: string; type: string; value: unknown }>();
+    const components = new Map<string, ComponentContext>();
+    let records = 0;
+
+    const reserve = () => {
+        if (++records > MAX_CONTEXT_RECORDS) {
+            throw new ContextTooLarge();
+        }
     };
+
+    const followTemplate = (text: string) => {
+        for (const [, inside, name] of text.matchAll(TEMPLATE_PART)) {
+            const variable =
+                inside === undefined
+                    ? undefined
+                    : templateVariable(document.variables, inside, name);
+
+            if (variable) {
+                addVariable(variable.id);
+            }
+        }
+    };
+    const addVariable = (id: string): void => {
+        const variable = document.variables[id];
+
+        if (!Object.hasOwn(document.variables, id) || variables.has(id)) {
+            return;
+        }
+        reserve();
+        variables.set(id, {
+            name: variable.name,
+            type: variable.type,
+            value: variable.values.default
+        });
+        if (variable.type === 'text') {
+            followTemplate(variable.values.default);
+        }
+    };
+    const followShape = (shape: Shape) => {
+        Object.values(shape.bindings ?? {}).forEach(addVariable);
+        if (shape.type === 'text' && shape.template !== undefined) {
+            followTemplate(shape.template);
+        }
+        if (shape.type === 'instance') {
+            addComponent(shape.componentId);
+            Object.values(shape.overrides).forEach((override) => {
+                if (typeof override === 'object') {
+                    addVariable(override.variableId);
+                } else if (typeof override === 'string') {
+                    followTemplate(override);
+                }
+            });
+        }
+    };
+    const addComponent = (id: string): void => {
+        const component = document.components[id];
+
+        if (!Object.hasOwn(document.components, id) || components.has(id)) {
+            return;
+        }
+        reserve();
+        const source: ComponentContext = {
+            name: component.name,
+            props: (component.props ?? []).map(({ id, label }) => ({ id, label })),
+            shapes: {}
+        };
+        const members = new Set(component.shapesIds);
+        const ordered = component.sourceShapes
+            ? inDrawingOrder(component.sourceShapes)
+            : document.shapesIds;
+
+        components.set(id, source);
+        source.shapes = Object.fromEntries(
+            ordered
+                .filter((shapeId) => members.has(shapeId))
+                .flatMap((shapeId) => {
+                    const shape = component.sourceShapes?.[shapeId] ?? document.shapes[shapeId];
+
+                    if (!shape) {
+                        return [];
+                    }
+                    reserve();
+                    followShape(shape);
+
+                    return [[shapeId, shapeContext(shape)]];
+                })
+        );
+    };
+
+    Object.values(document.groups).forEach(({ id, name, shapesIds }) => {
+        if (whole || shapesIds.some((id) => selected.has(id))) {
+            reserve();
+            const members = shapesIds.filter((id) => Object.hasOwn(document.shapes, id));
+
+            groups.set(id, { name, shapes: [...members] });
+            members.forEach((id) => shapeIds.add(id));
+        }
+    });
+    const shapes = Object.fromEntries(
+        document.shapesIds
+            .filter((id) => shapeIds.has(id))
+            .map((id) => {
+                reserve();
+                const shape = document.shapes[id];
+
+                followShape(shape);
+
+                return [id, shapeContext(shape)];
+            })
+    );
+
+    if (whole) {
+        Object.keys(document.variables).forEach(addVariable);
+        Object.keys(document.components).forEach(addComponent);
+    }
+    const context = {
+        selection,
+        shapes,
+        groups: Object.fromEntries(groups),
+        variables: Object.fromEntries(variables),
+        components: Object.fromEntries(components)
+    };
+
+    if (new TextEncoder().encode(JSON.stringify(context)).byteLength > MAX_CONTEXT_BYTES) {
+        throw new ContextTooLarge();
+    }
+
+    return context;
 }

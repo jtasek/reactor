@@ -33,11 +33,11 @@ describe('Edit with words', () => {
         expect(locked.state.aiEditDocumentId).toBeNull();
     });
 
-    it('keeps shortcuts and the clipboard from the editor while open', () => {
+    it('keeps canvas shortcuts and the clipboard available while chat is open', () => {
         const store = storeWithAi('available');
 
         store.actions.requestAiEdit();
-        expect(takesEditorInput(store.state)).toBe(false);
+        expect(takesEditorInput(store.state)).toBe(true);
 
         store.actions.closeAiEdit();
         expect(store.state.aiEditDocumentId).toBeNull();

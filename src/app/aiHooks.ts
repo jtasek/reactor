@@ -5,8 +5,12 @@ import { useAppState } from './hooks';
 /** Whether AI is offered to the person signed in. */
 export const useAiAvailable = () => useAppState((state) => state.ai === 'available');
 
-/** The document AI is asked to change while its dialog is open, if it is the one shown. */
+/** The document AI is asked to change while its chat is open, if it is the one shown. */
 export const useAiEdit = () =>
-    useAppState((state) =>
-        state.aiEditDocumentId === state.currentDocumentId ? state.aiEditDocumentId : undefined
-    );
+    useAppState((state) => {
+        const documentId = state.aiEditDocumentId;
+        const currentDocumentId = state.currentDocumentId;
+        const available = state.ai === 'available';
+
+        return available && documentId === currentDocumentId ? documentId : undefined;
+    });

@@ -481,7 +481,7 @@ export type Application = {
         camera: Camera;
     } | null;
     resetDocumentId: string | null;
-    /** The document a person is asking AI to change, while its dialog is open. */
+    /** The document a person is asking AI to change, while its chat is open. */
     aiEditDocumentId: string | null;
     devices: HashTable<Device>;
     documents: HashTable<Document>;

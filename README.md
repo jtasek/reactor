@@ -207,6 +207,18 @@ proposes, which the editor checks before showing; a problem goes back to the mod
 Each person may make 100 requests a day, and use 2 million tokens, and each workspace 500
 requests and 10 million tokens, one request of a person at a time.
 
+Edit with words (`W`, or its application-bar button) opens a movable, dockable chat
+window. Messages and proposals stay in the conversation; Accept applies a proposal as one
+undo step, and Discard leaves the document unchanged. The canvas stays editable beside the
+chat. Stop cancels a request, and New chat clears the local conversation. With a
+selection, it sends only those shapes, their groups, and the variables and component
+sources they use. Without a selection it uses the document and its design system. Each
+message uses the current context, which the chat shows above its composer. Context is
+limited to 32 KiB of UTF-8 JSON and 300 records, including component-source shapes. If it
+is too large, nothing is sent: select fewer items or shorten their text. Context stays
+whole rather than being silently truncated. These are transport limits, not a count of any
+provider's tokens; the gateway still accounts for provider-reported token use.
+
 Without `SMTP_URL`, the development server writes email to its log instead.
 `compose.yaml` runs the editor with a PostgreSQL database: set `POSTGRES_PASSWORD`,
 `BETTER_AUTH_SECRET` and `SMTP_URL`, then run `docker compose up --build`. Server
