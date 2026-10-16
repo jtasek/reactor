@@ -42,6 +42,8 @@ const CASES = new URL('./cases/', import.meta.url);
  */
 const RECORDING = process.env.AI_RECORD === '1';
 const LIVE = RECORDING || process.env.AI_EVAL === '1';
+/** Live evals score each case against the gates; recording still fails a case that misses. */
+const EVALUATING = !RECORDING && process.env.AI_EVAL === '1';
 const REPORT = process.env.AI_EVAL_REPORT ?? 'test-results/ai-eval.json';
 const samples: EvalSample[] = [];
 let model = '';
@@ -65,7 +67,7 @@ function pricing(): Pricing | undefined {
 
     return { inputPerMillion: Number(input), outputPerMillion: Number(output) };
 }
-const prices = LIVE ? pricing() : undefined;
+const prices = EVALUATING ? pricing() : undefined;
 
 const LIVE_TIMEOUT_MS = 120_000;
 
@@ -148,7 +150,7 @@ describe('AI eval cases', () => {
     });
     afterAll(async () => {
         await harness.close();
-        if (!LIVE) return;
+        if (!EVALUATING) return;
         const report = evaluationReport(configured, model, suite, samples, prices);
         const baseline = process.env.AI_EVAL_BASELINE
             ? (JSON.parse(readFileSync(process.env.AI_EVAL_BASELINE, 'utf8')) as EvalReport)
@@ -282,7 +284,7 @@ describe('AI eval cases', () => {
                 expect(content(b)).toEqual(before);
                 if (result.kind !== 'proposed') {
                     sample.problems.push(`Nothing was proposed: ${JSON.stringify(result)}`);
-                    if (!LIVE) throw new Error(sample.problems[0]);
+                    if (!EVALUATING) throw new Error(sample.problems[0]);
                     return;
                 }
 
@@ -301,7 +303,7 @@ describe('AI eval cases', () => {
                 ).toMatchObject({ applied: true });
                 sample.problems = test.check(shownDocument(a));
                 sample.passed = sample.problems.length === 0;
-                if (!LIVE) expect(sample.problems).toEqual([]);
+                if (!EVALUATING) expect(sample.problems).toEqual([]);
                 settle(copies);
                 expect(content(b)).toEqual(content(a));
                 expect(a.collaboration.undoAuthors(DOCUMENT_ID)).toEqual([by]);
@@ -316,7 +318,7 @@ describe('AI eval cases', () => {
                 throw error;
             } finally {
                 if (sample.durationMs === 0) sample.durationMs = performance.now() - started;
-                if (LIVE) {
+                if (EVALUATING) {
                     sample.usage =
                         usageMissing || !usage.length
                             ? null
