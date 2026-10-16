@@ -1,0 +1,58 @@
+name: AI evaluation
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '20 3 * * *'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ai-evaluation
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    # Provider calls are opt-in, including for manual runs; ordinary CI stays offline.
+    if: vars.AI_EVAL_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: pnpm install --frozen-lockfile
+
+      # Pin a successful run as the comparison, rather than silently moving the baseline.
+      - name: Download configured baseline
+        if: vars.AI_EVAL_BASELINE_RUN != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASELINE_RUN: ${{ vars.AI_EVAL_BASELINE_RUN }}
+        run: |
+          gh run download "$BASELINE_RUN" --name ai-eval --dir baseline
+          echo 'AI_EVAL_BASELINE=baseline/ai-eval.json' >> "$GITHUB_ENV"
+
+      - name: Evaluate configured provider
+        run: pnpm ai:eval
+        env:
+          AI_PROVIDER: ${{ vars.AI_PROVIDER }}
+          AI_EDIT_MODEL: ${{ vars.AI_EDIT_MODEL }}
+          AI_BASE_URL: ${{ vars.AI_BASE_URL }}
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          AI_EVAL_INPUT_USD_PER_MILLION: ${{ vars.AI_EVAL_INPUT_USD_PER_MILLION }}
+          AI_EVAL_OUTPUT_USD_PER_MILLION: ${{ vars.AI_EVAL_OUTPUT_USD_PER_MILLION }}
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ai-eval
+          path: test-results/ai-eval.json
+          if-no-files-found: warn
+          retention-days: 90

@@ -237,7 +237,11 @@ re-renders.** Components never mutate state directly.
   applying, and a provider's recorded events for each provider (`recordings/anthropic.json`,
   `recordings/openai.json`), which the tests replay through that provider's adapter, the server
   and the editor's code; `pnpm ai:record` asks the provider `AI_PROVIDER` and the rest configure
-  and records its answers.
+  and records its answers. Forty cases run for each adapter offline; cases without a provider
+  recording use explicit hand-authored `reference` rounds, never counted as live quality.
+  `pnpm ai:eval` runs the configured provider without changing recordings and writes
+  `test-results/ai-eval.json` with validity, semantic checks, latency, usage and optional cost
+  and baseline comparison. The nightly workflow is opt-in (`AI_EVAL_ENABLED`); see README.
 - **Server sync** (`src/app/services/serverSync.ts`, loaded only when signed in): syncs each
   document over one Hocuspocus socket through a Yjs document that mirrors the shared one, and
   passes the server's changes to `Collaboration.receive`, so they merge like any other copy's.
