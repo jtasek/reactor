@@ -122,6 +122,7 @@
     "typecheck": "pnpm run tsc && tsc -p tsconfig.test.json && tsc -p tsconfig.server.json",
     "test:browser": "playwright test",
     "ai:record": "cross-env AI_RECORD=1 vitest run tests/ai/cases.test.ts",
+    "ai:eval": "cross-env AI_EVAL=1 AI_RECORD=0 vitest run tests/ai/cases.test.ts",
     "check": "pnpm run lint:baseline && pnpm run lint:css && pnpm run typecheck && pnpm test && pnpm run test:browser"
   }
 }

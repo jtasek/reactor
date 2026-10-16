@@ -219,6 +219,43 @@ is too large, nothing is sent: select fewer items or shorten their text. Context
 whole rather than being silently truncated. These are transport limits, not a count of any
 provider's tokens; the gateway still accounts for provider-reported token use.
 
+### AI evaluations
+
+`pnpm test tests/ai/cases.test.ts` runs forty edit cases through both provider adapters,
+the real gateway and two collaborating editor copies. It checks the requested result,
+no changes before acceptance, sharing after acceptance and one-step undo. Separate proposal
+tests check cancellation, refusals, malformed replies and the one-repair limit.
+The original six cases use saved event fixtures; the other thirty-four have explicitly
+hand-authored `reference` rounds in their `case.ts`. These exercise the protocol and editor,
+not model quality. A provider recording, when present, takes precedence over a reference.
+
+With the provider environment above configured, `pnpm ai:eval` makes live calls on the
+forty fixtures without replacing recordings. It writes `test-results/ai-eval.json`, including
+per-case diagnostics, first-try and after-repair validity, semantic pass rate, first-operation
+p50 and completion p95, and provider-reported tokens across both attempts. These timings
+include the local gateway and validation, exclude test setup, and preserve provider streaming.
+No production documents are sent. `pnpm ai:record` also makes live calls and replaces that
+provider's recordings; review them before committing.
+
+Live gates require 90% first-try validity, 97% validity after one repair, 97% of cases satisfying
+the requested edit, first-operation p50 at most 2 seconds, and completion p95 at most 5 seconds.
+Any atomicity, collaboration or undo failure fails the run independently of these rates.
+Set `AI_EVAL_BASELINE` to a previous live report to fail on a semantic pass-rate drop greater
+than three percentage points. It must cover the same provider and case suite; the model may
+change. Without a baseline, the absolute gates still run and the report says `baseline: null`.
+For a flat-rate cost estimate, supply both `AI_EVAL_INPUT_USD_PER_MILLION` and
+`AI_EVAL_OUTPUT_USD_PER_MILLION`. Missing usage or prices produces an unknown cost, not zero.
+This estimate does not account for cache discounts or other provider fees.
+
+The **AI evaluation** workflow runs nightly at 03:20 UTC, or manually, only after the repository
+variable `AI_EVAL_ENABLED=true` is set. Configure repository variables `AI_PROVIDER`,
+`AI_EDIT_MODEL`, optional `AI_BASE_URL` and the optional prices, plus secret `AI_API_KEY` when
+required by the endpoint. Its report is retained as the `ai-eval` artifact. After establishing
+a baseline, set `AI_EVAL_BASELINE_RUN` to that workflow run's ID. Baselines expire after 90 days;
+renew the pin deliberately, and establish a new baseline when the case suite changes.
+Run live evaluations again before changing the model or system instructions. Offline results
+do not establish the R2 model-quality gate or replace testing with people outside the team.
+
 Without `SMTP_URL`, the development server writes email to its log instead.
 `compose.yaml` runs the editor with a PostgreSQL database: set `POSTGRES_PASSWORD`,
 `BETTER_AUTH_SECRET` and `SMTP_URL`, then run `docker compose up --build`. Server

@@ -226,6 +226,14 @@ Done when `tests/undo.test.ts` (two copies) and `tests/browser/undo.spec.ts` pas
 
 The user describes a change in words, sees it proposed and accepts it.
 
+Implementation status: the gateway, chat, bounded context and mutation operations are merged
+in #178–#182. Forty cases now exercise both adapters offline, with a live evaluation command
+and an opt-in nightly workflow. The additional reference answers are hand-authored fixtures;
+their passing results do not establish model quality. Live validity, semantic accuracy, latency
+and cost still need measurement with a configured provider, and the external-user gate below
+remains open. Component creation as an AI operation is also not implemented; existing component
+instances and source shapes can be edited.
+
 1. The gateway with one provider adapter, usage limits and the recorded-response harness.
 2. Edit with words: a lazy command that turns a request into operations on shapes, variables,
    components and alignment, with the proposal view, cancel and undo.

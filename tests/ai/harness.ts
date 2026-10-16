@@ -1,7 +1,7 @@
 import { orderAbove } from 'src/app/drawOrder';
 import { createDocument } from 'src/app/factories';
 import { hydrateDocument } from 'src/app/services/documentStorage';
-import type { Document } from 'src/app/types';
+import type { Component, Document } from 'src/app/types';
 import type { Send } from 'src/ai/client';
 import type { AiProvider } from '../../server/aiTasks';
 import { DOCUMENT_ID } from '../support/collaboration';
@@ -16,6 +16,7 @@ export interface Fixture {
     /** In drawing order, the first at the bottom. */
     shapes?: Record<string, { type: string } & Record<string, unknown>>;
     groups?: Record<string, { name: string; shapes: string[] }>;
+    components?: Record<string, Pick<Component, 'name' | 'shapesIds'> & Partial<Component>>;
 }
 
 /**
@@ -28,6 +29,10 @@ export interface AiCase {
     prompt: string;
     /** An image in the case's folder that the person attached. */
     image?: string;
+    /** Local selection, applied after hydrating the durable fixture. */
+    selection?: string[];
+    /** Hand-authored rounds for offline adapter coverage, never model-quality evidence. */
+    reference?: Array<Array<{ op: string } & Record<string, unknown>>>;
     /** What is wrong with the document after applying the proposal; nothing when it passes. */
     check(document: Document): string[];
 }
@@ -35,7 +40,12 @@ export interface AiCase {
 const entity = { locked: false, visible: true };
 
 /** The fixture as a document of the shared test copies, read as a saved document is. */
-export function fixtureDocument({ variables = {}, shapes = {}, groups = {} }: Fixture): Document {
+export function fixtureDocument({
+    variables = {},
+    shapes = {},
+    groups = {},
+    components = {}
+}: Fixture): Document {
     let order: string | null = null;
     const now = new Date().toISOString();
 
@@ -66,6 +76,12 @@ export function fixtureDocument({ variables = {}, shapes = {}, groups = {} }: Fi
                     }
                 ];
             })
+        ),
+        components: Object.fromEntries(
+            Object.entries(components).map(([id, component]) => [
+                id,
+                { ...entity, ...component, id }
+            ])
         ),
         groups: Object.fromEntries(
             Object.entries(groups).map(([id, { name, shapes: shapesIds }]) => [
