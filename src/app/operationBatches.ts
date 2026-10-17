@@ -19,6 +19,7 @@ import {
     bindingHolds,
     removeVariable,
     replaceTemplateIds,
+    unbindEditedProperties,
     writeText
 } from './variables';
 import { variableNamed, resolveVariable } from './variableResolver';
@@ -408,7 +409,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
 
     /**
      * Stages the fields an update leaves different from the shape, keeping the
-     * bindings that still hold after the batch's variables have changed.
+     * bindings not explicitly replaced that still hold after the batch's variables change.
      */
     const stageShapeUpdate = ({ shape: id, changes }: UpdateShape, index: number) => {
         const fields = Object.keys(changes);
@@ -421,8 +422,11 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             throw new Error(`its ${fixed} cannot change.`);
         }
         const current = projected?.shapes[id] ?? document.shapes[id];
-        const shape = { ...structuredClone(json(current)), ...structuredClone(changes) } as Shape;
-        const kept = Object.entries(current.bindings ?? {}).filter(([key, variableId]) => {
+        const shape = structuredClone(json(current));
+        unbindEditedProperties(shape, fields);
+        const bindings = shape.bindings ?? {};
+        Object.assign(shape, structuredClone(changes));
+        const kept = Object.entries(bindings).filter(([key, variableId]) => {
             const property = bindableProperty(key);
             const variable = variables[variableId];
 

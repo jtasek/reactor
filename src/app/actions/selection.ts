@@ -5,6 +5,7 @@ import { translateShape } from '../geometry';
 import { getCommand } from './startup';
 import { drawnExtent, selectedItems, shapeGroup } from '../membership';
 import { isShapeVisible } from '../utils';
+import { unbind } from '../variables';
 
 /** Aligning, which the editor provides as it loads. */
 const alignment = () => editorHelpers().alignment;
@@ -34,6 +35,7 @@ export const hideSelection: Action = ({ state }) => {
         unselect(currentDocument, group.shapesIds);
     });
     shapes.forEach((shape) => {
+        unbind(shape, 'visible');
         shape.visible = false;
         shape.selected = false;
     });
@@ -44,6 +46,11 @@ export const showAll: Action = ({ state, actions }) => {
 
     actions.showAllLayers();
 
+    Object.values(shapes).forEach((shape) => {
+        if (!shape.visible) {
+            unbind(shape, 'visible');
+        }
+    });
     [shapes, groups, layers].forEach((table) =>
         Object.values(table).forEach((item) => {
             if (!item.visible) {
@@ -56,6 +63,7 @@ export const showAll: Action = ({ state, actions }) => {
 const setSelectionLocked = ({ currentDocument }: Application, locked: boolean) => {
     const { groups, shapes } = selectedItems(currentDocument);
 
+    shapes.forEach((shape) => unbind(shape, 'locked'));
     [...groups, ...shapes].forEach((item) => {
         if (item.locked !== locked) {
             item.locked = locked;

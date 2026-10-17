@@ -1,3 +1,4 @@
+import { rectToBox } from 'src/app/utils';
 import { readClipboard } from 'src/app/clipboard';
 import { readEntity } from 'src/app/services/documentStorage';
 import { variableNamed } from 'src/app/variableResolver';
@@ -146,13 +147,87 @@ describe('binding a property to a variable', () => {
         expect(shapes()[1].fill).toBe('#00ff00');
     });
 
+    it('detaches a direct same-value edit immediately, keeping unrelated bindings', () => {
+        const { store, shapes } = storeWithShapes();
+        const brand = create(store, 'brand', 'color', '#3366ff')!;
+        const angle = create(store, 'angle', 'number', 45)!;
+        const [id] = shapes().map((shape) => shape.id);
+        store.actions.bindProperty({ shapeIds: [id], key: 'fill', variableId: brand });
+        store.actions.bindProperty({ shapeIds: [id], key: 'rotation', variableId: angle });
+
+        store.actions.updateShape({ id, fill: '#3366ff' });
+        expect(shapes()[0].bindings).toEqual({ rotation: angle });
+        store.actions.setVariableValue({ variableId: brand, value: '#ff0000' });
+        expect(shapes()[0].fill).toBe('#3366ff');
+    });
+
+    it('detaches state commands even when they write the current value', () => {
+        const { store, shapes } = storeWithShapes();
+        const shown = create(store, 'shown', 'boolean', true)!;
+        const locked = create(store, 'locked', 'boolean', false)!;
+        const [id] = shapes().map((shape) => shape.id);
+        store.actions.bindProperty({ shapeIds: [id], key: 'visible', variableId: shown });
+        store.actions.bindProperty({ shapeIds: [id], key: 'locked', variableId: locked });
+
+        store.actions.showShape(id);
+        store.actions.unlockShape(id);
+        expect(shapes()[0].bindings).toBeUndefined();
+        store.actions.setVariableValue({ variableId: shown, value: false });
+        store.actions.setVariableValue({ variableId: locked, value: true });
+        expect(shapes()[0]).toMatchObject({ visible: true, locked: false });
+    });
+
+    it('a position edit replaces both coordinate bindings but keeps style bindings', () => {
+        const { store, shapes } = storeWithShapes();
+        const coordinate = create(store, 'coordinate', 'number', 100)!;
+        const brand = create(store, 'brand', 'color', '#3366ff')!;
+        const id = shapes()[0].id;
+        for (const key of ['x', 'y']) {
+            store.actions.bindProperty({ shapeIds: [id], key, variableId: coordinate });
+        }
+        store.actions.bindProperty({ shapeIds: [id], key: 'fill', variableId: brand });
+        store.actions.updateShape({ id, position: { x: 100, y: 100 } });
+        expect(shapes()[0].bindings).toEqual({ fill: brand });
+    });
+
+    it('an explicit text value replaces its template even when the text stays the same', () => {
+        const { store, document } = storeWithShapes(0);
+        const name = create(store, 'Person', 'text', 'Ada')!;
+        store.actions.addShape({ type: 'text', position: { x: 0, y: 0 }, value: 'Hello' });
+        const [id] = document().shapesIds;
+        store.actions.setShapesProperty({ shapeIds: [id], key: 'text', value: 'Hi ${Person}' });
+        store.actions.updateShape({ id, value: 'Hi Ada' });
+        expect(document().shapes[id]).not.toHaveProperty('template');
+        store.actions.setVariableValue({ variableId: name, value: 'Grace' });
+        expect(document().shapes[id]).toMatchObject({ value: 'Hi Ada' });
+    });
+
+    it('selection state commands detach only the shape properties they edit', () => {
+        const { store, shapes } = storeWithShapes();
+        const shown = create(store, 'shown', 'boolean', true)!;
+        const unlocked = create(store, 'unlocked', 'boolean', false)!;
+        const id = shapes()[0].id;
+        store.actions.bindProperty({ shapeIds: [id], key: 'visible', variableId: shown });
+        store.actions.bindProperty({ shapeIds: [id], key: 'locked', variableId: unlocked });
+        store.actions.selectShape(id);
+        store.actions.hideSelection();
+        expect(shapes()[0].bindings).toEqual({ locked: unlocked });
+        store.actions.showAll();
+        store.actions.selectShape(id);
+        store.actions.unlockSelection();
+        expect(shapes()[0].bindings).toBeUndefined();
+    });
+
     it('holds through the noise of measuring the shape', () => {
         const { store, shapes, document } = storeWithShapes();
         const left = create(store, 'left', 'number', 100)!;
         const [id] = document().shapesIds;
 
         store.actions.bindProperty({ shapeIds: [id], key: 'x', variableId: left });
-        store.actions.updateShape({ id, position: { x: 100.0000038, y: 0 } });
+        store.actions.setShapeBounds({
+            id,
+            bounds: rectToBox({ x: 100.0000038, y: 0, width: 20, height: 10 })
+        });
 
         expect(boundVariable(shapes()[0], 'x', document())?.id).toBe(left);
     });
@@ -277,6 +352,37 @@ describe('variables shared between copies', () => {
                 bindings: { fill: brand }
             })
         );
+        expect(sharedContent(a)).toEqual(sharedContent(b));
+    });
+
+    it('shares detachment and restores it with undo without reverting another person’s edit', async () => {
+        const copies = await createCopies(2, (store) => {
+            store.actions.addShape(rectangle());
+            const brand = create(store, 'brand', 'color', '#3366ff')!;
+            const [id] = store.state.currentDocument.shapesIds;
+            store.actions.bindProperty({ shapeIds: [id], key: 'fill', variableId: brand });
+        });
+        const [a, b] = copies;
+        const [id] = shownDocument(a).shapesIds;
+        const [brand] = Object.keys(shownDocument(a).variables);
+        edit(a, (actions) => actions.updateShape({ id, fill: '#3366ff' }));
+        settle(copies);
+        copies.forEach((copy) => expect(shownDocument(copy).shapes[id].bindings).toBeUndefined());
+        edit(b, (actions) => actions.updateShape({ id, name: 'Another person’s name' }));
+        settle(copies);
+
+        a.collaboration.undo(shownDocument(a).id);
+        settle(copies);
+        copies.forEach((copy) =>
+            expect(shownDocument(copy).shapes[id]).toMatchObject({
+                fill: '#3366ff',
+                bindings: { fill: brand },
+                name: 'Another person’s name'
+            })
+        );
+        a.collaboration.redo(shownDocument(a).id);
+        settle(copies);
+        copies.forEach((copy) => expect(shownDocument(copy).shapes[id].bindings).toBeUndefined());
         expect(sharedContent(a)).toEqual(sharedContent(b));
     });
 

@@ -267,8 +267,13 @@ The Variables panel creates named colors, numbers, text and booleans. Inspector 
 follow a variable, and text can include `${Name}` templates. Renaming a variable preserves
 its references; deleting one leaves the shapes' values in place.
 
-Values and template diagnostics share a pure central resolver. This first foundation step
-keeps existing bindings and saved documents unchanged. Typed aliases, independent Theme and
+Inspector and AI edits of a property, and the hide, show, lock and unlock commands, stop it
+following its variable, even when the written value is unchanged. Moves by dragging, arrow
+keys or Align and Space stop it following only once the value differs. An AI operation can explicitly bind the
+property again in the same update. Undo restores the binding together with the edit.
+
+Values and template diagnostics share a pure central resolver; saved variable definitions
+keep their existing format. Typed aliases, independent Theme and
 Density dimensions, and design-system packages follow in the
 [variable roadmap](./APPLICATION_PLAN.md#variable-foundation-v1v5-incremental).
 

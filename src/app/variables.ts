@@ -117,6 +117,30 @@ export function unbind(shape: Shape, key: string) {
 }
 
 /**
+ * The bindings of `shape` an explicit edit of `fields` replaces, even when the new
+ * value equals the variable's. Position vectors replace both coordinate bindings; text
+ * content and templates replace the text binding. Other geometry effects still use
+ * bindingHolds until gestures and geometry edits have explicit binding rules.
+ */
+export function editedBindings(shape: Shape, fields: string[]): string[] {
+    return Object.keys(shape.bindings ?? {}).filter((key) => {
+        const written =
+            key === 'text'
+                ? ['value', 'template']
+                : key === 'x' || key === 'y'
+                  ? ['position', 'start', 'end', 'points']
+                  : [key];
+
+        return written.some((field) => fields.includes(field));
+    });
+}
+
+/** Removes the bindings of `shape` an explicit edit of `fields` replaces. */
+export function unbindEditedProperties(shape: Shape, fields: string[]) {
+    editedBindings(shape, fields).forEach((key) => unbind(shape, key));
+}
+
+/**
  * Writes into the shapes what the document's variables make them now that they
  * changed from `before`: the values of the properties bound to them and the text of
  * texts with a template. A binding or template that no longer held before, as a

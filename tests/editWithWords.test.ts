@@ -114,6 +114,17 @@ describe('Edit with words', () => {
         expect(describe({ op: 'updateShape', shape: title, changes: { value: 'Welcome' } })).toBe(
             'Change text “Title”: text “Welcome”'
         );
+        store.actions.bindProperty({ shapeIds: [footer], key: 'fill', variableId: brand });
+        expect(describe({ op: 'updateShape', shape: footer, changes: { fill: '#3366ff' } })).toBe(
+            'Change rectangle “Footer”: fill; stops following color variable “Brand”'
+        );
+        expect(
+            describe({
+                op: 'updateShape',
+                shape: footer,
+                changes: { fill: '#3366ff', bindings: { fill: brand } }
+            })
+        ).toBe('Change rectangle “Footer”: fill, bindings');
         expect(describe({ op: 'deleteShapes', shapes: [footer] })).toBe(
             'Delete rectangle “Footer”'
         );
