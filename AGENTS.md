@@ -616,7 +616,7 @@ Hidden guides are not drawn and locked ones do not move.
   `src/pages/registerEditor.ts`), not at startup, so they stay out of the entry bundle; add
   a new one there. Until then the registry is empty (`getCommands`, `getTools`), so code
   outside the editor must not count on them. So with the code only the editor's actions
-  run: snapping, aligning, the clipboard's format and applying operations
+  run: snapping, aligning, the clipboard's format, alias edits and applying operations
   (`src/app/operationBatches.ts`) are provided by `registerEditor`
   (`provideEditorHelpers`, `src/app/editorHelpers.ts`), and actions reach them through
   `editorHelpers()`; `createTestStore` provides them for store tests. The editor takes no

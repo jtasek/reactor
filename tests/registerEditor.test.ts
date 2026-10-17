@@ -1,4 +1,5 @@
 import { getCommand, getCommands, getTools, registerCommand } from 'src/app/actions/startup';
+import * as aliases from 'src/app/variableAliases';
 import * as snapping from 'src/app/snapping';
 import { editorHelpers, editorLoaded } from 'src/app/editorHelpers';
 import { takesEditorInput } from 'src/events/input';
@@ -18,6 +19,7 @@ describe('the editor’s commands and tools', () => {
         expect(getTools()).toEqual([]);
 
         registerEditor();
+        expect(editorHelpers().aliases).toBe(aliases);
         const commands = getCommands().map((command) => command.id);
         const tools = getTools().map((tool) => tool.id);
 

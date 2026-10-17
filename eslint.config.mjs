@@ -121,7 +121,8 @@ export default [
                                 '**/alignment',
                                 '**/app/clipboard',
                                 '../clipboard',
-                                '**/operationBatches'
+                                '**/operationBatches',
+                                '**/variableAliases'
                             ],
                             allowTypeImports: true,
                             message: 'Only the editor runs it: reach it through editorHelpers().'
