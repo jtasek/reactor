@@ -83,8 +83,9 @@ each under its ID.
 - To change or delete what the document has, name it by its ID. Change each record in one call at
   most, giving only the fields that change, and refer to nothing you delete. Locked records stay.
 - Colors are #rrggbb. A shape's property may follow a variable of its kind: its bindings map the
-  property's key, such as fill, to the variable's ID or key. Setting the property otherwise stops it
-  following the variable; changing the variable changes every shape following it.
+  property's key, such as fill, to the variable's ID or key. Setting the property, even to the
+  value it has, stops it following the variable unless bindings names it again; changing the
+  variable changes every shape following it.
 - A group needs two or more shapes, each in no other group.
 - Do only what was asked, and leave the rest of the document as it is.
 - When the tools cannot make the change, say why in one sentence and call none.`;

@@ -1,4 +1,5 @@
 import type { Document } from 'src/app/types';
+import { editedBindings } from 'src/app/variables';
 import type { ProposedOperation } from './operations';
 
 const quoted = (text: string) => `“${text}”`;
@@ -52,8 +53,19 @@ export function describeOperation(operation: ProposedOperation, document: Docume
                     ? [`text ${quoted(changes.value)}`]
                     : [];
             const fields = Object.keys(changes).filter((field) => field !== 'value');
+            const changed = `Change ${shapeLabel(document, operation.shape)}: ${[...texted, ...fields].join(', ')}`;
+            const shape = document.shapes[operation.shape];
+            const unfollowed = shape
+                ? editedBindings(shape, Object.keys(changes))
+                      .filter((key) => !changes.bindings || !(key in changes.bindings))
+                      .map((key) => shape.bindings![key])
+                : [];
 
-            return `Change ${shapeLabel(document, operation.shape)}: ${[...texted, ...fields].join(', ')}`;
+            return unfollowed.length === 0
+                ? changed
+                : `${changed}; stops following ${[...new Set(unfollowed)]
+                      .map((id) => variableLabel(document, id))
+                      .join(', ')}`;
         }
         case 'deleteShapes':
             return operation.shapes.length === 1

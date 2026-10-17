@@ -267,8 +267,9 @@ The Variables panel creates named colors, numbers, text and booleans. Inspector 
 follow a variable, and text can include `${Name}` templates. Renaming a variable preserves
 its references; deleting one leaves the shapes' values in place.
 
-Explicit property edits and visibility/lock commands stop following the variable they
-replace, even when the written value is unchanged. An AI operation can explicitly bind the
+Inspector and AI edits of a property, and the hide, show, lock and unlock commands, stop it
+following its variable, even when the written value is unchanged. Moves by dragging, arrow
+keys or Align and Space stop it following only once the value differs. An AI operation can explicitly bind the
 property again in the same update. Undo restores the binding together with the edit.
 
 Values and template diagnostics share a pure central resolver; saved variable definitions
