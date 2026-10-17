@@ -9,6 +9,8 @@
     --dialog-primary-background: var(--primary-action-color);
     --dialog-primary-hover-background: color-mix(in srgb, var(--primary-action-color) 90%, black);
     --dialog-primary-text: white;
+    --dialog-destructive-background: var(--error-color);
+    --dialog-destructive-hover-background: color-mix(in srgb, var(--error-color) 90%, black);
     --dialog-text-color: var(--ink-strong);
     --dialog-emphasis-weight: 600;
     background: var(--surface);
@@ -42,6 +44,7 @@
     flex-direction: row;
     gap: var(--dialog-action-gap);
     justify-content: flex-end;
+    margin-top: var(--dialog-padding);
 }
 
 .actions button {
@@ -60,4 +63,13 @@
 
 .actions button[data-variant='primary']:hover {
     background: var(--dialog-primary-hover-background);
+}
+
+.actions button[data-variant='destructive'] {
+    background: var(--dialog-destructive-background);
+    color: var(--dialog-primary-text);
+}
+
+.actions button[data-variant='destructive']:hover {
+    background: var(--dialog-destructive-hover-background);
 }

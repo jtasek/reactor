@@ -129,7 +129,7 @@ function geometry(document: Document, shape: Shape, ancestors: ReadonlySet<strin
     const outline = {
         fill: shape.fill ?? 'none',
         stroke: shape.stroke ?? 'var(--text-color)',
-        strokeWidth: 2,
+        strokeWidth: 1,
         vectorEffect: 'non-scaling-stroke' as const
     };
 
