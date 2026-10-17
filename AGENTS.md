@@ -457,13 +457,14 @@ keeps the binding. Inspector edits, `updateShape`, operation updates and shape v
 commands detach the properties they explicitly write even when the value is unchanged.
 `unbindEditedProperties` maps stored text fields to the text binding and position vectors to
 both coordinate bindings; an operation may explicitly rebind through `changes.bindings`.
-Measurements and handle clicks do not detach bindings. Translation actions detach only moved
-axes (`unbindMovedProperties`), even if a drag later returns to its starting value. Resize
-names position and font-size writes; group/component scaling also names corner radius, while
-container rotation names position and rotation. Radius writes on circles/ellipses detach X/Y,
-and text font-size writes detach Y. A canceled gesture restores its rebased snapshot, including
-bindings; undo restores committed bindings with their values. Variable changes still drop
-bindings that no longer hold, including old or merged edits.
+Measurements and handle clicks within a click's slip do not detach bindings. Translation
+actions detach only moved axes (`unbindMovedProperties`), even if a drag later returns to its
+starting value. Resize detaches X or Y only when it may move that top or left edge, both for a
+turned shape, circle or ellipse, and font size; group/component scaling names position and
+corner radius, while container rotation names position and rotation. Radius writes on
+circles/ellipses detach X/Y, and text font-size writes detach Y. A canceled gesture restores
+its rebased snapshot, including bindings; undo restores committed bindings with their values.
+Variable changes still drop bindings that no longer hold, including old or merged edits.
 Deleting a variable leaves the values. A variable may have an `alias` holding the ID of a
 same-type source; `values.default` then retains a fallback. `setVariableAlias` validates the
 source graph or detaches to the resolved literal; `setVariableValue` replaces an alias with

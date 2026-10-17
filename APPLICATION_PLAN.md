@@ -313,8 +313,9 @@ work, with V3 and V5 feeding R6. No speculative plugin or expression framework i
    Final increment implemented: move, resize, rotation, rounding, Align/Space and container
    transforms explicitly detach the bindings they write, including clamped and same-value
    geometry writes. A move detaches only moved axes and stays detached when dragged back.
-   Handle clicks and measurements preserve bindings; Cancel restores rebased bindings and
-   values, and shared undo restores committed ones. Circle/ellipse radius edits account for
+   A resize detaches only the coordinates whose top or left edge it may move. Handle clicks
+   within a click's slip and measurements preserve bindings; Cancel restores rebased
+   bindings and values, and shared undo restores committed ones. Circle/ellipse radius edits account for
    X/Y, and text-size edits account for the baseline's Y coordinate. Covered by
    `tests/geometryBindings.test.ts` and `tests/browser/variables.spec.ts`.
 3. **V3 — Independent dimensions and local context.** Add Theme and Density, defaults and
