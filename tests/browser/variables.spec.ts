@@ -192,15 +192,18 @@ test('a text shows the variables its template names and follows their changes', 
 test('an alias follows its source across reload and detaches to a literal', async ({ page }) => {
     const { fill } = await rectangleWithPanels(page);
     await addVariable(page, 'Brand', 'Color');
+    await expect(field(page, 'Source of Brand')).toHaveCount(0);
+    await expect(page.getByText('Add another color variable to reference it.')).toBeVisible();
+    await addVariable(page, 'Spacing', 'Number');
+    await expect(field(page, 'Source of Brand')).toHaveCount(0);
     await field(page, 'Value of Brand').fill('#3366ff');
     await addVariable(page, 'Button', 'Color');
     await field(page, 'Source of Button').selectOption({ label: 'Follow Brand' });
     await field(page, 'Variable for Fill').selectOption({ label: 'Button' });
     await expect.poll(fill).toBe('rgb(51, 102, 255)');
     await expect(field(page, 'Resolved value of Button')).toHaveText('Button → Brand: #3366ff');
-    await expect(
-        field(page, 'Source of Brand').getByRole('option', { name: 'Follow Button' })
-    ).toHaveCount(0);
+    await expect(field(page, 'Source of Brand')).toHaveCount(0);
+    await expect(page.getByText('Every other color variable follows Brand.')).toBeVisible();
     await field(page, 'Value of Brand').fill('#ff0000');
     await expect.poll(fill).toBe('rgb(255, 0, 0)');
     await page.reload();
