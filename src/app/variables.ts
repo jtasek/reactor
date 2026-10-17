@@ -7,6 +7,12 @@ import {
     type PropertyValue,
     type ShapeProperty
 } from './properties';
+import {
+    resolveVariable,
+    resolveTemplate,
+    TEMPLATE_PART,
+    templateVariable
+} from './variableResolver';
 
 const VARIABLE_TYPES: VariableType[] = ['color', 'number', 'text', 'boolean'];
 
@@ -52,16 +58,6 @@ export function buildVariable(
                 ? { id, name, type, values: { default: value } }
                 : undefined;
     }
-}
-
-/** The variable named `name`; of several, as merges can leave, the one with the lowest id. */
-export function variableNamed(
-    variables: Record<string, Variable>,
-    name: string
-): Variable | undefined {
-    return Object.values(variables)
-        .filter((variable) => variable.name === name)
-        .sort((a, b) => (a.id < b.id ? -1 : 1))[0];
 }
 
 /** The property that may use a variable under `key`: one the inspector can change. */
@@ -143,7 +139,7 @@ export function applyVariableChanges(
                 return;
             }
 
-            const value = variableValue(previous, before);
+            const value = resolveVariable(previous, before);
 
             if (!variable || (accepts(property, value) && !bindingHolds(property, shape, value))) {
                 unbind(shape, key);
@@ -151,7 +147,7 @@ export function applyVariableChanges(
                 return;
             }
 
-            const next = variableValue(variable, variables);
+            const next = resolveVariable(variable, variables);
 
             if (next !== value) {
                 applyProperty(property, shape, next);
@@ -162,7 +158,7 @@ export function applyVariableChanges(
             return;
         }
 
-        const previous = renderTemplate(shape.template, before);
+        const previous = resolveTemplate(shape.template, before);
 
         // A blank text, which a text does not take, left the text as it was.
         if (previous.trim() && shape.value !== previous) {
@@ -171,7 +167,7 @@ export function applyVariableChanges(
             return;
         }
 
-        const value = renderTemplate(shape.template, variables);
+        const value = resolveTemplate(shape.template, variables);
 
         if (value !== shape.value && value.trim()) {
             shape.value = value;
@@ -179,65 +175,8 @@ export function applyVariableChanges(
     });
 }
 
-/**
- * `\${`, kept as written, or `${...}`: a variable's name, or its id followed by `$`
- * and the name it had, which shows when no variable has the id.
- */
-export const TEMPLATE_PART = /\\\$\{|\$\{([^{}$]*)(?:\$([^{}$]*))?\}/g;
-
-/** How deep text variables may name others in their values, so a long chain still ends. */
-export const TEMPLATE_DEPTH = 16;
-
-/** The variable a template's `${...}` holds: by id, else by name. */
-export const templateVariable = (
-    variables: Record<string, Variable>,
-    inside: string,
-    name: string | undefined
-) =>
-    Object.hasOwn(variables, inside) ? variables[inside] : variableNamed(variables, name ?? inside);
-
 /** Text in which `${` reads as written in a template. */
 export const escapeTemplate = (text: string): string => text.replaceAll('${', '\\${');
-
-/**
- * The text `template` makes: each `${...}` naming a variable, or holding its id,
- * replaced by its value, a text variable's own template made too. A part naming no
- * variable, or a text variable leading back to itself, shows its name as written.
- */
-export function renderTemplate(
-    template: string,
-    variables: Record<string, Variable>,
-    within: string[] = []
-): string {
-    return template.replace(
-        TEMPLATE_PART,
-        (_, inside: string | undefined, name: string | undefined) => {
-            if (inside === undefined) {
-                return '${';
-            }
-
-            const variable = templateVariable(variables, inside, name);
-
-            if (!variable) {
-                return `\${${name ?? inside}}`;
-            }
-
-            if (within.includes(variable.id) || within.length >= TEMPLATE_DEPTH) {
-                return `\${${variable.name}}`;
-            }
-
-            return variable.type === 'text'
-                ? renderTemplate(variable.values.default, variables, [...within, variable.id])
-                : String(variable.values.default);
-        }
-    );
-}
-
-/** The value a variable writes: a text variable's template made into text. */
-export const variableValue = (variable: Variable, variables: Record<string, Variable>) =>
-    variable.type === 'text'
-        ? renderTemplate(variable.values.default, variables, [variable.id])
-        : variable.values.default;
 
 /** `template` as typed, with each variable it holds named instead. */
 export const templateWithNames = (template: string, variables: Record<string, Variable>) =>
@@ -262,7 +201,7 @@ export const templateWithIds = (text: string, variables: Record<string, Variable
  */
 export function writeText(shape: Text, typed: string, variables: Record<string, Variable>) {
     const template = templateWithIds(typed, variables);
-    const value = renderTemplate(template, variables);
+    const value = resolveTemplate(template, variables);
 
     if (!value.trim()) {
         return;
@@ -332,7 +271,7 @@ export function removeVariable(
     variableId: string
 ) {
     const { variables } = document;
-    const value = escapeTemplate(String(variableValue(variables[variableId], variables)));
+    const value = escapeTemplate(String(resolveVariable(variables[variableId], variables)));
     const inline = (template: string) =>
         replaceInTemplate(template, (inside) => (inside === variableId ? value : undefined));
 

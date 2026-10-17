@@ -9,7 +9,8 @@ navigate, controls that take input and sample data. Others open the result from 
 designer keeps changing it as a design. Each milestone below says what this user can do after
 it.
 
-Planning date: 2026-10-14. This roadmap proposes work; it does not mark it implemented.
+Planning date: 2026-10-14; variable foundation updated 2026-10-17. Work is planned unless
+its implementation status explicitly says otherwise.
 [REFACTOR_PLAN.md](REFACTOR_PLAN.md) keeps the earlier audit, its dated findings and its phases.
 
 ## Current state
@@ -18,7 +19,7 @@ Planning date: 2026-10-14. This roadmap proposes work; it does not mark it imple
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Drawing and editing        | Implemented and browser-tested: shapes, groups, layers, guides, snapping, inspector.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | Components                 | Implemented: instances, overrides, nested sources, and copies from other documents updated on request ([componentLibrary.ts](src/app/componentLibrary.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Variables and templates    | Implemented, with one value per variable (`values.default`). A binding writes the variable's value into the shape ([variables.ts](src/app/variables.ts)), so nothing else reads variables.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Variables and templates    | Implemented, with one value per variable (`values.default`). A pure central resolver evaluates values and templates ([variableResolver.ts](src/app/variableResolver.ts)); bindings still write default values into shapes. Aliases, dimensions and packages remain planned.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | Saving and collaboration   | Implemented: IndexedDB, tab sync, Yjs merges, server sync when signed in.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | Images                     | Implemented: content-addressed, shared with the server when signed in ([assetSync.ts](src/app/services/assetSync.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Accounts                   | Implemented: workspaces and document roles. People cannot yet share with others, and presence is off ([serverSync.ts](src/app/services/serverSync.ts) passes no awareness).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -135,12 +136,36 @@ blocks the runtime's scripts.
 - **Lists** bind an item template to an entity, and rows are keyed by record ID.
 - **Form state, loaded records and requests** are runtime state, never saved in the document.
 
-### Themes
+### Variables and design systems
 
-Variables gain modes, such as Light and Dark, and aliases to other variables. Renderers resolve
-bindings in the current mode while drawing. The value written into the shape stays the default
-mode's, for code that ignores modes. A person's chosen mode is local and never written to the
-shared document. Text templates stay separate from aliases.
+The pure central resolver is the common source of evaluated variable values and template
+reference diagnostics. Its first version preserves default values, materialized bindings,
+name fallback, missing-reference placeholders and existing detachment rules. It changes no
+saved records. Definition editors and serialization read raw definitions, not resolved text.
+
+Next, bindings become explicit references: a normal value edit replaces or detaches a binding
+through a defined action, rather than inferring its existence by comparing stored values.
+Default values may remain materialized for compatibility. Rendering, bounds, hit testing,
+layout and export must agree on resolution before a context can change geometry. Switching
+context locally never rewrites shared shapes.
+
+Aliases reference a compatible variable by ID and stay separate from text interpolation.
+Primitive, semantic and component token layers are a useful convention, not a required depth.
+Theme (Light/Dark) and Density (Comfortable/Compact) are independent dimensions; Brand follows
+only when needed. Initially a token varies along one declared dimension, avoiding a combined
+list of every possible mode. Cross-dimension overrides require a demonstrated use case and
+explicit precedence. Responsive layout belongs to frames; locale belongs to content.
+
+IDs identify variables; names and organizational paths label them. Native design-system
+packages preserve source-package and token identity across import and update. A matching name
+suggests a conflict resolution; it never silently establishes package identity. Existing
+clipboard name-and-type matching remains unchanged until a separately tested change.
+
+Design tokens, component inputs, runtime state and entity fields keep distinct ownership and
+lifetimes, even if a future picker presents them together. Numeric meanings and units are added
+with consumers: dimension, ratio and duration before compound typography or shadow values.
+Plain numbers remain supported. The inspector should explain the selected context, alias
+chain, final value, uses and any unresolved reference.
 
 ### AI
 
@@ -198,7 +223,10 @@ shared document. Text templates stay separate from aliases.
 flowchart LR
     R0 --> R1 --> R2
     R0 --> R3
-    R1 --> R4 --> R5 --> R8 --> R9 --> R10
+    R1 --> V1 --> V2 --> V3 --> V4 --> V5
+    V1 --> R4 --> R5 --> R8 --> R9 --> R10
+    V3 --> R6
+    V5 --> R6
     R4 --> R6
     R2 --> R7
     R3 --> R7
@@ -249,6 +277,47 @@ Done when, on 40 eval cases:
 
 Gate: ten people outside the team use it in their own work. Their accept and undo rates are
 recorded.
+
+### Variable foundation V1–V5 (incremental, alongside R3)
+
+Each step ships a usable editor. V1 precedes R4; the later steps can proceed alongside screen
+work, with V3 and V5 feeding R6. No speculative plugin or expression framework is needed.
+
+1. **V1 — Central resolver, existing behavior (implemented).** One pure module evaluates
+   variables and templates and reports reference problems. Actions, operations, clipboard,
+   component overrides and editor diagnostics use it. Keep all four types, stored defaults,
+   binding detachment and clamping, rename-safe templates and paste matching unchanged.
+   Acceptance: `tests/variableResolver.test.ts` characterizes pure reads, zero/false/empty
+   values, ID precedence and name fallback, cycles, diagnostic order and the depth limit;
+   existing variable, template, operation, component and browser tests remain green.
+2. **V2 — Typed aliases and explicit binding edits.** Add literal-or-reference definitions
+   with compatible types, cycle and missing-reference diagnostics. Make edits explicitly
+   replace or detach bindings; preserve resolved values when detaching. Update durable readers,
+   operations, copying, collaboration and undo together. Show the resolution chain and uses.
+   Acceptance: `tests/variableAliases.test.ts` covers invalid batches, rename/delete, copy,
+   undo and concurrent delete/reference; `tests/browser/variables.spec.ts` covers bind, edit,
+   detach and actionable diagnostics. Existing literals and templates still work.
+3. **V3 — Independent dimensions and local context.** Add Theme and Density, defaults and
+   a local switch, with each variable varying along one dimension initially. Resolve all
+   drawing and geometry consumers consistently before allowing geometry-changing density.
+   Acceptance: `tests/variableDimensions.test.ts` covers fallback and two copies in different
+   contexts without shared writes; `tests/browser/variableDimensions.spec.ts` checks drawing,
+   selection bounds, hit testing and local switching. Add preview/export parity checks when
+   those consumers land in R4/R5. Existing documents use their default values.
+4. **V4 — Native design-system packages.** Export and import a minimal versioned package of
+   variables and their dependencies, preserving package/token identity. Preview conflicts and
+   offer explicit reuse, replace or import separately; labels alone never trigger an update.
+   Apply validated imports atomically through operations, as one undo step.
+   Acceptance: `tests/designSystemPackages.test.ts` covers deterministic round trips, renamed
+   tokens, ID remapping, missing dependencies, rejected imports, updates and undo;
+   `tests/browser/designSystemPackages.spec.ts` covers the conflict choices and unchanged
+   content after a rejected import. Package export never includes runtime state.
+5. **V5 — Interchange and richer types as needed.** Add a DTCG adapter for the supported
+   subset, reporting unsupported constructs rather than silently flattening them. Add numeric
+   semantics and units only alongside their first properties and validation; compound types
+   follow consumers. Keep the native model independent of the interchange format.
+   Acceptance: `tests/designTokenInterchange.test.ts` covers supported round trips, alias
+   identity, units, unsupported-input diagnostics and failure without document changes.
 
 ### R3 Sharing and presence (M)
 
@@ -314,8 +383,9 @@ the user.
 
 The user switches a prototype between Light and Dark, and checks it for accessibility.
 
-1. Modes and aliases, resolved while drawing, with a local mode switch.
-2. Export of the supported subset in the DTCG format.
+1. Bring V2/V3 aliases and independent dimensions to prototypes, using the same resolver
+   in the editor, preview and exported app; verify local context and geometry agree.
+2. Expose V4/V5 package and supported DTCG interchange in the design-system workflow.
 3. Audits in the preview: contrast, labels and focus order, with fixes the AI can propose.
 
 Done when `tests/themes.test.ts` (aliases, cycles, two copies in different modes changing no
@@ -368,8 +438,8 @@ refused invalid and forbidden requests, retries that change nothing twice) passe
 
 ### Later, on evidence
 
-- Design-system packages with identity-aware updates.
-- DTCG import.
+- Advanced package publishing and update policies beyond V4's explicit import/update choices.
+- DTCG constructs beyond the subset validated in V5.
 - Contract diffs and migrations for published APIs.
 - Other export formats.
 
@@ -393,7 +463,7 @@ Revisit only when users ask for them.
 | Models                 | Claude Opus 5.5 for screens from screenshots and for agent mode, and Claude Haiku 5.5 for edits and audits. Claude Sonnet 5.5 is evaluated for generation, chosen by eval score per cost. A server may name another provider speaking OpenAI's Chat Completions API, and its models | Before R2 |
 | AI in shared documents | Proposals that a person accepts                                                                                                                                                                                                                                                     | R2        |
 | AI data                | Only what a request needs; providers do not train on it; AI can be turned off per workspace                                                                                                                                                                                         | Before R2 |
-| Modes in the editor    | Resolved while drawing; a person's mode stays local                                                                                                                                                                                                                                 | Before R6 |
+| Modes in the editor    | Independent dimensions through the central resolver; a person's context stays local                                                                                                                                                                                                                                 | V3        |
 | Compatibility          | None before the public beta                                                                                                                                                                                                                                                         | R7        |
 
 ## Keeping this plan current

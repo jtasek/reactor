@@ -1,15 +1,8 @@
 // What only the editor page shows of variables, so it loads with the page rather
 // than with the store, which every page needs as it opens.
 import type { Document, Shape, Variable } from './types';
-import {
-    TEMPLATE_DEPTH,
-    TEMPLATE_PART,
-    accepts,
-    bindableProperty,
-    bindingHolds,
-    templateVariable,
-    variableValue
-} from './variables';
+import { accepts, bindableProperty, bindingHolds } from './variables';
+import { resolveVariable } from './variableResolver';
 
 /**
  * The variable `shape`'s `key` property follows: bound to it, and showing its value.
@@ -20,7 +13,7 @@ export function boundVariable(shape: Shape, key: string, document: Document): Va
     const variableId = shape.bindings?.[key];
     const variable = variableId === undefined ? undefined : document.variables[variableId];
     const property = bindableProperty(key);
-    const value = variable && variableValue(variable, document.variables);
+    const value = variable && resolveVariable(variable, document.variables);
 
     return variable &&
         property &&
@@ -29,31 +22,4 @@ export function boundVariable(shape: Shape, key: string, document: Document): Va
         bindingHolds(property, shape, value)
         ? variable
         : undefined;
-}
-
-/** The names in `template` that name no variable, or text variables leading back to themselves. */
-export function templateProblems(
-    template: string,
-    variables: Record<string, Variable>,
-    within: string[] = []
-): string[] {
-    return [...template.matchAll(TEMPLATE_PART)].flatMap(([, inside, name]) => {
-        if (inside === undefined) {
-            return [];
-        }
-
-        const variable = templateVariable(variables, inside, name);
-
-        if (!variable) {
-            return [name ?? inside];
-        }
-
-        if (within.includes(variable.id) || within.length >= TEMPLATE_DEPTH) {
-            return [variable.name];
-        }
-
-        return variable.type === 'text'
-            ? templateProblems(variable.values.default, variables, [...within, variable.id])
-            : [];
-    });
 }

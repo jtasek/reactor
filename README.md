@@ -261,6 +261,17 @@ Without `SMTP_URL`, the development server writes email to its log instead.
 `BETTER_AUTH_SECRET` and `SMTP_URL`, then run `docker compose up --build`. Server
 tests run against PGlite, PostgreSQL built to run inside the test process.
 
+## Variables
+
+The Variables panel creates named colors, numbers, text and booleans. Inspector fields can
+follow a variable, and text can include `${Name}` templates. Renaming a variable preserves
+its references; deleting one leaves the shapes' values in place.
+
+Values and template diagnostics share a pure central resolver. This first foundation step
+keeps existing bindings and saved documents unchanged. Typed aliases, independent Theme and
+Density dimensions, and design-system packages follow in the
+[variable roadmap](./APPLICATION_PLAN.md#variable-foundation-v1v5-incremental-alongside-r3).
+
 ## Camera Coordinates
 
 Camera math and zoom bounds live in `src/app/camera.ts`. Camera position and pan

@@ -1,7 +1,7 @@
 import type { Document, Shape } from 'src/app/types';
 import { readEntity } from 'src/app/services/documentStorage';
 import { inDrawingOrder } from 'src/app/drawOrder';
-import { TEMPLATE_PART, templateVariable } from 'src/app/variables';
+import { TEMPLATE_PART, templateVariable } from 'src/app/variableResolver';
 
 /** A transport-size budget, not a provider-specific token count. */
 export const MAX_CONTEXT_BYTES = 32 * 1024;

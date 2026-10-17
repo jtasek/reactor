@@ -19,10 +19,9 @@ import {
     bindingHolds,
     removeVariable,
     replaceTemplateIds,
-    variableNamed,
-    variableValue,
     writeText
 } from './variables';
+import { variableNamed, resolveVariable } from './variableResolver';
 import { componentSource, instanceBox } from './componentSource';
 import { hydrateComponent, readEntity } from './services/documentStorage';
 import { shapeGeometryKey } from './utils';
@@ -246,7 +245,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             if (!property || variable.type !== property.kind) {
                 throw new Error(`${key} cannot follow the ${variable.type} variable ${ref}.`);
             }
-            applyProperty(property, shape, variableValue(variable, variables));
+            applyProperty(property, shape, resolveVariable(variable, variables));
             shape.bindings = { ...shape.bindings, [key]: variable.id };
         });
 
@@ -430,7 +429,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             if (!property || !variable) {
                 return false;
             }
-            const value = variableValue(variable, variables);
+            const value = resolveVariable(variable, variables);
 
             return !accepts(property, value) || bindingHolds(property, shape, value);
         });

@@ -1,6 +1,6 @@
 import { readClipboard } from 'src/app/clipboard';
 import { readEntity } from 'src/app/services/documentStorage';
-import { variableNamed } from 'src/app/variables';
+import { variableNamed } from 'src/app/variableResolver';
 import { boundVariable } from 'src/app/editorVariables';
 import type { Variable } from 'src/app/types';
 import {

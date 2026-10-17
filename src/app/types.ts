@@ -158,7 +158,7 @@ export interface Pen extends ShapeBase {
 export interface Text extends ShapeBase {
     type: 'text';
     position: Point;
-    /** What `value` is made from while it holds the text it makes: see `renderTemplate`. */
+    /** What `value` is made from while it holds the text it makes: see `resolveTemplate`. */
     template?: string;
     value: string;
     fontSize?: number;

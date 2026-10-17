@@ -3,7 +3,7 @@ import type { Variable, VariableType } from 'src/app/types';
 import { useActions } from 'src/app/hooks';
 import { useVariableUses, useVariables } from 'src/app/variableHooks';
 import { isVariableName, templateWithNames } from 'src/app/variables';
-import { templateProblems } from 'src/app/editorVariables';
+import { templateProblems } from 'src/app/variableResolver';
 import { SharedOnRelease } from '../Inspector/SharedOnRelease';
 import styles from './styles.css';
 
