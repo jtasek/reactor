@@ -261,6 +261,11 @@ re-renders.** Components never mutate state directly.
   cameras per device under `reactor:view`. A document that fails to load stays as saved. Other
   tabs' messages are taken only once loading is done; what they sent meanwhile is picked up
   from the database and by catching up.
+- **Recently Deleted**: the Documents page's Delete moves a document there (`trashDocument`
+  sets the shared, undated `deleted` field) and offers Undo; `restoreDocument` brings it back
+  and `removeDocument` deletes it for good, as `purgeDeletedDocuments` does when the page
+  opens, `RECENTLY_DELETED_DAYS` after the move (`src/app/documentList.ts`). Deleted documents
+  are never the one open and lend no components.
 - **Events** (`src/events/`): pointer/keyboard/clipboard input. `drivers/` are React hooks
   that translate DOM events into store actions — `useKeyboardDriver` and `useClipboardDriver`
   are mounted in `Shell` and `usePointerAdapter` in the canvas `Surface`

@@ -78,6 +78,7 @@ export type DocumentFields = Pick<
 > & {
     created: string;
     modified: string;
+    deleted?: string;
 };
 
 /** The durable form of each kind of entity a document holds. */
@@ -608,6 +609,7 @@ function readFields(d: Record<string, unknown>): DocumentFields {
         modified: date(d.modified),
         createdBy: text(d.createdBy),
         modifiedBy: text(d.modifiedBy),
+        ...(d.deleted === undefined ? {} : { deleted: date(d.deleted) }),
         ...(d.description === undefined ? {} : { description: text(d.description) }),
         tags: list(d.tags, text),
         tagTones: tones(d.tagTones),
@@ -864,10 +866,11 @@ export function hydrateEntity<C extends Collection>(
     return entityHydrators[collection](entity);
 }
 
-export const hydrateDocumentFields = (fields: DocumentFields) => ({
+export const hydrateDocumentFields = ({ deleted, ...fields }: DocumentFields) => ({
     ...fields,
     created: new Date(fields.created),
-    modified: new Date(fields.modified)
+    modified: new Date(fields.modified),
+    ...(deleted === undefined ? {} : { deleted: new Date(deleted) })
 });
 
 function hydrateTable<T, R>(items: Record<string, T>, hydrate: (item: T) => R) {
@@ -879,6 +882,7 @@ export function hydrateDocument(data: DocumentData): Document {
 
     const document = createDocument({
         ...data,
+        deleted: undefined,
         ...hydrateDocumentFields(data),
         shapes: hydrateTable(data.shapes, hydrateShape),
         groups: hydrateTable(data.groups, hydrateMember),

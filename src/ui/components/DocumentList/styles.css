@@ -21,6 +21,56 @@
     max-width: var(--documents-max-width);
 }
 
+.bar {
+    align-items: center;
+    color: var(--document-secondary-color);
+    display: flex;
+    font-size: 13px;
+    gap: 16px;
+    margin: -24px 0 12px;
+    min-height: 32px;
+}
+
+.documentList .back {
+    align-items: center;
+    border-radius: var(--radius-md);
+    color: var(--selection-color);
+    display: inline-flex;
+    gap: 2px;
+    min-width: 0;
+    padding: 4px 8px 4px 2px;
+    text-decoration: none;
+}
+
+.back span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.documentList .back:hover {
+    background: var(--field-background);
+}
+
+.documentList .back:focus-visible,
+.barStatus a:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 2px;
+}
+
+.barStatus {
+    align-items: center;
+    display: flex;
+    flex: none;
+    gap: 16px;
+    margin-left: auto;
+}
+
+.barStatus a {
+    color: var(--selection-color);
+    text-decoration: none;
+}
+
 .header {
     align-items: center;
     display: flex;
@@ -36,6 +86,12 @@
     letter-spacing: -1px;
     line-height: 40px;
     margin: 0;
+}
+
+.subtitle {
+    color: var(--document-secondary-color);
+    font-size: 13px;
+    margin: 4px 0 0;
 }
 
 .documentList button {
@@ -138,6 +194,11 @@
     padding: 4px 10px;
 }
 
+.documentList .tagFilter[aria-pressed='true'] {
+    background: var(--control-background-active);
+    color: var(--selection-color);
+}
+
 .layoutToggle {
     backdrop-filter: var(--backdrop-filter);
     background: var(--control-background);
@@ -231,6 +292,17 @@
     text-underline-offset: 3px;
 }
 
+.deletedName {
+    color: var(--document-secondary-color);
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 20px;
+    overflow: hidden;
+    padding: 2px 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .nameInput {
     background: var(--surface);
     border: 1px solid var(--selection-color);
@@ -261,6 +333,37 @@
     justify-content: center;
     overflow: hidden;
     position: relative;
+    transition:
+        box-shadow 0.15s ease,
+        transform 0.15s ease;
+}
+
+.card:not([data-deleted]) .thumbnail {
+    cursor: pointer;
+}
+
+.card:not([data-deleted]) .thumbnail:hover {
+    box-shadow: var(--box-shadow-hover);
+    transform: translateY(-2px);
+}
+
+.card:not([data-deleted]) .thumbnail:active {
+    transform: scale(0.98);
+}
+
+.card[data-deleted] .thumbnail {
+    opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .thumbnail {
+        transition: none;
+    }
+
+    .card:not([data-deleted]) .thumbnail:hover,
+    .card:not([data-deleted]) .thumbnail:active {
+        transform: none;
+    }
 }
 
 .thumbnailSvg {
@@ -346,6 +449,43 @@
     font-size: 20px;
     font-weight: 500;
     margin-bottom: 12px;
+}
+
+.toastRegion {
+    bottom: 24px;
+    display: flex;
+    justify-content: center;
+    left: 16px;
+    pointer-events: none;
+    position: fixed;
+    right: 16px;
+}
+
+.toast {
+    align-items: center;
+    backdrop-filter: var(--backdrop-filter);
+    background: var(--control-background);
+    border: 1px solid var(--glass-highlight);
+    border-radius: 22px;
+    box-shadow: var(--box-shadow-hover);
+    display: flex;
+    font-size: 13px;
+    gap: 12px;
+    max-width: 100%;
+    padding: 6px 6px 6px 16px;
+    pointer-events: auto;
+}
+
+.toast span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.documentList .toast button {
+    color: var(--selection-color);
+    flex: none;
+    font-weight: 500;
 }
 
 .grid[data-layout='list'] {
@@ -463,6 +603,7 @@
 }
 
 @supports not (backdrop-filter: blur(1px)) {
+    .toast,
     .documentList .newButton,
     .layoutToggle,
     .iconActions:hover,
@@ -472,6 +613,7 @@
 }
 
 @media (prefers-reduced-transparency: reduce) {
+    .toast,
     .documentList .newButton,
     .layoutToggle,
     .iconActions:hover,

@@ -12,7 +12,7 @@ test('the status bar’s slots follow the document, the selection, the pointer a
     await expect(page.locator('[id="tools"]')).toHaveCount(1);
     await expect(page.locator('[id="camera"]')).toHaveCount(1);
 
-    await expect(slot('message')).toHaveText('document-1');
+    await expect(slot('message')).toHaveText('Untitled');
     await expect(slot('selection')).toHaveText('selection: [0]');
 
     await drawRect(page, { x: 100, y: 100 }, { x: 140, y: 140 });
@@ -34,5 +34,5 @@ test('the status bar’s slots follow the document, the selection, the pointer a
         .getByRole('link', { name: 'Documents' })
         .dispatchEvent('click');
     await page.getByRole('button', { name: 'New document', exact: true }).click();
-    await expect(slot('message')).toHaveText('document-2');
+    await expect(slot('message')).toHaveText('Untitled 2');
 });

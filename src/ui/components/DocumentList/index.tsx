@@ -1,6 +1,12 @@
-import React, { FC } from 'react';
+import React, { FC, useEffect } from 'react';
 import { DocumentList } from './DocumentList';
-import { useActions, useCurrentDocumentId, useDocuments, useDocumentsIds } from 'src/app/hooks';
+import {
+    useActions,
+    useCurrentDocumentId,
+    useDocuments,
+    useDocumentsIds,
+    useDocumentsLayout
+} from 'src/app/hooks';
 import { tagKey } from 'src/app/tagTones';
 
 export const DocumentListContainer: FC = () => {
@@ -8,12 +14,15 @@ export const DocumentListContainer: FC = () => {
     const documents = useDocumentsIds().map((id) => ({
         id,
         name: byId[id].name,
+        created: byId[id].created,
         modified: byId[id].modified,
+        deleted: byId[id].deleted,
         tags: [...byId[id].tags],
         tagTones: { ...byId[id].tagTones }
     }));
     const currentDocumentId = useCurrentDocumentId();
-    const { newDocument, updateDocument } = useActions();
+    const layout = useDocumentsLayout();
+    const { newDocument, updateDocument, purgeDeletedDocuments, setDocumentsLayout } = useActions();
     // A tone is kept with every document that has the tag; it does not date them.
     const setTagTone = (tag: string, tone: string) =>
         documents
@@ -25,10 +34,14 @@ export const DocumentListContainer: FC = () => {
                 })
             );
 
+    useEffect(() => purgeDeletedDocuments(), [purgeDeletedDocuments]);
+
     return (
         <DocumentList
             documents={documents}
             currentDocumentId={currentDocumentId}
+            layout={layout}
+            onLayout={setDocumentsLayout}
             onCreate={() => newDocument()}
             onTagTone={setTagTone}
         />

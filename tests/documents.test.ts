@@ -4,14 +4,14 @@ describe('document list actions', () => {
     it('creates a document with the lowest unused name and opens it in the designer', () => {
         const { store, effects } = createTestStore();
 
-        store.actions.updateDocument({ id: 'test-document', name: 'document-1' });
-        store.actions.addDocument({ id: 'second', name: 'document-2' });
-        store.actions.addDocument({ id: 'fourth', name: 'document-4' });
+        store.actions.updateDocument({ id: 'test-document', name: 'Untitled' });
+        store.actions.addDocument({ id: 'second', name: 'Untitled 2' });
+        store.actions.addDocument({ id: 'fourth', name: 'Untitled 4' });
 
         store.actions.newDocument();
 
         expect(store.state.documentsIds).toHaveLength(4);
-        expect(store.state.currentDocument.name).toBe('document-3');
+        expect(store.state.currentDocument.name).toBe('Untitled 3');
         expect(store.state.currentDocument.shapesIds).toEqual([]);
         expect(effects.navigate).toHaveBeenCalledWith('/');
     });

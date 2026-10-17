@@ -54,7 +54,9 @@ const guideSequence = new Sequence();
 
 export const newApplicationName = (): string => `reactor-${Date.now()}`;
 export const newComponentName = (): string => `component-${componentSequence.next()}`;
-export const newDocumentName = (number = documentSequence.next()): string => `document-${number}`;
+/** Names a new document as Pages and Keynote do: Untitled, then Untitled 2. */
+export const newDocumentName = (number = documentSequence.next()): string =>
+    number === 1 ? 'Untitled' : `Untitled ${number}`;
 export const newGroupName = (): string => `group-${groupSequence.next()}`;
 export const newLayerName = (): string => `layer-${layerSequence.next()}`;
 export const newLinkName = (): string => `link-${linkSequence.next()}`;
@@ -306,6 +308,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
             arrowKeyStep: DEFAULT_ARROW_KEY_STEP,
             autoSave: true,
             debugMode: false,
+            documentsLayout: 'cards',
             panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT)
         },
         currentDocumentId: 'document-1',

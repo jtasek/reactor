@@ -87,7 +87,7 @@ test('the clipboard keys select the hidden field in an editor opened from the do
     page
 }) => {
     await page.goto('/documents');
-    await page.getByRole('button', { name: 'Open document-1', exact: true }).click();
+    await page.getByRole('button', { name: 'Open Untitled', exact: true }).click();
     await expect(page.locator('svg#surface')).toBeVisible();
 
     // Safari sends no clipboard event without selected text, so the keys select this field's.

@@ -1,4 +1,4 @@
-import type { Document } from './types';
+import type { Document, DocumentsLayout } from './types';
 import { isTagTone, TAG_TONES, tagKey, type TagTone } from './tagTones';
 
 export type DocumentDateFilter = 'all' | 'today' | 'week' | 'month';
@@ -10,6 +10,31 @@ export interface DocumentListFilters {
 }
 
 const FILTER_DAYS = { today: 1, week: 7, month: 30 };
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** How many days Recently Deleted keeps a document before deleting it for good. */
+export const RECENTLY_DELETED_DAYS = 30;
+
+export const DOCUMENTS_LAYOUT_KEY = 'reactor:documents-layout';
+
+export const readDocumentsLayout = (value: unknown): DocumentsLayout =>
+    value === 'list' ? 'list' : 'cards';
+
+/**
+ * The whole days left before a document moved to Recently Deleted is deleted for good,
+ * counted from `now`, which may be a little older than the move.
+ */
+export const daysLeftInRecentlyDeleted = (deleted: Date, now: Date): number =>
+    Math.min(
+        RECENTLY_DELETED_DAYS,
+        Math.max(
+            0,
+            Math.ceil((deleted.getTime() + RECENTLY_DELETED_DAYS * DAY_MS - now.getTime()) / DAY_MS)
+        )
+    );
+
+export const deletedForGood = (deleted: Date, now: Date): boolean =>
+    daysLeftInRecentlyDeleted(deleted, now) === 0;
 
 export const normalizeTags = (tags: string[]): string[] => {
     const seen = new Set<string>();

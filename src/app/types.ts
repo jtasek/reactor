@@ -267,6 +267,8 @@ export interface Document {
     camera: Camera;
     created: Date;
     createdBy: string;
+    /** When the document was moved to Recently Deleted, which deletes it for good 30 days later. */
+    deleted?: Date;
     description?: string;
     filter: string;
     grid: Grid;
@@ -439,9 +441,13 @@ export type Configuration = {
     arrowKeyStep: number;
     autoSave: boolean;
     debugMode: boolean;
+    /** How the Documents page shows documents, kept per device. */
+    documentsLayout: DocumentsLayout;
     panelLayout: Record<string, PanelPlacement>;
     version: string;
 };
+
+export type DocumentsLayout = 'cards' | 'list';
 
 export type PanelPlacement = {
     dock:

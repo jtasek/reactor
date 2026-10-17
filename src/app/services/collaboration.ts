@@ -110,7 +110,7 @@ const MEMBERS = 'shapesIds';
 const isLocalOnly = (field: string) =>
     RUNTIME_FIELDS.has(field) || field === 'camera' || field === 'shapesIds';
 /** Document fields whose changes are shared and saved but do not date the document. */
-const UNDATED_FIELDS = new Set(['tagTones']);
+const UNDATED_FIELDS = new Set(['tagTones', 'deleted']);
 /** Collections whose shared form can differ from what this copy wrote, as by members it hides. */
 const REFERRING = new Set<Collection>(['groups', 'layers', 'components', 'links']);
 /** Collections other entities refer to. */
