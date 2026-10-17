@@ -1,6 +1,6 @@
-/* The panel draws the glass; each group of variables is a lighter card on it. */
+/* Separate variable cards sit inside the panel’s glass frame. */
 .variables {
-    --field-height: 22px;
+    --field-height: 28px;
     --swatch-width: 36px;
     color: var(--text-color);
     padding: var(--panel-gap);
@@ -18,7 +18,7 @@
 }
 
 .create,
-.row {
+.rowHeader {
     align-items: center;
     display: flex;
     flex-wrap: wrap;
@@ -87,28 +87,48 @@
 }
 
 .variables ul {
-    background-color: var(--panel-content-background);
-    border-radius: var(--radius-md);
+    display: grid;
+    gap: var(--panel-gap);
     list-style: none;
     margin: 0;
-    padding: 4px 6px;
+    padding: 0;
 }
 
 .row {
-    padding: 3px 0;
+    background-color: var(--panel-content-background);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-md);
+    display: grid;
+    gap: var(--panel-gap);
+    min-width: 0;
+    padding: var(--panel-gap);
 }
 
-.row + .row {
-    border-top: 1px solid var(--hairline-color);
+.variables .rowHeader input[type='text'] {
+    font-weight: 600;
 }
 
-.uses {
+.metadata {
     color: var(--text-secondary-color);
-    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
     font-size: 0.75rem;
-    font-variant-numeric: tabular-nums;
-    min-width: 1.5em;
-    text-align: right;
+    gap: 4px var(--panel-gap);
+    justify-content: space-between;
+    line-height: 16px;
+}
+
+.field {
+    align-items: center;
+    display: flex;
+    gap: var(--panel-gap);
+    min-width: 0;
+}
+
+.fieldLabel {
+    color: var(--text-secondary-color);
+    flex: 0 0 44px;
+    font-size: 0.75rem;
 }
 
 .confirm {
@@ -144,12 +164,20 @@
 }
 
 .variables select.source {
-    flex: 1 0 100%;
+    flex: 1;
+    width: 0;
     max-width: 100%;
 }
 
 .resolution {
+    font-size: 0.75rem;
+    line-height: 16px;
     color: var(--text-secondary-color);
     flex-basis: 100%;
     overflow-wrap: anywhere;
+}
+
+.colorValue {
+    color: var(--text-secondary-color);
+    font-size: 0.75rem;
 }
