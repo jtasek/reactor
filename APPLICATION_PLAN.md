@@ -297,6 +297,12 @@ work, with V3 and V5 feeding R6. No speculative plugin or expression framework i
    Acceptance: `tests/variableAliases.test.ts` covers invalid batches, rename/delete, copy,
    undo and concurrent delete/reference; `tests/browser/variables.spec.ts` covers bind, edit,
    detach and actionable diagnostics. Existing literals and templates still work.
+   First increment implemented: direct shape/operation edits and visibility/lock commands
+   detach explicitly replaced bindings immediately, including same-value writes; explicit
+   operation bindings take precedence. Shared undo restores the references with their values.
+   Covered by `tests/variables.test.ts`, `tests/operations.test.ts` and
+   `tests/browser/variables.spec.ts`. Typed aliases, resolution-chain UI and explicit gesture
+   and indirect geometry detachment remain planned; V2 is not complete.
 3. **V3 — Independent dimensions and local context.** Add Theme and Density, defaults and
    a local switch, with each variable varying along one dimension initially. Resolve all
    drawing and geometry consumers consistently before allowing geometry-changing density.

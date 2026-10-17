@@ -405,6 +405,26 @@ describe('changing and deleting with operations', () => {
         expect(document().shapes[first].bindings).toBeUndefined();
     });
 
+    it('a literal equal to its variable detaches unless the update explicitly binds it', () => {
+        const { store, document, apply, brand, first, second } = setupDocument();
+        expect(
+            apply([
+                { op: 'updateShape', shape: first, changes: { fill: '#3366ff' } },
+                {
+                    op: 'updateShape',
+                    shape: second,
+                    changes: { fill: '#3366ff', bindings: { fill: brand } }
+                }
+            ])
+        ).toMatchObject({ applied: true });
+        expect(document().shapes[first].bindings).toBeUndefined();
+        expect(document().shapes[second].bindings).toEqual({ fill: brand });
+
+        store.actions.setVariableValue({ variableId: brand, value: '#ff0000' });
+        expect(document().shapes[first].fill).toBe('#3366ff');
+        expect(document().shapes[second].fill).toBe('#ff0000');
+    });
+
     it('binds a changed shape, and writes a text over its template', () => {
         const { store, document, apply, brand, second, label } = setupDocument();
 

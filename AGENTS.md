@@ -448,9 +448,13 @@ neither the store nor the renderer. Definition editors and serialization read th
 `values.default`, so they keep templates. A binding holds while writing the value would
 leave the shape as it is, numbers to a thousandth (`bindingHolds`, `src/app/variables.ts`);
 a value the property refuses (`accepts`), as a blank name, is not shown as followed but
-keeps the binding. A drag, Hide or another edit that sets the property otherwise ends it, a variable
-change drops the bindings that no longer hold, and the inspector's `setShapesProperty`
-removes it. Deleting a variable leaves the values.
+keeps the binding. Inspector edits, `updateShape`, operation updates and shape visibility/lock
+commands detach the properties they explicitly write even when the value is unchanged.
+`unbindEditedProperties` maps stored text fields to the text binding and position vectors to
+both coordinate bindings; an operation may explicitly rebind through `changes.bindings`.
+Measurements do not detach bindings. Gestures and indirect geometry effects still use the
+existing equality check, and variable changes drop the bindings that no longer hold.
+Deleting a variable leaves the values.
 Names are unique, trimmed and without `{`, `}` or `$` (`isVariableName`); one shared after
 a merge means the variable with the lowest id (`variableNamed`). Copied shapes carry the
 variables they follow, and a paste uses one of the same name and type or adds it.

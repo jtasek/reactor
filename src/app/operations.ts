@@ -55,7 +55,8 @@ export interface DeleteVariable {
 
 /**
  * Changes fields of a shape the document has, each as `addShape` takes it; a
- * property it sets otherwise stops following its variable. Its type cannot change.
+ * property explicitly set stops following its variable, even for the same value,
+ * unless `changes.bindings` explicitly binds it again. Its type cannot change.
  */
 export interface UpdateShape {
     op: 'updateShape';

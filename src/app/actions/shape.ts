@@ -14,7 +14,7 @@ import {
     Shape,
     ShapeInput
 } from '../types';
-import { unbind, writeText } from '../variables';
+import { unbind, unbindEditedProperties, writeText } from '../variables';
 import { Context } from 'src/app';
 import { screenToWorld } from '../camera';
 import { instanceName, createGroup, createShape, nextShapeName, shapeNamer } from '../factories';
@@ -982,36 +982,42 @@ export const deactivateShape: ActionWithParam<string> = ({ state }, shapeId) => 
 export const lockShape: ActionWithParam<string> = ({ state }, shapeId) => {
     const shape = getShape(state, shapeId);
 
+    unbind(shape, 'locked');
     shape.locked = true;
 };
 
 export const toggleShapeLocked: ActionWithParam<string> = ({ state }, shapeId) => {
     const shape = getShape(state, shapeId);
 
+    unbind(shape, 'locked');
     shape.locked = !shape.locked;
 };
 
 export const toggleShapeVisible: ActionWithParam<string> = ({ state }, shapeId) => {
     const shape = getShape(state, shapeId);
 
+    unbind(shape, 'visible');
     shape.visible = !shape.visible;
 };
 
 export const unlockShape: ActionWithParam<string> = ({ state }, shapeId) => {
     const shape = getShape(state, shapeId);
 
+    unbind(shape, 'locked');
     shape.locked = false;
 };
 
 export const showShape: ActionWithParam<string> = ({ state }, shapeId) => {
     const shape = getShape(state, shapeId);
 
+    unbind(shape, 'visible');
     shape.visible = true;
 };
 
 export const hideShape = ({ state }: Context, shapeId: string) => {
     const shape = getShape(state, shapeId);
 
+    unbind(shape, 'visible');
     shape.visible = false;
 };
 
@@ -1027,6 +1033,10 @@ export const updateShape = ({ state }: Context, options: Partial<ShapeInput> & {
         return;
     }
 
+    unbindEditedProperties(shape, Object.keys(options));
+    if (shape.type === 'text' && 'value' in options && !('template' in options)) {
+        delete shape.template;
+    }
     Object.assign(shape, options);
 };
 

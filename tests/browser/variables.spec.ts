@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import { createDocument, createShape } from 'src/app/factories';
+import { serializePersistedState } from 'src/app/services/documentStorage';
 import { drawRect, openEditor, pointer, selectTool, shapes } from './support/editor';
 
 const field = (page: Page, label: string) => page.getByLabel(label, { exact: true });
@@ -85,6 +87,43 @@ test('deleting a used variable asks first and leaves the shapes as they were', a
     await expect(panel(page).getByText('No variables yet')).toBeVisible();
     await expect(field(page, 'Fill')).toHaveValue('#3366ff');
     await expect.poll(fill).toBe('rgb(51, 102, 255)');
+});
+
+test('hide and show detach visibility so changing the former variable cannot hide the shape', async ({
+    page
+}) => {
+    const shape = createShape({
+        type: 'rectangle',
+        name: 'Box',
+        order: 'a0',
+        position: { x: 100, y: 100 },
+        size: { width: 50, height: 50 },
+        visible: true,
+        bindings: { visible: 'shown' }
+    });
+    const document = createDocument({
+        shapes: { [shape.id]: shape },
+        variables: {
+            shown: { id: 'shown', name: 'shown', type: 'boolean', values: { default: true } }
+        }
+    });
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await openEditor(page, ['Inspector', 'Variables']);
+    await selectTool(page, 'Selects shapes and groups ');
+    await pointer(page, 'pointerdown', { x: 125, y: 125 });
+    await pointer(page, 'pointerup', { x: 125, y: 125 });
+
+    await page.keyboard.press('Shift+H');
+    await expect(shapes(page)).toHaveCount(0);
+    await page.keyboard.press('Alt+Shift+H');
+    await expect(shapes(page)).toHaveCount(1);
+    await expect(panel(page).getByTitle('Used 0 times')).toBeVisible();
+    await field(page, 'Value of shown').uncheck();
+    await expect(shapes(page)).toHaveCount(1);
 });
 
 test('a name that is taken or holds a template mark is refused', async ({ page }) => {
