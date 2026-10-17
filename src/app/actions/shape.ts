@@ -43,6 +43,7 @@ import {
     cornerRadiusAfterDrag,
     hitTestShape,
     hitTolerance,
+    keepsAspectRatio,
     resizeShapeFromHandle,
     shapeIntersectsBox,
     translateShape
@@ -55,6 +56,7 @@ import {
     shapeGeometry,
     boxCenter,
     angleBetween,
+    movedEdges,
     shapeStyle
 } from '../utils';
 import { hasComponentInstances, reachesComponent } from './components';
@@ -1094,9 +1096,27 @@ export const resizeShape = (
         return;
     }
 
-    unbindEditedProperties(shape, ['position', 'fontSize']);
+    unbindResizedAxes(shape, handlerType, original ?? shape);
+    unbindEditedProperties(shape, ['fontSize']);
     resizeShapeFromHandle(shape, handlerType, position, original ?? shape);
 };
+
+/**
+ * A resize replaces the coordinate bindings of the axes whose top or left edge it
+ * may move: those the handle moves, the axis a side handle centers when the shape
+ * keeps its proportions, and both when the shape is turned or sized by its radius.
+ */
+function unbindResizedAxes(shape: Shape, handle: ResizeHandlerType, original: Shape) {
+    const both =
+        Boolean(original.rotation) || original.type === 'circle' || original.type === 'ellipse';
+    const { left, top } = movedEdges(handle);
+    const proportional = keepsAspectRatio(original);
+    const centersX = proportional && (handle === 'middleTop' || handle === 'middleBottom');
+    const centersY = proportional && (handle === 'middleLeft' || handle === 'middleRight');
+
+    if (both || left || centersX) unbind(shape, 'x');
+    if (both || top || centersY) unbind(shape, 'y');
+}
 
 /**
  * Rounds a rectangle's corners as the radius handle of `corner` is dragged from

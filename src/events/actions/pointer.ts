@@ -264,8 +264,6 @@ export const movePointer = (
         return;
     }
 
-    const previous = pointer.current;
-
     pointer.current = position;
 
     if (!pointer.inside) {
@@ -275,7 +273,7 @@ export const movePointer = (
     if (
         gesture.kind !== 'idle' &&
         !gesture.moved &&
-        (position.x !== previous.x || position.y !== previous.y)
+        beyondClickSlip(pointer.start, position, state.currentDocument.camera.scale)
     ) {
         gesture.moved = true;
     }
@@ -340,7 +338,7 @@ export const movePointer = (
         }
     }
 
-    // A press and release on a handle is a click, not an explicit geometry edit.
+    // Within a click's slip a handle edits nothing, so a click keeps its bindings.
     if (gesture.kind !== 'idle' && !gesture.moved) {
         return;
     }

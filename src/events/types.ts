@@ -13,7 +13,8 @@ export type ShapesSnapshot = Record<string, Shape>;
 
 /**
  * The pointer that owns a gesture. Input from any other pointer is ignored until
- * the gesture ends. `moved` records whether the owner has moved since it started.
+ * the gesture ends. `moved` records whether the owner has gone beyond a click's slip
+ * since it started.
  */
 type Owner = { pointerId: number; touch: boolean; moved: boolean };
 

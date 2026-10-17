@@ -41,15 +41,15 @@ it('keeps click bindings but detaches a moved axis even after dragging back to i
     expect(store.state.currentDocument.shapes[id]).toMatchObject({ position: { x: 0, y: 0 } });
 });
 
-it.each(['bottomRight', 'rotate', 'radius'] as const)(
+it.each(['topLeft', 'rotate', 'radius'] as const)(
     'keeps a %s handle click bound, then detaches a drag and restores on cancel',
     (type) => {
         const { store, id, shape, input } = setup();
         const handle: HandleTarget =
             type === 'radius' ? { type, shapeId: id, corner: 'topLeft' } : { type, shapeId: id };
         const start =
-            type === 'bottomRight'
-                ? { x: 40, y: 40 }
+            type === 'topLeft'
+                ? { x: 0, y: 0 }
                 : type === 'rotate'
                   ? { x: 20, y: -20 }
                   : { x: 8, y: 8 };
@@ -82,15 +82,57 @@ it('detaches a clamped radius write even when the radius stays zero', () => {
     expect(shape()).toMatchObject({ cornerRadius: 0 });
 });
 
-it('detaches resize position writes even when their coordinates remain the same, keeping radius and rotation', () => {
-    const { store, id, shape, input, radius, rotation } = setup();
+it('keeps a handle click that slips within the click slop bound and in place', () => {
+    const { store, id, shape, input } = setup();
+    const before = json(shape());
     store.actions.events.beginGesture({
         ...input({ x: 40, y: 40 }),
         handle: { type: 'bottomRight', shapeId: id }
     });
-    store.actions.events.endGesture(input({ x: 60, y: 60 }));
-    expect(shape().bindings).toEqual({ cornerRadius: radius, rotation });
-    expect(shape()).toMatchObject({ position: { x: 0, y: 0 } });
+    store.actions.events.movePointer(input({ x: 42, y: 41 }));
+    store.actions.events.endGesture(input({ x: 42, y: 41 }));
+    expect(shape().bindings).toEqual(before.bindings);
+    expect(shape()).toMatchObject({ position: { x: 0, y: 0 }, size: { width: 40, height: 40 } });
+});
+
+it.each([
+    ['bottomRight', { x: 60, y: 60 }, ['x', 'y']],
+    ['middleRight', { x: 60, y: 20 }, ['x', 'y']],
+    ['middleLeft', { x: -20, y: 20 }, ['y']],
+    ['middleTop', { x: 20, y: -20 }, ['x']],
+    ['topLeft', { x: -20, y: -20 }, []]
+] as const)(
+    'a %s resize detaches only the coordinates whose top or left edge it moves',
+    (type, to, kept) => {
+        const { store, id, shape, input, x, y, radius, rotation } = setup();
+        const start = {
+            bottomRight: { x: 40, y: 40 },
+            middleRight: { x: 40, y: 20 },
+            middleLeft: { x: 0, y: 20 },
+            middleTop: { x: 20, y: 0 },
+            topLeft: { x: 0, y: 0 }
+        }[type];
+        store.actions.events.beginGesture({ ...input(start), handle: { type, shapeId: id } });
+        store.actions.events.endGesture(input(to));
+        const coordinates = { x, y };
+        expect(shape().bindings).toEqual({
+            ...Object.fromEntries(kept.map((key) => [key, coordinates[key]])),
+            cornerRadius: radius,
+            rotation
+        });
+    }
+);
+
+it('a resize of a turned shape detaches both coordinates', () => {
+    const { store, id, shape, input, rotation, radius } = setup();
+    store.actions.setVariableValue({ variableId: rotation, value: 90 });
+    store.actions.unbindProperty({ shapeIds: [id], key: 'rotation' });
+    store.actions.events.beginGesture({
+        ...input({ x: 0, y: 40 }),
+        handle: { type: 'bottomRight', shapeId: id }
+    });
+    store.actions.events.endGesture(input({ x: -20, y: 60 }));
+    expect(shape().bindings).toEqual({ cornerRadius: radius });
 });
 
 it('detaches only translated axes for arrow and alignment actions', () => {

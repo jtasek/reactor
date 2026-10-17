@@ -270,7 +270,8 @@ its references; deleting one leaves the shapes' values in place.
 Inspector and AI edits of a property, and the hide, show, lock and unlock commands, stop it
 following its variable, even when the written value is unchanged. Dragging, arrow keys and
 Align/Space detach only the axes they move, and dragging back does not restore a binding.
-Resize detaches position and text-size bindings; group/component scaling also detaches corner
+Resize detaches X or Y only when it moves the left or top edge, both on a turned shape, circle
+or ellipse, and text size; group/component scaling detaches positions and corner
 radius, and rotation detaches the angles and member positions it writes. Radius edits on
 circles/ellipses detach X/Y; text-size edits detach Y because its baseline changes. A handle
 click and measurements preserve bindings. Cancel restores the gesture's bindings and values,
