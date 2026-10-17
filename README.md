@@ -268,9 +268,14 @@ follow a variable, and text can include `${Name}` templates. Renaming a variable
 its references; deleting one leaves the shapes' values in place.
 
 Inspector and AI edits of a property, and the hide, show, lock and unlock commands, stop it
-following its variable, even when the written value is unchanged. Moves by dragging, arrow
-keys or Align and Space stop it following only once the value differs. An AI operation can explicitly bind the
-property again in the same update. Undo restores the binding together with the edit.
+following its variable, even when the written value is unchanged. Dragging, arrow keys and
+Align/Space detach only the axes they move, and dragging back does not restore a binding.
+Resize detaches position and text-size bindings; group/component scaling also detaches corner
+radius, and rotation detaches the angles and member positions it writes. Radius edits on
+circles/ellipses detach X/Y; text-size edits detach Y because its baseline changes. A handle
+click and measurements preserve bindings. Cancel restores the gesture's bindings and values,
+including concurrent edits; Undo restores the binding together with a completed edit.
+An AI operation can explicitly bind the property again in the same update.
 
 Choose a variable's **Source** to follow another of the same type by ID. Renaming the source
 keeps the alias; the panel shows its chain, resolved value and uses. Choose **Literal value**
@@ -281,8 +286,8 @@ introduced by concurrent edits is bounded and reported in the panel. Copy/paste 
 dependencies and retains the existing name-and-type matching policy.
 
 Values and template diagnostics share a pure central resolver; saved variable definitions
-keep their existing format. Typed aliases, independent Theme and
-Density dimensions, and design-system packages follow in the
+retain raw templates and alias fallback values. Independent Theme and
+Density dimensions and design-system packages follow in the
 [variable roadmap](./APPLICATION_PLAN.md#variable-foundation-v1v5-incremental).
 
 ## Camera Coordinates

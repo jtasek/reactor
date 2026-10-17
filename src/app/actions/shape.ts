@@ -14,7 +14,7 @@ import {
     Shape,
     ShapeInput
 } from '../types';
-import { unbind, unbindEditedProperties, writeText } from '../variables';
+import { unbind, unbindEditedProperties, unbindMovedProperties, writeText } from '../variables';
 import { Context } from 'src/app';
 import { screenToWorld } from '../camera';
 import { instanceName, createGroup, createShape, nextShapeName, shapeNamer } from '../factories';
@@ -831,6 +831,7 @@ export const moveShapesBy: ActionWithParam<{ shapeIds: string[]; delta: Point }>
         const shape = state.currentDocument.shapes[id];
 
         if (shape) {
+            unbindMovedProperties(shape, delta);
             translateShape(shape, delta);
         }
     }
@@ -840,6 +841,7 @@ export const moveSelectedShapes: ActionWithParam<Point> = ({ state }, delta) => 
     const shapes = Object.values(state.currentDocument.shapes);
     shapes.forEach((shape) => {
         if (shape.selected && isInteractive(state, shape.id)) {
+            unbindMovedProperties(shape, delta);
             translateShape(shape, delta);
         }
     });
@@ -1062,7 +1064,7 @@ export const setShapesProperty = (
             return;
         }
 
-        unbind(shape, key);
+        unbindEditedProperties(shape, [key]);
 
         if (key === 'text' && shape.type === 'text' && typeof value === 'string') {
             writeText(shape, value, state.currentDocument.variables);
@@ -1092,6 +1094,7 @@ export const resizeShape = (
         return;
     }
 
+    unbindEditedProperties(shape, ['position', 'fontSize']);
     resizeShapeFromHandle(shape, handlerType, position, original ?? shape);
 };
 
@@ -1116,6 +1119,7 @@ export const roundCorners: ActionWithParam<{
         return;
     }
 
+    unbind(shape, 'cornerRadius');
     const radius = cornerRadiusAfterDrag(original, corner, from, to);
 
     if (shape.cornerRadius !== radius) {
@@ -1142,5 +1146,6 @@ export const rotateShape = (
 
     // The rotate handle sits directly above the shape, so a pointer straight up
     // from the center maps to 0°. atan2 measures from the +x axis, hence +90.
+    unbind(shape, 'rotation');
     shape.rotation = angleBetween(center, position) + 90;
 };

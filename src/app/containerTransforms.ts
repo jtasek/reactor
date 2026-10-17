@@ -1,3 +1,4 @@
+import { unbindEditedProperties } from './variables';
 import type { Document, Point, ResizeHandlerType } from './types';
 import type { ShapesSnapshot } from 'src/events/types';
 import type { GroupFrame } from './membership';
@@ -26,6 +27,7 @@ export function rotateContainerShapes(
         const from = boxCenter(getShapeBounds(original));
         const to = rotatePoint(from, center, turn);
 
+        unbindEditedProperties(shape, ['position', 'rotation']);
         placeShapeFrom(shape, original, from, 1, { x: to.x - from.x, y: to.y - from.y });
         shape.rotation = (original.rotation ?? 0) + turn;
     }
@@ -64,6 +66,7 @@ export function resizeContainerShapes(
         };
         const to = rotation ? rotatePoint(scaled, placedCenter, rotation) : scaled;
 
+        unbindEditedProperties(shape, ['position', 'fontSize', 'cornerRadius']);
         placeShapeFrom(shape, original, from, factor, { x: to.x - from.x, y: to.y - from.y });
     }
 }

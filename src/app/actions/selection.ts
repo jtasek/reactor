@@ -1,3 +1,4 @@
+import { unbindMovedProperties } from '../variables';
 import { Action, ActionWithParam, Application, Document, Orientation, Point } from '../types';
 import type { AlignTo, Spacing } from '../alignment';
 import { editorHelpers } from '../editorHelpers';
@@ -148,6 +149,7 @@ const moveItems = (document: Document, items: { shapeIds: string[] }[], offsets:
             const shape = document.shapes[id];
 
             if (shape) {
+                unbindMovedProperties(shape, offset);
                 translateShape(shape, offset);
             }
         });

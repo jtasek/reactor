@@ -213,3 +213,36 @@ test('an alias follows its source across reload and detaches to a literal', asyn
     await field(page, 'Value of Brand').fill('#00ff00');
     await expect.poll(fill).toBe('rgb(255, 0, 0)');
 });
+
+test('moving back to the original position detaches X, while cancel restores it and Y stays bound', async ({
+    page
+}) => {
+    await rectangleWithPanels(page);
+    await addVariable(page, 'Left', 'Number');
+    await field(page, 'Value of Left').fill('100');
+    await field(page, 'Value of Left').press('Enter');
+    await field(page, 'Variable for X').selectOption({ label: 'Left' });
+    await addVariable(page, 'Top', 'Number');
+    await field(page, 'Value of Top').fill('100');
+    await field(page, 'Value of Top').press('Enter');
+    await field(page, 'Variable for Y').selectOption({ label: 'Top' });
+    await pointer(page, 'pointerdown', { x: 125, y: 125 });
+    await pointer(page, 'pointermove', { x: 165, y: 125 });
+    await pointer(page, 'pointercancel', { x: 165, y: 125 });
+    await expect(field(page, 'X')).toHaveText('◆ Left');
+    await expect(field(page, 'Y')).toHaveText('◆ Top');
+    await pointer(page, 'pointerdown', { x: 125, y: 125 });
+    await pointer(page, 'pointermove', { x: 165, y: 125 });
+    await pointer(page, 'pointerup', { x: 125, y: 125 });
+    await expect(field(page, 'X')).toHaveValue('100');
+    await expect(field(page, 'Y')).toHaveText('◆ Top');
+    await field(page, 'Value of Left').fill('200');
+    await field(page, 'Value of Left').press('Enter');
+    await expect(field(page, 'X')).toHaveValue('100');
+    await page.reload();
+    await openEditor(page, ['Inspector', 'Variables']);
+    await pointer(page, 'pointerdown', { x: 125, y: 125 });
+    await pointer(page, 'pointerup', { x: 125, y: 125 });
+    await expect(field(page, 'X')).toHaveValue('100');
+    await expect(field(page, 'Y')).toHaveText('◆ Top');
+});
