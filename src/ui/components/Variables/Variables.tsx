@@ -152,6 +152,14 @@ const VariableRow: FC<{
               ? templateProblems(variable.values.default, variables, [variable.id])
               : [];
 
+    const sources = Object.values(variables).filter(
+        (source) =>
+            source.id === variable.alias ||
+            (source.id !== variable.id &&
+                source.type === variable.type &&
+                !variableDependencies(source, variables).has(variable.id))
+    );
+
     return (
         <li className={styles.row}>
             <DraftField
@@ -191,34 +199,32 @@ const VariableRow: FC<{
                     ×
                 </button>
             )}
-            <select
-                className={styles.source}
-                aria-label={`Source of ${variable.name}`}
-                value={variable.alias ?? ''}
-                onChange={(event) =>
-                    setProblem(
-                        setVariableAlias({
-                            variableId: variable.id,
-                            sourceId: event.target.value || null
-                        })
-                    )
-                }
-            >
-                <option value="">Literal value</option>
-                {Object.values(variables)
-                    .filter(
-                        (source) =>
-                            source.id === variable.alias ||
-                            (source.id !== variable.id &&
-                                source.type === variable.type &&
-                                !variableDependencies(source, variables).has(variable.id))
-                    )
-                    .map((source) => (
+            {sources.length > 0 || variable.alias !== undefined ? (
+                <select
+                    className={styles.source}
+                    aria-label={`Source of ${variable.name}`}
+                    value={variable.alias ?? ''}
+                    onChange={(event) =>
+                        setProblem(
+                            setVariableAlias({
+                                variableId: variable.id,
+                                sourceId: event.target.value || null
+                            })
+                        )
+                    }
+                >
+                    <option value="">Literal value</option>
+                    {sources.map((source) => (
                         <option key={source.id} value={source.id}>
                             Follow {source.name}
                         </option>
                     ))}
-            </select>
+                </select>
+            ) : (
+                <small className={styles.resolution}>
+                    Add another {variable.type} variable to reference it.
+                </small>
+            )}
             {variable.alias !== undefined && (
                 <small
                     className={styles.resolution}
