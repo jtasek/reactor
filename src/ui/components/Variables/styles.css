@@ -142,3 +142,14 @@
     font-size: 0.75rem;
     line-height: 16px;
 }
+
+.variables select.source {
+    flex: 1 0 100%;
+    max-width: 100%;
+}
+
+.resolution {
+    color: var(--text-secondary-color);
+    flex-basis: 100%;
+    overflow-wrap: anywhere;
+}

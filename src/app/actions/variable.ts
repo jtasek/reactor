@@ -6,11 +6,12 @@ import {
     bindableProperty,
     buildVariable,
     canBind,
+    escapeTemplate,
     removeVariable,
     templateWithIds,
     unbind
 } from '../variables';
-import { variableNamed, resolveVariable } from '../variableResolver';
+import { variableNamed, resolveVariable, variableProblems } from '../variableResolver';
 
 /**
  * Adds a variable to the current document and answers its id; none when `name` is
@@ -75,6 +76,35 @@ export const setVariableValue: ActionWithParam<{ variableId: string; value: unkn
         return;
     }
 
+    document.variables[variableId] = next;
+    applyVariableChanges(document, before);
+};
+
+/** Follows a same-type variable, or detaches to the resolved literal value. */
+export const setVariableAlias: ActionWithParamAndResult<
+    { variableId: string; sourceId: string | null },
+    string | undefined
+> = ({ state }, { variableId, sourceId }) => {
+    const document = state.currentDocument;
+    const variable = document.variables[variableId];
+    if (!variable || document.locked) {
+        return 'This variable cannot be changed.';
+    }
+    const before = structuredClone(json(document.variables));
+    const value = resolveVariable(variable, before);
+    const next = buildVariable(
+        variable.id,
+        variable.name,
+        variable.type,
+        variable.type === 'text' ? escapeTemplate(String(value)) : value
+    )!;
+    if (sourceId !== null) {
+        next.alias = sourceId;
+        const problem = variableProblems(next, { ...before, [variableId]: next })[0];
+        if (problem) {
+            return problem;
+        }
+    }
     document.variables[variableId] = next;
     applyVariableChanges(document, before);
 };

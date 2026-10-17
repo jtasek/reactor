@@ -60,30 +60,64 @@ export function resolveText(
                 return `\${${variable.name}}`;
             }
 
-            const value =
-                variable.type === 'text'
-                    ? resolveText(
-                          variable.values.default,
-                          variables,
-                          [...within, variable.id],
-                          problems
-                      )
-                    : String(variable.values.default);
+            const value = resolveValue(variable, variables, within, problems);
 
             // Diagnostics follow the same references without building expanded text.
-            return problems ? '' : value;
+            return problems ? '' : String(value);
         }
     );
 }
 
-/** The value a variable writes: a text variable's template made into text. */
+/** Resolve aliases and templates together, sharing the same cycle and depth bounds. */
+function resolveValue(
+    variable: Variable,
+    variables: Readonly<Record<string, Variable>>,
+    within: string[],
+    problems?: string[]
+): string | number | boolean {
+    const path = [...within, variable.id];
+    let source = variable;
+    while (source.alias !== undefined) {
+        const target = variables[source.alias];
+        if (
+            !target ||
+            target.type !== source.type ||
+            path.includes(target.id) ||
+            path.length >= TEMPLATE_DEPTH
+        ) {
+            problems?.push(
+                !target
+                    ? `Missing source ${source.alias}`
+                    : target.type !== source.type
+                      ? `${source.name} requires a ${source.type} source`
+                      : `Circular or too deep: ${target.name}`
+            );
+            source = variable;
+            break;
+        }
+        source = target;
+        path.push(source.id);
+    }
+    return source.type === 'text'
+        ? resolveText(source.values.default, variables, path, problems)
+        : source.values.default;
+}
+
+/** The value a variable writes, following same-type aliases and text templates. */
 export const resolveVariable = (
     variable: Variable,
     variables: Readonly<Record<string, Variable>>
-) =>
-    variable.type === 'text'
-        ? resolveText(variable.values.default, variables, [variable.id])
-        : variable.values.default;
+) => resolveValue(variable, variables, []);
+
+/** Reference problems in an alias's resolved value; useful for validation and editor diagnostics. */
+export function variableProblems(
+    variable: Variable,
+    variables: Readonly<Record<string, Variable>>
+): string[] {
+    const problems: string[] = [];
+    resolveValue(variable, variables, [], problems);
+    return problems;
+}
 
 /** The text a template makes, using the document's default variable values. */
 export const resolveTemplate = (

@@ -35,3 +35,20 @@ export function templateProblems(
 
     return problems;
 }
+
+/** Names along the alias chain, stopping at a missing or repeated source. */
+export function variableChain(
+    variable: Variable,
+    variables: Readonly<Record<string, Variable>>
+): string {
+    const seen = new Set<string>();
+    const names: string[] = [];
+    let current: Variable | undefined = variable;
+    while (current) {
+        names.push(current.name);
+        if (seen.has(current.id) || current.alias === undefined) break;
+        seen.add(current.id);
+        current = variables[current.alias];
+    }
+    return names.join(' → ');
+}

@@ -7,7 +7,9 @@ declare namespace StylesCssNamespace {
     groupName: string;
     note: string;
     problem: string;
+    resolution: string;
     row: string;
+    source: string;
     uses: string;
     variables: string;
   }

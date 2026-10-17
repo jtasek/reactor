@@ -272,6 +272,14 @@ following its variable, even when the written value is unchanged. Moves by dragg
 keys or Align and Space stop it following only once the value differs. An AI operation can explicitly bind the
 property again in the same update. Undo restores the binding together with the edit.
 
+Choose a variable's **Source** to follow another of the same type by ID. Renaming the source
+keeps the alias; the panel shows its chain, resolved value and uses. Choose **Literal value**
+to detach while keeping the resolved value. Cycles, incompatible types and missing sources
+are rejected. Deleting a source locally converts its direct aliases to resolved literals.
+If a concurrent edit leaves a missing source, the alias uses its retained fallback; a cycle
+introduced by concurrent edits is bounded and reported in the panel. Copy/paste carries alias
+dependencies and retains the existing name-and-type matching policy.
+
 Values and template diagnostics share a pure central resolver; saved variable definitions
 keep their existing format. Typed aliases, independent Theme and
 Density dimensions, and design-system packages follow in the

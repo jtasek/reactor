@@ -188,3 +188,28 @@ test('a text shows the variables its template names and follows their changes', 
     await page.getByRole('button', { name: 'Delete first name', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Confirm deleting first name' })).toBeVisible();
 });
+
+test('an alias follows its source across reload and detaches to a literal', async ({ page }) => {
+    const { fill } = await rectangleWithPanels(page);
+    await addVariable(page, 'Brand', 'Color');
+    await field(page, 'Value of Brand').fill('#3366ff');
+    await addVariable(page, 'Button', 'Color');
+    await field(page, 'Source of Button').selectOption({ label: 'Follow Brand' });
+    await field(page, 'Variable for Fill').selectOption({ label: 'Button' });
+    await expect.poll(fill).toBe('rgb(51, 102, 255)');
+    await expect(field(page, 'Resolved value of Button')).toHaveText('Button → Brand: #3366ff');
+    await field(page, 'Source of Brand').selectOption({ label: 'Follow Button' });
+    await expect(panel(page).getByRole('alert')).toContainText('Circular');
+    await expect(field(page, 'Source of Brand')).toHaveValue('');
+    await field(page, 'Value of Brand').fill('#ff0000');
+    await expect.poll(fill).toBe('rgb(255, 0, 0)');
+    await page.reload();
+    await openEditor(page, ['Inspector', 'Variables']);
+    await expect(field(page, 'Resolved value of Button')).toHaveText('Button → Brand: #ff0000');
+    await page.setViewportSize({ width: 540, height: 740 });
+    await expect(field(page, 'Source of Button')).toBeVisible();
+    await field(page, 'Source of Button').selectOption({ label: 'Literal value' });
+    await expect(field(page, 'Value of Button')).toHaveValue('#ff0000');
+    await field(page, 'Value of Brand').fill('#00ff00');
+    await expect.poll(fill).toBe('rgb(255, 0, 0)');
+});

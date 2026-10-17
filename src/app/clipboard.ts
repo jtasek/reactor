@@ -26,10 +26,16 @@ import {
     bindingHolds,
     replaceTemplateIds,
     templateVariablesIds,
+    variableDependencies,
     templateWithIds,
     writeText
 } from './variables';
-import { resolveTemplate, variableNamed, resolveVariable } from './variableResolver';
+import {
+    resolveTemplate,
+    variableNamed,
+    resolveVariable,
+    variableProblems
+} from './variableResolver';
 
 /** What a paste did: added shapes, found none in the text, waited for the editor, or was refused. */
 export type PasteResult = 'pasted' | 'noShapes' | 'notNow' | { problem: string };
@@ -134,9 +140,7 @@ export function writeClipboard(
             return;
         }
         held.add(variableId);
-        if (variable.type === 'text') {
-            templateVariablesIds(variable.values.default, variables, held);
-        }
+        variableDependencies(variable, variables, held);
     };
 
     for (const shape of dependencyShapes) {
@@ -214,6 +218,15 @@ export function readClipboard(text: string): Copied {
         }
 
         const variables = variablesData.map((variable) => readEntity('variables', variable));
+        const byId = Object.fromEntries(variables.map((variable) => [variable.id, variable]));
+        if (
+            variables.some(
+                (variable) =>
+                    variable.alias !== undefined && variableProblems(variable, byId).length > 0
+            )
+        ) {
+            return nothing;
+        }
         const copiedIds = new Set(variables.map((variable) => variable.id));
 
         if (
@@ -291,17 +304,31 @@ function pasteVariables(copied: Variable[], document: Document) {
             key,
             name,
             type: variable.type,
-            value: variable.values.default
+            value: variable.values.default,
+            ...(variable.alias === undefined ? {} : { alias: variable.alias })
         });
     });
 
     const remapTemplate = (template: string) =>
         replaceTemplateIds(template, (id) => references.get(id));
-    const operations = added.map((operation) =>
-        operation.type === 'text' && typeof operation.value === 'string'
+    const remapped = added.map((input) => {
+        const operation = {
+            ...input,
+            ...(input.alias === undefined ? {} : { alias: references.get(input.alias) })
+        };
+        return operation.type === 'text' && typeof operation.value === 'string'
             ? { ...operation, value: remapTemplate(operation.value) }
-            : operation
-    );
+            : operation;
+    });
+    const operations: AddVariable[] = [];
+    const pending = new Map(remapped.map((operation) => [operation.key, operation]));
+    const visit = (operation: AddVariable) => {
+        if (!pending.delete(operation.key)) return;
+        const source = operation.alias === undefined ? undefined : pending.get(operation.alias);
+        if (source) visit(source);
+        operations.push(operation);
+    };
+    remapped.forEach(visit);
 
     const values = { ...document.variables };
 
@@ -310,7 +337,8 @@ function pasteVariables(copied: Variable[], document: Document) {
             id: operation.key,
             name: operation.name,
             type: operation.type,
-            values: { default: operation.value }
+            values: { default: operation.value },
+            ...(operation.alias === undefined ? {} : { alias: operation.alias })
         });
     });
 

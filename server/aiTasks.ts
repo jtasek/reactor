@@ -230,7 +230,14 @@ export const TOOLS = [
                 key: { type: 'string' },
                 name: { type: 'string', description: 'Unique, without {, } or $.' },
                 type: { type: 'string', enum: ['color', 'number', 'text', 'boolean'] },
-                value: { description: 'A value of the type; a color is #rrggbb.' }
+                value: {
+                    description:
+                        'A value of the type; a color is #rrggbb. Retained as fallback when following an alias.'
+                },
+                alias: {
+                    type: 'string',
+                    description: 'Optional same-type source ID or earlier variable key; no cycles.'
+                }
             },
             required: ['key', 'name', 'type', 'value']
         }
@@ -311,7 +318,15 @@ export const TOOLS = [
             properties: {
                 variable: { type: 'string', description: 'The variable’s ID.' },
                 name: { type: 'string', description: 'Unique, without {, } or $.' },
-                value: { description: 'A value of its type; a color is #rrggbb.' }
+                value: {
+                    description:
+                        'A value of its type; a color is #rrggbb. Setting this alone stops following its alias.'
+                },
+                alias: {
+                    type: ['string', 'null'],
+                    description:
+                        'Same-type source ID or earlier variable key; null detaches to the resolved value. No cycles.'
+                }
             },
             required: ['variable']
         }

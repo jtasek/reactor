@@ -19,7 +19,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 export const RUNTIME_FIELDS = new Set([
     'active',
     'bounds',
@@ -95,7 +95,7 @@ type DocumentData = DocumentFields &
     Pick<Document, 'camera'> & { [C in Collection]: Record<string, SavedEntities[C]> };
 
 /** Whether an entity exists, for dropping references to ones that do not. */
-export type Exists = (collection: 'shapes' | 'components', id: string) => boolean;
+export type Exists = (collection: 'shapes' | 'components' | 'variables', id: string) => boolean;
 export interface PersistedState {
     version: number;
     currentDocumentId: string;
@@ -477,7 +477,7 @@ function readVariable(value: unknown): Variable {
         throw new Error('Invalid variable');
     }
 
-    return variable;
+    return v.alias === undefined ? variable : { ...variable, alias: id(v.alias) };
 }
 
 function readGuide(value: unknown): GuideData {
@@ -551,11 +551,18 @@ const referenceRepairs: {
             ? link
             : null,
     guides: (guide) => guide,
-    variables: (variable) => variable
+    variables: (variable, exists) => {
+        if (variable.alias === undefined || exists('variables', variable.alias)) {
+            return variable;
+        }
+        const copy = { ...variable };
+        delete copy.alias;
+        return copy;
+    }
 };
 
 /**
- * Drops an entity's references to shapes and components that do not exist, as
+ * Drops an entity's references to shapes, components and variables that do not exist, as
  * deleting them would: memberships and parents go, and a link to a missing shape
  * goes entirely (null). A member listed twice, as two copies adding it at once
  * leave it, is kept once. Returns the same entity when nothing was dropped.
@@ -699,8 +706,9 @@ function readDocument(value: unknown, onRepair = () => {}): DocumentData {
     const d = record(value);
     const shapes = readShapes(d.shapes, onRepair);
     const components = table(d.components, readComponent);
+    const variables = d.variables === undefined ? {} : table(d.variables, readVariable);
     const exists: Exists = (collection, entityId) =>
-        Object.hasOwn(collection === 'shapes' ? shapes : components, entityId);
+        Object.hasOwn({ shapes, components, variables }[collection], entityId);
     const repair = <C extends Collection>(collection: C, items: Record<string, SavedEntities[C]>) =>
         repairReferences(collection, items, exists, onRepair);
 
@@ -713,7 +721,7 @@ function readDocument(value: unknown, onRepair = () => {}): DocumentData {
         components: repair('components', components),
         links: repair('links', table(d.links, readLink)),
         guides: table(d.guides, readGuide),
-        variables: d.variables === undefined ? {} : table(d.variables, readVariable)
+        variables: repair('variables', variables)
     };
 }
 
@@ -757,6 +765,7 @@ export function migratePersistedState(raw: unknown, onRepair = () => {}): Persis
             data.version !== 1 &&
             data.version !== 2 &&
             data.version !== 3 &&
+            data.version !== 4 &&
             data.version !== SCHEMA_VERSION
         ) {
             return null;

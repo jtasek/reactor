@@ -67,6 +67,8 @@ type VariableOf<T extends VariableType, V> = {
     type: T;
     /** By mode; only `default` exists yet. */
     values: { default: V };
+    /** Same-type source by ID; default is retained as the fallback while following it. */
+    alias?: string;
 };
 
 /** A named value kept in a document, written into the shape properties bound to it. */
