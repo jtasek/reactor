@@ -1,7 +1,15 @@
-import { Action, ActionWithParam, Application, Document, UndoHistory } from '../types';
+import {
+    Action,
+    ActionWithParam,
+    Application,
+    Document,
+    DocumentsLayout,
+    UndoHistory
+} from '../types';
 import { createCamera, createDocument, createGrid, newDocumentName } from '../factories';
 import { takesEditorInput } from 'src/events/input';
 import { copyDocument } from '../services/documentStorage';
+import { DOCUMENTS_LAYOUT_KEY, deletedForGood } from '../documentList';
 
 const getDocument = ({ documents }: Application, documentId: string) => {
     const document = documents[documentId];
@@ -20,10 +28,46 @@ const deleteDocument = ({ documents }: Application, documentId: string) => {
     delete documents[documentId];
 };
 
+/** Opens another document than one deleted, or a new one when none is left outside Recently Deleted. */
+const replaceCurrentDocument = (state: Application, documentId: string) => {
+    if (state.currentDocumentId !== documentId && state.documents[state.currentDocumentId]) {
+        return;
+    }
+
+    state.enteredComponentId = null;
+
+    const nextId = Object.keys(state.documents).find(
+        (id) => id !== documentId && !state.documents[id].deleted
+    );
+
+    if (nextId) {
+        state.currentDocumentId = nextId;
+
+        return;
+    }
+
+    const document = createDocument();
+
+    setDocument(state, document);
+    state.currentDocumentId = document.id;
+};
+
 export const addDocument: ActionWithParam<Partial<Document>> = ({ state }, options) => {
     const document = createDocument(options);
 
     setDocument(state, document);
+};
+
+export const setDocumentsLayout: ActionWithParam<DocumentsLayout> = (
+    { state, effects },
+    layout
+) => {
+    state.config.documentsLayout = layout;
+    try {
+        effects.saveState(DOCUMENTS_LAYOUT_KEY, layout);
+    } catch {
+        // Keep the layout for this session if local storage is unavailable.
+    }
 };
 
 export const newDocument: Action = ({ state, effects }) => {
@@ -85,6 +129,7 @@ export const cloneDocument: ActionWithParam<string> = ({ state, effects }, docum
     const copy = copyDocument(document, effects.newId());
 
     copy.name = `${document.name} copy`;
+    delete copy.deleted;
     copy.created = new Date();
     copy.modified = new Date(copy.created);
     setDocument(state, copy);
@@ -116,25 +161,29 @@ export const discardDocument: ActionWithParam<string> = ({ state }, documentId) 
 
 export const removeDocument: ActionWithParam<string> = ({ state }, documentId) => {
     deleteDocument(state, documentId);
+    replaceCurrentDocument(state, documentId);
+};
 
-    if (state.documents[state.currentDocumentId]) {
-        return;
-    }
+/** Moves a document to Recently Deleted, from where it can be restored. */
+export const trashDocument: ActionWithParam<string> = ({ state }, documentId) => {
+    getDocument(state, documentId).deleted = new Date();
+    replaceCurrentDocument(state, documentId);
+};
 
-    state.enteredComponentId = null;
+export const restoreDocument: ActionWithParam<string> = ({ state }, documentId) => {
+    delete getDocument(state, documentId).deleted;
+};
 
-    const nextId = Object.keys(state.documents)[0];
+/** Deletes for good the documents Recently Deleted has kept for its days. */
+export const purgeDeletedDocuments: Action = ({ state }) => {
+    const now = new Date();
 
-    if (nextId) {
-        state.currentDocumentId = nextId;
-
-        return;
-    }
-
-    const document = createDocument();
-
-    setDocument(state, document);
-    state.currentDocumentId = document.id;
+    Object.values(state.documents)
+        .filter(({ deleted }) => deleted && deletedForGood(deleted, now))
+        .forEach(({ id }) => {
+            deleteDocument(state, id);
+            replaceCurrentDocument(state, id);
+        });
 };
 
 export const openDocument: ActionWithParam<string> = ({ state }, documentId) => {

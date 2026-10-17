@@ -5,6 +5,7 @@ import { startDocumentSync } from '../services/documentSync';
 import { listenToMutations } from '../services/mutations';
 import { documentOwner, readAccount } from '../services/accounts';
 import { PANEL_LAYOUT_KEY, readPanelLayout } from '../panelLayout';
+import { DOCUMENTS_LAYOUT_KEY, readDocumentsLayout } from '../documentList';
 
 const commands: Record<string, Command> = {};
 const tools: Record<string, Tool> = {};
@@ -90,6 +91,11 @@ export const onInitializeOvermind = async (
         state.config.panelLayout = readPanelLayout(effects.loadState(PANEL_LAYOUT_KEY));
     } catch {
         state.config.panelLayout = readPanelLayout(undefined);
+    }
+    try {
+        state.config.documentsLayout = readDocumentsLayout(effects.loadState(DOCUMENTS_LAYOUT_KEY));
+    } catch {
+        // Cards, as by default, when local storage cannot be read.
     }
 
     // The documents opened last open while the account is read; the first time, and

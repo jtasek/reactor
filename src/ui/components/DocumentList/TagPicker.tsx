@@ -105,6 +105,15 @@ export const TagPicker: FC<Props> = ({
 
                         return (
                             <div key={tag} className={styles.optionRow}>
+                                <button
+                                    type="button"
+                                    className={styles.toneButton}
+                                    data-tone={tone}
+                                    aria-label={`Color of ${tag}`}
+                                    title={`Color of ${tag}`}
+                                    aria-expanded={coloring === tag}
+                                    onClick={() => toggleColoring(tag)}
+                                />
                                 <label className={`${menuStyles.row} ${styles.option}`}>
                                     <input
                                         type="checkbox"
@@ -121,15 +130,6 @@ export const TagPicker: FC<Props> = ({
                                         )}
                                     </span>
                                 </label>
-                                <button
-                                    type="button"
-                                    className={styles.toneButton}
-                                    data-tone={tone}
-                                    aria-label={`Color of ${tag}`}
-                                    title={`Color of ${tag}`}
-                                    aria-expanded={coloring === tag}
-                                    onClick={() => toggleColoring(tag)}
-                                />
                                 {coloring === tag && (
                                     <div
                                         className={styles.tones}
