@@ -201,18 +201,18 @@ const VariableRow: FC<{
             </div>
             <div className={styles.metadata}>
                 <span>{TYPES.find((item) => item.type === variable.type)?.label}</span>
-                <span title={`Used ${uses} times`}>
+                <span>
                     {uses === 0 ? 'Not used yet' : `${uses} ${uses === 1 ? 'use' : 'uses'}`}
                 </span>
             </div>
             {variable.alias === undefined && (
-                <div className={styles.field}>
+                <label className={styles.field}>
                     <span className={styles.fieldLabel}>Value</span>
                     <ValueField variable={variable} variables={variables} />
                     {variable.type === 'color' && (
                         <code className={styles.colorValue}>{variable.values.default}</code>
                     )}
-                </div>
+                </label>
             )}
             {sources.length > 0 || variable.alias !== undefined ? (
                 <label className={styles.field}>
