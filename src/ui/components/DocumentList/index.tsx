@@ -14,6 +14,7 @@ export const DocumentListContainer: FC = () => {
     const documents = useDocumentsIds().map((id) => ({
         id,
         name: byId[id].name,
+        created: byId[id].created,
         modified: byId[id].modified,
         deleted: byId[id].deleted,
         tags: [...byId[id].tags],

@@ -21,6 +21,56 @@
     max-width: var(--documents-max-width);
 }
 
+.bar {
+    align-items: center;
+    color: var(--document-secondary-color);
+    display: flex;
+    font-size: 13px;
+    gap: 16px;
+    margin: -24px 0 12px;
+    min-height: 32px;
+}
+
+.documentList .back {
+    align-items: center;
+    border-radius: var(--radius-md);
+    color: var(--selection-color);
+    display: inline-flex;
+    gap: 2px;
+    min-width: 0;
+    padding: 4px 8px 4px 2px;
+    text-decoration: none;
+}
+
+.back span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.documentList .back:hover {
+    background: var(--field-background);
+}
+
+.documentList .back:focus-visible,
+.barStatus a:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 2px;
+}
+
+.barStatus {
+    align-items: center;
+    display: flex;
+    flex: none;
+    gap: 16px;
+    margin-left: auto;
+}
+
+.barStatus a {
+    color: var(--selection-color);
+    text-decoration: none;
+}
+
 .header {
     align-items: center;
     display: flex;
