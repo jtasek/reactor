@@ -137,6 +137,10 @@ export const useActiveToolsIds = () => {
     return useAppState((state) => state.tools.activeToolsIds);
 };
 
+export const useDocumentsLayout = () => {
+    return useAppState((state) => state.config.documentsLayout);
+};
+
 export const usePanelLayout = () => {
     return useAppState((state) => state.config.panelLayout);
 };

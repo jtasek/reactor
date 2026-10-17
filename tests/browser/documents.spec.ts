@@ -86,21 +86,38 @@ test('documents can be listed, cloned, deleted, created and opened', async ({ pa
     // The newest edit comes first.
     await expect(rows(page).first()).toContainText('document-1 copy');
 
+    // Deleting moves a document to Recently Deleted, at once and undoably.
     await button(page, 'Delete document-1 copy').click();
-    const confirmation = page.getByRole('dialog', { name: 'Delete this document?' });
-    await expect(confirmation).toContainText('document-1 copy');
+    await expect(rows(page)).toHaveCount(1);
+    await expect(page.getByRole('status').filter({ hasText: 'Moved' })).toHaveText(
+        'Moved “document-1 copy” to Recently DeletedUndo'
+    );
+    await expect(button(page, 'Undo')).toBeFocused();
+    await button(page, 'Undo').click();
+    await expect(rows(page)).toHaveCount(2);
+
+    await button(page, 'Delete document-1 copy').click();
+    await expect(rows(page)).toHaveCount(1);
+    await button(page, 'Recently Deleted (1)').click();
+    await expect(page.getByRole('heading', { name: 'Recently Deleted' })).toBeVisible();
+    await expect(rows(page)).toHaveCount(1);
+    await expect(rows(page).first()).toContainText('30 days left');
+    await expect(button(page, 'Open document-1 copy')).toHaveCount(0);
+
+    await button(page, 'Delete document-1 copy now').click();
+    const confirmation = page.getByRole('dialog', { name: 'Delete “document-1 copy” now?' });
+    await expect(confirmation.getByRole('button', { name: 'Cancel' })).toBeFocused();
     await confirmation.getByRole('button', { name: 'Cancel' }).click();
     await expect(confirmation).not.toBeVisible();
-    await expect(rows(page)).toHaveCount(2);
-
-    await button(page, 'Delete document-1 copy').click();
-    await page.keyboard.press('Escape');
-    await expect(confirmation).not.toBeVisible();
-    await expect(rows(page)).toHaveCount(2);
-
-    await button(page, 'Delete document-1 copy').click();
-    await confirmation.getByRole('button', { name: 'Delete document' }).click();
     await expect(rows(page)).toHaveCount(1);
+
+    await button(page, 'Delete document-1 copy now').click();
+    await confirmation.getByRole('button', { name: 'Delete', exact: true }).click();
+    await expect(rows(page)).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Recently Deleted is empty' })).toBeVisible();
+    await button(page, 'Recently Deleted').click();
+    await expect(rows(page)).toHaveCount(1);
+    await expect(button(page, 'Recently Deleted')).toHaveCount(0);
 
     await button(page, 'New document').click();
     await expect(page).toHaveURL(/\/$/);
@@ -118,7 +135,7 @@ test('documents can be listed, cloned, deleted, created and opened', async ({ pa
     await expect(shapes(page)).toHaveCount(1);
 });
 
-test('double-clicking a card opens it without intercepting controls or dialogs', async ({
+test('a click on the preview or a double click on the card opens it, not on its controls', async ({
     page
 }) => {
     await openDocumentExamples(page);
@@ -135,10 +152,8 @@ test('double-clicking a card opens it without intercepting controls or dialogs',
     await expect(page).toHaveURL(/\/documents$/);
     await page.keyboard.press('Escape');
 
-    const preview = page.getByRole('img', { name: 'Preview of Interface kit' });
-    await preview.click();
-    await expect(page).toHaveURL(/\/documents$/);
-    await preview.dblclick();
+    // A click on the preview opens the document.
+    await page.getByRole('img', { name: 'Preview of Interface kit' }).click();
     await expect(page).toHaveURL(/\/$/);
     await expect(shapes(page)).toHaveCount(1);
 
@@ -248,11 +263,11 @@ test('documents created or deleted in one tab are in the others', async ({ page 
     await expect(rows(otherTab).first()).toContainText('document-1 copy');
 
     await button(page, 'Delete document-1 copy').click();
-    await page
-        .getByRole('dialog', { name: 'Delete this document?' })
-        .getByRole('button', { name: 'Delete document' })
-        .click();
     await expect(rows(otherTab)).toHaveCount(1);
+    await expect(button(otherTab, 'Recently Deleted (1)')).toBeVisible();
+
+    await button(page, 'Undo').click();
+    await expect(rows(otherTab)).toHaveCount(2);
 });
 
 test('document cards keep their title and date above the preview and switch to a list', async ({
@@ -306,6 +321,15 @@ test('document cards keep their title and date above the preview and switch to a
     await button(page, 'Card view').click();
     await expect(button(page, 'Card view')).toHaveAttribute('aria-pressed', 'true');
     expect((await preview.boundingBox())!.height).toBeGreaterThan(listPreview!.height);
+});
+
+test('the documents page keeps its layout after a reload', async ({ page }) => {
+    await openDocumentExamples(page);
+
+    await button(page, 'List view').click();
+    await page.reload();
+    await expect(rows(page)).toHaveCount(4);
+    await expect(button(page, 'List view')).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('document name, date and tag filters work together', async ({ page }) => {

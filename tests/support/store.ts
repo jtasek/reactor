@@ -131,6 +131,7 @@ export function createTestStore(
             arrowKeyStep: options.arrowKeyStep ?? DEFAULT_ARROW_KEY_STEP,
             autoSave: options.autoSave ?? false,
             debugMode: false,
+            documentsLayout: 'cards',
             panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT),
             version: '1.0'
         }

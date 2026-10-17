@@ -8,6 +8,7 @@ declare namespace StylesCssNamespace {
     clearFilters: string;
     current: string;
     dateFilter: string;
+    deletedName: string;
     documentList: string;
     empty: string;
     filterSummary: string;
@@ -23,10 +24,13 @@ declare namespace StylesCssNamespace {
     panel: string;
     resultCount: string;
     search: string;
+    subtitle: string;
     tagFilter: string;
     thumbnail: string;
     thumbnailEmpty: string;
     thumbnailSvg: string;
+    toast: string;
+    toastRegion: string;
   }
 }
 

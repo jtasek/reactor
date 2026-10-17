@@ -306,6 +306,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
             arrowKeyStep: DEFAULT_ARROW_KEY_STEP,
             autoSave: true,
             debugMode: false,
+            documentsLayout: 'cards',
             panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT)
         },
         currentDocumentId: 'document-1',
