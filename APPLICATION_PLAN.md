@@ -278,7 +278,7 @@ Done when, on 40 eval cases:
 Gate: ten people outside the team use it in their own work. Their accept and undo rates are
 recorded.
 
-### Variable foundation V1–V5 (incremental, alongside R3)
+### Variable foundation V1–V5 (incremental)
 
 Each step ships a usable editor. V1 precedes R4; the later steps can proceed alongside screen
 work, with V3 and V5 feeding R6. No speculative plugin or expression framework is needed.
@@ -388,8 +388,10 @@ The user switches a prototype between Light and Dark, and checks it for accessib
 2. Expose V4/V5 package and supported DTCG interchange in the design-system workflow.
 3. Audits in the preview: contrast, labels and focus order, with fixes the AI can propose.
 
-Done when `tests/themes.test.ts` (aliases, cycles, two copies in different modes changing no
-shared value) and `tests/browser/themes.spec.ts` pass.
+Done when `tests/themes.test.ts` (the preview and exported app resolving aliases and dimensions
+as the editor does, which V2's `tests/variableAliases.test.ts` and V3's
+`tests/variableDimensions.test.ts` cover there) and `tests/browser/themes.spec.ts` (switching
+Light and Dark in the preview, and the audits) pass.
 
 ### R7 Public beta (S)
 

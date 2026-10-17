@@ -1,5 +1,6 @@
 import type { Variable } from 'src/app/types';
-import { resolveVariable, resolveTemplate, templateProblems } from 'src/app/variableResolver';
+import { resolveVariable, resolveTemplate } from 'src/app/variableResolver';
+import { templateProblems } from 'src/app/editorVariables';
 
 const variables: Record<string, Variable> = {
     color: { id: 'color', name: 'Brand', type: 'color', values: { default: '#3366ff' } },

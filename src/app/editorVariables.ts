@@ -2,7 +2,7 @@
 // than with the store, which every page needs as it opens.
 import type { Document, Shape, Variable } from './types';
 import { accepts, bindableProperty, bindingHolds } from './variables';
-import { resolveVariable } from './variableResolver';
+import { resolveText, resolveVariable } from './variableResolver';
 
 /**
  * The variable `shape`'s `key` property follows: bound to it, and showing its value.
@@ -22,4 +22,16 @@ export function boundVariable(shape: Shape, key: string, document: Document): Va
         bindingHolds(property, shape, value)
         ? variable
         : undefined;
+}
+
+/** The names of missing, cyclic or too deeply nested references, in template order. */
+export function templateProblems(
+    template: string,
+    variables: Readonly<Record<string, Variable>>,
+    within: string[] = []
+): string[] {
+    const problems: string[] = [];
+    resolveText(template, variables, within, problems);
+
+    return problems;
 }

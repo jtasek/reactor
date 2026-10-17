@@ -442,13 +442,13 @@ A variable (`Variable`, `document.variables`, listed by name in `variablesIds`) 
 color, number, text or boolean. A shape property the inspector can change may follow one of
 its kind (`shape.bindings`, by property key): binding, and every change of the variable
 (`setVariableValue`), writes its value into the shape as if typed into the field, so
-shape properties remain materialized. Pure reads use `resolveVariable` and `resolveTemplate`
-from `src/app/variableResolver.ts`; that module also owns reference lookup and template
-diagnostics, with no store or renderer dependencies. Definition editors and serialization
-keep reading raw `values.default`, so they preserve templates. A binding holds while writing the value would leave the shape
-as it is, numbers to a thousandth (`bindingHolds`, `src/app/variables.ts`); a value the
-property refuses (`accepts`), as a blank name, is not shown as followed but keeps the
-binding. A drag, Hide or another edit that sets the property otherwise ends it, a variable
+nothing else reads variables. Values and templates are resolved by `resolveVariable` and
+`resolveTemplate`, with lookup by id or name, in `src/app/variableResolver.ts`, which uses
+neither the store nor the renderer. Definition editors and serialization read the raw
+`values.default`, so they keep templates. A binding holds while writing the value would
+leave the shape as it is, numbers to a thousandth (`bindingHolds`, `src/app/variables.ts`);
+a value the property refuses (`accepts`), as a blank name, is not shown as followed but
+keeps the binding. A drag, Hide or another edit that sets the property otherwise ends it, a variable
 change drops the bindings that no longer hold, and the inspector's `setShapesProperty`
 removes it. Deleting a variable leaves the values.
 Names are unique, trimmed and without `{`, `}` or `$` (`isVariableName`); one shared after
@@ -464,7 +464,8 @@ which loads with the editor page rather than with `hooks.ts`.
 A text's content and a text variable's value may be templates: `${Name}` shows that
 variable's value (`resolveTemplate`), `\${` stays as written, and a name of no variable or
 a text variable leading back to itself stays as written and is noted under its field
-(`templateProblems`, in `src/app/variableResolver.ts`, using the same traversal as resolution).
+(`templateProblems`, in `src/app/editorVariables.ts` with what else only the editor shows,
+following references as `resolveText` does).
 A template holds variables by id, with the name each had, as `${id$name}`, and shows them
 by name (`templateWithIds`, `templateWithNames`), so renaming changes no text and one
 deleted by another copy still shows its name. A text keeps its template in `template` and

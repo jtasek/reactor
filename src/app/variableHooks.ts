@@ -4,8 +4,7 @@ import { useRef } from 'react';
 import type { Document, Shape, Variable } from './types';
 import { useAppState } from './hooks';
 import { bindableProperty, templateVariablesIds } from './variables';
-import { boundVariable } from './editorVariables';
-import { templateProblems } from './variableResolver';
+import { boundVariable, templateProblems } from './editorVariables';
 
 /**
  * `boundVariable` of a shape in the store, reading the property through the store

@@ -1,6 +1,7 @@
 import { SHAPE_PROPERTIES } from 'src/app/properties';
 import { buildVariable, templateWithNames } from 'src/app/variables';
-import { resolveTemplate, variableNamed, templateProblems } from 'src/app/variableResolver';
+import { resolveTemplate, variableNamed } from 'src/app/variableResolver';
+import { templateProblems } from 'src/app/editorVariables';
 import type { Text, Variable } from 'src/app/types';
 import { createCopies, edit, settle, shownDocument } from './support/collaboration';
 import { createTestStore } from './support/store';

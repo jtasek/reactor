@@ -270,7 +270,7 @@ its references; deleting one leaves the shapes' values in place.
 Values and template diagnostics share a pure central resolver. This first foundation step
 keeps existing bindings and saved documents unchanged. Typed aliases, independent Theme and
 Density dimensions, and design-system packages follow in the
-[variable roadmap](./APPLICATION_PLAN.md#variable-foundation-v1v5-incremental-alongside-r3).
+[variable roadmap](./APPLICATION_PLAN.md#variable-foundation-v1v5-incremental).
 
 ## Camera Coordinates
 

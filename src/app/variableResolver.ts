@@ -31,8 +31,9 @@ export const templateVariable = (
  * The text `template` makes: each `${...}` naming a variable, or holding its id,
  * replaced by its value, a text variable's own template made too. A part naming no
  * variable, or a text variable leading back to itself, shows its name as written.
+ * With `problems`, it collects those names instead of building the text.
  */
-function resolveText(
+export function resolveText(
     template: string,
     variables: Readonly<Record<string, Variable>>,
     within: string[],
@@ -89,15 +90,3 @@ export const resolveTemplate = (
     template: string,
     variables: Readonly<Record<string, Variable>>
 ): string => resolveText(template, variables, []);
-
-/** The names of missing, cyclic or too deeply nested references, in template order. */
-export function templateProblems(
-    template: string,
-    variables: Readonly<Record<string, Variable>>,
-    within: string[] = []
-): string[] {
-    const problems: string[] = [];
-    resolveText(template, variables, within, problems);
-
-    return problems;
-}
