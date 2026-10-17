@@ -1,7 +1,17 @@
 import React, { ChangeEvent, FC, useCallback, useEffect, useRef, useState } from 'react';
 import type { Document, DocumentsLayout } from 'src/app/types';
 import type { TagTone } from 'src/app/tagTones';
-import { ChevronDown, LayoutGrid, List, Plus, Search, Tag, Trash2, X } from 'lucide-react';
+import {
+    ArrowUpDown,
+    ChevronDown,
+    LayoutGrid,
+    List,
+    Plus,
+    Search,
+    Tag,
+    Trash2,
+    X
+} from 'lucide-react';
 import { useActions } from 'src/app/hooks';
 import {
     DocumentDateFilter,
@@ -12,18 +22,44 @@ import {
     normalizeTags
 } from 'src/app/documentList';
 import { DocumentCard } from './DocumentCard';
+import { DocumentsBar } from './DocumentsBar';
 import { FilterMenu } from './FilterMenu';
 import tagStyles from './tags.css';
 import styles from './styles.css';
 
 interface Props {
-    documents: Pick<Document, 'id' | 'name' | 'modified' | 'deleted' | 'tags' | 'tagTones'>[];
+    documents: Pick<
+        Document,
+        'id' | 'name' | 'created' | 'modified' | 'deleted' | 'tags' | 'tagTones'
+    >[];
     currentDocumentId: string;
     layout: DocumentsLayout;
     onLayout: (layout: DocumentsLayout) => void;
     onCreate: () => void;
     onTagTone: (tag: string, tone: TagTone) => void;
 }
+
+type DocumentSort = 'modified' | 'created' | 'name';
+
+const SORT_OPTIONS: { value: DocumentSort; label: string }[] = [
+    { value: 'modified', label: 'Date edited' },
+    { value: 'created', label: 'Date created' },
+    { value: 'name', label: 'Name' }
+];
+
+type Listed = Props['documents'][number];
+
+/** Newest first by date, A to Z by name; ties go by name. */
+const SORTS: Record<DocumentSort, (first: Listed, second: Listed) => number> = {
+    modified: (first, second) =>
+        second.modified.getTime() - first.modified.getTime() ||
+        first.name.localeCompare(second.name),
+    created: (first, second) =>
+        second.created.getTime() - first.created.getTime() || first.name.localeCompare(second.name),
+    name: (first, second) =>
+        first.name.localeCompare(second.name, undefined, { numeric: true }) ||
+        second.modified.getTime() - first.modified.getTime()
+};
 
 /** How long the offer to undo moving a document to Recently Deleted stays. */
 const UNDO_DELETE_MS = 8000;
@@ -50,7 +86,9 @@ export const DocumentList: FC<Props> = ({
     const [query, setQuery] = useState('');
     const [date, setDate] = useState<DocumentDateFilter>('all');
     const [tags, setTags] = useState<string[]>([]);
-    const [filterMenu, setFilterMenu] = useState<'date' | 'tags' | null>(null);
+    const [sort, setSort] = useState<DocumentSort>('modified');
+    const [filterMenu, setFilterMenu] = useState<'sort' | 'date' | 'tags' | null>(null);
+    const sortButton = useRef<HTMLButtonElement>(null);
     const dateButton = useRef<HTMLButtonElement>(null);
     const tagsButton = useRef<HTMLButtonElement>(null);
     const [now, setNow] = useState(() => new Date());
@@ -62,11 +100,8 @@ export const DocumentList: FC<Props> = ({
     const visibleDocuments = documents
         .filter(({ deleted }) => Boolean(deleted) === showDeleted)
         .filter((document) => matchesDocument(document, { query, date, tags }, now))
-        .sort(
-            (first, second) =>
-                second.modified.getTime() - first.modified.getTime() ||
-                first.name.localeCompare(second.name)
-        );
+        .sort(SORTS[sort]);
+    const sortLabel = SORT_OPTIONS.find(({ value }) => value === sort)?.label;
     const dateLabel = DATE_OPTIONS.find(({ value }) => value === date)?.label;
     const filtered = query !== '' || date !== 'all' || tags.length > 0;
 
@@ -108,6 +143,13 @@ export const DocumentList: FC<Props> = ({
             setDate(option.value);
         }
     };
+    const changeSort = (selected: string) => {
+        const option = SORT_OPTIONS.find(({ value }) => value === selected);
+
+        if (option) {
+            setSort(option.value);
+        }
+    };
     const clearFilters = () => {
         setQuery('');
         setDate('all');
@@ -125,6 +167,7 @@ export const DocumentList: FC<Props> = ({
     return (
         <main className={styles.documentList}>
             <div className={styles.panel}>
+                <DocumentsBar />
                 <header className={styles.header}>
                     <div>
                         <h1>{showDeleted ? 'Recently Deleted' : 'Documents'}</h1>
@@ -186,6 +229,18 @@ export const DocumentList: FC<Props> = ({
                             Recently Deleted{deletedCount > 0 && ` (${deletedCount})`}
                         </button>
                     )}
+                    <button
+                        ref={sortButton}
+                        type="button"
+                        className={styles.dateFilter}
+                        aria-label={`Sort by: ${sortLabel}`}
+                        aria-haspopup="menu"
+                        aria-expanded={filterMenu === 'sort'}
+                        onClick={() => setFilterMenu(filterMenu === 'sort' ? null : 'sort')}
+                    >
+                        <ArrowUpDown size={16} strokeWidth={1.5} aria-hidden="true" />
+                        {sortLabel}
+                    </button>
                     <div className={styles.layoutToggle} role="group" aria-label="Document layout">
                         <button
                             type="button"
@@ -289,6 +344,16 @@ export const DocumentList: FC<Props> = ({
                         selected={tags}
                         multiple
                         onSelect={toggleTag}
+                        onClose={closeFilterMenu}
+                    />
+                )}
+                {filterMenu === 'sort' && sortButton.current && (
+                    <FilterMenu
+                        anchor={sortButton.current}
+                        title="Sort by"
+                        options={SORT_OPTIONS}
+                        selected={[sort]}
+                        onSelect={changeSort}
                         onClose={closeFilterMenu}
                     />
                 )}

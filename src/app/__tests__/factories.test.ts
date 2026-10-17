@@ -29,7 +29,7 @@ describe('factories', () => {
         it('returns new document name', () => {
             const actual = newDocumentName();
 
-            expect(actual).toBe('document-1');
+            expect(actual).toBe('Untitled');
         });
     });
 

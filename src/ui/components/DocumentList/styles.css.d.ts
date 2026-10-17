@@ -1,5 +1,8 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
+    back: string;
+    bar: string;
+    barStatus: string;
     browseControls: string;
     card: string;
     cardFooter: string;
