@@ -162,64 +162,82 @@ const VariableRow: FC<{
 
     return (
         <li className={styles.row}>
-            <DraftField
-                label={`Name of ${variable.name}`}
-                value={variable.name}
-                onCommit={(name) => renameVariable({ variableId: variable.id, name: name.trim() })}
-            />
-            {variable.alias === undefined && (
-                <ValueField variable={variable} variables={variables} />
-            )}
-            <span className={styles.uses} title={`Used ${uses} times`}>
-                {uses}
-            </span>
-            {confirming ? (
-                <span
-                    className={styles.confirm}
-                    role="group"
-                    aria-label={`Delete ${variable.name}?`}
-                >
+            <div className={styles.rowHeader}>
+                <DraftField
+                    label={`Name of ${variable.name}`}
+                    value={variable.name}
+                    onCommit={(name) =>
+                        renameVariable({ variableId: variable.id, name: name.trim() })
+                    }
+                />
+                {confirming ? (
+                    <span
+                        className={styles.confirm}
+                        role="group"
+                        aria-label={`Delete ${variable.name}?`}
+                    >
+                        <button
+                            type="button"
+                            aria-label={`Confirm deleting ${variable.name}`}
+                            onClick={() => deleteVariable(variable.id)}
+                        >
+                            Delete
+                        </button>
+                        <button type="button" onClick={() => setConfirming(false)}>
+                            Keep
+                        </button>
+                    </span>
+                ) : (
                     <button
                         type="button"
-                        aria-label={`Confirm deleting ${variable.name}`}
-                        onClick={() => deleteVariable(variable.id)}
+                        aria-label={`Delete ${variable.name}`}
+                        onClick={() =>
+                            uses > 0 ? setConfirming(true) : deleteVariable(variable.id)
+                        }
                     >
-                        Delete
+                        ×
                     </button>
-                    <button type="button" onClick={() => setConfirming(false)}>
-                        Keep
-                    </button>
+                )}
+            </div>
+            <div className={styles.metadata}>
+                <span>{TYPES.find((item) => item.type === variable.type)?.label}</span>
+                <span>
+                    {uses === 0 ? 'Not used yet' : `${uses} ${uses === 1 ? 'use' : 'uses'}`}
                 </span>
-            ) : (
-                <button
-                    type="button"
-                    aria-label={`Delete ${variable.name}`}
-                    onClick={() => (uses > 0 ? setConfirming(true) : deleteVariable(variable.id))}
-                >
-                    ×
-                </button>
+            </div>
+            {variable.alias === undefined && (
+                <label className={styles.field}>
+                    <span className={styles.fieldLabel}>Value</span>
+                    <ValueField variable={variable} variables={variables} />
+                    {variable.type === 'color' && (
+                        <code className={styles.colorValue}>{variable.values.default}</code>
+                    )}
+                </label>
             )}
             {sources.length > 0 || variable.alias !== undefined ? (
-                <select
-                    className={styles.source}
-                    aria-label={`Source of ${variable.name}`}
-                    value={variable.alias ?? ''}
-                    onChange={(event) =>
-                        setProblem(
-                            setVariableAlias({
-                                variableId: variable.id,
-                                sourceId: event.target.value || null
-                            })
-                        )
-                    }
-                >
-                    <option value="">Literal value</option>
-                    {sources.map((source) => (
-                        <option key={source.id} value={source.id}>
-                            Follow {source.name}
-                        </option>
-                    ))}
-                </select>
+                <label className={styles.field}>
+                    <span className={styles.fieldLabel}>Source</span>
+                    <select
+                        className={styles.source}
+                        aria-label={`Source of ${variable.name}`}
+                        value={variable.alias ?? ''}
+                        onChange={(event) =>
+                            setProblem(
+                                setVariableAlias({
+                                    variableId: variable.id,
+                                    sourceId: event.target.value || null
+                                })
+                            )
+                        }
+                    >
+                        <option value="">Literal value</option>
+                        {sources.map((source) => (
+                            <option key={source.id} value={source.id}>
+                                Follow {source.name}
+                            </option>
+                        ))}
+                    </select>
+                </label>
             ) : (
                 <small className={styles.resolution}>
                     {Object.values(variables).some(

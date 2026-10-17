@@ -38,7 +38,7 @@ test('a fill follows a color variable until it stops using it, also after a relo
 
     await field(page, 'Value of brand/primary').fill('#ff0000');
     await expect.poll(fill).toBe('rgb(255, 0, 0)');
-    await expect(panel(page).getByTitle('Used 1 times')).toBeVisible();
+    await expect(panel(page).getByText('1 use', { exact: true })).toBeVisible();
 
     await page.reload();
     await openEditor(page, ['Inspector', 'Variables']);
@@ -121,7 +121,7 @@ test('hide and show detach visibility so changing the former variable cannot hid
     await expect(shapes(page)).toHaveCount(0);
     await page.keyboard.press('Alt+Shift+H');
     await expect(shapes(page)).toHaveCount(1);
-    await expect(panel(page).getByTitle('Used 0 times')).toBeVisible();
+    await expect(panel(page).getByText('Not used yet', { exact: true })).toBeVisible();
     await field(page, 'Value of shown').uncheck();
     await expect(shapes(page)).toHaveCount(1);
 });

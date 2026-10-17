@@ -1,16 +1,20 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
+    colorValue: string;
     confirm: string;
     create: string;
     empty: string;
+    field: string;
+    fieldLabel: string;
     group: string;
     groupName: string;
+    metadata: string;
     note: string;
     problem: string;
     resolution: string;
     row: string;
+    rowHeader: string;
     source: string;
-    uses: string;
     variables: string;
   }
 }
