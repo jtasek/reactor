@@ -14,6 +14,7 @@ export interface AddVariable {
     name: string;
     type: VariableType;
     value: unknown;
+    alias?: string;
 }
 
 /** Adds a component copied from a library, which keeps its ID. */
@@ -45,6 +46,8 @@ export interface UpdateVariable {
     variable: string;
     name?: string;
     value?: unknown;
+    /** A source reference, or null to keep the resolved value as a literal. */
+    alias?: string | null;
 }
 
 /** Deletes a variable; what followed it keeps its value, as deleting it in the editor does. */

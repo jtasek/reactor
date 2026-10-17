@@ -301,8 +301,16 @@ work, with V3 and V5 feeding R6. No speculative plugin or expression framework i
    detach explicitly replaced bindings immediately, including same-value writes; explicit
    operation bindings take precedence. Shared undo restores the references with their values.
    Covered by `tests/variables.test.ts`, `tests/operations.test.ts` and
-   `tests/browser/variables.spec.ts`. Typed aliases, resolution-chain UI and explicit gesture
-   and indirect geometry detachment remain planned; V2 is not complete.
+   `tests/browser/variables.spec.ts`.
+   Second increment implemented: same-type aliases reference stable IDs, retain a literal
+   fallback and resolve through the shared resolver. Source selection, chain/value display,
+   detach, local source deletion, durable readers, operations, clipboard dependencies,
+   collaboration, undo and AI context/tool schemas support aliases. Tests cover cycles,
+   incompatible/missing/forward sources, atomic batches, copy/paste, shared undo and concurrent
+   deletion/cycles in `tests/variableAliases.test.ts`; browser coverage checks source selection,
+   diagnostics, reload and detach. Concurrent missing sources use the retained fallback;
+   concurrent cycles remain visible and diagnosable. Explicit gesture and indirect geometry
+   detachment remain planned; V2 is not complete.
 3. **V3 — Independent dimensions and local context.** Add Theme and Density, defaults and
    a local switch, with each variable varying along one dimension initially. Resolve all
    drawing and geometry consumers consistently before allowing geometry-changing density.

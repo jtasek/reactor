@@ -255,12 +255,29 @@ export function templateVariablesIds(
         if (variable && !found.has(variable.id)) {
             found.add(variable.id);
 
-            if (variable.type === 'text') {
-                templateVariablesIds(variable.values.default, variables, found);
-            }
+            variableDependencies(variable, variables, found);
         }
     }
 
+    return found;
+}
+
+/** The transitive sources a variable follows, including aliases and template references. */
+export function variableDependencies(
+    variable: Variable,
+    variables: Record<string, Variable>,
+    found = new Set<string>()
+): Set<string> {
+    if (variable.alias !== undefined) {
+        const target = variables[variable.alias];
+        if (target && !found.has(target.id)) {
+            found.add(target.id);
+            variableDependencies(target, variables, found);
+        }
+    }
+    if (variable.type === 'text') {
+        templateVariablesIds(variable.values.default, variables, found);
+    }
     return found;
 }
 
@@ -299,6 +316,14 @@ export function removeVariable(
     const inline = (template: string) =>
         replaceInTemplate(template, (inside) => (inside === variableId ? value : undefined));
 
+    Object.values(variables).forEach((other) => {
+        if (other.alias === variableId) {
+            const resolved = resolveVariable(other, variables);
+            other.values.default =
+                other.type === 'text' ? escapeTemplate(String(resolved)) : resolved;
+            delete other.alias;
+        }
+    });
     delete variables[variableId];
     Object.values(variables).forEach((other) => {
         if (other.type === 'text') {

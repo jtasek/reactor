@@ -1,3 +1,4 @@
+import { editorHelpers } from '../editorHelpers';
 import { json } from 'overmind';
 import type { ActionWithParam, ActionWithParamAndResult, VariableType } from '../types';
 import { applyProperty, canEdit } from '../properties';
@@ -78,6 +79,13 @@ export const setVariableValue: ActionWithParam<{ variableId: string; value: unkn
     document.variables[variableId] = next;
     applyVariableChanges(document, before);
 };
+
+/** Follows a same-type variable, or detaches to the resolved literal value. */
+export const setVariableAlias: ActionWithParamAndResult<
+    { variableId: string; sourceId: string | null },
+    string | undefined
+> = ({ state }, { variableId, sourceId }) =>
+    editorHelpers().aliases.setVariableAlias(state.currentDocument, variableId, sourceId);
 
 /** Makes a property of the shapes that may change it follow a variable of its kind. */
 export const bindProperty: ActionWithParam<{

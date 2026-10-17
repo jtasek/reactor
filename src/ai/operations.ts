@@ -66,7 +66,10 @@ export function readOperation(value: unknown): ProposedOperation {
                 key: text(operation.key, 'Its key'),
                 name: text(operation.name, 'Its name'),
                 type,
-                value: operation.value
+                value: operation.value,
+                ...(operation.alias === undefined
+                    ? {}
+                    : { alias: text(operation.alias, 'Its source') })
             };
         }
         case 'addShape': {
@@ -97,7 +100,13 @@ export function readOperation(value: unknown): ProposedOperation {
                 op: 'updateVariable',
                 variable: text(operation.variable, 'Its variable'),
                 ...(operation.name === undefined ? {} : { name: text(operation.name, 'Its name') }),
-                ...(operation.value === undefined ? {} : { value: operation.value })
+                ...(operation.value === undefined ? {} : { value: operation.value }),
+                ...(operation.alias === undefined
+                    ? {}
+                    : {
+                          alias:
+                              operation.alias === null ? null : text(operation.alias, 'Its source')
+                      })
             };
         case 'deleteVariable':
             return { op: 'deleteVariable', variable: text(operation.variable, 'Its variable') };

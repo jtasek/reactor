@@ -1,3 +1,4 @@
+import * as aliases from 'src/app/variableAliases';
 import { IDBFactory } from 'fake-indexeddb';
 import { createDragTargets } from 'src/app/services/dragTargets';
 import { createOvermindMock } from 'overmind';
@@ -70,7 +71,9 @@ export function createTestStore(
 ) {
     // Store tests run the editor's actions, as the editor page does once loaded.
     provideEditorHelpers(
-        options.editorLoaded === false ? undefined : { alignment, clipboard, operations, snapping }
+        options.editorLoaded === false
+            ? undefined
+            : { aliases, alignment, clipboard, operations, snapping }
     );
     const storage = options.storage ?? new Map(Object.entries(seed));
     const indexedDB = options.indexedDB ?? new IDBFactory();

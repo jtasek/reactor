@@ -49,7 +49,10 @@ export function documentContext(document: Document) {
     const whole = selection.length === 0;
     const shapeIds = new Set(whole ? document.shapesIds : selection);
     const groups = new Map<string, { name: string; shapes: string[] }>();
-    const variables = new Map<string, { name: string; type: string; value: unknown }>();
+    const variables = new Map<
+        string,
+        { name: string; type: string; value: unknown; alias?: string }
+    >();
     const components = new Map<string, ComponentContext>();
     let records = 0;
 
@@ -81,8 +84,10 @@ export function documentContext(document: Document) {
         variables.set(id, {
             name: variable.name,
             type: variable.type,
-            value: variable.values.default
+            value: variable.values.default,
+            ...(variable.alias === undefined ? {} : { alias: variable.alias })
         });
+        if (variable.alias !== undefined) addVariable(variable.alias);
         if (variable.type === 'text') {
             followTemplate(variable.values.default);
         }

@@ -14,6 +14,7 @@ import { deleteShape } from './deleteShape';
 import { applyProperty } from './properties';
 import {
     accepts,
+    escapeTemplate,
     applyVariableChanges,
     bindableProperty,
     bindingHolds,
@@ -22,7 +23,7 @@ import {
     unbindEditedProperties,
     writeText
 } from './variables';
-import { variableNamed, resolveVariable } from './variableResolver';
+import { variableNamed, resolveVariable, variableProblems } from './variableResolver';
 import { componentSource, instanceBox } from './componentSource';
 import { hydrateComponent, readEntity } from './services/documentStorage';
 import { shapeGeometryKey } from './utils';
@@ -274,24 +275,41 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         );
     };
 
-    const updateVariable = ({ variable: id, name, value }: UpdateVariable) => {
+    const updateVariable = (
+        { variable: id, name, value, alias }: UpdateVariable,
+        index: number
+    ) => {
         const current = variables[id];
         const other = name === undefined ? undefined : variableNamed(variables, name);
 
-        if (name === undefined && value === undefined) {
+        if (name === undefined && value === undefined && alias === undefined) {
             throw new Error('it changes nothing.');
         }
         if (other && other.id !== id) {
             throw new Error(`the name ${name} is taken.`);
         }
+        const resolved = resolveVariable(current, variables);
+        const fallback =
+            alias === undefined
+                ? current.values.default
+                : current.type === 'text'
+                  ? escapeTemplate(String(resolved))
+                  : resolved;
+        const source =
+            alias === undefined && value === undefined
+                ? current.alias
+                : typeof alias === 'string'
+                  ? reference(alias, 'variables', index)
+                  : undefined;
         const variable = readEntity('variables', {
             id,
+            ...(source === undefined ? {} : { alias: source }),
             name: name ?? current.name,
             type: current.type,
             values: {
                 default:
                     value === undefined
-                        ? current.values.default
+                        ? fallback
                         : current.type === 'text' && typeof value === 'string'
                           ? remapTemplate(value)
                           : value
@@ -306,7 +324,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         if (operation.op === 'updateVariable' || operation.op === 'deleteVariable') {
             try {
                 if (operation.op === 'updateVariable') {
-                    updateVariable(operation);
+                    updateVariable(operation, index);
 
                     return;
                 }
@@ -333,13 +351,31 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                 id: ids.get(operation.key),
                 name: operation.name,
                 type: operation.type,
-                values: { default: value }
+                values: { default: value },
+                ...(operation.alias === undefined
+                    ? {}
+                    : { alias: reference(operation.alias, 'variables', index) })
             });
 
             variables[variable.id] = variable;
             staged.variables.push(variable);
         } catch (error) {
             throw problem(index, error);
+        }
+    });
+
+    // Check the final graph too: two individually valid updates can form a cycle.
+    operations.forEach((operation, index) => {
+        if (
+            (operation.op !== 'addVariable' && operation.op !== 'updateVariable') ||
+            typeof operation.alias !== 'string'
+        ) {
+            return;
+        }
+        const id = operation.op === 'addVariable' ? ids.get(operation.key)! : operation.variable;
+        const issue = variableProblems(variables[id], variables)[0];
+        if (issue) {
+            throw problem(index, issue);
         }
     });
 

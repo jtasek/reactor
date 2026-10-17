@@ -459,7 +459,14 @@ commands detach the properties they explicitly write even when the value is unch
 both coordinate bindings; an operation may explicitly rebind through `changes.bindings`.
 Measurements do not detach bindings. Gestures and indirect geometry effects still use the
 existing equality check, and variable changes drop the bindings that no longer hold.
-Deleting a variable leaves the values.
+Deleting a variable leaves the values. A variable may have an `alias` holding the ID of a
+same-type source; `values.default` then retains a fallback. `setVariableAlias` validates the
+source graph or detaches to the resolved literal; `setVariableValue` replaces an alias with
+a literal. Resolution bounds aliases and templates together. Local source deletion converts
+its direct aliases to resolved literals; a concurrently missing source drops the alias in
+the local view and retains its fallback, without writing repairs back. Concurrent cycles
+stay represented, resolve safely and show diagnostics. Clipboard dependencies include aliases,
+ordered before their dependents; operations validate the final alias graph atomically.
 Names are unique, trimmed and without `{`, `}` or `$` (`isVariableName`); one shared after
 a merge means the variable with the lowest id (`variableNamed`). Copied shapes carry the
 variables they follow, and a paste uses one of the same name and type or adds it.
@@ -609,7 +616,7 @@ Hidden guides are not drawn and locked ones do not move.
   `src/pages/registerEditor.ts`), not at startup, so they stay out of the entry bundle; add
   a new one there. Until then the registry is empty (`getCommands`, `getTools`), so code
   outside the editor must not count on them. So with the code only the editor's actions
-  run: snapping, aligning, the clipboard's format and applying operations
+  run: snapping, aligning, the clipboard's format, alias edits and applying operations
   (`src/app/operationBatches.ts`) are provided by `registerEditor`
   (`provideEditorHelpers`, `src/app/editorHelpers.ts`), and actions reach them through
   `editorHelpers()`; `createTestStore` provides them for store tests. The editor takes no

@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import type { Document, Shape, Variable } from './types';
 import { useAppState } from './hooks';
-import { bindableProperty, templateVariablesIds } from './variables';
+import { bindableProperty, templateVariablesIds, variableDependencies } from './variables';
 import { boundVariable, templateProblems } from './editorVariables';
 
 /**
@@ -45,6 +45,9 @@ export const useVariableUses = () => {
 
                 if (variable) {
                     countVariableUse(variable.id);
+                    variableDependencies(variable, variables, new Set([variable.id])).forEach(
+                        (id) => id !== variable.id && countVariableUse(id)
+                    );
                 }
             });
 
@@ -53,11 +56,9 @@ export const useVariableUses = () => {
             }
         });
         Object.values(variables).forEach((variable) => {
-            if (variable.type === 'text') {
-                templateVariablesIds(variable.values.default, variables).forEach(
-                    (variableId) => variableId !== variable.id && countVariableUse(variableId)
-                );
-            }
+            variableDependencies(variable, variables).forEach(
+                (variableId) => variableId !== variable.id && countVariableUse(variableId)
+            );
         });
 
         return uses;

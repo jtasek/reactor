@@ -114,7 +114,7 @@ const UNDATED_FIELDS = new Set(['tagTones', 'deleted']);
 /** Collections whose shared form can differ from what this copy wrote, as by members it hides. */
 const REFERRING = new Set<Collection>(['groups', 'layers', 'components', 'links']);
 /** Collections other entities refer to. */
-const REFERABLE = new Set<Collection>(['shapes', 'components']);
+const REFERABLE = new Set<Collection>(['shapes', 'components', 'variables']);
 
 const isCollection = (value: string): value is Collection =>
     COLLECTIONS.some((collection) => collection === value);
@@ -991,6 +991,7 @@ export class Collaboration {
         };
         const tests: Partial<Record<Collection, (entity: YEntity) => boolean>> = {
             shapes: (entity) => refers(entity.get('parentShapeId')),
+            variables: (entity) => refers(entity.get('alias')),
             groups: members,
             layers: members,
             components: (entity) => members(entity) || refers(entity.get('parentId')),

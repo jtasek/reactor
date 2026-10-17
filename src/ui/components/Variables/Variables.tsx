@@ -2,8 +2,9 @@ import React, { FC, FormEvent, KeyboardEvent, useState } from 'react';
 import type { Variable, VariableType } from 'src/app/types';
 import { useActions } from 'src/app/hooks';
 import { useVariableUses, useVariables } from 'src/app/variableHooks';
-import { isVariableName, templateWithNames } from 'src/app/variables';
-import { templateProblems } from 'src/app/editorVariables';
+import { isVariableName, templateWithNames, variableDependencies } from 'src/app/variables';
+import { resolveVariable, variableProblems } from 'src/app/variableResolver';
+import { templateProblems, variableChain } from 'src/app/editorVariables';
 import { SharedOnRelease } from '../Inspector/SharedOnRelease';
 import styles from './styles.css';
 
@@ -141,12 +142,15 @@ const VariableRow: FC<{
     variables: Record<string, Variable>;
     uses: number;
 }> = ({ variable, variables, uses }) => {
-    const { deleteVariable, renameVariable } = useActions();
+    const { deleteVariable, renameVariable, setVariableAlias } = useActions();
+    const [problem, setProblem] = useState<string>();
     const [confirming, setConfirming] = useState(false);
     const problems =
-        variable.type === 'text'
-            ? templateProblems(variable.values.default, variables, [variable.id])
-            : [];
+        variable.alias !== undefined
+            ? variableProblems(variable, variables)
+            : variable.type === 'text'
+              ? templateProblems(variable.values.default, variables, [variable.id])
+              : [];
 
     return (
         <li className={styles.row}>
@@ -155,7 +159,9 @@ const VariableRow: FC<{
                 value={variable.name}
                 onCommit={(name) => renameVariable({ variableId: variable.id, name: name.trim() })}
             />
-            <ValueField variable={variable} variables={variables} />
+            {variable.alias === undefined && (
+                <ValueField variable={variable} variables={variables} />
+            )}
             <span className={styles.uses} title={`Used ${uses} times`}>
                 {uses}
             </span>
@@ -184,6 +190,48 @@ const VariableRow: FC<{
                 >
                     ×
                 </button>
+            )}
+            <select
+                className={styles.source}
+                aria-label={`Source of ${variable.name}`}
+                value={variable.alias ?? ''}
+                onChange={(event) =>
+                    setProblem(
+                        setVariableAlias({
+                            variableId: variable.id,
+                            sourceId: event.target.value || null
+                        })
+                    )
+                }
+            >
+                <option value="">Literal value</option>
+                {Object.values(variables)
+                    .filter(
+                        (source) =>
+                            source.id === variable.alias ||
+                            (source.id !== variable.id &&
+                                source.type === variable.type &&
+                                !variableDependencies(source, variables).has(variable.id))
+                    )
+                    .map((source) => (
+                        <option key={source.id} value={source.id}>
+                            Follow {source.name}
+                        </option>
+                    ))}
+            </select>
+            {variable.alias !== undefined && (
+                <small
+                    className={styles.resolution}
+                    aria-label={`Resolved value of ${variable.name}`}
+                >
+                    {variableChain(variable, variables)}:{' '}
+                    {String(resolveVariable(variable, variables))}
+                </small>
+            )}
+            {problem && (
+                <small className={styles.note} role="alert">
+                    {problem}
+                </small>
             )}
             {problems.length > 0 && (
                 <small className={styles.note} role="note">
