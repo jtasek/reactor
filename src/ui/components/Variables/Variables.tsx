@@ -222,7 +222,11 @@ const VariableRow: FC<{
                 </select>
             ) : (
                 <small className={styles.resolution}>
-                    Add another {variable.type} variable to reference it.
+                    {Object.values(variables).some(
+                        (other) => other.id !== variable.id && other.type === variable.type
+                    )
+                        ? `Every other ${variable.type} variable follows ${variable.name}.`
+                        : `Add another ${variable.type} variable to reference it.`}
                 </small>
             )}
             {variable.alias !== undefined && (
