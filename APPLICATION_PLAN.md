@@ -290,7 +290,7 @@ work, with V3 and V5 feeding R6. No speculative plugin or expression framework i
    Acceptance: `tests/variableResolver.test.ts` characterizes pure reads, zero/false/empty
    values, ID precedence and name fallback, cycles, diagnostic order and the depth limit;
    existing variable, template, operation, component and browser tests remain green.
-2. **V2 — Typed aliases and explicit binding edits.** Add literal-or-reference definitions
+2. **V2 — Typed aliases and explicit binding edits (implemented).** Add literal-or-reference definitions
    with compatible types, cycle and missing-reference diagnostics. Make edits explicitly
    replace or detach bindings; preserve resolved values when detaching. Update durable readers,
    operations, copying, collaboration and undo together. Show the resolution chain and uses.
@@ -309,8 +309,14 @@ work, with V3 and V5 feeding R6. No speculative plugin or expression framework i
    incompatible/missing/forward sources, atomic batches, copy/paste, shared undo and concurrent
    deletion/cycles in `tests/variableAliases.test.ts`; browser coverage checks source selection,
    diagnostics, reload and detach. Concurrent missing sources use the retained fallback;
-   concurrent cycles remain visible and diagnosable. Explicit gesture and indirect geometry
-   detachment remain planned; V2 is not complete.
+   concurrent cycles remain visible and diagnosable.
+   Final increment implemented: move, resize, rotation, rounding, Align/Space and container
+   transforms explicitly detach the bindings they write, including clamped and same-value
+   geometry writes. A move detaches only moved axes and stays detached when dragged back.
+   Handle clicks and measurements preserve bindings; Cancel restores rebased bindings and
+   values, and shared undo restores committed ones. Circle/ellipse radius edits account for
+   X/Y, and text-size edits account for the baseline's Y coordinate. Covered by
+   `tests/geometryBindings.test.ts` and `tests/browser/variables.spec.ts`.
 3. **V3 — Independent dimensions and local context.** Add Theme and Density, defaults and
    a local switch, with each variable varying along one dimension initially. Resolve all
    drawing and geometry consumers consistently before allowing geometry-changing density.

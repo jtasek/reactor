@@ -340,6 +340,11 @@ export const movePointer = (
         }
     }
 
+    // A press and release on a handle is a click, not an explicit geometry edit.
+    if (gesture.kind !== 'idle' && !gesture.moved) {
+        return;
+    }
+
     if (
         gesture.kind === 'resizing' ||
         gesture.kind === 'resizingGroup' ||
