@@ -30,12 +30,31 @@ import {
     templateWithIds,
     writeText
 } from './variables';
-import {
-    resolveTemplate,
-    variableNamed,
-    resolveVariable,
-    variableProblems
-} from './variableResolver';
+import { resolveTemplate, variableNamed, resolveVariable } from './variableResolver';
+
+/**
+ * Drops each alias whose source is missing, of another type or leads back round, as
+ * copies merging at once can leave them, so the variable pastes with its fallback.
+ */
+function dropBrokenAliases(variables: Variable[]) {
+    const byId = new Map(variables.map((variable) => [variable.id, variable]));
+
+    for (const variable of variables) {
+        const seen = new Set([variable.id]);
+        let current = variable;
+
+        while (current.alias !== undefined) {
+            const source = byId.get(current.alias);
+
+            if (!source || source.type !== current.type || seen.has(source.id)) {
+                delete current.alias;
+                break;
+            }
+            seen.add(source.id);
+            current = source;
+        }
+    }
+}
 
 /** What a paste did: added shapes, found none in the text, waited for the editor, or was refused. */
 export type PasteResult = 'pasted' | 'noShapes' | 'notNow' | { problem: string };
@@ -218,15 +237,7 @@ export function readClipboard(text: string): Copied {
         }
 
         const variables = variablesData.map((variable) => readEntity('variables', variable));
-        const byId = Object.fromEntries(variables.map((variable) => [variable.id, variable]));
-        if (
-            variables.some(
-                (variable) =>
-                    variable.alias !== undefined && variableProblems(variable, byId).length > 0
-            )
-        ) {
-            return nothing;
-        }
+        dropBrokenAliases(variables);
         const copiedIds = new Set(variables.map((variable) => variable.id));
 
         if (

@@ -198,9 +198,9 @@ test('an alias follows its source across reload and detaches to a literal', asyn
     await field(page, 'Variable for Fill').selectOption({ label: 'Button' });
     await expect.poll(fill).toBe('rgb(51, 102, 255)');
     await expect(field(page, 'Resolved value of Button')).toHaveText('Button → Brand: #3366ff');
-    await field(page, 'Source of Brand').selectOption({ label: 'Follow Button' });
-    await expect(panel(page).getByRole('alert')).toContainText('Circular');
-    await expect(field(page, 'Source of Brand')).toHaveValue('');
+    await expect(
+        field(page, 'Source of Brand').getByRole('option', { name: 'Follow Button' })
+    ).toHaveCount(0);
     await field(page, 'Value of Brand').fill('#ff0000');
     await expect.poll(fill).toBe('rgb(255, 0, 0)');
     await page.reload();

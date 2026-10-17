@@ -2,7 +2,7 @@ import React, { FC, FormEvent, KeyboardEvent, useState } from 'react';
 import type { Variable, VariableType } from 'src/app/types';
 import { useActions } from 'src/app/hooks';
 import { useVariableUses, useVariables } from 'src/app/variableHooks';
-import { isVariableName, templateWithNames } from 'src/app/variables';
+import { isVariableName, templateWithNames, variableDependencies } from 'src/app/variables';
 import { resolveVariable, variableProblems } from 'src/app/variableResolver';
 import { templateProblems, variableChain } from 'src/app/editorVariables';
 import { SharedOnRelease } from '../Inspector/SharedOnRelease';
@@ -206,7 +206,13 @@ const VariableRow: FC<{
             >
                 <option value="">Literal value</option>
                 {Object.values(variables)
-                    .filter((source) => source.id !== variable.id && source.type === variable.type)
+                    .filter(
+                        (source) =>
+                            source.id === variable.alias ||
+                            (source.id !== variable.id &&
+                                source.type === variable.type &&
+                                !variableDependencies(source, variables).has(variable.id))
+                    )
                     .map((source) => (
                         <option key={source.id} value={source.id}>
                             Follow {source.name}

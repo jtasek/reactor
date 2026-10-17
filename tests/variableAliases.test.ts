@@ -174,6 +174,36 @@ it('copies dependencies before aliases and remaps their IDs on paste', () => {
     expect(destination.value(pastedLeaf.id)).toBe('#3366ff');
 });
 
+it('pastes variables whose copied aliases loop with their fallback values', () => {
+    const { store, document, create } = setup();
+    const first = create('First', 'number', 30);
+    const second = create('Second', 'number', 80);
+    const follower = create('Follower', 'number', 10);
+    store.actions.addShape({
+        type: 'rectangle',
+        position: { x: 0, y: 0 },
+        size: { width: 20, height: 10 }
+    });
+    const shape = document.shapes[document.shapesIds[0]];
+    store.actions.bindProperty({ shapeIds: [shape.id], key: 'opacity', variableId: follower });
+    // Copies merging at once can leave a cycle, which no local edit can make.
+    const variables = structuredClone(json(document.variables));
+    variables[first].alias = second;
+    variables[second].alias = first;
+    variables[follower].alias = first;
+    const copied = readClipboard(writeClipboard([json(shape)], [], variables));
+    expect(copied.shapes).toHaveLength(1);
+    const destination = setup();
+    expect(destination.apply(pasteOperations(copied, destination.document, null)).applied).toBe(
+        true
+    );
+    const pasted = Object.values(destination.document.variables);
+    expect(pasted.filter((variable) => variable.alias !== undefined)).toHaveLength(2);
+    pasted.forEach((variable) =>
+        expect(variableProblems(variable, destination.document.variables)).toEqual([])
+    );
+});
+
 it('shares alias edits and restores their definitions with undo', async () => {
     let source = '',
         leaf = '';
