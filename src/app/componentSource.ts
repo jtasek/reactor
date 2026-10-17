@@ -1,7 +1,7 @@
 import type { Box, Document, InstanceShape, Shape } from './types';
 import { drawnBox } from './membership';
 import { getShapeBounds, rectToBox, shapeGeometryKey } from './utils';
-import { variableValue } from './variables';
+import { resolveVariable } from './variableResolver';
 import { inDrawingOrder } from './drawOrder';
 
 export interface ComponentSource {
@@ -60,7 +60,7 @@ export function componentSource(
                 }
                 const variable = document.variables[override.variableId];
 
-                return variable ? [variableValue(variable, document.variables)] : [];
+                return variable ? [resolveVariable(variable, document.variables)] : [];
             });
             keys.push(`${geometryKey}:${JSON.stringify(variables)}:${nested.key}`);
 

@@ -6,7 +6,7 @@ import { Selectable } from '../Selectable/Selectable';
 import { getComponentByType } from 'src/tools/components';
 import { Instance } from './Instance';
 import type { Shape as ShapeType } from 'src/app/types';
-import { variableValue } from 'src/app/variables';
+import { resolveVariable } from 'src/app/variableResolver';
 import { rectToBox, shapeGeometryKey, getShapeBounds, boxCenter } from 'src/app/utils';
 import {
     useActions,
@@ -47,7 +47,7 @@ export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup, minimap = 
             }
             const variable = state.currentDocument.variables[override.variableId];
 
-            return variable ? [variableValue(variable, state.currentDocument.variables)] : [];
+            return variable ? [resolveVariable(variable, state.currentDocument.variables)] : [];
         });
 
         return JSON.stringify(values);

@@ -24,14 +24,12 @@ import {
 import {
     bindableProperty,
     bindingHolds,
-    renderTemplate,
     replaceTemplateIds,
     templateVariablesIds,
     templateWithIds,
-    variableNamed,
-    variableValue,
     writeText
 } from './variables';
+import { resolveTemplate, variableNamed, resolveVariable } from './variableResolver';
 
 /** What a paste did: added shapes, found none in the text, waited for the editor, or was refused. */
 export type PasteResult = 'pasted' | 'noShapes' | 'notNow' | { problem: string };
@@ -59,7 +57,7 @@ const holdingBindings = (shape: Shape, variables: Record<string, Variable>) =>
         return (
             property &&
             variable &&
-            bindingHolds(property, shape, variableValue(variable, variables))
+            bindingHolds(property, shape, resolveVariable(variable, variables))
         );
     });
 
@@ -67,7 +65,7 @@ const holdingBindings = (shape: Shape, variables: Record<string, Variable>) =>
 const holdingTemplate = (shape: Shape, variables: Record<string, Variable>) =>
     shape.type === 'text' &&
     shape.template !== undefined &&
-    renderTemplate(shape.template, variables) === shape.value
+    resolveTemplate(shape.template, variables) === shape.value
         ? shape.template
         : undefined;
 
@@ -383,7 +381,7 @@ export function pasteOperations(
             const variable = variables.values[id];
 
             if (property && variable && property.kind === variable.type) {
-                applyProperty(property, shape, variableValue(variable, variables.values));
+                applyProperty(property, shape, resolveVariable(variable, variables.values));
             }
         });
         if (shape.type === 'text' && shape.template !== undefined) {

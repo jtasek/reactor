@@ -8,10 +8,9 @@ import {
     canBind,
     removeVariable,
     templateWithIds,
-    unbind,
-    variableNamed,
-    variableValue
+    unbind
 } from '../variables';
+import { variableNamed, resolveVariable } from '../variableResolver';
 
 /**
  * Adds a variable to the current document and answers its id; none when `name` is
@@ -105,7 +104,7 @@ export const bindProperty: ActionWithParam<{
             return;
         }
 
-        applyProperty(property, shape, variableValue(variable, document.variables));
+        applyProperty(property, shape, resolveVariable(variable, document.variables));
         shape.bindings ??= {};
         shape.bindings[key] = variableId;
 

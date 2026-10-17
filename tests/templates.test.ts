@@ -1,7 +1,8 @@
 import { SHAPE_PROPERTIES } from 'src/app/properties';
-import { buildVariable, renderTemplate, templateWithNames, variableNamed } from 'src/app/variables';
-import type { Text, Variable } from 'src/app/types';
+import { buildVariable, templateWithNames } from 'src/app/variables';
+import { resolveTemplate, variableNamed } from 'src/app/variableResolver';
 import { templateProblems } from 'src/app/editorVariables';
+import type { Text, Variable } from 'src/app/types';
 import { createCopies, edit, settle, shownDocument } from './support/collaboration';
 import { createTestStore } from './support/store';
 
@@ -23,23 +24,23 @@ const variables = Object.fromEntries(
 
 describe('templates', () => {
     it('show variables by id or name, a text variable’s own template made too', () => {
-        expect(renderTemplate('${full} has ${count} notes: ${b}', variables)).toBe(
+        expect(resolveTemplate('${full} has ${count} notes: ${b}', variables)).toBe(
             'Ada Lovelace has 3 notes: true'
         );
-        expect(renderTemplate('${first name}', variables)).toBe('Ada');
+        expect(resolveTemplate('${first name}', variables)).toBe('Ada');
     });
 
     it('show the name a part keeps once no variable has its id', () => {
         const kept = 'Hi ${gone$first name} ${gone$dropped}';
 
-        expect(renderTemplate(kept, variables)).toBe('Hi Ada ${dropped}');
+        expect(resolveTemplate(kept, variables)).toBe('Hi Ada ${dropped}');
         expect(templateWithNames(kept, variables)).toBe('Hi ${first name} ${dropped}');
         expect(templateProblems(kept, variables)).toEqual(['dropped']);
     });
 
     it('keep `\\${` and names of no variable as written, and stop at a loop', () => {
-        expect(renderTemplate('\\${f} ${nobody}', variables)).toBe('${f} ${nobody}');
-        expect(renderTemplate('${loop}', variables)).toBe('again ${loop}');
+        expect(resolveTemplate('\\${f} ${nobody}', variables)).toBe('${f} ${nobody}');
+        expect(resolveTemplate('${loop}', variables)).toBe('again ${loop}');
         expect(templateProblems('${nobody} ${loop} ${f}', variables)).toEqual(['nobody', 'loop']);
     });
 });

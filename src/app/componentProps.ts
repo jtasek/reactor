@@ -1,6 +1,7 @@
 import type { Component, Document, InstanceShape, PropertyValue, Shape } from './types';
 import { SHAPE_PROPERTIES, applyProperty, type ShapeProperty } from './properties';
-import { escapeTemplate, templateWithNames, variableValue, writeText } from './variables';
+import { escapeTemplate, templateWithNames, writeText } from './variables';
+import { resolveVariable } from './variableResolver';
 import { isHexColor } from './utils';
 
 const SOURCE_ONLY = new Set(['name', 'x', 'y', 'width', 'height', 'rotation', 'locked']);
@@ -74,7 +75,7 @@ export function componentPropValue(
         const variable = document.variables[override.variableId];
 
         return variable
-            ? variableValue(variable, document.variables)
+            ? resolveVariable(variable, document.variables)
             : property.read(source, document);
     }
 
