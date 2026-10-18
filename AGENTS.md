@@ -526,6 +526,14 @@ or fork independent copies. The planner emits ordinary variable operations and `
 changes require updates for all assigned variables; incompatible modes reject. Exports include
 only definitions and no runtime state. The UI applies one conflict policy to the full package.
 
+`src/app/designTokenInterchange.ts` is a pure DTCG 2025.10 subset adapter, loaded only with
+Variables. Convert supported files into native packages and reuse their planner/operations;
+never mutate documents from the adapter. Color imports explicitly quantize opaque sRGB to
+8-bit hex. Unsupported types, units, modes and metadata must fail visibly before writes or
+file downloads, rather than being dropped. The namespaced Reactor extension preserves source
+identity and alias fallbacks. Keep the supported subset documented in
+`design/design-token-interchange.md`; richer native types require actual consumers.
+
 ## The selection's menu
 
 `SelectionMenu` (`src/ui/components/SelectionMenu`) is HTML over the canvas, so the zoom does

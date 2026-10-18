@@ -123,7 +123,8 @@ export default [
                                 '../clipboard',
                                 '**/operationBatches',
                                 '**/variableAliases',
-                                '**/variableDimensionEdits'
+                                '**/variableDimensionEdits',
+                                '**/designTokenInterchange'
                             ],
                             allowTypeImports: true,
                             message: 'Only the editor runs it: reach it through editorHelpers().'
