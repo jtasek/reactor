@@ -234,10 +234,15 @@ export const TOOLS = [
                     description:
                         'A value of the type; a color is #rrggbb. Retained as fallback when following an alias.'
                 },
-                darkValue: {
+                dimensionId: {
                     type: 'string',
+                    description: 'Optional existing dimension ID, for color variables only.'
+                },
+                modeValues: {
+                    type: 'object',
+                    additionalProperties: { type: 'string' },
                     description:
-                        'Optional #rrggbb Dark theme value for a color; otherwise uses its default.'
+                        'Optional color overrides keyed by mode ID from that dimension. Missing modes use the base value.'
                 },
                 alias: {
                     type: 'string',
@@ -327,10 +332,16 @@ export const TOOLS = [
                     description:
                         'A value of its type; a color is #rrggbb. Setting this alone stops following its alias.'
                 },
-                darkValue: {
+                dimensionId: {
                     type: ['string', 'null'],
                     description:
-                        'Color only: #rrggbb Dark theme value; null restores default fallback. Setting this without alias stops following its alias.'
+                        'Color only: existing dimension ID, or null to remove modes. Changing it clears old mode values.'
+                },
+                modeValues: {
+                    type: 'object',
+                    additionalProperties: { type: ['string', 'null'] },
+                    description:
+                        'Color overrides keyed by mode ID; null removes an override. Editing without an explicit alias detaches to literal values.'
                 },
                 alias: {
                     type: ['string', 'null'],

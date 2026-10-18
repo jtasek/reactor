@@ -1,3 +1,4 @@
+import { legacyTheme } from '../variableModes';
 import { json } from 'overmind';
 import type * as Yjs from 'yjs';
 import type { Document, UndoHistory } from '../types';
@@ -103,6 +104,8 @@ interface Binding {
 }
 
 const LOCAL = Symbol('local change');
+/** Moves Light/Dark colors into a Theme dimension: shared, but never undone. */
+const MIGRATION = Symbol('migration');
 const PERSON: Provenance = { kind: 'person' };
 /** This copy's changes this close together, as typing into a field, undo as one. */
 const UNDO_MERGE_MS = 500;
@@ -249,10 +252,14 @@ export class Collaboration {
 
         if (update) {
             yjs.applyUpdate(doc, update);
+            const beforeMigration = yjs.encodeStateVector(doc);
+            const migrated = this.migrate(binding);
             this.observe(documentId, binding);
             this.everything(documentId, binding, binding.remote);
             this.applyRemote(documentId, binding);
             this.track(documentId, binding);
+            if (migrated)
+                options.sendUpdate?.(documentId, yjs.encodeStateAsUpdate(doc, beforeMigration));
 
             return;
         }
@@ -281,6 +288,39 @@ export class Collaboration {
         binding.unwritten = unwritten;
         this.ready().yjs.applyUpdate(binding.doc, update);
         binding.unwritten = undefined;
+        // A copy from before dimensions, or the server, can still send Light/Dark colors.
+        this.migrate(binding);
+    }
+
+    /** Gives Light/Dark colors the Theme dimension; answers whether anything changed. */
+    private migrate(binding: Binding): boolean {
+        const { yjs } = this.ready();
+        const legacy = [...binding.tables.variables.values()].filter(
+            (entity): entity is Yjs.Map<unknown> => {
+                if (!(entity instanceof yjs.Map)) return false;
+                const raw = entity.toJSON();
+                return (
+                    raw.type === 'color' &&
+                    raw.dimensionId === undefined &&
+                    raw.values?.dark !== undefined
+                );
+            }
+        );
+
+        if (legacy.length === 0) {
+            return false;
+        }
+
+        binding.doc.transact(() => {
+            legacy.forEach((entity) => entity.set('dimensionId', 'theme'));
+            if (!binding.tables.dimensions.has('theme')) {
+                const dimension = new yjs.Map();
+                binding.tables.dimensions.set('theme', dimension);
+                this.writeValues(dimension, legacyTheme());
+            }
+        }, MIGRATION);
+
+        return true;
     }
 
     /** Ids of the documents shared here. */
@@ -791,7 +831,7 @@ export class Collaboration {
         binding.doc.on('afterTransaction', () => this.applyRemote(documentId, binding));
         binding.doc.on('update', (update: Uint8Array, origin: unknown) => {
             // An undo's origin is the history that made it; other copies' changes have their own.
-            if (origin === LOCAL || origin === binding.history) {
+            if (origin === LOCAL || origin === MIGRATION || origin === binding.history) {
                 this.ready().options.sendUpdate?.(documentId, update);
             }
         });

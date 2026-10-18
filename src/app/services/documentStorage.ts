@@ -1,3 +1,4 @@
+import { readDimension, legacyTheme } from '../variableModes';
 import type {
     Application,
     Camera,
@@ -10,7 +11,8 @@ import type {
     Component,
     Link,
     Guide,
-    Variable
+    Variable,
+    VariableDimension
 } from '../types';
 import { createDocument } from '../factories';
 import { orderAbove, resolveDrawOrderTies, validDrawOrder } from '../drawOrder';
@@ -39,7 +41,8 @@ export const COLLECTIONS = [
     'components',
     'links',
     'guides',
-    'variables'
+    'variables',
+    'dimensions'
 ] as const;
 
 export type Collection = (typeof COLLECTIONS)[number];
@@ -90,6 +93,7 @@ export interface SavedEntities {
     links: LinkData;
     guides: GuideData;
     variables: Variable;
+    dimensions: VariableDimension;
 }
 
 type DocumentData = DocumentFields &
@@ -478,10 +482,18 @@ function readVariable(value: unknown): Variable {
         throw new Error('Invalid variable');
     }
 
-    const dark = record(v.values).dark;
-    if (dark !== undefined) {
-        if (variable.type !== 'color') throw new Error('Only colors can vary by Theme');
-        variable.values.dark = color(dark);
+    const values = record(v.values);
+    const overrides = Object.entries(values).filter(([key]) => key !== 'default');
+    if (overrides.length || v.dimensionId !== undefined) {
+        if (variable.type !== 'color') throw new Error('Only color modes are supported');
+        variable.values = {
+            default: variable.values.default,
+            ...Object.fromEntries(overrides.map(([key, value]) => [id(key), color(value)]))
+        };
+        if (v.dimensionId !== undefined) variable.dimensionId = id(v.dimensionId);
+        else if (values.dark !== undefined) variable.dimensionId = 'theme';
+        // A merge can leave values whose dimension another copy removed: read the base alone.
+        else variable.values = { default: variable.values.default };
     }
     return v.alias === undefined ? variable : { ...variable, alias: id(v.alias) };
 }
@@ -514,6 +526,7 @@ const entityReaders: { [C in Collection]: (value: unknown) => SavedEntities[C] }
     components: readComponent,
     links: readLink,
     guides: readGuide,
+    dimensions: readDimension,
     variables: readVariable
 };
 
@@ -557,6 +570,7 @@ const referenceRepairs: {
             ? link
             : null,
     guides: (guide) => guide,
+    dimensions: (dimension) => dimension,
     variables: (variable, exists) => {
         if (variable.alias === undefined || exists('variables', variable.alias)) {
             return variable;
@@ -679,6 +693,8 @@ export function readCamera(value: unknown): Camera {
 
 /** What a device shows: the current document, and each document's camera. */
 export interface View {
+    previewModes?: Record<string, Record<string, string>>;
+    /** Legacy local preference, migrated when documents are available. */
     previewTheme?: 'light' | 'dark';
     currentDocumentId?: string;
     cameras: Record<string, Camera>;
@@ -705,6 +721,22 @@ export function readView(value: unknown): View {
     );
 
     return {
+        previewModes:
+            view.previewModes === undefined
+                ? undefined
+                : Object.fromEntries(
+                      Object.entries(orUndefined(() => record(view.previewModes)) ?? {}).map(
+                          ([documentId, modes]) => [
+                              documentId,
+                              Object.fromEntries(
+                                  Object.entries(orUndefined(() => record(modes)) ?? {}).filter(
+                                      (entry): entry is [string, string] =>
+                                          typeof entry[1] === 'string'
+                                  )
+                              )
+                          ]
+                      )
+                  ),
         previewTheme: view.previewTheme === 'dark' ? 'dark' : undefined,
         currentDocumentId: orUndefined(() => id(view.currentDocumentId)),
         cameras: Object.fromEntries(cameras)
@@ -716,6 +748,14 @@ function readDocument(value: unknown, onRepair = () => {}): DocumentData {
     const shapes = readShapes(d.shapes, onRepair);
     const components = table(d.components, readComponent);
     const variables = d.variables === undefined ? {} : table(d.variables, readVariable);
+    const dimensions =
+        d.dimensions === undefined
+            ? Object.values(variables).some(
+                  (variable) => variable.type === 'color' && variable.dimensionId === 'theme'
+              )
+                ? { theme: legacyTheme() }
+                : {}
+            : table(d.dimensions, readDimension);
     const exists: Exists = (collection, entityId) =>
         Object.hasOwn({ shapes, components, variables }[collection], entityId);
     const repair = <C extends Collection>(collection: C, items: Record<string, SavedEntities[C]>) =>
@@ -730,6 +770,7 @@ function readDocument(value: unknown, onRepair = () => {}): DocumentData {
         components: repair('components', components),
         links: repair('links', table(d.links, readLink)),
         guides: table(d.guides, readGuide),
+        dimensions,
         variables: repair('variables', variables)
     };
 }
@@ -862,6 +903,7 @@ const entityHydrators: {
     components: hydrateComponent,
     links: hydrateLink,
     guides: hydrateGuide,
+    dimensions: (dimension) => structuredClone(dimension),
     variables: hydrateVariable
 };
 

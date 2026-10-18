@@ -1,5 +1,5 @@
 import React, { FC, ReactNode, useLayoutEffect, useRef } from 'react';
-import { usePreviewTheme } from 'src/app/hooks';
+import { useVariableContext } from 'src/app/hooks';
 import { themeColors } from 'src/app/themeColors';
 import { SquareDashed } from 'lucide-react';
 import type { Box, Document, Image, InstanceShape, Shape } from 'src/app/types';
@@ -81,7 +81,7 @@ const PreviewInstance: FC<{
     shape: InstanceShape;
     ancestors: ReadonlySet<string>;
 }> = ({ document, shape, ancestors }) => {
-    const theme = usePreviewTheme();
+    const theme = useVariableContext(document.id);
     const source = componentSource(document, shape.componentId, ancestors);
 
     if (!source) {
@@ -211,7 +211,7 @@ const PreviewShape: FC<{
     shape: Shape;
     ancestors: ReadonlySet<string>;
 }> = ({ document, shape, ancestors, themed = false }) => {
-    const theme = usePreviewTheme();
+    const theme = useVariableContext(document.id);
     const painted = themed ? shape : themeColors(shape, document, theme);
     const bounds = shape.type === 'instance' ? previewBox(document, shape) : getShapeBounds(shape);
     const center = boxCenter(bounds);

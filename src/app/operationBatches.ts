@@ -1,5 +1,14 @@
+import { legacyTheme, readDimension } from './variableModes';
 import { json } from 'overmind';
-import type { Component, Document, Group, Shape, ShapeInput, Variable } from './types';
+import type {
+    Component,
+    Document,
+    Group,
+    Shape,
+    ShapeInput,
+    Variable,
+    VariableDimension
+} from './types';
 import type {
     AddShape,
     Operation,
@@ -23,7 +32,12 @@ import {
     unbindEditedProperties,
     writeText
 } from './variables';
-import { variableNamed, resolveVariable, variableProblems } from './variableResolver';
+import {
+    variableNamed,
+    resolveVariable,
+    variableProblems,
+    variableDefinition
+} from './variableResolver';
 import { componentSource, instanceBox } from './componentSource';
 import { hydrateComponent, readEntity } from './services/documentStorage';
 import { shapeGeometryKey } from './utils';
@@ -63,6 +77,7 @@ interface ShapeUpdate {
 }
 
 export interface Staged {
+    dimensions: VariableDimension[];
     variables: Variable[];
     components: Component[];
     shapes: Shape[];
@@ -225,7 +240,9 @@ function stage(document: Document, operations: Operation[], newId: () => string)
 
     let variables: Record<string, Variable> = { ...document.variables };
     const components: Record<string, Component> = { ...document.components };
+    const dimensions = { ...document.dimensions };
     const staged: Staged = {
+        dimensions: [],
         variables: [],
         components: [],
         shapes: [],
@@ -235,6 +252,25 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         updatedShapes: [],
         deletedShapes: [],
         deletedGroups: []
+    };
+
+    /** Adds a copied dimension; one this document already has, as edited here, is kept. */
+    const addDimension = (input: VariableDimension) => {
+        const dimension = readDimension(input);
+        const existing = dimensions[dimension.id];
+        if (existing) return existing;
+        dimensions[dimension.id] = dimension;
+        staged.dimensions.push(dimension);
+        return dimension;
+    };
+    const checkModes = (dimensionId: string | undefined, values: Record<string, unknown>) => {
+        const modes = Object.keys(values).filter((key) => key !== 'default');
+        if (modes.length === 0) return;
+        const dimension = dimensionId === undefined ? undefined : dimensions[dimensionId];
+        if (!dimension) throw new Error('Mode values need an existing dimension.');
+        if (modes.some((key) => !dimension.modes[key])) throw new Error('Unknown mode.');
+        if (modes.includes(dimension.defaultModeId))
+            throw new Error('The default mode uses the base value.');
     };
 
     /** Writes into `shape` the variables it follows and its template, and resolves its references. */
@@ -276,7 +312,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
     };
 
     const updateVariable = (
-        { variable: id, name, value, alias, darkValue }: UpdateVariable,
+        { variable: id, name, value, alias, darkValue, dimensionId, modeValues }: UpdateVariable,
         index: number
     ) => {
         const current = variables[id];
@@ -286,20 +322,29 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             name === undefined &&
             value === undefined &&
             alias === undefined &&
-            darkValue === undefined
+            darkValue === undefined &&
+            dimensionId === undefined &&
+            modeValues === undefined
         ) {
             throw new Error('it changes nothing.');
         }
         if (other && other.id !== id) {
             throw new Error(`the name ${name} is taken.`);
         }
-        if (darkValue !== undefined && current.type !== 'color') {
+        if (
+            (darkValue !== undefined || dimensionId !== undefined || modeValues !== undefined) &&
+            current.type !== 'color'
+        ) {
             throw new Error('Only colors can vary by Theme.');
         }
         const resolved = resolveVariable(current, variables);
         // A value of either theme set without a source stops following, as alias null does.
         const source =
-            alias === undefined && value === undefined && darkValue === undefined
+            alias === undefined &&
+            value === undefined &&
+            darkValue === undefined &&
+            dimensionId === undefined &&
+            modeValues === undefined
                 ? current.alias
                 : typeof alias === 'string'
                   ? reference(alias, 'variables', index)
@@ -311,29 +356,41 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                 : current.type === 'text'
                   ? escapeTemplate(String(resolved))
                   : resolved;
+        const definition = detaches ? variableDefinition(current, variables) : current;
+        const selectedDimension =
+            dimensionId === null
+                ? undefined
+                : (dimensionId ??
+                  (definition.type === 'color' ? definition.dimensionId : undefined) ??
+                  (darkValue !== undefined ? 'theme' : undefined));
+        if (darkValue !== undefined && !dimensions.theme) addDimension(legacyTheme());
+        const values = {
+            ...(dimensionId === undefined ? definition.values : {}),
+            default:
+                value === undefined
+                    ? fallback
+                    : current.type === 'text' && typeof value === 'string'
+                      ? remapTemplate(value)
+                      : value
+        } as Record<string, unknown>;
+        const overrides = {
+            ...modeValues,
+            ...(darkValue === undefined ? {} : { dark: darkValue })
+        };
+        if (Object.hasOwn(overrides, 'default'))
+            throw new Error('Use value to edit the base value.');
+        for (const [modeId, override] of Object.entries(overrides)) {
+            if (override === null) delete values[modeId];
+            else values[modeId] = override;
+        }
+        checkModes(selectedDimension, values);
         const variable = readEntity('variables', {
             id,
-            ...(source === undefined ? {} : { alias: source }),
             name: name ?? current.name,
             type: current.type,
-            values: {
-                ...(current.type === 'color'
-                    ? {
-                          dark: detaches
-                              ? resolveVariable(current, variables, 'dark')
-                              : current.values.dark
-                      }
-                    : {}),
-                ...(darkValue === undefined
-                    ? {}
-                    : { dark: darkValue === null ? undefined : darkValue }),
-                default:
-                    value === undefined
-                        ? fallback
-                        : current.type === 'text' && typeof value === 'string'
-                          ? remapTemplate(value)
-                          : value
-            }
+            values,
+            ...(selectedDimension === undefined ? {} : { dimensionId: selectedDimension }),
+            ...(source === undefined ? {} : { alias: source })
         });
 
         variables[id] = variable;
@@ -367,14 +424,35 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                 operation.type === 'text' && typeof operation.value === 'string'
                     ? remapTemplate(operation.value)
                     : operation.value;
+            // A pasted variable takes the modes this document's copy of its dimension has.
+            const pasted = operation.dimension && addDimension(operation.dimension);
+            if (operation.darkValue !== undefined && !dimensions.theme) addDimension(legacyTheme());
+            if (operation.modeValues && Object.hasOwn(operation.modeValues, 'default'))
+                throw new Error('Use value to edit the base value.');
+            const dimensionId =
+                operation.dimensionId ??
+                pasted?.id ??
+                (operation.darkValue === undefined ? undefined : 'theme');
+            const values = {
+                ...(pasted
+                    ? Object.fromEntries(
+                          Object.entries(operation.modeValues ?? {}).filter(
+                              ([modeId]) =>
+                                  Object.hasOwn(pasted.modes, modeId) &&
+                                  modeId !== pasted.defaultModeId
+                          )
+                      )
+                    : operation.modeValues),
+                default: value,
+                ...(operation.darkValue === undefined ? {} : { dark: operation.darkValue })
+            };
+            checkModes(dimensionId, values);
             const variable = readEntity('variables', {
                 id: ids.get(operation.key),
                 name: operation.name,
                 type: operation.type,
-                values: {
-                    default: value,
-                    ...(operation.darkValue === undefined ? {} : { dark: operation.darkValue })
-                },
+                dimensionId,
+                values,
                 ...(operation.alias === undefined
                     ? {}
                     : { alias: reference(operation.alias, 'variables', index) })
@@ -675,6 +753,9 @@ function writeVariables(
  * are added, and then deleted. Added shapes go on top.
  */
 export function writeBatch(document: Document, staged: Staged) {
+    staged.dimensions.forEach((dimension) => {
+        document.dimensions[dimension.id] = dimension;
+    });
     writeVariables(document, staged);
     staged.components.forEach((component) => {
         document.components[component.id] = component;

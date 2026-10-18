@@ -67,6 +67,7 @@ export interface Copied {
     shapes: ShapeInput[];
     groups: CopiedGroup[];
     variables: Variable[];
+    dimensions?: Document['dimensions'];
     components?: Component[];
 }
 
@@ -182,6 +183,15 @@ export function writeClipboard(
         }
     }
 
+    const copiedDimensions = [...held].flatMap((id) => {
+        const variable = variables[id];
+        const dimension =
+            variable?.type === 'color' && variable.dimensionId !== undefined
+                ? document?.dimensions[variable.dimensionId]
+                : undefined;
+        return dimension ? [dimension] : [];
+    });
+
     return JSON.stringify({
         format: CLIPBOARD_FORMAT,
         ...(components.size > 0 ? { components: [...components.values()] } : {}),
@@ -198,6 +208,9 @@ export function writeClipboard(
             ...(templates[index] === undefined ? {} : { template: templates[index] })
         })),
         ...(copiedGroups.length > 0 ? { groups: copiedGroups } : {}),
+        ...(copiedDimensions.length > 0
+            ? { dimensions: Object.fromEntries(copiedDimensions.map((d) => [d.id, d])) }
+            : {}),
         ...(held.size > 0 ? { variables: [...held].map((id) => variables[id]) } : {})
     });
 }
@@ -276,6 +289,14 @@ export function readClipboard(text: string): Copied {
         const taken = new Set<number>();
 
         return {
+            dimensions:
+                'dimensions' in data
+                    ? Object.fromEntries(
+                          Object.entries(data.dimensions as Record<string, unknown>).map(
+                              ([key, value]) => [key, readEntity('dimensions', value)]
+                          )
+                      )
+                    : undefined,
             shapes,
             groups: groupsData.map((group) => readCopiedGroup(group, shapes.length, taken)),
             variables,
@@ -291,7 +312,11 @@ export function readClipboard(text: string): Copied {
  * type is used, else the copied one is added, renamed as `Brand 2` when its name is
  * taken. Answers the operations adding them and each copied variable's reference.
  */
-function pasteVariables(copied: Variable[], document: Document) {
+function pasteVariables(
+    copied: Variable[],
+    document: Document,
+    dimensions: Document['dimensions'] = {}
+) {
     const taken = new Set(Object.values(document.variables).map((variable) => variable.name));
     const references = new Map<string, string>();
     const added: AddVariable[] = [];
@@ -316,8 +341,14 @@ function pasteVariables(copied: Variable[], document: Document) {
             name,
             type: variable.type,
             value: variable.values.default,
-            ...(variable.type === 'color' && variable.values.dark !== undefined
-                ? { darkValue: variable.values.dark }
+            ...(variable.type === 'color' && variable.dimensionId !== undefined
+                ? {
+                      dimensionId: variable.dimensionId,
+                      dimension: dimensions[variable.dimensionId],
+                      modeValues: Object.fromEntries(
+                          Object.entries(variable.values).filter(([key]) => key !== 'default')
+                      )
+                  }
                 : {}),
             ...(variable.alias === undefined ? {} : { alias: variable.alias })
         });
@@ -351,7 +382,9 @@ function pasteVariables(copied: Variable[], document: Document) {
             id: operation.key,
             name: operation.name,
             type: operation.type,
+            dimensionId: operation.dimensionId,
             values: {
+                ...operation.modeValues,
                 default: operation.value,
                 ...(operation.darkValue === undefined ? {} : { dark: operation.darkValue })
             },
@@ -374,7 +407,7 @@ export function pasteOperations(
     document: Document,
     target: Point | null
 ): Operation[] {
-    const variables = pasteVariables(copied.variables, document);
+    const variables = pasteVariables(copied.variables, document, copied.dimensions);
     const remapShape = (shape: Shape | ShapeInput) => {
         if (shape.bindings) {
             shape.bindings = Object.fromEntries(

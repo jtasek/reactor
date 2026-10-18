@@ -3,6 +3,8 @@ declare namespace StylesCssNamespace {
     colorValue: string;
     confirm: string;
     create: string;
+    dimension: string;
+    dimensions: string;
     empty: string;
     field: string;
     fieldLabel: string;

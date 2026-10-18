@@ -319,14 +319,16 @@ work, with V3 and V5 feeding R6. No speculative plugin or expression framework i
    X/Y, and text-size edits account for the baseline's Y coordinate. Covered by
    `tests/geometryBindings.test.ts` and `tests/browser/variables.spec.ts`.
 3. **V3 — Independent dimensions and local context (first increment implemented).**
-   Color variables now have Light (existing default) and optional Dark values. The Variables
-   panel switches a local preview; aliases, component colors and thumbnails use that theme,
-   while shared shape values and geometry remain at default. Missing Dark values use Light.
-   Save, copy/paste, operations, alias detachment and undo retain both definitions.
+   Dimensions and modes are now opt-in and user-defined. New documents and unassigned
+   variables use base values only. The panel creates, renames, reorders and deletes dimensions
+   and modes, with a default per dimension and local selections per document. Color variables
+   opt into one dimension; missing overrides use base, and aliases use their source context.
+   Definitions, copy/paste, operations, alias detachment and undo retain stable IDs and values.
+   Legacy Light/Dark values migrate into an editable Theme dimension. Colors in shapes,
+   components and thumbnails resolve in context; shared shape values remain at base.
    Still to do: Density and geometry-changing context, with consistent measurement and hit
    testing before enabling it. Text templates continue to use defaults in this paint-only
-   increment. Extend the local switch to independent dimensions, with each variable varying
-   along one dimension initially. Resolve all
+   increment. Resolve all
    drawing and geometry consumers consistently before allowing geometry-changing density.
    Acceptance: `tests/variableDimensions.test.ts` covers fallback and two copies in different
    contexts without shared writes; `tests/browser/variableDimensions.spec.ts` checks drawing,

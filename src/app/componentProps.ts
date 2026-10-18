@@ -1,4 +1,11 @@
-import type { Component, Document, InstanceShape, PropertyValue, Shape, Theme } from './types';
+import type {
+    Component,
+    Document,
+    InstanceShape,
+    PropertyValue,
+    Shape,
+    VariableContext
+} from './types';
 import { SHAPE_PROPERTIES, applyProperty, type ShapeProperty } from './properties';
 import { escapeTemplate, templateWithNames, writeText } from './variables';
 import { resolveVariable } from './variableResolver';
@@ -62,7 +69,7 @@ export function componentPropValue(
     component: Component,
     propId: string,
     document: Document,
-    theme: Theme = 'light'
+    theme: VariableContext = {}
 ): PropertyValue | undefined {
     const resolved = resolveComponentProp(component, propId, document);
 
@@ -76,11 +83,7 @@ export function componentPropValue(
         const variable = document.variables[override.variableId];
 
         return variable
-            ? resolveVariable(
-                  variable,
-                  document.variables,
-                  property.kind === 'color' ? theme : 'light'
-              )
+            ? resolveVariable(variable, document.variables, property.kind === 'color' ? theme : {})
             : property.read(source, document);
     }
 
@@ -97,7 +100,7 @@ export function applyInstanceOverrides(
     instance: InstanceShape,
     component: Component,
     document: Document,
-    theme: Theme = 'light'
+    theme: VariableContext = {}
 ): Shape {
     const props = component.props?.filter((prop) => prop.shapeId === source.id) ?? [];
 

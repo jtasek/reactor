@@ -8,6 +8,7 @@ import {
     type ShapeProperty
 } from './properties';
 import {
+    variableDefinition,
     resolveVariable,
     resolveTemplate,
     TEMPLATE_PART,
@@ -329,9 +330,11 @@ export function removeVariable(
             const resolved = resolveVariable(other, variables);
             other.values.default =
                 other.type === 'text' ? escapeTemplate(String(resolved)) : resolved;
-            if (other.type === 'color') {
-                const dark = resolveVariable(other, variables, 'dark');
-                if (typeof dark === 'string') other.values.dark = dark;
+            const definition = variableDefinition(other, variables);
+            if (other.type === 'color' && definition.type === 'color') {
+                other.values = { ...definition.values };
+                if (definition.dimensionId !== undefined)
+                    other.dimensionId = definition.dimensionId;
             }
             delete other.alias;
         }

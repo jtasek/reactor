@@ -59,7 +59,15 @@ export interface Guide {
 }
 
 /** Local artwork color context; never changes document geometry. */
-export type Theme = 'light' | 'dark';
+export type VariableContext = Readonly<Record<string, string>>;
+
+export interface VariableDimension {
+    id: string;
+    name: string;
+    order: number;
+    defaultModeId: string;
+    modes: Record<string, { id: string; name: string; order: number }>;
+}
 
 /** What a variable holds; a property may use a variable of its own kind. */
 export type VariableType = 'color' | 'number' | 'text' | 'boolean';
@@ -68,7 +76,7 @@ type VariableOf<T extends VariableType, V> = {
     id: string;
     name: string;
     type: T;
-    /** Default value; colors may also supply a Dark theme override. */
+    /** Base value; colors may also supply overrides keyed by mode ID. */
     values: { default: V };
     /** Same-type source by ID; default is retained as the fallback while following it. */
     alias?: string;
@@ -76,7 +84,10 @@ type VariableOf<T extends VariableType, V> = {
 
 /** A named value kept in a document, written into the shape properties bound to it. */
 export type Variable =
-    | (VariableOf<'color', string> & { values: { default: string; dark?: string } })
+    | (VariableOf<'color', string> & {
+          dimensionId?: string;
+          values: { default: string; [modeId: string]: string };
+      })
     | VariableOf<'number', number>
     | VariableOf<'text', string>
     | VariableOf<'boolean', boolean>;
@@ -319,6 +330,7 @@ export interface Document {
      * is not a tone, takes its name's.
      */
     tagTones: Record<string, string>;
+    dimensions: HashTable<VariableDimension>;
     variables: HashTable<Variable>;
     /** Sorted by name, then id. */
     variablesIds: string[];
@@ -477,7 +489,7 @@ export type Application = {
     commands: HashTable<Command>;
     commandsIds: string[];
     config: Configuration;
-    previewTheme: Theme;
+    previewModes: Record<string, Record<string, string>>;
     currentDocumentId: string;
     currentDocument: Document;
     /** The source or child being inspected, on this screen only. */

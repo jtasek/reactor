@@ -1,7 +1,7 @@
 import { json } from 'overmind';
 import type { Document } from './types';
 import { applyVariableChanges, buildVariable, escapeTemplate } from './variables';
-import { resolveVariable, variableProblems } from './variableResolver';
+import { resolveVariable, variableProblems, variableDefinition } from './variableResolver';
 
 /** Editor-only mutation: follow a same-type source, or detach to the resolved literal. */
 export function setVariableAlias(
@@ -21,9 +21,10 @@ export function setVariableAlias(
         variable.type,
         variable.type === 'text' ? escapeTemplate(String(value)) : value
     )!;
-    if (next.type === 'color') {
-        const dark = resolveVariable(variable, before, 'dark');
-        if (typeof dark === 'string' && dark !== next.values.default) next.values.dark = dark;
+    const definition = variableDefinition(variable, before);
+    if (next.type === 'color' && definition.type === 'color') {
+        next.values = { ...definition.values };
+        if (definition.dimensionId !== undefined) next.dimensionId = definition.dimensionId;
     }
     if (sourceId !== null) {
         next.alias = sourceId;

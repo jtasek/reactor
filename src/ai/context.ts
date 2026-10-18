@@ -51,7 +51,14 @@ export function documentContext(document: Document) {
     const groups = new Map<string, { name: string; shapes: string[] }>();
     const variables = new Map<
         string,
-        { name: string; type: string; value: unknown; alias?: string }
+        {
+            name: string;
+            type: string;
+            value: unknown;
+            alias?: string;
+            dimensionId?: string;
+            modeValues?: Record<string, string>;
+        }
     >();
     const components = new Map<string, ComponentContext>();
     let records = 0;
@@ -85,6 +92,14 @@ export function documentContext(document: Document) {
             name: variable.name,
             type: variable.type,
             value: variable.values.default,
+            ...(variable.type === 'color' && variable.dimensionId
+                ? {
+                      dimensionId: variable.dimensionId,
+                      modeValues: Object.fromEntries(
+                          Object.entries(variable.values).filter(([key]) => key !== 'default')
+                      )
+                  }
+                : {}),
             ...(variable.alias === undefined ? {} : { alias: variable.alias })
         });
         if (variable.alias !== undefined) addVariable(variable.alias);
@@ -174,6 +189,12 @@ export function documentContext(document: Document) {
         shapes,
         groups: Object.fromEntries(groups),
         variables: Object.fromEntries(variables),
+        dimensions: Object.fromEntries(
+            Object.entries(document.dimensions).filter(
+                ([id]) =>
+                    whole || [...variables.values()].some((variable) => variable.dimensionId === id)
+            )
+        ),
         components: Object.fromEntries(components)
     };
 

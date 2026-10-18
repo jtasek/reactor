@@ -1,4 +1,4 @@
-import type { Theme, Variable } from './types';
+import type { VariableContext, Variable } from './types';
 
 /** The variable named `name`; of several, as merges can leave, the one with the lowest id. */
 export function variableNamed(
@@ -74,7 +74,7 @@ function resolveValue(
     variables: Readonly<Record<string, Variable>>,
     within: string[],
     problems?: string[],
-    theme: Theme = 'light'
+    theme: VariableContext = {}
 ): string | number | boolean {
     const path = [...within, variable.id];
     let source = variable;
@@ -101,8 +101,8 @@ function resolveValue(
     }
     return source.type === 'text'
         ? resolveText(source.values.default, variables, path, problems)
-        : source.type === 'color' && theme === 'dark'
-          ? (source.values.dark ?? source.values.default)
+        : source.type === 'color' && source.dimensionId !== undefined
+          ? (source.values[theme[source.dimensionId]] ?? source.values.default)
           : source.values.default;
 }
 
@@ -110,7 +110,7 @@ function resolveValue(
 export const resolveVariable = (
     variable: Variable,
     variables: Readonly<Record<string, Variable>>,
-    theme: Theme = 'light'
+    theme: VariableContext = {}
 ) => resolveValue(variable, variables, [], undefined, theme);
 
 /** Reference problems in an alias's resolved value; useful for validation and editor diagnostics. */
@@ -128,3 +128,25 @@ export const resolveTemplate = (
     template: string,
     variables: Readonly<Record<string, Variable>>
 ): string => resolveText(template, variables, []);
+
+/** The definition behind a valid alias chain; broken/cyclic chains retain their own fallback. */
+export function variableDefinition(
+    variable: Variable,
+    variables: Readonly<Record<string, Variable>>
+): Variable {
+    let source = variable;
+    const seen = new Set<string>();
+    while (source.alias !== undefined) {
+        seen.add(source.id);
+        const target = variables[source.alias];
+        if (
+            !target ||
+            target.type !== variable.type ||
+            seen.has(target.id) ||
+            seen.size >= TEMPLATE_DEPTH
+        )
+            return variable;
+        source = target;
+    }
+    return source;
+}
