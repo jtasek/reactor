@@ -1,3 +1,5 @@
+import { isReadOnly, canDeleteDocument } from 'src/app/documentAccess';
+import { useAppState } from 'src/app/hooks';
 import React, {
     ChangeEvent,
     FC,
@@ -43,6 +45,8 @@ export const DocumentCard: FC<Props> = ({
     now
 }) => {
     const document = useDocument(documentId);
+    const readOnly = useAppState((state) => isReadOnly(state, documentId));
+    const canDelete = useAppState((state) => canDeleteDocument(state, documentId));
     const {
         editDocument,
         cloneDocument,
@@ -189,6 +193,7 @@ export const DocumentCard: FC<Props> = ({
                         </button>
                     )}
                     {current && <span className={styles.current}>Current</span>}
+                    {readOnly && <span className={styles.current}>View only</span>}
                 </div>
                 <span className={styles.meta}>
                     <Avatars people={documentPeople(document).map((name) => ({ name }))} />
@@ -216,7 +221,7 @@ export const DocumentCard: FC<Props> = ({
                 <DocumentThumbnail document={document} />
             </div>
             <div className={styles.cardFooter}>
-                {deleted ? (
+                {deleted || readOnly ? (
                     <div />
                 ) : (
                     <DocumentTags
@@ -240,6 +245,7 @@ export const DocumentCard: FC<Props> = ({
                                 type="button"
                                 aria-label={`Restore ${document.name}`}
                                 title={`Restore ${document.name}`}
+                                disabled={!canDelete}
                                 onClick={restore}
                             >
                                 <RotateCcw size={16} strokeWidth={1.5} aria-hidden="true" />
@@ -250,6 +256,7 @@ export const DocumentCard: FC<Props> = ({
                                 data-action="delete"
                                 aria-label={`Delete ${document.name} now`}
                                 title={`Delete ${document.name} now`}
+                                disabled={!canDelete}
                                 onClick={confirmDelete}
                             >
                                 <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />
@@ -263,6 +270,7 @@ export const DocumentCard: FC<Props> = ({
                                 type="button"
                                 aria-label={`Rename ${document.name}`}
                                 title={`Rename ${document.name}`}
+                                disabled={readOnly}
                                 onClick={beginRename}
                             >
                                 <Pencil size={16} strokeWidth={1.5} aria-hidden="true" />
@@ -282,6 +290,7 @@ export const DocumentCard: FC<Props> = ({
                                 data-action="delete"
                                 aria-label={`Delete ${document.name}`}
                                 title={`Delete ${document.name}`}
+                                disabled={!canDelete}
                                 onClick={trash}
                             >
                                 <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />

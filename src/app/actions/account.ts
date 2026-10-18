@@ -1,3 +1,5 @@
+import type { DocumentAccess } from '../documentAccess';
+import { isReadOnly } from '../documentAccess';
 import type { Context } from 'src/app';
 import { NOTICES_KEY } from '../services/accounts';
 import { createNotification } from '../factories';
@@ -58,4 +60,18 @@ export const noticeLocalDocuments = (context: Context) => {
                     : undefined
         })
     );
+};
+
+/** Permission updates arrive through a synchronous root action, like remote document changes. */
+export const setDocumentAccess: ActionWithParam<Record<string, DocumentAccess>> = (
+    { state, actions },
+    access
+) => {
+    const wasReadOnly = isReadOnly(state);
+    const next = access[state.currentDocumentId];
+    if (!wasReadOnly && (next?.role === 'viewer' || next?.role === 'unknown')) {
+        actions.events.cancelGesture();
+        state.aiEditDocumentId = null;
+    }
+    Object.assign(state.documentAccess, access);
 };

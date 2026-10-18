@@ -138,7 +138,18 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   of pending editor/viewer invites; tokens are hashed and expire after seven days. Inspection
   and explicit acceptance require the verified recipient's session and a token in the JSON
   body. Existing roles are preserved, and consumed tokens cannot restore removed membership.
-  Sharing UI, client viewer mode and member management remain R3 work.
+  `/sharing` lets admins create and revoke pending invitations; `/invite#<token>` lets the
+  signed-in recipient inspect and explicitly accept, retaining the fragment through email
+  and OAuth sign-in. OAuth continuation uses tab-scoped session storage and a token-free
+  callback; email sign-in asks the person to return to their original invitation tab.
+  These pages load on demand. `documentAccess` is local account state,
+  populated by server sync and cached beside its record, never serialized into documents.
+  Viewers use `pages/Viewer.tsx` (the existing thumbnail renderer, live, with zoom/Fit),
+  without editor controls; `takesEditorInput` also blocks viewer/unknown access. Cached
+  server documents without known permissions stay read-only, including new documents arriving
+  from another tab before their workspace role is known; unsent local documents
+  remain editable. Document rename/tag edits respect view access, and trash/restore/purge
+  require admin. Member management and connection access revocation remain R3 work.
 
 ### Verification baseline (do not treat as regressions)
 

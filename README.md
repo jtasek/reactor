@@ -185,8 +185,13 @@ in the same workspace returns it, and an id taken elsewhere is refused. Requests
 must come from the editor's own address and send JSON. The app's tables sit next
 to Better Auth's schema and are created or updated on start.
 
-Workspace invitations have a server API; the sharing UI and client viewer mode are
-still to come. An admin can invite a verified email address as `editor` or `viewer`.
+Open **Sharing** from the application bar or Documents page to invite someone as
+an `editor` or `viewer`. Only workspace admins can create and revoke invitations.
+Choose the workspace, recipient email and access level, then copy and send the
+invitation link. The recipient signs in with the invited email, reviews the workspace
+and role, and explicitly accepts. Google and GitHub sign-in retain the invitation in
+tab-scoped storage, with token-free authentication callbacks. After email sign-in,
+return to the original invitation tab or reopen the invitation link.
 Invitations cover all documents in the workspace, including future documents, and
 expire after seven days. The API does not send invitation emails.
 
@@ -207,8 +212,13 @@ A consumed token cannot restore removed membership, and an invitation stops work
 if its creator is no longer an admin. Inspecting a consumed token also requires the
 original accepting account to remain a member; matching the email alone is insufficient.
 Member removal, document invitations, viewer
-links and presence remain separate roadmap steps. The current editor does not yet
-present a read-only interface for viewers, although the server refuses their writes.
+links and presence remain separate roadmap steps. Viewer documents open in a live,
+read-only preview with zoom and Fit controls, without
+editor commands or property panels. Rename, tag editing and deletion are unavailable
+for viewers. Editors may edit, while document deletion stays admin-only. Cached viewer
+permissions survive offline restarts; server documents with unknown access, including
+those newly received from another tab, stay read-only until permissions can be checked. Permission state is local to the account,
+never shared document data, and the server still independently enforces access.
 
 Documents sync over a WebSocket at `/sync`, which needs the session cookie and the
 editor's own address. Opening a document needs the viewer role; a viewer's

@@ -331,6 +331,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         loading: true,
         saveStatus: { kind: 'notSaving', reason: 'Documents are loading.' },
         account: { kind: 'loading' },
+        documentAccess: {},
         ai: 'unavailable',
         ...options
     };

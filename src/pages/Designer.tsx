@@ -1,3 +1,5 @@
+import { isReadOnly } from 'src/app/documentAccess';
+import { useAppState } from 'src/app/hooks';
 import React, { FC } from 'react';
 
 import {
@@ -30,12 +32,20 @@ import { useActions } from 'src/app/hooks';
 import { useAiEdit } from 'src/app/aiHooks';
 import { ResetDocumentDialog } from 'src/ui/components/ResetDocumentDialog';
 import { registerEditor } from './registerEditor';
+import { Viewer } from './Viewer';
 
 registerEditor();
 
 export const Designer: FC = () => {
     const aiEdit = useAiEdit();
     const { closeAiEdit } = useActions();
+    const readOnly = useAppState(isReadOnly);
+    const checking = useAppState(
+        (state) =>
+            !state.documentAccess[state.currentDocumentId] ||
+            state.documentAccess[state.currentDocumentId].role === 'unknown'
+    );
+    if (readOnly) return <Viewer checking={checking} />;
 
     return (
         <Layout>
