@@ -6,6 +6,7 @@ import { signOut, waitForSync } from 'src/app/services/signOut';
 
 import { Avatars } from 'src/ui/components/Avatars';
 import styles from './Account.css';
+import { SocialSignIn } from './SocialSignIn';
 
 type Mode = 'signIn' | 'signUp' | 'link';
 
@@ -154,6 +155,7 @@ const SignInForm: FC = () => {
     return (
         <form className={styles.form} onSubmit={submit}>
             <h1>{MODES[mode].title}</h1>
+            <SocialSignIn />
             {mode === 'signUp' && (
                 <label>
                     Name
@@ -235,7 +237,11 @@ export const Account: FC = () => {
             <main className={styles.account}>
                 <h1>Account</h1>
                 <p>
-                    <Avatars names={[accountLabel(account)]} decorative /> Signed in as{' '}
+                    <Avatars
+                        people={[{ name: accountLabel(account), image: account.image }]}
+                        decorative
+                    />{' '}
+                    Signed in as{' '}
                     {account.name ? `${account.name} (${account.email})` : account.email}.
                 </p>
                 <SignOut owner={account.id} />

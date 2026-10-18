@@ -148,7 +148,25 @@ keeps documents only in the browser. With it, the server signs people in through
 Better Auth at `/api/auth`, keeping accounts and sessions in the `auth` schema of
 that PostgreSQL database and creating or updating its tables on start. People
 confirm their email address before signing in with a password, or sign in with a
-link sent by email.
+link sent by email. Google and GitHub sign-in are optional: configure either provider's
+client ID and secret below and its button appears on the account page. Provider names
+are available publicly at `/api/sign-in/providers`; credentials stay on the server.
+
+Register these callback URLs in the provider's OAuth application, using your
+`BETTER_AUTH_URL` origin:
+
+- Google: `https://reactor.example.com/api/auth/callback/google`
+- GitHub: `https://reactor.example.com/api/auth/callback/github`
+
+Use the same paths on `http://localhost:4000` for local development. Google uses
+OpenID/email/profile scopes; GitHub uses read:user and user:email. A new account
+takes the provider's name and profile photo, and each later sign-in refreshes only
+the photo, so the account keeps its own name and email. Signing in with a provider
+links to an account of the same email address only once that address is confirmed.
+The account UI displays the photo with a user-icon fallback, loaded only from
+Google's and GitHub's image hosts. Document attribution still stores names, so those avatars cannot yet
+be matched reliably to account photos. No OAuth credentials means email sign-in
+continues unchanged; configuring only one of a provider's credential pair fails startup.
 
 The account page, `/account`, reached from the status bar, signs in and out and
 creates accounts. Signed out, the editor says once, and again at 3 documents,
@@ -184,6 +202,8 @@ document shows its images on every device.
 | `DATABASE_URL` | PostgreSQL connection string; turns accounts on |
 | `BETTER_AUTH_URL` | The address people open the editor at, such as `https://reactor.example.com` |
 | `BETTER_AUTH_SECRET` | At least 32 random characters, used to sign sessions |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional Google OAuth credentials; both required to enable Google sign-in |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | Optional GitHub OAuth credentials; both required to enable GitHub sign-in |
 | `SMTP_URL` | SMTP server for email, such as `smtps://user:password@smtp.example.com`; required in production |
 | `MAIL_FROM` | Sender address; defaults to `no-reply` at the editor's host |
 | `AI_PROVIDER` | Turns AI on for people signed in: `anthropic`, or `openai` for any server speaking OpenAI's Chat Completions API (OpenAI, Mistral, OpenRouter, Ollama, vLLM) |

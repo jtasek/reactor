@@ -4,6 +4,7 @@ declare namespace AccountCssNamespace {
     form: string;
     link: string;
     modes: string;
+    social: string;
   }
 }
 

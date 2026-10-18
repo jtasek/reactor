@@ -46,7 +46,10 @@ export interface Email {
 }
 
 /** Accounts on an empty in-process database, with email kept in an outbox. */
-export async function startAccounts(plugins: KyselyPlugin[] = []) {
+export async function startAccounts(
+    plugins: KyselyPlugin[] = [],
+    socialProviders?: Parameters<typeof createAuth>[0]['socialProviders']
+) {
     const db = new Kysely<Database>({
         dialect: new PGliteDialect(new PGlite({ loadDataDir: emptyDatabase })),
         plugins
@@ -56,6 +59,7 @@ export async function startAccounts(plugins: KyselyPlugin[] = []) {
         db,
         baseURL: ORIGIN,
         secret: SECRET,
+        socialProviders,
         mailer: {
             send: async (email: Email) => {
                 outbox.push(email);
@@ -140,6 +144,7 @@ const sentBody = (body: unknown) => {
 let clients = 0;
 
 export interface ServeOptions {
+    socialProviders?: Parameters<typeof createAuth>[0]['socialProviders'];
     databasePlugins?: KyselyPlugin[];
     sessionCheck?: number;
     assetQuota?: number;
@@ -161,12 +166,13 @@ export async function serve(options: ServeOptions = {}) {
 
 /** As `serve`, until `close` is called, so one server may last for several tests. */
 export async function startServer({
+    socialProviders,
     sessionCheck,
     assetQuota,
     ai,
     databasePlugins
 }: ServeOptions = {}) {
-    const accounts = await startAccounts(databasePlugins);
+    const accounts = await startAccounts(databasePlugins, socialProviders);
     const app = express();
     const log = { error: () => {}, warn: () => {} };
     const sync = createSync({

@@ -420,7 +420,7 @@ export type Account =
     | { kind: 'loading' }
     | { kind: 'unavailable' }
     | { kind: 'signedOut' }
-    | { kind: 'signedIn'; id: string; name: string; email: string };
+    | { kind: 'signedIn'; id: string; name: string; email: string; image?: string | null };
 
 /** Whether the server offers AI to the person signed in; never signed out or without a provider. */
 export type AiAvailability = 'available' | 'unavailable';

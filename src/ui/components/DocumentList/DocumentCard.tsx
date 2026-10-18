@@ -191,7 +191,7 @@ export const DocumentCard: FC<Props> = ({
                     {current && <span className={styles.current}>Current</span>}
                 </div>
                 <span className={styles.meta}>
-                    <Avatars names={documentPeople(document)} />
+                    <Avatars people={documentPeople(document).map((name) => ({ name }))} />
                     <time
                         dateTime={document.modified.toISOString()}
                         title={`Last edited ${document.modified.toLocaleString()}`}

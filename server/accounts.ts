@@ -2,6 +2,7 @@ import { configuresAi, providerFromEnv } from './ai.ts';
 import { createApi } from './api.ts';
 import { UNUSED_ASSET_GRACE_MS, deleteUnusedAssets, postgresBlobs } from './assets.ts';
 import { authHandler, createAuth, migrateAuth } from './auth.ts';
+import { socialProvidersFromEnv } from './oauth.ts';
 import { openDatabase } from './database.ts';
 import { logMailer, smtpMailer } from './mailer.ts';
 import { migrateApp } from './migrations.ts';
@@ -42,6 +43,7 @@ export async function startAccounts(
         throw new Error('SMTP_URL is required in production when DATABASE_URL is set');
     }
 
+    const socialProviders = socialProvidersFromEnv(env);
     const ai = configuresAi(env) ? { provider: providerFromEnv(env) } : undefined;
     const mailer = env.SMTP_URL
         ? smtpMailer(
@@ -50,7 +52,7 @@ export async function startAccounts(
           )
         : logMailer(log);
     const db = openDatabase(env.DATABASE_URL, log);
-    const auth = createAuth({ db, baseURL, secret, mailer });
+    const auth = createAuth({ db, baseURL, secret, mailer, socialProviders });
 
     try {
         await migrateAuth(auth);

@@ -89,6 +89,12 @@ export function createApi({
 }) {
     const api = express.Router();
 
+    // Only public provider names, so signed-out people see the configured sign-in choices.
+    api.get('/sign-in/providers', (_req, res) => {
+        res.set('Cache-Control', 'no-store');
+        res.json(Object.keys(auth.options.socialProviders ?? {}));
+    });
+
     api.use((req, res, next) => {
         if (req.method === 'GET' || req.method === 'HEAD') {
             return next();
