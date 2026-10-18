@@ -144,8 +144,11 @@ export const getAnonymousUser = (): User => {
     };
 };
 
+/** The name recorded for a document's author and editors when no one is signed in. */
+export const ANONYMOUS = 'anonymous';
+
 export function getCurrentUserName(): string {
-    return 'anonymous';
+    return ANONYMOUS;
 }
 
 export function createNotification(options: Partial<Notification> = {}): Notification {

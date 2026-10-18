@@ -6,10 +6,22 @@ import {
     DocumentsLayout,
     UndoHistory
 } from '../types';
-import { createCamera, createDocument, createGrid, newDocumentName } from '../factories';
+import { ANONYMOUS, createCamera, createDocument, createGrid, newDocumentName } from '../factories';
 import { takesEditorInput } from 'src/events/input';
 import { copyDocument } from '../services/documentStorage';
 import { DOCUMENTS_LAYOUT_KEY, deletedForGood } from '../documentList';
+import { accountLabel } from '../services/accounts';
+
+/** The name documents record as who made or edited them here. */
+const personName = ({ account }: Application) =>
+    account.kind === 'signedIn' ? accountLabel(account) : ANONYMOUS;
+
+/** A new document made here, recording who made it. */
+const createOwnDocument = (state: Application, options: Partial<Document>) => {
+    const name = personName(state);
+
+    return createDocument({ author: name, createdBy: name, modifiedBy: name, ...options });
+};
 
 const getDocument = ({ documents }: Application, documentId: string) => {
     const document = documents[documentId];
@@ -46,7 +58,7 @@ const replaceCurrentDocument = (state: Application, documentId: string) => {
         return;
     }
 
-    const document = createDocument();
+    const document = createOwnDocument(state, {});
 
     setDocument(state, document);
     state.currentDocumentId = document.id;
@@ -78,7 +90,7 @@ export const newDocument: Action = ({ state, effects }) => {
         number++;
     }
 
-    const document = createDocument({ name: newDocumentName(number) });
+    const document = createOwnDocument(state, { name: newDocumentName(number) });
 
     setDocument(state, document);
     state.currentDocumentId = document.id;
@@ -132,12 +144,16 @@ export const cloneDocument: ActionWithParam<string> = ({ state, effects }, docum
     delete copy.deleted;
     copy.created = new Date();
     copy.modified = new Date(copy.created);
+    copy.createdBy = copy.modifiedBy = personName(state);
     setDocument(state, copy);
 };
 
 /** Records the time of a local edit before it is saved and shared. */
 export const markDocumentModified: ActionWithParam<string> = ({ state }, documentId) => {
-    getDocument(state, documentId).modified = new Date();
+    const document = getDocument(state, documentId);
+
+    document.modified = new Date();
+    document.modifiedBy = personName(state);
 };
 
 /** Shows what this copy can undo and redo of a document. */

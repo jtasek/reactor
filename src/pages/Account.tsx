@@ -1,9 +1,10 @@
 import React, { FC, SubmitEvent, useEffect, useRef, useState } from 'react';
 
 import { useAccount, useEffects, useReaction } from 'src/app/hooks';
-import type { AccountResult } from 'src/app/services/accounts';
+import { accountLabel, type AccountResult } from 'src/app/services/accounts';
 import { signOut, waitForSync } from 'src/app/services/signOut';
 
+import { Avatars } from 'src/ui/components/Avatars';
 import styles from './Account.css';
 
 type Mode = 'signIn' | 'signUp' | 'link';
@@ -234,7 +235,7 @@ export const Account: FC = () => {
             <main className={styles.account}>
                 <h1>Account</h1>
                 <p>
-                    Signed in as{' '}
+                    <Avatars names={[accountLabel(account)]} decorative /> Signed in as{' '}
                     {account.name ? `${account.name} (${account.email})` : account.email}.
                 </p>
                 <SignOut owner={account.id} />

@@ -32,6 +32,9 @@ async function openDocumentExamples(page: Page) {
     const documents = [
         createDocument({
             name: 'Interface kit',
+            author: 'Ada',
+            createdBy: 'Lin',
+            modifiedBy: 'Ada',
             modified: new Date(2026, 9, 13, 8),
             tags: ['UI kit', 'Client project'],
             shapes: { [shape.id]: shape }
@@ -139,6 +142,11 @@ test('a click on the preview or a double click on the card opens it, not on its 
     page
 }) => {
     await openDocumentExamples(page);
+
+    const authors = rows(page).first().getByRole('img', { name: 'Ada, Lin', exact: true });
+    await expect(authors).toBeVisible();
+    await expect(authors.locator('svg')).toHaveCount(2);
+    await expect(rows(page).first().locator('time svg')).toHaveCount(1);
 
     await button(page, 'Rename Interface kit').dblclick();
     const name = page.getByRole('textbox', { name: 'Name for Interface kit' });

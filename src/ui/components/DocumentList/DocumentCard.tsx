@@ -11,7 +11,9 @@ import { useActions, useDocument } from 'src/app/hooks';
 import { daysLeftInRecentlyDeleted, documentModifiedLabel } from 'src/app/documentList';
 import { tagKey, type TagTone } from 'src/app/tagTones';
 import { Dialog } from '../Dialog';
-import { Copy, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { CalendarDays, Clock, Copy, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { Avatars } from '../Avatars';
+import { documentPeople } from './documentPeople';
 import { DocumentTags } from './DocumentTags';
 import { DocumentThumbnail } from './DocumentThumbnail';
 import styles from './styles.css';
@@ -189,15 +191,19 @@ export const DocumentCard: FC<Props> = ({
                     {current && <span className={styles.current}>Current</span>}
                 </div>
                 <span className={styles.meta}>
+                    <Avatars names={documentPeople(document)} />
                     <time
                         dateTime={document.modified.toISOString()}
                         title={`Last edited ${document.modified.toLocaleString()}`}
                     >
+                        <CalendarDays size={14} strokeWidth={1.5} aria-hidden="true" />
                         {documentModifiedLabel(document.modified, now)}
                     </time>
-                    {' · '}
                     {deleted ? (
-                        <span>{daysLeftLabel(daysLeftInRecentlyDeleted(deleted, now))}</span>
+                        <span>
+                            <Clock size={14} strokeWidth={1.5} aria-hidden="true" />
+                            {daysLeftLabel(daysLeftInRecentlyDeleted(deleted, now))}
+                        </span>
                     ) : (
                         <span>
                             {document.shapesIds.length}{' '}

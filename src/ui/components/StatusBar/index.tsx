@@ -12,6 +12,9 @@ import {
 } from 'src/app/hooks';
 import { accountLabel } from 'src/app/services/accounts';
 
+import { Avatars } from '../Avatars';
+import styles from './styles.css';
+
 import { ZoomSlider } from './ZoomSlider';
 import { StatusBarSlot } from './StatusBarSlot';
 import { StatusBar } from './StatusBar';
@@ -76,7 +79,12 @@ export const AccountInfo: FC = () => {
     }
 
     return (
-        <a href="/account" title={account.kind === 'signedIn' ? account.email : undefined}>
+        <a
+            className={styles.accountLink}
+            href="/account"
+            title={account.kind === 'signedIn' ? account.email : undefined}
+        >
+            {account.kind === 'signedIn' && <Avatars names={[accountLabel(account)]} decorative />}
             {account.kind === 'signedIn' ? accountLabel(account) : 'Sign in'}
         </a>
     );

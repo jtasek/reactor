@@ -1,0 +1,27 @@
+.avatars {
+    --avatar-size: 22px;
+    --avatar-overlap: 6px;
+
+    display: inline-flex;
+    flex: none;
+    isolation: isolate;
+    vertical-align: middle;
+}
+
+.avatar {
+    align-items: center;
+    background: var(--panel-content-background);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    box-sizing: border-box;
+    color: var(--text-secondary-color);
+    display: inline-flex;
+    height: var(--avatar-size);
+    justify-content: center;
+    position: relative;
+    width: var(--avatar-size);
+}
+
+.avatar + .avatar {
+    margin-left: calc(-1 * var(--avatar-overlap));
+}

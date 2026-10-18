@@ -6,6 +6,7 @@ import {
     normalizeTags,
     type DocumentListFilters
 } from 'src/app/documentList';
+import { documentPeople } from 'src/ui/components/DocumentList/documentPeople';
 
 const referenceDate = new Date(2026, 9, 13, 12);
 const document = {
@@ -237,5 +238,13 @@ describe('chosen tag tones', () => {
 
         // A tone kept for a tag the document no longer has does not count.
         expect(chosenTagTones([newer, older])).toEqual({ 'ui kit': 'purple', draft: 'gray' });
+    });
+});
+
+describe('documentPeople', () => {
+    it('leaves out the anonymous name recorded signed out', () => {
+        expect(
+            documentPeople({ author: 'Ada', createdBy: 'Lin', modifiedBy: 'anonymous' })
+        ).toEqual(['Ada', 'Lin']);
     });
 });

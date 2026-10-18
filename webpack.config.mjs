@@ -104,10 +104,10 @@ export const config = {
               ]
             : [new MiniCssExtractPlugin({ filename: '[name].[contenthash].css' })])
     ],
-    // The bundle budget: the production build fails beyond it. Measured on 2026-10-13
-    // at 490.3 KiB for the entry bundle, including shared document edit timestamps
-    // that preserve received dates when gestures are canceled, and 234 KiB for its
-    // largest file. Documents controls and icons load with their page. Raise it only for code every page needs
+    // The bundle budget: the production build fails beyond it. Measured on 2026-10-18
+    // at 491.2 KiB for the entry bundle, including shared document edit timestamps
+    // that preserve received dates when gestures are canceled and record who edited,
+    // and 228 KiB for its largest file. Documents controls and icons load with their page. Raise it only for code every page needs
     // as it opens, after checking what grew. The commands and tools load with the
     // editor page, which registers them (`registerEditor`), so a new command or tool
     // does not count here; it was lowered from 468 KiB when they moved there.
@@ -115,7 +115,7 @@ export const config = {
         ? false
         : {
               hints: 'error',
-              maxEntrypointSize: 491 * 1024,
+              maxEntrypointSize: 492 * 1024,
               maxAssetSize: 248 * 1024
           },
     optimization: {
