@@ -23,6 +23,7 @@ import {
     listWorkspaces
 } from './workspaces.ts';
 import { createAi, sendsAiRequest, type AiLimits } from './ai.ts';
+import { createInvitations } from './invitations.ts';
 import type { AiProvider } from './aiTasks.ts';
 import type { Auth } from './auth.ts';
 import type { Db, Log } from './schema.ts';
@@ -33,6 +34,8 @@ declare global {
         interface Request {
             /** Who is signed in, set once the session is read. */
             userId: string;
+            userEmail: string;
+            emailVerified: boolean;
             /** The request's logger, where the server logs requests. */
             log?: Log;
         }
@@ -130,9 +133,13 @@ export function createApi({
         }
 
         req.userId = session.user.id;
+        req.userEmail = session.user.email.trim().toLowerCase();
+        req.emailVerified = session.user.emailVerified;
 
         return next();
     });
+
+    api.use(createInvitations(db));
 
     api.get('/workspaces', async (req, res) => {
         await ensurePersonalWorkspace(db, req.userId);
