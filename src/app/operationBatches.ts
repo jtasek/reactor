@@ -297,18 +297,20 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             throw new Error('Only colors can vary by Theme.');
         }
         const resolved = resolveVariable(current, variables);
-        const fallback =
-            alias === undefined
-                ? current.values.default
-                : current.type === 'text'
-                  ? escapeTemplate(String(resolved))
-                  : resolved;
+        // A value of either theme set without a source stops following, as alias null does.
         const source =
-            alias === undefined && value === undefined
+            alias === undefined && value === undefined && darkValue === undefined
                 ? current.alias
                 : typeof alias === 'string'
                   ? reference(alias, 'variables', index)
                   : undefined;
+        const detaches = current.alias !== undefined && source === undefined;
+        const fallback =
+            alias === undefined && !detaches
+                ? current.values.default
+                : current.type === 'text'
+                  ? escapeTemplate(String(resolved))
+                  : resolved;
         const variable = readEntity('variables', {
             id,
             ...(source === undefined ? {} : { alias: source }),
@@ -317,10 +319,9 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             values: {
                 ...(current.type === 'color'
                     ? {
-                          dark:
-                              current.alias !== undefined && source === undefined
-                                  ? resolveVariable(current, variables, 'dark')
-                                  : current.values.dark
+                          dark: detaches
+                              ? resolveVariable(current, variables, 'dark')
+                              : current.values.dark
                       }
                     : {}),
                 ...(darkValue === undefined

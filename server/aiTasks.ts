@@ -330,7 +330,7 @@ export const TOOLS = [
                 darkValue: {
                     type: ['string', 'null'],
                     description:
-                        'Color only: #rrggbb Dark theme value; null restores default fallback.'
+                        'Color only: #rrggbb Dark theme value; null restores default fallback. Setting this without alias stops following its alias.'
                 },
                 alias: {
                     type: ['string', 'null'],

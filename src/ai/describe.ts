@@ -47,7 +47,7 @@ export function describeOperation(operation: ProposedOperation, document: Docume
                 typeof alias === 'string'
                     ? `; follow ${variableLabel(document, alias)}`
                     : alias === null ||
-                        (value !== undefined &&
+                        ((value !== undefined || darkValue !== undefined) &&
                             document.variables[operation.variable]?.alias !== undefined)
                       ? '; stops following its source'
                       : '';

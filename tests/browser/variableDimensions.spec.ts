@@ -36,10 +36,8 @@ test('Light/Dark paints locally, preserves bounds and hit testing, and survives 
     await pointer(page, 'pointerdown', { x: 125, y: 125 });
     await pointer(page, 'pointerup', { x: 125, y: 125 });
     await expect(page.getByLabel('Fill', { exact: true })).toHaveText('◆ Ink');
-    await page.screenshot({ path: '/tmp/reactor-theme-normal.png' });
     await page.setViewportSize({ width: 700, height: 800 });
     await expect(page.getByLabel('Preview theme', { exact: true })).toBeVisible();
-    await page.screenshot({ path: '/tmp/reactor-theme-narrow.png' });
     await page
         .getByRole('button', { name: 'Use Light value for Ink in Dark', exact: true })
         .click();

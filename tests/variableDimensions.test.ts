@@ -6,6 +6,7 @@ import { themeColors } from 'src/app/themeColors';
 import { readEntity, readView } from 'src/app/services/documentStorage';
 import { readClipboard, writeClipboard, pasteOperations } from 'src/app/clipboard';
 import { readOperation } from 'src/ai/operations';
+import { describeOperation } from 'src/ai/describe';
 import { createTestStore } from './support/store';
 import { createCopies, edit, settle, shownDocument } from './support/collaboration';
 
@@ -210,4 +211,25 @@ it('paints bound text colors while leaving template content and geometry at defa
     store.actions.bindProperty({ shapeIds: [text.id], key: 'fontColor', variableId: id });
     store.actions.setVariableDarkValue({ variableId: id, value: '#ddeeff' });
     expect(themeColors(text, document, 'dark')).toEqual({ ...json(text), fontColor: '#ddeeff' });
+});
+
+it('stops following a source when an operation sets a Dark value alone', () => {
+    const { store, document, id } = setup();
+    store.actions.setVariableDarkValue({ variableId: id, value: '#ddeeff' });
+    const alias = store.actions.createVariable({ name: 'Alias', type: 'color', value: '#000000' })!;
+    store.actions.setVariableAlias({ variableId: alias, sourceId: id });
+    const operations = [{ op: 'updateVariable' as const, variable: alias, darkValue: '#abcdef' }];
+    expect(describeOperation(operations[0], document)).toBe(
+        'Change color variable “Alias”; Dark: #abcdef; stops following its source'
+    );
+    expect(
+        store.actions.applyOperations({
+            documentId: document.id,
+            by: { kind: 'person' },
+            operations
+        }).applied
+    ).toBe(true);
+    expect(document.variables[alias].alias).toBeUndefined();
+    expect(resolveVariable(document.variables[alias], document.variables)).toBe('#112233');
+    expect(resolveVariable(document.variables[alias], document.variables, 'dark')).toBe('#abcdef');
 });
