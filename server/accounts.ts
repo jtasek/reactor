@@ -85,6 +85,7 @@ export async function startAccounts(
             origin,
             onDeleted: sync.closeDocument,
             onAccessChanged: sync.closeMember,
+            log,
             blobs,
             ai
         }),

@@ -152,6 +152,10 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   remain editable. Document rename/tag edits respect view access, and trash/restore/purge
   require admin. `server/members.ts` lets admins list members, change editor/viewer roles and
   remove memberships with their pending invitations; owner/admin memberships are protected.
+  Its HTTP routes delegate membership rules and transactions to `server/services/members.ts`;
+  database queries and mutations live in `server/repositories/members.ts`. Every service
+  operation checks the actor's access and returns an explicit result. Post-commit connection
+  cleanup failures are logged and retried once; they do not report a committed change as failed.
   Membership changes lock the workspace, as invitation creation/acceptance do, then close
   only the affected member's document connections (`sync.closeMember`). Viewer sync always
   starts from the server's state and replaces the local collaboration binding and saved

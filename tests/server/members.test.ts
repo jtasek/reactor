@@ -1,5 +1,7 @@
 import { sql } from 'kysely';
 import { serve } from './support';
+import { createMemberService } from '../../server/services/members';
+import { workspaceRole } from '../../server/workspaces';
 
 async function setup(role = 'editor') {
     const server = await serve();
@@ -108,4 +110,72 @@ it('removes membership and pending invitations so old links cannot restore acces
             })
         ).status
     ).toBe(200);
+});
+
+it('enforces permissions and protects admins when the service is called without HTTP middleware', async () => {
+    const { db, admin, member, id } = await setup();
+    const changed = vi.fn(async () => {});
+    const service = createMemberService(db, changed, { warn: vi.fn() });
+    const workspaceId = admin.personal.id;
+    const workspace = await db
+        .selectFrom('workspaces')
+        .select('owner_id')
+        .where('id', '=', workspaceId)
+        .executeTakeFirstOrThrow();
+    const actorId = workspace.owner_id!;
+    const target = { actorId: id, workspaceId, userId: id };
+    expect(await service.list(target)).toEqual({ ok: false, problem: 'FORBIDDEN' });
+    expect(await service.setRole(target, 'viewer')).toEqual({ ok: false, problem: 'FORBIDDEN' });
+    expect(await service.remove(target)).toEqual({ ok: false, problem: 'FORBIDDEN' });
+    expect(await service.list({ actorId, workspaceId: member.personal.id })).toEqual({
+        ok: false,
+        problem: 'NOT_FOUND'
+    });
+    expect(await service.list({ actorId, workspaceId })).toMatchObject({
+        ok: true,
+        members: expect.any(Array)
+    });
+    expect(await service.remove({ actorId, workspaceId, userId: actorId })).toEqual({
+        ok: false,
+        problem: 'PROTECTED_MEMBER'
+    });
+    expect(await service.setRole({ actorId, workspaceId, userId: id }, 'admin')).toEqual({
+        ok: false,
+        problem: 'INVALID_ROLE'
+    });
+    expect(await workspaceRole(db, id, workspaceId)).toBe('editor');
+    expect(changed).not.toHaveBeenCalled();
+});
+
+it('retries connection cleanup after commit and reports success even when cleanup stays unavailable', async () => {
+    const { db, admin, id } = await setup();
+    const workspaceId = admin.personal.id;
+    const workspace = await db
+        .selectFrom('workspaces')
+        .select('owner_id')
+        .where('id', '=', workspaceId)
+        .executeTakeFirstOrThrow();
+    const input = { actorId: workspace.owner_id!, workspaceId, userId: id };
+    const unavailable = new Error('Sync unavailable');
+    const observedRoles: unknown[] = [];
+    const changed = vi.fn(async () => {
+        observedRoles.push(await workspaceRole(db, id, workspaceId));
+        throw unavailable;
+    });
+    const log = { warn: vi.fn() };
+    const service = createMemberService(db, changed, log);
+    expect(await service.setRole(input, 'viewer')).toEqual({ ok: true });
+    expect(changed).toHaveBeenCalledTimes(2);
+    expect(observedRoles).toEqual(['viewer', 'viewer']);
+    expect(log.warn).toHaveBeenCalledTimes(2);
+    expect(await workspaceRole(db, id, workspaceId)).toBe('viewer');
+
+    changed.mockImplementationOnce(async () => {
+        throw unavailable;
+    });
+    changed.mockImplementationOnce(async () => {});
+    expect(await service.remove(input)).toEqual({ ok: true });
+    expect(changed).toHaveBeenCalledTimes(4);
+    expect(log.warn).toHaveBeenCalledTimes(3);
+    expect(await workspaceRole(db, id, workspaceId)).toBeUndefined();
 });
