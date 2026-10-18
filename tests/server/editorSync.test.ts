@@ -549,3 +549,41 @@ describe('images when signed in', { timeout: IMAGE_TEST_MS }, () => {
         await uploaded(served, cookie, documentId, source);
     });
 });
+
+it('loads invited viewer permissions, receives live edits and preserves read-only access offline', async () => {
+    const served = await serve();
+    const owner = await served.user('owner@example.com');
+    const recipient = await served.user('recipient@example.com');
+    const editor = await device(served, owner.cookie);
+    const [id] = documentIds(editor);
+    editor.store.actions.addShape(rectangle);
+    await vi.waitFor(async () =>
+        expect(await serverDocuments(served, owner.cookie, owner.personal.id)).toHaveLength(1)
+    );
+    const invitation = await served.json<{ token: string }>(
+        served.call('POST', `/workspaces/${owner.personal.id}/invitations`, {
+            cookie: owner.cookie,
+            body: { email: 'recipient@example.com', role: 'viewer' }
+        })
+    );
+    expect(
+        (
+            await served.call('POST', '/invitations/accept', {
+                cookie: recipient.cookie,
+                body: { token: invitation.token }
+            })
+        ).status
+    ).toBe(200);
+    const viewer = await device(served, recipient.cookie);
+    await vi.waitFor(() => expect(shapeCount(viewer, id)).toBe(1));
+    expect(viewer.store.state.documentAccess[id]).toEqual({
+        workspaceId: owner.personal.id,
+        role: 'viewer'
+    });
+    viewer.store.actions.updateDocument({ id, name: 'Refused' });
+    expect(viewer.store.state.documents[id].name).toBe(editor.store.state.documents[id].name);
+    editor.store.actions.addShape({ ...rectangle, position: { x: 200, y: 300 } });
+    await vi.waitFor(() => expect(shapeCount(viewer, id)).toBe(2));
+    const offline = await restart(served, recipient.cookie, viewer, () => false);
+    expect(offline.store.state.documentAccess[id].role).toBe('viewer');
+});

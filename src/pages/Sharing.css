@@ -1,0 +1,58 @@
+.page {
+  background: var(--documents-background);
+  box-sizing: border-box;
+  color: var(--text-color);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  height: 100%;
+  overflow: auto;
+  padding: 32px 16px;
+}
+
+.content {
+  margin: 0 auto;
+  max-width: 640px;
+}
+
+.page h1 { font-size: 28px; margin: 16px 0 8px; }
+.page h2 { font-size: 18px; margin: 0 0 16px; }
+.page p { line-height: 1.5; margin: 8px 0; }
+.page a { color: var(--selection-color); }
+
+.card {
+  background: var(--control-background);
+  border: 1px solid var(--hairline-color);
+  border-radius: var(--radius-md);
+  margin-top: 20px;
+  padding: 20px;
+}
+
+.card form, .page label { display: grid; gap: 8px; }
+.card form { margin-top: 16px; }
+.page input, .page select, .page button {
+  background: var(--panel-content-background);
+  border: 1px solid var(--action-border);
+  border-radius: var(--radius-sm);
+  box-sizing: border-box;
+  color: var(--text-color);
+  font: inherit;
+  max-width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+}
+
+.page input, .page select { min-width: 0; width: 100%; }
+.page button { cursor: pointer; }
+.page button:disabled { cursor: default; opacity: 0.5; }
+.page :focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: 2px; }
+.secondary { color: var(--text-secondary-color); font-size: 13px; }
+.result { border-top: 1px solid var(--hairline-color); margin-top: 20px; padding-top: 8px; }
+.result button { margin-top: 12px; }
+.list { list-style: none; margin: 0; padding: 0; }
+.list li { align-items: center; border-top: 1px solid var(--hairline-color); display: flex; gap: 12px; padding: 16px 0; }
+.person { display: grid; flex: 1; font-size: 13px; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
+.person span { color: var(--text-secondary-color); }
+.preview { height: calc(100% - 140px); min-height: 200px; }
+.preview > svg { height: 100%; width: 100%; }
+
+.page nav { align-items: center; display: flex; gap: 8px; min-height: 24px; }
+.card button[type="submit"] { background: var(--primary-action-color); color: var(--panel-content-background); font-weight: 700; }

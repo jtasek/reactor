@@ -5,11 +5,12 @@ import {
     LibraryBig,
     SlidersHorizontal,
     Ellipsis,
-    Sparkles
+    Sparkles,
+    Share2
 } from 'lucide-react';
 
 import { useAiAvailable } from 'src/app/aiHooks';
-import { useActions, useControls } from 'src/app/hooks';
+import { useAccount, useActions, useControls } from 'src/app/hooks';
 import { Icon } from '../Icon';
 import { DOCK_GEOMETRY_STYLE } from '../PanelLayout/geometry';
 import styles from './styles.css';
@@ -18,12 +19,18 @@ export const ApplicationBar: FC = () => {
     const { explorer, components, inspector, controlPanel } = useControls();
     const { ui, requestAiEdit } = useActions();
     const aiAvailable = useAiAvailable();
+    const account = useAccount();
 
     return (
         <nav className={styles.applicationBar} aria-label="Application" style={DOCK_GEOMETRY_STYLE}>
             <a className={styles.button} href="/documents" aria-label="Documents" title="Documents">
                 <Icon icon={{ component: FolderOpen, size: 20 }} />
             </a>
+            {account.kind === 'signedIn' && (
+                <a className={styles.button} href="/sharing" aria-label="Sharing" title="Sharing">
+                    <Icon icon={{ component: Share2, size: 20 }} />
+                </a>
+            )}
             <span className={styles.divider} aria-hidden="true" />
             <button
                 className={styles.button}

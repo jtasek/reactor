@@ -1,3 +1,4 @@
+import { isReadOnly, canDeleteDocument } from '../documentAccess';
 import {
     Action,
     ActionWithParam,
@@ -20,7 +21,14 @@ const personName = ({ account }: Application) =>
 const createOwnDocument = (state: Application, options: Partial<Document>) => {
     const name = personName(state);
 
-    return createDocument({ author: name, createdBy: name, modifiedBy: name, ...options });
+    const document = createDocument({
+        author: name,
+        createdBy: name,
+        modifiedBy: name,
+        ...options
+    });
+    state.documentAccess[document.id] = { role: 'admin' };
+    return document;
 };
 
 const getDocument = ({ documents }: Application, documentId: string) => {
@@ -145,6 +153,7 @@ export const cloneDocument: ActionWithParam<string> = ({ state, effects }, docum
     copy.created = new Date();
     copy.modified = new Date(copy.created);
     copy.createdBy = copy.modifiedBy = personName(state);
+    state.documentAccess[copy.id] = { role: 'admin' };
     setDocument(state, copy);
 };
 
@@ -182,11 +191,13 @@ export const removeDocument: ActionWithParam<string> = ({ state }, documentId) =
 
 /** Moves a document to Recently Deleted, from where it can be restored. */
 export const trashDocument: ActionWithParam<string> = ({ state }, documentId) => {
+    if (!canDeleteDocument(state, documentId)) return;
     getDocument(state, documentId).deleted = new Date();
     replaceCurrentDocument(state, documentId);
 };
 
 export const restoreDocument: ActionWithParam<string> = ({ state }, documentId) => {
+    if (!canDeleteDocument(state, documentId)) return;
     delete getDocument(state, documentId).deleted;
 };
 
@@ -195,7 +206,10 @@ export const purgeDeletedDocuments: Action = ({ state }) => {
     const now = new Date();
 
     Object.values(state.documents)
-        .filter(({ deleted }) => deleted && deletedForGood(deleted, now))
+        .filter(
+            ({ id, deleted }) =>
+                canDeleteDocument(state, id) && deleted && deletedForGood(deleted, now)
+        )
         .forEach(({ id }) => {
             deleteDocument(state, id);
             replaceCurrentDocument(state, id);
@@ -243,6 +257,7 @@ export const updateDocument: ActionWithParam<Partial<Document> & { id: string }>
     { state },
     options
 ) => {
+    if (isReadOnly(state, options.id)) return;
     const document = getDocument(state, options.id);
 
     setDocument(state, createDocument({ ...document, ...options }));

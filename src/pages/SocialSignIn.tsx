@@ -21,7 +21,7 @@ function returnedProblem() {
         : 'Social sign-in was not completed. Please try again or sign in by email.';
 }
 
-export const SocialSignIn: FC = () => {
+export const SocialSignIn: FC<{ returnTo?: string }> = ({ returnTo }) => {
     const [providers, setProviders] = useState<OAuthProvider[]>([]);
     const [busy, setBusy] = useState(false);
     const [problem, setProblem] = useState(returnedProblem);
@@ -42,7 +42,7 @@ export const SocialSignIn: FC = () => {
         setBusy(true);
         setProblem(undefined);
         try {
-            await signInWithProvider(provider);
+            await signInWithProvider(provider, returnTo);
         } catch {
             setProblem('Could not start sign-in. Please try again.');
             setBusy(false);

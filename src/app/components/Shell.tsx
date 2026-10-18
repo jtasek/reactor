@@ -16,6 +16,13 @@ const Documents = lazy(() =>
     import('../../pages/Documents').then((module) => ({ default: module.Documents }))
 );
 
+const Sharing = lazy(() =>
+    import('../../pages/Sharing').then((module) => ({ default: module.Sharing }))
+);
+const Invitation = lazy(() =>
+    import('../../pages/Invitation').then((module) => ({ default: module.Invitation }))
+);
+
 export const Shell: FC = () => {
     useKeyboardDriver();
     useClipboardDriver();
@@ -39,6 +46,8 @@ export const Shell: FC = () => {
                     {currentPage === 'designer' && <Designer />}
                     {currentPage === 'documents' && <Documents />}
                     {currentPage === 'account' && <Account />}
+                    {currentPage === 'sharing' && <Sharing />}
+                    {currentPage === 'invitation' && <Invitation />}
                 </Suspense>
             )}
         </>

@@ -331,6 +331,13 @@ export async function startDocumentSync(
 
     /** Opens a saved or shared document from its updates; one that cannot be read stays out. */
     const openSaved = (documentId: string, updates: Uint8Array[]): boolean => {
+        if (owner && !instance.state.documentAccess[documentId]) {
+            instance.actions.setDocumentAccess({
+                [documentId]: {
+                    role: readRecord()?.unsent.includes(documentId) ? 'admin' : 'unknown'
+                }
+            });
+        }
         addDocument({ id: documentId });
 
         try {
@@ -435,6 +442,14 @@ export async function startDocumentSync(
                 opened: openFromServer,
                 deleted: removeDeleted,
                 received: append,
+                access: (access) => {
+                    instance.actions.setDocumentAccess(access);
+                    try {
+                        effects.saveState(`${recordKey}:access`, instance.state.documentAccess);
+                    } catch {
+                        /* Permissions are checked again when the server is reached. */
+                    }
+                },
                 changed: report
             }
         });
@@ -690,6 +705,21 @@ export async function startDocumentSync(
         migrate();
     }
 
+    if (owner) {
+        const { initialDocumentAccess } = await import('./serverSync');
+        let cached: unknown;
+        try {
+            cached = effects.loadState(`${recordKey}:access`);
+        } catch {
+            /* No cached permissions. */
+        }
+        state.documentAccess = initialDocumentAccess(
+            Object.keys(state.documents),
+            readRecord(),
+            cached
+        );
+    }
+
     // A new device shows the account's documents rather than starting one of its own.
     const serverStarted = owner
         ? startServer().catch((error: unknown) => {
@@ -711,6 +741,7 @@ export async function startDocumentSync(
         const document = createDocument();
 
         state.documents[document.id] = document;
+        state.documentAccess[document.id] = { role: 'admin' };
     }
 
     report();

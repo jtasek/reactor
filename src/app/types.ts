@@ -1,3 +1,4 @@
+import type { DocumentAccess } from './documentAccess';
 import { Context } from './index';
 import type { GroupFrame } from './membership';
 import type { LucideIcon } from 'lucide-react';
@@ -492,6 +493,7 @@ export type PanelPlacement = {
 export type Application = {
     id: string;
     account: Account;
+    documentAccess: Record<string, DocumentAccess>;
     ai: AiAvailability;
     commands: HashTable<Command>;
     commandsIds: string[];

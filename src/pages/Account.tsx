@@ -26,8 +26,8 @@ const DONE: Partial<Record<Mode, (email: string) => string>> = {
  * Account requests. Signing in loads the editor again, so everything it shows,
  * and later keeps in this browser, belongs to the new account.
  */
-function useAccountRequests() {
-    const { accounts, forgetOwner, reload } = useEffects();
+function useAccountRequests(returnTo?: string) {
+    const { accounts, forgetOwner, reload, reloadPage } = useEffects();
 
     return {
         signIn: async (email: string, password: string) => {
@@ -35,13 +35,16 @@ function useAccountRequests() {
 
             if (result.ok) {
                 forgetOwner();
-                reload('/');
+                // Assigning the same fragment URL does not reload the signed-out store.
+                if (returnTo) reloadPage();
+                else reload('/');
             }
 
             return result;
         },
-        signUp: accounts.signUp,
-        sendSignInLink: accounts.sendSignInLink
+        signUp: (name: string, email: string, password: string) =>
+            accounts.signUp(name, email, password, returnTo?.split('#')[0]),
+        sendSignInLink: (email: string) => accounts.sendSignInLink(email, returnTo?.split('#')[0])
     };
 }
 
@@ -109,8 +112,8 @@ const Back: FC = () => (
 );
 
 /** Signs in with a password, creates an account, or emails a sign-in link. */
-const SignInForm: FC = () => {
-    const { signIn, signUp, sendSignInLink } = useAccountRequests();
+export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
+    const { signIn, signUp, sendSignInLink } = useAccountRequests(returnTo);
     const [mode, setMode] = useState<Mode>('signIn');
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -155,7 +158,7 @@ const SignInForm: FC = () => {
     return (
         <form className={styles.form} onSubmit={submit}>
             <h1>{MODES[mode].title}</h1>
-            <SocialSignIn />
+            <SocialSignIn returnTo={returnTo?.split('#')[0]} />
             {mode === 'signUp' && (
                 <label>
                     Name
@@ -195,7 +198,15 @@ const SignInForm: FC = () => {
             <button type="submit" disabled={busy}>
                 {MODES[mode].submit}
             </button>
-            {result && <p role={result.failed ? 'alert' : 'status'}>{result.text}</p>}
+            {result && (
+                <p role={result.failed ? 'alert' : 'status'}>
+                    {result.text}
+                    {returnTo &&
+                        mode !== 'signIn' &&
+                        !result.failed &&
+                        ' After signing in, return to this invitation tab or reopen the invitation link.'}
+                </p>
+            )}
             <p className={styles.modes}>
                 {(Object.keys(MODES) as Mode[])
                     .filter((other) => other !== mode)

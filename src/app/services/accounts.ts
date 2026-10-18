@@ -94,10 +94,10 @@ export const accounts = {
         );
     },
     signIn: (email: string, password: string) => post('sign-in/email', { email, password }),
-    signUp: (name: string, email: string, password: string) =>
-        post('sign-up/email', { name, email, password, callbackURL: RETURN_TO }),
-    sendSignInLink: (email: string) =>
-        post('sign-in/magic-link', { email, callbackURL: RETURN_TO }),
+    signUp: (name: string, email: string, password: string, returnTo = RETURN_TO) =>
+        post('sign-up/email', { name, email, password, callbackURL: returnTo }),
+    sendSignInLink: (email: string, returnTo = RETURN_TO) =>
+        post('sign-in/magic-link', { email, callbackURL: returnTo }),
     signOut: () => post('sign-out', {})
 };
 

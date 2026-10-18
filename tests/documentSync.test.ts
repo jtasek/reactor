@@ -632,3 +632,18 @@ describe('document sync', () => {
         expect(storage.has(viewKey)).toBe(false);
     });
 });
+
+it('does not treat a document received from another account tab as locally owned before checking its permissions', async () => {
+    const hub = new Hub();
+    const indexedDB = new IDBFactory();
+    const first = await start(indexedDB, { hub, signedIn: ada });
+    const second = await start(indexedDB, { hub, signedIn: ada });
+    const id = 'new-shared-document';
+    first.store.actions.addDocument({ id, name: 'Shared drawing' });
+    await new Promise((resolve) => setTimeout(resolve));
+    hub.deliver();
+    await vi.waitFor(() => expect(second.store.state.documents[id]?.name).toBe('Shared drawing'));
+    expect(second.store.state.documentAccess[id]?.role).toBe('unknown');
+    second.store.actions.updateDocument({ id, name: 'Must not write' });
+    expect(second.store.state.documents[id].name).toBe('Shared drawing');
+});

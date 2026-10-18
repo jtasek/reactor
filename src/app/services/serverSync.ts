@@ -1,3 +1,4 @@
+import type { DocumentAccess } from '../documentAccess';
 import * as Yjs from 'yjs';
 import * as Hocuspocus from '@hocuspocus/provider';
 import type { Api, ServerRecord, SyncStatus, Transport } from './api';
@@ -18,6 +19,8 @@ export interface ServerEvents {
     received(documentId: string, update: Uint8Array): void;
     /** `status` may have changed. */
     changed(): void;
+    /** Current workspace permissions, before opening or refreshing documents. */
+    access?(documents: Record<string, DocumentAccess>): void;
 }
 
 export interface ServerSyncOptions {
@@ -263,6 +266,16 @@ export class ServerSync {
 
             listed = new Set(lists.flat().map(({ id }) => id));
             this.workspaceId = workspaces.find(({ kind }) => kind === 'personal')?.id;
+            events.access?.(
+                Object.fromEntries(
+                    workspaces.flatMap((workspace, index) =>
+                        lists[index].map(({ id }) => [
+                            id,
+                            { workspaceId: workspace.id, role: workspace.role }
+                        ])
+                    )
+                )
+            );
             this.reachable = true;
         } catch {
             this.reachable = false;
@@ -487,4 +500,35 @@ export class ServerSync {
 
         return this.socket;
     }
+}
+
+/** A cached permission only controls local UI; the server always checks current membership. */
+function readDocumentAccess(value: unknown): Record<string, DocumentAccess> {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+    return Object.fromEntries(
+        Object.entries(value).filter(([, entry]: [string, unknown]) => {
+            if (!entry || typeof entry !== 'object') return false;
+            const { role, workspaceId } = entry as Partial<DocumentAccess>;
+            return (
+                ['viewer', 'editor', 'admin', 'unknown'].includes(role ?? '') &&
+                (workspaceId === undefined || typeof workspaceId === 'string')
+            );
+        })
+    );
+}
+
+/** Cached server documents remain read-only until their permissions are known. */
+export function initialDocumentAccess(
+    ids: string[],
+    record: ServerRecord | undefined,
+    cached: unknown
+): Record<string, DocumentAccess> {
+    const access = readDocumentAccess(cached);
+    return Object.fromEntries(
+        ids.map((id) => [
+            id,
+            access[id] ??
+                (!record || record.unsent.includes(id) ? { role: 'admin' } : { role: 'unknown' })
+        ])
+    );
 }
