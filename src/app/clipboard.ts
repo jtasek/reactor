@@ -183,6 +183,15 @@ export function writeClipboard(
         }
     }
 
+    const copiedDimensions = [...held].flatMap((id) => {
+        const variable = variables[id];
+        const dimension =
+            variable?.type === 'color' && variable.dimensionId !== undefined
+                ? document?.dimensions[variable.dimensionId]
+                : undefined;
+        return dimension ? [dimension] : [];
+    });
+
     return JSON.stringify({
         format: CLIPBOARD_FORMAT,
         ...(components.size > 0 ? { components: [...components.values()] } : {}),
@@ -199,7 +208,9 @@ export function writeClipboard(
             ...(templates[index] === undefined ? {} : { template: templates[index] })
         })),
         ...(copiedGroups.length > 0 ? { groups: copiedGroups } : {}),
-        ...(document ? { dimensions: document.dimensions } : {}),
+        ...(copiedDimensions.length > 0
+            ? { dimensions: Object.fromEntries(copiedDimensions.map((d) => [d.id, d])) }
+            : {}),
         ...(held.size > 0 ? { variables: [...held].map((id) => variables[id]) } : {})
     });
 }

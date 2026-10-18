@@ -1,4 +1,3 @@
-import { sameJsonValue } from './services/collaboration';
 import { legacyTheme, readDimension } from './variableModes';
 import { json } from 'overmind';
 import type {
@@ -255,24 +254,23 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         deletedGroups: []
     };
 
+    /** Adds a copied dimension; one this document already has, as edited here, is kept. */
     const addDimension = (input: VariableDimension) => {
         const dimension = readDimension(input);
         const existing = dimensions[dimension.id];
-        if (existing && !sameJsonValue(existing, dimension))
-            throw new Error('The copied dimension conflicts with this document.');
-        if (!existing) {
-            dimensions[dimension.id] = dimension;
-            staged.dimensions.push(dimension);
-        }
+        if (existing) return existing;
+        dimensions[dimension.id] = dimension;
+        staged.dimensions.push(dimension);
+        return dimension;
     };
-    const checkModes = (variable: Variable) => {
-        if (variable.type !== 'color' || variable.dimensionId === undefined) return;
-        const dimension = dimensions[variable.dimensionId];
-        if (
-            !dimension ||
-            Object.keys(variable.values).some((key) => key !== 'default' && !dimension.modes[key])
-        )
-            throw new Error('Unknown dimension or mode.');
+    const checkModes = (dimensionId: string | undefined, values: Record<string, unknown>) => {
+        const modes = Object.keys(values).filter((key) => key !== 'default');
+        if (modes.length === 0) return;
+        const dimension = dimensionId === undefined ? undefined : dimensions[dimensionId];
+        if (!dimension) throw new Error('Mode values need an existing dimension.');
+        if (modes.some((key) => !dimension.modes[key])) throw new Error('Unknown mode.');
+        if (modes.includes(dimension.defaultModeId))
+            throw new Error('The default mode uses the base value.');
     };
 
     /** Writes into `shape` the variables it follows and its template, and resolves its references. */
@@ -385,6 +383,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             if (override === null) delete values[modeId];
             else values[modeId] = override;
         }
+        checkModes(selectedDimension, values);
         const variable = readEntity('variables', {
             id,
             name: name ?? current.name,
@@ -393,7 +392,6 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             ...(selectedDimension === undefined ? {} : { dimensionId: selectedDimension }),
             ...(source === undefined ? {} : { alias: source })
         });
-        checkModes(variable);
 
         variables[id] = variable;
         staged.updatedVariables.push(variable);
@@ -426,29 +424,40 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                 operation.type === 'text' && typeof operation.value === 'string'
                     ? remapTemplate(operation.value)
                     : operation.value;
-            if (operation.dimension) addDimension(operation.dimension);
+            // A pasted variable takes the modes this document's copy of its dimension has.
+            const pasted = operation.dimension && addDimension(operation.dimension);
             if (operation.darkValue !== undefined && !dimensions.theme) addDimension(legacyTheme());
             if (operation.modeValues && Object.hasOwn(operation.modeValues, 'default'))
                 throw new Error('Use value to edit the base value.');
+            const dimensionId =
+                operation.dimensionId ??
+                pasted?.id ??
+                (operation.darkValue === undefined ? undefined : 'theme');
+            const values = {
+                ...(pasted
+                    ? Object.fromEntries(
+                          Object.entries(operation.modeValues ?? {}).filter(
+                              ([modeId]) =>
+                                  Object.hasOwn(pasted.modes, modeId) &&
+                                  modeId !== pasted.defaultModeId
+                          )
+                      )
+                    : operation.modeValues),
+                default: value,
+                ...(operation.darkValue === undefined ? {} : { dark: operation.darkValue })
+            };
+            checkModes(dimensionId, values);
             const variable = readEntity('variables', {
                 id: ids.get(operation.key),
                 name: operation.name,
                 type: operation.type,
-                dimensionId:
-                    operation.dimensionId ??
-                    operation.dimension?.id ??
-                    (operation.darkValue === undefined ? undefined : 'theme'),
-                values: {
-                    ...operation.modeValues,
-                    default: value,
-                    ...(operation.darkValue === undefined ? {} : { dark: operation.darkValue })
-                },
+                dimensionId,
+                values,
                 ...(operation.alias === undefined
                     ? {}
                     : { alias: reference(operation.alias, 'variables', index) })
             });
 
-            checkModes(variable);
             variables[variable.id] = variable;
             staged.variables.push(variable);
         } catch (error) {

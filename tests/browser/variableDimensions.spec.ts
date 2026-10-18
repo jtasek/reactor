@@ -110,4 +110,6 @@ test('legacy Light/Dark documents preserve their values and local Dark selection
     await expect(page.getByLabel('Preview Theme', { exact: true })).toHaveValue('dark');
     await expect(page.getByLabel('Dark value of Ink', { exact: true })).toHaveValue('#ddeeff');
     await expect(page.getByLabel('Value of Ink', { exact: true })).toHaveValue('#112233');
+    // Light is the default mode, so its color is the base value.
+    await expect(page.getByLabel('Light value of Ink', { exact: true })).toHaveCount(0);
 });

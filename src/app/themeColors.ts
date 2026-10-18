@@ -6,7 +6,7 @@ import { bindableProperty } from './variables';
 
 /** Paint-only projection. Defaults remain the source of geometry and durable bindings. */
 export function themeColors(shape: Shape, document: Document, theme: VariableContext): Shape {
-    if (!shape.bindings) return shape;
+    if (!shape.bindings || Object.keys(theme).length === 0) return shape;
     let result = shape;
     for (const key of ['fill', 'stroke', 'fontColor']) {
         const variable = boundVariable(shape, key, document);

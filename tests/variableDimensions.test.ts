@@ -16,7 +16,11 @@ import { readClipboard, writeClipboard, pasteOperations } from 'src/app/clipboar
 import { readOperation } from 'src/ai/operations';
 import { describeOperation } from 'src/ai/describe';
 import { createTestStore } from './support/store';
+import type { VariableDimension } from 'src/app/types';
 import { createCopies, edit, settle, shownDocument } from './support/collaboration';
+
+const alternativeMode = (dimension: VariableDimension) =>
+    Object.keys(dimension.modes).find((modeId) => modeId !== dimension.defaultModeId)!;
 
 function setup() {
     const { store } = createTestStore();
@@ -135,7 +139,7 @@ it('keeps each collaborator’s theme local while sharing and undoing definition
         expect(b.inbox).toHaveLength(0);
         expect(
             variableContext(shownDocument(b), b.store.state.previewModes[shownDocument(b).id])
-        ).toEqual({ theme: 'light' });
+        ).toEqual({});
         edit(a, (actions) =>
             actions.setVariableModeValue({ modeId: 'dark', variableId: id, value: '#ddeeff' })
         );
@@ -319,7 +323,8 @@ it('starts with base values only and lets each variable opt into independent cus
         },
         defaultModeId: dim.id
     });
-    expect(variableContext(document)[appearance]).toBe(dim.id);
+    expect(variableContext(document)).not.toHaveProperty(appearance);
+    expect(document.variables[id].values.default).toBe('#ddeeff');
     expect(
         resolveVariable(document.variables[id], document.variables, variableContext(document))
     ).toBe('#ddeeff');
@@ -343,12 +348,13 @@ it('shares custom dimension definitions and restores a deleted dimension and its
         dimensionId = store.actions.createDimension('Brand')!;
         id = store.actions.createVariable({ name: 'Ink', type: 'color', value: '#112233' })!;
         store.actions.setVariableDimension({ variableId: id, dimensionId });
-        const modeId = store.state.currentDocument.dimensions[dimensionId].defaultModeId;
+        store.actions.addDimensionMode({ dimensionId, name: 'Alt' });
+        const modeId = alternativeMode(store.state.currentDocument.dimensions[dimensionId]);
         store.actions.setVariableModeValue({ variableId: id, modeId, value: '#abcdef' });
     });
     const [a, b] = copies;
     try {
-        const modeId = shownDocument(a).dimensions[dimensionId].defaultModeId;
+        const modeId = alternativeMode(shownDocument(a).dimensions[dimensionId]);
         edit(a, (actions) => actions.deleteDimension(dimensionId));
         settle(copies);
         expect(shownDocument(b).dimensions).toEqual({});
@@ -436,5 +442,147 @@ it('migrates legacy shared documents before starting undo history', async () => 
     } finally {
         old.destroy();
         copy.collaboration.dispose();
+    }
+});
+
+it('keeps a variable whose dimension another copy deleted while its mode color changed', async () => {
+    let dimensionId = '';
+    let id = '';
+    const copies = await createCopies(2, (store) => {
+        dimensionId = store.actions.createDimension('Brand')!;
+        store.actions.addDimensionMode({ dimensionId, name: 'Alt' });
+        id = store.actions.createVariable({ name: 'Ink', type: 'color', value: '#112233' })!;
+        store.actions.setVariableDimension({ variableId: id, dimensionId });
+    });
+    const [a, b] = copies;
+    try {
+        const modeId = alternativeMode(shownDocument(a).dimensions[dimensionId]);
+        edit(a, (actions) => actions.deleteDimension(dimensionId));
+        edit(b, (actions) =>
+            actions.setVariableModeValue({ variableId: id, modeId, value: '#abcdef' })
+        );
+        settle(copies);
+        copies.forEach((copy) =>
+            expect(json(shownDocument(copy).variables[id])).toEqual({
+                id,
+                name: 'Ink',
+                type: 'color',
+                values: { default: '#112233' }
+            })
+        );
+    } finally {
+        copies.forEach(({ collaboration }) => collaboration.dispose());
+    }
+});
+
+it('pastes into a document that edited its own Theme, keeping the modes it still has', () => {
+    const source = createTestStore().store;
+    source.actions.addDocument({
+        id: source.state.currentDocumentId,
+        dimensions: { theme: legacyTheme() }
+    });
+    const from = source.state.currentDocument;
+    const id = source.actions.createVariable({ name: 'Brand', type: 'color', value: '#112233' })!;
+    source.actions.setVariableDimension({ variableId: id, dimensionId: 'theme' });
+    source.actions.setVariableModeValue({ variableId: id, modeId: 'dark', value: '#ddeeff' });
+    source.actions.addShape({
+        type: 'rectangle',
+        position: { x: 0, y: 0 },
+        size: { width: 10, height: 10 }
+    });
+    const copied = from.shapes[from.shapesIds[0]];
+    source.actions.bindProperty({ shapeIds: [copied.id], key: 'fill', variableId: id });
+    const text = writeClipboard([copied], [], from.variables, from);
+    expect(Object.keys(readClipboard(text).dimensions ?? {})).toEqual(['theme']);
+    expect(Object.keys(JSON.parse(writeClipboard([copied], [], {}, from)))).not.toContain(
+        'dimensions'
+    );
+
+    const { store } = createTestStore();
+    store.actions.addDocument({
+        id: store.state.currentDocumentId,
+        dimensions: { theme: legacyTheme() }
+    });
+    const target = store.state.currentDocument;
+    const theme = json(target.dimensions.theme);
+    store.actions.updateDimension({
+        ...theme,
+        modes: { ...theme.modes, dark: { ...theme.modes.dark, name: 'Night' } }
+    });
+    const result = store.actions.applyOperations({
+        documentId: target.id,
+        by: { kind: 'person' },
+        operations: pasteOperations(readClipboard(text), target, null)
+    });
+    expect(result.applied).toBe(true);
+    expect(target.dimensions.theme.modes.dark.name).toBe('Night');
+    const pasted = Object.values(target.variables).find((variable) => variable.name === 'Brand')!;
+    expect(resolveVariable(pasted, target.variables, { theme: 'dark' })).toBe('#ddeeff');
+});
+
+it('keeps the default mode’s colors as the base values shapes hold', () => {
+    const { store, document, id, shape } = setup();
+    store.actions.setVariableModeValue({ variableId: id, modeId: 'light', value: '#ff0000' });
+    expect(document.variables[id].values).toEqual({ default: '#112233' });
+    expect(
+        store.actions.applyOperations({
+            documentId: document.id,
+            by: { kind: 'person' },
+            operations: [{ op: 'updateVariable', variable: id, modeValues: { light: '#ff0000' } }]
+        }).applied
+    ).toBe(false);
+    store.actions.setVariableModeValue({ variableId: id, modeId: 'dark', value: '#ddeeff' });
+    store.actions.setPreviewMode({ dimensionId: 'theme', modeId: 'light' });
+    expect(variableContext(document, store.state.previewModes[document.id])).toEqual({});
+
+    store.actions.updateDimension({ ...json(document.dimensions.theme), defaultModeId: 'dark' });
+    expect(document.variables[id].values).toEqual({ default: '#ddeeff', light: '#112233' });
+    expect(shape.fill).toBe('#ddeeff');
+    expect(shape.bindings?.fill).toBe(id);
+    expect(themeColors(shape, document, variableContext(document)).fill).toBe('#ddeeff');
+    expect(themeColors(shape, document, { theme: 'light' }).fill).toBe('#112233');
+
+    store.actions.deleteDimensionMode({ dimensionId: 'theme', modeId: 'dark' });
+    expect(document.dimensions.theme.defaultModeId).toBe('light');
+    expect(document.variables[id].values).toEqual({ default: '#112233' });
+    expect(shape.fill).toBe('#112233');
+});
+
+it('migrates Light/Dark colors that another copy sends', async () => {
+    const copies = await createCopies(2);
+    const [a] = copies;
+    const documentId = shownDocument(a).id;
+    const old = new Y.Doc();
+    try {
+        old.getMap('variables').set(
+            'old-color',
+            new Y.Map(
+                Object.entries({
+                    id: 'old-color',
+                    name: 'Old color',
+                    type: 'color',
+                    values: { default: '#112233', dark: '#ddeeff' }
+                })
+            )
+        );
+        // The server passes the old copy's change on to every copy.
+        copies.forEach((copy) =>
+            copy.collaboration.receive(documentId, Y.encodeStateAsUpdate(old))
+        );
+        settle(copies);
+        for (const copy of copies) {
+            const document = shownDocument(copy);
+            expect(document.dimensions.theme).toEqual(legacyTheme());
+            expect(
+                resolveVariable(document.variables['old-color'], document.variables, {
+                    theme: 'dark'
+                })
+            ).toBe('#ddeeff');
+        }
+        a.collaboration.undo(documentId);
+        expect(shownDocument(a).dimensions.theme).toBeDefined();
+    } finally {
+        old.destroy();
+        copies.forEach(({ collaboration }) => collaboration.dispose());
     }
 });

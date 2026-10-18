@@ -173,7 +173,7 @@ export function Dimensions() {
                     <select
                         className={styles.source}
                         aria-label={`Preview ${dimension.name}`}
-                        value={context[dimension.id]}
+                        value={context[dimension.id] ?? dimension.defaultModeId}
                         onChange={(event) =>
                             setPreviewMode({
                                 dimensionId: dimension.id,

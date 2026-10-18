@@ -492,7 +492,8 @@ function readVariable(value: unknown): Variable {
         };
         if (v.dimensionId !== undefined) variable.dimensionId = id(v.dimensionId);
         else if (values.dark !== undefined) variable.dimensionId = 'theme';
-        else throw new Error('Mode values require a dimension');
+        // A merge can leave values whose dimension another copy removed: read the base alone.
+        else variable.values = { default: variable.values.default };
     }
     return v.alias === undefined ? variable : { ...variable, alias: id(v.alias) };
 }
