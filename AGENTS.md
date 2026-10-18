@@ -761,7 +761,11 @@ Hidden guides are not drawn and locked ones do not move.
 - TypeScript is `strict`; **avoid `any`**. `console.log` is a lint warning (only
   `warn`/`error`/`info` allowed) — prefer the `useLog` hook for debug output.
 - `jsx-a11y/no-autofocus` is an **error**: focus inputs via a ref effect, not `autoFocus`.
-- Prefer **early returns** over `else` branches.
+- Prefer **early returns** over `else` branches and nested conditionals.
+- Use braces for conditionals; do not write inline `if` statements. Separate logical code
+  sections with blank lines, including before a return that follows another statement.
+- Prefer `const`. When a mutable temporary accumulates a computed result, consider extracting
+  a function that returns that result instead; retain mutation where it makes the code clearer.
 - Extract **magic numbers into named constants** that explain their purpose. When TypeScript
   and CSS need the same value, define it once and share it through CSS custom properties.
 - Listen to store mutations through the `addMutationListener` that `onInitializeOvermind`

@@ -49,18 +49,20 @@ export function createMemberService(db: Db, changed: AccessChanged, log: Pick<Lo
     async function notify(workspaceId: string, userId: string) {
         try {
             await changed(workspaceId, userId);
+
+            return;
         } catch (error) {
             log.warn(error, 'Membership committed; retrying connection cleanup');
+        }
 
-            try {
-                await changed(workspaceId, userId);
-            } catch (retryError) {
-                // Incoming messages and idle checks enforce access if cleanup remains unavailable.
-                log.warn(
-                    retryError,
-                    'Connection cleanup failed after retry; permission checks remain active'
-                );
-            }
+        try {
+            await changed(workspaceId, userId);
+        } catch (retryError) {
+            // Incoming messages and idle checks enforce access if cleanup remains unavailable.
+            log.warn(
+                retryError,
+                'Connection cleanup failed after retry; permission checks remain active'
+            );
         }
     }
 
@@ -104,17 +106,21 @@ export function createMemberService(db: Db, changed: AccessChanged, log: Pick<Lo
                     userId,
                     operation.role as 'viewer' | 'editor'
                 );
-            } else {
-                await revokeMemberInvitations(trx, workspaceId, userId);
-                await deleteMember(trx, workspaceId, userId);
+
+                return { ok: true };
             }
+
+            await revokeMemberInvitations(trx, workspaceId, userId);
+            await deleteMember(trx, workspaceId, userId);
 
             return { ok: true };
         });
 
-        if (result.ok) {
-            await notify(workspaceId, userId);
+        if (!result.ok) {
+            return result;
         }
+
+        await notify(workspaceId, userId);
 
         return result;
     }
