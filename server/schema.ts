@@ -20,6 +20,18 @@ export interface Database {
         user_id: string;
         role: Role | null;
     };
+    workspace_invitations: {
+        id: string;
+        workspace_id: string;
+        email: string;
+        role: 'viewer' | 'editor';
+        token_hash: string;
+        created_by: string;
+        expires_at: Date;
+        created_at: Generated<Date>;
+        accepted_at: Date | null;
+        accepted_by: string | null;
+    };
     documents: {
         id: string;
         workspace_id: string;

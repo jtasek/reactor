@@ -49,9 +49,13 @@ const memberships = (db: Db, userId: string) =>
             select.fn.coalesce('member.role', 'workspace.default_role').as('role')
         ]);
 
-/** The workspaces the user belongs to, with their role in each; the personal one first. */
+/** The workspaces the user belongs to, with their role in each; their own personal one first. */
 export const listWorkspaces = (db: Db, userId: string) =>
     memberships(db, userId)
+        .orderBy(
+            (eb) => eb('workspace.owner_id', '=', userId),
+            (order) => order.desc().nullsLast()
+        )
         .orderBy((eb) => eb('workspace.kind', '=', 'personal'), 'desc')
         .orderBy('workspace.created_at')
         .execute();

@@ -134,6 +134,12 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   A minute after it starts and then every hour it deletes the images no document links to
   any more, an hour after they were last added (`deleteUnusedAssets`). `tests/server/support.ts` `serve()` runs all of it over HTTP.
 
+- **Workspace invitations** (`server/invitations.ts`): admin-only creation/listing/revocation
+  of pending editor/viewer invites; tokens are hashed and expire after seven days. Inspection
+  and explicit acceptance require the verified recipient's session and a token in the JSON
+  body. Existing roles are preserved, and consumed tokens cannot restore removed membership.
+  Sharing UI, client viewer mode and member management remain R3 work.
+
 ### Verification baseline (do not treat as regressions)
 
 - Type-checking and all unit and browser tests pass on a clean checkout; keep it that way.

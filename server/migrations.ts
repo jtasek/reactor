@@ -167,6 +167,36 @@ const migrations: Record<string, Migration> = {
                 .columns(['user_id', 'created_at'])
                 .execute();
         }
+    },
+    '0006_workspace_invitations': {
+        async up(db) {
+            await db.schema
+                .createTable('workspace_invitations')
+                .addColumn('id', 'text', (c) => c.primaryKey())
+                .addColumn('workspace_id', 'text', (c) =>
+                    c.notNull().references('workspaces.id').onDelete('cascade')
+                )
+                .addColumn('email', 'text', (c) => c.notNull())
+                .addColumn('role', 'text', (c) =>
+                    c.notNull().check(sql`role in ('viewer', 'editor')`)
+                )
+                .addColumn('token_hash', 'text', (c) => c.notNull().unique())
+                .addColumn('created_by', 'text', (c) =>
+                    c.notNull().references('auth.user.id').onDelete('cascade')
+                )
+                .addColumn('expires_at', 'timestamptz', (c) => c.notNull())
+                .addColumn('created_at', 'timestamptz', (c) => c.notNull().defaultTo(sql`now()`))
+                .addColumn('accepted_at', 'timestamptz')
+                .addColumn('accepted_by', 'text', (c) =>
+                    c.references('auth.user.id').onDelete('set null')
+                )
+                .execute();
+            await db.schema
+                .createIndex('workspace_invitations_workspace')
+                .on('workspace_invitations')
+                .column('workspace_id')
+                .execute();
+        }
     }
 };
 

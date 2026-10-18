@@ -185,6 +185,31 @@ in the same workspace returns it, and an id taken elsewhere is refused. Requests
 must come from the editor's own address and send JSON. The app's tables sit next
 to Better Auth's schema and are created or updated on start.
 
+Workspace invitations have a server API; the sharing UI and client viewer mode are
+still to come. An admin can invite a verified email address as `editor` or `viewer`.
+Invitations cover all documents in the workspace, including future documents, and
+expire after seven days. The API does not send invitation emails.
+
+All paths below start with `/api` and require a session. POST and DELETE requests
+also require the editor's Origin; POST bodies are JSON.
+
+| Request | Body / result |
+|---|---|
+| `POST /workspaces/:workspaceId/invitations` | `{ "email": "person@example.com", "role": "editor" }`; returns the invitation summary and a secret `token` once, replacing any pending invitation for that email |
+| `GET /workspaces/:workspaceId/invitations` | Admin-only list of pending, unexpired invitations, without tokens |
+| `DELETE /workspaces/:workspaceId/invitations/:invitationId` | Admin-only revocation of a pending invitation; does not remove an accepted membership |
+| `POST /invitations/inspect` | `{ "token": "…" }`; shows the workspace name and invited role only to the signed-in, verified recipient, without granting access |
+| `POST /invitations/accept` | `{ "token": "…" }`; grants membership and returns `workspaceId`, the effective `role` and `alreadyMember` |
+
+Treat tokens as secrets: they are stored only as hashes and sent in request bodies,
+never URL paths or query strings. Acceptance preserves an existing member's role.
+A consumed token cannot restore removed membership, and an invitation stops working
+if its creator is no longer an admin. Inspecting a consumed token also requires the
+original accepting account to remain a member; matching the email alone is insufficient.
+Member removal, document invitations, viewer
+links and presence remain separate roadmap steps. The current editor does not yet
+present a read-only interface for viewers, although the server refuses their writes.
+
 Documents sync over a WebSocket at `/sync`, which needs the session cookie and the
 editor's own address. Opening a document needs the viewer role; a viewer's
 connection is read-only, so the server drops the changes it sends. Each document's
