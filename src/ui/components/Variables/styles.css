@@ -178,3 +178,14 @@
     color: var(--text-secondary-color);
     font-size: 0.75rem;
 }
+
+/* The resolved color of a color alias, beside its chain. */
+.swatch {
+    border: 1px solid var(--hairline-color);
+    border-radius: 2px;
+    display: inline-block;
+    height: 10px;
+    margin-right: 4px;
+    vertical-align: -1px;
+    width: 10px;
+}

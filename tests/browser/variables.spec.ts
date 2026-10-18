@@ -122,6 +122,8 @@ test('hide and show detach visibility so changing the former variable cannot hid
     await page.keyboard.press('Alt+Shift+H');
     await expect(shapes(page)).toHaveCount(1);
     await expect(panel(page).getByText('Not used yet', { exact: true })).toBeVisible();
+    await panel(page).getByText('Value', { exact: true }).click();
+    await expect(field(page, 'Value of shown')).toBeChecked();
     await field(page, 'Value of shown').uncheck();
     await expect(shapes(page)).toHaveCount(1);
 });
@@ -202,6 +204,10 @@ test('an alias follows its source across reload and detaches to a literal', asyn
     await field(page, 'Variable for Fill').selectOption({ label: 'Button' });
     await expect.poll(fill).toBe('rgb(51, 102, 255)');
     await expect(field(page, 'Resolved value of Button')).toHaveText('Button → Brand: #3366ff');
+    await expect(field(page, 'Resolved value of Button').locator('[aria-hidden]')).toHaveCSS(
+        'background-color',
+        'rgb(51, 102, 255)'
+    );
     await expect(field(page, 'Source of Brand')).toHaveCount(0);
     await expect(page.getByText('Every other color variable follows Brand.')).toBeVisible();
     await field(page, 'Value of Brand').fill('#ff0000');

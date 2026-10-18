@@ -15,6 +15,7 @@ declare namespace StylesCssNamespace {
     row: string;
     rowHeader: string;
     source: string;
+    swatch: string;
     variables: string;
   }
 }

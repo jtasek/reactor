@@ -152,6 +152,10 @@ const VariableRow: FC<{
               ? templateProblems(variable.values.default, variables, [variable.id])
               : [];
 
+    const ValueCaption = variable.type === 'boolean' ? 'div' : 'label';
+    const resolved =
+        variable.alias !== undefined ? resolveVariable(variable, variables) : undefined;
+
     const sources = Object.values(variables).filter(
         (source) =>
             source.id === variable.alias ||
@@ -206,13 +210,14 @@ const VariableRow: FC<{
                 </span>
             </div>
             {variable.alias === undefined && (
-                <label className={styles.field}>
+                // A caption click would flip a boolean, so only other fields take it as a label.
+                <ValueCaption className={styles.field}>
                     <span className={styles.fieldLabel}>Value</span>
                     <ValueField variable={variable} variables={variables} />
                     {variable.type === 'color' && (
                         <code className={styles.colorValue}>{variable.values.default}</code>
                     )}
-                </label>
+                </ValueCaption>
             )}
             {sources.length > 0 || variable.alias !== undefined ? (
                 <label className={styles.field}>
@@ -252,8 +257,14 @@ const VariableRow: FC<{
                     className={styles.resolution}
                     aria-label={`Resolved value of ${variable.name}`}
                 >
-                    {variableChain(variable, variables)}:{' '}
-                    {String(resolveVariable(variable, variables))}
+                    {variable.type === 'color' && typeof resolved === 'string' && (
+                        <span
+                            className={styles.swatch}
+                            style={{ backgroundColor: resolved }}
+                            aria-hidden="true"
+                        />
+                    )}
+                    {variableChain(variable, variables)}: {String(resolved)}
                 </small>
             )}
             {problem && (
