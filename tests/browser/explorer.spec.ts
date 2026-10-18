@@ -265,6 +265,7 @@ test('an empty layer has nothing to collapse', async ({ page }) => {
                 camera: { scale: 1, position: { x: 0, y: 0 } },
                 grid: { width: 10, height: 10, factor: 10, visible: true },
                 variables: {},
+                dimensions: {},
                 shapes: {
                     box: {
                         ...metadata,

@@ -306,15 +306,27 @@ If a concurrent edit leaves a missing source, the alias uses its retained fallba
 introduced by concurrent edits is bounded and reported in the panel. Copy/paste carries alias
 dependencies and retains the existing name-and-type matching policy.
 
-Color variables offer **Light** and optional **Dark** values. In the Variables panel,
-**Theme** changes your local preview, including component colors and document thumbnails.
-Dark uses Light until overridden; **Use Light** removes that override. Aliases follow the
-selected theme. The switch is remembered on this device and does not edit shared shapes or
-other collaborators' views. It changes artwork colors, not the editor's interface theme.
-Text templates and geometry still use defaults; Density modes are not implemented yet.
+Dimensions and modes are **opt-in**. New documents have none, and each variable starts
+with a single **Base** value. Open **Dimensions and modes (optional)** in Variables to
+create a dimension such as Appearance or Brand. Add, rename, reorder or delete its modes
+and choose its default. Assign a color variable using **Vary by**; missing mode overrides
+use its base value. **Use base** removes an override.
 
-Values and template diagnostics share a pure central resolver; saved variable definitions
-retain raw templates, theme values and alias fallbacks. Density and design-system packages follow in the
+Each document remembers your selected mode per dimension locally. Aliases follow their
+source's dimension; shapes, components and thumbnails use the same context. Renaming a mode
+does not break values or selection because references use IDs. Deleting a mode removes its
+overrides; deleting a dimension returns its variables to base-only values. These definition
+changes can be undone and are shared; preview selections are not shared.
+
+Existing Light/Dark documents migrate to an editable Theme dimension, including their local
+Dark preference. Plain documents stay base-only. Text templates and geometry still use base
+values: numeric, text and boolean mode overrides are gated until context-aware measurement
+is implemented. This changes artwork, not the editor's interface theme.
+
+Values and template diagnostics share a pure central resolver; saved definitions and clipboard
+transfers retain modes and aliases. The operations API accepts an existing `dimensionId` and
+color `modeValues` keyed by mode ID; older `darkValue` inputs remain readable for compatibility.
+Design-system packages follow in the
 [variable roadmap](./APPLICATION_PLAN.md#variable-foundation-v1v5-incremental).
 
 ## Camera Coordinates

@@ -67,6 +67,18 @@ export function readOperation(value: unknown): ProposedOperation {
                 name: text(operation.name, 'Its name'),
                 type,
                 value: operation.value,
+                ...(operation.dimensionId === undefined
+                    ? {}
+                    : { dimensionId: text(operation.dimensionId, 'Its dimension') }),
+                ...(operation.modeValues === undefined
+                    ? {}
+                    : {
+                          modeValues: Object.fromEntries(
+                              Object.entries(fields(operation.modeValues, 'Its mode values')).map(
+                                  ([id, value]) => [id, text(value, 'A mode value')]
+                              )
+                          )
+                      }),
                 ...(operation.darkValue === undefined
                     ? {}
                     : { darkValue: text(operation.darkValue, 'Its Dark value') }),
@@ -104,6 +116,26 @@ export function readOperation(value: unknown): ProposedOperation {
                 variable: text(operation.variable, 'Its variable'),
                 ...(operation.name === undefined ? {} : { name: text(operation.name, 'Its name') }),
                 ...(operation.value === undefined ? {} : { value: operation.value }),
+                ...(operation.dimensionId === undefined
+                    ? {}
+                    : {
+                          dimensionId:
+                              operation.dimensionId === null
+                                  ? null
+                                  : text(operation.dimensionId, 'Its dimension')
+                      }),
+                ...(operation.modeValues === undefined
+                    ? {}
+                    : {
+                          modeValues: Object.fromEntries(
+                              Object.entries(fields(operation.modeValues, 'Its mode values')).map(
+                                  ([id, value]) => [
+                                      id,
+                                      value === null ? null : text(value, 'A mode value')
+                                  ]
+                              )
+                          )
+                      }),
                 ...(operation.darkValue === undefined
                     ? {}
                     : {

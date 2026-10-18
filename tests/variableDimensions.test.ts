@@ -1,9 +1,17 @@
+import * as Y from 'yjs';
+import { legacyTheme, variableContext } from 'src/app/variableModes';
 import { createComponent, createShape } from 'src/app/factories';
 import { applyInstanceOverrides } from 'src/app/componentProps';
 import { json } from 'overmind';
 import { resolveVariable } from 'src/app/variableResolver';
 import { themeColors } from 'src/app/themeColors';
-import { readEntity, readView } from 'src/app/services/documentStorage';
+import {
+    readDocumentFields,
+    readEntity,
+    readView,
+    migratePersistedState,
+    serializePersistedState
+} from 'src/app/services/documentStorage';
 import { readClipboard, writeClipboard, pasteOperations } from 'src/app/clipboard';
 import { readOperation } from 'src/ai/operations';
 import { describeOperation } from 'src/ai/describe';
@@ -12,8 +20,13 @@ import { createCopies, edit, settle, shownDocument } from './support/collaborati
 
 function setup() {
     const { store } = createTestStore();
+    store.actions.addDocument({
+        id: store.state.currentDocumentId,
+        dimensions: { theme: legacyTheme() }
+    });
     const document = store.state.currentDocument;
     const id = store.actions.createVariable({ name: 'Ink', type: 'color', value: '#112233' })!;
+    store.actions.setVariableDimension({ variableId: id, dimensionId: 'theme' });
     store.actions.addShape({
         type: 'rectangle',
         position: { x: 10, y: 20 },
@@ -27,15 +40,15 @@ function setup() {
 it('projects Dark paint without changing durable colors, geometry or bindings', () => {
     const { store, document, id, shape } = setup();
     const before = json(shape);
-    expect(themeColors(shape, document, 'dark').fill).toBe('#112233');
-    store.actions.setVariableDarkValue({ variableId: id, value: '#ddeeff' });
-    expect(themeColors(shape, document, 'dark')).toEqual({ ...before, fill: '#ddeeff' });
+    expect(themeColors(shape, document, { theme: 'dark' }).fill).toBe('#112233');
+    store.actions.setVariableModeValue({ modeId: 'dark', variableId: id, value: '#ddeeff' });
+    expect(themeColors(shape, document, { theme: 'dark' })).toEqual({ ...before, fill: '#ddeeff' });
     expect(json(shape)).toEqual(before);
-    expect(themeColors(shape, document, 'light')).toBe(shape);
+    expect(themeColors(shape, document, {})).toBe(shape);
     store.actions.setVariableValue({ variableId: id, value: '#445566' });
-    expect(themeColors(shape, document, 'dark').fill).toBe('#ddeeff');
-    store.actions.setVariableDarkValue({ variableId: id, value: null });
-    expect(themeColors(shape, document, 'dark').fill).toBe('#445566');
+    expect(themeColors(shape, document, { theme: 'dark' }).fill).toBe('#ddeeff');
+    store.actions.setVariableModeValue({ modeId: 'dark', variableId: id, value: null });
+    expect(themeColors(shape, document, { theme: 'dark' }).fill).toBe('#445566');
 });
 
 it.each(['detach', 'delete', 'operation'] as const)(
@@ -48,10 +61,10 @@ it.each(['detach', 'delete', 'operation'] as const)(
             value: '#000000'
         })!;
         store.actions.setVariableAlias({ variableId: alias, sourceId: id });
-        store.actions.setVariableDarkValue({ variableId: id, value: '#ddeeff' });
-        expect(resolveVariable(document.variables[alias], document.variables, 'dark')).toBe(
-            '#ddeeff'
-        );
+        store.actions.setVariableModeValue({ modeId: 'dark', variableId: id, value: '#ddeeff' });
+        expect(
+            resolveVariable(document.variables[alias], document.variables, { theme: 'dark' })
+        ).toBe('#ddeeff');
         if (mode === 'detach')
             store.actions.setVariableAlias({ variableId: alias, sourceId: null });
         if (mode === 'delete') store.actions.deleteVariable(id);
@@ -66,15 +79,15 @@ it.each(['detach', 'delete', 'operation'] as const)(
         }
         expect(document.variables[alias].alias).toBeUndefined();
         expect(resolveVariable(document.variables[alias], document.variables)).toBe('#112233');
-        expect(resolveVariable(document.variables[alias], document.variables, 'dark')).toBe(
-            '#ddeeff'
-        );
+        expect(
+            resolveVariable(document.variables[alias], document.variables, { theme: 'dark' })
+        ).toBe('#ddeeff');
     }
 );
 
 it('validates mode values and preserves them through clipboard and operation readers', () => {
     const { store, document, id, shape } = setup();
-    store.actions.setVariableDarkValue({ variableId: id, value: '#ddeeff' });
+    store.actions.setVariableModeValue({ modeId: 'dark', variableId: id, value: '#ddeeff' });
     const variable = json(document.variables[id]);
     expect(readEntity('variables', variable)).toEqual(variable);
     expect(() =>
@@ -87,7 +100,7 @@ it('validates mode values and preserves them through clipboard and operation rea
             values: { default: 2, dark: '#ffffff' }
         })
     ).toThrow();
-    const clipboard = readClipboard(writeClipboard([shape], [], document.variables))!;
+    const clipboard = readClipboard(writeClipboard([shape], [], document.variables, document))!;
     const destination = createTestStore().store;
     const target = destination.state.currentDocument;
     expect(
@@ -98,7 +111,7 @@ it('validates mode values and preserves them through clipboard and operation rea
         }).applied
     ).toBe(true);
     const copied = Object.values(target.variables)[0];
-    expect(resolveVariable(copied, target.variables, 'dark')).toBe('#ddeeff');
+    expect(resolveVariable(copied, target.variables, { theme: 'dark' })).toBe('#ddeeff');
     expect(readOperation({ op: 'updateVariable', variable: id, darkValue: null })).toEqual({
         op: 'updateVariable',
         variable: id,
@@ -109,23 +122,36 @@ it('validates mode values and preserves them through clipboard and operation rea
 it('keeps each collaborator’s theme local while sharing and undoing definitions', async () => {
     let id = '';
     const copies = await createCopies(2, (store) => {
+        store.actions.addDocument({
+            id: store.state.currentDocumentId,
+            dimensions: { theme: legacyTheme() }
+        });
         id = store.actions.createVariable({ name: 'Ink', type: 'color', value: '#112233' })!;
+        store.actions.setVariableDimension({ variableId: id, dimensionId: 'theme' });
     });
     const [a, b] = copies;
     try {
-        edit(a, (actions) => actions.setPreviewTheme('dark'));
+        edit(a, (actions) => actions.setPreviewMode({ dimensionId: 'theme', modeId: 'dark' }));
         expect(b.inbox).toHaveLength(0);
-        expect(b.store.state.previewTheme).toBe('light');
-        edit(a, (actions) => actions.setVariableDarkValue({ variableId: id, value: '#ddeeff' }));
+        expect(
+            variableContext(shownDocument(b), b.store.state.previewModes[shownDocument(b).id])
+        ).toEqual({ theme: 'light' });
+        edit(a, (actions) =>
+            actions.setVariableModeValue({ modeId: 'dark', variableId: id, value: '#ddeeff' })
+        );
         settle(copies);
         const variable = shownDocument(b).variables[id];
-        expect(resolveVariable(variable, shownDocument(b).variables, 'dark')).toBe('#ddeeff');
+        expect(resolveVariable(variable, shownDocument(b).variables, { theme: 'dark' })).toBe(
+            '#ddeeff'
+        );
         a.collaboration.undo(shownDocument(a).id);
         settle(copies);
         expect(
-            resolveVariable(shownDocument(b).variables[id], shownDocument(b).variables, 'dark')
+            resolveVariable(shownDocument(b).variables[id], shownDocument(b).variables, {
+                theme: 'dark'
+            })
         ).toBe('#112233');
-        expect(a.store.state.previewTheme).toBe('dark');
+        expect(a.store.state.previewModes[shownDocument(a).id]).toEqual({ theme: 'dark' });
     } finally {
         copies.forEach(({ collaboration }) => collaboration.dispose());
     }
@@ -138,7 +164,7 @@ it('reads local theme preferences and ignores unknown themes', () => {
 
 it('lets literal instance colors override themed sources and resolves variable overrides in context', () => {
     const { store, document, id, shape } = setup();
-    store.actions.setVariableDarkValue({ variableId: id, value: '#ddeeff' });
+    store.actions.setVariableModeValue({ modeId: 'dark', variableId: id, value: '#ddeeff' });
     const component = createComponent({
         shapesIds: [shape.id],
         props: [{ id: 'color', shapeId: shape.id, key: 'fill', label: 'Color' }]
@@ -152,14 +178,14 @@ it('lets literal instance colors override themed sources and resolves variable o
         overrides: { color: '#ff0000' }
     });
     if (instance.type !== 'instance') throw new Error('Expected instance');
-    const painted = themeColors(shape, document, 'dark');
-    expect(applyInstanceOverrides(painted, instance, component, document, 'dark').fill).toBe(
-        '#ff0000'
-    );
+    const painted = themeColors(shape, document, { theme: 'dark' });
+    expect(
+        applyInstanceOverrides(painted, instance, component, document, { theme: 'dark' }).fill
+    ).toBe('#ff0000');
     instance.overrides.color = { variableId: id };
-    expect(applyInstanceOverrides(painted, instance, component, document, 'dark').fill).toBe(
-        '#ddeeff'
-    );
+    expect(
+        applyInstanceOverrides(painted, instance, component, document, { theme: 'dark' }).fill
+    ).toBe('#ddeeff');
     expect(applyInstanceOverrides(shape, instance, component, document).fill).toBe('#112233');
 });
 
@@ -175,13 +201,17 @@ it('updates and clears Dark values atomically while preserving them on rename', 
         true
     );
     expect(apply([{ op: 'updateVariable', variable: id, name: 'Renamed' }]).applied).toBe(true);
-    expect(resolveVariable(document.variables[id], document.variables, 'dark')).toBe('#ddeeff');
+    expect(resolveVariable(document.variables[id], document.variables, { theme: 'dark' })).toBe(
+        '#ddeeff'
+    );
     expect(
         apply([{ op: 'updateVariable', variable: id, name: 'Invalid', darkValue: 'red' }]).applied
     ).toBe(false);
     expect(document.variables[id].name).toBe('Renamed');
     expect(apply([{ op: 'updateVariable', variable: id, darkValue: null }]).applied).toBe(true);
-    expect(resolveVariable(document.variables[id], document.variables, 'dark')).toBe('#112233');
+    expect(resolveVariable(document.variables[id], document.variables, { theme: 'dark' })).toBe(
+        '#112233'
+    );
     const number = store.actions.createVariable({ name: 'Number', type: 'number', value: 2 })!;
     expect(apply([{ op: 'updateVariable', variable: number, darkValue: null }]).applied).toBe(
         false
@@ -190,13 +220,13 @@ it('updates and clears Dark values atomically while preserving them on rename', 
 
 it('uses Dark fallback for broken aliases and leaves stale or detached bindings alone', () => {
     const { store, document, id, shape } = setup();
-    store.actions.setVariableDarkValue({ variableId: id, value: '#ddeeff' });
+    store.actions.setVariableModeValue({ modeId: 'dark', variableId: id, value: '#ddeeff' });
     const broken = { ...json(document.variables[id]), alias: 'missing' };
-    expect(resolveVariable(broken, document.variables, 'dark')).toBe('#ddeeff');
+    expect(resolveVariable(broken, document.variables, { theme: 'dark' })).toBe('#ddeeff');
     const stale = { ...json(shape), fill: '#ff0000' };
-    expect(themeColors(stale, document, 'dark').fill).toBe('#ff0000');
+    expect(themeColors(stale, document, { theme: 'dark' }).fill).toBe('#ff0000');
     const detached = { ...json(shape), bindings: {} };
-    expect(themeColors(detached, document, 'dark').fill).toBe('#112233');
+    expect(themeColors(detached, document, { theme: 'dark' }).fill).toBe('#112233');
 });
 
 it('paints bound text colors while leaving template content and geometry at default', () => {
@@ -209,13 +239,16 @@ it('paints bound text colors while leaving template content and geometry at defa
     });
     const text = Object.values(document.shapes).find((shape) => shape.type === 'text')!;
     store.actions.bindProperty({ shapeIds: [text.id], key: 'fontColor', variableId: id });
-    store.actions.setVariableDarkValue({ variableId: id, value: '#ddeeff' });
-    expect(themeColors(text, document, 'dark')).toEqual({ ...json(text), fontColor: '#ddeeff' });
+    store.actions.setVariableModeValue({ modeId: 'dark', variableId: id, value: '#ddeeff' });
+    expect(themeColors(text, document, { theme: 'dark' })).toEqual({
+        ...json(text),
+        fontColor: '#ddeeff'
+    });
 });
 
 it('stops following a source when an operation sets a Dark value alone', () => {
     const { store, document, id } = setup();
-    store.actions.setVariableDarkValue({ variableId: id, value: '#ddeeff' });
+    store.actions.setVariableModeValue({ modeId: 'dark', variableId: id, value: '#ddeeff' });
     const alias = store.actions.createVariable({ name: 'Alias', type: 'color', value: '#000000' })!;
     store.actions.setVariableAlias({ variableId: alias, sourceId: id });
     const operations = [{ op: 'updateVariable' as const, variable: alias, darkValue: '#abcdef' }];
@@ -231,5 +264,177 @@ it('stops following a source when an operation sets a Dark value alone', () => {
     ).toBe(true);
     expect(document.variables[alias].alias).toBeUndefined();
     expect(resolveVariable(document.variables[alias], document.variables)).toBe('#112233');
-    expect(resolveVariable(document.variables[alias], document.variables, 'dark')).toBe('#abcdef');
+    expect(resolveVariable(document.variables[alias], document.variables, { theme: 'dark' })).toBe(
+        '#abcdef'
+    );
+});
+
+it('keeps an equal Dark value when detaching an alias and later editing Light', () => {
+    const { store, document, id } = setup();
+    store.actions.setVariableModeValue({ modeId: 'dark', variableId: id, value: '#112233' });
+    const alias = store.actions.createVariable({ name: 'Alias', type: 'color', value: '#000000' })!;
+    store.actions.setVariableAlias({ variableId: alias, sourceId: id });
+    store.actions.setVariableAlias({ variableId: alias, sourceId: null });
+    store.actions.setVariableValue({ variableId: alias, value: '#445566' });
+    expect(resolveVariable(document.variables[alias], document.variables)).toBe('#445566');
+    expect(resolveVariable(document.variables[alias], document.variables, { theme: 'dark' })).toBe(
+        '#112233'
+    );
+});
+
+it('starts with base values only and lets each variable opt into independent custom dimensions', () => {
+    const { store } = createTestStore();
+    const document = store.state.currentDocument;
+    expect(document.dimensions).toEqual({});
+    expect(variableContext(document)).toEqual({});
+    const id = store.actions.createVariable({ name: 'Ink', type: 'color', value: '#112233' })!;
+    const appearance = store.actions.createDimension('Appearance')!;
+    const brand = store.actions.createDimension('Brand')!;
+    expect(document.variables[id]).not.toHaveProperty('dimensionId');
+    store.actions.addDimensionMode({ dimensionId: appearance, name: 'Dim' });
+    store.actions.addDimensionMode({ dimensionId: brand, name: 'Acme' });
+    const dim = Object.values(document.dimensions[appearance].modes).find(
+        (mode) => mode.name === 'Dim'
+    )!;
+    const acme = Object.values(document.dimensions[brand].modes).find(
+        (mode) => mode.name === 'Acme'
+    )!;
+    store.actions.setVariableDimension({ variableId: id, dimensionId: appearance });
+    store.actions.setVariableModeValue({ variableId: id, modeId: dim.id, value: '#ddeeff' });
+    store.actions.setPreviewMode({ dimensionId: appearance, modeId: dim.id });
+    store.actions.setPreviewMode({ dimensionId: brand, modeId: acme.id });
+    expect(
+        resolveVariable(
+            document.variables[id],
+            document.variables,
+            variableContext(document, store.state.previewModes[document.id])
+        )
+    ).toBe('#ddeeff');
+    store.actions.updateDimension({
+        ...json(document.dimensions[appearance]),
+        name: 'Contrast',
+        modes: {
+            ...json(document.dimensions[appearance].modes),
+            [dim.id]: { ...dim, name: 'Low', order: -1 }
+        },
+        defaultModeId: dim.id
+    });
+    expect(variableContext(document)[appearance]).toBe(dim.id);
+    expect(
+        resolveVariable(document.variables[id], document.variables, variableContext(document))
+    ).toBe('#ddeeff');
+    store.actions.deleteDimensionMode({ dimensionId: appearance, modeId: dim.id });
+    expect(variableContext(document, store.state.previewModes[document.id])[appearance]).not.toBe(
+        dim.id
+    );
+    expect(
+        resolveVariable(document.variables[id], document.variables, variableContext(document))
+    ).toBe('#112233');
+    store.actions.deleteDimension(appearance);
+    expect(document.variables[id]).not.toHaveProperty('dimensionId');
+    expect(document.variables[id].values).toEqual({ default: '#112233' });
+    expect(document.dimensions[brand]).toBeDefined();
+});
+
+it('shares custom dimension definitions and restores a deleted dimension and its values with undo', async () => {
+    let dimensionId = '';
+    let id = '';
+    const copies = await createCopies(2, (store) => {
+        dimensionId = store.actions.createDimension('Brand')!;
+        id = store.actions.createVariable({ name: 'Ink', type: 'color', value: '#112233' })!;
+        store.actions.setVariableDimension({ variableId: id, dimensionId });
+        const modeId = store.state.currentDocument.dimensions[dimensionId].defaultModeId;
+        store.actions.setVariableModeValue({ variableId: id, modeId, value: '#abcdef' });
+    });
+    const [a, b] = copies;
+    try {
+        const modeId = shownDocument(a).dimensions[dimensionId].defaultModeId;
+        edit(a, (actions) => actions.deleteDimension(dimensionId));
+        settle(copies);
+        expect(shownDocument(b).dimensions).toEqual({});
+        expect(shownDocument(b).variables[id]).not.toHaveProperty('dimensionId');
+        a.collaboration.undo(shownDocument(a).id);
+        settle(copies);
+        expect(shownDocument(b).dimensions[dimensionId]).toBeDefined();
+        expect(
+            resolveVariable(shownDocument(b).variables[id], shownDocument(b).variables, {
+                [dimensionId]: modeId
+            })
+        ).toBe('#abcdef');
+    } finally {
+        copies.forEach(({ collaboration }) => collaboration.dispose());
+    }
+});
+
+it('rejects unknown modes atomically and keeps geometry variables independent of modes', () => {
+    const { store, document, id } = setup();
+    const number = store.actions.createVariable({ name: 'Width', type: 'number', value: 50 })!;
+    store.actions.setVariableDimension({ variableId: number, dimensionId: 'theme' });
+    expect(document.variables[number]).not.toHaveProperty('dimensionId');
+    const result = store.actions.applyOperations({
+        documentId: document.id,
+        by: { kind: 'person' },
+        operations: [
+            {
+                op: 'updateVariable',
+                variable: id,
+                name: 'Changed',
+                modeValues: { missing: '#abcdef' }
+            }
+        ]
+    });
+    expect(result.applied).toBe(false);
+    expect(document.variables[id].name).toBe('Ink');
+});
+
+it('migrates legacy Dark definitions without opting plain documents into dimensions', () => {
+    const { store, document, id } = setup();
+    store.actions.setVariableModeValue({ variableId: id, modeId: 'dark', value: '#ddeeff' });
+    const saved = JSON.parse(JSON.stringify(serializePersistedState(store.state)));
+    const raw = saved.documents[document.id];
+    delete raw.dimensions;
+    delete raw.variables[id].dimensionId;
+    const migrated = migratePersistedState(saved)!;
+    expect(migrated.documents[document.id].dimensions.theme.name).toBe('Theme');
+    expect(migrated.documents[document.id].variables[id]).toMatchObject({
+        dimensionId: 'theme',
+        values: { default: '#112233', dark: '#ddeeff' }
+    });
+    delete raw.variables[id].values.dark;
+    expect(migratePersistedState(saved)!.documents[document.id].dimensions).toEqual({});
+});
+
+it('migrates legacy shared documents before starting undo history', async () => {
+    const [copy] = await createCopies(1);
+    const documentId = shownDocument(copy).id;
+    const old = new Y.Doc();
+    for (const [key, value] of Object.entries(readDocumentFields(shownDocument(copy))))
+        old.getMap('document').set(key, value);
+    old.getMap('variables').set(
+        'old-color',
+        new Y.Map(
+            Object.entries({
+                id: 'old-color',
+                name: 'Old color',
+                type: 'color',
+                values: { default: '#112233', dark: '#ddeeff' }
+            })
+        )
+    );
+    try {
+        copy.collaboration.close(documentId);
+        copy.collaboration.open(documentId, Y.encodeStateAsUpdate(old));
+        const document = shownDocument(copy);
+        expect(document.dimensions.theme).toEqual(legacyTheme());
+        expect(document.variables['old-color']).toMatchObject({ dimensionId: 'theme' });
+        expect(
+            resolveVariable(document.variables['old-color'], document.variables, { theme: 'dark' })
+        ).toBe('#ddeeff');
+        copy.collaboration.undo(documentId);
+        expect(document.dimensions.theme).toBeDefined();
+        expect(readView({ previewTheme: 'dark' }).previewModes).toBeUndefined();
+    } finally {
+        old.destroy();
+        copy.collaboration.dispose();
+    }
 });

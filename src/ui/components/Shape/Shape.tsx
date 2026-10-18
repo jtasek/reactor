@@ -6,7 +6,7 @@ import { Selectable } from '../Selectable/Selectable';
 import { getComponentByType } from 'src/tools/components';
 import { Instance } from './Instance';
 import type { Shape as ShapeType } from 'src/app/types';
-import { usePreviewTheme, useCurrentDocument } from 'src/app/hooks';
+import { useVariableContext, useCurrentDocument } from 'src/app/hooks';
 import { themeColors } from 'src/app/themeColors';
 import { resolveVariable } from 'src/app/variableResolver';
 import { rectToBox, shapeGeometryKey, getShapeBounds, boxCenter } from 'src/app/utils';
@@ -32,7 +32,7 @@ interface Props {
 export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup, minimap = false }: Props) => {
     const shape = useShape(shapeId);
     const document = useCurrentDocument();
-    const theme = usePreviewTheme();
+    const theme = useVariableContext();
     const painted = themeColors(shape, document, theme);
     const visible = useShapeVisible(shapeId);
     const locked = useShapeLocked(shapeId);

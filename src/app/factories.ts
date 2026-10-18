@@ -254,6 +254,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
         shapes: {},
         tags: [],
         tagTones: {},
+        dimensions: {},
         variables: {},
         ...options,
         componentsIds,
@@ -314,7 +315,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
             documentsLayout: 'cards',
             panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT)
         },
-        previewTheme: 'light',
+        previewModes: {},
         currentDocumentId: 'document-1',
         currentDocument,
         currentPage: 'designer',

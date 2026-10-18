@@ -4,6 +4,25 @@ import type { ProposedOperation } from './operations';
 
 const quoted = (text: string) => `“${text}”`;
 
+const modesDescription = (
+    operation: { dimensionId?: string | null; modeValues?: Record<string, string | null> },
+    document: Document
+) => {
+    const dimension = operation.dimensionId
+        ? document.dimensions[operation.dimensionId]
+        : undefined;
+    const assigned =
+        operation.dimensionId === undefined
+            ? ''
+            : operation.dimensionId === null
+              ? '; base value only'
+              : `; vary by ${dimension?.name ?? operation.dimensionId}`;
+    const values = Object.entries(operation.modeValues ?? {}).map(
+        ([id, value]) => `${dimension?.modes[id]?.name ?? id}: ${value ?? 'use base'}`
+    );
+    return assigned + (values.length ? `; modes: ${values.join(', ')}` : '');
+};
+
 /** What a shape is called in a proposal: its type and name, or the ID the model gave. */
 const shapeLabel = (document: Document, id: string) => {
     const shape = document.shapes[id];
@@ -26,7 +45,7 @@ const variableLabel = (document: Document, id: string) => {
 export function describeOperation(operation: ProposedOperation, document: Document): string {
     switch (operation.op) {
         case 'addVariable':
-            return `Add ${operation.type} variable ${quoted(operation.name)}: ${operation.alias === undefined ? String(operation.value) : `follow ${variableLabel(document, operation.alias)}`}${operation.darkValue === undefined ? '' : `; Dark: ${operation.darkValue}`}`;
+            return `Add ${operation.type} variable ${quoted(operation.name)}: ${operation.alias === undefined ? String(operation.value) : `follow ${variableLabel(document, operation.alias)}`}${operation.darkValue === undefined ? '' : `; Dark: ${operation.darkValue}`}${modesDescription(operation, document)}`;
         case 'addShape': {
             const { shape } = operation;
             const named = shape.name ? ` ${quoted(shape.name)}` : '';
@@ -47,11 +66,14 @@ export function describeOperation(operation: ProposedOperation, document: Docume
                 typeof alias === 'string'
                     ? `; follow ${variableLabel(document, alias)}`
                     : alias === null ||
-                        ((value !== undefined || darkValue !== undefined) &&
+                        ((value !== undefined ||
+                            darkValue !== undefined ||
+                            operation.modeValues !== undefined ||
+                            operation.dimensionId !== undefined) &&
                             document.variables[operation.variable]?.alias !== undefined)
                       ? '; stops following its source'
                       : '';
-            return `Change ${variableLabel(document, operation.variable)}${renamed}${valued}${dark}${following}`;
+            return `Change ${variableLabel(document, operation.variable)}${renamed}${valued}${dark}${modesDescription(operation, document)}${following}`;
         }
         case 'deleteVariable':
             return `Delete ${variableLabel(document, operation.variable)}`;

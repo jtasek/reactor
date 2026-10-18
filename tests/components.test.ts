@@ -628,7 +628,8 @@ it.each([false, true])('detaches at the original stacking position (tied order: 
                 components: {},
                 links: {},
                 guides: {},
-                variables: {}
+                variables: {},
+                dimensions: {}
             }
         });
     }

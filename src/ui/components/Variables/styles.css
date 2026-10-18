@@ -35,6 +35,7 @@
     padding: 6px;
 }
 
+.variables input:not([type]),
 .variables input[type='text'],
 .variables input[type='number'],
 .variables select {
@@ -192,4 +193,20 @@
     margin-right: 4px;
     vertical-align: -1px;
     width: 10px;
+}
+
+.dimensions {
+    margin-bottom: var(--panel-gap);
+    font-size: 0.75rem;
+}
+
+.dimension {
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--panel-gap);
+    margin: var(--panel-gap) 0;
+    min-width: 0;
+    padding: var(--panel-gap);
 }

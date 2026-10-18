@@ -443,12 +443,16 @@ shared, and layers keep their own `visible`.
 
 ## Variables
 
-Color variables may store an optional `values.dark`; `values.default` is Light. The root
-`previewTheme` is local view state, saved only in `reactor:view`. Shared shapes remain
-materialized at default: `themeColors` projects only bound fill, stroke and fontColor at
-render time, and component color overrides use the same resolver context. Geometry and
-text templates stay at default until context-aware measurement is implemented. Keep both
-color values through serialization, clipboard, operations and alias detachment.
+Dimensions and modes are opt-in: new documents have empty `dimensions`, and a variable
+needs no dimension. `VariableDimension` entities have stable IDs, named/ordered modes and a
+default mode. A color variable may opt in with `dimensionId`; `values.default` is its base
+and other keys are mode IDs. `variableContext` selects local modes or dimension defaults;
+`themeColors` projects bound fill, stroke and fontColor without writing shared shape values.
+Root `previewModes` is local, keyed by document then dimension, saved only in `reactor:view`.
+Geometry and templates stay at base until context-aware measurement is implemented.
+Definitions use the ordinary shared entity/undo path. Keep all values and dimension IDs
+through serialization, clipboard, operations and alias detachment. Legacy Light/Dark data
+migrates into an editable Theme dimension, never into a dimension for otherwise plain documents.
 
 A variable (`Variable`, `document.variables`, listed by name in `variablesIds`) is a named
 color, number, text or boolean. A shape property the inspector can change may follow one of

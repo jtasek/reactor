@@ -17,3 +17,5 @@ export * from './account';
 export * from './variable';
 export * from './operations';
 export * from './ai';
+
+export * from './variableModes';

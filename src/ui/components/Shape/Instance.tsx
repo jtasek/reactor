@@ -5,7 +5,7 @@ import { componentSource } from 'src/app/componentSource';
 import { applyInstanceOverrides } from 'src/app/componentProps';
 import { boxCenter, getShapeBounds } from 'src/app/utils';
 import { themeColors } from 'src/app/themeColors';
-import { useCurrentDocument, usePreviewTheme } from 'src/app/hooks';
+import { useCurrentDocument, useVariableContext } from 'src/app/hooks';
 import { getComponentByType } from 'src/tools/components';
 
 interface Props {
@@ -17,7 +17,7 @@ interface Props {
 /** Draws source primitives in an instance's own frame; source flags do not affect them. */
 export const Instance: FC<Props> = ({ instance, source, ancestors = new Set() }) => {
     const document = useCurrentDocument();
-    const theme = usePreviewTheme();
+    const theme = useVariableContext();
 
     if (!source) {
         return (

@@ -1,3 +1,4 @@
+import { variableContext } from './variableModes';
 import { json } from 'overmind';
 import {
     createActionsHook,
@@ -584,4 +585,8 @@ export const useLog = () => {
 };
 
 /** This copy's color preview context; it is not document content. */
-export const usePreviewTheme = () => useAppState((state) => state.previewTheme);
+export const useVariableContext = (documentId?: string) =>
+    useAppState((state) => {
+        const document = state.documents[documentId ?? state.currentDocumentId];
+        return variableContext(document, state.previewModes[document.id]);
+    });

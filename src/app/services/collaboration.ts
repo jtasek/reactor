@@ -1,3 +1,4 @@
+import { legacyTheme } from '../variableModes';
 import { json } from 'overmind';
 import type * as Yjs from 'yjs';
 import type { Document, UndoHistory } from '../types';
@@ -249,10 +250,31 @@ export class Collaboration {
 
         if (update) {
             yjs.applyUpdate(doc, update);
+            const beforeMigration = yjs.encodeStateVector(doc);
+            let migrated = false;
+            binding.tables.variables.forEach((entity) => {
+                if (!(entity instanceof yjs.Map)) return;
+                const raw = entity.toJSON();
+                if (
+                    raw.type === 'color' &&
+                    raw.dimensionId === undefined &&
+                    raw.values?.dark !== undefined
+                ) {
+                    entity.set('dimensionId', 'theme');
+                    migrated = true;
+                }
+            });
+            if (migrated && !binding.tables.dimensions.has('theme')) {
+                const dimension = new yjs.Map();
+                binding.tables.dimensions.set('theme', dimension);
+                this.writeValues(dimension, legacyTheme());
+            }
             this.observe(documentId, binding);
             this.everything(documentId, binding, binding.remote);
             this.applyRemote(documentId, binding);
             this.track(documentId, binding);
+            if (migrated)
+                options.sendUpdate?.(documentId, yjs.encodeStateAsUpdate(doc, beforeMigration));
 
             return;
         }

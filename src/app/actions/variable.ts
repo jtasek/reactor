@@ -1,5 +1,3 @@
-import { isHexColor } from '../utils';
-import type { Theme } from '../types';
 import { editorHelpers } from '../editorHelpers';
 import { json } from 'overmind';
 import type { ActionWithParam, ActionWithParamAndResult, VariableType } from '../types';
@@ -13,7 +11,7 @@ import {
     templateWithIds,
     unbind
 } from '../variables';
-import { variableNamed, resolveVariable } from '../variableResolver';
+import { variableNamed, resolveVariable, variableDefinition } from '../variableResolver';
 
 /**
  * Adds a variable to the current document and answers its id; none when `name` is
@@ -78,8 +76,10 @@ export const setVariableValue: ActionWithParam<{ variableId: string; value: unkn
         return;
     }
 
-    if (next.type === 'color' && variable.type === 'color' && variable.values.dark !== undefined) {
-        next.values.dark = variable.values.dark;
+    const definition = variableDefinition(variable, before);
+    if (next.type === 'color' && definition.type === 'color') {
+        next.values = { ...definition.values, default: next.values.default };
+        if (definition.dimensionId !== undefined) next.dimensionId = definition.dimensionId;
     }
     document.variables[variableId] = next;
     applyVariableChanges(document, before);
@@ -155,21 +155,4 @@ export const deleteVariable: ActionWithParam<string> = ({ state }, variableId) =
 
     removeVariable(document, variableId);
     applyVariableChanges(document, before);
-};
-
-/** Local preview only: never materialize a theme into shared shape values. */
-export const setPreviewTheme: ActionWithParam<Theme> = ({ state }, theme) => {
-    if (theme === 'light' || theme === 'dark') state.previewTheme = theme;
-};
-
-/** Edit a color's Dark override; null makes it fall back to its Light value. */
-export const setVariableDarkValue: ActionWithParam<{ variableId: string; value: string | null }> = (
-    { state },
-    { variableId, value }
-) => {
-    const document = state.currentDocument;
-    const variable = document.variables[variableId];
-    if (document.locked || variable?.type !== 'color' || variable.alias !== undefined) return;
-    if (value === null) delete variable.values.dark;
-    else if (isHexColor(value)) variable.values.dark = value;
 };

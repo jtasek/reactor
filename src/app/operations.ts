@@ -1,4 +1,4 @@
-import type { Component, ShapeInput, VariableType } from './types';
+import type { Component, ShapeInput, VariableType, VariableDimension } from './types';
 
 /** Who made a batch: the person using this copy, or an AI request they accepted. */
 export type Provenance = { kind: 'person' } | { kind: 'ai'; model: string; requestId: string };
@@ -14,7 +14,11 @@ export interface AddVariable {
     name: string;
     type: VariableType;
     value: unknown;
+    /** Legacy input, retained for older recordings and clipboard payloads. */
     darkValue?: string;
+    dimensionId?: string;
+    dimension?: VariableDimension;
+    modeValues?: Record<string, string>;
     alias?: string;
 }
 
@@ -47,7 +51,10 @@ export interface UpdateVariable {
     variable: string;
     name?: string;
     value?: unknown;
+    /** Legacy input. */
     darkValue?: string | null;
+    dimensionId?: string | null;
+    modeValues?: Record<string, string | null>;
     /** A source reference, or null to keep the resolved value as a literal. */
     alias?: string | null;
 }
