@@ -83,11 +83,19 @@ export class DocumentDatabase {
     }
 
     /** Saves a new document and its starting state. */
-    create(documentId: string, state: Uint8Array): Promise<void> {
+    create(documentId: string, state: Uint8Array, replace = false): Promise<void> {
         const transaction = this.database.transaction([DOCUMENTS, UPDATES], 'readwrite');
 
         transaction.objectStore(DOCUMENTS).put({ id: documentId });
-        transaction.objectStore(UPDATES).add({ documentId, update: state });
+        const updates = transaction.objectStore(UPDATES);
+        const add = () => updates.add({ documentId, update: state });
+        if (replace) {
+            const keys = updates.index('documentId').getAllKeys(documentId);
+            keys.onsuccess = () => {
+                keys.result.forEach((key) => updates.delete(key));
+                add();
+            };
+        } else add();
 
         return completion(transaction);
     }

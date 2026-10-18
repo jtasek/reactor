@@ -12,7 +12,7 @@ export interface ServerEvents {
     /** A document this copy holds, by id. */
     document(documentId: string): Document | undefined;
     /** A document on the server this copy lacks, with its whole state; false when it cannot be read. */
-    opened(documentId: string, update: Uint8Array): boolean;
+    opened(documentId: string, update: Uint8Array, replace?: boolean): boolean;
     /** A document this copy holds was deleted on the server. */
     deleted(documentId: string): void;
     /** A change the server sent to a document this copy holds. */
@@ -46,6 +46,7 @@ interface Link {
     provider: Hocuspocus.HocuspocusProvider;
     /** Whether this copy holds the document, rather than waiting for its state. */
     held: boolean;
+    replace: boolean;
     /** Ends the wait for the document to sync, as when it is closed first. */
     settle(): void;
 }
@@ -82,6 +83,7 @@ export class ServerSync {
     private connected = false;
     private reachable = true;
     private workspaceId?: string;
+    private access: Record<string, DocumentAccess> = {};
     private refreshing?: Promise<void>;
     private refreshAgain = false;
     private retryTimer?: ReturnType<typeof setTimeout>;
@@ -266,16 +268,20 @@ export class ServerSync {
 
             listed = new Set(lists.flat().map(({ id }) => id));
             this.workspaceId = workspaces.find(({ kind }) => kind === 'personal')?.id;
-            events.access?.(
-                Object.fromEntries(
-                    workspaces.flatMap((workspace, index) =>
-                        lists[index].map(({ id }) => [
-                            id,
-                            { workspaceId: workspace.id, role: workspace.role }
-                        ])
-                    )
+            const access = Object.fromEntries(
+                workspaces.flatMap((workspace, index) =>
+                    lists[index].map(({ id }) => [
+                        id,
+                        { workspaceId: workspace.id, role: workspace.role }
+                    ])
                 )
             );
+            events.access?.(access);
+            for (const id of this.links.keys()) {
+                if (this.access[id] && access[id] && this.access[id].role !== access[id].role)
+                    this.unlink(id);
+            }
+            this.access = access;
             this.reachable = true;
         } catch {
             this.reachable = false;
@@ -396,6 +402,8 @@ export class ServerSync {
         }
 
         const { collaboration, events } = this.options;
+        const replace = this.access[documentId]?.role === 'viewer';
+        if (replace) held = false;
         const doc = new Yjs.Doc();
 
         if (held) {
@@ -431,7 +439,7 @@ export class ServerSync {
                 // It may have been deleted, or not be created yet.
                 onAuthenticationFailed: () => this.leave(documentId)
             });
-            const link: Link = { doc, provider, held, settle };
+            const link: Link = { doc, provider, held, replace, settle };
 
             doc.on('update', (update: Uint8Array, origin: unknown) => {
                 if (origin !== OUTGOING && link.held) {
@@ -453,7 +461,11 @@ export class ServerSync {
 
     /** Opens a document the server sent, which this copy lacked. */
     private arrived(link: Link, documentId: string) {
-        link.held = this.options.events.opened(documentId, Yjs.encodeStateAsUpdate(link.doc));
+        link.held = this.options.events.opened(
+            documentId,
+            Yjs.encodeStateAsUpdate(link.doc),
+            link.replace
+        );
 
         if (!link.held) {
             this.unlink(documentId);

@@ -14,7 +14,7 @@ export interface InvitationPreview {
     accepted: boolean;
 }
 
-async function request<T>(
+export async function sharingRequest<T>(
     method: string,
     path: string,
     body?: object,
@@ -33,13 +33,17 @@ async function request<T>(
     if (!response.ok) {
         const { code } = (await response.json().catch(() => ({}))) as { code?: string };
         throw new Error(
-            code === 'EMAIL_NOT_VERIFIED'
-                ? 'Confirm your email address before accepting this invitation.'
-                : response.status === 404
-                  ? 'This invitation or workspace is unavailable. Check the signed-in email or ask for a new invitation.'
-                  : response.status === 403
-                    ? 'Only a workspace admin can manage invitations.'
-                    : 'The request could not be completed. Please try again.'
+            code === 'PROTECTED_MEMBER'
+                ? 'Owner and admin memberships cannot be changed here.'
+                : code === 'EMAIL_NOT_VERIFIED'
+                  ? 'Confirm your email address before accepting this invitation.'
+                  : response.status === 404
+                    ? path.includes('/members')
+                        ? 'This member or workspace is unavailable. Reload to check current access.'
+                        : 'This invitation or workspace is unavailable. Check the signed-in email or ask for a new invitation.'
+                    : response.status === 403
+                      ? 'Only a workspace admin can manage access.'
+                      : 'The request could not be completed. Please try again.'
         );
     }
     return response.status === 204 ? (undefined as T) : (response.json() as Promise<T>);
@@ -48,15 +52,15 @@ async function request<T>(
 const path = (workspaceId: string) => `/workspaces/${encodeURIComponent(workspaceId)}/invitations`;
 export const invitations = {
     list: (workspaceId: string, signal?: AbortSignal) =>
-        request<Invitation[]>('GET', path(workspaceId), undefined, signal),
+        sharingRequest<Invitation[]>('GET', path(workspaceId), undefined, signal),
     create: (workspaceId: string, email: string, role: InvitationRole) =>
-        request<Invitation & { token: string }>('POST', path(workspaceId), { email, role }),
+        sharingRequest<Invitation & { token: string }>('POST', path(workspaceId), { email, role }),
     revoke: (workspaceId: string, id: string) =>
-        request<void>('DELETE', `${path(workspaceId)}/${encodeURIComponent(id)}`),
+        sharingRequest<void>('DELETE', `${path(workspaceId)}/${encodeURIComponent(id)}`),
     inspect: (token: string, signal?: AbortSignal) =>
-        request<InvitationPreview>('POST', '/invitations/inspect', { token }, signal),
+        sharingRequest<InvitationPreview>('POST', '/invitations/inspect', { token }, signal),
     accept: (token: string, signal?: AbortSignal) =>
-        request<{ workspaceId: string; role: InvitationRole | 'admin' }>(
+        sharingRequest<{ workspaceId: string; role: InvitationRole | 'admin' }>(
             'POST',
             '/invitations/accept',
             { token },

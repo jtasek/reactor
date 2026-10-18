@@ -15,6 +15,8 @@ export interface DocumentEvents {
     deleted(documentId: string): void;
     /** Another copy's change was applied to a document this copy holds. */
     received?(documentId: string, update: Uint8Array): void;
+    /** Read-only account documents follow only their server connection, not stale peer edits. */
+    accepts?(documentId: string): boolean;
 }
 
 type Message =
@@ -142,7 +144,7 @@ export class TabSync {
             return;
         }
 
-        if (!open) {
+        if (!open || this.documents.accepts?.(data.documentId) === false) {
             return;
         }
 

@@ -381,8 +381,14 @@ The user shares a document and sees who else is in it.
    offline; unknown cached server access is checked before editing. Permission state stays
    outside durable documents. `tests/browser/sharing.spec.ts`, `tests/documentAccess.test.ts`
    and `tests/server/editorSync.test.ts` cover these paths.
-   Next: member management and access revocation on existing sync connections. No invitation
-   email delivery yet.
+   Member management implemented: admins list members, switch editor/viewer roles and
+   confirm removals in Sharing. Owner/admin memberships stay protected. Removal also revokes
+   pending invitations. Changed members reconnect with refreshed permissions; incoming sync
+   messages and idle connections recheck access. Viewer snapshots come from the server, replacing
+   rejected offline edits in memory and IndexedDB and ignoring stale peer-tab updates.
+   `tests/server/members.test.ts`, `tests/server/sync.test.ts`, `tests/server/editorSync.test.ts`
+   and `tests/browser/sharing.spec.ts` cover these paths. Admin promotion/ownership transfer
+   and invitation email delivery remain later work.
 2. Document invitations and read-only viewer links.
 3. Presence: names, colors, pointers and selections.
 4. Comments on the canvas, in a change of their own.

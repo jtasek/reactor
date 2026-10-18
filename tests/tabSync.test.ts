@@ -147,3 +147,23 @@ describe('tab sync', () => {
         expect(catchUp).toHaveBeenCalledTimes(2);
     });
 });
+
+it('keeps read-only server documents from merging stale peer updates or deletions', async () => {
+    const hub = new Hub();
+    const [editor, viewer] = await openTabs(hub, 2);
+    const deleted = vi.fn();
+    new TabSync(viewer.collaboration, viewer.channel, {
+        created: () => {},
+        deleted,
+        accepts: () => false
+    });
+    change(editor, (actions) => actions.addShape(rectangle()));
+    hub.deliver();
+    expect(shownDocument(viewer).shapesIds).toHaveLength(0);
+    viewer.sync.catchUp();
+    hub.deliver();
+    expect(shownDocument(viewer).shapesIds).toHaveLength(0);
+    editor.sync.sendDeleted(DOCUMENT_ID);
+    hub.deliver();
+    expect(deleted).not.toHaveBeenCalled();
+});

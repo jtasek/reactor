@@ -1,3 +1,4 @@
+import { isReadOnly } from '../documentAccess';
 import { json } from 'overmind';
 import type { Context } from 'src/app';
 import type { Application } from '../types';
@@ -272,14 +273,14 @@ export async function startDocumentSync(
     };
 
     /** Saves a document's whole state: as a new document, or added to its saved updates. */
-    const saveWhole = (documentId: string, update: Uint8Array) => {
+    const saveWhole = (documentId: string, update: Uint8Array, replace = false) => {
         const target = database;
 
         if (!target || notSaving) {
             return;
         }
 
-        if (saved.has(documentId)) {
+        if (saved.has(documentId) && !replace) {
             void store(documentId, () => target.append(documentId, update), true);
 
             return;
@@ -289,7 +290,7 @@ export async function startDocumentSync(
         void store(
             documentId,
             () =>
-                target.create(documentId, update).then(
+                target.create(documentId, update, replace).then(
                     () => {
                         confirmed.add(documentId);
                     },
@@ -379,7 +380,14 @@ export async function startDocumentSync(
     };
 
     /** Opens a document from the server, saves it, and shares it with the other copies. */
-    const openFromServer = (documentId: string, update: Uint8Array) => {
+    const openFromServer = (documentId: string, update: Uint8Array, replace = false) => {
+        if (replace) {
+            if (!instance.state.documents[documentId]) addDocument({ id: documentId });
+            collaboration.close(documentId);
+            collaboration.open(documentId, update);
+            saveWhole(documentId, update, true);
+            return true;
+        }
         if (isOpen(documentId)) {
             collaboration.receive(documentId, update);
 
@@ -673,6 +681,7 @@ export async function startDocumentSync(
             historyChanged: (documentId, history) =>
                 instance.actions.setDocumentHistory({ documentId, history }),
             sendUpdate: (documentId, update) => {
+                if (owner && isReadOnly(instance.state, documentId)) return;
                 sync?.send(documentId, update);
                 server?.send(documentId, update);
                 append(documentId, update);
@@ -802,7 +811,8 @@ export async function startDocumentSync(
     sync = new TabSync(collaboration, effects.openChannel(scope), {
         created: (documentId, update) => openSaved(documentId, [update]),
         deleted: removeShared,
-        received: (documentId, update) => server?.send(documentId, update)
+        received: (documentId, update) => server?.send(documentId, update),
+        accepts: (documentId) => !owner || !isReadOnly(instance.state, documentId)
     });
     unannounced.splice(0).forEach(([documentId, update]) => sync?.sendDocument(documentId, update));
 

@@ -194,6 +194,7 @@ describe('editor sync', () => {
                 expect.objectContaining({ id: documentId })
             ])
         );
+        expect(first.store.state.documentAccess[documentId]?.role).toBe('admin');
         first.store.actions.addShape(rectangle);
 
         const second = await device(served, cookie);
@@ -586,4 +587,56 @@ it('loads invited viewer permissions, receives live edits and preserves read-onl
     await vi.waitFor(() => expect(shapeCount(viewer, id)).toBe(2));
     const offline = await restart(served, recipient.cookie, viewer, () => false);
     expect(offline.store.state.documentAccess[id].role).toBe('viewer');
+});
+
+it('downgrades an active editor, discards rejected offline edits from memory and disk, and removes revoked documents', async () => {
+    const served = await serve();
+    const owner = await served.user('owner@example.com');
+    const recipient = await served.user('recipient@example.com');
+    const editor = await device(served, owner.cookie);
+    const [id] = documentIds(editor);
+    editor.store.actions.addShape(rectangle);
+    await vi.waitFor(async () =>
+        expect(await serverDocuments(served, owner.cookie, owner.personal.id)).toHaveLength(1)
+    );
+    const invitation = await served.json<{ token: string }>(
+        served.call('POST', `/workspaces/${owner.personal.id}/invitations`, {
+            cookie: owner.cookie,
+            body: { email: 'recipient@example.com', role: 'editor' }
+        })
+    );
+    await served.call('POST', '/invitations/accept', {
+        cookie: recipient.cookie,
+        body: { token: invitation.token }
+    });
+    const member = await device(served, recipient.cookie);
+    await vi.waitFor(() => expect(shapeCount(member, id)).toBe(1));
+    member.store.actions.addShape({ ...rectangle, position: { x: 200, y: 300 } });
+    await vi.waitFor(() => expect(shapeCount(editor, id)).toBe(2));
+    await vi.waitFor(() => expect(member.store.state.saveStatus).toEqual({ kind: 'saved' }));
+    const offline = await restart(served, recipient.cookie, member, () => false);
+    expect(offline.store.state.documentAccess[id].role).toBe('editor');
+    const people = await served.json<{ id: string; email: string }[]>(
+        served.call('GET', `/workspaces/${owner.personal.id}/members`, { cookie: owner.cookie })
+    );
+    const memberId = people.find(({ email }) => email === 'recipient@example.com')!.id;
+    const path = `/workspaces/${owner.personal.id}/members/${memberId}`;
+    expect(
+        (await served.call('PATCH', path, { cookie: owner.cookie, body: { role: 'viewer' } }))
+            .status
+    ).toBe(204);
+    await vi.waitFor(() => expect(member.store.state.documentAccess[id].role).toBe('viewer'));
+    await vi.waitFor(() => expect(member.store.state.saveStatus).toEqual({ kind: 'saved' }));
+    offline.store.actions.addShape({ ...rectangle, position: { x: 400, y: 500 } });
+    expect(shapeCount(offline, id)).toBe(3);
+    await vi.waitFor(() => expect(offline.store.state.saveStatus).toEqual({ kind: 'offline' }));
+    const reconnected = await restart(served, recipient.cookie, offline);
+    await vi.waitFor(() => expect(shapeCount(reconnected, id)).toBe(2));
+    await vi.waitFor(() => expect(reconnected.store.state.saveStatus).toEqual({ kind: 'saved' }));
+    expect(shapeCount(editor, id)).toBe(2);
+    const cached = await restart(served, recipient.cookie, reconnected, () => false);
+    expect(shapeCount(cached, id)).toBe(2);
+    expect((await served.call('DELETE', path, { cookie: owner.cookie })).status).toBe(204);
+    await vi.waitFor(() => expect(documentIds(reconnected)).not.toContain(id));
+    expect(documentIds(editor)).toContain(id);
 });

@@ -3,6 +3,8 @@ declare namespace SharingCssNamespace {
     card: string;
     content: string;
     list: string;
+    member: string;
+    memberActions: string;
     page: string;
     person: string;
     preview: string;
