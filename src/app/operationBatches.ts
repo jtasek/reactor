@@ -32,12 +32,7 @@ import {
     unbindEditedProperties,
     writeText
 } from './variables';
-import {
-    variableNamed,
-    resolveVariable,
-    variableProblems,
-    variableDefinition
-} from './variableResolver';
+import { resolveVariable, variableProblems, variableDefinition } from './variableResolver';
 import { componentSource, instanceBox } from './componentSource';
 import { hydrateComponent, readEntity } from './services/documentStorage';
 import { shapeGeometryKey } from './utils';
@@ -355,7 +350,6 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         index: number
     ) => {
         const current = variables[id];
-        const other = name === undefined ? undefined : variableNamed(variables, name);
 
         if (
             name === undefined &&
@@ -366,9 +360,6 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             modeValues === undefined
         ) {
             throw new Error('it changes nothing.');
-        }
-        if (other && other.id !== id) {
-            throw new Error(`the name ${name} is taken.`);
         }
         if (
             (darkValue !== undefined || dimensionId !== undefined || modeValues !== undefined) &&
@@ -457,9 +448,6 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             return;
         }
         try {
-            if (variableNamed(variables, operation.name)) {
-                throw new Error(`the name ${operation.name} is taken.`);
-            }
             const value =
                 operation.type === 'text' && typeof operation.value === 'string'
                     ? remapTemplate(operation.value)
@@ -504,6 +492,29 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         } catch (error) {
             throw problem(index, error);
         }
+    });
+
+    // Names must be unique in the final batch, not in temporary states while swapping them.
+    operations.forEach((operation, index) => {
+        if (operation.op === 'setDimension') {
+            const dimension = dimensions[operation.dimension.id];
+            if (
+                Object.values(dimensions).some(
+                    (other) => other.id !== dimension.id && other.name === dimension.name
+                )
+            )
+                throw problem(index, `the dimension name ${dimension.name} is taken.`);
+        }
+        if (operation.op !== 'addVariable' && operation.op !== 'updateVariable') return;
+        if (operation.op === 'updateVariable' && operation.name === undefined) return;
+        const id = operation.op === 'addVariable' ? ids.get(operation.key)! : operation.variable;
+        const variable = variables[id];
+        if (
+            Object.values(variables).some(
+                (other) => other.id !== id && other.name === variable.name
+            )
+        )
+            throw problem(index, `the name ${variable.name} is taken.`);
     });
 
     if (dimensionIds.size) {

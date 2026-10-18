@@ -54,9 +54,15 @@ export function readDesignSystemPackage(input: unknown): DesignSystemPackage {
     )
         throw new Error(`A package must contain at most ${MAX_RECORDS} variables and dimensions.`);
     const dimensions = sorted(p.dimensions.map(readDimension));
+    for (const dimension of dimensions) {
+        if (!Object.hasOwn(dimension.modes, dimension.defaultModeId))
+            throw new Error(`Invalid default mode for ${dimension.name}.`);
+    }
     const variables = sorted(
         p.variables.map((raw) => {
             const variable = readEntity('variables', raw);
+            if (/[{}$]/.test(variable.id))
+                throw new Error('Invalid token ID for template references.');
             // The durable reader repairs orphan modes; a package must not need repairs.
             if (
                 JSON.stringify(Object.keys(raw.values).sort()) !==
@@ -72,13 +78,19 @@ export function readDesignSystemPackage(input: unknown): DesignSystemPackage {
     unique(dimensions, id);
     for (const variable of variables) {
         const issues = variableProblems(variable, byId);
+        // A missing alias source later exposes this retained fallback. Validate it too.
+        if (variable.type === 'text' && variable.alias !== undefined)
+            issues.push(...variableProblems({ ...variable, alias: undefined }, byId));
         if (issues.length) throw new Error(`${variable.name}: ${issues.join(', ')}.`);
         if (variable.type === 'color') {
             const dimension =
                 variable.dimensionId === undefined
                     ? undefined
                     : dimensionsById[variable.dimensionId];
-            if (variable.dimensionId !== undefined && !dimension)
+            if (
+                variable.dimensionId !== undefined &&
+                !Object.hasOwn(dimensionsById, variable.dimensionId)
+            )
                 throw new Error(`Missing dimension for ${variable.name}.`);
             for (const mode of Object.keys(variable.values).filter((key) => key !== 'default')) {
                 if (
@@ -181,11 +193,6 @@ export function planDesignSystemImport(
         dimensionIds.set(dimension.id, id);
         if (existing && choice === 'reuse') continue;
         const name = existing ? dimension.name : freshName(dimension.name, dimensionNames);
-        if (
-            existing &&
-            Object.values(document.dimensions).some((d) => d.id !== id && d.name === name)
-        )
-            throw new Error(`The dimension name ${name} is taken. Import separately instead.`);
         operations.push({
             op: 'setDimension',
             dimension: {

@@ -331,3 +331,84 @@ it('rejects missing text dependencies and unsupported numeric modes', () => {
     Reflect.set(count.values, 'night', 1);
     expect(() => readDesignSystemPackage(numeric)).toThrow('color modes');
 });
+
+it('replaces tokens whose names were exchanged upstream without breaking references', () => {
+    const { store, document } = setup();
+    apply(store, document);
+    const ink = Object.values(document.variables).find((v) => v.source?.tokenId === 'ink')!;
+    const alias = Object.values(document.variables).find((v) => v.source?.tokenId === 'alias')!;
+    const updated = source();
+    updated.variables.ink.name = 'Foreground';
+    updated.variables.alias.name = 'Ink';
+    expect(apply(store, document, 'replace', pack(updated)).applied).toBe(true);
+    expect(document.variables[ink.id].name).toBe('Foreground');
+    expect(document.variables[alias.id].name).toBe('Ink');
+    expect(document.variables[alias.id].alias).toBe(ink.id);
+});
+
+it('replaces dimensions whose names were exchanged upstream', () => {
+    const { store, document } = setup();
+    const original = source();
+    original.dimensions.brand = { ...original.dimensions.appearance, id: 'brand', name: 'Brand' };
+    apply(store, document, 'reuse', pack(original));
+    original.dimensions.appearance.name = 'Brand';
+    original.dimensions.brand.name = 'Appearance';
+    expect(apply(store, document, 'replace', pack(original)).applied).toBe(true);
+    expect(
+        Object.values(document.dimensions).find((d) => d.source?.tokenId === 'appearance')?.name
+    ).toBe('Brand');
+});
+
+it('rejects missing dimensions and default modes whose IDs name inherited object properties', () => {
+    const data = pack();
+    const ink = data.variables.find((v) => v.id === 'ink')!;
+    if (ink.type !== 'color') throw new Error('Expected a color');
+    ink.dimensionId = 'toString';
+    ink.values = { default: '#112233' };
+    expect(() => readDesignSystemPackage(data)).toThrow('dimension');
+    const modes = pack();
+    modes.dimensions[0].defaultModeId = 'toString';
+    expect(() => readDesignSystemPackage(modes)).toThrow('mode');
+});
+
+it('rejects missing dependencies in the stored fallback of text aliases', () => {
+    const data = pack();
+    data.variables.push({
+        id: 'text-alias',
+        name: 'Text alias',
+        type: 'text',
+        alias: 'label',
+        values: { default: '${missing$Missing}' }
+    });
+    expect(() => readDesignSystemPackage(data)).toThrow('Missing');
+});
+
+it('rejects token IDs that cannot be represented in a template reference', () => {
+    const data = pack();
+    const count = data.variables.find((v) => v.id === 'count')!;
+    count.id = 'count$invalid';
+    const label = data.variables.find((v) => v.id === 'label')!;
+    label.values.default = '${Count} items';
+    expect(() => readDesignSystemPackage(data)).toThrow('ID');
+});
+
+it.each(['variable', 'dimension'] as const)(
+    'still rejects a final %s name conflict without writes',
+    (kind) => {
+        const { store, document } = setup();
+        apply(store, document);
+        const updated = source();
+        if (kind === 'variable') {
+            store.actions.createVariable({ name: 'Taken', type: 'color', value: '#ffffff' });
+            updated.variables.ink.name = 'Taken';
+        } else {
+            store.actions.createDimension('Taken');
+            updated.dimensions.appearance.name = 'Taken';
+        }
+        const before = JSON.stringify(document);
+        expect(() =>
+            planDesignSystemImport(json(document), pack(updated), 'replace', newId)
+        ).toThrow('taken');
+        expect(JSON.stringify(document)).toBe(before);
+    }
+);
