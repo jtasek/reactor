@@ -23,6 +23,7 @@ export async function listMembers(db: Db, workspaceId: string) {
         where member.workspace_id = ${workspaceId}
         order by (workspace.owner_id = person.id) desc nulls last, person.email
     `.execute(db);
+
     return result.rows;
 }
 

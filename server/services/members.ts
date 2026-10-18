@@ -15,13 +15,16 @@ export type MemberProblem = 'NOT_FOUND' | 'FORBIDDEN' | 'PROTECTED_MEMBER' | 'IN
 type MemberFailure = { ok: false; problem: MemberProblem };
 export type MemberResult = { ok: true } | MemberFailure;
 type MemberListResult = { ok: true; members: WorkspaceMember[] } | MemberFailure;
+
 interface WorkspaceAccess {
     actorId: string;
     workspaceId: string;
 }
+
 interface MemberChange extends WorkspaceAccess {
     userId: string;
 }
+
 type Change = { kind: 'set-role'; role: unknown } | { kind: 'remove' };
 
 /** Membership policy and transactions, independent of HTTP. */
@@ -31,8 +34,15 @@ export function createMemberService(db: Db, changed: AccessChanged, log: Pick<Lo
         { actorId, workspaceId }: WorkspaceAccess
     ): Promise<MemberResult> {
         const role = await workspaceRole(database, actorId, workspaceId);
-        if (!allows(role, 'viewer')) return { ok: false, problem: 'NOT_FOUND' };
-        if (!allows(role, 'admin')) return { ok: false, problem: 'FORBIDDEN' };
+
+        if (!allows(role, 'viewer')) {
+            return { ok: false, problem: 'NOT_FOUND' };
+        }
+
+        if (!allows(role, 'admin')) {
+            return { ok: false, problem: 'FORBIDDEN' };
+        }
+
         return { ok: true };
     }
 
@@ -41,6 +51,7 @@ export function createMemberService(db: Db, changed: AccessChanged, log: Pick<Lo
             await changed(workspaceId, userId);
         } catch (error) {
             log.warn(error, 'Membership committed; retrying connection cleanup');
+
             try {
                 await changed(workspaceId, userId);
             } catch (retryError) {
@@ -57,19 +68,35 @@ export function createMemberService(db: Db, changed: AccessChanged, log: Pick<Lo
         const { workspaceId, userId } = input;
         const result = await db.transaction().execute(async (trx): Promise<MemberResult> => {
             const workspace = await lockWorkspace(trx, workspaceId);
-            if (!workspace) return { ok: false, problem: 'NOT_FOUND' };
+
+            if (!workspace) {
+                return { ok: false, problem: 'NOT_FOUND' };
+            }
+
             const permission = await access(trx, input);
-            if (!permission.ok) return permission;
+
+            if (!permission.ok) {
+                return permission;
+            }
+
             if (
                 operation.kind === 'set-role' &&
                 operation.role !== 'viewer' &&
                 operation.role !== 'editor'
-            )
+            ) {
                 return { ok: false, problem: 'INVALID_ROLE' };
+            }
+
             const before = await workspaceRole(trx, userId, workspaceId);
-            if (!before) return { ok: false, problem: 'NOT_FOUND' };
-            if (workspace.owner_id === userId || before === 'admin')
+
+            if (!before) {
+                return { ok: false, problem: 'NOT_FOUND' };
+            }
+
+            if (workspace.owner_id === userId || before === 'admin') {
                 return { ok: false, problem: 'PROTECTED_MEMBER' };
+            }
+
             if (operation.kind === 'set-role') {
                 await setMemberRole(
                     trx,
@@ -81,16 +108,25 @@ export function createMemberService(db: Db, changed: AccessChanged, log: Pick<Lo
                 await revokeMemberInvitations(trx, workspaceId, userId);
                 await deleteMember(trx, workspaceId, userId);
             }
+
             return { ok: true };
         });
-        if (result.ok) await notify(workspaceId, userId);
+
+        if (result.ok) {
+            await notify(workspaceId, userId);
+        }
+
         return result;
     }
 
     return {
         async list(input: WorkspaceAccess): Promise<MemberListResult> {
             const permission = await access(db, input);
-            if (!permission.ok) return permission;
+
+            if (!permission.ok) {
+                return permission;
+            }
+
             return { ok: true, members: await listMembers(db, input.workspaceId) };
         },
         setRole: (input: MemberChange, role: unknown) => change(input, { kind: 'set-role', role }),
