@@ -1,3 +1,4 @@
+import * as dimensions from 'src/app/variableDimensionEdits';
 import * as aliases from 'src/app/variableAliases';
 import * as alignment from 'src/app/alignment';
 import * as clipboard from 'src/app/clipboard';
@@ -134,5 +135,5 @@ function registerTools() {
 export function registerEditor() {
     registerCommands();
     registerTools();
-    provideEditorHelpers({ aliases, alignment, clipboard, operations, snapping });
+    provideEditorHelpers({ dimensions, aliases, alignment, clipboard, operations, snapping });
 }

@@ -151,8 +151,8 @@ context locally never rewrites shared shapes.
 
 Aliases reference a compatible variable by ID and stay separate from text interpolation.
 Primitive, semantic and component token layers are a useful convention, not a required depth.
-Theme (Light/Dark) and Density (Comfortable/Compact) are independent dimensions; Brand follows
-only when needed. Initially a token varies along one declared dimension, avoiding a combined
+Dimensions and modes are opt-in and user-defined. Theme (Light/Dark), Density
+(Comfortable/Compact) and Brand are examples, not mandatory built-ins. Initially a token varies along one declared dimension, avoiding a combined
 list of every possible mode. Cross-dimension overrides require a demonstrated use case and
 explicit precedence. Responsive layout belongs to frames; locale belongs to content.
 
@@ -318,30 +318,35 @@ work, with V3 and V5 feeding R6. No speculative plugin or expression framework i
    bindings and values, and shared undo restores committed ones. Circle/ellipse radius edits account for
    X/Y, and text-size edits account for the baseline's Y coordinate. Covered by
    `tests/geometryBindings.test.ts` and `tests/browser/variables.spec.ts`.
-3. **V3 — Independent dimensions and local context (first increment implemented).**
-   Dimensions and modes are now opt-in and user-defined. New documents and unassigned
-   variables use base values only. The panel creates, renames, reorders and deletes dimensions
-   and modes, with a default per dimension and local selections per document. Color variables
-   opt into one dimension; missing overrides use base, and aliases use their source context.
-   Definitions, copy/paste, operations, alias detachment and undo retain stable IDs and values.
-   Legacy Light/Dark values migrate into an editable Theme dimension. Colors in shapes,
-   components and thumbnails resolve in context; shared shape values remain at base.
-   Still to do: Density and geometry-changing context, with consistent measurement and hit
-   testing before enabling it. Text templates continue to use defaults in this paint-only
-   increment. Resolve all
-   drawing and geometry consumers consistently before allowing geometry-changing density.
-   Acceptance: `tests/variableDimensions.test.ts` covers fallback and two copies in different
-   contexts without shared writes; `tests/browser/variableDimensions.spec.ts` checks drawing,
-   selection bounds, hit testing and local switching. Add preview/export parity checks when
-   those consumers land in R4/R5. Existing documents use their default values.
-4. **V4 — Native design-system packages.** Export and import a minimal versioned package of
-   variables and their dependencies, preserving package/token identity. Preview conflicts and
-   offer explicit reuse, replace or import separately; labels alone never trigger an update.
-   Apply validated imports atomically through operations, as one undo step.
-   Acceptance: `tests/designSystemPackages.test.ts` covers deterministic round trips, renamed
-   tokens, ID remapping, missing dependencies, rejected imports, updates and undo;
-   `tests/browser/designSystemPackages.spec.ts` covers the conflict choices and unchanged
-   content after a rejected import. Package export never includes runtime state.
+3. **V3 — Independent dimensions and local context (color increment implemented).**
+   Dimensions and modes are opt-in and user-defined. New documents and variables use base
+   values only. People can add, rename, reorder and delete dimensions/modes, choose defaults,
+   and assign individual color variables to one dimension. Missing overrides use the base.
+   Preview selections are local per document; aliases, component colors and thumbnails use
+   the same resolver context without rewriting shared shapes. Existing Light/Dark data migrates
+   into editable definitions. Save, copy/paste, operations and undo retain modes.
+   Still to do: geometry-changing numeric and text context, with consistent rendering,
+   measurement and hit testing before enabling density. Text templates continue to use defaults.
+   Acceptance: `tests/variableDimensions.test.ts` and
+   `tests/browser/variableDimensions.spec.ts` cover opt-in behavior, custom modes, local
+   switching, migration, drawing, selection bounds, hit testing, persistence and collaboration.
+   Add preview/export parity checks when those consumers land in R4/R5.
+4. **V4 — Native design-system packages (first increment implemented).** Export/import a
+   versioned JSON package containing all document variables, aliases, text dependencies and
+   optional dimensions/modes. Durable source-package/token identities survive renaming,
+   edits, saving and collaboration. Exports exclude runtime state.
+   Preview identity matches first and name conflicts second. Explicit choices reuse local
+   definitions, replace matches, or import independent copies with unique names. Replacements
+   preserve local IDs and bound shapes; independent copies start their own identity. Imports
+   validate the complete graph and apply through operations as one shared undo step. Unknown
+   versions, missing dependencies, type conflicts and incompatible modes reject without writes.
+   This increment applies one conflict policy to the whole package. Per-token decisions,
+   selected-token exports and publishing/update policies remain later increments driven by use.
+   Acceptance: `tests/designSystemPackages.test.ts` covers deterministic exports, identities,
+   remapping, missing dependencies, rejection, updates, collaboration and undo;
+   `tests/browser/designSystemPackages.spec.ts` covers preview, conflict choices, reload,
+   export, cancellation and rejected imports. Package imports are limited to 1 MiB / 1,000
+   records. Existing clipboard name/type matching remains unchanged.
 5. **V5 — Interchange and richer types as needed.** Add a DTCG adapter for the supported
    subset, reporting unsupported constructs rather than silently flattening them. Add numeric
    semantics and units only alongside their first properties and validation; compound types

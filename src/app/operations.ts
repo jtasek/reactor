@@ -1,4 +1,10 @@
-import type { Component, ShapeInput, VariableType, VariableDimension } from './types';
+import type {
+    Component,
+    ShapeInput,
+    VariableType,
+    VariableDimension,
+    PackageIdentity
+} from './types';
 
 /** Who made a batch: the person using this copy, or an AI request they accepted. */
 export type Provenance = { kind: 'person' } | { kind: 'ai'; model: string; requestId: string };
@@ -10,6 +16,7 @@ export type Provenance = { kind: 'person' } | { kind: 'ai'; model: string; reque
  */
 export interface AddVariable {
     op: 'addVariable';
+    source?: PackageIdentity;
     key: string;
     name: string;
     type: VariableType;
@@ -48,6 +55,7 @@ export interface AddGroup {
  */
 export interface UpdateVariable {
     op: 'updateVariable';
+    source?: PackageIdentity;
     variable: string;
     name?: string;
     value?: unknown;
@@ -93,7 +101,14 @@ export interface DeleteGroup {
  * key, and each record changes in one operation of a batch at most. Nothing else
  * of the batch may refer to a record it deletes.
  */
+/** Package imports may explicitly add or replace a dimension. */
+export interface SetDimension {
+    op: 'setDimension';
+    dimension: VariableDimension;
+}
+
 export type Operation =
+    | SetDimension
     | AddVariable
     | AddComponent
     | AddShape

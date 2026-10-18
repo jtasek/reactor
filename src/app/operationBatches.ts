@@ -254,6 +254,36 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         deletedGroups: []
     };
 
+    const dimensionIds = new Set<string>();
+    operations.forEach((operation, index) => {
+        if (operation.op !== 'setDimension') return;
+        try {
+            const dimension = readDimension(operation.dimension);
+            if (dimensionIds.has(dimension.id)) throw new Error('Dimension changed twice.');
+            dimensionIds.add(dimension.id);
+            const before = dimensions[dimension.id];
+            if (
+                before &&
+                before.defaultModeId !== dimension.defaultModeId &&
+                Object.values(variables).some(
+                    (variable) =>
+                        variable.type === 'color' &&
+                        variable.dimensionId === dimension.id &&
+                        !operations.some(
+                            (op) => op.op === 'updateVariable' && op.variable === variable.id
+                        )
+                )
+            )
+                throw new Error(
+                    'Changing the default requires updating every variable in the dimension. Import separately instead.'
+                );
+            dimensions[dimension.id] = dimension;
+            staged.dimensions.push(dimension);
+        } catch (error) {
+            throw problem(index, error);
+        }
+    });
+
     /** Adds a copied dimension; one this document already has, as edited here, is kept. */
     const addDimension = (input: VariableDimension) => {
         const dimension = readDimension(input);
@@ -312,7 +342,16 @@ function stage(document: Document, operations: Operation[], newId: () => string)
     };
 
     const updateVariable = (
-        { variable: id, name, value, alias, darkValue, dimensionId, modeValues }: UpdateVariable,
+        {
+            variable: id,
+            name,
+            value,
+            alias,
+            darkValue,
+            dimensionId,
+            modeValues,
+            source: packageSource
+        }: UpdateVariable,
         index: number
     ) => {
         const current = variables[id];
@@ -386,6 +425,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         checkModes(selectedDimension, values);
         const variable = readEntity('variables', {
             id,
+            source: packageSource ?? current.source,
             name: name ?? current.name,
             type: current.type,
             values,
@@ -449,6 +489,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             checkModes(dimensionId, values);
             const variable = readEntity('variables', {
                 id: ids.get(operation.key),
+                source: operation.source,
                 name: operation.name,
                 type: operation.type,
                 dimensionId,
@@ -464,6 +505,17 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             throw problem(index, error);
         }
     });
+
+    if (dimensionIds.size) {
+        Object.values(variables).forEach((variable) => {
+            if (
+                variable.type === 'color' &&
+                variable.dimensionId &&
+                dimensionIds.has(variable.dimensionId)
+            )
+                checkModes(variable.dimensionId, variable.values);
+        });
+    }
 
     // Check the final graph too: two individually valid updates can form a cycle.
     operations.forEach((operation, index) => {
@@ -653,6 +705,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
     operations.forEach((operation, index) => {
         try {
             switch (operation.op) {
+                case 'setDimension':
                 case 'addVariable':
                 case 'updateVariable':
                 case 'deleteVariable':

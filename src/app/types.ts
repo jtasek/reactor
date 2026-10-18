@@ -61,7 +61,13 @@ export interface Guide {
 /** Local artwork color context; never changes document geometry. */
 export type VariableContext = Readonly<Record<string, string>>;
 
+export interface PackageIdentity {
+    packageId: string;
+    tokenId: string;
+}
+
 export interface VariableDimension {
+    source?: PackageIdentity;
     id: string;
     name: string;
     order: number;
@@ -73,6 +79,7 @@ export interface VariableDimension {
 export type VariableType = 'color' | 'number' | 'text' | 'boolean';
 
 type VariableOf<T extends VariableType, V> = {
+    source?: PackageIdentity;
     id: string;
     name: string;
     type: T;

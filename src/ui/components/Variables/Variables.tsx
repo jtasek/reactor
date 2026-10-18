@@ -1,3 +1,4 @@
+import { Packages } from './Packages';
 import { Dimensions } from './Dimensions';
 import { ordered } from 'src/app/variableModes';
 import React, { FC, FormEvent, KeyboardEvent, useState } from 'react';
@@ -412,6 +413,7 @@ export const Variables: FC = () => {
 
     return (
         <section className={styles.variables} aria-label="Variables">
+            <Packages />
             <Dimensions />
             <form className={styles.create} onSubmit={create}>
                 <input

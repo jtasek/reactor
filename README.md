@@ -370,3 +370,19 @@ as files are repaired; never add them.
 IndexedDB (`fake-indexeddb`) and channels; startup is opt-in with
 `store.onInitialize()`. Browser tests use port 4173 and fail rather than test
 another server that holds it; traces of failures are kept in `test-results/`.
+
+### Design-system packages
+
+Open **Variables → Design-system import / export** to download a versioned
+`design-system.reactor.json` file or import one. Packages contain variables, aliases, text
+references and optional dimensions/modes; they exclude shapes, accounts and local preview state.
+
+Review the matches, then choose **Reuse existing**, **Replace existing**, or **Import separately**.
+Identity matches survive renames. Names alone are shown as conflicts and never trigger an
+unreviewed update. Replace keeps local variable IDs so bound shapes update; separate creates
+independent copies with unique names. One policy applies to all matches in this first version.
+Apply imports as one undo step; cancel or an invalid package leaves the document unchanged.
+Packages are limited to 1 MiB and 1,000 variables/dimensions. Unsupported versions, incomplete
+references and incompatible types or modes are rejected with a message. Reusing a dimension
+requires compatible mode IDs; import separately when its modes differ. Replacing its default
+requires updating every variable assigned to it, so unrelated values cannot silently change.

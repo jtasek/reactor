@@ -81,6 +81,7 @@ export const setVariableValue: ActionWithParam<{ variableId: string; value: unkn
         next.values = { ...definition.values, default: next.values.default };
         if (definition.dimensionId !== undefined) next.dimensionId = definition.dimensionId;
     }
+    if (variable.source) next.source = { ...variable.source };
     document.variables[variableId] = next;
     applyVariableChanges(document, before);
 };

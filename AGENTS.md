@@ -513,6 +513,19 @@ set otherwise but keeping one a blank value left as it was, and deleting a varia
 writes its value into the templates that hold it. The Variables panel counts these
 templates as uses too.
 
+## Design-system packages
+
+Dimension-editing implementations (`src/app/variableDimensionEdits.ts`) are provided through
+`editorHelpers().dimensions` with the editor, preserving the startup budget.
+`src/app/designSystemPackages.ts` is loaded with the optional Variables panel. Native v1 JSON
+packages contain variables and dimensions, with durable `source: { packageId, tokenId }`
+identity on imported records. Keep this identity through local definition edits and durable
+readers. Imports preview identity matches before name conflicts, then explicitly reuse, replace
+or fork independent copies. The planner emits ordinary variable operations and `setDimension`;
+`stageBatch` validates before `applyOperations` writes one shared undo step. Dimension default
+changes require updates for all assigned variables; incompatible modes reject. Exports include
+only definitions and no runtime state. The UI applies one conflict policy to the full package.
+
 ## The selection's menu
 
 `SelectionMenu` (`src/ui/components/SelectionMenu`) is HTML over the canvas, so the zoom does
