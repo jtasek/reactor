@@ -3,6 +3,7 @@ import type { Document, DocumentsLayout } from 'src/app/types';
 import type { TagTone } from 'src/app/tagTones';
 import {
     ArrowUpDown,
+    CalendarDays,
     ChevronDown,
     LayoutGrid,
     List,
@@ -203,6 +204,7 @@ export const DocumentList: FC<Props> = ({
                         aria-expanded={filterMenu === 'date'}
                         onClick={() => setFilterMenu(filterMenu === 'date' ? null : 'date')}
                     >
+                        <CalendarDays size={16} strokeWidth={1.5} aria-hidden="true" />
                         {dateLabel}
                         <ChevronDown size={14} strokeWidth={1.5} aria-hidden="true" />
                     </button>

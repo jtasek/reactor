@@ -1,0 +1,24 @@
+.avatars {
+    display: inline-flex;
+    flex: none;
+    isolation: isolate;
+    vertical-align: middle;
+}
+
+.avatar {
+    align-items: center;
+    background: var(--panel-content-background);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    box-sizing: border-box;
+    color: var(--text-secondary-color);
+    display: inline-flex;
+    height: 22px;
+    justify-content: center;
+    position: relative;
+    width: 22px;
+}
+
+.avatar + .avatar {
+    margin-left: -6px;
+}

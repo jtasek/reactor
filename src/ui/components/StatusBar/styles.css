@@ -23,3 +23,10 @@
   width: calc(100% / var(--status-bar-slots));
 }
 
+
+.accountLink {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  vertical-align: top;
+}

@@ -315,6 +315,10 @@
 }
 
 .meta {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     color: var(--document-secondary-color);
     flex: none;
     font-size: 12px;
@@ -621,4 +625,11 @@
         backdrop-filter: none;
         background: var(--surface);
     }
+}
+
+.meta > time,
+.meta > span:not([role='img']) {
+    align-items: center;
+    display: inline-flex;
+    gap: 4px;
 }
