@@ -11,8 +11,17 @@ const rectangle = {
     size: { width: 20, height: 10 }
 };
 
-async function start(indexedDB = new IDBFactory()) {
-    const test = createTestStore({}, { indexedDB, autoSave: true });
+const ada = { id: 'user-ada', name: 'Ada', email: 'ada@example.com' };
+const signedIn = {
+    session: async () => ada,
+    signIn: async () => ({ ok: true as const }),
+    signUp: async () => ({ ok: true as const }),
+    sendSignInLink: async () => ({ ok: true as const }),
+    signOut: async () => ({ ok: true as const })
+};
+
+async function start(indexedDB = new IDBFactory(), accounts?: typeof signedIn) {
+    const test = createTestStore({}, { indexedDB, autoSave: true, accounts });
 
     await test.store.onInitialize();
 
@@ -386,6 +395,41 @@ describe('document modification dates', () => {
         expect(store.state.documents[sourceId]).toMatchObject({
             created,
             modified: created
+        });
+    });
+
+    it('records the signed-in person as who made and last edited a document', async () => {
+        const { store, effects } = await start(new IDBFactory(), signedIn);
+
+        store.actions.newDocument();
+        const id = store.state.currentDocumentId;
+
+        expect(store.state.documents[id]).toMatchObject({
+            author: 'Ada',
+            createdBy: 'Ada',
+            modifiedBy: 'Ada'
+        });
+
+        // A last editor recorded before, then an edit made here.
+        store.actions.updateDocument({ id, modifiedBy: 'Lin' });
+        effects.collaboration.flush();
+        await Promise.resolve();
+        vi.setSystemTime(edited);
+        store.actions.addShape(rectangle);
+        effects.collaboration.flush();
+        expect(store.state.documents[id].modified).toEqual(edited);
+        expect(store.state.documents[id].modifiedBy).toBe('Ada');
+    });
+
+    it('keeps the anonymous attribution signed out', async () => {
+        const { store, effects } = await start();
+        const id = store.state.currentDocumentId;
+
+        store.actions.addShape(rectangle);
+        effects.collaboration.flush();
+        expect(store.state.documents[id]).toMatchObject({
+            author: 'anonymous',
+            modifiedBy: 'anonymous'
         });
     });
 });

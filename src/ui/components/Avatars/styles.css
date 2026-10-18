@@ -1,4 +1,7 @@
 .avatars {
+    --avatar-size: 22px;
+    --avatar-overlap: 6px;
+
     display: inline-flex;
     flex: none;
     isolation: isolate;
@@ -13,12 +16,12 @@
     box-sizing: border-box;
     color: var(--text-secondary-color);
     display: inline-flex;
-    height: 22px;
+    height: var(--avatar-size);
     justify-content: center;
     position: relative;
-    width: 22px;
+    width: var(--avatar-size);
 }
 
 .avatar + .avatar {
-    margin-left: -6px;
+    margin-left: calc(-1 * var(--avatar-overlap));
 }

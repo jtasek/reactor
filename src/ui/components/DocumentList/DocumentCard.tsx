@@ -13,6 +13,7 @@ import { tagKey, type TagTone } from 'src/app/tagTones';
 import { Dialog } from '../Dialog';
 import { CalendarDays, Clock, Copy, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { Avatars } from '../Avatars';
+import { documentPeople } from './documentPeople';
 import { DocumentTags } from './DocumentTags';
 import { DocumentThumbnail } from './DocumentThumbnail';
 import styles from './styles.css';
@@ -190,7 +191,7 @@ export const DocumentCard: FC<Props> = ({
                     {current && <span className={styles.current}>Current</span>}
                 </div>
                 <span className={styles.meta}>
-                    <Avatars names={[document.author, document.createdBy, document.modifiedBy]} />
+                    <Avatars names={documentPeople(document)} />
                     <time
                         dateTime={document.modified.toISOString()}
                         title={`Last edited ${document.modified.toLocaleString()}`}

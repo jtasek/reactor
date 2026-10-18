@@ -83,9 +83,8 @@ export const AccountInfo: FC = () => {
             className={styles.accountLink}
             href="/account"
             title={account.kind === 'signedIn' ? account.email : undefined}
-            aria-label={account.kind === 'signedIn' ? accountLabel(account) : 'Sign in'}
         >
-            {account.kind === 'signedIn' && <Avatars names={[accountLabel(account)]} />}
+            {account.kind === 'signedIn' && <Avatars names={[accountLabel(account)]} decorative />}
             {account.kind === 'signedIn' ? accountLabel(account) : 'Sign in'}
         </a>
     );
