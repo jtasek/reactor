@@ -25,6 +25,10 @@
     gap: 6px;
 }
 
+.variables > .field {
+    margin-bottom: var(--panel-gap);
+}
+
 .create {
     background-color: var(--panel-content-background);
     border-radius: var(--radius-md);

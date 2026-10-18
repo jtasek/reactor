@@ -1,4 +1,6 @@
 import React, { FC, ReactNode, useLayoutEffect, useRef } from 'react';
+import { usePreviewTheme } from 'src/app/hooks';
+import { themeColors } from 'src/app/themeColors';
 import { SquareDashed } from 'lucide-react';
 import type { Box, Document, Image, InstanceShape, Shape } from 'src/app/types';
 import { applyInstanceOverrides } from 'src/app/componentProps';
@@ -79,6 +81,7 @@ const PreviewInstance: FC<{
     shape: InstanceShape;
     ancestors: ReadonlySet<string>;
 }> = ({ document, shape, ancestors }) => {
+    const theme = usePreviewTheme();
     const source = componentSource(document, shape.componentId, ancestors);
 
     if (!source) {
@@ -104,9 +107,10 @@ const PreviewInstance: FC<{
     return (
         <g transform={`translate(${offsetX} ${offsetY})`}>
             {source.shapes.map((member) => {
+                const painted = themeColors(member, document, theme);
                 const resolved = component
-                    ? applyInstanceOverrides(member, shape, component, document)
-                    : member;
+                    ? applyInstanceOverrides(painted, shape, component, document, theme)
+                    : painted;
 
                 if (!resolved.visible) {
                     return null;
@@ -117,6 +121,7 @@ const PreviewInstance: FC<{
                         key={member.id}
                         document={document}
                         shape={resolved}
+                        themed
                         ancestors={nextAncestors}
                     />
                 );
@@ -201,10 +206,13 @@ function geometry(document: Document, shape: Shape, ancestors: ReadonlySet<strin
 }
 
 const PreviewShape: FC<{
+    themed?: boolean;
     document: Document;
     shape: Shape;
     ancestors: ReadonlySet<string>;
-}> = ({ document, shape, ancestors }) => {
+}> = ({ document, shape, ancestors, themed = false }) => {
+    const theme = usePreviewTheme();
+    const painted = themed ? shape : themeColors(shape, document, theme);
     const bounds = shape.type === 'instance' ? previewBox(document, shape) : getShapeBounds(shape);
     const center = boxCenter(bounds);
     const transform = shape.rotation
@@ -213,7 +221,7 @@ const PreviewShape: FC<{
 
     return (
         <g opacity={shape.opacity} transform={transform}>
-            {geometry(document, shape, ancestors)}
+            {geometry(document, painted, ancestors)}
         </g>
     );
 };

@@ -40,9 +40,11 @@ const COMPACT_AFTER = 100;
 type Instance = Pick<Context, 'state' | 'actions' | 'addMutationListener'>;
 
 const captureView = ({
+    previewTheme,
     currentDocumentId,
     documents
-}: Pick<Application, 'currentDocumentId' | 'documents'>) => ({
+}: Pick<Application, 'currentDocumentId' | 'documents' | 'previewTheme'>) => ({
+    previewTheme,
     currentDocumentId,
     cameras: Object.fromEntries(
         Object.values(documents).map(({ id, camera }) => [id, json(camera)])
@@ -724,6 +726,7 @@ export async function startDocumentSync(
         // An unreadable view shows the first document, with its saved camera.
     }
 
+    state.previewTheme = view.previewTheme ?? 'light';
     Object.entries(view.cameras)
         .filter(([documentId]) => Object.hasOwn(state.documents, documentId))
         .forEach(([documentId, camera]) => {
@@ -739,7 +742,11 @@ export async function startDocumentSync(
     instance.addMutationListener(({ path, delimiter }) => {
         const [root, documentId, field] = path.split(delimiter);
 
-        if (root === 'currentDocumentId' || (root === 'documents' && field === 'camera')) {
+        if (
+            root === 'previewTheme' ||
+            root === 'currentDocumentId' ||
+            (root === 'documents' && field === 'camera')
+        ) {
             clearTimeout(viewTimer);
             viewTimer = setTimeout(saveView, 500);
         }

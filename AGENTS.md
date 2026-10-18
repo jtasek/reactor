@@ -443,6 +443,13 @@ shared, and layers keep their own `visible`.
 
 ## Variables
 
+Color variables may store an optional `values.dark`; `values.default` is Light. The root
+`previewTheme` is local view state, saved only in `reactor:view`. Shared shapes remain
+materialized at default: `themeColors` projects only bound fill, stroke and fontColor at
+render time, and component color overrides use the same resolver context. Geometry and
+text templates stay at default until context-aware measurement is implemented. Keep both
+color values through serialization, clipboard, operations and alias detachment.
+
 A variable (`Variable`, `document.variables`, listed by name in `variablesIds`) is a named
 color, number, text or boolean. A shape property the inspector can change may follow one of
 its kind (`shape.bindings`, by property key): binding, and every change of the variable

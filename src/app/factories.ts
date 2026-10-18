@@ -314,6 +314,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
             documentsLayout: 'cards',
             panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT)
         },
+        previewTheme: 'light',
         currentDocumentId: 'document-1',
         currentDocument,
         currentPage: 'designer',

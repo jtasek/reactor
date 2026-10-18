@@ -276,37 +276,57 @@ function stage(document: Document, operations: Operation[], newId: () => string)
     };
 
     const updateVariable = (
-        { variable: id, name, value, alias }: UpdateVariable,
+        { variable: id, name, value, alias, darkValue }: UpdateVariable,
         index: number
     ) => {
         const current = variables[id];
         const other = name === undefined ? undefined : variableNamed(variables, name);
 
-        if (name === undefined && value === undefined && alias === undefined) {
+        if (
+            name === undefined &&
+            value === undefined &&
+            alias === undefined &&
+            darkValue === undefined
+        ) {
             throw new Error('it changes nothing.');
         }
         if (other && other.id !== id) {
             throw new Error(`the name ${name} is taken.`);
         }
+        if (darkValue !== undefined && current.type !== 'color') {
+            throw new Error('Only colors can vary by Theme.');
+        }
         const resolved = resolveVariable(current, variables);
-        const fallback =
-            alias === undefined
-                ? current.values.default
-                : current.type === 'text'
-                  ? escapeTemplate(String(resolved))
-                  : resolved;
+        // A value of either theme set without a source stops following, as alias null does.
         const source =
-            alias === undefined && value === undefined
+            alias === undefined && value === undefined && darkValue === undefined
                 ? current.alias
                 : typeof alias === 'string'
                   ? reference(alias, 'variables', index)
                   : undefined;
+        const detaches = current.alias !== undefined && source === undefined;
+        const fallback =
+            alias === undefined && !detaches
+                ? current.values.default
+                : current.type === 'text'
+                  ? escapeTemplate(String(resolved))
+                  : resolved;
         const variable = readEntity('variables', {
             id,
             ...(source === undefined ? {} : { alias: source }),
             name: name ?? current.name,
             type: current.type,
             values: {
+                ...(current.type === 'color'
+                    ? {
+                          dark: detaches
+                              ? resolveVariable(current, variables, 'dark')
+                              : current.values.dark
+                      }
+                    : {}),
+                ...(darkValue === undefined
+                    ? {}
+                    : { dark: darkValue === null ? undefined : darkValue }),
                 default:
                     value === undefined
                         ? fallback
@@ -351,7 +371,10 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                 id: ids.get(operation.key),
                 name: operation.name,
                 type: operation.type,
-                values: { default: value },
+                values: {
+                    default: value,
+                    ...(operation.darkValue === undefined ? {} : { dark: operation.darkValue })
+                },
                 ...(operation.alias === undefined
                     ? {}
                     : { alias: reference(operation.alias, 'variables', index) })

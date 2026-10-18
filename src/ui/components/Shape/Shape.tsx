@@ -6,6 +6,8 @@ import { Selectable } from '../Selectable/Selectable';
 import { getComponentByType } from 'src/tools/components';
 import { Instance } from './Instance';
 import type { Shape as ShapeType } from 'src/app/types';
+import { usePreviewTheme, useCurrentDocument } from 'src/app/hooks';
+import { themeColors } from 'src/app/themeColors';
 import { resolveVariable } from 'src/app/variableResolver';
 import { rectToBox, shapeGeometryKey, getShapeBounds, boxCenter } from 'src/app/utils';
 import {
@@ -29,6 +31,9 @@ interface Props {
 
 export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup, minimap = false }: Props) => {
     const shape = useShape(shapeId);
+    const document = useCurrentDocument();
+    const theme = usePreviewTheme();
+    const painted = themeColors(shape, document, theme);
     const visible = useShapeVisible(shapeId);
     const locked = useShapeLocked(shapeId);
     const { setShapeBounds, activateShape, deactivateShape } = useActions();
@@ -127,7 +132,7 @@ export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup, minimap = 
     const transform = shape.rotation
         ? `rotate(${shape.rotation} ${center.x} ${center.y})`
         : undefined;
-    const { key, ...props } = shape;
+    const { key, ...props } = painted;
 
     return (
         <g transform={transform}>
@@ -137,8 +142,8 @@ export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup, minimap = 
                 style={
                     {
                         pointerEvents: 'all',
-                        '--shape-fill': shape.fill,
-                        '--shape-stroke': shape.stroke
+                        '--shape-fill': painted.fill,
+                        '--shape-stroke': painted.stroke
                     } as CSSProperties
                 }
                 onPointerEnter={() => activateShape(shapeId)}

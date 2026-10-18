@@ -234,6 +234,11 @@ export const TOOLS = [
                     description:
                         'A value of the type; a color is #rrggbb. Retained as fallback when following an alias.'
                 },
+                darkValue: {
+                    type: 'string',
+                    description:
+                        'Optional #rrggbb Dark theme value for a color; otherwise uses its default.'
+                },
                 alias: {
                     type: 'string',
                     description: 'Optional same-type source ID or earlier variable key; no cycles.'
@@ -321,6 +326,11 @@ export const TOOLS = [
                 value: {
                     description:
                         'A value of its type; a color is #rrggbb. Setting this alone stops following its alias.'
+                },
+                darkValue: {
+                    type: ['string', 'null'],
+                    description:
+                        'Color only: #rrggbb Dark theme value; null restores default fallback. Setting this without alias stops following its alias.'
                 },
                 alias: {
                     type: ['string', 'null'],

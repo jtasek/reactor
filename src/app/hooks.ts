@@ -582,3 +582,6 @@ export const useLog = () => {
         [debugMode]
     );
 };
+
+/** This copy's color preview context; it is not document content. */
+export const usePreviewTheme = () => useAppState((state) => state.previewTheme);

@@ -306,9 +306,15 @@ If a concurrent edit leaves a missing source, the alias uses its retained fallba
 introduced by concurrent edits is bounded and reported in the panel. Copy/paste carries alias
 dependencies and retains the existing name-and-type matching policy.
 
+Color variables offer **Light** and optional **Dark** values. In the Variables panel,
+**Theme** changes your local preview, including component colors and document thumbnails.
+Dark uses Light until overridden; **Use Light** removes that override. Aliases follow the
+selected theme. The switch is remembered on this device and does not edit shared shapes or
+other collaborators' views. It changes artwork colors, not the editor's interface theme.
+Text templates and geometry still use defaults; Density modes are not implemented yet.
+
 Values and template diagnostics share a pure central resolver; saved variable definitions
-retain raw templates and alias fallback values. Independent Theme and
-Density dimensions and design-system packages follow in the
+retain raw templates, theme values and alias fallbacks. Density and design-system packages follow in the
 [variable roadmap](./APPLICATION_PLAN.md#variable-foundation-v1v5-incremental).
 
 ## Camera Coordinates

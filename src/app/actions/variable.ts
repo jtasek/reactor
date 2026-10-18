@@ -1,3 +1,5 @@
+import { isHexColor } from '../utils';
+import type { Theme } from '../types';
 import { editorHelpers } from '../editorHelpers';
 import { json } from 'overmind';
 import type { ActionWithParam, ActionWithParamAndResult, VariableType } from '../types';
@@ -76,6 +78,9 @@ export const setVariableValue: ActionWithParam<{ variableId: string; value: unkn
         return;
     }
 
+    if (next.type === 'color' && variable.type === 'color' && variable.values.dark !== undefined) {
+        next.values.dark = variable.values.dark;
+    }
     document.variables[variableId] = next;
     applyVariableChanges(document, before);
 };
@@ -150,4 +155,21 @@ export const deleteVariable: ActionWithParam<string> = ({ state }, variableId) =
 
     removeVariable(document, variableId);
     applyVariableChanges(document, before);
+};
+
+/** Local preview only: never materialize a theme into shared shape values. */
+export const setPreviewTheme: ActionWithParam<Theme> = ({ state }, theme) => {
+    if (theme === 'light' || theme === 'dark') state.previewTheme = theme;
+};
+
+/** Edit a color's Dark override; null makes it fall back to its Light value. */
+export const setVariableDarkValue: ActionWithParam<{ variableId: string; value: string | null }> = (
+    { state },
+    { variableId, value }
+) => {
+    const document = state.currentDocument;
+    const variable = document.variables[variableId];
+    if (document.locked || variable?.type !== 'color' || variable.alias !== undefined) return;
+    if (value === null) delete variable.values.dark;
+    else if (isHexColor(value)) variable.values.dark = value;
 };

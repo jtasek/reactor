@@ -67,6 +67,9 @@ export function readOperation(value: unknown): ProposedOperation {
                 name: text(operation.name, 'Its name'),
                 type,
                 value: operation.value,
+                ...(operation.darkValue === undefined
+                    ? {}
+                    : { darkValue: text(operation.darkValue, 'Its Dark value') }),
                 ...(operation.alias === undefined
                     ? {}
                     : { alias: text(operation.alias, 'Its source') })
@@ -101,6 +104,14 @@ export function readOperation(value: unknown): ProposedOperation {
                 variable: text(operation.variable, 'Its variable'),
                 ...(operation.name === undefined ? {} : { name: text(operation.name, 'Its name') }),
                 ...(operation.value === undefined ? {} : { value: operation.value }),
+                ...(operation.darkValue === undefined
+                    ? {}
+                    : {
+                          darkValue:
+                              operation.darkValue === null
+                                  ? null
+                                  : text(operation.darkValue, 'Its Dark value')
+                      }),
                 ...(operation.alias === undefined
                     ? {}
                     : {

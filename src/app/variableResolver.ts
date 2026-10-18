@@ -1,4 +1,4 @@
-import type { Variable } from './types';
+import type { Theme, Variable } from './types';
 
 /** The variable named `name`; of several, as merges can leave, the one with the lowest id. */
 export function variableNamed(
@@ -73,7 +73,8 @@ function resolveValue(
     variable: Variable,
     variables: Readonly<Record<string, Variable>>,
     within: string[],
-    problems?: string[]
+    problems?: string[],
+    theme: Theme = 'light'
 ): string | number | boolean {
     const path = [...within, variable.id];
     let source = variable;
@@ -100,14 +101,17 @@ function resolveValue(
     }
     return source.type === 'text'
         ? resolveText(source.values.default, variables, path, problems)
-        : source.values.default;
+        : source.type === 'color' && theme === 'dark'
+          ? (source.values.dark ?? source.values.default)
+          : source.values.default;
 }
 
 /** The value a variable writes, following same-type aliases and text templates. */
 export const resolveVariable = (
     variable: Variable,
-    variables: Readonly<Record<string, Variable>>
-) => resolveValue(variable, variables, []);
+    variables: Readonly<Record<string, Variable>>,
+    theme: Theme = 'light'
+) => resolveValue(variable, variables, [], undefined, theme);
 
 /** Reference problems in an alias's resolved value; useful for validation and editor diagnostics. */
 export function variableProblems(

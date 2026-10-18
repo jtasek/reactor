@@ -26,7 +26,7 @@ const variableLabel = (document: Document, id: string) => {
 export function describeOperation(operation: ProposedOperation, document: Document): string {
     switch (operation.op) {
         case 'addVariable':
-            return `Add ${operation.type} variable ${quoted(operation.name)}: ${operation.alias === undefined ? String(operation.value) : `follow ${variableLabel(document, operation.alias)}`}`;
+            return `Add ${operation.type} variable ${quoted(operation.name)}: ${operation.alias === undefined ? String(operation.value) : `follow ${variableLabel(document, operation.alias)}`}${operation.darkValue === undefined ? '' : `; Dark: ${operation.darkValue}`}`;
         case 'addShape': {
             const { shape } = operation;
             const named = shape.name ? ` ${quoted(shape.name)}` : '';
@@ -38,19 +38,20 @@ export function describeOperation(operation: ProposedOperation, document: Docume
         case 'addGroup':
             return `Group ${operation.shapes.length} shapes as ${quoted(operation.name)}`;
         case 'updateVariable': {
-            const { name, value, alias } = operation;
+            const { name, value, alias, darkValue } = operation;
             const renamed = name === undefined ? '' : ` to ${quoted(name)}`;
             const valued = value === undefined ? '' : `: ${String(value)}`;
+            const dark = darkValue === undefined ? '' : `; Dark: ${darkValue ?? 'use Light'}`;
 
             const following =
                 typeof alias === 'string'
                     ? `; follow ${variableLabel(document, alias)}`
                     : alias === null ||
-                        (value !== undefined &&
+                        ((value !== undefined || darkValue !== undefined) &&
                             document.variables[operation.variable]?.alias !== undefined)
                       ? '; stops following its source'
                       : '';
-            return `Change ${variableLabel(document, operation.variable)}${renamed}${valued}${following}`;
+            return `Change ${variableLabel(document, operation.variable)}${renamed}${valued}${dark}${following}`;
         }
         case 'deleteVariable':
             return `Delete ${variableLabel(document, operation.variable)}`;
