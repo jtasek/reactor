@@ -15,20 +15,22 @@ export const legacyTheme = (): VariableDimension => ({
 export const ordered = <T extends { id: string; order: number }>(items: Record<string, T>): T[] =>
     Object.values(items).sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
 
-/** Missing/deleted selections fall back locally, without repairing shared data. */
+/**
+ * The modes colors resolve in: each dimension's selected mode, unless it is the default,
+ * whose colors are the base values. Missing or deleted selections use the default locally,
+ * without repairing shared data.
+ */
 export function variableContext(
     document: Pick<Document, 'dimensions'>,
     selected: VariableContext = {}
 ): VariableContext {
     return Object.fromEntries(
-        Object.values(document.dimensions).map((dimension) => [
-            dimension.id,
-            dimension.modes[selected[dimension.id]]
-                ? selected[dimension.id]
-                : dimension.modes[dimension.defaultModeId]
-                  ? dimension.defaultModeId
-                  : ordered(dimension.modes)[0]?.id
-        ])
+        Object.values(document.dimensions).flatMap((dimension) => {
+            const modeId = selected[dimension.id];
+            return dimension.modes[modeId] && modeId !== dimension.defaultModeId
+                ? [[dimension.id, modeId]]
+                : [];
+        })
     );
 }
 

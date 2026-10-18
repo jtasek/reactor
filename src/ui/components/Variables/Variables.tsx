@@ -153,6 +153,11 @@ const VariableRow: FC<{
     } = useActions();
     const theme = useVariableContext();
     const document = useCurrentDocument();
+    // The default mode's color is the base value, edited in the value field.
+    const dimension =
+        variable.type === 'color' && variable.dimensionId !== undefined
+            ? document.dimensions[variable.dimensionId]
+            : undefined;
     const [problem, setProblem] = useState<string>();
     const [confirming, setConfirming] = useState(false);
     const problems =
@@ -223,7 +228,9 @@ const VariableRow: FC<{
                 // A caption click would flip a boolean, so only other fields take it as a label.
                 <ValueCaption className={styles.field}>
                     <span className={styles.fieldLabel}>
-                        {variable.type === 'color' ? 'Base' : 'Value'}
+                        {variable.type !== 'color'
+                            ? 'Value'
+                            : (dimension?.modes[dimension.defaultModeId]?.name ?? 'Base')}
                     </span>
                     <ValueField variable={variable} variables={variables} />
                     {variable.type === 'color' && (
@@ -256,52 +263,54 @@ const VariableRow: FC<{
                                 ))}
                             </select>
                         </label>
-                        {variable.dimensionId &&
-                            document.dimensions[variable.dimensionId] &&
-                            ordered(document.dimensions[variable.dimensionId].modes).map((mode) => (
-                                <div className={styles.field} key={mode.id}>
-                                    <label
-                                        className={styles.fieldLabel}
-                                        htmlFor={`${variable.id}-${mode.id}`}
-                                    >
-                                        {mode.name}
-                                    </label>
-                                    <SharedOnRelease>
-                                        <input
-                                            id={`${variable.id}-${mode.id}`}
-                                            type="color"
-                                            aria-label={`${mode.name} value of ${variable.name}`}
-                                            value={
-                                                variable.values[mode.id] ?? variable.values.default
-                                            }
-                                            onChange={(event) =>
-                                                setVariableModeValue({
-                                                    variableId: variable.id,
-                                                    modeId: mode.id,
-                                                    value: event.target.value
-                                                })
-                                            }
-                                        />
-                                    </SharedOnRelease>
-                                    {variable.values[mode.id] === undefined ? (
-                                        <small className={styles.colorValue}>Uses base</small>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            aria-label={`Use base value for ${variable.name} in ${mode.name}`}
-                                            onClick={() =>
-                                                setVariableModeValue({
-                                                    variableId: variable.id,
-                                                    modeId: mode.id,
-                                                    value: null
-                                                })
-                                            }
+                        {dimension &&
+                            ordered(dimension.modes)
+                                .filter((mode) => mode.id !== dimension.defaultModeId)
+                                .map((mode) => (
+                                    <div className={styles.field} key={mode.id}>
+                                        <label
+                                            className={styles.fieldLabel}
+                                            htmlFor={`${variable.id}-${mode.id}`}
                                         >
-                                            Use base
-                                        </button>
-                                    )}
-                                </div>
-                            ))}
+                                            {mode.name}
+                                        </label>
+                                        <SharedOnRelease>
+                                            <input
+                                                id={`${variable.id}-${mode.id}`}
+                                                type="color"
+                                                aria-label={`${mode.name} value of ${variable.name}`}
+                                                value={
+                                                    variable.values[mode.id] ??
+                                                    variable.values.default
+                                                }
+                                                onChange={(event) =>
+                                                    setVariableModeValue({
+                                                        variableId: variable.id,
+                                                        modeId: mode.id,
+                                                        value: event.target.value
+                                                    })
+                                                }
+                                            />
+                                        </SharedOnRelease>
+                                        {variable.values[mode.id] === undefined ? (
+                                            <small className={styles.colorValue}>Uses base</small>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                aria-label={`Use base value for ${variable.name} in ${mode.name}`}
+                                                onClick={() =>
+                                                    setVariableModeValue({
+                                                        variableId: variable.id,
+                                                        modeId: mode.id,
+                                                        value: null
+                                                    })
+                                                }
+                                            >
+                                                Use base
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
                     </>
                 )}
             {sources.length > 0 || variable.alias !== undefined ? (

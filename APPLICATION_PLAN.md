@@ -328,8 +328,7 @@ work, with V3 and V5 feeding R6. No speculative plugin or expression framework i
    components and thumbnails resolve in context; shared shape values remain at base.
    Still to do: Density and geometry-changing context, with consistent measurement and hit
    testing before enabling it. Text templates continue to use defaults in this paint-only
-   increment. Extend the local switch to independent dimensions, with each variable varying
-   along one dimension initially. Resolve all
+   increment. Resolve all
    drawing and geometry consumers consistently before allowing geometry-changing density.
    Acceptance: `tests/variableDimensions.test.ts` covers fallback and two copies in different
    contexts without shared writes; `tests/browser/variableDimensions.spec.ts` checks drawing,

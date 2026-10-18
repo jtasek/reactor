@@ -446,13 +446,18 @@ shared, and layers keep their own `visible`.
 Dimensions and modes are opt-in: new documents have empty `dimensions`, and a variable
 needs no dimension. `VariableDimension` entities have stable IDs, named/ordered modes and a
 default mode. A color variable may opt in with `dimensionId`; `values.default` is its base
-and other keys are mode IDs. `variableContext` selects local modes or dimension defaults;
+and other keys are mode IDs. The default mode's colors are the base values, so it has no
+override: making another mode the default moves its colors into the base and into the shapes
+(`promoteDefaultMode`). `variableContext` holds the locally selected modes other than defaults;
 `themeColors` projects bound fill, stroke and fontColor without writing shared shape values.
 Root `previewModes` is local, keyed by document then dimension, saved only in `reactor:view`.
 Geometry and templates stay at base until context-aware measurement is implemented.
 Definitions use the ordinary shared entity/undo path. Keep all values and dimension IDs
 through serialization, clipboard, operations and alias detachment. Legacy Light/Dark data
-migrates into an editable Theme dimension, never into a dimension for otherwise plain documents.
+migrates into an editable Theme dimension, never into a dimension for otherwise plain documents,
+also when another copy sends it (`Collaboration.migrate`, shared but never undone). A pasted
+variable keeps a dimension this document already has, as edited here, and only its modes'
+colors; a merge that leaves mode colors without their dimension reads as the base alone.
 
 A variable (`Variable`, `document.variables`, listed by name in `variablesIds`) is a named
 color, number, text or boolean. A shape property the inspector can change may follow one of
