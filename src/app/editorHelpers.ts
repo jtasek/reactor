@@ -1,3 +1,4 @@
+import type * as Dimensions from './variableDimensionEdits';
 import type * as Aliases from './variableAliases';
 import type * as Alignment from './alignment';
 import type * as Clipboard from './clipboard';
@@ -11,6 +12,7 @@ import type * as Snapping from './snapping';
  * `editorHelpers`, which only runs once the editor has loaded.
  */
 export interface EditorHelpers {
+    dimensions: typeof Dimensions;
     aliases: typeof Aliases;
     alignment: typeof Alignment;
     clipboard: typeof Clipboard;

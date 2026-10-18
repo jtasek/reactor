@@ -122,7 +122,8 @@ export default [
                                 '**/app/clipboard',
                                 '../clipboard',
                                 '**/operationBatches',
-                                '**/variableAliases'
+                                '**/variableAliases',
+                                '**/variableDimensionEdits'
                             ],
                             allowTypeImports: true,
                             message: 'Only the editor runs it: reach it through editorHelpers().'

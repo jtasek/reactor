@@ -33,6 +33,7 @@ export function setVariableAlias(
             return problem;
         }
     }
+    if (variable.source) next.source = { ...variable.source };
     document.variables[variableId] = next;
     applyVariableChanges(document, before);
 }

@@ -1,3 +1,4 @@
+import { readPackageIdentity } from '../packageIdentity';
 import { readDimension, legacyTheme } from '../variableModes';
 import type {
     Application,
@@ -482,6 +483,7 @@ function readVariable(value: unknown): Variable {
         throw new Error('Invalid variable');
     }
 
+    if (v.source !== undefined) variable.source = readPackageIdentity(v.source);
     const values = record(v.values);
     const overrides = Object.entries(values).filter(([key]) => key !== 'default');
     if (overrides.length || v.dimensionId !== undefined) {

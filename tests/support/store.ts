@@ -1,3 +1,4 @@
+import * as dimensions from 'src/app/variableDimensionEdits';
 import * as aliases from 'src/app/variableAliases';
 import { IDBFactory } from 'fake-indexeddb';
 import { createDragTargets } from 'src/app/services/dragTargets';
@@ -73,7 +74,7 @@ export function createTestStore(
     provideEditorHelpers(
         options.editorLoaded === false
             ? undefined
-            : { aliases, alignment, clipboard, operations, snapping }
+            : { dimensions, aliases, alignment, clipboard, operations, snapping }
     );
     const storage = options.storage ?? new Map(Object.entries(seed));
     const indexedDB = options.indexedDB ?? new IDBFactory();

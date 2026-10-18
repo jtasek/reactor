@@ -1,3 +1,4 @@
+import { readPackageIdentity } from './packageIdentity';
 import type { Document, VariableContext, VariableDimension } from './types';
 
 /** Used only when reading documents created before user-defined dimensions. */
@@ -68,5 +69,12 @@ export function readDimension(value: unknown): VariableDimension {
     if (!modes[defaultModeId]) throw new Error('Invalid default mode');
     if (new Set(Object.values(modes).map((mode) => mode.name)).size !== Object.keys(modes).length)
         throw new Error('Mode names must be unique');
-    return { id: id(d.id), name: name(d.name), order: order(d.order), defaultModeId, modes };
+    return {
+        id: id(d.id),
+        name: name(d.name),
+        order: order(d.order),
+        defaultModeId,
+        modes,
+        ...(d.source === undefined ? {} : { source: readPackageIdentity(d.source) })
+    };
 }
