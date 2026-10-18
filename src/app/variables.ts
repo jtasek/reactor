@@ -329,6 +329,10 @@ export function removeVariable(
             const resolved = resolveVariable(other, variables);
             other.values.default =
                 other.type === 'text' ? escapeTemplate(String(resolved)) : resolved;
+            if (other.type === 'color') {
+                const dark = resolveVariable(other, variables, 'dark');
+                if (typeof dark === 'string') other.values.dark = dark;
+            }
             delete other.alias;
         }
     });

@@ -21,6 +21,10 @@ export function setVariableAlias(
         variable.type,
         variable.type === 'text' ? escapeTemplate(String(value)) : value
     )!;
+    if (next.type === 'color') {
+        const dark = resolveVariable(variable, before, 'dark');
+        if (typeof dark === 'string' && dark !== next.values.default) next.values.dark = dark;
+    }
     if (sourceId !== null) {
         next.alias = sourceId;
         const problem = variableProblems(next, { ...before, [variableId]: next })[0];

@@ -316,6 +316,9 @@ function pasteVariables(copied: Variable[], document: Document) {
             name,
             type: variable.type,
             value: variable.values.default,
+            ...(variable.type === 'color' && variable.values.dark !== undefined
+                ? { darkValue: variable.values.dark }
+                : {}),
             ...(variable.alias === undefined ? {} : { alias: variable.alias })
         });
     });
@@ -348,7 +351,10 @@ function pasteVariables(copied: Variable[], document: Document) {
             id: operation.key,
             name: operation.name,
             type: operation.type,
-            values: { default: operation.value },
+            values: {
+                default: operation.value,
+                ...(operation.darkValue === undefined ? {} : { dark: operation.darkValue })
+            },
             ...(operation.alias === undefined ? {} : { alias: operation.alias })
         });
     });

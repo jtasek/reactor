@@ -1,6 +1,6 @@
 import React, { FC, FormEvent, KeyboardEvent, useState } from 'react';
 import type { Variable, VariableType } from 'src/app/types';
-import { useActions } from 'src/app/hooks';
+import { useActions, usePreviewTheme } from 'src/app/hooks';
 import { useVariableUses, useVariables } from 'src/app/variableHooks';
 import { isVariableName, templateWithNames, variableDependencies } from 'src/app/variables';
 import { resolveVariable, variableProblems } from 'src/app/variableResolver';
@@ -142,7 +142,8 @@ const VariableRow: FC<{
     variables: Record<string, Variable>;
     uses: number;
 }> = ({ variable, variables, uses }) => {
-    const { deleteVariable, renameVariable, setVariableAlias } = useActions();
+    const { deleteVariable, renameVariable, setVariableAlias, setVariableDarkValue } = useActions();
+    const theme = usePreviewTheme();
     const [problem, setProblem] = useState<string>();
     const [confirming, setConfirming] = useState(false);
     const problems =
@@ -154,7 +155,7 @@ const VariableRow: FC<{
 
     const ValueCaption = variable.type === 'boolean' ? 'div' : 'label';
     const resolved =
-        variable.alias !== undefined ? resolveVariable(variable, variables) : undefined;
+        variable.alias !== undefined ? resolveVariable(variable, variables, theme) : undefined;
 
     const sources = Object.values(variables).filter(
         (source) =>
@@ -212,12 +213,48 @@ const VariableRow: FC<{
             {variable.alias === undefined && (
                 // A caption click would flip a boolean, so only other fields take it as a label.
                 <ValueCaption className={styles.field}>
-                    <span className={styles.fieldLabel}>Value</span>
+                    <span className={styles.fieldLabel}>
+                        {variable.type === 'color' ? 'Light' : 'Value'}
+                    </span>
                     <ValueField variable={variable} variables={variables} />
                     {variable.type === 'color' && (
                         <code className={styles.colorValue}>{variable.values.default}</code>
                     )}
                 </ValueCaption>
+            )}
+            {variable.type === 'color' && variable.alias === undefined && (
+                <div className={styles.field}>
+                    <label className={styles.fieldLabel} htmlFor={`dark-${variable.id}`}>
+                        Dark
+                    </label>
+                    <SharedOnRelease>
+                        <input
+                            id={`dark-${variable.id}`}
+                            type="color"
+                            aria-label={`Dark value of ${variable.name}`}
+                            value={variable.values.dark ?? variable.values.default}
+                            onChange={(event) =>
+                                setVariableDarkValue({
+                                    variableId: variable.id,
+                                    value: event.target.value
+                                })
+                            }
+                        />
+                    </SharedOnRelease>
+                    {variable.values.dark === undefined ? (
+                        <small className={styles.colorValue}>Uses Light</small>
+                    ) : (
+                        <button
+                            type="button"
+                            aria-label={`Use Light value for ${variable.name} in Dark`}
+                            onClick={() =>
+                                setVariableDarkValue({ variableId: variable.id, value: null })
+                            }
+                        >
+                            Use Light
+                        </button>
+                    )}
+                </div>
             )}
             {sources.length > 0 || variable.alias !== undefined ? (
                 <label className={styles.field}>
@@ -289,7 +326,8 @@ export const Variables: FC = () => {
     const variables = useVariables();
     const byId = Object.fromEntries(variables.map((variable) => [variable.id, variable]));
     const uses = useVariableUses();
-    const { createVariable } = useActions();
+    const { createVariable, setPreviewTheme } = useActions();
+    const theme = usePreviewTheme();
     const [name, setName] = useState('');
     const [type, setType] = useState<VariableType>('color');
     const [problem, setProblem] = useState<string>();
@@ -318,6 +356,20 @@ export const Variables: FC = () => {
 
     return (
         <section className={styles.variables} aria-label="Variables">
+            <label className={styles.field}>
+                <span className={styles.fieldLabel}>Theme</span>
+                <select
+                    aria-label="Preview theme"
+                    value={theme}
+                    onChange={(event) =>
+                        setPreviewTheme(event.target.value === 'dark' ? 'dark' : 'light')
+                    }
+                >
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                </select>
+                <small className={styles.colorValue}>Your preview only</small>
+            </label>
             <form className={styles.create} onSubmit={create}>
                 <input
                     type="text"

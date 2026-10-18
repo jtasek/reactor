@@ -1,4 +1,4 @@
-import type { Component, Document, InstanceShape, PropertyValue, Shape } from './types';
+import type { Component, Document, InstanceShape, PropertyValue, Shape, Theme } from './types';
 import { SHAPE_PROPERTIES, applyProperty, type ShapeProperty } from './properties';
 import { escapeTemplate, templateWithNames, writeText } from './variables';
 import { resolveVariable } from './variableResolver';
@@ -61,7 +61,8 @@ export function componentPropValue(
     instance: InstanceShape,
     component: Component,
     propId: string,
-    document: Document
+    document: Document,
+    theme: Theme = 'light'
 ): PropertyValue | undefined {
     const resolved = resolveComponentProp(component, propId, document);
 
@@ -75,7 +76,11 @@ export function componentPropValue(
         const variable = document.variables[override.variableId];
 
         return variable
-            ? resolveVariable(variable, document.variables)
+            ? resolveVariable(
+                  variable,
+                  document.variables,
+                  property.kind === 'color' ? theme : 'light'
+              )
             : property.read(source, document);
     }
 
@@ -91,7 +96,8 @@ export function applyInstanceOverrides(
     source: Shape,
     instance: InstanceShape,
     component: Component,
-    document: Document
+    document: Document,
+    theme: Theme = 'light'
 ): Shape {
     const props = component.props?.filter((prop) => prop.shapeId === source.id) ?? [];
 
@@ -110,7 +116,7 @@ export function applyInstanceOverrides(
         if (typeof override === 'object' && !document.variables[override.variableId]) {
             continue;
         }
-        const value = componentPropValue(instance, component, prop.id, document);
+        const value = componentPropValue(instance, component, prop.id, document, theme);
         const property = SHAPE_PROPERTIES.find((item) => item.key === prop.key);
 
         if (value === undefined || !property) {

@@ -478,6 +478,11 @@ function readVariable(value: unknown): Variable {
         throw new Error('Invalid variable');
     }
 
+    const dark = record(v.values).dark;
+    if (dark !== undefined) {
+        if (variable.type !== 'color') throw new Error('Only colors can vary by Theme');
+        variable.values.dark = color(dark);
+    }
     return v.alias === undefined ? variable : { ...variable, alias: id(v.alias) };
 }
 
@@ -674,6 +679,7 @@ export function readCamera(value: unknown): Camera {
 
 /** What a device shows: the current document, and each document's camera. */
 export interface View {
+    previewTheme?: 'light' | 'dark';
     currentDocumentId?: string;
     cameras: Record<string, Camera>;
 }
@@ -699,6 +705,7 @@ export function readView(value: unknown): View {
     );
 
     return {
+        previewTheme: view.previewTheme === 'dark' ? 'dark' : undefined,
         currentDocumentId: orUndefined(() => id(view.currentDocumentId)),
         cameras: Object.fromEntries(cameras)
     };

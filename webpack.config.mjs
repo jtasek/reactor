@@ -137,9 +137,9 @@ export const config = {
                           name: 'collaboration',
                           enforce: true
                       },
-                      // Cache clipboard transfers separately without raising the entry or file size budgets.
+                      // Keep editor-only clipboard transfers out of the eagerly used component library.
                       clipboard: {
-                          test: /[\\/]src[\\/]app[\\/](clipboard|componentLibrary)\.ts$/,
+                          test: /[\\/]src[\\/]app[\\/]clipboard\.ts$/,
                           name: 'clipboard',
                           enforce: true
                       }

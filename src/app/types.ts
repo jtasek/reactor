@@ -58,6 +58,9 @@ export interface Guide {
     visible: boolean;
 }
 
+/** Local artwork color context; never changes document geometry. */
+export type Theme = 'light' | 'dark';
+
 /** What a variable holds; a property may use a variable of its own kind. */
 export type VariableType = 'color' | 'number' | 'text' | 'boolean';
 
@@ -65,7 +68,7 @@ type VariableOf<T extends VariableType, V> = {
     id: string;
     name: string;
     type: T;
-    /** By mode; only `default` exists yet. */
+    /** Default value; colors may also supply a Dark theme override. */
     values: { default: V };
     /** Same-type source by ID; default is retained as the fallback while following it. */
     alias?: string;
@@ -73,7 +76,7 @@ type VariableOf<T extends VariableType, V> = {
 
 /** A named value kept in a document, written into the shape properties bound to it. */
 export type Variable =
-    | VariableOf<'color', string>
+    | (VariableOf<'color', string> & { values: { default: string; dark?: string } })
     | VariableOf<'number', number>
     | VariableOf<'text', string>
     | VariableOf<'boolean', boolean>;
@@ -474,6 +477,7 @@ export type Application = {
     commands: HashTable<Command>;
     commandsIds: string[];
     config: Configuration;
+    previewTheme: Theme;
     currentDocumentId: string;
     currentDocument: Document;
     /** The source or child being inspected, on this screen only. */

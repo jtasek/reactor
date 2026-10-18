@@ -14,6 +14,7 @@ export interface AddVariable {
     name: string;
     type: VariableType;
     value: unknown;
+    darkValue?: string;
     alias?: string;
 }
 
@@ -46,6 +47,7 @@ export interface UpdateVariable {
     variable: string;
     name?: string;
     value?: unknown;
+    darkValue?: string | null;
     /** A source reference, or null to keep the resolved value as a literal. */
     alias?: string | null;
 }
