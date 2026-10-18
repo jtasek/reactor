@@ -191,6 +191,8 @@ export async function startServer({
             auth: accounts.auth,
             origin: ORIGIN,
             onDeleted: sync.closeDocument,
+            onAccessChanged: sync.closeMember,
+            log,
             assetQuota,
             ai
         })

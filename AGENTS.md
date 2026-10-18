@@ -126,7 +126,8 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   `server/workspaces.ts`, and `server/api.ts` is the `/api` router, which checks the
   session, the `Origin` of changes and the role on every request. `server/sync.ts` serves
   documents over the `/sync` WebSocket with Hocuspocus: the upgrade checks the `Origin` and
-  the session, `onConnect` the role (viewers are read-only), and content is kept in
+  the session, `onConnect` and incoming messages the role (viewers are read-only),
+  and idle connections recheck it with the session; content is kept in
   `document_states`. `server/assets.ts` keeps images: an editor uploads one's bytes with
   `PUT /api/documents/:documentId/assets/:hash` and a viewer reads it there. The server
   checks the type by content and the hash, stores the bytes once (`BlobStorage`), links them
@@ -149,7 +150,17 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   server documents without known permissions stay read-only, including new documents arriving
   from another tab before their workspace role is known; unsent local documents
   remain editable. Document rename/tag edits respect view access, and trash/restore/purge
-  require admin. Member management and connection access revocation remain R3 work.
+  require admin. `server/members.ts` lets admins list members, change editor/viewer roles and
+  remove memberships with their pending invitations; owner/admin memberships are protected.
+  Its HTTP routes delegate membership rules and transactions to `server/services/members.ts`;
+  database queries and mutations live in `server/repositories/members.ts`. Every service
+  operation checks the actor's access and returns an explicit result. Post-commit connection
+  cleanup failures are logged and retried once; they do not report a committed change as failed.
+  Membership changes lock the workspace, as invitation creation/acceptance do, then close
+  only the affected member's document connections (`sync.closeMember`). Viewer sync always
+  starts from the server's state and replaces the local collaboration binding and saved
+  updates; it never merges rejected offline edits. Read-only account documents ignore peer
+  updates/deletions (`TabSync`'s `accepts`), while writable and signed-out tab sync stays intact.
 
 ### Verification baseline (do not treat as regressions)
 
@@ -750,7 +761,11 @@ Hidden guides are not drawn and locked ones do not move.
 - TypeScript is `strict`; **avoid `any`**. `console.log` is a lint warning (only
   `warn`/`error`/`info` allowed) — prefer the `useLog` hook for debug output.
 - `jsx-a11y/no-autofocus` is an **error**: focus inputs via a ref effect, not `autoFocus`.
-- Prefer **early returns** over `else` branches.
+- Prefer **early returns** over `else` branches and nested conditionals.
+- Use braces for conditionals; do not write inline `if` statements. Separate logical code
+  sections with blank lines, including before a return that follows another statement.
+- Prefer `const`. When a mutable temporary accumulates a computed result, consider extracting
+  a function that returns that result instead; retain mutation where it makes the code clearer.
 - Extract **magic numbers into named constants** that explain their purpose. When TypeScript
   and CSS need the same value, define it once and share it through CSS custom properties.
 - Listen to store mutations through the `addMutationListener` that `onInitializeOvermind`

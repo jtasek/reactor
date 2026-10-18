@@ -86,7 +86,7 @@ export function createSync({
     sessionCheck?: number;
 }) {
     const sockets = new Map<string, number>();
-    const hocuspocus = new Hocuspocus({
+    const hocuspocus = new Hocuspocus<{ userId: string }>({
         quiet: true,
         async onConnect({ context, documentName, connectionConfig }) {
             const role = await documentRole(db, context.userId, documentName);
@@ -96,6 +96,15 @@ export function createSync({
             }
 
             connectionConfig.readOnly = !allows(role, 'editor');
+        },
+        async beforeHandleMessage({ context, documentName, connection }) {
+            const role = await documentRole(db, context.userId, documentName);
+            if (!role || connection.readOnly !== !allows(role, 'editor')) {
+                connection.readOnly = true;
+                connection.close({ code: 4403, reason: 'Access changed' });
+                throw new Error('Not found');
+            }
+            connection.readOnly = !allows(role, 'editor');
         },
         onLoadDocument: ({ documentName, document }) => loadState(db, documentName, document),
         async onStoreDocument({ documentName, document }) {
@@ -174,6 +183,21 @@ export function createSync({
 
                 if (current?.user.id !== userId) {
                     websocket.close(4401, 'Session ended');
+                    return;
+                }
+                try {
+                    for (const document of hocuspocus.documents.values()) {
+                        for (const client of document.getConnections()) {
+                            if (client.webSocket !== websocket) continue;
+                            const role = await documentRole(db, userId, document.name);
+                            if (!role || client.readOnly !== !allows(role, 'editor')) {
+                                client.readOnly = true;
+                                client.close({ code: 4403, reason: 'Access changed' });
+                            }
+                        }
+                    }
+                } catch {
+                    /* A failed check is retried on the next interval and incoming message. */
                 }
             }, sessionCheck);
 
@@ -201,6 +225,21 @@ export function createSync({
         /** Disconnects everyone from a document, as when it is deleted. */
         closeDocument(documentId: string) {
             hocuspocus.closeConnections(documentId);
+        },
+        /** Reconnects only this member, so the client refreshes its permissions and document list. */
+        async closeMember(workspaceId: string, userId: string) {
+            const documents = await db
+                .selectFrom('documents')
+                .select('id')
+                .where('workspace_id', '=', workspaceId)
+                .execute();
+            for (const { id } of documents) {
+                for (const connection of hocuspocus.documents.get(id)?.getConnections() ?? []) {
+                    if (connection.context.userId !== userId) continue;
+                    connection.readOnly = true;
+                    connection.close({ code: 4403, reason: 'Access changed' });
+                }
+            }
         },
         /** Saves every document open here and disconnects everyone. */
         async close() {

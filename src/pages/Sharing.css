@@ -56,3 +56,12 @@
 
 .page nav { align-items: center; display: flex; gap: 8px; min-height: 24px; }
 .card button[type="submit"] { background: var(--primary-action-color); color: var(--panel-content-background); font-weight: 700; }
+
+.member { flex-wrap: wrap; }
+.memberActions { display: flex; flex-wrap: wrap; gap: 8px; max-width: 100%; }
+.memberActions select { width: auto; }
+.memberActions p { flex-basis: 100%; }
+
+@media (max-width: 600px) {
+  .memberActions { flex-basis: 100%; }
+}

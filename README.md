@@ -211,8 +211,26 @@ never URL paths or query strings. Acceptance preserves an existing member's role
 A consumed token cannot restore removed membership, and an invitation stops working
 if its creator is no longer an admin. Inspecting a consumed token also requires the
 original accepting account to remain a member; matching the email alone is insufficient.
-Member removal, document invitations, viewer
-links and presence remain separate roadmap steps. Viewer documents open in a live,
+The Members section of Sharing lists names, profile photos and access. Admins can
+switch an editor to viewer (or back) and confirm removal from the whole workspace.
+Owner and admin memberships are protected here. Removing a member also revokes
+pending invitations for their email; a new invitation can grant access again.
+
+| Request | Body / result |
+|---|---|
+| `GET /workspaces/:workspaceId/members` | Admin-only member list with `id`, `name`, `email`, `image`, effective `role` and `owner` |
+| `PATCH /workspaces/:workspaceId/members/:userId` | `{ "role": "viewer" }` or `editor`; changes an existing non-admin member, returns 204 |
+| `DELETE /workspaces/:workspaceId/members/:userId` | Removes a non-admin member and their pending invitations, returns 204 |
+
+These paths start with `/api` and use the same session/Origin rules as invitations.
+Changes disconnect only the affected member's document connections on this server.
+Incoming messages recheck membership, and idle connections recheck it at least every
+minute. After a downgrade, the viewer reloads the server snapshot, discarding edits
+that were made offline but no longer permitted, including their cached updates.
+Other tabs cannot reintroduce those edits into a viewer's document.
+
+Admin promotion, ownership transfer, document invitations, viewer links and presence
+remain separate roadmap steps. Viewer documents open in a live,
 read-only preview with zoom and Fit controls, without
 editor commands or property panels. Rename, tag editing and deletion are unavailable
 for viewers. Editors may edit, while document deletion stays admin-only. Cached viewer

@@ -1,3 +1,4 @@
+import { createMembers, type AccessChanged } from './members.ts';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { fromNodeHeaders } from 'better-auth/node';
 import {
@@ -76,6 +77,8 @@ export function createApi({
     auth,
     origin,
     onDeleted = () => {},
+    onAccessChanged = async () => {},
+    log = console,
     blobs = postgresBlobs(db),
     assetQuota = WORKSPACE_ASSET_BYTES,
     ai
@@ -84,6 +87,8 @@ export function createApi({
     auth: Auth;
     origin: string;
     onDeleted?: (documentId: string) => void;
+    onAccessChanged?: AccessChanged;
+    log?: Pick<Log, 'warn'>;
     blobs?: BlobStorage;
     /** The bytes of images a workspace's documents may use together. */
     assetQuota?: number;
@@ -140,6 +145,7 @@ export function createApi({
     });
 
     api.use(createInvitations(db));
+    api.use(createMembers(db, onAccessChanged, log));
 
     api.get('/workspaces', async (req, res) => {
         await ensurePersonalWorkspace(db, req.userId);

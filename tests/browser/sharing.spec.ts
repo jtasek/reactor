@@ -18,6 +18,7 @@ async function account(page: Page, signedIn = true) {
         route.fulfill({ json: signedIn ? { user } : null })
     );
     await page.route('**/api/workspaces', (route) => route.fulfill({ json: [workspace] }));
+    await page.route('**/api/workspaces/*/members', (route) => route.fulfill({ json: [] }));
     await page.route('**/api/workspaces/*/documents', (route) =>
         route.fulfill({ status: 503, json: {} })
     );
@@ -56,7 +57,9 @@ test('creates a scoped invitation link and revokes it at narrow and normal width
     await expect(page.getByLabel('Invitation link')).toHaveValue(
         `http://127.0.0.1:4173/invite#${token}`
     );
-    await expect(page.getByRole('list')).toContainText('recipient@example.com');
+    await expect(
+        page.getByRole('region', { name: 'Pending invitations' }).getByRole('list')
+    ).toContainText('recipient@example.com');
     await expect(page.getByText('including documents added later.')).toBeVisible();
     await page.screenshot({ path: '/tmp/reactor-sharing-normal.png' });
     await page.setViewportSize({ width: 390, height: 844 });
@@ -324,4 +327,68 @@ test('waits for the initial invitation list before enabling creation so a stale 
     await expect(
         page.getByRole('button', { name: 'Create invitation', exact: true })
     ).toBeEnabled();
+});
+
+test('admins manage editor/viewer members, confirm removals, and cannot edit protected owners', async ({
+    page
+}) => {
+    await account(page);
+    const member = {
+        id: 'member',
+        name: 'Grace',
+        email: 'recipient@example.com',
+        image: null,
+        role: 'editor',
+        owner: false
+    };
+    await page.route('**/api/workspaces/workspace/members', (route) =>
+        route.fulfill({ json: [{ ...user, image: null, role: 'admin', owner: true }, member] })
+    );
+    await page.route('**/api/workspaces/workspace/invitations', (route) =>
+        route.fulfill({
+            json: route.request().method() === 'POST' ? { ...invitation, token } : [invitation]
+        })
+    );
+    let removed = false;
+    await page.route('**/api/workspaces/workspace/members/member', async (route) => {
+        if (route.request().method() === 'PATCH')
+            expect(route.request().postDataJSON()).toEqual({ role: 'viewer' });
+        else {
+            expect(route.request().method()).toBe('DELETE');
+            removed = true;
+        }
+        await route.fulfill({ status: 204 });
+    });
+    await page.setViewportSize({ width: 1440, height: 1100 });
+    await page.goto('/sharing');
+    await page.getByLabel('Email', { exact: true }).fill(member.email);
+    await page.getByRole('button', { name: 'Create invitation', exact: true }).click();
+    await expect(page.getByLabel('Invitation link')).toBeVisible();
+    await page
+        .getByRole('combobox', { name: 'Access for recipient@example.com' })
+        .selectOption('viewer');
+    await expect(
+        page.getByRole('combobox', { name: 'Access for recipient@example.com' })
+    ).toHaveValue('viewer');
+    await expect(
+        page.getByRole('button', { name: 'Remove ada@example.com', exact: true })
+    ).toHaveCount(0);
+    const region = page.getByRole('region', { name: 'Members', exact: true });
+    await region.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: '/tmp/reactor-members-normal.png' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await region.scrollIntoViewIfNeeded();
+    await expect(
+        page.getByRole('button', { name: 'Remove recipient@example.com', exact: true })
+    ).toBeVisible();
+    await page.screenshot({ path: '/tmp/reactor-members-narrow.png' });
+    await page.getByRole('button', { name: 'Remove recipient@example.com', exact: true }).click();
+    expect(removed).toBe(false);
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await page.getByRole('button', { name: 'Remove recipient@example.com', exact: true }).click();
+    await page.getByRole('button', { name: 'Confirm removal', exact: true }).click();
+    await expect(region.getByText('Grace', { exact: true })).toHaveCount(0);
+    expect(removed).toBe(true);
+    await expect(page.getByText('No pending invitations.')).toBeVisible();
+    await expect(page.getByLabel('Invitation link')).toHaveCount(0);
 });

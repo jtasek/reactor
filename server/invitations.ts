@@ -101,6 +101,21 @@ export function createInvitations(db: Db) {
 
     /** Consumed invitations belong to the accepting account only while it remains a member. */
     async function pending(trx: Db, req: Request, token: string, lock: boolean) {
+        if (lock) {
+            const scope = await trx
+                .selectFrom('workspace_invitations')
+                .select('workspace_id')
+                .where('token_hash', '=', hash(token))
+                .where('email', '=', req.userEmail)
+                .executeTakeFirst();
+            if (!scope) return;
+            await trx
+                .selectFrom('workspaces')
+                .select('id')
+                .where('id', '=', scope.workspace_id)
+                .forUpdate()
+                .executeTakeFirst();
+        }
         let query = trx
             .selectFrom('workspace_invitations')
             .selectAll()

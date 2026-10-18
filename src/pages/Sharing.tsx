@@ -1,3 +1,4 @@
+import { WorkspaceMembers } from './WorkspaceMembers';
 import React, { FC, SubmitEvent, useEffect, useState } from 'react';
 import { CalendarDays } from 'lucide-react';
 import { useAccount, useAppState, useEffects } from 'src/app/hooks';
@@ -25,7 +26,7 @@ export const Sharing: FC = () => {
     const [role, setRole] = useState<InvitationRole>('editor');
     const [busy, setBusy] = useState(false);
     const [problem, setProblem] = useState<string>();
-    const [created, setCreated] = useState<{ id: string; link: string }>();
+    const [created, setCreated] = useState<{ id: string; email: string; link: string }>();
     const link = created?.link ?? '';
     const [copied, setCopied] = useState(false);
 
@@ -75,6 +76,7 @@ export const Sharing: FC = () => {
             const created = await invitations.create(workspaceId, email, role);
             setCreated({
                 id: created.id,
+                email: created.email,
                 link: window.location.origin + invitationPath(created.token)
             });
             setEmail('');
@@ -217,6 +219,23 @@ export const Sharing: FC = () => {
                                         </div>
                                     )}
                                 </section>
+                                <WorkspaceMembers
+                                    key={workspaceId}
+                                    workspaceId={workspaceId}
+                                    onRemoved={(email) => {
+                                        setCreated((current) =>
+                                            current?.email.toLowerCase() === email.toLowerCase()
+                                                ? undefined
+                                                : current
+                                        );
+                                        setPending((current) =>
+                                            current?.filter(
+                                                (item) =>
+                                                    item.email.toLowerCase() !== email.toLowerCase()
+                                            )
+                                        );
+                                    }}
+                                />
                                 <section className={styles.card} aria-labelledby="pending-heading">
                                     <h2 id="pending-heading">Pending invitations</h2>
                                     <p className={styles.secondary}>

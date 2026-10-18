@@ -202,3 +202,50 @@ describe('document sync', () => {
         expect(await upgrade(served, { origin: ORIGIN, cookie: ada.cookie })).toBe(401);
     });
 });
+
+it('disconnects only the changed member, rejects writes after downgrade, and revokes reads after removal', async () => {
+    const { served, ada, grace, plan, joinAs } = await start();
+    await joinAs('editor');
+    const editor = open(served, ada.cookie, plan.id);
+    const member = open(served, grace.cookie, plan.id);
+    expect(await editor.outcome).toBe('synced');
+    expect(await member.outcome).toBe('synced');
+    const rows = await sql<{
+        id: string;
+    }>`select id from auth."user" where email = 'grace@example.com'`.execute(served.db);
+    const path = `/workspaces/${ada.personal.id}/members/${rows.rows[0].id}`;
+    expect(
+        (await served.call('PATCH', path, { cookie: ada.cookie, body: { role: 'viewer' } })).status
+    ).toBe(204);
+    await vi.waitFor(() => expect(member.closed).toHaveBeenCalled());
+    expect(editor.closed).not.toHaveBeenCalled();
+    const viewer = open(served, grace.cookie, plan.id);
+    expect(await viewer.outcome).toBe('synced');
+    viewer.document.getText('notes').insert(0, 'Rejected');
+    editor.document.getText('notes').insert(0, 'Allowed');
+    await vi.waitFor(() => expect(notes(viewer.document)).toContain('Allowed'));
+    expect(notes(editor.document)).toBe('Allowed');
+    expect((await served.call('DELETE', path, { cookie: ada.cookie })).status).toBe(204);
+    await vi.waitFor(() => expect(viewer.closed).toHaveBeenCalled());
+    expect(await open(served, grace.cookie, plan.id).outcome).toBe('refused');
+});
+
+it('rechecks idle connections when membership changes outside this server', async () => {
+    const { served, ada, grace, plan, joinAs } = await start({ sessionCheck: 50 });
+    await joinAs('editor');
+    const owner = open(served, ada.cookie, plan.id);
+    const member = open(served, grace.cookie, plan.id);
+    expect(await owner.outcome).toBe('synced');
+    expect(await member.outcome).toBe('synced');
+    await sql`update workspace_members set role = 'viewer' where workspace_id = ${ada.personal.id} and user_id in (select id from auth."user" where email = 'grace@example.com')`.execute(
+        served.db
+    );
+    await vi.waitFor(() => expect(member.closed).toHaveBeenCalled());
+    const viewer = open(served, grace.cookie, plan.id);
+    expect(await viewer.outcome).toBe('synced');
+    await sql`delete from workspace_members where workspace_id = ${ada.personal.id} and user_id in (select id from auth."user" where email = 'grace@example.com')`.execute(
+        served.db
+    );
+    await vi.waitFor(() => expect(viewer.closed).toHaveBeenCalled());
+    expect(owner.closed).not.toHaveBeenCalled();
+});
