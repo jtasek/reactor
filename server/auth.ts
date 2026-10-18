@@ -5,6 +5,7 @@ import { magicLink } from 'better-auth/plugins/magic-link';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Mailer } from './mailer.ts';
 import type { Db } from './schema.ts';
+import type { socialProvidersFromEnv } from './oauth.ts';
 
 /** The header that carries the client's address, set only by `authHandler`. */
 const CLIENT_ADDRESS = 'x-reactor-client-address';
@@ -19,17 +20,20 @@ export function createAuth({
     db,
     baseURL,
     secret,
-    mailer
+    mailer,
+    socialProviders = {}
 }: {
     db: Db;
     baseURL: string;
     secret: string;
     mailer: Mailer;
+    socialProviders?: ReturnType<typeof socialProvidersFromEnv>;
 }) {
     return betterAuth({
         baseURL,
         basePath: '/api/auth',
         secret,
+        socialProviders,
         database: { db, type: 'postgres', schemaName: 'auth' },
         session: { cookieCache: { enabled: false } },
         // Both are on in tests too, where Better Auth would otherwise skip them.

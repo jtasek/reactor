@@ -198,6 +198,16 @@ describe('account requests', () => {
             email: 'ada@example.com'
         });
 
+        respond(200, {
+            user: {
+                name: 'Ada',
+                email: 'ada@example.com',
+                id: 'user-ada',
+                image: 'https://example.com/ada.png'
+            }
+        });
+        expect((await accounts.session())?.image).toBe('https://example.com/ada.png');
+
         respond(200, null);
         expect(await accounts.session()).toBeNull();
 

@@ -8,6 +8,7 @@ export interface AccountUser {
     id: string;
     name: string;
     email: string;
+    image?: string | null;
 }
 
 /** How an account request ended; `message` says why one failed. */
@@ -84,7 +85,12 @@ export const accounts = {
         const session = (await response.json()) as { user: AccountUser } | null;
 
         return (
-            session && { id: session.user.id, name: session.user.name, email: session.user.email }
+            session && {
+                id: session.user.id,
+                name: session.user.name,
+                email: session.user.email,
+                image: session.user.image
+            }
         );
     },
     signIn: (email: string, password: string) => post('sign-in/email', { email, password }),

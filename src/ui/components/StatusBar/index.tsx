@@ -84,7 +84,12 @@ export const AccountInfo: FC = () => {
             href="/account"
             title={account.kind === 'signedIn' ? account.email : undefined}
         >
-            {account.kind === 'signedIn' && <Avatars names={[accountLabel(account)]} decorative />}
+            {account.kind === 'signedIn' && (
+                <Avatars
+                    people={[{ name: accountLabel(account), image: account.image }]}
+                    decorative
+                />
+            )}
             {account.kind === 'signedIn' ? accountLabel(account) : 'Sign in'}
         </a>
     );
