@@ -386,3 +386,15 @@ Packages are limited to 1 MiB and 1,000 variables/dimensions. Unsupported versio
 references and incompatible types or modes are rejected with a message. Reusing a dimension
 requires compatible mode IDs; import separately when its modes differ. Replacing its default
 requires updating every variable assigned to it, so unrelated values cannot silently change.
+
+### DTCG design-token interchange
+
+In **Variables → Design-system import / export**, choose **DTCG (colors / numbers)** to
+import or export the supported [DTCG 2025.10](https://www.designtokens.org/tr/2025.10/format/)
+subset. Opaque sRGB colors convert to Reactor's 8-bit hex values; unitless numbers and aliases
+retain their meaning. Imports still require a preview and confirmation and undo in one step.
+
+Use **Reactor (all definitions)** for modes, text or boolean variables. The first DTCG adapter
+rejects unsupported definitions, including units, transparency, other color spaces, composite
+tokens, descriptions/deprecation and unknown extensions, rather than producing a partial file.
+See [the supported subset](design/design-token-interchange.md) for details and identity rules.

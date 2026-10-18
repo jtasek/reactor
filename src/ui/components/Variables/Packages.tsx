@@ -1,3 +1,7 @@
+import {
+    exportDesignTokenInterchange,
+    parseDesignTokenInterchange
+} from 'src/app/designTokenInterchange';
 import React, { useEffect, useRef, useState } from 'react';
 import { json } from 'overmind';
 import { useActions, useCurrentDocument, useEffects } from 'src/app/hooks';
@@ -21,6 +25,7 @@ function PackageControls() {
     const reading = useRef(0);
     const [data, setData] = useState<DesignSystemPackage>();
     const [choice, setChoice] = useState<ImportChoice>('reuse');
+    const [format, setFormat] = useState<'native' | 'dtcg'>('native');
     const [problem, setProblem] = useState('');
     const [notice, setNotice] = useState('');
     useEffect(
@@ -36,11 +41,20 @@ function PackageControls() {
     };
     const exportPackage = () => {
         try {
-            const text = exportDesignSystemPackage(json(document));
-            const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+            const text =
+                format === 'native'
+                    ? exportDesignSystemPackage(json(document))
+                    : exportDesignTokenInterchange(json(document));
+            const url = URL.createObjectURL(
+                new Blob([text], {
+                    type:
+                        format === 'native' ? 'application/json' : 'application/design-tokens+json'
+                })
+            );
             const link = window.document.createElement('a');
             link.href = url;
-            link.download = 'design-system.reactor.json';
+            link.download =
+                format === 'native' ? 'design-system.reactor.json' : 'design-system.tokens.json';
             link.click();
             setTimeout(() => URL.revokeObjectURL(url), 0);
             setProblem('');
@@ -58,7 +72,11 @@ function PackageControls() {
             if (file.size > PACKAGE_MAX_BYTES) throw new Error('The package is larger than 1 MiB.');
             const text = await file.text();
             if (request !== reading.current) return;
-            setData(parseDesignSystemPackage(text));
+            setData(
+                format === 'native'
+                    ? parseDesignSystemPackage(text)
+                    : parseDesignTokenInterchange(text, file.name)
+            );
             setChoice('reuse');
         } catch (error) {
             if (request === reading.current) setProblem(message(error));
@@ -89,6 +107,31 @@ function PackageControls() {
         <details className={styles.dimensions}>
             <summary>Design-system import / export</summary>
             <div className={styles.dimension}>
+                <label className={styles.field}>
+                    <span>Format</span>
+                    <select
+                        className={styles.source}
+                        aria-label="Design-system format"
+                        value={format}
+                        onChange={(event) => {
+                            reading.current++;
+                            setFormat(event.target.value === 'dtcg' ? 'dtcg' : 'native');
+                            setData(undefined);
+                            setProblem('');
+                            setNotice('');
+                        }}
+                    >
+                        <option value="native">Reactor (all definitions)</option>
+                        <option value="dtcg">DTCG (colors / numbers)</option>
+                    </select>
+                </label>
+                {format === 'dtcg' && (
+                    <p className={styles.resolution}>
+                        Imports opaque sRGB as 8-bit colors, unitless numbers and aliases.
+                        Unsupported definitions reject the whole file. Use Reactor format for modes,
+                        text and booleans.
+                    </p>
+                )}
                 <div className={styles.rowHeader}>
                     <button type="button" onClick={exportPackage}>
                         Export design system
@@ -104,7 +147,7 @@ function PackageControls() {
                         ref={input}
                         hidden
                         type="file"
-                        accept=".json,application/json"
+                        accept=".json,.tokens,application/json,application/design-tokens+json"
                         aria-label="Design-system package"
                         onChange={(event) => {
                             void load(event.target.files?.[0]);

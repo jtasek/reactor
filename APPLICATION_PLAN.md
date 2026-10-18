@@ -347,12 +347,23 @@ work, with V3 and V5 feeding R6. No speculative plugin or expression framework i
    `tests/browser/designSystemPackages.spec.ts` covers preview, conflict choices, reload,
    export, cancellation and rejected imports. Package imports are limited to 1 MiB / 1,000
    records. Existing clipboard name/type matching remains unchanged.
-5. **V5 — Interchange and richer types as needed.** Add a DTCG adapter for the supported
-   subset, reporting unsupported constructs rather than silently flattening them. Add numeric
-   semantics and units only alongside their first properties and validation; compound types
-   follow consumers. Keep the native model independent of the interchange format.
-   Acceptance: `tests/designTokenInterchange.test.ts` covers supported round trips, alias
-   identity, units, unsupported-input diagnostics and failure without document changes.
+5. **V5 — Interchange and richer types as needed (first increment implemented).** The
+   optional Variables panel offers a DTCG 2025.10 subset adapter alongside native packages.
+   It exchanges opaque sRGB colors (converted to Reactor's 8-bit hex), finite unitless
+   numbers, named groups, root tokens and same-type aliases (curly references and local
+   whole-token JSON Pointers). It preserves aliases and Reactor package/token identities
+   through a namespaced extension, including retained alias fallbacks. Files without that
+   extension use filename/path identity; renames outside Reactor need explicit conflict review.
+   Imports use V4's preview, validation, conflict choices and one-step undo. Unsupported
+   types, units, color spaces/alpha, modes, metadata, inheritance and property-level/remote
+   references reject the whole file with a location and reason; exports never silently drop
+   native definitions. Full DTCG conformance and Resolver mode interchange remain later work.
+   Native document types stay independent of the adapter. Numeric semantics and units will be
+   added alongside their first consumers; compound types follow consumers.
+   Acceptance: `tests/designTokenInterchange.test.ts` covers round trips, alias and source
+   identity, supported values, units/unsupported-input diagnostics, rejection without writes,
+   collaboration and undo. `tests/browser/designTokenInterchange.spec.ts` covers preview,
+   import/reload, export, unsupported definitions and switching formats safely.
 
 ### R3 Sharing and presence (M)
 
