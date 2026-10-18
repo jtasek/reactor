@@ -54,3 +54,10 @@ test('unconfigured providers do not appear', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
     await expect(page.getByRole('group', { name: 'Social sign-in' })).toHaveCount(0);
 });
+
+test('a provider stopped by an unconfirmed account asks to confirm it first', async ({ page }) => {
+    await page.route('**/api/auth/get-session', (route) => route.fulfill({ json: null }));
+    await page.route('**/api/sign-in/providers', (route) => route.fulfill({ json: ['google'] }));
+    await page.goto('/account?oauth=failed&error=account_not_linked');
+    await expect(page.getByRole('alert')).toContainText('not confirmed yet');
+});

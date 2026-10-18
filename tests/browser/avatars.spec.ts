@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const PHOTO = 'https://profiles.example.test/ada.svg';
+const PHOTO = 'https://lh3.googleusercontent.com/a/ada.svg';
 
 async function signIn(page: Page, image: string | null) {
     await page.route('**/api/auth/get-session', (route) =>
@@ -52,3 +52,20 @@ for (const image of [null, PHOTO]) {
         await expect(page.locator('main svg.lucide-user-round')).toBeVisible();
     });
 }
+
+test('a photo from a host other than the sign-in providers keeps the user icon', async ({
+    page
+}) => {
+    const elsewhere = 'https://photos.example.test/ada.svg';
+    await signIn(page, elsewhere);
+    await page.route(elsewhere, (route) =>
+        route.fulfill({
+            contentType: 'image/svg+xml',
+            body: '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="32"/>'
+        })
+    );
+    await page.goto('/account');
+    await expect(page.getByText('Signed in as Ada (ada@example.com).')).toBeVisible();
+    await expect(page.locator('main img')).toHaveCount(0);
+    await expect(page.locator('main svg.lucide-user-round')).toBeVisible();
+});

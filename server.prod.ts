@@ -52,6 +52,12 @@ const logger = pinoHttp({
     autoLogging: { ignore: (req) => req.url === '/healthz' }
 });
 
+/** Where Google and GitHub, the optional sign-in providers, keep profile photos. */
+const PROFILE_PHOTO_HOSTS = [
+    'https://*.googleusercontent.com',
+    'https://avatars.githubusercontent.com'
+];
+
 const app = express();
 
 // Behind a load balancer / reverse proxy this lets Express trust X-Forwarded-* headers.
@@ -73,8 +79,8 @@ app.use(
                 // React renders dynamic inline style attributes (shape positions,
                 // sizes, colors) so style-src needs 'unsafe-inline'. Scripts remain locked down.
                 styleSrc: ["'self'", "'unsafe-inline'"],
-                // Account photos may be hosted by an external HTTPS identity provider.
-                imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+                // Account photos come from the sign-in providers' own image hosts.
+                imgSrc: ["'self'", 'data:', 'blob:', ...PROFILE_PHOTO_HOSTS],
                 fontSrc: ["'self'", 'data:'],
                 connectSrc: ["'self'", ...(SYNC_ORIGIN ? [SYNC_ORIGIN] : [])],
                 manifestSrc: ["'self'"],

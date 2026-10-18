@@ -7,14 +7,24 @@ import {
 } from 'src/app/services/oauth';
 import styles from './Account.css';
 
+/** Why sign-in with a provider failed, when the page is where it returned after failing. */
+function returnedProblem() {
+    const search = new URLSearchParams(window.location.search);
+
+    if (search.get('oauth') !== 'failed') {
+        return undefined;
+    }
+
+    // Better Auth links a provider to an account of the same email only once it is confirmed.
+    return search.get('error') === 'account_not_linked'
+        ? 'This email address has an account that is not confirmed yet. Confirm it with the link we emailed you, then try again.'
+        : 'Social sign-in was not completed. Please try again or sign in by email.';
+}
+
 export const SocialSignIn: FC = () => {
     const [providers, setProviders] = useState<OAuthProvider[]>([]);
     const [busy, setBusy] = useState(false);
-    const [problem, setProblem] = useState<string | undefined>(() =>
-        new URLSearchParams(window.location.search).get('oauth') === 'failed'
-            ? 'Social sign-in was not completed. Please try again or sign in by email.'
-            : undefined
-    );
+    const [problem, setProblem] = useState(returnedProblem);
 
     useEffect(() => {
         const controller = new AbortController();

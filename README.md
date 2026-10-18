@@ -159,10 +159,12 @@ Register these callback URLs in the provider's OAuth application, using your
 - GitHub: `https://reactor.example.com/api/auth/callback/github`
 
 Use the same paths on `http://localhost:4000` for local development. Google uses
-OpenID/email/profile scopes; GitHub uses read:user and user:email. On each social
-sign-in, Better Auth saves the provider's name and profile photo to the account,
-refreshing an existing profile. The account UI displays the photo with a user-icon
-fallback. Document attribution still stores names, so those avatars cannot yet
+OpenID/email/profile scopes; GitHub uses read:user and user:email. A new account
+takes the provider's name and profile photo, and each later sign-in refreshes only
+the photo, so the account keeps its own name and email. Signing in with a provider
+links to an account of the same email address only once that address is confirmed.
+The account UI displays the photo with a user-icon fallback, loaded only from
+Google's and GitHub's image hosts. Document attribution still stores names, so those avatars cannot yet
 be matched reliably to account photos. No OAuth credentials means email sign-in
 continues unchanged; configuring only one of a provider's credential pair fails startup.
 

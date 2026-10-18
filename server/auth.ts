@@ -5,7 +5,7 @@ import { magicLink } from 'better-auth/plugins/magic-link';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Mailer } from './mailer.ts';
 import type { Db } from './schema.ts';
-import type { socialProvidersFromEnv } from './oauth.ts';
+import { refreshingPhotoOnly, type KnownUser, type SocialProviders } from './oauth.ts';
 
 /** The header that carries the client's address, set only by `authHandler`. */
 const CLIENT_ADDRESS = 'x-reactor-client-address';
@@ -14,7 +14,8 @@ const CLIENT_ADDRESS = 'x-reactor-client-address';
  * Accounts and sessions, stored in the `auth` schema of `db`. People sign up with
  * an email address, confirmed by a link before they can sign in with a password,
  * or sign in with a link sent by email. Sessions are only in the database, so
- * revoking one takes effect at once.
+ * revoking one takes effect at once. Google and GitHub sign-in, when configured,
+ * refresh only the account's photo (`refreshingPhotoOnly`).
  */
 export function createAuth({
     db,
@@ -27,13 +28,28 @@ export function createAuth({
     baseURL: string;
     secret: string;
     mailer: Mailer;
-    socialProviders?: ReturnType<typeof socialProvidersFromEnv>;
+    socialProviders?: SocialProviders;
 }) {
-    return betterAuth({
+    const auth = betterAuth({
         baseURL,
         basePath: '/api/auth',
         secret,
-        socialProviders,
+        socialProviders: refreshingPhotoOnly(socialProviders, {
+            byAccount: async (providerId, accountId): Promise<KnownUser | undefined> => {
+                const { internalAdapter } = await auth.$context;
+                const owner = await internalAdapter.findAccountOwnerByKey({
+                    providerId,
+                    accountId
+                });
+
+                return owner?.kind === 'owned' ? owner.user : undefined;
+            },
+            byEmail: async (email): Promise<KnownUser | undefined> => {
+                const { internalAdapter } = await auth.$context;
+
+                return (await internalAdapter.findUserByEmail(email.toLowerCase()))?.user;
+            }
+        }),
         database: { db, type: 'postgres', schemaName: 'auth' },
         session: { cookieCache: { enabled: false } },
         // Both are on in tests too, where Better Auth would otherwise skip them.
@@ -65,6 +81,8 @@ export function createAuth({
             })
         ]
     });
+
+    return auth;
 }
 
 export type Auth = ReturnType<typeof createAuth>;
