@@ -519,3 +519,19 @@ it('cancels a subtree move when another copy locks a child, keeping the remote l
         readEntity('shapes', shownDocument(b).shapes[shape])
     );
 });
+
+it('keeps a cloned nested frame in its parent and a cloned root frame on Canvas', () => {
+    const { store } = createTestStore();
+    const { root, child } = setup(store);
+    store.actions.editFrame({ kind: 'clone', id: child });
+    const document = store.state.currentDocument;
+    const clone = document.selectedFrameId!;
+    expect(clone).not.toBe(child);
+    expect(document.frames[clone].parentFrameId).toBe(root);
+    expect(frameContents(document, root).frames).toEqual(expect.arrayContaining([child, clone]));
+
+    store.actions.editFrame({ kind: 'clone', id: root });
+    expect(
+        store.state.currentDocument.frames[store.state.currentDocument.selectedFrameId!]
+    ).not.toHaveProperty('parentFrameId');
+});

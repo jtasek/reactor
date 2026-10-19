@@ -11,7 +11,13 @@ import { resizeBox, assertNever } from './utils';
 import { withTheirGroups } from './membership';
 import { unbindMovedProperties } from './variables';
 import { CLONE_OFFSET, translateShape } from './geometry';
-import { deleteFrame, frameContents, validFrameParent, frameMoveProblem } from './frameMembership';
+import {
+    deleteFrame,
+    frameContents,
+    frameParents,
+    validFrameParent,
+    frameMoveProblem
+} from './frameMembership';
 import { editorHelpers } from './editorHelpers';
 import { untracked } from './untracked';
 
@@ -62,6 +68,7 @@ function addFrame(context: Context, input: Extract<FrameEdit, { kind: 'add' | 'p
             name: frameName(document.frames, source?.name),
             position,
             size: input.kind === 'add' ? input.size : input.frame.size,
+            ...(source?.parentFrameId === undefined ? {} : { parentFrameId: source.parentFrameId }),
             locked: false,
             visible: true
         })
@@ -268,9 +275,16 @@ export function edit(context: Context, input: FrameEdit): string | undefined {
 
     if (input.kind === 'clone') {
         const copied = readClipboard(writeClipboard(frame, document));
+        // A clone stays beside its original, in the parent the view shows.
+        const parentFrameId = frameParents(untracked(document).frames).get(frame.id);
 
         return copied
-            ? actions.editFrame({ kind: 'paste', frame: copied.frame, copied, target: null })
+            ? actions.editFrame({
+                  kind: 'paste',
+                  frame: { ...copied.frame, ...(parentFrameId ? { parentFrameId } : {}) },
+                  copied,
+                  target: null
+              })
             : undefined;
     }
 

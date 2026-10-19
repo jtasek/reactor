@@ -11,7 +11,7 @@ import { Context } from '.';
 import { useCallback, useLayoutEffect, useReducer, useRef, useSyncExternalStore } from 'react';
 import { getShapeBounds, isShapeLocked, isShapeVisible } from './utils';
 import { hitTestShape, hitTolerance } from './geometry';
-import type { Command, CommandPlace, CommandScope } from './types';
+import type { Command, CommandPlace, CommandScope, Document } from './types';
 import { takesEditorInput } from '../events/input';
 import { editorLoaded, subscribeToEditorHelpers } from './editorHelpers';
 import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
@@ -284,6 +284,27 @@ export const useShape = (id: string) => {
     return useCurrentDocument()?.shapes[id];
 };
 
+/** Whether a frame, or a frame it is in, is the selected frame. */
+const inSelectedFrame = (document: Document, frameId: string | undefined) => {
+    const selected = document.selectedFrameId;
+    const seen = new Set<string>();
+
+    for (let id = frameId; selected !== undefined && id !== undefined; ) {
+        if (id === selected) {
+            return true;
+        }
+
+        if (seen.has(id)) {
+            return false;
+        }
+
+        seen.add(id);
+        id = document.frames[id]?.parentFrameId;
+    }
+
+    return false;
+};
+
 /** Whether the shape is drawn: see `isShapeVisible`. */
 /**
  * Whether a shape is measured where drawn: not while a gesture keeps its bounds
@@ -294,8 +315,9 @@ export const useMeasuringShape = (id: string) =>
     useAppState((state) => {
         const shape = state.currentDocument.shapes[id];
 
-        // Unframed, unselected shapes keep their existing measurement subscriptions.
-        if (shape?.parentFrameId !== undefined) {
+        // A frame drag moves its descendants, and only a selected frame is dragged, so
+        // only the selected frame's descendants read the gesture besides selected shapes.
+        if (inSelectedFrame(state.currentDocument, shape?.parentFrameId)) {
             const gesture = state.events.pointer.gesture;
 
             if (gesture.kind === 'editingFrame' && gesture.shapes[id]) {
