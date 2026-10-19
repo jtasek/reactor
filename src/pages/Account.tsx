@@ -1,4 +1,4 @@
-import React, { FC, SubmitEvent, useEffect, useRef, useState, type ReactNode } from 'react';
+import React, { FC, SubmitEvent, useEffect, useRef, useState } from 'react';
 import { useAccount, useEffects, useReaction } from 'src/app/hooks';
 import { accountLabel, type AccountResult } from 'src/app/services/accounts';
 import { authenticationURLs, loginURL, resendVerification } from 'src/app/services/authentication';
@@ -7,32 +7,26 @@ import { signOut, waitForSync } from 'src/app/services/signOut';
 import { Avatars } from 'src/ui/components/Avatars';
 import { SocialSignIn, returnedProblem } from './SocialSignIn';
 import styles from './Account.css';
+import { AccountFrame } from './AccountFrame';
+import { ResetPassword } from './ResetPassword';
+import { requestPasswordReset } from 'src/app/services/passwordRecovery';
 
-type Mode = 'signIn' | 'signUp' | 'link';
+type Mode = 'signIn' | 'signUp' | 'link' | 'forgot';
 type Pending = Mode | OAuthProvider | 'resend';
-type Sent = { mode: 'signUp' | 'link'; email: string };
+type Sent = { mode: Exclude<Mode, 'signIn'>; email: string };
 
 const RESEND_DELAY_SECONDS = 30;
 const SECOND = 1000;
 const MODES: Record<Mode, { title: string; submit: string; pending: string }> = {
     signIn: { title: 'Sign in', submit: 'Sign in', pending: 'Signing in…' },
     signUp: { title: 'Create an account', submit: 'Create account', pending: 'Creating account…' },
-    link: { title: 'Sign in with a link', submit: 'Email me a link', pending: 'Sending link…' }
+    link: { title: 'Sign in with a link', submit: 'Email me a link', pending: 'Sending link…' },
+    forgot: {
+        title: 'Reset your password',
+        submit: 'Send reset link',
+        pending: 'Sending reset link…'
+    }
 };
-
-const AccountFrame: FC<{ children: ReactNode; signedIn?: boolean }> = ({ children, signedIn }) => (
-    <main className={styles.page}>
-        <div className={styles.content}>
-            <a className={styles.brand} href="/documents" aria-label="Reactor documents">
-                Reactor
-            </a>
-            <section className={styles.card}>{children}</section>
-            <a className={styles.local} href="/documents">
-                {signedIn ? 'Back to Documents' : 'Continue without signing in'}
-            </a>
-        </div>
-    </main>
-);
 
 /**
  * Signs out, after telling the user what would be lost; the page loads again
@@ -225,6 +219,10 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
                 return accounts.signUp(name, email, password, urls.callbackURL);
             }
 
+            if (mode === 'forgot') {
+                return requestPasswordReset(email, urls.callbackURL);
+            }
+
             return accounts.sendSignInLink(email, urls.callbackURL);
         };
 
@@ -254,6 +252,10 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
                 return resendVerification(sent.email, urls.callbackURL);
             }
 
+            if (sent.mode === 'forgot') {
+                return requestPasswordReset(sent.email, urls.callbackURL);
+            }
+
             return accounts.sendSignInLink(sent.email, urls.callbackURL);
         };
 
@@ -266,10 +268,17 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
                 <Heading ref={sentHeading} tabIndex={-1}>
                     Check your email
                 </Heading>
-                <p role="status">
-                    Check <strong>{sent.email}</strong> for a link to{' '}
-                    {sent.mode === 'signUp' ? 'confirm your address and sign in.' : 'sign in.'}
-                </p>
+                {sent.mode === 'forgot' ? (
+                    <p role="status">
+                        If an account exists for <strong>{sent.email}</strong>, we sent a password
+                        reset link.
+                    </p>
+                ) : (
+                    <p role="status">
+                        Check <strong>{sent.email}</strong> for a link to{' '}
+                        {sent.mode === 'signUp' ? 'confirm your address and sign in.' : 'sign in.'}
+                    </p>
+                )}
                 {returnTo && (
                     <p>
                         After signing in, return to this invitation tab or reopen the invitation
@@ -305,7 +314,13 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
             <Heading>{MODES[mode].title}</Heading>
             {problem && <p role="alert">{problem}</p>}
             <fieldset className={styles.fields} disabled={busy}>
-                <SocialSignIn pending={pending} onSignIn={socialSignIn} onProblem={setProblem} />
+                {mode !== 'forgot' && (
+                    <SocialSignIn
+                        pending={pending}
+                        onSignIn={socialSignIn}
+                        onProblem={setProblem}
+                    />
+                )}
                 {mode === 'signUp' && (
                     <label>
                         Name
@@ -329,7 +344,7 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
                         required
                     />
                 </label>
-                {mode !== 'link' && (
+                {(mode === 'signIn' || mode === 'signUp') && (
                     <label>
                         Password
                         <input
@@ -342,12 +357,17 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
                         />
                     </label>
                 )}
+                {mode === 'signIn' && (
+                    <button className={styles.link} type="button" onClick={() => choose('forgot')}>
+                        Forgot password?
+                    </button>
+                )}
                 <button className={styles.primary} type="submit">
                     {pending === mode ? MODES[mode].pending : MODES[mode].submit}
                 </button>
                 <div className={styles.modes}>
                     {(Object.keys(MODES) as Mode[])
-                        .filter((other) => other !== mode)
+                        .filter((other) => other !== mode && other !== 'forgot')
                         .map((other) => (
                             <button
                                 key={other}
@@ -368,8 +388,13 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
 export const Account: FC<{ login?: boolean }> = ({ login = false }) => {
     const account = useAccount();
     const { redirect, reload } = useEffects();
+    const resetting = window.location.pathname.replace(/\/+$/, '') === '/reset-password';
 
     useEffect(() => {
+        if (resetting) {
+            return;
+        }
+
         if (!login && account.kind === 'signedOut') {
             redirect(loginURL('/account'));
 
@@ -379,7 +404,11 @@ export const Account: FC<{ login?: boolean }> = ({ login = false }) => {
         if (login && account.kind === 'signedIn') {
             reload(authenticationURLs().destination);
         }
-    }, [account.kind, login, redirect, reload]);
+    }, [account.kind, login, redirect, reload, resetting]);
+
+    if (resetting) {
+        return <ResetPassword />;
+    }
 
     if (account.kind === 'loading') {
         return (

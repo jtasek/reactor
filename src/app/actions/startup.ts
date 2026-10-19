@@ -76,6 +76,7 @@ function registerRoutes(effects: Context['effects'], actions: Context['actions']
         '/login': () => actions.showAccount('login'),
         // The alias shows as /login, keeping the query.
         '/signin': () => effects.redirect(`/login${window.location.search}`),
+        '/reset-password': () => actions.showAccount('login'),
         '/sharing': actions.showSharing,
         '/invite': actions.showInvitation
     });

@@ -181,6 +181,13 @@ cooldown. Signup resends verification rather than creating another account; conf
 the address signs the person in automatically. Authentication POST handling loads only
 when used. The editor also works without signing in.
 
+**Forgot password?** sends a recovery email without revealing whether the address has an
+account. Its link opens `/reset-password`, expires after one hour and works once. Resetting
+requires a matching new password, revokes the account's sessions, and returns to sign-in.
+The reset token stays in the URL fragment until success; invitation secrets stay in the
+original tab and are never included in recovery requests. Recovery preserves the allowed
+return destination and uses the same check-email and resend controls.
+
 Signed out, the editor says once, and again at 3 documents,
 that documents are kept only in this browser. Signed in, documents sync with the
 server, and the browser keeps a copy of them in a database of the account's own

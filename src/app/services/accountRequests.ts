@@ -2,6 +2,7 @@ import type { AccountResult } from './accounts';
 
 const MESSAGES: Record<string, string> = {
     INVALID_EMAIL: 'Enter a valid email address.',
+    INVALID_TOKEN: 'This reset link is invalid or has expired. Request a new one.',
     INVALID_EMAIL_OR_PASSWORD: 'The email address or password is wrong.',
     EMAIL_NOT_VERIFIED: 'Confirm your email address first, with the link we sent you.',
     PASSWORD_TOO_SHORT: 'Use a password of at least 8 characters.',

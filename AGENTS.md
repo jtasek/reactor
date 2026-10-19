@@ -137,13 +137,19 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
 
 - **Sign-in pages**: `/login` is the signed-out entry point; `/signin` is an alias.
   Signed-out `/account` visitors go to login with Account as the return destination.
-  Both pages share the lazy-loaded `pages/Account.tsx` frame and forms, including invitation
-  forms. `services/authentication.ts` resolves allowed destinations (Documents by default)
-  for password, email links and OAuth; invitation callbacks remain token-free `/invite`.
+  Both pages share the lazy-loaded `pages/AccountFrame.tsx` frame and `pages/Account.tsx`
+  forms, including invitation forms. `services/authentication.ts` resolves allowed destinations
+  (Documents by default) for password, email links and OAuth; invitation callbacks remain token-free `/invite`.
   The form owns a shared pending/error state across providers, email and mode controls.
   Successful email requests show a check-email step with a 30-second resend cooldown;
   signup resends use Better Auth's verification endpoint. Authentication POST handling
   and its error messages load through `accountRequests.ts` only when needed.
+  Forgot-password requests use the same check-email step. `/reset-password` accepts a token
+  in the fragment, requires matching passwords, then removes the token and asks for sign-in.
+  Better Auth expires reset tokens after one hour, consumes them once and revokes all sessions
+  for that account. Recovery callbacks preserve only allowed destinations, including token-free
+  `/invite`; the invitation secret remains in its original tab. The reset page is available
+  even when signed in, and its exit navigation reloads to recheck the session.
 
 - **Workspace invitations** (`server/invitations.ts`): admin-only creation/listing/revocation
   of pending editor/viewer invites; tokens are hashed and expire after seven days. Inspection
