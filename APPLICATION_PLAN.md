@@ -400,13 +400,15 @@ Done when `tests/server/sharing.test.ts` (invited roles, read-only viewer links)
 
 The user turns a drawing into screens that navigate and take input, and sends a link to them.
 
-Implementation status: the first layout spike is complete in `tests/frames.test.ts` and
-`tests/spikes/frameLayout.ts`. Sixteen cases cover fixed row/column layout, nested/free frames,
-independent rule edits, concurrent resize/reorder/reparent/delete, parent cycles and local undo
-across two Yjs copies. Derived positions stay outside the shared rules. This is test-only;
-frame records and editor controls are not implemented. [Spike findings and integration
-boundaries](design/frame-layout-spike.md) distinguish the candidate projection from production
-collaboration and record the coordinate-conversion work still needed.
+Implementation status: a first layout spike, `tests/frames.test.ts` and
+`tests/spikes/frameLayout.ts`, proves the layout algorithm on two Yjs copies merged in the
+test. Its cases cover fixed row/column layout, nested/free frames, independent rule edits,
+concurrent resize/reorder/reparent/delete, parent cycles, unreadable rules and local undo.
+Derived positions stay outside the shared rules. It does not go through the production
+`Collaboration` service, so stacks laid out again after merges across two production copies
+remain to be proved when stacks are integrated (below). Frame records and editor controls are
+not implemented. [Spike findings and integration boundaries](design/frame-layout-spike.md)
+record the coordinate-conversion work still needed.
 
 1. Frames for screens and stacks, and roles and props on components and instances:
    - First usable increment: validated frame records, durable membership, save/copy/operations,

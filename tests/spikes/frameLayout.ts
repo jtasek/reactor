@@ -27,26 +27,44 @@ export type LayoutNode =
 export type LayoutBox = Pick<LayoutBase, 'x' | 'y' | 'width' | 'height'>;
 export interface LayoutProblem {
     id: string;
-    code: 'invalid-geometry' | 'invalid-parent' | 'parent-cycle' | 'overflow';
+    code: 'invalid-geometry' | 'invalid-stack' | 'invalid-parent' | 'parent-cycle' | 'overflow';
 }
 
 const compare = (a: string, b: string) => (a < b ? -1 : Number(a > b));
-const finiteNonnegative = (value: number) => Number.isFinite(value) && value >= 0;
+const finiteNonnegative = (value: unknown) =>
+    typeof value === 'number' && Number.isFinite(value) && value >= 0;
+const DIRECTIONS: readonly unknown[] = ['row', 'column'];
+const ALIGNMENTS: readonly unknown[] = ['start', 'center', 'end'];
 
 function validGeometry(node: LayoutNode) {
     if (![node.x, node.y].every(Number.isFinite)) {
         return false;
     }
 
-    if (![node.width, node.height].every(finiteNonnegative)) {
+    return [node.width, node.height].every(finiteNonnegative);
+}
+
+/** Rules a copy cannot read, as a newer copy's direction, leave the frame free, not dropped. */
+function validStack(rules: StackRules) {
+    if (!DIRECTIONS.includes(rules.direction) || !ALIGNMENTS.includes(rules.align)) {
         return false;
     }
 
+    return [rules.gap, rules.padding].every(finiteNonnegative);
+}
+
+function readableStack(node: LayoutNode, problems: LayoutProblem[]) {
     if (node.kind !== 'frame' || !node.stack) {
-        return true;
+        return undefined;
     }
 
-    return [node.stack.gap, node.stack.padding].every(finiteNonnegative);
+    if (!validStack(node.stack)) {
+        problems.push({ id: node.id, code: 'invalid-stack' });
+
+        return undefined;
+    }
+
+    return node.stack;
 }
 
 /** Broken parent edges stay visible as roots; no repair is written into shared data. */
@@ -184,7 +202,7 @@ export function projectFrameLayout(records: readonly LayoutNode[]) {
         const node = pending[index];
         const members = children.get(node.id) ?? [];
         const box = boxes[node.id];
-        const stack = node.kind === 'frame' ? node.stack : undefined;
+        const stack = readableStack(node, problems);
         const positions = stack
             ? stackChildren(box, stack, members, problems, node.id)
             : members.map((child) => ({

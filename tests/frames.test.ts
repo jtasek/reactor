@@ -1,5 +1,5 @@
 import * as Y from 'yjs';
-import { projectFrameLayout, type LayoutNode } from './spikes/frameLayout';
+import { projectFrameLayout, type LayoutNode, type StackRules } from './spikes/frameLayout';
 
 const frame: LayoutNode = {
     id: 'screen',
@@ -33,14 +33,20 @@ function sharedNode(record: LayoutNode) {
     return new Y.Map<unknown>(entries);
 }
 
+/** Yjs keeps the concurrent map write of the copy with the higher client ID. */
+const FIRST_CLIENT = 1;
+const SECOND_CLIENT = 2;
+
 /** Nested layout fields merge independently, as production entities do. */
 function twoCopies(records = fixture()) {
     const first = new Y.Doc();
+    first.clientID = FIRST_CLIENT;
     const table = first.getMap<Y.Map<unknown>>('nodes');
     for (const node of records) {
         table.set(node.id, sharedNode(node));
     }
     const second = new Y.Doc();
+    second.clientID = SECOND_CLIENT;
     Y.applyUpdate(second, Y.encodeStateAsUpdate(first));
 
     onTestFinished(() => {
@@ -151,17 +157,29 @@ it('converges concurrent insertion, reordering and frame resizing after delayed 
     expect(result.boxes.first.y).toBe(180);
 });
 
-it('uses the CRDT winner for concurrent reparenting without duplicating a child', () => {
-    const copies = twoCopies([...fixture(), { ...frame, id: 'other', x: 700 }]);
-    const [first, second] = copies;
-    node(first, 'first').set('parentId', 'other');
-    node(second, 'first').set('parentId', undefined);
-    merge(copies);
-    expect(project(first)).toEqual(project(second));
-    const parent = node(first, 'first').get('parentId');
-    expect(project(first).boxes.first.x).toBe(parent === 'other' ? 720 : 0);
-    expect(Object.keys(project(first).boxes).filter((id) => id === 'first')).toHaveLength(1);
-});
+it.each([
+    { moved: 0, winner: 'canvas', x: 0 },
+    { moved: 1, winner: 'other', x: 720 }
+])(
+    'keeps the CRDT winner ($winner) of concurrent reparenting without duplicating a child',
+    ({ moved, winner, x }) => {
+        const copies = twoCopies([...fixture(), { ...frame, id: 'other', x: 700 }]);
+        node(copies[moved], 'first').set('parentId', 'other');
+        node(copies[1 - moved], 'first').set('parentId', undefined);
+        merge(copies);
+        const result = project(copies[0]);
+        expect(result).toEqual(project(copies[1]));
+        expect(node(copies[0], 'first').get('parentId')).toBe(
+            winner === 'other' ? 'other' : undefined
+        );
+        expect(result.boxes.first).toEqual({
+            x,
+            y: winner === 'other' ? 130 : 0,
+            width: 80,
+            height: 40
+        });
+    }
+);
 
 it('keeps a child as a root when its parent is concurrently deleted, without repairing the CRDT', () => {
     const copies = twoCopies();
@@ -226,6 +244,19 @@ it('diagnoses invalid geometry and does not allow a shape to be a parent', () =>
         { id: 'invalid', code: 'invalid-geometry' },
         { id: 'second', code: 'invalid-parent' }
     ]);
+});
+
+it.each([
+    ['an unknown direction', { direction: 'diagonal' }],
+    ['an unknown alignment', { align: 'middle' }],
+    ['a missing gap', { gap: undefined }],
+    ['a negative padding', { padding: -1 }]
+])('keeps a frame with %s and places its children freely', (_, changes) => {
+    const stack = { ...frame.stack, ...changes } as unknown as StackRules;
+    const result = projectFrameLayout([{ ...frame, stack }, child('first', 'a', { x: 5, y: 6 })]);
+    expect(result.boxes.screen).toEqual({ x: 100, y: 50, width: 400, height: 200 });
+    expect(result.boxes.first).toEqual({ x: 105, y: 56, width: 80, height: 40 });
+    expect(result.problems).toEqual([{ id: 'screen', code: 'invalid-stack' }]);
 });
 
 it('merges edits to different layout fields instead of replacing the entire stack rule', () => {
