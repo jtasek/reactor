@@ -111,6 +111,8 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
     const [resendIn, setResendIn] = useState(0);
     const [resendAt, setResendAt] = useState(0);
     const inFlight = useRef(false);
+    /** Set once a request succeeded and the browser is leaving, so the form stays busy. */
+    const leaving = useRef(false);
     const first = useRef<HTMLInputElement>(null);
     const sentHeading = useRef<HTMLHeadingElement>(null);
     const Heading = returnTo ? 'h2' : 'h1';
@@ -178,8 +180,10 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
                     : 'The request could not be completed. Please try again.'
             );
         } finally {
-            inFlight.current = false;
-            setPending(undefined);
+            if (!leaving.current) {
+                inFlight.current = false;
+                setPending(undefined);
+            }
         }
     };
 
@@ -200,6 +204,7 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
                 mode,
                 () => accounts.signIn(email, password),
                 () => {
+                    leaving.current = true;
                     forgetOwner();
 
                     if (returnTo) {
@@ -233,6 +238,7 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
     const socialSignIn = (provider: OAuthProvider) => {
         void perform(provider, async () => {
             await signInWithProvider(provider, urls.callbackURL, urls.errorCallbackURL);
+            leaving.current = true;
 
             return { ok: true };
         });
@@ -361,18 +367,11 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
 /** Login is the only signed-out entry point; Account shows identity and sign-out. */
 export const Account: FC<{ login?: boolean }> = ({ login = false }) => {
     const account = useAccount();
-    const { reload } = useEffects();
-    const signInAlias = window.location.pathname.replace(/\/+$/, '') === '/signin';
+    const { redirect, reload } = useEffects();
 
     useEffect(() => {
-        if (signInAlias) {
-            window.location.replace(loginURL());
-
-            return;
-        }
-
         if (!login && account.kind === 'signedOut') {
-            window.location.replace(loginURL('/account'));
+            redirect(loginURL('/account'));
 
             return;
         }
@@ -380,7 +379,7 @@ export const Account: FC<{ login?: boolean }> = ({ login = false }) => {
         if (login && account.kind === 'signedIn') {
             reload(authenticationURLs().destination);
         }
-    }, [account.kind, login, reload, signInAlias]);
+    }, [account.kind, login, redirect, reload]);
 
     if (account.kind === 'loading') {
         return (
@@ -399,7 +398,7 @@ export const Account: FC<{ login?: boolean }> = ({ login = false }) => {
         );
     }
 
-    if (account.kind === 'signedOut' && (!login || signInAlias)) {
+    if (account.kind === 'signedOut' && !login) {
         return (
             <AccountFrame>
                 <p role="status">Opening sign-in…</p>

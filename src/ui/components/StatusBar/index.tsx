@@ -4,13 +4,14 @@ import {
     useAccount,
     useCamera,
     useControls,
+    useCurrentPage,
     useDocumentName,
     useKeyboard,
     usePointerPosition,
     useSaveStatus,
     useSelectedShapesIds
 } from 'src/app/hooks';
-import { accountLabel } from 'src/app/services/accounts';
+import { accountLabel, loginFrom } from 'src/app/services/accounts';
 
 import { Avatars } from '../Avatars';
 import styles from './styles.css';
@@ -73,6 +74,7 @@ export const SaveStatusInfo: FC = () => {
 /** Leads to the account page: to sign in, or showing who is signed in. */
 export const AccountInfo: FC = () => {
     const account = useAccount();
+    const page = useCurrentPage();
 
     if (account.kind === 'loading' || account.kind === 'unavailable') {
         return null;
@@ -81,7 +83,7 @@ export const AccountInfo: FC = () => {
     return (
         <a
             className={styles.accountLink}
-            href={account.kind === 'signedIn' ? '/account' : '/login'}
+            href={account.kind === 'signedIn' ? '/account' : loginFrom(page)}
             title={account.kind === 'signedIn' ? account.email : undefined}
         >
             {account.kind === 'signedIn' && (
