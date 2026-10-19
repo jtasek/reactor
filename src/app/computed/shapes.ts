@@ -1,3 +1,4 @@
+import { projectFrameStates } from '../frameState';
 import { derived } from 'overmind';
 import { Application, Document } from '../types';
 import { isShapeVisible } from '../utils';
@@ -13,6 +14,8 @@ import {
 export const commandsIds = derived(({ commands }: Application) => {
     return Object.keys(commands);
 });
+
+export const frameStates = derived((document: Document) => projectFrameStates(document.frames));
 
 export const framesIds = derived((document: Document) => Object.keys(document.frames).sort());
 

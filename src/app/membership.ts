@@ -1,3 +1,4 @@
+import { frameStatesOf } from './frameState';
 import type { Box, CommandScope, Document, Group, Layer, Point, Shape } from './types';
 import { boxCenter, getShapeBounds, isShapeLocked, isShapeVisible, rotatePoint } from './utils';
 
@@ -266,6 +267,7 @@ export function shownShapesIds(document: Document, editingComponentId: string | 
         );
     }
 
+    const frameStates = frameStatesOf(document);
     const shownLayer = document.shownLayerId ? document.layers[document.shownLayerId] : undefined;
     const onShownLayer = new Set(shownLayer?.shapesIds ?? []);
     const onLayers = new Set(Object.values(document.layers).flatMap((layer) => layer.shapesIds));
@@ -285,6 +287,7 @@ export function shownShapesIds(document: Document, editingComponentId: string | 
         document.shapesIds.filter(
             (id) =>
                 document.shapes[id]?.visible &&
+                frameStates[document.shapes[id].parentFrameId ?? '']?.hiddenBy === undefined &&
                 !sourceOnly.has(id) &&
                 !inHiddenContainer.has(id) &&
                 !(shownLayer && onLayers.has(id) && !onShownLayer.has(id))
@@ -510,7 +513,7 @@ export function selectedItems(document: Document) {
  */
 export const hasHidden = (document: Document) =>
     (document.shownLayerId !== undefined && document.layers[document.shownLayerId] !== undefined) ||
-    [document.shapes, document.groups, document.layers].some((table) =>
+    [document.shapes, document.groups, document.layers, document.frames].some((table) =>
         Object.values(table).some((item) => !item.visible)
     );
 

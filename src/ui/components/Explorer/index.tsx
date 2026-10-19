@@ -10,7 +10,7 @@ import { SourceItem } from './SourceItem';
 import { sceneLayers } from 'src/app/componentTree';
 import { byDrawingOrder } from 'src/app/drawOrder';
 import type { CommandScope } from 'src/app/types';
-import { useFrameRows, useSelectedFrameId } from 'src/app/frameHooks';
+import { useFrameRows, useSelectedFrameId, useShapesFrameState } from 'src/app/frameHooks';
 import {
     useActions,
     useComponents,
@@ -74,6 +74,7 @@ const RootItem: FC<{
 
 const ShapeItem: FC<{ shapeId: string; sourceId?: string }> = ({ shapeId, sourceId }) => {
     const shape = useShape(shapeId);
+    const inherited = useShapesFrameState([shapeId]);
     const sourceSelected = useSourceSelected(sourceId ?? null);
     const {
         selectShape,
@@ -83,7 +84,10 @@ const ShapeItem: FC<{ shapeId: string; sourceId?: string }> = ({ shapeId, source
         toggleShapeVisible,
         selectComponentChild
     } = useActions();
-    const commands = useItemCommandActions([shapeId], useShapeLocked(shapeId) || !shape.visible);
+    const commands = useItemCommandActions(
+        [shapeId],
+        useShapeLocked(shapeId) || !shape.visible || inherited.hidden
+    );
 
     const handleSelect = ({ shiftKey }: MouseEvent<HTMLButtonElement>) => {
         if (shiftKey) {
@@ -108,11 +112,17 @@ const ShapeItem: FC<{ shapeId: string; sourceId?: string }> = ({ shapeId, source
             dragged={sourceId ? undefined : { kind: 'shape', id: shapeId }}
             selected={shape.selected && !sourceSelected}
             active={shape.active}
-            visible={shape.visible}
+            visible={shape.visible && !inherited.hidden}
             onClick={handleSelect}
             menuActions={[
-                hideAction(!shape.visible, () => toggleShapeVisible(shapeId)),
-                lockAction(shape.locked, () => toggleShapeLocked(shapeId)),
+                {
+                    ...hideAction(!shape.visible, () => toggleShapeVisible(shapeId)),
+                    disabled: inherited.locked
+                },
+                {
+                    ...lockAction(shape.locked, () => toggleShapeLocked(shapeId)),
+                    disabled: inherited.locked
+                },
                 ...commands(useScopedCommands('shape'))
             ]}
         />
@@ -124,6 +134,7 @@ const GroupItem: FC<{
     shapesIds: string[];
 }> = ({ groupId, shapesIds }) => {
     const group = useGroup(groupId);
+    const inherited = useShapesFrameState(group.shapesIds);
     const selected = useGroupSelected(groupId);
     const {
         addShapesToGroup,
@@ -132,7 +143,10 @@ const GroupItem: FC<{
         toggleGroupLocked,
         toggleGroupVisible
     } = useActions();
-    const commands = useItemCommandActions(group.shapesIds, group.locked);
+    const commands = useItemCommandActions(
+        group.shapesIds,
+        group.locked || inherited.locked || inherited.hidden
+    );
 
     const handleSelect = ({ shiftKey }: MouseEvent<HTMLButtonElement>) => {
         if (!shiftKey) {
@@ -149,11 +163,17 @@ const GroupItem: FC<{
             dragged={{ kind: 'group', id: groupId }}
             collapseId={groupId}
             selected={selected}
-            visible={group.visible}
+            visible={group.visible && !inherited.hidden}
             onClick={handleSelect}
             menuActions={[
-                hideAction(!group.visible, () => toggleGroupVisible(groupId)),
-                lockAction(group.locked, () => toggleGroupLocked(groupId)),
+                {
+                    ...hideAction(!group.visible, () => toggleGroupVisible(groupId)),
+                    disabled: inherited.locked
+                },
+                {
+                    ...lockAction(group.locked, () => toggleGroupLocked(groupId)),
+                    disabled: inherited.locked
+                },
                 ...commands(useScopedCommands('group'))
             ]}
             onDrop={({ kind, id }) => {
@@ -294,16 +314,22 @@ export const Explorer: FC = () => {
             name={frame.name}
             icon={<FrameIcon size={16} aria-hidden="true" />}
             selected={selectedFrameId === frame.id}
-            visible={frame.visible}
+            visible={frame.shown}
             collapseId={`frame:${frame.id}`}
             onClick={() => editFrame({ kind: 'select', id: frame.id })}
             menuActions={[
-                hideAction(!frame.visible, () =>
-                    editFrame({ kind: 'toggle', id: frame.id, flag: 'visible' })
-                ),
-                lockAction(frame.locked, () =>
-                    editFrame({ kind: 'toggle', id: frame.id, flag: 'locked' })
-                )
+                {
+                    ...hideAction(!frame.visible, () =>
+                        editFrame({ kind: 'toggle', id: frame.id, flag: 'visible' })
+                    ),
+                    disabled: frame.inheritedLock
+                },
+                {
+                    ...lockAction(frame.locked, () =>
+                        editFrame({ kind: 'toggle', id: frame.id, flag: 'locked' })
+                    ),
+                    disabled: frame.inheritedLock
+                }
             ]}
         >
             {shownFrames.filter((child) => child.parentFrameId === frame.id).map(frameItem)}

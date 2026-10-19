@@ -1,3 +1,4 @@
+import { isFrameVisible } from 'src/app/frameState';
 import { json } from 'overmind';
 import { Context } from 'src/app';
 import { ActionWithParam, Point, Shape } from 'src/app/types';
@@ -297,6 +298,15 @@ export const movePointer = (
         );
     }
 
+    if (
+        'shapes' in gesture &&
+        editorHelpers().frames.gestureBlocked(state.currentDocument, gesture)
+    ) {
+        actions.events.cancelGesture();
+
+        return;
+    }
+
     if (gesture.kind === 'editingFrame') {
         editorHelpers().frames.move({ state, actions }, position);
 
@@ -477,6 +487,10 @@ export const endGesture = (
 
     actions.events.movePointer({ pointerId, position, free });
 
+    if (pointer.gesture.kind === 'idle') {
+        return;
+    }
+
     // A click, rather than a drag, on a shape of a group selected before it enters the group.
     if (gesture.kind === 'moving' && !gesture.dragged) {
         actions.enterClickedGroup(gesture.selection);
@@ -579,7 +593,7 @@ export const cancelGesture = (
 
     delete state.currentDocument.selectedFrameId;
 
-    if (gesture.selectedFrameId && state.currentDocument.frames[gesture.selectedFrameId]) {
+    if (gesture.selectedFrameId && isFrameVisible(state.currentDocument, gesture.selectedFrameId)) {
         state.currentDocument.selectedFrameId = gesture.selectedFrameId;
     }
 

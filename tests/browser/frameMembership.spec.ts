@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { createDocument } from 'src/app/factories';
+import { createDocument, createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
 import { drawRect, openEditor, pointer, selectTool } from './support/editor';
 
@@ -160,4 +160,107 @@ test('lets a person repair a concurrent parent cycle by explicitly choosing Canv
     await expect(
         page.getByRole('status').filter({ hasText: 'Invalid parent reference' })
     ).toHaveCount(0);
+});
+
+test('inherits Hide and Lock, explains restrictions, and recovers through Explorer', async ({
+    page
+}) => {
+    const box = {
+        position: { x: 100, y: 120 },
+        size: { width: 400, height: 300 },
+        visible: true,
+        locked: false
+    };
+    const document = createDocument({
+        id: 'inherited-document',
+        frames: {
+            outer: { ...box, id: 'outer', name: 'Outer' },
+            inner: {
+                ...box,
+                id: 'inner',
+                name: 'Inner',
+                parentFrameId: 'outer',
+                position: { x: 200, y: 220 },
+                size: { width: 200, height: 150 }
+            }
+        },
+        shapes: {
+            artwork: {
+                ...createShape({
+                    order: 'a0',
+                    type: 'rectangle',
+                    name: 'Artwork',
+                    parentFrameId: 'inner',
+                    position: { x: 250, y: 260 },
+                    size: { width: 60, height: 40 }
+                }),
+                id: 'artwork'
+            }
+        },
+        shapesIds: ['artwork']
+    });
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await openEditor(page, ['Inspector', 'Explorer']);
+    const outerRow = explorer(page).getByRole('button', { name: 'Outer', exact: true });
+    const innerRow = explorer(page).getByRole('button', { name: 'Inner', exact: true });
+    const outerMenu = explorer(page).getByRole('toolbar', { name: 'Outer menu', exact: true });
+    const innerMenu = explorer(page).getByRole('toolbar', { name: 'Inner menu', exact: true });
+    await expect(artwork(page)).toBeVisible();
+    await outerRow.hover();
+    await outerMenu.getByRole('button', { name: 'Hide', exact: true }).click();
+    await expect(frame(page, 'Outer')).toHaveCount(0);
+    await expect(frame(page, 'Inner')).toHaveCount(0);
+    await expect(artwork(page)).toHaveCount(0);
+    await innerRow.click();
+    await expect(
+        page.getByRole('status').filter({ hasText: 'Hidden by frame Outer' })
+    ).toBeVisible();
+    await innerRow.hover();
+    // The child's own flag remains visible; it was not rewritten to hidden.
+    await expect(innerMenu.getByRole('button', { name: 'Hide', exact: true })).toBeEnabled();
+    await page.reload();
+    await expect(artwork(page)).toHaveCount(0);
+    const editorUrl = page.url();
+    await page.goto('/documents');
+    await expect(page.getByText('Empty canvas', { exact: true })).toBeVisible();
+    await page.goto(editorUrl);
+    await outerRow.hover();
+    await outerMenu.getByRole('button', { name: 'Show', exact: true }).click();
+    await expect(artwork(page)).toBeVisible();
+    await expect(frame(page, 'Inner')).toBeVisible();
+    await outerRow.hover();
+    await outerMenu.getByRole('button', { name: 'Lock', exact: true }).click();
+    await explorer(page).getByRole('button', { name: 'Artwork', exact: true }).click();
+    await expect(page.getByLabel('Name', { exact: true })).not.toBeEditable();
+    await expect(page.getByLabel('Selection parent', { exact: true })).toBeDisabled();
+    await innerRow.click();
+    await expect(page.getByLabel('Frame name', { exact: true })).toBeDisabled();
+    await expect(page.getByLabel('Frame parent', { exact: true })).toBeDisabled();
+    await expect(
+        page.getByRole('status').filter({ hasText: 'Locked by frame Outer' })
+    ).toBeVisible();
+    await innerRow.hover();
+    await expect(innerMenu.getByRole('button', { name: 'Lock', exact: true })).toBeDisabled();
+    await expect(innerMenu.getByRole('button', { name: 'Hide', exact: true })).toBeDisabled();
+    await page.screenshot({ path: '/tmp/reactor-frame-state-normal.png' });
+    await page.setViewportSize({ width: 600, height: 850 });
+    await expect(
+        page.getByRole('status').filter({ hasText: 'Locked by frame Outer' })
+    ).toBeVisible();
+    const hint = page.getByRole('status').filter({ hasText: 'Locked by frame Outer' });
+    await expect(hint).toHaveCSS('white-space', 'normal');
+    expect(await hint.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await page.screenshot({ path: '/tmp/reactor-frame-state-narrow.png' });
+    await outerRow.hover();
+    await outerMenu.getByRole('button', { name: 'Unlock', exact: true }).click();
+    await innerRow.click();
+    await expect(page.getByLabel('Frame name', { exact: true })).toBeEnabled();
+    await expect(page.getByLabel('Frame parent', { exact: true })).toBeEnabled();
+    await expect(page.getByRole('status').filter({ hasText: 'Locked by frame Outer' })).toHaveCount(
+        0
+    );
 });

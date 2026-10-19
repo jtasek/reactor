@@ -1,3 +1,5 @@
+import type * as Visibility from './visibilityEdits';
+import type * as Groups from './groupEdits';
 import type * as ClipboardEdits from './clipboardEdits';
 import type * as Frames from './frameEdits';
 import type * as Dimensions from './variableDimensionEdits';
@@ -16,6 +18,8 @@ import type * as Snapping from './snapping';
 export interface EditorHelpers {
     clipboardEdits: typeof ClipboardEdits;
     frames: typeof Frames;
+    groups: typeof Groups;
+    visibility: typeof Visibility;
     dimensions: typeof Dimensions;
     aliases: typeof Aliases;
     alignment: typeof Alignment;

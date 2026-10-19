@@ -1,3 +1,4 @@
+import { useShapesFrameState } from 'src/app/frameHooks';
 import React, { FC } from 'react';
 import { Eye, EyeOff, Lock, LockOpen } from 'lucide-react';
 import styles from './styles.css';
@@ -29,7 +30,8 @@ interface Props {
 }
 
 export const GroupPanelItem: FC<Props> = ({ groupId }) => {
-    const { name, locked, visible } = useGroup(groupId);
+    const { name, locked, visible, shapesIds } = useGroup(groupId);
+    const inherited = useShapesFrameState(shapesIds);
     const selected = useGroupSelected(groupId);
     const { toggleGroupLocked, toggleGroupSelected, toggleGroupVisible } = useActions();
 
@@ -49,6 +51,7 @@ export const GroupPanelItem: FC<Props> = ({ groupId }) => {
                     <button
                         type="button"
                         title={visible ? 'Hide' : 'Show'}
+                        disabled={inherited.locked}
                         onClick={() => toggleGroupVisible(groupId)}
                     >
                         <Icon icon={visible ? visibleIcon : hiddenIcon} />
@@ -58,6 +61,7 @@ export const GroupPanelItem: FC<Props> = ({ groupId }) => {
                     <button
                         type="button"
                         title={locked ? 'Unlock' : 'Lock'}
+                        disabled={inherited.locked}
                         onClick={() => toggleGroupLocked(groupId)}
                     >
                         <Icon icon={locked ? lockedIcon : openIcon} />

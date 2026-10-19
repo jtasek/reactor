@@ -1,3 +1,9 @@
+import { frameState, isFrameVisible, isFrameLocked, projectFrameStates } from 'src/app/frameState';
+import { shownShapesIds } from 'src/app/membership';
+import { isShapeVisible, isShapeLocked } from 'src/app/utils';
+import { DeleteCommand } from 'src/commands/delete';
+import { CloneCommand } from 'src/commands/clone';
+import { CutCommand } from 'src/commands/clipboard';
 import { json } from 'overmind';
 import { createTestStore } from './support/store';
 import {
@@ -534,4 +540,268 @@ it('keeps a cloned nested frame in its parent and a cloned root frame on Canvas'
     expect(
         store.state.currentDocument.frames[store.state.currentDocument.selectedFrameId!]
     ).not.toHaveProperty('parentFrameId');
+});
+
+it('inherits frame visibility without rewriting descendant flags, including after save and reload', () => {
+    const { store } = createTestStore();
+    const { root, child, shape } = setup(store);
+    const document = store.state.currentDocument;
+    store.actions.editFrame({ kind: 'toggle', id: root, flag: 'visible' });
+    expect(isFrameVisible(document, child)).toBe(false);
+    expect(isShapeVisible(document, shape)).toBe(false);
+    expect(shownShapesIds(document, null)).not.toContain(shape);
+    expect(document.frames[child].visible).toBe(true);
+    expect(document.shapes[shape].visible).toBe(true);
+    const saved = serializePersistedState(store.state);
+    expect(saved.documents[document.id]).not.toHaveProperty('frameStates');
+    const restored = hydrateDocument(saved.documents[document.id]);
+    expect(frameState(restored, child)?.hiddenBy).toBe(root);
+    store.actions.editFrame({ kind: 'toggle', id: root, flag: 'visible' });
+    expect(shownShapesIds(document, null)).toContain(shape);
+    store.actions.toggleShapeVisible(shape);
+    store.actions.editFrame({ kind: 'toggle', id: root, flag: 'visible' });
+    store.actions.editFrame({ kind: 'toggle', id: root, flag: 'visible' });
+    expect(isShapeVisible(document, shape)).toBe(false);
+    store.actions.editFrame({ kind: 'toggle', id: root, flag: 'visible' });
+    store.actions.showAll();
+    expect(isFrameVisible(document, child)).toBe(true);
+    expect(isShapeVisible(document, shape)).toBe(true);
+});
+
+it('blocks descendant edits, flag changes and reparenting under a locked frame, and permits recovery', () => {
+    const { store } = createTestStore();
+    const { root, child, shape } = setup(store);
+    const document = store.state.currentDocument;
+    store.actions.editFrame({ kind: 'toggle', id: root, flag: 'locked' });
+    expect(isFrameLocked(document, child)).toBe(true);
+    expect(isShapeLocked(document, shape)).toBe(true);
+    const before = json(document.shapes[shape]);
+    store.actions.updateShape({ id: shape, name: 'Changed' });
+    store.actions.setShapesProperty({
+        shapeIds: [shape],
+        key: 'name',
+        value: 'Changed in Inspector'
+    });
+    store.actions.setShapesProperty({ shapeIds: [shape], key: 'visible', value: false });
+    store.actions.toggleShapeVisible(shape);
+    store.actions.toggleShapeLocked(shape);
+    store.actions.unlockShape(shape);
+    store.actions.editFrame({ kind: 'update', id: child, changes: { name: 'Changed' } });
+    store.actions.editFrame({ kind: 'reparentShapes', ids: [shape], parentFrameId: null });
+    store.actions.editFrame({ kind: 'toggle', id: child, flag: 'locked' });
+    expect(document.shapes[shape]).toEqual(before);
+    expect(document.frames[child]).toMatchObject({ name: 'Card', locked: false });
+    store.actions.editFrame({ kind: 'select', id: child });
+    const context = { state: store.state };
+    expect(DeleteCommand.canExecute(context)).toBe(false);
+    expect(CloneCommand.canExecute(context)).toBe(false);
+    expect(CutCommand.canExecute(context)).toBe(false);
+    expect(store.actions.selectionToCut()).toBeNull();
+    store.actions.editFrame({ kind: 'toggle', id: root, flag: 'locked' });
+    expect(isShapeLocked(document, shape)).toBe(false);
+    store.actions.updateShape({ id: shape, name: 'Changed' });
+    expect(document.shapes[shape].name).toBe('Changed');
+});
+
+it('rejects operation edits and insertions into an existing locked frame atomically', () => {
+    const { store } = createTestStore();
+    const { root, child, shape } = setup(store);
+    const document = store.state.currentDocument;
+    const outsider = addShape(store);
+    const sentinel = addShape(store);
+    store.actions.editFrame({ kind: 'toggle', id: root, flag: 'locked' });
+    const operations = [
+        { op: 'updateShape' as const, shape, changes: { name: 'Changed' } },
+        { op: 'deleteShapes' as const, shapes: [shape] },
+        { op: 'updateFrame' as const, frame: child, changes: { parentFrameId: null } },
+        { op: 'deleteFrame' as const, frame: child },
+        { op: 'updateShape' as const, shape: outsider, changes: { parentFrameId: child } },
+        {
+            op: 'addFrame' as const,
+            key: 'nested',
+            frame: { ...json(document.frames[child]), parentFrameId: child }
+        },
+        {
+            op: 'addShape' as const,
+            key: 'nestedShape',
+            shape: { ...json(document.shapes[shape]), parentFrameId: child }
+        }
+    ];
+    const before = serializePersistedState(store.state);
+
+    for (const operation of operations) {
+        const result = store.actions.applyOperations({
+            documentId: document.id,
+            by: { kind: 'person' },
+            operations: [
+                { op: 'updateShape', shape: sentinel, changes: { name: 'Other edit' } },
+                operation
+            ]
+        });
+        expect(result.applied, JSON.stringify(operation)).toBe(false);
+    }
+
+    expect(serializePersistedState(store.state)).toEqual(before);
+});
+
+it('keeps cycle members as independent roots and inherits only valid parent edges', () => {
+    const { store } = createTestStore();
+    const { root, child } = setup(store);
+    const frames = json(store.state.currentDocument.frames);
+    frames[root].parentFrameId = child;
+    frames[root].visible = false;
+    frames[root].locked = true;
+    frames.descendant = { ...frames[child], id: 'descendant', parentFrameId: root };
+    frames.orphan = { ...frames[child], id: 'orphan', parentFrameId: 'missing' };
+    const states = projectFrameStates(frames);
+    expect(states[root]).toEqual({ hiddenBy: root, lockedBy: root });
+    expect(states[child]).toEqual({ hiddenBy: undefined, lockedBy: undefined });
+    expect(states.descendant).toEqual(states[root]);
+    expect(states.orphan).toEqual(states[child]);
+});
+
+it('resolves deep hierarchies iteratively without reading geometry', () => {
+    const { store } = createTestStore();
+    const { child } = setup(store);
+    const frames = Object.fromEntries(
+        Array.from({ length: 2000 }, (_, index) => [
+            String(index),
+            {
+                ...json(store.state.currentDocument.frames[child]),
+                id: String(index),
+                parentFrameId: index === 0 ? undefined : String(index - 1),
+                locked: index === 0,
+                get position(): never {
+                    throw new Error('Geometry must not be read');
+                },
+                get size(): never {
+                    throw new Error('Geometry must not be read');
+                }
+            }
+        ])
+    );
+    expect(projectFrameStates(frames)['1999'].lockedBy).toBe('0');
+});
+
+it.each(['visible', 'locked'] as const)(
+    'rolls back a subtree drag after a remote ancestor %s change, retaining the remote flag',
+    async (flag) => {
+        const copies = await createCopies(2, (store) => setup(store));
+        const [a, b] = copies;
+        const document = shownDocument(a);
+        const root = Object.values(document.frames).find((frame) => frame.name === 'Screen')!.id;
+        const child = Object.values(document.frames).find((frame) => frame.name === 'Card')!.id;
+        a.store.actions.events.beginGesture({
+            pointerId: 1,
+            position: { x: 100, y: 80 },
+            handle: { frameId: child, type: 'move' }
+        });
+        a.store.actions.events.movePointer({ pointerId: 1, position: { x: 160, y: 120 } });
+        edit(b, (actions) => actions.editFrame({ kind: 'toggle', id: root, flag }));
+        settle(copies);
+        a.store.actions.events.endGesture({ pointerId: 1, position: { x: 170, y: 130 } });
+        settle(copies);
+        expect(a.store.state.events.pointer.gesture.kind).toBe('idle');
+        expect(document.frames[child].position).toEqual({ x: 100, y: 80 });
+        expect(document.shapes[document.shapesIds[0]]).toMatchObject({
+            position: { x: 120, y: 100 }
+        });
+        expect(document.frames[root][flag]).toBe(flag === 'locked');
+        expect(sharedState(a)).toEqual(sharedState(b));
+        b.collaboration.undo(DOCUMENT_ID);
+        settle(copies);
+        expect(document.frames[root][flag]).toBe(flag === 'visible');
+        expect(isShapeLocked(document, document.shapesIds[0])).toBe(false);
+        expect(isShapeVisible(document, document.shapesIds[0])).toBe(true);
+    }
+);
+
+it.each(['visible', 'locked'] as const)(
+    'rolls back a shape drag after a remote ancestor %s change',
+    async (flag) => {
+        const copies = await createCopies(2, (store) => setup(store));
+        const [a, b] = copies;
+        const document = shownDocument(a);
+        const root = Object.values(document.frames).find((frame) => frame.name === 'Screen')!.id;
+        const shape = document.shapesIds[0];
+        a.store.actions.events.beginGesture({ pointerId: 1, position: { x: 130, y: 110 } });
+        a.store.actions.events.movePointer({ pointerId: 1, position: { x: 160, y: 140 } });
+        expect(document.shapes[shape]).not.toMatchObject({ position: { x: 120, y: 100 } });
+        edit(b, (actions) => actions.editFrame({ kind: 'toggle', id: root, flag }));
+        settle(copies);
+        a.store.actions.events.endGesture({ pointerId: 1, position: { x: 170, y: 150 } });
+        settle(copies);
+        expect(a.store.state.events.pointer.gesture.kind).toBe('idle');
+        expect(document.shapes[shape]).toMatchObject({ position: { x: 120, y: 100 } });
+        expect(document.frames[root][flag]).toBe(flag === 'locked');
+        expect(sharedState(a)).toEqual(sharedState(b));
+    }
+);
+
+it('protects framed group flags, membership and clones while allowing copies', () => {
+    const { store } = createTestStore();
+    const { root, child, shape } = setup(store);
+    const second = addShape(store, child);
+    store.actions.selectShape(shape);
+    store.actions.selectShape(second);
+    store.actions.groupSelection();
+    const document = store.state.currentDocument;
+    const group = document.groups[document.groupsIds[0]];
+    store.actions.editFrame({ kind: 'toggle', id: root, flag: 'locked' });
+    const before = json(group);
+    store.actions.toggleGroupVisible(group.id);
+    store.actions.toggleGroupLocked(group.id);
+    store.actions.updateGroup({ id: group.id, name: 'Changed' });
+    store.actions.hideSelection();
+    store.actions.lockSelection();
+    store.actions.ungroupSelection();
+    expect(document.groups[group.id]).toEqual(before);
+    const count = document.shapesIds.length;
+    store.actions.cloneShapes([shape, second]);
+    expect(document.shapesIds).toHaveLength(count);
+    store.actions.selectShape(shape);
+    expect(store.actions.copySelection()).not.toBeNull();
+    expect(
+        store.actions.applyOperations({
+            documentId: document.id,
+            by: { kind: 'person' },
+            operations: [{ op: 'deleteGroup', group: group.id }]
+        }).applied
+    ).toBe(false);
+});
+
+it('rejects grouping existing artwork inside a locked frame through operations', () => {
+    const { store } = createTestStore();
+    const { root, child, shape } = setup(store);
+    const second = addShape(store, child);
+    store.actions.editFrame({ kind: 'toggle', id: root, flag: 'locked' });
+    expect(
+        store.actions.checkOperations({
+            documentId: store.state.currentDocumentId,
+            operations: [
+                {
+                    op: 'addGroup',
+                    name: 'Group',
+                    rotation: 0,
+                    shapes: [shape, second]
+                }
+            ]
+        }).valid
+    ).toBe(false);
+});
+
+it('moves a visible frame together with its already hidden descendants', () => {
+    const { store } = createTestStore();
+    const { root, child, shape } = setup(store);
+    store.actions.editFrame({ kind: 'toggle', id: child, flag: 'visible' });
+    store.actions.events.beginGesture({
+        pointerId: 1,
+        position: { x: 100, y: 80 },
+        handle: { frameId: root, type: 'move' }
+    });
+    store.actions.events.endGesture({ pointerId: 1, position: { x: 160, y: 120 } });
+    const document = store.state.currentDocument;
+    expect(document.frames[root].position).toEqual({ x: 160, y: 120 });
+    expect(document.frames[child]).toMatchObject({ position: { x: 160, y: 120 }, visible: false });
+    expect(document.shapes[shape]).toMatchObject({ position: { x: 180, y: 140 }, visible: true });
 });

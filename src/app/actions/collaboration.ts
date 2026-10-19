@@ -1,3 +1,4 @@
+import { isFrameVisible } from '../frameState';
 import { editorHelpers } from '../editorHelpers';
 import type { Action, ActionWithParam, Box, Document, Shape } from '../types';
 import { getBoundingBox, mapPointBetweenBoxes } from '../utils';
@@ -225,7 +226,7 @@ export const applyRemoteChanges: ActionWithParam<RemoteChanges> = ({ state }, ch
         }
     }
 
-    if (document.selectedFrameId && !document.frames[document.selectedFrameId]) {
+    if (document.selectedFrameId && !isFrameVisible(document, document.selectedFrameId)) {
         delete document.selectedFrameId;
     }
 };

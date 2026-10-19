@@ -439,6 +439,16 @@
     width: var(--field-height);
 }
 
+/* Inherited frame restrictions must wrap, including in a narrow Inspector. */
+.frameHint {
+    color: var(--text-secondary-color);
+    display: block;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+
 /* What a field's value cannot show, as a template naming no variable. */
 .note {
     color: var(--warning-color);

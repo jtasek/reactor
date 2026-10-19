@@ -1,3 +1,4 @@
+import { projectFrameStates } from './frameState';
 import { deleteFrame, validFrameParent, frameContents, frameMoveProblem } from './frameMembership';
 import { legacyTheme, readDimension } from './variableModes';
 import { json } from 'overmind';
@@ -154,6 +155,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         throw new Error('The batch has no operations.');
     }
 
+    const frameStates = projectFrameStates(document.frames);
     const declared = new Map<string, { index: number; collection: Referable }>();
     const ids = new Map<string, string>();
     /** The operation changing each record of the document, by collection and ID. */
@@ -164,6 +166,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
     const shapeLocked = (id: string) =>
         document.locked ||
         document.shapes[id].locked ||
+        frameStates[document.shapes[id].parentFrameId ?? '']?.lockedBy !== undefined ||
         [
             ...Object.values(document.groups),
             ...Object.values(document.layers),
@@ -188,8 +191,15 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             }
             if (
                 (collection === 'shapes' && shapeLocked(ref)) ||
-                (collection === 'groups' && document.groups[ref].locked) ||
-                (collection === 'frames' && (document.locked || document.frames[ref].locked))
+                (collection === 'groups' &&
+                    (document.groups[ref].locked ||
+                        document.groups[ref].shapesIds.some(
+                            (id) =>
+                                frameStates[document.shapes[id]?.parentFrameId ?? '']?.lockedBy !==
+                                undefined
+                        ))) ||
+                (collection === 'frames' &&
+                    (document.locked || frameStates[ref]?.lockedBy !== undefined))
             ) {
                 throw problem(index, `${ref} is locked.`);
             }
@@ -242,6 +252,15 @@ function stage(document: Document, operations: Operation[], newId: () => string)
 
         if (entry.index >= index || id === undefined) {
             throw new Error(`${ref} is not one of the batch's earlier ${collection}.`);
+        }
+
+        return id;
+    };
+    const frameReference = (ref: string, index: number) => {
+        const id = reference(ref, 'frames', index);
+
+        if (frameStates[id]?.lockedBy !== undefined) {
+            throw new Error(`${ref} is locked.`);
         }
 
         return id;
@@ -632,7 +651,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
 
         linkShape(shape, input, index);
         if (shape.parentFrameId !== undefined) {
-            shape.parentFrameId = reference(shape.parentFrameId, 'frames', index);
+            shape.parentFrameId = frameReference(shape.parentFrameId, index);
         }
         if (shape.parentShapeId !== undefined) {
             shape.parentShapeId = reference(shape.parentShapeId, 'shapes', index);
@@ -665,7 +684,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         if (changes.parentFrameId === null) {
             delete shape.parentFrameId;
         } else if (changes.parentFrameId !== undefined) {
-            shape.parentFrameId = reference(changes.parentFrameId, 'frames', index);
+            shape.parentFrameId = frameReference(changes.parentFrameId, index);
         }
         const kept = Object.entries(bindings).filter(([key, variableId]) => {
             const property = bindableProperty(key);
@@ -736,6 +755,14 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         if (shapesIds.length < 2) {
             throw new Error('a group needs two shapes.');
         }
+        if (
+            shapesIds.some(
+                (id) =>
+                    frameStates[document.shapes[id]?.parentFrameId ?? '']?.lockedBy !== undefined
+            )
+        ) {
+            throw new Error('a shape belongs to a locked frame.');
+        }
         const inGroups = (grouped ??= new Set(
             Object.values(document.groups)
                 .filter((group) => !deleted.has(record('groups', group.id)))
@@ -767,7 +794,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                         id: ids.get(operation.key)
                     });
                     if (frame.parentFrameId !== undefined) {
-                        frame.parentFrameId = reference(frame.parentFrameId, 'frames', index);
+                        frame.parentFrameId = frameReference(frame.parentFrameId, index);
                     }
                     staged.frames.push(frame);
                     return;
@@ -784,7 +811,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                         ...(parent === null ? { parentFrameId: undefined } : {})
                     });
                     if (parent !== undefined && parent !== null) {
-                        frame.parentFrameId = reference(parent, 'frames', index);
+                        frame.parentFrameId = frameReference(parent, index);
                     }
                     staged.updatedFrames.push(frame);
                     return;

@@ -1,3 +1,4 @@
+import { frameState } from './frameState';
 import type { Document, Shape } from './types';
 import { limitCornerRadius, translateShape } from './geometry';
 import {
@@ -238,7 +239,7 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
 
 /** Whether `property` may be changed on `shape` now. */
 export function canEdit(property: ShapeProperty, shape: Shape, document: Document): boolean {
-    if (!property.write) {
+    if (!property.write || frameState(document, shape.parentFrameId)?.lockedBy !== undefined) {
         return false;
     }
 

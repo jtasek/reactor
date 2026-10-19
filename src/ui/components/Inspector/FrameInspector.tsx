@@ -1,6 +1,6 @@
 import React, { type FC, useEffect, useState } from 'react';
 import { useActions, useAppState } from 'src/app/hooks';
-import { useFrameMoveProblem } from 'src/app/frameHooks';
+import { useFrameMoveProblem, useFrameLocked } from 'src/app/frameHooks';
 import { FrameParent } from './FrameParent';
 import { PropertyGroup } from './PropertyGroup';
 import styles from './styles.css';
@@ -67,12 +67,13 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
     }));
     const { editFrame } = useActions();
     const moveProblem = useFrameMoveProblem(id);
+    const inheritedLocked = useFrameLocked(id);
 
     if (!frame) {
         return null;
     }
 
-    const disabled = locked || frame.locked;
+    const disabled = locked || inheritedLocked;
 
     return (
         <div className={styles.inspector} aria-label="Frame properties">

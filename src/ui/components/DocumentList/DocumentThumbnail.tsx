@@ -1,5 +1,6 @@
 import React, { FC, ReactNode, useLayoutEffect, useRef } from 'react';
 import { useVariableContext } from 'src/app/hooks';
+import { isFrameVisible } from 'src/app/frameState';
 import { themeColors } from 'src/app/themeColors';
 import { SquareDashed } from 'lucide-react';
 import type { Box, Document, Image, InstanceShape, Shape } from 'src/app/types';
@@ -250,7 +251,9 @@ export const DocumentThumbnail: FC<{ document: Document }> = ({ document }) => {
         }
     });
 
-    const frames = Object.values(document.frames).filter((frame) => frame.visible);
+    const frames = Object.values(document.frames).filter((frame) =>
+        isFrameVisible(document, frame.id)
+    );
 
     if (shapes.length === 0 && frames.length === 0) {
         return (

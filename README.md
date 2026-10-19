@@ -131,8 +131,12 @@ include the subtree. Copy/paste retains groups, variables and component dependen
 Frames and their memberships are saved and shared; selection stays local. Concurrent parent
 cycles appear as roots with an Inspector diagnostic and can be repaired through Parent.
 
-Frame Hide/Lock still controls the boundary itself. Inherited frame state, automatic layout,
-clipping and interactive screen behavior remain later increments.
+Hide a frame in Explorer to hide its nested frames and artwork everywhere, including previews.
+Locking a frame prevents edits to its descendants, including reparenting; their individual
+Hide/Lock flags stay intact. Inspector explains inherited restrictions. Show or unlock the
+parent in Explorer to recover; **Show all** also reveals hidden frames. A remote Hide or Lock
+cancels a descendant drag on its next pointer event without losing that remote change.
+Automatic layout, clipping and interactive screen behavior remain later increments.
 
 ## Saving
 

@@ -1,3 +1,5 @@
+import * as visibility from 'src/app/visibilityEdits';
+import * as groups from 'src/app/groupEdits';
 import * as clipboardEdits from 'src/app/clipboardEdits';
 import * as frames from 'src/app/frameEdits';
 import * as dimensions from 'src/app/variableDimensionEdits';
@@ -79,6 +81,8 @@ export function createTestStore(
             : {
                   clipboardEdits,
                   frames,
+                  groups,
+                  visibility,
                   dimensions,
                   aliases,
                   alignment,

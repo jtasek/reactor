@@ -1,3 +1,4 @@
+import { frameState, lockedFrameForShapes } from '../frameState';
 import { untracked } from '../untracked';
 import {
     Action,
@@ -89,6 +90,10 @@ const isInteractive = ({ currentDocument }: Application, shapeId: string) =>
     isShapeVisible(currentDocument, shapeId) && !isShapeLocked(currentDocument, shapeId);
 
 export const addShape: ActionWithParam<ShapeInput> = ({ state }, options) => {
+    if (frameState(state.currentDocument, options.parentFrameId)?.lockedBy !== undefined) {
+        return;
+    }
+
     const shapes = Object.values(untracked(state.currentDocument).shapes);
     const component =
         options.type === 'instance' ? state.currentDocument.components[options.componentId] : null;
@@ -113,6 +118,10 @@ export const drawShape: ActionWithParam<ShapeInput> = ({ state, actions }, optio
     const component = componentId && document.components[componentId];
     const layerId = document.selectedLayersIds[0];
     const layer = !component && layerId ? document.layers[layerId] : undefined;
+
+    if (frameState(document, options.parentFrameId)?.lockedBy !== undefined) {
+        return;
+    }
 
     if (componentId && (!component || component.library || component.locked)) {
         return;
@@ -741,6 +750,10 @@ export const deactivateShape: ActionWithParam<string> = ({ state }, shapeId) => 
 };
 
 export const lockShape: ActionWithParam<string> = ({ state }, shapeId) => {
+    if (lockedFrameForShapes(state.currentDocument, [shapeId])) {
+        return;
+    }
+
     const shape = getShape(state, shapeId);
 
     unbind(shape, 'locked');
@@ -748,6 +761,10 @@ export const lockShape: ActionWithParam<string> = ({ state }, shapeId) => {
 };
 
 export const toggleShapeLocked: ActionWithParam<string> = ({ state }, shapeId) => {
+    if (lockedFrameForShapes(state.currentDocument, [shapeId])) {
+        return;
+    }
+
     const shape = getShape(state, shapeId);
 
     unbind(shape, 'locked');
@@ -755,6 +772,10 @@ export const toggleShapeLocked: ActionWithParam<string> = ({ state }, shapeId) =
 };
 
 export const toggleShapeVisible: ActionWithParam<string> = ({ state }, shapeId) => {
+    if (lockedFrameForShapes(state.currentDocument, [shapeId])) {
+        return;
+    }
+
     const shape = getShape(state, shapeId);
 
     unbind(shape, 'visible');
@@ -762,6 +783,10 @@ export const toggleShapeVisible: ActionWithParam<string> = ({ state }, shapeId) 
 };
 
 export const unlockShape: ActionWithParam<string> = ({ state }, shapeId) => {
+    if (lockedFrameForShapes(state.currentDocument, [shapeId])) {
+        return;
+    }
+
     const shape = getShape(state, shapeId);
 
     unbind(shape, 'locked');
@@ -769,6 +794,10 @@ export const unlockShape: ActionWithParam<string> = ({ state }, shapeId) => {
 };
 
 export const showShape: ActionWithParam<string> = ({ state }, shapeId) => {
+    if (lockedFrameForShapes(state.currentDocument, [shapeId])) {
+        return;
+    }
+
     const shape = getShape(state, shapeId);
 
     unbind(shape, 'visible');
@@ -776,6 +805,10 @@ export const showShape: ActionWithParam<string> = ({ state }, shapeId) => {
 };
 
 export const hideShape = ({ state }: Context, shapeId: string) => {
+    if (lockedFrameForShapes(state.currentDocument, [shapeId])) {
+        return;
+    }
+
     const shape = getShape(state, shapeId);
 
     unbind(shape, 'visible');
@@ -783,7 +816,10 @@ export const hideShape = ({ state }: Context, shapeId: string) => {
 };
 
 export const updateShape = ({ state }: Context, options: Partial<ShapeInput> & { id: string }) => {
-    if (isShapeLocked(state.currentDocument, options.id)) {
+    if (
+        isShapeLocked(state.currentDocument, options.id) ||
+        frameState(state.currentDocument, options.parentFrameId)?.lockedBy !== undefined
+    ) {
         return;
     }
 

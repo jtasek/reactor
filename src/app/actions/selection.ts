@@ -1,23 +1,14 @@
 import { unbindMovedProperties } from '../variables';
-import { Action, ActionWithParam, Application, Document, Orientation, Point } from '../types';
+import { Action, ActionWithParam, Document, Orientation, Point } from '../types';
 import type { AlignTo, Spacing } from '../alignment';
 import { editorHelpers } from '../editorHelpers';
 import { translateShape } from '../geometry';
 import { getCommand } from './startup';
-import { drawnExtent, selectedItems, shapeGroup } from '../membership';
+import { drawnExtent, shapeGroup } from '../membership';
 import { isShapeVisible } from '../utils';
-import { unbind } from '../variables';
 
 /** Aligning, which the editor provides as it loads. */
 const alignment = () => editorHelpers().alignment;
-
-const unselect = ({ shapes }: Document, shapeIds: string[]) => {
-    shapeIds.forEach((id) => {
-        if (shapes[id]?.selected) {
-            shapes[id].selected = false;
-        }
-    });
-};
 
 export const bringSelectionToFront: Action = ({ state, actions }) => {
     actions.bringShapesToFront(state.currentDocument.editableSelectedShapesIds);
@@ -27,58 +18,12 @@ export const sendSelectionToBack: Action = ({ state, actions }) => {
     actions.sendShapesToBack(state.currentDocument.editableSelectedShapesIds);
 };
 
-export const hideSelection: Action = ({ state }) => {
-    const { currentDocument } = state;
-    const { groups, shapes } = selectedItems(currentDocument);
-
-    groups.forEach((group) => {
-        group.visible = false;
-        unselect(currentDocument, group.shapesIds);
-    });
-    shapes.forEach((shape) => {
-        unbind(shape, 'visible');
-        shape.visible = false;
-        shape.selected = false;
-    });
-};
-
-export const showAll: Action = ({ state, actions }) => {
-    const { shapes, groups, layers } = state.currentDocument;
-
-    actions.showAllLayers();
-
-    Object.values(shapes).forEach((shape) => {
-        if (!shape.visible) {
-            unbind(shape, 'visible');
-        }
-    });
-    [shapes, groups, layers].forEach((table) =>
-        Object.values(table).forEach((item) => {
-            if (!item.visible) {
-                item.visible = true;
-            }
-        })
-    );
-};
-
-const setSelectionLocked = ({ currentDocument }: Application, locked: boolean) => {
-    const { groups, shapes } = selectedItems(currentDocument);
-
-    shapes.forEach((shape) => unbind(shape, 'locked'));
-    [...groups, ...shapes].forEach((item) => {
-        if (item.locked !== locked) {
-            item.locked = locked;
-        }
-    });
-};
-
-export const lockSelection: Action = ({ state }) => {
-    setSelectionLocked(state, true);
-};
-
-export const unlockSelection: Action = ({ state }) => {
-    setSelectionLocked(state, false);
-};
+/** Visibility edits load with the editor's controls. */
+export const hideSelection: Action = (context) => editorHelpers().visibility.hideSelection(context);
+export const showAll: Action = (context) => editorHelpers().visibility.showAll(context);
+export const lockSelection: Action = (context) => editorHelpers().visibility.lockSelection(context);
+export const unlockSelection: Action = (context) =>
+    editorHelpers().visibility.unlockSelection(context);
 
 /**
  * Runs a command for the given shapes, as an item's menu does: they become the
