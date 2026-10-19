@@ -445,8 +445,18 @@ the read-only viewer. `framesIds` is derived with the other entity ID lists.
 Frame clipboard payloads are validated independently of shape payloads, then pasted through
 operations. `clipboardEdits.ts` also loads with the editor: do not move its shape/frame copy,
 cut or paste implementations back into startup actions. `tests/frameEditing.test.ts` exercises
-production copies and `tests/browser/screens.spec.ts` exercises the canvas UI. Nesting, parent
-references, automatic stacks and interactive roles remain future work in APPLICATION_PLAN.
+production copies and `tests/browser/screens.spec.ts` exercises the canvas UI.
+
+Shapes and frames may name `parentFrameId`, with geometry in canvas coordinates. Reparenting
+preserves position, applies to whole groups in the editor, and rejects cycles. The local
+`frameParents` projection omits cycle edges without rewriting shared data. Missing frame
+references are repaired like missing shape references, including in collaboration referrers.
+Move carries descendants; resize changes only the boundary. Deletion releases immediate
+children; cut removes only the captured subtree. Frame clipboard payloads carry nested frames
+and shape membership/state, reusing the shape clipboard for artwork and dependencies. Keep
+source-only component masters out of frames; their instance keeps the former parent.
+`tests/frameMembership.test.ts` and `tests/browser/frameMembership.spec.ts` exercise these paths.
+Inherited frame Hide/Lock, stacks and interactive roles remain future work in APPLICATION_PLAN.
 
 ## Groups and layers
 
@@ -661,8 +671,9 @@ Hidden guides are not drawn and locked ones do not move.
       (`src/events/gestures.ts`): while it lasts no shape is measured, and when it ends only
       the shapes whose geometry changed are. A new gesture kind must be added to the list,
       and one listed as keeping bounds must update `shape.bounds` with the geometry. Only
-      selected shapes read the gesture (`useMeasuringShape`), since gestures change only
-      those, so the other shapes do not render again as a gesture begins and ends.
+      selected shapes read ordinary gestures (`useMeasuringShape`). Framed shapes also check
+      whether a frame gesture owns them, since a frame moves unselected descendants. Keep
+      unframed, unselected shapes out of this subscription.
     - Loops that only read thousands of shapes, as hit tests and snapshots on a press, read
       them with `untracked` (`src/app/untracked.ts`), skipping the store's tracking of each
       access; changes still go through the store.

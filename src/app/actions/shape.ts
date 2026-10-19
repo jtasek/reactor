@@ -16,7 +16,7 @@ import {
 } from '../types';
 import { unbind, unbindEditedProperties, unbindMovedProperties, writeText } from '../variables';
 import { Context } from 'src/app';
-import { instanceName, createGroup, createShape, nextShapeName, shapeNamer } from '../factories';
+import { instanceName, createGroup, createShape, nextShapeName } from '../factories';
 import { containersHolding, groupAtPoint, shapeGroup, shownGroupShapesIds } from '../membership';
 import { deleteShape } from '../deleteShape';
 import {
@@ -38,7 +38,6 @@ import type { PasteResult } from '../clipboard';
 import { editorHelpers } from '../editorHelpers';
 import { takesEditorInput } from 'src/events/input';
 import {
-    CLONE_OFFSET,
     cornerRadiusAfterDrag,
     hitTestShape,
     hitTolerance,
@@ -153,81 +152,9 @@ export const drawShape: ActionWithParam<ShapeInput> = ({ state, actions }, optio
     };
 };
 
-/**
- * Adds an independent copy of each shape, offset by `CLONE_OFFSET`, above all
- * other shapes and stacked like the originals, and selects the copies in place
- * of the selection. A copy keeps its original's geometry and appearance but gets
- * its own id, name and timestamps, and is measured afresh. Copies join their
- * originals' layers; a group copied whole is copied as a group of its own, and
- * copies of some of a group's shapes join it.
- */
-export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shapeIds) => {
-    const { currentDocument } = state;
-    const { shapes, shapesIds } = currentDocument;
-    const cloning = new Set(shapeIds);
-    const clonesIds = new Map<string, string>();
-    let order = topOrder(state);
-
-    const present = Object.values(untracked(currentDocument).shapes);
-    const nameShape = shapeNamer(present);
-    const taken = new Set(present.map((shape) => shape.name));
-
-    actions.unselectShapes();
-
-    for (const id of shapesIds.filter((shapeId) => cloning.has(shapeId))) {
-        const original = shapes[id];
-
-        order = orderAbove(order);
-
-        const component =
-            original.type === 'instance' ? currentDocument.components[original.componentId] : null;
-        const name = component ? instanceName(component.name, taken) : nameShape(original.type);
-
-        taken.add(name);
-
-        const clone = createShape({
-            ...shapeGeometry(original),
-            ...(original.type === 'instance' ? { bounds: original.bounds } : {}),
-            order,
-            name,
-            description: original.description,
-            parentShapeId: original.parentShapeId,
-            rotation: original.rotation,
-            locked: original.locked,
-            visible: original.visible,
-            selected: true
-        });
-
-        translateShape(clone, CLONE_OFFSET);
-        putOnTop(state, clone);
-        clonesIds.set(id, clone.id);
-    }
-
-    const clonesOf = (ids: string[]) =>
-        ids.map((id) => clonesIds.get(id)).filter((id) => id !== undefined);
-
-    for (const layer of containersHolding(currentDocument.layers, clonesIds.keys())) {
-        layer.shapesIds = [...layer.shapesIds, ...clonesOf(layer.shapesIds)];
-    }
-
-    for (const group of containersHolding(currentDocument.groups, clonesIds.keys())) {
-        const copies = clonesOf(group.shapesIds);
-        const shown = group.shapesIds.filter((id) => isShapeVisible(currentDocument, id));
-
-        // Hidden shapes are not cloned, so a group is cloned whole when its shown ones are.
-        if (copies.length === shown.length) {
-            const copy = createGroup({
-                shapesIds: copies,
-                name: `Clone of ${group.name}`,
-                rotation: group.rotation
-            });
-
-            currentDocument.groups[copy.id] = copy;
-        } else {
-            group.shapesIds = [...group.shapesIds, ...copies];
-        }
-    }
-};
+/** Cloning is an editor-only transfer, alongside copying and pasting. */
+export const cloneShapes: ActionWithParam<string[]> = (context, shapeIds) =>
+    editorHelpers().clipboardEdits.cloneShapes(context, shapeIds);
 
 /** Clipboard editing is provided by the editor page, not loaded at startup. */
 export const copySelection: ActionWithResult<string | null> = (context) =>

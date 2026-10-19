@@ -119,10 +119,20 @@ handles to resize it. Inspector edits its name, X/Y, width and height; press Ent
 the field to commit. Arrow keys nudge a selected frame. Copy, Cut, Paste, Clone, Delete and
 Undo/Redo work with frames, including across documents.
 
-Frames are independent screen boundaries in this first increment. Shapes inside remain
-independently selectable; moving or deleting the boundary leaves artwork unchanged. Explicit
-membership, nested frames and stack layout will follow. Frames are saved and shared, while
-selection remains local to this copy.
+Use Inspector’s **Parent** control to attach selected shapes or a frame to another frame;
+choose **Canvas** to release them. Explorer nests frame rows. Membership is explicit:
+drawing inside a boundary does not attach an object, and reparenting preserves its canvas
+position. Reparenting a grouped shape moves the whole group into the same frame.
+
+Moving a frame carries its nested frames and artwork. Resizing changes only the boundary;
+it does not scale or lay out its contents. A locked descendant or a group split across frames blocks moving the frame; Inspector explains why.
+**Delete** removes only the boundary and releases its children in place; **Cut** and **Clone**
+include the subtree. Copy/paste retains groups, variables and component dependencies.
+Frames and their memberships are saved and shared; selection stays local. Concurrent parent
+cycles appear as roots with an Inspector diagnostic and can be repaired through Parent.
+
+Frame Hide/Lock still controls the boundary itself. Inherited frame state, automatic layout,
+clipping and interactive screen behavior remain later increments.
 
 ## Saving
 

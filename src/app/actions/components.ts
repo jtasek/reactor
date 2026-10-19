@@ -13,7 +13,7 @@ import type { GroupDrag } from './group';
 import type { ResizeHandlerType } from '../types';
 import { resizeContainerShapes, rotateContainerShapes } from '../containerTransforms';
 import { ordersBetween, resolveDrawOrderTies } from '../drawOrder';
-import { putShapesOnLayer, shapeLayer } from '../membership';
+import { putShapesOnLayer, putShapesInFrame, shapeLayer } from '../membership';
 
 type ComponentDrag = Omit<GroupDrag, 'groupId'> & { componentId: string };
 
@@ -173,6 +173,7 @@ export const createComponentFromSelection: Action = ({ state, actions }) => {
     }
 
     const topId = ids[ids.length - 1];
+    const parentFrameId = document.shapes[topId].parentFrameId;
     const layerId = shapeLayer(document, topId)?.id ?? null;
     resolveDrawOrderTies(document.shapesIds.map((id) => document.shapes[id]));
     const index = document.shapesIds.indexOf(topId);
@@ -188,6 +189,7 @@ export const createComponentFromSelection: Action = ({ state, actions }) => {
     state.enteredGroupId = null;
     const instance = createShape({
         type: 'instance',
+        parentFrameId,
         componentId: component.id,
         name: instanceName(
             component.name,
@@ -210,6 +212,7 @@ export const createComponentFromSelection: Action = ({ state, actions }) => {
     document.shapesIds.splice(index + 1, 0, instance.id);
     putShapesOnLayer(document, [instance.id], layerId);
     putShapesOnLayer(document, ids, null);
+    putShapesInFrame(document, ids, undefined);
     actions.ui.showControl('explorer');
     actions.ui.showControl('inspector');
 };
@@ -228,6 +231,7 @@ export const addShapesToComponent: ActionWithParam<{ componentId: string; shapeI
     component.shapesIds.push(...shapeIds);
     if (component.sourceOnly) {
         putShapesOnLayer(state.currentDocument, shapeIds, null);
+        putShapesInFrame(state.currentDocument, shapeIds, undefined);
     }
 };
 

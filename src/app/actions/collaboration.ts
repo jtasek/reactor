@@ -1,3 +1,4 @@
+import { editorHelpers } from '../editorHelpers';
 import type { Action, ActionWithParam, Box, Document, Shape } from '../types';
 import { getBoundingBox, mapPointBetweenBoxes } from '../utils';
 import {
@@ -189,16 +190,12 @@ export const applyRemoteChanges: ActionWithParam<RemoteChanges> = ({ state }, ch
     const { gesture } = state.events.pointer;
 
     if (gesture.kind === 'editingFrame' && documentId === state.currentDocumentId) {
-        const change = unwrittenOrMerged(entities, changes.unwritten, 'frames', gesture.frameId);
-
-        if (change?.previous) {
-            rebaseChangedFields(
-                gesture.originalFrame,
-                change.previous,
-                change.view,
-                change.changed
-            );
-        }
+        editorHelpers().frames.rebaseGesture(
+            gesture,
+            changes,
+            (id) => unwrittenOrMerged(entities, changes.unwritten, 'frames', id),
+            rebaseChangedFields
+        );
     }
 
     if ('shapes' in gesture && documentId === state.currentDocumentId) {

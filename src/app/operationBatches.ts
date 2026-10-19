@@ -1,3 +1,4 @@
+import { deleteFrame, validFrameParent, frameContents, frameMoveProblem } from './frameMembership';
 import { legacyTheme, readDimension } from './variableModes';
 import { json } from 'overmind';
 import type {
@@ -31,12 +32,14 @@ import {
     removeVariable,
     replaceTemplateIds,
     unbindEditedProperties,
+    unbindMovedProperties,
     writeText
 } from './variables';
 import { resolveVariable, variableProblems, variableDefinition } from './variableResolver';
 import { componentSource, instanceBox } from './componentSource';
 import { hydrateComponent, readEntity } from './services/documentStorage';
-import { shapeGeometryKey } from './utils';
+import { shapeGeometryKey, shapeGeometry } from './utils';
+import { translateShape } from './geometry';
 
 type Referable = 'variables' | 'components' | 'shapes' | 'frames';
 
@@ -46,6 +49,7 @@ type Changeable = 'variables' | 'shapes' | 'groups' | 'frames';
 /** The fields of a shape an update may change: those a model may give a shape it adds. */
 const CHANGEABLE_FIELDS = new Set([
     'name',
+    'parentFrameId',
     'description',
     'rotation',
     'opacity',
@@ -560,16 +564,28 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         }
     });
 
-    // Project only the shapes being updated; validation must not mutate the document.
+    // Project explicit updates and frame descendants against the batch's variable changes.
     let projected: Pick<Document, 'variables' | 'shapes'> | undefined;
 
     if (staged.updatedVariables.length > 0 || staged.deletedVariables.length > 0) {
         projected = {
             variables: structuredClone(json(document.variables)),
             shapes: Object.fromEntries(
-                operations
-                    .filter((operation) => operation.op === 'updateShape')
-                    .map(({ shape }) => [shape, structuredClone(json(document.shapes[shape]))])
+                [
+                    ...new Set(
+                        operations.flatMap((operation) => {
+                            if (operation.op === 'updateShape') {
+                                return [operation.shape];
+                            }
+
+                            if (operation.op === 'updateFrame' && operation.changes.position) {
+                                return frameContents(document, operation.frame).shapes;
+                            }
+
+                            return [];
+                        })
+                    )
+                ].map((shape) => [shape, structuredClone(json(document.shapes[shape]))])
             )
         };
         writeVariables(
@@ -615,6 +631,9 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         const shape = createShape({ ...input, name, order, selected: false });
 
         linkShape(shape, input, index);
+        if (shape.parentFrameId !== undefined) {
+            shape.parentFrameId = reference(shape.parentFrameId, 'frames', index);
+        }
         if (shape.parentShapeId !== undefined) {
             shape.parentShapeId = reference(shape.parentShapeId, 'shapes', index);
         }
@@ -643,6 +662,11 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         unbindEditedProperties(shape, fields);
         const bindings = shape.bindings ?? {};
         Object.assign(shape, structuredClone(changes));
+        if (changes.parentFrameId === null) {
+            delete shape.parentFrameId;
+        } else if (changes.parentFrameId !== undefined) {
+            shape.parentFrameId = reference(changes.parentFrameId, 'frames', index);
+        }
         const kept = Object.entries(bindings).filter(([key, variableId]) => {
             const property = bindableProperty(key);
             const variable = variables[variableId];
@@ -669,16 +693,17 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         }
         const read: Record<string, unknown> = readEntity('shapes', shape);
         const foreign = fields.find(
-            (field) => field !== 'bindings' && field !== 'template' && !(field in read)
+            (field) =>
+                !['bindings', 'template', 'parentFrameId'].includes(field) && !(field in read)
         );
 
         if (foreign) {
             throw new Error(`a ${current.type} has no ${foreign}.`);
         }
         const before = new Map(Object.entries(json(current)));
-        const written = [...new Set([...Object.keys(read), 'bindings', 'template'])].filter(
-            (field) => JSON.stringify(read[field]) !== JSON.stringify(before.get(field))
-        );
+        const written = [
+            ...new Set([...Object.keys(read), 'bindings', 'template', 'parentFrameId'])
+        ].filter((field) => JSON.stringify(read[field]) !== JSON.stringify(before.get(field)));
 
         staged.updatedShapes.push({
             id,
@@ -741,20 +766,27 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                         ...operation.frame,
                         id: ids.get(operation.key)
                     });
+                    if (frame.parentFrameId !== undefined) {
+                        frame.parentFrameId = reference(frame.parentFrameId, 'frames', index);
+                    }
                     staged.frames.push(frame);
                     return;
                 }
                 case 'updateFrame': {
-                    const allowed = new Set(['name', 'position', 'size']);
+                    const allowed = new Set(['name', 'position', 'size', 'parentFrameId']);
                     if (Object.keys(operation.changes).some((key) => !allowed.has(key))) {
                         throw new Error('Unsupported frame field.');
                     }
-                    staged.updatedFrames.push(
-                        readEntity('frames', {
-                            ...json(document.frames[operation.frame]),
-                            ...operation.changes
-                        })
-                    );
+                    const parent = operation.changes.parentFrameId;
+                    const frame = readEntity('frames', {
+                        ...json(document.frames[operation.frame]),
+                        ...operation.changes,
+                        ...(parent === null ? { parentFrameId: undefined } : {})
+                    });
+                    if (parent !== undefined && parent !== null) {
+                        frame.parentFrameId = reference(parent, 'frames', index);
+                    }
+                    staged.updatedFrames.push(frame);
                     return;
                 }
                 case 'deleteFrame':
@@ -782,6 +814,122 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             }
         } catch (error) {
             throw problem(index, error);
+        }
+    });
+
+    const parentOfShape = (id: string) => {
+        const added = staged.shapes.find((shape) => shape.id === id);
+        const update = staged.updatedShapes.find((shape) => shape.id === id);
+
+        if (update && 'parentFrameId' in update.fields) {
+            return update.fields.parentFrameId;
+        }
+
+        return (added ?? document.shapes[id])?.parentFrameId;
+    };
+    [...Object.values(document.groups), ...staged.groups].forEach((group) => {
+        const parentChange = staged.updatedShapes.find(
+            (shape) => group.shapesIds.includes(shape.id) && 'parentFrameId' in shape.fields
+        );
+
+        if (
+            staged.deletedGroups.includes(group.id) ||
+            (!parentChange && !staged.groups.includes(group))
+        ) {
+            return;
+        }
+
+        if (
+            new Set(
+                group.shapesIds
+                    .filter((id) => !staged.deletedShapes.includes(id))
+                    .map(parentOfShape)
+            ).size > 1
+        ) {
+            const index = parentChange
+                ? changed.get(record('shapes', parentChange.id))!
+                : operations.findIndex((op) => op.op === 'addGroup');
+            throw problem(
+                index,
+                'A group must stay in one frame. Reparent all of its shapes together.'
+            );
+        }
+    });
+
+    // A free frame moves its subtree once. A batch must not also edit those records.
+    [...staged.updatedFrames].forEach((frame) => {
+        const original = document.frames[frame.id];
+        const delta = {
+            x: frame.position.x - original.position.x,
+            y: frame.position.y - original.position.y
+        };
+
+        if (delta.x === 0 && delta.y === 0) {
+            return;
+        }
+
+        const index = changed.get(record('frames', frame.id))!;
+        const contents = frameContents(document, frame.id);
+        const conflict =
+            contents.frames.some((id) => changed.has(record('frames', id))) ||
+            contents.shapes.some((id) => changed.has(record('shapes', id)));
+        const movementProblem = frameMoveProblem(document, frame.id);
+
+        if (conflict || movementProblem) {
+            throw problem(
+                index,
+                movementProblem ??
+                    'Moving a frame cannot also edit its descendants in the same batch.'
+            );
+        }
+
+        contents.frames.forEach((id) => {
+            changed.set(record('frames', id), index);
+            const child = json(document.frames[id]);
+            try {
+                staged.updatedFrames.push(
+                    readEntity('frames', {
+                        ...child,
+                        position: { x: child.position.x + delta.x, y: child.position.y + delta.y }
+                    })
+                );
+            } catch (error) {
+                throw problem(index, error);
+            }
+        });
+        contents.shapes.forEach((id) => {
+            changed.set(record('shapes', id), index);
+            const child = structuredClone(json(projected?.shapes[id] ?? document.shapes[id]));
+            translateShape(child, delta);
+            try {
+                readEntity('shapes', child);
+            } catch (error) {
+                throw problem(index, error);
+            }
+            unbindMovedProperties(child, delta);
+            staged.updatedShapes.push({
+                id,
+                fields: { ...shapeGeometry(child), bindings: child.bindings }
+            });
+        });
+    });
+
+    const frames = {
+        ...document.frames,
+        ...Object.fromEntries(
+            [...staged.frames, ...staged.updatedFrames].map((frame) => [frame.id, frame])
+        )
+    };
+    operations.forEach((operation, index) => {
+        const id =
+            operation.op === 'addFrame'
+                ? ids.get(operation.key)
+                : operation.op === 'updateFrame' && 'parentFrameId' in operation.changes
+                  ? operation.frame
+                  : undefined;
+
+        if (id !== undefined && !validFrameParent(frames, id, frames[id].parentFrameId)) {
+            throw problem(index, 'A frame parent would create a cycle or is missing.');
         }
     });
 
@@ -864,12 +1012,6 @@ export function writeBatch(document: Document, staged: Staged) {
     [...staged.frames, ...staged.updatedFrames].forEach((frame) => {
         document.frames[frame.id] = frame;
     });
-    staged.deletedFrames.forEach((id) => {
-        delete document.frames[id];
-        if (document.selectedFrameId === id) {
-            delete document.selectedFrameId;
-        }
-    });
     staged.dimensions.forEach((dimension) => {
         document.dimensions[dimension.id] = dimension;
     });
@@ -906,6 +1048,7 @@ export function writeBatch(document: Document, staged: Staged) {
 
     const emptied = containersHolding(document.groups, staged.deletedShapes);
 
+    staged.deletedFrames.forEach((id) => deleteFrame(document, id));
     staged.deletedShapes.forEach((id) => deleteShape(document, id));
     emptied
         .filter((group) => group.shapesIds.length === 0)

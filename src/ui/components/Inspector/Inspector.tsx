@@ -1,5 +1,6 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
+import { FrameParent } from './FrameParent';
 import { PropertyField } from './PropertyField';
 import { PropertyGroup } from './PropertyGroup';
 import { AlignSection } from './AlignSection';
@@ -172,6 +173,9 @@ export const Inspector: FC<Props> = ({
             {instance && <InstanceProps />}
             <AlignSection />
             <table>
+                <PropertyGroup name="Frame">
+                    <FrameParent shapeIds={shapeIds} />
+                </PropertyGroup>
                 {groupRows(shownRows).map(({ group, rows: grouped }) => (
                     <PropertyGroup key={group} name={group}>
                         {grouped.map(propertyField)}

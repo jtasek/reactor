@@ -359,6 +359,23 @@ export function putShapesOnLayer(
     }
 }
 
+/** Reparenting never converts canvas coordinates. Callers check edit access first. */
+export function putShapesInFrame(
+    document: Document,
+    ids: string[],
+    parentFrameId: string | undefined
+) {
+    ids.forEach((id) => {
+        if (parentFrameId === undefined) {
+            delete document.shapes[id].parentFrameId;
+
+            return;
+        }
+
+        document.shapes[id].parentFrameId = parentFrameId;
+    });
+}
+
 /**
  * Adds shapes to a group, out of any other group, and puts them on the group's
  * layer, the one its first shape is on.
@@ -366,6 +383,7 @@ export function putShapesOnLayer(
 export function putShapesInGroup(document: Document, shapeIds: string[], groupId: string) {
     const group = document.groups[groupId];
     const added = shapeIds.filter((id) => !group.shapesIds.includes(id));
+    putShapesInFrame(document, added, document.shapes[group.shapesIds[0]]?.parentFrameId);
 
     putShapesOnLayer(document, added, shapeLayer(document, group.shapesIds[0])?.id ?? null);
 

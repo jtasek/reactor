@@ -274,7 +274,41 @@ export const Explorer: FC = () => {
     const document = useCurrentDocument();
     const components = useComponents() ?? {};
     const filter = useDocumentFilter().trim().toLowerCase();
-    const shownFrames = frames.filter((frame) => frame.name.toLowerCase().includes(filter));
+    const matchingFrames = new Set(
+        frames.filter((frame) => frame.name.toLowerCase().includes(filter)).map((frame) => frame.id)
+    );
+    const byId = new Map(frames.map((frame) => [frame.id, frame]));
+    for (const id of [...matchingFrames]) {
+        let parent = byId.get(id)?.parentFrameId;
+
+        while (parent !== undefined) {
+            matchingFrames.add(parent);
+            parent = byId.get(parent)?.parentFrameId;
+        }
+    }
+    const shownFrames = frames.filter((frame) => matchingFrames.has(frame.id));
+    const frameItem = (frame: (typeof frames)[number]): React.ReactNode => (
+        <ExplorerItem
+            key={frame.id}
+            kind="frame"
+            name={frame.name}
+            icon={<FrameIcon size={16} aria-hidden="true" />}
+            selected={selectedFrameId === frame.id}
+            visible={frame.visible}
+            collapseId={`frame:${frame.id}`}
+            onClick={() => editFrame({ kind: 'select', id: frame.id })}
+            menuActions={[
+                hideAction(!frame.visible, () =>
+                    editFrame({ kind: 'toggle', id: frame.id, flag: 'visible' })
+                ),
+                lockAction(frame.locked, () =>
+                    editFrame({ kind: 'toggle', id: frame.id, flag: 'locked' })
+                )
+            ]}
+        >
+            {shownFrames.filter((child) => child.parentFrameId === frame.id).map(frameItem)}
+        </ExplorerItem>
+    );
     const drawOrder = new Map(useShapesIds().map((id, index) => [id, index]));
     const scene = sceneLayers(found, document).filter(
         ({ layerId, groups, shapesIds }) =>
@@ -347,25 +381,9 @@ export const Explorer: FC = () => {
                 <SearchBoxContainer />
                 {shownFrames.length > 0 && (
                     <ul aria-label="Frames">
-                        {shownFrames.map((frame) => (
-                            <ExplorerItem
-                                key={frame.id}
-                                kind="frame"
-                                name={frame.name}
-                                icon={<FrameIcon size={16} aria-hidden="true" />}
-                                selected={selectedFrameId === frame.id}
-                                visible={frame.visible}
-                                onClick={() => editFrame({ kind: 'select', id: frame.id })}
-                                menuActions={[
-                                    hideAction(!frame.visible, () =>
-                                        editFrame({ kind: 'toggle', id: frame.id, flag: 'visible' })
-                                    ),
-                                    lockAction(frame.locked, () =>
-                                        editFrame({ kind: 'toggle', id: frame.id, flag: 'locked' })
-                                    )
-                                ]}
-                            />
-                        ))}
+                        {shownFrames
+                            .filter((frame) => frame.parentFrameId === undefined)
+                            .map(frameItem)}
                     </ul>
                 )}
                 {shownLayerId && (
