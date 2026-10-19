@@ -20,11 +20,12 @@ cases are [frames.test.ts](../tests/frames.test.ts):
 - a rule edit concurrent with a child-size edit;
 - independent edits to nested rule fields (direction and gap both survive);
 - insertion, reorder and resize with delayed and repeated state delivery;
-- concurrent reparenting using one parent register per child;
+- concurrent reparenting using one parent register per child, with each copy as the winner;
 - deletion of a parent concurrent with insertion of a child;
 - a parent cycle created by two individually valid offline edits;
 - undo of a local rule edit while keeping another copy's size edit;
-- invalid geometry, non-frame parents, visible overflow and 2,000 nested frames.
+- invalid geometry, unreadable stack rules, non-frame parents, visible overflow and 2,000
+  nested frames.
 
 Run `pnpm test tests/frames.test.ts`.
 
@@ -44,6 +45,9 @@ proves the candidate algorithm on merged snapshots, not the full editor integrat
 - Invalid parent edges are omitted from the local projection with diagnostics, leaving those
   items visible as roots. All edges within a parent cycle are omitted; descendants outside
   the cycle stay attached. No repair is written back to other copies.
+- A frame whose stack rules a copy cannot read (an unknown direction or alignment, a missing
+  or negative gap or padding) keeps its box and places its children by their own positions,
+  with an `invalid-stack` diagnostic. Only invalid geometry drops an item from the projection.
 - Fixed-size children keep their size on overflow. The prototype reports overflow rather
   than silently shrinking or clipping artwork.
 
@@ -74,13 +78,14 @@ preview, navigation, exports or a renderer/plugin framework.
 
 ## Measurement
 
-Observed locally with Node 25.6.0, 20 warm-up passes then 100 measured passes, one row frame
-and fixed-size children with distinct order keys:
+Run `node scripts/bench-frame-layout.ts`: 20 warm-up passes, then 100 measured passes of one
+row frame with fixed-size children and distinct order keys. Informal figures from one run on
+Node 22.22.0 in a shared cloud container; they vary from machine to machine:
 
 | Children | Median layout | p95 layout |
 | -------- | ------------- | ---------- |
-| 300      | 0.159 ms      | 0.241 ms   |
-| 2,000    | 1.017 ms      | 1.473 ms   |
+| 300      | 0.291 ms      | 0.486 ms   |
+| 2,000    | 1.525 ms      | 2.547 ms   |
 
 These are isolated projection timings, excluding validation of untrusted input, Yjs merge,
 store propagation, rendering and hit testing. They do not establish the editor's 4/16 ms
