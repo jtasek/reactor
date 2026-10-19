@@ -42,8 +42,6 @@ const onClick = (event: MouseEvent): void => {
         href === null ||
         anchor.target ||
         anchor.hasAttribute('download') ||
-        // Preserve query-bearing links, including authentication return destinations.
-        !!anchor.search ||
         // Invitation secrets must survive navigation, including a new fragment on this page.
         (anchor.pathname === '/invite' && !!anchor.hash) ||
         anchor.origin !== window.location.origin
@@ -52,7 +50,8 @@ const onClick = (event: MouseEvent): void => {
     }
 
     event.preventDefault();
-    navigate(anchor.pathname);
+    // The query stays, as an authentication return destination does.
+    navigate(anchor.pathname + anchor.search);
 };
 
 export const initializeRoutes = (routes: Routes): void => {
@@ -67,11 +66,24 @@ export const initializeRoutes = (routes: Routes): void => {
     dispatch(window.location.pathname);
 };
 
+const split = (url: string) => {
+    const { pathname, search } = new URL(url, window.location.origin);
+
+    return { path: normalize(pathname), search };
+};
+
 export const navigate = (url: string): void => {
-    const path = normalize(url);
-    if (path !== normalize(window.location.pathname)) {
-        window.history.pushState({}, '', path);
+    const { path, search } = split(url);
+    if (path + search !== normalize(window.location.pathname) + window.location.search) {
+        window.history.pushState({}, '', path + search);
     }
+    dispatch(path);
+};
+
+/** Shows `url` in place of the current entry, as a redirect, without loading the page again. */
+export const redirect = (url: string): void => {
+    const { path, search } = split(url);
+    window.history.replaceState({}, '', path + search);
     dispatch(path);
 };
 

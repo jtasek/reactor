@@ -101,14 +101,14 @@ describe('accounts', () => {
 });
 
 describe('signed-out notices', () => {
-    it('says once that documents are kept only in this browser, with a link to sign in', async () => {
+    it('says once that documents are kept only in this browser, with a link to sign in and back', async () => {
         const first = await start(server());
 
         expect(notices(first)).toEqual([
             expect.objectContaining({
                 message:
                     'Your documents are kept only in this browser and are lost if its site data is cleared.',
-                link: { label: 'Sign in to keep them', url: '/login' }
+                link: { label: 'Sign in to keep them', url: '/login?returnTo=/' }
             })
         ]);
 

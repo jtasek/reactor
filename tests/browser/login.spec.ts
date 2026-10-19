@@ -32,7 +32,7 @@ test('login is reachable from the editor and stays readable at narrow widths', a
     await signedOut(page);
     await page.goto('/');
     await page.getByRole('link', { name: 'Sign in', exact: true }).click();
-    await expect(page).toHaveURL('/login');
+    await expect(page).toHaveURL('/login?returnTo=/');
     await expect(page.getByRole('heading', { name: 'Sign in', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Continue with GitHub' })).toBeVisible();

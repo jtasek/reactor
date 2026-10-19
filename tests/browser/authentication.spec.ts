@@ -14,12 +14,21 @@ test('legacy routes use login and retain the intended destination and provider e
     page
 }) => {
     await signedOut(page);
+    let pageLoads = 0;
+    page.on('request', (request) => {
+        if (request.resourceType() === 'document') {
+            pageLoads += 1;
+        }
+    });
     await page.goto('/signin/?returnTo=%2Fsharing');
     await expect(page).toHaveURL('/login?returnTo=%2Fsharing');
+    await expect(page.getByRole('heading', { name: 'Sign in', exact: true })).toBeVisible();
     await page.goto('/account?oauth=failed');
     await expect(page).toHaveURL('/login?oauth=failed&returnTo=%2Faccount');
     await expect(page.getByRole('heading', { name: 'Sign in', exact: true })).toBeVisible();
     await expect(page.getByRole('alert')).toContainText('Social sign-in was not completed');
+    // Each redirect replaces the address without loading the app again.
+    expect(pageLoads).toBe(2);
 });
 
 test('password login coordinates all controls and opens Documents by default', async ({ page }) => {
@@ -74,6 +83,44 @@ test('provider requests disable email and mode switching and release them after 
     await expect(page.getByRole('alert')).toHaveText('Could not start sign-in. Please try again.');
     await expect(page.getByLabel('Email', { exact: true })).toBeEnabled();
     await expect(page.getByRole('button', { name: 'Continue with GitHub' })).toBeEnabled();
+});
+
+test('the form stays busy while the browser leaves for the provider', async ({ page }) => {
+    await signedOut(page);
+    await page.route('**/api/auth/sign-in/social', (route) =>
+        route.fulfill({ json: { url: 'https://identity.example.test/authorize' } })
+    );
+    const leaving = page.waitForResponse('https://identity.example.test/authorize');
+    // A 204 answer cancels the navigation, so the login page stays to be read.
+    await page.route('https://identity.example.test/authorize', (route) =>
+        route.fulfill({ status: 204 })
+    );
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Continue with Google' }).click();
+    await leaving;
+    await expect(page).toHaveURL('/login');
+    await expect(page.getByRole('button', { name: 'Continuing with Google…' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Continue with GitHub' })).toBeDisabled();
+    await expect(page.getByLabel('Email', { exact: true })).toBeDisabled();
+});
+
+test('signing in from the editor returns to the editor', async ({ page }) => {
+    await signedOut(page);
+    let loggedIn = false;
+    await page.route('**/api/auth/get-session', (route) =>
+        route.fulfill({ json: loggedIn ? { user } : null })
+    );
+    await page.route('**/api/auth/sign-in/email', async (route) => {
+        loggedIn = true;
+        await route.fulfill({ json: { user } });
+    });
+    await page.goto('/');
+    await page.getByRole('link', { name: 'Sign in', exact: true }).click();
+    await expect(page).toHaveURL('/login?returnTo=/');
+    await page.getByLabel('Email', { exact: true }).fill(user.email);
+    await page.getByLabel('Password', { exact: true }).fill('correct password');
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await expect(page).toHaveURL('/');
 });
 
 test('email links show a focused check-email step with controlled resend and editable address', async ({
