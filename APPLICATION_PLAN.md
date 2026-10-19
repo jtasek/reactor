@@ -400,9 +400,23 @@ Done when `tests/server/sharing.test.ts` (invited roles, read-only viewer links)
 
 The user turns a drawing into screens that navigate and take input, and sends a link to them.
 
-1. Frames for screens and stacks, and roles and props on components and instances, set in the
-   inspector, with keyboard access. A spike first proves stacks laid out again after merges
-   across two copies.
+Implementation status: the first layout spike is complete in `tests/frames.test.ts` and
+`tests/spikes/frameLayout.ts`. Sixteen cases cover fixed row/column layout, nested/free frames,
+independent rule edits, concurrent resize/reorder/reparent/delete, parent cycles and local undo
+across two Yjs copies. Derived positions stay outside the shared rules. This is test-only;
+frame records and editor controls are not implemented. [Spike findings and integration
+boundaries](design/frame-layout-spike.md) distinguish the candidate projection from production
+collaboration and record the coordinate-conversion work still needed.
+
+1. Frames for screens and stacks, and roles and props on components and instances:
+   - First usable increment: validated frame records, durable membership, save/copy/operations,
+     collaboration and undo, with free-positioned frame boxes, names, keyboard/Explorer
+     selection and box/reparent controls. Preserve group selection semantics.
+   - Then integrate fixed row/column stack layout and gap/padding/alignment controls. Drawing,
+     measurement and hit testing must use one projection; verify through production copies
+     that remote edits reflow without shared derived-position or undo feedback.
+   - Add hug/fill and min/max sizing, with explicit sizing-cycle diagnostics, before component
+     roles and props in the inspector. The initial spike covers fixed sizes only.
 2. The sandboxed preview, with navigation, input state, diagnostics and the last valid preview.
 3. Preview links: read-only, on the separate domain.
 4. SVG export of a screen or a selection, reusing geometry, order, visibility and overrides.
