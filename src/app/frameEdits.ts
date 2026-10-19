@@ -14,6 +14,7 @@ export type FrameEdit =
     | { kind: 'update'; id: string; changes: Partial<Pick<Frame, 'name' | 'position' | 'size'>> }
     | { kind: 'delete'; id: string; documentId?: string }
     | { kind: 'clone'; id: string }
+    | { kind: 'toggle'; id: string; flag: 'locked' | 'visible' }
     | { kind: 'paste'; frame: Frame; target: Point | null };
 
 export const frameBox = (frame: Frame) => ({
@@ -112,6 +113,20 @@ export function edit(context: Context, input: FrameEdit): string | undefined {
     }
 
     const frame = document.frames[input.id];
+
+    if (input.kind === 'toggle') {
+        if (!frame) {
+            return;
+        }
+
+        frame[input.flag] = !frame[input.flag];
+
+        if (!frame.visible && document.selectedFrameId === frame.id) {
+            delete document.selectedFrameId;
+        }
+
+        return frame.id;
+    }
 
     if (!frame || frame.locked) {
         return;

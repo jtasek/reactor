@@ -55,7 +55,7 @@ test('selects by the canvas label and moves/resizes with cancelable owning-point
     await pointer(page, 'pointerdown', {
         x: 150,
         y: 240,
-        target: '[data-frame] [data-type="move"] > rect:first-child'
+        target: '#frame-grips [data-frame-id]'
     });
     await pointer(page, 'pointermove', { x: 200, y: 290 });
     await pointer(page, 'pointerup', { x: 200, y: 290 });
@@ -85,6 +85,26 @@ test('leaves artwork independently selectable and does not select the frame from
     await pointer(page, 'pointerup', { x: 400, y: 300 });
     await expect(frames(page).first()).toHaveAttribute('aria-pressed', 'false');
     await expect(frames(page).locator('rect').last()).toHaveAttribute('width', '400');
+});
+
+test('lets a shape on a frame edge take the press, and the edge alone grab the frame', async ({
+    page
+}) => {
+    await openEditor(page, ['Inspector']);
+    await drawFrame(page);
+    await drawRect(page, { x: 150, y: 140 }, { x: 550, y: 340 });
+    const box = (await page.locator('svg#surface').boundingBox())!;
+    const press = async (x: number, y: number) => {
+        await page.mouse.move(box.x + x, box.y + y);
+        await page.mouse.down();
+        await page.mouse.up();
+    };
+
+    await press(152, 240);
+    await expect(frames(page).first()).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.getByLabel('Frame name', { exact: true })).toHaveCount(0);
+    await press(152, 400);
+    await expect(frames(page).first()).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('supports keyboard selection, nudging, clone, delete and undo without changing artwork', async ({

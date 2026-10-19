@@ -1,6 +1,7 @@
 import React, { type FC } from 'react';
 import { useActions, useAppState, useCameraScale, useGesture } from 'src/app/hooks';
 import { isReadOnly } from 'src/app/documentAccess';
+import { useFramesIds } from 'src/app/frameHooks';
 import type { ResizeHandlerType } from 'src/app/types';
 import styles from './styles.css';
 
@@ -54,15 +55,6 @@ const CanvasFrame: FC<{ id: string; interactive: boolean }> = ({ id, interactive
             }
         >
             <g data-handle={interactive ? true : undefined} data-frame-id={id} data-type="move">
-                {interactive && (
-                    <rect
-                        className={styles.hit}
-                        x={position.x}
-                        y={position.y}
-                        width={size.width}
-                        height={size.height}
-                    />
-                )}
                 <rect
                     className={styles.edge}
                     x={position.x}
@@ -95,19 +87,46 @@ const CanvasFrame: FC<{ id: string; interactive: boolean }> = ({ id, interactive
     );
 };
 
-/** Interior is transparent to input: artwork remains independently selectable. */
+/**
+ * Where a frame's edge is grabbed, drawn under the shapes, as a guide's grip is, so
+ * a shape on the edge, and its handles, take the press. Interiors take none.
+ */
+const FrameGrip: FC<{ id: string }> = ({ id }) => {
+    const frame = useAppState((state) => state.currentDocument.frames[id]);
+
+    if (!frame?.visible) {
+        return null;
+    }
+
+    return (
+        <rect
+            className={styles.hit}
+            data-handle
+            data-frame-id={id}
+            data-type="move"
+            x={frame.position.x}
+            y={frame.position.y}
+            width={frame.size.width}
+            height={frame.size.height}
+        />
+    );
+};
+
+export const FrameGrips: FC = () => {
+    const ids = useFramesIds();
+
+    return (
+        <g id="frame-grips">
+            {ids.map((id) => (
+                <FrameGrip key={id} id={id} />
+            ))}
+        </g>
+    );
+};
+
+/** The frames' edges and names, over the shapes; the edges take no press, their grips do. */
 export const Frames: FC<{ interactive?: boolean }> = ({ interactive = true }) => {
-    const ids = useAppState((state) => {
-        if (state.currentDocument.editingComponentId) {
-            return [];
-        }
-
-        const ids = state.currentDocument.framesIds;
-        const selected = state.currentDocument.selectedFrameId;
-
-        // Selected handles must stay above every other frame's hit area.
-        return [...ids.filter((id) => id !== selected), ...ids.filter((id) => id === selected)];
-    });
+    const ids = useFramesIds();
 
     return (
         <g id="frames" pointerEvents={interactive ? undefined : 'none'}>

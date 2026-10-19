@@ -7,8 +7,7 @@
     stroke: var(--text-secondary-color);
     stroke-width: 1;
     vector-effect: non-scaling-stroke;
-    pointer-events: stroke;
-    cursor: move;
+    pointer-events: none;
 }
 
 .selected .edge {

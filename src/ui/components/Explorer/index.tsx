@@ -10,8 +10,8 @@ import { SourceItem } from './SourceItem';
 import { sceneLayers } from 'src/app/componentTree';
 import { byDrawingOrder } from 'src/app/drawOrder';
 import type { CommandScope } from 'src/app/types';
+import { useFrameRows, useSelectedFrameId } from 'src/app/frameHooks';
 import {
-    useAppState,
     useActions,
     useComponents,
     useCommandsEnabled,
@@ -267,10 +267,8 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
 };
 
 export const Explorer: FC = () => {
-    const frames = useAppState((state) =>
-        state.currentDocument.framesIds.map((id) => ({ ...state.currentDocument.frames[id] }))
-    );
-    const selectedFrameId = useAppState((state) => state.currentDocument.selectedFrameId);
+    const frames = useFrameRows();
+    const selectedFrameId = useSelectedFrameId();
     const { editFrame } = useActions();
     const { layers, found } = useOutline();
     const document = useCurrentDocument();
@@ -349,20 +347,25 @@ export const Explorer: FC = () => {
                 <SearchBoxContainer />
                 {shownFrames.length > 0 && (
                     <ul aria-label="Frames">
-                        {shownFrames
-                            .sort(
-                                (a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)
-                            )
-                            .map((frame) => (
-                                <ExplorerItem
-                                    key={frame.id}
-                                    kind="frame"
-                                    name={frame.name}
-                                    icon={<FrameIcon size={16} aria-hidden="true" />}
-                                    selected={selectedFrameId === frame.id}
-                                    onClick={() => editFrame({ kind: 'select', id: frame.id })}
-                                />
-                            ))}
+                        {shownFrames.map((frame) => (
+                            <ExplorerItem
+                                key={frame.id}
+                                kind="frame"
+                                name={frame.name}
+                                icon={<FrameIcon size={16} aria-hidden="true" />}
+                                selected={selectedFrameId === frame.id}
+                                visible={frame.visible}
+                                onClick={() => editFrame({ kind: 'select', id: frame.id })}
+                                menuActions={[
+                                    hideAction(!frame.visible, () =>
+                                        editFrame({ kind: 'toggle', id: frame.id, flag: 'visible' })
+                                    ),
+                                    lockAction(frame.locked, () =>
+                                        editFrame({ kind: 'toggle', id: frame.id, flag: 'locked' })
+                                    )
+                                ]}
+                            />
+                        ))}
                     </ul>
                 )}
                 {shownLayerId && (

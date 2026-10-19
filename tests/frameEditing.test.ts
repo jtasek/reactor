@@ -6,7 +6,9 @@ import {
     serializePersistedState
 } from 'src/app/services/documentStorage';
 import { FrameTool } from 'src/tools/components/Frame';
-import { registerTool } from 'src/app/actions/startup';
+import { registerCommand, registerTool } from 'src/app/actions/startup';
+import { CloneCommand } from 'src/commands/clone';
+import { DeleteCommand } from 'src/commands/delete';
 
 const geometry = { position: { x: 100, y: 80 }, size: { width: 300, height: 200 } };
 const add = (store: ReturnType<typeof createTestStore>['store']) =>
@@ -303,4 +305,67 @@ it('restores the previous selection when a frame drag or a marquee is canceled',
     store.actions.events.cancelGesture();
     expect(store.state.currentDocument.selectedFrameId).toBe(id);
     expect(store.state.currentDocument.selectedShapesIds).toEqual([]);
+});
+
+it('drops the frame selection when shapes are selected outside the canvas, so their commands leave the frame', () => {
+    const { store } = createTestStore();
+    registerCommand(CloneCommand);
+    registerCommand(DeleteCommand);
+    store.actions.addShape({
+        type: 'rectangle',
+        position: { x: 0, y: 0 },
+        size: { width: 40, height: 30 }
+    });
+    const document = store.state.currentDocument;
+    const [shapeId] = document.shapesIds;
+    const frameId = add(store);
+
+    store.actions.runCommandOn({ shapeIds: [shapeId], commandId: CloneCommand.id });
+    expect(Object.keys(document.frames)).toEqual([frameId]);
+    expect(document.shapesIds).toHaveLength(2);
+    expect(document.selectedFrameId).toBeUndefined();
+
+    store.actions.editFrame({ kind: 'select', id: frameId });
+    store.actions.runCommandOn({ shapeIds: [shapeId], commandId: DeleteCommand.id });
+    expect(document.frames[frameId]).toBeDefined();
+    expect(document.shapes[shapeId]).toBeUndefined();
+
+    store.actions.editFrame({ kind: 'select', id: frameId });
+    store.actions.toggleShapeSelected(document.shapesIds[0]);
+    expect(document.selectedFrameId).toBeUndefined();
+});
+
+it('restores the frame selection when a row command cannot run', () => {
+    const { store } = createTestStore();
+    registerCommand(DeleteCommand);
+    store.actions.addShape({
+        type: 'rectangle',
+        position: { x: 0, y: 0 },
+        size: { width: 40, height: 30 },
+        locked: true
+    });
+    const document = store.state.currentDocument;
+    const frameId = add(store);
+
+    store.actions.runCommandOn({ shapeIds: [document.shapesIds[0]], commandId: DeleteCommand.id });
+    expect(document.selectedFrameId).toBe(frameId);
+});
+
+it('locks, unlocks, hides and shows a frame, letting go of a hidden selected one', () => {
+    const { store } = createTestStore();
+    const document = store.state.currentDocument;
+    const id = add(store);
+
+    store.actions.editFrame({ kind: 'toggle', id, flag: 'locked' });
+    expect(document.frames[id].locked).toBe(true);
+    store.actions.editFrame({ kind: 'update', id, changes: { name: 'Locked' } });
+    expect(document.frames[id].name).toBe('Frame');
+    store.actions.editFrame({ kind: 'toggle', id, flag: 'locked' });
+    expect(document.frames[id].locked).toBe(false);
+
+    store.actions.editFrame({ kind: 'toggle', id, flag: 'visible' });
+    expect(document.frames[id].visible).toBe(false);
+    expect(document.selectedFrameId).toBeUndefined();
+    store.actions.editFrame({ kind: 'toggle', id, flag: 'visible' });
+    expect(document.frames[id].visible).toBe(true);
 });

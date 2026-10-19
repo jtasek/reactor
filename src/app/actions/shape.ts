@@ -400,6 +400,7 @@ export const toggleShapeSelected: ActionWithParam<string> = ({ state, actions },
     if (!shape.selected) {
         return;
     }
+    delete state.currentDocument.selectedFrameId;
     actions.unselectGuides();
 };
 
@@ -408,6 +409,7 @@ export const selectShape: ActionWithParam<string> = ({ state, actions }, shapeId
     const shape = getShape(state, shapeId);
 
     shape.selected = true;
+    delete state.currentDocument.selectedFrameId;
     actions.unselectGuides();
 };
 

@@ -102,7 +102,8 @@ export const runCommandOn: ActionWithParam<{ shapeIds: string[]; commandId: stri
         selected: Object.values(shapes)
             .filter((shape) => shape.selected)
             .map((shape) => shape.id),
-        enteredGroupId: state.enteredGroupId
+        enteredGroupId: state.enteredGroupId,
+        selectedFrameId: state.currentDocument.selectedFrameId
     };
     const select = (ids: Set<string>) =>
         Object.values(shapes).forEach((shape) => {
@@ -112,6 +113,7 @@ export const runCommandOn: ActionWithParam<{ shapeIds: string[]; commandId: stri
         });
 
     actions.unselectGuides();
+    delete state.currentDocument.selectedFrameId;
     select(chosen);
     // One shape of a group is selected alone, as inside its group.
     state.enteredGroupId =
@@ -123,6 +125,9 @@ export const runCommandOn: ActionWithParam<{ shapeIds: string[]; commandId: stri
             guide.selected = true;
         });
         state.enteredGroupId = before.enteredGroupId;
+        if (before.selectedFrameId && state.currentDocument.frames[before.selectedFrameId]) {
+            state.currentDocument.selectedFrameId = before.selectedFrameId;
+        }
     }
 };
 
