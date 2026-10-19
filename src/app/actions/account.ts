@@ -1,7 +1,7 @@
 import type { DocumentAccess } from '../documentAccess';
 import { isReadOnly } from '../documentAccess';
 import type { Context } from 'src/app';
-import { NOTICES_KEY } from '../services/accounts';
+import { loginFrom, NOTICES_KEY } from '../services/accounts';
 import { createNotification } from '../factories';
 import type { ActionWithParam, AiAvailability } from '../types';
 
@@ -56,7 +56,7 @@ export const noticeLocalDocuments = (context: Context) => {
             type: 'info',
             link:
                 state.account.kind === 'signedOut'
-                    ? { label: 'Sign in to keep them', url: '/login' }
+                    ? { label: 'Sign in to keep them', url: loginFrom(state.currentPage) }
                     : undefined
         })
     );

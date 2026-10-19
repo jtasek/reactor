@@ -1,7 +1,7 @@
 import type { AssetServer } from './services/assetSync';
 export { v4 as newId } from 'uuid';
 export { loadState, saveState, backupState, removeState } from './services/localStorage';
-export { initializeRoutes, navigate, reload, reloadPage } from './services/router';
+export { initializeRoutes, navigate, redirect, reload, reloadPage } from './services/router';
 export { collaboration } from './services/collaboration';
 export { deleteDocumentDatabase, openDocumentDatabase } from './services/documentDatabase';
 export { openChannel } from './services/tabSync';

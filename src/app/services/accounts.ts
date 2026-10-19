@@ -28,6 +28,9 @@ export async function accountRequest(path: string, body: object): Promise<Accoun
     }
 }
 
+/** The login page, returning to the editor when left from it; otherwise login's default, Documents. */
+export const loginFrom = (page: string) => (page === 'designer' ? '/login?returnTo=/' : '/login');
+
 /** Where email links lead back to once followed. */
 const RETURN_TO = '/documents';
 
