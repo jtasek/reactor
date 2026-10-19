@@ -14,52 +14,22 @@ export interface AccountUser {
 /** How an account request ended; `message` says why one failed. */
 export type AccountResult = { ok: true } | { ok: false; message: string };
 
-const MESSAGES: Record<string, string> = {
-    INVALID_EMAIL: 'Enter a valid email address.',
-    INVALID_EMAIL_OR_PASSWORD: 'The email address or password is wrong.',
-    EMAIL_NOT_VERIFIED: 'Confirm your email address first, with the link we sent you.',
-    PASSWORD_TOO_SHORT: 'Use a password of at least 8 characters.',
-    PASSWORD_TOO_LONG: 'Use a shorter password.',
-    USER_ALREADY_EXISTS: 'An account with this email address already exists.',
-    USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: 'An account with this email address already exists.'
-};
-
 /** How long the editor waits for the session before showing no accounts. */
 const SESSION_TIMEOUT = 5000;
 
-const request = (path: string, body?: object, signal?: AbortSignal) =>
-    fetch(`/api/auth/${path}`, {
-        method: body ? 'POST' : 'GET',
-        credentials: 'same-origin',
-        headers: body ? { 'content-type': 'application/json' } : undefined,
-        body: body && JSON.stringify(body),
-        signal
-    });
-
-async function post(path: string, body: object): Promise<AccountResult> {
-    let response: Response;
-
+/** Account mutations load with authentication, rather than every page opening. */
+export async function accountRequest(path: string, body: object): Promise<AccountResult> {
     try {
-        response = await request(path, body);
+        const requests = await import('./accountRequests');
+
+        return await requests.accountRequest(path, body);
     } catch {
         return { ok: false, message: 'The server could not be reached. Try again.' };
     }
-
-    if (response.ok) {
-        return { ok: true };
-    }
-
-    if (response.status === 429) {
-        return { ok: false, message: 'Too many attempts. Try again in a minute.' };
-    }
-
-    const { code } = (await response.json().catch(() => ({}))) as { code?: string };
-
-    return { ok: false, message: (code && MESSAGES[code]) ?? 'Something went wrong. Try again.' };
 }
 
 /** Where email links lead back to once followed. */
-const RETURN_TO = '/account';
+const RETURN_TO = '/documents';
 
 /** Signing in and out through the server's `/api/auth` endpoints. */
 export const accounts = {
@@ -68,11 +38,10 @@ export const accounts = {
      * has no accounts.
      */
     async session(): Promise<AccountUser | null | undefined> {
-        const response = await request(
-            'get-session',
-            undefined,
-            AbortSignal.timeout(SESSION_TIMEOUT)
-        );
+        const response = await fetch('/api/auth/get-session', {
+            credentials: 'same-origin',
+            signal: AbortSignal.timeout(SESSION_TIMEOUT)
+        });
 
         if (response.status === 404) {
             return undefined;
@@ -93,12 +62,13 @@ export const accounts = {
             }
         );
     },
-    signIn: (email: string, password: string) => post('sign-in/email', { email, password }),
+    signIn: (email: string, password: string) =>
+        accountRequest('sign-in/email', { email, password }),
     signUp: (name: string, email: string, password: string, returnTo = RETURN_TO) =>
-        post('sign-up/email', { name, email, password, callbackURL: returnTo }),
+        accountRequest('sign-up/email', { name, email, password, callbackURL: returnTo }),
     sendSignInLink: (email: string, returnTo = RETURN_TO) =>
-        post('sign-in/magic-link', { email, callbackURL: returnTo }),
-    signOut: () => post('sign-out', {})
+        accountRequest('sign-in/magic-link', { email, callbackURL: returnTo }),
+    signOut: () => accountRequest('sign-out', {})
 };
 
 export type Accounts = typeof accounts;

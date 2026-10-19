@@ -2,10 +2,10 @@ import { expect, test, type Page } from '@playwright/test';
 
 const PHOTO = 'https://lh3.googleusercontent.com/a/ada.svg';
 
-async function signIn(page: Page, image: string | null) {
+async function signIn(page: Page, image: string | null, name = 'Ada') {
     await page.route('**/api/auth/get-session', (route) =>
         route.fulfill({
-            json: { user: { id: 'ada', name: 'Ada', email: 'ada@example.com', image } }
+            json: { user: { id: 'ada', name, email: 'ada@example.com', image } }
         })
     );
     await page.route('**/api/workspaces', (route) => route.fulfill({ json: [] }));
@@ -15,6 +15,7 @@ async function signIn(page: Page, image: string | null) {
 test('account photos load over HTTPS without a referrer or duplicate accessible name', async ({
     page
 }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
     await signIn(page, PHOTO);
     const referrers: (string | undefined)[] = [];
     await page.route(PHOTO, (route) => {
@@ -33,6 +34,10 @@ test('account photos load over HTTPS without a referrer or duplicate accessible 
     await expect(photo).toHaveCSS('object-fit', 'cover');
     await expect(photo.locator('..')).toHaveCSS('border-radius', '50%');
     await expect(photo.locator('../..')).toHaveAttribute('aria-hidden', 'true');
+    await page.screenshot({ path: '/tmp/reactor-account-normal.png' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.getByRole('button', { name: 'Sign out', exact: true })).toBeVisible();
+    await page.screenshot({ path: '/tmp/reactor-account-narrow.png' });
     await page.goto('/documents');
     const account = page.getByRole('link', { name: 'Ada', exact: true });
     await expect(account.locator('img')).toBeVisible();
@@ -47,7 +52,7 @@ for (const image of [null, PHOTO]) {
         await signIn(page, image);
         await page.route(PHOTO, (route) => route.fulfill({ status: 404, body: '' }));
         await page.goto('/account');
-        await expect(page.getByText('Signed in as Ada (ada@example.com).')).toBeVisible();
+        await expect(page.getByText('ada@example.com', { exact: true })).toBeVisible();
         await expect(page.locator('main img')).toHaveCount(0);
         await expect(page.locator('main svg.lucide-user-round')).toBeVisible();
     });
@@ -65,7 +70,16 @@ test('a photo from a host other than the sign-in providers keeps the user icon',
         })
     );
     await page.goto('/account');
-    await expect(page.getByText('Signed in as Ada (ada@example.com).')).toBeVisible();
+    await expect(page.getByText('ada@example.com', { exact: true })).toBeVisible();
     await expect(page.locator('main img')).toHaveCount(0);
     await expect(page.locator('main svg.lucide-user-round')).toBeVisible();
+});
+
+test('a profile without a name shows its email once', async ({ page }) => {
+    await signIn(page, null, '');
+    await page.goto('/account');
+    await expect(page.getByRole('main').getByText('ada@example.com', { exact: true })).toHaveCount(
+        1
+    );
+    await expect(page.getByRole('button', { name: 'Sign out', exact: true })).toBeVisible();
 });

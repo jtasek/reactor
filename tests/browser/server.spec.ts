@@ -59,7 +59,7 @@ test('renders every page within its content security policy', async ({ page }) =
         }
     });
 
-    for (const route of ['/', '/documents', '/account']) {
+    for (const route of ['/', '/documents', '/account', '/login', '/signin']) {
         await page.goto(route);
         await expect(page.locator('#app > *').first()).toBeVisible();
     }

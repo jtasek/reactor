@@ -127,7 +127,8 @@ export const Sharing: FC = () => {
                 </p>
                 {account.kind !== 'signedIn' ? (
                     <p>
-                        Sign in to manage workspace invitations. <a href="/account">Sign in</a>
+                        Sign in to manage workspace invitations.{' '}
+                        <a href="/login?returnTo=/sharing">Sign in</a>
                     </p>
                 ) : (
                     <>
