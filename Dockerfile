@@ -46,6 +46,8 @@ COPY --chown=node:node --from=builder /app/dist ./dist
 COPY --chown=node:node static ./static
 COPY --chown=node:node server.prod.ts package.json ./
 COPY --chown=node:node server ./server
+# Password reset and browser sign-in share the allowed return destinations.
+COPY --chown=node:node src/app/authenticationDestination.ts ./src/app/authenticationDestination.ts
 
 # Drop privileges; the app never writes to disk so the FS can be mounted read-only.
 USER node
