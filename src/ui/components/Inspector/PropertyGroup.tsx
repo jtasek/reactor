@@ -7,7 +7,7 @@ interface Props {
 
 /** A section of related properties (e.g. Shape or Text) under its own heading. */
 export const PropertyGroup: FC<Props> = ({ name, children }) => (
-    <tbody>
+    <tbody data-property-group={name}>
         <tr>
             <th colSpan={2} scope="colgroup">
                 {name}

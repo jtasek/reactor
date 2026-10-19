@@ -1,5 +1,7 @@
 import React, { type FC, useEffect, useState } from 'react';
 import { useActions, useAppState } from 'src/app/hooks';
+import { useFrameMoveProblem } from 'src/app/frameHooks';
+import { FrameParent } from './FrameParent';
 import { PropertyGroup } from './PropertyGroup';
 import styles from './styles.css';
 import { MIN_FRAME_SIZE } from 'src/app/services/documentStorage';
@@ -64,6 +66,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
         locked: state.currentDocument.locked
     }));
     const { editFrame } = useActions();
+    const moveProblem = useFrameMoveProblem(id);
 
     if (!frame) {
         return null;
@@ -78,6 +81,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
             </header>
             <table>
                 <PropertyGroup name="Frame">
+                    <FrameParent frameId={id} />
                     <Field
                         label="Name"
                         value={frame.name}
@@ -89,7 +93,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                             key={key}
                             label={key.toUpperCase()}
                             value={frame.position[key]}
-                            disabled={disabled}
+                            disabled={disabled || Boolean(moveProblem)}
                             onCommit={(value) =>
                                 editFrame({
                                     kind: 'update',
@@ -101,6 +105,13 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                             }
                         />
                     ))}
+                    {moveProblem && (
+                        <tr>
+                            <td colSpan={2}>
+                                <small role="status">{moveProblem}</small>
+                            </td>
+                        </tr>
+                    )}
                     {(['width', 'height'] as const).map((key) => (
                         <Field
                             key={key}

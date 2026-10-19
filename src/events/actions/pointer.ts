@@ -298,7 +298,7 @@ export const movePointer = (
     }
 
     if (gesture.kind === 'editingFrame') {
-        editorHelpers().frames.move({ state }, position);
+        editorHelpers().frames.move({ state, actions }, position);
 
         return;
     }

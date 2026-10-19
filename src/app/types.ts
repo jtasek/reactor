@@ -131,6 +131,8 @@ export interface ShapeBase {
     opacity?: number;
     order: string;
     parentShapeId?: string;
+    /** Explicit membership; geometry stays in canvas coordinates. */
+    parentFrameId?: string;
     rotation?: number;
     selected: boolean;
     /** The color its outline is drawn in, as `#rrggbb`; the default outline when unset. */
@@ -283,9 +285,10 @@ export interface Camera {
     scale: number;
 }
 
-/** A free-positioned screen boundary, independent of shapes and groups. */
+/** A free-positioned screen boundary; its parent and children keep canvas coordinates. */
 export interface Frame {
     id: string;
+    parentFrameId?: string;
     name: string;
     position: Point;
     size: Size;

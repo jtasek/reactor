@@ -9,7 +9,7 @@ import type { Gesture } from './types';
  */
 export const KEEPS_SHAPE_BOUNDS: Record<Gesture['kind'], boolean> = {
     idle: false,
-    editingFrame: false,
+    editingFrame: true,
     pinching: false,
     // The shape drawn is new, and a marquee edits none.
     drawing: false,

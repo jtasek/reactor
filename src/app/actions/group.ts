@@ -14,6 +14,7 @@ import {
     type GroupFrame,
     groupedShapesSelectedAlone,
     putShapesInGroup,
+    putShapesInFrame,
     putShapesOnLayer,
     removeFromContainers,
     shapeLayer
@@ -69,6 +70,9 @@ export const groupSelection: Action = ({ state }) => {
 
     removeFromContainers(currentDocument.groups, shapesIds, GROUP_MINIMUM);
     setGroup(state, createGroup({ shapesIds }));
+    const parent = currentDocument.shapes[shapesIds[shapesIds.length - 1]].parentFrameId;
+    putShapesInFrame(currentDocument, shapesIds, parent);
+
     // A group is on one layer: the topmost shape's, or none.
     putShapesOnLayer(
         currentDocument,

@@ -95,8 +95,19 @@ export function createClipboard(system: SystemClipboard | undefined) {
 
         async cut({ text, shapeIds, frameIds, documentId }: Cut) {
             if (await write(text, 'Ctrl/Cmd+X')) {
+                if (frameIds?.length) {
+                    actions?.editFrame?.({
+                        kind: 'cut',
+                        id: frameIds[0],
+                        documentId,
+                        frameIds,
+                        shapeIds
+                    });
+
+                    return;
+                }
+
                 actions?.removeShapes(shapeIds);
-                frameIds?.forEach((id) => actions?.editFrame?.({ kind: 'delete', id, documentId }));
             }
         },
 

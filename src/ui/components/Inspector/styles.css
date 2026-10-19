@@ -659,7 +659,7 @@
     width: 100%;
 }
 
-.instanceInspector > table > tbody:first-of-type {
+.instanceInspector > table > tbody[data-property-group='Layout'] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -677,7 +677,7 @@
         margin-left: auto;
     }
 
-    .instanceInspector > table > tbody:first-of-type {
+    .instanceInspector > table > tbody[data-property-group='Layout'] {
         grid-template-columns: minmax(0, 1fr);
     }
 }
@@ -722,7 +722,7 @@
     > tbody
     > tr[data-property='rotation']
     > td:first-child,
-.instanceInspector > table > tbody:not(:first-of-type) > tr > td:first-child {
+.instanceInspector > table > tbody:not([data-property-group='Layout']) > tr > td:first-child {
     flex-basis: 72px;
 }
 

@@ -419,9 +419,21 @@ losing remote edits or resurrecting deleted frames. `tests/frameEditing.test.ts`
 `tests/browser/screens.spec.ts` cover these paths. Clipboard editing code loads with the editor
 to preserve entry/file bundle budgets.
 
-Still to do before stacks: explicit shape/frame parent references, nesting and reparenting,
-including position-preserving deletion and production-copy delete/reference tests. No automatic
-containment, hug/fill, stack controls, interactive roles or preview is implied by this increment.
+Explicit membership increment implemented: shapes and frames store optional `parentFrameId`
+references, with Parent controls in Inspector and nested frame rows in Explorer. Geometry
+remains in canvas coordinates; reparenting preserves it. Moving a frame carries its subtree,
+resizing only changes its boundary, and deletion releases immediate children without moving
+them. Frame copy/cut/clone includes nested artwork, groups, variable and component dependencies;
+shape-only copies remain detached. Local edits reject cycles and preserve group membership;
+concurrent cycles are roots in the local projection, with diagnostics and no shared repair.
+Production-copy tests cover deletion concurrent with insertion, cycle creation, local undo and
+canceling a subtree drag across remote membership edits. Durable schema v7 accepts v6 documents.
+`tests/frameMembership.test.ts` and `tests/browser/frameMembership.spec.ts` cover this increment.
+
+Before stacks: finish inherited frame visibility/locking. Frame flags still apply to the
+boundary itself. Movement is blocked for locked descendants or groups left across frames by
+concurrent edits, with an Inspector explanation. No automatic
+containment, hug/fill, stack controls, clipping, interactive roles or preview is implied yet.
 
 1. Frames for screens and stacks, and roles and props on components and instances:
    - First usable increment: validated frame records, durable membership, save/copy/operations,

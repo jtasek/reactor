@@ -79,10 +79,16 @@ export interface DeleteVariable {
  * property explicitly set stops following its variable, even for the same value,
  * unless `changes.bindings` explicitly binds it again. Its type cannot change.
  */
+type ShapeChanges = ShapeInput extends infer S
+    ? S extends ShapeInput
+        ? Partial<Omit<S, 'parentFrameId'>> & { parentFrameId?: string | null }
+        : never
+    : never;
+
 export interface UpdateShape {
     op: 'updateShape';
     shape: string;
-    changes: Partial<ShapeInput>;
+    changes: ShapeChanges;
 }
 
 /** Deletes shapes the document has, and the groups this empties. */
@@ -116,7 +122,9 @@ export interface AddFrame {
 export interface UpdateFrame {
     op: 'updateFrame';
     frame: string;
-    changes: Partial<Pick<Frame, 'name' | 'position' | 'size'>>;
+    changes: Partial<Pick<Frame, 'name' | 'position' | 'size'>> & {
+        parentFrameId?: string | null;
+    };
 }
 export interface DeleteFrame {
     op: 'deleteFrame';

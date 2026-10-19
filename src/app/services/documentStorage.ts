@@ -23,7 +23,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -106,7 +106,10 @@ type DocumentData = DocumentFields &
     Pick<Document, 'camera'> & { [C in Collection]: Record<string, SavedEntities[C]> };
 
 /** Whether an entity exists, for dropping references to ones that do not. */
-export type Exists = (collection: 'shapes' | 'components' | 'variables', id: string) => boolean;
+export type Exists = (
+    collection: 'shapes' | 'components' | 'variables' | 'frames',
+    id: string
+) => boolean;
 export interface PersistedState {
     version: number;
     currentDocumentId: string;
@@ -308,6 +311,7 @@ function readShape(value: unknown, readChild: (child: unknown) => ShapeData): Sh
         order: validDrawOrder(s.order) ?? '',
         rotation: s.rotation === undefined ? 0 : number(s.rotation),
         ...(s.description === undefined ? {} : { description: text(s.description) }),
+        ...(s.parentFrameId === undefined ? {} : { parentFrameId: id(s.parentFrameId) }),
         ...(s.parentShapeId === undefined ? {} : { parentShapeId: id(s.parentShapeId) }),
         ...(s.children === undefined ? {} : { children: list(s.children, readChild) }),
         ...(s.bindings === undefined ? {} : { bindings: readBindings(s.bindings) })
@@ -537,6 +541,7 @@ function readFrame(value: unknown): Frame {
     return {
         ...entity(value),
         name,
+        ...(f.parentFrameId === undefined ? {} : { parentFrameId: id(f.parentFrameId) }),
         position: point(f.position),
         size: {
             width: number(record(f.size).width, MIN_FRAME_SIZE),
@@ -568,14 +573,28 @@ const withoutMissingMembers = <T extends MemberData>(member: T, exists: Exists):
     return shapesIds.length === member.shapesIds.length ? member : { ...member, shapesIds };
 };
 
+const withoutMissingFrame = <T extends { parentFrameId?: string }>(item: T, exists: Exists): T => {
+    if (item.parentFrameId === undefined || exists('frames', item.parentFrameId)) {
+        return item;
+    }
+
+    const copy = { ...item };
+    delete copy.parentFrameId;
+
+    return copy;
+};
+
 const referenceRepairs: {
     [C in Collection]: (entity: SavedEntities[C], exists: Exists) => SavedEntities[C] | null;
 } = {
-    shapes: (shape, exists) =>
-        shape.parentShapeId === undefined || exists('shapes', shape.parentShapeId)
-            ? shape
-            : { ...shape, parentShapeId: undefined },
-    frames: (frame) => frame,
+    shapes: (shape, exists) => {
+        const next = withoutMissingFrame(shape, exists);
+
+        return next.parentShapeId === undefined || exists('shapes', next.parentShapeId)
+            ? next
+            : { ...next, parentShapeId: undefined };
+    },
+    frames: withoutMissingFrame,
     groups: withoutMissingMembers,
     layers: withoutMissingMembers,
     components: (component, exists) => {
@@ -774,6 +793,7 @@ export function readView(value: unknown): View {
 function readDocument(value: unknown, onRepair = () => {}): DocumentData {
     const d = record(value);
     const shapes = readShapes(d.shapes, onRepair);
+    const frames = d.frames === undefined ? {} : table(d.frames, readFrame);
     const components = table(d.components, readComponent);
     const variables = d.variables === undefined ? {} : table(d.variables, readVariable);
     const dimensions =
@@ -785,7 +805,7 @@ function readDocument(value: unknown, onRepair = () => {}): DocumentData {
                 : {}
             : table(d.dimensions, readDimension);
     const exists: Exists = (collection, entityId) =>
-        Object.hasOwn({ shapes, components, variables }[collection], entityId);
+        Object.hasOwn({ shapes, components, variables, frames }[collection], entityId);
     const repair = <C extends Collection>(collection: C, items: Record<string, SavedEntities[C]>) =>
         repairReferences(collection, items, exists, onRepair);
 
@@ -793,7 +813,7 @@ function readDocument(value: unknown, onRepair = () => {}): DocumentData {
         ...readFields(d),
         camera: readCamera(d.camera),
         shapes: repair('shapes', shapes),
-        frames: d.frames === undefined ? {} : table(d.frames, readFrame),
+        frames: repair('frames', frames),
         groups: repair('groups', table(d.groups, readMember)),
         layers: repair('layers', table(d.layers, readMember)),
         components: repair('components', components),
@@ -846,6 +866,7 @@ export function migratePersistedState(raw: unknown, onRepair = () => {}): Persis
             data.version !== 3 &&
             data.version !== 4 &&
             data.version !== 5 &&
+            data.version !== 6 &&
             data.version !== SCHEMA_VERSION
         ) {
             return null;

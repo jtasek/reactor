@@ -40,6 +40,9 @@ export type Gesture =
                     selection: SelectionSnapshot;
                     frameId: string;
                     originalFrame: Frame;
+                    childFrames: Record<string, Frame>;
+                    invalidated?: boolean;
+                    shapes: ShapesSnapshot;
                     handle: ResizeHandlerType | 'move';
                 }
               | { kind: 'drawing' }

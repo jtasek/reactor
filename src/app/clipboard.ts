@@ -28,7 +28,8 @@ import {
     templateVariablesIds,
     variableDependencies,
     templateWithIds,
-    writeText
+    writeText,
+    unbindMovedProperties
 } from './variables';
 import { resolveTemplate, variableNamed, resolveVariable } from './variableResolver';
 
@@ -405,7 +406,8 @@ function pasteVariables(
 export function pasteOperations(
     copied: Copied,
     document: Document,
-    target: Point | null
+    target: Point | null,
+    translation?: Point
 ): Operation[] {
     const variables = pasteVariables(copied.variables, document, copied.dimensions);
     const remapShape = (shape: Shape | ShapeInput) => {
@@ -515,7 +517,7 @@ export function pasteOperations(
         return shape;
     });
 
-    if (target) {
+    if (target && !translation) {
         const boxes = pasted.map(getShapeBounds);
         const left = Math.min(...boxes.map((box) => box.topLeft.x));
         const top = Math.min(...boxes.map((box) => box.topLeft.y));
@@ -547,14 +549,26 @@ export function pasteOperations(
             );
         });
 
-    while (drawn.has(shapeGeometryKey(pasted[0])) || coversLiveSource()) {
+    while (!translation && (drawn.has(shapeGeometryKey(pasted[0])) || coversLiveSource())) {
         pasted.forEach((shape) => translateShape(shape, CLONE_OFFSET));
+    }
+
+    if (translation) {
+        pasted.forEach((shape) => {
+            translateShape(shape, translation);
+            unbindMovedProperties(shape, translation);
+        });
     }
 
     const shapeOperations: AddShape[] = copied.shapes.map((input, index) => ({
         op: 'addShape',
         key: `shape:${index}`,
-        shape: { ...input, ...shapeGeometry(pasted[index]), name: pasted[index].name }
+        shape: {
+            ...input,
+            ...shapeGeometry(pasted[index]),
+            name: pasted[index].name,
+            ...(translation ? { bindings: pasted[index].bindings } : {})
+        }
     }));
     const groupOperations: AddGroup[] = copied.groups.map(({ name, rotation, members }) => ({
         op: 'addGroup',

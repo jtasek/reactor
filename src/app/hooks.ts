@@ -294,6 +294,15 @@ export const useMeasuringShape = (id: string) =>
     useAppState((state) => {
         const shape = state.currentDocument.shapes[id];
 
+        // Unframed, unselected shapes keep their existing measurement subscriptions.
+        if (shape?.parentFrameId !== undefined) {
+            const gesture = state.events.pointer.gesture;
+
+            if (gesture.kind === 'editingFrame' && gesture.shapes[id]) {
+                return false;
+            }
+        }
+
         if (shape?.type === 'instance') {
             return !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind];
         }

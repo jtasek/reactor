@@ -1,14 +1,23 @@
-import type { ActionWithResult, ActionWithParamAndResult, Application, Point } from './types';
+import { orderAbove } from './drawOrder';
+import { CLONE_OFFSET, translateShape } from './geometry';
+import type {
+    ActionWithParam,
+    ActionWithResult,
+    ActionWithParamAndResult,
+    Application,
+    Point
+} from './types';
 import type { Context } from './index';
 import type { PasteResult } from './clipboard';
-import { createShape } from './factories';
+import { createShape, createGroup, instanceName, shapeNamer } from './factories';
 import { componentSource } from './componentSource';
 import { focusedSourceOnlyId } from './componentSelection';
-import { shownGroupShapesIds } from './membership';
-import { isShapeLocked } from './utils';
+import { shownGroupShapesIds, containersHolding } from './membership';
+import { isShapeLocked, isShapeVisible, shapeGeometry } from './utils';
 import { screenToWorld } from './camera';
 import { untracked } from './untracked';
 import { editorHelpers } from './editorHelpers';
+import { frameContents } from './frameMembership';
 import { takesEditorInput } from 'src/events/input';
 
 const clipboardFormat = () => editorHelpers().clipboard;
@@ -91,7 +100,7 @@ export const copySelection: ActionWithResult<string | null> = ({ state }) => {
     const frame = state.currentDocument.frames[state.currentDocument.selectedFrameId ?? ''];
 
     if (frame && takesEditorInput(state)) {
-        return editorHelpers().frames.writeClipboard(frame);
+        return editorHelpers().frames.writeClipboard(frame, state.currentDocument);
     }
 
     const selected = takesEditorInput(state) ? selectedForCopy(state) : [];
@@ -116,10 +125,19 @@ export const selectionToCut: ActionWithResult<
     const frame = state.currentDocument.frames[state.currentDocument.selectedFrameId ?? ''];
 
     if (frame && !frame.locked && !state.currentDocument.locked && takesEditorInput(state)) {
+        const contents = frameContents(untracked(state.currentDocument), frame.id);
+
+        if (
+            contents.frames.some((id) => state.currentDocument.frames[id].locked) ||
+            contents.shapes.some((id) => isShapeLocked(state.currentDocument, id))
+        ) {
+            return null;
+        }
+
         return {
-            text: editorHelpers().frames.writeClipboard(frame),
-            shapeIds: [],
-            frameIds: [frame.id],
+            text: editorHelpers().frames.writeClipboard(frame, state.currentDocument),
+            shapeIds: contents.shapes,
+            frameIds: [frame.id, ...contents.frames],
             documentId: state.currentDocumentId
         };
     }
@@ -181,7 +199,12 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
     const frame = editorHelpers().frames.readClipboard(text);
 
     if (frame) {
-        const id = actions.editFrame({ kind: 'paste', frame, target: pasteTarget(context) });
+        const id = actions.editFrame({
+            kind: 'paste',
+            frame: frame.frame,
+            copied: frame,
+            target: pasteTarget(context)
+        });
 
         return id ? 'pasted' : 'notNow';
     }
@@ -217,4 +240,83 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
     });
 
     return 'pasted';
+};
+
+/**
+ * Adds an independent copy of each shape, offset by `CLONE_OFFSET`, above all
+ * other shapes and stacked like the originals, and selects the copies in place
+ * of the selection. A copy keeps its original's geometry and appearance but gets
+ * its own id, name and timestamps, and is measured afresh. Copies join their
+ * originals' layers; a group copied whole is copied as a group of its own, and
+ * copies of some of a group's shapes join it.
+ */
+export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shapeIds) => {
+    const { currentDocument } = state;
+    const { shapes, shapesIds } = currentDocument;
+    const cloning = new Set(shapeIds);
+    const clonesIds = new Map<string, string>();
+    const top = shapesIds.at(-1);
+    let order = top ? shapes[top].order : null;
+
+    const present = Object.values(untracked(currentDocument).shapes);
+    const nameShape = shapeNamer(present);
+    const taken = new Set(present.map((shape) => shape.name));
+
+    actions.unselectShapes();
+
+    for (const id of shapesIds.filter((shapeId) => cloning.has(shapeId))) {
+        const original = shapes[id];
+
+        order = orderAbove(order);
+
+        const component =
+            original.type === 'instance' ? currentDocument.components[original.componentId] : null;
+        const name = component ? instanceName(component.name, taken) : nameShape(original.type);
+
+        taken.add(name);
+
+        const clone = createShape({
+            ...shapeGeometry(original),
+            ...(original.type === 'instance' ? { bounds: original.bounds } : {}),
+            order,
+            name,
+            description: original.description,
+            parentShapeId: original.parentShapeId,
+            parentFrameId: original.parentFrameId,
+            rotation: original.rotation,
+            locked: original.locked,
+            visible: original.visible,
+            selected: true
+        });
+
+        translateShape(clone, CLONE_OFFSET);
+        shapes[clone.id] = clone;
+        shapesIds.push(clone.id);
+        clonesIds.set(id, clone.id);
+    }
+
+    const clonesOf = (ids: string[]) =>
+        ids.map((id) => clonesIds.get(id)).filter((id) => id !== undefined);
+
+    for (const layer of containersHolding(currentDocument.layers, clonesIds.keys())) {
+        layer.shapesIds = [...layer.shapesIds, ...clonesOf(layer.shapesIds)];
+    }
+
+    for (const group of containersHolding(currentDocument.groups, clonesIds.keys())) {
+        const copies = clonesOf(group.shapesIds);
+        const shown = group.shapesIds.filter((id) => isShapeVisible(currentDocument, id));
+
+        // Hidden shapes are not cloned, so a group is cloned whole when its shown ones are.
+        if (copies.length === shown.length) {
+            const copy = createGroup({
+                shapesIds: copies,
+                name: `Clone of ${group.name}`,
+                rotation: group.rotation
+            });
+
+            currentDocument.groups[copy.id] = copy;
+        } else {
+            group.shapesIds = [...group.shapesIds, ...copies];
+        }
+    }
 };
