@@ -75,6 +75,7 @@ function registerRoutes(effects: Context['effects'], actions: Context['actions']
         '/account': () => actions.showAccount('account'),
         '/login': () => actions.showAccount('login'),
         '/signin': () => actions.showAccount('login'),
+        '/reset-password': () => actions.showAccount('login'),
         '/sharing': actions.showSharing,
         '/invite': actions.showInvitation
     });

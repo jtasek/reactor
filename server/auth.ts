@@ -5,10 +5,12 @@ import { magicLink } from 'better-auth/plugins/magic-link';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Mailer } from './mailer.ts';
 import type { Db } from './schema.ts';
+import { passwordResetURL } from './passwordReset.ts';
 import { refreshingPhotoOnly, type KnownUser, type SocialProviders } from './oauth.ts';
 
 /** The header that carries the client's address, set only by `authHandler`. */
 const CLIENT_ADDRESS = 'x-reactor-client-address';
+const PASSWORD_RESET_SECONDS = 60 * 60;
 
 /**
  * Accounts and sessions, stored in the `auth` schema of `db`. People sign up with
@@ -59,7 +61,18 @@ export function createAuth({
             // Requests are limited per client, known only from `authHandler`.
             ipAddress: { ipAddressHeaders: [CLIENT_ADDRESS] }
         },
-        emailAndPassword: { enabled: true, requireEmailVerification: true },
+        emailAndPassword: {
+            enabled: true,
+            requireEmailVerification: true,
+            resetPasswordTokenExpiresIn: PASSWORD_RESET_SECONDS,
+            revokeSessionsOnPasswordReset: true,
+            sendResetPassword: ({ user, token, url }) =>
+                mailer.send({
+                    to: user.email,
+                    subject: 'Reset your Reactor password',
+                    text: `Reset your password with this link, valid for one hour:\n\n${passwordResetURL(baseURL, token, url)}\n\nIf you did not request this, you can ignore this email.\n`
+                })
+        },
         emailVerification: {
             sendOnSignUp: true,
             autoSignInAfterVerification: true,
