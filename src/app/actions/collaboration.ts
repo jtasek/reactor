@@ -188,6 +188,19 @@ export const applyRemoteChanges: ActionWithParam<RemoteChanges> = ({ state }, ch
 
     const { gesture } = state.events.pointer;
 
+    if (gesture.kind === 'editingFrame' && documentId === state.currentDocumentId) {
+        const change = unwrittenOrMerged(entities, changes.unwritten, 'frames', gesture.frameId);
+
+        if (change?.previous) {
+            rebaseChangedFields(
+                gesture.originalFrame,
+                change.previous,
+                change.view,
+                change.changed
+            );
+        }
+    }
+
     if ('shapes' in gesture && documentId === state.currentDocumentId) {
         rebaseGesture(gesture.shapes, changes);
     }
@@ -213,6 +226,10 @@ export const applyRemoteChanges: ActionWithParam<RemoteChanges> = ({ state }, ch
         if (reordered && collection === 'shapes') {
             document.shapesIds = inDrawingOrder(document.shapes);
         }
+    }
+
+    if (document.selectedFrameId && !document.frames[document.selectedFrameId]) {
+        delete document.selectedFrameId;
     }
 };
 

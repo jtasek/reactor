@@ -16,13 +16,11 @@ import {
 } from '../types';
 import { unbind, unbindEditedProperties, unbindMovedProperties, writeText } from '../variables';
 import { Context } from 'src/app';
-import { screenToWorld } from '../camera';
 import { instanceName, createGroup, createShape, nextShapeName, shapeNamer } from '../factories';
 import { containersHolding, groupAtPoint, shapeGroup, shownGroupShapesIds } from '../membership';
 import { deleteShape } from '../deleteShape';
 import {
     componentAtPoint,
-    focusedSourceOnlyId,
     selectionMembers,
     shapeComponent,
     shownComponentShapesIds
@@ -35,6 +33,7 @@ import {
     resolveDrawOrderTies
 } from '../drawOrder';
 import { PropertyValue, SHAPE_PROPERTIES, applyProperty, canEdit } from '../properties';
+import type { Cut } from '../services/clipboard';
 import type { PasteResult } from '../clipboard';
 import { editorHelpers } from '../editorHelpers';
 import { takesEditorInput } from 'src/events/input';
@@ -62,9 +61,6 @@ import {
 import { hasComponentInstances, reachesComponent } from './components';
 import { componentSource } from '../componentSource';
 import { detachedMembers } from '../componentDetach';
-
-/** The clipboard's format, which the editor provides as it loads. */
-const clipboardFormat = () => editorHelpers().clipboard;
 
 const getShape = ({ currentDocument }: Application, shapeId: string) => {
     const shape = currentDocument.shapes[shapeId];
@@ -233,118 +229,12 @@ export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shape
     }
 };
 
-/** The selection commands act on, shown shapes only, in drawing order. */
-const selectedInDrawOrder = ({ currentDocument }: Application) => {
-    const selected = new Set(currentDocument.selectedShapesIds);
+/** Clipboard editing is provided by the editor page, not loaded at startup. */
+export const copySelection: ActionWithResult<string | null> = (context) =>
+    takesEditorInput(context.state) ? editorHelpers().clipboardEdits.copySelection(context) : null;
 
-    return currentDocument.shapesIds
-        .filter((id) => selected.has(id))
-        .map((id) => currentDocument.shapes[id]);
-};
-
-/** The groups selected as one, with the shapes of theirs that are shown, as only those are copied. */
-const selectedGroups = ({ currentDocument }: Application) =>
-    currentDocument.selectedGroupsIds.map((id) => {
-        const group = currentDocument.groups[id];
-
-        return { ...group, shapesIds: shownGroupShapesIds(currentDocument, group) };
-    });
-
-/** Copy a selected source as one live instance, alongside any other selected shapes. */
-const selectedForCopy = (state: Application) => {
-    const document = state.currentDocument;
-    const focusedSourceId = focusedSourceOnlyId(state);
-    const sourceInstance = (componentId: string, order: string) => {
-        const source = componentSource(document, componentId);
-
-        if (!source) {
-            return null;
-        }
-
-        return createShape({
-            type: 'instance',
-            componentId,
-            position: source.box.topLeft,
-            overrides: {},
-            name: document.components[componentId].name,
-            order
-        });
-    };
-    const sources = new Map(
-        document.selectedComponentsIds.flatMap((id) =>
-            document.components[id].shapesIds.map((shapeId) => [shapeId, id] as const)
-        )
-    );
-    const copiedSources = new Set<string>();
-
-    const selected = selectedInDrawOrder(state).flatMap((shape) => {
-        const componentId = sources.get(shape.id);
-
-        if (!componentId) {
-            return [shape];
-        }
-        if (copiedSources.has(componentId)) {
-            return [];
-        }
-        copiedSources.add(componentId);
-        const instance = sourceInstance(componentId, shape.order);
-
-        return instance ? [instance] : [];
-    });
-
-    if (!focusedSourceId) {
-        return selected;
-    }
-    const firstId = document.components[focusedSourceId].shapesIds[0];
-    const firstShape = document.shapes[firstId];
-
-    if (!firstShape) {
-        return selected;
-    }
-    const instance = sourceInstance(focusedSourceId, firstShape.order);
-
-    return instance ? [instance, ...selected] : selected;
-};
-
-/** The selected items as clipboard text, or null when there are none to copy. */
-export const copySelection: ActionWithResult<string | null> = ({ state }) => {
-    const selected = takesEditorInput(state) ? selectedForCopy(state) : [];
-
-    return selected.length > 0
-        ? clipboardFormat().writeClipboard(
-              selected,
-              selectedGroups(state),
-              state.currentDocument.variables,
-              state.currentDocument
-          )
-        : null;
-};
-
-/**
- * The selected shapes that are not locked, as clipboard text and their ids, or
- * null when there are none to cut. They are removed once the clipboard holds them.
- */
-export const selectionToCut: ActionWithResult<{ text: string; shapeIds: string[] } | null> = ({
-    state
-}) => {
-    const cut = takesEditorInput(state)
-        ? selectedInDrawOrder(state).filter(
-              (shape) => !isShapeLocked(state.currentDocument, shape.id)
-          )
-        : [];
-
-    return cut.length > 0
-        ? {
-              text: clipboardFormat().writeClipboard(
-                  cut,
-                  selectedGroups(state),
-                  state.currentDocument.variables,
-                  state.currentDocument
-              ),
-              shapeIds: cut.map((shape) => shape.id)
-          }
-        : null;
-};
+export const selectionToCut: ActionWithResult<Cut | null> = (context) =>
+    takesEditorInput(context.state) ? editorHelpers().clipboardEdits.selectionToCut(context) : null;
 
 /**
  * Removes the shapes that still exist and are not locked, and the groups this
@@ -439,73 +329,10 @@ export const detachInstances: ActionWithParam<string[]> = ({ state }, instanceId
     }
 };
 
-/**
- * Where a paste is centered: where this document's canvas was last pressed, or
- * the middle of the view once that place is out of sight. None before any press.
- */
-const pasteTarget = ({ state, effects }: Context): Point | null => {
-    const { lastPress } = state.events.pointer;
-    const { camera } = state.currentDocument;
-    const { width, height } = effects.viewSize();
-    const topLeft = screenToWorld({ x: 0, y: 0 }, camera);
-    const bottomRight = screenToWorld({ x: width, y: height }, camera);
-
-    if (lastPress?.documentId !== state.currentDocumentId || !topLeft || !bottomRight) {
-        return null;
-    }
-
-    const { x, y } = lastPress.position;
-    const inView = x >= topLeft.x && x <= bottomRight.x && y >= topLeft.y && y <= bottomRight.y;
-
-    return inView
-        ? lastPress.position
-        : { x: (topLeft.x + bottomRight.x) / 2, y: (topLeft.y + bottomRight.y) / 2 };
-};
-
-/**
- * Adds the shapes clipboard text holds, through `applyOperations`, selected in
- * place of the selection. Pastes nothing while the editor takes no input, when the
- * text holds no shapes, or when the batch is refused, answering why.
- */
-export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (context, text) => {
-    const { state, actions } = context;
-
-    if (!takesEditorInput(state)) {
-        return 'notNow';
-    }
-
-    const { readClipboard, pasteOperations } = clipboardFormat();
-    const copied = readClipboard(text);
-
-    if (copied.shapes.length === 0) {
-        return 'noShapes';
-    }
-
-    const operations = pasteOperations(
-        copied,
-        untracked(state.currentDocument),
-        pasteTarget(context)
-    );
-    const result = actions.applyOperations({
-        documentId: state.currentDocumentId,
-        by: { kind: 'person' },
-        operations
-    });
-
-    if (!result.applied) {
-        return { problem: result.problem };
-    }
-
-    actions.unselectShapes();
-    state.enteredGroupId = null;
-    operations.forEach((operation) => {
-        if (operation.op === 'addShape') {
-            state.currentDocument.shapes[result.ids[operation.key]].selected = true;
-        }
-    });
-
-    return 'pasted';
-};
+export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (context, text) =>
+    takesEditorInput(context.state)
+        ? editorHelpers().clipboardEdits.pasteShapes(context, text)
+        : 'notNow';
 
 /**
  * Moves unlocked shapes to the top or the bottom of the draw order, keeping their
@@ -573,6 +400,7 @@ export const toggleShapeSelected: ActionWithParam<string> = ({ state, actions },
     if (!shape.selected) {
         return;
     }
+    delete state.currentDocument.selectedFrameId;
     actions.unselectGuides();
 };
 
@@ -581,6 +409,7 @@ export const selectShape: ActionWithParam<string> = ({ state, actions }, shapeId
     const shape = getShape(state, shapeId);
 
     shape.selected = true;
+    delete state.currentDocument.selectedFrameId;
     actions.unselectGuides();
 };
 
@@ -946,6 +775,7 @@ export const setShapeBounds: ActionWithParam<{ id: string; bounds: Box }> = (
 export const unselectShapes: Action = ({ state, actions }) => {
     state.selectedComponent = null;
     state.enteredComponentId = null;
+    delete state.currentDocument.selectedFrameId;
     delete state.currentDocument.surfaceSelected;
     actions.unselectGuides();
     Object.values(state.currentDocument.layers).forEach((layer) => {

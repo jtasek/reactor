@@ -196,12 +196,33 @@ describe('editor sync', () => {
         );
         expect(first.store.state.documentAccess[documentId]?.role).toBe('admin');
         first.store.actions.addShape(rectangle);
+        const frameId = first.store.actions.editFrame({
+            kind: 'add',
+            position: { x: 0, y: 0 },
+            size: { width: 390, height: 844 }
+        })!;
 
         const second = await device(served, cookie);
 
         // Rather than a new document of its own.
         expect(documentIds(second)).toEqual([documentId]);
         await vi.waitFor(() => expect(shapeCount(second, documentId)).toBe(1));
+        await vi.waitFor(() =>
+            expect(second.store.state.documents[documentId].frames[frameId]).toMatchObject({
+                size: { width: 390, height: 844 }
+            })
+        );
+        expect(second.store.state.documents[documentId].selectedFrameId).toBeUndefined();
+        second.store.actions.editFrame({
+            kind: 'update',
+            id: frameId,
+            changes: { name: 'Shared screen' }
+        });
+        await vi.waitFor(() =>
+            expect(first.store.state.documents[documentId].frames[frameId].name).toBe(
+                'Shared screen'
+            )
+        );
 
         second.store.actions.addShape({ ...rectangle, position: { x: 50, y: 60 } });
         await vi.waitFor(() => expect(shapeCount(first, documentId)).toBe(2));

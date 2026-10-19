@@ -128,6 +128,8 @@ export const resetDocument: Action = ({ state }) => {
         return;
     }
     const document = state.currentDocument;
+    document.frames = {};
+    delete document.selectedFrameId;
     document.shapes = {};
     document.shapesIds = [];
     document.layers = {};

@@ -1,4 +1,4 @@
-import { Box, Corner, Point, ResizeHandlerType, Shape, Size } from '../app/types';
+import { Frame, Box, Corner, Point, ResizeHandlerType, Shape, Size } from '../app/types';
 import type { GroupFrame } from '../app/membership';
 import type { Gap, SnapLines } from '../app/snapping';
 
@@ -16,7 +16,7 @@ export type ShapesSnapshot = Record<string, Shape>;
  * the gesture ends. `moved` records whether the owner has gone beyond a click's slip
  * since it started.
  */
-type Owner = { pointerId: number; touch: boolean; moved: boolean };
+type Owner = { pointerId: number; touch: boolean; moved: boolean; selectedFrameId?: string };
 
 /**
  * The gesture in progress. A two-finger pinch is driven by touch contacts and has
@@ -35,6 +35,13 @@ export type Gesture =
       }
     | (Owner &
           (
+              | {
+                    kind: 'editingFrame';
+                    selection: SelectionSnapshot;
+                    frameId: string;
+                    originalFrame: Frame;
+                    handle: ResizeHandlerType | 'move';
+                }
               | { kind: 'drawing' }
               | {
                     kind: 'marquee';
@@ -108,6 +115,7 @@ export type HandleOwner = { shapeId: string } | { groupId: string } | { componen
 
 /** A resize, rotate or radius handle under the pointer when a gesture starts. */
 export type HandleTarget =
+    | { frameId: string; type: ResizeHandlerType | 'move' }
     | ({ type: ResizeHandlerType | 'rotate' } & HandleOwner)
     | { type: 'radius'; shapeId: string; corner: Corner };
 

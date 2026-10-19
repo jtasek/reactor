@@ -430,6 +430,24 @@ Examples worth modelling new tools on:
   persists on release. A click without a drag clears the selection, or, on a locked item,
   selects it (`selectClickedShapes`).
 
+## Frames
+
+Free-positioned frame boxes are separate `document.frames` records, not rectangle shapes or
+whole-selected groups. `selectedFrameId` is local runtime state. The Frame tool (`f`) commits
+synchronously on release; boundaries/labels start `editingFrame` gestures, with owning-pointer
+capture, click slip, cancel and rebasing over remote changes. `frameEdits.ts` loads through
+editor helpers; only a small root action delegates to it. Keep frames out of component-source
+editing. No geometric containment creates membership in this increment.
+
+The durable reader checks finite positions, nonempty names and sides at least `MIN_FRAME_SIZE`.
+Frames participate in persistence, shared undo, operations, clipboard, reset, thumbnails and
+the read-only viewer. `framesIds` is derived with the other entity ID lists.
+Frame clipboard payloads are validated independently of shape payloads, then pasted through
+operations. `clipboardEdits.ts` also loads with the editor: do not move its shape/frame copy,
+cut or paste implementations back into startup actions. `tests/frameEditing.test.ts` exercises
+production copies and `tests/browser/screens.spec.ts` exercises the canvas UI. Nesting, parent
+references, automatic stacks and interactive roles remain future work in APPLICATION_PLAN.
+
 ## Groups and layers
 
 A group is one object. Pressing or boxing any of its shapes selects it, which selects all

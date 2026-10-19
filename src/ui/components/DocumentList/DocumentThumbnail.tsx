@@ -18,6 +18,7 @@ import styles from './styles.css';
 
 /** The size of the mark drawn for an instance whose component is missing. */
 const MISSING_INSTANCE_SIZE = 24;
+const FRAME_LABEL_OFFSET = 8;
 
 const imageFallback = (shape: Image) => (
     <rect
@@ -249,7 +250,9 @@ export const DocumentThumbnail: FC<{ document: Document }> = ({ document }) => {
         }
     });
 
-    if (shapes.length === 0) {
+    const frames = Object.values(document.frames).filter((frame) => frame.visible);
+
+    if (shapes.length === 0 && frames.length === 0) {
         return (
             <div className={styles.thumbnailEmpty}>
                 <SquareDashed size={20} strokeWidth={1.5} aria-hidden="true" />
@@ -258,7 +261,10 @@ export const DocumentThumbnail: FC<{ document: Document }> = ({ document }) => {
         );
     }
 
-    const boxes = shapes.map((shape) => previewBox(document, shape));
+    const boxes = [
+        ...shapes.map((shape) => previewBox(document, shape)),
+        ...frames.map((frame) => rectToBox({ ...frame.position, ...frame.size }))
+    ];
     const left = Math.min(...boxes.map((box) => box.topLeft.x));
     const top = Math.min(...boxes.map((box) => box.topLeft.y));
     const right = Math.max(...boxes.map((box) => box.bottomRight.x));
@@ -275,6 +281,27 @@ export const DocumentThumbnail: FC<{ document: Document }> = ({ document }) => {
             preserveAspectRatio="xMidYMid meet"
         >
             <g ref={contentRef}>
+                {frames.map((frame) => (
+                    <g key={frame.id}>
+                        <rect
+                            x={frame.position.x}
+                            y={frame.position.y}
+                            width={frame.size.width}
+                            height={frame.size.height}
+                            fill="none"
+                            stroke="var(--text-secondary-color)"
+                            vectorEffect="non-scaling-stroke"
+                        />
+                        <text
+                            x={frame.position.x}
+                            y={frame.position.y - FRAME_LABEL_OFFSET}
+                            fill="var(--text-secondary-color)"
+                            fontSize="var(--canvas-label-size)"
+                        >
+                            {frame.name}
+                        </text>
+                    </g>
+                ))}
                 {shapes.map((shape) => (
                     <PreviewShape
                         key={shape.id}

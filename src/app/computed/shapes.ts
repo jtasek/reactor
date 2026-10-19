@@ -14,6 +14,8 @@ export const commandsIds = derived(({ commands }: Application) => {
     return Object.keys(commands);
 });
 
+export const framesIds = derived((document: Document) => Object.keys(document.frames).sort());
+
 export const componentsIds = derived((currentDocument: Document) => {
     return Object.keys(currentDocument.components);
 });

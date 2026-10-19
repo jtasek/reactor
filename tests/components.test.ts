@@ -622,6 +622,7 @@ it.each([false, true])('detaches at the original stacking position (tied order: 
         store.actions.applyRemoteChanges({
             documentId: document.id,
             entities: {
+                frames: {},
                 shapes: { [instanceId]: { view, changed: ['order'] } },
                 groups: {},
                 layers: {},

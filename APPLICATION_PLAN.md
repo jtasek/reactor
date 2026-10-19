@@ -406,9 +406,22 @@ test. Its cases cover fixed row/column layout, nested/free frames, independent r
 concurrent resize/reorder/reparent/delete, parent cycles, unreadable rules and local undo.
 Derived positions stay outside the shared rules. It does not go through the production
 `Collaboration` service, so stacks laid out again after merges across two production copies
-remain to be proved when stacks are integrated (below). Frame records and editor controls are
-not implemented. [Spike findings and integration boundaries](design/frame-layout-spike.md)
+remain to be proved when stacks are integrated (below). [Spike findings and integration boundaries](design/frame-layout-spike.md)
 record the coordinate-conversion work still needed.
+
+First canvas increment implemented: draw independent frame boxes with the Frame tool (`f`),
+select by boundary, name or Explorer, move and resize on the canvas, and edit names/geometry
+in Inspector. Frames have their own validated durable table; save/reload, tab/server sync,
+shared undo, operations, copy/cut/paste/clone, deletion/reset, thumbnails and viewer rendering
+retain them. Selection stays local. Existing shapes and group selection remain independent;
+being geometrically inside a frame does not create membership. Frame gestures cancel without
+losing remote edits or resurrecting deleted frames. `tests/frameEditing.test.ts` and
+`tests/browser/screens.spec.ts` cover these paths. Clipboard editing code loads with the editor
+to preserve entry/file bundle budgets.
+
+Still to do before stacks: explicit shape/frame parent references, nesting and reparenting,
+including position-preserving deletion and production-copy delete/reference tests. No automatic
+containment, hug/fill, stack controls, interactive roles or preview is implied by this increment.
 
 1. Frames for screens and stacks, and roles and props on components and instances:
    - First usable increment: validated frame records, durable membership, save/copy/operations,

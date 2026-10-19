@@ -123,7 +123,7 @@ test('signed-in people can reset and cannot submit twice while the request is pe
     await page.getByRole('button', { name: 'Update password', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Updating password…' })).toBeDisabled();
     await expect(page.getByLabel('New password', { exact: true })).toBeDisabled();
-    expect(requests).toBe(1);
+    await expect.poll(() => requests).toBe(1);
     release();
     await expect(page.getByRole('heading', { name: 'Password updated' })).toBeVisible();
 });

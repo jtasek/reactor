@@ -1,5 +1,5 @@
 import React, { FC, MouseEvent, useState } from 'react';
-import { CircleHelp, Star, Trash2 } from 'lucide-react';
+import { Frame as FrameIcon, CircleHelp, Star, Trash2 } from 'lucide-react';
 import styles from './styles.css';
 import { CollapsedItems, Dragged, ExplorerItem } from './ExplorerItem';
 import { SearchBoxContainer } from '../SearchBox';
@@ -10,6 +10,7 @@ import { SourceItem } from './SourceItem';
 import { sceneLayers } from 'src/app/componentTree';
 import { byDrawingOrder } from 'src/app/drawOrder';
 import type { CommandScope } from 'src/app/types';
+import { useFrameRows, useSelectedFrameId } from 'src/app/frameHooks';
 import {
     useActions,
     useComponents,
@@ -266,10 +267,14 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
 };
 
 export const Explorer: FC = () => {
+    const frames = useFrameRows();
+    const selectedFrameId = useSelectedFrameId();
+    const { editFrame } = useActions();
     const { layers, found } = useOutline();
     const document = useCurrentDocument();
     const components = useComponents() ?? {};
     const filter = useDocumentFilter().trim().toLowerCase();
+    const shownFrames = frames.filter((frame) => frame.name.toLowerCase().includes(filter));
     const drawOrder = new Map(useShapesIds().map((id, index) => [id, index]));
     const scene = sceneLayers(found, document).filter(
         ({ layerId, groups, shapesIds }) =>
@@ -340,6 +345,29 @@ export const Explorer: FC = () => {
         >
             <section className={styles.explorer} aria-label="Explorer">
                 <SearchBoxContainer />
+                {shownFrames.length > 0 && (
+                    <ul aria-label="Frames">
+                        {shownFrames.map((frame) => (
+                            <ExplorerItem
+                                key={frame.id}
+                                kind="frame"
+                                name={frame.name}
+                                icon={<FrameIcon size={16} aria-hidden="true" />}
+                                selected={selectedFrameId === frame.id}
+                                visible={frame.visible}
+                                onClick={() => editFrame({ kind: 'select', id: frame.id })}
+                                menuActions={[
+                                    hideAction(!frame.visible, () =>
+                                        editFrame({ kind: 'toggle', id: frame.id, flag: 'visible' })
+                                    ),
+                                    lockAction(frame.locked, () =>
+                                        editFrame({ kind: 'toggle', id: frame.id, flag: 'locked' })
+                                    )
+                                ]}
+                            />
+                        ))}
+                    </ul>
+                )}
                 {shownLayerId && (
                     <button
                         type="button"
@@ -350,7 +378,7 @@ export const Explorer: FC = () => {
                     </button>
                 )}
                 {filter && scene.length === 0 && sources.length === 0 ? (
-                    <p className={styles.empty}>No shapes match</p>
+                    shownFrames.length === 0 && <p className={styles.empty}>No shapes match</p>
                 ) : (
                     <ul>
                         {(!filter || scene.length > 0) && (

@@ -1,5 +1,7 @@
 import React, { FC, useRef } from 'react';
 
+import { FrameInspector } from './FrameInspector';
+import { useSelectedFrameId } from 'src/app/frameHooks';
 import { Inspector } from './Inspector';
 import { useActions, useAppState, useSelectedShapesProperties } from 'src/app/hooks';
 import { useSelectedVariables, useTextTemplateProblems, useVariables } from 'src/app/variableHooks';
@@ -8,6 +10,7 @@ import { selectionIdentity, type SelectionIdentity } from '../selectionIdentity'
 const cannotShow = (names: string[]) => `Cannot show ${names.join(', ')}`;
 
 export const InspectorContainer: FC = () => {
+    const selectedFrameId = useSelectedFrameId();
     const rows = useSelectedShapesProperties();
     const heldSelection = useRef<{ shapeIds: string[]; identity: SelectionIdentity | null }>({
         shapeIds: [],
@@ -31,6 +34,10 @@ export const InspectorContainer: FC = () => {
     const bound = useSelectedVariables();
     const problems = useTextTemplateProblems();
     const { bindProperty, setShapesProperty, unbindProperty } = useActions();
+
+    if (selectedFrameId) {
+        return <FrameInspector key={selectedFrameId} id={selectedFrameId} />;
+    }
 
     return (
         <Inspector

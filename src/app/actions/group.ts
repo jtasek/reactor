@@ -140,6 +140,7 @@ export const toggleGroupSelected: ActionWithParam<string> = ({ state, actions },
     if (!selected) {
         return;
     }
+    delete currentDocument.selectedFrameId;
     actions.unselectGuides();
 };
 

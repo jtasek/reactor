@@ -1,0 +1,57 @@
+.frame {
+    fill: none;
+}
+
+.edge {
+    fill: none;
+    stroke: var(--text-secondary-color);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
+}
+
+.selected .edge {
+    stroke: var(--selection-color);
+    stroke-width: 2;
+}
+
+.label {
+    font-size: var(--canvas-label-size);
+    fill: var(--text-secondary-color);
+    stroke: var(--surface);
+    stroke-width: var(--canvas-label-halo-width);
+    paint-order: stroke;
+    cursor: move;
+    pointer-events: visiblePainted;
+}
+
+.selected .label {
+    font-size: var(--canvas-label-size);
+    fill: var(--selection-color);
+}
+
+.handle {
+    fill: var(--selection-color);
+    stroke: var(--handle-stroke);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+}
+
+.active {
+    fill: var(--handle-active);
+}
+
+.frame:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 3px;
+}
+
+.hit {
+    fill: none;
+    stroke: var(--text-secondary-color);
+    stroke-opacity: 0;
+    stroke-width: 12;
+    vector-effect: non-scaling-stroke;
+    pointer-events: stroke;
+    cursor: move;
+}

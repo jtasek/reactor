@@ -7,6 +7,7 @@ export { InstanceTool } from './components/Instance';
 export { LineTool } from './components/Line';
 export { MoveTool } from './components/Move';
 export { PenTool } from './components/Pen';
+export { FrameTool } from './components/Frame';
 export { RectTool } from './components/Rect';
 export { SelectTool } from './components/Select';
 export { TextTool } from './components/Text';

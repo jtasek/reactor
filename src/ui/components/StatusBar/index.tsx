@@ -8,10 +8,10 @@ import {
     useDocumentName,
     useKeyboard,
     usePointerPosition,
-    useSaveStatus,
-    useSelectedShapesIds
+    useSaveStatus
 } from 'src/app/hooks';
 import { accountLabel, loginFrom } from 'src/app/services/accounts';
+import { useSelectionCount } from 'src/app/frameHooks';
 
 import { Avatars } from '../Avatars';
 import styles from './styles.css';
@@ -116,7 +116,7 @@ const DocumentNameInfo: FC = () => {
 };
 
 const SelectionInfo: FC = () => {
-    const { length } = useSelectedShapesIds();
+    const length = useSelectionCount();
 
     return <>{`selection: [${length}]`}</>;
 };

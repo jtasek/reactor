@@ -1,6 +1,7 @@
 import { legacyTheme, readDimension } from './variableModes';
 import { json } from 'overmind';
 import type {
+    Frame,
     Component,
     Document,
     Group,
@@ -37,10 +38,10 @@ import { componentSource, instanceBox } from './componentSource';
 import { hydrateComponent, readEntity } from './services/documentStorage';
 import { shapeGeometryKey } from './utils';
 
-type Referable = 'variables' | 'components' | 'shapes';
+type Referable = 'variables' | 'components' | 'shapes' | 'frames';
 
 /** The records an operation may change or delete. */
-type Changeable = 'variables' | 'shapes' | 'groups';
+type Changeable = 'variables' | 'shapes' | 'groups' | 'frames';
 
 /** The fields of a shape an update may change: those a model may give a shape it adds. */
 const CHANGEABLE_FIELDS = new Set([
@@ -72,6 +73,9 @@ interface ShapeUpdate {
 }
 
 export interface Staged {
+    frames: Frame[];
+    updatedFrames: Frame[];
+    deletedFrames: string[];
     dimensions: VariableDimension[];
     variables: Variable[];
     components: Component[];
@@ -89,6 +93,8 @@ export type StagedBatch = Staged & { ids: Record<string, string> };
 
 const declaredKey = (operation: Operation): [string, Referable] | undefined => {
     switch (operation.op) {
+        case 'addFrame':
+            return [operation.key, 'frames'];
         case 'addVariable':
             return [operation.key, 'variables'];
         case 'addComponent':
@@ -103,6 +109,9 @@ const declaredKey = (operation: Operation): [string, Referable] | undefined => {
 /** The records the document has that an operation changes or deletes. */
 const changedRecords = (operation: Operation): [Changeable, string[]] | undefined => {
     switch (operation.op) {
+        case 'updateFrame':
+        case 'deleteFrame':
+            return ['frames', [operation.frame]];
         case 'updateVariable':
         case 'deleteVariable':
             return ['variables', [operation.variable]];
@@ -118,6 +127,7 @@ const changedRecords = (operation: Operation): [Changeable, string[]] | undefine
 };
 
 const isDeletion = (operation: Operation) =>
+    operation.op === 'deleteFrame' ||
     operation.op === 'deleteVariable' ||
     operation.op === 'deleteShapes' ||
     operation.op === 'deleteGroup';
@@ -174,7 +184,8 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             }
             if (
                 (collection === 'shapes' && shapeLocked(ref)) ||
-                (collection === 'groups' && document.groups[ref].locked)
+                (collection === 'groups' && document.groups[ref].locked) ||
+                (collection === 'frames' && (document.locked || document.frames[ref].locked))
             ) {
                 throw problem(index, `${ref} is locked.`);
             }
@@ -200,7 +211,10 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         }
         declared.set(key, { index, collection });
         if (operation.op !== 'addShape') {
-            ids.set(key, operation.op === 'addVariable' ? newId() : key);
+            ids.set(
+                key,
+                operation.op === 'addVariable' || operation.op === 'addFrame' ? newId() : key
+            );
         }
     });
 
@@ -237,6 +251,9 @@ function stage(document: Document, operations: Operation[], newId: () => string)
     const components: Record<string, Component> = { ...document.components };
     const dimensions = { ...document.dimensions };
     const staged: Staged = {
+        frames: [],
+        updatedFrames: [],
+        deletedFrames: [],
         dimensions: [],
         variables: [],
         components: [],
@@ -716,6 +733,33 @@ function stage(document: Document, operations: Operation[], newId: () => string)
     operations.forEach((operation, index) => {
         try {
             switch (operation.op) {
+                case 'addFrame': {
+                    if (document.locked) {
+                        throw new Error('The document is locked.');
+                    }
+                    const frame = readEntity('frames', {
+                        ...operation.frame,
+                        id: ids.get(operation.key)
+                    });
+                    staged.frames.push(frame);
+                    return;
+                }
+                case 'updateFrame': {
+                    const allowed = new Set(['name', 'position', 'size']);
+                    if (Object.keys(operation.changes).some((key) => !allowed.has(key))) {
+                        throw new Error('Unsupported frame field.');
+                    }
+                    staged.updatedFrames.push(
+                        readEntity('frames', {
+                            ...json(document.frames[operation.frame]),
+                            ...operation.changes
+                        })
+                    );
+                    return;
+                }
+                case 'deleteFrame':
+                    staged.deletedFrames.push(operation.frame);
+                    return;
                 case 'setDimension':
                 case 'addVariable':
                 case 'updateVariable':
@@ -817,6 +861,15 @@ function writeVariables(
  * are added, and then deleted. Added shapes go on top.
  */
 export function writeBatch(document: Document, staged: Staged) {
+    [...staged.frames, ...staged.updatedFrames].forEach((frame) => {
+        document.frames[frame.id] = frame;
+    });
+    staged.deletedFrames.forEach((id) => {
+        delete document.frames[id];
+        if (document.selectedFrameId === id) {
+            delete document.selectedFrameId;
+        }
+    });
     staged.dimensions.forEach((dimension) => {
         document.dimensions[dimension.id] = dimension;
     });
