@@ -43,7 +43,7 @@ function readDragged(event: DragEvent): Dragged | null {
 }
 
 interface Props {
-    kind: 'root' | 'layer' | 'group' | 'shape' | 'component' | 'instance';
+    kind: 'root' | 'layer' | 'group' | 'shape' | 'component' | 'instance' | 'frame';
     name: string;
     icon?: ReactNode;
     secondary?: string;

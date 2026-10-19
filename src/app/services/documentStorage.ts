@@ -13,7 +13,8 @@ import type {
     Link,
     Guide,
     Variable,
-    VariableDimension
+    VariableDimension,
+    Frame
 } from '../types';
 import { createDocument } from '../factories';
 import { orderAbove, resolveDrawOrderTies, validDrawOrder } from '../drawOrder';
@@ -22,8 +23,10 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
+export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
+    'selectedFrameId',
     'active',
     'bounds',
     'filter',
@@ -37,6 +40,7 @@ export const RUNTIME_FIELDS = new Set([
 ]);
 export const COLLECTIONS = [
     'shapes',
+    'frames',
     'groups',
     'layers',
     'components',
@@ -87,6 +91,7 @@ export type DocumentFields = Pick<
 
 /** The durable form of each kind of entity a document holds. */
 export interface SavedEntities {
+    frames: Frame;
     shapes: ShapeData;
     groups: MemberData;
     layers: MemberData;
@@ -521,7 +526,27 @@ function readOrderedShape(value: unknown): ShapeData {
     return shape;
 }
 
+function readFrame(value: unknown): Frame {
+    const f = record(value);
+    const name = text(f.name).trim();
+
+    if (!name) {
+        throw new Error('Expected a frame name');
+    }
+
+    return {
+        ...entity(value),
+        name,
+        position: point(f.position),
+        size: {
+            width: number(record(f.size).width, MIN_FRAME_SIZE),
+            height: number(record(f.size).height, MIN_FRAME_SIZE)
+        }
+    };
+}
+
 const entityReaders: { [C in Collection]: (value: unknown) => SavedEntities[C] } = {
+    frames: readFrame,
     shapes: readOrderedShape,
     groups: readMember,
     layers: readMember,
@@ -550,6 +575,7 @@ const referenceRepairs: {
         shape.parentShapeId === undefined || exists('shapes', shape.parentShapeId)
             ? shape
             : { ...shape, parentShapeId: undefined },
+    frames: (frame) => frame,
     groups: withoutMissingMembers,
     layers: withoutMissingMembers,
     components: (component, exists) => {
@@ -767,6 +793,7 @@ function readDocument(value: unknown, onRepair = () => {}): DocumentData {
         ...readFields(d),
         camera: readCamera(d.camera),
         shapes: repair('shapes', shapes),
+        frames: d.frames === undefined ? {} : table(d.frames, readFrame),
         groups: repair('groups', table(d.groups, readMember)),
         layers: repair('layers', table(d.layers, readMember)),
         components: repair('components', components),
@@ -818,6 +845,7 @@ export function migratePersistedState(raw: unknown, onRepair = () => {}): Persis
             data.version !== 2 &&
             data.version !== 3 &&
             data.version !== 4 &&
+            data.version !== 5 &&
             data.version !== SCHEMA_VERSION
         ) {
             return null;
@@ -899,6 +927,7 @@ const hydrateVariable = (variable: Variable): Variable => structuredClone(variab
 const entityHydrators: {
     [C in Collection]: (entity: SavedEntities[C]) => Document[C][string];
 } = {
+    frames: (frame) => structuredClone(frame),
     shapes: hydrateShape,
     groups: hydrateMember,
     layers: hydrateMember,

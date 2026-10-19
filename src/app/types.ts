@@ -283,7 +283,21 @@ export interface Camera {
     scale: number;
 }
 
+/** A free-positioned screen boundary, independent of shapes and groups. */
+export interface Frame {
+    id: string;
+    name: string;
+    position: Point;
+    size: Size;
+    locked: boolean;
+    visible: boolean;
+}
+
 export interface Document {
+    frames: HashTable<Frame>;
+    framesIds: string[];
+    /** Local selection; never saved or shared. */
+    selectedFrameId?: string;
     id: string;
     author: string;
     camera: Camera;

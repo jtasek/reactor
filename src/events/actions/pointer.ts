@@ -72,12 +72,23 @@ export const beginGesture = (
     delete state.currentDocument.surfaceSelected;
     effects.collaboration.pause();
 
-    const owner = { pointerId, touch, moved: false };
+    const owner = {
+        pointerId,
+        touch,
+        moved: false,
+        selectedFrameId: state.currentDocument.selectedFrameId
+    };
 
     pointer.start = position;
     pointer.lastPress = { documentId: state.currentDocumentId, position };
     pointer.current = position;
     pointer.path = [];
+
+    if (handle && 'frameId' in handle && state.tools.activeToolsIds[0] === 'select') {
+        return editorHelpers().frames.begin({ state, actions, effects }, owner, handle);
+    }
+
+    delete state.currentDocument.selectedFrameId;
 
     if (handle && 'componentId' in handle) {
         const component = state.currentDocument.components[handle.componentId];
@@ -284,6 +295,12 @@ export const movePointer = (
             Object.values(untracked(state.currentDocument.guides)),
             SNAP_DISTANCE_PX / state.currentDocument.camera.scale
         );
+    }
+
+    if (gesture.kind === 'editingFrame') {
+        editorHelpers().frames.move({ state }, position);
+
+        return;
     }
 
     if (gesture.kind === 'drawing') {
@@ -511,6 +528,10 @@ export const cancelGesture = (
 
     const restoredEntities: RestoredEntity[] = [];
 
+    if (gesture.kind === 'editingFrame') {
+        editorHelpers().frames.cancel({ state }, restoredEntities);
+    }
+
     if ('shapes' in gesture) {
         Object.entries(gesture.shapes).forEach(([id, snapshot]) => {
             const shape = state.currentDocument.shapes[id];
@@ -554,6 +575,12 @@ export const cancelGesture = (
                 shape.selected = selected;
             }
         });
+    }
+
+    delete state.currentDocument.selectedFrameId;
+
+    if (gesture.selectedFrameId && state.currentDocument.frames[gesture.selectedFrameId]) {
+        state.currentDocument.selectedFrameId = gesture.selectedFrameId;
     }
 
     effects.dragTargets.clear();

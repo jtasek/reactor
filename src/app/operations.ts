@@ -1,4 +1,5 @@
 import type {
+    Frame,
     Component,
     ShapeInput,
     VariableType,
@@ -107,7 +108,25 @@ export interface SetDimension {
     dimension: VariableDimension;
 }
 
+export interface AddFrame {
+    op: 'addFrame';
+    key: string;
+    frame: Omit<Frame, 'id'>;
+}
+export interface UpdateFrame {
+    op: 'updateFrame';
+    frame: string;
+    changes: Partial<Pick<Frame, 'name' | 'position' | 'size'>>;
+}
+export interface DeleteFrame {
+    op: 'deleteFrame';
+    frame: string;
+}
+
 export type Operation =
+    | AddFrame
+    | UpdateFrame
+    | DeleteFrame
     | SetDimension
     | AddVariable
     | AddComponent

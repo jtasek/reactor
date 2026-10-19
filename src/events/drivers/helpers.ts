@@ -79,10 +79,15 @@ const isResizeHandlerType = (type: string): type is ResizeHandlerType =>
 /** Resolves the resize, rotate or radius handle (if any) that an event target belongs to. */
 export function getHandleTarget(target: EventTarget | null): HandleTarget | undefined {
     const handle = target instanceof Element ? target.closest('[data-handle]') : null;
+    const frameId = handle?.getAttribute('data-frame-id');
     const shapeId = handle?.getAttribute('data-shape-id');
     const groupId = handle?.getAttribute('data-group-id');
     const componentId = handle?.getAttribute('data-component-id');
     const type = handle?.getAttribute('data-type');
+
+    if (frameId && (type === 'move' || (type && isResizeHandlerType(type)))) {
+        return { frameId, type };
+    }
 
     if (type === 'radius') {
         const corner = handle?.getAttribute('data-corner');

@@ -5,6 +5,23 @@ export const moveSelectionOrPan = ({ state, actions }: Context, direction: Point
     const step = state.config.arrowKeyStep;
     const shapeIds = state.currentDocument.editableSelectedShapesIds;
 
+    const frame = state.currentDocument.frames[state.currentDocument.selectedFrameId ?? ''];
+
+    if (frame) {
+        actions.editFrame({
+            kind: 'update',
+            id: frame.id,
+            changes: {
+                position: {
+                    x: frame.position.x + direction.x * step,
+                    y: frame.position.y + direction.y * step
+                }
+            }
+        });
+
+        return;
+    }
+
     if (shapeIds.length === 0) {
         actions.tools.panCamera({ dx: -direction.x * step, dy: -direction.y * step });
 

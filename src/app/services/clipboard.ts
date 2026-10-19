@@ -1,3 +1,4 @@
+import type { FrameEdit } from '../frameEdits';
 import type { PasteResult } from '../clipboard';
 
 /** The browser's asynchronous clipboard, which commands use outside a clipboard event. */
@@ -8,12 +9,15 @@ export type ClipboardEventData = Pick<DataTransfer, 'getData' | 'setData'>;
 
 /** Shapes to cut: their clipboard text, and their ids to remove once it is copied. */
 export interface Cut {
+    frameIds?: string[];
+    documentId?: string;
     text: string;
     shapeIds: string[];
 }
 
 /** The root actions that apply what the clipboard answers. */
 interface ClipboardActions {
+    editFrame?: (edit: FrameEdit) => unknown;
     pasteShapes: (text: string) => PasteResult;
     removeShapes: (shapeIds: string[]) => void;
     displayError: (message: string) => void;
@@ -89,9 +93,10 @@ export function createClipboard(system: SystemClipboard | undefined) {
             await write(text, 'Ctrl/Cmd+C');
         },
 
-        async cut({ text, shapeIds }: Cut) {
+        async cut({ text, shapeIds, frameIds, documentId }: Cut) {
             if (await write(text, 'Ctrl/Cmd+X')) {
                 actions?.removeShapes(shapeIds);
+                frameIds?.forEach((id) => actions?.editFrame?.({ kind: 'delete', id, documentId }));
             }
         },
 

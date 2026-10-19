@@ -1,6 +1,7 @@
 import { currentDocument } from './computed/currentDocument';
 import { documentsIds } from './computed/documents';
 import {
+    framesIds,
     commandsIds,
     componentsIds,
     sourceOnlyShapesIds,
@@ -241,6 +242,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
         filter: '',
         grid: createGrid(),
         components: {},
+        frames: {},
         groups: {},
         history: { canUndo: false, canRedo: false },
         layers: {},
@@ -257,6 +259,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
         dimensions: {},
         variables: {},
         ...options,
+        framesIds,
         componentsIds,
         sourceOnlyShapesIds,
         selectedComponentsIds,

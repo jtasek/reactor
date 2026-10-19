@@ -1,3 +1,5 @@
+import * as clipboardEdits from 'src/app/clipboardEdits';
+import * as frames from 'src/app/frameEdits';
 import * as dimensions from 'src/app/variableDimensionEdits';
 import * as aliases from 'src/app/variableAliases';
 import * as alignment from 'src/app/alignment';
@@ -53,6 +55,7 @@ import {
 } from 'src/commands';
 
 import {
+    FrameTool,
     CircleTool,
     EllipseTool,
     ImageTool,
@@ -114,6 +117,7 @@ function registerCommands() {
 }
 
 function registerTools() {
+    registerTool(FrameTool);
     registerTool(CircleTool);
     registerTool(EllipseTool);
     registerTool(ImageTool);
@@ -135,5 +139,14 @@ function registerTools() {
 export function registerEditor() {
     registerCommands();
     registerTools();
-    provideEditorHelpers({ dimensions, aliases, alignment, clipboard, operations, snapping });
+    provideEditorHelpers({
+        clipboardEdits,
+        frames,
+        dimensions,
+        aliases,
+        alignment,
+        clipboard,
+        operations,
+        snapping
+    });
 }

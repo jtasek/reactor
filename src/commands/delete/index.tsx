@@ -8,6 +8,11 @@ export const deleteSelectedShapes = ({ state, actions }: Context) => {
 
     actions.removeShapes([...selectedShapesIds]);
     actions.removeSelectedGuides();
+    const id = state.currentDocument.selectedFrameId;
+
+    if (id) {
+        actions.editFrame({ kind: 'delete', id });
+    }
 };
 
 export const DeleteCommand: Command = {
@@ -24,6 +29,11 @@ export const DeleteCommand: Command = {
     scopes: ['shape', 'group', 'selection'],
     menuOrder: 20,
     canExecute: ({ state }) =>
+        Boolean(
+            state.currentDocument.selectedFrameId &&
+            !state.currentDocument.locked &&
+            !state.currentDocument.frames[state.currentDocument.selectedFrameId]?.locked
+        ) ||
         state.currentDocument.editableSelectedShapesIds.length > 0 ||
         (!state.currentDocument.locked &&
             state.ui.guides.visible &&

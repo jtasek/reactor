@@ -17,7 +17,11 @@ export const CopyCommand: Command = {
     clipboardEvent: 'copy',
     canExecute: ({ state }) =>
         takesEditorInput(state) &&
-        (state.currentDocument?.selectedShapesIds.length > 0 ||
+        (Boolean(
+            state.currentDocument.selectedFrameId &&
+            state.currentDocument.frames[state.currentDocument.selectedFrameId]
+        ) ||
+            state.currentDocument?.selectedShapesIds.length > 0 ||
             focusedSourceOnlyId(state) !== null),
     execute: ({ actions, effects }) => {
         const text = actions.copySelection();
@@ -41,9 +45,14 @@ export const CutCommand: Command = {
     clipboardEvent: 'cut',
     canExecute: ({ state }) =>
         takesEditorInput(state) &&
-        state.currentDocument?.selectedShapesIds.some(
-            (id) => !isShapeLocked(state.currentDocument, id)
-        ),
+        (Boolean(
+            state.currentDocument.selectedFrameId &&
+            !state.currentDocument.locked &&
+            !state.currentDocument.frames[state.currentDocument.selectedFrameId]?.locked
+        ) ||
+            state.currentDocument?.selectedShapesIds.some(
+                (id) => !isShapeLocked(state.currentDocument, id)
+            )),
     execute: ({ actions, effects }) => {
         const cut = actions.selectionToCut();
 

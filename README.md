@@ -111,6 +111,19 @@ Input:
 - The editor's buttons, lists and panels can be used from the keyboard; drawing
   on the canvas needs a pointer.
 
+### Frames
+
+Choose **Frame** in the tool bar, or press **F**, then drag a frame on the canvas. Select it
+by its boundary or name, or from Explorer. Drag the boundary to move it; use its corner
+handles to resize it. Inspector edits its name, X/Y, width and height; press Enter or leave
+the field to commit. Arrow keys nudge a selected frame. Copy, Cut, Paste, Clone, Delete and
+Undo/Redo work with frames, including across documents.
+
+Frames are independent screen boundaries in this first increment. Shapes inside remain
+independently selectable; moving or deleting the boundary leaves artwork unchanged. Explicit
+membership, nested frames and stack layout will follow. Frames are saved and shared, while
+selection remains local to this copy.
+
 ## Saving
 
 Documents are saved in the `reactor` IndexedDB database: an index of documents, and

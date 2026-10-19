@@ -2,14 +2,14 @@ import React, { FC } from 'react';
 
 import {
     useAccount,
+    useAppState,
     useCamera,
     useControls,
     useCurrentPage,
     useDocumentName,
     useKeyboard,
     usePointerPosition,
-    useSaveStatus,
-    useSelectedShapesIds
+    useSaveStatus
 } from 'src/app/hooks';
 import { accountLabel, loginFrom } from 'src/app/services/accounts';
 
@@ -116,7 +116,11 @@ const DocumentNameInfo: FC = () => {
 };
 
 const SelectionInfo: FC = () => {
-    const { length } = useSelectedShapesIds();
+    const length = useAppState(
+        (state) =>
+            state.currentDocument.selectedShapesIds.length +
+            Number(Boolean(state.currentDocument.selectedFrameId))
+    );
 
     return <>{`selection: [${length}]`}</>;
 };

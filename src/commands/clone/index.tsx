@@ -3,6 +3,14 @@ import { Command } from 'src/app/types';
 import { Context } from 'src/app';
 
 export const cloneSelection = ({ state, actions }: Context) => {
+    const id = state.currentDocument.selectedFrameId;
+
+    if (id) {
+        actions.editFrame({ kind: 'clone', id });
+
+        return;
+    }
+
     actions.cloneShapes(state.currentDocument.selectedShapesIds);
 };
 
@@ -19,6 +27,11 @@ export const CloneCommand: Command = {
     shortcut: 'mod+d',
     scopes: ['shape', 'group', 'selection'],
     menuOrder: 10,
-    canExecute: ({ state }) => state.currentDocument?.selectedShapesIds.length > 0,
+    canExecute: ({ state }) =>
+        Boolean(
+            state.currentDocument.selectedFrameId &&
+            !state.currentDocument.locked &&
+            !state.currentDocument.frames[state.currentDocument.selectedFrameId]?.locked
+        ) || state.currentDocument?.selectedShapesIds.length > 0,
     execute: cloneSelection
 };

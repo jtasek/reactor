@@ -1,3 +1,5 @@
+import * as clipboardEdits from 'src/app/clipboardEdits';
+import * as frames from 'src/app/frameEdits';
 import * as dimensions from 'src/app/variableDimensionEdits';
 import * as aliases from 'src/app/variableAliases';
 import { IDBFactory } from 'fake-indexeddb';
@@ -74,7 +76,16 @@ export function createTestStore(
     provideEditorHelpers(
         options.editorLoaded === false
             ? undefined
-            : { dimensions, aliases, alignment, clipboard, operations, snapping }
+            : {
+                  clipboardEdits,
+                  frames,
+                  dimensions,
+                  aliases,
+                  alignment,
+                  clipboard,
+                  operations,
+                  snapping
+              }
     );
     const storage = options.storage ?? new Map(Object.entries(seed));
     const indexedDB = options.indexedDB ?? new IDBFactory();
