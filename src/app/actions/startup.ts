@@ -72,7 +72,9 @@ function registerRoutes(effects: Context['effects'], actions: Context['actions']
     effects.initializeRoutes({
         '/': actions.showDesigner,
         '/documents': actions.showDocuments,
-        '/account': actions.showAccount,
+        '/account': () => actions.showAccount('account'),
+        '/login': () => actions.showAccount('login'),
+        '/signin': () => actions.showAccount('login'),
         '/sharing': actions.showSharing,
         '/invite': actions.showInvitation
     });

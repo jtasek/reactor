@@ -108,7 +108,7 @@ describe('signed-out notices', () => {
             expect.objectContaining({
                 message:
                     'Your documents are kept only in this browser and are lost if its site data is cleared.',
-                link: { label: 'Sign in to keep them', url: '/account' }
+                link: { label: 'Sign in to keep them', url: '/login' }
             })
         ]);
 

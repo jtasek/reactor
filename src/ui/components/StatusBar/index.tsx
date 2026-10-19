@@ -81,7 +81,7 @@ export const AccountInfo: FC = () => {
     return (
         <a
             className={styles.accountLink}
-            href="/account"
+            href={account.kind === 'signedIn' ? '/account' : '/login'}
             title={account.kind === 'signedIn' ? account.email : undefined}
         >
             {account.kind === 'signedIn' && (

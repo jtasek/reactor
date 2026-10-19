@@ -149,7 +149,7 @@ Better Auth at `/api/auth`, keeping accounts and sessions in the `auth` schema o
 that PostgreSQL database and creating or updating its tables on start. People
 confirm their email address before signing in with a password, or sign in with a
 link sent by email. Google and GitHub sign-in are optional: configure either provider's
-client ID and secret below and its button appears on the account page. Provider names
+client ID and secret below and its button appears on the login and account pages. Provider names
 are available publicly at `/api/sign-in/providers`; credentials stay on the server.
 
 Register these callback URLs in the provider's OAuth application, using your
@@ -168,13 +168,26 @@ Google's and GitHub's image hosts. Document attribution still stores names, so t
 be matched reliably to account photos. No OAuth credentials means email sign-in
 continues unchanged; configuring only one of a provider's credential pair fails startup.
 
-The account page, `/account`, reached from the status bar, signs in and out and
-creates accounts. Signed out, the editor says once, and again at 3 documents,
+The login page, `/login`, is the single authentication entry point; `/signin` redirects
+there. The account page, `/account`, shows the signed-in profile and sign-out controls;
+signed-out visitors are sent to login with Account as their return destination. Both
+pages share the same frame and controls. Google, GitHub, password and email-link sign-in
+open the requested app page, or Documents by default. Return destinations are limited
+to known app pages. Invitation callbacks continue to use `/invite` without its secret.
+
+Email, provider and mode controls share one pending/error state. Signup and email-link
+requests open a **Check your email** step with an editable address and a 30-second resend
+cooldown. Signup resends verification rather than creating another account; confirming
+the address signs the person in automatically. Authentication POST handling loads only
+when used. The editor also works without signing in.
+
+Signed out, the editor says once, and again at 3 documents,
 that documents are kept only in this browser. Signed in, documents sync with the
 server, and the browser keeps a copy of them in a database of the account's own
 (`reactor-<user id>`), apart from the ones kept signed out. Signing out waits for
 changes still on their way to the server, says what would be lost if some cannot
-be sent, then removes that copy from the browser.
+be sent, then removes that copy and its cached permissions from the browser and
+returns to `/login`. Open your account from your name or avatar and choose **Sign out**.
 
 Signed in, the API at `/api` lists the user's workspaces, starting with a personal
 one created on first use, and lists, creates and deletes a workspace's documents.

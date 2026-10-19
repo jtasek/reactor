@@ -45,7 +45,9 @@ export const Shell: FC = () => {
                 <Suspense fallback={null}>
                     {currentPage === 'designer' && <Designer />}
                     {currentPage === 'documents' && <Documents />}
-                    {currentPage === 'account' && <Account />}
+                    {(currentPage === 'account' || currentPage === 'login') && (
+                        <Account login={currentPage === 'login'} />
+                    )}
                     {currentPage === 'sharing' && <Sharing />}
                     {currentPage === 'invitation' && <Invitation />}
                 </Suspense>

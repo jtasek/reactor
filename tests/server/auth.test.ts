@@ -97,6 +97,24 @@ describe('accounts', () => {
         expect((await fetchSession(request, cookie))?.user.email).toBe(account.email);
     });
 
+    it('resends verification and returns the signed-in account to its intended page', async () => {
+        const { request, outbox } = await startAccounts();
+        await request('/api/auth/sign-up/email', { body: { ...account, callbackURL: '/invite' } });
+        expect(
+            (
+                await request('/api/auth/send-verification-email', {
+                    body: { email: account.email, callbackURL: '/invite' }
+                })
+            ).ok
+        ).toBe(true);
+        expect(outbox).toHaveLength(2);
+        const confirmed = await request(findLink(outbox[1]));
+        expect(new URL(confirmed.headers.get('location')!, ORIGIN).pathname).toBe('/invite');
+        expect((await fetchSession(request, cookieHeader(confirmed)))?.user.email).toBe(
+            account.email
+        );
+    });
+
     it('ends the session at once when signing out', async () => {
         const { request, outbox } = await startAccounts();
 

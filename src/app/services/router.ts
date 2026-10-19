@@ -42,6 +42,8 @@ const onClick = (event: MouseEvent): void => {
         href === null ||
         anchor.target ||
         anchor.hasAttribute('download') ||
+        // Preserve query-bearing links, including authentication return destinations.
+        !!anchor.search ||
         // Invitation secrets must survive navigation, including a new fragment on this page.
         (anchor.pathname === '/invite' && !!anchor.hash) ||
         anchor.origin !== window.location.origin

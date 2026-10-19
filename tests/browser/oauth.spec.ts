@@ -10,7 +10,7 @@ for (const provider of ['Google', 'GitHub']) {
             expect(route.request().postDataJSON()).toEqual({
                 provider: provider.toLowerCase(),
                 callbackURL: '/account',
-                errorCallbackURL: '/account?oauth=failed',
+                errorCallbackURL: '/login?oauth=failed&returnTo=%2Faccount',
                 disableRedirect: true
             });
             await route.fulfill({

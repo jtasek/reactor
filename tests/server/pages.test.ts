@@ -63,7 +63,7 @@ describe('pages', () => {
     it('serves the page for the editor’s routes, and files as they are', async () => {
         const request = await serve();
 
-        for (const route of ['/', '/documents', '/account']) {
+        for (const route of ['/', '/documents', '/account', '/login', '/signin']) {
             const response = await request(route);
 
             expect(response.status).toBe(200);

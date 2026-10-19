@@ -89,11 +89,15 @@ export async function signOut(
         return result;
     }
 
+    // Stop account copies from saving cached records again while cleanup is in flight.
+    effects.recordSignedOut();
+
     const { database, viewKey, recordKey } = accountCopy(owner);
 
     try {
         effects.removeState(viewKey);
         effects.removeState(recordKey);
+        effects.removeState(`${recordKey}:access`);
     } catch {
         // Without storage, there is nothing kept there to remove.
     }
@@ -103,8 +107,7 @@ export async function signOut(
         effects.deleteDocumentDatabase(database).catch(() => undefined),
         delay(CLEAR_WAIT)
     ]);
-    effects.recordSignedOut();
-    effects.reload('/');
+    effects.reload('/login');
 
     return result;
 }

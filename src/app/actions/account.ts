@@ -56,7 +56,7 @@ export const noticeLocalDocuments = (context: Context) => {
             type: 'info',
             link:
                 state.account.kind === 'signedOut'
-                    ? { label: 'Sign in to keep them', url: '/account' }
+                    ? { label: 'Sign in to keep them', url: '/login' }
                     : undefined
         })
     );

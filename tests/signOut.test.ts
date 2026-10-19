@@ -27,6 +27,7 @@ async function browser(accounts = server()) {
     const storage = new Map([
         [copy.viewKey, '{}'],
         [copy.recordKey, '{"unsent":[],"deleting":[]}'],
+        [`${copy.recordKey}:access`, '{"plan":{"role":"admin"}}'],
         ['reactor:notices', '["first"]']
     ]);
     const open = await DocumentDatabase.open(indexedDB, copy.database);
@@ -39,7 +40,7 @@ async function browser(accounts = server()) {
         removeState: (key: string) => {
             storage.delete(key);
         },
-        deleteDocumentDatabase: (name: string) => deleteDocumentDatabase(name, indexedDB),
+        deleteDocumentDatabase: vi.fn((name: string) => deleteDocumentDatabase(name, indexedDB)),
         recordSignedOut: vi.fn(),
         reload: vi.fn()
     };
@@ -58,7 +59,10 @@ describe('signing out', () => {
         expect([...storage.keys()]).toEqual(['reactor:notices']);
         expect(await databases()).toEqual(['reactor']);
         expect(effects.recordSignedOut).toHaveBeenCalledOnce();
-        expect(effects.reload).toHaveBeenCalledWith('/');
+        expect(effects.recordSignedOut.mock.invocationCallOrder[0]).toBeLessThan(
+            effects.deleteDocumentDatabase.mock.invocationCallOrder[0]
+        );
+        expect(effects.reload).toHaveBeenCalledWith('/login');
     });
 
     it('says what would be lost instead of signing out, unless asked to anyway', async () => {
@@ -70,7 +74,8 @@ describe('signing out', () => {
             unsynced: 'The server cannot be reached.'
         });
         expect(effects.accounts.signOut).not.toHaveBeenCalled();
-        expect(storage.size).toBe(3);
+        expect(effects.recordSignedOut).not.toHaveBeenCalled();
+        expect(storage.size).toBe(4);
         expect(await databases()).toContain(copy.database);
 
         expect(await signOut(effects, 'user-ada', unsynced, true)).toEqual({ ok: true });
@@ -84,9 +89,10 @@ describe('signing out', () => {
             ok: false,
             message: 'Try again.'
         });
-        expect(storage.size).toBe(3);
+        expect(storage.size).toBe(4);
         expect(await databases()).toContain(copy.database);
         expect(effects.reload).not.toHaveBeenCalled();
+        expect(effects.recordSignedOut).not.toHaveBeenCalled();
     });
 
     it('waits for changes on their way to the server, and says what is lost if they stay', async () => {

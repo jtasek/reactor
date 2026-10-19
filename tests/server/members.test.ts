@@ -158,7 +158,7 @@ it('retries connection cleanup after commit and reports success even when cleanu
     const input = { actorId: workspace.owner_id!, workspaceId, userId: id };
     const unavailable = new Error('Sync unavailable');
     const observedRoles: unknown[] = [];
-    const changed = vi.fn(async () => {
+    const changed = vi.fn(async (): Promise<void> => {
         observedRoles.push(await workspaceRole(db, id, workspaceId));
         throw unavailable;
     });

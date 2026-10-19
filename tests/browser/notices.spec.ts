@@ -36,11 +36,11 @@ test('tells a signed-out user once that documents are kept only in this browser'
 test('the account page says when the server has no accounts', async ({ page }) => {
     await page.goto('/account');
 
-    await expect(page.getByRole('heading', { name: 'Accounts' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sign in', exact: true })).toBeVisible();
     await expect(page.getByText('This server has no accounts.')).toBeVisible();
 
-    await page.getByRole('link', { name: 'Back to the editor' }).click();
-    await expect(page.locator('svg#surface')).toBeVisible();
+    await page.getByRole('link', { name: 'Continue without signing in' }).click();
+    await expect(page.getByRole('heading', { name: 'Documents', exact: true })).toBeVisible();
 });
 
 test('an open tab loads again when another tab signs someone in or out', async ({ page }) => {

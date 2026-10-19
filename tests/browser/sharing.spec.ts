@@ -392,3 +392,27 @@ test('admins manage editor/viewer members, confirm removals, and cannot edit pro
     await expect(page.getByText('No pending invitations.')).toBeVisible();
     await expect(page.getByLabel('Invitation link')).toHaveCount(0);
 });
+
+test('invitation signup keeps its secret local and shows the verification step', async ({
+    page
+}) => {
+    await account(page, false);
+    await page.route('**/api/auth/sign-up/email', async (route) => {
+        expect(route.request().postDataJSON()).toMatchObject({ callbackURL: '/invite' });
+        expect(route.request().url()).not.toContain(token);
+        await route.fulfill({ json: { user } });
+    });
+    await page.goto(`/invite#${token}`);
+    await page.getByRole('button', { name: 'Create an account', exact: true }).click();
+    await page.getByLabel('Name', { exact: true }).fill('Recipient');
+    await page.getByLabel('Email', { exact: true }).fill('recipient@example.com');
+    await page.getByLabel('Password', { exact: true }).fill('correct password');
+    await page.getByRole('button', { name: 'Create account', exact: true }).click();
+    await expect(page).toHaveURL(`/invite#${token}`);
+    await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+    await expect(
+        page.getByText(
+            'After signing in, return to this invitation tab or reopen the invitation link.'
+        )
+    ).toBeVisible();
+});

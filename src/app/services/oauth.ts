@@ -17,16 +17,18 @@ export async function readProviders(signal: AbortSignal): Promise<OAuthProvider[
         : [];
 }
 
-export async function signInWithProvider(provider: OAuthProvider, returnTo = '/account') {
+export async function signInWithProvider(
+    provider: OAuthProvider,
+    callbackURL = '/documents',
+    errorCallbackURL = '/login?oauth=failed'
+) {
     const response = await fetch('/api/auth/sign-in/social', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
             provider,
-            callbackURL: returnTo,
-            errorCallbackURL: returnTo.includes('#')
-                ? returnTo.replace('#', '?oauth=failed#')
-                : `${returnTo}?oauth=failed`,
+            callbackURL,
+            errorCallbackURL,
             disableRedirect: true
         })
     });

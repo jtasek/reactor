@@ -451,6 +451,10 @@ export async function startDocumentSync(
                 deleted: removeDeleted,
                 received: append,
                 access: (access) => {
+                    if (!keepsRecords()) {
+                        return;
+                    }
+
                     instance.actions.setDocumentAccess(access);
                     try {
                         effects.saveState(`${recordKey}:access`, instance.state.documentAccess);

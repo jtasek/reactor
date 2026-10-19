@@ -135,6 +135,16 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   A minute after it starts and then every hour it deletes the images no document links to
   any more, an hour after they were last added (`deleteUnusedAssets`). `tests/server/support.ts` `serve()` runs all of it over HTTP.
 
+- **Sign-in pages**: `/login` is the signed-out entry point; `/signin` is an alias.
+  Signed-out `/account` visitors go to login with Account as the return destination.
+  Both pages share the lazy-loaded `pages/Account.tsx` frame and forms, including invitation
+  forms. `services/authentication.ts` resolves allowed destinations (Documents by default)
+  for password, email links and OAuth; invitation callbacks remain token-free `/invite`.
+  The form owns a shared pending/error state across providers, email and mode controls.
+  Successful email requests show a check-email step with a 30-second resend cooldown;
+  signup resends use Better Auth's verification endpoint. Authentication POST handling
+  and its error messages load through `accountRequests.ts` only when needed.
+
 - **Workspace invitations** (`server/invitations.ts`): admin-only creation/listing/revocation
   of pending editor/viewer invites; tokens are hashed and expire after seven days. Inspection
   and explicit acceptance require the verified recipient's session and a token in the JSON
@@ -278,7 +288,9 @@ re-renders.** Components never mutate state directly.
   sent, so one the server lacks that was not made here was deleted elsewhere. It stops once
   another account is signed in. `tests/server/editorSync.test.ts` runs signed-in copies
   against the test server. Signing out (`src/app/services/signOut.ts`) warns about changes
-  the server lacks, then removes the account's copy from the browser.
+  the server lacks, then marks the browser signed out before removing the account's copy and
+  cached permissions, and returns to `/login`. Late permission responses cannot recreate those
+  records after sign-out; local signed-out documents remain available.
 - **Document database** (`src/app/services/documentDatabase.ts`): IndexedDB with an index of
   documents and each document's Yjs updates as records of their own; `compact` merges them in
   one transaction. Unit tests run it on `fake-indexeddb`.
