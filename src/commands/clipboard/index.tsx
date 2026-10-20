@@ -1,3 +1,4 @@
+import { isFrameLocked } from 'src/app/frameState';
 import { Copy, Scissors, ClipboardPaste } from 'lucide-react';
 import { Command } from 'src/app/types';
 import { isShapeLocked } from 'src/app/utils';
@@ -47,8 +48,7 @@ export const CutCommand: Command = {
         takesEditorInput(state) &&
         (Boolean(
             state.currentDocument.selectedFrameId &&
-            !state.currentDocument.locked &&
-            !state.currentDocument.frames[state.currentDocument.selectedFrameId]?.locked
+            !isFrameLocked(state.currentDocument, state.currentDocument.selectedFrameId)
         ) ||
             state.currentDocument?.selectedShapesIds.some(
                 (id) => !isShapeLocked(state.currentDocument, id)

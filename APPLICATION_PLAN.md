@@ -430,9 +430,18 @@ Production-copy tests cover deletion concurrent with insertion, cycle creation, 
 canceling a subtree drag across remote membership edits. Durable schema v7 accepts v6 documents.
 `tests/frameMembership.test.ts` and `tests/browser/frameMembership.spec.ts` cover this increment.
 
-Before stacks: finish inherited frame visibility/locking. Frame flags still apply to the
-boundary itself. Movement is blocked for locked descendants or groups left across frames by
-concurrent edits, with an Inspector explanation. No automatic
+Inherited visibility/locking increment implemented: Hide excludes the frame's subtree from
+canvas interaction, snapping and previews; Lock blocks descendant edits and reparenting,
+including operation batches, without rewriting individual flags. Inspector explains inherited
+restrictions and Explorer retains parent recovery controls. The cached local projection uses
+the same cycle roots as membership and is never saved or shared. Remote ancestor Hide/Lock
+cancels a running descendant gesture on its next pointer event, preserving remote flags and
+sharing the rollback. Show all reveals hidden frames too. Group and selection visibility editing load with the editor
+to preserve startup bundle budgets. Their editing code shares a bounded, separately cached chunk. Tests cover deep hierarchies, atomic rejection, production
+copies, undo, reload and normal/narrow browser layouts.
+
+Next: integrate fixed row/column stacks. Movement remains blocked for locked descendants or
+groups left across frames by concurrent edits, with an Inspector explanation. No automatic
 containment, hug/fill, stack controls, clipping, interactive roles or preview is implied yet.
 
 1. Frames for screens and stacks, and roles and props on components and instances:

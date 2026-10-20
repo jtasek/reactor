@@ -2,6 +2,7 @@ import { currentDocument } from './computed/currentDocument';
 import { documentsIds } from './computed/documents';
 import {
     framesIds,
+    frameStates,
     commandsIds,
     componentsIds,
     sourceOnlyShapesIds,
@@ -260,6 +261,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
         variables: {},
         ...options,
         framesIds,
+        frameStates,
         componentsIds,
         sourceOnlyShapesIds,
         selectedComponentsIds,

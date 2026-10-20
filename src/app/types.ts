@@ -1,3 +1,4 @@
+import type { FrameState } from './frameState';
 import type { DocumentAccess } from './documentAccess';
 import { Context } from './index';
 import type { GroupFrame } from './membership';
@@ -299,6 +300,8 @@ export interface Frame {
 export interface Document {
     frames: HashTable<Frame>;
     framesIds: string[];
+    /** Local projection; never saved or shared. */
+    frameStates: Record<string, FrameState>;
     /** Local selection; never saved or shared. */
     selectedFrameId?: string;
     id: string;

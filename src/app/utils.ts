@@ -1,3 +1,4 @@
+import { frameState } from './frameState';
 import {
     Box,
     Circle,
@@ -568,7 +569,11 @@ export function isShapeLockedExternally(document: Document | undefined, shapeId:
         return false;
     }
 
-    return document.locked || inContainer(document, shapeId, (container) => container.locked);
+    return (
+        document.locked ||
+        frameState(document, document.shapes[shapeId].parentFrameId)?.lockedBy !== undefined ||
+        inContainer(document, shapeId, (container) => container.locked)
+    );
 }
 
 /**
@@ -605,7 +610,10 @@ export function isShapeVisible(document: Document | undefined, shapeId: string):
         return false;
     }
 
-    if (hiddenByShownLayer(document, shapeId)) {
+    if (
+        frameState(document, shape.parentFrameId)?.hiddenBy !== undefined ||
+        hiddenByShownLayer(document, shapeId)
+    ) {
         return false;
     }
 

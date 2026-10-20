@@ -456,7 +456,17 @@ children; cut removes only the captured subtree. Frame clipboard payloads carry 
 and shape membership/state, reusing the shape clipboard for artwork and dependencies. Keep
 source-only component masters out of frames; their instance keeps the former parent.
 `tests/frameMembership.test.ts` and `tests/browser/frameMembership.spec.ts` exercise these paths.
-Inherited frame Hide/Lock, stacks and interactive roles remain future work in APPLICATION_PLAN.
+Frame Hide/Lock applies to the subtree through the local derived `frameStates` projection
+(`frameState.ts`), using the same cycle roots as membership. Never materialize inherited flags
+into descendants or persist/share the projection. Hidden descendants leave hit testing,
+selection, snapping and previews; inherited locks gate properties, flag edits, reparenting and
+operation batches. Explorer retains ancestors' Show/Unlock controls and Inspector explains the
+restriction. Hiding a frame, here or in another copy, unselects the shapes it holds
+(`unselectHiddenFrameShapes`). Show all reveals frames too, but leaves what a locked frame
+holds hidden; a frame's own lock does not stop it. Ancestor Hide/Lock during a gesture cancels it on
+the next local pointer event, outside remote apply so rollback is shared. Group and selection visibility editing also
+load through editor helpers (`groupEdits.ts`, `visibilityEdits.ts`). Stacks and interactive roles remain next in
+APPLICATION_PLAN.
 
 ## Groups and layers
 

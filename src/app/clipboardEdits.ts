@@ -1,3 +1,4 @@
+import { isFrameLocked, lockedFrameForShapes } from './frameState';
 import { orderAbove } from './drawOrder';
 import { CLONE_OFFSET, translateShape } from './geometry';
 import type {
@@ -124,7 +125,7 @@ export const selectionToCut: ActionWithResult<
 > = ({ state }) => {
     const frame = state.currentDocument.frames[state.currentDocument.selectedFrameId ?? ''];
 
-    if (frame && !frame.locked && !state.currentDocument.locked && takesEditorInput(state)) {
+    if (frame && !isFrameLocked(state.currentDocument, frame.id) && takesEditorInput(state)) {
         const contents = frameContents(untracked(state.currentDocument), frame.id);
 
         if (
@@ -253,7 +254,7 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
 export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shapeIds) => {
     const { currentDocument } = state;
     const { shapes, shapesIds } = currentDocument;
-    const cloning = new Set(shapeIds);
+    const cloning = new Set(shapeIds.filter((id) => !lockedFrameForShapes(currentDocument, [id])));
     const clonesIds = new Map<string, string>();
     const top = shapesIds.at(-1);
     let order = top ? shapes[top].order : null;

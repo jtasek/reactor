@@ -1,3 +1,10 @@
+import {
+    frameState,
+    isFrameVisible,
+    isFrameLocked,
+    lockedFrameForShapes,
+    unselectHiddenFrameShapes
+} from './frameState';
 import { json } from 'overmind';
 import type { Context } from './index';
 import type { Frame, Point, ResizeHandlerType, Shape } from './types';
@@ -7,7 +14,7 @@ import type { RestoredEntity } from './services/collaboration';
 import { readEntity, orUndefined, MIN_FRAME_SIZE } from './services/documentStorage';
 import { isReadOnly } from './documentAccess';
 import { numberedName } from './factories';
-import { resizeBox, assertNever } from './utils';
+import { resizeBox, assertNever, isShapeVisible } from './utils';
 import { withTheirGroups } from './membership';
 import { unbindMovedProperties } from './variables';
 import { CLONE_OFFSET, translateShape } from './geometry';
@@ -217,20 +224,26 @@ export function edit(context: Context, input: FrameEdit): string | undefined {
     const frame = document.frames[input.id];
 
     if (input.kind === 'toggle') {
-        if (!frame) {
+        if (
+            !frame ||
+            (frameState(document, frame.id)?.lockedBy !== undefined &&
+                frameState(document, frame.id)?.lockedBy !== frame.id)
+        ) {
             return;
         }
 
         frame[input.flag] = !frame[input.flag];
 
-        if (!frame.visible && document.selectedFrameId === frame.id) {
+        if (document.selectedFrameId && !isFrameVisible(document, document.selectedFrameId)) {
             delete document.selectedFrameId;
         }
+
+        unselectHiddenFrameShapes(document);
 
         return frame.id;
     }
 
-    if (!frame || frame.locked) {
+    if (!frame || isFrameLocked(document, frame.id)) {
         return;
     }
 
@@ -331,8 +344,8 @@ export function begin(
 
     if (
         !frame ||
-        !frame.visible ||
-        frame.locked ||
+        !isFrameVisible(state.currentDocument, frame.id) ||
+        isFrameLocked(state.currentDocument, frame.id) ||
         state.currentDocument.locked ||
         isReadOnly(state)
     ) {
@@ -391,7 +404,7 @@ export function move({ state, actions }: Pick<Context, 'state' | 'actions'>, pos
 
     const frame = state.currentDocument.frames[gesture.frameId];
 
-    if (!frame || frame.locked || state.currentDocument.locked || isReadOnly(state)) {
+    if (!frame || isFrameLocked(state.currentDocument, frame.id) || isReadOnly(state)) {
         return;
     }
 
@@ -567,6 +580,44 @@ export function readClipboard(text: string): CopiedFrame | undefined {
 
         return { frame, children, artwork };
     });
+}
+
+/** An ancestor may be hidden or locked remotely after a gesture starts. */
+export function gestureBlocked(document: Context['state']['currentDocument'], gesture: Gesture) {
+    if (gesture.kind === 'editingFrame') {
+        return (
+            !isFrameVisible(document, gesture.frameId) || isFrameLocked(document, gesture.frameId)
+        );
+    }
+
+    if (!('shapes' in gesture)) {
+        return false;
+    }
+
+    const ids =
+        gesture.kind === 'moving'
+            ? gesture.dragged
+                ? gesture.movingIds
+                : document.editableSelectedShapesIds
+            : Object.keys(gesture.shapes);
+
+    if (lockedFrameForShapes(document, ids)) {
+        return true;
+    }
+
+    if (
+        gesture.kind === 'resizingGroup' ||
+        gesture.kind === 'rotatingGroup' ||
+        gesture.kind === 'resizingComponent' ||
+        gesture.kind === 'rotatingComponent'
+    ) {
+        // Hidden members follow a visible container, just as they did at the press.
+        return ids.every((id) => !isShapeVisible(document, id));
+    }
+
+    return ids.some(
+        (id) => frameState(document, document.shapes[id]?.parentFrameId)?.hiddenBy !== undefined
+    );
 }
 
 /** Keep frame-specific gesture bookkeeping with the editor, alongside its implementation. */

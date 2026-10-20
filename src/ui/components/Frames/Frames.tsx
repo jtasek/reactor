@@ -1,7 +1,7 @@
 import React, { type FC } from 'react';
 import { useActions, useAppState, useCameraScale, useGesture } from 'src/app/hooks';
 import { isReadOnly } from 'src/app/documentAccess';
-import { useFramesIds } from 'src/app/frameHooks';
+import { useFramesIds, useFrameLocked } from 'src/app/frameHooks';
 import type { ResizeHandlerType } from 'src/app/types';
 import styles from './styles.css';
 
@@ -21,6 +21,7 @@ const CanvasFrame: FC<{ id: string; interactive: boolean }> = ({ id, interactive
         editable: !isReadOnly(state) && !state.currentDocument.locked,
         drawing: state.tools.activeToolsIds[0] !== 'select'
     }));
+    const locked = useFrameLocked(id);
     const zoom = useCameraScale();
     const scale = interactive ? zoom : 1;
     const gesture = useGesture();
@@ -31,7 +32,7 @@ const CanvasFrame: FC<{ id: string; interactive: boolean }> = ({ id, interactive
     }
 
     const { position, size } = frame;
-    const handles = interactive && selected && editable && !frame.locked && !drawing;
+    const handles = interactive && selected && editable && !locked && !drawing;
     const active =
         gesture.kind === 'editingFrame' && gesture.frameId === id ? gesture.handle : null;
 

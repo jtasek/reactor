@@ -1,3 +1,5 @@
+import { isFrameVisible } from 'src/app/frameState';
+import { shownShapesIds } from 'src/app/membership';
 import React, { FC } from 'react';
 
 import { useControls, useCurrentDocument } from 'src/app/hooks';
@@ -17,11 +19,15 @@ const DEFAULT_VIEW_BOX = '0 0 1000 1000';
  * Computes a viewBox that frames every shape (with a small margin) so the
  * minimap always shows the whole canvas where the shapes are.
  */
-const getContentViewBox = ({ shapes, frames }: ReturnType<typeof useCurrentDocument>): string => {
+const getContentViewBox = (document: ReturnType<typeof useCurrentDocument>): string => {
+    const { shapes, frames } = document;
+    const shown = shownShapesIds(document, document.editingComponentId);
     const boxes = [
-        ...Object.values(shapes).map(getShapeBounds),
+        ...Object.values(shapes)
+            .filter((shape) => shown.has(shape.id))
+            .map(getShapeBounds),
         ...Object.values(frames)
-            .filter((frame) => frame.visible)
+            .filter((frame) => isFrameVisible(document, frame.id))
             .map(frameBox)
     ];
 

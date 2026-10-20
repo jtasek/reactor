@@ -27,6 +27,7 @@ export const SCHEMA_VERSION = 7;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
+    'frameStates',
     'active',
     'bounds',
     'filter',

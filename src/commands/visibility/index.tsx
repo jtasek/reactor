@@ -1,11 +1,12 @@
 import { EyeOff, Eye, Lock, LockOpen } from 'lucide-react';
 import { Command, CommandGuard } from 'src/app/types';
-import { hasHidden, selectedItems } from 'src/app/membership';
+import { hasHidden } from 'src/app/membership';
+import { flagEditableItems } from 'src/app/visibilityEdits';
 
 const selects =
     (locked: boolean): CommandGuard =>
     ({ state }) => {
-        const { groups, shapes } = selectedItems(state.currentDocument);
+        const { groups, shapes } = flagEditableItems(state.currentDocument);
 
         return [...groups, ...shapes].some((item) => item.locked === locked);
     };
@@ -20,7 +21,8 @@ export const HideCommand: Command = {
         size: 24
     },
     shortcut: 'shift+h',
-    canExecute: ({ state }) => state.currentDocument.selectedShapesIds.length > 0,
+    canExecute: ({ state }) =>
+        Object.values(flagEditableItems(state.currentDocument)).some((items) => items.length > 0),
     execute: ({ actions }) => actions.hideSelection()
 };
 
@@ -28,7 +30,7 @@ export const ShowAllCommand: Command = {
     id: 'show-all',
     name: 'Show all',
     category: 'visibility',
-    description: 'Show every hidden shape, group and layer',
+    description: 'Show every hidden shape, group, layer and frame',
     icon: {
         component: Eye,
         size: 24

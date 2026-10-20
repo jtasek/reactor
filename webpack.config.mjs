@@ -137,6 +137,12 @@ export const config = {
                           name: 'collaboration',
                           enforce: true
                       },
+                      // Frame, group and visibility editing stay with the editor, in a bounded file.
+                      editorEdits: {
+                          test: /[\\/]src[\\/]app[\\/](frameEdits|groupEdits|visibilityEdits)\.ts$/,
+                          name: 'editor-edits',
+                          enforce: true
+                      },
                       // Keep editor-only clipboard transfers out of the eagerly used component library.
                       clipboard: {
                           test: /[\\/]src[\\/]app[\\/]clipboard\.ts$/,

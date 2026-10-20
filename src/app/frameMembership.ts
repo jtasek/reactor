@@ -1,38 +1,7 @@
 import type { Document, Frame } from './types';
 
-/** Missing parents and every edge inside a cycle are roots in the local view only. */
-export function frameParents(frames: Record<string, Frame>) {
-    const parents = new Map<string, string | undefined>();
-    const done = new Set<string>();
-
-    for (const id of Object.keys(frames)) {
-        const path: string[] = [];
-        const visited = new Map<string, number>();
-        let current: string | undefined = id;
-
-        while (current !== undefined && Object.hasOwn(frames, current) && !done.has(current)) {
-            const cycle = visited.get(current);
-
-            if (cycle !== undefined) {
-                path.slice(cycle).forEach((member) => parents.set(member, undefined));
-                break;
-            }
-
-            visited.set(current, path.length);
-            path.push(current);
-            const parent: string | undefined = frames[current].parentFrameId;
-            parents.set(
-                current,
-                parent !== undefined && Object.hasOwn(frames, parent) ? parent : undefined
-            );
-            current = parent;
-        }
-
-        path.forEach((member) => done.add(member));
-    }
-
-    return parents;
-}
+import { frameParents } from './frameState';
+export { frameParents } from './frameState';
 
 /** Children are explicit: geometric overlap never adopts an item. */
 export function frameContents(document: Pick<Document, 'frames' | 'shapes'>, id: string) {

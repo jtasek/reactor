@@ -1,3 +1,4 @@
+import { isFrameLocked, lockedFrameForShapes } from 'src/app/frameState';
 import { Copy } from 'lucide-react';
 import { Command } from 'src/app/types';
 import { Context } from 'src/app';
@@ -30,8 +31,10 @@ export const CloneCommand: Command = {
     canExecute: ({ state }) =>
         Boolean(
             state.currentDocument.selectedFrameId &&
-            !state.currentDocument.locked &&
-            !state.currentDocument.frames[state.currentDocument.selectedFrameId]?.locked
-        ) || state.currentDocument?.selectedShapesIds.length > 0,
+            !isFrameLocked(state.currentDocument, state.currentDocument.selectedFrameId)
+        ) ||
+        state.currentDocument.selectedShapesIds.some(
+            (id) => !lockedFrameForShapes(state.currentDocument, [id])
+        ),
     execute: cloneSelection
 };

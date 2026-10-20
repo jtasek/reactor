@@ -1,3 +1,4 @@
+import { isFrameLocked } from 'src/app/frameState';
 import { Trash2 } from 'lucide-react';
 import { Command } from 'src/app/types';
 
@@ -31,8 +32,7 @@ export const DeleteCommand: Command = {
     canExecute: ({ state }) =>
         Boolean(
             state.currentDocument.selectedFrameId &&
-            !state.currentDocument.locked &&
-            !state.currentDocument.frames[state.currentDocument.selectedFrameId]?.locked
+            !isFrameLocked(state.currentDocument, state.currentDocument.selectedFrameId)
         ) ||
         state.currentDocument.editableSelectedShapesIds.length > 0 ||
         (!state.currentDocument.locked &&

@@ -1,3 +1,4 @@
+import { lockedFrameForShapes } from 'src/app/frameState';
 import { Group, Ungroup, CircleMinus } from 'lucide-react';
 import { Command } from 'src/app/types';
 import { GROUP_MINIMUM, groupedShapesSelectedAlone } from 'src/app/membership';
@@ -33,7 +34,12 @@ export const UngroupCommand: Command = {
     menuOrder: 5,
     canExecute: ({ state }) =>
         state.currentDocument.selectedGroupsIds.some(
-            (id) => !state.currentDocument.groups[id].locked
+            (id) =>
+                !state.currentDocument.groups[id].locked &&
+                !lockedFrameForShapes(
+                    state.currentDocument,
+                    state.currentDocument.groups[id].shapesIds
+                )
         ),
     execute: ({ actions }) => actions.ungroupSelection()
 };
