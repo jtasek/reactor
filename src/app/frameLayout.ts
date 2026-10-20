@@ -1,4 +1,6 @@
-import type { Document, Frame, Point, Shape, StackRules } from './types';
+import { projectStackSizes } from './stackSizing';
+import { rectToBox } from './utils';
+import type { Size, Document, Frame, Point, Shape, StackRules } from './types';
 import { frameParents, projectFrameStates } from './frameState';
 import { drawnBox } from './membership';
 import { translateShape } from './geometry';
@@ -11,6 +13,8 @@ export interface FrameLayout {
     managedShapes: Set<string>;
     managedFrames: Set<string>;
     problems: Record<string, string>;
+    frameSizes: Record<string, Size>;
+    shapeSizes: Record<string, Size>;
     /** Each stack's shown slots in layout order. */
     slots: Record<string, StackSlot[]>;
 }
@@ -33,7 +37,7 @@ interface Item {
     height: number;
 }
 
-/** Fixed sizes, canvas-authored fallback positions, and local offsets only. */
+/** Authored fallback geometry with local size and position projections only. */
 export function projectFrameLayout(document: Document): FrameLayout {
     const result: FrameLayout = {
         shapes: {},
@@ -41,11 +45,13 @@ export function projectFrameLayout(document: Document): FrameLayout {
         managedShapes: new Set<string>(),
         managedFrames: new Set<string>(),
         problems: {},
+        frameSizes: {},
+        shapeSizes: {},
         slots: {}
     };
     const stacks = Object.values(document.frames).filter((frame) => frame.stack);
 
-    if (stacks.length === 0) {
+    if (stacks.length === 0 && !Object.values(document.frames).some((frame) => frame.sizing)) {
         return result;
     }
 
@@ -180,16 +186,33 @@ export function projectFrameLayout(document: Document): FrameLayout {
         }
     }
 
+    items.forEach((members) =>
+        members.sort((a, b) => a.order - b.order || (a.id < b.id ? -1 : Number(a.id > b.id)))
+    );
+    const freeStacks = new Set(Object.keys(result.problems));
+    const sizes = projectStackSizes(document, items, parents, freeStacks);
+    result.frameSizes = sizes.frames;
+    result.shapeSizes = sizes.shapes;
+    Object.entries(sizes.problems).forEach(([id, problem]) => {
+        result.problems[id] = [result.problems[id], problem].filter(Boolean).join(' ');
+    });
+    items.forEach((members) =>
+        members.forEach((item) => {
+            Object.assign(item, (item.kind === 'frame' ? sizes.frames : sizes.shapes)[item.id]);
+        })
+    );
+
     const pending = Object.keys(document.frames).filter((id) => parents.get(id) === undefined);
 
     for (let index = 0; index < pending.length; index++) {
         const id = pending[index];
-        const frame = document.frames[id];
+        const frame = {
+            ...document.frames[id],
+            size: sizes.frames[id] ?? document.frames[id].size
+        };
         const offset = result.frames[id] ?? ZERO;
-        const rules = result.problems[id] ? undefined : frame.stack;
-        const members = (items.get(id) ?? []).sort(
-            (a, b) => a.order - b.order || (a.id < b.id ? -1 : Number(a.id > b.id))
-        );
+        const rules = freeStacks.has(id) ? undefined : frame.stack;
+        const members = items.get(id) ?? [];
         let cursor = rules?.padding ?? 0;
 
         if (frame.stack) {
@@ -214,8 +237,8 @@ export function projectFrameLayout(document: Document): FrameLayout {
                     cursor - rules.gap + rules.padding > main ||
                     itemCross + 2 * rules.padding > cross
                 ) {
-                    result.problems[id] =
-                        'Contents overflow this fixed-size stack. Increase its size or reduce gap or padding.';
+                    result.problems[id] ??=
+                        'Contents overflow this stack. Increase its size or reduce gap, padding or minimum sizes.';
                 }
             }
             if (item.kind === 'frame') {
@@ -277,13 +300,19 @@ export function renderedShape(document: Document, id: string, layout?: FrameLayo
         return shape;
     }
 
-    const delta = (layout ?? frameLayout(document)).shapes[id] ?? ZERO;
+    const projection = layout ?? frameLayout(document);
+    const delta = projection.shapes[id] ?? ZERO;
+    const size = projection.shapeSizes[id];
 
-    if (!shape || (delta.x === 0 && delta.y === 0)) {
+    if (!size && delta.x === 0 && delta.y === 0) {
         return shape;
     }
 
     const copy = { ...shape };
+    if (size && copy.type === 'rectangle') {
+        copy.size = size;
+        copy.bounds = rectToBox({ ...copy.position, ...size });
+    }
     if (copy.type === 'instance' && !copy.bounds) {
         const source = componentSource(document, copy.componentId);
         if (source) {
@@ -306,7 +335,11 @@ export function renderedFrame(
     }
     const delta = layout.frames[id] ?? ZERO;
 
-    return { ...frame, position: { x: frame.position.x + delta.x, y: frame.position.y + delta.y } };
+    return {
+        ...frame,
+        size: layout.frameSizes[id] ?? frame.size,
+        position: { x: frame.position.x + delta.x, y: frame.position.y + delta.y }
+    };
 }
 
 /** A read-only view for thumbnails and export; never use this for mutations. */
@@ -327,6 +360,8 @@ export function layoutDocument(document: Document): Document {
             managedShapes: new Set(),
             managedFrames: new Set(),
             problems: {},
+            frameSizes: {},
+            shapeSizes: {},
             slots: {}
         }
     };
@@ -346,7 +381,18 @@ export function frameHasLayoutOffset(document: Document, id: string) {
     const layout = frameLayout(document);
     const delta = layout.frames[id];
 
-    return layout.managedFrames.has(id) || Boolean(delta?.x || delta?.y);
+    return (
+        layout.managedFrames.has(id) ||
+        Boolean(delta?.x || delta?.y) ||
+        Object.values(document.frames[id]?.sizing ?? {}).some(
+            (rule) => rule.mode !== 'fixed' || rule.min !== undefined || rule.max !== undefined
+        ) ||
+        Boolean(
+            layout.frameSizes[id] &&
+            (layout.frameSizes[id].width !== document.frames[id].size.width ||
+                layout.frameSizes[id].height !== document.frames[id].size.height)
+        )
+    );
 }
 
 const ORDER_STEP = 1;

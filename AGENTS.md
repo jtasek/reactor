@@ -483,7 +483,19 @@ is available in Inspector, images retain their ratio. Canvas transforms of proje
 are disabled; remote layout takeover cancels an active transform. Source-only masters stay
 outside frames. Stack rules/order survive schema v8, copy, operations, sync and undo; v7 loads.
 `tests/stackLayout.test.ts` includes production-copy convergence/undo and no feedback; browser
-coverage is `tests/browser/stacks.spec.ts`. Hug/fill, min/max and interactive roles remain next.
+coverage is `tests/browser/stacks.spec.ts`.
+
+Schema v9 adds optional per-axis `sizing` (Fixed/Hug/Fill and min/max) on frames and shapes,
+with controls for frames and individual unrotated stack rectangles. `stackSizing.ts` evaluates
+an iterative dependency graph; cyclic axes retain constrained authored fallbacks and produce
+local diagnostics, never repairs. Acyclic dependents still resolve. Minimums win conflicting
+maximums, keeping concurrently merged rules editable. Unsupported contexts retain intrinsic
+geometry with diagnostics. `frameLayout` carries projected sizes too; measurement must not
+write projected rectangle sizes back into authored bounds. Explicit detach/Free/deletion bakes
+visible sizes as well as positions. Preserve sizing rules through readers, operations, copy,
+collaboration and undo. Tests are `tests/stackSizing.test.ts` and `tests/browser/stackSizing.spec.ts`.
+Gesture implementations (`src/events/pointerEdits.ts`) load through `editorHelpers().pointer`;
+startup delegates retain a safe no-op cancellation before editor loading.
 
 ## Groups and layers
 

@@ -1,5 +1,12 @@
 import { withTheirGroups } from './membership';
-import { frameLayout, hasLayoutOffset, orderAtPosition, stackPosition } from './frameLayout';
+import {
+    frameLayout,
+    hasLayoutOffset,
+    orderAtPosition,
+    stackPosition,
+    renderedFrame,
+    renderedShape
+} from './frameLayout';
 // Only the editor page shows frames' controls, so these hooks load with it rather
 // than with `hooks.ts`, which every page needs as it opens.
 import { frameState, isFrameVisible, isFrameLocked } from './frameState';
@@ -145,6 +152,57 @@ export const useFrameMoveProblem = (id: string) =>
 
 export const useFrameLocked = (id: string) =>
     useAppState((state) => isFrameLocked(state.currentDocument, id));
+
+/** Sizing controls currently support frames and individual upright stack rectangles. */
+export const useSizingTarget = (frameId?: string, shapeId?: string) =>
+    useAppState((state) => {
+        const document = state.currentDocument;
+        const shape = shapeId === undefined ? undefined : document.shapes[shapeId];
+        const frame = frameId === undefined ? undefined : document.frames[frameId];
+        const target = frame ?? shape;
+        const supported =
+            Boolean(frame) ||
+            Boolean(
+                shape?.type === 'rectangle' &&
+                !shape.rotation &&
+                document.frames[shape.parentFrameId ?? '']?.stack &&
+                !Object.values(document.groups).some((group) =>
+                    group.shapesIds.includes(shape.id)
+                ) &&
+                !document.componentMembersIds.has(shape.id)
+            );
+
+        const shownFrame = frame ? renderedFrame(document, frame.id) : undefined;
+        const shownShape = supported && shape ? renderedShape(document, shape.id) : undefined;
+
+        return {
+            documentId: document.id,
+            shownSize: shownFrame
+                ? { ...shownFrame.size }
+                : shownShape?.type === 'rectangle'
+                  ? { ...shownShape.size }
+                  : undefined,
+            supported,
+            sizing: {
+                ...(target?.sizing?.width ? { width: { ...target.sizing.width } } : {}),
+                ...(target?.sizing?.height ? { height: { ...target.sizing.height } } : {})
+            },
+            size: frame?.size ?? (shape?.type === 'rectangle' ? shape.size : undefined),
+            problem: target
+                ? (frameLayout(document).problems[target.id] ??
+                  (!supported && Object.keys(target.sizing ?? {}).length > 0
+                      ? 'Sizing rules require an unrotated, ungrouped rectangle in a stack. Intrinsic size is retained.'
+                      : undefined))
+                : undefined,
+            disabled:
+                !target ||
+                document.locked ||
+                isReadOnly(state) ||
+                state.events.pointer.gesture.kind !== 'idle' ||
+                Boolean(frame && isFrameLocked(document, frame.id)) ||
+                Boolean(shape && isShapeLocked(document, shape.id))
+        };
+    });
 
 export const useShapesFrameState = (ids: string[]) =>
     useAppState((state) => {

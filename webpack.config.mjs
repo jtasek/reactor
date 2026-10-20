@@ -138,6 +138,11 @@ export const config = {
                           enforce: true
                       },
                       // Frame, group and visibility editing stay with the editor, in a bounded file.
+                      pointerEdits: {
+                          test: /[\\/]src[\\/]events[\\/]pointerEdits\.ts$/,
+                          name: 'pointer-edits',
+                          enforce: true
+                      },
                       shapeEdits: {
                           test: /[\\/]src[\\/]app[\\/]shapeEdits\.ts$/,
                           name: 'shape-edits',

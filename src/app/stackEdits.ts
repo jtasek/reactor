@@ -5,7 +5,7 @@ import type { Document, Frame, Shape } from './types';
 import { frameLayout, renderedFrame, renderedShape } from './frameLayout';
 import { frameContents } from './frameMembership';
 import { translateShape } from './geometry';
-import { unbindMovedProperties } from './variables';
+import { unbindMovedProperties, unbindEditedProperties } from './variables';
 
 /** Only an explicit detach, free-layout change or boundary deletion authors the visible positions. */
 export function releaseStackPositions(
@@ -57,6 +57,12 @@ export function releaseStackPositions(
             captureFrame(frame.id, frame.parentFrameId);
         }
         if (previous.stack && !frame.stack) {
+            if (
+                frame.size.width === previous.size.width &&
+                frame.size.height === previous.size.height
+            ) {
+                frame.size = { ...(layout.frameSizes[frame.id] ?? previous.size) };
+            }
             releaseChildren(frame.id, frame.id);
         }
     });
@@ -84,6 +90,14 @@ export function releaseStackPositions(
         ) {
             update.position = frame.position;
         }
+        if (
+            update &&
+            update.size.width === original.size.width &&
+            update.size.height === original.size.height
+        ) {
+            update.size = { ...frame.size };
+        }
+        original.size = { ...frame.size };
         original.position = frame.position;
     });
 }
@@ -113,6 +127,21 @@ function applyPlacement(original: Shape, shape: Shape) {
             });
             break;
         case 'rectangle':
+            if (original.type === 'rectangle') {
+                unbindEditedProperties(
+                    shape,
+                    (['width', 'height'] as const).filter(
+                        (axis) => original.size[axis] !== shape.size[axis]
+                    )
+                );
+            }
+            Object.assign(original, {
+                size: shape.size,
+                position: shape.position,
+                bounds: shape.bounds,
+                bindings: shape.bindings
+            });
+            break;
         case 'image':
         case 'circle':
         case 'ellipse':
@@ -143,7 +172,7 @@ export function materializeGroupPlacement(
     if (
         offset.x === 0 &&
         offset.y === 0 &&
-        ids.every((id) => !layout.shapes[id]?.x && !layout.shapes[id]?.y)
+        ids.every((id) => !layout.shapes[id]?.x && !layout.shapes[id]?.y && !layout.shapeSizes[id])
     ) {
         return;
     }

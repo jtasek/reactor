@@ -109,9 +109,9 @@ A frame may be a stack:
 - gap, padding and alignment;
 - each child's width and height: hug, fill or fixed, with a minimum and maximum.
 
-The editor lays a stack out as part of the change that alters it, and again once other copies'
-changes reach it. Layout depends only on the merged rules and sizes, so every copy writes the
-same positions, and a merge never leaves a mix that no layout made. The preview and exported
+The editor projects a stack after local and remote changes. Layout depends only on merged
+authored rules and fallback geometry; every copy derives the same positions and sizes without
+writing computed geometry back into shared documents. The preview and exported
 apps apply the same rules with the browser's layout.
 
 The preview runs in an iframe sandboxed without same-origin access, and receives the validated
@@ -454,12 +454,27 @@ local undo, convergence without layout writes, and cancellation across remote la
 This increment sizes frames plus stack rectangles/images in Inspector (images retain their
 aspect ratio); text keeps its font controls and instances keep their source dimensions.
 Projected canvas transforms are disabled with an Inspector explanation; choose another parent
-to edit other geometry freely. Reorder with Stack order. Hug/fill, min/max, direct drag-to-reorder,
+to edit other geometry freely. Reorder with Stack order. Direct drag-to-reorder,
 clipping, automatic containment and interactive roles remain separate increments. Shape editing
 loads with the editor to keep the existing entry/file budgets. Coverage:
 `tests/stackLayout.test.ts` and `tests/browser/stacks.spec.ts`.
 
-Next: hug/fill and min/max sizing with sizing-cycle diagnostics, then component roles/props.
+Sizing increment implemented: frames and individual unrotated stack rectangles have independent
+Fixed/Hug/Fill axes and optional min/max constraints. Frames hug their shown slots; rectangles
+hug their authored dimensions. Fill shares remaining main-axis space, redistributing at
+constraints, or fills the cross-axis inner size. Minimums win conflicting maximums and may
+overflow; conflicts stay editable. The iterative sizing dependency graph diagnoses actual
+cycles per axis and falls back to constrained authored sizes only for participating nodes;
+acyclic dependents still resolve. Unsupported contexts diagnose and keep authored dimensions.
+Sizes join positions in the local projection and are never written by reflow. Explicit detach,
+Free and boundary deletion preserve visible geometry. Schema v9 preserves v8 documents and
+rules through operations, clipboard, collaboration and undo. Gesture implementations load
+with the editor to retain bundle budgets. Coverage: `tests/stackSizing.test.ts` and
+`tests/browser/stackSizing.spec.ts`, including deep chains, production-copy merges and cycle recovery.
+Text, images, groups, instances and rotated rectangles retain their existing sizing behavior;
+text wrapping and image aspect-ratio dependencies need separate measured support.
+
+Next: component roles/props, with richer shape sizing as a separate increment.
 
 1. Frames for screens and stacks, and roles and props on components and instances:
    - First usable increment: validated frame records, durable membership, save/copy/operations,
@@ -468,8 +483,8 @@ Next: hug/fill and min/max sizing with sizing-cycle diagnostics, then component 
    - Then integrate fixed row/column stack layout and gap/padding/alignment controls. Drawing,
      measurement and hit testing must use one projection; verify through production copies
      that remote edits reflow without shared derived-position or undo feedback.
-   - Add hug/fill and min/max sizing, with explicit sizing-cycle diagnostics, before component
-     roles and props in the inspector. The initial spike covers fixed sizes only.
+   - Hug/fill and min/max sizing with cycle diagnostics is implemented for frames and upright
+     stack rectangles. Next add component roles and props in the inspector.
 2. The sandboxed preview, with navigation, input state, diagnostics and the last valid preview.
 3. Preview links: read-only, on the separate domain.
 4. SVG export of a screen or a selection, reusing geometry, order, visibility and overrides.

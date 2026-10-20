@@ -71,6 +71,7 @@ function addFrame(context: Context, input: Extract<FrameEdit, { kind: 'add' | 'p
             position,
             size: input.kind === 'add' ? input.size : input.frame.size,
             ...(source?.parentFrameId === undefined ? {} : { parentFrameId: source.parentFrameId }),
+            ...(source?.sizing ? { sizing: source.sizing } : {}),
             ...(source?.stack ? { stack: source.stack } : {}),
             locked: false,
             visible: true

@@ -1,3 +1,4 @@
+import type * as Pointer from '../events/pointerEdits';
 import type * as Shapes from './shapeEdits';
 import type * as Visibility from './visibilityEdits';
 import type * as Groups from './groupEdits';
@@ -17,6 +18,7 @@ import type * as Snapping from './snapping';
  * `editorHelpers`, which only runs once the editor has loaded.
  */
 export interface EditorHelpers {
+    pointer: typeof Pointer;
     clipboardEdits: typeof ClipboardEdits;
     frames: typeof Frames;
     groups: typeof Groups;

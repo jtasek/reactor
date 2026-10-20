@@ -74,7 +74,7 @@ export function validFrameParent(
 /** A container move must neither bypass a lock nor deform a group split by a merge. */
 export function frameMoveProblem(document: Document, id: string) {
     if (frameHasLayoutOffset(document, id)) {
-        return 'Stack placement controls canvas transforms. Change the size in Inspector or choose another parent.';
+        return 'Stack layout controls canvas transforms. Use Inspector for sizing or change the layout rules.';
     }
     const contents = frameContents(document, id);
 
