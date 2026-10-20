@@ -1,3 +1,5 @@
+import { hasLayoutOffset } from 'src/app/frameLayout';
+import { useAppState } from 'src/app/hooks';
 import React, { FC } from 'react';
 import styles from './styles.css';
 import { Handles } from '../Selectable/Resizable';
@@ -18,6 +20,12 @@ interface Props {
 export const GroupSelection: FC<Props> = ({ groupId }) => {
     const frame = useGroupFrame(groupId);
     const locked = useGroupLocked(groupId);
+    const inLayout = useAppState((state) =>
+        hasLayoutOffset(
+            state.currentDocument,
+            state.currentDocument.groups[groupId]?.shapesIds ?? []
+        )
+    );
     const gesture = useGesture();
 
     if (!frame) {
@@ -42,7 +50,7 @@ export const GroupSelection: FC<Props> = ({ groupId }) => {
                 height={box.height}
             />
             {/* A locked group, or one with a locked shape, cannot be resized or rotated. */}
-            {!locked && (
+            {!locked && !inLayout && (
                 <Handles
                     box={box}
                     rotation={rotation}

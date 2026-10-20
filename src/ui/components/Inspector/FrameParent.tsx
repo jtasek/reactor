@@ -1,5 +1,5 @@
 import React, { type FC } from 'react';
-import { useActions } from 'src/app/hooks';
+import { useActions, useAppState } from 'src/app/hooks';
 import { useFrameParent } from 'src/app/frameHooks';
 import styles from './styles.css';
 
@@ -8,8 +8,10 @@ export const FrameParent: FC<{ frameId?: string; shapeIds?: string[] }> = ({
     frameId,
     shapeIds = []
 }) => {
-    const { value, choices, disabled, problem, restriction } = useFrameParent(frameId, shapeIds);
-    const { editFrame } = useActions();
+    const { value, choices, disabled, problem, restriction, stackOrder, inStack, orderShapeIds } =
+        useFrameParent(frameId, shapeIds);
+    const { editFrame, applyOperations } = useActions();
+    const documentId = useAppState((state) => state.currentDocumentId);
     const id = frameId ? 'frame-parent' : 'shape-frame-parent';
 
     return (
@@ -64,6 +66,47 @@ export const FrameParent: FC<{ frameId?: string; shapeIds?: string[] }> = ({
                     </select>
                 </td>
             </tr>
+            {inStack && (
+                <tr>
+                    <th scope="row">
+                        <label htmlFor={`${id}-order`}>Order</label>
+                    </th>
+                    <td>
+                        <input
+                            id={`${id}-order`}
+                            aria-label="Stack order"
+                            type="number"
+                            min={0}
+                            step={1}
+                            value={stackOrder ?? 0}
+                            disabled={disabled}
+                            onChange={(event) => {
+                                const order = Number(event.target.value);
+                                if (!event.target.value || !Number.isFinite(order) || order < 0) {
+                                    return;
+                                }
+                                if (frameId) {
+                                    editFrame({
+                                        kind: 'update',
+                                        id: frameId,
+                                        changes: { layoutOrder: order }
+                                    });
+                                    return;
+                                }
+                                applyOperations({
+                                    documentId,
+                                    by: { kind: 'person' },
+                                    operations: orderShapeIds.map((shape) => ({
+                                        op: 'updateShape',
+                                        shape,
+                                        changes: { layoutOrder: order }
+                                    }))
+                                });
+                            }}
+                        />
+                    </td>
+                </tr>
+            )}
             {restriction && (
                 <tr>
                     <td colSpan={2}>

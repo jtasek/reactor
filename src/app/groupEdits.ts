@@ -1,3 +1,6 @@
+import { materializeGroupPlacement } from './stackEdits';
+export { materializeGroupPlacement } from './stackEdits';
+import { hasLayoutOffset } from './frameLayout';
 import { lockedFrameForShapes } from './frameState';
 import type {
     Action,
@@ -69,9 +72,10 @@ export const groupSelection: Action = ({ state }) => {
         return;
     }
 
+    const parent = currentDocument.shapes[shapesIds[shapesIds.length - 1]].parentFrameId;
+    materializeGroupPlacement(currentDocument, shapesIds, parent);
     removeFromContainers(currentDocument.groups, shapesIds, GROUP_MINIMUM);
     setGroup(state, createGroup({ shapesIds }));
-    const parent = currentDocument.shapes[shapesIds[shapesIds.length - 1]].parentFrameId;
     putShapesInFrame(currentDocument, shapesIds, parent);
 
     // A group is on one layer: the topmost shape's, or none.
@@ -94,11 +98,18 @@ export const addShapesToGroup: ActionWithParam<{ shapeIds: string[]; groupId: st
         return;
     }
 
-    putShapesInGroup(
-        currentDocument,
-        shapeIds.filter((id) => !isShapeLocked(currentDocument, id)),
-        groupId
+    const incoming = shapeIds.filter(
+        (id) => !group.shapesIds.includes(id) && !isShapeLocked(currentDocument, id)
     );
+    if (incoming.length === 0) {
+        return;
+    }
+    materializeGroupPlacement(
+        currentDocument,
+        [...new Set([...group.shapesIds, ...incoming])],
+        currentDocument.shapes[group.shapesIds[0]]?.parentFrameId
+    );
+    putShapesInGroup(currentDocument, incoming, groupId);
 };
 
 /** Removes the selected groups that are unlocked; their shapes stay selected. */
@@ -251,7 +262,11 @@ export const rotateGroup: ActionWithParam<GroupDrag> = (
     const { currentDocument } = state;
     const group = currentDocument.groups[groupId];
 
-    if (!group || lockedFrameForShapes(currentDocument, group.shapesIds)) {
+    if (
+        !group ||
+        lockedFrameForShapes(currentDocument, group.shapesIds) ||
+        hasLayoutOffset(currentDocument, group.shapesIds)
+    ) {
         return;
     }
 
@@ -271,6 +286,7 @@ export const resizeGroup: ActionWithParam<GroupDrag & { handle: ResizeHandlerTyp
 
     if (
         !currentDocument.groups[groupId] ||
+        hasLayoutOffset(currentDocument, currentDocument.groups[groupId].shapesIds) ||
         lockedFrameForShapes(currentDocument, currentDocument.groups[groupId].shapesIds)
     ) {
         return;

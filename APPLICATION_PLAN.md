@@ -406,7 +406,7 @@ test. Its cases cover fixed row/column layout, nested/free frames, independent r
 concurrent resize/reorder/reparent/delete, parent cycles, unreadable rules and local undo.
 Derived positions stay outside the shared rules. It does not go through the production
 `Collaboration` service, so stacks laid out again after merges across two production copies
-remain to be proved when stacks are integrated (below). [Spike findings and integration boundaries](design/frame-layout-spike.md)
+are now covered by the production stack tests described below. [Spike findings and integration boundaries](design/frame-layout-spike.md)
 record the coordinate-conversion work still needed.
 
 First canvas increment implemented: draw independent frame boxes with the Frame tool (`f`),
@@ -440,9 +440,26 @@ sharing the rollback. Show all reveals hidden frames too. Group and selection vi
 to preserve startup bundle budgets. Their editing code shares a bounded, separately cached chunk. Tests cover deep hierarchies, atomic rejection, production
 copies, undo, reload and normal/narrow browser layouts.
 
-Next: integrate fixed row/column stacks. Movement remains blocked for locked descendants or
-groups left across frames by concurrent edits, with an Inspector explanation. No automatic
-containment, hug/fill, stack controls, clipping, interactive roles or preview is implied yet.
+Fixed stack increment implemented: Inspector offers Free/Row/Column, nonnegative uniform
+padding and gap, and Start/Center/End cross-axis alignment. Stack order is authored separately
+from z order. The pure local `frameLayout` projection places fixed-size shapes and nested
+frames, treating a group as one slot, excluding hidden slots and reporting visible overflow
+or groups split across frames. Rendering, selection, hit tests, snapping and previews use the
+same offsets. Stored coordinates remain authored canvas fallbacks; only explicit membership/grouping,
+component conversion, Free or boundary deletion commits the visible positions. Concurrent missing-parent recovery
+uses the authored canvas fallback, including a child inserted unseen by the deleting copy.
+Schema v8 preserves v7 documents. Production-copy tests cover independent rule/size edits,
+local undo, convergence without layout writes, and cancellation across remote layout changes.
+
+This increment sizes frames plus stack rectangles/images in Inspector (images retain their
+aspect ratio); text keeps its font controls and instances keep their source dimensions.
+Projected canvas transforms are disabled with an Inspector explanation; choose another parent
+to edit other geometry freely. Reorder with Stack order. Hug/fill, min/max, direct drag-to-reorder,
+clipping, automatic containment and interactive roles remain separate increments. Shape editing
+loads with the editor to keep the existing entry/file budgets. Coverage:
+`tests/stackLayout.test.ts` and `tests/browser/stacks.spec.ts`.
+
+Next: hug/fill and min/max sizing with sizing-cycle diagnostics, then component roles/props.
 
 1. Frames for screens and stacks, and roles and props on components and instances:
    - First usable increment: validated frame records, durable membership, save/copy/operations,

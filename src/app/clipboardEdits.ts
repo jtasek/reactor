@@ -1,3 +1,4 @@
+import { renderedShape } from './frameLayout';
 import { isFrameLocked, lockedFrameForShapes } from './frameState';
 import { orderAbove } from './drawOrder';
 import { CLONE_OFFSET, translateShape } from './geometry';
@@ -29,7 +30,7 @@ const selectedInDrawOrder = ({ currentDocument }: Application) => {
 
     return currentDocument.shapesIds
         .filter((id) => selected.has(id))
-        .map((id) => currentDocument.shapes[id]);
+        .map((id) => renderedShape(currentDocument, id));
 };
 
 /** The groups selected as one, with the shapes of theirs that are shown, as only those are copied. */

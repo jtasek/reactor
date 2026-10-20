@@ -1,3 +1,4 @@
+import type { FrameLayout } from './frameLayout';
 import type { FrameState } from './frameState';
 import type { DocumentAccess } from './documentAccess';
 import { Context } from './index';
@@ -134,6 +135,7 @@ export interface ShapeBase {
     parentShapeId?: string;
     /** Explicit membership; geometry stays in canvas coordinates. */
     parentFrameId?: string;
+    layoutOrder?: number;
     rotation?: number;
     selected: boolean;
     /** The color its outline is drawn in, as `#rrggbb`; the default outline when unset. */
@@ -287,9 +289,18 @@ export interface Camera {
 }
 
 /** A free-positioned screen boundary; its parent and children keep canvas coordinates. */
+export interface StackRules {
+    direction: 'row' | 'column';
+    gap: number;
+    padding: number;
+    align: 'start' | 'center' | 'end';
+}
+
 export interface Frame {
+    stack?: StackRules;
     id: string;
     parentFrameId?: string;
+    layoutOrder?: number;
     name: string;
     position: Point;
     size: Size;
@@ -302,6 +313,7 @@ export interface Document {
     framesIds: string[];
     /** Local projection; never saved or shared. */
     frameStates: Record<string, FrameState>;
+    frameLayout: FrameLayout;
     /** Local selection; never saved or shared. */
     selectedFrameId?: string;
     id: string;

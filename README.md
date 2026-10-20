@@ -137,7 +137,18 @@ Hide/Lock flags stay intact. Inspector explains inherited restrictions. Show or 
 parent in Explorer to recover; **Show all** also reveals hidden frames, except inside a
 locked frame. Hiding a frame unselects the shapes in it. A remote Hide or Lock
 cancels a descendant drag on its next pointer event without losing that remote change.
-Automatic layout, clipping and interactive screen behavior remain later increments.
+In the selected frame's Inspector, choose **Layout → Row** or **Column** for a fixed-size
+stack, or **Free** for manual placement. Set **Gap**, uniform **Padding** and cross-axis
+**Alignment** (Start, Center or End). Children keep their fixed sizes; groups occupy one slot,
+hidden items occupy none, and overflow remains visible with a warning. **Stack order** in a
+child's Parent section controls its slot independently of drawing order.
+
+Resize frames and stack rectangles/images in Inspector; images keep their aspect ratio.
+Text uses its font controls and instances their source dimensions. Canvas transforms that
+would conflict with stack placement are unavailable; choose another parent for free editing.
+Choosing Free, detaching a child or deleting its boundary preserves visible positions.
+Hug/fill sizing, min/max, drag-to-reorder, clipping and interactive screen behavior are later
+increments.
 
 ## Saving
 

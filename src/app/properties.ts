@@ -1,3 +1,4 @@
+import { frameLayout, renderedShape, hasLayoutOffset } from './frameLayout';
 import { frameState } from './frameState';
 import type { Document, Shape } from './types';
 import { limitCornerRadius, translateShape } from './geometry';
@@ -60,6 +61,33 @@ const OPAQUE_PERCENT = 100;
 const notBlank = (value: string) => value.trim() !== '';
 
 // Metadata may change on a locked shape, but not in a locked document.
+const stackDimensionEditable = (shape: Shape, document: Document) =>
+    (shape.type === 'rectangle' || shape.type === 'image') &&
+    hasLayoutOffset(document, [shape.id]) &&
+    !isShapeLocked(document, shape.id);
+
+function writeStackDimension(shape: Shape, axis: 'width' | 'height', value: number) {
+    if (
+        (shape.type !== 'rectangle' && shape.type !== 'image') ||
+        value <= 0 ||
+        !Number.isFinite(value)
+    ) {
+        return;
+    }
+
+    const other = axis === 'width' ? 'height' : 'width';
+    const size =
+        shape.type === 'image'
+            ? {
+                  ...shape.size,
+                  [axis]: value,
+                  [other]: (shape.size[other] * value) / shape.size[axis]
+              }
+            : { ...shape.size, [axis]: value };
+    shape.size = size;
+    delete shape.bounds;
+}
+
 const unlessDocumentLocked = (_shape: Shape, document: Document) => !document.locked;
 
 /** A color of section `group`, for the shapes `applies` to; the empty string takes it off. */
@@ -126,14 +154,18 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         label: 'Width',
         group: 'Layout',
         kind: 'number',
-        read: (shape) => getShapeBounds(shape).width
+        read: (shape) => getShapeBounds(shape).width,
+        editable: stackDimensionEditable,
+        write: (shape, value) => writeStackDimension(shape, 'width', value)
     },
     {
         key: 'height',
         label: 'Height',
         group: 'Layout',
         kind: 'number',
-        read: (shape) => getShapeBounds(shape).height
+        read: (shape) => getShapeBounds(shape).height,
+        editable: stackDimensionEditable,
+        write: (shape, value) => writeStackDimension(shape, 'height', value)
     },
     {
         key: 'rotation',
@@ -243,6 +275,10 @@ export function canEdit(property: ShapeProperty, shape: Shape, document: Documen
         return false;
     }
 
+    if (['x', 'y'].includes(property.key) && frameLayout(document).managedShapes.has(shape.id)) {
+        return false;
+    }
+
     return property.editable
         ? property.editable(shape, document)
         : !isShapeLocked(document, shape.id);
@@ -270,7 +306,9 @@ export function sharedProperties(shapes: Shape[], document: Document): PropertyR
     }
 
     return SHAPE_PROPERTIES.flatMap((property) => {
-        const values = shapes.map((shape) => shown(property.read(shape, document)));
+        const values = shapes.map((shape) =>
+            shown(property.read(renderedShape(document, shape.id), document))
+        );
 
         if (values.some((value) => value === undefined)) {
             return [];

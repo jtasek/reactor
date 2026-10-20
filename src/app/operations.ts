@@ -122,8 +122,9 @@ export interface AddFrame {
 export interface UpdateFrame {
     op: 'updateFrame';
     frame: string;
-    changes: Partial<Pick<Frame, 'name' | 'position' | 'size'>> & {
+    changes: Partial<Pick<Frame, 'name' | 'position' | 'size' | 'layoutOrder'>> & {
         parentFrameId?: string | null;
+        stack?: Frame['stack'] | null;
     };
 }
 export interface DeleteFrame {

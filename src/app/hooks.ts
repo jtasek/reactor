@@ -1,3 +1,4 @@
+import { renderedShape } from './frameLayout';
 import { variableContext } from './variableModes';
 import { json } from 'overmind';
 import {
@@ -179,18 +180,11 @@ export const useSelectedShapesProperties = () => {
         const document = state.currentDocument;
         const { kind } = state.events.pointer.gesture;
 
-        if (kind === 'marquee') {
+        if (kind !== 'idle') {
             return held.current;
         }
 
-        const shapes = untracked(document.shapes);
-
-        held.current = sharedProperties(
-            kind === 'idle'
-                ? document.selectedShapes
-                : document.selectedShapesIds.map((id) => shapes[id]),
-            document
-        );
+        held.current = sharedProperties(document.selectedShapes, document);
 
         return held.current;
     });
@@ -281,7 +275,7 @@ export const useCurrentDocumentId = () => {
 };
 
 export const useShape = (id: string) => {
-    return useCurrentDocument()?.shapes[id];
+    return useAppState((state) => renderedShape(state.currentDocument, id));
 };
 
 /** Whether a frame, or a frame it is in, is the selected frame. */

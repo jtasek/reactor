@@ -1,3 +1,4 @@
+import type * as Shapes from './shapeEdits';
 import type * as Visibility from './visibilityEdits';
 import type * as Groups from './groupEdits';
 import type * as ClipboardEdits from './clipboardEdits';
@@ -19,6 +20,7 @@ export interface EditorHelpers {
     clipboardEdits: typeof ClipboardEdits;
     frames: typeof Frames;
     groups: typeof Groups;
+    shapes: typeof Shapes;
     visibility: typeof Visibility;
     dimensions: typeof Dimensions;
     aliases: typeof Aliases;

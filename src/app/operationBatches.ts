@@ -1,3 +1,9 @@
+import { frameLayout, hasLayoutOffset } from './frameLayout';
+import {
+    initializeStackOrder,
+    releaseStackPositions,
+    materializeGroupPlacement
+} from './stackEdits';
 import { projectFrameStates } from './frameState';
 import { deleteFrame, validFrameParent, frameContents, frameMoveProblem } from './frameMembership';
 import { legacyTheme, readDimension } from './variableModes';
@@ -51,6 +57,7 @@ type Changeable = 'variables' | 'shapes' | 'groups' | 'frames';
 const CHANGEABLE_FIELDS = new Set([
     'name',
     'parentFrameId',
+    'layoutOrder',
     'description',
     'rotation',
     'opacity',
@@ -676,6 +683,9 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         if (fixed) {
             throw new Error(`its ${fixed} cannot change.`);
         }
+        if ('position' in changes && frameLayout(document).managedShapes.has(id)) {
+            throw new Error('Stack placement controls this position.');
+        }
         const current = projected?.shapes[id] ?? document.shapes[id];
         const shape = structuredClone(json(current));
         unbindEditedProperties(shape, fields);
@@ -685,6 +695,9 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             delete shape.parentFrameId;
         } else if (changes.parentFrameId !== undefined) {
             shape.parentFrameId = frameReference(changes.parentFrameId, index);
+        }
+        if (shape.parentFrameId !== current.parentFrameId && changes.layoutOrder === undefined) {
+            delete shape.layoutOrder;
         }
         const kept = Object.entries(bindings).filter(([key, variableId]) => {
             const property = bindableProperty(key);
@@ -721,7 +734,13 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         }
         const before = new Map(Object.entries(json(current)));
         const written = [
-            ...new Set([...Object.keys(read), 'bindings', 'template', 'parentFrameId'])
+            ...new Set([
+                ...Object.keys(read),
+                'bindings',
+                'template',
+                'parentFrameId',
+                'layoutOrder'
+            ])
         ].filter((field) => JSON.stringify(read[field]) !== JSON.stringify(before.get(field)));
 
         staged.updatedShapes.push({
@@ -775,6 +794,17 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         if (new Set(shapesIds.map((id) => shapeLayer(document, id)?.id)).size > 1) {
             throw new Error('a group needs shapes on the same layer.');
         }
+        for (const id of shapesIds.filter(
+            (member) =>
+                Object.hasOwn(document.shapes, member) && hasLayoutOffset(document, [member])
+        )) {
+            if (shapeLocked(id) || changed.has(record('shapes', id))) {
+                throw new Error(
+                    'A group must not also change a locked or already edited layout member.'
+                );
+            }
+            changed.set(record('shapes', id), index);
+        }
         const group = createGroup({ name, rotation, shapesIds });
 
         readEntity('groups', group);
@@ -800,7 +830,14 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                     return;
                 }
                 case 'updateFrame': {
-                    const allowed = new Set(['name', 'position', 'size', 'parentFrameId']);
+                    const allowed = new Set([
+                        'name',
+                        'position',
+                        'size',
+                        'parentFrameId',
+                        'layoutOrder',
+                        'stack'
+                    ]);
                     if (Object.keys(operation.changes).some((key) => !allowed.has(key))) {
                         throw new Error('Unsupported frame field.');
                     }
@@ -808,10 +845,17 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                     const frame = readEntity('frames', {
                         ...json(document.frames[operation.frame]),
                         ...operation.changes,
-                        ...(parent === null ? { parentFrameId: undefined } : {})
+                        ...(parent === null ? { parentFrameId: undefined } : {}),
+                        ...(operation.changes.stack === null ? { stack: undefined } : {})
                     });
                     if (parent !== undefined && parent !== null) {
                         frame.parentFrameId = frameReference(parent, index);
+                    }
+                    if (
+                        frame.parentFrameId !== document.frames[frame.id].parentFrameId &&
+                        operation.changes.layoutOrder === undefined
+                    ) {
+                        delete frame.layoutOrder;
                     }
                     staged.updatedFrames.push(frame);
                     return;
@@ -1036,6 +1080,17 @@ function writeVariables(
  * are added, and then deleted. Added shapes go on top.
  */
 export function writeBatch(document: Document, staged: Staged) {
+    staged.groups.forEach((group) => {
+        const existing = group.shapesIds.filter((id) => Object.hasOwn(document.shapes, id));
+        materializeGroupPlacement(document, existing, document.shapes[existing[0]]?.parentFrameId);
+    });
+    releaseStackPositions(
+        document,
+        staged.updatedFrames,
+        staged.updatedShapes,
+        staged.deletedFrames
+    );
+
     [...staged.frames, ...staged.updatedFrames].forEach((frame) => {
         document.frames[frame.id] = frame;
     });
@@ -1092,4 +1147,10 @@ export function writeBatch(document: Document, staged: Staged) {
             shape.bounds = instanceBox(shape, source);
         }
     });
+    initializeStackOrder(document, [
+        ...staged.frames.map((frame) => frame.id),
+        ...staged.updatedFrames.map((frame) => frame.id),
+        ...staged.shapes.map((shape) => shape.parentFrameId ?? ''),
+        ...staged.updatedShapes.map((shape) => document.shapes[shape.id]?.parentFrameId ?? '')
+    ]);
 }

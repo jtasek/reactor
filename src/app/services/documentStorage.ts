@@ -23,11 +23,12 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 8;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
     'frameStates',
+    'frameLayout',
     'active',
     'bounds',
     'filter',
@@ -313,6 +314,7 @@ function readShape(value: unknown, readChild: (child: unknown) => ShapeData): Sh
         rotation: s.rotation === undefined ? 0 : number(s.rotation),
         ...(s.description === undefined ? {} : { description: text(s.description) }),
         ...(s.parentFrameId === undefined ? {} : { parentFrameId: id(s.parentFrameId) }),
+        ...(s.layoutOrder === undefined ? {} : { layoutOrder: number(s.layoutOrder, 0) }),
         ...(s.parentShapeId === undefined ? {} : { parentShapeId: id(s.parentShapeId) }),
         ...(s.children === undefined ? {} : { children: list(s.children, readChild) }),
         ...(s.bindings === undefined ? {} : { bindings: readBindings(s.bindings) })
@@ -531,6 +533,24 @@ function readOrderedShape(value: unknown): ShapeData {
     return shape;
 }
 
+export function readStack(value: unknown): import('../types').StackRules {
+    const rules = record(value);
+
+    if (
+        !['row', 'column'].includes(String(rules.direction)) ||
+        !['start', 'center', 'end'].includes(String(rules.align))
+    ) {
+        throw new Error('Invalid stack direction or alignment');
+    }
+
+    return {
+        direction: rules.direction as 'row' | 'column',
+        align: rules.align as 'start' | 'center' | 'end',
+        gap: number(rules.gap, 0),
+        padding: number(rules.padding, 0)
+    };
+}
+
 function readFrame(value: unknown): Frame {
     const f = record(value);
     const name = text(f.name).trim();
@@ -543,6 +563,8 @@ function readFrame(value: unknown): Frame {
         ...entity(value),
         name,
         ...(f.parentFrameId === undefined ? {} : { parentFrameId: id(f.parentFrameId) }),
+        ...(f.stack === undefined ? {} : { stack: readStack(f.stack) }),
+        ...(f.layoutOrder === undefined ? {} : { layoutOrder: number(f.layoutOrder, 0) }),
         position: point(f.position),
         size: {
             width: number(record(f.size).width, MIN_FRAME_SIZE),
@@ -868,6 +890,7 @@ export function migratePersistedState(raw: unknown, onRepair = () => {}): Persis
             data.version !== 4 &&
             data.version !== 5 &&
             data.version !== 6 &&
+            data.version !== 7 &&
             data.version !== SCHEMA_VERSION
         ) {
             return null;

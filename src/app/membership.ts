@@ -1,3 +1,4 @@
+import { renderedShape, hasLayoutOffset } from './frameLayout';
 import { frameStatesOf } from './frameState';
 import type { Box, CommandScope, Document, Group, Layer, Point, Shape } from './types';
 import { boxCenter, getShapeBounds, isShapeLocked, isShapeVisible, rotatePoint } from './utils';
@@ -82,7 +83,7 @@ export function groupFrame(document: Document, group: Group): GroupFrame | null 
     const rotation = group.rotation ?? 0;
     const origin = { x: 0, y: 0 };
     const corners = shownGroupShapesIds(document, group).flatMap((id) => {
-        const shape = document.shapes[id];
+        const shape = renderedShape(document, id);
         const bounds = getShapeBounds(shape);
         const center = boxCenter(bounds);
         const { topLeft, bottomRight } = bounds;
@@ -234,7 +235,7 @@ export function drawnExtent(document: Document, shapeIds: string[]): Box | null 
     let bottom = -Infinity;
 
     for (const id of shapeIds) {
-        const box = drawnBox(document.shapes[id]);
+        const box = drawnBox(renderedShape(document, id));
 
         left = Math.min(left, box.topLeft.x);
         top = Math.min(top, box.topLeft.y);
@@ -538,7 +539,8 @@ export function selectionScope(document: Document): CommandScope | null {
  */
 export function listMovableSelectedItems(document: Document): string[][] {
     const { groups, shapes } = selectedItems(document);
-    const unlocked = (shapeIds: string[]) => !shapeIds.some((id) => isShapeLocked(document, id));
+    const unlocked = (shapeIds: string[]) =>
+        !hasLayoutOffset(document, shapeIds) && !shapeIds.some((id) => isShapeLocked(document, id));
 
     return [...groups.map((group) => group.shapesIds), ...shapes.map((shape) => [shape.id])].filter(
         unlocked

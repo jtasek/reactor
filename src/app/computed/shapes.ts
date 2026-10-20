@@ -1,3 +1,4 @@
+import { projectFrameLayout } from '../frameLayout';
 import { projectFrameStates } from '../frameState';
 import { derived } from 'overmind';
 import { Application, Document } from '../types';
@@ -14,6 +15,8 @@ import {
 export const commandsIds = derived(({ commands }: Application) => {
     return Object.keys(commands);
 });
+
+export const frameLayout = derived((document: Document) => projectFrameLayout(document));
 
 export const frameStates = derived((document: Document) => projectFrameStates(document.frames));
 

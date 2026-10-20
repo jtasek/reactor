@@ -1,3 +1,5 @@
+import { withTheirGroups } from './membership';
+import { frameLayout, hasLayoutOffset } from './frameLayout';
 // Only the editor page shows frames' controls, so these hooks load with it rather
 // than with `hooks.ts`, which every page needs as it opens.
 import { frameState, isFrameVisible, isFrameLocked } from './frameState';
@@ -103,7 +105,26 @@ export const useFrameParent = (frameId: string | undefined, shapeIds: string[]) 
             .join(' ');
 
         return {
-            restriction,
+            restriction: [
+                restriction,
+                (
+                    frame
+                        ? frameLayout(document).managedFrames.has(frame.id)
+                        : hasLayoutOffset(document, shapeIds)
+                )
+                    ? 'Stack placement controls canvas transforms. Change the size in Inspector or choose another parent.'
+                    : ''
+            ]
+                .filter(Boolean)
+                .join(' '),
+            orderShapeIds: [...withTheirGroups(document, shapeIds, null)],
+            stackOrder: frame ? frame.layoutOrder : shapes[0]?.layoutOrder,
+            inStack: frame
+                ? Boolean(document.frames[frame.parentFrameId ?? '']?.stack)
+                : shapes.length > 0 &&
+                  shapes.every((shape) =>
+                      Boolean(document.frames[shape.parentFrameId ?? '']?.stack)
+                  ),
             value: problem ? (frame?.parentFrameId ?? '') : value,
             choices,
             problem,
