@@ -805,3 +805,57 @@ it('moves a visible frame together with its already hidden descendants', () => {
     expect(document.frames[child]).toMatchObject({ position: { x: 160, y: 120 }, visible: false });
     expect(document.shapes[shape]).toMatchObject({ position: { x: 180, y: 140 }, visible: true });
 });
+
+it('unselects the shapes a frame holds when the frame is hidden, here or by another copy', () => {
+    const { store } = createTestStore();
+    const { root, shape } = setup(store);
+    const outside = addShape(store);
+    const document = store.state.currentDocument;
+    store.actions.selectShape(shape);
+    store.actions.selectShape(outside);
+    expect(document.shapes[shape].selected).toBe(true);
+    store.actions.editFrame({ kind: 'toggle', id: root, flag: 'visible' });
+    expect(document.shapes[shape].selected).toBe(false);
+    expect(document.shapes[outside].selected).toBe(true);
+    const context = { state: store.state };
+    expect(CloneCommand.canExecute(context)).toBe(true);
+    store.actions.runCommand(CloneCommand);
+    expect(
+        document.shapesIds.filter((id) => document.shapes[id].parentFrameId !== undefined)
+    ).toEqual([shape]);
+});
+
+it('unselects shapes when another copy hides their frame', async () => {
+    const copies = await createCopies(2, (store) => setup(store));
+    const [a, b] = copies;
+    const root = Object.values(shownDocument(a).frames).find(
+        (frame) => frame.name === 'Screen'
+    )!.id;
+    const shape = shownDocument(b).shapesIds[0];
+    edit(b, (actions) => actions.selectShape(shape));
+    edit(a, (actions) => actions.editFrame({ kind: 'toggle', id: root, flag: 'visible' }));
+    settle(copies);
+    expect(shownDocument(b).frames[root].visible).toBe(false);
+    expect(shownDocument(b).shapes[shape].selected).toBe(false);
+});
+
+it('leaves what a locked frame holds hidden on Show all, as it is', () => {
+    const { store } = createTestStore();
+    const { root, child, shape } = setup(store);
+    const outside = addShape(store);
+    const document = store.state.currentDocument;
+    store.actions.toggleShapeVisible(shape);
+    store.actions.toggleShapeVisible(outside);
+    store.actions.editFrame({ kind: 'toggle', id: child, flag: 'visible' });
+    store.actions.editFrame({ kind: 'toggle', id: root, flag: 'visible' });
+    store.actions.editFrame({ kind: 'toggle', id: root, flag: 'locked' });
+    store.actions.showAll();
+    expect(document.frames[root].visible).toBe(true);
+    expect(document.frames[child].visible).toBe(false);
+    expect(document.shapes[shape].visible).toBe(false);
+    expect(document.shapes[outside].visible).toBe(true);
+    store.actions.editFrame({ kind: 'toggle', id: root, flag: 'locked' });
+    store.actions.showAll();
+    expect(document.frames[child].visible).toBe(true);
+    expect(document.shapes[shape].visible).toBe(true);
+});

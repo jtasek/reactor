@@ -1,6 +1,6 @@
 import type { Action, Application, Document } from './types';
 import { selectedItems } from './membership';
-import { lockedFrameForShapes } from './frameState';
+import { frameState, lockedFrameForShapes } from './frameState';
 import { unbind } from './variables';
 
 /** Flag commands must not change descendants of locked frames. */
@@ -36,23 +36,29 @@ export const hideSelection: Action = ({ state }) => {
     });
 };
 
+/** Show all leaves what a locked frame holds as it is; a frame's own lock does not stop it. */
 export const showAll: Action = ({ state, actions }) => {
-    const { shapes, groups, layers, frames } = state.currentDocument;
+    const document = state.currentDocument;
+    const { shapes, groups, layers, frames } = document;
+    const hiddenShapes = Object.values(shapes).filter(
+        (shape) => !shape.visible && !lockedFrameForShapes(document, [shape.id])
+    );
+    const hiddenGroups = Object.values(groups).filter(
+        (group) => !group.visible && !lockedFrameForShapes(document, group.shapesIds)
+    );
+    const hiddenFrames = Object.values(frames).filter((frame) => {
+        const lockedBy = frameState(document, frame.id)?.lockedBy;
+
+        return !frame.visible && (lockedBy === undefined || lockedBy === frame.id);
+    });
+    const hiddenLayers = Object.values(layers).filter((layer) => !layer.visible);
 
     actions.showAllLayers();
 
-    Object.values(shapes).forEach((shape) => {
-        if (!shape.visible) {
-            unbind(shape, 'visible');
-        }
+    hiddenShapes.forEach((shape) => unbind(shape, 'visible'));
+    [...hiddenShapes, ...hiddenGroups, ...hiddenFrames, ...hiddenLayers].forEach((item) => {
+        item.visible = true;
     });
-    [shapes, groups, layers, frames].forEach((table) =>
-        Object.values(table).forEach((item) => {
-            if (!item.visible) {
-                item.visible = true;
-            }
-        })
-    );
 };
 
 const setSelectionLocked = ({ currentDocument }: Application, locked: boolean) => {

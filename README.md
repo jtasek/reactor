@@ -134,7 +134,8 @@ cycles appear as roots with an Inspector diagnostic and can be repaired through 
 Hide a frame in Explorer to hide its nested frames and artwork everywhere, including previews.
 Locking a frame prevents edits to its descendants, including reparenting; their individual
 Hide/Lock flags stay intact. Inspector explains inherited restrictions. Show or unlock the
-parent in Explorer to recover; **Show all** also reveals hidden frames. A remote Hide or Lock
+parent in Explorer to recover; **Show all** also reveals hidden frames, except inside a
+locked frame. Hiding a frame unselects the shapes in it. A remote Hide or Lock
 cancels a descendant drag on its next pointer event without losing that remote change.
 Automatic layout, clipping and interactive screen behavior remain later increments.
 

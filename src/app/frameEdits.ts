@@ -1,4 +1,10 @@
-import { frameState, isFrameVisible, isFrameLocked, lockedFrameForShapes } from './frameState';
+import {
+    frameState,
+    isFrameVisible,
+    isFrameLocked,
+    lockedFrameForShapes,
+    unselectHiddenFrameShapes
+} from './frameState';
 import { json } from 'overmind';
 import type { Context } from './index';
 import type { Frame, Point, ResizeHandlerType, Shape } from './types';
@@ -231,6 +237,8 @@ export function edit(context: Context, input: FrameEdit): string | undefined {
         if (document.selectedFrameId && !isFrameVisible(document, document.selectedFrameId)) {
             delete document.selectedFrameId;
         }
+
+        unselectHiddenFrameShapes(document);
 
         return frame.id;
     }

@@ -461,7 +461,9 @@ Frame Hide/Lock applies to the subtree through the local derived `frameStates` p
 into descendants or persist/share the projection. Hidden descendants leave hit testing,
 selection, snapping and previews; inherited locks gate properties, flag edits, reparenting and
 operation batches. Explorer retains ancestors' Show/Unlock controls and Inspector explains the
-restriction. Show all reveals frames too. Ancestor Hide/Lock during a gesture cancels it on
+restriction. Hiding a frame, here or in another copy, unselects the shapes it holds
+(`unselectHiddenFrameShapes`). Show all reveals frames too, but leaves what a locked frame
+holds hidden; a frame's own lock does not stop it. Ancestor Hide/Lock during a gesture cancels it on
 the next local pointer event, outside remote apply so rollback is shared. Group and selection visibility editing also
 load through editor helpers (`groupEdits.ts`, `visibilityEdits.ts`). Stacks and interactive roles remain next in
 APPLICATION_PLAN.

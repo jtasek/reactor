@@ -1,4 +1,5 @@
 import type { Document, Frame } from './types';
+import { untracked } from './untracked';
 
 /** Missing parents and every edge inside a cycle are roots in the local view only. */
 export function frameParents(frames: Record<string, Frame>) {
@@ -98,4 +99,21 @@ export function lockedFrameForShapes(document: Document, ids: string[]) {
     return ids.some(
         (id) => states[document.shapes[id]?.parentFrameId ?? '']?.lockedBy !== undefined
     );
+}
+
+/** Shapes a hidden frame holds cannot stay selected, as hiding a shape unselects it. */
+export function unselectHiddenFrameShapes(document: Document) {
+    const states = frameStatesOf(document);
+
+    if (!Object.values(states).some((state) => state.hiddenBy !== undefined)) {
+        return;
+    }
+
+    Object.values(untracked(document).shapes)
+        .filter(
+            (shape) => shape.selected && states[shape.parentFrameId ?? '']?.hiddenBy !== undefined
+        )
+        .forEach((shape) => {
+            document.shapes[shape.id].selected = false;
+        });
 }
