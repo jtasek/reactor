@@ -492,7 +492,9 @@ local diagnostics, never repairs. Acyclic dependents still resolve. Minimums win
 maximums, keeping concurrently merged rules editable. Unsupported contexts retain intrinsic
 geometry with diagnostics. `frameLayout` carries projected sizes too; measurement must not
 write projected rectangle sizes back into authored bounds. Explicit detach/Free/deletion bakes
-visible sizes as well as positions. Preserve sizing rules through readers, operations, copy,
+visible sizes as well as positions, and drops the sizing rules of shapes it takes out of
+stack control, as grouping does. Only stack placement stops a frame's canvas move; Hug, Fill or a
+clamped size stops only its canvas resize (`frameSizedByLayout`). Preserve sizing rules through readers, operations, copy,
 collaboration and undo. Tests are `tests/stackSizing.test.ts` and `tests/browser/stackSizing.spec.ts`.
 Gesture implementations (`src/events/pointerEdits.ts`) load through `editorHelpers().pointer`;
 startup delegates retain a safe no-op cancellation before editor loading.

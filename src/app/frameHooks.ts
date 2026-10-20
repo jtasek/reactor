@@ -1,4 +1,5 @@
 import { withTheirGroups } from './membership';
+import { hasSizingRules } from './stackSizing';
 import {
     frameLayout,
     hasLayoutOffset,
@@ -190,7 +191,7 @@ export const useSizingTarget = (frameId?: string, shapeId?: string) =>
             size: frame?.size ?? (shape?.type === 'rectangle' ? shape.size : undefined),
             problem: target
                 ? (frameLayout(document).problems[target.id] ??
-                  (!supported && Object.keys(target.sizing ?? {}).length > 0
+                  (!supported && hasSizingRules(target.sizing)
                       ? 'Sizing rules require an unrotated, ungrouped rectangle in a stack. Intrinsic size is retained.'
                       : undefined))
                 : undefined,

@@ -17,6 +17,12 @@ export function releaseStackPositions(
     const layout = frameLayout(document);
     const frames = new Map<string, Frame>();
     const artwork = new Map<string, Shape>();
+    // Shapes leaving stack control keep their drawn size, so their sizing rules no longer apply.
+    const unsized = new Set<string>();
+    const stackAfter = (id: string | undefined) =>
+        id !== undefined &&
+        !deleted.includes(id) &&
+        Boolean((updates.find((frame) => frame.id === id) ?? document.frames[id])?.stack);
     const targetOffset = (parent: string | undefined) =>
         layout.frames[parent ?? ''] ?? { x: 0, y: 0 };
     const captureShape = (id: string, parent: string | undefined) => {
@@ -43,7 +49,10 @@ export function releaseStackPositions(
             .forEach((frame) => captureFrame(frame.id, parent));
         Object.values(document.shapes)
             .filter((shape) => shape.parentFrameId === id)
-            .forEach((shape) => captureShape(shape.id, parent));
+            .forEach((shape) => {
+                captureShape(shape.id, parent);
+                unsized.add(shape.id);
+            });
     };
 
     deleted.forEach((id) => releaseChildren(id, undefined));
@@ -71,14 +80,19 @@ export function releaseStackPositions(
             'parentFrameId' in fields &&
             fields.parentFrameId !== document.shapes[id]?.parentFrameId
         ) {
-            captureShape(
-                id,
-                typeof fields.parentFrameId === 'string' ? fields.parentFrameId : undefined
-            );
+            const parent =
+                typeof fields.parentFrameId === 'string' ? fields.parentFrameId : undefined;
+            captureShape(id, parent);
+            if (!stackAfter(parent)) {
+                unsized.add(id);
+            }
         }
     });
 
     artwork.forEach((shape, id) => applyPlacement(document.shapes[id], shape));
+    unsized.forEach((id) => {
+        delete document.shapes[id].sizing;
+    });
     frames.forEach((frame, id) => {
         const update = updates.find((item) => item.id === id);
         const original = document.frames[id];
@@ -169,6 +183,16 @@ export function materializeGroupPlacement(
     }
     const layout = frameLayout(document);
     const offset = layout.frames[parent ?? ''] ?? { x: 0, y: 0 };
+    const copies = ids.map((id) => {
+        const copy = json(renderedShape(document, id, layout));
+        translateShape(copy, { x: -offset.x, y: -offset.y });
+
+        return copy;
+    });
+    // Grouped shapes keep their drawn size; sizing rules apply only to ungrouped rectangles.
+    ids.forEach((id) => {
+        delete document.shapes[id]?.sizing;
+    });
     if (
         offset.x === 0 &&
         offset.y === 0 &&
@@ -176,12 +200,6 @@ export function materializeGroupPlacement(
     ) {
         return;
     }
-    const copies = ids.map((id) => {
-        const copy = json(renderedShape(document, id, layout));
-        translateShape(copy, { x: -offset.x, y: -offset.y });
-
-        return copy;
-    });
     copies.forEach((copy) => applyPlacement(document.shapes[copy.id], copy));
 }
 

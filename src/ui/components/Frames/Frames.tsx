@@ -1,4 +1,4 @@
-import { renderedFrame, frameHasLayoutOffset } from 'src/app/frameLayout';
+import { renderedFrame, frameHasLayoutOffset, frameSizedByLayout } from 'src/app/frameLayout';
 import React, { type FC } from 'react';
 import { useActions, useAppState, useCameraScale, useGesture } from 'src/app/hooks';
 import { isReadOnly } from 'src/app/documentAccess';
@@ -23,7 +23,11 @@ const CanvasFrame: FC<{ id: string; interactive: boolean }> = ({ id, interactive
         drawing: state.tools.activeToolsIds[0] !== 'select'
     }));
     const locked = useFrameLocked(id);
-    const inLayout = useAppState((state) => frameHasLayoutOffset(state.currentDocument, id));
+    const inLayout = useAppState(
+        (state) =>
+            frameHasLayoutOffset(state.currentDocument, id) ||
+            frameSizedByLayout(state.currentDocument, id)
+    );
     const zoom = useCameraScale();
     const scale = interactive ? zoom : 1;
     const gesture = useGesture();

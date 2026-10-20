@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { createDocument, createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
 import { openEditor, pointer } from './support/editor';
@@ -75,4 +75,53 @@ test('edits hug/fill and constraints, shows cycles, hit tests sizes, and reloads
     await explorer.getByRole('button', { name: 'Stack', exact: true }).click();
     await expect(page.getByLabel('Height sizing', { exact: true })).toHaveValue('hug');
     await expect(page.getByLabel('Min height', { exact: true })).toHaveValue('90');
+});
+
+const undoButton = (page: Page) =>
+    page.getByRole('list', { name: 'Commands' }).getByRole('button', { name: 'Undo', exact: true });
+
+test('leaving constraint fields unchanged writes nothing', async ({ page }) => {
+    const a = createShape({
+        type: 'rectangle',
+        name: 'Item',
+        order: 'a0',
+        position: { x: 600, y: 600 },
+        size: { width: 40, height: 30 },
+        parentFrameId: 'stack'
+    });
+    const document = createDocument({
+        id: 'sizing-document',
+        frames: {
+            stack: {
+                id: 'stack',
+                name: 'Stack',
+                position: { x: 100, y: 100 },
+                size: { width: 300, height: 200 },
+                visible: true,
+                locked: false,
+                stack: { direction: 'row', gap: 10, padding: 20, align: 'start' },
+                sizing: { height: { mode: 'fixed', max: 250 } }
+            }
+        },
+        shapes: { [a.id]: a }
+    });
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await openEditor(page, ['Inspector', 'Explorer']);
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    for (const name of ['Item', 'Stack']) {
+        await explorer.getByRole('button', { name, exact: true }).click();
+        for (const label of ['Min width', 'Max width', 'Min height', 'Max height']) {
+            await page.getByLabel(label, { exact: true }).focus();
+            await page.getByLabel(label, { exact: true }).blur();
+        }
+    }
+    await expect(page.getByLabel('Max height', { exact: true })).toHaveValue('250');
+    await expect(undoButton(page)).toBeDisabled();
+    await page.getByLabel('Min width', { exact: true }).fill('20');
+    await page.getByLabel('Min width', { exact: true }).press('Enter');
+    await expect(undoButton(page)).toBeEnabled();
 });

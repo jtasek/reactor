@@ -14,6 +14,12 @@ const mainAxis = (rules: StackRules) => (rules.direction === 'row' ? 'width' : '
 const key = (item: Pick<SizingItem, 'id' | 'kind'>, axis: keyof Size) =>
     `${item.kind}:${item.id}:${axis}`;
 
+/** Whether rules change anything: Hug, Fill or a constraint on an axis; plain Fixed does not. */
+export const hasSizingRules = (sizing: Sizing | undefined) =>
+    Object.values(sizing ?? {}).some(
+        (rule) => rule.mode !== 'fixed' || rule.min !== undefined || rule.max !== undefined
+    );
+
 interface Node {
     dependencies: string[];
     fallback: number;
@@ -166,7 +172,7 @@ export function projectStackSizes(
         })
     );
     Object.values(document.shapes).forEach((shape) => {
-        if (!shape.sizing || supported.has(shape.id)) {
+        if (!hasSizingRules(shape.sizing) || supported.has(shape.id)) {
             return;
         }
         problems[shape.id] =

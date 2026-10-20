@@ -32,18 +32,16 @@ const Constraint: FC<{
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}
                     onBlur={() => {
-                        if (!draft.trim()) {
-                            onCommit(undefined);
-
-                            return;
-                        }
-                        const number = Number(draft);
-                        if (!Number.isFinite(number) || number < 0) {
+                        const number = draft.trim() ? Number(draft) : undefined;
+                        if (number !== undefined && (!Number.isFinite(number) || number < 0)) {
                             setDraft(value === undefined ? '' : String(value));
 
                             return;
                         }
-                        onCommit(number);
+                        // Leaving a field unchanged writes nothing.
+                        if (number !== value) {
+                            onCommit(number);
+                        }
                     }}
                     onKeyDown={(event) => {
                         if (event.key === 'Enter') {
@@ -147,7 +145,13 @@ export const SizingFields: FC<{ frameId?: string; shapeId?: string }> = ({ frame
                                 label={`${bound === 'min' ? 'Min' : 'Max'} ${axis}`}
                                 value={rule[bound]}
                                 disabled={disabled}
-                                onCommit={(value) => change(axis, { ...rule, [bound]: value })}
+                                onCommit={(value) => {
+                                    const next = { ...rule, [bound]: value };
+                                    if (value === undefined) {
+                                        delete next[bound];
+                                    }
+                                    change(axis, next);
+                                }}
                             />
                         ))}
                     </React.Fragment>

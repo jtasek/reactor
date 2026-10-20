@@ -381,17 +381,18 @@ export function frameHasLayoutOffset(document: Document, id: string) {
     const layout = frameLayout(document);
     const delta = layout.frames[id];
 
-    return (
-        layout.managedFrames.has(id) ||
-        Boolean(delta?.x || delta?.y) ||
-        Object.values(document.frames[id]?.sizing ?? {}).some(
-            (rule) => rule.mode !== 'fixed' || rule.min !== undefined || rule.max !== undefined
-        ) ||
-        Boolean(
-            layout.frameSizes[id] &&
-            (layout.frameSizes[id].width !== document.frames[id].size.width ||
-                layout.frameSizes[id].height !== document.frames[id].size.height)
-        )
+    return layout.managedFrames.has(id) || Boolean(delta?.x || delta?.y);
+}
+
+/** Hug or Fill, or a constraint that changes it, decides the drawn size, so the canvas cannot resize it. */
+export function frameSizedByLayout(document: Document, id: string) {
+    const frame = document.frames[id];
+    const size = frameLayout(document).frameSizes[id];
+
+    return Boolean(
+        frame &&
+        (Object.values(frame.sizing ?? {}).some((rule) => rule.mode !== 'fixed') ||
+            (size && (size.width !== frame.size.width || size.height !== frame.size.height)))
     );
 }
 

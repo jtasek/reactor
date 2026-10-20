@@ -397,3 +397,95 @@ it('retains and diagnoses min/max conflicts produced by concurrent edits, and un
     settle(copies);
     expect(shownDocument(b).shapes[id].sizing?.width).toEqual({ mode: 'fill', min: 20, max: 80 });
 });
+
+describe('canvas transforms of sized frames', () => {
+    const drag = (
+        store: ReturnType<typeof createTestStore>['store'],
+        id: string,
+        type: 'move' | 'bottomRight'
+    ) => {
+        const started = store.actions.events.beginGesture({
+            pointerId: 1,
+            position: { x: 400, y: 300 },
+            handle: { frameId: id, type }
+        });
+        store.actions.events.movePointer({ pointerId: 1, position: { x: 450, y: 340 } });
+        store.actions.events.endGesture({ pointerId: 1, position: { x: 450, y: 340 } });
+
+        return started;
+    };
+    const addFrame = (store: ReturnType<typeof createTestStore>['store'], changes: object) => {
+        const id = store.actions.editFrame({
+            kind: 'add',
+            position: { x: 100, y: 100 },
+            size: { width: 300, height: 200 }
+        })!;
+        store.actions.editFrame({ kind: 'update', id, changes });
+
+        return id;
+    };
+
+    it('moves a top-level Hug stack but does not resize it', () => {
+        const { store } = createTestStore();
+        const id = addFrame(store, {
+            stack: frame('root').stack,
+            sizing: { width: { mode: 'hug' } }
+        });
+        const frames = () => store.state.currentDocument.frames;
+        expect(drag(store, id, 'move')).toBe(true);
+        expect(frames()[id].position).toEqual({ x: 150, y: 140 });
+        expect(drag(store, id, 'bottomRight')).toBe(false);
+        expect(frames()[id].size).toEqual({ width: 300, height: 200 });
+    });
+
+    it('moves and resizes a free frame that only has constraints it meets', () => {
+        const { store } = createTestStore();
+        const id = addFrame(store, { sizing: { width: { mode: 'fixed', min: 10 } } });
+        expect(drag(store, id, 'bottomRight')).toBe(true);
+        expect(store.state.currentDocument.frames[id].size).toEqual({ width: 350, height: 240 });
+        expect(drag(store, id, 'move')).toBe(true);
+        expect(store.state.currentDocument.frames[id].position).toEqual({ x: 150, y: 140 });
+    });
+});
+
+it('drops sizing rules from rectangles leaving stack control, so no stale warning stays', () => {
+    const { store } = createTestStore();
+    const id = store.state.currentDocumentId;
+    const root = store.actions.editFrame({
+        kind: 'add',
+        position: { x: 100, y: 100 },
+        size: { width: 300, height: 200 }
+    })!;
+    store.actions.editFrame({ kind: 'update', id: root, changes: { stack: frame('root').stack } });
+    const add = () => {
+        store.actions.addShape({
+            type: 'rectangle',
+            parentFrameId: root,
+            position: { x: 500, y: 500 },
+            size: { width: 40, height: 30 },
+            sizing: { width: { mode: 'fill' } }
+        });
+
+        return store.state.currentDocument.shapesIds.at(-1)!;
+    };
+    const [a, b, c] = [add(), add(), add()];
+    const problems = () => projectFrameLayout(store.state.currentDocument).problems;
+    store.actions.editFrame({ kind: 'reparentShapes', ids: [a], parentFrameId: null });
+    expect(store.state.currentDocument.shapes[a].sizing).toBeUndefined();
+    expect(problems()[a]).toBeUndefined();
+    store.actions.selectShape(b);
+    store.actions.selectShape(c);
+    store.actions.groupSelection();
+    expect(store.state.currentDocument.shapes[b].sizing).toBeUndefined();
+    expect(problems()[b]).toBeUndefined();
+    expect(
+        store.actions.applyOperations({
+            documentId: id,
+            by: { kind: 'person' },
+            operations: [
+                { op: 'updateShape', shape: a, changes: { sizing: { width: { mode: 'fixed' } } } }
+            ]
+        }).applied
+    ).toBe(true);
+    expect(problems()[a]).toBeUndefined();
+});
