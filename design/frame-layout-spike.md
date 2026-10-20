@@ -1,7 +1,8 @@
 # R4 frame layout spike
 
 Status: first spike complete, 2026-10-19. This is test-only research, not a shipped frame
-editor or a durable document format. The editor still behaves as before.
+editor or a durable document format. Production fixed stacks are now implemented separately in
+`src/app/frameLayout.ts`; see APPLICATION_PLAN.md for shipped behavior and remaining limits.
 
 ## Result
 

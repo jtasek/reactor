@@ -216,7 +216,7 @@ re-renders.** Components never mutate state directly.
   `bottomRight`, `center`, `radius`, `offset`).
 - **Actions** (`src/app/actions/`): one file per domain (`shape.ts`, `link.ts`, …),
   re-exported from `actions/index.ts`. Actions receive the Overmind `Context` and mutate
-  state in place. `src/app/actions/shape.ts` is the canonical pattern (private
+  state in place. `src/app/shapeEdits.ts` is the canonical editor action pattern (private
   `getShape`/`putOnTop`/`deleteShape` helpers + exported actions).
 - **Effects** (`src/app/effects.ts`): impure helpers (`newId`, localStorage, routing,
   `collaboration`, `openDocumentDatabase`, `openChannel`). Call them from actions (`effects.newId()`); don't import those libs
@@ -465,8 +465,25 @@ restriction. Hiding a frame, here or in another copy, unselects the shapes it ho
 (`unselectHiddenFrameShapes`). Show all reveals frames too, but leaves what a locked frame
 holds hidden; a frame's own lock does not stop it. Ancestor Hide/Lock during a gesture cancels it on
 the next local pointer event, outside remote apply so rollback is shared. Group and selection visibility editing also
-load through editor helpers (`groupEdits.ts`, `visibilityEdits.ts`). Stacks and interactive roles remain next in
-APPLICATION_PLAN.
+load through editor helpers (`groupEdits.ts`, `visibilityEdits.ts`). Shape actions delegate to
+`shapeEdits.ts`, also provided by the editor; keep the clipboard entry guards in startup.
+
+Frames may have fixed `stack` rules (row/column, gap, padding, cross-axis align). `layoutOrder`
+on a child is separate from z order. `frameLayout.ts` derives offsets from authored canvas
+fallbacks without writing them to shared data, using cycle roots from `frameParents`. Groups
+are one slot, hidden slots are omitted, overflow remains visible, and split groups diagnose
+and leave that frame free. Use `renderedShape`/`renderedFrame` or read-only `layoutDocument`
+for drawing, extents, hit tests, measurements and previews. Never mutate these views.
+Measurements translate back to authored bounds; geometry keys use authored shapes to avoid
+remeasuring every reflow. A deliberate membership/grouping change, component conversion, Free or boundary deletion bakes the visible
+geometry through `stackEdits.ts`; ordinary reflow never does. Inspector's Stack order is a place among the
+shown slots (`layout.slots`); moving there writes one order between the new neighbors
+(`orderAtPosition`), which may be negative. Frame and rectangle/image sizing
+is available in Inspector, images retain their ratio. Canvas transforms of projected content
+are disabled; remote layout takeover cancels an active transform. Source-only masters stay
+outside frames. Stack rules/order survive schema v8, copy, operations, sync and undo; v7 loads.
+`tests/stackLayout.test.ts` includes production-copy convergence/undo and no feedback; browser
+coverage is `tests/browser/stacks.spec.ts`. Hug/fill, min/max and interactive roles remain next.
 
 ## Groups and layers
 

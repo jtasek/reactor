@@ -1,3 +1,4 @@
+import { layoutDocument } from 'src/app/frameLayout';
 import React, { FC, ReactNode, useLayoutEffect, useRef } from 'react';
 import { useVariableContext } from 'src/app/hooks';
 import { isFrameVisible } from 'src/app/frameState';
@@ -228,7 +229,8 @@ const PreviewShape: FC<{
     );
 };
 
-export const DocumentThumbnail: FC<{ document: Document }> = ({ document }) => {
+export const DocumentThumbnail: FC<{ document: Document }> = ({ document: sourceDocument }) => {
+    const document = layoutDocument(sourceDocument);
     const svgRef = useRef<SVGSVGElement>(null);
     const contentRef = useRef<SVGGElement>(null);
     const shown = shownShapesIds({ ...document, shownLayerId: undefined }, null);

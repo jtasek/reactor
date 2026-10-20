@@ -3,6 +3,7 @@ import { documentsIds } from './computed/documents';
 import {
     framesIds,
     frameStates,
+    frameLayout,
     commandsIds,
     componentsIds,
     sourceOnlyShapesIds,
@@ -262,6 +263,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
         ...options,
         framesIds,
         frameStates,
+        frameLayout,
         componentsIds,
         sourceOnlyShapesIds,
         selectedComponentsIds,

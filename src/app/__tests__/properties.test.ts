@@ -50,7 +50,7 @@ describe('applyProperty()', () => {
     it('does not write read-only properties', () => {
         const shape = rect();
 
-        applyProperty(property('width'), shape, 99);
+        applyProperty({ ...property('width'), write: undefined }, shape, 99);
 
         expect(shape).toMatchObject({ size: { width: 40 } });
     });

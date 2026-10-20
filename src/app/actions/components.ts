@@ -1,3 +1,4 @@
+import { editorHelpers } from '../editorHelpers';
 import { Action, ActionWithParam, Application, Component, Point, PropertyValue } from '../types';
 import { createComponent, createShape, instanceName } from '../factories';
 import { componentSource } from '../componentSource';
@@ -162,6 +163,11 @@ export const createComponentFromSelection: Action = ({ state, actions }) => {
         return;
     }
 
+    const parentFrameId = document.shapes[ids[ids.length - 1]].parentFrameId;
+    const layoutOrder = Math.min(
+        ...ids.map((id) => document.shapes[id].layoutOrder ?? Number.MAX_SAFE_INTEGER)
+    );
+    editorHelpers().groups.materializeGroupPlacement(document, ids, parentFrameId);
     const component = createComponent({ shapesIds: ids, sourceOnly: true });
     setComponent(state, component);
     const source = componentSource(document, component.id);
@@ -173,7 +179,6 @@ export const createComponentFromSelection: Action = ({ state, actions }) => {
     }
 
     const topId = ids[ids.length - 1];
-    const parentFrameId = document.shapes[topId].parentFrameId;
     const layerId = shapeLayer(document, topId)?.id ?? null;
     resolveDrawOrderTies(document.shapesIds.map((id) => document.shapes[id]));
     const index = document.shapesIds.indexOf(topId);
@@ -190,6 +195,7 @@ export const createComponentFromSelection: Action = ({ state, actions }) => {
     const instance = createShape({
         type: 'instance',
         parentFrameId,
+        ...(layoutOrder === Number.MAX_SAFE_INTEGER ? {} : { layoutOrder }),
         componentId: component.id,
         name: instanceName(
             component.name,

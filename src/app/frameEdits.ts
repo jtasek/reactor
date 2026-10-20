@@ -1,3 +1,4 @@
+import { layoutDocument, frameHasLayoutOffset, hasLayoutOffset } from './frameLayout';
 import {
     frameState,
     isFrameVisible,
@@ -18,13 +19,7 @@ import { resizeBox, assertNever, isShapeVisible } from './utils';
 import { withTheirGroups } from './membership';
 import { unbindMovedProperties } from './variables';
 import { CLONE_OFFSET, translateShape } from './geometry';
-import {
-    deleteFrame,
-    frameContents,
-    frameParents,
-    validFrameParent,
-    frameMoveProblem
-} from './frameMembership';
+import { frameContents, frameParents, validFrameParent, frameMoveProblem } from './frameMembership';
 import { editorHelpers } from './editorHelpers';
 import { untracked } from './untracked';
 
@@ -76,6 +71,7 @@ function addFrame(context: Context, input: Extract<FrameEdit, { kind: 'add' | 'p
             position,
             size: input.kind === 'add' ? input.size : input.frame.size,
             ...(source?.parentFrameId === undefined ? {} : { parentFrameId: source.parentFrameId }),
+            ...(source?.stack ? { stack: source.stack } : {}),
             locked: false,
             visible: true
         })
@@ -281,7 +277,11 @@ export function edit(context: Context, input: FrameEdit): string | undefined {
             return;
         }
 
-        deleteFrame(document, frame.id);
+        actions.applyOperations({
+            documentId: document.id,
+            by: { kind: 'person' },
+            operations: [{ op: 'deleteFrame', frame: frame.id }]
+        });
 
         return;
     }
@@ -345,6 +345,7 @@ export function begin(
     if (
         !frame ||
         !isFrameVisible(state.currentDocument, frame.id) ||
+        frameHasLayoutOffset(state.currentDocument, frame.id) ||
         isFrameLocked(state.currentDocument, frame.id) ||
         state.currentDocument.locked ||
         isReadOnly(state)
@@ -480,6 +481,11 @@ export interface CopiedFrame {
 }
 
 export function writeClipboard(frame: Frame, document?: Context['state']['currentDocument']) {
+    if (document) {
+        document = layoutDocument(document);
+        frame = document.frames[frame.id];
+    }
+
     const contents = document
         ? frameContents(untracked(document), frame.id)
         : { frames: [], shapes: [] };
@@ -508,7 +514,8 @@ export function writeClipboard(frame: Frame, document?: Context['state']['curren
         members: shapes.map((shape) => ({
             parentFrameId: shape.parentFrameId,
             locked: shape.locked,
-            visible: shape.visible
+            visible: shape.visible,
+            layoutOrder: shape.layoutOrder
         }))
     });
 }
@@ -563,7 +570,10 @@ export function readClipboard(text: string): CopiedFrame | undefined {
                     typeof member?.parentFrameId !== 'string' ||
                     !Object.hasOwn(frames, member.parentFrameId) ||
                     typeof member.locked !== 'boolean' ||
-                    typeof member.visible !== 'boolean'
+                    typeof member.visible !== 'boolean' ||
+                    (member.layoutOrder !== undefined &&
+                        (typeof member.layoutOrder !== 'number' ||
+                            !Number.isFinite(member.layoutOrder)))
             )
         ) {
             return;
@@ -574,7 +584,8 @@ export function readClipboard(text: string): CopiedFrame | undefined {
             Object.assign(shape, {
                 parentFrameId: member.parentFrameId,
                 locked: member.locked,
-                visible: member.visible
+                visible: member.visible,
+                ...(member.layoutOrder === undefined ? {} : { layoutOrder: member.layoutOrder })
             });
         });
 
@@ -586,7 +597,9 @@ export function readClipboard(text: string): CopiedFrame | undefined {
 export function gestureBlocked(document: Context['state']['currentDocument'], gesture: Gesture) {
     if (gesture.kind === 'editingFrame') {
         return (
-            !isFrameVisible(document, gesture.frameId) || isFrameLocked(document, gesture.frameId)
+            frameHasLayoutOffset(document, gesture.frameId) ||
+            !isFrameVisible(document, gesture.frameId) ||
+            isFrameLocked(document, gesture.frameId)
         );
     }
 
@@ -601,7 +614,10 @@ export function gestureBlocked(document: Context['state']['currentDocument'], ge
                 : document.editableSelectedShapesIds
             : Object.keys(gesture.shapes);
 
-    if (lockedFrameForShapes(document, ids)) {
+    if (
+        lockedFrameForShapes(document, ids) ||
+        ((gesture.kind !== 'moving' || gesture.dragged) && hasLayoutOffset(document, ids))
+    ) {
         return true;
     }
 

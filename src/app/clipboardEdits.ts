@@ -1,3 +1,5 @@
+import { renderedShape } from './frameLayout';
+import { initializeStackOrder } from './stackEdits';
 import { isFrameLocked, lockedFrameForShapes } from './frameState';
 import { orderAbove } from './drawOrder';
 import { CLONE_OFFSET, translateShape } from './geometry';
@@ -29,7 +31,7 @@ const selectedInDrawOrder = ({ currentDocument }: Application) => {
 
     return currentDocument.shapesIds
         .filter((id) => selected.has(id))
-        .map((id) => currentDocument.shapes[id]);
+        .map((id) => renderedShape(currentDocument, id));
 };
 
 /** The groups selected as one, with the shapes of theirs that are shown, as only those are copied. */
@@ -320,4 +322,10 @@ export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shape
             group.shapesIds = [...group.shapesIds, ...copies];
         }
     }
+
+    // Clones in a stack join its order, after its other items or with their group.
+    initializeStackOrder(
+        currentDocument,
+        clonesOf([...cloning]).map((id) => shapes[id].parentFrameId ?? '')
+    );
 };

@@ -1,3 +1,4 @@
+import { hasLayoutOffset } from 'src/app/frameLayout';
 import React, { CSSProperties, FC, createElement, memo, useLayoutEffect, useRef } from 'react';
 import { Active } from '../Active/Active';
 import { Label } from '../Label';
@@ -61,7 +62,9 @@ export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup, minimap = 
         shape.type === 'instance'
             ? null
             : (getComponentByType(shape.type) as FC<Omit<ShapeType, 'key'>>);
-    const geometryKey = `${shapeGeometryKey(shape)}:${source?.key ?? ''}:${variableKey}`;
+    const authored = useAppState((state) => state.currentDocument.shapes[shapeId]);
+    const inLayout = hasLayoutOffset(document, [shapeId]);
+    const geometryKey = `${shapeGeometryKey(authored)}:${source?.key ?? ''}:${variableKey}`;
 
     // Measure the actual rendered geometry so the selection box, handles and
     // label match exactly. getBBox returns local (canvas) coordinates, so it is
@@ -162,7 +165,7 @@ export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup, minimap = 
                 <>
                     <Selectable key={`selectable-${shape.type}-${shape.id}`} shape={shape} />
                     {/* Locked shapes stay selectable but cannot be resized or rotated. */}
-                    {!locked && (
+                    {!locked && !inLayout && (
                         <Resizable key={`resizable-${shape.type}-${shape.id}`} shape={shape} />
                     )}
                     <Label key={`label-${shape.type}-${shape.id}`} shape={shape} />

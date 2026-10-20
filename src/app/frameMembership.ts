@@ -1,3 +1,4 @@
+import { frameHasLayoutOffset } from './frameLayout';
 import type { Document, Frame } from './types';
 
 import { frameParents } from './frameState';
@@ -72,6 +73,9 @@ export function validFrameParent(
 
 /** A container move must neither bypass a lock nor deform a group split by a merge. */
 export function frameMoveProblem(document: Document, id: string) {
+    if (frameHasLayoutOffset(document, id)) {
+        return 'Stack placement controls canvas transforms. Change the size in Inspector or choose another parent.';
+    }
     const contents = frameContents(document, id);
 
     const lockedMembers = new Set(

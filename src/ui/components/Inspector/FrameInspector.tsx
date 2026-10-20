@@ -1,3 +1,4 @@
+import { renderedFrame, frameLayout } from 'src/app/frameLayout';
 import React, { type FC, useEffect, useState } from 'react';
 import { useActions, useAppState } from 'src/app/hooks';
 import { useFrameMoveProblem, useFrameLocked } from 'src/app/frameHooks';
@@ -61,8 +62,9 @@ const Field: FC<{
 };
 
 export const FrameInspector: FC<{ id: string }> = ({ id }) => {
-    const { frame, locked } = useAppState((state) => ({
-        frame: state.currentDocument.frames[id],
+    const { frame, locked, layout } = useAppState((state) => ({
+        frame: renderedFrame(state.currentDocument, id),
+        layout: frameLayout(state.currentDocument),
         locked: state.currentDocument.locked
     }));
     const { editFrame } = useActions();
@@ -94,13 +96,19 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                             key={key}
                             label={key.toUpperCase()}
                             value={frame.position[key]}
-                            disabled={disabled || Boolean(moveProblem)}
+                            disabled={
+                                disabled || Boolean(moveProblem) || layout.managedFrames.has(id)
+                            }
                             onCommit={(value) =>
                                 editFrame({
                                     kind: 'update',
                                     id,
                                     changes: {
-                                        position: { ...frame.position, [key]: Number(value) }
+                                        position: {
+                                            x: frame.position.x - (layout.frames[id]?.x ?? 0),
+                                            y: frame.position.y - (layout.frames[id]?.y ?? 0),
+                                            [key]: Number(value) - (layout.frames[id]?.[key] ?? 0)
+                                        }
                                     }
                                 })
                             }
@@ -129,6 +137,117 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                             }
                         />
                     ))}
+                </PropertyGroup>
+                <PropertyGroup name="Layout">
+                    <tr>
+                        <th scope="row">
+                            <label htmlFor="frame-layout">Layout</label>
+                        </th>
+                        <td>
+                            <select
+                                id="frame-layout"
+                                aria-label="Frame layout"
+                                disabled={disabled}
+                                value={frame.stack?.direction ?? 'free'}
+                                onChange={(event) =>
+                                    editFrame({
+                                        kind: 'update',
+                                        id,
+                                        changes: {
+                                            stack:
+                                                event.target.value === 'free'
+                                                    ? null
+                                                    : {
+                                                          direction: event.target.value as
+                                                              | 'row'
+                                                              | 'column',
+                                                          gap: frame.stack?.gap ?? 0,
+                                                          padding: frame.stack?.padding ?? 0,
+                                                          align: frame.stack?.align ?? 'start'
+                                                      }
+                                        }
+                                    })
+                                }
+                            >
+                                <option value="free">Free</option>
+                                <option value="row">Row</option>
+                                <option value="column">Column</option>
+                            </select>
+                        </td>
+                    </tr>
+                    {frame.stack && (
+                        <>
+                            <Field
+                                label="Gap"
+                                value={frame.stack.gap}
+                                minimum={0}
+                                disabled={disabled}
+                                onCommit={(value) =>
+                                    editFrame({
+                                        kind: 'update',
+                                        id,
+                                        changes: { stack: { ...frame.stack!, gap: Number(value) } }
+                                    })
+                                }
+                            />
+                            <Field
+                                label="Padding"
+                                value={frame.stack.padding}
+                                minimum={0}
+                                disabled={disabled}
+                                onCommit={(value) =>
+                                    editFrame({
+                                        kind: 'update',
+                                        id,
+                                        changes: {
+                                            stack: { ...frame.stack!, padding: Number(value) }
+                                        }
+                                    })
+                                }
+                            />
+                            <tr>
+                                <th scope="row">
+                                    <label htmlFor="frame-alignment">Alignment</label>
+                                </th>
+                                <td>
+                                    <select
+                                        id="frame-alignment"
+                                        aria-label="Frame alignment"
+                                        disabled={disabled}
+                                        value={frame.stack.align}
+                                        onChange={(event) =>
+                                            editFrame({
+                                                kind: 'update',
+                                                id,
+                                                changes: {
+                                                    stack: {
+                                                        ...frame.stack!,
+                                                        align: event.target.value as
+                                                            | 'start'
+                                                            | 'center'
+                                                            | 'end'
+                                                    }
+                                                }
+                                            })
+                                        }
+                                    >
+                                        <option value="start">Start</option>
+                                        <option value="center">Center</option>
+                                        <option value="end">End</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        </>
+                    )}
+                    {layout.problems[id] && (
+                        <tr>
+                            <td colSpan={2}>
+                                <small className={styles.frameHint} role="status">
+                                    {layout.problems[id]}
+                                </small>
+                            </td>
+                        </tr>
+                    )}
                 </PropertyGroup>
             </table>
         </div>

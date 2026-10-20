@@ -1,3 +1,4 @@
+import * as shapes from 'src/app/shapeEdits';
 import * as visibility from 'src/app/visibilityEdits';
 import * as groups from 'src/app/groupEdits';
 import * as clipboardEdits from 'src/app/clipboardEdits';
@@ -82,6 +83,7 @@ export function createTestStore(
                   clipboardEdits,
                   frames,
                   groups,
+                  shapes,
                   visibility,
                   dimensions,
                   aliases,

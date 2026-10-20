@@ -1,3 +1,4 @@
+import { renderedFrame, frameHasLayoutOffset } from 'src/app/frameLayout';
 import React, { type FC } from 'react';
 import { useActions, useAppState, useCameraScale, useGesture } from 'src/app/hooks';
 import { isReadOnly } from 'src/app/documentAccess';
@@ -16,12 +17,13 @@ const HANDLES: [ResizeHandlerType, number, number][] = [
 
 const CanvasFrame: FC<{ id: string; interactive: boolean }> = ({ id, interactive }) => {
     const { frame, selected, editable, drawing } = useAppState((state) => ({
-        frame: state.currentDocument.frames[id],
+        frame: renderedFrame(state.currentDocument, id),
         selected: state.currentDocument.selectedFrameId === id,
         editable: !isReadOnly(state) && !state.currentDocument.locked,
         drawing: state.tools.activeToolsIds[0] !== 'select'
     }));
     const locked = useFrameLocked(id);
+    const inLayout = useAppState((state) => frameHasLayoutOffset(state.currentDocument, id));
     const zoom = useCameraScale();
     const scale = interactive ? zoom : 1;
     const gesture = useGesture();
@@ -32,7 +34,7 @@ const CanvasFrame: FC<{ id: string; interactive: boolean }> = ({ id, interactive
     }
 
     const { position, size } = frame;
-    const handles = interactive && selected && editable && !locked && !drawing;
+    const handles = interactive && selected && editable && !locked && !inLayout && !drawing;
     const active =
         gesture.kind === 'editingFrame' && gesture.frameId === id ? gesture.handle : null;
 
@@ -93,7 +95,7 @@ const CanvasFrame: FC<{ id: string; interactive: boolean }> = ({ id, interactive
  * a shape on the edge, and its handles, take the press. Interiors take none.
  */
 const FrameGrip: FC<{ id: string }> = ({ id }) => {
-    const frame = useAppState((state) => state.currentDocument.frames[id]);
+    const frame = useAppState((state) => renderedFrame(state.currentDocument, id));
 
     if (!frame?.visible) {
         return null;

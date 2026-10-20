@@ -1,3 +1,4 @@
+import { layoutDocument } from 'src/app/frameLayout';
 import { isFrameVisible } from 'src/app/frameState';
 import { shownShapesIds } from 'src/app/membership';
 import React, { FC } from 'react';
@@ -20,6 +21,7 @@ const DEFAULT_VIEW_BOX = '0 0 1000 1000';
  * minimap always shows the whole canvas where the shapes are.
  */
 const getContentViewBox = (document: ReturnType<typeof useCurrentDocument>): string => {
+    document = layoutDocument(document);
     const { shapes, frames } = document;
     const shown = shownShapesIds(document, document.editingComponentId);
     const boxes = [

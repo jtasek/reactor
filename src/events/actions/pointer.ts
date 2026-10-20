@@ -1,3 +1,4 @@
+import { renderedShape, hasLayoutOffset, frameLayout } from 'src/app/frameLayout';
 import { isFrameVisible } from 'src/app/frameState';
 import { json } from 'overmind';
 import { Context } from 'src/app';
@@ -87,6 +88,20 @@ export const beginGesture = (
 
     if (handle && 'frameId' in handle && state.tools.activeToolsIds[0] === 'select') {
         return editorHelpers().frames.begin({ state, actions, effects }, owner, handle);
+    }
+
+    if (
+        handle &&
+        (('shapeId' in handle && hasLayoutOffset(state.currentDocument, [handle.shapeId])) ||
+            ('groupId' in handle &&
+                hasLayoutOffset(
+                    state.currentDocument,
+                    state.currentDocument.groups[handle.groupId]?.shapesIds ?? []
+                )))
+    ) {
+        effects.collaboration.resume();
+
+        return false;
     }
 
     delete state.currentDocument.selectedFrameId;
@@ -250,12 +265,17 @@ const takeSnapTargets = (
     const { targetLines } = snapping();
     const changing = new Set(changingIds);
     // Read without the store's tracking: thousands of shapes are only looked at here.
-    const document = untracked(state.currentDocument);
+    const document = {
+        ...untracked(state.currentDocument),
+        frameLayout: frameLayout(state.currentDocument)
+    };
     const others = [...shownShapesIds(document, state.enteredComponentId)].filter(
         (id) => !changing.has(id)
     );
 
-    effects.dragTargets.take(targetLines(others.map((id) => drawnBox(document.shapes[id]))));
+    effects.dragTargets.take(
+        targetLines(others.map((id) => drawnBox(renderedShape(document, id))))
+    );
 
     return drawnExtent(document, changingIds);
 };
@@ -338,7 +358,9 @@ export const movePointer = (
     ) {
         if (!gesture.dragged) {
             gesture.dragged = true;
-            gesture.movingIds = [...state.currentDocument.editableSelectedShapesIds];
+            gesture.movingIds = state.currentDocument.editableSelectedShapesIds.filter(
+                (id) => !hasLayoutOffset(state.currentDocument, [id])
+            );
             gesture.box = takeSnapTargets({ state, effects }, gesture.movingIds);
         }
 

@@ -138,8 +138,13 @@ export const config = {
                           enforce: true
                       },
                       // Frame, group and visibility editing stay with the editor, in a bounded file.
+                      shapeEdits: {
+                          test: /[\\/]src[\\/]app[\\/]shapeEdits\.ts$/,
+                          name: 'shape-edits',
+                          enforce: true
+                      },
                       editorEdits: {
-                          test: /[\\/]src[\\/]app[\\/](frameEdits|groupEdits|visibilityEdits)\.ts$/,
+                          test: /[\\/]src[\\/]app[\\/](frameEdits|groupEdits|visibilityEdits|stackEdits)\.ts$/,
                           name: 'editor-edits',
                           enforce: true
                       },
