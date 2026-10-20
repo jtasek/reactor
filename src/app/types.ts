@@ -47,6 +47,15 @@ export type Size = {
     width: number;
 };
 
+export interface AxisSizing {
+    mode: 'fixed' | 'hug' | 'fill';
+    min?: number;
+    max?: number;
+}
+
+/** Authored rules; calculated sizes stay in the local layout projection. */
+export type Sizing = Partial<Record<keyof Size, AxisSizing>>;
+
 export interface HashTable<T> {
     [key: string]: T;
 }
@@ -136,6 +145,7 @@ export interface ShapeBase {
     /** Explicit membership; geometry stays in canvas coordinates. */
     parentFrameId?: string;
     layoutOrder?: number;
+    sizing?: Sizing;
     rotation?: number;
     selected: boolean;
     /** The color its outline is drawn in, as `#rrggbb`; the default outline when unset. */
@@ -301,6 +311,7 @@ export interface Frame {
     id: string;
     parentFrameId?: string;
     layoutOrder?: number;
+    sizing?: Sizing;
     name: string;
     position: Point;
     size: Size;

@@ -2,6 +2,7 @@ import { renderedFrame, frameLayout } from 'src/app/frameLayout';
 import React, { type FC, useEffect, useState } from 'react';
 import { useActions, useAppState } from 'src/app/hooks';
 import { useFrameMoveProblem, useFrameLocked } from 'src/app/frameHooks';
+import { SizingFields } from './SizingFields';
 import { FrameParent } from './FrameParent';
 import { PropertyGroup } from './PropertyGroup';
 import styles from './styles.css';
@@ -48,6 +49,7 @@ const Field: FC<{
                         }
 
                         onCommit(draft);
+                        setDraft(String(value));
                     }}
                     onKeyDown={(event) => {
                         if (event.key === 'Enter') {
@@ -62,9 +64,10 @@ const Field: FC<{
 };
 
 export const FrameInspector: FC<{ id: string }> = ({ id }) => {
-    const { frame, locked, layout } = useAppState((state) => ({
+    const { frame, authoredSize, locked, layout } = useAppState((state) => ({
         frame: renderedFrame(state.currentDocument, id),
         layout: frameLayout(state.currentDocument),
+        authoredSize: state.currentDocument.frames[id]?.size,
         locked: state.currentDocument.locked
     }));
     const { editFrame } = useActions();
@@ -117,7 +120,9 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                     {moveProblem && (
                         <tr>
                             <td colSpan={2}>
-                                <small role="status">{moveProblem}</small>
+                                <small className={styles.frameHint} role="status">
+                                    {moveProblem}
+                                </small>
                             </td>
                         </tr>
                     )}
@@ -127,17 +132,20 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                             label={key === 'width' ? 'Width' : 'Height'}
                             value={frame.size[key]}
                             minimum={MIN_FRAME_SIZE}
-                            disabled={disabled}
+                            disabled={
+                                disabled || (frame.sizing?.[key]?.mode ?? 'fixed') !== 'fixed'
+                            }
                             onCommit={(value) =>
                                 editFrame({
                                     kind: 'update',
                                     id,
-                                    changes: { size: { ...frame.size, [key]: Number(value) } }
+                                    changes: { size: { ...authoredSize!, [key]: Number(value) } }
                                 })
                             }
                         />
                     ))}
                 </PropertyGroup>
+                <SizingFields frameId={id} />
                 <PropertyGroup name="Layout">
                     <tr>
                         <th scope="row">

@@ -58,6 +58,7 @@ const CHANGEABLE_FIELDS = new Set([
     'name',
     'parentFrameId',
     'layoutOrder',
+    'sizing',
     'description',
     'rotation',
     'opacity',
@@ -836,6 +837,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                         'size',
                         'parentFrameId',
                         'layoutOrder',
+                        'sizing',
                         'stack'
                     ]);
                     if (Object.keys(operation.changes).some((key) => !allowed.has(key))) {

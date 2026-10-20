@@ -1,4 +1,9 @@
-import { layoutDocument, frameHasLayoutOffset, hasLayoutOffset } from './frameLayout';
+import {
+    layoutDocument,
+    frameHasLayoutOffset,
+    frameSizedByLayout,
+    hasLayoutOffset
+} from './frameLayout';
 import {
     frameState,
     isFrameVisible,
@@ -71,6 +76,7 @@ function addFrame(context: Context, input: Extract<FrameEdit, { kind: 'add' | 'p
             position,
             size: input.kind === 'add' ? input.size : input.frame.size,
             ...(source?.parentFrameId === undefined ? {} : { parentFrameId: source.parentFrameId }),
+            ...(source?.sizing ? { sizing: source.sizing } : {}),
             ...(source?.stack ? { stack: source.stack } : {}),
             locked: false,
             visible: true
@@ -346,6 +352,7 @@ export function begin(
         !frame ||
         !isFrameVisible(state.currentDocument, frame.id) ||
         frameHasLayoutOffset(state.currentDocument, frame.id) ||
+        (handle.type !== 'move' && frameSizedByLayout(state.currentDocument, frame.id)) ||
         isFrameLocked(state.currentDocument, frame.id) ||
         state.currentDocument.locked ||
         isReadOnly(state)
@@ -598,6 +605,7 @@ export function gestureBlocked(document: Context['state']['currentDocument'], ge
     if (gesture.kind === 'editingFrame') {
         return (
             frameHasLayoutOffset(document, gesture.frameId) ||
+            (gesture.handle !== 'move' && frameSizedByLayout(document, gesture.frameId)) ||
             !isFrameVisible(document, gesture.frameId) ||
             isFrameLocked(document, gesture.frameId)
         );

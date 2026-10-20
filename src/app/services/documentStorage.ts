@@ -23,7 +23,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 8;
+export const SCHEMA_VERSION = 9;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -314,6 +314,7 @@ function readShape(value: unknown, readChild: (child: unknown) => ShapeData): Sh
         rotation: s.rotation === undefined ? 0 : number(s.rotation),
         ...(s.description === undefined ? {} : { description: text(s.description) }),
         ...(s.parentFrameId === undefined ? {} : { parentFrameId: id(s.parentFrameId) }),
+        ...(s.sizing === undefined ? {} : { sizing: readSizing(s.sizing) }),
         ...(s.layoutOrder === undefined ? {} : { layoutOrder: number(s.layoutOrder) }),
         ...(s.parentShapeId === undefined ? {} : { parentShapeId: id(s.parentShapeId) }),
         ...(s.children === undefined ? {} : { children: list(s.children, readChild) }),
@@ -533,6 +534,31 @@ function readOrderedShape(value: unknown): ShapeData {
     return shape;
 }
 
+export function readSizing(value: unknown): import('../types').Sizing {
+    return Object.fromEntries(
+        Object.entries(record(value)).map(([axis, value]) => {
+            const rule = record(value);
+
+            if (
+                !['width', 'height'].includes(axis) ||
+                !['fixed', 'hug', 'fill'].includes(String(rule.mode)) ||
+                Object.keys(rule).some((key) => !['mode', 'min', 'max'].includes(key))
+            ) {
+                throw new Error('Invalid sizing rule');
+            }
+
+            return [
+                axis,
+                {
+                    mode: rule.mode,
+                    ...(rule.min === undefined ? {} : { min: number(rule.min, 0) }),
+                    ...(rule.max === undefined ? {} : { max: number(rule.max, 0) })
+                }
+            ];
+        })
+    );
+}
+
 export function readStack(value: unknown): import('../types').StackRules {
     const rules = record(value);
 
@@ -564,6 +590,7 @@ function readFrame(value: unknown): Frame {
         name,
         ...(f.parentFrameId === undefined ? {} : { parentFrameId: id(f.parentFrameId) }),
         ...(f.stack === undefined ? {} : { stack: readStack(f.stack) }),
+        ...(f.sizing === undefined ? {} : { sizing: readSizing(f.sizing) }),
         ...(f.layoutOrder === undefined ? {} : { layoutOrder: number(f.layoutOrder) }),
         position: point(f.position),
         size: {
@@ -891,6 +918,7 @@ export function migratePersistedState(raw: unknown, onRepair = () => {}): Persis
             data.version !== 5 &&
             data.version !== 6 &&
             data.version !== 7 &&
+            data.version !== 8 &&
             data.version !== SCHEMA_VERSION
         ) {
             return null;

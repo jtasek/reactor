@@ -5,7 +5,7 @@ import type { Document, Frame, Shape } from './types';
 import { frameLayout, renderedFrame, renderedShape } from './frameLayout';
 import { frameContents } from './frameMembership';
 import { translateShape } from './geometry';
-import { unbindMovedProperties } from './variables';
+import { unbindMovedProperties, unbindEditedProperties } from './variables';
 
 /** Only an explicit detach, free-layout change or boundary deletion authors the visible positions. */
 export function releaseStackPositions(
@@ -17,6 +17,12 @@ export function releaseStackPositions(
     const layout = frameLayout(document);
     const frames = new Map<string, Frame>();
     const artwork = new Map<string, Shape>();
+    // Shapes leaving stack control keep their drawn size, so their sizing rules no longer apply.
+    const unsized = new Set<string>();
+    const stackAfter = (id: string | undefined) =>
+        id !== undefined &&
+        !deleted.includes(id) &&
+        Boolean((updates.find((frame) => frame.id === id) ?? document.frames[id])?.stack);
     const targetOffset = (parent: string | undefined) =>
         layout.frames[parent ?? ''] ?? { x: 0, y: 0 };
     const captureShape = (id: string, parent: string | undefined) => {
@@ -43,7 +49,10 @@ export function releaseStackPositions(
             .forEach((frame) => captureFrame(frame.id, parent));
         Object.values(document.shapes)
             .filter((shape) => shape.parentFrameId === id)
-            .forEach((shape) => captureShape(shape.id, parent));
+            .forEach((shape) => {
+                captureShape(shape.id, parent);
+                unsized.add(shape.id);
+            });
     };
 
     deleted.forEach((id) => releaseChildren(id, undefined));
@@ -57,6 +66,12 @@ export function releaseStackPositions(
             captureFrame(frame.id, frame.parentFrameId);
         }
         if (previous.stack && !frame.stack) {
+            if (
+                frame.size.width === previous.size.width &&
+                frame.size.height === previous.size.height
+            ) {
+                frame.size = { ...(layout.frameSizes[frame.id] ?? previous.size) };
+            }
             releaseChildren(frame.id, frame.id);
         }
     });
@@ -65,14 +80,19 @@ export function releaseStackPositions(
             'parentFrameId' in fields &&
             fields.parentFrameId !== document.shapes[id]?.parentFrameId
         ) {
-            captureShape(
-                id,
-                typeof fields.parentFrameId === 'string' ? fields.parentFrameId : undefined
-            );
+            const parent =
+                typeof fields.parentFrameId === 'string' ? fields.parentFrameId : undefined;
+            captureShape(id, parent);
+            if (!stackAfter(parent)) {
+                unsized.add(id);
+            }
         }
     });
 
     artwork.forEach((shape, id) => applyPlacement(document.shapes[id], shape));
+    unsized.forEach((id) => {
+        delete document.shapes[id].sizing;
+    });
     frames.forEach((frame, id) => {
         const update = updates.find((item) => item.id === id);
         const original = document.frames[id];
@@ -84,6 +104,14 @@ export function releaseStackPositions(
         ) {
             update.position = frame.position;
         }
+        if (
+            update &&
+            update.size.width === original.size.width &&
+            update.size.height === original.size.height
+        ) {
+            update.size = { ...frame.size };
+        }
+        original.size = { ...frame.size };
         original.position = frame.position;
     });
 }
@@ -113,6 +141,21 @@ function applyPlacement(original: Shape, shape: Shape) {
             });
             break;
         case 'rectangle':
+            if (original.type === 'rectangle') {
+                unbindEditedProperties(
+                    shape,
+                    (['width', 'height'] as const).filter(
+                        (axis) => original.size[axis] !== shape.size[axis]
+                    )
+                );
+            }
+            Object.assign(original, {
+                size: shape.size,
+                position: shape.position,
+                bounds: shape.bounds,
+                bindings: shape.bindings
+            });
+            break;
         case 'image':
         case 'circle':
         case 'ellipse':
@@ -140,19 +183,23 @@ export function materializeGroupPlacement(
     }
     const layout = frameLayout(document);
     const offset = layout.frames[parent ?? ''] ?? { x: 0, y: 0 };
-    if (
-        offset.x === 0 &&
-        offset.y === 0 &&
-        ids.every((id) => !layout.shapes[id]?.x && !layout.shapes[id]?.y)
-    ) {
-        return;
-    }
     const copies = ids.map((id) => {
         const copy = json(renderedShape(document, id, layout));
         translateShape(copy, { x: -offset.x, y: -offset.y });
 
         return copy;
     });
+    // Grouped shapes keep their drawn size; sizing rules apply only to ungrouped rectangles.
+    ids.forEach((id) => {
+        delete document.shapes[id]?.sizing;
+    });
+    if (
+        offset.x === 0 &&
+        offset.y === 0 &&
+        ids.every((id) => !layout.shapes[id]?.x && !layout.shapes[id]?.y && !layout.shapeSizes[id])
+    ) {
+        return;
+    }
     copies.forEach((copy) => applyPlacement(document.shapes[copy.id], copy));
 }
 

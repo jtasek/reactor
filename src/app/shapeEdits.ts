@@ -731,7 +731,16 @@ export const setShapeBounds: ActionWithParam<{ id: string; bounds: Box }> = (
         return;
     }
 
-    const offset = frameLayout(state.currentDocument).shapes[id];
+    const layout = frameLayout(state.currentDocument);
+    const size = layout.shapeSizes[id];
+    if (
+        shape.type === 'rectangle' &&
+        size &&
+        (size.width !== shape.size.width || size.height !== shape.size.height)
+    ) {
+        return;
+    }
+    const offset = layout.shapes[id];
     const measured = offset
         ? {
               ...bounds,

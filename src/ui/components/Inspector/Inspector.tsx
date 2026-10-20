@@ -1,5 +1,6 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
+import { SizingFields } from './SizingFields';
 import { FrameParent } from './FrameParent';
 import { PropertyField } from './PropertyField';
 import { PropertyGroup } from './PropertyGroup';
@@ -176,6 +177,7 @@ export const Inspector: FC<Props> = ({
                 <PropertyGroup name="Frame">
                     <FrameParent shapeIds={shapeIds} />
                 </PropertyGroup>
+                {shapeIds.length === 1 && <SizingFields shapeId={shapeIds[0]} />}
                 {groupRows(shownRows).map(({ group, rows: grouped }) => (
                     <PropertyGroup key={group} name={group}>
                         {grouped.map(propertyField)}

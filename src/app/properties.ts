@@ -61,7 +61,8 @@ const OPAQUE_PERCENT = 100;
 const notBlank = (value: string) => value.trim() !== '';
 
 // Metadata may change on a locked shape, but not in a locked document.
-const stackDimensionEditable = (shape: Shape, document: Document) =>
+const stackDimensionEditable = (axis: 'width' | 'height') => (shape: Shape, document: Document) =>
+    (shape.sizing?.[axis]?.mode ?? 'fixed') === 'fixed' &&
     (shape.type === 'rectangle' || shape.type === 'image') &&
     hasLayoutOffset(document, [shape.id]) &&
     !isShapeLocked(document, shape.id);
@@ -155,7 +156,7 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         group: 'Layout',
         kind: 'number',
         read: (shape) => getShapeBounds(shape).width,
-        editable: stackDimensionEditable,
+        editable: stackDimensionEditable('width'),
         write: (shape, value) => writeStackDimension(shape, 'width', value)
     },
     {
@@ -164,7 +165,7 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         group: 'Layout',
         kind: 'number',
         read: (shape) => getShapeBounds(shape).height,
-        editable: stackDimensionEditable,
+        editable: stackDimensionEditable('height'),
         write: (shape, value) => writeStackDimension(shape, 'height', value)
     },
     {
