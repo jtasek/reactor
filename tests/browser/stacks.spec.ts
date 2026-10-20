@@ -52,6 +52,15 @@ test('lays out fixed stacks, edits controls, hit tests projected positions and p
     await pointer(page, 'pointerdown', { x: 130, y: 195 });
     await pointer(page, 'pointerup', { x: 130, y: 195 });
     await expect(page.getByLabel('Name', { exact: true })).toHaveValue('A');
+    // Alt measures to B where the stack draws it, not where it is stored: 10 apart,
+    // with B's top and bottom 5 beyond A's.
+    const measures = page.locator('svg#surface [data-measures] text');
+    await pointer(page, 'pointermove', { x: 190, y: 200, buttons: 0 });
+    await page.keyboard.down('Alt');
+    await pointer(page, 'pointermove', { x: 191, y: 200, buttons: 0 });
+    await expect(measures).toHaveText(['10', '5', '5']);
+    await page.keyboard.up('Alt');
+    await expect(measures).toHaveCount(0);
     await expect(page.getByLabel('X', { exact: true })).not.toBeEditable();
     await expect(page.getByLabel('Width', { exact: true })).toBeEditable();
     await page.getByLabel('Width', { exact: true }).fill('70');

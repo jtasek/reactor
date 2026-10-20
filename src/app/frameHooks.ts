@@ -1,5 +1,5 @@
 import { withTheirGroups } from './membership';
-import { frameLayout, hasLayoutOffset } from './frameLayout';
+import { frameLayout, hasLayoutOffset, orderAtPosition, stackPosition } from './frameLayout';
 // Only the editor page shows frames' controls, so these hooks load with it rather
 // than with `hooks.ts`, which every page needs as it opens.
 import { frameState, isFrameVisible, isFrameLocked } from './frameState';
@@ -7,6 +7,7 @@ import { frameParents, validFrameParent, frameMoveProblem } from './frameMembers
 import { isReadOnly } from './documentAccess';
 import { isShapeLocked } from './utils';
 import { useAppState } from './hooks';
+import type { Document, Frame } from './types';
 
 /** The current document's frames, without the one selected, then that one, so its handles are on top. */
 export const useFramesIds = () =>
@@ -99,7 +100,10 @@ export const useFrameParent = (frameId: string | undefined, shapeIds: string[]) 
         )?.lockedBy;
         const restriction = [
             hiddenBy === undefined ? '' : `Hidden by frame ${document.frames[hiddenBy].name}.`,
-            lockedBy === undefined ? '' : `Locked by frame ${document.frames[lockedBy].name}.`
+            lockedBy === undefined ? '' : `Locked by frame ${document.frames[lockedBy].name}.`,
+            hiddenBy === undefined && lockedBy === undefined
+                ? ''
+                : 'Use Explorer to show or unlock the frame.'
         ]
             .filter(Boolean)
             .join(' ');
@@ -118,13 +122,7 @@ export const useFrameParent = (frameId: string | undefined, shapeIds: string[]) 
                 .filter(Boolean)
                 .join(' '),
             orderShapeIds: [...withTheirGroups(document, shapeIds, null)],
-            stackOrder: frame ? frame.layoutOrder : shapes[0]?.layoutOrder,
-            inStack: frame
-                ? Boolean(document.frames[frame.parentFrameId ?? '']?.stack)
-                : shapes.length > 0 &&
-                  shapes.every((shape) =>
-                      Boolean(document.frames[shape.parentFrameId ?? '']?.stack)
-                  ),
+            ...stackSlot(document, frame, shapeIds),
             value: problem ? (frame?.parentFrameId ?? '') : value,
             choices,
             problem,
@@ -160,3 +158,32 @@ export const useShapesFrameState = (ids: string[]) =>
             locked: restrictions.some((item) => item?.lockedBy !== undefined)
         };
     });
+
+/**
+ * Where the frame, or the selected shapes as one slot, stand in their stack, and the
+ * layout order that moves them to another place; nothing when they fill no one slot.
+ */
+function stackSlot(document: Document, frame: Frame | undefined, shapeIds: string[]) {
+    const layout = frameLayout(document);
+    const kind = frame ? 'frame' : 'shape';
+    const ids = frame ? [frame.id] : shapeIds;
+    const stackId = frame ? frame.parentFrameId : document.shapes[shapeIds[0] ?? '']?.parentFrameId;
+
+    if (stackId === undefined || ids.length === 0) {
+        return { inStack: false, stackSize: 0 };
+    }
+
+    const positions = new Set(ids.map((id) => stackPosition(layout, stackId, kind, id)));
+    const [position] = positions;
+
+    if (positions.size !== 1 || position === undefined) {
+        return { inStack: false, stackSize: 0 };
+    }
+
+    return {
+        inStack: true,
+        stackPosition: position,
+        stackSize: layout.slots[stackId].length,
+        orderAt: (target: number) => orderAtPosition(layout, stackId, kind, ids[0], target)
+    };
+}

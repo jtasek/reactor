@@ -11,6 +11,15 @@ export interface FrameLayout {
     managedShapes: Set<string>;
     managedFrames: Set<string>;
     problems: Record<string, string>;
+    /** Each stack's shown slots in layout order. */
+    slots: Record<string, StackSlot[]>;
+}
+
+export interface StackSlot {
+    id: string;
+    kind: 'frame' | 'shape';
+    members: string[];
+    order: number;
 }
 
 interface Item {
@@ -31,7 +40,8 @@ export function projectFrameLayout(document: Document): FrameLayout {
         frames: {},
         managedShapes: new Set<string>(),
         managedFrames: new Set<string>(),
-        problems: {}
+        problems: {},
+        slots: {}
     };
     const stacks = Object.values(document.frames).filter((frame) => frame.stack);
 
@@ -182,6 +192,15 @@ export function projectFrameLayout(document: Document): FrameLayout {
         );
         let cursor = rules?.padding ?? 0;
 
+        if (frame.stack) {
+            result.slots[id] = members.map(({ id, kind, members, order }) => ({
+                id,
+                kind,
+                members,
+                order
+            }));
+        }
+
         for (const item of members) {
             const delta = rules ? stackOffset(frame, offset, rules, item, cursor) : offset;
 
@@ -307,7 +326,8 @@ export function layoutDocument(document: Document): Document {
             frames: {},
             managedShapes: new Set(),
             managedFrames: new Set(),
-            problems: {}
+            problems: {},
+            slots: {}
         }
     };
 }
@@ -327,4 +347,63 @@ export function frameHasLayoutOffset(document: Document, id: string) {
     const delta = layout.frames[id];
 
     return layout.managedFrames.has(id) || Boolean(delta?.x || delta?.y);
+}
+
+const ORDER_STEP = 1;
+
+/** The stack slot holding a frame, or a shape and its group. */
+const slotIndex = (slots: StackSlot[], kind: StackSlot['kind'], id: string) =>
+    slots.findIndex((slot) =>
+        kind === 'frame' ? slot.kind === 'frame' && slot.id === id : slot.members.includes(id)
+    );
+
+/** Where an item is in its stack, counting the shown slots from 0. */
+export function stackPosition(
+    layout: FrameLayout,
+    stackId: string,
+    kind: StackSlot['kind'],
+    id: string
+): number | undefined {
+    const index = slotIndex(layout.slots[stackId] ?? [], kind, id);
+
+    return index === -1 ? undefined : index;
+}
+
+/**
+ * The layout order that puts an item at `position` among its stack's shown slots,
+ * between its new neighbors, so no other item's order changes and no two tie.
+ */
+export function orderAtPosition(
+    layout: FrameLayout,
+    stackId: string,
+    kind: StackSlot['kind'],
+    id: string,
+    position: number
+): number | undefined {
+    const slots = layout.slots[stackId] ?? [];
+    const index = slotIndex(slots, kind, id);
+
+    if (index === -1) {
+        return undefined;
+    }
+
+    const others = slots.filter((_slot, slot) => slot !== index);
+    const at = Math.max(0, Math.min(Math.trunc(position), others.length));
+    // Items without an order sort last; they give no number to place beside.
+    const order = (slot: StackSlot | undefined) =>
+        slot && slot.order !== Number.MAX_SAFE_INTEGER ? slot.order : undefined;
+    const before = order(others[at - 1]);
+    const after = order(others[at]);
+
+    if (before !== undefined && after !== undefined) {
+        return (before + after) / 2;
+    }
+    if (before !== undefined) {
+        return before + ORDER_STEP;
+    }
+    if (after !== undefined) {
+        return after - ORDER_STEP;
+    }
+
+    return at;
 }

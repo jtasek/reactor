@@ -314,7 +314,7 @@ function readShape(value: unknown, readChild: (child: unknown) => ShapeData): Sh
         rotation: s.rotation === undefined ? 0 : number(s.rotation),
         ...(s.description === undefined ? {} : { description: text(s.description) }),
         ...(s.parentFrameId === undefined ? {} : { parentFrameId: id(s.parentFrameId) }),
-        ...(s.layoutOrder === undefined ? {} : { layoutOrder: number(s.layoutOrder, 0) }),
+        ...(s.layoutOrder === undefined ? {} : { layoutOrder: number(s.layoutOrder) }),
         ...(s.parentShapeId === undefined ? {} : { parentShapeId: id(s.parentShapeId) }),
         ...(s.children === undefined ? {} : { children: list(s.children, readChild) }),
         ...(s.bindings === undefined ? {} : { bindings: readBindings(s.bindings) })
@@ -564,7 +564,7 @@ function readFrame(value: unknown): Frame {
         name,
         ...(f.parentFrameId === undefined ? {} : { parentFrameId: id(f.parentFrameId) }),
         ...(f.stack === undefined ? {} : { stack: readStack(f.stack) }),
-        ...(f.layoutOrder === undefined ? {} : { layoutOrder: number(f.layoutOrder, 0) }),
+        ...(f.layoutOrder === undefined ? {} : { layoutOrder: number(f.layoutOrder) }),
         position: point(f.position),
         size: {
             width: number(record(f.size).width, MIN_FRAME_SIZE),

@@ -1,4 +1,5 @@
 import { renderedShape } from './frameLayout';
+import { initializeStackOrder } from './stackEdits';
 import { isFrameLocked, lockedFrameForShapes } from './frameState';
 import { orderAbove } from './drawOrder';
 import { CLONE_OFFSET, translateShape } from './geometry';
@@ -321,4 +322,10 @@ export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shape
             group.shapesIds = [...group.shapesIds, ...copies];
         }
     }
+
+    // Clones in a stack join its order, after its other items or with their group.
+    initializeStackOrder(
+        currentDocument,
+        clonesOf([...cloning]).map((id) => shapes[id].parentFrameId ?? '')
+    );
 };

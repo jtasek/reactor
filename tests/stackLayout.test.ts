@@ -13,7 +13,10 @@ import {
     renderedShape,
     renderedFrame,
     projectFrameLayout,
-    layoutDocument
+    layoutDocument,
+    frameLayout,
+    orderAtPosition,
+    stackPosition
 } from 'src/app/frameLayout';
 import {
     serializePersistedState,
@@ -400,4 +403,58 @@ it('keeps visible spacing and the stack slot when creating and detaching a compo
         drawnBox(renderedShape(document, copies[1].id)).topLeft.x -
             drawnBox(renderedShape(document, copies[0].id)).topLeft.x
     ).toBe(before);
+});
+
+it('moves an item to a stack position without tying or changing the other items', () => {
+    const { store } = createTestStore();
+    const { root, a, b } = setup(store);
+    const c = shape(store, root, 20);
+    const document = store.state.currentDocument;
+    const names = () => projectFrameLayout(document).slots[root].map((slot) => slot.members[0]);
+    const moveTo = (id: string, position: number) => {
+        const layoutOrder = orderAtPosition(frameLayout(document), root, 'shape', id, position)!;
+        store.actions.applyOperations({
+            documentId: document.id,
+            by: { kind: 'person' },
+            operations: [{ op: 'updateShape', shape: id, changes: { layoutOrder } }]
+        });
+    };
+    expect(names()).toEqual([a, b, c]);
+    const before = { a: document.shapes[a].layoutOrder, b: document.shapes[b].layoutOrder };
+
+    moveTo(c, 0);
+    expect(names()).toEqual([c, a, b]);
+    expect(stackPosition(frameLayout(document), root, 'shape', c)).toBe(0);
+    moveTo(c, 1);
+    expect(names()).toEqual([a, c, b]);
+    moveTo(a, 2);
+    expect(names()).toEqual([c, b, a]);
+    moveTo(a, 0);
+    expect(names()).toEqual([a, c, b]);
+    expect(document.shapes[b].layoutOrder).toBe(before.b);
+    expect(new Set(Object.values(document.shapes).map((item) => item.layoutOrder)).size).toBe(3);
+
+    // An order below the first one survives saving and loading.
+    const saved = serializePersistedState(store.state);
+    const loaded = hydrateDocument(saved.documents[document.id]);
+    expect(loaded.shapes[a].layoutOrder).toBeLessThan(0);
+    expect(projectFrameLayout(loaded).slots[root].map((slot) => slot.members[0])).toEqual([
+        a,
+        c,
+        b
+    ]);
+});
+
+it('orders a cloned stack item after the others', () => {
+    const { store } = createTestStore();
+    const { root, a, b } = setup(store);
+    const document = store.state.currentDocument;
+    store.actions.cloneShapes([a]);
+    const clone = document.shapesIds.at(-1)!;
+    expect(document.shapes[clone].layoutOrder).toBe(2);
+    expect(projectFrameLayout(document).slots[root].map((slot) => slot.members[0])).toEqual([
+        a,
+        b,
+        clone
+    ]);
 });

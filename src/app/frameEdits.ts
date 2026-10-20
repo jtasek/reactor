@@ -573,8 +573,7 @@ export function readClipboard(text: string): CopiedFrame | undefined {
                     typeof member.visible !== 'boolean' ||
                     (member.layoutOrder !== undefined &&
                         (typeof member.layoutOrder !== 'number' ||
-                            !Number.isFinite(member.layoutOrder) ||
-                            member.layoutOrder < 0))
+                            !Number.isFinite(member.layoutOrder)))
             )
         ) {
             return;

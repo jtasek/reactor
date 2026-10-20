@@ -8,8 +8,18 @@ export const FrameParent: FC<{ frameId?: string; shapeIds?: string[] }> = ({
     frameId,
     shapeIds = []
 }) => {
-    const { value, choices, disabled, problem, restriction, stackOrder, inStack, orderShapeIds } =
-        useFrameParent(frameId, shapeIds);
+    const {
+        value,
+        choices,
+        disabled,
+        problem,
+        restriction,
+        inStack,
+        stackPosition,
+        stackSize,
+        orderAt,
+        orderShapeIds
+    } = useFrameParent(frameId, shapeIds);
     const { editFrame, applyOperations } = useActions();
     const documentId = useAppState((state) => state.currentDocumentId);
     const id = frameId ? 'frame-parent' : 'shape-frame-parent';
@@ -77,12 +87,21 @@ export const FrameParent: FC<{ frameId?: string; shapeIds?: string[] }> = ({
                             aria-label="Stack order"
                             type="number"
                             min={0}
+                            max={stackSize - 1}
                             step={1}
-                            value={stackOrder ?? 0}
+                            value={stackPosition ?? 0}
                             disabled={disabled}
                             onChange={(event) => {
-                                const order = Number(event.target.value);
-                                if (!event.target.value || !Number.isFinite(order) || order < 0) {
+                                const position = Number(event.target.value);
+                                if (
+                                    !event.target.value ||
+                                    !Number.isInteger(position) ||
+                                    position === stackPosition
+                                ) {
+                                    return;
+                                }
+                                const order = orderAt?.(position);
+                                if (order === undefined) {
                                     return;
                                 }
                                 if (frameId) {
@@ -111,7 +130,7 @@ export const FrameParent: FC<{ frameId?: string; shapeIds?: string[] }> = ({
                 <tr>
                     <td colSpan={2}>
                         <small id={`${id}-restriction`} className={styles.frameHint} role="status">
-                            {restriction} Use Explorer to show or unlock the frame.
+                            {restriction}
                         </small>
                     </td>
                 </tr>

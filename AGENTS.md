@@ -476,7 +476,9 @@ and leave that frame free. Use `renderedShape`/`renderedFrame` or read-only `lay
 for drawing, extents, hit tests, measurements and previews. Never mutate these views.
 Measurements translate back to authored bounds; geometry keys use authored shapes to avoid
 remeasuring every reflow. A deliberate membership/grouping change, component conversion, Free or boundary deletion bakes the visible
-geometry through `stackEdits.ts`; ordinary reflow never does. Frame and rectangle/image sizing
+geometry through `stackEdits.ts`; ordinary reflow never does. Inspector's Stack order is a place among the
+shown slots (`layout.slots`); moving there writes one order between the new neighbors
+(`orderAtPosition`), which may be negative. Frame and rectangle/image sizing
 is available in Inspector, images retain their ratio. Canvas transforms of projected content
 are disabled; remote layout takeover cancels an active transform. Source-only masters stay
 outside frames. Stack rules/order survive schema v8, copy, operations, sync and undo; v7 loads.

@@ -1,4 +1,4 @@
-import { renderedShape } from './frameLayout';
+import { frameLayout, renderedShape } from './frameLayout';
 import { variableContext } from './variableModes';
 import { json } from 'overmind';
 import {
@@ -461,11 +461,13 @@ export const useMeasuredBoxes = () =>
         }
 
         // Read without the store's tracking: thousands of shapes are only looked at here.
-        const shapes = untracked(document.shapes);
+        const plain = untracked(document);
+        const layout = frameLayout(document);
         const tolerance = hitTolerance(document.camera.scale);
+        // Where each shape is drawn, as a stack places it.
         const target = [...document.shapesIds]
             .reverse()
-            .map((id) => shapes[id])
+            .map((id) => plain.shapes[id] && renderedShape(plain, id, layout))
             .find(
                 (shape) =>
                     shape &&
