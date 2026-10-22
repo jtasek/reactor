@@ -901,5 +901,12 @@ both the parent Window and configured editor origin. The static `server.preview.
 requires a configured separate site, with an explicit two-loopback-origin opt-in for local tests.
 Keep its CSP network-free and its server free of account/API routes. Do not move its code into
 the startup bundle. Runtime screen/input state never reaches document data. Invalid updates retain
-the last valid preview. Images currently produce an explicit unsupported-resource diagnostic;
-list repetition and shared links remain later increments. See README for hosting configuration.
+the last valid preview. `projectPreview` returns a drawing with image hash references;
+`createPreviewResources` prepares its deduplicated image table before `readPreview` validates
+and allowlists the complete payload. Use `effects.assets.read` for local/authorized sync bytes,
+never arbitrary URLs. Verify content/hash, per-file bounds and decoding; keep the aggregate
+8 MiB bound. Cache only for the open panel, prune unused entries, retry missing resources and
+abort stale preparations. The sandbox receives only raster data URLs, with no new CSP origins. Its version handshake
+must succeed before the editor sends any application data; mismatches show an update notice.
+The canvas and runtime share the default outline token; text keeps the canvas font fallback.
+List repetition and shared links remain later increments. See README for hosting configuration.

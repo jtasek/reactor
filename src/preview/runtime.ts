@@ -1,4 +1,9 @@
-import { readPreview, type PreviewApplication, type PreviewNode } from './protocol';
+import {
+    readPreview,
+    PREVIEW_PROTOCOL_VERSION,
+    type PreviewApplication,
+    type PreviewNode
+} from './protocol';
 import '../../static/styles/site.css';
 import './runtime.css';
 
@@ -18,6 +23,9 @@ let port: MessagePort | undefined;
 function nodeElement(node: PreviewNode, decorative = false): SVGElement {
     const element = document.createElementNS(SVG, node.tag);
     Object.entries(node.attrs).forEach(([key, value]) => element.setAttribute(key, String(value)));
+    if (node.image) {
+        element.setAttribute('href', application!.images[node.image]);
+    }
     if (node.text !== undefined) {
         element.textContent = node.text;
     }
@@ -183,6 +191,6 @@ window.addEventListener('message', (event) => {
     }
     port = event.ports[0];
     port.onmessage = (event) => receive(event.data);
-    port.postMessage({ type: 'ready' });
+    port.postMessage({ type: 'ready', version: PREVIEW_PROTOCOL_VERSION });
 });
 window.addEventListener('pagehide', () => port?.close());

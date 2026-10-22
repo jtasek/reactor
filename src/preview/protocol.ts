@@ -4,6 +4,8 @@ export interface PreviewNode {
     tag: 'g' | 'rect' | 'circle' | 'ellipse' | 'line' | 'polyline' | 'text' | 'image';
     attrs: Record<string, string | number>;
     text?: string;
+    /** SHA-256 key into the application's verified raster image table. */
+    image?: string;
     children?: PreviewNode[];
     control?: {
         role: 'text' | 'input' | 'button' | 'list' | 'image';
@@ -19,7 +21,8 @@ export interface PreviewNode {
     };
 }
 
-export interface PreviewApplication {
+/** Drawing projected from the graph, before image bytes have been prepared. */
+export interface PreviewDrawing {
     documentId: string;
     screens: {
         id: string;
@@ -32,8 +35,14 @@ export interface PreviewApplication {
     }[];
 }
 
+export interface PreviewApplication extends PreviewDrawing {
+    images: Record<string, string>;
+}
+
 export const MAX_PREVIEW_BYTES = 8 * 1024 * 1024;
-const MAX_NODES = 5000;
+/** Version 2 adds the verified image table; older runtimes silently omit image references. */
+export const PREVIEW_PROTOCOL_VERSION = 2;
+export const MAX_PREVIEW_NODES = 5000;
 const MAX_DEPTH = 32;
 const TAGS = new Set(['g', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'text', 'image']);
 const NUMBERS = new Set([
@@ -73,13 +82,16 @@ function attribute(key: string, value: unknown) {
     switch (key) {
         case 'fill':
         case 'stroke':
-            return /^(#[0-9a-f]{6}|none|currentColor)$/i.test(value);
+            return (
+                /^(#[0-9a-f]{6}|none|currentColor)$/i.test(value) ||
+                (key === 'stroke' && value === 'var(--shape-stroke-color)')
+            );
         case 'transform':
             return /^(?:(?:translate|rotate)\([-+\d.eE ,]+\)\s*)+$/.test(value);
         case 'points':
             return /^[-+\d.eE ,]*$/.test(value);
-        case 'href':
-            return /^data:image\/(png|jpeg|gif|webp);base64,[a-z0-9+/=]+$/i.test(value);
+        case 'preserveAspectRatio':
+            return value === 'xMidYMid meet';
         default:
             return false;
     }
@@ -94,6 +106,19 @@ export function readPreview(value: unknown): PreviewApplication {
     if (!string(app.documentId) || !Array.isArray(app.screens) || !app.screens.length) {
         throw new Error('Add a visible top-level frame to preview a screen.');
     }
+    const images = Object.fromEntries(
+        Object.entries(object(app.images ?? {})).map(([hash, url]) => {
+            if (
+                !/^[a-f0-9]{64}$/.test(hash) ||
+                !string(url) ||
+                !/^data:image\/(png|jpeg|gif|webp);base64,[a-z0-9+/=]+$/i.test(url)
+            ) {
+                throw new Error('Invalid preview image resource.');
+            }
+
+            return [hash, url];
+        })
+    );
     const keys = new Set<string>();
     const screenIds = new Set<string>();
     const nodes: PreviewNode[] = [];
@@ -101,7 +126,7 @@ export function readPreview(value: unknown): PreviewApplication {
         const node = object(value);
         if (
             depth > MAX_DEPTH ||
-            nodes.length >= MAX_NODES ||
+            nodes.length >= MAX_PREVIEW_NODES ||
             !string(node.key) ||
             keys.has(node.key) ||
             !string(node.tag) ||
@@ -123,6 +148,14 @@ export function readPreview(value: unknown): PreviewApplication {
             attrs: attrs as PreviewNode['attrs']
         };
         nodes.push(result);
+        if (node.tag === 'image') {
+            if (!string(node.image) || !Object.hasOwn(images, node.image)) {
+                throw new Error('A preview image resource is missing.');
+            }
+            result.image = node.image;
+        } else if (node.image !== undefined) {
+            throw new Error('Only image elements may reference raster resources.');
+        }
         if (node.text !== undefined) {
             result.text = node.text as string;
         }
@@ -194,5 +227,5 @@ export function readPreview(value: unknown): PreviewApplication {
         throw new Error('A button refers to a missing or hidden screen. Choose another target.');
     }
 
-    return { documentId: app.documentId, screens };
+    return { documentId: app.documentId, screens, images };
 }

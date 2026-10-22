@@ -503,8 +503,24 @@ image-bearing screens fail visibly rather than silently losing artwork. Hosting 
 editor remains usable without preview configuration. Coverage: `tests/preview.test.ts`,
 `tests/previewConfiguration.test.ts`, `tests/browser/preview.spec.ts`.
 
-Next: complete image resource transfer and preview artwork parity, then read-only preview links
-on the separate domain. Richer shape sizing remains a separate increment.
+Image/artwork increment implemented: image primitives reference a deduplicated raster table,
+prepared asynchronously in the editor from its document database or authorized asset sync.
+Content signatures, SHA-256, the existing per-image size limit and browser decoding are checked
+before a complete projection is sent; the aggregate 8 MiB preview bound remains in place.
+Only required, shown images are read, including nested component/library artwork. Valid images
+are cached for the open panel, unused entries are discarded, failures can be retried, and stale
+preparation is cancelled. Loading or failed image preparation retains the last valid preview;
+a Retry action recovers after a missing asset arrives. Runtime requests remain blocked: the
+sandbox receives raster data URLs, never editor blob URLs or external image addresses. A version
+handshake rejects outdated runtimes before sending the projection. SVG
+image boxes preserve intrinsic aspect ratios, transforms, opacity, draw order and visibility.
+Default outlines now share a design token with the canvas; text uses the same fallback font
+and native SVG default fill. Coverage includes resource validation/cache/cancellation and real
+browser decoding, geometry/style parity, missing-image recovery and normal/narrow visual checks.
+Diagram connector links remain absent, as in the current canvas; this does not introduce them.
+
+Next: read-only preview links on the separate domain. Richer shape sizing and data/list repetition
+remain separate increments.
 
 1. Frames for screens and stacks, and roles and props on components and instances:
    - First usable increment: validated frame records, durable membership, save/copy/operations,

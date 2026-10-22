@@ -111,6 +111,13 @@ export function createAssets({ pick = pickFile, measure = measureImage } = {}) {
     let sync: AssetSync | undefined;
     const urls = new Map<string, Promise<string | undefined>>();
 
+    /** Bytes from this browser or the document's authorized asset sync, never an external URL. */
+    const read = async (hash: string, documentId?: string) => {
+        const opened = await database;
+
+        return (await opened?.asset(hash)) ?? sync?.download(documentId, hash, opened);
+    };
+
     /** Keeps a file as an image to draw; throws `ImageRefused` saying why it cannot. */
     const add = async (file: Blob): Promise<ImageToPlace> => {
         const opened = await database;
@@ -154,6 +161,7 @@ export function createAssets({ pick = pickFile, measure = measureImage } = {}) {
         },
 
         add,
+        read,
 
         /**
          * Asks for an image and makes it the one the image tool draws. Without
@@ -195,16 +203,11 @@ export function createAssets({ pick = pickFile, measure = measureImage } = {}) {
                 return known;
             }
 
-            const created = database
-                .then(
-                    async (opened) =>
-                        (await opened?.asset(hash)) ?? sync?.download(documentId, hash, opened)
-                )
-                .then((asset) =>
-                    asset
-                        ? URL.createObjectURL(new Blob([asset.bytes], { type: asset.type }))
-                        : undefined
-                );
+            const created = read(hash, documentId).then((asset) =>
+                asset
+                    ? URL.createObjectURL(new Blob([asset.bytes], { type: asset.type }))
+                    : undefined
+            );
 
             urls.set(hash, created);
             // An image not kept yet may arrive later, so only what was found is remembered.

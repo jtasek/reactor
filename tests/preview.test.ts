@@ -209,7 +209,7 @@ it('drops screen links from library components copied into another document', ()
     expect(library.components.button.interaction?.navigateTo).toBe('details');
 });
 
-it('diagnoses unsupported resources explicitly', () => {
+it('diagnoses image sources that are not stored assets explicitly', () => {
     const document = previewFixture();
     document.shapes.photo = {
         ...createShape({
@@ -225,5 +225,5 @@ it('diagnoses unsupported resources explicitly', () => {
         id: 'photo'
     };
     document.shapesIds.push('photo');
-    expect(() => projectPreview(document, {})).toThrow('image resources');
+    expect(() => projectPreview(document, {})).toThrow('must be stored Reactor assets');
 });

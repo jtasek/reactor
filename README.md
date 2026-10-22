@@ -545,9 +545,15 @@ For a button, **Navigate to** chooses a target screen. Inputs and navigation are
 preview, never saved or synchronized. **Reset preview** clears input edits and returns to the
 first screen. Closing the panel clears its runtime state. Broken role links, hidden/missing
 navigation targets and layout problems retain the last valid preview with a diagnostic.
-This first increment supports shape/component SVG artwork and native inputs/button overlays;
-images are diagnosed as unsupported, and diagram connector links are not rendered. List roles
-are labeled containers; record repetition, validation and shared preview links come later.
+Preview supports shape/component SVG artwork, stored raster images and native inputs/button
+overlays. Images are read in the editor from its document database or authorized asset sync,
+verified by content/hash and decoding, and sent as a deduplicated raster table. The sandbox
+cannot fetch images. Missing, invalid or oversized resources retain the last valid preview;
+**Retry preview** tries again after an image arrives. Images keep their intrinsic aspect ratio,
+transforms and opacity, including in nested/library components. Import external images into
+Reactor first. The existing 5 MiB per-image and 8 MiB aggregate preview limits apply. Diagram
+connector links are not rendered. List roles are labeled containers; record repetition,
+validation and shared preview links come later.
 
 The runtime is a separate static server. It must be on a **different registrable domain** from
 the editor, on an app subdomain, without the editor's cookies. Configure the same
@@ -555,7 +561,9 @@ the editor, on an app subdomain, without the editor's cookies. Configure the sam
 origin (the same image can run `node server.preview.ts`). Public origins require HTTPS.
 The origin guard conservatively requires different final two hostname labels, so sites using
 multi-label suffixes must also use a preview domain with different final two labels.
-`pnpm build` builds both the editor (`dist`) and static runtime (`dist-preview`). For development,
+Deploy the editor and runtime from the same release; an outdated runtime shows an update notice
+before any projection is sent. `pnpm build` builds both the editor (`dist`) and static runtime
+(`dist-preview`). For development,
 `pnpm build:preview` builds the runtime independently. It serves no accounts, documents, APIs or
 external assets; its sandbox disallows same-origin access, forms, popups and top navigation.
 The editor sends a validated projection over a dedicated channel; changes cannot travel back
