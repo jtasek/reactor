@@ -23,3 +23,24 @@
     border: 1px solid var(--hairline-color);
     border-radius: var(--radius-md);
 }
+
+.retry {
+    margin: var(--panel-gap);
+    padding: 4px 8px;
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-sm);
+    background: var(--field-background);
+    color: var(--text-color);
+    font: inherit;
+    cursor: pointer;
+}
+
+.retry:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 2px;
+}
+
+.retry:disabled {
+    cursor: default;
+    background: var(--control-background-disabled);
+}

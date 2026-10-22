@@ -7,7 +7,7 @@ import { applyInstanceOverrides } from '../app/componentProps';
 import { effectiveRoleSettings, resolveComponentRole } from '../app/componentRoles';
 import { themeColors } from '../app/themeColors';
 import { assertNever, boxCenter, getShapeBounds, DEFAULT_TEXT_FONT_SIZE } from '../app/utils';
-import { readPreview, type PreviewApplication, type PreviewNode } from './protocol';
+import type { PreviewDrawing, PreviewNode } from './protocol';
 
 /** A read-only projection. Source component records and bindings never cross the sandbox boundary.
  * Problems that leave the prototype usable, such as a link to a deleted screen, go to `warnings`. */
@@ -15,7 +15,7 @@ export function projectPreview(
     sourceDocument: Document,
     context: VariableContext,
     warnings: string[] = []
-): PreviewApplication {
+): PreviewDrawing {
     const problems = Object.values(frameLayout(sourceDocument).problems);
     if (problems.length) {
         throw new Error(problems.join(' '));
@@ -47,7 +47,7 @@ export function projectPreview(
         const attrs: PreviewNode['attrs'] = { opacity: shape.opacity ?? 1 };
         const paint = {
             fill: shape.fill ?? 'none',
-            stroke: shape.stroke ?? 'currentColor',
+            stroke: shape.stroke ?? 'var(--shape-stroke-color)',
             // Matches the canvas's `.shape` stroke width.
             'stroke-width': 2
         };
@@ -116,15 +116,31 @@ export function projectPreview(
                         x: shape.position.x,
                         y: shape.position.y,
                         'font-size': shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE,
-                        fill: shape.fontColor ?? 'currentColor'
+                        ...(shape.fontColor === undefined ? {} : { fill: shape.fontColor })
                     },
                     shape.value
                 );
                 break;
-            case 'image':
-                throw new Error(
-                    `${shape.name}: image resources are not supported in this preview increment.`
-                );
+            case 'image': {
+                const hash = /^asset:([a-f0-9]{64})$/.exec(shape.source)?.[1];
+                if (!hash) {
+                    throw new Error(
+                        `${shape.name}: preview images must be stored Reactor assets. Import this image before previewing.`
+                    );
+                }
+                group.children!.push({
+                    key: `${key}/art`,
+                    tag: 'image',
+                    image: hash,
+                    attrs: {
+                        x: shape.position.x,
+                        y: shape.position.y,
+                        ...shape.size,
+                        preserveAspectRatio: 'xMidYMid meet'
+                    }
+                });
+                break;
+            }
             case 'instance': {
                 const source = componentSource(document, shape.componentId, ancestors);
                 const component = document.components[shape.componentId];
@@ -187,7 +203,7 @@ export function projectPreview(
         return group;
     };
 
-    return readPreview({
+    return {
         documentId: document.id,
         screens: roots.map((frame) => ({
             id: frame.id,
@@ -203,5 +219,5 @@ export function projectPreview(
                     draw(themeColors(document.shapes[id], document, context), frame.id, new Set())
                 )
         }))
-    });
+    };
 }

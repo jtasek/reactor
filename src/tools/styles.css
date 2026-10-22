@@ -1,7 +1,6 @@
 .shape {
     fill: var(--shape-fill, none);
-    /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- no design token yet */
-    stroke: var(--shape-stroke, rgba(71, 74, 81, 1.0));
+    stroke: var(--shape-stroke, var(--shape-stroke-color));
     stroke-width: 2;
 }
 

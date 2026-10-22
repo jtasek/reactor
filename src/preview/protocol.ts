@@ -4,6 +4,8 @@ export interface PreviewNode {
     tag: 'g' | 'rect' | 'circle' | 'ellipse' | 'line' | 'polyline' | 'text' | 'image';
     attrs: Record<string, string | number>;
     text?: string;
+    /** SHA-256 key into the application's verified raster image table. */
+    image?: string;
     children?: PreviewNode[];
     control?: {
         role: 'text' | 'input' | 'button' | 'list' | 'image';
@@ -19,7 +21,8 @@ export interface PreviewNode {
     };
 }
 
-export interface PreviewApplication {
+/** Drawing projected from the graph, before image bytes have been prepared. */
+export interface PreviewDrawing {
     documentId: string;
     screens: {
         id: string;
@@ -32,8 +35,20 @@ export interface PreviewApplication {
     }[];
 }
 
+export interface PreviewApplication extends PreviewDrawing {
+    images: Record<string, string>;
+}
+
+/** Bound on the drawing itself, measured as JSON without its image table. */
 export const MAX_PREVIEW_BYTES = 8 * 1024 * 1024;
-const MAX_NODES = 5000;
+/** Bound on the image bytes one preview shows, measured as decoded files, not base64 text. */
+export const MAX_PREVIEW_IMAGE_BYTES = 8 * 1024 * 1024;
+/** Matches the editor's per-image limit (`MAX_IMAGE_BYTES`). */
+const MAX_PREVIEW_IMAGE_FILE_BYTES = 5 * 1024 * 1024;
+const IMAGE_URL = /^data:image\/(png|jpeg|gif|webp);base64,([a-z0-9+/]*={0,2})$/i;
+/** Version 2 adds the verified image table; older runtimes silently omit image references. */
+export const PREVIEW_PROTOCOL_VERSION = 2;
+export const MAX_PREVIEW_NODES = 5000;
 const MAX_DEPTH = 32;
 const TAGS = new Set(['g', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'text', 'image']);
 const NUMBERS = new Set([
@@ -73,27 +88,76 @@ function attribute(key: string, value: unknown) {
     switch (key) {
         case 'fill':
         case 'stroke':
-            return /^(#[0-9a-f]{6}|none|currentColor)$/i.test(value);
+            return (
+                /^(#[0-9a-f]{6}|none|currentColor)$/i.test(value) ||
+                (key === 'stroke' && value === 'var(--shape-stroke-color)')
+            );
         case 'transform':
             return /^(?:(?:translate|rotate)\([-+\d.eE ,]+\)\s*)+$/.test(value);
         case 'points':
             return /^[-+\d.eE ,]*$/.test(value);
-        case 'href':
-            return /^data:image\/(png|jpeg|gif|webp);base64,[a-z0-9+/=]+$/i.test(value);
+        case 'preserveAspectRatio':
+            return value === 'xMidYMid meet';
         default:
             return false;
     }
 }
 
-/** Both ends validate before rendering. DOM construction never accepts arbitrary tags or attributes. */
-export function readPreview(value: unknown): PreviewApplication {
-    if (new TextEncoder().encode(JSON.stringify(value)).byteLength > MAX_PREVIEW_BYTES) {
+/** Decoded size of a raster data URL, or undefined when it is not one. */
+function imageBytes(url: unknown) {
+    const data = string(url) ? IMAGE_URL.exec(url)?.[2] : undefined;
+    if (data === undefined || data.length % 4 !== 0) {
+        return undefined;
+    }
+
+    return (data.length / 4) * 3 - (data.endsWith('==') ? 2 : data.endsWith('=') ? 1 : 0);
+}
+
+/** Validates an image table entry by entry. Each data URL needs checking only once:
+ * the editor checks it when it is prepared, the runtime when it first arrives. */
+export function readPreviewImages(value: unknown): Record<string, string> {
+    return Object.fromEntries(
+        Object.entries(object(value ?? {})).map(([hash, url]) => {
+            const bytes = imageBytes(url);
+            if (!/^[a-f0-9]{64}$/.test(hash) || bytes === undefined) {
+                throw new Error('Invalid preview image resource.');
+            }
+            if (bytes > MAX_PREVIEW_IMAGE_FILE_BYTES) {
+                throw new Error(
+                    'A preview image is larger than 5 MiB. Replace it with a smaller one.'
+                );
+            }
+
+            return [hash, url as string];
+        })
+    );
+}
+
+/** Both ends validate before rendering. DOM construction never accepts arbitrary tags or attributes.
+ * Images in `value.images` are validated here; `known` holds images validated earlier, which a
+ * drawing may refer to without sending them again. The result's table has only the images it uses. */
+export function readPreview(
+    value: unknown,
+    known: Readonly<Record<string, string>> = {}
+): PreviewApplication {
+    const app = object(value);
+    const sent = readPreviewImages(app.images);
+    if (
+        new TextEncoder().encode(JSON.stringify({ ...app, images: undefined })).byteLength >
+        MAX_PREVIEW_BYTES
+    ) {
         throw new Error('Preview exceeds the 8 MiB limit.');
     }
-    const app = object(value);
     if (!string(app.documentId) || !Array.isArray(app.screens) || !app.screens.length) {
         throw new Error('Add a visible top-level frame to preview a screen.');
     }
+    const available = (hash: string) =>
+        Object.hasOwn(sent, hash)
+            ? sent[hash]
+            : Object.hasOwn(known, hash)
+              ? known[hash]
+              : undefined;
+    const images: Record<string, string> = {};
     const keys = new Set<string>();
     const screenIds = new Set<string>();
     const nodes: PreviewNode[] = [];
@@ -101,7 +165,7 @@ export function readPreview(value: unknown): PreviewApplication {
         const node = object(value);
         if (
             depth > MAX_DEPTH ||
-            nodes.length >= MAX_NODES ||
+            nodes.length >= MAX_PREVIEW_NODES ||
             !string(node.key) ||
             keys.has(node.key) ||
             !string(node.tag) ||
@@ -123,6 +187,16 @@ export function readPreview(value: unknown): PreviewApplication {
             attrs: attrs as PreviewNode['attrs']
         };
         nodes.push(result);
+        if (node.tag === 'image') {
+            const url = string(node.image) ? available(node.image) : undefined;
+            if (url === undefined) {
+                throw new Error('A preview image resource is missing.');
+            }
+            result.image = node.image as string;
+            images[result.image] = url;
+        } else if (node.image !== undefined) {
+            throw new Error('Only image elements may reference raster resources.');
+        }
         if (node.text !== undefined) {
             result.text = node.text as string;
         }
@@ -194,5 +268,10 @@ export function readPreview(value: unknown): PreviewApplication {
         throw new Error('A button refers to a missing or hidden screen. Choose another target.');
     }
 
-    return { documentId: app.documentId, screens };
+    const imageTotal = Object.values(images).reduce((total, url) => total + imageBytes(url)!, 0);
+    if (imageTotal > MAX_PREVIEW_IMAGE_BYTES) {
+        throw new Error('Preview images exceed the 8 MiB limit. Remove or reduce some images.');
+    }
+
+    return { documentId: app.documentId, screens, images };
 }

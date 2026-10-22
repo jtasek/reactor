@@ -10,8 +10,9 @@ export interface PreviewProjection {
     paused: boolean;
 }
 
-/** Read the projection while Overmind tracks its actual dependencies. Serializing the
- * small DTO also avoids sending an unchanged view after selection-only edits. During a
+/** Read the drawing while Overmind tracks its actual dependencies. Image preparation
+ * and final validation happen before transmission. Serialization avoids rebuilding an
+ * unchanged view after selection-only edits. During a
  * drag only the gesture kind is read, so pointer moves don't rebuild the preview. */
 export const usePreviewProjection = () =>
     useAppState((state): PreviewProjection => {
@@ -21,14 +22,14 @@ export const usePreviewProjection = () =>
         const document = state.currentDocument;
         const warnings: string[] = [];
         try {
-            const application = projectPreview(
+            const drawing = projectPreview(
                 document,
                 variableContext(document, state.previewModes[document.id]),
                 warnings
             );
 
             return {
-                serialized: JSON.stringify(application),
+                serialized: JSON.stringify(drawing),
                 problem: null,
                 warnings: [...new Set(warnings)],
                 paused: false

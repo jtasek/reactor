@@ -1,4 +1,10 @@
-import { readPreview, type PreviewApplication, type PreviewNode } from './protocol';
+import {
+    readPreview,
+    readPreviewImages,
+    PREVIEW_PROTOCOL_VERSION,
+    type PreviewApplication,
+    type PreviewNode
+} from './protocol';
 import '../../static/styles/site.css';
 import './runtime.css';
 
@@ -12,12 +18,17 @@ const XHTML = 'http://www.w3.org/1999/xhtml';
 const root = document.getElementById('preview')!;
 const values = new Map<string, string>();
 let application: PreviewApplication | undefined;
+/** Images received so far. The editor sends each image once and later updates only refer to it. */
+let images: Record<string, string> = {};
 let currentScreen: string | undefined;
 let port: MessagePort | undefined;
 
 function nodeElement(node: PreviewNode, decorative = false): SVGElement {
     const element = document.createElementNS(SVG, node.tag);
     Object.entries(node.attrs).forEach(([key, value]) => element.setAttribute(key, String(value)));
+    if (node.image) {
+        element.setAttribute('href', application!.images[node.image]);
+    }
     if (node.text !== undefined) {
         element.textContent = node.text;
     }
@@ -142,7 +153,10 @@ function render() {
 
 function receive(value: unknown) {
     try {
-        const next = readPreview(value);
+        const update = value && typeof value === 'object' ? (value as { images?: unknown }) : {};
+        // Keep new images even if this drawing is refused: the editor counts them as sent.
+        images = { ...images, ...readPreviewImages(update.images) };
+        const next = readPreview({ ...update, images: undefined }, images);
         if (application?.documentId !== next.documentId) {
             values.clear();
             currentScreen = undefined;
@@ -161,6 +175,8 @@ function receive(value: unknown) {
             }
         });
         application = next;
+        // Only what the accepted drawing uses stays, matching what the editor remembers sending.
+        images = next.images;
         render();
         port?.postMessage({ type: 'rendered' });
     } catch (error) {
@@ -183,6 +199,6 @@ window.addEventListener('message', (event) => {
     }
     port = event.ports[0];
     port.onmessage = (event) => receive(event.data);
-    port.postMessage({ type: 'ready' });
+    port.postMessage({ type: 'ready', version: PREVIEW_PROTOCOL_VERSION });
 });
 window.addEventListener('pagehide', () => port?.close());
