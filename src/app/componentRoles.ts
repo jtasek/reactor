@@ -32,6 +32,44 @@ export const ROLE_PROPERTIES: Record<ComponentRole, RoleProperty[]> = {
     image: [{ key: 'alt', label: 'Alternative text', kind: 'text', required: true }]
 };
 
+/** Keeps only the links the role uses, dropping leftovers such as a link merged from another copy. */
+export const roleLinks = (
+    role: RoleSettings['role'],
+    props: Record<string, string>
+): Record<string, string> =>
+    role === 'none'
+        ? {}
+        : Object.fromEntries(
+              Object.entries(props).filter(([key]) =>
+                  ROLE_PROPERTIES[role].some((field) => field.key === key)
+              )
+          );
+
+/**
+ * The links a role starts with when chosen: the source's links when an instance picks
+ * the source's role, otherwise the current links that still fit, so Input to Button keeps
+ * Label and Disabled. Links to missing or incompatible properties are left out.
+ */
+export function startingRoleLinks(
+    document: Document,
+    component: Component,
+    current: RoleSettings,
+    role: ComponentRole,
+    instance?: InstanceShape
+): Record<string, string> {
+    const source = component.interaction;
+    const from = instance && source?.role === role ? source.props : current.props;
+
+    return Object.fromEntries(
+        Object.entries(from).filter(([key, propId]) => {
+            const field = ROLE_PROPERTIES[role].find((field) => field.key === key);
+            const resolved = resolveComponentProp(component, propId, document);
+
+            return field && resolved?.property.kind === field.kind;
+        })
+    );
+}
+
 export const effectiveRoleSettings = (
     component: Component,
     instance?: InstanceShape

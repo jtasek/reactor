@@ -137,12 +137,13 @@ export const config = {
                           name: 'collaboration',
                           enforce: true
                       },
-                      // Frame, group and visibility editing stay with the editor, in a bounded file.
+                      // Role editing and the Inspector that hosts it load with the editor.
                       componentRoles: {
                           test: /[\\/]src[\\/](app[\\/](componentRoles|roleEdits|roleHooks)\.ts|ui[\\/]components[\\/]Inspector[\\/](ComponentRole|ComponentDetails|Inspector)\.tsx)$/,
                           name: 'component-roles',
                           enforce: true
                       },
+                      // Frame, group and visibility editing stay with the editor, in a bounded file.
                       pointerEdits: {
                           test: /[\\/]src[\\/]events[\\/]pointerEdits\.ts$/,
                           name: 'pointer-edits',

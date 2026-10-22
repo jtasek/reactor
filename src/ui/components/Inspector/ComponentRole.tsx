@@ -1,5 +1,6 @@
 import React, { type FC } from 'react';
-import type { RoleSettings } from 'src/app/types';
+import type { ComponentRole as ComponentRoleName, RoleSettings } from 'src/app/types';
+import { roleLinks } from 'src/app/componentRoles';
 import { useActions } from 'src/app/hooks';
 import { useRoleEditor } from 'src/app/roleHooks';
 import { PropertyGroup } from './PropertyGroup';
@@ -44,7 +45,24 @@ export const ComponentRole: FC<{ componentId?: string; instanceId?: string }> = 
 
                                         return;
                                     }
-                                    update({ role: role as RoleSettings['role'], props: {} });
+                                    if (
+                                        data.inherited &&
+                                        role !== 'none' &&
+                                        role === data.sourceRole
+                                    ) {
+                                        // Already this role through the source; keep following it.
+                                        return;
+                                    }
+                                    update(
+                                        role === 'none'
+                                            ? { role, props: {} }
+                                            : {
+                                                  role: role as ComponentRoleName,
+                                                  props: data.startingLinks[
+                                                      role as ComponentRoleName
+                                                  ]
+                                              }
+                                    );
                                 }}
                             >
                                 {instanceId && (
@@ -75,7 +93,9 @@ export const ComponentRole: FC<{ componentId?: string; instanceId?: string }> = 
                                         disabled={data.disabled}
                                         value={value}
                                         onChange={(event) => {
-                                            const props = { ...data.settings.props };
+                                            const props = roleLinks(data.settings.role, {
+                                                ...data.settings.props
+                                            });
                                             if (event.target.value) {
                                                 props[field.key] = event.target.value;
                                             } else {
