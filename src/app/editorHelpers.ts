@@ -1,3 +1,4 @@
+import type * as Roles from './roleEdits';
 import type * as Pointer from '../events/pointerEdits';
 import type * as Shapes from './shapeEdits';
 import type * as Visibility from './visibilityEdits';
@@ -18,6 +19,7 @@ import type * as Snapping from './snapping';
  * `editorHelpers`, which only runs once the editor has loaded.
  */
 export interface EditorHelpers {
+    roles: typeof Roles;
     pointer: typeof Pointer;
     clipboardEdits: typeof ClipboardEdits;
     frames: typeof Frames;

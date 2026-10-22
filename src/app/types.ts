@@ -205,6 +205,8 @@ export interface Text extends ShapeBase {
 
 /** A live reference to a component's source shapes. */
 export interface InstanceShape extends ShapeBase {
+    /** Absent inherits the source; none explicitly removes its semantic role. */
+    interaction?: RoleSettings;
     type: 'instance';
     componentId: string;
     position: Point;
@@ -218,6 +220,14 @@ export interface ComponentProp {
     label: string;
     shapeId: string;
     key: string;
+}
+
+export type ComponentRole = 'text' | 'input' | 'button' | 'list' | 'image';
+
+/** Semantic property names refer to existing exposed property IDs, never copied values. */
+export interface RoleSettings {
+    role: ComponentRole | 'none';
+    props: Record<string, string>;
 }
 
 export type Shape = Rectangle | Image | Circle | Ellipse | Line | Pen | Text | InstanceShape;
@@ -270,6 +280,7 @@ export interface Layer {
 }
 
 export interface Component {
+    interaction?: RoleSettings;
     id: string;
     /** Rotation of the source's selection frame; its shapes carry their own geometry. */
     rotation?: number;

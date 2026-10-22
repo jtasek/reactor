@@ -138,6 +138,11 @@ export const config = {
                           enforce: true
                       },
                       // Frame, group and visibility editing stay with the editor, in a bounded file.
+                      componentRoles: {
+                          test: /[\\/]src[\\/](app[\\/](componentRoles|roleEdits|roleHooks)\.ts|ui[\\/]components[\\/]Inspector[\\/](ComponentRole|ComponentDetails|Inspector)\.tsx)$/,
+                          name: 'component-roles',
+                          enforce: true
+                      },
                       pointerEdits: {
                           test: /[\\/]src[\\/]events[\\/]pointerEdits\.ts$/,
                           name: 'pointer-edits',

@@ -1,3 +1,4 @@
+import * as roles from 'src/app/roleEdits';
 import * as pointer from 'src/events/pointerEdits';
 import * as shapes from 'src/app/shapeEdits';
 import * as visibility from 'src/app/visibilityEdits';
@@ -144,6 +145,7 @@ export function registerEditor() {
     registerCommands();
     registerTools();
     provideEditorHelpers({
+        roles,
         pointer,
         clipboardEdits,
         frames,

@@ -23,7 +23,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 9;
+export const SCHEMA_VERSION = 10;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -273,6 +273,7 @@ function readComponent(value: unknown): ComponentData {
 
     return {
         ...readMember(value),
+        ...(c.interaction === undefined ? {} : { interaction: readRoleSettings(c.interaction) }),
         ...(c.sourceOnly === undefined ? {} : { sourceOnly: bool(c.sourceOnly) }),
         ...(c.sourceShapes === undefined
             ? {}
@@ -403,6 +404,9 @@ export function readShapeGeometry(value: unknown) {
         case 'instance':
             return {
                 type: s.type,
+                ...(s.interaction === undefined
+                    ? {}
+                    : { interaction: readRoleSettings(s.interaction) }),
                 componentId: id(s.componentId),
                 position: point(s.position),
                 overrides: Object.fromEntries(
@@ -532,6 +536,23 @@ function readOrderedShape(value: unknown): ShapeData {
     }
 
     return shape;
+}
+
+export function readRoleSettings(value: unknown): import('../types').RoleSettings {
+    const settings = record(value);
+    if (
+        typeof settings.role !== 'string' ||
+        !['none', 'text', 'input', 'button', 'list', 'image'].includes(settings.role)
+    ) {
+        throw new Error('Invalid component role');
+    }
+
+    return {
+        role: settings.role as import('../types').RoleSettings['role'],
+        props: Object.fromEntries(
+            Object.entries(record(settings.props)).map(([key, value]) => [id(key), id(value)])
+        )
+    };
 }
 
 export function readSizing(value: unknown): import('../types').Sizing {
@@ -919,6 +940,7 @@ export function migratePersistedState(raw: unknown, onRepair = () => {}): Persis
             data.version !== 6 &&
             data.version !== 7 &&
             data.version !== 8 &&
+            data.version !== 9 &&
             data.version !== SCHEMA_VERSION
         ) {
             return null;

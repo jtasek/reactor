@@ -871,3 +871,20 @@ Hidden guides are not drawn and locked ones do not move.
     ```
     Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
     ```
+
+
+## Component roles
+
+Schema v10 adds optional `interaction: { role, props }` settings to component sources and
+instance shapes. Instances without settings inherit the source; `none` explicitly opts out.
+A custom instance replaces the complete role configuration, while visual overrides remain
+independent. Role fields refer only to existing exposed component property IDs, never copied
+values or new control-tree nodes. `componentRoles.ts` resolves types and values through the
+existing component-prop/override system. Missing/incompatible references remain durable and
+produce local diagnostics; never delete a component or instance because a role link is stale.
+The initial list role has a label only, not item data/repetition. Roles are authoring metadata
+until the sandboxed preview lands. No runtime behavior or role inference is implicit.
+Role edits load through `editorHelpers().roles`; `roleHooks.ts` and the Inspector role fields
+load with the editor. Role settings survive readers, operations, clipboard, clone, library
+fingerprints/snapshots, sync and undo. Library hashes sort semantic map keys. Coverage lives
+in `tests/componentRoles.test.ts` and `tests/browser/componentRoles.spec.ts`.

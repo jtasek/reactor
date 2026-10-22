@@ -1,5 +1,6 @@
 import React, { FC } from 'react';
 import styles from './styles.css';
+import { ComponentRole } from './ComponentRole';
 import { SizingFields } from './SizingFields';
 import { FrameParent } from './FrameParent';
 import { PropertyField } from './PropertyField';
@@ -171,6 +172,7 @@ export const Inspector: FC<Props> = ({
                 visibleExposure={exposureFor('visible')}
                 lockedExposure={exposureFor('locked')}
             />
+            {instance && shapeIds.length === 1 && <ComponentRole instanceId={shapeIds[0]} />}
             {instance && <InstanceProps />}
             <AlignSection />
             <table>

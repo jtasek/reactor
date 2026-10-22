@@ -474,7 +474,20 @@ with the editor to retain bundle budgets. Coverage: `tests/stackSizing.test.ts` 
 Text, images, groups, instances and rotated rectangles retain their existing sizing behavior;
 text wrapping and image aspect-ratio dependencies need separate measured support.
 
-Next: component roles/props, with richer shape sizing as a separate increment.
+Role authoring increment implemented: components and instances explicitly choose Text, Input,
+Button, List or Image roles. Typed role fields link to existing exposed component property IDs,
+so source values, templates, variable bindings and instance overrides remain the single value
+system. Instances inherit source settings unless explicitly customized, may choose None, and
+can restore inheritance without clearing visual overrides. No roles are inferred. Missing or
+incompatible links show local diagnostics and remain durable for repair. Schema v10 retains v9
+files and role settings through persistence, operations, clone/copy/paste, library snapshots,
+collaboration and undo. Library hashes include roles with stable property-map ordering.
+This increment authors and resolves semantics; it does not execute controls. List currently
+has an accessible label; its item data and repetition belong to the later data/list increment.
+Coverage: `tests/componentRoles.test.ts` and `tests/browser/componentRoles.spec.ts`.
+
+Next: sandboxed preview with navigation, input state, diagnostics and the last valid preview.
+Richer shape sizing remains a separate increment.
 
 1. Frames for screens and stacks, and roles and props on components and instances:
    - First usable increment: validated frame records, durable membership, save/copy/operations,
@@ -484,7 +497,8 @@ Next: component roles/props, with richer shape sizing as a separate increment.
      measurement and hit testing must use one projection; verify through production copies
      that remote edits reflow without shared derived-position or undo feedback.
    - Hug/fill and min/max sizing with cycle diagnostics is implemented for frames and upright
-     stack rectangles. Next add component roles and props in the inspector.
+     stack rectangles. Explicit component/instance roles and property links are now authored
+     in Inspector; preview execution follows.
 2. The sandboxed preview, with navigation, input state, diagnostics and the last valid preview.
 3. Preview links: read-only, on the separate domain.
 4. SVG export of a screen or a selection, reusing geometry, order, visibility and overrides.
