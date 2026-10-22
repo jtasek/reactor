@@ -3,6 +3,7 @@ import type { PanelPlacement } from './types';
 export const PANEL_LAYOUT_KEY = 'reactor:panel-layout';
 
 export const DEFAULT_PANEL_LAYOUT: Record<string, PanelPlacement> = {
+    preview: { dock: null, position: { x: 380, y: 80 }, size: { width: 440, height: 560 } },
     aiEdit: { dock: null, position: { x: 960, y: 80 }, size: { height: 480 } },
     explorer: { dock: 'left', position: { x: 12, y: 12 } },
     components: { dock: 'left', position: { x: 12, y: 12 } },

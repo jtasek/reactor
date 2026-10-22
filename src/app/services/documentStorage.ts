@@ -23,7 +23,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 10;
+export const SCHEMA_VERSION = 11;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -549,6 +549,10 @@ export function readRoleSettings(value: unknown): import('../types').RoleSetting
 
     return {
         role: settings.role as import('../types').RoleSettings['role'],
+        // Only buttons navigate; a stray link on another role is dropped rather than kept.
+        ...(settings.navigateTo === undefined || settings.role !== 'button'
+            ? {}
+            : { navigateTo: id(settings.navigateTo) }),
         props: Object.fromEntries(
             Object.entries(record(settings.props)).map(([key, value]) => [id(key), id(value)])
         )
@@ -941,6 +945,7 @@ export function migratePersistedState(raw: unknown, onRepair = () => {}): Persis
             data.version !== 7 &&
             data.version !== 8 &&
             data.version !== 9 &&
+            data.version !== 10 &&
             data.version !== SCHEMA_VERSION
         ) {
             return null;

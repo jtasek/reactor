@@ -29,6 +29,8 @@ import {
     Variables
 } from 'src/ui/components';
 import { useActions } from 'src/app/hooks';
+import { usePreviewOpen } from 'src/app/previewHooks';
+import { InteractivePreview } from 'src/ui/components/InteractivePreview';
 import { useAiEdit } from 'src/app/aiHooks';
 import { ResetDocumentDialog } from 'src/ui/components/ResetDocumentDialog';
 import { registerEditor } from './registerEditor';
@@ -38,14 +40,17 @@ registerEditor();
 
 export const Designer: FC = () => {
     const aiEdit = useAiEdit();
-    const { closeAiEdit } = useActions();
+    const { closeAiEdit, closePreview } = useActions();
+    const previewOpen = usePreviewOpen();
     const readOnly = useAppState(isReadOnly);
     const checking = useAppState(
         (state) =>
             !state.documentAccess[state.currentDocumentId] ||
             state.documentAccess[state.currentDocumentId].role === 'unknown'
     );
-    if (readOnly) return <Viewer checking={checking} />;
+    if (readOnly) {
+        return <Viewer checking={checking} />;
+    }
 
     return (
         <Layout>
@@ -57,6 +62,15 @@ export const Designer: FC = () => {
             <Canvas />
             <ContextMenu />
             <PanelLayout toolbar={<ToolBar />}>
+                <DockablePanel
+                    id="preview"
+                    title="Preview"
+                    docking="vertical"
+                    visible={previewOpen}
+                    onClose={() => closePreview()}
+                >
+                    <InteractivePreview />
+                </DockablePanel>
                 <DockablePanel
                     id="aiEdit"
                     title="AI chat"

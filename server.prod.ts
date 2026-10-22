@@ -1,3 +1,4 @@
+import { previewConfiguration, previewConfigHandler } from './server/preview.ts';
 import path, { dirname } from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -58,6 +59,7 @@ const PROFILE_PHOTO_HOSTS = [
     'https://avatars.githubusercontent.com'
 ];
 
+const PREVIEW = previewConfiguration(process.env);
 const app = express();
 
 // Behind a load balancer / reverse proxy this lets Express trust X-Forwarded-* headers.
@@ -74,6 +76,7 @@ app.use(
                 baseUri: ["'none'"],
                 objectSrc: ["'none'"],
                 frameAncestors: ["'none'"],
+                frameSrc: PREVIEW ? [PREVIEW.previewOrigin] : ["'none'"],
                 formAction: ["'self'"],
                 scriptSrc: ["'self'"],
                 // React renders dynamic inline style attributes (shape positions,
@@ -95,6 +98,8 @@ app.use(
 
 app.use(compression());
 app.use(logger);
+
+app.get('/api/preview-config', previewConfigHandler(PREVIEW));
 
 app.get('/healthz', healthCheck(DIST_DIR));
 

@@ -882,9 +882,24 @@ independent. Role fields refer only to existing exposed component property IDs, 
 values or new control-tree nodes. `componentRoles.ts` resolves types and values through the
 existing component-prop/override system. Missing/incompatible references remain durable and
 produce local diagnostics; never delete a component or instance because a role link is stale.
-The initial list role has a label only, not item data/repetition. Roles are authoring metadata
-until the sandboxed preview lands. No runtime behavior or role inference is implicit.
+The initial list role has a label only, not item data/repetition. Roles are explicit authoring metadata, executed only in the opt-in sandboxed preview. No runtime behavior or role inference is implicit.
 Role edits load through `editorHelpers().roles`; `roleHooks.ts` and the Inspector role fields
 load with the editor. Role settings survive readers, operations, clipboard, clone, library
 fingerprints/snapshots, sync and undo. Library hashes sort semantic map keys. Coverage lives
 in `tests/componentRoles.test.ts` and `tests/browser/componentRoles.spec.ts`.
+
+
+## Interactive preview
+
+Schema v11 adds optional `RoleSettings.navigateTo`, naming a top-level frame for button navigation.
+Missing/hidden targets stay durable and diagnosable; never repair them into another screen.
+The lazy `src/preview/project.ts` reads geometry through `layoutDocument`, visibility and resolved
+component overrides. `src/preview/hooks.ts` reads it inside `useAppState` to track dependencies;
+`overmind.json` alone bypasses tracking. Only the validated `PreviewApplication` DTO crosses the
+MessageChannel. The iframe has `sandbox="allow-scripts"`, no same-origin access; bootstrap checks
+both the parent Window and configured editor origin. The static `server.preview.ts` runtime
+requires a configured separate site, with an explicit two-loopback-origin opt-in for local tests.
+Keep its CSP network-free and its server free of account/API routes. Do not move its code into
+the startup bundle. Runtime screen/input state never reaches document data. Invalid updates retain
+the last valid preview. Images currently produce an explicit unsupported-resource diagnostic;
+list repetition and shared links remain later increments. See README for hosting configuration.

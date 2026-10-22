@@ -101,7 +101,7 @@ export const ComponentRole: FC<{ componentId?: string; instanceId?: string }> = 
                                             } else {
                                                 delete props[field.key];
                                             }
-                                            update({ role: data.settings.role, props });
+                                            update({ ...data.settings, props });
                                         }}
                                     >
                                         <option value="">Not linked</option>
@@ -120,12 +120,48 @@ export const ComponentRole: FC<{ componentId?: string; instanceId?: string }> = 
                             </tr>
                         );
                     })}
+                    {data.settings.role === 'button' && (
+                        <tr>
+                            <th scope="row">
+                                <label htmlFor="role-target">Navigate to</label>
+                            </th>
+                            <td>
+                                <select
+                                    id="role-target"
+                                    aria-label="Navigate to screen"
+                                    disabled={data.disabled}
+                                    value={data.settings.navigateTo ?? ''}
+                                    onChange={(event) =>
+                                        update({
+                                            ...data.settings,
+                                            navigateTo: event.target.value || undefined
+                                        })
+                                    }
+                                >
+                                    <option value="">No navigation</option>
+                                    {data.settings.navigateTo &&
+                                        !data.screens.some(
+                                            (screen) => screen.id === data.settings.navigateTo
+                                        ) && (
+                                            <option value={data.settings.navigateTo}>
+                                                Missing or hidden screen
+                                            </option>
+                                        )}
+                                    {data.screens.map((screen) => (
+                                        <option key={screen.id} value={screen.id}>
+                                            {screen.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </td>
+                        </tr>
+                    )}
                     <tr>
                         <td colSpan={2}>
                             <small className={styles.frameHint}>
                                 {data.settings.role === 'none'
                                     ? 'Choose a role for this component.'
-                                    : 'Choose the exposed property for each role field. Interactive preview is not available yet.'}
+                                    : 'Choose the exposed property for each role field. Test controls in Preview.'}
                                 {instanceId &&
                                     !data.inherited &&
                                     ' Custom role settings; choose From source to reset.'}

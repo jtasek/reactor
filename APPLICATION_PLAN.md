@@ -486,8 +486,25 @@ This increment authors and resolves semantics; it does not execute controls. Lis
 has an accessible label; its item data and repetition belong to the later data/list increment.
 Coverage: `tests/componentRoles.test.ts` and `tests/browser/componentRoles.spec.ts`.
 
-Next: sandboxed preview with navigation, input state, diagnostics and the last valid preview.
-Richer shape sizing remains a separate increment.
+First sandboxed preview increment implemented: Preview opens a lazy-loaded, dockable panel.
+Visible top-level frames are screens; nested frames retain the shared stack/visibility projection.
+Button roles may name a target screen, with source inheritance and instance customization.
+Native input values and screen navigation live only inside the runtime, survive valid graph
+updates, and clear on Reset or closing the preview. Invalid role links, missing/hidden targets,
+layout problems and unsupported image resources show diagnostics while retaining the last valid
+projection. The sandbox receives only an allowlisted drawing/control DTO over a MessageChannel,
+never the store, credentials or executable expressions. It runs without same-origin access on
+an explicitly configured separate site; local development/tests opt into two loopback origins.
+The static-only runtime has no auth/API endpoints and cannot fetch network resources. Schema v11
+preserves optional navigation targets and opens v10 documents. Component artwork remains SVG;
+inputs use native fields and buttons use keyboard-accessible overlays. List roles remain labeled
+containers without repetition. Images and diagram links are not rendered in this first increment;
+image-bearing screens fail visibly rather than silently losing artwork. Hosting is opt-in, so the
+editor remains usable without preview configuration. Coverage: `tests/preview.test.ts`,
+`tests/previewConfiguration.test.ts`, `tests/browser/preview.spec.ts`.
+
+Next: complete image resource transfer and preview artwork parity, then read-only preview links
+on the separate domain. Richer shape sizing remains a separate increment.
 
 1. Frames for screens and stacks, and roles and props on components and instances:
    - First usable increment: validated frame records, durable membership, save/copy/operations,
@@ -498,7 +515,7 @@ Richer shape sizing remains a separate increment.
      that remote edits reflow without shared derived-position or undo feedback.
    - Hug/fill and min/max sizing with cycle diagnostics is implemented for frames and upright
      stack rectangles. Explicit component/instance roles and property links are now authored
-     in Inspector; preview execution follows.
+     in Inspector; the first sandboxed preview now executes inputs and navigation.
 2. The sandboxed preview, with navigation, input state, diagnostics and the last valid preview.
 3. Preview links: read-only, on the separate domain.
 4. SVG export of a screen or a selection, reusing geometry, order, visibility and overrides.

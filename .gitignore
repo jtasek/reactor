@@ -8,3 +8,5 @@ todo
 test-results/
 playwright-report/
 .pnpm-store/
+
+dist-preview

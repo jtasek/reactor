@@ -535,3 +535,44 @@ Use **Reactor (all definitions)** for modes, text or boolean variables. The firs
 rejects unsupported definitions, including units, transparency, other color spaces, composite
 tokens, descriptions/deprecation and unknown extensions, rather than producing a partial file.
 See [the supported subset](design/design-token-interchange.md) for details and identity rules.
+
+### Interactive prototype preview
+
+Open a document with visible top-level frames, then press **Preview** (the play icon on the
+application bar). Top-level frames become screens; nested frames keep their layout. Give a
+component or instance an Input or Button role in Inspector and link its exposed properties.
+For a button, **Navigate to** chooses a target screen. Inputs and navigation are local to the
+preview, never saved or synchronized. **Reset preview** clears input edits and returns to the
+first screen. Closing the panel clears its runtime state. Broken role links, hidden/missing
+navigation targets and layout problems retain the last valid preview with a diagnostic.
+This first increment supports shape/component SVG artwork and native inputs/button overlays;
+images are diagnosed as unsupported, and diagram connector links are not rendered. List roles
+are labeled containers; record repetition, validation and shared preview links come later.
+
+The runtime is a separate static server. It must be on a **different registrable domain** from
+the editor, on an app subdomain, without the editor's cookies. Configure the same
+`PREVIEW_ORIGIN` and `EDITOR_ORIGIN` on both processes, and run `pnpm serve:preview` on that
+origin (the same image can run `node server.preview.ts`). Public origins require HTTPS.
+The origin guard conservatively requires different final two hostname labels, so sites using
+multi-label suffixes must also use a preview domain with different final two labels.
+`pnpm build` builds both the editor (`dist`) and static runtime (`dist-preview`). For development,
+`pnpm build:preview` builds the runtime independently. It serves no accounts, documents, APIs or
+external assets; its sandbox disallows same-origin access, forms, popups and top navigation.
+The editor sends a validated projection over a dedicated channel; changes cannot travel back
+into the document. Without configuration, Preview explains that hosting is unavailable.
+
+Local testing uses distinct loopback origins with an explicit opt-in. In one terminal:
+
+```sh
+PREVIEW_ORIGIN=http://127.0.0.1:4001 EDITOR_ORIGIN=http://127.0.0.1:4000 PREVIEW_ALLOW_LOCALHOST=true pnpm start
+```
+
+After `pnpm build:preview`, start the runtime in another terminal:
+
+```sh
+PORT=4001 HOST=127.0.0.1 PREVIEW_ORIGIN=http://127.0.0.1:4001 EDITOR_ORIGIN=http://127.0.0.1:4000 PREVIEW_ALLOW_LOCALHOST=true pnpm serve:preview
+```
+
+Use `http://127.0.0.1:4000` for the editor, matching `EDITOR_ORIGIN` exactly. The runtime does
+not hot-reload; rebuild/reopen Preview after changing its implementation. Browser tests start
+both origins automatically and verify native controls, live updates, recovery and isolation.

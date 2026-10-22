@@ -1,0 +1,25 @@
+.preview {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--panel-gap);
+    min-height: 0;
+    height: 100%;
+    color: var(--text-color);
+}
+.preview p {
+    margin: 0;
+    padding: var(--panel-gap);
+}
+.preview > div {
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-md);
+    background: var(--control-background);
+}
+.preview iframe {
+    flex: 1;
+    width: 100%;
+    min-height: 240px;
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-md);
+}
