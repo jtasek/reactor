@@ -37,7 +37,8 @@ svg {
     display: block;
     max-width: 100%;
     height: auto;
-    overflow: visible;
+    /* A screen shows only what is inside its frame, so artwork can't cover the controls above. */
+    overflow: hidden;
 }
 foreignObject {
     overflow: visible;

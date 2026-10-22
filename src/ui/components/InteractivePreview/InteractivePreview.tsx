@@ -1,10 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { usePreviewProjection } from 'src/preview/hooks';
+import { usePreviewProjection, type PreviewProjection } from 'src/preview/hooks';
 import type { PreviewApplication } from 'src/preview/protocol';
 import styles from './styles.css';
 
 export default function InteractivePreview() {
-    const projection = usePreviewProjection();
+    const live = usePreviewProjection();
+    // Keep showing the last result while a drag pauses updates.
+    const settled = useRef<PreviewProjection>(live);
+    if (!live.paused) {
+        settled.current = live;
+    }
+    const projection = settled.current;
     const frame = useRef<HTMLIFrameElement>(null);
     const connection = useRef<MessagePort | null>(null);
     const latest = useRef<PreviewApplication | null>(null);
@@ -102,7 +108,6 @@ export default function InteractivePreview() {
         frame.current?.contentWindow?.postMessage({ type: 'reactor-preview-connect' }, '*', [
             channel.port2
         ]);
-        connection.current = channel.port1;
     };
 
     return (
@@ -113,6 +118,14 @@ export default function InteractivePreview() {
                     <strong>Preview needs attention</strong>
                     <p>{problem}</p>
                     {latest.current && <p>Showing the last valid preview.</p>}
+                </div>
+            )}
+            {!problem && projection.warnings.length > 0 && (
+                <div role="status">
+                    <strong>Preview needs attention</strong>
+                    {projection.warnings.map((warning) => (
+                        <p key={warning}>{warning}</p>
+                    ))}
                 </div>
             )}
             {origin && (

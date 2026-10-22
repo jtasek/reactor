@@ -5,7 +5,6 @@ import { shapeGeometry, shapeStyle } from './utils';
 const roleContent = (settings: RoleSettings | undefined) =>
     settings && {
         role: settings.role,
-        navigateTo: settings.navigateTo,
         props: Object.fromEntries(
             Object.entries(settings.props).sort(([a], [b]) => (a < b ? -1 : Number(a > b)))
         )
@@ -88,6 +87,15 @@ export function componentFingerprint(document: Document, componentId: string): s
     return libraryRecords(document, componentId)?.get(componentId)?.hash ?? null;
 }
 
+/** Screen links point at the library document's frames, which the destination does not have. */
+function withoutNavigation<T extends { interaction?: RoleSettings } | Shape>(record: T): T {
+    if ('interaction' in record && record.interaction) {
+        delete record.interaction.navigateTo;
+    }
+
+    return record;
+}
+
 /** Copies a source and the nested sources it needs into portable records. */
 export function librarySnapshot(
     document: Document,
@@ -108,9 +116,9 @@ export function librarySnapshot(
     }
 
     return [...records.values()].map(({ component, members, hash }) => ({
-        ...structuredClone(json(component)),
+        ...withoutNavigation(structuredClone(json(component))),
         sourceShapes: Object.fromEntries(
-            members.map((shape) => [shape.id, structuredClone(json(shape))])
+            members.map((shape) => [shape.id, withoutNavigation(structuredClone(json(shape)))])
         ),
         library: { documentId: document.id, hash },
         selected: false

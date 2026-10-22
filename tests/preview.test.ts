@@ -1,14 +1,14 @@
 import { projectPreview } from 'src/preview/project';
 import { readPreview } from 'src/preview/protocol';
 import { previewFixture } from './support/preview';
-import { createShape } from 'src/app/factories';
+import { createComponent, createDocument, createShape } from 'src/app/factories';
 import {
     readRoleSettings,
     serializePersistedState,
     migratePersistedState,
     restoreDocuments
 } from 'src/app/services/documentStorage';
-import { componentFingerprint } from 'src/app/componentLibrary';
+import { componentFingerprint, librarySnapshot } from 'src/app/componentLibrary';
 import { buildVariable, writeText } from 'src/app/variables';
 import { componentPropValue } from 'src/app/componentProps';
 
@@ -110,14 +110,11 @@ it('projects only shown frame members, resolved props and drawing data, without 
     expect(projectPreview(document, {}).screens.map((screen) => screen.id)).toEqual(['details']);
 });
 
-it('reports stale semantic links, navigation targets and cyclic components instead of producing a partial prototype', () => {
+it('reports stale semantic links and cyclic components instead of producing a partial prototype', () => {
     const document = previewFixture();
     document.components.button.interaction!.props.label = 'gone';
     expect(() => projectPreview(document, {})).toThrow('missing or incompatible');
     document.components.button.interaction!.props.label = 'label';
-    document.frames.details.visible = false;
-    expect(() => projectPreview(document, {})).toThrow('missing or hidden screen');
-    document.frames.details.visible = true;
     document.components.button.sourceShapes = {
         caption: document.shapes.caption,
         self: { ...document.shapes.next, id: 'self' }
@@ -151,9 +148,65 @@ it('preserves navigation through durable readers and library fingerprints, and o
     });
     const restored = restoreDocuments(migratePersistedState({ ...saved, version: 10 })!);
     expect(restored['preview-document'].components.button.interaction?.navigateTo).toBe('details');
+    // Screen links stay in their own document, so they don't flag library updates.
     const before = componentFingerprint(document, 'button');
     document.components.button.interaction!.navigateTo = 'home';
-    expect(componentFingerprint(document, 'button')).not.toBe(before);
+    expect(componentFingerprint(document, 'button')).toBe(before);
+    expect(
+        readRoleSettings({ role: 'input', props: {}, navigateTo: 'details' }).navigateTo
+    ).toBeUndefined();
+});
+
+it.each([
+    [
+        'deleted',
+        (document: ReturnType<typeof previewFixture>) => {
+            delete document.frames.details;
+            delete document.shapes.title.parentFrameId;
+        }
+    ],
+    [
+        'hidden',
+        (document: ReturnType<typeof previewFixture>) => {
+            document.frames.details.visible = false;
+        }
+    ]
+])('keeps previewing when a button links to a %s screen, with a warning', (_name, change) => {
+    const document = previewFixture();
+    change(document);
+    const warnings: string[] = [];
+    const output = projectPreview(document, {}, warnings);
+    const button = output.screens[0].nodes.find((node) => node.key === 'home/next')!;
+    expect(button.control?.role).toBe('button');
+    expect(button.control?.navigateTo).toBeUndefined();
+    expect(warnings).toEqual([
+        'Continue button links to a missing or hidden screen and does nothing. Choose another screen in its role settings.'
+    ]);
+});
+
+it('drops screen links from library components copied into another document', () => {
+    const library = previewFixture();
+    library.shapes.nested = {
+        ...library.shapes.next,
+        id: 'nested',
+        interaction: { role: 'button', props: { label: 'label' }, navigateTo: 'home' }
+    } as typeof library.shapes.next;
+    const panel = createComponent({
+        id: 'panel',
+        name: 'Panel',
+        shapesIds: ['nested'],
+        props: []
+    });
+    library.components.panel = panel;
+    delete (library.shapes.nested as { parentFrameId?: string }).parentFrameId;
+    const target = createDocument({ id: 'other', name: 'Other' });
+    const copies = librarySnapshot(library, 'panel', target)!;
+    const button = copies.find((component) => component.id === 'button')!;
+    const copiedPanel = copies.find((component) => component.id === 'panel')!;
+    expect(button.interaction).toEqual({ role: 'button', props: { label: 'label' } });
+    const nested = copiedPanel.sourceShapes!.nested;
+    expect(nested.type === 'instance' && nested.interaction?.navigateTo).toBeUndefined();
+    expect(library.components.button.interaction?.navigateTo).toBe('details');
 });
 
 it('diagnoses unsupported resources explicitly', () => {

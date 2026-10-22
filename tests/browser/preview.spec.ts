@@ -3,6 +3,7 @@ import { serializePersistedState } from 'src/app/services/documentStorage';
 import { previewFixture } from '../support/preview';
 import { openEditor } from './support/editor';
 import { buildVariable, writeText } from 'src/app/variables';
+import { createShape } from 'src/app/factories';
 
 test('renders templates in native input values, placeholders and accessible labels', async ({
     page
@@ -121,4 +122,93 @@ test('serves only static runtime files with a restricted policy', async ({ reque
     );
     expect(response.headers()['set-cookie']).toBeUndefined();
     expect((await request.get('http://127.0.0.1:4194/api/auth/get-session')).status()).toBe(404);
+});
+
+test('clips screens to their frame and keeps previewing a button whose screen is hidden', async ({
+    page
+}) => {
+    const document = previewFixture();
+    // Artwork sticking out above the frame must not cover the preview controls.
+    document.shapes.banner = {
+        ...createShape({
+            type: 'rectangle',
+            name: 'Banner',
+            order: 'a9',
+            position: { x: -50, y: -120 },
+            size: { width: 500, height: 130 },
+            parentFrameId: 'home',
+            fill: '#ff0000'
+        }),
+        id: 'banner',
+        selected: false
+    };
+    document.shapesIds.push('banner');
+    document.frames.details.visible = false;
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript(
+        (saved) => localStorage.setItem('reactor', saved),
+        JSON.stringify(saved)
+    );
+    await openEditor(page);
+    await page.getByRole('button', { name: 'Preview', exact: true }).click();
+    const iframe = page.frameLocator('iframe[title="Application preview"]');
+    await expect(
+        page.getByText('Continue button links to a missing or hidden screen', { exact: false })
+    ).toBeVisible();
+    await iframe.getByLabel('Your name').fill('Ada');
+    await iframe.getByRole('button', { name: 'Continue', exact: true }).click();
+    await expect(iframe.getByLabel('Preview screen')).toHaveValue('home');
+    await iframe.getByRole('button', { name: 'Reset preview' }).click({ timeout: 5000 });
+    await expect(iframe.getByLabel('Your name')).toHaveValue('');
+});
+
+test('updates the preview when a drag ends, not on every pointer move', async ({ page }) => {
+    const document = previewFixture();
+    document.frames.wide = {
+        id: 'wide',
+        name: 'Wide',
+        position: { x: 800, y: 100 },
+        size: { width: 200, height: 200 },
+        visible: true,
+        locked: false
+    };
+    document.shapes.box = {
+        ...createShape({
+            type: 'rectangle',
+            name: 'Box',
+            order: 'a9',
+            position: { x: 840, y: 150 },
+            size: { width: 80, height: 60 },
+            parentFrameId: 'wide',
+            fill: '#00ff00'
+        }),
+        id: 'box',
+        selected: false
+    };
+    document.shapesIds.push('box');
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript(
+        (saved) => localStorage.setItem('reactor', saved),
+        JSON.stringify(saved)
+    );
+    await openEditor(page);
+    await page.getByRole('button', { name: 'Preview', exact: true }).click();
+    const iframe = page.frameLocator('iframe[title="Application preview"]');
+    await iframe.getByLabel('Preview screen').selectOption('wide');
+    const box = iframe.locator('rect[fill="#00ff00"]');
+    await expect(box).toHaveAttribute('x', '840');
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    await page.mouse.click(surface.x + 880, surface.y + 180);
+    await page.mouse.down();
+    await page.mouse.move(surface.x + 860, surface.y + 230, { steps: 6 });
+    await expect(page.locator('svg#surface rect[x="820"]').first()).toBeAttached();
+    await expect(box).toHaveAttribute('x', '840');
+    await page.mouse.up();
+    await expect(box).toHaveAttribute('x', '820');
 });

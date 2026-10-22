@@ -9,10 +9,12 @@ import { themeColors } from '../app/themeColors';
 import { assertNever, boxCenter, getShapeBounds, DEFAULT_TEXT_FONT_SIZE } from '../app/utils';
 import { readPreview, type PreviewApplication, type PreviewNode } from './protocol';
 
-/** A read-only projection. Source component records and bindings never cross the sandbox boundary. */
+/** A read-only projection. Source component records and bindings never cross the sandbox boundary.
+ * Problems that leave the prototype usable, such as a link to a deleted screen, go to `warnings`. */
 export function projectPreview(
     sourceDocument: Document,
-    context: VariableContext
+    context: VariableContext,
+    warnings: string[] = []
 ): PreviewApplication {
     const problems = Object.values(frameLayout(sourceDocument).problems);
     if (problems.length) {
@@ -23,6 +25,7 @@ export function projectPreview(
     const roots = Object.values(document.frames).filter(
         (frame) => !parents.get(frame.id) && isFrameVisible(document, frame.id)
     );
+    const screenIds = new Set(roots.map((frame) => frame.id));
     const shown = shownShapesIds({ ...document, shownLayerId: undefined }, null);
     const rootOf = (parent: string | undefined): string | undefined => {
         if (!parent) {
@@ -45,7 +48,8 @@ export function projectPreview(
         const paint = {
             fill: shape.fill ?? 'none',
             stroke: shape.stroke ?? 'currentColor',
-            'stroke-width': 1
+            // Matches the canvas's `.shape` stroke width.
+            'stroke-width': 2
         };
         const group: PreviewNode = { key, tag: 'g', attrs, children: [] };
         const primitive = (tag: PreviewNode['tag'], attrs: PreviewNode['attrs'], text?: string) => {
@@ -147,10 +151,13 @@ export function projectPreview(
                     throw new Error(`${shape.name}: ${role.problems.join(' ')}`);
                 }
                 const settings = effectiveRoleSettings(component, shape);
-                if (settings.navigateTo && role.role !== 'button') {
-                    throw new Error(
-                        `${shape.name}: only buttons can navigate. Update its role settings.`
+                let navigateTo = role.role === 'button' ? settings.navigateTo : undefined;
+                if (navigateTo && !screenIds.has(navigateTo)) {
+                    // The button stays clickable; it just goes nowhere until relinked.
+                    warnings.push(
+                        `${shape.name} links to a missing or hidden screen and does nothing. Choose another screen in its role settings.`
                     );
+                    navigateTo = undefined;
                 }
                 if (role.role !== 'none') {
                     group.control = {
@@ -164,7 +171,7 @@ export function projectPreview(
                                 ? role.props.placeholder
                                 : undefined,
                         disabled: role.props.disabled === true,
-                        navigateTo: settings.navigateTo,
+                        navigateTo,
                         x: source.box.topLeft.x,
                         y: source.box.topLeft.y,
                         width: source.box.width,

@@ -549,7 +549,10 @@ export function readRoleSettings(value: unknown): import('../types').RoleSetting
 
     return {
         role: settings.role as import('../types').RoleSettings['role'],
-        ...(settings.navigateTo === undefined ? {} : { navigateTo: id(settings.navigateTo) }),
+        // Only buttons navigate; a stray link on another role is dropped rather than kept.
+        ...(settings.navigateTo === undefined || settings.role !== 'button'
+            ? {}
+            : { navigateTo: id(settings.navigateTo) }),
         props: Object.fromEntries(
             Object.entries(record(settings.props)).map(([key, value]) => [id(key), id(value)])
         )
