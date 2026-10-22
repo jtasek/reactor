@@ -50,6 +50,9 @@ test('edits explicit source roles, instance customization and inheritance, and p
     await explorer.getByRole('button', { name: 'Action instance', exact: true }).click();
     await expect(role).toHaveValue('inherit');
     await expect(page.getByLabel('Role label', { exact: true })).toHaveValue('caption');
+    // Picking the source's role keeps following the source.
+    await role.selectOption('button');
+    await expect(role).toHaveValue('inherit');
     await page.getByLabel('Caption', { exact: true }).fill('Continue');
     await role.selectOption('text');
     await page.getByLabel('Role content', { exact: true }).selectOption('caption');
@@ -62,8 +65,12 @@ test('edits explicit source roles, instance customization and inheritance, and p
     await explorer.getByRole('button', { name: 'Action instance', exact: true }).click();
     await expect(role).toHaveValue('text');
     await expect(page.getByLabel('Role content', { exact: true })).toHaveValue('caption');
+    // Choosing the source's role on a customized instance starts from the source's links.
+    await role.selectOption('button');
+    await expect(page.getByLabel('Role label', { exact: true })).toHaveValue('caption');
+    await expect(page.getByRole('status').filter({ hasText: 'Link label' })).toHaveCount(0);
     await role.selectOption('none');
-    await expect(page.getByLabel('Role content', { exact: true })).toHaveCount(0);
+    await expect(page.getByLabel('Role label', { exact: true })).toHaveCount(0);
     await role.selectOption('inherit');
     await expect(page.getByLabel('Role label', { exact: true })).toHaveValue('caption');
     await expect(page.getByLabel('Caption', { exact: true })).toHaveValue('Continue');

@@ -1,5 +1,11 @@
 import { useAppState } from './hooks';
-import { effectiveRoleSettings, resolveComponentRole, ROLE_PROPERTIES } from './componentRoles';
+import {
+    effectiveRoleSettings,
+    resolveComponentRole,
+    startingRoleLinks,
+    ROLE_PROPERTIES
+} from './componentRoles';
+import type { ComponentRole } from './types';
 import { resolveComponentProp } from './componentProps';
 import { isReadOnly } from './documentAccess';
 import { isShapeLocked } from './utils';
@@ -20,6 +26,12 @@ export const useRoleEditor = (componentId?: string, instanceId?: string) =>
             settings: { role: settings.role, props: { ...settings.props } },
             inherited: Boolean(instance && !instance.interaction),
             sourceRole: component.interaction?.role ?? 'none',
+            startingLinks: Object.fromEntries(
+                (Object.keys(ROLE_PROPERTIES) as ComponentRole[]).map((role) => [
+                    role,
+                    startingRoleLinks(document, component, settings, role, instance)
+                ])
+            ) as Record<ComponentRole, Record<string, string>>,
             problems: resolveComponentRole(document, component, instance).problems,
             fields: fields.map((field) => ({
                 ...field,

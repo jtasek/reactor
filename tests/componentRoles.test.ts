@@ -1,6 +1,6 @@
 import { json } from 'overmind';
 import { createTestStore } from './support/store';
-import { resolveComponentRole } from 'src/app/componentRoles';
+import { resolveComponentRole, roleLinks, startingRoleLinks } from 'src/app/componentRoles';
 import {
     SCHEMA_VERSION,
     readEntity,
@@ -356,4 +356,32 @@ it('converges through production collaboration and undoes role edits without und
     expect((shownDocument(b).shapes[instanceId] as InstanceShape).overrides[propId]).toBe(
         'Continue'
     );
+});
+
+it('starts a chosen role from the source links or the current links that still fit', () => {
+    const { document, propId, instance, sourceRole } = fixture();
+    const component = document.components.action;
+    sourceRole();
+    const custom = { role: 'text' as const, props: { content: propId } };
+    // An instance picking the source's role starts from the source's links.
+    expect(startingRoleLinks(document, component, custom, 'button', instance())).toEqual({
+        label: propId
+    });
+    // Otherwise links carry over by field name, and only where the kind fits.
+    const input = { role: 'input' as const, props: { label: propId, placeholder: propId } };
+    expect(startingRoleLinks(document, component, input, 'button')).toEqual({ label: propId });
+    expect(startingRoleLinks(document, component, input, 'image')).toEqual({});
+    expect(
+        startingRoleLinks(
+            document,
+            component,
+            { role: 'input', props: { label: 'gone' } },
+            'button'
+        )
+    ).toEqual({});
+});
+
+it('drops links the role does not use', () => {
+    expect(roleLinks('button', { label: 'a', placeholder: 'b' })).toEqual({ label: 'a' });
+    expect(roleLinks('none', { label: 'a' })).toEqual({});
 });
