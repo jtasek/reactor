@@ -43,8 +43,9 @@ WORKDIR /app
 # Runtime needs only production deps, the built bundle, static assets and the server.
 COPY --chown=node:node --from=deps /app/node_modules ./node_modules
 COPY --chown=node:node --from=builder /app/dist ./dist
+COPY --chown=node:node --from=builder /app/dist-preview ./dist-preview
 COPY --chown=node:node static ./static
-COPY --chown=node:node server.prod.ts package.json ./
+COPY --chown=node:node server.prod.ts server.preview.ts package.json ./
 COPY --chown=node:node server ./server
 # Password reset and browser sign-in share the allowed return destinations.
 COPY --chown=node:node src/app/authenticationDestination.ts ./src/app/authenticationDestination.ts

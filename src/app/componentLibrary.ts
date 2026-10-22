@@ -5,6 +5,7 @@ import { shapeGeometry, shapeStyle } from './utils';
 const roleContent = (settings: RoleSettings | undefined) =>
     settings && {
         role: settings.role,
+        navigateTo: settings.navigateTo,
         props: Object.fromEntries(
             Object.entries(settings.props).sort(([a], [b]) => (a < b ? -1 : Number(a > b)))
         )

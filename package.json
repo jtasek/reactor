@@ -105,8 +105,10 @@
   },
   "scripts": {
     "build": "pnpm run clean && pnpm run build:webpack",
-    "build:webpack": "cross-env NODE_ENV=production node ./node_modules/webpack/bin/webpack --config webpack.config.mjs",
-    "clean": "rimraf dist",
+    "build:webpack": "cross-env NODE_ENV=production node ./node_modules/webpack/bin/webpack --config webpack.config.mjs && pnpm run build:preview",
+    "build:preview": "cross-env NODE_ENV=production node ./node_modules/webpack/bin/webpack --config webpack.preview.mjs",
+    "serve:preview": "node server.preview.ts",
+    "clean": "rimraf dist dist-preview",
     "lint": "eslint src tests server *.ts *.mjs *.mts scripts --max-warnings 0",
     "rebuild": "pnpm run build:webpack",
     "serve": "cross-env NODE_ENV=production node server.prod.ts",

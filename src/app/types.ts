@@ -228,6 +228,8 @@ export type ComponentRole = 'text' | 'input' | 'button' | 'list' | 'image';
 export interface RoleSettings {
     role: ComponentRole | 'none';
     props: Record<string, string>;
+    /** Optional button navigation to a top-level frame. Missing targets remain repairable. */
+    navigateTo?: string;
 }
 
 export type Shape = Rectangle | Image | Circle | Ellipse | Line | Pen | Text | InstanceShape;
@@ -570,6 +572,7 @@ export type Application = {
     resetDocumentId: string | null;
     /** The document a person is asking AI to change, while its chat is open. */
     aiEditDocumentId: string | null;
+    previewDocumentId: string | null;
     devices: HashTable<Device>;
     documents: HashTable<Document>;
     documentsIds: string[];

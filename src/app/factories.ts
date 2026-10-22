@@ -330,6 +330,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         enteredComponentId: null,
         resetDocumentId: null,
         aiEditDocumentId: null,
+        previewDocumentId: null,
         devices: {},
         notifications: [],
         providers: {},

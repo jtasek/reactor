@@ -1,3 +1,4 @@
+import { previewConfiguration, previewConfigHandler } from './server/preview.ts';
 import path, { dirname } from 'path';
 import express from 'express';
 import webpack from 'webpack';
@@ -21,9 +22,12 @@ try {
     process.exit(1);
 }
 
+const PREVIEW = previewConfiguration(process.env);
 const app = express();
 const compiler = webpack(config);
 const accounts = await startAccounts(process.env, { production: false, log: console });
+
+app.get('/api/preview-config', previewConfigHandler(PREVIEW));
 
 // Before any body parser, which would consume the request Better Auth reads.
 if (accounts) {

@@ -6,9 +6,11 @@ import {
     SlidersHorizontal,
     Ellipsis,
     Sparkles,
+    Play,
     Share2
 } from 'lucide-react';
 
+import { usePreviewOpen } from 'src/app/previewHooks';
 import { useAiAvailable } from 'src/app/aiHooks';
 import { useAccount, useActions, useControls } from 'src/app/hooks';
 import { Icon } from '../Icon';
@@ -17,7 +19,8 @@ import styles from './styles.css';
 
 export const ApplicationBar: FC = () => {
     const { explorer, components, inspector, controlPanel } = useControls();
-    const { ui, requestAiEdit } = useActions();
+    const previewOpen = usePreviewOpen();
+    const { ui, requestAiEdit, togglePreview } = useActions();
     const aiAvailable = useAiAvailable();
     const account = useAccount();
 
@@ -72,6 +75,16 @@ export const ApplicationBar: FC = () => {
                 onClick={() => ui.toggleControlVisibility('controlPanel')}
             >
                 <Icon icon={{ component: Ellipsis, size: 20 }} />
+            </button>
+            <button
+                className={styles.button}
+                type="button"
+                aria-label="Preview"
+                title="Preview"
+                aria-pressed={previewOpen}
+                onClick={() => togglePreview()}
+            >
+                <Icon icon={{ component: Play, size: 20 }} />
             </button>
             {aiAvailable && (
                 <>

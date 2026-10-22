@@ -6,7 +6,7 @@ import type {
     PropertyValue,
     RoleSettings
 } from './types';
-import { componentPropValue, resolveComponentProp } from './componentProps';
+import { applyInstanceOverrides, componentPropValue, resolveComponentProp } from './componentProps';
 
 interface RoleProperty {
     key: string;
@@ -104,9 +104,18 @@ export function resolveComponentRole(
             );
             continue;
         }
-        const value = instance
-            ? componentPropValue(instance, component, propId, document)
-            : resolved.property.read(resolved.source, document);
+        const source =
+            resolved.property.key === 'text' && instance
+                ? applyInstanceOverrides(resolved.source, instance, component, document)
+                : resolved.source;
+        // Text property readers preserve templates for editing. Semantics use the same
+        // rendered value as artwork, including escaping already resolved variable overrides.
+        const value =
+            resolved.property.key === 'text' && source.type === 'text'
+                ? source.value
+                : instance
+                  ? componentPropValue(instance, component, propId, document)
+                  : resolved.property.read(source, document);
         if (typeof value !== (field.kind === 'text' ? 'string' : 'boolean')) {
             problems.push(`${field.label} has an incompatible value.`);
             continue;

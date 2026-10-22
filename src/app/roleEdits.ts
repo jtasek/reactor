@@ -5,6 +5,7 @@ import { isReadOnly } from './documentAccess';
 import { isShapeLocked } from './utils';
 import { ROLE_PROPERTIES, effectiveRoleSettings } from './componentRoles';
 import { resolveComponentProp } from './componentProps';
+import { frameParents, isFrameVisible } from './frameState';
 
 export interface RoleEdit {
     target: 'component' | 'instance';
@@ -54,6 +55,16 @@ export function editRole({ state }: Context, edit: RoleEdit) {
 
         return !field || !resolved || resolved.property.kind !== field.kind;
     });
+    if (
+        settings.navigateTo &&
+        settings.navigateTo !== previous.navigateTo &&
+        (settings.role !== 'button' ||
+            !document.frames[settings.navigateTo] ||
+            frameParents(document.frames).get(settings.navigateTo) ||
+            !isFrameVisible(document, settings.navigateTo))
+    ) {
+        return;
+    }
     if (invalid) {
         return;
     }

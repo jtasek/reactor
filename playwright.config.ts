@@ -22,19 +22,39 @@ export default defineConfig({
         trace: 'retain-on-failure'
     },
     projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-    webServer: {
-        command: 'pnpm run build:webpack && node server.prod.ts',
-        url: 'http://127.0.0.1:4173/healthz',
-        // Without accounts, whatever the shell running the tests holds.
-        env: {
-            NODE_ENV: 'production',
-            HOST: '127.0.0.1',
-            PORT: '4173',
-            DATABASE_URL: '',
-            TRUST_PROXY: ''
+    webServer: [
+        {
+            command: 'pnpm run build:webpack && node server.prod.ts',
+            url: 'http://127.0.0.1:4173/healthz',
+            // Without accounts, whatever the shell running the tests holds.
+            env: {
+                NODE_ENV: 'production',
+                HOST: '127.0.0.1',
+                PORT: '4173',
+                DATABASE_URL: '',
+                TRUST_PROXY: '',
+                PREVIEW_ORIGIN: 'http://127.0.0.1:4194',
+                EDITOR_ORIGIN: 'http://127.0.0.1:4173',
+                PREVIEW_ALLOW_LOCALHOST: 'true'
+            },
+            reuseExistingServer: false,
+            gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 },
+            timeout: 120_000
         },
-        reuseExistingServer: false,
-        gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 },
-        timeout: 120_000
-    }
+        {
+            command: 'node server.preview.ts',
+            url: 'http://127.0.0.1:4194/healthz',
+            env: {
+                NODE_ENV: 'production',
+                HOST: '127.0.0.1',
+                PORT: '4194',
+                PREVIEW_ORIGIN: 'http://127.0.0.1:4194',
+                EDITOR_ORIGIN: 'http://127.0.0.1:4173',
+                PREVIEW_ALLOW_LOCALHOST: 'true'
+            },
+            reuseExistingServer: false,
+            gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 },
+            timeout: 120_000
+        }
+    ]
 });

@@ -10,7 +10,10 @@ const CLEARED = {
     BETTER_AUTH_URL: '',
     BETTER_AUTH_SECRET: '',
     SMTP_URL: '',
-    TRUST_PROXY: ''
+    TRUST_PROXY: '',
+    PREVIEW_ORIGIN: '',
+    EDITOR_ORIGIN: '',
+    PREVIEW_ALLOW_LOCALHOST: ''
 };
 
 /**
