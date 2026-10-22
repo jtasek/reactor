@@ -1,6 +1,14 @@
-import type { Component, Document, Shape } from './types';
+import type { Component, Document, Shape, RoleSettings } from './types';
 import { json } from 'overmind';
 import { shapeGeometry, shapeStyle } from './utils';
+
+const roleContent = (settings: RoleSettings | undefined) =>
+    settings && {
+        role: settings.role,
+        props: Object.fromEntries(
+            Object.entries(settings.props).sort(([a], [b]) => (a < b ? -1 : Number(a > b)))
+        )
+    };
 
 function fingerprint(
     component: Component,
@@ -10,6 +18,7 @@ function fingerprint(
     const payload = JSON.stringify({
         name: component.name,
         props: component.props,
+        interaction: roleContent(component.interaction),
         shapes: members.map((shape) => ({
             id: shape.id,
             order: shape.order,
@@ -17,6 +26,7 @@ function fingerprint(
             style: shapeStyle(shape),
             rotation: shape.rotation,
             visible: shape.visible,
+            interaction: shape.type === 'instance' ? roleContent(shape.interaction) : undefined,
             nested: shape.type === 'instance' ? records.get(shape.componentId)?.hash : undefined
         }))
     });

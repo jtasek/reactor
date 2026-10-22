@@ -280,7 +280,14 @@ export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shape
 
         const clone = createShape({
             ...shapeGeometry(original),
-            ...(original.type === 'instance' ? { bounds: original.bounds } : {}),
+            ...(original.type === 'instance'
+                ? {
+                      bounds: original.bounds,
+                      interaction: original.interaction
+                          ? { ...original.interaction, props: { ...original.interaction.props } }
+                          : undefined
+                  }
+                : {}),
             order,
             name,
             description: original.description,

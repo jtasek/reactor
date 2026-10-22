@@ -198,7 +198,9 @@ export function writeClipboard(
         ...(components.size > 0 ? { components: [...components.values()] } : {}),
         shapes: shapes.map((shape, index) => ({
             ...shapeGeometry(shape),
-            ...(shape.type === 'instance' ? { overrides: copiedOverrides(shape, variables) } : {}),
+            ...(shape.type === 'instance'
+                ? { overrides: copiedOverrides(shape, variables), interaction: shape.interaction }
+                : {}),
             ...shapeStyle(shape),
             name: shape.name,
             rotation: shape.rotation,

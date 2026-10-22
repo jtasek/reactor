@@ -8,6 +8,7 @@ import {
     layoutDocument
 } from 'src/app/frameLayout';
 import {
+    SCHEMA_VERSION,
     readEntity,
     migratePersistedState,
     serializePersistedState,
@@ -200,7 +201,7 @@ it('retains intrinsic rotated/grouped geometry and diagnoses unsupported sizing'
     expect(projectFrameLayout(document).problems.a).toContain('ungrouped');
 });
 
-it('persists authored rules and fallback sizes in v9, accepts v8, and rejects invalid rules', () => {
+it('persists authored rules and fallback sizes in the current schema, accepts v8, and rejects invalid rules', () => {
     const document = fixture(
         { width: { mode: 'fill', min: 20, max: 100 } },
         { height: { mode: 'hug' } }
@@ -209,7 +210,7 @@ it('persists authored rules and fallback sizes in v9, accepts v8, and rejects in
         currentDocumentId: document.id,
         documents: { [document.id]: document }
     });
-    expect(saved.version).toBe(9);
+    expect(saved.version).toBe(SCHEMA_VERSION);
     expect(saved.documents[document.id].shapes.a).toMatchObject({
         size: { width: 40 },
         sizing: { width: { mode: 'fill', min: 20, max: 100 } }

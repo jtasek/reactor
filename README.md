@@ -160,6 +160,21 @@ Images retain intrinsic aspect ratio, while text, groups and instances keep thei
 sizes; new sizing rules on these or rotated rectangles are not exposed. Drag-to-reorder,
 clipping and interactive screen behavior remain later increments.
 
+### Component roles
+
+Select a component source or one instance and use **Inspector → Role** to choose Text, Input,
+Button, List or Image. Roles are explicit; existing artwork gets none automatically. Expose
+source properties first (select a source shape and use its property exposure controls), then
+link each role field to a compatible exposed property. Values continue to come from those
+properties, including text templates, variables and instance overrides. Diagnostics identify
+missing required fields or broken links without discarding the settings.
+
+An instance starts **From source**. Editing its role settings creates a custom configuration;
+**None** removes its role, and **From source** restores inheritance while keeping its visual
+property overrides. Imported library sources stay read-only; their instances may customize
+roles locally. These settings are saved, copied, shared and undoable. Interactive preview is
+not available yet. List currently declares its label; item data and repetition come later.
+
 ## Saving
 
 Documents are saved in the `reactor` IndexedDB database: an index of documents, and

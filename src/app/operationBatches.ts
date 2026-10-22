@@ -59,6 +59,7 @@ const CHANGEABLE_FIELDS = new Set([
     'parentFrameId',
     'layoutOrder',
     'sizing',
+    'interaction',
     'description',
     'rotation',
     'opacity',
@@ -688,10 +689,16 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             throw new Error('Stack placement controls this position.');
         }
         const current = projected?.shapes[id] ?? document.shapes[id];
+        if ('interaction' in changes && current.type !== 'instance') {
+            throw new Error('Only an instance can declare a role.');
+        }
         const shape = structuredClone(json(current));
         unbindEditedProperties(shape, fields);
         const bindings = shape.bindings ?? {};
         Object.assign(shape, structuredClone(changes));
+        if (shape.type === 'instance' && changes.interaction === null) {
+            delete shape.interaction;
+        }
         if (changes.parentFrameId === null) {
             delete shape.parentFrameId;
         } else if (changes.parentFrameId !== undefined) {
@@ -727,7 +734,8 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         const read: Record<string, unknown> = readEntity('shapes', shape);
         const foreign = fields.find(
             (field) =>
-                !['bindings', 'template', 'parentFrameId'].includes(field) && !(field in read)
+                !['bindings', 'template', 'parentFrameId', 'interaction'].includes(field) &&
+                !(field in read)
         );
 
         if (foreign) {
@@ -740,7 +748,8 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                 'bindings',
                 'template',
                 'parentFrameId',
-                'layoutOrder'
+                'layoutOrder',
+                'interaction'
             ])
         ].filter((field) => JSON.stringify(read[field]) !== JSON.stringify(before.get(field)));
 

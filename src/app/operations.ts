@@ -81,7 +81,10 @@ export interface DeleteVariable {
  */
 type ShapeChanges = ShapeInput extends infer S
     ? S extends ShapeInput
-        ? Partial<Omit<S, 'parentFrameId'>> & { parentFrameId?: string | null }
+        ? Partial<Omit<S, 'parentFrameId' | 'interaction'>> & {
+              parentFrameId?: string | null;
+              interaction?: import('./types').RoleSettings | null;
+          }
         : never
     : never;
 

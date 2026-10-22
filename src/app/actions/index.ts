@@ -1,3 +1,4 @@
+export * from './role';
 export * from './frame';
 export * from './collaboration';
 export * from './commands';

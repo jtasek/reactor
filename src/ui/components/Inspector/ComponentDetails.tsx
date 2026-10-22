@@ -7,6 +7,7 @@ import { ObjectTypeSymbol } from '../ObjectTypeSymbol';
 import { Instance } from '../Shape/Instance';
 import { useComponent, useLibraryUpdateAvailable } from 'src/app/componentHooks';
 import styles from './styles.css';
+import { ComponentRole } from './ComponentRole';
 
 const ACTION_ICON = { component: SquarePlus, size: 16 };
 const FIND_ICON = { component: FileSearch, size: 16 };
@@ -88,6 +89,7 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
                     <Instance instance={preview} source={source} />
                 </svg>
             )}
+            <ComponentRole componentId={componentId} />
             <div>
                 <h3 className={styles.heading}>Editable properties</h3>
                 {component.props?.length ? (
