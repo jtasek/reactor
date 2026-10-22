@@ -506,7 +506,8 @@ editor remains usable without preview configuration. Coverage: `tests/preview.te
 Image/artwork increment implemented: image primitives reference a deduplicated raster table,
 prepared asynchronously in the editor from its document database or authorized asset sync.
 Content signatures, SHA-256, the existing per-image size limit and browser decoding are checked
-before a complete projection is sent; the aggregate 8 MiB preview bound remains in place.
+before a complete projection is sent; images are bounded at 8 MiB of decoded bytes, apart from the
+drawing's own 8 MiB bound, and each image crosses a preview channel once.
 Only required, shown images are read, including nested component/library artwork. Valid images
 are cached for the open panel, unused entries are discarded, failures can be retried, and stale
 preparation is cancelled. Loading or failed image preparation retains the last valid preview;

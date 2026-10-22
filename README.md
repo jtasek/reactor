@@ -551,7 +551,8 @@ verified by content/hash and decoding, and sent as a deduplicated raster table. 
 cannot fetch images. Missing, invalid or oversized resources retain the last valid preview;
 **Retry preview** tries again after an image arrives. Images keep their intrinsic aspect ratio,
 transforms and opacity, including in nested/library components. Import external images into
-Reactor first. The existing 5 MiB per-image and 8 MiB aggregate preview limits apply. Diagram
+Reactor first. Each image can be up to 5 MiB and a preview's images up to 8 MiB together, counted
+as image file sizes; the drawing has its own 8 MiB limit. Each image is sent to the preview once. Diagram
 connector links are not rendered. List roles are labeled containers; record repetition,
 validation and shared preview links come later.
 

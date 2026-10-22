@@ -23,6 +23,8 @@ export default function InteractivePreview() {
     const connection = useRef<MessagePort | null>(null);
     const channelPort = useRef<MessagePort | null>(null);
     const latest = useRef<PreviewApplication | null>(null);
+    // Images the runtime already has on the current channel, so each is sent only once.
+    const sentImages = useRef(new Set<string>());
     const [ready, setReady] = useState(false);
     const [origin, setOrigin] = useState<string | null>(null);
     const [availability, setAvailability] = useState('Loading preview…');
@@ -85,7 +87,9 @@ export default function InteractivePreview() {
                     return;
                 }
                 latest.current = application;
-                connection.current?.postMessage(application);
+                if (connection.current) {
+                    send(connection.current, application);
+                }
                 setProblem(null);
                 setPreparing(false);
             })
@@ -118,13 +122,24 @@ export default function InteractivePreview() {
 
         return () => window.clearTimeout(timeout);
     }, [origin, ready]);
+    /** Posts the drawing with only the images this channel has not received yet. */
+    const send = (port: MessagePort, application: PreviewApplication) => {
+        const images = Object.fromEntries(
+            Object.entries(application.images).filter(([hash]) => !sentImages.current.has(hash))
+        );
+        port.postMessage({ ...application, images });
+        sentImages.current = new Set(Object.keys(application.images));
+    };
     const connect = () => {
         channelPort.current?.close();
+        sentImages.current = new Set();
         const channel = new MessageChannel();
         channelPort.current = channel.port1;
         connection.current = null;
         channel.port1.onmessage = (event) => {
             if (event.data?.type === 'error') {
+                // The runtime may not have kept this update's images; send them all next time.
+                sentImages.current = new Set();
                 setProblem(
                     typeof event.data.message === 'string' ? event.data.message : 'Preview failed.'
                 );
@@ -146,7 +161,7 @@ export default function InteractivePreview() {
             connection.current = channel.port1;
             setAvailability('');
             if (latest.current) {
-                channel.port1.postMessage(latest.current);
+                send(channel.port1, latest.current);
             }
         };
         // The sandbox has an opaque origin. Only its captured Window receives the port;

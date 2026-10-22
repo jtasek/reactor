@@ -904,8 +904,9 @@ the startup bundle. Runtime screen/input state never reaches document data. Inva
 the last valid preview. `projectPreview` returns a drawing with image hash references;
 `createPreviewResources` prepares its deduplicated image table before `readPreview` validates
 and allowlists the complete payload. Use `effects.assets.read` for local/authorized sync bytes,
-never arbitrary URLs. Verify content/hash, per-file bounds and decoding; keep the aggregate
-8 MiB bound. Cache only for the open panel, prune unused entries, retry missing resources and
+never arbitrary URLs. Verify content/hash, per-file bounds and decoding; keep the 8 MiB bound on
+decoded image bytes (`MAX_PREVIEW_IMAGE_BYTES`), separate from the drawing's 8 MiB JSON bound.
+Each channel sends an image once; later updates refer to it and `readPreview(value, known)` resolves it. Cache only for the open panel, prune unused entries, retry missing resources and
 abort stale preparations. The sandbox receives only raster data URLs, with no new CSP origins. Its version handshake
 must succeed before the editor sends any application data; mismatches show an update notice.
 The canvas and runtime share the default outline token; text keeps the canvas font fallback.

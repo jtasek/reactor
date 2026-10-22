@@ -1,5 +1,6 @@
 import {
     readPreview,
+    readPreviewImages,
     PREVIEW_PROTOCOL_VERSION,
     type PreviewApplication,
     type PreviewNode
@@ -17,6 +18,8 @@ const XHTML = 'http://www.w3.org/1999/xhtml';
 const root = document.getElementById('preview')!;
 const values = new Map<string, string>();
 let application: PreviewApplication | undefined;
+/** Images received so far. The editor sends each image once and later updates only refer to it. */
+let images: Record<string, string> = {};
 let currentScreen: string | undefined;
 let port: MessagePort | undefined;
 
@@ -150,7 +153,10 @@ function render() {
 
 function receive(value: unknown) {
     try {
-        const next = readPreview(value);
+        const update = value && typeof value === 'object' ? (value as { images?: unknown }) : {};
+        // Keep new images even if this drawing is refused: the editor counts them as sent.
+        images = { ...images, ...readPreviewImages(update.images) };
+        const next = readPreview({ ...update, images: undefined }, images);
         if (application?.documentId !== next.documentId) {
             values.clear();
             currentScreen = undefined;
@@ -169,6 +175,8 @@ function receive(value: unknown) {
             }
         });
         application = next;
+        // Only what the accepted drawing uses stays, matching what the editor remembers sending.
+        images = next.images;
         render();
         port?.postMessage({ type: 'rendered' });
     } catch (error) {

@@ -216,8 +216,54 @@ it('keeps the aggregate payload bound and refuses missing or externally sourced 
             ...result,
             images: { [asset.hash]: `data:image/png;base64,${'a'.repeat(8 * 1024 * 1024)}` }
         })
-    ).toThrow('8 MiB');
+    ).toThrow('larger than 5 MiB');
     const node = result.screens[0].nodes.at(-1)!.children![0];
     node.attrs.href = `data:image/png;base64,${PREVIEW_PNG}`;
     expect(() => readPreview(result)).toThrow('attributes');
+});
+
+/** A data URL whose decoded file is `bytes` long. */
+const rasterOf = (bytes: number) => `data:image/png;base64,${'A'.repeat((bytes / 3) * 4)}`;
+const MiB = 1024 * 1024;
+
+it('counts decoded image bytes against the 8 MiB image limit, separately from the drawing', async () => {
+    const asset = await previewImageAsset();
+    const drawing = projectPreview(previewImageFixture(asset.hash), {});
+    const [first, second] = ['1', '2'].map((digit) => digit.repeat(64));
+    const art = drawing.screens[0].nodes.at(-1)!.children![0];
+    const withImages = (hashes: string[]) => ({
+        ...drawing,
+        screens: [
+            {
+                ...drawing.screens[0],
+                nodes: hashes.map((hash, index) => ({ ...art, key: `art-${index}`, image: hash }))
+            }
+        ]
+    });
+    // Two 3.75 MiB files are 10 MiB as base64 but 7.5 MiB of images, within the limit.
+    const images = { [first]: rasterOf(3.75 * MiB), [second]: rasterOf(3.75 * MiB) };
+    expect(Object.keys(readPreview({ ...withImages([first, second]), images }).images)).toEqual([
+        first,
+        second
+    ]);
+    const third = '3'.repeat(64);
+    expect(() =>
+        readPreview({
+            ...withImages([first, second, third]),
+            images: { ...images, [third]: rasterOf(0.75 * MiB) }
+        })
+    ).toThrow('images exceed the 8 MiB limit');
+    expect(() => readPreview({ ...drawing, images: { [first]: rasterOf(5 * MiB + 1) } })).toThrow(
+        'larger than 5 MiB'
+    );
+});
+
+it('lets a drawing refer to images received earlier and keeps only the ones it uses', async () => {
+    const asset = await previewImageAsset();
+    const drawing = projectPreview(previewImageFixture(asset.hash), {});
+    const url = `data:image/png;base64,${PREVIEW_PNG}`;
+    const unused = 'f'.repeat(64);
+    const result = readPreview(drawing, { [asset.hash]: url, [unused]: url });
+    expect(result.images).toEqual({ [asset.hash]: url });
+    expect(() => readPreview(drawing, { [unused]: url })).toThrow('resource is missing');
 });

@@ -1,7 +1,9 @@
 import { readImage, type createAssets } from '../app/services/assets';
 import {
     readPreview,
+    readPreviewImages,
     MAX_PREVIEW_BYTES,
+    MAX_PREVIEW_IMAGE_BYTES,
     MAX_PREVIEW_NODES,
     type PreviewDrawing,
     type PreviewNode
@@ -20,7 +22,7 @@ const encode = (bytes: Uint8Array) => {
 /** One open panel's image cache. All IO stays in the editor; the sandbox receives only
  * verified bytes as raster data URLs. Failed reads can be retried when sync catches up. */
 export function createPreviewResources(assets: Pick<ReturnType<typeof createAssets>, 'read'>) {
-    const cache = new Map<string, Promise<string>>();
+    const cache = new Map<string, Promise<{ url: string; bytes: number }>>();
     const load = (hash: string, documentId: string) => {
         const known = cache.get(hash);
         if (known) {
@@ -45,7 +47,11 @@ export function createPreviewResources(assets: Pick<ReturnType<typeof createAsse
                 throw new Error('An image could not be decoded. Replace it before previewing.');
             }
 
-            return `data:${image.type};base64,${encode(image.bytes)}`;
+            const url = `data:${image.type};base64,${encode(image.bytes)}`;
+            // Checked once here, so later updates can reuse it without re-reading megabytes.
+            readPreviewImages({ [hash]: url });
+
+            return { url, bytes: image.bytes.length };
         });
         cache.set(hash, pending);
         void pending.catch(() => {
@@ -87,14 +93,17 @@ export function createPreviewResources(assets: Pick<ReturnType<typeof createAsse
         let size = 0;
         for (const hash of hashes) {
             signal.throwIfAborted();
-            images[hash] = await load(hash, drawing.documentId);
+            const image = await load(hash, drawing.documentId);
             signal.throwIfAborted();
-            size += images[hash].length;
-            if (size > MAX_PREVIEW_BYTES) {
-                throw new Error('Preview exceeds the 8 MiB limit. Remove or reduce some images.');
+            images[hash] = image.url;
+            size += image.bytes;
+            if (size > MAX_PREVIEW_IMAGE_BYTES) {
+                throw new Error(
+                    'Preview images exceed the 8 MiB limit. Remove or reduce some images.'
+                );
             }
         }
 
-        return readPreview({ ...drawing, images });
+        return readPreview(drawing, images);
     };
 }

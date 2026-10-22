@@ -228,3 +228,46 @@ test('explains an outdated runtime instead of sending image references it cannot
     ).toHaveCount(0);
     await expect(page.locator('svg#surface')).toBeVisible();
 });
+
+test('sends each image to the preview once, not with every update', async ({ page }) => {
+    const asset = await previewImageAsset();
+    await page.addInitScript(() => {
+        const sent: number[] = [];
+        (window as unknown as { previewImageCounts: number[] }).previewImageCounts = sent;
+        const post = MessagePort.prototype.postMessage;
+        MessagePort.prototype.postMessage = function (
+            this: MessagePort,
+            ...args: Parameters<MessagePort['postMessage']>
+        ) {
+            const data = args[0] as { screens?: unknown; images?: object } | undefined;
+            if (window === window.top && data?.screens) {
+                sent.push(Object.keys(data.images ?? {}).length);
+            }
+
+            return post.apply(this, args);
+        } as MessagePort['postMessage'];
+    });
+    await openImageDocument(page, asset.hash);
+    await keepImage(page, asset);
+    await openEditor(page, ['Explorer']);
+    await page.getByRole('button', { name: 'Preview', exact: true }).click();
+    const iframe = page.frameLocator('iframe[title="Application preview"]');
+    await expect(iframe.locator('svg image')).toHaveCount(2);
+    const counts = () =>
+        page.evaluate(
+            () => (window as unknown as { previewImageCounts: number[] }).previewImageCounts
+        );
+    // Both image shapes share one file, sent once.
+    expect(await counts()).toEqual([1]);
+    const explorer = page.getByRole('region', { name: 'Explorer', exact: true });
+    const details = explorer.getByRole('button', { name: 'Details', exact: true });
+    const menu = explorer.getByRole('toolbar', { name: 'Details menu', exact: true });
+    await details.hover();
+    await menu.getByRole('button', { name: 'Hide', exact: true }).click();
+    await expect.poll(counts).toEqual([1, 0]);
+    await details.hover();
+    await menu.getByRole('button', { name: 'Show', exact: true }).click();
+    await expect.poll(counts).toEqual([1, 0, 0]);
+    await expect(iframe.locator('svg image')).toHaveCount(2);
+    await expect(page.getByText('Preview needs attention')).toHaveCount(0);
+});
