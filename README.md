@@ -78,8 +78,10 @@ bar, side bar, panels and other parts of the editor.
 | `k`, Shift+K | Lock and unlock the selection |
 | `+` or `=`, `-`, `0` | Zoom in, zoom out, reset zoom |
 
-The Explorer (in the side bar) lists the layers with their groups and shapes as a
-tree. Drag a shape or a group onto a layer or a group to move it there. Press a layer's
+The Explorer (in the side bar) nests frames and their artwork under Canvas, keeping layers,
+groups and shapes within their parent frame. Unparented artwork stays directly under Canvas.
+A layer spanning frames appears in each relevant branch, with each shape listed once.
+Drag a shape or a group onto a layer or a group to move it there. Press a layer's
 name to see only that layer, with the shapes on no layer, on your screen; press it again,
 or Show all layers, to see everything. A group is on one layer, with all its shapes. Type in the explorer's search box to list only
 the layers, groups and shapes whose names contain the text. Press the arrow beside a layer or
@@ -120,7 +122,9 @@ the field to commit. Arrow keys nudge a selected frame. Copy, Cut, Paste, Clone,
 Undo/Redo work with frames, including across documents.
 
 Use Inspector’s **Parent** control to attach selected shapes or a frame to another frame;
-choose **Canvas** to release them. Explorer nests frame rows. Membership is explicit:
+choose **Canvas** to release them. Explorer nests frames with their shapes and groups;
+collapse a frame to hide its tree contents. Searching for artwork reveals its frame ancestors,
+and searching for a frame shows its complete subtree. Membership is explicit:
 drawing inside a boundary does not attach an object, and reparenting preserves its canvas
 position. Reparenting a grouped shape moves the whole group into the same frame.
 

@@ -539,8 +539,13 @@ A group is on one layer, with all its shapes (`putShapesOnLayer`, `putShapesInGr
 puts its shapes on the topmost one's layer, a group moved to a layer moves whole, and a shape
 moved without the rest of its group leaves it. Loading does not repair a group other copies'
 merges left across layers; the explorer lists it under its first shape's layer. The explorer
-(`src/ui/components/Explorer`, from `outline`) is the side bar's tree under a Canvas root:
-the layers with their groups and shapes, then the shapes on no layer. Pressing Canvas selects
+(`src/ui/components/Explorer`, from `explorerTree` and `outline`) is the side bar's tree under a Canvas root:
+frames nest their immediate artwork and child frames; unparented artwork stays on Canvas.
+Layers are sliced by frame without duplicating shapes; split groups retain their actual parent
+placements. Keep source-only members under Components, use safe `frameParents` cycle roots,
+and never rewrite memberships from this projection. Layer/group collapse state is scoped to its
+frame branch. Search retains frame ancestors; a matching frame includes its subtree.
+Within each container, layers hold their groups and shapes, followed by shapes on no layer. Pressing Canvas selects
 the canvas (`surfaceSelected`), and dragging a shape or group onto it takes it off its layer,
 as dragging onto a layer or group moves it there. Its search box
 lists only what has a name containing what is typed (`filterOutline`): a layer or group with

@@ -21,14 +21,7 @@ import { PropertyRow, sharedProperties } from './properties';
 import { untracked } from './untracked';
 import { componentSource } from './componentSource';
 import { localComponents } from './componentSelection';
-import {
-    drawnExtent,
-    groupFrame,
-    hoveredGroupsIds,
-    filterOutline,
-    outline,
-    selectionScope
-} from './membership';
+import { drawnExtent, groupFrame, hoveredGroupsIds, selectionScope } from './membership';
 
 export const useActions = createActionsHook<Context>();
 export const useEffects = createEffectsHook<Context>();
@@ -569,16 +562,6 @@ export const useGroups = () => {
 
 export const useLinks = () => {
     return useCurrentDocument()?.links ?? [];
-};
-
-/** The document as a tree of layers, their groups and shapes, and the part of it the search finds. */
-export const useOutline = () => {
-    return useAppState((state) => {
-        const document = state.currentDocument;
-        const layers = outline(document);
-
-        return { layers, found: filterOutline(layers, document, document.filter) };
-    });
 };
 
 /** The one layer this screen shows, if it shows only one. */

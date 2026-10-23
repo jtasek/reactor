@@ -1,8 +1,151 @@
 import { sceneLayers } from 'src/app/componentTree';
+import { explorerTree } from 'src/app/explorerTree';
 import { outline } from 'src/app/membership';
 import { serializePersistedState } from 'src/app/services/documentStorage';
 import { isShapeVisible } from 'src/app/utils';
 import { createTestStore } from './support/store';
+
+function framedScene() {
+    const { store } = createTestStore();
+    const document = store.state.currentDocument;
+    const frame = (name: string, parentFrameId?: string) => {
+        const id = store.actions.editFrame({
+            kind: 'add',
+            position: { x: 0, y: 0 },
+            size: { width: 400, height: 300 }
+        })!;
+
+        store.actions.editFrame({ kind: 'update', id, changes: { name, parentFrameId } });
+
+        return id;
+    };
+    const outer = frame('Home');
+    const inner = frame('Card', outer);
+    const other = frame('Settings');
+    const shape = (name: string, parentFrameId?: string) => {
+        store.actions.addShape({
+            type: 'rectangle',
+            name,
+            parentFrameId,
+            position: { x: 10, y: 20 },
+            size: { width: 30, height: 40 }
+        });
+
+        return document.shapesIds.at(-1)!;
+    };
+    const title = shape('Title', outer);
+    const artwork = shape('Artwork', inner);
+    const button = shape('Button', inner);
+    const loose = shape('Loose');
+
+    store.actions.addGroup({ id: 'card-art', name: 'Card art', shapesIds: [artwork, button] });
+    store.actions.addLayer({ id: 'shared', name: 'Shared layer', shapesIds: [title, loose] });
+
+    return { store, document, outer, inner, other, title, artwork, button, loose };
+}
+
+describe('frame hierarchy in Explorer', () => {
+    it('partitions layer and group artwork by immediate parent without duplicate shapes or writes', () => {
+        const { store, document, outer, inner, title, artwork, button, loose } = framedScene();
+        const before = serializePersistedState(store.state);
+        const tree = explorerTree(document, '');
+
+        expect(tree.canvas).toEqual([{ layerId: 'shared', groups: [], shapesIds: [loose] }]);
+        expect(tree.frames.find((frame) => frame.id === outer)?.layers).toEqual([
+            { layerId: 'shared', groups: [], shapesIds: [title] }
+        ]);
+        expect(tree.frames.find((frame) => frame.id === inner)).toEqual({
+            id: inner,
+            parentFrameId: outer,
+            layers: [
+                {
+                    layerId: null,
+                    groups: [{ groupId: 'card-art', shapesIds: [artwork, button] }],
+                    shapesIds: []
+                }
+            ]
+        });
+        expect(serializePersistedState(store.state)).toEqual(before);
+    });
+
+    it('reveals a matching shape with its group, layer and complete frame ancestry', () => {
+        const { document, outer, inner, artwork, title, loose } = framedScene();
+        const tree = explorerTree(document, 'ARTWORK');
+
+        expect(tree.canvas).toEqual([]);
+        expect(tree.frames.map((frame) => frame.id).sort()).toEqual([outer, inner].sort());
+        expect(tree.frames.find((frame) => frame.id === outer)?.layers).toEqual([]);
+        expect(tree.frames.find((frame) => frame.id === inner)?.layers[0].groups).toEqual([
+            { groupId: 'card-art', shapesIds: [artwork] }
+        ]);
+        const layerMatch = explorerTree(document, 'Shared layer');
+
+        expect(layerMatch.canvas[0].shapesIds).toEqual([loose]);
+        expect(layerMatch.frames).toEqual([
+            {
+                id: outer,
+                parentFrameId: undefined,
+                layers: [{ layerId: 'shared', groups: [], shapesIds: [title] }]
+            }
+        ]);
+    });
+
+    it('a frame name matches all descendants, but not other screens or loose artwork', () => {
+        const { document, outer, inner, artwork, button, other } = framedScene();
+        const tree = explorerTree(document, 'home');
+
+        expect(tree.canvas).toEqual([]);
+        expect(tree.frames.map((frame) => frame.id).sort()).toEqual([outer, inner].sort());
+        expect(
+            tree.frames.find((frame) => frame.id === inner)?.layers[0].groups[0].shapesIds
+        ).toEqual([artwork, button]);
+        expect(explorerTree(document, 'settings').frames).toEqual([
+            { id: other, parentFrameId: undefined, layers: [] }
+        ]);
+        expect(explorerTree(document, 'no match')).toEqual({ canvas: [], frames: [] });
+    });
+
+    it('uses safe cycle roots and keeps orphaned shapes on Canvas without repairing data', () => {
+        const { store, document: source, outer, inner, loose } = framedScene();
+        const document = {
+            ...source,
+            frames: {
+                ...source.frames,
+                [outer]: { ...source.frames[outer], parentFrameId: inner }
+            },
+            shapes: {
+                ...source.shapes,
+                [loose]: { ...source.shapes[loose], parentFrameId: 'missing' }
+            }
+        };
+        const before = serializePersistedState(store.state);
+        const tree = explorerTree(document, '');
+
+        expect(tree.frames.find((frame) => frame.id === outer)?.parentFrameId).toBeUndefined();
+        expect(tree.frames.find((frame) => frame.id === inner)?.parentFrameId).toBeUndefined();
+        expect(tree.canvas[0].shapesIds).toEqual([loose]);
+        expect(serializePersistedState(store.state)).toEqual(before);
+    });
+
+    it('lists each member of a concurrently split group under its actual frame', () => {
+        const { document: source, inner, other, artwork, button } = framedScene();
+        const document = {
+            ...source,
+            shapes: {
+                ...source.shapes,
+                [button]: { ...source.shapes[button], parentFrameId: other }
+            }
+        };
+        const tree = explorerTree(document, 'card art');
+
+        expect(tree.frames.find((frame) => frame.id === inner)?.layers[0].groups).toEqual([
+            { groupId: 'card-art', shapesIds: [artwork] }
+        ]);
+        expect(tree.frames.find((frame) => frame.id === other)?.layers[0].groups).toEqual([
+            { groupId: 'card-art', shapesIds: [button] }
+        ]);
+    });
+});
 
 it('lists each source only under Components and scene objects under their layer or Surface', () => {
     const { store } = createTestStore();
@@ -32,6 +175,7 @@ it('lists each source only under Components and scene objects under their layer 
         }
     ]);
     expect(isShapeVisible(document, sourceId)).toBe(false);
+    expect(explorerTree(document, '').canvas).toEqual(sceneLayers(outline(document), document));
     store.actions.editComponentSource(componentId);
     expect(isShapeVisible(document, sourceId)).toBe(true);
     expect(isShapeVisible(document, sceneId)).toBe(false);
