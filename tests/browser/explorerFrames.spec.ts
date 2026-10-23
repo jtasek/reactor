@@ -165,12 +165,24 @@ test('layer branches collapse independently and retain drag and inherited restri
         .locator('> ul > li')
         .filter({ has: page.getByRole('button', { name: 'Loose', exact: true }) });
 
+    // A layer listed in several branches says its commands reach beyond this one.
+    await expect(homeLayer).toHaveAccessibleDescription('Also outside this frame');
+    await expect(
+        canvasLayer.locator('> div').getByRole('button', { name: 'Shared layer', exact: true })
+    ).toHaveAccessibleDescription('Also inside frames');
+
     await home.getByRole('button', { name: 'Collapse Shared layer', exact: true }).click();
     await expect(name(page, 'Title')).toHaveCount(0);
     await expect(name(page, 'Loose')).toBeVisible();
     await home.getByRole('button', { name: 'Expand Shared layer', exact: true }).click();
+    // A drop on a layer inside a frame's branch puts the shape in that frame, where it shows.
     await name(page, 'Loose').locator('..').locator('span[draggable]').dragTo(homeLayer);
-    await expect(canvasLayer.getByRole('button', { name: 'Loose', exact: true })).toBeVisible();
+    await expect(
+        branch(page, 'Shared layer').getByRole('button', { name: 'Loose', exact: true })
+    ).toBeVisible();
+    await expect(home.getByRole('button', { name: 'Loose', exact: true })).toBeVisible();
+    await expect(name(page, 'Loose')).toHaveCount(1);
+    await expect(homeLayer).not.toHaveAccessibleDescription('Also outside this frame');
 
     // Existing group drops set both group and parent membership.
     await name(page, 'Loose')

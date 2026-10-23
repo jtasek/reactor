@@ -200,6 +200,8 @@ interface LayerProps {
     groups: { groupId: string; shapesIds: string[] }[];
     shapesIds: string[];
     contextId: string;
+    /** The frame whose branch lists the layer, or null on Canvas; a drop moves shapes there. */
+    frameId: string | null;
     /** The shapes a dragged shape or group stands for. */
     shapesOf: (dragged: Dragged) => string[];
 }
@@ -249,10 +251,21 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
     groups,
     shapesIds,
     contextId,
+    frameId,
     shapesOf
 }) => {
     const layer = useLayer(layerId);
-    const documentLocked = useCurrentDocument().locked;
+    const { locked: documentLocked, sourceOnlyShapesIds } = useCurrentDocument();
+    const listedHere =
+        shapesIds.length + groups.reduce((count, group) => count + group.shapesIds.length, 0);
+    const listedAnywhere = layer.shapesIds.filter((id) => !sourceOnlyShapesIds.has(id)).length;
+    // The row's commands act on the whole layer, also on its shapes listed in other branches.
+    const elsewhere =
+        listedHere < listedAnywhere
+            ? frameId === null
+                ? 'Also inside frames'
+                : 'Also outside this frame'
+            : undefined;
     const shown = useShownLayerId() === layerId;
     const {
         moveShapesToLayer,
@@ -268,6 +281,7 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
         <ExplorerItem
             kind="layer"
             name={layer.name}
+            secondary={elsewhere}
             icon={<ObjectTypeSymbol type="layer" />}
             collapseId={
                 groups.length + shapesIds.length > 0 ? `${contextId}:layer:${layerId}` : undefined
@@ -297,7 +311,13 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
                 },
                 ...commands(useScopedCommands('layer'))
             ]}
-            onDrop={(dragged) => moveShapesToLayer({ shapeIds: shapesOf(dragged), layerId })}
+            onDrop={(dragged) =>
+                moveShapesToLayer({
+                    shapeIds: shapesOf(dragged),
+                    layerId,
+                    parentFrameId: frameId
+                })
+            }
         >
             <LayerContents groups={groups} shapesIds={shapesIds} contextId={contextId} />
         </ExplorerItem>
@@ -344,7 +364,7 @@ export const Explorer: FC = () => {
             ]}
         >
             {shownFrames.filter((child) => child.parentFrameId === frame.id).map(frameItem)}
-            {renderLayers(frame.layers, `frame:${frame.id}`)}
+            {renderLayers(frame.layers, frame.id)}
         </ExplorerItem>
     );
     const drawOrder = new Map(useShapesIds().map((id, index) => [id, index]));
@@ -388,7 +408,7 @@ export const Explorer: FC = () => {
 
     const shapesOf = ({ kind, id }: Dragged) =>
         kind === 'shape' ? [id] : (document.groups[id]?.shapesIds ?? []);
-    const renderLayers = (layers: OutlineLayer[], contextId: string) =>
+    const renderLayers = (layers: OutlineLayer[], frameId: string | null) =>
         [
             ...layers.filter(({ layerId }) => layerId !== null),
             ...layers.filter(({ layerId }) => layerId === null)
@@ -398,7 +418,7 @@ export const Explorer: FC = () => {
                     key="canvas"
                     groups={groups}
                     shapesIds={shapesIds}
-                    contextId={contextId}
+                    contextId={frameId === null ? 'canvas' : `frame:${frameId}`}
                 />
             ) : (
                 <LayerItem
@@ -406,7 +426,8 @@ export const Explorer: FC = () => {
                     layerId={layerId}
                     groups={groups}
                     shapesIds={shapesIds}
-                    contextId={contextId}
+                    contextId={frameId === null ? 'canvas' : `frame:${frameId}`}
+                    frameId={frameId}
                     shapesOf={shapesOf}
                 />
             )
@@ -461,7 +482,7 @@ export const Explorer: FC = () => {
                                 {shownFrames
                                     .filter((frame) => frame.parentFrameId === undefined)
                                     .map(frameItem)}
-                                {renderLayers(scene, 'canvas')}
+                                {renderLayers(scene, null)}
                             </RootItem>
                         )}
                         {(!filter || sources.length > 0) && (

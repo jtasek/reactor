@@ -545,6 +545,9 @@ Layers are sliced by frame without duplicating shapes; split groups retain their
 placements. Keep source-only members under Components, use safe `frameParents` cycle roots,
 and never rewrite memberships from this projection. Layer/group collapse state is scoped to its
 frame branch. Search retains frame ancestors; a matching frame includes its subtree.
+A drop on a layer row also sets the frame of that branch (`moveShapesToLayer` with
+`parentFrameId`, one undo step via `stageBatch`/`writeBatch`); a layer row whose layer holds
+shapes in other branches says so, as its commands act on the whole layer.
 Within each container, layers hold their groups and shapes, followed by shapes on no layer. Pressing Canvas selects
 the canvas (`surfaceSelected`), and dragging a shape or group onto it takes it off its layer,
 as dragging onto a layer or group moves it there. Its search box

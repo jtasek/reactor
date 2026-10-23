@@ -80,8 +80,10 @@ bar, side bar, panels and other parts of the editor.
 
 The Explorer (in the side bar) nests frames and their artwork under Canvas, keeping layers,
 groups and shapes within their parent frame. Unparented artwork stays directly under Canvas.
-A layer spanning frames appears in each relevant branch, with each shape listed once.
-Drag a shape or a group onto a layer or a group to move it there. Press a layer's
+A layer spanning frames appears in each relevant branch, with each shape listed once, and
+notes that it also holds shapes elsewhere: its commands act on the whole layer.
+Drag a shape or a group onto a layer or a group to move it there; dropping on a layer
+inside a frame also moves it into that frame (or onto Canvas for a layer under Canvas). Press a layer's
 name to see only that layer, with the shapes on no layer, on your screen; press it again,
 or Show all layers, to see everything. A group is on one layer, with all its shapes. Type in the explorer's search box to list only
 the layers, groups and shapes whose names contain the text. Press the arrow beside a layer or
