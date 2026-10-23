@@ -6,6 +6,7 @@ import React, {
     ReactNode,
     createContext,
     useContext,
+    useId,
     useRef,
     useState
 } from 'react';
@@ -46,6 +47,7 @@ interface Props {
     kind: 'root' | 'layer' | 'group' | 'shape' | 'component' | 'instance' | 'frame';
     name: string;
     icon?: ReactNode;
+    /** A note under the name; it describes the row rather than naming it. */
     secondary?: string;
     /** What dragging the item moves; a layer is not dragged. */
     dragged?: Dragged;
@@ -88,6 +90,7 @@ export const ExplorerItem: FC<Props> = ({
     const [dropTarget, setDropTarget] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const nameButton = useRef<HTMLButtonElement>(null);
+    const secondaryId = useId();
     const items = useContext(CollapsedItems);
     const collapsed = collapseId !== undefined && items.collapsed.has(collapseId);
     // A search shows everything it finds, also in collapsed items.
@@ -189,14 +192,18 @@ export const ExplorerItem: FC<Props> = ({
                         type="button"
                         className={styles.name}
                         aria-pressed={selected}
+                        aria-labelledby={secondary ? `${secondaryId}-name` : undefined}
+                        aria-describedby={secondary ? secondaryId : undefined}
                         onPointerDown={handleNamePointerDown}
                         onClick={handleNameClick}
                         onDoubleClick={onDoubleClick}
                     >
                         {icon}
                         <span className={styles.itemText}>
-                            <span className={styles.itemName}>{name}</span>
-                            {secondary && <small>{secondary}</small>}
+                            <span id={`${secondaryId}-name`} className={styles.itemName}>
+                                {name}
+                            </span>
+                            {secondary && <small id={secondaryId}>{secondary}</small>}
                         </span>
                     </button>
                 ) : (

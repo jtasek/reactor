@@ -14,6 +14,7 @@ import { frameState, isFrameVisible, isFrameLocked } from './frameState';
 import { frameParents, validFrameParent, frameMoveProblem } from './frameMembership';
 import { isReadOnly } from './documentAccess';
 import { isShapeLocked } from './utils';
+import { explorerTree } from './explorerTree';
 import { useAppState } from './hooks';
 import type { Document, Frame } from './types';
 
@@ -36,6 +37,9 @@ export const useFramesIds = () =>
 
 export const useSelectedFrameId = () =>
     useAppState((state) => state.currentDocument.selectedFrameId);
+
+export const useExplorerTree = () =>
+    useAppState((state) => explorerTree(state.currentDocument, state.currentDocument.filter));
 
 /** The frames' names, sorted, reading only what the explorer's rows show. */
 export const useFrameRows = () =>
