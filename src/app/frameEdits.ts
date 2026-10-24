@@ -1,4 +1,5 @@
 import { editableScreenView, sourceOffset } from './screenViewEditing';
+import { initializeStackOrder } from './stackEdits';
 import {
     layoutDocument,
     frameHasLayoutOffset,
@@ -114,6 +115,11 @@ function addFrame(context: Context, input: Extract<FrameEdit, { kind: 'add' | 'p
         }
 
         document.frames[frame.id] = frame;
+
+        if (frame.parentFrameId) {
+            // Takes the next place in a stacked Screen, after what is already there.
+            initializeStackOrder(document, [frame.parentFrameId]);
+        }
 
         return actions.editFrame({ kind: 'select', id: frame.id });
     }

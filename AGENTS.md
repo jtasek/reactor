@@ -459,7 +459,10 @@ Screen and assigns source membership; dragging free artwork edits shared source 
 Keep stack-managed transforms disabled. Pointer addresses and gesture placement snapshots
 stay in the events namespace, never in durable document data. A changed/removed/hidden/locked
 View cancels its gesture; normal snapshot rebasing preserves remote edits on cancellation.
-Two-phase text retains its source placement until commit, and its input follows View movement.
+Two-phase text retains its source placement until commit, and its input follows View movement;
+it commits into its Screen even if the View is hidden or removed meanwhile. Only editable Views
+take presses (locked, hidden, read-only or broken ones let them reach the canvas), and their hit
+area leaves the inner half of the View's edge grip free. A marquee projects its View once per gesture.
 View boundary gestures edit only the placement. Projected resize/rotate handles and contextual menus/overlays remain planned.
 Deleting a screen removes its placed views; deleting a view keeps the screen. Explorer and
 Inspector identify the referenced screen. Tests: `screenViews.test.ts` and browser counterpart.

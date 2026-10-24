@@ -277,3 +277,65 @@ test('draws and drags source artwork through a secondary view, cancels a drag an
     );
     await page.screenshot({ path: '/tmp/reactor-screen-view-gestures.png' });
 });
+
+test('moves a view from just inside its edge, and lets presses through a locked view', async ({
+    page
+}) => {
+    const document = createDocument({
+        id: 'screen-view-edges',
+        frames: {
+            home: {
+                id: 'home',
+                kind: 'screen',
+                name: 'Home',
+                position: { x: 100, y: 80 },
+                size: { width: 300, height: 200 },
+                visible: true,
+                locked: false
+            }
+        }
+    });
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await openEditor(page, ['Inspector', 'Explorer']);
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    await explorer.getByRole('button', { name: 'Home', exact: true }).click();
+    await page.getByRole('button', { name: 'Create view of screen' }).click();
+    await expect(page.getByLabel('Screen view properties')).toBeVisible();
+    const viewId = await page
+        .locator('svg#surface #frames > [data-frame]')
+        .filter({ hasText: 'Home view' })
+        .getAttribute('data-frame');
+    const x = Number(await page.getByLabel('View x').inputValue());
+    const grip = page.locator(`#frame-grips [data-frame-id="${viewId}"]`);
+    // The grip's box includes its 12px stroke: 6px outside the edge, 6px inside.
+    const box = (await grip.boundingBox())!;
+    const inside = { x: box.x + 9, y: box.y + box.height / 2 };
+    const pressed = (point: { x: number; y: number }) =>
+        page.evaluate(({ x, y }) => {
+            const element = window.document.elementFromPoint(x, y);
+
+            return {
+                grip: element?.getAttribute('data-frame-id') ?? null,
+                view: Boolean(element?.closest('[data-screen-view]'))
+            };
+        }, point);
+
+    expect(await pressed(inside)).toEqual({ grip: viewId, view: false });
+    await page.mouse.move(inside.x, inside.y);
+    await page.mouse.down();
+    await page.mouse.move(inside.x + 40, inside.y, { steps: 5 });
+    await page.mouse.up();
+    await expect(page.getByLabel('View x')).toHaveValue(String(x + 40));
+
+    const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    expect((await pressed(center)).view).toBe(true);
+    const viewRow = explorer.getByRole('button', { name: 'Home view' }).locator('..');
+    await viewRow.hover();
+    await viewRow.getByRole('button', { name: 'Lock', exact: true }).click();
+    await expect.poll(async () => (await pressed(center)).view).toBe(false);
+});
