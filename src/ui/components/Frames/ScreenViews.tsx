@@ -1,5 +1,5 @@
 import React, { createElement, type CSSProperties, type FC } from 'react';
-import { componentSource } from 'src/app/componentSource';
+import { componentSource, instanceBox } from 'src/app/componentSource';
 import { withTheirGroups } from 'src/app/membership';
 import { projectScreenViews } from 'src/app/screenProjection';
 import { themeColors } from 'src/app/themeColors';
@@ -20,9 +20,18 @@ const ProjectedShape: FC<{
     const document = useCurrentDocument();
     const context = useVariableContext();
     const { unselectShapes, selectShape } = useActions();
-    const enteredGroupId = useAppState((state) => state.enteredGroupId);
+    const { enteredGroupId, idle } = useAppState((state) => ({
+        enteredGroupId: state.enteredGroupId,
+        idle: state.events.pointer.gesture.kind === 'idle'
+    }));
     const painted = themeColors(shape, document, context);
-    const center = boxCenter(getShapeBounds(shape));
+    const source =
+        painted.type === 'instance' ? componentSource(document, painted.componentId) : null;
+    const bounds =
+        painted.type === 'instance' && source
+            ? instanceBox(painted, source)
+            : getShapeBounds(shape);
+    const center = boxCenter(bounds);
     const transform = shape.rotation
         ? `rotate(${shape.rotation} ${center.x} ${center.y})`
         : undefined;
@@ -31,7 +40,6 @@ const ProjectedShape: FC<{
             ? null
             : (getComponentByType(painted.type) as FC<Omit<Shape, 'key'>>);
     const { key, ...props } = painted;
-    const bounds = getShapeBounds(shape);
 
     return (
         <g
@@ -50,7 +58,7 @@ const ProjectedShape: FC<{
                     ? (event) => {
                           event.stopPropagation();
 
-                          if (!selecting) {
+                          if (!selecting || !idle || event.button !== 0) {
                               return;
                           }
 
@@ -63,10 +71,17 @@ const ProjectedShape: FC<{
             }
         >
             {painted.type === 'instance' ? (
-                <Instance
-                    instance={painted}
-                    source={componentSource(document, painted.componentId)}
-                />
+                <>
+                    <Instance instance={painted} source={source} />
+                    <rect
+                        data-view-instance-hit
+                        x={bounds.topLeft.x}
+                        y={bounds.topLeft.y}
+                        width={bounds.width}
+                        height={bounds.height}
+                        fill="transparent"
+                    />
+                </>
             ) : (
                 Primitive && createElement(Primitive, { ...props, key, selected: false })
             )}
