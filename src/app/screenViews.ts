@@ -1,6 +1,18 @@
 import type { Document, Frame } from './types';
 import { frameParents } from './frameState';
 
+/**
+ * A root screen is a definition drawn only through its views. A nested screen
+ * is not a destination, so it stays drawn in place inside its parent.
+ */
+export function isScreenDefinition(
+    frames: Record<string, Frame>,
+    id: string,
+    parents = frameParents(frames)
+) {
+    return frames[id]?.kind === 'screen' && !parents.get(id);
+}
+
 /** The shared screen that owns an entity's authored geometry, if any. */
 export function screenOwners(frames: Record<string, Frame>) {
     const parents = frameParents(frames);
@@ -13,7 +25,7 @@ export function screenOwners(frames: Record<string, Frame>) {
         while (current !== undefined && !owners.has(current)) {
             path.push(current);
 
-            if (frames[current]?.kind === 'screen') {
+            if (isScreenDefinition(frames, current, parents)) {
                 owners.set(current, current);
                 break;
             }

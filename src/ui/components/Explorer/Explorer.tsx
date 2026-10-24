@@ -330,8 +330,9 @@ export const Explorer: FC = () => {
         return contents ? [{ ...frame, ...contents }] : [];
     });
     const owners = screenOwners(document.frames);
+    // Only root screens are definitions; nested screens stay in their parent's branch.
     const screens = frames
-        .filter((frame) => frame.kind === 'screen')
+        .filter((frame) => owners.get(frame.id) === frame.id)
         .map((screen) => ({
             ...screen,
             viewCount: frames.filter((view) => view.kind === 'view' && view.screenId === screen.id)
@@ -380,7 +381,7 @@ export const Explorer: FC = () => {
             {shownFrames
                 .filter(
                     (child) =>
-                        child.kind !== 'screen' &&
+                        owners.get(child.id) !== child.id &&
                         child.parentFrameId === (frame.kind === 'view' ? frame.screenId : frame.id)
                 )
                 .map((child) => frameItem(child, viewId ?? frame.id))}
