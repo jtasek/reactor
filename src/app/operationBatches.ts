@@ -841,6 +841,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                 }
                 case 'updateFrame': {
                     const allowed = new Set([
+                        'kind',
                         'name',
                         'position',
                         'size',

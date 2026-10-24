@@ -18,7 +18,7 @@ async function drawFrame(
     from: { x: number; y: number },
     to: { x: number; y: number }
 ) {
-    await selectTool(page, 'Draw a screen frame');
+    await selectTool(page, 'Draw a frame');
     await pointer(page, 'pointerdown', from);
     await pointer(page, 'pointermove', to);
     await pointer(page, 'pointerup', to);

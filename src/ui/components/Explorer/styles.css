@@ -7,6 +7,54 @@
     width: 100%;
 }
 
+.views {
+    background: var(--field-background);
+    border-radius: var(--radius-md);
+    display: flex;
+    gap: 2px;
+    margin-bottom: var(--panel-gap);
+    padding: 3px;
+}
+
+.views button {
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary-color);
+    cursor: pointer;
+    flex: 1;
+    font: inherit;
+    min-height: 28px;
+}
+
+.views button[aria-pressed='true'] {
+    background: var(--panel-content-background);
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.views button:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+}
+
+.hint {
+    color: var(--text-secondary-color);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    margin: var(--panel-gap) 4px;
+}
+
+.badge {
+    background: var(--field-background);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary-color);
+    flex: 0 0 auto;
+    font-size: 0.6875rem;
+    line-height: 16px;
+    padding: 0 4px;
+}
+
 .rootAction {
     align-items: center;
     background: transparent;

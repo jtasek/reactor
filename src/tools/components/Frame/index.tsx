@@ -7,7 +7,7 @@ export const FrameTool: Tool = {
     id: 'frame',
     name: 'Frame',
     category: 'surface',
-    description: 'Draw a screen frame',
+    description: 'Draw a frame',
     shortcut: 'f',
     icon: { component: Frame, size: 24 },
     designComponent: DesignRect,

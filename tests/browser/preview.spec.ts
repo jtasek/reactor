@@ -156,7 +156,7 @@ test('clips screens to their frame and keeps previewing a button whose screen is
     await page.getByRole('button', { name: 'Preview', exact: true }).click();
     const iframe = page.frameLocator('iframe[title="Application preview"]');
     await expect(
-        page.getByText('Continue button links to a missing or hidden screen', { exact: false })
+        page.getByText('Continue button links to an unavailable screen', { exact: false })
     ).toBeVisible();
     await iframe.getByLabel('Your name').fill('Ada');
     await iframe.getByRole('button', { name: 'Continue', exact: true }).click();
@@ -169,6 +169,7 @@ test('updates the preview when a drag ends, not on every pointer move', async ({
     const document = previewFixture();
     document.frames.wide = {
         id: 'wide',
+        kind: 'screen',
         name: 'Wide',
         position: { x: 800, y: 100 },
         size: { width: 200, height: 200 },

@@ -1,12 +1,14 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
     active: string;
+    badge: string;
     component: string;
     dropTarget: string;
     empty: string;
     explorer: string;
     grip: string;
     hidden: string;
+    hint: string;
     icon: string;
     inlineMenu: string;
     itemName: string;
@@ -22,6 +24,7 @@ declare namespace StylesCssNamespace {
     shown: string;
     toggle: string;
     toggleSpacer: string;
+    views: string;
   }
 }
 

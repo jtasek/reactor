@@ -36,9 +36,9 @@ test.beforeEach(async ({ page }) => {
     );
     const document = createDocument({
         frames: {
-            home: { ...box, id: 'home', name: 'Home' },
+            home: { ...box, id: 'home', name: 'Home', kind: 'screen' },
             card: { ...box, id: 'card', name: 'Card', parentFrameId: 'home' },
-            settings: { ...box, id: 'settings', name: 'Settings' }
+            settings: { ...box, id: 'settings', name: 'Settings', kind: 'screen' }
         },
         shapes,
         groups: {
@@ -61,7 +61,7 @@ test.beforeEach(async ({ page }) => {
     await openEditor(page, ['Explorer', 'Inspector']);
 });
 
-test('nests frame artwork once, keeps layer/group controls and sorts shapes by drawing order', async ({
+test('nests frame artwork once, keeps group controls and sorts shapes by drawing order', async ({
     page
 }) => {
     const home = branch(page, 'Home');
@@ -91,16 +91,16 @@ test('nests frame artwork once, keeps layer/group controls and sorts shapes by d
     ).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(name(page, 'Artwork')).toBeFocused();
-    await page.screenshot({ path: '/tmp/reactor-explorer-frames-normal.png' });
+    await page.screenshot({ path: '/tmp/reactor-explorer-objects-normal.png' });
     await page.setViewportSize({ width: 600, height: 850 });
     await expect(name(page, 'Artwork')).toBeVisible();
-    await page.screenshot({ path: '/tmp/reactor-explorer-frames-narrow.png' });
+    await page.screenshot({ path: '/tmp/reactor-explorer-objects-narrow.png' });
 });
 
 test('search reveals frame ancestry and matching frame contents without forgetting collapse state', async ({
     page
 }) => {
-    const search = page.getByRole('searchbox', { name: 'Search shapes' });
+    const search = page.getByRole('searchbox', { name: 'Search objects' });
 
     await explorer(page).getByRole('button', { name: 'Collapse Home', exact: true }).click();
     await expect(name(page, 'Artwork')).toHaveCount(0);
@@ -156,34 +156,72 @@ test('updates frame branches after reparenting, reload, boundary deletion and un
     ).toBeVisible();
 });
 
-test('layer branches collapse independently and retain drag and inherited restriction behavior', async ({
+test('global layers stay whole and preserve selection and collapse state across views', async ({
     page
 }) => {
-    const home = branch(page, 'Home');
-    const homeLayer = home.getByRole('button', { name: 'Shared layer', exact: true });
-    const canvasLayer = branch(page, 'Canvas')
-        .locator('> ul > li')
-        .filter({ has: page.getByRole('button', { name: 'Loose', exact: true }) });
-
-    // A layer listed in several branches says its commands reach beyond this one.
-    await expect(homeLayer).toHaveAccessibleDescription('Also outside this frame');
+    await expect(name(page, 'Shared layer')).toHaveCount(0);
+    await expect(name(page, 'New layer')).toHaveCount(0);
+    await expect(name(page, 'Home')).toHaveAccessibleDescription('Screen');
+    await expect(name(page, 'Settings')).toHaveAccessibleDescription('Screen');
+    await expect(name(page, 'Card')).not.toHaveAttribute('aria-describedby');
+    await name(page, 'Title').click();
+    await name(page, 'Collapse Home').click();
+    await name(page, 'Layers').click();
+    await expect(name(page, 'Layers')).toHaveAttribute('aria-pressed', 'true');
+    await expect(name(page, 'Shared layer')).toHaveCount(1);
+    await expect(name(page, 'Home')).toHaveCount(0);
+    await expect(name(page, 'Title')).toHaveAttribute('aria-pressed', 'true');
     await expect(
-        canvasLayer.locator('> div').getByRole('button', { name: 'Shared layer', exact: true })
-    ).toHaveAccessibleDescription('Also inside frames');
+        branch(page, 'Shared layer').getByRole('button', { name: /^(Title|Loose)$/ })
+    ).toHaveText(['Loose', 'Title']);
+    await expect(
+        explorer(page).getByText('Global layers organize objects across all screens.')
+    ).toBeVisible();
 
-    await home.getByRole('button', { name: 'Collapse Shared layer', exact: true }).click();
-    await expect(name(page, 'Title')).toHaveCount(0);
-    await expect(name(page, 'Loose')).toBeVisible();
-    await home.getByRole('button', { name: 'Expand Shared layer', exact: true }).click();
-    // A drop on a layer inside a frame's branch puts the shape in that frame, where it shows.
-    await name(page, 'Loose').locator('..').locator('span[draggable]').dragTo(homeLayer);
+    const layerRow = name(page, 'Shared layer').locator('..');
+
+    await layerRow.hover();
+    await layerRow.getByRole('button', { name: 'Hide', exact: true }).click();
+    await expect(page.locator('svg#surface rect[data-cy="Title"]')).toHaveCount(0);
+    await expect(page.locator('svg#surface rect[data-cy="Loose"]')).toHaveCount(0);
+    await layerRow.hover();
+    await layerRow.getByRole('button', { name: 'Show', exact: true }).click();
+    await expect(page.locator('svg#surface rect[data-cy="Title"]')).toBeVisible();
+    await expect(page.locator('svg#surface rect[data-cy="Loose"]')).toBeVisible();
+    await name(page, 'Loose')
+        .locator('..')
+        .locator('span[draggable]')
+        .dragTo(name(page, 'No layer'));
+    await expect(
+        branch(page, 'Shared layer').getByRole('button', { name: 'Loose', exact: true })
+    ).toHaveCount(0);
+    await name(page, 'Loose')
+        .locator('..')
+        .locator('span[draggable]')
+        .dragTo(name(page, 'Shared layer'));
     await expect(
         branch(page, 'Shared layer').getByRole('button', { name: 'Loose', exact: true })
     ).toBeVisible();
-    await expect(home.getByRole('button', { name: 'Loose', exact: true })).toBeVisible();
-    await expect(name(page, 'Loose')).toHaveCount(1);
-    await expect(homeLayer).not.toHaveAccessibleDescription('Also outside this frame');
+    await page.mouse.move(700, 500);
+    await page.screenshot({ path: '/tmp/reactor-explorer-layers-normal.png' });
+    await page.setViewportSize({ width: 600, height: 850 });
+    await expect(name(page, 'Shared layer')).toBeVisible();
+    await page.screenshot({ path: '/tmp/reactor-explorer-layers-narrow.png' });
+    await name(page, 'Collapse Shared layer').click();
+    await name(page, 'Objects').click();
+    await expect(name(page, 'Title')).toHaveCount(0);
+    await name(page, 'Expand Home').click();
+    await expect(name(page, 'Title')).toBeVisible();
+    await expect(
+        branch(page, 'Home').getByRole('button', { name: 'Loose', exact: true })
+    ).toHaveCount(0);
+    await name(page, 'Layers').click();
+    await expect(name(page, 'Title')).toHaveCount(0);
+    await name(page, 'Objects').click();
+    await expect(name(page, 'Title')).toBeVisible();
+});
 
+test('object grouping retains inherited restrictions', async ({ page }) => {
     // Existing group drops set both group and parent membership.
     await name(page, 'Loose')
         .locator('..')
@@ -212,4 +250,77 @@ test('layer branches collapse independently and retain drag and inherited restri
     await homeRow.hover();
     await homeRow.getByRole('button', { name: 'Show', exact: true }).click();
     await expect(page.locator('svg#surface rect[data-cy="Artwork"]')).toBeVisible();
+});
+
+test('screen identity is explicit and search is scoped to each view', async ({ page }) => {
+    await name(page, 'Card').click();
+    await page.getByLabel('Frame parent', { exact: true }).selectOption('');
+    await expect(name(page, 'Card')).not.toHaveAttribute('aria-describedby');
+    await page.getByLabel('Frame type', { exact: true }).selectOption('screen');
+    await expect(name(page, 'Card')).toHaveAccessibleDescription('Screen');
+    await page.getByLabel('Frame parent', { exact: true }).selectOption('home');
+    await expect(name(page, 'Card')).toHaveAccessibleDescription('Screen');
+    await expect(page.getByText('Move this screen to Canvas', { exact: false })).toBeVisible();
+    await page.getByRole('searchbox', { name: 'Search objects', exact: true }).fill('Shared layer');
+    await expect(explorer(page).getByText('No objects match')).toBeVisible();
+    await name(page, 'Layers').click();
+    await expect(name(page, 'Shared layer')).toBeVisible();
+    await expect(name(page, 'Title')).toBeVisible();
+    await page
+        .getByRole('searchbox', { name: 'Search layers and objects' })
+        .fill('nothing matches');
+    await expect(explorer(page).getByText('No layers or objects match')).toBeVisible();
+});
+
+test('dropping on a frame or Canvas row moves objects in and out of frames', async ({ page }) => {
+    const handle = (text: string) => name(page, text).locator('..').locator('span[draggable]');
+
+    await handle('Loose').dragTo(name(page, 'Settings'));
+    await expect(
+        branch(page, 'Settings').getByRole('button', { name: 'Loose', exact: true })
+    ).toBeVisible();
+    await name(page, 'Loose').click();
+    await expect(page.getByLabel('Selection parent', { exact: true })).toHaveValue('settings');
+
+    // A group moves whole, as with the Parent picker.
+    await handle('Art group').dragTo(name(page, 'Settings'));
+    await expect(
+        branch(page, 'Settings').getByRole('button', { name: 'Art group', exact: true })
+    ).toBeVisible();
+    await expect(name(page, 'Artwork')).toHaveCount(1);
+
+    await handle('Loose').dragTo(name(page, 'Canvas'));
+    await expect(
+        branch(page, 'Settings').getByRole('button', { name: 'Loose', exact: true })
+    ).toHaveCount(0);
+    await expect(name(page, 'Loose')).toHaveCount(1);
+    await name(page, 'Loose').click();
+    await expect(page.getByLabel('Selection parent', { exact: true })).toHaveValue('');
+
+    // A locked frame takes nothing.
+    const homeRow = name(page, 'Home').locator('..');
+
+    await homeRow.hover();
+    await homeRow.getByRole('button', { name: 'Lock', exact: true }).click();
+    await handle('Loose').dragTo(name(page, 'Home'));
+    await expect(
+        branch(page, 'Home').getByRole('button', { name: 'Loose', exact: true })
+    ).toHaveCount(0);
+    await expect(name(page, 'Loose')).toHaveCount(1);
+});
+
+test('the chosen view survives closing the panel and reloading', async ({ page }) => {
+    await name(page, 'Layers').click();
+    await expect(name(page, 'Shared layer')).toBeVisible();
+    const toggle = page.getByRole('checkbox', { name: 'Explorer', exact: true });
+
+    await toggle.uncheck();
+    await toggle.check();
+    await expect(name(page, 'Layers')).toHaveAttribute('aria-pressed', 'true');
+    await expect(name(page, 'Shared layer')).toBeVisible();
+    await page.reload();
+    await expect(name(page, 'Layers')).toHaveAttribute('aria-pressed', 'true');
+    await name(page, 'Objects').click();
+    await expect(name(page, 'Shared layer')).toHaveCount(0);
+    await expect(name(page, 'Home')).toBeVisible();
 });

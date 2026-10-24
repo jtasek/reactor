@@ -12,6 +12,7 @@ export function previewFixture() {
     const frame = (id: string, name: string, x: number): Frame => ({
         id,
         name,
+        kind: 'screen',
         position: { x, y: 0 },
         size: { width: 320, height: 480 },
         visible: true,

@@ -49,6 +49,7 @@ interface Props {
     icon?: ReactNode;
     /** A note under the name; it describes the row rather than naming it. */
     secondary?: string;
+    badge?: string;
     /** What dragging the item moves; a layer is not dragged. */
     dragged?: Dragged;
     selected?: boolean;
@@ -74,6 +75,7 @@ export const ExplorerItem: FC<Props> = ({
     name,
     icon,
     secondary,
+    badge,
     dragged,
     selected = false,
     active = false,
@@ -87,6 +89,7 @@ export const ExplorerItem: FC<Props> = ({
     onDrop,
     children
 }) => {
+    const badgeId = useId();
     const [dropTarget, setDropTarget] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const nameButton = useRef<HTMLButtonElement>(null);
@@ -178,6 +181,7 @@ export const ExplorerItem: FC<Props> = ({
                     <button
                         type="button"
                         className={styles.toggle}
+                        aria-expanded={!collapsed}
                         aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${name}`}
                         onClick={() => items.toggle(collapseId)}
                     >
@@ -193,7 +197,11 @@ export const ExplorerItem: FC<Props> = ({
                         className={styles.name}
                         aria-pressed={selected}
                         aria-labelledby={secondary ? `${secondaryId}-name` : undefined}
-                        aria-describedby={secondary ? secondaryId : undefined}
+                        aria-describedby={
+                            [secondary && secondaryId, badge && badgeId]
+                                .filter(Boolean)
+                                .join(' ') || undefined
+                        }
                         onPointerDown={handleNamePointerDown}
                         onClick={handleNameClick}
                         onDoubleClick={onDoubleClick}
@@ -210,6 +218,11 @@ export const ExplorerItem: FC<Props> = ({
                     <span className={styles.label}>
                         {icon}
                         {name}
+                    </span>
+                )}
+                {badge && (
+                    <span id={badgeId} className={styles.badge}>
+                        {badge}
                     </span>
                 )}
                 {rootButtons}

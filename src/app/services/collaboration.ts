@@ -1,7 +1,8 @@
+import { frameParents } from '../frameState';
 import { legacyTheme } from '../variableModes';
 import { json } from 'overmind';
 import type * as Yjs from 'yjs';
-import type { Document, UndoHistory } from '../types';
+import type { Document, Frame, UndoHistory } from '../types';
 import type { Provenance } from '../operations';
 import {
     COLLECTIONS,
@@ -292,12 +293,14 @@ export class Collaboration {
         this.migrate(binding);
     }
 
-    /** Gives Light/Dark colors the Theme dimension; answers whether anything changed. */
+    /** Upgrades legacy colors and screen destinations without recording an undo step. */
     private migrate(binding: Binding): boolean {
         const { yjs } = this.ready();
         const legacy = [...binding.tables.variables.values()].filter(
             (entity): entity is Yjs.Map<unknown> => {
-                if (!(entity instanceof yjs.Map)) return false;
+                if (!(entity instanceof yjs.Map)) {
+                    return false;
+                }
                 const raw = entity.toJSON();
                 return (
                     raw.type === 'color' &&
@@ -307,17 +310,46 @@ export class Collaboration {
             }
         );
 
-        if (legacy.length === 0) {
+        const legacyFrames = [...binding.tables.frames.values()].filter(
+            (entity): entity is Yjs.Map<unknown> => entity instanceof yjs.Map && !entity.has('kind')
+        );
+
+        if (legacy.length === 0 && legacyFrames.length === 0) {
             return false;
         }
 
+        const frames: Record<string, Frame> = {};
+
+        if (legacyFrames.length > 0) {
+            binding.tables.frames.forEach((entity) => {
+                if (!(entity instanceof yjs.Map)) {
+                    return;
+                }
+
+                const frame = orUndefined(() => readEntity('frames', entity.toJSON()));
+
+                if (frame) {
+                    frames[frame.id] = frame;
+                }
+            });
+        }
+
+        const parents = frameParents(frames);
+
         binding.doc.transact(() => {
             legacy.forEach((entity) => entity.set('dimensionId', 'theme'));
-            if (!binding.tables.dimensions.has('theme')) {
+            if (legacy.length > 0 && !binding.tables.dimensions.has('theme')) {
                 const dimension = new yjs.Map();
                 binding.tables.dimensions.set('theme', dimension);
                 this.writeValues(dimension, legacyTheme());
             }
+            legacyFrames.forEach((entity) => {
+                if (!frames[String(entity.get('id'))]) {
+                    return;
+                }
+
+                entity.set('kind', parents.get(String(entity.get('id'))) ? 'frame' : 'screen');
+            });
         }, MIGRATION);
 
         return true;

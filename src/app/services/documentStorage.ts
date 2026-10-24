@@ -1,3 +1,4 @@
+import { frameParents } from '../frameState';
 import { readPackageIdentity } from '../packageIdentity';
 import { readDimension, legacyTheme } from '../variableModes';
 import type {
@@ -23,7 +24,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 11;
+export const SCHEMA_VERSION = 12;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -610,9 +611,14 @@ function readFrame(value: unknown): Frame {
         throw new Error('Expected a frame name');
     }
 
+    if (f.kind !== undefined && f.kind !== 'frame' && f.kind !== 'screen') {
+        throw new Error('Expected frame or screen identity');
+    }
+
     return {
         ...entity(value),
         name,
+        kind: f.kind ?? 'frame',
         ...(f.parentFrameId === undefined ? {} : { parentFrameId: id(f.parentFrameId) }),
         ...(f.stack === undefined ? {} : { stack: readStack(f.stack) }),
         ...(f.sizing === undefined ? {} : { sizing: readSizing(f.sizing) }),
@@ -865,10 +871,20 @@ export function readView(value: unknown): View {
     };
 }
 
-function readDocument(value: unknown, onRepair = () => {}): DocumentData {
+function readDocument(value: unknown, onRepair = () => {}, legacyScreens = false): DocumentData {
     const d = record(value);
     const shapes = readShapes(d.shapes, onRepair);
     const frames = d.frames === undefined ? {} : table(d.frames, readFrame);
+    if (legacyScreens) {
+        const parents = frameParents(frames);
+
+        Object.values(frames).forEach((frame) => {
+            if (record(record(d.frames)[frame.id]).kind === undefined) {
+                frame.kind = parents.get(frame.id) ? 'frame' : 'screen';
+            }
+        });
+    }
+
     const components = table(d.components, readComponent);
     const variables = d.variables === undefined ? {} : table(d.variables, readVariable);
     const dimensions =
@@ -946,6 +962,7 @@ export function migratePersistedState(raw: unknown, onRepair = () => {}): Persis
             data.version !== 8 &&
             data.version !== 9 &&
             data.version !== 10 &&
+            data.version !== 11 &&
             data.version !== SCHEMA_VERSION
         ) {
             return null;
@@ -956,7 +973,7 @@ export function migratePersistedState(raw: unknown, onRepair = () => {}): Persis
         let currentDocumentId = text(data.currentDocumentId);
 
         for (const [key, value] of entries) {
-            const read = readDocument(value, onRepair);
+            const read = readDocument(value, onRepair, data.version !== SCHEMA_VERSION);
             const document = data.version === 1 || data.version === 2 ? showContainers(read) : read;
 
             if (data.version !== 1 && key !== document.id) {

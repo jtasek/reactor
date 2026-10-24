@@ -67,6 +67,10 @@ test('hiding a layer hides its shapes on the canvas and from presses', async ({ 
         JSON.stringify(layeredDocument())
     );
     await openEditor(page, ['Explorer']);
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Layers', exact: true })
+        .click();
     await expect(shapes(page)).toHaveCount(1);
 
     const layer = itemMenu(page, 'Layer');

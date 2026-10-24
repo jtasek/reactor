@@ -14,7 +14,7 @@ import { frameState, isFrameVisible, isFrameLocked } from './frameState';
 import { frameParents, validFrameParent, frameMoveProblem } from './frameMembership';
 import { isReadOnly } from './documentAccess';
 import { isShapeLocked } from './utils';
-import { explorerTree } from './explorerTree';
+import { explorerLayers, explorerTree } from './explorerTree';
 import { useAppState } from './hooks';
 import type { Document, Frame } from './types';
 
@@ -38,8 +38,18 @@ export const useFramesIds = () =>
 export const useSelectedFrameId = () =>
     useAppState((state) => state.currentDocument.selectedFrameId);
 
-export const useExplorerTree = () =>
-    useAppState((state) => explorerTree(state.currentDocument, state.currentDocument.filter));
+/** Each Explorer view builds only its own tree; the hidden one reads nothing. */
+export const useExplorerTree = (shown = true) =>
+    useAppState((state) =>
+        shown ? explorerTree(state.currentDocument, state.currentDocument.filter) : undefined
+    );
+
+export const useExplorerLayers = (shown = true) =>
+    useAppState((state) =>
+        shown ? explorerLayers(state.currentDocument, state.currentDocument.filter) : undefined
+    );
+
+export const useExplorerView = () => useAppState((state) => state.config.explorerView);
 
 /** The frames' names, sorted, reading only what the explorer's rows show. */
 export const useFrameRows = () =>
@@ -52,6 +62,7 @@ export const useFrameRows = () =>
             .map((id) => ({
                 id,
                 name: frames[id].name,
+                kind: frames[id].kind,
                 parentFrameId: parents.get(id),
                 visible: frames[id].visible,
                 shown: isFrameVisible(document, id),

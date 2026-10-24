@@ -180,7 +180,7 @@ it.each([
     expect(button.control?.role).toBe('button');
     expect(button.control?.navigateTo).toBeUndefined();
     expect(warnings).toEqual([
-        'Continue button links to a missing or hidden screen and does nothing. Choose another screen in its role settings.'
+        'Continue button links to an unavailable screen and does nothing. Choose another screen in its role settings.'
     ]);
 });
 

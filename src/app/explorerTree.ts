@@ -4,31 +4,38 @@ import { filterOutline, outline } from './membership';
 import type { OutlineLayer } from './membership';
 import type { Document } from './types';
 
-/** Partition scene rows without changing either frame or layer membership. */
-function layersByFrame(document: Document) {
-    const contents = new Map<string | undefined, OutlineLayer[]>();
+export type ExplorerContents = Pick<OutlineLayer, 'groups' | 'shapesIds'>;
+
+const emptyContents = (): ExplorerContents => ({ groups: [], shapesIds: [] });
+
+/** Each global layer appears once, independent of frame containment. */
+export function explorerLayers(document: Document, text: string) {
+    return filterOutline(sceneLayers(outline(document), document), document, text);
+}
+
+/** Partition objects by actual containment, without global layer wrappers. */
+function objectsByFrame(document: Document) {
+    const contents = new Map<string | undefined, ExplorerContents>();
     const parentOf = (id: string) => {
         const parent = document.shapes[id]?.parentFrameId;
 
         return parent !== undefined && Object.hasOwn(document.frames, parent) ? parent : undefined;
     };
+    const entry = (parent: string | undefined) => {
+        const existing = contents.get(parent);
+
+        if (existing) {
+            return existing;
+        }
+
+        const items = emptyContents();
+
+        contents.set(parent, items);
+
+        return items;
+    };
 
     for (const layer of sceneLayers(outline(document), document)) {
-        const slices = new Map<string | undefined, OutlineLayer>();
-        const entry = (parent: string | undefined) => {
-            const existing = slices.get(parent);
-
-            if (existing) {
-                return existing;
-            }
-
-            const slice: OutlineLayer = { layerId: layer.layerId, groups: [], shapesIds: [] };
-
-            slices.set(parent, slice);
-
-            return slice;
-        };
-
         for (const group of layer.groups) {
             const members = new Map<string | undefined, string[]>();
 
@@ -46,28 +53,22 @@ function layersByFrame(document: Document) {
         }
 
         layer.shapesIds.forEach((id) => entry(parentOf(id)).shapesIds.push(id));
-
-        // Empty layers remain reachable, including ones containing only source artwork.
-        if (slices.size === 0 && layer.layerId !== null) {
-            entry(undefined);
-        }
-
-        for (const [parent, slice] of slices) {
-            const layers = contents.get(parent) ?? [];
-
-            layers.push(slice);
-            contents.set(parent, layers);
-        }
     }
 
     return contents;
+}
+
+function matchingObjects(contents: ExplorerContents, document: Document, text: string) {
+    const [matching] = filterOutline([{ layerId: null, ...contents }], document, text);
+
+    return matching ? { groups: matching.groups, shapesIds: matching.shapesIds } : emptyContents();
 }
 
 /** Search keeps frame ancestors; a named frame includes its complete subtree. */
 export function explorerTree(document: Document, text: string) {
     const wanted = text.trim().toLowerCase();
     const parents = frameParents(document.frames);
-    const contents = layersByFrame(document);
+    const contents = objectsByFrame(document);
     const named = new Set(
         Object.values(document.frames)
             .filter((frame) => frame.name.toLowerCase().includes(wanted))
@@ -84,15 +85,19 @@ export function explorerTree(document: Document, text: string) {
             {
                 id,
                 parentFrameId,
-                layers: includesAll(id)
-                    ? (contents.get(id) ?? [])
-                    : filterOutline(contents.get(id) ?? [], document, wanted)
+                contents: includesAll(id)
+                    ? (contents.get(id) ?? emptyContents())
+                    : matchingObjects(contents.get(id) ?? emptyContents(), document, wanted)
             }
         ])
     );
     const shown = new Set(
         [...frames.values()]
-            .filter((frame) => includesAll(frame.id) || frame.layers.length > 0)
+            .filter(
+                (frame) =>
+                    includesAll(frame.id) ||
+                    frame.contents.groups.length + frame.contents.shapesIds.length > 0
+            )
             .map((frame) => frame.id)
     );
 
@@ -106,7 +111,7 @@ export function explorerTree(document: Document, text: string) {
     }
 
     return {
-        canvas: filterOutline(contents.get(undefined) ?? [], document, wanted),
+        canvas: matchingObjects(contents.get(undefined) ?? emptyContents(), document, wanted),
         frames: [...frames.values()].filter((frame) => shown.has(frame.id))
     };
 }

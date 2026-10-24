@@ -173,6 +173,7 @@ test('moving a group also moves its hidden member', async ({ page }) => {
     await menu.getByRole('menuitem', { name: 'Target' }).click();
 
     const explorer = page.getByRole('region', { name: 'Explorer' });
+    await explorer.getByRole('button', { name: 'Layers', exact: true }).click();
     const targetLayer = explorer
         .getByRole('button', { name: 'Target', exact: true })
         .locator('xpath=ancestor::li[1]');

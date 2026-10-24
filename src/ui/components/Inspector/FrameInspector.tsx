@@ -1,3 +1,5 @@
+import type { Gesture } from 'src/events/types';
+import { frameParents } from 'src/app/frameMembership';
 import { renderedFrame, frameLayout } from 'src/app/frameLayout';
 import React, { type FC, useEffect, useState } from 'react';
 import { useActions, useAppState } from 'src/app/hooks';
@@ -63,9 +65,16 @@ const Field: FC<{
     );
 };
 
+/** Only a canvas gesture on this frame, or on a frame that carries it along, holds its fields. */
+const editedOnCanvas = (gesture: Gesture, id: string) =>
+    gesture.kind === 'editingFrame' &&
+    (gesture.frameId === id || Object.hasOwn(gesture.childFrames, id));
+
 export const FrameInspector: FC<{ id: string }> = ({ id }) => {
-    const { frame, authoredSize, locked, layout } = useAppState((state) => ({
+    const { frame, authoredSize, locked, layout, nested, busy } = useAppState((state) => ({
         frame: renderedFrame(state.currentDocument, id),
+        nested: Boolean(frameParents(state.currentDocument.frames).get(id)),
+        busy: editedOnCanvas(state.events.pointer.gesture, id),
         layout: frameLayout(state.currentDocument),
         authoredSize: state.currentDocument.frames[id]?.size,
         locked: state.currentDocument.locked
@@ -78,15 +87,52 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
         return null;
     }
 
-    const disabled = locked || inheritedLocked;
+    const disabled = locked || inheritedLocked || busy;
 
     return (
         <div className={styles.inspector} aria-label="Frame properties">
             <header className={styles.inspectorHeader}>
-                <strong>Frame</strong>
+                <strong>{frame.kind === 'screen' ? 'Screen' : 'Frame'}</strong>
             </header>
             <table>
                 <PropertyGroup name="Frame">
+                    <tr>
+                        <th scope="row">
+                            <label htmlFor="frame-kind">Type</label>
+                        </th>
+                        <td>
+                            <select
+                                id="frame-kind"
+                                aria-label="Frame type"
+                                disabled={disabled}
+                                value={frame.kind ?? 'frame'}
+                                onChange={(event) =>
+                                    editFrame({
+                                        kind: 'update',
+                                        id,
+                                        changes: {
+                                            kind:
+                                                event.target.value === 'screen' ? 'screen' : 'frame'
+                                        }
+                                    })
+                                }
+                            >
+                                <option value="frame">Frame</option>
+                                <option value="screen">Screen</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colSpan={2}>
+                            <small className={styles.frameHint} role="status">
+                                {frame.kind !== 'screen'
+                                    ? 'Choose Screen to make this frame a prototype destination.'
+                                    : nested
+                                      ? 'Move this screen to Canvas to use it as a prototype destination.'
+                                      : 'A prototype destination. Other screens remain on the same canvas.'}
+                            </small>
+                        </td>
+                    </tr>
                     <FrameParent frameId={id} />
                     <Field
                         label="Name"
