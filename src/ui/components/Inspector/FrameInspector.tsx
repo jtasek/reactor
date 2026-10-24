@@ -1,3 +1,4 @@
+import type { Gesture } from 'src/events/types';
 import { frameParents } from 'src/app/frameMembership';
 import { renderedFrame, frameLayout } from 'src/app/frameLayout';
 import React, { type FC, useEffect, useState } from 'react';
@@ -64,11 +65,16 @@ const Field: FC<{
     );
 };
 
+/** Only a canvas gesture on this frame, or on a frame that carries it along, holds its fields. */
+const editedOnCanvas = (gesture: Gesture, id: string) =>
+    gesture.kind === 'editingFrame' &&
+    (gesture.frameId === id || Object.hasOwn(gesture.childFrames, id));
+
 export const FrameInspector: FC<{ id: string }> = ({ id }) => {
     const { frame, authoredSize, locked, layout, nested, busy } = useAppState((state) => ({
         frame: renderedFrame(state.currentDocument, id),
         nested: Boolean(frameParents(state.currentDocument.frames).get(id)),
-        busy: state.events.pointer.gesture.kind !== 'idle',
+        busy: editedOnCanvas(state.events.pointer.gesture, id),
         layout: frameLayout(state.currentDocument),
         authoredSize: state.currentDocument.frames[id]?.size,
         locked: state.currentDocument.locked

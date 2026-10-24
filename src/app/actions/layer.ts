@@ -1,4 +1,5 @@
-import { Action, ActionWithParam, Application, Layer } from '../types';
+import { Action, ActionWithParam, Application, ExplorerView, Layer } from '../types';
+import { EXPLORER_VIEW_KEY } from '../explorerView';
 import { createLayer } from '../factories';
 import { LAYER_MINIMUM, putShapesOnLayer, selectionLayerId } from '../membership';
 import { isShapeLocked } from '../utils';
@@ -256,4 +257,14 @@ export const updateLayer: ActionWithParam<Partial<Layer> & { id: string }> = (
     const layer = getLayer(state, options.id);
 
     setLayer(state, { ...layer, ...options });
+};
+
+/** Which Explorer view shows; kept per device, so it survives closing the panel. */
+export const setExplorerView: ActionWithParam<ExplorerView> = ({ state, effects }, view) => {
+    state.config.explorerView = view;
+    try {
+        effects.saveState(EXPLORER_VIEW_KEY, view);
+    } catch {
+        // Keep the view for this session if local storage is unavailable.
+    }
 };

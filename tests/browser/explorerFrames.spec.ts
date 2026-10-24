@@ -271,3 +271,56 @@ test('screen identity is explicit and search is scoped to each view', async ({ p
         .fill('nothing matches');
     await expect(explorer(page).getByText('No layers or objects match')).toBeVisible();
 });
+
+test('dropping on a frame or Canvas row moves objects in and out of frames', async ({ page }) => {
+    const handle = (text: string) => name(page, text).locator('..').locator('span[draggable]');
+
+    await handle('Loose').dragTo(name(page, 'Settings'));
+    await expect(
+        branch(page, 'Settings').getByRole('button', { name: 'Loose', exact: true })
+    ).toBeVisible();
+    await name(page, 'Loose').click();
+    await expect(page.getByLabel('Selection parent', { exact: true })).toHaveValue('settings');
+
+    // A group moves whole, as with the Parent picker.
+    await handle('Art group').dragTo(name(page, 'Settings'));
+    await expect(
+        branch(page, 'Settings').getByRole('button', { name: 'Art group', exact: true })
+    ).toBeVisible();
+    await expect(name(page, 'Artwork')).toHaveCount(1);
+
+    await handle('Loose').dragTo(name(page, 'Canvas'));
+    await expect(
+        branch(page, 'Settings').getByRole('button', { name: 'Loose', exact: true })
+    ).toHaveCount(0);
+    await expect(name(page, 'Loose')).toHaveCount(1);
+    await name(page, 'Loose').click();
+    await expect(page.getByLabel('Selection parent', { exact: true })).toHaveValue('');
+
+    // A locked frame takes nothing.
+    const homeRow = name(page, 'Home').locator('..');
+
+    await homeRow.hover();
+    await homeRow.getByRole('button', { name: 'Lock', exact: true }).click();
+    await handle('Loose').dragTo(name(page, 'Home'));
+    await expect(
+        branch(page, 'Home').getByRole('button', { name: 'Loose', exact: true })
+    ).toHaveCount(0);
+    await expect(name(page, 'Loose')).toHaveCount(1);
+});
+
+test('the chosen view survives closing the panel and reloading', async ({ page }) => {
+    await name(page, 'Layers').click();
+    await expect(name(page, 'Shared layer')).toBeVisible();
+    const toggle = page.getByRole('checkbox', { name: 'Explorer', exact: true });
+
+    await toggle.uncheck();
+    await toggle.check();
+    await expect(name(page, 'Layers')).toHaveAttribute('aria-pressed', 'true');
+    await expect(name(page, 'Shared layer')).toBeVisible();
+    await page.reload();
+    await expect(name(page, 'Layers')).toHaveAttribute('aria-pressed', 'true');
+    await name(page, 'Objects').click();
+    await expect(name(page, 'Shared layer')).toHaveCount(0);
+    await expect(name(page, 'Home')).toBeVisible();
+});

@@ -38,11 +38,18 @@ export const useFramesIds = () =>
 export const useSelectedFrameId = () =>
     useAppState((state) => state.currentDocument.selectedFrameId);
 
-export const useExplorerTree = () =>
-    useAppState((state) => explorerTree(state.currentDocument, state.currentDocument.filter));
+/** Each Explorer view builds only its own tree; the hidden one reads nothing. */
+export const useExplorerTree = (shown = true) =>
+    useAppState((state) =>
+        shown ? explorerTree(state.currentDocument, state.currentDocument.filter) : undefined
+    );
 
-export const useExplorerLayers = () =>
-    useAppState((state) => explorerLayers(state.currentDocument, state.currentDocument.filter));
+export const useExplorerLayers = (shown = true) =>
+    useAppState((state) =>
+        shown ? explorerLayers(state.currentDocument, state.currentDocument.filter) : undefined
+    );
+
+export const useExplorerView = () => useAppState((state) => state.config.explorerView);
 
 /** The frames' names, sorted, reading only what the explorer's rows show. */
 export const useFrameRows = () =>
