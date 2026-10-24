@@ -1,3 +1,4 @@
+import { useFrameName } from 'src/app/frameHooks';
 import React, { createElement, type CSSProperties, type FC } from 'react';
 import { componentSource, instanceBox } from 'src/app/componentSource';
 import { projectScreenViews } from 'src/app/screenProjection';
@@ -85,6 +86,7 @@ const ScreenView: FC<{
     readOnly: boolean;
 }> = ({ item, interactive, readOnly }) => {
     const { view, projection, problem } = item;
+    const name = useFrameName(view.id);
 
     if (!projection) {
         return (
@@ -110,11 +112,11 @@ const ScreenView: FC<{
         );
     }
 
-    const { screen, frames, shapes } = projection;
+    const { frames, shapes } = projection;
 
     return (
         <g
-            aria-label={`View of ${screen.name}`}
+            aria-label={`Screen view ${name}`}
             data-screen-view={view.id}
             pointerEvents={readOnly || !interactive ? 'none' : undefined}
         >

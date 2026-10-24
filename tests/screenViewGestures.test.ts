@@ -55,7 +55,10 @@ it.each(['rectangle', 'line'])(
                 ? { start: { x: 120, y: 110 }, end: { x: 160, y: 140 } }
                 : { position: { x: 120, y: 110 }, size: { width: 40, height: 30 } }
         );
-        expect(projectScreenViews(document)[0].projection?.shapes[0]).toMatchObject(
+        expect(
+            projectScreenViews(document).find((item) => item.view.id === viewId)?.projection
+                ?.shapes[0]
+        ).toMatchObject(
             tool === 'line' ? { start: { x: 520, y: 330 } } : { position: { x: 520, y: 330 } }
         );
         expect(json(document.frames)).toEqual(frames);
@@ -121,7 +124,8 @@ it('hits viewport-specific layout, keeps stack-managed artwork fixed and moves f
     expect(document.shapes[id]).toMatchObject({ position: { x: 120, y: 100 } });
     store.actions.editFrame({ kind: 'update', id: screenId, changes: { stack: null } });
     const original = json(document.shapes[id]);
-    const projected = projectScreenViews(document)[0].projection!.shapes[0];
+    const projected = projectScreenViews(document).find((item) => item.view.id === viewId)!
+        .projection!.shapes[0];
     const position = projected.type === 'rectangle' ? projected.position : { x: 0, y: 0 };
     store.actions.events.beginGesture({ pointerId: 1, position, screenViewId: viewId });
     store.actions.events.movePointer({
@@ -175,7 +179,7 @@ it('shares a drag through a view, preserves a remote edit on cancel, and undoes 
     });
     const [a, b] = copies;
     const viewId = Object.values(shownDocument(a).frames).find(
-        (frame) => frame.kind === 'view'
+        (frame) => frame.kind === 'view' && frame.position.x === 500
     )!.id;
     const shapeId = shownDocument(a).shapesIds[0];
     const drag = () => {
@@ -220,7 +224,7 @@ it.each(['lock', 'resize', 'hide', 'delete'] as const)(
         const copies = await createCopies(2, addViews);
         const [a, b] = copies;
         const viewId = Object.values(shownDocument(a).frames).find(
-            (frame) => frame.kind === 'view'
+            (frame) => frame.kind === 'view' && frame.position.x === 500
         )!.id;
         a.store.actions.tools.activateTool('rectangle');
         a.store.actions.events.beginGesture({

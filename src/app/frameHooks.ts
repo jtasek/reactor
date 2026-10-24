@@ -1,3 +1,4 @@
+import { screenOwners, screenSourceShapes, screenViewName } from './screenViews';
 import { withTheirGroups } from './membership';
 import { hasSizingRules } from './stackSizing';
 import {
@@ -28,10 +29,12 @@ export const useFramesIds = () =>
         }
 
         const selected = document.selectedFrameId;
+        const owners = screenOwners(document.frames);
+        const canvasIds = document.framesIds.filter((id) => !owners.get(id));
 
         return [
-            ...document.framesIds.filter((id) => id !== selected && isFrameVisible(document, id)),
-            ...document.framesIds.filter((id) => id === selected && isFrameVisible(document, id))
+            ...canvasIds.filter((id) => id !== selected && isFrameVisible(document, id)),
+            ...canvasIds.filter((id) => id === selected && isFrameVisible(document, id))
         ];
     });
 
@@ -61,7 +64,7 @@ export const useFrameRows = () =>
         return framesIds
             .map((id) => ({
                 id,
-                name: frames[id].name,
+                name: screenViewName(document, frames[id]),
                 kind: frames[id].kind,
                 screenId: frames[id].screenId,
                 size: frames[id].size,
@@ -264,3 +267,33 @@ function stackSlot(document: Document, frame: Frame | undefined, shapeIds: strin
         orderAt: (target: number) => orderAtPosition(layout, stackId, kind, ids[0], target)
     };
 }
+
+/** Source geometry is measured but never painted as another canvas placement. */
+export const useScreenSourceShapes = () =>
+    useAppState((state) =>
+        state.currentDocument.editingComponentId
+            ? new Set<string>()
+            : screenSourceShapes(state.currentDocument)
+    );
+
+export const useScreenSourceGroup = (groupId: string) =>
+    useAppState((state) => {
+        const document = state.currentDocument;
+        const ids = screenSourceShapes(document);
+
+        return document.groups[groupId]?.shapesIds.some((id) => ids.has(id));
+    });
+
+export const useScreenSourceSelection = () =>
+    useAppState((state) => {
+        const document = state.currentDocument;
+        const source = screenSourceShapes(document);
+
+        return (
+            document.selectedShapesIds.some((id) => source.has(id)) ||
+            document.frames[document.selectedFrameId ?? '']?.kind === 'screen'
+        );
+    });
+
+export const useFrameName = (id: string) =>
+    useAppState((state) => screenViewName(state.currentDocument, state.currentDocument.frames[id]));

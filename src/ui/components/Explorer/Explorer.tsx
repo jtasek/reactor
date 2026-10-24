@@ -1,3 +1,4 @@
+import { screenOwners } from 'src/app/screenViews';
 import React, { FC, MouseEvent, useState } from 'react';
 import { Frame as FrameIcon, CircleHelp, Star, Trash2 } from 'lucide-react';
 import styles from './styles.css';
@@ -328,12 +329,20 @@ export const Explorer: FC = () => {
 
         return contents ? [{ ...frame, ...contents }] : [];
     });
-    const frameItem = (frame: (typeof shownFrames)[number]): React.ReactNode => (
+    const owners = screenOwners(document.frames);
+    const screens = frames
+        .filter((frame) => frame.kind === 'screen')
+        .map((screen) => ({
+            ...screen,
+            viewCount: frames.filter((view) => view.kind === 'view' && view.screenId === screen.id)
+                .length
+        }));
+    const frameItem = (frame: (typeof shownFrames)[number], viewId?: string): React.ReactNode => (
         <ExplorerItem
             key={`frame:${frame.id}`}
             kind="frame"
             name={frame.name}
-            badge={frame.kind === 'screen' ? 'Screen' : frame.kind === 'view' ? 'View' : undefined}
+            badge={frame.kind === 'view' ? 'Screen view' : undefined}
             secondary={
                 frame.kind === 'view'
                     ? `${document.frames[frame.screenId ?? '']?.name ?? 'Missing screen'} · ${frame.size.width} × ${frame.size.height}`
@@ -342,12 +351,16 @@ export const Explorer: FC = () => {
             icon={<FrameIcon size={16} aria-hidden="true" />}
             selected={selectedFrameId === frame.id}
             visible={frame.shown}
-            collapseId={frame.kind === 'view' ? undefined : `frame:${frame.id}`}
+            collapseId={`frame:${viewId ?? frame.id}:${frame.id}`}
             onClick={() => editFrame({ kind: 'select', id: frame.id })}
             onDrop={
-                frame.kind === 'view' || frame.locked || frame.inheritedLock
+                frame.locked || frame.inheritedLock
                     ? undefined
-                    : (dragged) => moveIntoFrame(dragged, frame.id)
+                    : (dragged) =>
+                          moveIntoFrame(
+                              dragged,
+                              frame.kind === 'view' ? (frame.screenId ?? frame.id) : frame.id
+                          )
             }
             menuActions={[
                 {
@@ -364,8 +377,22 @@ export const Explorer: FC = () => {
                 }
             ]}
         >
-            {shownFrames.filter((child) => child.parentFrameId === frame.id).map(frameItem)}
-            <ObjectContents {...frame.contents} contextId={`frame:${frame.id}`} />
+            {shownFrames
+                .filter(
+                    (child) =>
+                        child.kind !== 'screen' &&
+                        child.parentFrameId === (frame.kind === 'view' ? frame.screenId : frame.id)
+                )
+                .map((child) => frameItem(child, viewId ?? frame.id))}
+            <ObjectContents
+                {...(frame.kind === 'view'
+                    ? (frameContents.get(frame.screenId ?? '')?.contents ?? {
+                          groups: [],
+                          shapesIds: []
+                      })
+                    : frame.contents)}
+                contextId={`frame:${viewId ?? frame.id}:${frame.id}`}
+            />
         </ExplorerItem>
     );
     const drawOrder = new Map(useShapesIds().map((id, index) => [id, index]));
@@ -534,9 +561,64 @@ export const Explorer: FC = () => {
                                 onDrop={(dragged) => moveIntoFrame(dragged, null)}
                             >
                                 {shownFrames
-                                    .filter((frame) => frame.parentFrameId === undefined)
-                                    .map(frameItem)}
+                                    .filter(
+                                        (frame) =>
+                                            frame.parentFrameId === undefined &&
+                                            !owners.get(frame.id)
+                                    )
+                                    .map((frame) => frameItem(frame))}
                                 <ObjectContents {...scene} contextId="canvas" />
+                            </RootItem>
+                        )}
+                        {screens.length > 0 && (
+                            <RootItem name="Screens">
+                                {screens
+                                    .filter(
+                                        (screen) =>
+                                            !filter || screen.name.toLowerCase().includes(filter)
+                                    )
+                                    .map((screen) => (
+                                        <ExplorerItem
+                                            key={screen.id}
+                                            kind="frame"
+                                            name={screen.name}
+                                            badge="Screen"
+                                            icon={<FrameIcon size={16} aria-hidden="true" />}
+                                            secondary={`${screen.viewCount} Screen ${screen.viewCount === 1 ? 'view' : 'views'}`}
+                                            selected={selectedFrameId === screen.id}
+                                            visible={screen.shown}
+                                            onDrop={
+                                                screen.locked || screen.inheritedLock
+                                                    ? undefined
+                                                    : (dragged) => moveIntoFrame(dragged, screen.id)
+                                            }
+                                            menuActions={[
+                                                {
+                                                    ...hideAction(!screen.visible, () =>
+                                                        editFrame({
+                                                            kind: 'toggle',
+                                                            id: screen.id,
+                                                            flag: 'visible'
+                                                        })
+                                                    ),
+                                                    disabled: screen.inheritedLock
+                                                },
+                                                {
+                                                    ...lockAction(screen.locked, () =>
+                                                        editFrame({
+                                                            kind: 'toggle',
+                                                            id: screen.id,
+                                                            flag: 'locked'
+                                                        })
+                                                    ),
+                                                    disabled: screen.inheritedLock
+                                                }
+                                            ]}
+                                            onClick={() =>
+                                                editFrame({ kind: 'select', id: screen.id })
+                                            }
+                                        />
+                                    ))}
                             </RootItem>
                         )}
                         {(!filter || sources.length > 0) && (

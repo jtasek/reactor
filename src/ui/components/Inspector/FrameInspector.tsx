@@ -106,13 +106,13 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                     <strong>Screen view</strong>
                 </header>
                 <table>
-                    <PropertyGroup name="View">
+                    <PropertyGroup name="Screen view">
                         <tr>
                             <td colSpan={2}>
                                 <small className={styles.frameHint} role="status">
                                     {viewProblem ??
                                         (source?.kind === 'screen'
-                                            ? `View of ${source.name}. Resize this viewport without changing the screen's source.`
+                                            ? `${source.name} · ${frame.name}. Artwork is shared across all Screen views.`
                                             : 'The source screen is missing. Delete this view or restore its screen.')}
                                 </small>
                             </td>
@@ -171,12 +171,39 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                                         Edit screen
                                     </button>
                                 )}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colSpan={2}>
+                                {source?.kind === 'screen' && (
+                                    <button
+                                        type="button"
+                                        disabled={disabled}
+                                        onClick={() =>
+                                            editFrame({
+                                                kind: 'addView',
+                                                screenId: source.id,
+                                                position: {
+                                                    x: frame.position.x + frame.size.width + 40,
+                                                    y: frame.position.y
+                                                },
+                                                size: frame.size
+                                            })
+                                        }
+                                    >
+                                        Create Screen view
+                                    </button>
+                                )}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colSpan={2}>
                                 <button
                                     type="button"
                                     disabled={disabled}
                                     onClick={() => editFrame({ kind: 'delete', id })}
                                 >
-                                    Delete view
+                                    Delete Screen view
                                 </button>
                             </td>
                         </tr>
@@ -226,7 +253,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                                     ? 'Choose Screen to make this frame a prototype destination.'
                                     : nested
                                       ? 'Move this screen to Canvas to use it as a prototype destination.'
-                                      : 'A prototype destination. Other screens remain on the same canvas.'}
+                                      : 'Shared artwork and layout. Place Screen views on Canvas.'}
                             </small>
                         </td>
                     </tr>
@@ -248,7 +275,20 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                                         })
                                     }
                                 >
-                                    Create view of screen
+                                    Create Screen view
+                                </button>
+                            </td>
+                        </tr>
+                    )}
+                    {frame.kind === 'screen' && (
+                        <tr>
+                            <td colSpan={2}>
+                                <button
+                                    type="button"
+                                    disabled={disabled}
+                                    onClick={() => editFrame({ kind: 'delete', id })}
+                                >
+                                    Delete screen
                                 </button>
                             </td>
                         </tr>

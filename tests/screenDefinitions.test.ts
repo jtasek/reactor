@@ -28,7 +28,14 @@ function legacyDocument() {
         documents: { [document.id]: document }
     });
     Object.values(saved.documents[document.id].frames).forEach((frame) => {
+        if (frame.kind === 'view') {
+            delete saved.documents[document.id].frames[frame.id];
+
+            return;
+        }
+
         delete frame.kind;
+        delete frame.definitionOnly;
     });
 
     return { saved: { ...saved, version: 11 }, id: document.id };
@@ -63,13 +70,16 @@ it('creates ordinary frames, converts in place, and copies screen identity witho
     const document = store.state.currentDocument;
     expect(document.frames[id].kind).toBe('frame');
     store.actions.addShape({ type: 'rectangle', ...geometry, parentFrameId: id });
+    store.actions.unselectShapes();
     const before = json(document.shapes);
     store.actions.editFrame({ kind: 'update', id, changes: { kind: 'screen', name: 'Home' } });
     expect(document.frames[id]).toMatchObject({ id, kind: 'screen', ...geometry });
     expect(json(document.shapes)).toEqual(before);
     const clipboard = writeClipboard(json(document.frames[id]), document);
     store.actions.pasteShapes(clipboard);
-    const copied = Object.values(document.frames).find((frame) => frame.id !== id)!;
+    const copied = Object.values(document.frames).find(
+        (frame) => frame.id !== id && frame.kind === 'screen'
+    )!;
     expect(copied.kind).toBe('screen');
     expect(screenFrames(document)).toHaveLength(2);
     expect(Object.values(document.shapes).some((shape) => shape.parentFrameId === copied.id)).toBe(

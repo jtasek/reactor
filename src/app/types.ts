@@ -321,6 +321,8 @@ export interface StackRules {
 
 export interface Frame {
     kind?: 'frame' | 'screen' | 'view';
+    /** Screens are source definitions; every canvas placement is a separate view. */
+    definitionOnly?: true;
     /** A placed view references its screen definition; its box is view-local. */
     screenId?: string;
     stack?: StackRules;

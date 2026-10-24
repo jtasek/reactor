@@ -1,3 +1,4 @@
+import { screenViewName } from 'src/app/screenViews';
 import { renderedFrame, frameHasLayoutOffset, frameSizedByLayout } from 'src/app/frameLayout';
 import React, { type FC } from 'react';
 import { useActions, useAppState, useCameraScale, useGesture } from 'src/app/hooks';
@@ -16,8 +17,9 @@ const HANDLES: [ResizeHandlerType, number, number][] = [
 ];
 
 const CanvasFrame: FC<{ id: string; interactive: boolean }> = ({ id, interactive }) => {
-    const { frame, selected, editable, drawing } = useAppState((state) => ({
+    const { frame, name, selected, editable, drawing } = useAppState((state) => ({
         frame: renderedFrame(state.currentDocument, id),
+        name: screenViewName(state.currentDocument, state.currentDocument.frames[id]),
         selected: state.currentDocument.selectedFrameId === id,
         editable: !isReadOnly(state) && !state.currentDocument.locked,
         drawing: state.tools.activeToolsIds[0] !== 'select'
@@ -50,7 +52,7 @@ const CanvasFrame: FC<{ id: string; interactive: boolean }> = ({ id, interactive
             tabIndex={interactive ? 0 : undefined}
             aria-label={
                 interactive
-                    ? `${frame.kind === 'view' ? 'View' : 'Frame'} ${frame.name}`
+                    ? `${frame.kind === 'view' ? 'Screen view' : 'Frame'} ${name}`
                     : undefined
             }
             aria-pressed={interactive ? selected : undefined}
@@ -77,7 +79,7 @@ const CanvasFrame: FC<{ id: string; interactive: boolean }> = ({ id, interactive
                     className={styles.label}
                     transform={`translate(${position.x} ${position.y - LABEL_OFFSET / scale}) scale(${1 / scale})`}
                 >
-                    {frame.name}
+                    {name}
                 </text>
             </g>
             {handles &&

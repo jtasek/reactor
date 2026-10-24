@@ -159,6 +159,12 @@ export const config = {
                           name: 'editor-edits',
                           enforce: true
                       },
+                      // Screen geometry is shared by lazy canvas, thumbnail and viewer pages.
+                      screenProjection: {
+                          test: /[\\/]src[\\/]app[\\/](screenProjection|screenViews)\.ts$/,
+                          name: 'screen-projection',
+                          enforce: true
+                      },
                       // Keep editor-only clipboard transfers out of the eagerly used component library.
                       clipboard: {
                           test: /[\\/]src[\\/]app[\\/]clipboard\.ts$/,

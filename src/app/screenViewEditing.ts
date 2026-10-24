@@ -1,3 +1,4 @@
+import { screenSourceShapes } from './screenViews';
 import { isReadOnly } from './documentAccess';
 import { groupFrame } from './membership';
 import { localComponents } from './componentSelection';
@@ -51,7 +52,39 @@ export function pointerDocument(state: Context['state']): Document {
     const address = state.events.pointer.screenView;
 
     if (!address || address.documentId !== document.id) {
-        return document;
+        if (document.editingComponentId) {
+            return document;
+        }
+
+        const source = screenSourceShapes(document);
+
+        const canvas: Document = {
+            ...document,
+            shapes: Object.fromEntries(
+                Object.entries(document.shapes).filter(([id]) => !source.has(id))
+            ),
+            shapesIds: document.shapesIds.filter((id) => !source.has(id))
+        };
+
+        return {
+            ...canvas,
+            groupFrames: Object.fromEntries(
+                Object.values(document.groups).map((group) => [
+                    group.id,
+                    group.shapesIds.some((id) => source.has(id))
+                        ? (groupFrame(canvas, group) ?? undefined)
+                        : document.groupFrames[group.id]
+                ])
+            ),
+            componentFrames: Object.fromEntries(
+                localComponents(document).map((component) => [
+                    component.id,
+                    component.shapesIds.some((id) => source.has(id))
+                        ? (groupFrame(canvas, component) ?? undefined)
+                        : document.componentFrames[component.id]
+                ])
+            )
+        };
     }
 
     const projected = editableScreenView(state, address)?.projection;

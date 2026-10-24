@@ -1,3 +1,4 @@
+import { screenViewName } from './screenViews';
 import { sceneLayers } from './componentTree';
 import { frameParents } from './frameState';
 import { filterOutline, outline } from './membership';
@@ -71,9 +72,15 @@ export function explorerTree(document: Document, text: string) {
     const contents = objectsByFrame(document);
     const named = new Set(
         Object.values(document.frames)
-            .filter((frame) => frame.name.toLowerCase().includes(wanted))
+            .filter((frame) => screenViewName(document, frame).toLowerCase().includes(wanted))
             .map((frame) => frame.id)
     );
+    for (const frame of Object.values(document.frames)) {
+        if (frame.kind === 'view' && frame.screenId && named.has(frame.id)) {
+            named.add(frame.screenId);
+        }
+    }
+
     const includesAll = (id: string): boolean => {
         const parent = parents.get(id);
 
@@ -107,6 +114,12 @@ export function explorerTree(document: Document, text: string) {
         while (parent !== undefined) {
             shown.add(parent);
             parent = parents.get(parent);
+        }
+    }
+
+    for (const frame of Object.values(document.frames)) {
+        if (frame.kind === 'view' && frame.screenId && shown.has(frame.screenId)) {
+            shown.add(frame.id);
         }
     }
 

@@ -1,3 +1,4 @@
+import { initialScreenView } from './screenViewMigration';
 import { frameLayout, hasLayoutOffset } from './frameLayout';
 import {
     initializeStackOrder,
@@ -1006,6 +1007,23 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             });
         });
     });
+
+    for (const frame of [...staged.frames, ...staged.updatedFrames]) {
+        if (frame.kind !== 'screen' || document.frames[frame.id]?.kind === 'screen') {
+            continue;
+        }
+
+        frame.definitionOnly = true;
+        const explicitView = [
+            ...Object.values(document.frames),
+            ...staged.frames,
+            ...staged.updatedFrames
+        ].some((view) => view.kind === 'view' && view.screenId === frame.id);
+
+        if (!explicitView) {
+            staged.frames.push(initialScreenView(frame, newId()));
+        }
+    }
 
     const frames = {
         ...document.frames,

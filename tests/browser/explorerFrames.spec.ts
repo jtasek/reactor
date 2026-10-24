@@ -6,7 +6,10 @@ import { openEditor } from './support/editor';
 const explorer = (page: Page) => page.getByRole('region', { name: 'Explorer' });
 const name = (page: Page, text: string) =>
     explorer(page).getByRole('button', { name: text, exact: true });
-const branch = (page: Page, text: string) => name(page, text).locator('xpath=ancestor::li[1]');
+const viewName = (text: string) =>
+    ['Home', 'Settings'].includes(text) ? `${text} · 500 px` : text;
+const branch = (page: Page, text: string) =>
+    name(page, viewName(text)).locator('xpath=ancestor::li[1]');
 
 test.beforeEach(async ({ page }) => {
     const box = {
@@ -102,10 +105,12 @@ test('search reveals frame ancestry and matching frame contents without forgetti
 }) => {
     const search = page.getByRole('searchbox', { name: 'Search objects' });
 
-    await explorer(page).getByRole('button', { name: 'Collapse Home', exact: true }).click();
+    await explorer(page)
+        .getByRole('button', { name: 'Collapse Home · 500 px', exact: true })
+        .click();
     await expect(name(page, 'Artwork')).toHaveCount(0);
     await search.fill('Artwork');
-    await expect(name(page, 'Home')).toBeVisible();
+    await expect(name(page, 'Home · 500 px')).toBeVisible();
     await expect(name(page, 'Card')).toBeVisible();
     await expect(name(page, 'Art group')).toBeVisible();
     await expect(name(page, 'Artwork')).toBeVisible();
@@ -115,14 +120,14 @@ test('search reveals frame ancestry and matching frame contents without forgetti
     await search.fill('Home');
     await expect(name(page, 'Title')).toBeVisible();
     await expect(name(page, 'Button')).toBeVisible();
-    await expect(name(page, 'Settings')).toHaveCount(0);
+    await expect(name(page, 'Settings · 500 px')).toHaveCount(0);
     await search.fill('Settings');
-    await expect(name(page, 'Settings')).toBeVisible();
-    await expect(name(page, 'Home')).toHaveCount(0);
+    await expect(name(page, 'Settings · 500 px')).toBeVisible();
+    await expect(name(page, 'Home · 500 px')).toHaveCount(0);
     await search.fill('');
-    await expect(name(page, 'Home')).toBeVisible();
+    await expect(name(page, 'Home · 500 px')).toBeVisible();
     await expect(name(page, 'Artwork')).toHaveCount(0);
-    await explorer(page).getByRole('button', { name: 'Expand Home', exact: true }).click();
+    await explorer(page).getByRole('button', { name: 'Expand Home · 500 px', exact: true }).click();
     await expect(name(page, 'Artwork')).toBeVisible();
 });
 
@@ -161,11 +166,11 @@ test('global layers stay whole and preserve selection and collapse state across 
 }) => {
     await expect(name(page, 'Shared layer')).toHaveCount(0);
     await expect(name(page, 'New layer')).toHaveCount(0);
-    await expect(name(page, 'Home')).toHaveAccessibleDescription('Screen');
-    await expect(name(page, 'Settings')).toHaveAccessibleDescription('Screen');
+    await expect(name(page, 'Home')).toHaveAccessibleDescription('1 Screen view Screen');
+    await expect(name(page, 'Settings')).toHaveAccessibleDescription('1 Screen view Screen');
     await expect(name(page, 'Card')).not.toHaveAttribute('aria-describedby');
     await name(page, 'Title').click();
-    await name(page, 'Collapse Home').click();
+    await name(page, 'Collapse Home · 500 px').click();
     await name(page, 'Layers').click();
     await expect(name(page, 'Layers')).toHaveAttribute('aria-pressed', 'true');
     await expect(name(page, 'Shared layer')).toHaveCount(1);
@@ -182,11 +187,11 @@ test('global layers stay whole and preserve selection and collapse state across 
 
     await layerRow.hover();
     await layerRow.getByRole('button', { name: 'Hide', exact: true }).click();
-    await expect(page.locator('svg#surface rect[data-cy="Title"]')).toHaveCount(0);
+    await expect(page.locator('svg#surface #screen-views rect[data-cy="Title"]')).toHaveCount(0);
     await expect(page.locator('svg#surface rect[data-cy="Loose"]')).toHaveCount(0);
     await layerRow.hover();
     await layerRow.getByRole('button', { name: 'Show', exact: true }).click();
-    await expect(page.locator('svg#surface rect[data-cy="Title"]')).toBeVisible();
+    await expect(page.locator('svg#surface #screen-views rect[data-cy="Title"]')).toBeVisible();
     await expect(page.locator('svg#surface rect[data-cy="Loose"]')).toBeVisible();
     await name(page, 'Loose')
         .locator('..')
@@ -210,7 +215,7 @@ test('global layers stay whole and preserve selection and collapse state across 
     await name(page, 'Collapse Shared layer').click();
     await name(page, 'Objects').click();
     await expect(name(page, 'Title')).toHaveCount(0);
-    await name(page, 'Expand Home').click();
+    await name(page, 'Expand Home · 500 px').click();
     await expect(name(page, 'Title')).toBeVisible();
     await expect(
         branch(page, 'Home').getByRole('button', { name: 'Loose', exact: true })
@@ -246,10 +251,10 @@ test('object grouping retains inherited restrictions', async ({ page }) => {
     await homeRow.hover();
     await homeRow.getByRole('button', { name: 'Hide', exact: true }).click();
     await expect(name(page, 'Artwork')).toBeVisible();
-    await expect(page.locator('svg#surface rect[data-cy="Artwork"]')).toHaveCount(0);
+    await expect(page.locator('svg#surface #screen-views rect[data-cy="Artwork"]')).toHaveCount(0);
     await homeRow.hover();
     await homeRow.getByRole('button', { name: 'Show', exact: true }).click();
-    await expect(page.locator('svg#surface rect[data-cy="Artwork"]')).toBeVisible();
+    await expect(page.locator('svg#surface #screen-views rect[data-cy="Artwork"]')).toBeVisible();
 });
 
 test('screen identity is explicit and search is scoped to each view', async ({ page }) => {
@@ -257,9 +262,10 @@ test('screen identity is explicit and search is scoped to each view', async ({ p
     await page.getByLabel('Frame parent', { exact: true }).selectOption('');
     await expect(name(page, 'Card')).not.toHaveAttribute('aria-describedby');
     await page.getByLabel('Frame type', { exact: true }).selectOption('screen');
-    await expect(name(page, 'Card')).toHaveAccessibleDescription('Screen');
+    await expect(name(page, 'Card')).toHaveAccessibleDescription('1 Screen view Screen');
+    await name(page, 'Card').click();
     await page.getByLabel('Frame parent', { exact: true }).selectOption('home');
-    await expect(name(page, 'Card')).toHaveAccessibleDescription('Screen');
+    await expect(name(page, 'Card')).toHaveAccessibleDescription('1 Screen view Screen');
     await expect(page.getByText('Move this screen to Canvas', { exact: false })).toBeVisible();
     await page.getByRole('searchbox', { name: 'Search objects', exact: true }).fill('Shared layer');
     await expect(explorer(page).getByText('No objects match')).toBeVisible();

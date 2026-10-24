@@ -1,7 +1,7 @@
 import type { Document } from './types';
 import { frameParents, isFrameVisible } from './frameState';
 
-/** Only visible screens on Canvas are prototype destinations. Identity survives nesting. */
+/** Visible root screen definitions are prototype destinations, even with no canvas views. */
 export function screenFrames(document: Document) {
     const parents = frameParents(document.frames);
 
