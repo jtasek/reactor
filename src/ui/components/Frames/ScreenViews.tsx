@@ -4,9 +4,9 @@ import { componentSource, instanceBox } from 'src/app/componentSource';
 import { projectScreenViews } from 'src/app/screenProjection';
 import { themeColors } from 'src/app/themeColors';
 import { boxCenter, getShapeBounds } from 'src/app/utils';
-import { useAppState, useCurrentDocument, useVariableContext } from 'src/app/hooks';
-import { isReadOnly } from 'src/app/documentAccess';
-import type { Shape } from 'src/app/types';
+import { useAppState, useCameraScale, useCurrentDocument, useVariableContext } from 'src/app/hooks';
+import { canEditThroughView } from 'src/app/screenViewEditing';
+import type { Frame, Shape } from 'src/app/types';
 import { getComponentByType } from 'src/tools/components';
 import { Instance } from '../Shape/Instance';
 import styles from './styles.css';
@@ -80,36 +80,47 @@ const ProjectedShape: FC<{
     );
 };
 
+/** Matches `.hit`'s stroke width in styles.css: a frame's edge grip, half of it inside. */
+const FRAME_GRIP_WIDTH_PX = 12;
+
+/**
+ * Where an editable View takes presses: its viewport, less the inner half of its
+ * own edge grip, which is drawn underneath and must still move the View.
+ */
+const ViewHitArea: FC<{ view: Frame }> = ({ view }) => {
+    const scale = useCameraScale();
+    const inset = FRAME_GRIP_WIDTH_PX / 2 / scale;
+
+    return (
+        <rect
+            x={view.position.x + inset}
+            y={view.position.y + inset}
+            width={Math.max(0, view.size.width - 2 * inset)}
+            height={Math.max(0, view.size.height - 2 * inset)}
+            fill="transparent"
+        />
+    );
+};
+
 const ScreenView: FC<{
     item: ReturnType<typeof projectScreenViews>[number];
-    interactive: boolean;
-    readOnly: boolean;
-}> = ({ item, interactive, readOnly }) => {
+    editable: boolean;
+}> = ({ item, editable }) => {
     const { view, projection, problem } = item;
     const name = useFrameName(view.id);
 
     if (!projection) {
-        return (
-            <g
-                data-screen-view={view.id}
-                pointerEvents={readOnly || !interactive ? 'none' : undefined}
+        // Nothing here can be edited, so presses reach the canvas underneath.
+        return problem ? (
+            <text
+                x={view.position.x + 8}
+                y={view.position.y + 20}
+                className={styles.label}
+                pointerEvents="none"
             >
-                {interactive && !readOnly && (
-                    <rect
-                        x={view.position.x}
-                        y={view.position.y}
-                        width={view.size.width}
-                        height={view.size.height}
-                        fill="transparent"
-                    />
-                )}
-                {problem && (
-                    <text x={view.position.x + 8} y={view.position.y + 20} className={styles.label}>
-                        {problem}
-                    </text>
-                )}
-            </g>
-        );
+                {problem}
+            </text>
+        ) : null;
     }
 
     const { frames, shapes } = projection;
@@ -117,20 +128,17 @@ const ScreenView: FC<{
     return (
         <g
             aria-label={`Screen view ${name}`}
-            data-screen-view={view.id}
-            pointerEvents={readOnly || !interactive ? 'none' : undefined}
+            data-screen-view={editable ? view.id : undefined}
+            pointerEvents={editable ? undefined : 'none'}
         >
-            {interactive && !readOnly && (
-                <rect
-                    x={view.position.x}
-                    y={view.position.y}
-                    width={view.size.width}
-                    height={view.size.height}
-                    fill="transparent"
-                />
-            )}
+            {editable && <ViewHitArea view={view} />}
             {problem && (
-                <text x={view.position.x + 8} y={view.position.y + 20} className={styles.label}>
+                <text
+                    x={view.position.x + 8}
+                    y={view.position.y + 20}
+                    className={styles.label}
+                    pointerEvents="none"
+                >
                     {problem}
                 </text>
             )}
@@ -153,7 +161,7 @@ const ScreenView: FC<{
                     key={shape.id}
                     shape={shape}
                     viewId={view.id}
-                    interactive={interactive && !readOnly}
+                    interactive={editable}
                 />
             ))}
         </g>
@@ -162,22 +170,23 @@ const ScreenView: FC<{
 
 /** Optional placements of one screen share its source artwork and resolve layout per viewport. */
 export const ScreenViews: FC<{ interactive?: boolean }> = ({ interactive = true }) => {
-    const { items, readOnly } = useAppState((state) => ({
-        items: state.currentDocument.editingComponentId
+    const items = useAppState((state) =>
+        state.currentDocument.editingComponentId
             ? []
-            : projectScreenViews(state.currentDocument),
-        readOnly: isReadOnly(state)
-    }));
+            : projectScreenViews(state.currentDocument).map((item) => ({
+                  item,
+                  // A locked, hidden or read-only View lets presses through, as before.
+                  editable:
+                      interactive &&
+                      item.projection !== null &&
+                      canEditThroughView(state, item.view.id)
+              }))
+    );
 
     return (
         <g id="screen-views">
-            {items.map((item) => (
-                <ScreenView
-                    key={item.view.id}
-                    item={item}
-                    interactive={interactive}
-                    readOnly={readOnly}
-                />
+            {items.map(({ item, editable }) => (
+                <ScreenView key={item.view.id} item={item} editable={editable} />
             ))}
         </g>
     );

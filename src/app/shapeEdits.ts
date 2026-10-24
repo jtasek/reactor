@@ -1,5 +1,5 @@
 import { json } from 'overmind';
-import { editableScreenView, pointerDocument, sourceOffset } from './screenViewEditing';
+import { drawingScreen, pointerDocument } from './screenViewEditing';
 import { initializeStackOrder } from './stackEdits';
 import { frameLayout, renderedShape, hasLayoutOffset } from './frameLayout';
 import { frameState, lockedFrameForShapes } from './frameState';
@@ -122,15 +122,15 @@ export const addShape: ActionWithParam<ShapeInput> = ({ state }, options) => {
 export const drawShape: ActionWithParam<ShapeInput> = ({ state, actions }, options) => {
     const document = state.currentDocument;
     const address = state.events.pointer.screenView;
-    const placed = address ? editableScreenView(state, address) : null;
+    const placed = drawingScreen(state, address);
 
-    if (address && !placed) {
+    if (address?.drawingOrigin && !placed && document.frames[address.drawingOrigin.screenId]) {
         return;
     }
 
     if (placed) {
         const drawing = json(options);
-        translateShape(drawing, sourceOffset(address?.drawingOrigin ?? placed.view, placed.screen));
+        translateShape(drawing, placed.offset);
         options = { ...drawing, parentFrameId: placed.screen.id };
     }
 
