@@ -15,6 +15,7 @@ export interface ScreenProjection {
     frames: Frame[];
     shapes: Shape[];
     problems: string[];
+    exceedsNodeLimit?: boolean;
 }
 
 export const MAX_PROJECTED_NODES = 5000;
@@ -56,6 +57,7 @@ export function projectScreen(
 
     if (1 + frameIds.length + shapeIds.length > MAX_PROJECTED_NODES) {
         return {
+            exceedsNodeLimit: true,
             screen: source,
             frames: [],
             shapes: [],
@@ -121,17 +123,20 @@ export function projectScreenViews(document: Document) {
 
             const projection = view.screenId ? projectScreen(document, view.screenId, view) : null;
             const count = projection ? 1 + projection.frames.length + projection.shapes.length : 0;
+            const blocked =
+                !projection || projection.exceedsNodeLimit || nodes + count > MAX_PROJECTED_NODES;
             const problem =
-                projection?.problems[0] ??
                 (!projection ? 'Source screen is unavailable.' : undefined) ??
+                (projection?.exceedsNodeLimit ? projection.problems[0] : undefined) ??
                 (nodes + count > MAX_PROJECTED_NODES
                     ? `Screen views exceed ${MAX_PROJECTED_NODES} projected nodes.`
-                    : undefined);
+                    : undefined) ??
+                projection?.problems[0];
 
-            if (!problem) {
+            if (!blocked) {
                 nodes += count;
             }
 
-            return { view, projection: problem ? null : projection, problem };
+            return { view, projection: blocked ? null : projection, problem };
         });
 }

@@ -58,6 +58,10 @@ export function pointerDocument(state: Context['state']): Document {
 
         const source = screenSourceShapes(document);
 
+        if (source.size === 0) {
+            return document;
+        }
+
         const canvas: Document = {
             ...document,
             shapes: Object.fromEntries(

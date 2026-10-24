@@ -184,3 +184,13 @@ it('does not hit shared artwork or group boxes at hidden source coordinates', ()
     expect(canvas.shapes[document.shapesIds[0]]).toBeUndefined();
     expect(canvas.groupFrames['source-group']).toBeUndefined();
 });
+
+it('reuses ordinary canvas geometry when there is no shared screen artwork', () => {
+    const { store } = createTestStore();
+    store.actions.addShape({
+        type: 'rectangle',
+        position: { x: 10, y: 10 },
+        size: { width: 40, height: 30 }
+    });
+    expect(pointerDocument(store.state)).toBe(store.state.currentDocument);
+});

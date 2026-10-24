@@ -129,6 +129,11 @@ const ScreenView: FC<{
                     fill="transparent"
                 />
             )}
+            {problem && (
+                <text x={view.position.x + 8} y={view.position.y + 20} className={styles.label}>
+                    {problem}
+                </text>
+            )}
             {frames.map((frame) => (
                 <g key={frame.id} pointerEvents="none">
                     <rect

@@ -205,3 +205,20 @@ it('shares independent view placement and source edits, and undoes only the loca
     expect(shownDocument(a).frames[viewId]).toBeUndefined();
     expect(shownDocument(b).frames[screenId].name).toBe('Welcome');
 });
+
+it('keeps overflowing screen artwork visible with its layout diagnostic', () => {
+    const document = screenDocument();
+    document.frames.mobile = {
+        id: 'mobile',
+        kind: 'view',
+        screenId: 'home',
+        name: 'Mobile',
+        ...geometry,
+        size: { width: 30, height: 20 },
+        visible: true,
+        locked: false
+    };
+    const [view] = projectScreenViews(document);
+    expect(view.problem).toContain('overflow');
+    expect(view.projection?.shapes).toHaveLength(1);
+});
