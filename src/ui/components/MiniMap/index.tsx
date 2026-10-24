@@ -5,6 +5,7 @@ import React, { FC } from 'react';
 
 import { useControls, useCurrentDocument } from 'src/app/hooks';
 import { Frames } from '../Frames/Frames';
+import { ScreenViews } from '../Frames/ScreenViews';
 import { frameBox } from 'src/app/frameEdits';
 import { getShapeBounds } from 'src/app/utils';
 import { MiniMap } from './MiniMap';
@@ -74,6 +75,7 @@ export const MiniMapContainer: FC = () => {
         <MiniMap size={{ width: 200, height: 200 }} viewBox={viewBox}>
             <Guides key="minimap-guides" camera={STATIC_CAMERA} />
             <Shapes minimap />
+            <ScreenViews interactive={false} />
             <Frames interactive={false} />
         </MiniMap>
     );

@@ -333,14 +333,19 @@ export const Explorer: FC = () => {
             key={`frame:${frame.id}`}
             kind="frame"
             name={frame.name}
-            badge={frame.kind === 'screen' ? 'Screen' : undefined}
+            badge={frame.kind === 'screen' ? 'Screen' : frame.kind === 'view' ? 'View' : undefined}
+            secondary={
+                frame.kind === 'view'
+                    ? `${document.frames[frame.screenId ?? '']?.name ?? 'Missing screen'} · ${frame.size.width} × ${frame.size.height}`
+                    : undefined
+            }
             icon={<FrameIcon size={16} aria-hidden="true" />}
             selected={selectedFrameId === frame.id}
             visible={frame.shown}
-            collapseId={`frame:${frame.id}`}
+            collapseId={frame.kind === 'view' ? undefined : `frame:${frame.id}`}
             onClick={() => editFrame({ kind: 'select', id: frame.id })}
             onDrop={
-                frame.locked || frame.inheritedLock
+                frame.kind === 'view' || frame.locked || frame.inheritedLock
                     ? undefined
                     : (dragged) => moveIntoFrame(dragged, frame.id)
             }

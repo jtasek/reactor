@@ -1,3 +1,4 @@
+import { editableScreenView, sourceOffset } from './screenViewEditing';
 import {
     layoutDocument,
     frameHasLayoutOffset,
@@ -30,6 +31,7 @@ import { untracked } from './untracked';
 
 export type FrameEdit =
     | { kind: 'add'; position: Point; size: Frame['size'] }
+    | { kind: 'addView'; screenId: string; position: Point; size: Frame['size'] }
     | { kind: 'select'; id: string }
     | { kind: 'reparentShapes'; ids: string[]; parentFrameId: string | null }
     | { kind: 'update'; id: string; changes: import('./operations').UpdateFrame['changes'] }
@@ -58,6 +60,11 @@ function addFrame(context: Context, input: Extract<FrameEdit, { kind: 'add' | 'p
     const { state, actions, effects } = context;
     const document = state.currentDocument;
     const source = input.kind === 'paste' ? input.frame : undefined;
+
+    if (source?.kind === 'view' && document.frames[source.screenId ?? '']?.kind !== 'screen') {
+        return;
+    }
+
     const position =
         input.kind === 'add'
             ? input.position
@@ -74,6 +81,7 @@ function addFrame(context: Context, input: Extract<FrameEdit, { kind: 'add' | 'p
             id: effects.newId(),
             name: frameName(document.frames, source?.name),
             kind: source?.kind ?? 'frame',
+            ...(source?.screenId ? { screenId: source.screenId } : {}),
             position,
             size: input.kind === 'add' ? input.size : input.frame.size,
             ...(source?.parentFrameId === undefined ? {} : { parentFrameId: source.parentFrameId }),
@@ -89,6 +97,22 @@ function addFrame(context: Context, input: Extract<FrameEdit, { kind: 'add' | 'p
     }
 
     if (input.kind === 'add') {
+        const address =
+            state.events.pointer.gesture.kind === 'drawing'
+                ? state.events.pointer.screenView
+                : null;
+        const placed = address ? editableScreenView(state, address) : null;
+
+        if (address && !placed) {
+            return;
+        }
+
+        if (placed) {
+            const offset = sourceOffset(placed.view, placed.screen);
+            frame.position = { x: frame.position.x + offset.x, y: frame.position.y + offset.y };
+            frame.parentFrameId = placed.screen.id;
+        }
+
         document.frames[frame.id] = frame;
 
         return actions.editFrame({ kind: 'select', id: frame.id });
@@ -202,6 +226,39 @@ export function edit(context: Context, input: FrameEdit): string | undefined {
 
     if (input.kind === 'add' || input.kind === 'paste') {
         return addFrame(context, input);
+    }
+
+    if (input.kind === 'addView') {
+        const screen = document.frames[input.screenId];
+
+        if (
+            screen?.kind !== 'screen' ||
+            frameParents(document.frames).get(screen.id) ||
+            isFrameLocked(document, screen.id)
+        ) {
+            return;
+        }
+
+        const view = orUndefined(() =>
+            readEntity('frames', {
+                id: context.effects.newId(),
+                kind: 'view',
+                screenId: screen.id,
+                name: frameName(document.frames, `${screen.name} view`),
+                position: input.position,
+                size: input.size,
+                locked: false,
+                visible: true
+            })
+        );
+
+        if (!view) {
+            return;
+        }
+
+        document.frames[view.id] = view;
+
+        return actions.editFrame({ kind: 'select', id: view.id });
     }
 
     if (input.kind === 'reparentShapes') {

@@ -9,14 +9,16 @@ import { FrameParent } from './FrameParent';
 import { PropertyGroup } from './PropertyGroup';
 import styles from './styles.css';
 import { MIN_FRAME_SIZE } from 'src/app/services/documentStorage';
+import { projectScreenViews } from 'src/app/screenProjection';
 
 const Field: FC<{
     label: string;
     value: string | number;
     disabled: boolean;
     minimum?: number;
+    prefix?: string;
     onCommit: (value: string) => void;
-}> = ({ label, value, disabled, minimum, onCommit }) => {
+}> = ({ label, value, disabled, minimum, prefix = 'Frame', onCommit }) => {
     const [draft, setDraft] = useState(String(value));
     const id = `frame-${label.replaceAll(' ', '-').toLowerCase()}`;
 
@@ -30,7 +32,7 @@ const Field: FC<{
             <td>
                 <input
                     id={id}
-                    aria-label={`Frame ${label.toLowerCase()}`}
+                    aria-label={`${prefix} ${label.toLowerCase()}`}
                     type={typeof value === 'number' ? 'number' : 'text'}
                     step={typeof value === 'number' ? 'any' : undefined}
                     min={minimum}
@@ -71,14 +73,22 @@ const editedOnCanvas = (gesture: Gesture, id: string) =>
     (gesture.frameId === id || Object.hasOwn(gesture.childFrames, id));
 
 export const FrameInspector: FC<{ id: string }> = ({ id }) => {
-    const { frame, authoredSize, locked, layout, nested, busy } = useAppState((state) => ({
-        frame: renderedFrame(state.currentDocument, id),
-        nested: Boolean(frameParents(state.currentDocument.frames).get(id)),
-        busy: editedOnCanvas(state.events.pointer.gesture, id),
-        layout: frameLayout(state.currentDocument),
-        authoredSize: state.currentDocument.frames[id]?.size,
-        locked: state.currentDocument.locked
-    }));
+    const { frame, source, viewProblem, authoredSize, locked, layout, nested, busy } = useAppState(
+        (state) => ({
+            frame: renderedFrame(state.currentDocument, id),
+            source: state.currentDocument.frames[state.currentDocument.frames[id]?.screenId ?? ''],
+            viewProblem:
+                state.currentDocument.frames[id]?.kind === 'view'
+                    ? projectScreenViews(state.currentDocument).find((item) => item.view.id === id)
+                          ?.problem
+                    : undefined,
+            nested: Boolean(frameParents(state.currentDocument.frames).get(id)),
+            busy: editedOnCanvas(state.events.pointer.gesture, id),
+            layout: frameLayout(state.currentDocument),
+            authoredSize: state.currentDocument.frames[id]?.size,
+            locked: state.currentDocument.locked
+        })
+    );
     const { editFrame } = useActions();
     const moveProblem = useFrameMoveProblem(id);
     const inheritedLocked = useFrameLocked(id);
@@ -88,6 +98,93 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
     }
 
     const disabled = locked || inheritedLocked || busy;
+
+    if (frame.kind === 'view') {
+        return (
+            <div className={styles.inspector} aria-label="Screen view properties">
+                <header className={styles.inspectorHeader}>
+                    <strong>Screen view</strong>
+                </header>
+                <table>
+                    <PropertyGroup name="View">
+                        <tr>
+                            <td colSpan={2}>
+                                <small className={styles.frameHint} role="status">
+                                    {viewProblem ??
+                                        (source?.kind === 'screen'
+                                            ? `View of ${source.name}. Resize this viewport without changing the screen's source.`
+                                            : 'The source screen is missing. Delete this view or restore its screen.')}
+                                </small>
+                            </td>
+                        </tr>
+                        <Field
+                            prefix="View"
+                            label="Name"
+                            value={frame.name}
+                            disabled={disabled}
+                            onCommit={(name) =>
+                                editFrame({ kind: 'update', id, changes: { name } })
+                            }
+                        />
+                        {(['x', 'y'] as const).map((key) => (
+                            <Field
+                                key={key}
+                                prefix="View"
+                                label={key.toUpperCase()}
+                                value={frame.position[key]}
+                                disabled={disabled}
+                                onCommit={(value) =>
+                                    editFrame({
+                                        kind: 'update',
+                                        id,
+                                        changes: {
+                                            position: { ...frame.position, [key]: Number(value) }
+                                        }
+                                    })
+                                }
+                            />
+                        ))}
+                        {(['width', 'height'] as const).map((key) => (
+                            <Field
+                                key={key}
+                                prefix="View"
+                                label={key === 'width' ? 'Width' : 'Height'}
+                                value={frame.size[key]}
+                                minimum={MIN_FRAME_SIZE}
+                                disabled={disabled}
+                                onCommit={(value) =>
+                                    editFrame({
+                                        kind: 'update',
+                                        id,
+                                        changes: { size: { ...frame.size, [key]: Number(value) } }
+                                    })
+                                }
+                            />
+                        ))}
+                        <tr>
+                            <td colSpan={2}>
+                                {source?.kind === 'screen' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => editFrame({ kind: 'select', id: source.id })}
+                                    >
+                                        Edit screen
+                                    </button>
+                                )}
+                                <button
+                                    type="button"
+                                    disabled={disabled}
+                                    onClick={() => editFrame({ kind: 'delete', id })}
+                                >
+                                    Delete view
+                                </button>
+                            </td>
+                        </tr>
+                    </PropertyGroup>
+                </table>
+            </div>
+        );
+    }
 
     return (
         <div className={styles.inspector} aria-label="Frame properties">
@@ -133,6 +230,29 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                             </small>
                         </td>
                     </tr>
+                    {frame.kind === 'screen' && !nested && (
+                        <tr>
+                            <td colSpan={2}>
+                                <button
+                                    type="button"
+                                    disabled={disabled}
+                                    onClick={() =>
+                                        editFrame({
+                                            kind: 'addView',
+                                            screenId: frame.id,
+                                            position: {
+                                                x: frame.position.x + frame.size.width + 40,
+                                                y: frame.position.y
+                                            },
+                                            size: frame.size
+                                        })
+                                    }
+                                >
+                                    Create view of screen
+                                </button>
+                            </td>
+                        </tr>
+                    )}
                     <FrameParent frameId={id} />
                     <Field
                         label="Name"

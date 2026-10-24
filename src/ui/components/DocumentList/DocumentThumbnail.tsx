@@ -1,4 +1,5 @@
 import { layoutDocument } from 'src/app/frameLayout';
+import { projectScreenViews } from 'src/app/screenProjection';
 import React, { FC, ReactNode, useLayoutEffect, useRef } from 'react';
 import { useVariableContext } from 'src/app/hooks';
 import { isFrameVisible } from 'src/app/frameState';
@@ -256,6 +257,9 @@ export const DocumentThumbnail: FC<{ document: Document }> = ({ document: source
     const frames = Object.values(document.frames).filter((frame) =>
         isFrameVisible(document, frame.id)
     );
+    const views = projectScreenViews(sourceDocument).flatMap(({ view, projection }) =>
+        projection ? [{ ...projection, viewId: view.id }] : []
+    );
 
     if (shapes.length === 0 && frames.length === 0) {
         return (
@@ -315,6 +319,30 @@ export const DocumentThumbnail: FC<{ document: Document }> = ({ document: source
                         ancestors={new Set()}
                     />
                 ))}
+                {views.flatMap((view) =>
+                    view.frames.map((frame) => (
+                        <rect
+                            key={`${view.viewId}:${frame.id}`}
+                            x={frame.position.x}
+                            y={frame.position.y}
+                            width={frame.size.width}
+                            height={frame.size.height}
+                            fill="none"
+                            stroke="var(--text-secondary-color)"
+                            vectorEffect="non-scaling-stroke"
+                        />
+                    ))
+                )}
+                {views.flatMap((view) =>
+                    view.shapes.map((shape) => (
+                        <PreviewShape
+                            key={`${view.viewId}:${shape.id}`}
+                            document={document}
+                            shape={shape}
+                            ancestors={new Set()}
+                        />
+                    ))
+                )}
             </g>
         </svg>
     );

@@ -320,7 +320,9 @@ export interface StackRules {
 }
 
 export interface Frame {
-    kind?: 'frame' | 'screen';
+    kind?: 'frame' | 'screen' | 'view';
+    /** A placed view references its screen definition; its box is view-local. */
+    screenId?: string;
     stack?: StackRules;
     id: string;
     parentFrameId?: string;

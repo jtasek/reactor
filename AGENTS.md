@@ -445,8 +445,24 @@ Legacy saved documents and Yjs updates without the designation migrate roots to 
 nested frames to ordinary frames, using safe `frameParents`. Multiple screens and frames share
 one canvas. `screenFrames` selects only visible screens on Canvas for Preview and target pickers.
 Nesting retains screen identity but makes the destination unavailable; Inspector explains it.
-Demotion/deletion preserves authored target references for diagnostics. Separate screen/view
-records are deferred to R4.2. Tests: `screenDefinitions.test.ts` and browser counterpart.
+Demotion/deletion preserves authored target references for diagnostics. Tests:
+`screenDefinitions.test.ts` and browser counterpart.
+
+Schema v13 adds optional placed views as `Frame.kind = 'view'` with a `screenId` pointing to
+an explicit screen. The original screen frame remains the default view and navigation ID.
+View geometry is independent; it cannot parent shapes or frames or carry stack/sizing rules.
+`screenProjection.ts` derives the referenced artwork at the view's viewport size without
+writing layout to shared data, and caps all placed views together at 5,000 projected nodes.
+`screenViewEditing.ts` resolves local pointer addresses for projected hit tests, group boxes,
+marquee selection and snapping. Drawing through a View translates geometry into its source
+Screen and assigns source membership; dragging free artwork edits shared source geometry.
+Keep stack-managed transforms disabled. Pointer addresses and gesture placement snapshots
+stay in the events namespace, never in durable document data. A changed/removed/hidden/locked
+View cancels its gesture; normal snapshot rebasing preserves remote edits on cancellation.
+Two-phase text retains its source placement until commit, and its input follows View movement.
+View boundary gestures edit only the placement. Projected resize/rotate handles and contextual menus/overlays remain planned.
+Deleting a screen removes its placed views; deleting a view keeps the screen. Explorer and
+Inspector identify the referenced screen. Tests: `screenViews.test.ts` and browser counterpart.
 
 The durable reader checks finite positions, nonempty names and sides at least `MIN_FRAME_SIZE`.
 Frames participate in persistence, shared undo, operations, clipboard, reset, thumbnails and

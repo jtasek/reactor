@@ -63,6 +63,8 @@ export const useFrameRows = () =>
                 id,
                 name: frames[id].name,
                 kind: frames[id].kind,
+                screenId: frames[id].screenId,
+                size: frames[id].size,
                 parentFrameId: parents.get(id),
                 visible: frames[id].visible,
                 shown: isFrameVisible(document, id),
@@ -98,8 +100,9 @@ export const useFrameParent = (frameId: string | undefined, shapeIds: string[]) 
         const choices = Object.values(document.frames)
             .filter(
                 (candidate) =>
-                    frameId === undefined ||
-                    validFrameParent(document.frames, frameId, candidate.id)
+                    candidate.kind !== 'view' &&
+                    (frameId === undefined ||
+                        validFrameParent(document.frames, frameId, candidate.id))
             )
             .map((candidate) => ({
                 id: candidate.id,

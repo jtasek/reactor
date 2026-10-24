@@ -60,7 +60,11 @@ export function validFrameParent(
     let current = parent;
 
     while (current !== undefined) {
-        if (!Object.hasOwn(frames, current) || seen.has(current)) {
+        if (
+            !Object.hasOwn(frames, current) ||
+            frames[current].kind === 'view' ||
+            seen.has(current)
+        ) {
             return false;
         }
 
