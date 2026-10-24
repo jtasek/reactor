@@ -130,7 +130,7 @@ export const drawShape: ActionWithParam<ShapeInput> = ({ state, actions }, optio
 
     if (placed) {
         const drawing = json(options);
-        translateShape(drawing, sourceOffset(placed.view, placed.screen));
+        translateShape(drawing, sourceOffset(address?.drawingOrigin ?? placed.view, placed.screen));
         options = { ...drawing, parentFrameId: placed.screen.id };
     }
 

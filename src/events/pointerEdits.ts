@@ -86,8 +86,17 @@ export const beginGesture = (
         return false;
     }
 
-    const previousScreenView = pointer.screenView ? { ...pointer.screenView } : null;
-    pointer.screenView = address;
+    const previousScreenView = pointer.screenView ? json(pointer.screenView) : null;
+    pointer.screenView =
+        projected && address
+            ? {
+                  ...address,
+                  drawingOrigin: {
+                      screenId: projected.screen.id,
+                      position: { ...projected.view.position }
+                  }
+              }
+            : address;
     state.selectedComponent = null;
     delete state.currentDocument.surfaceSelected;
     effects.collaboration.pause();
@@ -308,7 +317,10 @@ const takeSnapTargets = (
         targetLines(others.map((id) => drawnBox(renderedShape(document, id))))
     );
 
-    return drawnExtent(document, changingIds);
+    return drawnExtent(
+        document,
+        changingIds.filter((id) => document.shapes[id])
+    );
 };
 
 export const movePointer = (
@@ -399,9 +411,8 @@ export const movePointer = (
     ) {
         if (!gesture.dragged) {
             gesture.dragged = true;
-            const placed = pointerDocument(state);
             gesture.movingIds = state.currentDocument.editableSelectedShapesIds.filter(
-                (id) => placed.shapes[id] && !hasLayoutOffset(state.currentDocument, [id])
+                (id) => !hasLayoutOffset(state.currentDocument, [id])
             );
             gesture.box = takeSnapTargets({ state, effects }, gesture.movingIds);
         }
@@ -664,7 +675,7 @@ export const cancelGesture = (
     effects.dragTargets.clear();
     const owner = gesture.pointerId;
 
-    pointer.screenView = gesture.previousScreenView ? { ...gesture.previousScreenView } : null;
+    pointer.screenView = gesture.previousScreenView ? json(gesture.previousScreenView) : null;
     pointer.gesture = { kind: 'idle' };
     actions.tools.resetTools();
     effects.collaboration.resume({

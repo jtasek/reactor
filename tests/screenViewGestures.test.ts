@@ -302,3 +302,56 @@ it('drags a group by the gap between its projected members and scopes marquee se
     expect(document.shapes[ids[1]].selected).toBe(true);
     expect(document.shapes[outsider].selected).toBe(false);
 });
+
+it('moves the complete existing selection when a selected shape is dragged through a view', () => {
+    const { store, screenId, viewId } = setup();
+    store.actions.addShape({
+        type: 'rectangle',
+        position: { x: 120, y: 110 },
+        size: { width: 40, height: 30 },
+        parentFrameId: screenId
+    });
+    store.actions.addShape({
+        type: 'rectangle',
+        position: { x: 50, y: 500 },
+        size: { width: 40, height: 30 }
+    });
+    const document = store.state.currentDocument;
+    const [inside, outside] = document.shapesIds;
+    store.actions.unselectShapes();
+    store.actions.selectShape(inside);
+    store.actions.selectShape(outside);
+    store.actions.tools.activateTool('select');
+    store.actions.events.beginGesture({
+        pointerId: 1,
+        position: { x: 525, y: 335 },
+        screenViewId: viewId
+    });
+    store.actions.events.endGesture({ pointerId: 1, position: { x: 555, y: 355 }, free: true });
+    expect(document.shapes[inside]).toMatchObject({ position: { x: 150, y: 130 }, selected: true });
+    expect(document.shapes[outside]).toMatchObject({ position: { x: 80, y: 520 }, selected: true });
+});
+
+it('keeps pending text anchored to its chosen source location when its view moves', () => {
+    const { store, screenId, viewId } = setup();
+    store.actions.tools.activateTool('text');
+    store.actions.events.beginGesture({
+        pointerId: 1,
+        position: { x: 520, y: 330 },
+        screenViewId: viewId
+    });
+    store.actions.events.endGesture({ pointerId: 1, position: { x: 520, y: 330 } });
+    store.actions.events.typing('Anchored');
+    store.actions.editFrame({
+        kind: 'update',
+        id: viewId,
+        changes: { position: { x: 700, y: 400 } }
+    });
+    store.actions.tools.executeToolCommands();
+    const document = store.state.currentDocument;
+    expect(document.shapes[document.shapesIds[0]]).toMatchObject({
+        type: 'text',
+        position: { x: 120, y: 110 },
+        parentFrameId: screenId
+    });
+});

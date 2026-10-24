@@ -250,5 +250,30 @@ test('draws and drags source artwork through a secondary view, cancels a drag an
     await page.reload();
     await expect(projected).toHaveAttribute('x', '587');
     await expect(original).toHaveAttribute('x', '237');
+    await selectTool(page, 'Type a text');
+    await pointer(page, 'pointerdown', {
+        x: 520,
+        y: 250,
+        target: '#screen-views > g[data-screen-view="view"] > rect'
+    });
+    await pointer(page, 'pointerup', { x: 520, y: 250 });
+    const text = page.getByPlaceholder('Type something...');
+    await text.fill('Anchored');
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Wide', exact: true })
+        .click();
+    await page.getByLabel('View x').fill('650');
+    await page.getByLabel('View x').press('Enter');
+    await expect(page.locator('#tools foreignObject')).toHaveAttribute('x', '720');
+    await text.press('Enter');
+    await expect(page.locator('svg#surface #shapes text[data-cy="text-1"]')).toHaveAttribute(
+        'x',
+        '170'
+    );
+    await expect(page.locator('svg#surface #screen-views text[data-cy="text-1"]')).toHaveAttribute(
+        'x',
+        '720'
+    );
     await page.screenshot({ path: '/tmp/reactor-screen-view-gestures.png' });
 });

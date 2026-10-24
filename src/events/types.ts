@@ -11,7 +11,12 @@ export type SelectionSnapshot = Record<string, boolean>;
  */
 export type ShapesSnapshot = Record<string, Shape>;
 
-export type ScreenViewAddress = { documentId: string; viewId: string };
+export type ScreenViewAddress = {
+    documentId: string;
+    viewId: string;
+    /** Preserve a text placement across its separate placement and commit phases. */
+    drawingOrigin?: { screenId: string; position: Point };
+};
 
 export interface ScreenViewGesture {
     address: ScreenViewAddress;

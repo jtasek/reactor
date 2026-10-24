@@ -17,6 +17,7 @@ function screenViewSource(state: Context['state'], address: ScreenViewAddress | 
         document.locked ||
         view?.kind !== 'view' ||
         screen?.kind !== 'screen' ||
+        (address?.drawingOrigin && address.drawingOrigin.screenId !== screen.id) ||
         frameParents(document.frames).get(screen.id) ||
         !isFrameVisible(document, view.id) ||
         !isFrameVisible(document, screen.id) ||
@@ -89,7 +90,10 @@ export function pointerDocument(state: Context['state']): Document {
     };
 }
 
-export function sourceOffset(view: Frame, screen: Frame): Point {
+export function sourceOffset(
+    view: Pick<Frame, 'position'>,
+    screen: Pick<Frame, 'position'>
+): Point {
     return { x: screen.position.x - view.position.x, y: screen.position.y - view.position.y };
 }
 
