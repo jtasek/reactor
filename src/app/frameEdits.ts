@@ -1,3 +1,4 @@
+import { editableScreenView, sourceOffset } from './screenViewEditing';
 import {
     layoutDocument,
     frameHasLayoutOffset,
@@ -96,6 +97,22 @@ function addFrame(context: Context, input: Extract<FrameEdit, { kind: 'add' | 'p
     }
 
     if (input.kind === 'add') {
+        const address =
+            state.events.pointer.gesture.kind === 'drawing'
+                ? state.events.pointer.screenView
+                : null;
+        const placed = address ? editableScreenView(state, address) : null;
+
+        if (address && !placed) {
+            return;
+        }
+
+        if (placed) {
+            const offset = sourceOffset(placed.view, placed.screen);
+            frame.position = { x: frame.position.x + offset.x, y: frame.position.y + offset.y };
+            frame.parentFrameId = placed.screen.id;
+        }
+
         document.frames[frame.id] = frame;
 
         return actions.editFrame({ kind: 'select', id: frame.id });

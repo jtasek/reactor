@@ -453,8 +453,14 @@ an explicit screen. The original screen frame remains the default view and navig
 View geometry is independent; it cannot parent shapes or frames or carry stack/sizing rules.
 `screenProjection.ts` derives the referenced artwork at the view's viewport size without
 writing layout to shared data, and caps all placed views together at 5,000 projected nodes.
-Canvas selection of projected artwork targets its source shape for Inspector edits; direct
-projected shape gestures are still planned. View boundary gestures edit only the placement.
+`screenViewEditing.ts` resolves local pointer addresses for projected hit tests, group boxes,
+marquee selection and snapping. Drawing through a View translates geometry into its source
+Screen and assigns source membership; dragging free artwork edits shared source geometry.
+Keep stack-managed transforms disabled. Pointer addresses and gesture placement snapshots
+stay in the events namespace, never in durable document data. A changed/removed/hidden/locked
+View cancels its gesture; normal snapshot rebasing preserves remote edits on cancellation.
+Two-phase text retains its source placement until commit, and its input follows View movement.
+View boundary gestures edit only the placement. Projected resize/rotate handles and contextual menus/overlays remain planned.
 Deleting a screen removes its placed views; deleting a view keeps the screen. Explorer and
 Inspector identify the referenced screen. Tests: `screenViews.test.ts` and browser counterpart.
 

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { createComponent, createDocument, createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
-import { openEditor, pointer } from './support/editor';
+import { openEditor, pointer, selectTool } from './support/editor';
 
 test('places a second view, resolves its width, edits shared content and deletes only the view', async ({
     page
@@ -152,6 +152,14 @@ test('selects projected instances and ignores secondary presses during a gesture
     await hit.click();
     await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Card');
 
+    const hitBox = (await hit.boundingBox())!;
+    await page.mouse.move(hitBox.x + 1, hitBox.y + 1);
+    await page.mouse.down();
+    await page.mouse.move(hitBox.x + 34, hitBox.y + 22);
+    await page.mouse.up();
+    await expect(hit).toHaveAttribute('x', '453');
+    await expect(hit).toHaveAttribute('y', '121');
+
     const explorer = page.getByRole('region', { name: 'Explorer' });
     await explorer.getByRole('button', { name: 'Second', exact: true }).click();
     await pointer(page, 'pointerdown', {
@@ -169,4 +177,103 @@ test('selects projected instances and ignores secondary presses during a gesture
     await pointer(page, 'pointercancel', { x: 400, y: 150 });
     await hit.dispatchEvent('pointerdown', { button: 2, bubbles: true });
     await expect(page.getByLabel('Screen view properties')).toBeVisible();
+});
+
+test('draws and drags source artwork through a secondary view, cancels a drag and retains it after reload', async ({
+    page
+}) => {
+    const body = createShape({
+        type: 'rectangle',
+        name: 'Body',
+        order: 'a0',
+        position: { x: 120, y: 120 },
+        size: { width: 50, height: 40 },
+        parentFrameId: 'home'
+    });
+    const document = createDocument({
+        id: 'view-gestures-browser',
+        frames: {
+            home: {
+                id: 'home',
+                kind: 'screen',
+                name: 'Home',
+                position: { x: 100, y: 80 },
+                size: { width: 240, height: 200 },
+                visible: true,
+                locked: false
+            },
+            view: {
+                id: 'view',
+                kind: 'view',
+                screenId: 'home',
+                name: 'Wide',
+                position: { x: 450, y: 80 },
+                size: { width: 400, height: 240 },
+                visible: true,
+                locked: false
+            }
+        },
+        shapes: { [body.id]: body }
+    });
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await openEditor(page, ['Inspector']);
+    await page.getByRole('button', { name: 'More panels' }).click();
+    await selectTool(page, 'Draws a rectangle or square');
+    const surface = page.locator('svg#surface');
+    const box = (await surface.boundingBox())!;
+    await page.mouse.move(box.x + 550, box.y + 170);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 610, box.y + 210, { steps: 3 });
+    await expect(page.locator('#tools rect')).toHaveAttribute('x', '550');
+    await page.mouse.up();
+    const original = page.locator('svg#surface #shapes rect[data-cy="rectangle-1"]');
+    const projected = page.locator('svg#surface #screen-views rect[data-cy="rectangle-1"]');
+    await expect(original).toHaveAttribute('x', '200');
+    await expect(projected).toHaveAttribute('x', '550');
+    await expect(page.getByLabel('Selection parent')).toContainText('Home');
+    await page.mouse.move(box.x + 550, box.y + 170);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 587, box.y + 197, { steps: 3 });
+    await page.mouse.up();
+    await expect(projected).toHaveAttribute('x', '587');
+    await expect(original).toHaveAttribute('x', '237');
+    await page.mouse.down();
+    await page.mouse.move(box.x + 617, box.y + 227);
+    await surface.dispatchEvent('pointercancel', { pointerId: 1 });
+    await page.mouse.up();
+    await expect(projected).toHaveAttribute('x', '587');
+    await expect(original).toHaveAttribute('x', '237');
+    await page.reload();
+    await expect(projected).toHaveAttribute('x', '587');
+    await expect(original).toHaveAttribute('x', '237');
+    await selectTool(page, 'Type a text');
+    await pointer(page, 'pointerdown', {
+        x: 520,
+        y: 250,
+        target: '#screen-views > g[data-screen-view="view"] > rect'
+    });
+    await pointer(page, 'pointerup', { x: 520, y: 250 });
+    const text = page.getByPlaceholder('Type something...');
+    await text.fill('Anchored');
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Wide', exact: true })
+        .click();
+    await page.getByLabel('View x').fill('650');
+    await page.getByLabel('View x').press('Enter');
+    await expect(page.locator('#tools foreignObject')).toHaveAttribute('x', '720');
+    await text.press('Enter');
+    await expect(page.locator('svg#surface #shapes text[data-cy="text-1"]')).toHaveAttribute(
+        'x',
+        '170'
+    );
+    await expect(page.locator('svg#surface #screen-views text[data-cy="text-1"]')).toHaveAttribute(
+        'x',
+        '720'
+    );
+    await page.screenshot({ path: '/tmp/reactor-screen-view-gestures.png' });
 });

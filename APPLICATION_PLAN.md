@@ -656,10 +656,17 @@ continues working through adapters to the new screen/context projection until R4
    viewport; cloning, deletion, persistence, collaboration, thumbnails and the viewer retain
    the placement. Deleting a Screen removes its placed views; deleting a View keeps the Screen.
    Projection across placed views is bounded to 5,000 nodes and diagnoses invalid sources.
+   **Direct creation and dragging implemented:** local pointer addresses identify the View;
+   hit tests, marquee selection, group boxes and snapping use its resolved geometry. Drawing
+   creates source artwork (including two-phase text and nested frames), and dragging free
+   artwork edits the shared source. Stack-managed artwork retains its layout rules. The
+   existing owning-pointer lifecycle preserves cancellation, shared undo and remote edits;
+   a removed, hidden, locked or repositioned View cancels its active gesture. Tests:
+   `tests/screenViewGestures.test.ts` and `tests/browser/screenViews.spec.ts`.
    **Still required for R4.2:** extract the default view from the screen definition so every
-   view can be deleted while its screen remains discoverable; address projected shapes by
-   `(viewId, shapeId)` for direct canvas move/resize/create gestures and hit testing; and
-   resolve selection overlays, group/component editing and keyboard commands in that context.
+   view can be deleted while its screen remains discoverable; add projected resize/rotate
+   handles and place selection menus/measurement overlays in the active context; complete
+   focused component editing and contextual keyboard commands.
 
 3. **R4.3 — Inherited color modes per view (M).**
    Extend the central resolver with the precedence above. Add Inherit/reset controls for
