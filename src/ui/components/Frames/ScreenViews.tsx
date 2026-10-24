@@ -1,10 +1,9 @@
 import React, { createElement, type CSSProperties, type FC } from 'react';
 import { componentSource, instanceBox } from 'src/app/componentSource';
-import { withTheirGroups } from 'src/app/membership';
 import { projectScreenViews } from 'src/app/screenProjection';
 import { themeColors } from 'src/app/themeColors';
 import { boxCenter, getShapeBounds } from 'src/app/utils';
-import { useActions, useAppState, useCurrentDocument, useVariableContext } from 'src/app/hooks';
+import { useAppState, useCurrentDocument, useVariableContext } from 'src/app/hooks';
 import { isReadOnly } from 'src/app/documentAccess';
 import type { Shape } from 'src/app/types';
 import { getComponentByType } from 'src/tools/components';
@@ -15,15 +14,9 @@ const ProjectedShape: FC<{
     shape: Shape;
     viewId: string;
     interactive: boolean;
-    selecting: boolean;
-}> = ({ shape, viewId, interactive, selecting }) => {
+}> = ({ shape, viewId, interactive }) => {
     const document = useCurrentDocument();
     const context = useVariableContext();
-    const { unselectShapes, selectShape } = useActions();
-    const { enteredGroupId, idle } = useAppState((state) => ({
-        enteredGroupId: state.enteredGroupId,
-        idle: state.events.pointer.gesture.kind === 'idle'
-    }));
     const painted = themeColors(shape, document, context);
     const source =
         painted.type === 'instance' ? componentSource(document, painted.componentId) : null;
@@ -52,22 +45,6 @@ const ProjectedShape: FC<{
                     '--shape-fill': painted.fill,
                     '--shape-stroke': painted.stroke
                 } as CSSProperties
-            }
-            onPointerDown={
-                interactive
-                    ? (event) => {
-                          event.stopPropagation();
-
-                          if (!selecting || !idle || event.button !== 0) {
-                              return;
-                          }
-
-                          unselectShapes();
-                          withTheirGroups(document, [shape.id], enteredGroupId).forEach(
-                              selectShape
-                          );
-                      }
-                    : undefined
             }
         >
             {painted.type === 'instance' ? (
@@ -106,16 +83,31 @@ const ScreenView: FC<{
     item: ReturnType<typeof projectScreenViews>[number];
     interactive: boolean;
     readOnly: boolean;
-    selecting: boolean;
-}> = ({ item, interactive, readOnly, selecting }) => {
+}> = ({ item, interactive, readOnly }) => {
     const { view, projection, problem } = item;
 
     if (!projection) {
-        return problem ? (
-            <text x={view.position.x + 8} y={view.position.y + 20} className={styles.label}>
-                {problem}
-            </text>
-        ) : null;
+        return (
+            <g
+                data-screen-view={view.id}
+                pointerEvents={readOnly || !interactive ? 'none' : undefined}
+            >
+                {interactive && !readOnly && (
+                    <rect
+                        x={view.position.x}
+                        y={view.position.y}
+                        width={view.size.width}
+                        height={view.size.height}
+                        fill="transparent"
+                    />
+                )}
+                {problem && (
+                    <text x={view.position.x + 8} y={view.position.y + 20} className={styles.label}>
+                        {problem}
+                    </text>
+                )}
+            </g>
+        );
     }
 
     const { screen, frames, shapes } = projection;
@@ -123,16 +115,16 @@ const ScreenView: FC<{
     return (
         <g
             aria-label={`View of ${screen.name}`}
+            data-screen-view={view.id}
             pointerEvents={readOnly || !interactive ? 'none' : undefined}
         >
-            {!selecting && interactive && !readOnly && (
+            {interactive && !readOnly && (
                 <rect
                     x={view.position.x}
                     y={view.position.y}
                     width={view.size.width}
                     height={view.size.height}
                     fill="transparent"
-                    onPointerDown={(event) => event.stopPropagation()}
                 />
             )}
             {frames.map((frame) => (
@@ -155,7 +147,6 @@ const ScreenView: FC<{
                     shape={shape}
                     viewId={view.id}
                     interactive={interactive && !readOnly}
-                    selecting={selecting}
                 />
             ))}
         </g>
@@ -164,12 +155,11 @@ const ScreenView: FC<{
 
 /** Optional placements of one screen share its source artwork and resolve layout per viewport. */
 export const ScreenViews: FC<{ interactive?: boolean }> = ({ interactive = true }) => {
-    const { items, readOnly, selecting } = useAppState((state) => ({
+    const { items, readOnly } = useAppState((state) => ({
         items: state.currentDocument.editingComponentId
             ? []
             : projectScreenViews(state.currentDocument),
-        readOnly: isReadOnly(state),
-        selecting: state.tools.activeToolsIds[0] === 'select'
+        readOnly: isReadOnly(state)
     }));
 
     return (
@@ -180,7 +170,6 @@ export const ScreenViews: FC<{ interactive?: boolean }> = ({ interactive = true 
                     item={item}
                     interactive={interactive}
                     readOnly={readOnly}
-                    selecting={selecting}
                 />
             ))}
         </g>

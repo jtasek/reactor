@@ -1,3 +1,5 @@
+import { json } from 'overmind';
+import { editableScreenView, pointerDocument, sourceOffset } from './screenViewEditing';
 import { initializeStackOrder } from './stackEdits';
 import { frameLayout, renderedShape, hasLayoutOffset } from './frameLayout';
 import { frameState, lockedFrameForShapes } from './frameState';
@@ -119,6 +121,19 @@ export const addShape: ActionWithParam<ShapeInput> = ({ state }, options) => {
  */
 export const drawShape: ActionWithParam<ShapeInput> = ({ state, actions }, options) => {
     const document = state.currentDocument;
+    const address = state.events.pointer.screenView;
+    const placed = address ? editableScreenView(state, address) : null;
+
+    if (address && !placed) {
+        return;
+    }
+
+    if (placed) {
+        const drawing = json(options);
+        translateShape(drawing, sourceOffset(placed.view, placed.screen));
+        options = { ...drawing, parentFrameId: placed.screen.id };
+    }
+
     const componentId = state.enteredComponentId;
     const component = componentId && document.components[componentId];
     const layerId = document.selectedLayersIds[0];
@@ -385,8 +400,9 @@ const shapeAtPointer = (
     canPress = (id: string) => isInteractive(state, id)
 ): string | null => {
     const { current } = state.events.pointer;
-    const document = untracked(state.currentDocument);
-    const layout = frameLayout(state.currentDocument);
+    const placed = pointerDocument(state);
+    const document = untracked(placed);
+    const layout = frameLayout(placed);
     const { shapesIds, shapes, camera } = document;
     const tolerance = hitTolerance(camera.scale);
 
@@ -547,14 +563,16 @@ const selectPressed = (
     });
 };
 
-const boxMembersAtPointer = (state: Context['state']) =>
-    (
-        componentAtPoint(
-            state.currentDocument,
-            state.events.pointer.current,
-            state.enteredComponentId
-        ) ?? groupAtPoint(state.currentDocument, state.events.pointer.current, state.enteredGroupId)
-    )?.shapesIds ?? [];
+const boxMembersAtPointer = (state: Context['state']) => {
+    const document = pointerDocument(state);
+
+    return (
+        (
+            componentAtPoint(document, state.events.pointer.current, state.enteredComponentId) ??
+            groupAtPoint(document, state.events.pointer.current, state.enteredGroupId)
+        )?.shapesIds ?? []
+    );
+};
 
 /** Uses the same hit and selection rules as a canvas press for a context menu. */
 export const selectContextMenuTarget: ActionWithParamAndResult<Point, boolean> = (
@@ -684,8 +702,9 @@ export const selectShapes: Action = ({ state }) => {
 
     const document = state.currentDocument;
     // Read without the store's tracking: thousands of shapes are only looked at here.
-    const plain = untracked(document);
-    const layout = frameLayout(document);
+    const placed = pointerDocument(state);
+    const plain = untracked(placed);
+    const layout = frameLayout(placed);
     const shapes = Object.values(plain.shapes);
     const hits = isClick
         ? []
@@ -709,7 +728,7 @@ export const selectShapes: Action = ({ state }) => {
 
     const hit = new Set(hits);
 
-    shapes.forEach((shape) => {
+    Object.values(document.shapes).forEach((shape) => {
         const selected =
             boxed.has(shape.id) && (hit.has(shape.id) || isInteractive(state, shape.id));
 

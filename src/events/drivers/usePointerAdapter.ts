@@ -12,6 +12,11 @@ import { useActions, useCamera, useControls, useLog } from 'src/app/hooks';
 import type { TouchContact } from 'src/events/types';
 import { trySetPointerCapture, tryReleasePointerCapture } from './pointerCapture';
 
+const screenViewTarget = (target: EventTarget) =>
+    target instanceof Element
+        ? (target.closest('[data-screen-view]')?.getAttribute('data-screen-view') ?? undefined)
+        : undefined;
+
 export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | undefined) => {
     const log = useLog();
     const actions = useActions();
@@ -130,6 +135,7 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
             pointerId: event.pointerId,
             position,
             handle: getHandleTarget(event.target),
+            screenViewId: screenViewTarget(event.target),
             free: event.ctrlKey || event.metaKey,
             touch: event.pointerType === 'touch'
         });
@@ -298,7 +304,8 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
 
             actions.ui.displayContextMenu({
                 position: { x: event.clientX, y: event.clientY },
-                canvasPoint
+                canvasPoint,
+                screenViewId: screenViewTarget(event.target)
             });
         },
         [actions, camera, cancelGesture, getSvgElement]
