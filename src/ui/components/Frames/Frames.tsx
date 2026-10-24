@@ -48,7 +48,11 @@ const CanvasFrame: FC<{ id: string; interactive: boolean }> = ({ id, interactive
             className={`${styles.frame} ${selected && interactive ? styles.selected : ''}`}
             role={interactive ? 'button' : undefined}
             tabIndex={interactive ? 0 : undefined}
-            aria-label={interactive ? `Frame ${frame.name}` : undefined}
+            aria-label={
+                interactive
+                    ? `${frame.kind === 'view' ? 'View' : 'Frame'} ${frame.name}`
+                    : undefined
+            }
             aria-pressed={interactive ? selected : undefined}
             onKeyDown={
                 interactive

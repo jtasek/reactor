@@ -1,5 +1,6 @@
 import React, { FC } from 'react';
 import { FrameGrips, Frames } from '../Frames/Frames';
+import { ScreenViews } from '../Frames/ScreenViews';
 import { Camera } from './Camera';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { GridContainer as Grid } from '../Grid';
@@ -22,6 +23,7 @@ export const Canvas: FC = () => (
                 <ErrorBoundary fallback={<h1>Something went wrong while rendering shapes</h1>}>
                     <FrameGrips />
                     <Shapes />
+                    <ScreenViews />
                     <Frames />
                     <SnapLines />
                     <Measures />

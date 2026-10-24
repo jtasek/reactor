@@ -24,7 +24,11 @@ export function frameParents(frames: Record<string, Frame>) {
             const parent: string | undefined = frames[current].parentFrameId;
             parents.set(
                 current,
-                parent !== undefined && Object.hasOwn(frames, parent) ? parent : undefined
+                parent !== undefined &&
+                    Object.hasOwn(frames, parent) &&
+                    frames[parent].kind !== 'view'
+                    ? parent
+                    : undefined
             );
             current = parent;
         }
