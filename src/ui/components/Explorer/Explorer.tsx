@@ -9,9 +9,12 @@ import { ObjectTypeSymbol } from '../ObjectTypeSymbol';
 import { SourceItem } from './SourceItem';
 import { byDrawingOrder } from 'src/app/drawOrder';
 import type { CommandScope } from 'src/app/types';
+import type { explorerTree } from 'src/app/explorerTree';
+import { isShapeLocked } from 'src/app/utils';
 import {
     useExplorerTree,
     useExplorerLayers,
+    useExplorerView,
     useFrameRows,
     useSelectedFrameId,
     useShapesFrameState
@@ -304,13 +307,18 @@ const LayerItem: FC<LayerProps & { layerId: string }> = ({
     );
 };
 
+const noObjects: ReturnType<typeof explorerTree> = {
+    canvas: { groups: [], shapesIds: [] },
+    frames: []
+};
+
 export const Explorer: FC = () => {
     const frames = useFrameRows();
     const selectedFrameId = useSelectedFrameId();
-    const { editFrame } = useActions();
-    const tree = useExplorerTree();
-    const layers = useExplorerLayers();
-    const [view, setView] = useState<'objects' | 'layers'>('objects');
+    const { editFrame, setExplorerView } = useActions();
+    const view = useExplorerView();
+    const tree = useExplorerTree(view === 'objects') ?? noObjects;
+    const layers = useExplorerLayers(view === 'layers') ?? [];
     const document = useCurrentDocument();
     const components = useComponents() ?? {};
     const filter = useDocumentFilter().trim().toLowerCase();
@@ -331,6 +339,11 @@ export const Explorer: FC = () => {
             visible={frame.shown}
             collapseId={`frame:${frame.id}`}
             onClick={() => editFrame({ kind: 'select', id: frame.id })}
+            onDrop={
+                frame.locked || frame.inheritedLock
+                    ? undefined
+                    : (dragged) => moveIntoFrame(dragged, frame.id)
+            }
             menuActions={[
                 {
                     ...hideAction(!frame.visible, () =>
@@ -392,6 +405,18 @@ export const Explorer: FC = () => {
 
     const shapesOf = ({ kind, id }: Dragged) =>
         kind === 'shape' ? [id] : (document.groups[id]?.shapesIds ?? []);
+    // Same as the Parent picker: a group moves whole, positions stay where they are.
+    const moveIntoFrame = (dragged: Dragged, parentFrameId: string | null) => {
+        const ids = shapesOf(dragged).filter(
+            (id) =>
+                !isShapeLocked(document, id) &&
+                (document.shapes[id]?.parentFrameId ?? null) !== parentFrameId
+        );
+
+        if (ids.length > 0) {
+            editFrame({ kind: 'reparentShapes', ids, parentFrameId });
+        }
+    };
 
     return (
         <CollapsedItems.Provider
@@ -412,14 +437,14 @@ export const Explorer: FC = () => {
                     <button
                         type="button"
                         aria-pressed={view === 'objects'}
-                        onClick={() => setView('objects')}
+                        onClick={() => setExplorerView('objects')}
                     >
                         Objects
                     </button>
                     <button
                         type="button"
                         aria-pressed={view === 'layers'}
-                        onClick={() => setView('layers')}
+                        onClick={() => setExplorerView('layers')}
                     >
                         Layers
                     </button>
@@ -501,6 +526,7 @@ export const Explorer: FC = () => {
                                 icon={<ObjectTypeSymbol type="surface" />}
                                 selected={document.surfaceSelected ?? false}
                                 onClick={handleCanvasSelect}
+                                onDrop={(dragged) => moveIntoFrame(dragged, null)}
                             >
                                 {shownFrames
                                     .filter((frame) => frame.parentFrameId === undefined)

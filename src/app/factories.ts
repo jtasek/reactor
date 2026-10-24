@@ -320,6 +320,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
             autoSave: true,
             debugMode: false,
             documentsLayout: 'cards',
+            explorerView: 'objects',
             panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT)
         },
         previewModes: {},

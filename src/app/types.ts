@@ -523,11 +523,15 @@ export type Configuration = {
     debugMode: boolean;
     /** How the Documents page shows documents, kept per device. */
     documentsLayout: DocumentsLayout;
+    /** Which Explorer view shows, kept per device. */
+    explorerView: ExplorerView;
     panelLayout: Record<string, PanelPlacement>;
     version: string;
 };
 
 export type DocumentsLayout = 'cards' | 'list';
+
+export type ExplorerView = 'objects' | 'layers';
 
 export type PanelPlacement = {
     dock:

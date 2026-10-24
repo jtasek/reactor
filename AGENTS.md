@@ -548,16 +548,18 @@ A group is on one layer, with all its shapes (`putShapesOnLayer`, `putShapesInGr
 puts its shapes on the topmost one's layer, a group moved to a layer moves whole, and a shape
 moved without the rest of its group leaves it. Loading does not repair a group other copies'
 merges left across layers; the explorer lists it under its first shape's layer. The explorer
-(`src/ui/components/Explorer`, from `explorerTree` and `outline`) has local Objects/Layers
-views, loaded on demand with the panel. Objects shows actual containment under Canvas: frames
+(`src/ui/components/Explorer`, from `explorerTree` and `outline`) has Objects/Layers
+views (`config.explorerView`, kept per device like the Documents layout), loaded on demand
+with the panel; only the shown view's tree is built. Objects shows actual containment under Canvas: frames
 nest immediate artwork and child frames, unparented artwork stays on Canvas, and explicitly designated screens have a Screen badge. Global
 layer wrappers never appear in Objects. Split groups retain actual parent placements. Keep
 source-only members under Components, use safe `frameParents` cycle roots, and never rewrite
 memberships from this projection. Layers lists each global layer once with all scene members,
 plus No layer for unlayered artwork. New layer belongs in that view. Layer controls affect
 members across frames; dropping on a layer or No layer changes only layer membership.
-Pressing Canvas or No layer selects the canvas (`surfaceSelected`); Canvas is not a layer drop
-target. Group drops keep existing group/parent behavior. Search uses the document's runtime
+Pressing Canvas or No layer selects the canvas (`surfaceSelected`). Dropping on a frame row
+moves the dragged objects into that frame, and on Canvas out of frames, like the Parent picker
+(`reparentShapes`: groups move whole, canvas positions stay); locked frames take no drops. Group drops keep existing group/parent behavior. Search uses the document's runtime
 `filter` (neither saved nor shared), retains ancestors, and includes a matching frame's subtree;
 layer names match only in Layers. Selection survives switching views. Collapse keys distinguish
 frame branches from the Layers view; search temporarily reveals collapsed matches without
