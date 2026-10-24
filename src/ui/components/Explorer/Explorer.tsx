@@ -343,7 +343,13 @@ export const Explorer: FC = () => {
             key={`frame:${frame.id}`}
             kind="frame"
             name={frame.name}
-            badge={frame.kind === 'view' ? 'Screen view' : undefined}
+            badge={
+                frame.kind === 'view'
+                    ? 'Screen view'
+                    : frame.kind === 'screen'
+                      ? 'Screen'
+                      : undefined
+            }
             secondary={
                 frame.kind === 'view'
                     ? `${document.frames[frame.screenId ?? '']?.name ?? 'Missing screen'} · ${frame.size.width} × ${frame.size.height}`

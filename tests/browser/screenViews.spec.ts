@@ -320,11 +320,12 @@ test('moves a view from just inside its edge, and lets presses through a locked 
     await openEditor(page, ['Inspector', 'Explorer']);
     const explorer = page.getByRole('region', { name: 'Explorer' });
     await explorer.getByRole('button', { name: 'Home', exact: true }).click();
-    await page.getByRole('button', { name: 'Create view of screen' }).click();
+    // Placed beside the first view, clear of the panels.
+    await page.getByRole('button', { name: 'Create Screen view', exact: true }).click();
     await expect(page.getByLabel('Screen view properties')).toBeVisible();
     const viewId = await page
         .locator('svg#surface #frames > [data-frame]')
-        .filter({ hasText: 'Home view' })
+        .filter({ hasText: 'Home · 300 px 2' })
         .getAttribute('data-frame');
     const x = Number(await page.getByLabel('View x').inputValue());
     const grip = page.locator(`#frame-grips [data-frame-id="${viewId}"]`);
@@ -350,7 +351,9 @@ test('moves a view from just inside its edge, and lets presses through a locked 
 
     const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
     expect((await pressed(center)).view).toBe(true);
-    const viewRow = explorer.getByRole('button', { name: 'Home view' }).locator('..');
+    const viewRow = explorer
+        .getByRole('button', { name: 'Home · 300 px 2', exact: true })
+        .locator('..');
     await viewRow.hover();
     await viewRow.getByRole('button', { name: 'Lock', exact: true }).click();
     await expect.poll(async () => (await pressed(center)).view).toBe(false);
