@@ -2,6 +2,9 @@ import { Action, ActionWithParam, Application, Layer } from '../types';
 import { createLayer } from '../factories';
 import { LAYER_MINIMUM, putShapesOnLayer, selectionLayerId } from '../membership';
 import { isShapeLocked } from '../utils';
+import { editorHelpers } from '../editorHelpers';
+import { isFrameLocked } from '../frameState';
+import { untracked } from '../untracked';
 
 const getLayer = ({ currentDocument }: Application, layerId: string) => {
     const layer = currentDocument.layers[layerId];
@@ -83,22 +86,63 @@ export const unlayerSelection: Action = ({ state }) => {
     putShapesOnLayer(state.currentDocument, selectionWithGroups(state), null);
 };
 
-/** Puts shapes that are not locked on a layer, or on none. */
-export const moveShapesToLayer: ActionWithParam<{ shapeIds: string[]; layerId: string | null }> = (
-    { state },
-    { shapeIds, layerId }
-) => {
+/**
+ * Puts shapes that are not locked on a layer, or on none. With `parentFrameId`, they
+ * also move into that frame (`null`: onto Canvas), as one undo step: the explorer
+ * shows a layer inside each frame holding its shapes, so a drop lands where it shows.
+ * A drop into a frame that cannot take them changes nothing.
+ */
+export const moveShapesToLayer: ActionWithParam<{
+    shapeIds: string[];
+    layerId: string | null;
+    parentFrameId?: string | null;
+}> = ({ state, effects }, { shapeIds, layerId, parentFrameId }) => {
     const { currentDocument } = state;
 
     if (layerId !== null && !currentDocument.layers[layerId]) {
         return;
     }
 
-    putShapesOnLayer(
-        currentDocument,
-        shapeIds.filter((id) => !isShapeLocked(currentDocument, id)),
-        layerId
+    const ids = shapeIds.filter((id) => !isShapeLocked(currentDocument, id));
+    const parent = parentFrameId ?? undefined;
+    const moving = ids.filter((id) => currentDocument.shapes[id]?.parentFrameId !== parent);
+
+    if (parentFrameId === undefined || moving.length === 0) {
+        putShapesOnLayer(currentDocument, ids, layerId);
+
+        return;
+    }
+
+    if (
+        currentDocument.editingComponentId ||
+        moving.some((id) => currentDocument.componentMembersIds.has(id)) ||
+        (parent !== undefined &&
+            (!currentDocument.frames[parent] || isFrameLocked(currentDocument, parent)))
+    ) {
+        return;
+    }
+
+    const { stageBatch, writeBatch } = editorHelpers().operations;
+    const by = { kind: 'person' } as const;
+
+    effects.collaboration.startBatch(currentDocument.id, by);
+    // The layer goes first: a shape dropped without its group leaves the group, so it
+    // can change frame alone.
+    putShapesOnLayer(currentDocument, ids, layerId);
+    const result = stageBatch(
+        untracked(currentDocument),
+        moving.map((id) => ({
+            op: 'updateShape' as const,
+            shape: id,
+            changes: { parentFrameId }
+        })),
+        effects.newId
     );
+
+    if (result.valid) {
+        writeBatch(currentDocument, result.staged);
+    }
+    effects.collaboration.flush();
 };
 
 /**
