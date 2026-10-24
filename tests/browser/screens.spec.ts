@@ -4,7 +4,7 @@ import { drawRect, openEditor, pointer, selectTool } from './support/editor';
 const frames = (page: Parameters<typeof openEditor>[0]) =>
     page.locator('svg#surface #frames > [data-frame]');
 async function drawFrame(page: Parameters<typeof openEditor>[0]) {
-    await selectTool(page, 'Draw a screen frame');
+    await selectTool(page, 'Draw a frame');
     await pointer(page, 'pointerdown', { x: 150, y: 140 });
     await pointer(page, 'pointermove', { x: 550, y: 440 });
     await pointer(page, 'pointerup', { x: 550, y: 440 });
@@ -128,7 +128,7 @@ test('canceling creation leaves no frame and a frame-only document has a visible
     page
 }) => {
     await openEditor(page);
-    await selectTool(page, 'Draw a screen frame');
+    await selectTool(page, 'Draw a frame');
     await pointer(page, 'pointerdown', { x: 150, y: 140 });
     await pointer(page, 'pointermove', { x: 550, y: 440 });
     await pointer(page, 'pointercancel', { x: 550, y: 440 });
@@ -156,7 +156,7 @@ test('copies, cuts and pastes a frame using the native keyboard clipboard flow',
 test('keeps selected resize handles above overlapping frame boundaries', async ({ page }) => {
     await openEditor(page, ['Inspector']);
     await drawFrame(page);
-    await selectTool(page, 'Draw a screen frame');
+    await selectTool(page, 'Draw a frame');
     await pointer(page, 'pointerdown', { x: 150, y: 140 });
     await pointer(page, 'pointermove', { x: 550, y: 440 });
     await pointer(page, 'pointerup', { x: 550, y: 440 });

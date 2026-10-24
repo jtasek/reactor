@@ -439,6 +439,15 @@ capture, click slip, cancel and rebasing over remote changes. `frameEdits.ts` lo
 editor helpers; only a small root action delegates to it. Keep frames out of component-source
 editing. No geometric containment creates membership in this increment.
 
+Schema v12 adds `Frame.kind` (`frame` or `screen`; absent input defaults to frame). Inspector
+converts in place; the frame ID remains the navigation destination. New frames are ordinary.
+Legacy saved documents and Yjs updates without the designation migrate roots to screens and
+nested frames to ordinary frames, using safe `frameParents`. Multiple screens and frames share
+one canvas. `screenFrames` selects only visible screens on Canvas for Preview and target pickers.
+Nesting retains screen identity but makes the destination unavailable; Inspector explains it.
+Demotion/deletion preserves authored target references for diagnostics. Separate screen/view
+records are deferred to R4.2. Tests: `screenDefinitions.test.ts` and browser counterpart.
+
 The durable reader checks finite positions, nonempty names and sides at least `MIN_FRAME_SIZE`.
 Frames participate in persistence, shared undo, operations, clipboard, reset, thumbnails and
 the read-only viewer. `framesIds` is derived with the other entity ID lists.
@@ -539,24 +548,25 @@ A group is on one layer, with all its shapes (`putShapesOnLayer`, `putShapesInGr
 puts its shapes on the topmost one's layer, a group moved to a layer moves whole, and a shape
 moved without the rest of its group leaves it. Loading does not repair a group other copies'
 merges left across layers; the explorer lists it under its first shape's layer. The explorer
-(`src/ui/components/Explorer`, from `explorerTree` and `outline`) is the side bar's tree under a Canvas root:
-frames nest their immediate artwork and child frames; unparented artwork stays on Canvas.
-Layers are sliced by frame without duplicating shapes; split groups retain their actual parent
-placements. Keep source-only members under Components, use safe `frameParents` cycle roots,
-and never rewrite memberships from this projection. Layer/group collapse state is scoped to its
-frame branch. Search retains frame ancestors; a matching frame includes its subtree.
-Within each container, layers hold their groups and shapes, followed by shapes on no layer. Pressing Canvas selects
-the canvas (`surfaceSelected`), and dragging a shape or group onto it takes it off its layer,
-as dragging onto a layer or group moves it there. Its search box
-lists only what has a name containing what is typed (`filterOutline`): a layer or group with
-all it holds, a shape with its group and layer. The text is the document's runtime `filter`,
-neither saved nor shared. Layers and groups holding rows collapse; the explorer keeps which
-are, also through a search that leaves them out, and opens them while a search is typed. A row's menu
+(`src/ui/components/Explorer`, from `explorerTree` and `outline`) has local Objects/Layers
+views, loaded on demand with the panel. Objects shows actual containment under Canvas: frames
+nest immediate artwork and child frames, unparented artwork stays on Canvas, and explicitly designated screens have a Screen badge. Global
+layer wrappers never appear in Objects. Split groups retain actual parent placements. Keep
+source-only members under Components, use safe `frameParents` cycle roots, and never rewrite
+memberships from this projection. Layers lists each global layer once with all scene members,
+plus No layer for unlayered artwork. New layer belongs in that view. Layer controls affect
+members across frames; dropping on a layer or No layer changes only layer membership.
+Pressing Canvas or No layer selects the canvas (`surfaceSelected`); Canvas is not a layer drop
+target. Group drops keep existing group/parent behavior. Search uses the document's runtime
+`filter` (neither saved nor shared), retains ancestors, and includes a matching frame's subtree;
+layer names match only in Layers. Selection survives switching views. Collapse keys distinguish
+frame branches from the Layers view; search temporarily reveals collapsed matches without
+forgetting them. A row's menu
 (`ItemMenu`, `src/ui/components/ItemMenu`) opens inside the hovered or focused row: hide and lock switch
 the row's item itself, and its commands run for that item, which `runCommandOn` selects
 first. Four buttons fit in a row; More swaps to the remaining actions until Back is pressed or the pointer or focus
 leaves the row. Pressing a
-layer's name or star, or running the Highlight layer command for the layer of the selected
+layer's star, or running the Highlight layer command for the layer of the selected
 shapes (`selectionLayerId`), shows only that layer and the shapes on no layer (`showOnlyLayer`,
 `document.shownLayerId`), on this screen only: it is a runtime field, neither saved nor
 shared, and layers keep their own `visible`.
@@ -896,7 +906,7 @@ in `tests/componentRoles.test.ts` and `tests/browser/componentRoles.spec.ts`.
 
 ## Interactive preview
 
-Schema v11 adds optional `RoleSettings.navigateTo`, naming a top-level frame for button navigation.
+Schema v11 adds optional `RoleSettings.navigateTo`, naming a screen frame ID for button navigation.
 Missing/hidden targets stay durable and diagnosable; never repair them into another screen.
 The lazy `src/preview/project.ts` reads geometry through `layoutDocument`, visibility and resolved
 component overrides. `src/preview/hooks.ts` reads it inside `useAppState` to track dependencies;

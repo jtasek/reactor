@@ -1,7 +1,7 @@
 import type { Document } from './types';
 import type { OutlineLayer } from './membership';
 
-/** A scene row appears only in Layers; definition-only members appear in Components. */
+/** Scene projections exclude definition-only members, which appear under Components. */
 export function sceneLayers(layers: OutlineLayer[], document: Document): OutlineLayer[] {
     const sources = document.sourceOnlyShapesIds;
 

@@ -69,7 +69,8 @@ test('Create component in the selection menu replaces the selected shape with an
         type: 'rectangle',
         name: 'Artwork',
         order: 'a0',
-        position: { x: 300, y: 200 },
+        // Keep the selection menu clear of the floating Explorer panel.
+        position: { x: 600, y: 200 },
         size: { width: 40, height: 40 }
     });
     const document = createDocument({ shapes: { [shape.id]: shape } });
@@ -83,7 +84,7 @@ test('Create component in the selection menu replaces the selected shape with an
     const explorer = page.getByRole('region', { name: 'Explorer' });
     await explorer.getByRole('button', { name: 'Artwork' }).click();
     const surface = (await page.locator('svg#surface').boundingBox())!;
-    await page.mouse.move(surface.x + 320, surface.y + 220);
+    await page.mouse.move(surface.x + 620, surface.y + 220);
 
     const menu = page.getByRole('toolbar', { name: 'Selection menu' });
     await expect(menu.getByRole('button', { name: 'Create component' })).toBeVisible();

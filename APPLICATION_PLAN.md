@@ -9,7 +9,8 @@ navigate, controls that take input and sample data. Others open the result from 
 designer keeps changing it as a design. Each milestone below says what this user can do after
 it.
 
-Planning date: 2026-10-14; variable foundation updated 2026-10-17. Work is planned unless
+Planning date: 2026-10-14; variable foundation updated 2026-10-17; screen/view and responsive
+model updated 2026-10-23. Work is planned unless
 its implementation status explicitly says otherwise.
 [REFACTOR_PLAN.md](REFACTOR_PLAN.md) keeps the earlier audit, its dated findings and its phases.
 
@@ -19,15 +20,15 @@ its implementation status explicitly says otherwise.
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Drawing and editing        | Implemented and browser-tested: shapes, groups, layers, guides, snapping, inspector.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | Components                 | Implemented: instances, overrides, nested sources, and copies from other documents updated on request ([componentLibrary.ts](src/app/componentLibrary.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Variables and templates    | Implemented, with one value per variable (`values.default`). A pure central resolver evaluates values and templates ([variableResolver.ts](src/app/variableResolver.ts)); bindings still write default values into shapes. Aliases, dimensions and packages remain planned.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Variables and templates | Implemented: central resolver, explicit bindings, typed aliases, opt-in user-defined dimensions with color modes, native design-system packages and a bounded DTCG adapter. Current mode selection is local per document. Inherited per-view contexts, contextual numeric/text measurement and responsive variants remain planned (V1–V5 and R4 below). |
 | Saving and collaboration   | Implemented: IndexedDB, tab sync, Yjs merges, server sync when signed in.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | Images                     | Implemented: content-addressed, shared with the server when signed in ([assetSync.ts](src/app/services/assetSync.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Accounts                   | Implemented: workspaces, document roles and workspace invitations with sharing/acceptance UI and a read-only viewer preview. Presence is off ([serverSync.ts](src/app/services/serverSync.ts) passes no awareness).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | Undo and redo              | Implemented: each person undoes and redoes their own changes to a document's records, also while others edit ([collaboration.ts](src/app/services/collaboration.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Operations                 | Implemented: paste goes through `applyOperations`, applied whole as one undo step that records its author ([#177](https://github.com/jtasek/reactor/pull/177)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | AI                         | Gateway implemented: `/api/ai` streams operations from Claude Haiku 5.5 or any OpenAI-compatible provider, checked and repaired once, with daily limits, and recorded eval cases replayed in CI ([#178](https://github.com/jtasek/reactor/pull/178)). Edit with words has a movable, dockable chat with local conversation history; it proposes added, changed and deleted shapes, variables and groups, applied as one undo step once accepted ([#179](https://github.com/jtasek/reactor/pull/179)). Requests use the selection with its group, variable and component dependencies, or the document when nothing is selected, bounded to 32 KiB of UTF-8 JSON and 300 records ([context.ts](src/ai/context.ts)). |
-| Screens, data and behavior | Absent. Links have loose endpoints and types without meaning, and the data view is a placeholder.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Export and runtime         | Absent. The editor's content security policy lets the page connect only to its own server and the sync server ([server.prod.ts](server.prod.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Screens, data and behavior | Implemented: frame membership, inherited Hide/Lock, fixed stacks, initial hug/fill sizing, explicit component roles and navigation targets. Frames explicitly declare Screen identity; the runtime uses visible screens on Canvas. Separate screen definitions/view records, multiple contextual views of one screen, variants and a Flow feature remain planned. Data/list repetition is still absent. |
+| Export and runtime | Implemented: explicitly invoked, sandboxed Preview with navigation, native inputs and image artwork. Runtime state is separate from document state. Read-only links, SVG export and a standalone web package remain planned. |
 
 The editor surface depends on SVG: input converts through `getScreenCTM`
 ([helpers.ts](src/events/drivers/helpers.ts)) and shapes are measured with `getBBox`. That
@@ -36,16 +37,17 @@ stays; nothing below replaces the editor surface.
 ## Rules for every milestone
 
 - Existing documents open, edit, save, copy and sync. Signed-out drawing works without a server.
-- Until the public beta (R7), saved document formats change freely: bump the schema version
-  and update readers and fixtures, with no migrations or fallbacks. From the beta on, a format
-  change migrates saved documents, and published apps' public contracts, their API names and
-  package format, stay compatible. Server tables always change through new migrations in
+- Schema changes preserve documents supported by the current reader: bump the version and
+  provide a tested conversion when records or references change. In particular, introducing
+  screens/views must preserve frame artwork and existing navigation targets. Pre-beta internal
+  contracts may evolve; from R7, published apps' public contracts, API names and package format
+  also stay compatible. Server tables always change through new migrations in
   `server/migrations.ts`; released ones are never edited.
 - A new kind of durable record joins the readers, factories, copy and paste, collaboration and
   the merge repair in the same change: references to missing records are dropped, as deleting
   them would. A two-copy test covers a concurrent delete and reference.
 - Actions stay synchronous and async work stays in services. Gestures commit synchronously.
-- A new feature loads with its page or control. The entry bundle budget stays at 491 KiB, and
+- A new feature loads with its page or control. The entry bundle budget stays at 492 KiB, and
   248 KiB per file.
 - A failed import, build or generation leaves working content and the last valid preview, and
   a result that arrives after a newer edit is dropped. Diagnostics name the record that caused
@@ -92,34 +94,96 @@ Changes that arrive as data (AI proposals, imports, pastes) are typed operations
 - it applies all or nothing, as one undo step;
 - it records who made the batch: a person, or an AI request with its model.
 
-### Screens
+### Screens, canvas views and responsive components
 
-A component or an instance may declare a role (text, input, button, list, image) and the props
-that role takes; there is no second tree of controls beside the drawing. "Make interactive"
-sets a role by hand or from an AI suggestion; nothing infers roles silently.
+The canvas is a design workspace that may show many screens, and many views of the same screen,
+at once. It never executes navigation or input behavior. Ordinary frames and loose artwork may
+coexist with screen views. Flow and Prototype are separate features that the person invokes;
+neither is a mode silently entered by clicking a drawn control.
 
-Screens and stacks are frames, a new kind of record, because groups hold only shapes and are
-selected whole. A frame has its own box and holds shapes and other frames, so frames nest. A
-press inside a frame takes the shape under it, and a frame is selected by its edge, its name or
-the explorer. A screen is a top-level frame, and a button's role may navigate to a screen.
+There is one shared, pannable and zoomable design canvas, not one editor canvas per screen.
+Home, Checkout, Settings and ordinary layout frames can all be visible and editable side by
+side. A second size or mode view of Home is optional. "Screen view" means a placed frame-like
+representation on this same canvas, not a separate page, tab or running prototype.
 
-A frame may be a stack:
+For example, one canvas may contain Home (phone, Dark), Home (desktop, Light), Checkout
+(phone, Dark), Settings (tablet), a free-standing component study frame and loose artwork.
+Selecting any of these does not hide the others or navigate the application. Create screen
+places an editable screen on the canvas directly; managing a separate definition first is
+not a prerequisite in the user interface.
 
-- direction: row or column;
-- gap, padding and alignment;
-- each child's width and height: hug, fill or fixed, with a minimum and maximum.
+| Concept | Authored responsibility | Local presentation/runtime state |
+| --- | --- | --- |
+| Screen definition | Stable destination ID, name, default layout and optional responsive layouts; owns content and component instances through existing frame trees. | Selection of its currently resolved layout. |
+| Screen view | Stable view ID, reference to one screen, canvas position, viewport dimensions and optional mode overrides for comparison. | Selection, hover, measurement caches and temporary inspection settings. |
+| Component | Shapes and nested instances, variable bindings, stable exposed property IDs, optional role and variant family. | Resolved appearance within the current instance path and context. |
+| Interaction | Trigger and typed action on a screen/control; navigation references a screen ID. | Executed only inside an invoked prototype session. |
+| Flow view | Optional saved diagram positions for screen nodes; edges come from the same interaction records. | Diagram selection and diagnostics; opening it executes nothing. |
+| Prototype session | Launch configuration may name a start screen, size and modes. | Current screen, navigation history, input values and mode/viewport changes; never document edits. |
 
-The editor projects a stack after local and remote changes. Layout depends only on merged
-authored rules and fallback geometry; every copy derives the same positions and sizes without
-writing computed geometry back into shared documents. The preview and exported
-apps apply the same rules with the browser's layout.
+Names are labels, not identity. A screen is explicitly defined, not permanently inferred from
+being a top-level frame. Initial conversion keeps the current runtime's top-level-frame screens
+working; new ordinary frames do not silently become navigation destinations.
 
-The preview runs in an iframe sandboxed without same-origin access, and receives the validated
-application projection, never the store. Shared previews and published apps are served from a
-separate registrable domain, one subdomain per app, without the editor's cookies. The editor's
-preview frame loads from that domain too, so the editor's content security policy gains a
-`frame-src` for it alone; a `srcdoc` or blob frame would inherit the editor's policy, which
-blocks the runtime's scripts.
+A screen view references a definition rather than copying its shapes. Editing content through
+one view edits the definition and updates every view; moving/resizing the view or changing its
+mode overrides edits only that view's configuration. Creating another view and duplicating a
+screen definition are separate commands. Deleting a view leaves its screen and navigation
+intact; deleting a screen identifies affected views/actions and supports undo. Unresolved
+concurrent references remain diagnosable without silently redirecting to another screen.
+
+Each projected object is addressed by view ID, instance path and source object ID. Rendering,
+selection, hit testing, text measurement and gestures use that same address and transform.
+Canvas placement is separate from layout coordinates inside the screen. A repeated view can
+therefore resolve different geometry without creating duplicate authored shapes or IDs.
+Explorer nests the resolved contents under each screen view, identifies the shared screen and
+its size/context, and preserves a way to edit the source definition. Global layers remain an
+independent organization mechanism; they do not determine screens or navigation.
+
+Frames retain Free/Row/Column layout, gap, padding, alignment and fixed/hug/fill sizing with
+min/max constraints. Responsive layout first uses those rules. A screen may later explicitly
+provide alternate layout trees for cases continuous reflow cannot express; all layouts retain
+one screen destination, and reusable components/compatible property IDs carry shared content.
+Creating an alternate layout is an explicit authoring operation, not a copy on every resize.
+
+Component variants share a stable public property/role contract; variant artwork may differ.
+An instance uses the default variant, an explicit variant, or Auto. Auto initially uses ordered,
+unique minimum-width thresholds plus a base variant. Its author selects screen width or the
+available inner width of its layout parent; these are distinct contexts, never guessed device
+names. The greatest matching threshold wins, with exact boundary behavior defined in tests.
+Different instances of one component may resolve different variants simultaneously. Content,
+variable bindings, compatible overrides and interactions survive variant switches.
+
+Variant choice and layout form one bounded resolution process. A rule must not oscillate because
+its chosen variant changes the hug width that selects that variant. Diagnose such dependencies
+and use a deterministic authored fallback variant/size; never write the computed choice or
+geometry to shared state. Inspector explains the active mode, variant, width source and rule.
+
+### Invoked Flow and Prototype features
+
+Roles (Text, Input, Button, List, Image) describe semantics and typed property links. Actions
+such as Navigate describe behavior separately. A Button role alone does not cause navigation;
+its interaction chooses the destination. Keep the drawing's component tree as the control tree.
+Actions address logical controls/property IDs, not transient canvas-view or variant artwork IDs.
+
+Flow opens on explicit request and visualizes screen definitions and their authored actions.
+Several canvas views of Home produce one Home flow node. Choosing a control and target in Flow
+edits the same interaction as Inspector. Moving a flow node changes only diagram placement.
+Canvas coordinates never define navigation order. R9 later extends these actions with conditions
+and asynchronous branches rather than introducing another behavior graph.
+
+Prototype opens on explicit request, using a chosen start screen, viewport and modes, optionally
+seeded from a selected canvas view. Buttons execute actions and inputs accept values only there.
+Navigation retains the session's viewport and mode selections and resolves the target
+screen's layout/variants anew; it never navigates to a particular canvas view. Session selections
+occupy the same precedence as canvas-view overrides; descendant overrides still apply. Flow need not be open or configured to run an authored
+interaction. Reset/close clears session state without changing canvas view settings or content.
+
+Evolve the existing Preview implementation into this Prototype feature; keep its invocation
+working between increments. It runs in an iframe sandboxed without same-origin access and
+receives a validated plain-data application projection, never the store. Shared prototypes and
+published apps use the existing separate-site hosting boundary without editor cookies. Flow
+and Prototype load only when invoked; the canvas editor remains usable without runtime hosting.
 
 ### Data
 
@@ -138,16 +202,34 @@ blocks the runtime's scripts.
 
 ### Variables and design systems
 
-The pure central resolver is the common source of evaluated variable values and template
-reference diagnostics. Its first version preserves default values, materialized bindings,
-name fallback, missing-reference placeholders and existing detachment rules. It changes no
-saved records. Definition editors and serialization read raw definitions, not resolved text.
+The pure central resolver evaluates variable values, aliases and template reference
+problems. Explicit binding edits replace or detach references; definition editors and serializers
+read authored definitions, not their resolved appearance. Existing defaults remain supported.
 
-Next, bindings become explicit references: a normal value edit replaces or detaches a binding
-through a defined action, rather than inferring its existence by comparing stored values.
-Default values may remain materialized for compatibility. Rendering, bounds, hit testing,
-layout and export must agree on resolution before a context can change geometry. Switching
-context locally never rewrites shared shapes.
+Mode selection resolves independently for each optional dimension, from broadest to nearest:
+
+1. Authored application defaults, or the dimension's default when not specified.
+2. Local editor simulation selections for the application (canvas only).
+3. Explicit screen overrides.
+4. Explicit canvas-view overrides, or local Prototype session selections when running.
+5. Overrides on containing frames and component instances, outermost to innermost.
+
+An absent entry means inherit that dimension, not reset every dimension. A variable with no
+matching mode value uses its existing base/alias fallback. Dimensions and modes use stable IDs;
+missing/deleted choices produce a diagnostic and a defined fallback. Changing an ancestor's
+Theme affects all descendants that have not explicitly overridden Theme, including nested
+components. A locally selected mode never edits authored definitions or view settings. An
+explicitly authored view override is saved/shared so comparison views reopen as designed.
+When launching Prototype from a view, snapshot its effective screen-root modes, before child
+overrides, into session selections at the same precedence. This keeps the launch appearance
+consistent even when the view overrides its screen. Manual launch may leave dimensions at
+Inherit; reset of a session selection restores the destination screen/application defaults.
+Thereafter session choices persist across navigation without retaining a live link to the view.
+
+Initially extend the existing color projection. Enable numeric/text modes only once rendering,
+layout, bounds, hit testing, templates and export agree for supported consumers. Resolve each
+view independently: caches must include view, instance path, modes and available size, and
+invalidate on dependent edits. No mode switch writes resolved values into shared shapes.
 
 Aliases reference a compatible variable by ID and stay separate from text interpolation.
 Primitive, semantic and component token layers are a useful convention, not a required depth.
@@ -210,7 +292,7 @@ chain, final value, uses and any unresolved reference.
 | Projecting a slice             | 4 ms for 300 controls, 16 ms for 2,000 records; only on committed edits |
 | Preview after a committed edit | 250 ms at p95                                                           |
 | Shared document                | A warning at 5 MB of Yjs state                                          |
-| Entry bundle                   | Unchanged: 491 KiB, 248 KiB per file                                    |
+| Entry bundle                   | Unchanged: 492 KiB, 248 KiB per file                                    |
 | Preview and runtime chunk      | 150 KiB                                                                 |
 | AI chunk in the editor         | 40 KiB                                                                  |
 | Exported runtime               | 60 KiB gzipped                                                          |
@@ -225,6 +307,7 @@ flowchart LR
     R0 --> R3
     R1 --> V1 --> V2 --> V3 --> V4 --> V5
     V1 --> R4 --> R5 --> R8 --> R9 --> R10
+    V3 --> R4
     V3 --> R6
     V5 --> R6
     R4 --> R6
@@ -281,7 +364,7 @@ recorded.
 ### Variable foundation V1–V5 (incremental)
 
 Each step ships a usable editor. V1 precedes R4; the later steps can proceed alongside screen
-work, with V3 and V5 feeding R6. No speculative plugin or expression framework is needed.
+work, with V3 extended by R4.3–R4.4 and V5 feeding R6. No speculative plugin or expression framework is needed.
 
 1. **V1 — Central resolver, existing behavior (implemented).** One pure module evaluates
    variables and templates and reports reference problems. Actions, operations, clipboard,
@@ -330,7 +413,8 @@ work, with V3 and V5 feeding R6. No speculative plugin or expression framework i
    Acceptance: `tests/variableDimensions.test.ts` and
    `tests/browser/variableDimensions.spec.ts` cover opt-in behavior, custom modes, local
    switching, migration, drawing, selection bounds, hit testing, persistence and collaboration.
-   Add preview/export parity checks when those consumers land in R4/R5.
+   R4.3 adds inherited, per-view color contexts; R4.4 completes supported numeric/text
+   consumers. Extend preview/export parity checks as those consumers land in R4/R5.
 4. **V4 — Native design-system packages (first increment implemented).** Export/import a
    versioned JSON package containing all document variables, aliases, text dependencies and
    optional dimensions/modes. Durable source-package/token identities survive renaming,
@@ -396,9 +480,11 @@ The user shares a document and sees who else is in it.
 Done when `tests/server/sharing.test.ts` (invited roles, read-only viewer links) and
 `tests/browser/presence.spec.ts` (two pages see each other's pointers and selections) pass.
 
-### R4 Interactive screens (XL)
+### R4 Responsive screens, canvas views and invoked prototypes (XL)
 
-The user turns a drawing into screens that navigate and take input, and sends a link to them.
+The user designs several contextual views of one application side by side, then explicitly
+opens Flow to edit navigation or Prototype to try it. The numbered R4 increments below replace
+that milestone's earlier remaining-work order. Implemented foundations remain in use throughout.
 
 Implementation status: a first layout spike, `tests/frames.test.ts` and
 `tests/spikes/frameLayout.ts`, proves the layout algorithm on two Yjs copies merged in the
@@ -487,7 +573,8 @@ has an accessible label; its item data and repetition belong to the later data/l
 Coverage: `tests/componentRoles.test.ts` and `tests/browser/componentRoles.spec.ts`.
 
 First sandboxed preview increment implemented: Preview opens a lazy-loaded, dockable panel.
-Visible top-level frames are screens; nested frames retain the shared stack/visibility projection.
+In that initial implementation, visible top-level frames are screens; nested frames retain the
+shared stack/visibility projection. R4.1 now replaces this inference with explicit screen identity.
 Button roles may name a target screen, with source inheritance and instance customization.
 Native input values and screen navigation live only inside the runtime, survive valid graph
 updates, and clear on Reset or closing the preview. Invalid role links, missing/hidden targets,
@@ -520,36 +607,158 @@ and native SVG default fill. Coverage includes resource validation/cache/cancell
 browser decoding, geometry/style parity, missing-image recovery and normal/narrow visual checks.
 Diagram connector links remain absent, as in the current canvas; this does not introduce them.
 
-Next: read-only preview links on the separate domain. Richer shape sizing and data/list repetition
-remain separate increments.
+#### Increments: R4.1 complete; R4.2–R4.10 planned
 
-1. Frames for screens and stacks, and roles and props on components and instances:
-   - First usable increment: validated frame records, durable membership, save/copy/operations,
-     collaboration and undo, with free-positioned frame boxes, names, keyboard/Explorer
-     selection and box/reparent controls. Preserve group selection semantics.
-   - Then integrate fixed row/column stack layout and gap/padding/alignment controls. Drawing,
-     measurement and hit testing must use one projection; verify through production copies
-     that remote edits reflow without shared derived-position or undo feedback.
-   - Hug/fill and min/max sizing with cycle diagnostics is implemented for frames and upright
-     stack rectangles. Explicit component/instance roles and property links are now authored
-     in Inspector; the first sandboxed preview now executes inputs and navigation.
-2. The sandboxed preview, with navigation, input state, diagnostics and the last valid preview.
-3. Preview links: read-only, on the separate domain.
-4. SVG export of a screen or a selection, reusing geometry, order, visibility and overrides.
-5. Starter templates (list and detail, form, sign-in, settings), and empty states for the new
-   panels.
-6. AI: a screen from a prompt or a screenshot, in the document's components and variables.
-   Done when:
-    - at least 80% of 30 screenshots are rated a usable start by two reviewers;
-    - when the document has a matching component, at least 70% of controls are its instances;
-    - a color within ΔE 2 of a color variable is bound to it;
-    - it finishes within 20 s at p95.
+Do these in order. Each numbered increment is independently usable and reviewable; do not merge
+an intermediate format that the editor cannot open and edit. New test filenames below are
+acceptance targets for planned increments; R4.1 names its implemented coverage. The existing Preview
+continues working through adapters to the new screen/context projection until R4.10 completes.
 
-Steps 1 to 5 are done when `tests/frames.test.ts` (nesting, selection, layout after merges by
-two copies) and `tests/browser/screens.spec.ts` (build two screens, navigate and type in the
-preview, open the preview link, export SVG) pass.
+1. **R4.1 — Explicit screen identity (implemented).**
+   A frame explicitly declares Frame or Screen in Inspector. Its existing ID is the stable
+   navigation destination; its name, viewport, artwork, canvas position and selection remain
+   on the existing frame record. Draw with the Frame tool, then choose Screen to designate it.
+   Multiple screens, ordinary frames and loose artwork remain on one shared canvas. Explorer
+   badges use this designation, not inferred top-level membership. Only visible screens on
+   Canvas are prototype destinations; nested screens retain their identity and explain how to
+   make them available. Demoting or deleting a target preserves authored navigation references
+   with a diagnostic. Schema v12 and shared-update migration designate legacy roots as screens
+   and nested frames as ordinary frames without moving artwork or remapping IDs. New frames
+   default to ordinary frames. Readers, operations, clipboard, collaboration and undo preserve
+   the designation; thumbnails and the viewer continue drawing the same frame content.
+   **Acceptance:** `tests/screenDefinitions.test.ts` and `tests/browser/screenDefinitions.spec.ts`:
+   migration, conversion, save/reload, copy, local undo, concurrent deletion, explicit identity,
+   multiple screens on the canvas and existing Preview navigation.
+   **Scope refinement:** separate screen definitions, view records and screen-local transforms
+   move to R4.2, where multiple placements of one screen first require that distinction.
 
-Gate: people outside the team send preview links to others.
+2. **R4.2 — Multiple editable canvas views (M).**
+   Extract screen definitions from the explicit screen frames, retaining destination IDs and
+   visible geometry. Add a default view per screen and screen-local transforms. Distinguish
+   Delete view from Delete screen, with a way to reveal a screen with no remaining views.
+   Add Create view of screen, independent placement and viewport size, and Edit screen versus
+   Edit view controls. Display, for example, Home at 390 and 1440 pixels beside Checkout. Reuse
+   the same canvas and camera for all views and ordinary frames; never replace the canvas with
+   a single active screen. Additional views of the same screen are optional. Reuse
+   one definition and resolve existing layout separately per view. Content edits through either
+   Home view update both; view resizing does not resize the source or the other view. Explorer
+   identifies the screen reference and viewport; selection/gestures address the projected path.
+   Keep source editing reachable when a projection is invalid. Bound projected-node counts
+   across views and measure against the existing projection budget without raising it.
+   **Acceptance:** `tests/screenViews.test.ts` and `tests/browser/screenViews.spec.ts`: two views
+   with distinct geometry, hit tests, selection, cancel, view-only resizing, edit propagation,
+   copy/delete semantics, reload, undo and two collaborators using different local selections.
+
+3. **R4.3 — Inherited color modes per view (M).**
+   Extend the central resolver with the precedence above. Add Inherit/reset controls for
+   screens, views, frames and component instances, and show effective values and their source.
+   Existing local document mode controls remain simulation choices. Authoring a view's mode
+   override is a distinct, undoable operation. Dimensions remain opt-in: no built-in Theme or
+   forced Light/Dark pair. Show two Home views in different modes at once, including nested
+   component colors. Feed the same resolved context to the existing Preview when launched.
+   **Acceptance:** `tests/inheritedModes.test.ts` and `tests/browser/inheritedModes.spec.ts`:
+   partial inheritance across multiple dimensions, aliases, local vs authored changes,
+   ancestor updates, reset, missing modes, packages/copy, undo/concurrent edits, canvas/runtime
+   color parity and zero writes caused merely by resolving a view.
+
+4. **R4.4 — Geometry-aware mode values (M).**
+   Complete the unfinished V3 numeric/text work in supported consumers: spacing and dimensions,
+   then typography/templates with contextual measurement. Keep unsupported bindings disabled
+   with an explanation until their renderer, bounds and hit testing agree. Reuse sizing-cycle
+   diagnostics; share measured results across drawing and interaction for each context.
+   **Acceptance:** extend `tests/inheritedModes.test.ts`, add `tests/contextualLayout.test.ts`
+   and `tests/browser/contextualLayout.spec.ts`: Compact/Comfortable views, text wrapping,
+   correct selection/hit tests and gestures, nested stacks, deterministic fallback, runtime
+   parity and convergence with no shared derived-value writes.
+
+5. **R4.5 — Manual component variants (M).**
+   Add a bounded variant family to reusable components, with a default and explicit instance
+   selection. Start with default plus one alternate. Variant trees share stable exposed
+   property IDs and compatible role/action targets; changing variants retains text, bindings,
+   compatible overrides and authored actions. Report incompatible or removed properties instead
+   of silently discarding user values. Define retained values and fallback when a selected
+   variant disappears. Existing components behave as a one-variant family. Support library
+   snapshots, update/import, operations, clipboard, collaboration and undo together.
+   **Acceptance:** `tests/componentVariants.test.ts` and `tests/browser/componentVariants.spec.ts`:
+   manual switch and return, shared property edits, nested instances, library updates, missing
+   variants, incompatibility diagnostics, reload, concurrent edits and undo.
+
+6. **R4.6 — Automatic responsive component variants (M).**
+   Add Auto alongside explicit variant selection. Author minimum-width thresholds and choose
+   screen width or layout-parent inner width as the rule input. Resolve each instance separately;
+   authoring an explicit selection wins over Auto. A local inspection override must not save a
+   different instance selection. Explain the winning rule and measured width in Inspector.
+   Reject duplicate thresholds and detect dependencies where a chosen variant determines its
+   own selecting width; keep a documented fallback and a repairable diagnostic.
+   **Acceptance:** `tests/responsiveVariants.test.ts` and `tests/browser/responsiveVariants.spec.ts`:
+   exact thresholds, base fallback, narrow/wide instances on one screen, two screen views,
+   parent vs screen sizing, padding, fixed vs Auto, preserved content/actions, no oscillation,
+   canvas/runtime parity and no shared writes from resizing a local prototype viewport.
+
+7. **R4.7 — Optional responsive screen layouts (M).**
+   Keep continuous frame/stack reflow as the default. Add explicit alternate layout trees only
+   when needed, selected by screen viewport width with the same deterministic threshold rules.
+   A screen retains one destination ID across layouts. Shared content uses reusable component
+   instances/property bindings; authoring explains which edits belong only to the active layout.
+   Compatible control/property identities must preserve prototype inputs/actions across layout
+   changes; incompatible state receives a documented reset. Allow a local layout inspection
+   override so every layout stays editable, including an otherwise unreachable one.
+   **Acceptance:** `tests/screenLayouts.test.ts` and `tests/browser/screenLayouts.spec.ts`: same
+   Home destination at multiple widths, layout-specific edits, shared component updates,
+   missing layouts, rule boundaries, navigation targets, state continuity and undo/reload.
+
+8. **R4.8 — Explicit interactions independent of roles (M).**
+   Provide a small Inspector editor for a control's Activate trigger and Navigate action with a
+   screen-ID target. Preserve existing Button navigation through a tested conversion/adapter;
+   do not introduce an arbitrary expression engine. Role semantics, visual variants and action
+   targets stay separate. Source actions may be inherited or explicitly overridden by instances.
+   Canvas clicks always select/edit and never execute actions. The existing invoked Preview
+   executes the same action definitions, so this increment is usable without a Flow feature.
+   **Acceptance:** `tests/screenInteractions.test.ts` and `tests/browser/screenInteractions.spec.ts`:
+   role without action, inherited/custom actions, renamed/deleted targets, variant/layout
+   continuity, atomic operations, undo, concurrent edits and no canvas-side execution.
+
+9. **R4.9 — Separately invoked Flow view (M).**
+   Add an explicit Open flow command and a lazily loaded view of logical screens and their
+   actions. All Home canvas views map to one Home node. Let the person select a source control,
+   connect a destination and edit/remove the same action Inspector edits. Surface unreachable
+   screens and unresolved targets as diagnostics, without deleting authored content. Store
+   optional diagram positions independently from screen/view geometry; opening or arranging
+   Flow never runs a prototype or changes behavior. Keep Inspector-based authoring available.
+   **Acceptance:** `tests/flowProjection.test.ts` and `tests/browser/flows.spec.ts`: one node per
+   definition, round-trip edits between Flow/Inspector, missing targets, diagram-only movement,
+   undo/collaboration and no session execution or loading while Flow is closed.
+
+10. **R4.10 — Contextual Prototype player (M).**
+    Evolve the existing Preview command/panel into an explicitly invoked Prototype feature with
+    start-screen, viewport and mode controls. Launch independently of Flow, or seed from a chosen
+    canvas view. Navigate by screen ID, retaining session size/modes and resolving each target's
+    layout and component variants. Preserve compatible input state across live edits and responsive
+    switches; Reset/close clears it. Keep canvas configuration and other sessions independent.
+    Retain the existing sandbox, validated protocol, resource limits, cancellation and last-valid
+    projection behavior. Expose diagnostics with links back to the relevant authored record.
+    **Acceptance:** extend `tests/preview.test.ts` and `tests/browser/preview.spec.ts`, and add
+    `tests/browser/responsivePrototype.spec.ts`: launch/reset/close, navigation through two
+    screens at multiple widths/modes, keyboard-native controls, variant/layout switches, live
+    invalid/valid edits, session isolation, unchanged canvas data and separate feature loading.
+
+#### R4 delivery after the responsive foundation
+
+- Read-only prototype links on the separate domain, with a defined starting screen and context.
+- SVG export of a selected canvas view or selection, using its resolved modes/layout/variants.
+- Starter templates (list/detail, form, sign-in, settings) and empty states.
+- AI: create screens, views and responsive rules through the same validated operations and
+  acceptance UI. Screenshot-generation targets remain: 80% of 30 screenshots rated a usable
+  start by two reviewers; 70% component reuse when suitable definitions exist; colors within
+  ΔE 2 bound to matching variables; completion within 20 s at p95. Measure these, do not infer
+  quality from deterministic replay tests.
+
+Acceptance: `tests/screenExport.test.ts` checks deterministic resolved SVG fixtures;
+`tests/browser/prototypeLinks.spec.ts` checks read-only links and chosen launch context.
+The end-to-end R4 gate is a designer comparing Home/Checkout views at two widths and two modes,
+editing shared content once, authoring navigation in an explicitly opened Flow view, and testing
+it in a separately opened Prototype without modifying those canvas views. People outside the
+team can then send a working prototype link to others.
 
 ### R5 Data and forms (L)
 
@@ -575,19 +784,21 @@ package behaving as the preview) pass.
 Afterward, agent mode: the AI plans, proposes, previews and asks for acceptance in rounds with
 the user.
 
-### R6 Themes (M)
+### R6 Design-system portability and accessibility (M)
 
-The user switches a prototype between Light and Dark, and checks it for accessibility.
+The user exports the same contextual design they tested and checks its accessibility. Basic
+mode inheritance and responsive behavior are R4 requirements, not postponed to this milestone.
 
-1. Bring V2/V3 aliases and independent dimensions to prototypes, using the same resolver
-   in the editor, preview and exported app; verify local context and geometry agree.
-2. Expose V4/V5 package and supported DTCG interchange in the design-system workflow.
-3. Audits in the preview: contrast, labels and focus order, with fixes the AI can propose.
+1. Verify the R4 resolver and responsive rules have identical meaning in R5's standalone web
+   package; exported apps do not depend on editor-only context or canvas view placement.
+2. Expose V4/V5 package and supported DTCG interchange in the design-system workflow. Preserve
+   unsupported-mode diagnostics rather than claiming the DTCG subset can exchange all contexts.
+3. Audit contrast, labels and focus order across selected modes, widths, variants and layouts,
+   with fixes the AI can propose and a person accepts.
 
-Done when `tests/themes.test.ts` (the preview and exported app resolving aliases and dimensions
-as the editor does, which V2's `tests/variableAliases.test.ts` and V3's
-`tests/variableDimensions.test.ts` cover there) and `tests/browser/themes.spec.ts` (switching
-Light and Dark in the preview, and the audits) pass.
+Done when `tests/themes.test.ts` checks editor/prototype/export resolution parity and
+`tests/browser/themes.spec.ts` switches user-defined modes and sizes in the exported runtime,
+then reports accessible names, focus order and contrast for those contexts.
 
 ### R7 Public beta (S)
 
@@ -612,7 +823,8 @@ refused, time and size limits, no credentials in exports) and `tests/browser/liv
 
 ### R9 Workflows (L)
 
-The user sees and edits what a screen does as a diagram of the same events and actions.
+The user extends R4.9's explicitly invoked Flow view beyond simple navigation, using the same
+interaction records and prototype executor. Basic screen navigation is already usable in R4.
 
 - Conditions, success and error branches, and a bounded interpreter with cancellation.
 - Traces stay local, and reloading never replays an action.
@@ -643,7 +855,8 @@ refused invalid and forbidden requests, retries that change nothing twice) passe
 
 ### Not planned
 
-- A Canvas preview or editor.
+- An HTML Canvas renderer replacing the existing SVG editor or prototype artwork renderer.
+  Multiple screen views on the existing design canvas are planned in R4.2.
 - A 3D view.
 - Native iOS and Android targets.
 - XML.
@@ -655,14 +868,25 @@ Revisit only when users ask for them.
 
 | Decision               | Default                                                                                                                                                                                                                                                                             | Decide by |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| Semantics              | Roles and props on components and instances; screens and stacks are frames, which nest                                                                                                                                                                                              | Before R4 |
-| Stack positions        | Written by the change that alters the stack, and again after merges                                                                                                                                                                                                                 | R4 step 1 |
-| Where apps run         | Hosted previews and apps, with the exported web package as the exit; self-hosting later                                                                                                                                                                                             | R4 step 3 |
+| Semantics              | Roles and props on components and instances; explicit screens reference frame-based layouts; canvas views reference screens                                                                                                                                                                                              | R4.1–R4.2 |
+| Stack positions        | Derived per view/context after authored changes or merges; never shared as computed geometry                                                                                                                                                                                                                 | Implemented; extend in R4.2 |
+| Where apps run         | Hosted previews and apps, with the exported web package as the exit; self-hosting later                                                                                                                                                                                             | R4 delivery |
 | Models                 | Claude Opus 5.5 for screens from screenshots and for agent mode, and Claude Haiku 5.5 for edits and audits. Claude Sonnet 5.5 is evaluated for generation, chosen by eval score per cost. A server may name another provider speaking OpenAI's Chat Completions API, and its models | Before R2 |
 | AI in shared documents | Proposals that a person accepts                                                                                                                                                                                                                                                     | R2        |
 | AI data                | Only what a request needs; providers do not train on it; AI can be turned off per workspace                                                                                                                                                                                         | Before R2 |
-| Modes in the editor    | Independent dimensions through the central resolver; a person's context stays local                                                                                                                                                                                                                                 | V3        |
-| Compatibility          | None before the public beta                                                                                                                                                                                                                                                         | R7        |
+| Modes in the editor    | Opt-in dimensions, inherited per view/instance; authored overrides are shared and simulation selections stay local                                                                                                                                                                                                                                 | V3; R4.3–R4.4 |
+| Compatibility          | Tested conversion of currently supported documents; public contract compatibility from beta                                                                                                                                                                                                                                                         | R7        |
+
+Additional decisions for the next R4 increments:
+
+| Decision | Default | Delivered by |
+| --- | --- | --- |
+| Screen vs view | One logical destination may have multiple canvas views with independent size/context. | R4.1–R4.2 |
+| Editing repeated views | Edit source content through a projected address; edit placement/context on the view only. | R4.2 |
+| Responsive component choice | Explicit selection or Auto from screen/parent inner width; ordered minimum-width rules with fallback. | R4.5–R4.6 |
+| Screen layout choice | Continuous reflow first; optional alternate layouts retain one screen ID. | R4.7 |
+| Behavior ownership | Roles provide semantics; typed interactions reference screen IDs, not view IDs. | R4.8 |
+| Flow and Prototype | Separate, explicitly invoked features; Flow edits definitions, Prototype executes them in local session state. | R4.9–R4.10 |
 
 ## Keeping this plan current
 

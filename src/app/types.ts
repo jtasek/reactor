@@ -320,6 +320,7 @@ export interface StackRules {
 }
 
 export interface Frame {
+    kind?: 'frame' | 'screen';
     stack?: StackRules;
     id: string;
     parentFrameId?: string;

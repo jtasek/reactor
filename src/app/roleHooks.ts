@@ -9,7 +9,7 @@ import type { ComponentRole } from './types';
 import { resolveComponentProp } from './componentProps';
 import { isReadOnly } from './documentAccess';
 import { isShapeLocked } from './utils';
-import { frameParents, isFrameVisible } from './frameState';
+import { screenFrames } from './screens';
 
 export const useRoleEditor = (componentId?: string, instanceId?: string) =>
     useAppState((state) => {
@@ -22,13 +22,10 @@ export const useRoleEditor = (componentId?: string, instanceId?: string) =>
         }
         const settings = effectiveRoleSettings(component, instance);
         const fields = settings.role === 'none' ? [] : ROLE_PROPERTIES[settings.role];
-        const parents = frameParents(document.frames);
 
         return {
             settings: { ...settings, props: { ...settings.props } },
-            screens: Object.values(document.frames)
-                .filter((frame) => !parents.get(frame.id) && isFrameVisible(document, frame.id))
-                .map((frame) => ({ id: frame.id, name: frame.name })),
+            screens: screenFrames(document).map((frame) => ({ id: frame.id, name: frame.name })),
             inherited: Boolean(instance && !instance.interaction),
             sourceRole: component.interaction?.role ?? 'none',
             startingLinks: Object.fromEntries(

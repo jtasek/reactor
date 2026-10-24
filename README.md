@@ -78,14 +78,23 @@ bar, side bar, panels and other parts of the editor.
 | `k`, Shift+K | Lock and unlock the selection |
 | `+` or `=`, `-`, `0` | Zoom in, zoom out, reset zoom |
 
-The Explorer (in the side bar) nests frames and their artwork under Canvas, keeping layers,
-groups and shapes within their parent frame. Unparented artwork stays directly under Canvas.
-A layer spanning frames appears in each relevant branch, with each shape listed once.
-Drag a shape or a group onto a layer or a group to move it there. Press a layer's
-name to see only that layer, with the shapes on no layer, on your screen; press it again,
-or Show all layers, to see everything. A group is on one layer, with all its shapes. Type in the explorer's search box to list only
-the layers, groups and shapes whose names contain the text. Press the arrow beside a layer or
-group to collapse or expand it.
+The Explorer has two views. **Objects** shows actual containment: Canvas holds top-level
+frames and loose artwork, and frames contain their child frames, groups and shapes.
+Frames explicitly designated as screens carry a **Screen** badge. Draw with **Frame** (`f`),
+then select **Screen** in Inspector’s **Type** field. Names, geometry and artwork stay in place;
+many screens and ordinary frames can coexist on the same canvas.
+Component definitions stay under Components, separate from scene objects.
+
+**Layers** lists each global layer once, across all screens. Use its **New layer** button
+to create one. Drag a shape or group onto a layer to move it there, or onto **No layer**
+to remove its layer membership without changing its parent frame. A group is on one
+layer with all its shapes. A layer's name selects it; its **Highlight layer** action shows
+only that layer and unlayered artwork. **Show all layers**, available in either view,
+restores the full view. Layer Hide/Lock applies to its members across screens.
+
+Search filters the current view; matching objects retain their frame or layer ancestry,
+and matching frames include their whole subtree. Disclosure arrows collapse containers.
+Switching views preserves selection and each view's collapse state while Explorer stays open.
 
 The image tool asks for a PNG, JPEG, GIF or WebP file of 5 MB or less, then draws it
 at its own proportions where you drag.
@@ -542,8 +551,10 @@ See [the supported subset](design/design-token-interchange.md) for details and i
 
 ### Interactive prototype preview
 
-Open a document with visible top-level frames, then press **Preview** (the play icon on the
-application bar). Top-level frames become screens; nested frames keep their layout. Give a
+Designate frames as **Screen** in Inspector, keep them visible directly on **Canvas**, then
+press **Preview** (the play icon on the application bar). Ordinary frames remain containers.
+Nested screens keep their identity but must be moved to Canvas to become destinations. Older
+documents retain their existing screen destinations automatically. Give a
 component or instance an Input or Button role in Inspector and link its exposed properties.
 For a button, **Navigate to** chooses a target screen. Inputs and navigation are local to the
 preview, never saved or synchronized. **Reset preview** clears input edits and returns to the

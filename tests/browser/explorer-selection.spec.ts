@@ -106,6 +106,7 @@ test('object symbols identify selections, with canvas name labels only for compo
         await expect(badge).toContainText(name);
     }
 
+    await explorer.getByRole('button', { name: 'Layers', exact: true }).click();
     await explorer.getByRole('button', { name: 'New layer' }).click();
     const layer = explorer.getByRole('button', { name: /^layer-\d+$/ }).first();
 

@@ -144,7 +144,7 @@ export const ComponentRole: FC<{ componentId?: string; instanceId?: string }> = 
                                             (screen) => screen.id === data.settings.navigateTo
                                         ) && (
                                             <option value={data.settings.navigateTo}>
-                                                Missing or hidden screen
+                                                Unavailable screen
                                             </option>
                                         )}
                                     {data.screens.map((screen) => (

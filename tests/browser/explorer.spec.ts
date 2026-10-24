@@ -7,35 +7,38 @@ async function click(page: Page, x: number, y: number) {
     await pointer(page, 'pointerup', { x, y });
 }
 
-test('tree heading actions create a layer and a component in their own roots', async ({ page }) => {
+test('creation actions stay in their own Explorer views', async ({ page }) => {
     await openEditor(page, ['Explorer']);
     const explorer = page.getByRole('region', { name: 'Explorer' });
-    const layers = explorer
-        .getByRole('button', { name: 'Canvas', exact: true })
-        .locator('xpath=ancestor::li[1]');
-    const components = explorer
-        .getByText('Components', { exact: true })
-        .locator('xpath=ancestor::li[1]');
-    const newLayer = layers.getByRole('button', { name: 'New layer' });
-    const createComponent = components.getByRole('button', { name: 'Create component' });
+    const createComponent = explorer.getByRole('button', { name: 'Create component' });
 
-    await expect(newLayer).toBeVisible();
     await expect(createComponent).toBeDisabled();
-    await newLayer.click();
-    await expect(layers.getByRole('button', { name: 'layer-1' })).toBeVisible();
-
+    await expect(explorer.getByRole('button', { name: 'New layer' })).toHaveCount(0);
+    await explorer.getByRole('button', { name: 'Layers', exact: true }).click();
+    await explorer.getByRole('button', { name: 'New layer' }).click();
+    await expect(explorer.getByRole('button', { name: 'layer-1', exact: true })).toBeVisible();
+    await expect(createComponent).toHaveCount(0);
+    await explorer.getByRole('button', { name: 'Objects', exact: true }).click();
     await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
     await expect(createComponent).toBeEnabled();
     await createComponent.click();
+    const components = explorer
+        .getByText('Components', { exact: true })
+        .locator('xpath=ancestor::li[1]');
+
     await expect(
         components.getByRole('button', { name: 'component-1', exact: true })
     ).toBeVisible();
 });
 
-test('drawn shapes appear beneath the selected layer and switch back to the canvas', async ({
+test('drawn shapes appear beneath the selected layer and switch back to No layer', async ({
     page
 }) => {
     await openEditor(page, ['Explorer']);
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Layers', exact: true })
+        .click();
     const explorer = page.getByRole('region', { name: 'Explorer' });
     await explorer.getByRole('button', { name: 'New layer', exact: true }).click();
     const layer = explorer.getByRole('button', { name: 'layer-1', exact: true });
@@ -49,7 +52,7 @@ test('drawn shapes appear beneath the selected layer and switch back to the canv
         'rectangle-1'
     ]);
 
-    const canvas = explorer.getByRole('button', { name: 'Canvas', exact: true });
+    const canvas = explorer.getByRole('button', { name: 'No layer', exact: true });
     await canvas.click();
     await drawRect(page, { x: 600, y: 100 }, { x: 640, y: 140 });
     await expect(
@@ -58,9 +61,9 @@ test('drawn shapes appear beneath the selected layer and switch back to the canv
     await expect(layerTree.getByRole('button', { name: 'rectangle-3' })).toHaveCount(0);
 
     // The shapes on no layer come after the layers.
-    const rows = canvas.locator('xpath=ancestor::li[1]').locator('> ul > li');
-    await expect(rows.first()).toContainText('layer-1');
-    await expect(rows.last()).toContainText('rectangle-3');
+    const roots = explorer.locator(':scope > ul > li');
+    await expect(roots.first()).toContainText('layer-1');
+    await expect(roots.last()).toContainText('rectangle-3');
     await expect(layerTree.getByRole('button', { name: /^rectangle-/ })).toHaveCount(2);
     await expect(shapes(page)).toHaveCount(3);
 });
@@ -73,16 +76,20 @@ test('the canvas selects like a layer, including when it is empty', async ({ pag
     await surface.click();
     await expect(surface).toHaveAttribute('aria-pressed', 'true');
 
+    await explorer.getByRole('button', { name: 'Layers', exact: true }).click();
     await explorer.getByRole('button', { name: 'New layer', exact: true }).click();
     const layer = explorer.getByRole('button', { name: 'layer-1', exact: true });
     await layer.click();
-    await expect(surface).toHaveAttribute('aria-pressed', 'false');
     await expect(layer).toHaveAttribute('aria-pressed', 'true');
 
+    await explorer.getByRole('button', { name: 'Objects', exact: true }).click();
+    await expect(surface).toHaveAttribute('aria-pressed', 'false');
     await surface.focus();
     await page.keyboard.press('Enter');
     await expect(surface).toHaveAttribute('aria-pressed', 'true');
+    await explorer.getByRole('button', { name: 'Layers', exact: true }).click();
     await expect(layer).toHaveAttribute('aria-pressed', 'false');
+    await explorer.getByRole('button', { name: 'Objects', exact: true }).click();
 
     await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
     const shape = explorer.getByRole('button', { name: 'rectangle-1', exact: true });
@@ -100,8 +107,12 @@ test('the canvas selects like a layer, including when it is empty', async ({ pag
     await expect(shapes(page)).toHaveCount(1);
 });
 
-test('deleting a layer from its row moves its shapes to the canvas', async ({ page }) => {
+test('deleting a layer from its row moves its shapes to No layer', async ({ page }) => {
     await openEditor(page, ['Explorer']);
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Layers', exact: true })
+        .click();
     await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
     await page.keyboard.press('ControlOrMeta+Alt+l');
 
@@ -119,7 +130,7 @@ test('deleting a layer from its row moves its shapes to the canvas', async ({ pa
     await expect(layer).toHaveCount(0);
     await expect(explorer.getByText('Show all layers', { exact: true })).toHaveCount(0);
     const canvas = explorer
-        .getByRole('button', { name: 'Canvas', exact: true })
+        .getByRole('button', { name: 'No layer', exact: true })
         .locator('xpath=ancestor::li[1]');
     await expect(canvas.getByRole('button', { name: 'rectangle-1' })).toBeVisible();
     await expect(shapes(page)).toHaveCount(1);
@@ -129,6 +140,10 @@ test('the explorer lists layers as a tree, shows one layer alone, and takes drop
     page
 }) => {
     await openEditor(page, ['Explorer']);
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Layers', exact: true })
+        .click();
 
     // Two squares, each moved to a layer of its own while it is the selection.
     await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
@@ -176,8 +191,8 @@ test('the explorer lists layers as a tree, shows one layer alone, and takes drop
     await expect(shapesOn(first)).toHaveCount(2);
     await expect(second).toHaveCount(0);
 
-    // Dropping a shape on the canvas takes it off its layer.
-    const canvas = page.getByRole('button', { name: 'Canvas', exact: true });
+    // Dropping a shape on No layer takes it off its layer.
+    const canvas = page.getByRole('button', { name: 'No layer', exact: true });
 
     await shapesOn(first).first().locator('xpath=..').locator('span[draggable]').dragTo(canvas);
     await expect(shapesOn(first)).toHaveCount(1);
@@ -193,7 +208,7 @@ test('the search box filters the explorer’s shapes by name, without running sh
     await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
     await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
 
-    const search = page.getByRole('searchbox', { name: 'Search shapes' });
+    const search = page.getByRole('searchbox', { name: 'Search objects' });
     const rows = page.getByRole('region', { name: 'Explorer' }).getByRole('button', {
         name: /^rectangle-\d$/
     });
@@ -206,7 +221,7 @@ test('the search box filters the explorer’s shapes by name, without running sh
     await search.fill('');
     await search.pressSequentially('door');
     await expect(rows).toHaveCount(0);
-    await expect(page.getByText('No shapes match')).toBeVisible();
+    await expect(page.getByText('No objects match')).toBeVisible();
     await expect(shapes(page)).toHaveCount(2);
 
     await search.fill('');
@@ -215,12 +230,16 @@ test('the search box filters the explorer’s shapes by name, without running sh
 
 test('a layer collapses, and opens while a search finds what it holds', async ({ page }) => {
     await openEditor(page, ['Explorer']);
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Layers', exact: true })
+        .click();
     await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
     await page.keyboard.press('ControlOrMeta+Alt+l');
     await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
 
     const row = (name: string) => page.getByRole('button', { name, exact: true });
-    const search = page.getByRole('searchbox', { name: 'Search shapes' });
+    const search = page.getByRole('searchbox', { name: 'Search layers and objects' });
 
     await page.getByRole('button', { name: 'Collapse layer-1', exact: true }).click();
     await expect(row('rectangle-1')).toHaveCount(0);
@@ -299,10 +318,16 @@ test('an empty layer has nothing to collapse', async ({ page }) => {
 
     await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
     await openEditor(page, ['Explorer']);
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Layers', exact: true })
+        .click();
 
     await expect(page.getByRole('button', { name: 'Walls', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Collapse Walls', exact: true })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Collapse Canvas', exact: true })).toBeVisible();
+    await expect(
+        page.getByRole('button', { name: 'Collapse No layer', exact: true })
+    ).toBeVisible();
 });
 
 test('an item’s menu stays in its row and runs commands for that item', async ({ page }) => {

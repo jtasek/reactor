@@ -149,7 +149,9 @@ export function readPreview(
         throw new Error('Preview exceeds the 8 MiB limit.');
     }
     if (!string(app.documentId) || !Array.isArray(app.screens) || !app.screens.length) {
-        throw new Error('Add a visible top-level frame to preview a screen.');
+        throw new Error(
+            'Choose Screen in a frame’s Type field and keep it visible on Canvas to preview.'
+        );
     }
     const available = (hash: string) =>
         Object.hasOwn(sent, hash)

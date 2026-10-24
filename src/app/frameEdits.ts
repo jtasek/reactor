@@ -73,6 +73,7 @@ function addFrame(context: Context, input: Extract<FrameEdit, { kind: 'add' | 'p
         readEntity('frames', {
             id: effects.newId(),
             name: frameName(document.frames, source?.name),
+            kind: source?.kind ?? 'frame',
             position,
             size: input.kind === 'add' ? input.size : input.frame.size,
             ...(source?.parentFrameId === undefined ? {} : { parentFrameId: source.parentFrameId }),

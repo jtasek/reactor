@@ -6,6 +6,7 @@ import React, {
     ReactNode,
     createContext,
     useContext,
+    useId,
     useRef,
     useState
 } from 'react';
@@ -47,6 +48,7 @@ interface Props {
     name: string;
     icon?: ReactNode;
     secondary?: string;
+    badge?: string;
     /** What dragging the item moves; a layer is not dragged. */
     dragged?: Dragged;
     selected?: boolean;
@@ -72,6 +74,7 @@ export const ExplorerItem: FC<Props> = ({
     name,
     icon,
     secondary,
+    badge,
     dragged,
     selected = false,
     active = false,
@@ -85,6 +88,7 @@ export const ExplorerItem: FC<Props> = ({
     onDrop,
     children
 }) => {
+    const badgeId = useId();
     const [dropTarget, setDropTarget] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const nameButton = useRef<HTMLButtonElement>(null);
@@ -175,6 +179,7 @@ export const ExplorerItem: FC<Props> = ({
                     <button
                         type="button"
                         className={styles.toggle}
+                        aria-expanded={!collapsed}
                         aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${name}`}
                         onClick={() => items.toggle(collapseId)}
                     >
@@ -189,6 +194,7 @@ export const ExplorerItem: FC<Props> = ({
                         type="button"
                         className={styles.name}
                         aria-pressed={selected}
+                        aria-describedby={badge ? badgeId : undefined}
                         onPointerDown={handleNamePointerDown}
                         onClick={handleNameClick}
                         onDoubleClick={onDoubleClick}
@@ -203,6 +209,11 @@ export const ExplorerItem: FC<Props> = ({
                     <span className={styles.label}>
                         {icon}
                         {name}
+                    </span>
+                )}
+                {badge && (
+                    <span id={badgeId} className={styles.badge}>
+                        {badge}
                     </span>
                 )}
                 {rootButtons}

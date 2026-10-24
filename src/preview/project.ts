@@ -1,6 +1,7 @@
 import type { Document, Shape, VariableContext } from '../app/types';
 import { layoutDocument, frameLayout } from '../app/frameLayout';
-import { frameParents, isFrameVisible } from '../app/frameState';
+import { frameParents } from '../app/frameState';
+import { screenFrames } from '../app/screens';
 import { shownShapesIds } from '../app/membership';
 import { componentSource, instanceBox } from '../app/componentSource';
 import { applyInstanceOverrides } from '../app/componentProps';
@@ -22,9 +23,7 @@ export function projectPreview(
     }
     const document = layoutDocument(sourceDocument);
     const parents = frameParents(document.frames);
-    const roots = Object.values(document.frames).filter(
-        (frame) => !parents.get(frame.id) && isFrameVisible(document, frame.id)
-    );
+    const roots = screenFrames(document);
     const screenIds = new Set(roots.map((frame) => frame.id));
     const shown = shownShapesIds({ ...document, shownLayerId: undefined }, null);
     const rootOf = (parent: string | undefined): string | undefined => {
@@ -171,7 +170,7 @@ export function projectPreview(
                 if (navigateTo && !screenIds.has(navigateTo)) {
                     // The button stays clickable; it just goes nowhere until relinked.
                     warnings.push(
-                        `${shape.name} links to a missing or hidden screen and does nothing. Choose another screen in its role settings.`
+                        `${shape.name} links to an unavailable screen and does nothing. Choose another screen in its role settings.`
                     );
                     navigateTo = undefined;
                 }
