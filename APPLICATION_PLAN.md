@@ -27,7 +27,7 @@ its implementation status explicitly says otherwise.
 | Undo and redo              | Implemented: each person undoes and redoes their own changes to a document's records, also while others edit ([collaboration.ts](src/app/services/collaboration.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Operations                 | Implemented: paste goes through `applyOperations`, applied whole as one undo step that records its author ([#177](https://github.com/jtasek/reactor/pull/177)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | AI                         | Gateway implemented: `/api/ai` streams operations from Claude Haiku 5.5 or any OpenAI-compatible provider, checked and repaired once, with daily limits, and recorded eval cases replayed in CI ([#178](https://github.com/jtasek/reactor/pull/178)). Edit with words has a movable, dockable chat with local conversation history; it proposes added, changed and deleted shapes, variables and groups, applied as one undo step once accepted ([#179](https://github.com/jtasek/reactor/pull/179)). Requests use the selection with its group, variable and component dependencies, or the document when nothing is selected, bounded to 32 KiB of UTF-8 JSON and 300 records ([context.ts](src/ai/context.ts)). |
-| Screens, data and behavior | Implemented: frame membership, inherited Hide/Lock, fixed stacks, initial hug/fill sizing, explicit component roles and navigation targets. Frames explicitly declare Screen identity; the runtime uses visible screens on Canvas. Separate screen definitions/view records, multiple contextual views of one screen, variants and a Flow feature remain planned. Data/list repetition is still absent. |
+| Screens, data and behavior | Implemented: frame membership, inherited Hide/Lock, fixed stacks, initial hug/fill sizing, explicit component roles and navigation targets. Frames explicitly declare Screen identity; the runtime uses visible screens on Canvas. An initial placed-view slice shows the same screen at another viewport with shared content selection and Inspector editing. Extracting the default view, direct projected gestures, variants and a Flow feature remain planned. Data/list repetition is still absent. |
 | Export and runtime | Implemented: explicitly invoked, sandboxed Preview with navigation, native inputs and image artwork. Runtime state is separate from document state. Read-only links, SVG export and a standalone web package remain planned. |
 
 The editor surface depends on SVG: input converts through `getScreenCTM`
@@ -607,7 +607,7 @@ and native SVG default fill. Coverage includes resource validation/cache/cancell
 browser decoding, geometry/style parity, missing-image recovery and normal/narrow visual checks.
 Diagram connector links remain absent, as in the current canvas; this does not introduce them.
 
-#### Increments: R4.1 complete; R4.2–R4.10 planned
+#### Increments: R4.1 complete; R4.2 in progress; R4.3–R4.10 planned
 
 Do these in order. Each numbered increment is independently usable and reviewable; do not merge
 an intermediate format that the editor cannot open and edit. New test filenames below are
@@ -648,6 +648,25 @@ continues working through adapters to the new screen/context projection until R4
    **Acceptance:** `tests/screenViews.test.ts` and `tests/browser/screenViews.spec.ts`: two views
    with distinct geometry, hit tests, selection, cancel, view-only resizing, edit propagation,
    copy/delete semantics, reload, undo and two collaborators using different local selections.
+   **First usable slice implemented:** a placed View record references an explicit Screen while
+   the original screen frame remains its default view. The optional second view has its own
+   canvas position and viewport size; fixed stack layout resolves against that size. Selecting
+   projected artwork edits its shared source through Inspector. Moving/resizing the View uses
+   existing frame gestures, including cancel and undo. Explorer identifies the source and
+   viewport; cloning, deletion, persistence, collaboration, thumbnails and the viewer retain
+   the placement. Deleting a Screen removes its placed views; deleting a View keeps the Screen.
+   Projection across placed views is bounded to 5,000 nodes and diagnoses invalid sources.
+   **Direct creation and dragging implemented:** local pointer addresses identify the View;
+   hit tests, marquee selection, group boxes and snapping use its resolved geometry. Drawing
+   creates source artwork (including two-phase text and nested frames), and dragging free
+   artwork edits the shared source. Stack-managed artwork retains its layout rules. The
+   existing owning-pointer lifecycle preserves cancellation, shared undo and remote edits;
+   a removed, hidden, locked or repositioned View cancels its active gesture. Tests:
+   `tests/screenViewGestures.test.ts` and `tests/browser/screenViews.spec.ts`.
+   **Still required for R4.2:** extract the default view from the screen definition so every
+   view can be deleted while its screen remains discoverable; add projected resize/rotate
+   handles and place selection menus/measurement overlays in the active context; complete
+   focused component editing and contextual keyboard commands.
 
 3. **R4.3 — Inherited color modes per view (M).**
    Extend the central resolver with the precedence above. Add Inherit/reset controls for

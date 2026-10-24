@@ -6,7 +6,7 @@ import type { Command, Point } from 'src/app/types';
 import type { Keyboard, Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
 import { DEFAULT_TEXT_FONT_SIZE } from 'src/app/utils';
-import { useActions, useKeyboard, usePointer } from 'src/app/hooks';
+import { useActions, useAppState, useKeyboard, usePointer } from 'src/app/hooks';
 
 /**
  * Draws a text in current position
@@ -73,7 +73,22 @@ export const DesignText: FC = () => {
     const pointer = usePointer();
     const actions = useActions();
 
-    const { fontSize, name, position, value } = createTextProps(pointer, keyboard, true);
+    const { fontSize, name, value } = createTextProps(pointer, keyboard, true);
+    const position = useAppState((state) => {
+        const { start, screenView } = state.events.pointer;
+        const origin = screenView?.drawingOrigin;
+        const view =
+            screenView?.documentId === state.currentDocumentId
+                ? state.currentDocument.frames[screenView.viewId]
+                : undefined;
+
+        return origin && view
+            ? {
+                  x: start.x + view.position.x - origin.position.x,
+                  y: start.y + view.position.y - origin.position.y
+              }
+            : start;
+    });
 
     // Focus the input once the location has been set (typing mode is started by the
     // placement click) and whenever it is repositioned.

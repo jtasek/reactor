@@ -1,4 +1,13 @@
-import type { Box, Corner, Point, Rectangle, ResizeHandlerType, Shape, Size } from './types';
+import type {
+    Box,
+    Corner,
+    Point,
+    Rectangle,
+    ResizeHandlerType,
+    Shape,
+    ShapeInput,
+    Size
+} from './types';
 import {
     DEFAULT_TEXT_FONT_SIZE,
     assertNever,
@@ -27,7 +36,7 @@ const translatePoint = (point: Point, delta: Point): Point => ({
 /** How far a clone is offset from its original so it does not cover it. */
 export const CLONE_OFFSET: Point = { x: 10, y: 10 };
 
-export function translateShape(shape: Shape, delta: Point): void {
+export function translateShape(shape: ShapeInput, delta: Point): void {
     switch (shape.type) {
         case 'line':
             shape.start = translatePoint(shape.start, delta);

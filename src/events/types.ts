@@ -11,12 +11,34 @@ export type SelectionSnapshot = Record<string, boolean>;
  */
 export type ShapesSnapshot = Record<string, Shape>;
 
+export type ScreenViewAddress = {
+    documentId: string;
+    viewId: string;
+    /** Preserve a text placement across its separate placement and commit phases. */
+    drawingOrigin?: { screenId: string; position: Point };
+};
+
+export interface ScreenViewGesture {
+    address: ScreenViewAddress;
+    screenId: string;
+    position: Point;
+    size: Size;
+    sourcePosition: Point;
+}
+
 /**
  * The pointer that owns a gesture. Input from any other pointer is ignored until
  * the gesture ends. `moved` records whether the owner has gone beyond a click's slip
  * since it started.
  */
-type Owner = { pointerId: number; touch: boolean; moved: boolean; selectedFrameId?: string };
+type Owner = {
+    pointerId: number;
+    touch: boolean;
+    moved: boolean;
+    selectedFrameId?: string;
+    screenView?: ScreenViewGesture;
+    previousScreenView?: ScreenViewAddress | null;
+};
 
 /**
  * The gesture in progress. A two-finger pinch is driven by touch contacts and has
@@ -136,6 +158,8 @@ export interface Pointer {
      */
     lastPress: { documentId: string; position: Point } | null;
     gesture: Gesture;
+    /** Local projected editing address, retained for text placement and group entry. */
+    screenView: ScreenViewAddress | null;
     offset: Point;
     path: Point[];
     radius: number;

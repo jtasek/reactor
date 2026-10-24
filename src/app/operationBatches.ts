@@ -268,6 +268,13 @@ function stage(document: Document, operations: Operation[], newId: () => string)
     const frameReference = (ref: string, index: number) => {
         const id = reference(ref, 'frames', index);
 
+        if (
+            document.frames[id]?.kind === 'view' ||
+            staged.frames.some((frame) => frame.id === id && frame.kind === 'view')
+        ) {
+            throw new Error(`${ref} is a screen view, not a container.`);
+        }
+
         if (frameStates[id]?.lockedBy !== undefined) {
             throw new Error(`${ref} is locked.`);
         }
@@ -836,6 +843,9 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                     if (frame.parentFrameId !== undefined) {
                         frame.parentFrameId = frameReference(frame.parentFrameId, index);
                     }
+                    if (frame.kind === 'view' && frame.screenId) {
+                        frame.screenId = reference(frame.screenId, 'frames', index);
+                    }
                     staged.frames.push(frame);
                     return;
                 }
@@ -1014,7 +1024,42 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         if (id !== undefined && !validFrameParent(frames, id, frames[id].parentFrameId)) {
             throw problem(index, 'A frame parent would create a cycle or is missing.');
         }
+
+        if (
+            id !== undefined &&
+            frames[id].kind === 'view' &&
+            frames[frames[id].screenId ?? '']?.kind !== 'screen'
+        ) {
+            throw problem(index, 'A screen view must reference a screen in this document.');
+        }
     });
+
+    for (const screenId of [...staged.deletedFrames]) {
+        if (document.frames[screenId]?.kind !== 'screen') {
+            continue;
+        }
+
+        for (const view of Object.values(document.frames)) {
+            if (
+                view.kind !== 'view' ||
+                view.screenId !== screenId ||
+                staged.deletedFrames.includes(view.id)
+            ) {
+                continue;
+            }
+
+            const index = deleted.get(record('frames', screenId)) ?? 0;
+
+            if (
+                changed.has(record('frames', view.id)) ||
+                frameStates[view.id]?.lockedBy !== undefined
+            ) {
+                throw problem(index, `the screen view ${view.id} is locked or changed separately.`);
+            }
+
+            staged.deletedFrames.push(view.id);
+        }
+    }
 
     const gone = new Set(staged.deletedShapes);
     const instantiated = new Set(

@@ -1,3 +1,9 @@
+import {
+    editableScreenView,
+    pointerDocument,
+    screenViewGestureBlocked
+} from 'src/app/screenViewEditing';
+import { takesEditorInput } from './input';
 import { renderedShape, hasLayoutOffset, frameLayout } from 'src/app/frameLayout';
 import { isFrameVisible } from 'src/app/frameState';
 import { json } from 'overmind';
@@ -60,16 +66,37 @@ export const beginGesture = (
         position,
         handle,
         free = false,
-        touch = false
-    }: PointerInput & { handle?: HandleTarget; touch?: boolean }
+        touch = false,
+        screenViewId
+    }: PointerInput & { handle?: HandleTarget; touch?: boolean; screenViewId?: string }
 ): boolean => {
     const { SNAP_DISTANCE_PX, snapToGuides } = snapping();
     const pointer = state.events.pointer;
 
-    if (pointer.gesture.kind !== 'idle') {
+    if (pointer.gesture.kind !== 'idle' || !takesEditorInput(state)) {
         return false;
     }
 
+    const address = screenViewId
+        ? { documentId: state.currentDocumentId, viewId: screenViewId }
+        : null;
+    const projected = address ? editableScreenView(state, address) : null;
+
+    if (address && (!projected || state.currentDocument.editingComponentId)) {
+        return false;
+    }
+
+    const previousScreenView = pointer.screenView ? json(pointer.screenView) : null;
+    pointer.screenView =
+        projected && address
+            ? {
+                  ...address,
+                  drawingOrigin: {
+                      screenId: projected.screen.id,
+                      position: { ...projected.view.position }
+                  }
+              }
+            : address;
     state.selectedComponent = null;
     delete state.currentDocument.surfaceSelected;
     effects.collaboration.pause();
@@ -78,7 +105,19 @@ export const beginGesture = (
         pointerId,
         touch,
         moved: false,
-        selectedFrameId: state.currentDocument.selectedFrameId
+        selectedFrameId: state.currentDocument.selectedFrameId,
+        previousScreenView,
+        ...(projected && address
+            ? {
+                  screenView: {
+                      address: { ...address },
+                      screenId: projected.screen.id,
+                      position: { ...projected.view.position },
+                      size: { ...projected.view.size },
+                      sourcePosition: { ...projected.screen.position }
+                  }
+              }
+            : {})
     };
 
     pointer.start = position;
@@ -87,7 +126,13 @@ export const beginGesture = (
     pointer.path = [];
 
     if (handle && 'frameId' in handle && state.tools.activeToolsIds[0] === 'select') {
-        return editorHelpers().frames.begin({ state, actions, effects }, owner, handle);
+        const began = editorHelpers().frames.begin({ state, actions, effects }, owner, handle);
+
+        if (!began) {
+            pointer.screenView = previousScreenView;
+        }
+
+        return began;
     }
 
     if (
@@ -99,6 +144,7 @@ export const beginGesture = (
                     state.currentDocument.groups[handle.groupId]?.shapesIds ?? []
                 )))
     ) {
+        pointer.screenView = previousScreenView;
         effects.collaboration.resume();
 
         return false;
@@ -265,9 +311,10 @@ const takeSnapTargets = (
     const { targetLines } = snapping();
     const changing = new Set(changingIds);
     // Read without the store's tracking: thousands of shapes are only looked at here.
+    const placed = pointerDocument(state);
     const document = {
-        ...untracked(state.currentDocument),
-        frameLayout: frameLayout(state.currentDocument)
+        ...untracked(placed),
+        frameLayout: frameLayout(placed)
     };
     const others = [...shownShapesIds(document, state.enteredComponentId)].filter(
         (id) => !changing.has(id)
@@ -277,7 +324,10 @@ const takeSnapTargets = (
         targetLines(others.map((id) => drawnBox(renderedShape(document, id))))
     );
 
-    return drawnExtent(document, changingIds);
+    return drawnExtent(
+        document,
+        changingIds.filter((id) => document.shapes[id])
+    );
 };
 
 export const movePointer = (
@@ -308,6 +358,16 @@ export const movePointer = (
         beyondClickSlip(pointer.start, position, state.currentDocument.camera.scale)
     ) {
         gesture.moved = true;
+    }
+
+    if (
+        gesture.kind !== 'idle' &&
+        gesture.screenView &&
+        screenViewGestureBlocked(state, gesture.screenView)
+    ) {
+        actions.events.cancelGesture();
+
+        return;
     }
 
     if (gesture.kind === 'drawing' && !free && state.ui.guides.visible) {
@@ -622,6 +682,7 @@ export const cancelGesture = (
     effects.dragTargets.clear();
     const owner = gesture.pointerId;
 
+    pointer.screenView = gesture.previousScreenView ? json(gesture.previousScreenView) : null;
     pointer.gesture = { kind: 'idle' };
     actions.tools.resetTools();
     effects.collaboration.resume({

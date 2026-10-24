@@ -24,7 +24,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 12;
+export const SCHEMA_VERSION = 13;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -611,14 +611,29 @@ function readFrame(value: unknown): Frame {
         throw new Error('Expected a frame name');
     }
 
-    if (f.kind !== undefined && f.kind !== 'frame' && f.kind !== 'screen') {
-        throw new Error('Expected frame or screen identity');
+    if (f.kind !== undefined && f.kind !== 'frame' && f.kind !== 'screen' && f.kind !== 'view') {
+        throw new Error('Expected frame, screen or view identity');
+    }
+
+    if ((f.kind === 'view') !== (f.screenId !== undefined)) {
+        throw new Error('A screen view needs a screen reference');
+    }
+
+    if (
+        f.kind === 'view' &&
+        (f.parentFrameId !== undefined ||
+            f.stack !== undefined ||
+            f.sizing !== undefined ||
+            f.layoutOrder !== undefined)
+    ) {
+        throw new Error('A screen view cannot hold layout children');
     }
 
     return {
         ...entity(value),
         name,
         kind: f.kind ?? 'frame',
+        ...(f.screenId === undefined ? {} : { screenId: id(f.screenId) }),
         ...(f.parentFrameId === undefined ? {} : { parentFrameId: id(f.parentFrameId) }),
         ...(f.stack === undefined ? {} : { stack: readStack(f.stack) }),
         ...(f.sizing === undefined ? {} : { sizing: readSizing(f.sizing) }),
@@ -896,7 +911,9 @@ function readDocument(value: unknown, onRepair = () => {}, legacyScreens = false
                 : {}
             : table(d.dimensions, readDimension);
     const exists: Exists = (collection, entityId) =>
-        Object.hasOwn({ shapes, components, variables, frames }[collection], entityId);
+        collection === 'frames'
+            ? Object.hasOwn(frames, entityId) && frames[entityId].kind !== 'view'
+            : Object.hasOwn({ shapes, components, variables }[collection], entityId);
     const repair = <C extends Collection>(collection: C, items: Record<string, SavedEntities[C]>) =>
         repairReferences(collection, items, exists, onRepair);
 
@@ -963,6 +980,7 @@ export function migratePersistedState(raw: unknown, onRepair = () => {}): Persis
             data.version !== 9 &&
             data.version !== 10 &&
             data.version !== 11 &&
+            data.version !== 12 &&
             data.version !== SCHEMA_VERSION
         ) {
             return null;
@@ -973,7 +991,7 @@ export function migratePersistedState(raw: unknown, onRepair = () => {}): Persis
         let currentDocumentId = text(data.currentDocumentId);
 
         for (const [key, value] of entries) {
-            const read = readDocument(value, onRepair, data.version !== SCHEMA_VERSION);
+            const read = readDocument(value, onRepair, data.version < 12);
             const document = data.version === 1 || data.version === 2 ? showContainers(read) : read;
 
             if (data.version !== 1 && key !== document.id) {

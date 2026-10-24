@@ -1,9 +1,13 @@
 import { ActionWithParam, Action, Point } from 'src/app/types';
 
-export const displayContextMenu: ActionWithParam<{ position: Point; canvasPoint: Point }> = (
-    { state, actions },
-    { position, canvasPoint }
-) => {
+export const displayContextMenu: ActionWithParam<{
+    position: Point;
+    canvasPoint: Point;
+    screenViewId?: string;
+}> = ({ state, actions }, { position, canvasPoint, screenViewId }) => {
+    state.events.pointer.screenView = screenViewId
+        ? { documentId: state.currentDocumentId, viewId: screenViewId }
+        : null;
     const hit = actions.selectContextMenuTarget(canvasPoint);
 
     state.ui.contextMenu.position = position;
