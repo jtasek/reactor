@@ -15,6 +15,8 @@ export interface ScreenProjection {
     frames: Frame[];
     shapes: Shape[];
     problems: string[];
+    /** Shapes this viewport's layout places away from their authored position. */
+    layoutOffsets: Set<string>;
     exceedsNodeLimit?: boolean;
 }
 
@@ -61,7 +63,8 @@ export function projectScreen(
             screen: source,
             frames: [],
             shapes: [],
-            problems: [`Screen view exceeds ${MAX_PROJECTED_NODES} projected nodes.`]
+            problems: [`Screen view exceeds ${MAX_PROJECTED_NODES} projected nodes.`],
+            layoutOffsets: new Set()
         };
     }
 
@@ -101,7 +104,14 @@ export function projectScreen(
         }),
         problems: Object.entries(layout.problems)
             .filter(([id]) => involved.has(id))
-            .map(([, problem]) => problem)
+            .map(([, problem]) => problem),
+        layoutOffsets: new Set(
+            shapeIds.filter(
+                (id) =>
+                    layout.managedShapes.has(id) ||
+                    Boolean(layout.shapes[id]?.x || layout.shapes[id]?.y)
+            )
+        )
     };
 }
 

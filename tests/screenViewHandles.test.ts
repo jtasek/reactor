@@ -1,5 +1,6 @@
 import { json } from 'overmind';
 import { projectScreenViews } from 'src/app/screenProjection';
+import { canTransformScreenViewShape, screenViewTransformTarget } from 'src/app/screenViewEditing';
 import { createTestStore } from './support/store';
 import { createCopies, edit, settle, shownDocument, DOCUMENT_ID } from './support/collaboration';
 
@@ -262,4 +263,36 @@ it('cancels a resize when a remote layout starts offsetting artwork only in its 
     expect(json(shownDocument(b).shapes[shapeId])).toEqual(original);
     expect(shownDocument(a).frames[screenId].stack?.align).toBe('end');
     expect(a.store.state.events.pointer.gesture.kind).toBe('idle');
+});
+
+it('reuses the projected layout and agrees with a fresh layout check', () => {
+    const { store, screenId, viewId, shapeId } = setup();
+    const document = store.state.currentDocument;
+    const placed = () =>
+        projectScreenViews(document)
+            .find((item) => item.view.id === viewId)!
+            .projection!.layoutOffsets.has(shapeId);
+
+    // No stack between the shape and its Screen: no viewport can move it.
+    expect(placed()).toBe(false);
+    expect(canTransformScreenViewShape(document, viewId, shapeId)).toBe(true);
+    expect(screenViewTransformTarget(document, viewId, shapeId)?.stacked).toBe(false);
+
+    // A child frame ends its row at 200px tall but sits lower in the 250px View.
+    const childId = store.actions.editFrame({
+        kind: 'add',
+        position: { x: 100, y: 180 },
+        size: { width: 100, height: 100 }
+    })!;
+    store.actions.editFrame({ kind: 'update', id: childId, changes: { parentFrameId: screenId } });
+    store.actions.editFrame({ kind: 'reparentShapes', ids: [shapeId], parentFrameId: childId });
+    store.actions.editFrame({
+        kind: 'update',
+        id: screenId,
+        changes: { stack: { direction: 'row', gap: 0, padding: 0, align: 'end' } }
+    });
+
+    expect(placed()).toBe(true);
+    expect(canTransformScreenViewShape(document, viewId, shapeId)).toBe(false);
+    expect(screenViewTransformTarget(document, viewId, shapeId)?.stacked).toBe(true);
 });

@@ -478,6 +478,8 @@ deletes its views and moves its artwork to where its first view shows it, in one
 Free shapes expose the existing resize/rotate handles in editable Screen views. Pointer and
 snapping geometry stay in view coordinates; only authored shape edits translate to source
 coordinates. Eligibility checks both source and placed layout, including nested frame offsets.
+Handles read the placed check from the View projection's `layoutOffsets`; the per-move check
+lays out the viewport only when a stack sits between the shape and its Screen.
 Locked or stack-managed shapes have no transform handles; instances retain their
 rotation-only handles. Group/component handles, selection menus and measurement overlays remain
 planned. Tests: screenViewHandles and its browser counterpart.

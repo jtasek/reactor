@@ -1,4 +1,4 @@
-import { canTransformScreenViewShape } from './screenViewEditing';
+import { screenViewTransformTarget } from './screenViewEditing';
 import { screenOwners, screenSourceShapes, screenViewName } from './screenViews';
 import { withTheirGroups } from './membership';
 import { hasSizingRules } from './stackSizing';
@@ -299,10 +299,17 @@ export const useScreenSourceSelection = () =>
 export const useFrameName = (id: string) =>
     useAppState((state) => screenViewName(state.currentDocument, state.currentDocument.frames[id]));
 
-/** Mounted only for selected artwork; placement permissions are checked by its view. */
-export const useScreenShapeTransformable = (viewId: string, shapeId: string) =>
-    useAppState((state) => {
-        const document = state.currentDocument;
-
-        return canTransformScreenViewShape(document, viewId, shapeId);
-    });
+/**
+ * Mounted only for selected artwork; placement permissions are checked by its view,
+ * and `placedOffset` comes from the layout the view's projection already made.
+ */
+export const useScreenShapeTransformable = (
+    viewId: string,
+    shapeId: string,
+    placedOffset: boolean
+) =>
+    useAppState(
+        (state) =>
+            !placedOffset &&
+            screenViewTransformTarget(state.currentDocument, viewId, shapeId) !== null
+    );
