@@ -54,8 +54,13 @@ export function editableScreenView(state: Context['state'], address: ScreenViewA
     return projection ? { ...source, projection } : null;
 }
 
-/** A nested frame can move at this viewport even when its source has no layout offset. */
-export function canTransformScreenViewShape(document: Document, viewId: string, shapeId: string) {
+/**
+ * The cheap checks for a shape's handles in a View: it belongs to the View's Screen,
+ * is shown and unlocked, and has no layout offset in its source. `stacked` says
+ * whether a stack among its frames could still move it at the View's viewport, so a
+ * caller holding the View's projection reuses its layout instead of making one.
+ */
+export function screenViewTransformTarget(document: Document, viewId: string, shapeId: string) {
     const view = document.frames[viewId];
     const screen = view?.screenId ? document.frames[view.screenId] : undefined;
     const shape = document.shapes[shapeId];
@@ -69,9 +74,30 @@ export function canTransformScreenViewShape(document: Document, viewId: string, 
         isShapeLocked(document, shapeId) ||
         hasLayoutOffset(document, [shapeId])
     ) {
-        return false;
+        return null;
     }
 
+    // Only stack rules place frames, so without a stack between the shape and its
+    // Screen no viewport can offset it. The owner check above ends this walk.
+    const parents = frameParents(document.frames);
+    let stacked = false;
+
+    for (let id = shape.parentFrameId; id; id = id === screen.id ? undefined : parents.get(id)) {
+        stacked ||= Boolean(document.frames[id].stack);
+    }
+
+    return { view, screen, stacked };
+}
+
+/** A nested frame can move at this viewport even when its source has no layout offset. */
+export function canTransformScreenViewShape(document: Document, viewId: string, shapeId: string) {
+    const target = screenViewTransformTarget(document, viewId, shapeId);
+
+    if (!target?.stacked) {
+        return target !== null;
+    }
+
+    const { view, screen } = target;
     // Match the viewport layout used by projectScreen before editing authored geometry.
     const resized = {
         ...document,

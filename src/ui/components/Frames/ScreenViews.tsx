@@ -19,8 +19,12 @@ import { Handles } from '../Selectable/Resizable';
 import { Instance } from '../Shape/Instance';
 import styles from './styles.css';
 
-const ProjectedHandles: FC<{ shape: Shape; viewId: string }> = ({ shape, viewId }) => {
-    const editable = useScreenShapeTransformable(viewId, shape.id);
+const ProjectedHandles: FC<{ shape: Shape; viewId: string; placedOffset: boolean }> = ({
+    shape,
+    viewId,
+    placedOffset
+}) => {
+    const editable = useScreenShapeTransformable(viewId, shape.id, placedOffset);
     const grouped = useShapesInSelectedGroupsIds();
     const gesture = useGesture();
     const ownsGesture = 'screenView' in gesture && gesture.screenView?.address.viewId === viewId;
@@ -51,7 +55,8 @@ const ProjectedShape: FC<{
     shape: Shape;
     viewId: string;
     interactive: boolean;
-}> = ({ shape, viewId, interactive }) => {
+    placedOffset: boolean;
+}> = ({ shape, viewId, interactive, placedOffset }) => {
     const document = useCurrentDocument();
     const context = useVariableContext();
     const painted = themeColors(shape, document, context);
@@ -113,7 +118,9 @@ const ProjectedShape: FC<{
                     pointerEvents="none"
                 />
             )}
-            {interactive && shape.selected && <ProjectedHandles shape={shape} viewId={viewId} />}
+            {interactive && shape.selected && (
+                <ProjectedHandles shape={shape} viewId={viewId} placedOffset={placedOffset} />
+            )}
         </g>
     );
 };
@@ -161,7 +168,7 @@ const ScreenView: FC<{
         ) : null;
     }
 
-    const { frames, shapes } = projection;
+    const { frames, shapes, layoutOffsets } = projection;
 
     return (
         <g
@@ -200,6 +207,7 @@ const ScreenView: FC<{
                     shape={shape}
                     viewId={view.id}
                     interactive={editable}
+                    placedOffset={layoutOffsets.has(shape.id)}
                 />
             ))}
         </g>

@@ -114,12 +114,10 @@ test('resizes and rotates shared artwork through real Screen view handles', asyn
         'transform',
         'rotate(90 580 375)'
     );
-    await page.screenshot({ path: '/private/tmp/reactor-screen-view-handles.png' });
 
     await page.setViewportSize({ width: 600, height: 850 });
     const mobile = page.locator('svg#surface #screen-views > [data-screen-view="home:view"]');
     await expect(mobile.locator('[data-type="rotate"]')).toBeVisible();
-    await page.screenshot({ path: '/private/tmp/reactor-screen-view-handles-narrow.png' });
 });
 
 for (const restriction of ['locked', 'stack', 'nested-stack'] as const) {

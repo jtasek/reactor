@@ -569,10 +569,14 @@ export const movePointer = (
         }
 
         // Its group and layer are shown, so each shape's own flag says whether it is drawn.
-        const document = untracked(pointerDocument(state));
-        const box = drawnExtent(
-            document,
-            changingIds.filter((id) => document.shapes[id]?.visible)
+        // A View draws its artwork shifted by the View's offset, as no layout moves it.
+        const document = untracked(state.currentDocument);
+        const box = placedBox(
+            drawnExtent(
+                document,
+                changingIds.filter((id) => document.shapes[id]?.visible)
+            ) ?? undefined,
+            gesture.screenView
         );
         const lines = box ? linesOnEdges(snapped.lines, box) : { x: null, y: null };
 
