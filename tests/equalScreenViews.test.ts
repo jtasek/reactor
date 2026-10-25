@@ -7,7 +7,7 @@ import {
     migratePersistedState,
     serializePersistedState
 } from 'src/app/services/documentStorage';
-import { screenSourceShapes, screenViewName } from 'src/app/screenViews';
+import { screenOwners, screenSourceShapes, screenViewName } from 'src/app/screenViews';
 import { projectScreenViews } from 'src/app/screenProjection';
 import { createCopies, edit, settle, shownDocument, DOCUMENT_ID } from './support/collaboration';
 
@@ -193,4 +193,91 @@ it('reuses ordinary canvas geometry when there is no shared screen artwork', () 
         size: { width: 40, height: 30 }
     });
     expect(pointerDocument(store.state)).toBe(store.state.currentDocument);
+});
+
+it('keeps a deleted screen’s artwork where its first view shows it, in one undo step', async () => {
+    const copies = await createCopies(2, (store) => setup(store));
+    const [a, b] = copies;
+    const document = shownDocument(a);
+    const screen = Object.values(document.frames).find((frame) => frame.kind === 'screen')!;
+    const mobile = Object.values(document.frames).find((frame) => frame.name === 'Mobile')!;
+    const [shapeId] = document.shapesIds;
+    edit(a, (actions) =>
+        actions.editFrame({
+            kind: 'update',
+            id: mobile.id,
+            changes: { position: { x: 2000, y: 1500 } }
+        })
+    );
+    edit(a, (actions) => actions.editFrame({ kind: 'delete', id: screen.id }));
+    settle(copies);
+    expect(Object.keys(shownDocument(b).frames)).toHaveLength(0);
+    // The rectangle sat 20, 20 inside the screen, so it stays 20, 20 inside the view.
+    expect(shownDocument(b).shapes[shapeId]).toMatchObject({ position: { x: 2020, y: 1520 } });
+    expect(shownDocument(b).shapes[shapeId].parentFrameId).toBeUndefined();
+    a.collaboration.undo(DOCUMENT_ID);
+    settle(copies);
+    expect(shownDocument(b).frames[screen.id]).toMatchObject({ position: { x: 100, y: 80 } });
+    expect(shownDocument(b).shapes[shapeId]).toMatchObject({
+        position: { x: 120, y: 100 },
+        parentFrameId: screen.id
+    });
+});
+
+function nestedFrame(store = createTestStore().store) {
+    const parentId = store.actions.editFrame({
+        kind: 'add',
+        position: { x: 0, y: 0 },
+        size: { width: 800, height: 800 }
+    })!;
+    const childId = store.actions.editFrame({
+        kind: 'add',
+        position: { x: 300, y: 300 },
+        size: { width: 200, height: 200 }
+    })!;
+    store.actions.editFrame({ kind: 'update', id: childId, changes: { parentFrameId: parentId } });
+
+    return { store, parentId, childId };
+}
+
+const views = (frames: Record<string, { kind?: string }>) =>
+    Object.values(frames).filter((frame) => frame.kind === 'view');
+
+it('draws a nested screen in place and gives it a view only once it moves to Canvas', () => {
+    const { store, childId } = nestedFrame();
+    const document = store.state.currentDocument;
+    store.actions.editFrame({ kind: 'update', id: childId, changes: { kind: 'screen' } });
+    expect(document.frames[childId].kind).toBe('screen');
+    expect(views(document.frames)).toHaveLength(0);
+    expect(screenOwners(document.frames).get(childId)).toBeUndefined();
+    store.actions.editFrame({ kind: 'update', id: childId, changes: { parentFrameId: null } });
+    expect(document.frames[childId].definitionOnly).toBe(true);
+    expect(views(document.frames)).toEqual([
+        expect.objectContaining({ screenId: childId, position: { x: 300, y: 300 } })
+    ]);
+    expect(screenOwners(document.frames).get(childId)).toBe(childId);
+});
+
+it('leaves legacy nested screens in their parent frame on upgrade', () => {
+    const { store, childId } = nestedFrame();
+    const document = store.state.currentDocument;
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    const legacy = { ...saved, version: 13 };
+    legacy.documents[document.id].frames[childId].kind = 'screen';
+    const migrated = migratePersistedState(legacy)!.documents[document.id];
+    expect(migrated.frames[childId].kind).toBe('screen');
+    expect(migrated.frames[childId].definitionOnly).toBeUndefined();
+    expect(views(migrated.frames)).toHaveLength(0);
+});
+
+it('leaves a shared nested screen in its parent frame when another copy opens it', async () => {
+    const copies = await createCopies(2, (store) => {
+        const { childId } = nestedFrame(store);
+        store.actions.editFrame({ kind: 'update', id: childId, changes: { kind: 'screen' } });
+    });
+    settle(copies);
+    copies.forEach((copy) => expect(views(shownDocument(copy).frames)).toHaveLength(0));
 });

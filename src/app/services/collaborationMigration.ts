@@ -29,11 +29,13 @@ export function migrateDocument(
         (entity): entity is Yjs.Map<unknown> => entity instanceof yjs.Map && !entity.has('kind')
     );
 
+    // Nested screens never get views, so only a root screen can still need one.
     const legacyScreens = [...binding.tables.frames.values()].some(
         (entity) =>
             entity instanceof yjs.Map &&
             entity.get('kind') === 'screen' &&
-            entity.get('definitionOnly') !== true
+            entity.get('definitionOnly') !== true &&
+            !binding.tables.frames.has(String(entity.get('parentFrameId')))
     );
 
     if (legacy.length === 0 && legacyFrames.length === 0 && !legacyScreens) {

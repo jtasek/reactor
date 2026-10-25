@@ -468,8 +468,13 @@ source Screen and assigns membership; dragging edits shared free artwork. Keep s
 transforms disabled. Addresses and placement snapshots stay in the events namespace. A
 removed/hidden/locked/repositioned view cancels an active gesture; snapshot rebasing preserves
 remote edits. Two-phase text stays anchored to its source location while its input follows
-view movement; text can commit after the view is hidden or removed. Only editable views take
-presses, leaving the inner half of their edge grip free. Marquees project once per gesture.
+view movement, and commits into its Screen even if the view is hidden or removed meanwhile.
+Only editable views take presses (locked, hidden, read-only or broken ones let them reach the
+canvas), and their hit area leaves the inner half of the view's edge grip free. A marquee
+projects its view once per gesture. View boundary gestures edit only the placement.
+Only root screens are definitions (`isScreenDefinition`). A nested screen is not a destination,
+stays drawn inside its parent and gets no view until it moves to Canvas. Deleting a screen
+deletes its views and moves its artwork to where its first view shows it, in one undo step.
 Free shapes expose the existing resize/rotate handles in editable Screen views. Pointer and
 snapping geometry stay in view coordinates; only authored shape edits translate to source
 coordinates. Eligibility checks both source and placed layout, including nested frame offsets.

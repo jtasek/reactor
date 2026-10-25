@@ -1,3 +1,4 @@
+import { frameParents } from './frameState';
 import type { Frame } from './types';
 
 export function initialScreenView(screen: Frame, id: string): Frame {
@@ -13,12 +14,16 @@ export function initialScreenView(screen: Frame, id: string): Frame {
     };
 }
 
-/** Upgrade a hybrid screen/placement once; a screen with no views stays without views. */
+/**
+ * Upgrade a hybrid root screen/placement once; a screen with no views stays without views.
+ * Nested screens stay drawn in their parent frame, so they get no view.
+ */
 export function extractScreenViews(frames: Record<string, Frame>) {
     const added: Frame[] = [];
+    const parents = frameParents(frames);
 
     for (const screen of Object.values(frames)) {
-        if (screen.kind !== 'screen' || screen.definitionOnly) {
+        if (screen.kind !== 'screen' || screen.definitionOnly || parents.get(screen.id)) {
             continue;
         }
 

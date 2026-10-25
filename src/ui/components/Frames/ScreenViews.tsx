@@ -171,7 +171,12 @@ const ScreenView: FC<{
         >
             {editable && <ViewHitArea view={view} />}
             {problem && (
-                <text x={view.position.x + 8} y={view.position.y + 20} className={styles.label}>
+                <text
+                    x={view.position.x + 8}
+                    y={view.position.y + 20}
+                    className={styles.label}
+                    pointerEvents="none"
+                >
                     {problem}
                 </text>
             )}
