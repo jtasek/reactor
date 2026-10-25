@@ -468,7 +468,9 @@ source Screen and assigns membership; dragging edits shared free artwork. Keep s
 transforms disabled. Addresses and placement snapshots stay in the events namespace. A
 removed/hidden/locked/repositioned view cancels an active gesture; snapshot rebasing preserves
 remote edits. Two-phase text stays anchored to its source location while its input follows
-view movement. Projected handles, selection menus and measurement overlays remain planned.
+view movement; text can commit after the view is hidden or removed. Only editable views take
+presses, leaving the inner half of their edge grip free. Marquees project once per gesture.
+Projected handles, selection menus and measurement overlays remain planned.
 Collaboration migrations load alongside Yjs in `initialize`, before any document is opened;
 keep them outside the eager entry. Tests: equalScreenViews, screenViews and screenViewGestures.
 

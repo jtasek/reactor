@@ -5,6 +5,7 @@ import { LineTool } from 'src/tools/components/Line';
 import { TextTool } from 'src/tools/components/Text';
 import { FrameTool } from 'src/tools/components/Frame';
 import { projectScreenViews } from 'src/app/screenProjection';
+import { pointerDocument } from 'src/app/screenViewEditing';
 import { createTestStore } from './support/store';
 import { createCopies, edit, settle, shownDocument, DOCUMENT_ID } from './support/collaboration';
 
@@ -358,4 +359,101 @@ it('keeps pending text anchored to its chosen source location when its view move
         position: { x: 120, y: 110 },
         parentFrameId: screenId
     });
+});
+
+it('commits pending text into its screen when the view is hidden or deleted before Enter', () => {
+    for (const change of ['hide', 'delete'] as const) {
+        const { store, screenId, viewId } = setup();
+        store.actions.tools.activateTool('text');
+        store.actions.events.beginGesture({
+            pointerId: 1,
+            position: { x: 520, y: 330 },
+            screenViewId: viewId
+        });
+        store.actions.events.endGesture({ pointerId: 1, position: { x: 520, y: 330 } });
+        store.actions.events.typing('Kept');
+        store.actions.editFrame(
+            change === 'hide'
+                ? { kind: 'toggle', id: viewId, flag: 'visible' }
+                : { kind: 'delete', id: viewId }
+        );
+        store.actions.tools.executeToolCommands();
+        const document = store.state.currentDocument;
+        expect(document.shapes[document.shapesIds[0]]).toMatchObject({
+            type: 'text',
+            value: 'Kept',
+            position: { x: 120, y: 110 },
+            parentFrameId: screenId
+        });
+    }
+});
+
+it('gives a frame drawn into a stacked screen the next place, before later drawings', () => {
+    const { store, screenId, viewId } = setup();
+    store.actions.editFrame({
+        kind: 'update',
+        id: screenId,
+        changes: { stack: { direction: 'column', gap: 0, padding: 10, align: 'start' } }
+    });
+    store.actions.tools.activateTool('frame');
+    store.actions.events.beginGesture({
+        pointerId: 1,
+        position: { x: 550, y: 350 },
+        screenViewId: viewId
+    });
+    store.actions.events.endGesture({ pointerId: 1, position: { x: 600, y: 400 } });
+    store.actions.tools.activateTool('rectangle');
+    store.actions.events.beginGesture({
+        pointerId: 1,
+        position: { x: 700, y: 450 },
+        screenViewId: viewId
+    });
+    store.actions.events.endGesture({ pointerId: 1, position: { x: 740, y: 480 } });
+    const document = store.state.currentDocument;
+    const frame = Object.values(document.frames).find((item) => item.parentFrameId === screenId)!;
+    const rectangle = document.shapes[document.shapesIds[0]];
+    expect(frame.layoutOrder).toBe(0);
+    expect(rectangle.layoutOrder).toBe(1);
+    const projection = projectScreenViews(document)[0].projection!;
+    const frameY = projection.frames.find((item) => item.id === frame.id)!.position.y;
+    const shape = projection.shapes[0];
+    expect(shape.type === 'rectangle' && shape.position.y).toBeGreaterThan(frameY);
+});
+
+it('projects a marquee inside a view once, and drops the view address of a refused press', () => {
+    const { store, screenId, viewId } = setup();
+    store.actions.addShape({
+        type: 'rectangle',
+        position: { x: 120, y: 100 },
+        size: { width: 40, height: 30 },
+        parentFrameId: screenId
+    });
+    store.actions.tools.activateTool('select');
+    store.actions.events.beginGesture({
+        pointerId: 1,
+        position: { x: 900, y: 500 },
+        screenViewId: viewId
+    });
+    const first = pointerDocument(store.state);
+    store.actions.events.movePointer({ pointerId: 1, position: { x: 880, y: 480 } });
+    expect(pointerDocument(store.state)).toBe(first);
+    store.actions.events.endGesture({ pointerId: 1, position: { x: 870, y: 470 } });
+
+    const id = store.state.currentDocument.shapesIds[0];
+    store.actions.editFrame({
+        kind: 'update',
+        id: screenId,
+        changes: { stack: { direction: 'column', gap: 0, padding: 10, align: 'start' } }
+    });
+    store.actions.events.beginGesture({ pointerId: 1, position: { x: 0, y: 0 } });
+    store.actions.events.endGesture({ pointerId: 1, position: { x: 0, y: 0 } });
+    expect(
+        store.actions.events.beginGesture({
+            pointerId: 1,
+            position: { x: 520, y: 330 },
+            handle: { shapeId: id, type: 'bottomRight' },
+            screenViewId: viewId
+        })
+    ).toBe(false);
+    expect(store.state.events.pointer.screenView).toBeNull();
 });

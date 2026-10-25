@@ -6,6 +6,7 @@ import type { Context } from './index';
 import type { Document, Frame, Point } from './types';
 import { frameParents, isFrameLocked, isFrameVisible } from './frameState';
 import { projectScreenViews } from './screenProjection';
+import { untracked } from './untracked';
 import type { ScreenViewAddress, ScreenViewGesture } from 'src/events/types';
 
 function screenViewSource(state: Context['state'], address: ScreenViewAddress | null) {
@@ -31,6 +32,11 @@ function screenViewSource(state: Context['state'], address: ScreenViewAddress | 
     return { view, screen };
 }
 
+/** Whether presses on a View edit its Screen; one that cannot lets them reach the canvas. */
+export function canEditThroughView(state: Context['state'], viewId: string) {
+    return screenViewSource(state, { documentId: state.currentDocument.id, viewId }) !== null;
+}
+
 /** Resolve a local editing address without putting projection data into the document. */
 export function editableScreenView(state: Context['state'], address: ScreenViewAddress | null) {
     const source = screenViewSource(state, address);
@@ -45,6 +51,12 @@ export function editableScreenView(state: Context['state'], address: ScreenViewA
 
     return projection ? { ...source, projection } : null;
 }
+
+/**
+ * A marquee only changes selection, so its placed geometry is projected once per
+ * gesture rather than on every pointer move.
+ */
+const marqueeDocuments = new WeakMap<object, Document>();
 
 /** Hit tests and snapping read the same placed geometry as the renderer. */
 export function pointerDocument(state: Context['state']): Document {
@@ -90,6 +102,26 @@ export function pointerDocument(state: Context['state']): Document {
             )
         };
     }
+
+    const { gesture } = state.events.pointer;
+    const key = gesture.kind === 'marquee' ? untracked(gesture) : null;
+    const cached = key ? marqueeDocuments.get(key) : undefined;
+
+    if (cached) {
+        return cached;
+    }
+
+    const placedDocument = placedPointerDocument(state, address);
+
+    if (key) {
+        marqueeDocuments.set(key, placedDocument);
+    }
+
+    return placedDocument;
+}
+
+function placedPointerDocument(state: Context['state'], address: ScreenViewAddress): Document {
+    const document = state.currentDocument;
 
     const projected = editableScreenView(state, address)?.projection;
     const shapes = projected?.shapes ?? [];
@@ -148,4 +180,29 @@ export function screenViewGestureBlocked(state: Context['state'], context: Scree
         current.screen.position.x !== context.sourcePosition.x ||
         current.screen.position.y !== context.sourcePosition.y
     );
+}
+
+/**
+ * Where artwork started through a View is added: its source Screen. A drawing
+ * gesture is cancelled when its View changes, but two-phase text commits later,
+ * so only the Screen chosen at placement is needed; the View may since have moved,
+ * been hidden or removed without losing the typed text.
+ */
+export function drawingScreen(state: Context['state'], address: ScreenViewAddress | null) {
+    const origin = address?.drawingOrigin;
+    const document = state.currentDocument;
+    const screen = origin ? document.frames[origin.screenId] : undefined;
+
+    if (
+        !origin ||
+        address?.documentId !== document.id ||
+        isReadOnly(state) ||
+        document.locked ||
+        screen?.kind !== 'screen' ||
+        frameParents(document.frames).get(screen.id)
+    ) {
+        return null;
+    }
+
+    return { screen, offset: sourceOffset(origin, screen) };
 }
