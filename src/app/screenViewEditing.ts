@@ -1,4 +1,4 @@
-import { hasLayoutOffset } from './frameLayout';
+import { hasLayoutOffset, projectFrameLayout } from './frameLayout';
 import { isShapeLocked, isShapeVisible } from './utils';
 import { screenOwners, screenSourceShapes } from './screenViews';
 import { isReadOnly } from './documentAccess';
@@ -54,17 +54,34 @@ export function editableScreenView(state: Context['state'], address: ScreenViewA
     return projection ? { ...source, projection } : null;
 }
 
-/** Free artwork keeps its authored geometry in every viewport. */
-export function canTransformScreenShape(document: Document, screenId: string, shapeId: string) {
+/** A nested frame can move at this viewport even when its source has no layout offset. */
+export function canTransformScreenViewShape(document: Document, viewId: string, shapeId: string) {
+    const view = document.frames[viewId];
+    const screen = view?.screenId ? document.frames[view.screenId] : undefined;
     const shape = document.shapes[shapeId];
 
-    return Boolean(
-        shape &&
-        screenOwners(document.frames).get(shape.parentFrameId ?? '') === screenId &&
-        isShapeVisible(document, shapeId) &&
-        !isShapeLocked(document, shapeId) &&
-        !hasLayoutOffset(document, [shapeId])
-    );
+    if (
+        view?.kind !== 'view' ||
+        screen?.kind !== 'screen' ||
+        !shape ||
+        screenOwners(document.frames).get(shape.parentFrameId ?? '') !== screen.id ||
+        !isShapeVisible(document, shapeId) ||
+        isShapeLocked(document, shapeId) ||
+        hasLayoutOffset(document, [shapeId])
+    ) {
+        return false;
+    }
+
+    // Match the viewport layout used by projectScreen before editing authored geometry.
+    const resized = {
+        ...document,
+        frames: {
+            ...document.frames,
+            [screen.id]: { ...screen, size: view.size, sizing: undefined }
+        }
+    };
+
+    return !hasLayoutOffset({ ...resized, frameLayout: projectFrameLayout(resized) }, [shapeId]);
 }
 
 /**

@@ -1,4 +1,4 @@
-import { canTransformScreenShape } from './screenViewEditing';
+import { canTransformScreenViewShape } from './screenViewEditing';
 import { screenOwners, screenSourceShapes, screenViewName } from './screenViews';
 import { withTheirGroups } from './membership';
 import { hasSizingRules } from './stackSizing';
@@ -303,7 +303,6 @@ export const useFrameName = (id: string) =>
 export const useScreenShapeTransformable = (viewId: string, shapeId: string) =>
     useAppState((state) => {
         const document = state.currentDocument;
-        const screenId = document.frames[viewId]?.screenId;
 
-        return Boolean(screenId && canTransformScreenShape(document, screenId, shapeId));
+        return canTransformScreenViewShape(document, viewId, shapeId);
     });

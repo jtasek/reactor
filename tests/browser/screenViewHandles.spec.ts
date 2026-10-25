@@ -3,14 +3,14 @@ import { createDocument, createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
 import { openEditor, pointer } from './support/editor';
 
-function fixture(restriction?: 'locked' | 'stack') {
+function fixture(restriction?: 'locked' | 'stack' | 'nested-stack') {
     const shape = createShape({
         type: 'rectangle',
         name: 'Body',
         order: 'a0',
-        position: { x: 120, y: 110 },
+        position: { x: 120, y: restriction === 'nested-stack' ? 190 : 110 },
         size: { width: 80, height: 60 },
-        parentFrameId: 'home',
+        parentFrameId: restriction === 'nested-stack' ? 'child' : 'home',
         locked: restriction === 'locked'
     });
     const document = createDocument({
@@ -48,6 +48,20 @@ function fixture(restriction?: 'locked' | 'stack') {
         },
         shapes: { [shape.id]: shape }
     });
+
+    if (restriction === 'nested-stack') {
+        document.frames.home.stack = { direction: 'row', gap: 0, padding: 0, align: 'end' };
+        document.frames.child = {
+            id: 'child',
+            name: 'Content',
+            kind: 'frame',
+            parentFrameId: 'home',
+            position: { x: 100, y: 180 },
+            size: { width: 100, height: 100 },
+            visible: true,
+            locked: false
+        };
+    }
 
     return serializePersistedState({
         currentDocumentId: document.id,
@@ -108,7 +122,7 @@ test('resizes and rotates shared artwork through real Screen view handles', asyn
     await page.screenshot({ path: '/private/tmp/reactor-screen-view-handles-narrow.png' });
 });
 
-for (const restriction of ['locked', 'stack'] as const) {
+for (const restriction of ['locked', 'stack', 'nested-stack'] as const) {
     test(`keeps ${restriction} artwork selectable without transform handles`, async ({ page }) => {
         await page.addInitScript(
             (data) => localStorage.setItem('reactor', JSON.stringify(data)),
@@ -121,5 +135,13 @@ for (const restriction of ['locked', 'stack'] as const) {
         await page.mouse.click(bodyBox.x + bodyBox.width / 2, bodyBox.y + bodyBox.height / 2);
         await expect(desktop.locator('rect[stroke="var(--selection-color)"]')).toBeVisible();
         await expect(desktop.locator('[data-handle]')).toHaveCount(0);
+
+        if (restriction === 'nested-stack') {
+            await expect(
+                page.locator(
+                    'svg#surface #screen-views > [data-screen-view="home:view"] [data-type="bottomRight"]'
+                )
+            ).toBeVisible();
+        }
     });
 }

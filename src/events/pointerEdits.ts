@@ -1,5 +1,5 @@
 import {
-    canTransformScreenShape,
+    canTransformScreenViewShape,
     editableScreenView,
     pointerDocument,
     screenViewGestureBlocked
@@ -127,7 +127,11 @@ export const beginGesture = (
         handle &&
         (!('shapeId' in handle) ||
             handle.type === 'radius' ||
-            !canTransformScreenShape(state.currentDocument, projected.screen.id, handle.shapeId) ||
+            !canTransformScreenViewShape(
+                state.currentDocument,
+                projected.view.id,
+                handle.shapeId
+            ) ||
             !projected.projection.shapes.some((shape) => shape.id === handle.shapeId))
     ) {
         return false;
@@ -430,9 +434,9 @@ export const movePointer = (
         (editorHelpers().frames.gestureBlocked(state.currentDocument, gesture) ||
             (gesture.screenView &&
                 'shapeId' in gesture &&
-                !canTransformScreenShape(
+                !canTransformScreenViewShape(
                     state.currentDocument,
-                    gesture.screenView.screenId,
+                    gesture.screenView.address.viewId,
                     gesture.shapeId
                 )))
     ) {

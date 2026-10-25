@@ -188,3 +188,78 @@ it('cancels a resize if its view moves remotely and keeps the new placement', as
     expect(shownDocument(a).frames[viewId].position.x).toBe(550);
     expect(a.store.state.events.pointer.gesture.kind).toBe('idle');
 });
+
+it('rejects handles when only the placed viewport offsets a nested free shape', () => {
+    const { store, viewId, shapeId, screenId } = setup();
+    const childId = store.actions.editFrame({
+        kind: 'add',
+        position: { x: 100, y: 180 },
+        size: { width: 100, height: 100 }
+    })!;
+    store.actions.editFrame({ kind: 'update', id: childId, changes: { parentFrameId: screenId } });
+    store.actions.editFrame({ kind: 'reparentShapes', ids: [shapeId], parentFrameId: childId });
+    store.actions.editFrame({
+        kind: 'update',
+        id: screenId,
+        changes: { stack: { direction: 'row', gap: 0, padding: 0, align: 'end' } }
+    });
+    const projected = projectScreenViews(store.state.currentDocument).find(
+        (item) => item.view.id === viewId
+    )!.projection!.shapes[0];
+    expect(projected.type === 'rectangle' && projected.position.y).toBe(380);
+    expect(
+        store.actions.events.beginGesture({
+            pointerId: 1,
+            position: { x: 600, y: 440 },
+            screenViewId: viewId,
+            handle: { shapeId, type: 'bottomRight' }
+        })
+    ).toBe(false);
+    expect(store.state.events.pointer.gesture.kind).toBe('idle');
+});
+
+it('cancels a resize when a remote layout starts offsetting artwork only in its view', async () => {
+    const copies = await createCopies(2, (store) => {
+        const { screenId, shapeId } = setup(store);
+        const childId = store.actions.editFrame({
+            kind: 'add',
+            position: { x: 100, y: 180 },
+            size: { width: 100, height: 100 }
+        })!;
+        store.actions.editFrame({
+            kind: 'update',
+            id: childId,
+            changes: { parentFrameId: screenId }
+        });
+        store.actions.editFrame({ kind: 'reparentShapes', ids: [shapeId], parentFrameId: childId });
+    });
+    const [a, b] = copies;
+    const document = shownDocument(a);
+    const shapeId = document.shapesIds[0];
+    const viewId = Object.values(document.frames).find(
+        (frame) => frame.kind === 'view' && frame.position.x === 500
+    )!.id;
+    const screenId = document.frames[viewId].screenId!;
+    const original = json(document.shapes[shapeId]);
+    a.store.actions.events.beginGesture({
+        pointerId: 1,
+        position: { x: 600, y: 390 },
+        screenViewId: viewId,
+        handle: { shapeId, type: 'bottomRight' }
+    });
+    a.store.actions.events.movePointer({ pointerId: 1, position: { x: 640, y: 420 }, free: true });
+    edit(b, (actions) =>
+        actions.editFrame({
+            kind: 'update',
+            id: screenId,
+            changes: { stack: { direction: 'row', gap: 0, padding: 0, align: 'end' } }
+        })
+    );
+    settle(copies);
+    a.store.actions.events.endGesture({ pointerId: 1, position: { x: 640, y: 420 }, free: true });
+    settle(copies);
+    expect(json(shownDocument(a).shapes[shapeId])).toEqual(original);
+    expect(json(shownDocument(b).shapes[shapeId])).toEqual(original);
+    expect(shownDocument(a).frames[screenId].stack?.align).toBe('end');
+    expect(a.store.state.events.pointer.gesture.kind).toBe('idle');
+});
