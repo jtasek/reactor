@@ -98,7 +98,11 @@ function screenViewMembersTarget(
     // Screen no viewport can offset it. The owner check above ends this walk.
     const parents = frameParents(document.frames);
     const stacked = shapeIds.some((shapeId) => {
-        for (let id = document.shapes[shapeId].parentFrameId; id; id = parents.get(id)) {
+        for (
+            let id = document.shapes[shapeId].parentFrameId;
+            id;
+            id = id === screen.id ? undefined : parents.get(id)
+        ) {
             if (document.frames[id].stack) {
                 return true;
             }
@@ -141,10 +145,9 @@ export function screenViewContainerTarget(
 export function canTransformScreenViewContainer(
     document: Document,
     viewId: string,
-    owner: ScreenViewContainer
+    owner: ScreenViewContainer,
+    target = screenViewContainerTarget(document, viewId, owner)
 ) {
-    const target = screenViewContainerTarget(document, viewId, owner);
-
     return target !== null && !placedLayoutOffset(document, target, target.shapeIds);
 }
 

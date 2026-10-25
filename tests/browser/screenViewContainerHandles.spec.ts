@@ -118,11 +118,6 @@ for (const kind of ['group', 'component'] as const) {
         await expect(
             page.locator(`#${kind === 'group' ? 'group' : 'component'}-selections ${selector}`)
         ).toHaveCount(0);
-        if (kind === 'group') {
-            await page.screenshot({
-                path: '/private/tmp/reactor-screen-view-container-handles.png'
-            });
-        }
     });
 
     test(`${kind}: cancel restores geometry and handles work in a narrow Screen view`, async ({

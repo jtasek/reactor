@@ -1,5 +1,6 @@
 import { json } from 'overmind';
 import { projectScreenViews } from 'src/app/screenProjection';
+import { canvasComponentFrame } from 'src/app/frameHooks';
 import { canTransformScreenViewContainer } from 'src/app/screenViewEditing';
 import type { ScreenViewContainer } from 'src/app/screenViewEditing';
 import { createTestStore } from './support/store';
@@ -378,5 +379,59 @@ describe.each(['group', 'component'] as const)('%s handles in Screen views', (ki
                 .shapesIds
         ).toHaveLength(3);
         expect(a.store.state.events.pointer.gesture.kind).toBe('idle');
+    });
+});
+
+describe('components split between a Screen and the canvas', () => {
+    it('keep a canvas outline around their canvas members, without transform handles', () => {
+        const { store } = createTestStore();
+        const screenId = store.actions.editFrame({
+            kind: 'add',
+            position: { x: 100, y: 80 },
+            size: { width: 300, height: 200 }
+        })!;
+        store.actions.editFrame({ kind: 'update', id: screenId, changes: { kind: 'screen' } });
+        const viewId = store.actions.editFrame({
+            kind: 'addView',
+            screenId,
+            position: { x: 500, y: 300 },
+            size: { width: 500, height: 250 }
+        })!;
+        store.actions.addShape({
+            type: 'rectangle',
+            position: { x: 120, y: 110 },
+            size: { width: 40, height: 40 },
+            parentFrameId: screenId
+        });
+        store.actions.addShape({
+            type: 'rectangle',
+            position: { x: 1200, y: 1100 },
+            size: { width: 40, height: 40 }
+        });
+        const document = store.state.currentDocument;
+        store.actions.addComponent({ id: 'split', shapesIds: [...document.shapesIds] });
+
+        expect(canvasComponentFrame(document, 'split')).toEqual({
+            frame: expect.objectContaining({
+                box: expect.objectContaining({
+                    topLeft: { x: 1200, y: 1100 },
+                    width: 40,
+                    height: 40
+                })
+            }),
+            split: true
+        });
+        expect(canTransformScreenViewContainer(document, viewId, { componentId: 'split' })).toBe(
+            false
+        );
+    });
+
+    it('draw nothing on the canvas when every member is Screen artwork', () => {
+        const { store } = setup('component');
+
+        expect(canvasComponentFrame(store.state.currentDocument, 'container')).toEqual({
+            frame: null,
+            split: true
+        });
     });
 });

@@ -110,7 +110,6 @@ test('anchors the menu to the selected view and runs shared lock, clone and dele
     const menuBox = (await toolbar.boundingBox())!;
     expect(menuBox.x).toBeGreaterThanOrEqual(0);
     expect(menuBox.x + menuBox.width).toBeLessThanOrEqual(600);
-    await page.screenshot({ path: '/private/tmp/reactor-screen-view-menu-narrow.png' });
 });
 
 test('shows Alt distances only within the active view and keeps resize snap paths in view coordinates', async ({
@@ -155,7 +154,6 @@ test('keeps instance badges and Explorer selections in the chosen view and remov
     const badge = page.locator('[data-selection-badge]');
     await expect(badge).toHaveAttribute('data-object-type', 'instance');
     await expect(badge).toHaveCSS('left', '540px');
-    await page.screenshot({ path: '/private/tmp/reactor-screen-view-menu.png' });
     await row.getByRole('button', { name: 'Home · Desktop', exact: true }).click();
     await expect(menu).toHaveCount(0);
     await expect(badge).toHaveCount(0);
