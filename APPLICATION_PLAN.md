@@ -675,7 +675,13 @@ continues working through adapters to the new screen/context projection until R4
    dimension labels show the resolved size in each view.
    Overlays follow viewport/camera changes and disappear for unavailable views or mixed
    selections. `tests/screenViewOverlays.test.ts` and its browser counterpart cover these paths.
-   **Still required for R4.2:** complete focused component editing, group/component handles and
+   **Container handles implemented:** selected groups and local component containers expose one
+   proportional resize/rotate handle set in each editable view. Gestures edit shared source
+   artwork, including hidden members, and retain snapping, cancellation and shared undo.
+   Locked, mixed-screen and stack-positioned containers have no transform handles. Instances
+   retain their existing rotation-only controls. `tests/screenViewContainerHandles.test.ts` and
+   its browser counterpart cover transforms, viewport geometry and concurrent changes.
+   **Still required for R4.2:** complete focused component editing and
    contextual keyboard commands. All views have the same supported interactions throughout these increments.
 
 3. **R4.3 — Inherited color modes per view (M).**

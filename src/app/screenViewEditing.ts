@@ -5,11 +5,13 @@ import { isReadOnly } from './documentAccess';
 import { groupFrame } from './membership';
 import { localComponents } from './componentSelection';
 import type { Context } from './index';
-import type { Document, Frame, Point } from './types';
+import type { Document, Frame, Point, Shape } from './types';
 import { frameParents, isFrameLocked, isFrameVisible } from './frameState';
 import { projectScreenViews } from './screenProjection';
 import { untracked } from './untracked';
-import type { ScreenViewAddress, ScreenViewGesture } from 'src/events/types';
+import type { HandleOwner, ScreenViewAddress, ScreenViewGesture } from 'src/events/types';
+
+export type ScreenViewContainer = Exclude<HandleOwner, { shapeId: string }>;
 
 function screenViewSource(state: Context['state'], address: ScreenViewAddress | null) {
     const document = state.currentDocument;
@@ -61,18 +63,33 @@ export function editableScreenView(state: Context['state'], address: ScreenViewA
  * caller holding the View's projection reuses its layout instead of making one.
  */
 export function screenViewTransformTarget(document: Document, viewId: string, shapeId: string) {
+    return screenViewMembersTarget(document, viewId, [shapeId], false);
+}
+
+function screenViewMembersTarget(
+    document: Document,
+    viewId: string,
+    shapeIds: string[],
+    includeHidden: boolean
+) {
     const view = document.frames[viewId];
     const screen = view?.screenId ? document.frames[view.screenId] : undefined;
-    const shape = document.shapes[shapeId];
+
+    if (view?.kind !== 'view' || screen?.kind !== 'screen' || shapeIds.length === 0) {
+        return null;
+    }
+
+    const owners = screenOwners(document.frames);
 
     if (
-        view?.kind !== 'view' ||
-        screen?.kind !== 'screen' ||
-        !shape ||
-        screenOwners(document.frames).get(shape.parentFrameId ?? '') !== screen.id ||
-        !isShapeVisible(document, shapeId) ||
-        isShapeLocked(document, shapeId) ||
-        hasLayoutOffset(document, [shapeId])
+        shapeIds.some(
+            (id) =>
+                !document.shapes[id] ||
+                owners.get(document.shapes[id].parentFrameId ?? '') !== screen.id ||
+                (!includeHidden && !isShapeVisible(document, id)) ||
+                isShapeLocked(document, id)
+        ) ||
+        hasLayoutOffset(document, shapeIds)
     ) {
         return null;
     }
@@ -80,11 +97,15 @@ export function screenViewTransformTarget(document: Document, viewId: string, sh
     // Only stack rules place frames, so without a stack between the shape and its
     // Screen no viewport can offset it. The owner check above ends this walk.
     const parents = frameParents(document.frames);
-    let stacked = false;
+    const stacked = shapeIds.some((shapeId) => {
+        for (let id = document.shapes[shapeId].parentFrameId; id; id = parents.get(id)) {
+            if (document.frames[id].stack) {
+                return true;
+            }
+        }
 
-    for (let id = shape.parentFrameId; id; id = id === screen.id ? undefined : parents.get(id)) {
-        stacked ||= Boolean(document.frames[id].stack);
-    }
+        return false;
+    });
 
     return { view, screen, stacked };
 }
@@ -93,8 +114,47 @@ export function screenViewTransformTarget(document: Document, viewId: string, sh
 export function canTransformScreenViewShape(document: Document, viewId: string, shapeId: string) {
     const target = screenViewTransformTarget(document, viewId, shapeId);
 
-    if (!target?.stacked) {
-        return target !== null;
+    return target !== null && !placedLayoutOffset(document, target, [shapeId]);
+}
+
+/** Hidden members follow a container, but every member must belong to this Screen. */
+export function screenViewContainerTarget(
+    document: Document,
+    viewId: string,
+    owner: ScreenViewContainer
+) {
+    const container =
+        'groupId' in owner
+            ? document.groups[owner.groupId]
+            : document.components[owner.componentId];
+
+    if (!container || ('library' in container && container.library)) {
+        return null;
+    }
+
+    const shapeIds = container.shapesIds.filter((id) => document.shapes[id]);
+    const target = screenViewMembersTarget(document, viewId, shapeIds, true);
+
+    return target ? { ...target, shapeIds } : null;
+}
+
+export function canTransformScreenViewContainer(
+    document: Document,
+    viewId: string,
+    owner: ScreenViewContainer
+) {
+    const target = screenViewContainerTarget(document, viewId, owner);
+
+    return target !== null && !placedLayoutOffset(document, target, target.shapeIds);
+}
+
+function placedLayoutOffset(
+    document: Document,
+    target: NonNullable<ReturnType<typeof screenViewTransformTarget>>,
+    shapeIds: string[]
+) {
+    if (!target.stacked) {
+        return false;
     }
 
     const { view, screen } = target;
@@ -107,7 +167,7 @@ export function canTransformScreenViewShape(document: Document, viewId: string, 
         }
     };
 
-    return !hasLayoutOffset({ ...resized, frameLayout: projectFrameLayout(resized) }, [shapeId]);
+    return hasLayoutOffset({ ...resized, frameLayout: projectFrameLayout(resized) }, shapeIds);
 }
 
 /**
@@ -184,21 +244,7 @@ function placedPointerDocument(state: Context['state'], address: ScreenViewAddre
     const projected = editableScreenView(state, address)?.projection;
     const shapes = projected?.shapes ?? [];
 
-    const placed: Document = {
-        ...document,
-        shapes: Object.fromEntries(shapes.map((shape) => [shape.id, shape])),
-        shapesIds: shapes.map((shape) => shape.id),
-        frameLayout: {
-            shapes: {},
-            frames: {},
-            managedShapes: new Set(),
-            managedFrames: new Set(),
-            problems: {},
-            frameSizes: {},
-            shapeSizes: {},
-            slots: {}
-        }
-    };
+    const placed = placedScreenDocument(document, shapes);
 
     return {
         ...placed,
@@ -214,6 +260,25 @@ function placedPointerDocument(state: Context['state'], address: ScreenViewAddre
                 groupFrame(placed, component) ?? undefined
             ])
         )
+    };
+}
+
+/** Projected shapes already contain their layout; do not apply it a second time. */
+export function placedScreenDocument(document: Document, shapes: Shape[]): Document {
+    return {
+        ...document,
+        shapes: Object.fromEntries(shapes.map((shape) => [shape.id, shape])),
+        shapesIds: shapes.map((shape) => shape.id),
+        frameLayout: {
+            shapes: {},
+            frames: {},
+            managedShapes: new Set(),
+            managedFrames: new Set(),
+            problems: {},
+            frameSizes: {},
+            shapeSizes: {},
+            slots: {}
+        }
     };
 }
 

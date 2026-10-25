@@ -1,6 +1,12 @@
-import { screenViewTransformTarget } from './screenViewEditing';
+import {
+    screenViewTransformTarget,
+    screenViewContainerTarget,
+    placedScreenDocument,
+    type ScreenViewContainer
+} from './screenViewEditing';
 import { screenOwners, screenSourceShapes, screenViewName } from './screenViews';
-import { withTheirGroups } from './membership';
+import { groupFrame, withTheirGroups } from './membership';
+import type { ScreenProjection } from './screenProjection';
 import { hasSizingRules } from './stackSizing';
 import {
     frameLayout,
@@ -15,7 +21,7 @@ import {
 import { frameState, isFrameVisible, isFrameLocked } from './frameState';
 import { frameParents, validFrameParent, frameMoveProblem } from './frameMembership';
 import { isReadOnly } from './documentAccess';
-import { isShapeLocked } from './utils';
+import { isShapeLocked, isShapeVisible } from './utils';
 import { explorerLayers, explorerTree } from './explorerTree';
 import { useAppState } from './hooks';
 import type { Document, Frame } from './types';
@@ -283,6 +289,64 @@ export const useScreenSourceGroup = (groupId: string) =>
         const ids = screenSourceShapes(document);
 
         return document.groups[groupId]?.shapesIds.some((id) => ids.has(id));
+    });
+
+export const useScreenSourceComponent = (componentId: string) =>
+    useAppState((state) => {
+        const document = state.currentDocument;
+        const ids = screenSourceShapes(document);
+
+        return document.components[componentId]?.shapesIds.some((id) => ids.has(id));
+    });
+
+/** One placed box per selected container; reuse the viewport's existing layout. */
+export const useScreenViewContainers = (
+    viewId: string,
+    projection: ScreenProjection | null,
+    editable: boolean
+) =>
+    useAppState((state) => {
+        if (!editable || !projection) {
+            return [];
+        }
+
+        const document = state.currentDocument;
+        const placed = placedScreenDocument(document, projection.shapes);
+        const owners: ScreenViewContainer[] = [
+            ...document.selectedGroupsIds.map((groupId) => ({ groupId })),
+            ...document.selectedComponentsIds.map((componentId) => ({ componentId }))
+        ];
+
+        return owners.flatMap((owner) => {
+            const container =
+                'groupId' in owner
+                    ? document.groups[owner.groupId]
+                    : document.components[owner.componentId];
+            const shown = container.shapesIds.filter((id) => isShapeVisible(document, id));
+
+            if (!shown.every((id) => placed.shapes[id])) {
+                return [];
+            }
+
+            const frame = groupFrame(placed, container);
+
+            if (!frame) {
+                return [];
+            }
+
+            const target = screenViewContainerTarget(document, viewId, owner);
+
+            return [
+                {
+                    owner,
+                    frame,
+                    shapeIds: shown,
+                    transformable:
+                        target !== null &&
+                        !target.shapeIds.some((id) => projection.layoutOffsets.has(id))
+                }
+            ];
+        });
     });
 
 export const useFrameName = (id: string) =>

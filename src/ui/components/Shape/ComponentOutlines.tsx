@@ -1,4 +1,5 @@
 import React, { FC } from 'react';
+import { useScreenSourceComponent } from 'src/app/frameHooks';
 import { useGesture } from 'src/app/hooks';
 import {
     useComponent,
@@ -19,8 +20,9 @@ const ComponentSelection: FC<{ componentId: string; selected: boolean }> = ({
     const frame = useComponentFrame(componentId);
     const locked = useComponentLocked(componentId);
     const gesture = useGesture();
+    const source = useScreenSourceComponent(componentId);
 
-    if (!frame) {
+    if (!frame || source) {
         return null;
     }
     const { box, rotation } = frame;

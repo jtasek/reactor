@@ -1,5 +1,7 @@
 import {
     canTransformScreenViewShape,
+    canTransformScreenViewContainer,
+    screenViewContainerTarget,
     editableScreenView,
     pointerDocument,
     screenViewGestureBlocked
@@ -20,6 +22,7 @@ import type { RestoredEntity } from 'src/app/services/collaboration';
 import { beyondClickSlip } from './gestures';
 import {
     HandleTarget,
+    Gesture,
     ScreenViewGesture,
     SelectionSnapshot,
     ShapesSnapshot,
@@ -59,6 +62,33 @@ function placedBox(box: Box | undefined, view: ScreenViewGesture | undefined) {
         topLeft: { x: box.topLeft.x + offset.x, y: box.topLeft.y + offset.y },
         bottomRight: { x: box.bottomRight.x + offset.x, y: box.bottomRight.y + offset.y }
     };
+}
+
+/** A view drag stops if any member can no longer follow the source-space transform. */
+function viewTransformBlocked(state: Context['state'], gesture: Gesture) {
+    if (!('shapes' in gesture) || !gesture.screenView) {
+        return false;
+    }
+
+    const { viewId } = gesture.screenView.address;
+    const document = state.currentDocument;
+
+    if ('shapeId' in gesture) {
+        return !canTransformScreenViewShape(document, viewId, gesture.shapeId);
+    }
+
+    if ('groupId' in gesture || 'componentId' in gesture) {
+        const target = screenViewContainerTarget(document, viewId, gesture);
+
+        return (
+            !target ||
+            target.shapeIds.length !== Object.keys(gesture.shapes).length ||
+            target.shapeIds.some((id) => !gesture.shapes[id]) ||
+            !canTransformScreenViewContainer(document, viewId, gesture)
+        );
+    }
+
+    return false;
 }
 
 /** Explorer selections retain the view branch that was used to select the artwork. */
@@ -137,14 +167,19 @@ export const beginGesture = (
     if (
         projected &&
         handle &&
-        (!('shapeId' in handle) ||
+        ('frameId' in handle ||
             handle.type === 'radius' ||
-            !canTransformScreenViewShape(
-                state.currentDocument,
-                projected.view.id,
-                handle.shapeId
-            ) ||
-            !projected.projection.shapes.some((shape) => shape.id === handle.shapeId))
+            ('shapeId' in handle
+                ? !canTransformScreenViewShape(
+                      state.currentDocument,
+                      projected.view.id,
+                      handle.shapeId
+                  ) || !projected.projection.shapes.some((shape) => shape.id === handle.shapeId)
+                : !canTransformScreenViewContainer(
+                      state.currentDocument,
+                      projected.view.id,
+                      handle
+                  )))
     ) {
         return false;
     }
@@ -448,13 +483,7 @@ export const movePointer = (
     if (
         'shapes' in gesture &&
         (editorHelpers().frames.gestureBlocked(state.currentDocument, gesture) ||
-            (gesture.screenView &&
-                'shapeId' in gesture &&
-                !canTransformScreenViewShape(
-                    state.currentDocument,
-                    gesture.screenView.address.viewId,
-                    gesture.shapeId
-                )))
+            viewTransformBlocked(state, gesture))
     ) {
         actions.events.cancelGesture();
 
@@ -538,7 +567,7 @@ export const movePointer = (
         const upright = rotation % 90 === 0;
         const startBox =
             gesture.kind !== 'resizing'
-                ? gesture.frame.box
+                ? placedBox(gesture.frame.box, gesture.screenView)
                 : placedBox(original && getShapeBounds(original), gesture.screenView);
         const proportional =
             gesture.kind !== 'resizing' || (original !== undefined && keepsAspectRatio(original));
@@ -574,14 +603,20 @@ export const movePointer = (
             actions.resizeComponent({
                 componentId,
                 handle,
-                position: snapped.point,
+                position: sourcePoint(snapped.point, gesture.screenView),
                 shapes,
                 frame
             });
         } else {
             const { groupId, handle, shapes, frame } = gesture;
 
-            actions.resizeGroup({ groupId, handle, position: snapped.point, shapes, frame });
+            actions.resizeGroup({
+                groupId,
+                handle,
+                position: sourcePoint(snapped.point, gesture.screenView),
+                shapes,
+                frame
+            });
         }
 
         // Its group and layer are shown, so each shape's own flag says whether it is drawn.
@@ -621,11 +656,22 @@ export const movePointer = (
     if (gesture.kind === 'rotatingGroup') {
         const { groupId, shapes, frame } = gesture;
 
-        actions.rotateGroup({ groupId, position, shapes, frame });
+        actions.rotateGroup({
+            groupId,
+            position: sourcePoint(position, gesture.screenView),
+            shapes,
+            frame
+        });
     }
     if (gesture.kind === 'rotatingComponent') {
         const { componentId, shapes, frame } = gesture;
-        actions.rotateComponent({ componentId, position, shapes, frame });
+
+        actions.rotateComponent({
+            componentId,
+            position: sourcePoint(position, gesture.screenView),
+            shapes,
+            frame
+        });
     }
 };
 

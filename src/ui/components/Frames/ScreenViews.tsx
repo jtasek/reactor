@@ -1,4 +1,8 @@
-import { useFrameName, useScreenShapeTransformable } from 'src/app/frameHooks';
+import {
+    useFrameName,
+    useScreenShapeTransformable,
+    useScreenViewContainers
+} from 'src/app/frameHooks';
 import React, { createElement, type CSSProperties, type FC } from 'react';
 import { componentSource, instanceBox } from 'src/app/componentSource';
 import { projectScreenViews } from 'src/app/screenProjection';
@@ -18,6 +22,7 @@ import { getComponentByType } from 'src/tools/components';
 import { Label } from '../Label';
 import { Handles } from '../Selectable/Resizable';
 import { Instance } from '../Shape/Instance';
+import { ScreenViewContainerSelection } from './ScreenViewContainerSelection';
 import styles from './styles.css';
 
 const ProjectedSelectionControls: FC<{ shape: Shape; viewId: string; placedOffset: boolean }> = ({
@@ -62,7 +67,8 @@ const ProjectedShape: FC<{
     viewId: string;
     interactive: boolean;
     placedOffset: boolean;
-}> = ({ shape, viewId, interactive, placedOffset }) => {
+    inSelectedContainer: boolean;
+}> = ({ shape, viewId, interactive, placedOffset, inSelectedContainer }) => {
     const document = useCurrentDocument();
     const context = useVariableContext();
     const painted = themeColors(shape, document, context);
@@ -111,7 +117,7 @@ const ProjectedShape: FC<{
                     Primitive && createElement(Primitive, { ...props, key, selected: false })
                 )}
             </g>
-            {interactive && shape.selected && (
+            {interactive && shape.selected && !inSelectedContainer && (
                 <rect
                     x={bounds.topLeft.x}
                     y={bounds.topLeft.y}
@@ -124,7 +130,7 @@ const ProjectedShape: FC<{
                     pointerEvents="none"
                 />
             )}
-            {interactive && shape.selected && (
+            {interactive && shape.selected && !inSelectedContainer && (
                 <ProjectedSelectionControls
                     shape={shape}
                     viewId={viewId}
@@ -163,6 +169,8 @@ const ScreenView: FC<{
 }> = ({ item, editable }) => {
     const { view, projection, problem } = item;
     const name = useFrameName(view.id);
+    const selections = useScreenViewContainers(view.id, projection, editable);
+    const contained = new Set(selections.flatMap((selection) => selection.shapeIds));
 
     if (!projection) {
         // Nothing here can be edited, so presses reach the canvas underneath.
@@ -218,6 +226,18 @@ const ScreenView: FC<{
                     viewId={view.id}
                     interactive={editable}
                     placedOffset={layoutOffsets.has(shape.id)}
+                    inSelectedContainer={contained.has(shape.id)}
+                />
+            ))}
+            {selections.map((selection) => (
+                <ScreenViewContainerSelection
+                    key={
+                        'groupId' in selection.owner
+                            ? `group:${selection.owner.groupId}`
+                            : `component:${selection.owner.componentId}`
+                    }
+                    {...selection}
+                    viewId={view.id}
                 />
             ))}
         </g>

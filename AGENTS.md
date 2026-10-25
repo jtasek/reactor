@@ -488,8 +488,12 @@ of pointer-following components. Explorer selections retain their view branch th
 Resize snap overlays read projected bounds too; selected shapes retain dimension labels
 resolved per viewport. Missing, hidden or locked views and mixed
 canvas/view selections have no overlay; menus keep editing shared source entities through
-existing commands. Group/component handles remain planned. Tests: screenViewHandles,
-screenViewOverlays and their browser counterparts.
+existing commands. Selected groups and local component containers draw one projected box and
+handle set per editable view, using the existing container transforms in source coordinates.
+Hidden members follow too; all members must belong to the view's Screen and remain unlocked
+and free of source/viewport layout offsets. Changed membership or layout cancels the gesture.
+Instances keep rotation-only handles. Tests: screenViewHandles, screenViewOverlays,
+screenViewContainerHandles and their browser counterparts.
 Collaboration migrations load alongside Yjs in `initialize`, before any document is opened;
 keep them outside the eager entry. Tests: equalScreenViews, screenViews and screenViewGestures.
 
