@@ -126,7 +126,13 @@ export const beginGesture = (
     pointer.path = [];
 
     if (handle && 'frameId' in handle && state.tools.activeToolsIds[0] === 'select') {
-        return editorHelpers().frames.begin({ state, actions, effects }, owner, handle);
+        const began = editorHelpers().frames.begin({ state, actions, effects }, owner, handle);
+
+        if (!began) {
+            pointer.screenView = previousScreenView;
+        }
+
+        return began;
     }
 
     if (
@@ -138,6 +144,7 @@ export const beginGesture = (
                     state.currentDocument.groups[handle.groupId]?.shapesIds ?? []
                 )))
     ) {
+        pointer.screenView = previousScreenView;
         effects.collaboration.resume();
 
         return false;

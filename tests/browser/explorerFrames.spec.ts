@@ -265,7 +265,9 @@ test('screen identity is explicit and search is scoped to each view', async ({ p
     await expect(name(page, 'Card')).toHaveAccessibleDescription('1 Screen view Screen');
     await name(page, 'Card').click();
     await page.getByLabel('Frame parent', { exact: true }).selectOption('home');
-    await expect(name(page, 'Card')).toHaveAccessibleDescription('1 Screen view Screen');
+    // A nested screen is drawn inside its parent again, so it leaves the Screens list.
+    await expect(name(page, 'Card')).toHaveCount(1);
+    await expect(name(page, 'Card')).toHaveAccessibleDescription('Screen');
     await expect(page.getByText('Move this screen to Canvas', { exact: false })).toBeVisible();
     await page.getByRole('searchbox', { name: 'Search objects', exact: true }).fill('Shared layer');
     await expect(explorer(page).getByText('No objects match')).toBeVisible();
