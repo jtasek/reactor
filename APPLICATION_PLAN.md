@@ -664,8 +664,13 @@ continues working through adapters to the new screen/context projection until R4
    shared undo, concurrent edits, text placement, cloning, thumbnails and the viewer are covered.
    Projection across placed views stays bounded to 5,000 nodes. Tests:
    `tests/equalScreenViews.test.ts`, `tests/screenViewGestures.test.ts` and browser counterparts.
-   **Still required for R4.2:** projected resize/rotate handles, selection menus and measurement
-   overlays in the active view; complete focused component editing and contextual keyboard
+   **Shape handles implemented:** free shapes expose the existing resize/rotate handles inside
+   every editable Screen view. Pointer positions translate back to shared source geometry;
+   snapping stays in view coordinates. Locked and stack-managed shapes remain selectable without
+   transform handles. Cancellation, remote edits and shared undo are covered by
+   `tests/screenViewHandles.test.ts` and `tests/browser/screenViewHandles.spec.ts`.
+   **Still required for R4.2:** selection menus and measurement overlays in the active view;
+   complete focused component editing and contextual keyboard
    commands. All views have the same supported interactions throughout these increments.
 
 3. **R4.3 — Inherited color modes per view (M).**

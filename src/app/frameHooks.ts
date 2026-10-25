@@ -1,3 +1,4 @@
+import { canTransformScreenShape } from './screenViewEditing';
 import { screenOwners, screenSourceShapes, screenViewName } from './screenViews';
 import { withTheirGroups } from './membership';
 import { hasSizingRules } from './stackSizing';
@@ -297,3 +298,12 @@ export const useScreenSourceSelection = () =>
 
 export const useFrameName = (id: string) =>
     useAppState((state) => screenViewName(state.currentDocument, state.currentDocument.frames[id]));
+
+/** Mounted only for selected artwork; placement permissions are checked by its view. */
+export const useScreenShapeTransformable = (viewId: string, shapeId: string) =>
+    useAppState((state) => {
+        const document = state.currentDocument;
+        const screenId = document.frames[viewId]?.screenId;
+
+        return Boolean(screenId && canTransformScreenShape(document, screenId, shapeId));
+    });

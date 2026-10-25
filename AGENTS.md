@@ -470,7 +470,11 @@ removed/hidden/locked/repositioned view cancels an active gesture; snapshot reba
 remote edits. Two-phase text stays anchored to its source location while its input follows
 view movement; text can commit after the view is hidden or removed. Only editable views take
 presses, leaving the inner half of their edge grip free. Marquees project once per gesture.
-Projected handles, selection menus and measurement overlays remain planned.
+Free shapes expose the existing resize/rotate handles in editable Screen views. Pointer and
+snapping geometry stay in view coordinates; only authored shape edits translate to source
+coordinates. Locked or stack-managed shapes have no transform handles; instances retain their
+rotation-only handles. Group/component handles, selection menus and measurement overlays remain
+planned. Tests: screenViewHandles and its browser counterpart.
 Collaboration migrations load alongside Yjs in `initialize`, before any document is opened;
 keep them outside the eager entry. Tests: equalScreenViews, screenViews and screenViewGestures.
 

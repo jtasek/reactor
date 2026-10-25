@@ -1,4 +1,5 @@
 import {
+    canTransformScreenShape,
     editableScreenView,
     pointerDocument,
     screenViewGestureBlocked
@@ -8,7 +9,7 @@ import { renderedShape, hasLayoutOffset, frameLayout } from 'src/app/frameLayout
 import { isFrameVisible } from 'src/app/frameState';
 import { json } from 'overmind';
 import { Context } from 'src/app';
-import { ActionWithParam, Point, Shape } from 'src/app/types';
+import { ActionWithParam, Box, Point, Shape } from 'src/app/types';
 import { screenToWorld } from 'src/app/camera';
 import { drawnBox, drawnExtent, groupFrame, shownShapesIds } from 'src/app/membership';
 import { editorHelpers } from 'src/app/editorHelpers';
@@ -17,13 +18,48 @@ import { getShapeBounds, isShapeLocked } from 'src/app/utils';
 import { keepsAspectRatio } from 'src/app/geometry';
 import type { RestoredEntity } from 'src/app/services/collaboration';
 import { beyondClickSlip } from './gestures';
-import { HandleTarget, SelectionSnapshot, ShapesSnapshot, TouchContact } from './types';
+import {
+    HandleTarget,
+    ScreenViewGesture,
+    SelectionSnapshot,
+    ShapesSnapshot,
+    TouchContact
+} from './types';
 
 /** Snapping, which the editor provides as it loads. */
 const snapping = () => editorHelpers().snapping;
 
 /** A pointer's input; `free` moves without snapping, as while Ctrl or Cmd is held. */
 type PointerInput = { pointerId: number; position: Point; free?: boolean };
+
+/** Pointer and snap geometry stay in the view; authored edits use screen coordinates. */
+function sourcePoint(position: Point, view: ScreenViewGesture | undefined): Point {
+    if (!view) {
+        return position;
+    }
+
+    return {
+        x: position.x + view.sourcePosition.x - view.position.x,
+        y: position.y + view.sourcePosition.y - view.position.y
+    };
+}
+
+function placedBox(box: Box | undefined, view: ScreenViewGesture | undefined) {
+    if (!box || !view) {
+        return box;
+    }
+
+    const offset = {
+        x: view.position.x - view.sourcePosition.x,
+        y: view.position.y - view.sourcePosition.y
+    };
+
+    return {
+        ...box,
+        topLeft: { x: box.topLeft.x + offset.x, y: box.topLeft.y + offset.y },
+        bottomRight: { x: box.bottomRight.x + offset.x, y: box.bottomRight.y + offset.y }
+    };
+}
 
 export const setStartPosition: ActionWithParam<Point> = ({ state }, position) => {
     state.events.pointer.start = position;
@@ -83,6 +119,17 @@ export const beginGesture = (
     const projected = address ? editableScreenView(state, address) : null;
 
     if (address && (!projected || state.currentDocument.editingComponentId)) {
+        return false;
+    }
+
+    if (
+        projected &&
+        handle &&
+        (!('shapeId' in handle) ||
+            handle.type === 'radius' ||
+            !canTransformScreenShape(state.currentDocument, projected.screen.id, handle.shapeId) ||
+            !projected.projection.shapes.some((shape) => shape.id === handle.shapeId))
+    ) {
         return false;
     }
 
@@ -380,7 +427,14 @@ export const movePointer = (
 
     if (
         'shapes' in gesture &&
-        editorHelpers().frames.gestureBlocked(state.currentDocument, gesture)
+        (editorHelpers().frames.gestureBlocked(state.currentDocument, gesture) ||
+            (gesture.screenView &&
+                'shapeId' in gesture &&
+                !canTransformScreenShape(
+                    state.currentDocument,
+                    gesture.screenView.screenId,
+                    gesture.shapeId
+                )))
     ) {
         actions.events.cancelGesture();
 
@@ -463,7 +517,9 @@ export const movePointer = (
         const rotation = resizing ? (original?.rotation ?? 0) : gesture.frame.rotation;
         const upright = rotation % 90 === 0;
         const startBox =
-            gesture.kind !== 'resizing' ? gesture.frame.box : original && getShapeBounds(original);
+            gesture.kind !== 'resizing'
+                ? gesture.frame.box
+                : placedBox(original && getShapeBounds(original), gesture.screenView);
         const proportional =
             gesture.kind !== 'resizing' || (original !== undefined && keepsAspectRatio(original));
 
@@ -490,7 +546,7 @@ export const movePointer = (
             actions.resizeShape({
                 shapeId: gesture.shapeId,
                 handlerType: gesture.handle,
-                position: snapped.point,
+                position: sourcePoint(snapped.point, gesture.screenView),
                 original: gesture.shapes[gesture.shapeId]
             });
         } else if (gesture.kind === 'resizingComponent') {
@@ -509,7 +565,7 @@ export const movePointer = (
         }
 
         // Its group and layer are shown, so each shape's own flag says whether it is drawn.
-        const document = untracked(state.currentDocument);
+        const document = untracked(pointerDocument(state));
         const box = drawnExtent(
             document,
             changingIds.filter((id) => document.shapes[id]?.visible)
@@ -522,7 +578,10 @@ export const movePointer = (
     }
 
     if (gesture.kind === 'rotating') {
-        actions.rotateShape({ shapeId: gesture.shapeId, position });
+        actions.rotateShape({
+            shapeId: gesture.shapeId,
+            position: sourcePoint(position, gesture.screenView)
+        });
     }
 
     if (gesture.kind === 'rounding') {

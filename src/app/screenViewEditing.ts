@@ -1,4 +1,6 @@
-import { screenSourceShapes } from './screenViews';
+import { hasLayoutOffset } from './frameLayout';
+import { isShapeLocked, isShapeVisible } from './utils';
+import { screenOwners, screenSourceShapes } from './screenViews';
 import { isReadOnly } from './documentAccess';
 import { groupFrame } from './membership';
 import { localComponents } from './componentSelection';
@@ -50,6 +52,19 @@ export function editableScreenView(state: Context['state'], address: ScreenViewA
     )?.projection;
 
     return projection ? { ...source, projection } : null;
+}
+
+/** Free artwork keeps its authored geometry in every viewport. */
+export function canTransformScreenShape(document: Document, screenId: string, shapeId: string) {
+    const shape = document.shapes[shapeId];
+
+    return Boolean(
+        shape &&
+        screenOwners(document.frames).get(shape.parentFrameId ?? '') === screenId &&
+        isShapeVisible(document, shapeId) &&
+        !isShapeLocked(document, shapeId) &&
+        !hasLayoutOffset(document, [shapeId])
+    );
 }
 
 /**

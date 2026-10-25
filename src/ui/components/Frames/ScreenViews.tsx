@@ -1,15 +1,51 @@
-import { useFrameName } from 'src/app/frameHooks';
+import { useFrameName, useScreenShapeTransformable } from 'src/app/frameHooks';
 import React, { createElement, type CSSProperties, type FC } from 'react';
 import { componentSource, instanceBox } from 'src/app/componentSource';
 import { projectScreenViews } from 'src/app/screenProjection';
 import { themeColors } from 'src/app/themeColors';
 import { boxCenter, getShapeBounds } from 'src/app/utils';
-import { useAppState, useCameraScale, useCurrentDocument, useVariableContext } from 'src/app/hooks';
+import {
+    useAppState,
+    useGesture,
+    useShapesInSelectedGroupsIds,
+    useCameraScale,
+    useCurrentDocument,
+    useVariableContext
+} from 'src/app/hooks';
 import { canEditThroughView } from 'src/app/screenViewEditing';
 import type { Frame, Shape } from 'src/app/types';
 import { getComponentByType } from 'src/tools/components';
+import { Handles } from '../Selectable/Resizable';
 import { Instance } from '../Shape/Instance';
 import styles from './styles.css';
+
+const ProjectedHandles: FC<{ shape: Shape; viewId: string }> = ({ shape, viewId }) => {
+    const editable = useScreenShapeTransformable(viewId, shape.id);
+    const grouped = useShapesInSelectedGroupsIds();
+    const gesture = useGesture();
+    const ownsGesture = 'screenView' in gesture && gesture.screenView?.address.viewId === viewId;
+
+    if (!editable || grouped.includes(shape.id)) {
+        return null;
+    }
+
+    return (
+        <Handles
+            box={getShapeBounds(shape)}
+            rotation={shape.rotation ?? 0}
+            owner={{ shapeId: shape.id }}
+            activeHandle={
+                ownsGesture && gesture.kind === 'resizing' && gesture.shapeId === shape.id
+                    ? gesture.handle
+                    : undefined
+            }
+            rotateActive={
+                ownsGesture && gesture.kind === 'rotating' && gesture.shapeId === shape.id
+            }
+            resizeHandles={shape.type !== 'instance'}
+        />
+    );
+};
 
 const ProjectedShape: FC<{
     shape: Shape;
@@ -40,7 +76,6 @@ const ProjectedShape: FC<{
             data-screen-view={viewId}
             data-shape-id={shape.id}
             transform={transform}
-            opacity={painted.opacity}
             style={
                 {
                     '--shape-fill': painted.fill,
@@ -48,21 +83,23 @@ const ProjectedShape: FC<{
                 } as CSSProperties
             }
         >
-            {painted.type === 'instance' ? (
-                <>
-                    <Instance instance={painted} source={source} />
-                    <rect
-                        data-view-instance-hit
-                        x={bounds.topLeft.x}
-                        y={bounds.topLeft.y}
-                        width={bounds.width}
-                        height={bounds.height}
-                        fill="transparent"
-                    />
-                </>
-            ) : (
-                Primitive && createElement(Primitive, { ...props, key, selected: false })
-            )}
+            <g opacity={painted.opacity}>
+                {painted.type === 'instance' ? (
+                    <>
+                        <Instance instance={painted} source={source} />
+                        <rect
+                            data-view-instance-hit
+                            x={bounds.topLeft.x}
+                            y={bounds.topLeft.y}
+                            width={bounds.width}
+                            height={bounds.height}
+                            fill="transparent"
+                        />
+                    </>
+                ) : (
+                    Primitive && createElement(Primitive, { ...props, key, selected: false })
+                )}
+            </g>
             {interactive && shape.selected && (
                 <rect
                     x={bounds.topLeft.x}
@@ -76,6 +113,7 @@ const ProjectedShape: FC<{
                     pointerEvents="none"
                 />
             )}
+            {interactive && shape.selected && <ProjectedHandles shape={shape} viewId={viewId} />}
         </g>
     );
 };
