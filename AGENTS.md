@@ -481,8 +481,15 @@ coordinates. Eligibility checks both source and placed layout, including nested 
 Handles read the placed check from the View projection's `layoutOffsets`; the per-move check
 lays out the viewport only when a stack sits between the shape and its Screen.
 Locked or stack-managed shapes have no transform handles; instances retain their
-rotation-only handles. Group/component handles, selection menus and measurement overlays remain
-planned. Tests: screenViewHandles and its browser counterpart.
+rotation-only handles. Selection menus, badges and Alt measurements resolve through
+`selectionOverlays.ts` in the active view. Its editor-only hooks keep geometry projection out
+of pointer-following components. Explorer selections retain their view branch through
+`events.setScreenView`; hover ownership is local and separate from the drawing address.
+Resize snap overlays read projected bounds too; selected shapes retain dimension labels
+resolved per viewport. Missing, hidden or locked views and mixed
+canvas/view selections have no overlay; menus keep editing shared source entities through
+existing commands. Group/component handles remain planned. Tests: screenViewHandles,
+screenViewOverlays and their browser counterparts.
 Collaboration migrations load alongside Yjs in `initialize`, before any document is opened;
 keep them outside the eager entry. Tests: equalScreenViews, screenViews and screenViewGestures.
 

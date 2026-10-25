@@ -669,9 +669,14 @@ continues working through adapters to the new screen/context projection until R4
    snapping stays in view coordinates. Locked and stack-managed shapes remain selectable without
    transform handles. Cancellation, remote edits and shared undo are covered by
    `tests/screenViewHandles.test.ts` and `tests/browser/screenViewHandles.spec.ts`.
-   **Still required for R4.2:** selection menus and measurement overlays in the active view;
-   complete focused component editing and contextual keyboard
-   commands. All views have the same supported interactions throughout these increments.
+   **Selection overlays implemented:** selection menus and instance badges anchor to the active
+   Screen view, including Explorer selection. Existing menu commands edit shared artwork; Alt
+   distances compare shapes only within that view, resize snapping uses placed bounds, and
+   dimension labels show the resolved size in each view.
+   Overlays follow viewport/camera changes and disappear for unavailable views or mixed
+   selections. `tests/screenViewOverlays.test.ts` and its browser counterpart cover these paths.
+   **Still required for R4.2:** complete focused component editing, group/component handles and
+   contextual keyboard commands. All views have the same supported interactions throughout these increments.
 
 3. **R4.3 — Inherited color modes per view (M).**
    Extend the central resolver with the precedence above. Add Inherit/reset controls for

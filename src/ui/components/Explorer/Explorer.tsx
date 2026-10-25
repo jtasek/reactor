@@ -80,7 +80,11 @@ const RootItem: FC<{
     );
 };
 
-const ShapeItem: FC<{ shapeId: string; sourceId?: string }> = ({ shapeId, sourceId }) => {
+const ShapeItem: FC<{ shapeId: string; sourceId?: string; viewId?: string }> = ({
+    shapeId,
+    sourceId,
+    viewId
+}) => {
     const shape = useShape(shapeId);
     const inherited = useShapesFrameState([shapeId]);
     const sourceSelected = useSourceSelected(sourceId ?? null);
@@ -90,7 +94,8 @@ const ShapeItem: FC<{ shapeId: string; sourceId?: string }> = ({ shapeId, source
         toggleShapeSelected,
         toggleShapeLocked,
         toggleShapeVisible,
-        selectComponentChild
+        selectComponentChild,
+        events
     } = useActions();
     const commands = useItemCommandActions(
         [shapeId],
@@ -98,6 +103,8 @@ const ShapeItem: FC<{ shapeId: string; sourceId?: string }> = ({ shapeId, source
     );
 
     const handleSelect = ({ shiftKey }: MouseEvent<HTMLButtonElement>) => {
+        events.setScreenView(viewId ?? null);
+
         if (shiftKey) {
             toggleShapeSelected(shapeId);
 
@@ -141,7 +148,8 @@ const GroupItem: FC<{
     groupId: string;
     shapesIds: string[];
     contextId: string;
-}> = ({ groupId, shapesIds, contextId }) => {
+    viewId?: string;
+}> = ({ groupId, shapesIds, contextId, viewId }) => {
     const group = useGroup(groupId);
     const inherited = useShapesFrameState(group.shapesIds);
     const selected = useGroupSelected(groupId);
@@ -150,7 +158,8 @@ const GroupItem: FC<{
         unselectShapes,
         toggleGroupSelected,
         toggleGroupLocked,
-        toggleGroupVisible
+        toggleGroupVisible,
+        events
     } = useActions();
     const commands = useItemCommandActions(
         group.shapesIds,
@@ -158,6 +167,8 @@ const GroupItem: FC<{
     );
 
     const handleSelect = ({ shiftKey }: MouseEvent<HTMLButtonElement>) => {
+        events.setScreenView(viewId ?? null);
+
         if (!shiftKey) {
             unselectShapes();
         }
@@ -193,7 +204,7 @@ const GroupItem: FC<{
             }}
         >
             {shapesIds.map((shapeId) => (
-                <ShapeItem key={shapeId} shapeId={shapeId} />
+                <ShapeItem key={shapeId} shapeId={shapeId} viewId={viewId} />
             ))}
         </ExplorerItem>
     );
@@ -208,11 +219,9 @@ interface LayerProps {
     shapesOf: (dragged: Dragged) => string[];
 }
 
-const ObjectContents: FC<Pick<LayerProps, 'groups' | 'shapesIds' | 'contextId'>> = ({
-    groups,
-    shapesIds,
-    contextId
-}) => {
+const ObjectContents: FC<
+    Pick<LayerProps, 'groups' | 'shapesIds' | 'contextId'> & { viewId?: string }
+> = ({ groups, shapesIds, contextId, viewId }) => {
     const drawOrder = new Map(useShapesIds().map((id, index) => [id, index]));
     const items = [
         ...groups.map((group) => ({
@@ -239,9 +248,10 @@ const ObjectContents: FC<Pick<LayerProps, 'groups' | 'shapesIds' | 'contextId'>>
                         groupId={item.id}
                         shapesIds={item.shapesIds}
                         contextId={contextId}
+                        viewId={viewId}
                     />
                 ) : (
-                    <ShapeItem key={item.id} shapeId={item.id} />
+                    <ShapeItem key={item.id} shapeId={item.id} viewId={viewId} />
                 )
             )}
         </>
@@ -338,7 +348,7 @@ export const Explorer: FC = () => {
             viewCount: frames.filter((view) => view.kind === 'view' && view.screenId === screen.id)
                 .length
         }));
-    const frameItem = (frame: (typeof shownFrames)[number], viewId?: string): React.ReactNode => (
+    const frameItem = (frame: (typeof shownFrames)[number], branchId?: string): React.ReactNode => (
         <ExplorerItem
             key={`frame:${frame.id}`}
             kind="frame"
@@ -358,7 +368,7 @@ export const Explorer: FC = () => {
             icon={<FrameIcon size={16} aria-hidden="true" />}
             selected={selectedFrameId === frame.id}
             visible={frame.shown}
-            collapseId={`frame:${viewId ?? frame.id}:${frame.id}`}
+            collapseId={`frame:${branchId ?? frame.id}:${frame.id}`}
             onClick={() => editFrame({ kind: 'select', id: frame.id })}
             onDrop={
                 frame.locked || frame.inheritedLock
@@ -390,7 +400,7 @@ export const Explorer: FC = () => {
                         owners.get(child.id) !== child.id &&
                         child.parentFrameId === (frame.kind === 'view' ? frame.screenId : frame.id)
                 )
-                .map((child) => frameItem(child, viewId ?? frame.id))}
+                .map((child) => frameItem(child, branchId ?? frame.id))}
             <ObjectContents
                 {...(frame.kind === 'view'
                     ? (frameContents.get(frame.screenId ?? '')?.contents ?? {
@@ -398,7 +408,14 @@ export const Explorer: FC = () => {
                           shapesIds: []
                       })
                     : frame.contents)}
-                contextId={`frame:${viewId ?? frame.id}:${frame.id}`}
+                contextId={`frame:${branchId ?? frame.id}:${frame.id}`}
+                viewId={
+                    frame.kind === 'view'
+                        ? frame.id
+                        : document.frames[branchId ?? '']?.kind === 'view'
+                          ? branchId
+                          : undefined
+                }
             />
         </ExplorerItem>
     );

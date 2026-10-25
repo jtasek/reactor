@@ -1,12 +1,8 @@
+import type { SelectionOverlay } from 'src/app/selectionOverlays';
+import { useSelectionMenuPlacement } from 'src/app/selectionHooks';
 import React, { FC, useEffect, useRef } from 'react';
 import type { Command } from 'src/app/types';
-import {
-    useActions,
-    useCommandEnabled,
-    useControls,
-    useSelectionCommands,
-    useSelectionMenuPlacement
-} from 'src/app/hooks';
+import { useActions, useCommandEnabled, useControls, useSelectionCommands } from 'src/app/hooks';
 import { HideCommand, LockCommand, UnlockCommand } from 'src/commands';
 import { commandAction } from '../ItemMenu';
 import { CanvasMenu } from './CanvasMenu';
@@ -23,9 +19,9 @@ const useCommandAction = (command: Command) => {
  * change. It fades in while the pointer is over the selection and is gone
  * during a drag.
  */
-export const SelectionMenu: FC = () => {
+export const SelectionMenu: FC<{ overlay: SelectionOverlay | null }> = ({ overlay }) => {
     const shownBefore = useRef(false);
-    const placement = useSelectionMenuPlacement(shownBefore.current);
+    const placement = useSelectionMenuPlacement(overlay, shownBefore.current);
     const { contextMenu } = useControls();
     const hide = useCommandAction(HideCommand);
     const lock = useCommandAction(LockCommand);

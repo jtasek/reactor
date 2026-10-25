@@ -15,11 +15,12 @@ import {
 import { canEditThroughView } from 'src/app/screenViewEditing';
 import type { Frame, Shape } from 'src/app/types';
 import { getComponentByType } from 'src/tools/components';
+import { Label } from '../Label';
 import { Handles } from '../Selectable/Resizable';
 import { Instance } from '../Shape/Instance';
 import styles from './styles.css';
 
-const ProjectedHandles: FC<{ shape: Shape; viewId: string; placedOffset: boolean }> = ({
+const ProjectedSelectionControls: FC<{ shape: Shape; viewId: string; placedOffset: boolean }> = ({
     shape,
     viewId,
     placedOffset
@@ -29,25 +30,30 @@ const ProjectedHandles: FC<{ shape: Shape; viewId: string; placedOffset: boolean
     const gesture = useGesture();
     const ownsGesture = 'screenView' in gesture && gesture.screenView?.address.viewId === viewId;
 
-    if (!editable || grouped.includes(shape.id)) {
+    if (grouped.includes(shape.id)) {
         return null;
     }
 
     return (
-        <Handles
-            box={getShapeBounds(shape)}
-            rotation={shape.rotation ?? 0}
-            owner={{ shapeId: shape.id }}
-            activeHandle={
-                ownsGesture && gesture.kind === 'resizing' && gesture.shapeId === shape.id
-                    ? gesture.handle
-                    : undefined
-            }
-            rotateActive={
-                ownsGesture && gesture.kind === 'rotating' && gesture.shapeId === shape.id
-            }
-            resizeHandles={shape.type !== 'instance'}
-        />
+        <>
+            {editable && (
+                <Handles
+                    box={getShapeBounds(shape)}
+                    rotation={shape.rotation ?? 0}
+                    owner={{ shapeId: shape.id }}
+                    activeHandle={
+                        ownsGesture && gesture.kind === 'resizing' && gesture.shapeId === shape.id
+                            ? gesture.handle
+                            : undefined
+                    }
+                    rotateActive={
+                        ownsGesture && gesture.kind === 'rotating' && gesture.shapeId === shape.id
+                    }
+                    resizeHandles={shape.type !== 'instance'}
+                />
+            )}
+            <Label shape={shape} />
+        </>
     );
 };
 
@@ -119,7 +125,11 @@ const ProjectedShape: FC<{
                 />
             )}
             {interactive && shape.selected && (
-                <ProjectedHandles shape={shape} viewId={viewId} placedOffset={placedOffset} />
+                <ProjectedSelectionControls
+                    shape={shape}
+                    viewId={viewId}
+                    placedOffset={placedOffset}
+                />
             )}
         </g>
     );

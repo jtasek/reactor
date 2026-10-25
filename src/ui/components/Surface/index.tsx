@@ -1,4 +1,4 @@
-import { useScreenSourceSelection } from 'src/app/frameHooks';
+import { useSelectionOverlay } from 'src/app/selectionHooks';
 import React, { FC } from 'react';
 import { FrameGrips, Frames } from '../Frames/Frames';
 import { ScreenViews } from '../Frames/ScreenViews';
@@ -16,7 +16,7 @@ import { Stack } from 'src/tools/components/Stack';
 import { Surface } from './Surface';
 
 export const Canvas: FC = () => {
-    const sourceSelection = useScreenSourceSelection();
+    const overlay = useSelectionOverlay();
 
     return (
         <>
@@ -30,15 +30,15 @@ export const Canvas: FC = () => {
                         <ScreenViews />
                         <Frames />
                         <SnapLines />
-                        {!sourceSelection && <Measures />}
+                        <Measures overlay={overlay} />
                         <Stack />
                     </ErrorBoundary>
                 </Camera>
                 <Guides />
                 <Rulers />
             </Surface>
-            {!sourceSelection && <SelectionMenu />}
-            {!sourceSelection && <SelectionBadge />}
+            <SelectionMenu overlay={overlay} />
+            <SelectionBadge overlay={overlay} />
         </>
     );
 };

@@ -30,7 +30,7 @@ import {
 const snapping = () => editorHelpers().snapping;
 
 /** A pointer's input; `free` moves without snapping, as while Ctrl or Cmd is held. */
-type PointerInput = { pointerId: number; position: Point; free?: boolean };
+type PointerInput = { pointerId: number; position: Point; free?: boolean; screenViewId?: string };
 
 /** Pointer and snap geometry stay in the view; authored edits use screen coordinates. */
 function sourcePoint(position: Point, view: ScreenViewGesture | undefined): Point {
@@ -60,6 +60,18 @@ function placedBox(box: Box | undefined, view: ScreenViewGesture | undefined) {
         bottomRight: { x: box.bottomRight.x + offset.x, y: box.bottomRight.y + offset.y }
     };
 }
+
+/** Explorer selections retain the view branch that was used to select the artwork. */
+export const setScreenView = ({ state }: Context, viewId: string | null) => {
+    const pointer = state.events.pointer;
+
+    if (pointer.gesture.kind !== 'idle' || state.events.keyboard.typing) {
+        return;
+    }
+
+    const address = viewId ? { documentId: state.currentDocumentId, viewId } : null;
+    pointer.screenView = address && editableScreenView(state, address) ? address : null;
+};
 
 export const setStartPosition: ActionWithParam<Point> = ({ state }, position) => {
     state.events.pointer.start = position;
@@ -383,7 +395,7 @@ const takeSnapTargets = (
 
 export const movePointer = (
     { state, actions, effects }: Context,
-    { pointerId, position, free = false }: PointerInput
+    { pointerId, position, free = false, screenViewId }: PointerInput
 ) => {
     const pointer = state.events.pointer;
     const { gesture } = pointer;
@@ -398,6 +410,10 @@ export const movePointer = (
     }
 
     pointer.current = position;
+
+    if (gesture.kind === 'idle') {
+        pointer.hoveredScreenViewId = screenViewId ?? null;
+    }
 
     if (!pointer.inside) {
         pointer.inside = true;

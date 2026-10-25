@@ -1,12 +1,14 @@
+import type { SelectionOverlay } from 'src/app/selectionOverlays';
+import { useMeasuredBoxes } from 'src/app/selectionHooks';
 import React, { FC } from 'react';
-import { useCameraScale, useMeasuredBoxes } from 'src/app/hooks';
+import { useCameraScale } from 'src/app/hooks';
 import { measuresBetween } from 'src/app/measures';
 import { GapLabels, measurePath, TICK_HALF_SIZE } from '.';
 import styles from './styles.css';
 
 /** With Alt held over another shape, the distances between it and the selection. */
-export const Measures: FC = () => {
-    const boxes = useMeasuredBoxes();
+export const Measures: FC<{ overlay: SelectionOverlay | null }> = ({ overlay }) => {
+    const boxes = useMeasuredBoxes(overlay);
     const scale = useCameraScale();
 
     if (!boxes) {

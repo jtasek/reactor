@@ -285,17 +285,6 @@ export const useScreenSourceGroup = (groupId: string) =>
         return document.groups[groupId]?.shapesIds.some((id) => ids.has(id));
     });
 
-export const useScreenSourceSelection = () =>
-    useAppState((state) => {
-        const document = state.currentDocument;
-        const source = screenSourceShapes(document);
-
-        return (
-            document.selectedShapesIds.some((id) => source.has(id)) ||
-            document.frames[document.selectedFrameId ?? '']?.kind === 'screen'
-        );
-    });
-
 export const useFrameName = (id: string) =>
     useAppState((state) => screenViewName(state.currentDocument, state.currentDocument.frames[id]));
 

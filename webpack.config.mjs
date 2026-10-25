@@ -165,6 +165,12 @@ export const config = {
                           name: 'screen-projection',
                           enforce: true
                       },
+                      // Selection controls and projected overlays load with the editor.
+                      selectionOverlays: {
+                          test: /[\\/]src[\\/](app[\\/](selectionOverlays|selectionHooks|selectionMenu)\.ts$|ui[\\/]components[\\/]SelectionMenu[\\/])/,
+                          name: 'selection-overlays',
+                          enforce: true
+                      },
                       // Keep editor-only clipboard transfers out of the eagerly used component library.
                       clipboard: {
                           test: /[\\/]src[\\/]app[\\/]clipboard\.ts$/,

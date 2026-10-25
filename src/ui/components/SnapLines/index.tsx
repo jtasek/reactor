@@ -1,11 +1,6 @@
+import { useSnappedBox } from 'src/app/selectionHooks';
 import React, { FC, memo } from 'react';
-import {
-    useCameraScale,
-    useEffects,
-    useEqualGaps,
-    useSnapLines,
-    useSnappedBox
-} from 'src/app/hooks';
+import { useCameraScale, useEffects, useEqualGaps, useSnapLines } from 'src/app/hooks';
 import { snapDistances } from 'src/app/snapDistances';
 import { Gap, gapLength, SnapMark, snapMarks, snapTargetPoints } from 'src/app/snapping';
 import type { Point } from 'src/app/types';
