@@ -84,9 +84,6 @@ export const useHoveredComponentsIds = () =>
         hoveredComponentsIds(state.currentDocument, state.enteredComponentId, state.events.pointer)
     );
 
-export const useComponentFrame = (id: string) =>
-    useAppState((state) => state.currentDocument.componentFrames[id]);
-
 export const useComponentLocked = (id: string) =>
     useAppState((state) => {
         const document = state.currentDocument;

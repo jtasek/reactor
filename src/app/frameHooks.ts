@@ -291,13 +291,37 @@ export const useScreenSourceGroup = (groupId: string) =>
         return document.groups[groupId]?.shapesIds.some((id) => ids.has(id));
     });
 
-export const useScreenSourceComponent = (componentId: string) =>
-    useAppState((state) => {
-        const document = state.currentDocument;
-        const ids = screenSourceShapes(document);
+/**
+ * A component's canvas box. Screen members are drawn only in views, so the box
+ * covers just its canvas members; with members in both places it is `split`, and
+ * no single box can transform them all.
+ */
+export function canvasComponentFrame(document: Document, componentId: string) {
+    const component = document.components[componentId];
+    const frame = document.componentFrames[componentId];
 
-        return document.components[componentId]?.shapesIds.some((id) => ids.has(id));
-    });
+    if (!component || !frame) {
+        return { frame: null, split: false };
+    }
+
+    const source = screenSourceShapes(document);
+    const canvasIds = component.shapesIds.filter((id) => !source.has(id));
+
+    if (canvasIds.length === component.shapesIds.length) {
+        return { frame, split: false };
+    }
+
+    return {
+        frame:
+            canvasIds.length > 0
+                ? groupFrame(document, { ...component, shapesIds: canvasIds })
+                : null,
+        split: true
+    };
+}
+
+export const useCanvasComponentFrame = (componentId: string) =>
+    useAppState((state) => canvasComponentFrame(state.currentDocument, componentId));
 
 /** One placed box per selected container; reuse the viewport's existing layout. */
 export const useScreenViewContainers = (

@@ -84,7 +84,7 @@ function viewTransformBlocked(state: Context['state'], gesture: Gesture) {
             !target ||
             target.shapeIds.length !== Object.keys(gesture.shapes).length ||
             target.shapeIds.some((id) => !gesture.shapes[id]) ||
-            !canTransformScreenViewContainer(document, viewId, gesture)
+            !canTransformScreenViewContainer(document, viewId, gesture, target)
         );
     }
 
