@@ -8,6 +8,7 @@ import type {
     ActionWithResult,
     ActionWithParamAndResult,
     Application,
+    Component,
     Point
 } from './types';
 import type { Context } from './index';
@@ -22,17 +23,58 @@ import { untracked } from './untracked';
 import { editorHelpers } from './editorHelpers';
 import { frameContents } from './frameMembership';
 import { takesEditorInput } from 'src/events/input';
+import { editableScreenView, pointerDocument, sourceOffset } from './screenViewEditing';
+import { reachesComponent } from './actions/components';
 
 const clipboardFormat = () => editorHelpers().clipboard;
 
 /** The selection commands act on, shown shapes only, in drawing order. */
-const selectedInDrawOrder = ({ currentDocument }: Application) => {
-    const selected = new Set(currentDocument.selectedShapesIds);
+const selectedInDrawOrder = (state: Context['state']) => {
+    const selected = new Set(state.currentDocument.selectedShapesIds);
+    const document = pointerDocument(state);
 
-    return currentDocument.shapesIds
+    return document.shapesIds
         .filter((id) => selected.has(id))
-        .map((id) => renderedShape(currentDocument, id));
+        .map((id) => renderedShape(document, id));
 };
+
+/** Transfers keep the active view and focused definition, including after selection is cleared. */
+function transferContext(state: Context['state']) {
+    const document = state.currentDocument;
+    const component = document.components[state.enteredComponentId ?? ''];
+    const address = state.events.pointer.screenView;
+    const placed = address ? editableScreenView(state, address) : null;
+
+    if (
+        (address && !placed) ||
+        (state.enteredComponentId && (!component || component.library || component.locked))
+    ) {
+        return null;
+    }
+
+    return { component, placed };
+}
+
+function selectTransfer(
+    { state, actions }: Context,
+    ids: string[],
+    component: Component | undefined
+) {
+    actions.unselectShapes();
+    state.enteredGroupId = null;
+    state.enteredComponentId = component?.id ?? null;
+    ids.forEach((id) => {
+        state.currentDocument.shapes[id].selected = true;
+    });
+
+    if (component && ids.length > 0) {
+        state.selectedComponent = {
+            documentId: state.currentDocumentId,
+            componentId: component.id,
+            shapeId: ids[0]
+        };
+    }
+}
 
 /** The groups selected as one, with the shapes of theirs that are shown, as only those are copied. */
 const selectedGroups = ({ currentDocument }: Application) =>
@@ -43,7 +85,7 @@ const selectedGroups = ({ currentDocument }: Application) =>
     });
 
 /** Copy a selected source as one live instance, alongside any other selected shapes. */
-const selectedForCopy = (state: Application) => {
+const selectedForCopy = (state: Context['state']) => {
     const document = state.currentDocument;
     const focusedSourceId = focusedSourceOnlyId(state);
     const sourceInstance = (componentId: string, order: string) => {
@@ -187,21 +229,62 @@ const pasteTarget = ({ state, effects }: Context): Point | null => {
         : { x: (topLeft.x + bottomRight.x) / 2, y: (topLeft.y + bottomRight.y) / 2 };
 };
 
+/** A view paste uses its source coordinates, even when Explorer chose the view without a press. */
+function transferTarget(context: Context, placed: ReturnType<typeof editableScreenView>) {
+    if (!placed) {
+        return pasteTarget(context);
+    }
+
+    const { view, screen, component } = placed;
+    const pressed = pasteTarget(context);
+    const inside =
+        pressed &&
+        pressed.x >= view.position.x &&
+        pressed.x <= view.position.x + view.size.width &&
+        pressed.y >= view.position.y &&
+        pressed.y <= view.position.y + view.size.height;
+    const point = inside
+        ? pressed
+        : {
+              x: view.position.x + view.size.width / 2,
+              y: view.position.y + view.size.height / 2
+          };
+    const offset = component
+        ? {
+              x: component.origin.x - component.position.x,
+              y: component.origin.y - component.position.y
+          }
+        : sourceOffset(view, screen);
+
+    return { x: point.x + offset.x, y: point.y + offset.y };
+}
+
 /**
  * Adds the shapes clipboard text holds, through `applyOperations`, selected in
  * place of the selection. Pastes nothing while the editor takes no input, when the
  * text holds no shapes, or when the batch is refused, answering why.
  */
 export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (context, text) => {
-    const { state, actions } = context;
+    const { state, actions, effects } = context;
 
     if (!takesEditorInput(state)) {
         return 'notNow';
     }
 
+    const destination = transferContext(state);
+
+    if (!destination) {
+        return 'notNow';
+    }
+
+    const { component, placed } = destination;
     const frame = editorHelpers().frames.readClipboard(text);
 
     if (frame) {
+        if (component) {
+            return 'notNow';
+        }
+
         const id = actions.editFrame({
             kind: 'paste',
             frame: frame.frame,
@@ -222,27 +305,66 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
     const operations = pasteOperations(
         copied,
         untracked(state.currentDocument),
-        pasteTarget(context)
+        transferTarget(context, placed)
     );
-    const result = actions.applyOperations({
-        documentId: state.currentDocumentId,
-        by: { kind: 'person' },
-        operations
-    });
+    const additions = operations.filter((operation) => operation.op === 'addShape');
 
-    if (!result.applied) {
-        return { problem: result.problem };
+    if (placed || component?.sourceOnly) {
+        additions.forEach(({ shape }) => {
+            shape.parentFrameId = component?.sourceOnly ? undefined : placed?.screen.id;
+        });
     }
 
-    actions.unselectShapes();
-    state.enteredGroupId = null;
-    operations.forEach((operation) => {
-        if (operation.op === 'addShape') {
-            state.currentDocument.shapes[result.ids[operation.key]].selected = true;
+    // Imported definitions participate in the same recursion guard as local sources.
+    const dependencies = {
+        shapes: state.currentDocument.shapes,
+        components: {
+            ...Object.fromEntries((copied.components ?? []).map((source) => [source.id, source])),
+            ...state.currentDocument.components
         }
-    });
+    };
 
-    return 'pasted';
+    if (
+        component &&
+        additions.some(
+            ({ shape }) =>
+                shape.type === 'instance' &&
+                reachesComponent(dependencies, shape.componentId, component.id)
+        )
+    ) {
+        return { problem: 'A component cannot contain an instance of itself.' };
+    }
+
+    // Membership and the operation batch must be shared and undone together.
+    const hold = Boolean(component) && !state.events.keyboard.repeating;
+
+    if (hold) {
+        effects.collaboration.startBatch(state.currentDocumentId, { kind: 'person' });
+        effects.collaboration.pause();
+    }
+
+    try {
+        const result = actions.applyOperations({
+            documentId: state.currentDocumentId,
+            by: { kind: 'person' },
+            operations
+        });
+
+        if (!result.applied) {
+            return { problem: result.problem };
+        }
+
+        const ids = additions.map(({ key }) => result.ids[key]);
+
+        component?.shapesIds.push(...ids);
+        selectTransfer(context, ids, component);
+
+        return 'pasted';
+    } finally {
+        if (hold) {
+            effects.collaboration.resume();
+        }
+    }
 };
 
 /**
@@ -253,7 +375,16 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
  * originals' layers; a group copied whole is copied as a group of its own, and
  * copies of some of a group's shapes join it.
  */
-export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shapeIds) => {
+export const cloneShapes: ActionWithParam<string[]> = (context, shapeIds) => {
+    const { state, actions } = context;
+    const destination = transferContext(state);
+    const shown = new Set(destination?.placed?.projection.shapes.map((shape) => shape.id));
+
+    if (!destination || (destination.placed && shapeIds.some((id) => !shown.has(id)))) {
+        return;
+    }
+
+    const { component } = destination;
     const { currentDocument } = state;
     const { shapes, shapesIds } = currentDocument;
     const cloning = new Set(shapeIds.filter((id) => !lockedFrameForShapes(currentDocument, [id])));
@@ -335,4 +466,11 @@ export const cloneShapes: ActionWithParam<string[]> = ({ state, actions }, shape
         currentDocument,
         clonesOf([...cloning]).map((id) => shapes[id].parentFrameId ?? '')
     );
+
+    if (component) {
+        const ids = [...clonesIds.values()];
+
+        component.shapesIds.push(...ids);
+        selectTransfer(context, ids, component);
+    }
 };

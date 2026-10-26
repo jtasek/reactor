@@ -229,3 +229,75 @@ test('the breadcrumb leaves out the view when a rotated instance opens the stand
     await expect(page.locator('#screen-views > g')).toHaveCount(0);
     await expect(navigation).not.toContainText('Home · Desktop');
 });
+
+test.describe('Screen view keyboard editing', () => {
+    test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
+
+    test('pastes, duplicates and nudges shared artwork in the active view', async ({ page }) => {
+        const { desktop, mobile } = await openComponent(page);
+        const surface = (await page.locator('svg#surface').boundingBox())!;
+        await page.mouse.click(surface.x + 680, surface.y + 350);
+        await page.keyboard.press('ControlOrMeta+c');
+        await page.mouse.click(surface.x + 800, surface.y + 450);
+        await page.keyboard.press('ControlOrMeta+v');
+        const pasted = desktop.locator('[data-cy="Part 4"]');
+        await expect(pasted).toHaveAttribute('x', '780');
+        await expect(pasted).toHaveAttribute('y', '430');
+        await expect(mobile.locator('[data-cy="Part 4"]')).toHaveAttribute('x', '380');
+        await page.keyboard.press('ControlOrMeta+d');
+        const clone = desktop.locator('[data-cy="rectangle-1"]');
+        await expect(clone).toHaveAttribute('x', '790');
+        await page.keyboard.press('ArrowRight');
+        await expect(clone).toHaveAttribute('x', '800');
+        await expect(mobile.locator('[data-cy="rectangle-1"]')).toHaveAttribute('x', '400');
+        await page.keyboard.press('Delete');
+        await expect(clone).toHaveCount(0);
+        await expect(pasted).toBeVisible();
+        await page.setViewportSize({ width: 600, height: 850 });
+        await mobile.locator('[data-cy="Part 3"]').click();
+        await page.keyboard.press('ControlOrMeta+c');
+        await page.mouse.click(surface.x + 240, surface.y + 230);
+        await page.keyboard.press('ControlOrMeta+v');
+        await expect(mobile.locator('[data-cy="Part 5"]')).toHaveAttribute('x', '220');
+        await expect(mobile.locator('[data-cy="Part 5"]')).toHaveAttribute('y', '210');
+        await page.screenshot({ path: 'test-results/reactor-screen-view-keyboard-narrow.png' });
+    });
+
+    test('keeps duplicate and pasted children in focus, with shared undo and return behavior', async ({
+        page
+    }) => {
+        const { desktop, mobile } = await openComponent(page, false, true);
+        await desktop.locator('[data-view-instance-hit]').click();
+        await page
+            .getByRole('list', { name: 'Commands' })
+            .getByRole('button', { name: 'Select component source', exact: true })
+            .click();
+        const navigation = page.getByRole('navigation', { name: 'Component editing' });
+        await page.getByRole('button', { name: 'More panels' }).click();
+        await page.getByRole('checkbox', { name: 'Inspector', exact: true }).uncheck();
+        await page.getByRole('button', { name: 'More panels' }).click();
+        const surface = (await page.locator('svg#surface').boundingBox())!;
+        await page.mouse.click(surface.x + 550, surface.y + 390);
+        await page.keyboard.press('ControlOrMeta+d');
+        const clone = desktop.locator('[data-cy="rectangle-1"]');
+        await expect(clone).toHaveAttribute('x', '550');
+        await expect(navigation).toContainText('Home · Desktop');
+        await page.keyboard.press('ArrowRight');
+        await expect(clone).toHaveAttribute('x', '560');
+        await page.keyboard.press('ControlOrMeta+c');
+        await page.keyboard.press('ControlOrMeta+v');
+        const pasted = desktop.locator('[data-cy="rectangle-2"]');
+        await expect(pasted).toBeVisible();
+        await expect(navigation).toContainText('Home · Desktop');
+        await expect(mobile.locator('[data-cy="rectangle-2"]')).toBeVisible();
+        await page.keyboard.press('ControlOrMeta+z');
+        await expect(pasted).toHaveCount(0);
+        await expect(clone).toBeVisible();
+        await page.keyboard.press('ControlOrMeta+Shift+z');
+        await expect(pasted).toBeVisible();
+        await page.screenshot({ path: 'test-results/reactor-screen-view-keyboard.png' });
+        await navigation.getByRole('button', { name: 'Back to canvas' }).click();
+        await expect(navigation).toHaveCount(0);
+        await expect(desktop.locator('[data-view-instance-hit]')).toHaveCount(1);
+    });
+});

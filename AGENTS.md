@@ -503,6 +503,13 @@ still counts against the shared 5,000-node projection cap. Pointer snapshots cap
 component offset; transforms, snapping and two-phase text use it without writing projected
 geometry into source records. Explorer child selection retains focus. Tests:
 screenViewComponentEditing and its browser counterpart.
+Clipboard shape transfers read the active view's projection and translate paste targets back to
+source coordinates. Pasted shapes join its Screen; source-only component children stay unparented.
+Focused duplicate/paste keeps component membership and return context. Hold sharing while a focused
+paste adds shapes through `applyOperations` and joins them to its component, so both undo together.
+Check local and imported component dependencies before adding instances to a focused source.
+Arrow nudges reject unavailable views and source/viewport stack offsets; keep contextual
+alignment/spacing as follow-up work. Tests: screenViewKeyboard and the component-editing browser tests.
 Collaboration migrations load alongside Yjs in `initialize`, before any document is opened;
 keep them outside the eager entry. Tests: equalScreenViews, screenViews and screenViewGestures.
 
