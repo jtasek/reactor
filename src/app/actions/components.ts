@@ -545,19 +545,50 @@ export const editComponentSource: ActionWithParam<string> = ({ state, actions },
         state.componentEditingReturn?.documentId !== state.currentDocumentId
     ) {
         const document = state.currentDocument;
+        const instanceId = document.selectedShapesIds.find(
+            (id) =>
+                document.shapes[id].type === 'instance' &&
+                document.shapes[id].componentId === componentId
+        );
+        const source =
+            component.sourceOnly && instanceId ? componentSource(document, componentId) : null;
         state.componentEditingReturn = {
             documentId: document.id,
+            ...(document.selectedComponentsIds.includes(componentId)
+                ? { selectedComponentId: componentId }
+                : {}),
             shapeIds: document.selectedShapesIds.filter((id) => {
                 const shape = document.shapes[id];
 
-                return shape.type === 'instance' && shape.componentId === componentId;
+                return (
+                    (shape.type === 'instance' && shape.componentId === componentId) ||
+                    component.shapesIds.includes(id)
+                );
             }),
-            camera: { position: { ...document.camera.position }, scale: document.camera.scale }
+            camera: { position: { ...document.camera.position }, scale: document.camera.scale },
+            screenView: state.events.pointer.screenView
+                ? {
+                      documentId: state.events.pointer.screenView.documentId,
+                      viewId: state.events.pointer.screenView.viewId
+                  }
+                : null,
+            ...(source && instanceId
+                ? {
+                      componentOrigin: {
+                          componentId,
+                          instanceId,
+                          position: { ...source.box.topLeft }
+                      }
+                  }
+                : {})
         };
     }
     actions.unselectShapes();
     state.enteredGroupId = null;
     state.enteredComponentId = componentId;
+    if (!editorHelpers().pointer.componentScreenView(state)) {
+        state.events.pointer.screenView = null;
+    }
     state.selectedComponent = { documentId: state.currentDocumentId, componentId };
 };
 
@@ -571,11 +602,15 @@ export const leaveComponentSource: Action = ({ state, actions }) => {
     state.componentEditingReturn = null;
     if (previous?.documentId === state.currentDocumentId) {
         actions.unselectShapes();
+        actions.events.setScreenView(previous.screenView?.viewId ?? null);
         state.currentDocument.camera = {
             position: { ...previous.camera.position },
             scale: previous.camera.scale
         };
-        const shapeIds = previous.shapeIds.filter(
+        const shapeIds = (
+            state.currentDocument.components[previous.selectedComponentId ?? '']?.shapesIds ??
+            previous.shapeIds
+        ).filter(
             (id) => state.currentDocument.shapes[id] && isShapeVisible(state.currentDocument, id)
         );
         if (shapeIds.length > 0) {

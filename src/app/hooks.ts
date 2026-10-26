@@ -1,4 +1,4 @@
-import { frameLayout, renderedShape } from './frameLayout';
+import { renderedShape } from './frameLayout';
 import { variableContext } from './variableModes';
 import { json } from 'overmind';
 import {
@@ -10,18 +10,15 @@ import {
 import { commandsFor, commandsIn, getCommand, getCommands } from './actions';
 import { Context } from '.';
 import { useCallback, useLayoutEffect, useReducer, useRef, useSyncExternalStore } from 'react';
-import { getShapeBounds, isShapeLocked, isShapeVisible } from './utils';
-import { hitTestShape, hitTolerance } from './geometry';
+import { isShapeLocked, isShapeVisible } from './utils';
 import type { Command, CommandPlace, CommandScope, Document } from './types';
 import { takesEditorInput } from '../events/input';
 import { editorLoaded, subscribeToEditorHelpers } from './editorHelpers';
 import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
-import { placeSelectionMenu } from './selectionMenu';
 import { PropertyRow, sharedProperties } from './properties';
-import { untracked } from './untracked';
 import { componentSource } from './componentSource';
 import { localComponents } from './componentSelection';
-import { drawnExtent, groupFrame, hoveredGroupsIds, selectionScope } from './membership';
+import { groupFrame, hoveredGroupsIds, selectionScope } from './membership';
 
 export const useActions = createActionsHook<Context>();
 export const useEffects = createEffectsHook<Context>();
@@ -353,22 +350,6 @@ export const useSelectedGroupsIds = () => {
 };
 
 /** Where the selection's menu goes; none without a selection or during a drag. */
-export const useSelectionMenuPlacement = (alreadyShown: boolean) => {
-    return useAppState((state) => {
-        const { pointer } = state.events;
-
-        if (pointer.dragging) {
-            return null;
-        }
-
-        const { selectionExtent, camera } = state.currentDocument;
-
-        return selectionExtent
-            ? placeSelectionMenu(selectionExtent, camera, pointer, alreadyShown)
-            : null;
-    });
-};
-
 /** The lines a dragged selection, or a resized shape's or group's edges, snapped to. */
 export const useSnapLines = () =>
     useAppState((state) => {
@@ -391,85 +372,6 @@ export const useEqualGaps = () =>
         const { gesture } = state.events.pointer;
 
         return gesture.kind === 'moving' && gesture.dragged ? json(gesture.equalGaps) : [];
-    });
-
-/**
- * Where the dragged selection's box, or the resized shape's or group's, is now, while
- * it is snapped to a line; none otherwise.
- */
-export const useSnappedBox = () =>
-    useAppState((state) => {
-        const { gesture } = state.events.pointer;
-
-        if (
-            (gesture.kind === 'resizing' ||
-                gesture.kind === 'resizingGroup' ||
-                gesture.kind === 'resizingComponent') &&
-            (gesture.snapLines.x !== null || gesture.snapLines.y !== null)
-        ) {
-            const document = state.currentDocument;
-            const ids =
-                gesture.kind === 'resizing' ? [gesture.shapeId] : Object.keys(gesture.shapes);
-
-            return drawnExtent(
-                document,
-                ids.filter((id) => isShapeVisible(document, id))
-            );
-        }
-
-        if (
-            gesture.kind !== 'moving' ||
-            !gesture.dragged ||
-            !gesture.box ||
-            (gesture.snapLines.x === null && gesture.snapLines.y === null)
-        ) {
-            return null;
-        }
-
-        const { topLeft, width, height } = gesture.box;
-        const left = topLeft.x + gesture.movedBy.x;
-        const top = topLeft.y + gesture.movedBy.y;
-
-        return {
-            topLeft: { x: left, y: top },
-            bottomRight: { x: left + width, y: top + height },
-            width,
-            height
-        };
-    });
-
-/** Whether a pointer gesture is in progress on the canvas. */
-/**
- * The selection's box and that of the shape under the pointer, while Alt is held
- * over a shape outside the selection and no gesture is in progress.
- */
-export const useMeasuredBoxes = () =>
-    useAppState((state) => {
-        const { keyboard, pointer } = state.events;
-        const document = state.currentDocument;
-        const selection = document.selectionExtent;
-
-        if (!keyboard.altKey || !pointer.inside || pointer.gesture.kind !== 'idle' || !selection) {
-            return null;
-        }
-
-        // Read without the store's tracking: thousands of shapes are only looked at here.
-        const plain = untracked(document);
-        const layout = frameLayout(document);
-        const tolerance = hitTolerance(document.camera.scale);
-        // Where each shape is drawn, as a stack places it.
-        const target = [...document.shapesIds]
-            .reverse()
-            .map((id) => plain.shapes[id] && renderedShape(plain, id, layout))
-            .find(
-                (shape) =>
-                    shape &&
-                    !shape.selected &&
-                    hitTestShape(shape, pointer.current, tolerance) &&
-                    isShapeVisible(document, shape.id)
-            );
-
-        return target ? { selection, target: getShapeBounds(target) } : null;
     });
 
 export const useGestureInProgress = () =>

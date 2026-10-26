@@ -1,3 +1,4 @@
+import { useScreenSourceGroup } from 'src/app/frameHooks';
 import { hasLayoutOffset } from 'src/app/frameLayout';
 import { useAppState } from 'src/app/hooks';
 import React, { FC } from 'react';
@@ -18,6 +19,7 @@ interface Props {
 
 /** A selected group's box and handles, turned with the group. */
 export const GroupSelection: FC<Props> = ({ groupId }) => {
+    const source = useScreenSourceGroup(groupId);
     const frame = useGroupFrame(groupId);
     const locked = useGroupLocked(groupId);
     const inLayout = useAppState((state) =>
@@ -28,7 +30,7 @@ export const GroupSelection: FC<Props> = ({ groupId }) => {
     );
     const gesture = useGesture();
 
-    if (!frame) {
+    if (!frame || source) {
         return null;
     }
 
@@ -65,9 +67,10 @@ export const GroupSelection: FC<Props> = ({ groupId }) => {
 
 /** The box of a group the pointer is over, turned with the group. */
 const GroupHighlight: FC<Props> = ({ groupId }) => {
+    const source = useScreenSourceGroup(groupId);
     const frame = useGroupFrame(groupId);
 
-    if (!frame) {
+    if (!frame || source) {
         return null;
     }
 

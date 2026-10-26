@@ -4,6 +4,7 @@ import type { DocumentAccess } from './documentAccess';
 import { Context } from './index';
 import type { GroupFrame } from './membership';
 import type { LucideIcon } from 'lucide-react';
+import type { ScreenViewAddress } from '../events/types';
 
 export type Orientation = 'horizontal' | 'vertical';
 
@@ -321,6 +322,8 @@ export interface StackRules {
 
 export interface Frame {
     kind?: 'frame' | 'screen' | 'view';
+    /** Screens are source definitions; every canvas placement is a separate view. */
+    definitionOnly?: true;
     /** A placed view references its screen definition; its box is view-local. */
     screenId?: string;
     stack?: StackRules;
@@ -575,6 +578,9 @@ export type Application = {
         documentId: string;
         shapeIds: string[];
         camera: Camera;
+        screenView?: ScreenViewAddress | null;
+        selectedComponentId?: string;
+        componentOrigin?: { componentId: string; instanceId: string; position: Point };
     } | null;
     resetDocumentId: string | null;
     /** The document a person is asking AI to change, while its chat is open. */

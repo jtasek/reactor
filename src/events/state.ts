@@ -19,6 +19,7 @@ export const state: Events = {
         dragging,
         gesture: { kind: 'idle' },
         screenView: null,
+        hoveredScreenViewId: null,
         inside: false,
         lastPress: null,
         offset,

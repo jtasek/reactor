@@ -4,6 +4,8 @@ import { useAppState } from './hooks';
 import { hoveredComponentsIds } from './componentSelection';
 import { isShapeLocked } from './utils';
 import { selectedComponentContext } from './componentTree';
+import { screenViewName } from './screenViews';
+import { componentScreenView } from './screenViewEditing';
 import {
     componentCandidates,
     componentLibraries,
@@ -56,6 +58,23 @@ export const useComponentExposure = (componentId: string | null, shapeId: string
 
 export const useEditingComponentId = () => useAppState((state) => state.enteredComponentId);
 
+export const useEditingComponentForShape = (shapeId: string) =>
+    useAppState((state) => {
+        const id = state.enteredComponentId;
+
+        return id && state.currentDocument.components[id]?.shapesIds.includes(shapeId) ? id : null;
+    });
+
+/** Names the Screen view only while the component is actually edited inside it. */
+export const useComponentEditingViewName = () =>
+    useAppState((state) => {
+        const document = state.currentDocument;
+        const address = componentScreenView(state);
+        const view = address ? document.frames[address.viewId] : undefined;
+
+        return view ? screenViewName(document, view) : null;
+    });
+
 export const useEditingComponentName = () =>
     useAppState((state) =>
         state.enteredComponentId
@@ -83,9 +102,6 @@ export const useHoveredComponentsIds = () =>
     useAppState((state) =>
         hoveredComponentsIds(state.currentDocument, state.enteredComponentId, state.events.pointer)
     );
-
-export const useComponentFrame = (id: string) =>
-    useAppState((state) => state.currentDocument.componentFrames[id]);
 
 export const useComponentLocked = (id: string) =>
     useAppState((state) => {

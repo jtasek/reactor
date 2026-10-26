@@ -28,9 +28,17 @@ interface Props {
     /** In a group not double-clicked into, so the pointer does not highlight it alone. */
     inClosedGroup: boolean;
     minimap?: boolean;
+    measurementOnly?: boolean;
 }
 
-export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup, minimap = false }: Props) => {
+export const Shape = memo((props: Props) => {
+    const {
+        shapeId,
+        inSelectedGroup,
+        inClosedGroup,
+        minimap = false,
+        measurementOnly = false
+    } = props;
     const shape = useShape(shapeId);
     const document = useCurrentDocument();
     const theme = useVariableContext();
@@ -110,6 +118,18 @@ export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup, minimap = 
         return null;
     }
 
+    if (measurementOnly) {
+        return (
+            <g ref={groupRef} visibility="hidden" pointerEvents="none" aria-hidden="true">
+                {shape.type === 'instance' ? (
+                    <Instance instance={shape} source={source} />
+                ) : (
+                    Component && createElement(Component, { ...painted, selected: false })
+                )}
+            </g>
+        );
+    }
+
     if (minimap && shape.type === 'instance') {
         return (
             <rect
@@ -135,7 +155,7 @@ export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup, minimap = 
     const transform = shape.rotation
         ? `rotate(${shape.rotation} ${center.x} ${center.y})`
         : undefined;
-    const { key, ...props } = painted;
+    const { key, ...paintedProps } = painted;
 
     return (
         <g transform={transform}>
@@ -155,7 +175,7 @@ export const Shape = memo(({ shapeId, inSelectedGroup, inClosedGroup, minimap = 
                 {shape.type === 'instance' ? (
                     <Instance instance={shape} source={source} />
                 ) : (
-                    Component && createElement(Component, { ...props, key })
+                    Component && createElement(Component, { ...paintedProps, key })
                 )}
             </g>
             {shape.active && !shape.selected && !inClosedGroup && (

@@ -159,6 +159,24 @@ export const config = {
                           name: 'editor-edits',
                           enforce: true
                       },
+                      // Screen geometry is shared by lazy canvas, thumbnail and viewer pages.
+                      screenProjection: {
+                          test: /[\\/]src[\\/]app[\\/](screenProjection|screenViews)\.ts$/,
+                          name: 'screen-projection',
+                          enforce: true
+                      },
+                      // Focused editing and its view hooks load with the editor, not startup.
+                      screenEditing: {
+                          test: /[\\/]src[\\/]app[\\/](screenViewEditing|frameHooks)\.ts$/,
+                          name: 'screen-editing',
+                          enforce: true
+                      },
+                      // Selection controls and projected overlays load with the editor.
+                      selectionOverlays: {
+                          test: /[\\/]src[\\/](app[\\/](selectionOverlays|selectionHooks|selectionMenu)\.ts$|ui[\\/]components[\\/]SelectionMenu[\\/])/,
+                          name: 'selection-overlays',
+                          enforce: true
+                      },
                       // Keep editor-only clipboard transfers out of the eagerly used component library.
                       clipboard: {
                           test: /[\\/]src[\\/]app[\\/]clipboard\.ts$/,

@@ -2,6 +2,9 @@ import type * as PointerEdits from '../pointerEdits';
 import { editorHelpers, editorLoaded } from 'src/app/editorHelpers';
 
 /** Gesture implementations load with the editor; account changes may cancel before it loads. */
+export const setScreenView: typeof PointerEdits.setScreenView = (context, input) =>
+    editorHelpers().pointer.setScreenView(context, input);
+
 export const setStartPosition: typeof PointerEdits.setStartPosition = (context, input) =>
     editorHelpers().pointer.setStartPosition(context, input);
 

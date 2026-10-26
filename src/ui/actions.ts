@@ -1,10 +1,16 @@
 import { ActionWithParam, Action, Point } from 'src/app/types';
+import { editorHelpers } from 'src/app/editorHelpers';
 
 export const displayContextMenu: ActionWithParam<{
     position: Point;
     canvasPoint: Point;
     screenViewId?: string;
 }> = ({ state, actions }, { position, canvasPoint, screenViewId }) => {
+    // While a component is edited inside a Screen view, the canvas around it takes no input.
+    if (!screenViewId && editorHelpers().pointer.componentScreenView(state)) {
+        return;
+    }
+
     state.events.pointer.screenView = screenViewId
         ? { documentId: state.currentDocumentId, viewId: screenViewId }
         : null;

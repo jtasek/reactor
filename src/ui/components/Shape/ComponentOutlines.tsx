@@ -1,8 +1,8 @@
 import React, { FC } from 'react';
+import { useCanvasComponentFrame } from 'src/app/frameHooks';
 import { useGesture } from 'src/app/hooks';
 import {
     useComponent,
-    useComponentFrame,
     useComponentLocked,
     useHoveredComponentsIds,
     useSelectedComponentsIds
@@ -16,7 +16,7 @@ const ComponentSelection: FC<{ componentId: string; selected: boolean }> = ({
     selected
 }) => {
     const component = useComponent(componentId);
-    const frame = useComponentFrame(componentId);
+    const { frame, split } = useCanvasComponentFrame(componentId);
     const locked = useComponentLocked(componentId);
     const gesture = useGesture();
 
@@ -49,7 +49,7 @@ const ComponentSelection: FC<{ componentId: string; selected: boolean }> = ({
                     {component.name}
                 </text>
             )}
-            {selected && !locked && (
+            {selected && !locked && !split && (
                 <Handles
                     box={box}
                     rotation={rotation}

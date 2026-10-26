@@ -196,9 +196,10 @@ export const ExplorerItem: FC<Props> = ({
                         type="button"
                         className={styles.name}
                         aria-pressed={selected}
+                        title={secondary ? name : undefined}
                         aria-labelledby={secondary ? `${secondaryId}-name` : undefined}
                         aria-describedby={
-                            [secondary && secondaryId, badge && badgeId]
+                            [secondary && secondaryId, !secondary && badge && badgeId]
                                 .filter(Boolean)
                                 .join(' ') || undefined
                         }
@@ -211,7 +212,17 @@ export const ExplorerItem: FC<Props> = ({
                             <span id={`${secondaryId}-name`} className={styles.itemName}>
                                 {name}
                             </span>
-                            {secondary && <small id={secondaryId}>{secondary}</small>}
+                            {secondary && (
+                                <small id={secondaryId}>
+                                    {secondary}
+                                    {badge && (
+                                        <>
+                                            {' '}
+                                            <span className={styles.badge}>{badge}</span>
+                                        </>
+                                    )}
+                                </small>
+                            )}
                         </span>
                     </button>
                 ) : (
@@ -220,7 +231,7 @@ export const ExplorerItem: FC<Props> = ({
                         {name}
                     </span>
                 )}
-                {badge && (
+                {badge && !secondary && (
                     <span id={badgeId} className={styles.badge}>
                         {badge}
                     </span>

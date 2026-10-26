@@ -1,3 +1,4 @@
+import { useSelectionOverlay } from 'src/app/selectionHooks';
 import React, { FC } from 'react';
 import { FrameGrips, Frames } from '../Frames/Frames';
 import { ScreenViews } from '../Frames/ScreenViews';
@@ -14,26 +15,30 @@ import { Measures } from '../SnapLines/Measures';
 import { Stack } from 'src/tools/components/Stack';
 import { Surface } from './Surface';
 
-export const Canvas: FC = () => (
-    <>
-        <Surface>
-            <Grid />
-            <GuideGrips />
-            <Camera>
-                <ErrorBoundary fallback={<h1>Something went wrong while rendering shapes</h1>}>
-                    <FrameGrips />
-                    <Shapes />
-                    <ScreenViews />
-                    <Frames />
-                    <SnapLines />
-                    <Measures />
-                    <Stack />
-                </ErrorBoundary>
-            </Camera>
-            <Guides />
-            <Rulers />
-        </Surface>
-        <SelectionMenu />
-        <SelectionBadge />
-    </>
-);
+export const Canvas: FC = () => {
+    const overlay = useSelectionOverlay();
+
+    return (
+        <>
+            <Surface>
+                <Grid />
+                <GuideGrips />
+                <Camera>
+                    <ErrorBoundary fallback={<h1>Something went wrong while rendering shapes</h1>}>
+                        <FrameGrips />
+                        <Shapes />
+                        <ScreenViews />
+                        <Frames />
+                        <SnapLines />
+                        <Measures overlay={overlay} />
+                        <Stack />
+                    </ErrorBoundary>
+                </Camera>
+                <Guides />
+                <Rulers />
+            </Surface>
+            <SelectionMenu overlay={overlay} />
+            <SelectionBadge overlay={overlay} />
+        </>
+    );
+};

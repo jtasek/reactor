@@ -1,8 +1,6 @@
-import { frameParents } from '../frameState';
-import { legacyTheme } from '../variableModes';
 import { json } from 'overmind';
 import type * as Yjs from 'yjs';
-import type { Document, Frame, UndoHistory } from '../types';
+import type { Document, UndoHistory } from '../types';
 import type { Provenance } from '../operations';
 import {
     COLLECTIONS,
@@ -198,6 +196,7 @@ function writeMembers(members: Yjs.Array<unknown>, next: string[], previous: unk
  */
 export class Collaboration {
     private yjs?: typeof Yjs;
+    private migrateDocument?: typeof import('./collaborationMigration').migrateDocument;
     private options?: CollaborationOptions;
     private stopListening?: () => void;
     private readonly bindings = new Map<string, Binding>();
@@ -211,7 +210,12 @@ export class Collaboration {
     constructor(private readonly undoMergeMs = UNDO_MERGE_MS) {}
 
     async initialize(options: CollaborationOptions): Promise<void> {
-        this.yjs = await import('yjs');
+        const [yjs, migration] = await Promise.all([
+            import('yjs'),
+            import('./collaborationMigration')
+        ]);
+        this.yjs = yjs;
+        this.migrateDocument = migration.migrateDocument;
         this.options = options;
         this.stopListening = options.addMutationListener((mutation) => this.record(mutation));
     }
@@ -259,8 +263,9 @@ export class Collaboration {
             this.everything(documentId, binding, binding.remote);
             this.applyRemote(documentId, binding);
             this.track(documentId, binding);
-            if (migrated)
+            if (migrated) {
                 options.sendUpdate?.(documentId, yjs.encodeStateAsUpdate(doc, beforeMigration));
+            }
 
             return;
         }
@@ -293,66 +298,11 @@ export class Collaboration {
         this.migrate(binding);
     }
 
-    /** Upgrades legacy colors and screen destinations without recording an undo step. */
+    /** Migrations load with Yjs, before any document is opened. */
     private migrate(binding: Binding): boolean {
-        const { yjs } = this.ready();
-        const legacy = [...binding.tables.variables.values()].filter(
-            (entity): entity is Yjs.Map<unknown> => {
-                if (!(entity instanceof yjs.Map)) {
-                    return false;
-                }
-                const raw = entity.toJSON();
-                return (
-                    raw.type === 'color' &&
-                    raw.dimensionId === undefined &&
-                    raw.values?.dark !== undefined
-                );
-            }
-        );
+        const { yjs, migrate } = this.ready();
 
-        const legacyFrames = [...binding.tables.frames.values()].filter(
-            (entity): entity is Yjs.Map<unknown> => entity instanceof yjs.Map && !entity.has('kind')
-        );
-
-        if (legacy.length === 0 && legacyFrames.length === 0) {
-            return false;
-        }
-
-        const frames: Record<string, Frame> = {};
-
-        if (legacyFrames.length > 0) {
-            binding.tables.frames.forEach((entity) => {
-                if (!(entity instanceof yjs.Map)) {
-                    return;
-                }
-
-                const frame = orUndefined(() => readEntity('frames', entity.toJSON()));
-
-                if (frame) {
-                    frames[frame.id] = frame;
-                }
-            });
-        }
-
-        const parents = frameParents(frames);
-
-        binding.doc.transact(() => {
-            legacy.forEach((entity) => entity.set('dimensionId', 'theme'));
-            if (legacy.length > 0 && !binding.tables.dimensions.has('theme')) {
-                const dimension = new yjs.Map();
-                binding.tables.dimensions.set('theme', dimension);
-                this.writeValues(dimension, legacyTheme());
-            }
-            legacyFrames.forEach((entity) => {
-                if (!frames[String(entity.get('id'))]) {
-                    return;
-                }
-
-                entity.set('kind', parents.get(String(entity.get('id'))) ? 'frame' : 'screen');
-            });
-        }, MIGRATION);
-
-        return true;
+        return migrate(binding, yjs, MIGRATION, (entity, value) => this.writeValues(entity, value));
     }
 
     /** Ids of the documents shared here. */
@@ -490,13 +440,13 @@ export class Collaboration {
     }
 
     private ready() {
-        const { yjs, options } = this;
+        const { yjs, options, migrateDocument: migrate } = this;
 
-        if (!yjs || !options) {
+        if (!yjs || !options || !migrate) {
             throw new Error('Collaboration is not initialized');
         }
 
-        return { yjs, options };
+        return { yjs, options, migrate };
     }
 
     private bindingOf(documentId: string): Binding {

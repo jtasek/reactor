@@ -1,3 +1,4 @@
+import { extractScreenViews } from '../screenViewMigration';
 import { frameParents } from '../frameState';
 import { readPackageIdentity } from '../packageIdentity';
 import { readDimension, legacyTheme } from '../variableModes';
@@ -24,7 +25,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 13;
+export const SCHEMA_VERSION = 14;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -633,6 +634,9 @@ function readFrame(value: unknown): Frame {
         ...entity(value),
         name,
         kind: f.kind ?? 'frame',
+        ...(f.kind === 'screen' && f.definitionOnly === true
+            ? { definitionOnly: true as const }
+            : {}),
         ...(f.screenId === undefined ? {} : { screenId: id(f.screenId) }),
         ...(f.parentFrameId === undefined ? {} : { parentFrameId: id(f.parentFrameId) }),
         ...(f.stack === undefined ? {} : { stack: readStack(f.stack) }),
@@ -900,6 +904,8 @@ function readDocument(value: unknown, onRepair = () => {}, legacyScreens = false
         });
     }
 
+    extractScreenViews(frames);
+
     const components = table(d.components, readComponent);
     const variables = d.variables === undefined ? {} : table(d.variables, readVariable);
     const dimensions =
@@ -981,6 +987,7 @@ export function migratePersistedState(raw: unknown, onRepair = () => {}): Persis
             data.version !== 10 &&
             data.version !== 11 &&
             data.version !== 12 &&
+            data.version !== 13 &&
             data.version !== SCHEMA_VERSION
         ) {
             return null;

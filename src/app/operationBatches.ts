@@ -1,10 +1,12 @@
+import { initialScreenView } from './screenViewMigration';
+import { isScreenDefinition } from './screenViews';
 import { frameLayout, hasLayoutOffset } from './frameLayout';
 import {
     initializeStackOrder,
     releaseStackPositions,
     materializeGroupPlacement
 } from './stackEdits';
-import { projectFrameStates } from './frameState';
+import { frameParents, projectFrameStates } from './frameState';
 import { deleteFrame, validFrameParent, frameContents, frameMoveProblem } from './frameMembership';
 import { legacyTheme, readDimension } from './variableModes';
 import { json } from 'overmind';
@@ -13,6 +15,7 @@ import type {
     Component,
     Document,
     Group,
+    Point,
     Shape,
     ShapeInput,
     Variable,
@@ -949,24 +952,13 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         }
     });
 
-    // A free frame moves its subtree once. A batch must not also edit those records.
-    [...staged.updatedFrames].forEach((frame) => {
-        const original = document.frames[frame.id];
-        const delta = {
-            x: frame.position.x - original.position.x,
-            y: frame.position.y - original.position.y
-        };
-
-        if (delta.x === 0 && delta.y === 0) {
-            return;
-        }
-
-        const index = changed.get(record('frames', frame.id))!;
-        const contents = frameContents(document, frame.id);
+    /** Moves a frame's subtree by `delta`. A batch must not also edit those records. */
+    const moveContents = (frameId: string, delta: Point, index: number) => {
+        const contents = frameContents(document, frameId);
         const conflict =
             contents.frames.some((id) => changed.has(record('frames', id))) ||
             contents.shapes.some((id) => changed.has(record('shapes', id)));
-        const movementProblem = frameMoveProblem(document, frame.id);
+        const movementProblem = frameMoveProblem(document, frameId);
 
         if (conflict || movementProblem) {
             throw problem(
@@ -1005,7 +997,53 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                 fields: { ...shapeGeometry(child), bindings: child.bindings }
             });
         });
+    };
+
+    // A free frame moves its subtree once. A batch must not also edit those records.
+    [...staged.updatedFrames].forEach((frame) => {
+        const original = document.frames[frame.id];
+        const delta = {
+            x: frame.position.x - original.position.x,
+            y: frame.position.y - original.position.y
+        };
+
+        if (delta.x === 0 && delta.y === 0) {
+            return;
+        }
+
+        moveContents(frame.id, delta, changed.get(record('frames', frame.id))!);
     });
+
+    // A frame that becomes a root screen turns into a definition drawn through views.
+    const framesAfter = {
+        ...document.frames,
+        ...Object.fromEntries(
+            [...staged.frames, ...staged.updatedFrames].map((frame) => [frame.id, frame])
+        )
+    };
+    const parentsAfter = frameParents(framesAfter);
+    const parentsBefore = frameParents(document.frames);
+
+    for (const frame of [...staged.frames, ...staged.updatedFrames]) {
+        if (
+            framesAfter[frame.id] !== frame ||
+            !isScreenDefinition(framesAfter, frame.id, parentsAfter) ||
+            isScreenDefinition(document.frames, frame.id, parentsBefore)
+        ) {
+            continue;
+        }
+
+        frame.definitionOnly = true;
+        const explicitView = [
+            ...Object.values(document.frames),
+            ...staged.frames,
+            ...staged.updatedFrames
+        ].some((view) => view.kind === 'view' && view.screenId === frame.id);
+
+        if (!explicitView) {
+            staged.frames.push(initialScreenView(frame, newId()));
+        }
+    }
 
     const frames = {
         ...document.frames,
@@ -1037,6 +1075,27 @@ function stage(document: Document, operations: Operation[], newId: () => string)
     for (const screenId of [...staged.deletedFrames]) {
         if (document.frames[screenId]?.kind !== 'screen') {
             continue;
+        }
+
+        // A definition's artwork is only seen through its views, so it stays where the first one is.
+        const screen = document.frames[screenId];
+        const firstView = Object.values(document.frames).find(
+            (view) => view.kind === 'view' && view.screenId === screenId
+        );
+        const contents = frameContents(document, screenId);
+        const delta = firstView && {
+            x: firstView.position.x - screen.position.x,
+            y: firstView.position.y - screen.position.y
+        };
+
+        if (
+            delta &&
+            (delta.x !== 0 || delta.y !== 0) &&
+            isScreenDefinition(document.frames, screenId) &&
+            !contents.frames.some((id) => staged.deletedFrames.includes(id)) &&
+            !contents.shapes.some((id) => staged.deletedShapes.includes(id))
+        ) {
+            moveContents(screenId, delta, deleted.get(record('frames', screenId)) ?? 0);
         }
 
         for (const view of Object.values(document.frames)) {

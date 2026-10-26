@@ -1,3 +1,4 @@
+import { useScreenSourceShapes } from 'src/app/frameHooks';
 import React, { memo } from 'react';
 import {
     useShapesIds,
@@ -10,6 +11,7 @@ import { GroupSelections } from '../GroupSelection';
 
 export const Shapes = memo(({ minimap = false }: { minimap?: boolean }) => {
     const shapesIds = useShapesIds();
+    const source = useScreenSourceShapes();
     const grouped = new Set(useShapesInSelectedGroupsIds());
     const closed = new Set(useShapesInClosedGroupsIds());
 
@@ -23,6 +25,7 @@ export const Shapes = memo(({ minimap = false }: { minimap?: boolean }) => {
                         inSelectedGroup={grouped.has(shapeId)}
                         inClosedGroup={closed.has(shapeId)}
                         minimap={minimap}
+                        measurementOnly={source.has(shapeId)}
                     />
                 ))}
             </g>

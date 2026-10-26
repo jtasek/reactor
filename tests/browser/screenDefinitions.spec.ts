@@ -19,9 +19,9 @@ test('creates an ordinary frame and explicitly makes it a screen on the shared c
     await expect(page.getByLabel('Frame type', { exact: true })).toHaveValue('frame');
     await expect(row(page, 'Frame')).not.toHaveAttribute('aria-describedby');
     await page.getByLabel('Frame type', { exact: true }).selectOption('screen');
-    await expect(row(page, 'Frame')).toHaveAccessibleDescription('Screen');
-    await expect(page.getByLabel('Frame width', { exact: true })).toHaveValue('300');
-    await expect(page.getByLabel('Frame height', { exact: true })).toHaveValue('200');
+    await expect(row(page, 'Frame')).toHaveAccessibleDescription('1 Screen view Screen');
+    await expect(page.getByLabel('View width', { exact: true })).toHaveValue('300');
+    await expect(page.getByLabel('View height', { exact: true })).toHaveValue('200');
 });
 
 test('keeps multiple screens and ordinary frames visible, persists conversion, and diagnoses demoted navigation targets', async ({
@@ -42,8 +42,8 @@ test('keeps multiple screens and ordinary frames visible, persists conversion, a
     await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
     await openEditor(page, ['Inspector', 'Explorer']);
     await expect(page.locator('svg#surface #frames > [data-frame]')).toHaveCount(3);
-    await expect(row(page, 'Home')).toHaveAccessibleDescription('Screen');
-    await expect(row(page, 'Details')).toHaveAccessibleDescription('Screen');
+    await expect(row(page, 'Home')).toHaveAccessibleDescription('1 Screen view Screen');
+    await expect(row(page, 'Details')).toHaveAccessibleDescription('1 Screen view Screen');
     await expect(row(page, 'Artwork frame')).not.toHaveAttribute('aria-describedby');
     await row(page, 'Details').click();
     await page.getByLabel('Frame name', { exact: true }).fill('Checkout');
@@ -52,7 +52,7 @@ test('keeps multiple screens and ordinary frames visible, persists conversion, a
     await expect(row(page, 'Checkout')).not.toHaveAttribute('aria-describedby');
     await page.reload();
     await expect(row(page, 'Checkout')).not.toHaveAttribute('aria-describedby');
-    await expect(page.locator('svg#surface #frames > [data-frame]')).toHaveCount(3);
+    await expect(page.locator('svg#surface #frames > [data-frame]')).toHaveCount(4);
     await page.getByRole('button', { name: 'Preview', exact: true }).click();
     await expect(
         page.getByText('Continue button links to an unavailable screen', { exact: false })
@@ -68,6 +68,7 @@ test('keeps multiple screens and ordinary frames visible, persists conversion, a
     await page.getByRole('button', { name: 'Close Preview', exact: true }).press('Enter');
     await page.screenshot({ path: '/tmp/reactor-screen-identity.png' });
     await page.setViewportSize({ width: 600, height: 850 });
-    await expect(page.getByLabel('Frame type', { exact: true })).toBeVisible();
+    await row(page, 'Checkout · 320 px').click();
+    await expect(page.getByLabel('Screen view properties')).toBeVisible();
     await page.screenshot({ path: '/tmp/reactor-screen-identity-narrow.png' });
 });

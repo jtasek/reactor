@@ -1,20 +1,78 @@
+import {
+    useFrameName,
+    useScreenShapeTransformable,
+    useScreenViewContainers
+} from 'src/app/frameHooks';
 import React, { createElement, type CSSProperties, type FC } from 'react';
 import { componentSource, instanceBox } from 'src/app/componentSource';
 import { projectScreenViews } from 'src/app/screenProjection';
 import { themeColors } from 'src/app/themeColors';
 import { boxCenter, getShapeBounds } from 'src/app/utils';
-import { useAppState, useCameraScale, useCurrentDocument, useVariableContext } from 'src/app/hooks';
-import { canEditThroughView } from 'src/app/screenViewEditing';
+import {
+    useAppState,
+    useGesture,
+    useShapesInSelectedGroupsIds,
+    useCameraScale,
+    useCurrentDocument,
+    useVariableContext
+} from 'src/app/hooks';
+import {
+    canEditThroughView,
+    componentScreenView,
+    projectComponentView
+} from 'src/app/screenViewEditing';
 import type { Frame, Shape } from 'src/app/types';
 import { getComponentByType } from 'src/tools/components';
+import { Label } from '../Label';
+import { Handles } from '../Selectable/Resizable';
 import { Instance } from '../Shape/Instance';
+import { ScreenViewContainerSelection } from './ScreenViewContainerSelection';
 import styles from './styles.css';
+
+const ProjectedSelectionControls: FC<{ shape: Shape; viewId: string; placedOffset: boolean }> = ({
+    shape,
+    viewId,
+    placedOffset
+}) => {
+    const editable = useScreenShapeTransformable(viewId, shape.id, placedOffset);
+    const grouped = useShapesInSelectedGroupsIds();
+    const gesture = useGesture();
+    const ownsGesture = 'screenView' in gesture && gesture.screenView?.address.viewId === viewId;
+
+    if (grouped.includes(shape.id)) {
+        return null;
+    }
+
+    return (
+        <>
+            {editable && (
+                <Handles
+                    box={getShapeBounds(shape)}
+                    rotation={shape.rotation ?? 0}
+                    owner={{ shapeId: shape.id }}
+                    activeHandle={
+                        ownsGesture && gesture.kind === 'resizing' && gesture.shapeId === shape.id
+                            ? gesture.handle
+                            : undefined
+                    }
+                    rotateActive={
+                        ownsGesture && gesture.kind === 'rotating' && gesture.shapeId === shape.id
+                    }
+                    resizeHandles={shape.type !== 'instance'}
+                />
+            )}
+            <Label shape={shape} />
+        </>
+    );
+};
 
 const ProjectedShape: FC<{
     shape: Shape;
     viewId: string;
     interactive: boolean;
-}> = ({ shape, viewId, interactive }) => {
+    placedOffset: boolean;
+    inSelectedContainer: boolean;
+}> = ({ shape, viewId, interactive, placedOffset, inSelectedContainer }) => {
     const document = useCurrentDocument();
     const context = useVariableContext();
     const painted = themeColors(shape, document, context);
@@ -39,7 +97,6 @@ const ProjectedShape: FC<{
             data-screen-view={viewId}
             data-shape-id={shape.id}
             transform={transform}
-            opacity={painted.opacity}
             style={
                 {
                     '--shape-fill': painted.fill,
@@ -47,22 +104,24 @@ const ProjectedShape: FC<{
                 } as CSSProperties
             }
         >
-            {painted.type === 'instance' ? (
-                <>
-                    <Instance instance={painted} source={source} />
-                    <rect
-                        data-view-instance-hit
-                        x={bounds.topLeft.x}
-                        y={bounds.topLeft.y}
-                        width={bounds.width}
-                        height={bounds.height}
-                        fill="transparent"
-                    />
-                </>
-            ) : (
-                Primitive && createElement(Primitive, { ...props, key, selected: false })
-            )}
-            {interactive && shape.selected && (
+            <g opacity={painted.opacity}>
+                {painted.type === 'instance' ? (
+                    <>
+                        <Instance instance={painted} source={source} />
+                        <rect
+                            data-view-instance-hit
+                            x={bounds.topLeft.x}
+                            y={bounds.topLeft.y}
+                            width={bounds.width}
+                            height={bounds.height}
+                            fill="transparent"
+                        />
+                    </>
+                ) : (
+                    Primitive && createElement(Primitive, { ...props, key, selected: false })
+                )}
+            </g>
+            {interactive && shape.selected && !inSelectedContainer && (
                 <rect
                     x={bounds.topLeft.x}
                     y={bounds.topLeft.y}
@@ -73,6 +132,13 @@ const ProjectedShape: FC<{
                     strokeWidth={2}
                     vectorEffect="non-scaling-stroke"
                     pointerEvents="none"
+                />
+            )}
+            {interactive && shape.selected && !inSelectedContainer && (
+                <ProjectedSelectionControls
+                    shape={shape}
+                    viewId={viewId}
+                    placedOffset={placedOffset}
                 />
             )}
         </g>
@@ -104,8 +170,12 @@ const ViewHitArea: FC<{ view: Frame }> = ({ view }) => {
 const ScreenView: FC<{
     item: ReturnType<typeof projectScreenViews>[number];
     editable: boolean;
-}> = ({ item, editable }) => {
+    focused: boolean;
+}> = ({ item, editable, focused }) => {
     const { view, projection, problem } = item;
+    const name = useFrameName(view.id);
+    const selections = useScreenViewContainers(view.id, projection, editable);
+    const contained = new Set(selections.flatMap((selection) => selection.shapeIds));
 
     if (!projection) {
         // Nothing here can be edited, so presses reach the canvas underneath.
@@ -121,15 +191,39 @@ const ScreenView: FC<{
         ) : null;
     }
 
-    const { screen, frames, shapes } = projection;
+    const { frames, shapes, layoutOffsets } = projection;
 
     return (
         <g
-            aria-label={`View of ${screen.name}`}
+            aria-label={`Screen view ${name}`}
             data-screen-view={editable ? view.id : undefined}
             pointerEvents={editable ? undefined : 'none'}
         >
             {editable && <ViewHitArea view={view} />}
+            {focused && (
+                <g pointerEvents="none">
+                    <rect
+                        className={styles.edge}
+                        x={view.position.x}
+                        y={view.position.y}
+                        width={view.size.width}
+                        height={view.size.height}
+                    />
+                    <text className={styles.label} x={view.position.x} y={view.position.y - 8}>
+                        {name}
+                    </text>
+                </g>
+            )}
+            {problem && (
+                <text
+                    x={view.position.x + 8}
+                    y={view.position.y + 20}
+                    className={styles.label}
+                    pointerEvents="none"
+                >
+                    {problem}
+                </text>
+            )}
             {frames.map((frame) => (
                 <g key={frame.id} pointerEvents="none">
                     <rect
@@ -150,6 +244,19 @@ const ScreenView: FC<{
                     shape={shape}
                     viewId={view.id}
                     interactive={editable}
+                    placedOffset={layoutOffsets.has(shape.id)}
+                    inSelectedContainer={contained.has(shape.id)}
+                />
+            ))}
+            {selections.map((selection) => (
+                <ScreenViewContainerSelection
+                    key={
+                        'groupId' in selection.owner
+                            ? `group:${selection.owner.groupId}`
+                            : `component:${selection.owner.componentId}`
+                    }
+                    {...selection}
+                    viewId={view.id}
                 />
             ))}
         </g>
@@ -158,23 +265,52 @@ const ScreenView: FC<{
 
 /** Optional placements of one screen share its source artwork and resolve layout per viewport. */
 export const ScreenViews: FC<{ interactive?: boolean }> = ({ interactive = true }) => {
-    const items = useAppState((state) =>
-        state.currentDocument.editingComponentId
+    const items = useAppState((state) => {
+        if (state.currentDocument.editingComponentId && !state.events.pointer.screenView) {
+            return [];
+        }
+        const views = projectScreenViews(state.currentDocument);
+        const focused = componentScreenView(state, views) !== null;
+
+        return state.currentDocument.editingComponentId && !focused
             ? []
-            : projectScreenViews(state.currentDocument).map((item) => ({
-                  item,
-                  // A locked, hidden or read-only View lets presses through, as before.
-                  editable:
-                      interactive &&
-                      item.projection !== null &&
-                      canEditThroughView(state, item.view.id)
-              }))
-    );
+            : views.map((item) => {
+                  const component =
+                      focused && item.projection
+                          ? projectComponentView(state, item.projection)
+                          : null;
+
+                  return {
+                      item:
+                          component && item.projection
+                              ? {
+                                    ...item,
+                                    projection: {
+                                        ...item.projection,
+                                        shapes: [
+                                            ...item.projection.shapes.filter(
+                                                (shape) =>
+                                                    shape.id !== component.transform.instanceId
+                                            ),
+                                            ...component.shapes
+                                        ]
+                                    }
+                                }
+                              : item,
+                      focused,
+                      // A locked, hidden or read-only View lets presses through, as before.
+                      editable:
+                          interactive &&
+                          item.projection !== null &&
+                          canEditThroughView(state, item.view.id)
+                  };
+              });
+    });
 
     return (
         <g id="screen-views">
-            {items.map(({ item, editable }) => (
-                <ScreenView key={item.view.id} item={item} editable={editable} />
+            {items.map(({ item, editable, focused }) => (
+                <ScreenView key={item.view.id} item={item} editable={editable} focused={focused} />
             ))}
         </g>
     );

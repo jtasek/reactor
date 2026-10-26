@@ -1,3 +1,4 @@
+import { screenOwners, screenSourceShapes, screenViewName } from 'src/app/screenViews';
 import { layoutDocument } from 'src/app/frameLayout';
 import { projectScreenViews } from 'src/app/screenProjection';
 import React, { FC, ReactNode, useLayoutEffect, useRef } from 'react';
@@ -235,8 +236,9 @@ export const DocumentThumbnail: FC<{ document: Document }> = ({ document: source
     const svgRef = useRef<SVGSVGElement>(null);
     const contentRef = useRef<SVGGElement>(null);
     const shown = shownShapesIds({ ...document, shownLayerId: undefined }, null);
+    const sourceShapes = screenSourceShapes(document);
     const shapes = document.shapesIds
-        .filter((id) => shown.has(id))
+        .filter((id) => shown.has(id) && !sourceShapes.has(id))
         .map((id) => document.shapes[id]);
 
     useLayoutEffect(() => {
@@ -254,8 +256,9 @@ export const DocumentThumbnail: FC<{ document: Document }> = ({ document: source
         }
     });
 
-    const frames = Object.values(document.frames).filter((frame) =>
-        isFrameVisible(document, frame.id)
+    const owners = screenOwners(document.frames);
+    const frames = Object.values(document.frames).filter(
+        (frame) => !owners.get(frame.id) && isFrameVisible(document, frame.id)
     );
     const views = projectScreenViews(sourceDocument).flatMap(({ view, projection }) =>
         projection ? [{ ...projection, viewId: view.id }] : []
@@ -307,7 +310,7 @@ export const DocumentThumbnail: FC<{ document: Document }> = ({ document: source
                             fill="var(--text-secondary-color)"
                             fontSize="var(--canvas-label-size)"
                         >
-                            {frame.name}
+                            {screenViewName(document, frame)}
                         </text>
                     </g>
                 ))}

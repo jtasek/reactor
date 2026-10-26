@@ -1,3 +1,4 @@
+import type { SelectionOverlay } from 'src/app/selectionOverlays';
 import React, { FC } from 'react';
 import { useAppState } from 'src/app/hooks';
 import { ObjectTypeSymbol } from '../ObjectTypeSymbol';
@@ -7,16 +8,12 @@ import styles from './styles.css';
 const BADGE_OFFSET = 24;
 
 /** The selected object's name stays visible even when its action menu is hidden. */
-export const SelectionBadge: FC = () => {
-    const selection = useAppState((state) => {
-        if (state.events.pointer.dragging) {
-            return null;
-        }
-
-        const document = state.currentDocument;
-
-        return { identity: selectionIdentity(document), camera: document.camera };
-    });
+export const SelectionBadge: FC<{ overlay: SelectionOverlay | null }> = ({ overlay }) => {
+    const selection = useAppState(() =>
+        overlay
+            ? { identity: selectionIdentity(overlay.document), camera: overlay.document.camera }
+            : null
+    );
 
     if (!selection?.identity) {
         return null;

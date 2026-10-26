@@ -448,24 +448,63 @@ Nesting retains screen identity but makes the destination unavailable; Inspector
 Demotion/deletion preserves authored target references for diagnostics. Tests:
 `screenDefinitions.test.ts` and browser counterpart.
 
-Schema v13 adds optional placed views as `Frame.kind = 'view'` with a `screenId` pointing to
-an explicit screen. The original screen frame remains the default view and navigation ID.
-View geometry is independent; it cannot parent shapes or frames or carry stack/sizing rules.
-`screenProjection.ts` derives the referenced artwork at the view's viewport size without
-writing layout to shared data, and caps all placed views together at 5,000 projected nodes.
-`screenViewEditing.ts` resolves local pointer addresses for projected hit tests, group boxes,
-marquee selection and snapping. Drawing through a View translates geometry into its source
-Screen and assigns source membership; dragging free artwork edits shared source geometry.
-Keep stack-managed transforms disabled. Pointer addresses and gesture placement snapshots
-stay in the events namespace, never in durable document data. A changed/removed/hidden/locked
-View cancels its gesture; normal snapshot rebasing preserves remote edits on cancellation.
-Two-phase text retains its source placement until commit, and its input follows View movement;
-it commits into its Screen even if the View is hidden or removed meanwhile. Only editable Views
-take presses (locked, hidden, read-only or broken ones let them reach the canvas), and their hit
-area leaves the inner half of the View's edge grip free. A marquee projects its View once per gesture.
-View boundary gestures edit only the placement. Projected resize/rotate handles and contextual menus/overlays remain planned.
-Deleting a screen removes its placed views; deleting a view keeps the screen. Explorer and
-Inspector identify the referenced screen. Tests: `screenViews.test.ts` and browser counterpart.
+Schema v13 introduced placed views. Schema v14 separates every placement from its shared
+screen definition. `Frame.kind = 'screen'` with `definitionOnly: true` retains the destination
+ID, source artwork and layout; every canvas placement is a separate `kind = 'view'` record.
+There is no primary, secondary or default view. A view stores only its own label in `name`;
+`screenViewName` composes labels such as Home · Mobile and Home · Desktop from the shared
+screen name. All views share the same move, resize, lock, hide, delete and editing behavior.
+`screenViewMigration.ts` extracts legacy placements deterministically once. The persisted
+`definitionOnly` marker prevents a last-view deletion being undone by loading or sync.
+New screen operations create an initial view in the same undo batch. Deleting a view retains
+the screen and artwork; Explorer's Screens list makes definitions with no views reachable.
+Definitions and their authored children do not paint or hit-test as canvas objects; hidden
+source-only primitives retain existing geometry measurement. Canvas and Explorer show
+placements and their shared contents. Thumbnail/viewer/minimap extents omit source geometry.
+`screenProjection.ts` resolves each viewport without writing derived geometry to shared data;
+it caps all placed views together at 5,000 projected nodes. `screenViewEditing.ts` resolves
+local addresses for hit tests, group boxes, marquee and snapping. Drawing translates into the
+source Screen and assigns membership; dragging edits shared free artwork. Keep stack-managed
+transforms disabled. Addresses and placement snapshots stay in the events namespace. A
+removed/hidden/locked/repositioned view cancels an active gesture; snapshot rebasing preserves
+remote edits. Two-phase text stays anchored to its source location while its input follows
+view movement, and commits into its Screen even if the view is hidden or removed meanwhile.
+Only editable views take presses (locked, hidden, read-only or broken ones let them reach the
+canvas), and their hit area leaves the inner half of the view's edge grip free. A marquee
+projects its view once per gesture. View boundary gestures edit only the placement.
+Only root screens are definitions (`isScreenDefinition`). A nested screen is not a destination,
+stays drawn inside its parent and gets no view until it moves to Canvas. Deleting a screen
+deletes its views and moves its artwork to where its first view shows it, in one undo step.
+Free shapes expose the existing resize/rotate handles in editable Screen views. Pointer and
+snapping geometry stay in view coordinates; only authored shape edits translate to source
+coordinates. Eligibility checks both source and placed layout, including nested frame offsets.
+Handles read the placed check from the View projection's `layoutOffsets`; the per-move check
+lays out the viewport only when a stack sits between the shape and its Screen.
+Locked or stack-managed shapes have no transform handles; instances retain their
+rotation-only handles. Selection menus, badges and Alt measurements resolve through
+`selectionOverlays.ts` in the active view. Its editor-only hooks keep geometry projection out
+of pointer-following components. Explorer selections retain their view branch through
+`events.setScreenView`; hover ownership is local and separate from the drawing address.
+Resize snap overlays read projected bounds too; selected shapes retain dimension labels
+resolved per viewport. Missing, hidden or locked views and mixed
+canvas/view selections have no overlay; menus keep editing shared source entities through
+existing commands. Selected groups and local component containers draw one projected box and
+handle set per editable view, using the existing container transforms in source coordinates.
+Hidden members follow too; all members must belong to the view's Screen and remain unlocked
+and free of source/viewport layout offsets. Changed membership or layout cancels the gesture.
+Instances keep rotation-only handles. Tests: screenViewHandles, screenViewOverlays,
+screenViewContainerHandles and their browser counterparts.
+Focused component children stay in the chosen Screen view. Source-only masters opened through
+a free, unrotated instance project at that instance's placement; `componentEditingReturn`
+keeps a local pinned source origin and restores the original view, selection and camera.
+Master children remain unparented, and new children join the definition. Rotated, stack-managed,
+unplaced or over-budget instance contexts use the standalone source editor. Context expansion
+still counts against the shared 5,000-node projection cap. Pointer snapshots capture the local
+component offset; transforms, snapping and two-phase text use it without writing projected
+geometry into source records. Explorer child selection retains focus. Tests:
+screenViewComponentEditing and its browser counterpart.
+Collaboration migrations load alongside Yjs in `initialize`, before any document is opened;
+keep them outside the eager entry. Tests: equalScreenViews, screenViews and screenViewGestures.
 
 The durable reader checks finite positions, nonempty names and sides at least `MIN_FRAME_SIZE`.
 Frames participate in persistence, shared undo, operations, clipboard, reset, thumbnails and
@@ -507,7 +546,7 @@ remeasuring every reflow. A deliberate membership/grouping change, component con
 geometry through `stackEdits.ts`; ordinary reflow never does. Inspector's Stack order is a place among the
 shown slots (`layout.slots`); moving there writes one order between the new neighbors
 (`orderAtPosition`), which may be negative. Frame and rectangle/image sizing
-is available in Inspector, images retain their ratio. Canvas transforms of projected content
+is available in Inspector, images retain their ratio. Canvas transforms of stack-managed content
 are disabled; remote layout takeover cancels an active transform. Source-only masters stay
 outside frames. Stack rules/order survive schema v8, copy, operations, sync and undo; v7 loads.
 `tests/stackLayout.test.ts` includes production-copy convergence/undo and no feedback; browser

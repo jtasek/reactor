@@ -7,6 +7,7 @@ import type { Keyboard, Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
 import { DEFAULT_TEXT_FONT_SIZE } from 'src/app/utils';
 import { useActions, useAppState, useKeyboard, usePointer } from 'src/app/hooks';
+import { editableScreenView } from 'src/app/screenViewEditing';
 
 /**
  * Draws a text in current position
@@ -81,6 +82,22 @@ export const DesignText: FC = () => {
             screenView?.documentId === state.currentDocumentId
                 ? state.currentDocument.frames[screenView.viewId]
                 : undefined;
+        const component = origin?.component
+            ? editableScreenView(state, screenView)?.component
+            : undefined;
+
+        if (origin?.component) {
+            return {
+                x:
+                    start.x +
+                    origin.component.offset.x +
+                    (component ? component.position.x - component.origin.x : 0),
+                y:
+                    start.y +
+                    origin.component.offset.y +
+                    (component ? component.position.y - component.origin.y : 0)
+            };
+        }
 
         return origin && view
             ? {

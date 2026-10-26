@@ -1,13 +1,14 @@
 import React, { FC } from 'react';
 import { ArrowLeft, Component } from 'lucide-react';
 import { useActions, useCommandEnabled } from 'src/app/hooks';
-import { useEditingComponentName } from 'src/app/componentHooks';
+import { useEditingComponentName, useComponentEditingViewName } from 'src/app/componentHooks';
 import { LeaveComponentSourceCommand } from 'src/commands/component';
 import { Icon } from '../Icon';
 import styles from './styles.css';
 
 export const ComponentNavigation: FC = () => {
     const name = useEditingComponentName();
+    const viewName = useComponentEditingViewName();
     const enabled = useCommandEnabled(LeaveComponentSourceCommand);
     const { runCommand } = useActions();
     const handleBack = () => runCommand(LeaveComponentSourceCommand);
@@ -28,6 +29,12 @@ export const ComponentNavigation: FC = () => {
                 Back to canvas
             </button>
             <span aria-hidden="true">/</span>
+            {viewName && (
+                <>
+                    <span title={viewName}>{viewName}</span>
+                    <span aria-hidden="true">/</span>
+                </>
+            )}
             <span className={styles.componentName} aria-current="page" title={name}>
                 <Icon icon={{ component: Component, size: 16 }} />
                 <span>{name}</span>

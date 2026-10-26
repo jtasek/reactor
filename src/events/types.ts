@@ -15,7 +15,11 @@ export type ScreenViewAddress = {
     documentId: string;
     viewId: string;
     /** Preserve a text placement across its separate placement and commit phases. */
-    drawingOrigin?: { screenId: string; position: Point };
+    drawingOrigin?: {
+        screenId: string;
+        position: Point;
+        component?: { id: string; offset: Point };
+    };
 };
 
 export interface ScreenViewGesture {
@@ -24,6 +28,7 @@ export interface ScreenViewGesture {
     position: Point;
     size: Size;
     sourcePosition: Point;
+    component?: { instanceId: string; origin: Point; position: Point };
 }
 
 /**
@@ -160,6 +165,8 @@ export interface Pointer {
     gesture: Gesture;
     /** Local projected editing address, retained for text placement and group entry. */
     screenView: ScreenViewAddress | null;
+    /** The view under an idle pointer, distinct from the retained editing address. */
+    hoveredScreenViewId: string | null;
     offset: Point;
     path: Point[];
     radius: number;

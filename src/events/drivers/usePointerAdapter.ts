@@ -171,6 +171,7 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
         actions.events.movePointer({
             pointerId: event.pointerId,
             position,
+            screenViewId: screenViewTarget(event.target),
             free: event.ctrlKey || event.metaKey
         });
     };

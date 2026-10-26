@@ -40,19 +40,25 @@ test('places a second view, resolves its width, edits shared content and deletes
     await openEditor(page, ['Inspector', 'Explorer']);
     const explorer = page.getByRole('region', { name: 'Explorer' });
     await explorer.getByRole('button', { name: 'Home', exact: true }).click();
-    await page.getByRole('button', { name: 'Create view of screen' }).click();
+    await page.getByRole('button', { name: 'Create Screen view' }).click();
     await expect(page.getByLabel('Screen view properties')).toBeVisible();
-    await expect(explorer.getByRole('button', { name: 'Home view' })).toHaveAccessibleDescription(
-        'Home · 300 × 200 View'
-    );
+    await page.getByLabel('View name').fill('Desktop');
+    await page.getByLabel('View name').press('Enter');
+    await expect(
+        explorer.getByRole('button', { name: 'Home · Desktop', exact: true })
+    ).toHaveAccessibleDescription('Home · 300 × 200 Screen view');
 
-    const original = page.locator('svg#surface #shapes rect[data-cy="Body"]');
-    const projected = page.locator('svg#surface #screen-views rect[data-cy="Body"]');
+    const original = page.locator(
+        'svg#surface #screen-views > [data-screen-view="home:view"] rect[data-cy="Body"]'
+    );
+    const projected = page.locator(
+        'svg#surface #screen-views > g:not([data-screen-view="home:view"]) rect[data-cy="Body"]'
+    );
     await expect(original).toHaveAttribute('width', '280');
     await expect(projected).toHaveAttribute('x', '450');
     const viewId = await page
         .locator('svg#surface #frames > [data-frame]')
-        .filter({ hasText: 'Home view' })
+        .filter({ hasText: 'Home · Desktop' })
         .getAttribute('data-frame');
     await pointer(page, 'pointerdown', {
         x: 440,
@@ -71,25 +77,30 @@ test('places a second view, resolves its width, edits shared content and deletes
     await pointer(page, 'pointerdown', {
         x: 460,
         y: 100,
-        target: '#screen-views rect[data-cy="Body"]'
+        target: '#screen-views > g:not([data-screen-view="home:view"]) rect[data-cy="Body"]'
     });
     await pointer(page, 'pointerup', {
         x: 460,
         y: 100,
-        target: '#screen-views rect[data-cy="Body"]'
+        target: '#screen-views > g:not([data-screen-view="home:view"]) rect[data-cy="Body"]'
     });
     await page.getByLabel('Name', { exact: true }).fill('Heading');
     await page.getByLabel('Name', { exact: true }).press('Enter');
     await expect(page.locator('svg#surface #shapes rect[data-cy="Heading"]')).toHaveCount(1);
-    await expect(page.locator('svg#surface #screen-views rect[data-cy="Heading"]')).toHaveCount(1);
+    await expect(
+        page.locator(
+            'svg#surface #screen-views > g:not([data-screen-view="home:view"]) rect[data-cy="Heading"]'
+        )
+    ).toHaveCount(1);
 
-    await explorer.getByRole('button', { name: 'Home view' }).click();
+    await explorer.getByRole('button', { name: 'Home · Desktop', exact: true }).click();
     await page.screenshot({ path: '/tmp/reactor-screen-views.png' });
     await page.setViewportSize({ width: 600, height: 850 });
     await expect(page.getByLabel('View width')).toBeVisible();
     await page.screenshot({ path: '/tmp/reactor-screen-views-narrow.png' });
-    await page.getByRole('button', { name: 'Delete view' }).click();
-    await expect(page.locator('svg#surface #screen-views [data-shape-id]')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Delete Screen view' }).click();
+    await expect(projected).toHaveCount(0);
+    await expect(page.locator('svg#surface #screen-views [data-shape-id]')).toHaveCount(1);
     await expect(explorer.getByRole('button', { name: 'Home', exact: true })).toBeVisible();
     await page.reload();
     await expect(explorer.getByRole('button', { name: 'Home', exact: true })).toBeVisible();
@@ -147,7 +158,9 @@ test('selects projected instances and ignores secondary presses during a gesture
     await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
     await openEditor(page, ['Inspector', 'Explorer']);
     await page.getByRole('button', { name: 'More panels' }).click();
-    const hit = page.locator('svg#surface [data-view-instance-hit]');
+    const hit = page.locator(
+        'svg#surface #screen-views > [data-screen-view="view"] [data-view-instance-hit]'
+    );
     await expect(hit).toHaveAttribute('width', '60');
     await hit.click();
     await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Card');
@@ -161,7 +174,7 @@ test('selects projected instances and ignores secondary presses during a gesture
     await expect(hit).toHaveAttribute('y', '121');
 
     const explorer = page.getByRole('region', { name: 'Explorer' });
-    await explorer.getByRole('button', { name: 'Second', exact: true }).click();
+    await explorer.getByRole('button', { name: 'Home · Second', exact: true }).click();
     await pointer(page, 'pointerdown', {
         x: 400,
         y: 150,
@@ -171,7 +184,7 @@ test('selects projected instances and ignores secondary presses during a gesture
         pointerId: 2,
         x: 430,
         y: 110,
-        target: '[data-view-instance-hit]'
+        target: '#screen-views > [data-screen-view="view"] [data-view-instance-hit]'
     });
     await expect(page.getByLabel('Screen view properties')).toBeVisible();
     await pointer(page, 'pointercancel', { x: 400, y: 150 });
@@ -179,7 +192,7 @@ test('selects projected instances and ignores secondary presses during a gesture
     await expect(page.getByLabel('Screen view properties')).toBeVisible();
 });
 
-test('draws and drags source artwork through a secondary view, cancels a drag and retains it after reload', async ({
+test('draws and drags source artwork through a Screen view, cancels a drag and retains it after reload', async ({
     page
 }) => {
     const body = createShape({
@@ -230,8 +243,12 @@ test('draws and drags source artwork through a secondary view, cancels a drag an
     await page.mouse.move(box.x + 610, box.y + 210, { steps: 3 });
     await expect(page.locator('#tools rect')).toHaveAttribute('x', '550');
     await page.mouse.up();
-    const original = page.locator('svg#surface #shapes rect[data-cy="rectangle-1"]');
-    const projected = page.locator('svg#surface #screen-views rect[data-cy="rectangle-1"]');
+    const original = page.locator(
+        'svg#surface #screen-views > [data-screen-view="home:view"] rect[data-cy="rectangle-1"]'
+    );
+    const projected = page.locator(
+        'svg#surface #screen-views > [data-screen-view="view"] rect[data-cy="rectangle-1"]'
+    );
     await expect(original).toHaveAttribute('x', '200');
     await expect(projected).toHaveAttribute('x', '550');
     await expect(page.getByLabel('Selection parent')).toContainText('Home');
@@ -261,7 +278,7 @@ test('draws and drags source artwork through a secondary view, cancels a drag an
     await text.fill('Anchored');
     await page
         .getByRole('region', { name: 'Explorer' })
-        .getByRole('button', { name: 'Wide', exact: true })
+        .getByRole('button', { name: 'Home · Wide', exact: true })
         .click();
     await page.getByLabel('View x').fill('650');
     await page.getByLabel('View x').press('Enter');
@@ -271,10 +288,9 @@ test('draws and drags source artwork through a secondary view, cancels a drag an
         'x',
         '170'
     );
-    await expect(page.locator('svg#surface #screen-views text[data-cy="text-1"]')).toHaveAttribute(
-        'x',
-        '720'
-    );
+    await expect(
+        page.locator('svg#surface #screen-views > [data-screen-view="view"] text[data-cy="text-1"]')
+    ).toHaveAttribute('x', '720');
     await page.screenshot({ path: '/tmp/reactor-screen-view-gestures.png' });
 });
 
@@ -304,11 +320,12 @@ test('moves a view from just inside its edge, and lets presses through a locked 
     await openEditor(page, ['Inspector', 'Explorer']);
     const explorer = page.getByRole('region', { name: 'Explorer' });
     await explorer.getByRole('button', { name: 'Home', exact: true }).click();
-    await page.getByRole('button', { name: 'Create view of screen' }).click();
+    // Placed beside the first view, clear of the panels.
+    await page.getByRole('button', { name: 'Create Screen view', exact: true }).click();
     await expect(page.getByLabel('Screen view properties')).toBeVisible();
     const viewId = await page
         .locator('svg#surface #frames > [data-frame]')
-        .filter({ hasText: 'Home view' })
+        .filter({ hasText: 'Home · 300 px 2' })
         .getAttribute('data-frame');
     const x = Number(await page.getByLabel('View x').inputValue());
     const grip = page.locator(`#frame-grips [data-frame-id="${viewId}"]`);
@@ -334,7 +351,9 @@ test('moves a view from just inside its edge, and lets presses through a locked 
 
     const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
     expect((await pressed(center)).view).toBe(true);
-    const viewRow = explorer.getByRole('button', { name: 'Home view' }).locator('..');
+    const viewRow = explorer
+        .getByRole('button', { name: 'Home · 300 px 2', exact: true })
+        .locator('..');
     await viewRow.hover();
     await viewRow.getByRole('button', { name: 'Lock', exact: true }).click();
     await expect.poll(async () => (await pressed(center)).view).toBe(false);

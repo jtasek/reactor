@@ -1,4 +1,13 @@
-import { withTheirGroups } from './membership';
+import {
+    screenViewTransformTarget,
+    screenViewContainerTarget,
+    placedScreenDocument,
+    componentScreenView,
+    type ScreenViewContainer
+} from './screenViewEditing';
+import { screenOwners, screenSourceShapes, screenViewName } from './screenViews';
+import { groupFrame, withTheirGroups } from './membership';
+import type { ScreenProjection } from './screenProjection';
 import { hasSizingRules } from './stackSizing';
 import {
     frameLayout,
@@ -13,7 +22,7 @@ import {
 import { frameState, isFrameVisible, isFrameLocked } from './frameState';
 import { frameParents, validFrameParent, frameMoveProblem } from './frameMembership';
 import { isReadOnly } from './documentAccess';
-import { isShapeLocked } from './utils';
+import { isShapeLocked, isShapeVisible } from './utils';
 import { explorerLayers, explorerTree } from './explorerTree';
 import { useAppState } from './hooks';
 import type { Document, Frame } from './types';
@@ -28,10 +37,12 @@ export const useFramesIds = () =>
         }
 
         const selected = document.selectedFrameId;
+        const owners = screenOwners(document.frames);
+        const canvasIds = document.framesIds.filter((id) => !owners.get(id));
 
         return [
-            ...document.framesIds.filter((id) => id !== selected && isFrameVisible(document, id)),
-            ...document.framesIds.filter((id) => id === selected && isFrameVisible(document, id))
+            ...canvasIds.filter((id) => id !== selected && isFrameVisible(document, id)),
+            ...canvasIds.filter((id) => id === selected && isFrameVisible(document, id))
         ];
     });
 
@@ -61,7 +72,7 @@ export const useFrameRows = () =>
         return framesIds
             .map((id) => ({
                 id,
-                name: frames[id].name,
+                name: screenViewName(document, frames[id]),
                 kind: frames[id].kind,
                 screenId: frames[id].screenId,
                 size: frames[id].size,
@@ -264,3 +275,128 @@ function stackSlot(document: Document, frame: Frame | undefined, shapeIds: strin
         orderAt: (target: number) => orderAtPosition(layout, stackId, kind, ids[0], target)
     };
 }
+
+/** Source geometry is measured but never painted as another canvas placement. */
+export const useScreenSourceShapes = () =>
+    useAppState((state) => {
+        const document = state.currentDocument;
+        if (document.editingComponentId && !componentScreenView(state)) {
+            return new Set<string>();
+        }
+        const ids = screenSourceShapes(document);
+        if (document.editingComponentId) {
+            document.components[document.editingComponentId]?.shapesIds.forEach((id) =>
+                ids.add(id)
+            );
+        }
+
+        return ids;
+    });
+
+export const useScreenSourceGroup = (groupId: string) =>
+    useAppState((state) => {
+        const document = state.currentDocument;
+        const ids = screenSourceShapes(document);
+
+        return document.groups[groupId]?.shapesIds.some((id) => ids.has(id));
+    });
+
+/**
+ * A component's canvas box. Screen members are drawn only in views, so the box
+ * covers just its canvas members; with members in both places it is `split`, and
+ * no single box can transform them all.
+ */
+export function canvasComponentFrame(document: Document, componentId: string) {
+    const component = document.components[componentId];
+    const frame = document.componentFrames[componentId];
+
+    if (!component || !frame) {
+        return { frame: null, split: false };
+    }
+
+    const source = screenSourceShapes(document);
+    const canvasIds = component.shapesIds.filter((id) => !source.has(id));
+
+    if (canvasIds.length === component.shapesIds.length) {
+        return { frame, split: false };
+    }
+
+    return {
+        frame:
+            canvasIds.length > 0
+                ? groupFrame(document, { ...component, shapesIds: canvasIds })
+                : null,
+        split: true
+    };
+}
+
+export const useCanvasComponentFrame = (componentId: string) =>
+    useAppState((state) => canvasComponentFrame(state.currentDocument, componentId));
+
+/** One placed box per selected container; reuse the viewport's existing layout. */
+export const useScreenViewContainers = (
+    viewId: string,
+    projection: ScreenProjection | null,
+    editable: boolean
+) =>
+    useAppState((state) => {
+        if (!editable || !projection) {
+            return [];
+        }
+
+        const document = state.currentDocument;
+        const placed = placedScreenDocument(document, projection.shapes);
+        const owners: ScreenViewContainer[] = [
+            ...document.selectedGroupsIds.map((groupId) => ({ groupId })),
+            ...document.selectedComponentsIds.map((componentId) => ({ componentId }))
+        ];
+
+        return owners.flatMap((owner) => {
+            const container =
+                'groupId' in owner
+                    ? document.groups[owner.groupId]
+                    : document.components[owner.componentId];
+            const shown = container.shapesIds.filter((id) => isShapeVisible(document, id));
+
+            if (!shown.every((id) => placed.shapes[id])) {
+                return [];
+            }
+
+            const frame = groupFrame(placed, container);
+
+            if (!frame) {
+                return [];
+            }
+
+            const target = screenViewContainerTarget(document, viewId, owner);
+
+            return [
+                {
+                    owner,
+                    frame,
+                    shapeIds: shown,
+                    transformable:
+                        target !== null &&
+                        !target.shapeIds.some((id) => projection.layoutOffsets.has(id))
+                }
+            ];
+        });
+    });
+
+export const useFrameName = (id: string) =>
+    useAppState((state) => screenViewName(state.currentDocument, state.currentDocument.frames[id]));
+
+/**
+ * Mounted only for selected artwork; placement permissions are checked by its view,
+ * and `placedOffset` comes from the layout the view's projection already made.
+ */
+export const useScreenShapeTransformable = (
+    viewId: string,
+    shapeId: string,
+    placedOffset: boolean
+) =>
+    useAppState(
+        (state) =>
+            !placedOffset &&
+            screenViewTransformTarget(state.currentDocument, viewId, shapeId) !== null
+    );

@@ -1,3 +1,4 @@
+import { screenOwners } from 'src/app/screenViews';
 import React, { FC, MouseEvent, useState } from 'react';
 import { Frame as FrameIcon, CircleHelp, Star, Trash2 } from 'lucide-react';
 import styles from './styles.css';
@@ -35,7 +36,7 @@ import {
     useScopedCommands,
     useShownLayerId
 } from 'src/app/hooks';
-import { useSourceSelected } from 'src/app/componentHooks';
+import { useSourceSelected, useEditingComponentForShape } from 'src/app/componentHooks';
 
 const RootItem: FC<{
     scope?: Extract<CommandScope, 'layers' | 'components'>;
@@ -79,17 +80,23 @@ const RootItem: FC<{
     );
 };
 
-const ShapeItem: FC<{ shapeId: string; sourceId?: string }> = ({ shapeId, sourceId }) => {
+const ShapeItem: FC<{ shapeId: string; sourceId?: string; viewId?: string }> = ({
+    shapeId,
+    sourceId,
+    viewId
+}) => {
     const shape = useShape(shapeId);
     const inherited = useShapesFrameState([shapeId]);
     const sourceSelected = useSourceSelected(sourceId ?? null);
+    const focusedId = useEditingComponentForShape(shapeId);
     const {
         selectShape,
         unselectShapes,
         toggleShapeSelected,
         toggleShapeLocked,
         toggleShapeVisible,
-        selectComponentChild
+        selectComponentChild,
+        events
     } = useActions();
     const commands = useItemCommandActions(
         [shapeId],
@@ -97,13 +104,20 @@ const ShapeItem: FC<{ shapeId: string; sourceId?: string }> = ({ shapeId, source
     );
 
     const handleSelect = ({ shiftKey }: MouseEvent<HTMLButtonElement>) => {
+        // A child of the component being edited keeps the view it is being edited in.
+        if (viewId || !focusedId) {
+            events.setScreenView(viewId ?? null);
+        }
+
         if (shiftKey) {
             toggleShapeSelected(shapeId);
 
             return;
         }
-        if (sourceId) {
-            selectComponentChild({ componentId: sourceId, shapeId });
+        const componentId = sourceId ?? focusedId;
+
+        if (componentId) {
+            selectComponentChild({ componentId, shapeId });
 
             return;
         }
@@ -140,7 +154,8 @@ const GroupItem: FC<{
     groupId: string;
     shapesIds: string[];
     contextId: string;
-}> = ({ groupId, shapesIds, contextId }) => {
+    viewId?: string;
+}> = ({ groupId, shapesIds, contextId, viewId }) => {
     const group = useGroup(groupId);
     const inherited = useShapesFrameState(group.shapesIds);
     const selected = useGroupSelected(groupId);
@@ -149,7 +164,8 @@ const GroupItem: FC<{
         unselectShapes,
         toggleGroupSelected,
         toggleGroupLocked,
-        toggleGroupVisible
+        toggleGroupVisible,
+        events
     } = useActions();
     const commands = useItemCommandActions(
         group.shapesIds,
@@ -157,6 +173,8 @@ const GroupItem: FC<{
     );
 
     const handleSelect = ({ shiftKey }: MouseEvent<HTMLButtonElement>) => {
+        events.setScreenView(viewId ?? null);
+
         if (!shiftKey) {
             unselectShapes();
         }
@@ -192,7 +210,7 @@ const GroupItem: FC<{
             }}
         >
             {shapesIds.map((shapeId) => (
-                <ShapeItem key={shapeId} shapeId={shapeId} />
+                <ShapeItem key={shapeId} shapeId={shapeId} viewId={viewId} />
             ))}
         </ExplorerItem>
     );
@@ -207,11 +225,9 @@ interface LayerProps {
     shapesOf: (dragged: Dragged) => string[];
 }
 
-const ObjectContents: FC<Pick<LayerProps, 'groups' | 'shapesIds' | 'contextId'>> = ({
-    groups,
-    shapesIds,
-    contextId
-}) => {
+const ObjectContents: FC<
+    Pick<LayerProps, 'groups' | 'shapesIds' | 'contextId'> & { viewId?: string }
+> = ({ groups, shapesIds, contextId, viewId }) => {
     const drawOrder = new Map(useShapesIds().map((id, index) => [id, index]));
     const items = [
         ...groups.map((group) => ({
@@ -238,9 +254,10 @@ const ObjectContents: FC<Pick<LayerProps, 'groups' | 'shapesIds' | 'contextId'>>
                         groupId={item.id}
                         shapesIds={item.shapesIds}
                         contextId={contextId}
+                        viewId={viewId}
                     />
                 ) : (
-                    <ShapeItem key={item.id} shapeId={item.id} />
+                    <ShapeItem key={item.id} shapeId={item.id} viewId={viewId} />
                 )
             )}
         </>
@@ -328,12 +345,27 @@ export const Explorer: FC = () => {
 
         return contents ? [{ ...frame, ...contents }] : [];
     });
-    const frameItem = (frame: (typeof shownFrames)[number]): React.ReactNode => (
+    const owners = screenOwners(document.frames);
+    // Only root screens are definitions; nested screens stay in their parent's branch.
+    const screens = frames
+        .filter((frame) => owners.get(frame.id) === frame.id)
+        .map((screen) => ({
+            ...screen,
+            viewCount: frames.filter((view) => view.kind === 'view' && view.screenId === screen.id)
+                .length
+        }));
+    const frameItem = (frame: (typeof shownFrames)[number], branchId?: string): React.ReactNode => (
         <ExplorerItem
             key={`frame:${frame.id}`}
             kind="frame"
             name={frame.name}
-            badge={frame.kind === 'screen' ? 'Screen' : frame.kind === 'view' ? 'View' : undefined}
+            badge={
+                frame.kind === 'view'
+                    ? 'Screen view'
+                    : frame.kind === 'screen'
+                      ? 'Screen'
+                      : undefined
+            }
             secondary={
                 frame.kind === 'view'
                     ? `${document.frames[frame.screenId ?? '']?.name ?? 'Missing screen'} · ${frame.size.width} × ${frame.size.height}`
@@ -342,12 +374,16 @@ export const Explorer: FC = () => {
             icon={<FrameIcon size={16} aria-hidden="true" />}
             selected={selectedFrameId === frame.id}
             visible={frame.shown}
-            collapseId={frame.kind === 'view' ? undefined : `frame:${frame.id}`}
+            collapseId={`frame:${branchId ?? frame.id}:${frame.id}`}
             onClick={() => editFrame({ kind: 'select', id: frame.id })}
             onDrop={
-                frame.kind === 'view' || frame.locked || frame.inheritedLock
+                frame.locked || frame.inheritedLock
                     ? undefined
-                    : (dragged) => moveIntoFrame(dragged, frame.id)
+                    : (dragged) =>
+                          moveIntoFrame(
+                              dragged,
+                              frame.kind === 'view' ? (frame.screenId ?? frame.id) : frame.id
+                          )
             }
             menuActions={[
                 {
@@ -364,8 +400,29 @@ export const Explorer: FC = () => {
                 }
             ]}
         >
-            {shownFrames.filter((child) => child.parentFrameId === frame.id).map(frameItem)}
-            <ObjectContents {...frame.contents} contextId={`frame:${frame.id}`} />
+            {shownFrames
+                .filter(
+                    (child) =>
+                        owners.get(child.id) !== child.id &&
+                        child.parentFrameId === (frame.kind === 'view' ? frame.screenId : frame.id)
+                )
+                .map((child) => frameItem(child, branchId ?? frame.id))}
+            <ObjectContents
+                {...(frame.kind === 'view'
+                    ? (frameContents.get(frame.screenId ?? '')?.contents ?? {
+                          groups: [],
+                          shapesIds: []
+                      })
+                    : frame.contents)}
+                contextId={`frame:${branchId ?? frame.id}:${frame.id}`}
+                viewId={
+                    frame.kind === 'view'
+                        ? frame.id
+                        : document.frames[branchId ?? '']?.kind === 'view'
+                          ? branchId
+                          : undefined
+                }
+            />
         </ExplorerItem>
     );
     const drawOrder = new Map(useShapesIds().map((id, index) => [id, index]));
@@ -534,9 +591,64 @@ export const Explorer: FC = () => {
                                 onDrop={(dragged) => moveIntoFrame(dragged, null)}
                             >
                                 {shownFrames
-                                    .filter((frame) => frame.parentFrameId === undefined)
-                                    .map(frameItem)}
+                                    .filter(
+                                        (frame) =>
+                                            frame.parentFrameId === undefined &&
+                                            !owners.get(frame.id)
+                                    )
+                                    .map((frame) => frameItem(frame))}
                                 <ObjectContents {...scene} contextId="canvas" />
+                            </RootItem>
+                        )}
+                        {screens.length > 0 && (
+                            <RootItem name="Screens">
+                                {screens
+                                    .filter(
+                                        (screen) =>
+                                            !filter || screen.name.toLowerCase().includes(filter)
+                                    )
+                                    .map((screen) => (
+                                        <ExplorerItem
+                                            key={screen.id}
+                                            kind="frame"
+                                            name={screen.name}
+                                            badge="Screen"
+                                            icon={<FrameIcon size={16} aria-hidden="true" />}
+                                            secondary={`${screen.viewCount} Screen ${screen.viewCount === 1 ? 'view' : 'views'}`}
+                                            selected={selectedFrameId === screen.id}
+                                            visible={screen.shown}
+                                            onDrop={
+                                                screen.locked || screen.inheritedLock
+                                                    ? undefined
+                                                    : (dragged) => moveIntoFrame(dragged, screen.id)
+                                            }
+                                            menuActions={[
+                                                {
+                                                    ...hideAction(!screen.visible, () =>
+                                                        editFrame({
+                                                            kind: 'toggle',
+                                                            id: screen.id,
+                                                            flag: 'visible'
+                                                        })
+                                                    ),
+                                                    disabled: screen.inheritedLock
+                                                },
+                                                {
+                                                    ...lockAction(screen.locked, () =>
+                                                        editFrame({
+                                                            kind: 'toggle',
+                                                            id: screen.id,
+                                                            flag: 'locked'
+                                                        })
+                                                    ),
+                                                    disabled: screen.inheritedLock
+                                                }
+                                            ]}
+                                            onClick={() =>
+                                                editFrame({ kind: 'select', id: screen.id })
+                                            }
+                                        />
+                                    ))}
                             </RootItem>
                         )}
                         {(!filter || sources.length > 0) && (

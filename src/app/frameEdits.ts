@@ -32,7 +32,7 @@ import { untracked } from './untracked';
 
 export type FrameEdit =
     | { kind: 'add'; position: Point; size: Frame['size'] }
-    | { kind: 'addView'; screenId: string; position: Point; size: Frame['size'] }
+    | { kind: 'addView'; screenId: string; position: Point; size: Frame['size']; name?: string }
     | { kind: 'select'; id: string }
     | { kind: 'reparentShapes'; ids: string[]; parentFrameId: string | null }
     | { kind: 'update'; id: string; changes: import('./operations').UpdateFrame['changes'] }
@@ -83,6 +83,7 @@ function addFrame(context: Context, input: Extract<FrameEdit, { kind: 'add' | 'p
             name: frameName(document.frames, source?.name),
             kind: source?.kind ?? 'frame',
             ...(source?.screenId ? { screenId: source.screenId } : {}),
+            ...(source?.definitionOnly ? { definitionOnly: true } : {}),
             position,
             size: input.kind === 'add' ? input.size : input.frame.size,
             ...(source?.parentFrameId === undefined ? {} : { parentFrameId: source.parentFrameId }),
@@ -245,12 +246,17 @@ export function edit(context: Context, input: FrameEdit): string | undefined {
             return;
         }
 
+        const peers = Object.fromEntries(
+            Object.entries(document.frames).filter(
+                ([, frame]) => frame.kind === 'view' && frame.screenId === screen.id
+            )
+        );
         const view = orUndefined(() =>
             readEntity('frames', {
                 id: context.effects.newId(),
                 kind: 'view',
                 screenId: screen.id,
-                name: frameName(document.frames, `${screen.name} view`),
+                name: frameName(peers, input.name ?? `${input.size.width} px`),
                 position: input.position,
                 size: input.size,
                 locked: false,
@@ -382,6 +388,13 @@ export function edit(context: Context, input: FrameEdit): string | undefined {
     }
 
     editorHelpers().operations.writeBatch(document, result.staged);
+    const createdView = result.staged.frames.find(
+        (view) => view.kind === 'view' && view.screenId === frame.id
+    );
+
+    if (createdView) {
+        actions.editFrame({ kind: 'select', id: createdView.id });
+    }
 
     return frame.id;
 }

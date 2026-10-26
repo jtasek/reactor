@@ -1,3 +1,4 @@
+import { screenOwners, screenSourceShapes } from 'src/app/screenViews';
 import { layoutDocument } from 'src/app/frameLayout';
 import { isFrameVisible } from 'src/app/frameState';
 import { shownShapesIds } from 'src/app/membership';
@@ -24,13 +25,15 @@ const DEFAULT_VIEW_BOX = '0 0 1000 1000';
 const getContentViewBox = (document: ReturnType<typeof useCurrentDocument>): string => {
     document = layoutDocument(document);
     const { shapes, frames } = document;
+    const source = screenSourceShapes(document);
+    const owners = screenOwners(frames);
     const shown = shownShapesIds(document, document.editingComponentId);
     const boxes = [
         ...Object.values(shapes)
-            .filter((shape) => shown.has(shape.id))
+            .filter((shape) => shown.has(shape.id) && !source.has(shape.id))
             .map(getShapeBounds),
         ...Object.values(frames)
-            .filter((frame) => isFrameVisible(document, frame.id))
+            .filter((frame) => !owners.get(frame.id) && isFrameVisible(document, frame.id))
             .map(frameBox)
     ];
 
