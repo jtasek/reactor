@@ -1,5 +1,11 @@
 import type { Box, Orientation, Point, Side } from './types';
-import { assertNever } from './utils';
+import { assertNever, isShapeLocked, isShapeVisible } from './utils';
+import { drawnExtent } from './membership';
+import { hasLayoutOffset } from './frameLayout';
+import { screenOwners } from './screenViews';
+import { editableScreenView, placedScreenDocument } from './screenViewEditing';
+import { isReadOnly } from './documentAccess';
+import type { Context } from './index';
 
 /** Where Align puts the items: on a side of their box, or on its center across or down. */
 export type AlignTo = Side | 'center' | 'middle';
@@ -10,6 +16,63 @@ export type Spacing = 'between' | 'centers';
 /** Aligning takes two items at least, and spacing three. */
 export const ALIGN_MINIMUM = 2;
 export const SPACE_MINIMUM = 3;
+
+/** Resolve boxes locally; only their translation deltas are written to shared source shapes. */
+export function placedItems(state: Context['state'], sourceItems: string[][]) {
+    const document = state.currentDocument;
+    const address = state.events.pointer.screenView;
+    const placed = address ? editableScreenView(state, address) : null;
+
+    if (isReadOnly(state) || document.locked || (address && !placed)) {
+        return [];
+    }
+
+    const geometry = placed ? placedScreenDocument(document, placed.projection.shapes) : document;
+    const shown = new Set(placed?.projection.shapes.map((shape) => shape.id));
+
+    if (placed && document.selectedShapesIds.some((id) => !shown.has(id))) {
+        return [];
+    }
+
+    const components = placed
+        ? document.selectedComponentsIds.map((id) => document.components[id])
+        : [];
+    const contained = new Set(components.flatMap((component) => component.shapesIds));
+    const items = [
+        ...components.map((component) => component.shapesIds),
+        ...sourceItems.filter((ids) => !ids.some((id) => contained.has(id)))
+    ];
+    const owners = placed ? screenOwners(document.frames) : null;
+    const focus = placed?.component
+        ? document.components[document.editingComponentId ?? '']
+        : undefined;
+    const inView = (id: string) =>
+        shown.has(id) ||
+        Boolean(focus?.shapesIds.includes(id)) ||
+        owners?.get(document.shapes[id]?.parentFrameId ?? '') === placed?.screen.id;
+
+    return items.flatMap((shapeIds) => {
+        if (
+            placed &&
+            (hasLayoutOffset(document, shapeIds) ||
+                shapeIds.some(
+                    (id) =>
+                        !inView(id) ||
+                        isShapeLocked(document, id) ||
+                        placed.projection.layoutOffsets.has(id)
+                ))
+        ) {
+            return [];
+        }
+
+        const box = drawnExtent(
+            geometry,
+            shapeIds.filter((id) => geometry.shapes[id] && isShapeVisible(document, id))
+        );
+
+        return box ? [{ shapeIds, box }] : [];
+    });
+}
 
 const across = (x: number): Point => ({ x, y: 0 });
 const down = (y: number): Point => ({ x: 0, y });

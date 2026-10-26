@@ -28,7 +28,7 @@ const alignCommand = (
     description: `${name}: line the selected items up on their box`,
     icon: { component: icon, size: 24 },
     shortcut,
-    canExecute: ({ state }) => state.currentDocument.movableSelectedItems.length >= ALIGN_MINIMUM,
+    canExecute: ({ state }) => state.alignmentItems.length >= ALIGN_MINIMUM,
     execute: ({ actions }) => actions.alignSelection(to)
 });
 
@@ -50,7 +50,7 @@ const spaceCommand = (
             : `${name}: equal distances between the selected items' centers, the outermost staying`,
     icon: { component: icon, size: 24 },
     shortcut,
-    canExecute: ({ state }) => state.currentDocument.movableSelectedItems.length >= SPACE_MINIMUM,
+    canExecute: ({ state }) => state.alignmentItems.length >= SPACE_MINIMUM,
     execute: ({ actions }) => actions.spaceSelection({ axis, spacing })
 });
 

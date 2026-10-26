@@ -510,8 +510,8 @@ unavailable view say why once (`reportUnavailableView`). Pasted shapes join its 
 Focused duplicate/paste keeps component membership and return context. Hold sharing while a focused
 paste adds shapes through `applyOperations` and joins them to its component, so both undo together.
 Check local and imported component dependencies before adding instances to a focused source.
-Arrow nudges reject unavailable views and source/viewport stack offsets; keep contextual
-alignment/spacing as follow-up work. Tests: screenViewKeyboard and the component-editing browser tests.
+Arrow nudges reject unavailable views and source/viewport stack offsets. Tests:
+screenViewKeyboard and the component-editing browser tests.
 Collaboration migrations load alongside Yjs in `initialize`, before any document is opened;
 keep them outside the eager entry. Tests: equalScreenViews, screenViews and screenViewGestures.
 
@@ -597,8 +597,15 @@ not re-render every shape.
 
 Align and Space (`src/commands/align`) move the selection's items, a group selected as
 one whole, by the boxes they are drawn in (`drawnExtent`); locked items stay and do not
-count (`movableSelectedItems`, derived, so their ten guards share one list). They are in
-the Inspector's Align section (`AlignSection`), for two items or more, not in the command
+count. Root `alignmentItems` is a local derived list of eligible IDs and placed boxes shared
+by all ten guards, Inspector counts and actions. It delegates to the editor-only alignment
+helper; keep projection code out of startup and derived boxes out of durable documents.
+With an active Screen view, require its whole visible selection in that view and respect
+source/viewport stack offsets, including hidden members. Groups and selected local component
+containers move whole; focused component children remain individual items. Only translation
+deltas are written to source geometry. Tests: screenViewAlignment and its browser counterpart.
+The existing document `movableSelectedItems` remains the cached source eligibility list.
+The commands appear in the Inspector's Align section (`AlignSection`), for two items or more, not in the command
 bar: their `places` name only the inspector (`commandsIn`). The offsets come from pure functions in `src/app/alignment.ts`.
 
 A shape is in one group and on one layer at most: Group and Layer take the selected shapes
