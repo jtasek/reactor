@@ -104,7 +104,10 @@ const ShapeItem: FC<{ shapeId: string; sourceId?: string; viewId?: string }> = (
     );
 
     const handleSelect = ({ shiftKey }: MouseEvent<HTMLButtonElement>) => {
-        events.setScreenView(viewId ?? null);
+        // A child of the component being edited keeps the view it is being edited in.
+        if (viewId || !focusedId) {
+            events.setScreenView(viewId ?? null);
+        }
 
         if (shiftKey) {
             toggleShapeSelected(shapeId);

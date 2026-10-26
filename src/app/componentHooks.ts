@@ -5,6 +5,7 @@ import { hoveredComponentsIds } from './componentSelection';
 import { isShapeLocked } from './utils';
 import { selectedComponentContext } from './componentTree';
 import { screenViewName } from './screenViews';
+import { componentScreenView } from './screenViewEditing';
 import {
     componentCandidates,
     componentLibraries,
@@ -64,12 +65,12 @@ export const useEditingComponentForShape = (shapeId: string) =>
         return id && state.currentDocument.components[id]?.shapesIds.includes(shapeId) ? id : null;
     });
 
+/** Names the Screen view only while the component is actually edited inside it. */
 export const useComponentEditingViewName = () =>
     useAppState((state) => {
         const document = state.currentDocument;
-        const address = state.events.pointer.screenView ?? state.componentEditingReturn?.screenView;
-        const view =
-            address?.documentId === document.id ? document.frames[address.viewId] : undefined;
+        const address = componentScreenView(state);
+        const view = address ? document.frames[address.viewId] : undefined;
 
         return view ? screenViewName(document, view) : null;
     });

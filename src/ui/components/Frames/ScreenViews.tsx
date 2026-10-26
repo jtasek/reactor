@@ -266,11 +266,15 @@ const ScreenView: FC<{
 /** Optional placements of one screen share its source artwork and resolve layout per viewport. */
 export const ScreenViews: FC<{ interactive?: boolean }> = ({ interactive = true }) => {
     const items = useAppState((state) => {
-        const focused = componentScreenView(state) !== null;
+        if (state.currentDocument.editingComponentId && !state.events.pointer.screenView) {
+            return [];
+        }
+        const views = projectScreenViews(state.currentDocument);
+        const focused = componentScreenView(state, views) !== null;
 
         return state.currentDocument.editingComponentId && !focused
             ? []
-            : projectScreenViews(state.currentDocument).map((item) => {
+            : views.map((item) => {
                   const component =
                       focused && item.projection
                           ? projectComponentView(state, item.projection)

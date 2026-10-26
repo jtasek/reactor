@@ -3,7 +3,7 @@ import { createDocument, createShape, createComponent } from 'src/app/factories'
 import { serializePersistedState } from 'src/app/services/documentStorage';
 import { openEditor, pointer, selectTool } from './support/editor';
 
-async function openComponent(page: Page, explorer = false, sourceOnly = false) {
+async function openComponent(page: Page, explorer = false, sourceOnly = false, rotation = 0) {
     const shapes = [120, 180, 260].map((x, i) =>
         createShape({
             type: 'rectangle',
@@ -27,6 +27,7 @@ async function openComponent(page: Page, explorer = false, sourceOnly = false) {
         order: 'a3',
         componentId: 'card',
         position: { x: 140, y: 160 },
+        rotation,
         parentFrameId: 'home',
         overrides: {},
         selected: false
@@ -121,7 +122,6 @@ test('edits and draws focused children in their Screen view, then returns to the
     await expect(navigation).toBeVisible();
     await expect(desktop.locator('[data-cy]')).toHaveCount(4);
     await expect(mobile.locator('[data-cy]')).toHaveCount(4);
-    await page.screenshot({ path: '/private/tmp/reactor-focused-screen-view-component.png' });
     await navigation.getByRole('button', { name: 'Back to canvas' }).click();
     await expect(navigation).toHaveCount(0);
     await expect(desktop.locator('[data-component-selection="card"]')).toBeVisible();
@@ -157,7 +157,6 @@ test('opens an instance source in place, edits its master and returns to the ins
     await page.keyboard.press('Enter');
     await expect(desktop.locator('text[data-cy^="text-"]')).toHaveText('Caption');
     await expect(mobile.locator('text[data-cy^="text-"]')).toHaveText('Caption');
-    await page.screenshot({ path: '/private/tmp/reactor-focused-instance-source.png' });
     await navigation.getByRole('button', { name: 'Back to canvas' }).click();
     await expect(navigation).toHaveCount(0);
     await expect(desktop.locator('[data-view-instance-hit]')).toHaveCount(1);
@@ -195,4 +194,38 @@ test('Explorer child selection retains view focus and Escape returns to the orig
         'left',
         '520px'
     );
+});
+
+async function openInstanceSource(page: Page, rotation = 0) {
+    const views = await openComponent(page, true, true, rotation);
+    await views.desktop.locator('[data-view-instance-hit]').click();
+    await page
+        .getByRole('list', { name: 'Commands' })
+        .getByRole('button', { name: 'Select component source', exact: true })
+        .click();
+
+    return { ...views, navigation: page.getByRole('navigation', { name: 'Component editing' }) };
+}
+
+test('selecting a source-only child in the Explorer keeps editing in the view', async ({
+    page
+}) => {
+    const { desktop, navigation } = await openInstanceSource(page);
+    await expect(navigation).toContainText('Home · Desktop');
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Part 1', exact: true })
+        .click();
+    await expect(navigation).toContainText('Home · Desktop');
+    await expect(desktop.locator('[data-cy="Part 1"]')).toBeVisible();
+    await expect(desktop.locator('[data-type="bottomRight"]')).toHaveCount(1);
+});
+
+test('the breadcrumb leaves out the view when a rotated instance opens the standalone editor', async ({
+    page
+}) => {
+    const { navigation } = await openInstanceSource(page, 15);
+    await expect(navigation).toContainText('Card');
+    await expect(page.locator('#screen-views > g')).toHaveCount(0);
+    await expect(navigation).not.toContainText('Home · Desktop');
 });
