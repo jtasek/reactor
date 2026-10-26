@@ -16,7 +16,11 @@ import {
     useCurrentDocument,
     useVariableContext
 } from 'src/app/hooks';
-import { canEditThroughView } from 'src/app/screenViewEditing';
+import {
+    canEditThroughView,
+    componentScreenView,
+    projectComponentView
+} from 'src/app/screenViewEditing';
 import type { Frame, Shape } from 'src/app/types';
 import { getComponentByType } from 'src/tools/components';
 import { Label } from '../Label';
@@ -166,7 +170,8 @@ const ViewHitArea: FC<{ view: Frame }> = ({ view }) => {
 const ScreenView: FC<{
     item: ReturnType<typeof projectScreenViews>[number];
     editable: boolean;
-}> = ({ item, editable }) => {
+    focused: boolean;
+}> = ({ item, editable, focused }) => {
     const { view, projection, problem } = item;
     const name = useFrameName(view.id);
     const selections = useScreenViewContainers(view.id, projection, editable);
@@ -195,6 +200,20 @@ const ScreenView: FC<{
             pointerEvents={editable ? undefined : 'none'}
         >
             {editable && <ViewHitArea view={view} />}
+            {focused && (
+                <g pointerEvents="none">
+                    <rect
+                        className={styles.edge}
+                        x={view.position.x}
+                        y={view.position.y}
+                        width={view.size.width}
+                        height={view.size.height}
+                    />
+                    <text className={styles.label} x={view.position.x} y={view.position.y - 8}>
+                        {name}
+                    </text>
+                </g>
+            )}
             {problem && (
                 <text
                     x={view.position.x + 8}
@@ -246,23 +265,48 @@ const ScreenView: FC<{
 
 /** Optional placements of one screen share its source artwork and resolve layout per viewport. */
 export const ScreenViews: FC<{ interactive?: boolean }> = ({ interactive = true }) => {
-    const items = useAppState((state) =>
-        state.currentDocument.editingComponentId
+    const items = useAppState((state) => {
+        const focused = componentScreenView(state) !== null;
+
+        return state.currentDocument.editingComponentId && !focused
             ? []
-            : projectScreenViews(state.currentDocument).map((item) => ({
-                  item,
-                  // A locked, hidden or read-only View lets presses through, as before.
-                  editable:
-                      interactive &&
-                      item.projection !== null &&
-                      canEditThroughView(state, item.view.id)
-              }))
-    );
+            : projectScreenViews(state.currentDocument).map((item) => {
+                  const component =
+                      focused && item.projection
+                          ? projectComponentView(state, item.projection)
+                          : null;
+
+                  return {
+                      item:
+                          component && item.projection
+                              ? {
+                                    ...item,
+                                    projection: {
+                                        ...item.projection,
+                                        shapes: [
+                                            ...item.projection.shapes.filter(
+                                                (shape) =>
+                                                    shape.id !== component.transform.instanceId
+                                            ),
+                                            ...component.shapes
+                                        ]
+                                    }
+                                }
+                              : item,
+                      focused,
+                      // A locked, hidden or read-only View lets presses through, as before.
+                      editable:
+                          interactive &&
+                          item.projection !== null &&
+                          canEditThroughView(state, item.view.id)
+                  };
+              });
+    });
 
     return (
         <g id="screen-views">
-            {items.map(({ item, editable }) => (
-                <ScreenView key={item.view.id} item={item} editable={editable} />
+            {items.map(({ item, editable, focused }) => (
+                <ScreenView key={item.view.id} item={item} editable={editable} focused={focused} />
             ))}
         </g>
     );

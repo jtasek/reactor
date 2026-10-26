@@ -165,6 +165,12 @@ export const config = {
                           name: 'screen-projection',
                           enforce: true
                       },
+                      // Focused editing and its view hooks load with the editor, not startup.
+                      screenEditing: {
+                          test: /[\\/]src[\\/]app[\\/](screenViewEditing|frameHooks)\.ts$/,
+                          name: 'screen-editing',
+                          enforce: true
+                      },
                       // Selection controls and projected overlays load with the editor.
                       selectionOverlays: {
                           test: /[\\/]src[\\/](app[\\/](selectionOverlays|selectionHooks|selectionMenu)\.ts$|ui[\\/]components[\\/]SelectionMenu[\\/])/,

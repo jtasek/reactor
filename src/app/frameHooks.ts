@@ -2,6 +2,7 @@ import {
     screenViewTransformTarget,
     screenViewContainerTarget,
     placedScreenDocument,
+    componentScreenView,
     type ScreenViewContainer
 } from './screenViewEditing';
 import { screenOwners, screenSourceShapes, screenViewName } from './screenViews';
@@ -277,11 +278,20 @@ function stackSlot(document: Document, frame: Frame | undefined, shapeIds: strin
 
 /** Source geometry is measured but never painted as another canvas placement. */
 export const useScreenSourceShapes = () =>
-    useAppState((state) =>
-        state.currentDocument.editingComponentId
-            ? new Set<string>()
-            : screenSourceShapes(state.currentDocument)
-    );
+    useAppState((state) => {
+        const document = state.currentDocument;
+        if (document.editingComponentId && !componentScreenView(state)) {
+            return new Set<string>();
+        }
+        const ids = screenSourceShapes(document);
+        if (document.editingComponentId) {
+            document.components[document.editingComponentId]?.shapesIds.forEach((id) =>
+                ids.add(id)
+            );
+        }
+
+        return ids;
+    });
 
 export const useScreenSourceGroup = (groupId: string) =>
     useAppState((state) => {

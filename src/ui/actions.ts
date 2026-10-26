@@ -5,6 +5,10 @@ export const displayContextMenu: ActionWithParam<{
     canvasPoint: Point;
     screenViewId?: string;
 }> = ({ state, actions }, { position, canvasPoint, screenViewId }) => {
+    if (state.enteredComponentId && state.events.pointer.screenView && !screenViewId) {
+        return;
+    }
+
     state.events.pointer.screenView = screenViewId
         ? { documentId: state.currentDocumentId, viewId: screenViewId }
         : null;

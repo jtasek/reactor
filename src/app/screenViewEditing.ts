@@ -7,8 +7,12 @@ import { localComponents } from './componentSelection';
 import type { Context } from './index';
 import type { Document, Frame, Point, Shape } from './types';
 import { frameParents, isFrameLocked, isFrameVisible } from './frameState';
-import { projectScreenViews } from './screenProjection';
+import { MAX_PROJECTED_NODES, projectScreenViews } from './screenProjection';
 import { untracked } from './untracked';
+import { json } from 'overmind';
+import { translateShape } from './geometry';
+import { componentSource } from './componentSource';
+import type { ScreenProjection } from './screenProjection';
 import type { HandleOwner, ScreenViewAddress, ScreenViewGesture } from 'src/events/types';
 
 export type ScreenViewContainer = Exclude<HandleOwner, { shapeId: string }>;
@@ -17,6 +21,24 @@ function screenViewSource(state: Context['state'], address: ScreenViewAddress | 
     const document = state.currentDocument;
     const view = address?.documentId === document.id ? document.frames[address.viewId] : undefined;
     const screen = view?.screenId ? document.frames[view.screenId] : undefined;
+    const component = document.components[document.editingComponentId ?? ''];
+    const owners = component ? screenOwners(document.frames) : null;
+    const focus =
+        state.componentEditingReturn?.documentId === document.id
+            ? state.componentEditingReturn.componentOrigin
+            : undefined;
+    const instance =
+        focus && component && focus.componentId === component.id
+            ? document.shapes[focus.instanceId]
+            : undefined;
+    const throughInstance =
+        component?.sourceOnly &&
+        instance?.type === 'instance' &&
+        instance.componentId === component.id &&
+        !instance.rotation &&
+        owners?.get(instance.parentFrameId ?? '') === screen?.id &&
+        !isShapeLocked(document, instance.id) &&
+        !hasLayoutOffset(document, [instance.id]);
 
     if (
         isReadOnly(state) ||
@@ -28,12 +50,54 @@ function screenViewSource(state: Context['state'], address: ScreenViewAddress | 
         !isFrameVisible(document, view.id) ||
         !isFrameVisible(document, screen.id) ||
         isFrameLocked(document, view.id) ||
-        isFrameLocked(document, screen.id)
+        isFrameLocked(document, screen.id) ||
+        (component &&
+            (component.library ||
+                (component.sourceOnly
+                    ? !throughInstance
+                    : !component.shapesIds.every(
+                          (id) =>
+                              owners?.get(document.shapes[id]?.parentFrameId ?? '') === screen.id
+                      ))))
     ) {
         return null;
     }
 
     return { view, screen };
+}
+
+/** A placed component edits through its Screen; unplaced definitions use the source editor. */
+export function componentScreenView(state: Context['state']) {
+    const address = state.events.pointer.screenView;
+
+    if (!state.currentDocument.editingComponentId || !screenViewSource(state, address)) {
+        return null;
+    }
+    const document = state.currentDocument;
+    const component = document.components[document.editingComponentId ?? ''];
+
+    if (component?.sourceOnly) {
+        const views = projectScreenViews(document);
+        const placed = views.find((item) => item.view.id === address?.viewId)?.projection;
+        const extra = component.shapesIds.filter((id) => document.shapes[id]?.visible).length - 1;
+        const nodes = views.reduce(
+            (total, item) =>
+                total +
+                (item.projection
+                    ? 1 +
+                      item.projection.frames.length +
+                      item.projection.shapes.length +
+                      (projectComponentView(state, item.projection) ? extra : 0)
+                    : 0),
+            0
+        );
+
+        return placed && projectComponentView(state, placed) && nodes <= MAX_PROJECTED_NODES
+            ? address
+            : null;
+    }
+
+    return address;
 }
 
 /** Whether presses on a View edit its Screen; one that cannot lets them reach the canvas. */
@@ -53,7 +117,77 @@ export function editableScreenView(state: Context['state'], address: ScreenViewA
         (item) => item.view.id === source.view.id
     )?.projection;
 
-    return projection ? { ...source, projection } : null;
+    if (!projection) {
+        return null;
+    }
+
+    const focused = projectComponentView(state, projection);
+
+    if (state.currentDocument.components[state.enteredComponentId ?? '']?.sourceOnly) {
+        return focused
+            ? {
+                  ...source,
+                  projection: {
+                      ...projection,
+                      shapes: focused.shapes,
+                      layoutOffsets: new Set<string>()
+                  },
+                  component: focused.transform
+              }
+            : null;
+    }
+
+    return { ...source, projection, component: undefined };
+}
+
+/** Master geometry stays unchanged; the chosen instance supplies its local editing placement. */
+export function projectComponentView(state: Context['state'], projection: ScreenProjection) {
+    const document = state.currentDocument;
+    const focus =
+        state.componentEditingReturn?.documentId === document.id
+            ? state.componentEditingReturn.componentOrigin
+            : undefined;
+    const component = document.components[document.editingComponentId ?? ''];
+    const instance = projection.shapes.find((shape) => shape.id === focus?.instanceId);
+
+    if (
+        !focus ||
+        focus.componentId !== component?.id ||
+        !component.sourceOnly ||
+        instance?.type !== 'instance' ||
+        instance.rotation ||
+        projection.layoutOffsets.has(instance.id)
+    ) {
+        return null;
+    }
+
+    const source = componentSource(document, component.id);
+
+    if (!source) {
+        return null;
+    }
+
+    const offset = {
+        x: instance.position.x - focus.position.x,
+        y: instance.position.y - focus.position.y
+    };
+    const shapes = source.shapes
+        .filter((shape) => shape.visible)
+        .map((member) => {
+            const shape = json(member);
+            translateShape(shape, offset);
+
+            return shape;
+        });
+
+    return {
+        shapes,
+        transform: {
+            instanceId: instance.id,
+            origin: { ...focus.position },
+            position: { ...instance.position }
+        }
+    };
 }
 
 /**
@@ -80,12 +214,14 @@ function screenViewMembersTarget(
     }
 
     const owners = screenOwners(document.frames);
+    const master = document.components[document.editingComponentId ?? ''];
 
     if (
         shapeIds.some(
             (id) =>
                 !document.shapes[id] ||
-                owners.get(document.shapes[id].parentFrameId ?? '') !== screen.id ||
+                (!(master?.sourceOnly && master.shapesIds.includes(id)) &&
+                    owners.get(document.shapes[id].parentFrameId ?? '') !== screen.id) ||
                 (!includeHidden && !isShapeVisible(document, id)) ||
                 isShapeLocked(document, id)
         ) ||
@@ -245,7 +381,10 @@ function placedPointerDocument(state: Context['state'], address: ScreenViewAddre
     const document = state.currentDocument;
 
     const projected = editableScreenView(state, address)?.projection;
-    const shapes = projected?.shapes ?? [];
+    const members = document.components[document.editingComponentId ?? '']?.shapesIds;
+    const shapes = (projected?.shapes ?? []).filter(
+        (shape) => !members || members.includes(shape.id)
+    );
 
     const placed = placedScreenDocument(document, shapes);
 
@@ -295,9 +434,18 @@ export function sourceOffset(
 /** A changed placement invalidates the gesture's coordinate system; never guess a new one. */
 export function screenViewGestureBlocked(state: Context['state'], context: ScreenViewGesture) {
     const current = screenViewSource(state, context.address);
+    const component = context.component;
+    const placed = component ? editableScreenView(state, context.address)?.component : undefined;
 
     return (
         !current ||
+        (component &&
+            (!placed ||
+                placed.instanceId !== component.instanceId ||
+                placed.position.x !== component.position.x ||
+                placed.position.y !== component.position.y ||
+                placed.origin.x !== component.origin.x ||
+                placed.origin.y !== component.origin.y)) ||
         current.screen.id !== context.screenId ||
         current.view.position.x !== context.position.x ||
         current.view.position.y !== context.position.y ||
@@ -330,5 +478,12 @@ export function drawingScreen(state: Context['state'], address: ScreenViewAddres
         return null;
     }
 
-    return { screen, offset: sourceOffset(origin, screen) };
+    if (origin.component) {
+        return document.components[origin.component.id] &&
+            state.enteredComponentId === origin.component.id
+            ? { screen, offset: origin.component.offset, componentId: origin.component.id }
+            : null;
+    }
+
+    return { screen, offset: sourceOffset(origin, screen), componentId: undefined };
 }

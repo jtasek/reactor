@@ -3,7 +3,7 @@ import type { Box, Document } from './types';
 import { frameLayout, renderedShape } from './frameLayout';
 import { hitTestShape, hitTolerance } from './geometry';
 import { drawnBox, drawnExtent } from './membership';
-import { pointerDocument } from './screenViewEditing';
+import { componentScreenView, pointerDocument } from './screenViewEditing';
 import { screenOwners } from './screenViews';
 import { placeSelectionMenu } from './selectionMenu';
 import { isShapeVisible } from './utils';
@@ -28,8 +28,9 @@ export function selectionOverlay(state: State): SelectionOverlay | null {
 
     const owners = screenOwners(document.frames);
     const inScreen =
-        !document.editingComponentId &&
-        ids.some((id) => owners.get(document.shapes[id]?.parentFrameId ?? ''));
+        (!document.editingComponentId || componentScreenView(state)) &&
+        (Boolean(document.components[document.editingComponentId ?? '']?.sourceOnly) ||
+            ids.some((id) => owners.get(document.shapes[id]?.parentFrameId ?? '')));
 
     if (!inScreen) {
         return document.selectionExtent

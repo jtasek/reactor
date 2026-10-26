@@ -131,7 +131,7 @@ export const drawShape: ActionWithParam<ShapeInput> = ({ state, actions }, optio
     if (placed) {
         const drawing = json(options);
         translateShape(drawing, placed.offset);
-        options = { ...drawing, parentFrameId: placed.screen.id };
+        options = { ...drawing, parentFrameId: placed.componentId ? undefined : placed.screen.id };
     }
 
     const componentId = state.enteredComponentId;

@@ -36,7 +36,7 @@ import {
     useScopedCommands,
     useShownLayerId
 } from 'src/app/hooks';
-import { useSourceSelected } from 'src/app/componentHooks';
+import { useSourceSelected, useEditingComponentForShape } from 'src/app/componentHooks';
 
 const RootItem: FC<{
     scope?: Extract<CommandScope, 'layers' | 'components'>;
@@ -88,6 +88,7 @@ const ShapeItem: FC<{ shapeId: string; sourceId?: string; viewId?: string }> = (
     const shape = useShape(shapeId);
     const inherited = useShapesFrameState([shapeId]);
     const sourceSelected = useSourceSelected(sourceId ?? null);
+    const focusedId = useEditingComponentForShape(shapeId);
     const {
         selectShape,
         unselectShapes,
@@ -110,8 +111,10 @@ const ShapeItem: FC<{ shapeId: string; sourceId?: string; viewId?: string }> = (
 
             return;
         }
-        if (sourceId) {
-            selectComponentChild({ componentId: sourceId, shapeId });
+        const componentId = sourceId ?? focusedId;
+
+        if (componentId) {
+            selectComponentChild({ componentId, shapeId });
 
             return;
         }

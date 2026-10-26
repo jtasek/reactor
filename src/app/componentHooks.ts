@@ -4,6 +4,7 @@ import { useAppState } from './hooks';
 import { hoveredComponentsIds } from './componentSelection';
 import { isShapeLocked } from './utils';
 import { selectedComponentContext } from './componentTree';
+import { screenViewName } from './screenViews';
 import {
     componentCandidates,
     componentLibraries,
@@ -55,6 +56,23 @@ export const useComponentExposure = (componentId: string | null, shapeId: string
     });
 
 export const useEditingComponentId = () => useAppState((state) => state.enteredComponentId);
+
+export const useEditingComponentForShape = (shapeId: string) =>
+    useAppState((state) => {
+        const id = state.enteredComponentId;
+
+        return id && state.currentDocument.components[id]?.shapesIds.includes(shapeId) ? id : null;
+    });
+
+export const useComponentEditingViewName = () =>
+    useAppState((state) => {
+        const document = state.currentDocument;
+        const address = state.events.pointer.screenView ?? state.componentEditingReturn?.screenView;
+        const view =
+            address?.documentId === document.id ? document.frames[address.viewId] : undefined;
+
+        return view ? screenViewName(document, view) : null;
+    });
 
 export const useEditingComponentName = () =>
     useAppState((state) =>

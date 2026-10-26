@@ -681,7 +681,15 @@ continues working through adapters to the new screen/context projection until R4
    Locked, mixed-screen and stack-positioned containers have no transform handles. Instances
    retain their existing rotation-only controls. `tests/screenViewContainerHandles.test.ts` and
    its browser counterpart cover transforms, viewport geometry and concurrent changes.
-   **Still required for R4.2:** complete focused component editing and
+   **Focused editing implemented:** placed component containers retain their Screen view while
+   their children are selected, transformed or drawn. Opening the source of a free, unrotated
+   instance projects master children at that instance's placement, without reparenting masters.
+   Other views remain visible. Back/Escape restores the original view, selection and camera;
+   Explorer child selection preserves focus. Unplaced, rotated, stack-positioned or over-budget
+   instance contexts retain the standalone source editor and their return context. Focus and
+   pinned source origins stay local, and expanded projections retain the 5,000-node budget.
+   Covered by `tests/screenViewComponentEditing.test.ts` and its browser counterpart.
+   **Still required for R4.2:** in-place focus through rotated or stack-positioned instances and
    contextual keyboard commands. All views have the same supported interactions throughout these increments.
 
 3. **R4.3 — Inherited color modes per view (M).**

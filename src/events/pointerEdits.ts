@@ -3,6 +3,7 @@ import {
     canTransformScreenViewContainer,
     screenViewContainerTarget,
     editableScreenView,
+    componentScreenView,
     pointerDocument,
     screenViewGestureBlocked
 } from 'src/app/screenViewEditing';
@@ -32,6 +33,8 @@ import {
 /** Snapping, which the editor provides as it loads. */
 const snapping = () => editorHelpers().snapping;
 
+export { componentScreenView } from 'src/app/screenViewEditing';
+
 /** A pointer's input; `free` moves without snapping, as while Ctrl or Cmd is held. */
 type PointerInput = { pointerId: number; position: Point; free?: boolean; screenViewId?: string };
 
@@ -41,9 +44,12 @@ function sourcePoint(position: Point, view: ScreenViewGesture | undefined): Poin
         return position;
     }
 
+    const origin = view.component?.origin ?? view.sourcePosition;
+    const placed = view.component?.position ?? view.position;
+
     return {
-        x: position.x + view.sourcePosition.x - view.position.x,
-        y: position.y + view.sourcePosition.y - view.position.y
+        x: position.x + origin.x - placed.x,
+        y: position.y + origin.y - placed.y
     };
 }
 
@@ -53,8 +59,12 @@ function placedBox(box: Box | undefined, view: ScreenViewGesture | undefined) {
     }
 
     const offset = {
-        x: view.position.x - view.sourcePosition.x,
-        y: view.position.y - view.sourcePosition.y
+        x:
+            (view.component?.position.x ?? view.position.x) -
+            (view.component?.origin.x ?? view.sourcePosition.x),
+        y:
+            (view.component?.position.y ?? view.position.y) -
+            (view.component?.origin.y ?? view.sourcePosition.y)
     };
 
     return {
@@ -160,7 +170,7 @@ export const beginGesture = (
         : null;
     const projected = address ? editableScreenView(state, address) : null;
 
-    if (address && (!projected || state.currentDocument.editingComponentId)) {
+    if ((address && !projected) || (!address && componentScreenView(state))) {
         return false;
     }
 
@@ -191,7 +201,22 @@ export const beginGesture = (
                   ...address,
                   drawingOrigin: {
                       screenId: projected.screen.id,
-                      position: { ...projected.view.position }
+                      position: { ...projected.view.position },
+                      ...(projected.component
+                          ? {
+                                component: {
+                                    id: state.enteredComponentId!,
+                                    offset: {
+                                        x:
+                                            projected.component.origin.x -
+                                            projected.component.position.x,
+                                        y:
+                                            projected.component.origin.y -
+                                            projected.component.position.y
+                                    }
+                                }
+                            }
+                          : {})
                   }
               }
             : address;
@@ -212,7 +237,8 @@ export const beginGesture = (
                       screenId: projected.screen.id,
                       position: { ...projected.view.position },
                       size: { ...projected.view.size },
-                      sourcePosition: { ...projected.screen.position }
+                      sourcePosition: { ...projected.screen.position },
+                      ...(projected.component ? { component: projected.component } : {})
                   }
               }
             : {})

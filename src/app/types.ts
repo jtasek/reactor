@@ -4,6 +4,7 @@ import type { DocumentAccess } from './documentAccess';
 import { Context } from './index';
 import type { GroupFrame } from './membership';
 import type { LucideIcon } from 'lucide-react';
+import type { ScreenViewAddress } from '../events/types';
 
 export type Orientation = 'horizontal' | 'vertical';
 
@@ -577,6 +578,9 @@ export type Application = {
         documentId: string;
         shapeIds: string[];
         camera: Camera;
+        screenView?: ScreenViewAddress | null;
+        selectedComponentId?: string;
+        componentOrigin?: { componentId: string; instanceId: string; position: Point };
     } | null;
     resetDocumentId: string | null;
     /** The document a person is asking AI to change, while its chat is open. */

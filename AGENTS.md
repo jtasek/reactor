@@ -494,6 +494,15 @@ Hidden members follow too; all members must belong to the view's Screen and rema
 and free of source/viewport layout offsets. Changed membership or layout cancels the gesture.
 Instances keep rotation-only handles. Tests: screenViewHandles, screenViewOverlays,
 screenViewContainerHandles and their browser counterparts.
+Focused component children stay in the chosen Screen view. Source-only masters opened through
+a free, unrotated instance project at that instance's placement; `componentEditingReturn`
+keeps a local pinned source origin and restores the original view, selection and camera.
+Master children remain unparented, and new children join the definition. Rotated, stack-managed,
+unplaced or over-budget instance contexts use the standalone source editor. Context expansion
+still counts against the shared 5,000-node projection cap. Pointer snapshots capture the local
+component offset; transforms, snapping and two-phase text use it without writing projected
+geometry into source records. Explorer child selection retains focus. Tests:
+screenViewComponentEditing and its browser counterpart.
 Collaboration migrations load alongside Yjs in `initialize`, before any document is opened;
 keep them outside the eager entry. Tests: equalScreenViews, screenViews and screenViewGestures.
 
