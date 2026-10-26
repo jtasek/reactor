@@ -602,7 +602,7 @@ by all ten guards, Inspector counts and actions. It delegates to the editor-only
 helper; keep projection code out of startup and derived boxes out of durable documents.
 With an active Screen view, require its whole visible selection in that view and respect
 source/viewport stack offsets, including hidden members. Groups and selected local component
-containers move whole; focused component children remain individual items. Only translation
+containers move whole, on the Canvas too; focused component children remain individual items. Only translation
 deltas are written to source geometry. Tests: screenViewAlignment and its browser counterpart.
 The existing document `movableSelectedItems` remains the cached source eligibility list.
 The commands appear in the Inspector's Align section (`AlignSection`), for two items or more, not in the command

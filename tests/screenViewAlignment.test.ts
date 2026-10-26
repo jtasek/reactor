@@ -302,3 +302,30 @@ it('shares alignment and undoes it without reverting a remote author’s edit', 
         name: 'Remote name'
     });
 });
+
+it('treats a selected local component as one item on the Canvas too', () => {
+    const { store } = createTestStore();
+    for (const [x, y, width, height] of [
+        [120, 110, 20, 20],
+        [200, 170, 60, 40],
+        [420, 310, 40, 60]
+    ]) {
+        store.actions.addShape({ type: 'rectangle', position: { x, y }, size: { width, height } });
+    }
+    const ids = [...store.state.currentDocument.shapesIds];
+    store.actions.unselectShapes();
+    ids.forEach((id) => store.actions.selectShape(id));
+    store.actions.addComponent({ id: 'card', name: 'Card', shapesIds: ids.slice(0, 2) });
+    expect(store.state.alignmentItems).toHaveLength(2);
+    expect(SpaceBetweenHorizontallyCommand.canExecute({ state: store.state })).toBe(false);
+    expect(store.actions.runCommand(AlignLeftCommand)).toBe(true);
+    expect(ids.map((id) => store.state.currentDocument.shapes[id])).toMatchObject([
+        { position: { x: 120, y: 110 } },
+        { position: { x: 200, y: 170 } },
+        { position: { x: 120, y: 310 } }
+    ]);
+
+    // A locked member keeps the whole component in place.
+    store.actions.setShapesProperty({ shapeIds: [ids[1]], key: 'locked', value: true });
+    expect(store.state.alignmentItems.map(({ shapeIds }) => shapeIds)).toEqual([[ids[2]]]);
+});

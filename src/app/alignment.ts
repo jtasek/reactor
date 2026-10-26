@@ -34,9 +34,8 @@ export function placedItems(state: Context['state'], sourceItems: string[][]) {
         return [];
     }
 
-    const components = placed
-        ? document.selectedComponentsIds.map((id) => document.components[id])
-        : [];
+    // A selected local component moves whole, on the Canvas as in a view.
+    const components = document.selectedComponentsIds.map((id) => document.components[id]);
     const contained = new Set(components.flatMap((component) => component.shapesIds));
     const items = [
         ...components.map((component) => component.shapesIds),
@@ -53,14 +52,12 @@ export function placedItems(state: Context['state'], sourceItems: string[][]) {
 
     return items.flatMap((shapeIds) => {
         if (
-            placed &&
-            (hasLayoutOffset(document, shapeIds) ||
-                shapeIds.some(
-                    (id) =>
-                        !inView(id) ||
-                        isShapeLocked(document, id) ||
-                        placed.projection.layoutOffsets.has(id)
-                ))
+            hasLayoutOffset(document, shapeIds) ||
+            shapeIds.some(
+                (id) =>
+                    isShapeLocked(document, id) ||
+                    (placed && (!inView(id) || placed.projection.layoutOffsets.has(id)))
+            )
         ) {
             return [];
         }
