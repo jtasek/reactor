@@ -23,33 +23,52 @@ import { untracked } from './untracked';
 import { editorHelpers } from './editorHelpers';
 import { frameContents } from './frameMembership';
 import { takesEditorInput } from 'src/events/input';
-import { editableScreenView, pointerDocument, sourceOffset } from './screenViewEditing';
+import {
+    editableScreenView,
+    pointerDocument,
+    reportUnavailableView,
+    sourceOffset,
+    UNAVAILABLE_VIEW_MESSAGE
+} from './screenViewEditing';
 import { reachesComponent } from './actions/components';
 
 const clipboardFormat = () => editorHelpers().clipboard;
 
-/** The selection commands act on, shown shapes only, in drawing order. */
+/**
+ * The selection commands act on, shown shapes only, in drawing order. An active view
+ * supplies its resolved geometry; otherwise Screen artwork (e.g. picked in the Layers
+ * view) is read from the document, which `pointerDocument` would leave out.
+ */
 const selectedInDrawOrder = (state: Context['state']) => {
     const selected = new Set(state.currentDocument.selectedShapesIds);
-    const document = pointerDocument(state);
+    const document =
+        state.events.pointer.screenView?.documentId === state.currentDocumentId
+            ? pointerDocument(state)
+            : state.currentDocument;
 
     return document.shapesIds
         .filter((id) => selected.has(id))
         .map((id) => renderedShape(document, id));
 };
 
-/** Transfers keep the active view and focused definition, including after selection is cleared. */
+const LOCKED_SOURCE_MESSAGE = 'The component being edited is locked or from a library.';
+
+/**
+ * Transfers keep the active view and focused definition, including after selection is
+ * cleared; otherwise why they cannot happen.
+ */
 function transferContext(state: Context['state']) {
     const document = state.currentDocument;
     const component = document.components[state.enteredComponentId ?? ''];
     const address = state.events.pointer.screenView;
     const placed = address ? editableScreenView(state, address) : null;
 
-    if (
-        (address && !placed) ||
-        (state.enteredComponentId && (!component || component.library || component.locked))
-    ) {
-        return null;
+    if (address && !placed) {
+        return { problem: UNAVAILABLE_VIEW_MESSAGE };
+    }
+
+    if (state.enteredComponentId && (!component || component.library || component.locked)) {
+        return { problem: LOCKED_SOURCE_MESSAGE };
     }
 
     return { component, placed };
@@ -273,8 +292,8 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
 
     const destination = transferContext(state);
 
-    if (!destination) {
-        return 'notNow';
+    if (destination.problem !== undefined) {
+        return { problem: destination.problem };
     }
 
     const { component, placed } = destination;
@@ -282,14 +301,16 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
 
     if (frame) {
         if (component) {
-            return 'notNow';
+            return { problem: 'Frames cannot be pasted into a component.' };
         }
 
+        // A plain frame pasted through a view joins its Screen, as pasted shapes do.
+        const joins = placed && frame.frame.kind === 'frame';
         const id = actions.editFrame({
             kind: 'paste',
-            frame: frame.frame,
+            frame: joins ? { ...frame.frame, parentFrameId: placed.screen.id } : frame.frame,
             copied: frame,
-            target: pasteTarget(context)
+            target: joins ? transferTarget(context, placed) : pasteTarget(context)
         });
 
         return id ? 'pasted' : 'notNow';
@@ -335,7 +356,8 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
         return { problem: 'A component cannot contain an instance of itself.' };
     }
 
-    // Membership and the operation batch must be shared and undone together.
+    // Membership and the operation batch must be shared and undone together. A held
+    // key has already paused sharing, which then holds this paste with the others.
     const hold = Boolean(component) && !state.events.keyboard.repeating;
 
     if (hold) {
@@ -378,9 +400,18 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
 export const cloneShapes: ActionWithParam<string[]> = (context, shapeIds) => {
     const { state, actions } = context;
     const destination = transferContext(state);
-    const shown = new Set(destination?.placed?.projection.shapes.map((shape) => shape.id));
 
-    if (!destination || (destination.placed && shapeIds.some((id) => !shown.has(id)))) {
+    if (destination.problem !== undefined) {
+        if (destination.problem === UNAVAILABLE_VIEW_MESSAGE) {
+            reportUnavailableView(context);
+        }
+
+        return;
+    }
+
+    const shown = new Set(destination.placed?.projection.shapes.map((shape) => shape.id));
+
+    if (destination.placed && shapeIds.some((id) => !shown.has(id))) {
         return;
     }
 
