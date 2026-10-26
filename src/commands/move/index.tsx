@@ -1,9 +1,10 @@
 import { Command, Point } from 'src/app/types';
 import { Context } from 'src/app';
-import { editableScreenView } from 'src/app/screenViewEditing';
+import { editableScreenView, reportUnavailableView } from 'src/app/screenViewEditing';
 import { hasLayoutOffset } from 'src/app/frameLayout';
 
-export const moveSelectionOrPan = ({ state, actions }: Context, direction: Point) => {
+export const moveSelectionOrPan = (context: Context, direction: Point) => {
+    const { state, actions } = context;
     const step = state.config.arrowKeyStep;
     const shapeIds = state.currentDocument.editableSelectedShapesIds;
 
@@ -34,10 +35,15 @@ export const moveSelectionOrPan = ({ state, actions }: Context, direction: Point
     const placed = address ? editableScreenView(state, address) : null;
     const shown = new Set(placed?.projection.shapes.map((shape) => shape.id));
 
+    if (address && !placed) {
+        reportUnavailableView(context);
+
+        return;
+    }
+
     if (
-        address &&
-        (!placed ||
-            hasLayoutOffset(state.currentDocument, shapeIds) ||
+        placed &&
+        (hasLayoutOffset(state.currentDocument, shapeIds) ||
             shapeIds.some((id) => placed.projection.layoutOffsets.has(id) || !shown.has(id)))
     ) {
         return;

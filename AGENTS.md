@@ -504,7 +504,9 @@ component offset; transforms, snapping and two-phase text use it without writing
 geometry into source records. Explorer child selection retains focus. Tests:
 screenViewComponentEditing and its browser counterpart.
 Clipboard shape transfers read the active view's projection and translate paste targets back to
-source coordinates. Pasted shapes join its Screen; source-only component children stay unparented.
+source coordinates. Without an active view they read the document, so Screen artwork picked in
+the Layers view still copies. Plain frames pasted through a view join its Screen. Refusals in an
+unavailable view say why once (`reportUnavailableView`). Pasted shapes join its Screen; source-only component children stay unparented.
 Focused duplicate/paste keeps component membership and return context. Hold sharing while a focused
 paste adds shapes through `applyOperations` and joins them to its component, so both undo together.
 Check local and imported component dependencies before adding instances to a focused source.

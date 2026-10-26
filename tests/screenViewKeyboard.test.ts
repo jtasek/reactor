@@ -1,7 +1,8 @@
 import { registerCommand } from 'src/app/actions/startup';
 import { CloneCommand } from 'src/commands/clone';
 import { MoveRightCommand } from 'src/commands/move';
-import { pointerDocument } from 'src/app/screenViewEditing';
+import { pointerDocument, UNAVAILABLE_VIEW_MESSAGE } from 'src/app/screenViewEditing';
+import { writeClipboard as writeFrameClipboard } from 'src/app/frameEdits';
 import { hasLayoutOffset } from 'src/app/frameLayout';
 import { serializePersistedState } from 'src/app/services/documentStorage';
 import { createComponent, createShape } from 'src/app/factories';
@@ -153,11 +154,16 @@ it.each(['locked', 'hidden', 'deleted'] as const)(
             });
         }
 
-        expect(store.actions.pasteShapes(text)).toBe('notNow');
+        expect(store.actions.pasteShapes(text)).toEqual({ problem: UNAVAILABLE_VIEW_MESSAGE });
         store.actions.runCommand(CloneCommand);
+        store.actions.runCommand(MoveRightCommand);
         store.actions.runCommand(MoveRightCommand);
         expect(document.shapesIds).toEqual([shapeId]);
         expect(document.shapes[shapeId]).toMatchObject({ position: { x: 140, y: 120 } });
+        // Explained once, however often a held key repeats the refusal.
+        expect(
+            store.state.notifications.filter(({ message }) => message === UNAVAILABLE_VIEW_MESSAGE)
+        ).toHaveLength(1);
     }
 );
 
@@ -266,6 +272,53 @@ it('checks imported component dependencies before pasting into a focused source'
     const before = serializePersistedState(store.state);
     expect(store.actions.pasteShapes(text)).toEqual({
         problem: 'A component cannot contain an instance of itself.'
+    });
+    expect(serializePersistedState(store.state)).toEqual(before);
+});
+
+it('copies and cuts Screen artwork selected while no view is active, as from the Layers view', () => {
+    const { store, shapeId } = setup();
+    store.actions.events.setScreenView(null);
+    const copied = JSON.parse(store.actions.copySelection()!);
+    expect(copied.shapes).toHaveLength(1);
+    expect(copied.shapes[0]).toMatchObject({
+        position: { x: 140, y: 120 },
+        size: { width: 40, height: 40 }
+    });
+    expect(store.actions.selectionToCut()?.shapeIds).toEqual([shapeId]);
+});
+
+it('pastes a copied frame into the active view as part of its Screen', () => {
+    const { store, screenId, viewId } = setup();
+    const document = store.state.currentDocument;
+    const frameId = store.actions.editFrame({
+        kind: 'add',
+        position: { x: 2000, y: 2000 },
+        size: { width: 40, height: 20 }
+    })!;
+    const text = writeFrameClipboard(document.frames[frameId], document);
+    store.actions.events.beginGesture({
+        pointerId: 1,
+        position: { x: 700, y: 440 },
+        screenViewId: viewId
+    });
+    store.actions.events.endGesture({ pointerId: 1, position: { x: 700, y: 440 } });
+    expect(store.actions.pasteShapes(text)).toBe('pasted');
+    const pasted = document.frames[document.selectedFrameId!];
+    expect(pasted.id).not.toBe(frameId);
+    // Centered on the press, at (700, 440) in the view, so (300, 220) in the Screen.
+    expect(pasted).toMatchObject({ parentFrameId: screenId, position: { x: 280, y: 210 } });
+});
+
+it('explains why a frame cannot be pasted into a focused component source', () => {
+    const { store, viewId } = setup();
+    focus(store, viewId);
+    const document = store.state.currentDocument;
+    const screen = Object.values(document.frames).find((frame) => frame.kind === 'screen')!;
+    const text = writeFrameClipboard({ ...screen, kind: 'frame' }, document);
+    const before = serializePersistedState(store.state);
+    expect(store.actions.pasteShapes(text)).toEqual({
+        problem: 'Frames cannot be pasted into a component.'
     });
     expect(serializePersistedState(store.state)).toEqual(before);
 });
