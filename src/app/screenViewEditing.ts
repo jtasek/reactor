@@ -66,8 +66,14 @@ function screenViewSource(state: Context['state'], address: ScreenViewAddress | 
     return { view, screen };
 }
 
-/** A placed component edits through its Screen; unplaced definitions use the source editor. */
-export function componentScreenView(state: Context['state']) {
+/**
+ * A placed component edits through its Screen; unplaced definitions use the source editor.
+ * Pass `views` when they are already projected, so the views are not projected twice.
+ */
+export function componentScreenView(
+    state: Context['state'],
+    views?: ReturnType<typeof projectScreenViews>
+) {
     const address = state.events.pointer.screenView;
 
     if (!state.currentDocument.editingComponentId || !screenViewSource(state, address)) {
@@ -77,22 +83,22 @@ export function componentScreenView(state: Context['state']) {
     const component = document.components[document.editingComponentId ?? ''];
 
     if (component?.sourceOnly) {
-        const views = projectScreenViews(document);
-        const placed = views.find((item) => item.view.id === address?.viewId)?.projection;
+        const projected = views ?? projectScreenViews(document);
+        const placed = projected.find((item) => item.view.id === address?.viewId)?.projection;
         const extra = component.shapesIds.filter((id) => document.shapes[id]?.visible).length - 1;
-        const nodes = views.reduce(
+        const nodes = projected.reduce(
             (total, item) =>
                 total +
                 (item.projection
                     ? 1 +
                       item.projection.frames.length +
                       item.projection.shapes.length +
-                      (projectComponentView(state, item.projection) ? extra : 0)
+                      (componentFocus(state, item.projection) ? extra : 0)
                     : 0),
             0
         );
 
-        return placed && projectComponentView(state, placed) && nodes <= MAX_PROJECTED_NODES
+        return placed && nodes <= MAX_PROJECTED_NODES && projectComponentView(state, placed)
             ? address
             : null;
     }
@@ -140,8 +146,8 @@ export function editableScreenView(state: Context['state'], address: ScreenViewA
     return { ...source, projection, component: undefined };
 }
 
-/** Master geometry stays unchanged; the chosen instance supplies its local editing placement. */
-export function projectComponentView(state: Context['state'], projection: ScreenProjection) {
+/** The instance a source-only master is edited through in this projection, if it can be. */
+function componentFocus(state: Context['state'], projection: ScreenProjection) {
     const document = state.currentDocument;
     const focus =
         state.componentEditingReturn?.documentId === document.id
@@ -161,6 +167,19 @@ export function projectComponentView(state: Context['state'], projection: Screen
         return null;
     }
 
+    return { focus, component, instance };
+}
+
+/** Master geometry stays unchanged; the chosen instance supplies its local editing placement. */
+export function projectComponentView(state: Context['state'], projection: ScreenProjection) {
+    const document = state.currentDocument;
+    const target = componentFocus(state, projection);
+
+    if (!target) {
+        return null;
+    }
+
+    const { focus, component, instance } = target;
     const source = componentSource(document, component.id);
 
     if (!source) {

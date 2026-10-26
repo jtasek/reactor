@@ -135,6 +135,20 @@ export default [
         }
     },
     {
+        // CI runs on Linux; a macOS-only folder fails the test there.
+        files: ['tests/**'],
+        rules: {
+            'no-restricted-syntax': [
+                'error',
+                {
+                    selector: 'Literal[value=/^\\/private\\/tmp\\//]',
+                    message:
+                        'Write test files under test-results/ or os.tmpdir(), not /private/tmp.'
+                }
+            ]
+        }
+    },
+    {
         // Node runs the server's and scripts' TypeScript as it is, so their imports name the files.
         files: ['server/**/*.ts', 'server*.ts', 'scripts/**/*.ts'],
         rules: { 'import/extensions': ['error', 'ignorePackages'] }
