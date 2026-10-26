@@ -60,7 +60,7 @@ export const hasComponentInstances = (document: Application['currentDocument'], 
 
 /** Whether adding a nested instance would make its containing source recursive. */
 export function reachesComponent(
-    document: Application['currentDocument'],
+    document: Pick<Application['currentDocument'], 'components' | 'shapes'>,
     from: string,
     target: string,
     visited = new Set<string>()
@@ -73,8 +73,10 @@ export function reachesComponent(
     }
     visited.add(from);
 
-    return (document.components[from]?.shapesIds ?? []).some((id) => {
-        const shape = document.shapes[id];
+    const component = document.components[from];
+
+    return (component?.shapesIds ?? []).some((id) => {
+        const shape = component.sourceShapes?.[id] ?? document.shapes[id];
 
         return (
             shape?.type === 'instance' &&

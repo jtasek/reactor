@@ -1,5 +1,7 @@
 import { Command, Point } from 'src/app/types';
 import { Context } from 'src/app';
+import { editableScreenView } from 'src/app/screenViewEditing';
+import { hasLayoutOffset } from 'src/app/frameLayout';
 
 export const moveSelectionOrPan = ({ state, actions }: Context, direction: Point) => {
     const step = state.config.arrowKeyStep;
@@ -25,6 +27,19 @@ export const moveSelectionOrPan = ({ state, actions }: Context, direction: Point
     if (shapeIds.length === 0) {
         actions.tools.panCamera({ dx: -direction.x * step, dy: -direction.y * step });
 
+        return;
+    }
+
+    const address = state.events.pointer.screenView;
+    const placed = address ? editableScreenView(state, address) : null;
+    const shown = new Set(placed?.projection.shapes.map((shape) => shape.id));
+
+    if (
+        address &&
+        (!placed ||
+            hasLayoutOffset(state.currentDocument, shapeIds) ||
+            shapeIds.some((id) => placed.projection.layoutOffsets.has(id) || !shown.has(id)))
+    ) {
         return;
     }
 

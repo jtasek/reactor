@@ -689,8 +689,17 @@ continues working through adapters to the new screen/context projection until R4
    instance contexts retain the standalone source editor and their return context. Focus and
    pinned source origins stay local, and expanded projections retain the 5,000-node budget.
    Covered by `tests/screenViewComponentEditing.test.ts` and its browser counterpart.
+   **Contextual clipboard and core keyboard editing implemented:** Copy/Cut capture the active
+   view's resolved artwork. Paste uses that view's press location or center, translates into
+   source coordinates and assigns Screen membership. Duplicate and paste retain focused
+   component membership and return context; a focused paste is one shared undo step, including
+   membership. Recursive component pastes are rejected before writes. Arrow keys respect both
+   source and viewport stack placement, and stale views cannot paste, duplicate or nudge.
+   Covered by `tests/screenViewKeyboard.test.ts` and keyboard scenarios in
+   `tests/browser/screenViewComponentEditing.spec.ts`, including narrow layouts.
    **Still required for R4.2:** in-place focus through rotated or stack-positioned instances and
-   contextual keyboard commands. All views have the same supported interactions throughout these increments.
+   contextual alignment/spacing commands. All views have the same supported interactions
+   throughout these increments.
 
 3. **R4.3 — Inherited color modes per view (M).**
    Extend the central resolver with the precedence above. Add Inherit/reset controls for
