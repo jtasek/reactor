@@ -17,7 +17,7 @@ import { MoveRightCommand } from 'src/commands/move';
 import { CloneCommand } from 'src/commands/clone';
 import { selectionOverlay } from 'src/app/selectionOverlays';
 import { serializePersistedState } from 'src/app/services/documentStorage';
-import type { Point } from 'src/app/types';
+import type { Point, Rectangle } from 'src/app/types';
 import { createCopies, edit, settle, shownDocument, DOCUMENT_ID } from './support/collaboration';
 
 registerTool(RectTool);
@@ -249,6 +249,27 @@ it('keeps an unmoved source-axis binding when nudging through a quarter-turned i
         position: { x: 120, y: 100 },
         bindings: { x: variableId }
     });
+});
+
+it('rounds a nudge through an uneven-angle instance to whole source pixels', () => {
+    const { store, document, firstId } = setup(27);
+    const position = () => (document.shapes[firstId] as Rectangle).position;
+    const before = json(position());
+    const step = store.state.config.arrowKeyStep;
+
+    for (let i = 0; i < 3; i++) {
+        store.actions.runCommand(MoveRightCommand);
+    }
+
+    const after = position();
+    expect(Number.isInteger(after.x)).toBe(true);
+    expect(Number.isInteger(after.y)).toBe(true);
+    // Each displayed step to the right moves right and up in the master, as rotation says.
+    const turned = {
+        x: Math.round(step * Math.cos((27 * Math.PI) / 180)),
+        y: Math.round(-step * Math.sin((27 * Math.PI) / 180))
+    };
+    expect(after).toEqual({ x: before.x + 3 * turned.x, y: before.y + 3 * turned.y });
 });
 
 it('draws a line through a rotated instance with the same displayed endpoints as its preview', () => {

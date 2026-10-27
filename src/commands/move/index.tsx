@@ -2,7 +2,7 @@ import { Command, Point } from 'src/app/types';
 import { Context } from 'src/app';
 import { editableScreenView, reportUnavailableView } from 'src/app/screenViewEditing';
 import { hasLayoutOffset } from 'src/app/frameLayout';
-import { componentSourceDelta } from 'src/app/componentViewTransform';
+import { componentSourceNudge } from 'src/app/componentViewTransform';
 
 export const moveSelectionOrPan = (context: Context, direction: Point) => {
     const { state, actions } = context;
@@ -52,7 +52,7 @@ export const moveSelectionOrPan = (context: Context, direction: Point) => {
 
     actions.moveShapesBy({
         shapeIds,
-        delta: componentSourceDelta(
+        delta: componentSourceNudge(
             { x: direction.x * step, y: direction.y * step },
             placed?.component
         )

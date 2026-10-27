@@ -502,7 +502,8 @@ Unplaced or over-budget instance contexts use the standalone source editor. Cont
 still counts against the shared 5,000-node projection cap. Pointer snapshots capture the local
 component transform; `componentViewTransform.ts` maps points, screen-axis deltas and shapes
 between master and view coordinates. Drawing, handles, snapping, nudging, duplication, clipboard
-and alignment use the same transform. The focused instance's layout footprint is pinned locally
+and alignment use the same transform; arrow-key nudges at angles other than quarter turns
+round the turned step to whole source pixels. The focused instance's layout footprint is pinned locally
 until exit, so changing master bounds does not move the stack beneath a drag. External placement
 or rotation changes still cancel the gesture. No projected geometry is written into source
 records. Explorer child selection retains focus. Tests: screenViewComponentEditing,
