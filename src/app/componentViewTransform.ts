@@ -44,6 +44,20 @@ export function componentSourceDelta(delta: Point, transform?: ComponentViewTran
     }
 }
 
+/**
+ * An arrow-key step in master axes. At uneven angles the turned step is rounded to whole
+ * pixels, so repeated nudges do not leave fractional coordinates in shared geometry.
+ */
+export function componentSourceNudge(delta: Point, transform?: ComponentViewTransform): Point {
+    const moved = componentSourceDelta(delta, transform);
+
+    if ((transform?.rotation ?? 0) % 90 === 0) {
+        return moved;
+    }
+
+    return { x: Math.round(moved.x) || 0, y: Math.round(moved.y) || 0 };
+}
+
 export function componentViewBox(box: Box, transform: ComponentViewTransform): Box {
     const center = boxCenter(box);
     const placed = componentViewPoint(center, transform);
