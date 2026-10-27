@@ -1,6 +1,8 @@
 import { json } from 'overmind';
 import { createTestStore } from './support/store';
 import { resolveModes, instanceModes } from 'src/app/inheritedModes';
+import { artworkModes } from 'src/app/modeHooks';
+import { pasteOperations } from 'src/app/clipboard';
 import { themeColors } from 'src/app/themeColors';
 import { resolveVariable } from 'src/app/variableResolver';
 import { projectPreview } from 'src/preview/project';
@@ -489,4 +491,106 @@ it('keeps mode choices separate from adjacent edits within the normal undo merge
     expect(document.frames[viewId]).toMatchObject({ name: 'Renamed', modeOverrides: {} });
     copy.collaboration.undo(DOCUMENT_ID);
     expect(document.frames[viewId].name).not.toBe('Renamed');
+});
+
+it('pastes into a document that has a same-named dimension, matching its modes by name', () => {
+    const { store, document, instance, setInstance, setFrame } = setup();
+    setInstance(instance.id, 'brand', 'accent');
+    const emptyId = store.actions.editFrame({
+        kind: 'add',
+        position: { x: 900, y: 900 },
+        size: { width: 50, height: 50 }
+    })!;
+    setFrame(emptyId, 'palette', 'night');
+    const own = (id: string): VariableDimension => ({
+        ...structuredClone(dimensions.palette),
+        id,
+        modes: {
+            light: { id: 'light', name: 'Day', order: 0 },
+            dark: { id: 'dark', name: 'Night', order: 1 }
+        },
+        defaultModeId: 'light'
+    });
+    const { store: target } = createTestStore();
+    target.actions.addDocument({
+        id: target.state.currentDocumentId,
+        dimensions: {
+            other: own('other'),
+            brand2: { ...structuredClone(dimensions.brand), id: 'brand2' }
+        }
+    });
+    const destination = target.state.currentDocument;
+    const shapes = readClipboard(
+        writeClipboard([document.shapes[instance.id]], [], document.variables, document)
+    )!;
+    const result = target.actions.applyOperations({
+        documentId: destination.id,
+        by: { kind: 'person' },
+        operations: pasteOperations(shapes, destination, null)
+    });
+    expect(result).toMatchObject({ applied: true });
+    const pasted = Object.values(destination.shapes).find(
+        (shape) => shape.type === 'instance' && shape.componentId === 'card'
+    )!;
+    expect(pasted).toMatchObject({ modeOverrides: { brand2: 'accent' } });
+    expect(Object.values(destination.dimensions).filter((d) => d.name === 'Brand')).toHaveLength(1);
+
+    const frame = readFrame(writeFrame(document.frames[emptyId], document))!;
+    const { store: frameTarget } = createTestStore();
+    frameTarget.actions.addDocument({
+        id: frameTarget.state.currentDocumentId,
+        dimensions: { other: own('other') }
+    });
+    const frameDocument = frameTarget.state.currentDocument;
+    const frameId = frameTarget.actions.editFrame({
+        kind: 'paste',
+        frame: frame.frame,
+        target: null,
+        copied: frame
+    })!;
+    expect(frameDocument.frames[frameId].modeOverrides).toEqual({ other: 'dark' });
+    expect(Object.keys(frameDocument.dimensions)).toEqual(['other']);
+});
+
+it('keeps another Screen’s own choices when Preview launches from a view', () => {
+    const { store, document, viewId, aliasId, setFrame } = setup();
+    const otherId = store.actions.editFrame({
+        kind: 'add',
+        position: { x: 2000, y: 80 },
+        size: { width: 300, height: 200 }
+    })!;
+    store.actions.editFrame({ kind: 'update', id: otherId, changes: { kind: 'screen' } });
+    store.actions.addShape({
+        type: 'rectangle',
+        position: { x: 2010, y: 90 },
+        size: { width: 40, height: 40 },
+        parentFrameId: otherId
+    });
+    store.actions.bindProperty({
+        shapeIds: [document.shapesIds.at(-1)!],
+        key: 'fill',
+        variableId: aliasId
+    });
+    setFrame(otherId, 'palette', 'night');
+    store.actions.editFrame({ kind: 'select', id: viewId });
+    store.actions.togglePreview();
+    const drawing = projectPreview(document, {}, [], json(store.state.previewModeContext));
+    const other = drawing.screens.find((screen) => screen.id === otherId);
+    expect(JSON.stringify(other)).toContain('#ddeeff');
+    const launched = drawing.screens.find((screen) => screen.id !== otherId);
+    expect(JSON.stringify(launched)).not.toContain('#ddeeff');
+});
+
+it('draws only the focused component’s artwork through its instance', () => {
+    const { store, document, viewId, mobileId, shapeId, instance, nested, setInstance } = setup();
+    setInstance(instance.id, 'palette', 'night');
+    store.actions.events.setScreenView(viewId);
+    store.actions.editComponentSource('card');
+    expect(document.editingComponentId).toBe('card');
+    const unrelated = document.shapes[shapeId];
+    expect(artworkModes(store.state, unrelated, viewId).modes.palette).toBe('day');
+    expect(artworkModes(store.state, unrelated, mobileId).modes.palette).toBe('day');
+    expect(artworkModes(store.state, document.shapes[nested.id], viewId).modes.palette).toBe(
+        'night'
+    );
 });
