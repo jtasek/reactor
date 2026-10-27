@@ -15,7 +15,7 @@ export interface ScreenProjection {
     frames: Frame[];
     shapes: Shape[];
     problems: string[];
-    /** Shapes this viewport's layout places away from their authored position. */
+    /** Shapes managed or offset by this viewport's layout, including hidden members. */
     layoutOffsets: Set<string>;
     exceedsNodeLimit?: boolean;
 }
@@ -53,9 +53,10 @@ export function projectScreen(
         (id) => id !== screenId && belongsToScreen(id) && isFrameVisible(document, id)
     );
     const shown = shownShapesIds(document, null);
-    const shapeIds = document.shapesIds.filter(
-        (id) => belongsToScreen(document.shapes[id]?.parentFrameId) && shown.has(id)
+    const memberIds = document.shapesIds.filter((id) =>
+        belongsToScreen(document.shapes[id]?.parentFrameId)
     );
+    const shapeIds = memberIds.filter((id) => shown.has(id));
 
     if (1 + frameIds.length + shapeIds.length > MAX_PROJECTED_NODES) {
         return {
@@ -106,7 +107,7 @@ export function projectScreen(
             .filter(([id]) => involved.has(id))
             .map(([, problem]) => problem),
         layoutOffsets: new Set(
-            shapeIds.filter(
+            memberIds.filter(
                 (id) =>
                     layout.managedShapes.has(id) ||
                     Boolean(layout.shapes[id]?.x || layout.shapes[id]?.y)

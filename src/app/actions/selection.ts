@@ -4,8 +4,7 @@ import type { AlignTo, Spacing } from '../alignment';
 import { editorHelpers } from '../editorHelpers';
 import { translateShape } from '../geometry';
 import { getCommand } from './startup';
-import { drawnExtent, shapeGroup } from '../membership';
-import { isShapeVisible } from '../utils';
+import { shapeGroup } from '../membership';
 
 /** Aligning, which the editor provides as it loads. */
 const alignment = () => editorHelpers().alignment;
@@ -76,17 +75,6 @@ export const runCommandOn: ActionWithParam<{ shapeIds: string[]; commandId: stri
     }
 };
 
-/** The movable selected items, each with the box its shown shapes are drawn in. */
-const placedItems = (document: Document) =>
-    document.movableSelectedItems.flatMap((shapeIds) => {
-        const box = drawnExtent(
-            document,
-            shapeIds.filter((id) => isShapeVisible(document, id))
-        );
-
-        return box ? [{ shapeIds, box }] : [];
-    });
-
 const moveItems = (document: Document, items: { shapeIds: string[] }[], offsets: Point[]) =>
     items.forEach(({ shapeIds }, index) => {
         const offset = offsets[index];
@@ -108,7 +96,7 @@ const moveItems = (document: Document, items: { shapeIds: string[] }[], offsets:
 /** Lines the selected items up on a side or a center of their box. */
 export const alignSelection: ActionWithParam<AlignTo> = ({ state }, to) => {
     const { currentDocument } = state;
-    const items = placedItems(currentDocument);
+    const items = state.alignmentItems;
 
     if (items.length >= alignment().ALIGN_MINIMUM) {
         moveItems(
@@ -128,7 +116,7 @@ export const spaceSelection: ActionWithParam<{ axis: Orientation; spacing: Spaci
     { axis, spacing }
 ) => {
     const { currentDocument } = state;
-    const items = placedItems(currentDocument);
+    const items = state.alignmentItems;
 
     if (items.length >= alignment().SPACE_MINIMUM) {
         moveItems(

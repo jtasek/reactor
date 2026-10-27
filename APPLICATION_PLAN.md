@@ -697,9 +697,16 @@ continues working through adapters to the new screen/context projection until R4
    source and viewport stack placement, and stale views cannot paste, duplicate or nudge.
    Covered by `tests/screenViewKeyboard.test.ts` and keyboard scenarios in
    `tests/browser/screenViewComponentEditing.spec.ts`, including narrow layouts.
-   **Still required for R4.2:** in-place focus through rotated or stack-positioned instances and
-   contextual alignment/spacing commands. All views have the same supported interactions
-   throughout these increments.
+   **Contextual alignment/spacing implemented:** Inspector, context-menu and shortcut commands
+   share cached local eligibility and displayed bounds for the active Screen view. Alignment,
+   equal gaps and equal center distances translate those bounds into shared source edits.
+   Groups and local component containers move whole, including hidden members; focused master
+   children remain individually editable. Mixed-context selections and unavailable views cannot
+   align; source and viewport stack restrictions apply to every container member. Covered by
+   `tests/screenViewAlignment.test.ts` and `tests/browser/screenViewAlignment.spec.ts`, including
+   shared undo, remote edits and narrow layouts. Canvas behavior and existing shortcuts remain.
+   **Still required for R4.2:** in-place focus through rotated or stack-positioned instances.
+   All views have the same supported interactions throughout these increments.
 
 3. **R4.3 — Inherited color modes per view (M).**
    Extend the central resolver with the precedence above. Add Inherit/reset controls for

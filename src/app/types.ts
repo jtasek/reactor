@@ -567,6 +567,8 @@ export type Application = {
     previewModes: Record<string, Record<string, string>>;
     currentDocumentId: string;
     currentDocument: Document;
+    /** Local alignment geometry, resolved once for the active canvas or Screen view. */
+    alignmentItems: { shapeIds: string[]; box: Box }[];
     /** The source or child being inspected, on this screen only. */
     selectedComponent?: { documentId: string; componentId: string; shapeId?: string } | null;
     currentPage: string;

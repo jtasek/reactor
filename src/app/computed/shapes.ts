@@ -4,6 +4,8 @@ import { derived } from 'overmind';
 import { Application, Document } from '../types';
 import { isShapeVisible } from '../utils';
 import { localComponents, selectedComponentsIdsOf } from '../componentSelection';
+import { editorHelpers, editorLoaded } from '../editorHelpers';
+import type { Context } from '../index';
 import {
     editableSelectedShapesIds as findEditableSelectedShapesIds,
     groupFrame,
@@ -133,6 +135,13 @@ export const selectionExtent = derived((currentDocument: Document) =>
 export const movableSelectedItems = derived((currentDocument: Document) =>
     listMovableSelectedItems(currentDocument)
 );
+
+/** All alignment controls share the same local eligibility and placed boxes. */
+export const alignmentItems = derived((state: Context['state']) => {
+    const items = state.currentDocument.movableSelectedItems;
+
+    return editorLoaded() ? editorHelpers().alignment.placedItems(state, items) : [];
+});
 
 /** The selected shapes commands may change, kept until they change: see `editableSelectedShapesIds` in `membership.ts`. */
 export const editableSelectedShapesIds = derived((currentDocument: Document) =>

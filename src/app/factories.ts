@@ -22,6 +22,7 @@ import {
     selectedShapesIds,
     selectionExtent,
     movableSelectedItems,
+    alignmentItems,
     editableSelectedShapesIds,
     variablesIds
 } from './computed/shapes';
@@ -326,6 +327,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         previewModes: {},
         currentDocumentId: 'document-1',
         currentDocument,
+        alignmentItems,
         currentPage: 'designer',
         enteredGroupId: null,
         enteredComponentId: null,
