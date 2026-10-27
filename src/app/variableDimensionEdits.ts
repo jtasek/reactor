@@ -9,6 +9,8 @@ import { readDimension, ordered } from './variableModes';
 import { isHexColor } from './utils';
 import { applyVariableChanges } from './variables';
 
+export { setModeOverride, previewModes } from './modeEdits';
+
 const validName = (name: string) => name.trim().length > 0 && name.trim().length <= 200;
 
 /**

@@ -1,6 +1,8 @@
 import type { Document, InstanceShape, Shape } from './types';
 import { instanceBox, type ComponentSource } from './componentSource';
 import { applyInstanceOverrides } from './componentProps';
+import { resolveModes } from './inheritedModes';
+import { themeColors } from './themeColors';
 import { translateShape } from './geometry';
 import { boxCenter, getShapeBounds, rotatePoint } from './utils';
 
@@ -11,6 +13,10 @@ export function detachedMembers(
     source: ComponentSource
 ): Shape[] {
     const component = document.components[instance.componentId];
+    const context = resolveModes(document, {
+        frameId: instance.parentFrameId,
+        instances: [instance]
+    }).modes;
     const center = boxCenter(instanceBox(instance, source));
     const offset = {
         x: instance.position.x - source.box.topLeft.x,
@@ -18,7 +24,20 @@ export function detachedMembers(
     };
 
     return source.shapes.map((member) => {
-        const copy = { ...applyInstanceOverrides(member, instance, component, document) };
+        const copy = {
+            ...applyInstanceOverrides(
+                themeColors(member, document, context),
+                instance,
+                component,
+                document,
+                context
+            )
+        };
+
+        if (copy.type === 'instance') {
+            copy.modeOverrides = { ...instance.modeOverrides, ...copy.modeOverrides };
+        }
+
         translateShape(copy, offset);
         const from = boxCenter(getShapeBounds(copy));
         const to = rotatePoint(from, center, instance.rotation ?? 0);

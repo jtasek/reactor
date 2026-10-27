@@ -6,7 +6,8 @@ import { useVariableContext } from 'src/app/hooks';
 import { isFrameVisible } from 'src/app/frameState';
 import { themeColors } from 'src/app/themeColors';
 import { SquareDashed } from 'lucide-react';
-import type { Box, Document, Image, InstanceShape, Shape } from 'src/app/types';
+import type { Box, Document, Image, InstanceShape, Shape, VariableContext } from 'src/app/types';
+import { instanceModes, resolveModes } from 'src/app/inheritedModes';
 import { applyInstanceOverrides } from 'src/app/componentProps';
 import { componentSource, instanceBox } from 'src/app/componentSource';
 import { drawnBox, shownShapesIds } from 'src/app/membership';
@@ -85,8 +86,8 @@ const PreviewInstance: FC<{
     document: Document;
     shape: InstanceShape;
     ancestors: ReadonlySet<string>;
-}> = ({ document, shape, ancestors }) => {
-    const theme = useVariableContext(document.id);
+    context: VariableContext;
+}> = ({ document, shape, ancestors, context: theme }) => {
     const source = componentSource(document, shape.componentId, ancestors);
 
     if (!source) {
@@ -127,6 +128,7 @@ const PreviewInstance: FC<{
                         document={document}
                         shape={resolved}
                         themed
+                        context={theme}
                         ancestors={nextAncestors}
                     />
                 );
@@ -135,7 +137,12 @@ const PreviewInstance: FC<{
     );
 };
 
-function geometry(document: Document, shape: Shape, ancestors: ReadonlySet<string>): ReactNode {
+function geometry(
+    document: Document,
+    shape: Shape,
+    ancestors: ReadonlySet<string>,
+    context: VariableContext
+): ReactNode {
     const outline = {
         fill: shape.fill ?? 'none',
         stroke: shape.stroke ?? 'var(--text-color)',
@@ -204,7 +211,14 @@ function geometry(document: Document, shape: Shape, ancestors: ReadonlySet<strin
         case 'image':
             return <PreviewImage shape={shape} documentId={document.id} />;
         case 'instance':
-            return <PreviewInstance document={document} shape={shape} ancestors={ancestors} />;
+            return (
+                <PreviewInstance
+                    document={document}
+                    shape={shape}
+                    ancestors={ancestors}
+                    context={context}
+                />
+            );
         default:
             return assertNever(shape);
     }
@@ -215,8 +229,14 @@ const PreviewShape: FC<{
     document: Document;
     shape: Shape;
     ancestors: ReadonlySet<string>;
-}> = ({ document, shape, ancestors, themed = false }) => {
-    const theme = useVariableContext(document.id);
+    context?: VariableContext;
+    viewId?: string;
+}> = ({ document, shape, ancestors, themed = false, context, viewId }) => {
+    const simulation = useVariableContext(document.id);
+    const inherited =
+        context ??
+        resolveModes(document, { simulation, viewId, frameId: shape.parentFrameId }).modes;
+    const theme = shape.type === 'instance' ? instanceModes(document, inherited, shape) : inherited;
     const painted = themed ? shape : themeColors(shape, document, theme);
     const bounds = shape.type === 'instance' ? previewBox(document, shape) : getShapeBounds(shape);
     const center = boxCenter(bounds);
@@ -226,7 +246,7 @@ const PreviewShape: FC<{
 
     return (
         <g opacity={shape.opacity} transform={transform}>
-            {geometry(document, painted, ancestors)}
+            {geometry(document, painted, ancestors, theme)}
         </g>
     );
 };
@@ -343,6 +363,7 @@ export const DocumentThumbnail: FC<{ document: Document }> = ({ document: source
                             document={document}
                             shape={shape}
                             ancestors={new Set()}
+                            viewId={view.viewId}
                         />
                     ))
                 )}

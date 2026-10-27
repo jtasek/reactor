@@ -126,7 +126,10 @@ export interface UpdateFrame {
     op: 'updateFrame';
     frame: string;
     changes: Partial<
-        Pick<Frame, 'kind' | 'name' | 'position' | 'size' | 'layoutOrder' | 'sizing'>
+        Pick<
+            Frame,
+            'kind' | 'name' | 'position' | 'size' | 'layoutOrder' | 'sizing' | 'modeOverrides'
+        >
     > & {
         parentFrameId?: string | null;
         stack?: Frame['stack'] | null;

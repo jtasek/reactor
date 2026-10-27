@@ -7,17 +7,18 @@ import React, { createElement, type CSSProperties, type FC } from 'react';
 import { componentSource, instanceBox } from 'src/app/componentSource';
 import { projectScreenViews } from 'src/app/screenProjection';
 import { themeColors } from 'src/app/themeColors';
+import { useArtworkModes } from 'src/app/modeHooks';
 import { boxCenter, getShapeBounds } from 'src/app/utils';
 import {
     useAppState,
     useGesture,
     useShapesInSelectedGroupsIds,
     useCameraScale,
-    useCurrentDocument,
-    useVariableContext
+    useCurrentDocument
 } from 'src/app/hooks';
 import {
     canEditThroughView,
+    componentScreenViews,
     componentScreenView,
     projectComponentView
 } from 'src/app/screenViewEditing';
@@ -74,7 +75,7 @@ const ProjectedShape: FC<{
     inSelectedContainer: boolean;
 }> = ({ shape, viewId, interactive, placedOffset, inSelectedContainer }) => {
     const document = useCurrentDocument();
-    const context = useVariableContext();
+    const context = useArtworkModes(shape, viewId);
     const painted = themeColors(shape, document, context);
     const source =
         painted.type === 'instance' ? componentSource(document, painted.componentId) : null;
@@ -107,7 +108,7 @@ const ProjectedShape: FC<{
             <g opacity={painted.opacity}>
                 {painted.type === 'instance' ? (
                     <>
-                        <Instance instance={painted} source={source} />
+                        <Instance instance={painted} source={source} context={context} />
                         <rect
                             data-view-instance-hit
                             x={bounds.topLeft.x}
@@ -269,7 +270,7 @@ export const ScreenViews: FC<{ interactive?: boolean }> = ({ interactive = true 
         if (state.currentDocument.editingComponentId && !state.events.pointer.screenView) {
             return [];
         }
-        const views = projectScreenViews(state.currentDocument);
+        const views = componentScreenViews(state);
         const focused = componentScreenView(state, views) !== null;
 
         return state.currentDocument.editingComponentId && !focused
@@ -287,6 +288,7 @@ export const ScreenViews: FC<{ interactive?: boolean }> = ({ interactive = true 
                                     ...item,
                                     projection: {
                                         ...item.projection,
+                                        componentRotation: component.transform.rotation,
                                         shapes: [
                                             ...item.projection.shapes.filter(
                                                 (shape) =>

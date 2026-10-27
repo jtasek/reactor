@@ -7,6 +7,7 @@ import { useFrameMoveProblem, useFrameLocked } from 'src/app/frameHooks';
 import { SizingFields } from './SizingFields';
 import { FrameParent } from './FrameParent';
 import { PropertyGroup } from './PropertyGroup';
+import { ModeFields } from './ModeFields';
 import styles from './styles.css';
 import { MIN_FRAME_SIZE } from 'src/app/services/documentStorage';
 import { projectScreenViews } from 'src/app/screenProjection';
@@ -106,6 +107,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                     <strong>Screen view</strong>
                 </header>
                 <table>
+                    <ModeFields target={{ frameId: id }} />
                     <PropertyGroup name="Screen view">
                         <tr>
                             <td colSpan={2}>
@@ -219,6 +221,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                 <strong>{frame.kind === 'screen' ? 'Screen' : 'Frame'}</strong>
             </header>
             <table>
+                <ModeFields target={{ frameId: id }} />
                 <PropertyGroup name="Frame">
                     <tr>
                         <th scope="row">

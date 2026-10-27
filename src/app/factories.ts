@@ -179,6 +179,7 @@ export function createShape(input: ShapeInput & Pick<Shape, 'order' | 'name'>): 
         rotation: 0,
         selected: true,
         visible: true,
+        ...(input.type === 'instance' ? { modeOverrides: {} } : {}),
         ...input,
         id,
         key: `${input.type}-${id}`
@@ -334,6 +335,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         resetDocumentId: null,
         aiEditDocumentId: null,
         previewDocumentId: null,
+        previewModeContext: null,
         devices: {},
         notifications: [],
         providers: {},

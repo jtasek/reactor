@@ -18,9 +18,17 @@ export type ScreenViewAddress = {
     drawingOrigin?: {
         screenId: string;
         position: Point;
-        component?: { id: string; offset: Point };
+        component?: { id: string; transform: ComponentViewTransform };
     };
 };
+
+export interface ComponentViewTransform {
+    instanceId: string;
+    origin: Point;
+    position: Point;
+    size: Size;
+    rotation: number;
+}
 
 export interface ScreenViewGesture {
     address: ScreenViewAddress;
@@ -28,7 +36,7 @@ export interface ScreenViewGesture {
     position: Point;
     size: Size;
     sourcePosition: Point;
-    component?: { instanceId: string; origin: Point; position: Point };
+    component?: ComponentViewTransform;
 }
 
 /**

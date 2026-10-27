@@ -6,6 +6,7 @@ import { FrameParent } from './FrameParent';
 import { PropertyField } from './PropertyField';
 import { PropertyGroup } from './PropertyGroup';
 import { AlignSection } from './AlignSection';
+import { ModeFields } from './ModeFields';
 import { InstanceProps } from './InstanceProps';
 import { ComponentDetails, SourceChildBreadcrumb } from './ComponentDetails';
 import { InspectorHeader } from './InspectorHeader';
@@ -176,6 +177,9 @@ export const Inspector: FC<Props> = ({
             {instance && <InstanceProps />}
             <AlignSection />
             <table>
+                {instance && shapeIds.length === 1 && (
+                    <ModeFields target={{ instanceId: shapeIds[0] }} />
+                )}
                 <PropertyGroup name="Frame">
                     <FrameParent shapeIds={shapeIds} />
                 </PropertyGroup>

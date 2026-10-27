@@ -19,16 +19,28 @@ function fingerprint(
         name: component.name,
         props: component.props,
         interaction: roleContent(component.interaction),
-        shapes: members.map((shape) => ({
-            id: shape.id,
-            order: shape.order,
-            geometry: shapeGeometry(shape),
-            style: shapeStyle(shape),
-            rotation: shape.rotation,
-            visible: shape.visible,
-            interaction: shape.type === 'instance' ? roleContent(shape.interaction) : undefined,
-            nested: shape.type === 'instance' ? records.get(shape.componentId)?.hash : undefined
-        }))
+        shapes: members.map((shape) => {
+            const geometry = shapeGeometry(shape);
+
+            if (geometry.type === 'instance') {
+                const modes = Object.entries(geometry.modeOverrides ?? {});
+                geometry.modeOverrides =
+                    modes.length > 0
+                        ? Object.fromEntries(modes.sort(([a], [b]) => a.localeCompare(b)))
+                        : undefined;
+            }
+
+            return {
+                id: shape.id,
+                order: shape.order,
+                geometry,
+                style: shapeStyle(shape),
+                rotation: shape.rotation,
+                visible: shape.visible,
+                interaction: shape.type === 'instance' ? roleContent(shape.interaction) : undefined,
+                nested: shape.type === 'instance' ? records.get(shape.componentId)?.hash : undefined
+            };
+        })
     });
     let first = 2166136261;
     let second = 2166136261 ^ 0x9e3779b9;

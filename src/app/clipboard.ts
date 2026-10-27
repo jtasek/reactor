@@ -6,7 +6,8 @@ import type {
     Point,
     Shape,
     ShapeInput,
-    Variable
+    Variable,
+    VariableContext
 } from './types';
 import type { AddComponent, AddGroup, AddShape, AddVariable, Operation } from './operations';
 import { getShapeBounds, shapeGeometry, shapeGeometryKey, shapeStyle } from './utils';
@@ -115,7 +116,8 @@ export function writeClipboard(
     shapes: Shape[],
     groups: Group[] = [],
     variables: Record<string, Variable> = {},
-    document?: Document
+    document?: Document,
+    frameModes: readonly VariableContext[] = []
 ): string {
     const components = new Map<string, Component>();
 
@@ -191,6 +193,28 @@ export function writeClipboard(
                 ? document?.dimensions[variable.dimensionId]
                 : undefined;
         return dimension ? [dimension] : [];
+    });
+    dependencyShapes.forEach((shape) => {
+        if (shape.type !== 'instance') {
+            return;
+        }
+
+        Object.keys(shape.modeOverrides ?? {}).forEach((id) => {
+            const dimension = document?.dimensions[id];
+
+            if (dimension) {
+                copiedDimensions.push(dimension);
+            }
+        });
+    });
+    frameModes.forEach((modes) => {
+        Object.keys(modes).forEach((id) => {
+            const dimension = document?.dimensions[id];
+
+            if (dimension) {
+                copiedDimensions.push(dimension);
+            }
+        });
     });
 
     return JSON.stringify({
@@ -411,6 +435,14 @@ export function pasteOperations(
     target: Point | null,
     translation?: Point
 ): Operation[] {
+    const dimensions: Operation[] = Object.values(copied.dimensions ?? {})
+        .filter((dimension) => !document.dimensions[dimension.id])
+        .map((dimension) => ({ op: 'setDimension', dimension }));
+
+    if (copied.shapes.length === 0) {
+        return dimensions;
+    }
+
     const variables = pasteVariables(copied.variables, document, copied.dimensions);
     const remapShape = (shape: Shape | ShapeInput) => {
         if (shape.bindings) {
@@ -580,6 +612,7 @@ export function pasteOperations(
     }));
 
     return [
+        ...dimensions,
         ...variables.operations,
         ...components.map((component): AddComponent => ({ op: 'addComponent', component })),
         ...shapeOperations,

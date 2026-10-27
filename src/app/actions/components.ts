@@ -2,7 +2,6 @@ import { editorHelpers } from '../editorHelpers';
 import { Action, ActionWithParam, Application, Component, Point, PropertyValue } from '../types';
 import { createComponent, createShape, instanceName } from '../factories';
 import { componentSource } from '../componentSource';
-import { componentFingerprint, librarySnapshot } from '../componentLibrary';
 import {
     exposableProperties,
     resolveComponentProp,
@@ -459,7 +458,7 @@ export const importLibraryComponent: ActionWithParam<{
     if (!source || source === target || target.locked || target.components[componentId]) {
         return;
     }
-    const copies = librarySnapshot(source, componentId, target);
+    const copies = editorHelpers().library.librarySnapshot(source, componentId, target);
 
     if (!copies) {
         actions.displayWarning('This component cannot be copied into this document.');
@@ -483,12 +482,12 @@ export const updateLibraryComponent: ActionWithParam<string> = (
     if (!source || target.locked) {
         return;
     }
-    const hash = componentFingerprint(source, componentId);
+    const hash = editorHelpers().library.componentFingerprint(source, componentId);
 
     if (!hash || hash === existing.library?.hash) {
         return;
     }
-    const copies = librarySnapshot(source, componentId, target);
+    const copies = editorHelpers().library.librarySnapshot(source, componentId, target);
 
     if (!copies) {
         actions.displayWarning('This component update cannot be applied.');
@@ -579,7 +578,8 @@ export const editComponentSource: ActionWithParam<string> = ({ state, actions },
                       componentOrigin: {
                           componentId,
                           instanceId,
-                          position: { ...source.box.topLeft }
+                          position: { ...source.box.topLeft },
+                          size: { width: source.box.width, height: source.box.height }
                       }
                   }
                 : {})

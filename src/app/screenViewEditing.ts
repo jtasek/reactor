@@ -1,5 +1,5 @@
 import { hasLayoutOffset, projectFrameLayout } from './frameLayout';
-import { isShapeLocked, isShapeVisible } from './utils';
+import { isShapeLocked, isShapeVisible, rectToBox } from './utils';
 import { screenOwners, screenSourceShapes } from './screenViews';
 import { isReadOnly } from './documentAccess';
 import { groupFrame } from './membership';
@@ -10,12 +10,39 @@ import { frameParents, isFrameLocked, isFrameVisible } from './frameState';
 import { MAX_PROJECTED_NODES, projectScreenViews } from './screenProjection';
 import { untracked } from './untracked';
 import { json } from 'overmind';
-import { translateShape } from './geometry';
-import { componentSource } from './componentSource';
+import { componentSource, instanceBox } from './componentSource';
+import { transformComponentShape } from './componentViewTransform';
 import type { ScreenProjection } from './screenProjection';
 import type { HandleOwner, ScreenViewAddress, ScreenViewGesture } from 'src/events/types';
 
 export type ScreenViewContainer = Exclude<HandleOwner, { shapeId: string }>;
+
+/** Keep the focused instance's layout footprint stable while its master bounds change. */
+export function componentScreenViews(state: Context['state']) {
+    const document = state.currentDocument;
+    const focus = state.componentEditingReturn?.componentOrigin;
+    const instance = focus ? document.shapes[focus.instanceId] : undefined;
+
+    if (
+        state.componentEditingReturn?.documentId !== document.id ||
+        document.editingComponentId !== focus?.componentId ||
+        instance?.type !== 'instance' ||
+        instance.componentId !== focus.componentId
+    ) {
+        return projectScreenViews(document);
+    }
+
+    return projectScreenViews({
+        ...document,
+        shapes: {
+            ...document.shapes,
+            [instance.id]: {
+                ...instance,
+                bounds: rectToBox({ ...instance.position, ...focus.size })
+            }
+        }
+    });
+}
 
 function screenViewSource(state: Context['state'], address: ScreenViewAddress | null) {
     const document = state.currentDocument;
@@ -35,10 +62,8 @@ function screenViewSource(state: Context['state'], address: ScreenViewAddress | 
         component?.sourceOnly &&
         instance?.type === 'instance' &&
         instance.componentId === component.id &&
-        !instance.rotation &&
         owners?.get(instance.parentFrameId ?? '') === screen?.id &&
-        !isShapeLocked(document, instance.id) &&
-        !hasLayoutOffset(document, [instance.id]);
+        !isShapeLocked(document, instance.id);
 
     if (
         isReadOnly(state) ||
@@ -83,7 +108,7 @@ export function componentScreenView(
     const component = document.components[document.editingComponentId ?? ''];
 
     if (component?.sourceOnly) {
-        const projected = views ?? projectScreenViews(document);
+        const projected = views ?? componentScreenViews(state);
         const placed = projected.find((item) => item.view.id === address?.viewId)?.projection;
         const extra = component.shapesIds.filter((id) => document.shapes[id]?.visible).length - 1;
         const nodes = projected.reduce(
@@ -119,7 +144,7 @@ export function editableScreenView(state: Context['state'], address: ScreenViewA
         return null;
     }
 
-    const projection = projectScreenViews(state.currentDocument).find(
+    const projection = componentScreenViews(state).find(
         (item) => item.view.id === source.view.id
     )?.projection;
 
@@ -136,6 +161,7 @@ export function editableScreenView(state: Context['state'], address: ScreenViewA
                   projection: {
                       ...projection,
                       shapes: focused.shapes,
+                      componentRotation: focused.transform.rotation,
                       layoutOffsets: new Set<string>()
                   },
                   component: focused.transform
@@ -160,9 +186,7 @@ function componentFocus(state: Context['state'], projection: ScreenProjection) {
         !focus ||
         focus.componentId !== component?.id ||
         !component.sourceOnly ||
-        instance?.type !== 'instance' ||
-        instance.rotation ||
-        projection.layoutOffsets.has(instance.id)
+        instance?.type !== 'instance'
     ) {
         return null;
     }
@@ -186,26 +210,32 @@ export function projectComponentView(state: Context['state'], projection: Screen
         return null;
     }
 
-    const offset = {
-        x: instance.position.x - focus.position.x,
-        y: instance.position.y - focus.position.y
+    const transform = {
+        instanceId: instance.id,
+        origin: { ...focus.position },
+        position: { ...instance.position },
+        size: { ...focus.size },
+        rotation: instance.rotation ?? 0
     };
     const shapes = source.shapes
         .filter((shape) => shape.visible)
         .map((member) => {
             const shape = json(member);
-            translateShape(shape, offset);
+            const nested =
+                shape.type === 'instance' ? componentSource(document, shape.componentId) : null;
+
+            if (shape.type === 'instance' && nested) {
+                shape.bounds = instanceBox(shape, nested);
+            }
+
+            transformComponentShape(shape, transform);
 
             return shape;
         });
 
     return {
         shapes,
-        transform: {
-            instanceId: instance.id,
-            origin: { ...focus.position },
-            position: { ...instance.position }
-        }
+        transform
     };
 }
 
@@ -405,29 +435,41 @@ function placedPointerDocument(state: Context['state'], address: ScreenViewAddre
         (shape) => !members || members.includes(shape.id)
     );
 
-    const placed = placedScreenDocument(document, shapes);
+    const placed = placedScreenDocument(document, shapes, projected?.componentRotation);
 
     return {
         ...placed,
         groupFrames: Object.fromEntries(
             Object.values(document.groups).map((group) => [
                 group.id,
-                groupFrame(placed, group) ?? undefined
+                groupFrame(placed, placed.groups[group.id]) ?? undefined
             ])
         ),
         componentFrames: Object.fromEntries(
             localComponents(document).map((component) => [
                 component.id,
-                groupFrame(placed, component) ?? undefined
+                groupFrame(placed, placed.components[component.id]) ?? undefined
             ])
         )
     };
 }
 
 /** Projected shapes already contain their layout; do not apply it a second time. */
-export function placedScreenDocument(document: Document, shapes: Shape[]): Document {
+export function placedScreenDocument(document: Document, shapes: Shape[], rotation = 0): Document {
+    const containers = <T extends { rotation?: number }>(table: Record<string, T>) =>
+        rotation
+            ? Object.fromEntries(
+                  Object.entries(table).map(([id, item]) => [
+                      id,
+                      { ...item, rotation: (item.rotation ?? 0) + rotation }
+                  ])
+              )
+            : table;
+
     return {
         ...document,
+        groups: containers(document.groups),
+        components: containers(document.components),
         shapes: Object.fromEntries(shapes.map((shape) => [shape.id, shape])),
         shapesIds: shapes.map((shape) => shape.id),
         frameLayout: {
@@ -463,6 +505,7 @@ export function screenViewGestureBlocked(state: Context['state'], context: Scree
                 placed.instanceId !== component.instanceId ||
                 placed.position.x !== component.position.x ||
                 placed.position.y !== component.position.y ||
+                placed.rotation !== component.rotation ||
                 placed.origin.x !== component.origin.x ||
                 placed.origin.y !== component.origin.y)) ||
         current.screen.id !== context.screenId ||
@@ -500,11 +543,21 @@ export function drawingScreen(state: Context['state'], address: ScreenViewAddres
     if (origin.component) {
         return document.components[origin.component.id] &&
             state.enteredComponentId === origin.component.id
-            ? { screen, offset: origin.component.offset, componentId: origin.component.id }
+            ? {
+                  screen,
+                  component: origin.component.transform,
+                  offset: { x: 0, y: 0 },
+                  componentId: origin.component.id
+              }
             : null;
     }
 
-    return { screen, offset: sourceOffset(origin, screen), componentId: undefined };
+    return {
+        screen,
+        offset: sourceOffset(origin, screen),
+        component: undefined,
+        componentId: undefined
+    };
 }
 
 /** Why a keyboard command did nothing in a view that became locked, hidden or deleted. */

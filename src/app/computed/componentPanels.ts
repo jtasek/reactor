@@ -1,6 +1,6 @@
 import type { Application, Document, InstanceShape } from '../types';
 import { componentPropValue, exposableProperties } from '../componentProps';
-import { componentFingerprint } from '../componentLibrary';
+import { editorHelpers, editorLoaded } from '../editorHelpers';
 import { SHAPE_PROPERTIES } from '../properties';
 
 export function instanceProperties(document: Document) {
@@ -90,7 +90,10 @@ export function componentLibraries(state: Application) {
 export function libraryUpdateAvailable(state: Application, componentId: string) {
     const library = state.currentDocument.components[componentId]?.library;
     const source = library && state.documents[library.documentId];
-    const hash = source ? componentFingerprint(source, componentId) : null;
+    const hash =
+        source && editorLoaded()
+            ? editorHelpers().library.componentFingerprint(source, componentId)
+            : null;
 
     return Boolean(hash && hash !== library?.hash);
 }

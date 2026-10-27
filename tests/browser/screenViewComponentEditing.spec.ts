@@ -3,7 +3,13 @@ import { createDocument, createShape, createComponent } from 'src/app/factories'
 import { serializePersistedState } from 'src/app/services/documentStorage';
 import { openEditor, pointer, selectTool } from './support/editor';
 
-async function openComponent(page: Page, explorer = false, sourceOnly = false, rotation = 0) {
+async function openComponent(
+    page: Page,
+    explorer = false,
+    sourceOnly = false,
+    rotation = 0,
+    stacked = false
+) {
     const shapes = [120, 180, 260].map((x, i) =>
         createShape({
             type: 'rectangle',
@@ -53,7 +59,17 @@ async function openComponent(page: Page, explorer = false, sourceOnly = false, r
                 position: { x: 100, y: 80 },
                 size: { width: 300, height: 200 },
                 visible: true,
-                locked: false
+                locked: false,
+                ...(stacked
+                    ? {
+                          stack: {
+                              direction: 'row' as const,
+                              gap: 10,
+                              padding: 20,
+                              align: 'center' as const
+                          }
+                      }
+                    : {})
             },
             desktop: {
                 id: 'desktop',
@@ -196,8 +212,8 @@ test('Explorer child selection retains view focus and Escape returns to the orig
     );
 });
 
-async function openInstanceSource(page: Page, rotation = 0) {
-    const views = await openComponent(page, true, true, rotation);
+async function openInstanceSource(page: Page, rotation = 0, stacked = false) {
+    const views = await openComponent(page, true, true, rotation, stacked);
     await views.desktop.locator('[data-view-instance-hit]').click();
     await page
         .getByRole('list', { name: 'Commands' })
@@ -221,14 +237,71 @@ test('selecting a source-only child in the Explorer keeps editing in the view', 
     await expect(desktop.locator('[data-type="bottomRight"]')).toHaveCount(1);
 });
 
-test('the breadcrumb leaves out the view when a rotated instance opens the standalone editor', async ({
+test('a rotated instance retains its Screen view and Explorer editing context', async ({
     page
 }) => {
     const { navigation } = await openInstanceSource(page, 15);
     await expect(navigation).toContainText('Card');
-    await expect(page.locator('#screen-views > g')).toHaveCount(0);
-    await expect(navigation).not.toContainText('Home · Desktop');
+    await expect(page.locator('#screen-views > g')).toHaveCount(2);
+    await expect(navigation).toContainText('Home · Desktop');
 });
+
+for (const rotation of [0, 90, 27]) {
+    test(`edits a ${rotation}° stack-positioned instance in place with real canvas handles`, async ({
+        page
+    }) => {
+        const { desktop, mobile, navigation } = await openInstanceSource(page, rotation, true);
+        await page
+            .getByRole('region', { name: 'Explorer' })
+            .getByRole('button', { name: 'Part 1', exact: true })
+            .click();
+        await page.getByRole('button', { name: 'More panels' }).click();
+        await page.getByRole('checkbox', { name: 'Inspector', exact: true }).uncheck();
+        await page.getByRole('checkbox', { name: 'Explorer', exact: true }).uncheck();
+        await page.getByRole('button', { name: 'More panels' }).click();
+        await expect(navigation).toContainText('Home · Desktop');
+        const handle = desktop.locator('[data-type="bottomRight"]');
+        await expect(handle).toBeVisible();
+        const bounds = (await handle.boundingBox())!;
+        const radians = (rotation * Math.PI) / 180;
+        const dx = 20 * (Math.cos(radians) - Math.sin(radians));
+        const dy = 20 * (Math.sin(radians) + Math.cos(radians));
+        const start = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+        await page.mouse.move(start.x, start.y);
+        await page.mouse.down();
+        await page.keyboard.down('ControlOrMeta');
+        await page.mouse.move(start.x + dx, start.y + dy, { steps: 4 });
+        await page.mouse.up();
+        await page.keyboard.up('ControlOrMeta');
+        await expect(desktop.locator('[data-cy="Part 1"]')).toHaveAttribute(
+            'width',
+            /^(59|60|61)(\.|$)/
+        );
+        await expect(mobile.locator('[data-cy="Part 1"]')).toHaveAttribute(
+            'width',
+            /^(59|60|61)(\.|$)/
+        );
+        const primitive = desktop.locator('[data-cy="Part 1"]');
+        const before = (await primitive.boundingBox())!;
+        await page.evaluate(() => (document.activeElement as HTMLElement).blur());
+        await page.keyboard.press('ArrowRight');
+        await expect
+            .poll(async () => (await primitive.boundingBox())!.x - before.x)
+            .toBeCloseTo(10, 0);
+        await page.screenshot({ path: `test-results/reactor-focused-stack-${rotation}.png` });
+        if (rotation === 27) {
+            await page.setViewportSize({ width: 600, height: 850 });
+            await mobile.locator('[data-cy="Part 1"]').click();
+            await expect(navigation).toContainText('Home · 300 px');
+            await expect(mobile.locator('[data-type="bottomRight"]')).toBeVisible();
+            await page.screenshot({ path: 'test-results/reactor-focused-stack-narrow.png' });
+        }
+
+        await navigation.getByRole('button', { name: 'Back to canvas' }).click();
+        await expect(desktop.locator('[data-view-instance-hit]')).toHaveCount(1);
+        await expect(navigation).toHaveCount(0);
+    });
+}
 
 test.describe('Screen view keyboard editing', () => {
     test.use({ permissions: ['clipboard-read', 'clipboard-write'] });

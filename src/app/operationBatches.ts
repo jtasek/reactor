@@ -63,6 +63,7 @@ const CHANGEABLE_FIELDS = new Set([
     'layoutOrder',
     'sizing',
     'interaction',
+    'modeOverrides',
     'description',
     'rotation',
     'opacity',
@@ -702,6 +703,9 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         if ('interaction' in changes && current.type !== 'instance') {
             throw new Error('Only an instance can declare a role.');
         }
+        if ('modeOverrides' in changes && current.type !== 'instance') {
+            throw new Error('Only an instance can override color modes.');
+        }
         const shape = structuredClone(json(current));
         unbindEditedProperties(shape, fields);
         const bindings = shape.bindings ?? {};
@@ -861,6 +865,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                         'parentFrameId',
                         'layoutOrder',
                         'sizing',
+                        'modeOverrides',
                         'stack'
                     ]);
                     if (Object.keys(operation.changes).some((key) => !allowed.has(key))) {

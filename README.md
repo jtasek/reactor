@@ -106,6 +106,11 @@ source exposes, reset them, or be detached into plain shapes. The Library contro
 copies another document's component here and lists the copies, to place or inspect;
 a copy shows when its source has changed and is updated on request.
 
+Select an instance inside a Screen view and choose **Select component source** to edit its
+children in place, including through rotated instances and instances positioned by a stack.
+The instance keeps its placement while you edit; the stack reflows when you leave. Use
+**Back to canvas** or Escape to restore your original view and selection. Edits update every instance.
+
 Shortcuts do nothing while a text field has focus. The command line runs a command
 by name.
 
@@ -467,6 +472,16 @@ source's dimension; shapes, components and thumbnails use the same context. Rena
 does not break values or selection because references use IDs. Deleting a mode removes its
 overrides; deleting a dimension returns its variables to base-only values. These definition
 changes can be undone and are shared; preview selections are not shared.
+
+Select a Screen, Screen view, frame or component instance to set **Color modes** in Inspector.
+Each dimension starts at **Inherit**. The effective mode and its source appear below the field;
+choose a mode to override that dimension, or Inherit to reset it. Screen choices apply to all
+its views; view choices let Home · Mobile and Home · Desktop show different palettes at once.
+Frames and nested instances can override their inherited modes. These authored choices are
+saved, shared and undoable; the Variables panel's preview remains local. A missing mode stays
+listed with a diagnostic and uses the dimension's default until you choose another or reset it.
+Opening Preview from a view captures its screen-root modes for that session. Later canvas
+simulation/view changes do not change the session, while descendant overrides still apply.
 
 Existing Light/Dark documents migrate to an editable Theme dimension, including their local
 Dark preference. Plain documents stay base-only. Text templates and geometry still use base

@@ -8,6 +8,7 @@ import type { Tool } from 'src/tools/types';
 import { DEFAULT_TEXT_FONT_SIZE } from 'src/app/utils';
 import { useActions, useAppState, useKeyboard, usePointer } from 'src/app/hooks';
 import { editableScreenView } from 'src/app/screenViewEditing';
+import { componentSourcePoint, componentViewPoint } from 'src/app/componentViewTransform';
 
 /**
  * Draws a text in current position
@@ -87,16 +88,9 @@ export const DesignText: FC = () => {
             : undefined;
 
         if (origin?.component) {
-            return {
-                x:
-                    start.x +
-                    origin.component.offset.x +
-                    (component ? component.position.x - component.origin.x : 0),
-                y:
-                    start.y +
-                    origin.component.offset.y +
-                    (component ? component.position.y - component.origin.y : 0)
-            };
+            const source = componentSourcePoint(start, origin.component.transform);
+
+            return component ? componentViewPoint(source, component) : source;
         }
 
         return origin && view

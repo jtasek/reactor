@@ -495,14 +495,19 @@ and free of source/viewport layout offsets. Changed membership or layout cancels
 Instances keep rotation-only handles. Tests: screenViewHandles, screenViewOverlays,
 screenViewContainerHandles and their browser counterparts.
 Focused component children stay in the chosen Screen view. Source-only masters opened through
-a free, unrotated instance project at that instance's placement; `componentEditingReturn`
-keeps a local pinned source origin and restores the original view, selection and camera.
-Master children remain unparented, and new children join the definition. Rotated, stack-managed,
-unplaced or over-budget instance contexts use the standalone source editor. Context expansion
+an instance project at that instance's placed position and rotation, including stack placement.
+`componentEditingReturn` keeps a local pinned source origin and size and restores the original
+view, selection and camera. Master children remain unparented, and new children join the definition.
+Unplaced or over-budget instance contexts use the standalone source editor. Context expansion
 still counts against the shared 5,000-node projection cap. Pointer snapshots capture the local
-component offset; transforms, snapping and two-phase text use it without writing projected
-geometry into source records. Explorer child selection retains focus. Tests:
-screenViewComponentEditing and its browser counterpart.
+component transform; `componentViewTransform.ts` maps points, screen-axis deltas and shapes
+between master and view coordinates. Drawing, handles, snapping, nudging, duplication, clipboard
+and alignment use the same transform; arrow-key nudges at angles other than quarter turns
+round the turned step to whole source pixels. The focused instance's layout footprint is pinned locally
+until exit, so changing master bounds does not move the stack beneath a drag. External placement
+or rotation changes still cancel the gesture. No projected geometry is written into source
+records. Explorer child selection retains focus. Tests: screenViewComponentEditing,
+screenViewTransformedFocus and the component-editing browser tests.
 Clipboard shape transfers read the active view's projection and translate paste targets back to
 source coordinates. Without an active view they read the document, so Screen artwork picked in
 the Layers view still copies. Plain frames pasted through a view join its Screen. Refusals in an
@@ -657,6 +662,24 @@ override: making another mode the default moves its colors into the base and int
 (`promoteDefaultMode`). `variableContext` holds the locally selected modes other than defaults;
 `themeColors` projects bound fill, stroke and fontColor without writing shared shape values.
 Root `previewModes` is local, keyed by document then dimension, saved only in `reactor:view`.
+Schema v15 adds authored `modeOverrides` maps to frames (including Screens/views) and instances.
+`inheritedModes.ts` resolves each dimension independently: dimension default, local simulation,
+Screen, view, then containing frames and instances from outermost to innermost. Absent keys
+inherit; missing choices stay authored, report a diagnostic and fall back to the dimension's
+default (missing dimensions are ignored). `ModeFields` offers Inherit and shows the effective
+mode and its source. Authored choices are separate undo batches; local simulation stays local.
+Empty maps are initialized at creation/read/migration so independent dimension edits merge.
+Artwork, nested instances, thumbnails and Preview use the same contexts without shared color
+or geometry writes. Default-mode selections always use base values. Instance mode metadata
+does not change `shapeGeometryKey` or force measurements. Preview captures a view's screen-root
+modes and start screen in local `previewModeContext`; descendants still override them. Manual
+launch inherits screen defaults. Session choices stay independent of later view/simulation edits.
+Clipboard transfers retain instance/frame choices and their dimension definitions, including
+dimensions used only by mode overrides. Fingerprints sort override keys. Library fingerprint
+and snapshot helpers load through `editorHelpers().library`, with the editor.
+Detaching bakes authored colors into independent primitives and passes the detached instance's
+explicit mode choices to surviving nested instances, preserving their nearer overrides.
+Coverage: inheritedModes unit/browser tests; R4.4 remains responsible for geometry-aware values.
 Geometry and templates stay at base until context-aware measurement is implemented.
 Definitions use the ordinary shared entity/undo path. Keep all values and dimension IDs
 through serialization, clipboard, operations and alias detachment. Legacy Light/Dark data

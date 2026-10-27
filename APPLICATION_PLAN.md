@@ -20,14 +20,14 @@ its implementation status explicitly says otherwise.
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Drawing and editing        | Implemented and browser-tested: shapes, groups, layers, guides, snapping, inspector.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | Components                 | Implemented: instances, overrides, nested sources, and copies from other documents updated on request ([componentLibrary.ts](src/app/componentLibrary.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Variables and templates | Implemented: central resolver, explicit bindings, typed aliases, opt-in user-defined dimensions with color modes, native design-system packages and a bounded DTCG adapter. Current mode selection is local per document. Inherited per-view contexts, contextual numeric/text measurement and responsive variants remain planned (V1–V5 and R4 below). |
+| Variables and templates | Implemented: central resolver, explicit bindings, typed aliases, opt-in user-defined dimensions with inherited color modes per Screen view, native design-system packages and a bounded DTCG adapter. Local simulation stays separate from authored frame/view/instance overrides. Contextual numeric/text measurement and responsive variants remain planned (V1–V5 and R4 below). |
 | Saving and collaboration   | Implemented: IndexedDB, tab sync, Yjs merges, server sync when signed in.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | Images                     | Implemented: content-addressed, shared with the server when signed in ([assetSync.ts](src/app/services/assetSync.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Accounts                   | Implemented: workspaces, document roles and workspace invitations with sharing/acceptance UI and a read-only viewer preview. Presence is off ([serverSync.ts](src/app/services/serverSync.ts) passes no awareness).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | Undo and redo              | Implemented: each person undoes and redoes their own changes to a document's records, also while others edit ([collaboration.ts](src/app/services/collaboration.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Operations                 | Implemented: paste goes through `applyOperations`, applied whole as one undo step that records its author ([#177](https://github.com/jtasek/reactor/pull/177)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | AI                         | Gateway implemented: `/api/ai` streams operations from Claude Haiku 5.5 or any OpenAI-compatible provider, checked and repaired once, with daily limits, and recorded eval cases replayed in CI ([#178](https://github.com/jtasek/reactor/pull/178)). Edit with words has a movable, dockable chat with local conversation history; it proposes added, changed and deleted shapes, variables and groups, applied as one undo step once accepted ([#179](https://github.com/jtasek/reactor/pull/179)). Requests use the selection with its group, variable and component dependencies, or the document when nothing is selected, bounded to 32 KiB of UTF-8 JSON and 300 records ([context.ts](src/ai/context.ts)). |
-| Screens, data and behavior | Implemented: frame membership, inherited Hide/Lock, fixed stacks, initial hug/fill sizing, explicit component roles and navigation targets. Screens have stable logical identity and shared artwork; equal Screen views place them on Canvas with independent names and viewports. Direct drawing, dragging, deletion of any or every view, and placement from the Screens list are implemented. Contextual handles/overlays, variants and a Flow feature remain planned. Data/list repetition is still absent. |
+| Screens, data and behavior | Implemented: frame membership, inherited Hide/Lock, fixed stacks, initial hug/fill sizing, explicit component roles and navigation targets. Screens have stable logical identity and shared artwork; equal Screen views place them on Canvas with independent names, viewports and inherited color modes. Drawing, transforms, overlays, contextual alignment, and focused component editing through rotated/stack-positioned instances are implemented. Any or every view can be deleted and placed again from the Screens list. Responsive variants and a Flow feature remain planned. Data/list repetition is still absent. |
 | Export and runtime | Implemented: explicitly invoked, sandboxed Preview with navigation, native inputs and image artwork. Runtime state is separate from document state. Read-only links, SVG export and a standalone web package remain planned. |
 
 The editor surface depends on SVG: input converts through `getScreenCTM`
@@ -607,7 +607,7 @@ and native SVG default fill. Coverage includes resource validation/cache/cancell
 browser decoding, geometry/style parity, missing-image recovery and normal/narrow visual checks.
 Diagram connector links remain absent, as in the current canvas; this does not introduce them.
 
-#### Increments: R4.1 complete; R4.2 in progress; R4.3–R4.10 planned
+#### Increments: R4.1–R4.3 complete; R4.4–R4.10 planned
 
 Do these in order. Each numbered increment is independently usable and reviewable; do not merge
 an intermediate format that the editor cannot open and edit. New test filenames below are
@@ -682,10 +682,10 @@ continues working through adapters to the new screen/context projection until R4
    retain their existing rotation-only controls. `tests/screenViewContainerHandles.test.ts` and
    its browser counterpart cover transforms, viewport geometry and concurrent changes.
    **Focused editing implemented:** placed component containers retain their Screen view while
-   their children are selected, transformed or drawn. Opening the source of a free, unrotated
-   instance projects master children at that instance's placement, without reparenting masters.
+   their children are selected, transformed or drawn. Opening the source of an instance
+   projects master children at that instance's placement, without reparenting masters.
    Other views remain visible. Back/Escape restores the original view, selection and camera;
-   Explorer child selection preserves focus. Unplaced, rotated, stack-positioned or over-budget
+   Explorer child selection preserves focus. Unplaced or over-budget
    instance contexts retain the standalone source editor and their return context. Focus and
    pinned source origins stay local, and expanded projections retain the 5,000-node budget.
    Covered by `tests/screenViewComponentEditing.test.ts` and its browser counterpart.
@@ -705,10 +705,16 @@ continues working through adapters to the new screen/context projection until R4
    align; source and viewport stack restrictions apply to every container member. Covered by
    `tests/screenViewAlignment.test.ts` and `tests/browser/screenViewAlignment.spec.ts`, including
    shared undo, remote edits and narrow layouts. Canvas behavior and existing shortcuts remain.
-   **Still required for R4.2:** in-place focus through rotated or stack-positioned instances.
+   **Transformed instance focus implemented:** source-only masters can be edited in place through
+   rotated and stack-positioned instances at each view's viewport. A shared inverse transform
+   maps dragging, handles, drawing, clipboard placement, nudging and alignment back to authored
+   geometry. Source origins, rotation pivots and the instance's layout footprint stay local and
+   pinned during focus; leaving resumes normal stack reflow. External placement/rotation changes
+   cancel active gestures safely. Coverage: `tests/screenViewTransformedFocus.test.ts` and the
+   component-editing browser tests, including arbitrary angles, narrow views and shared undo.
    All views have the same supported interactions throughout these increments.
 
-3. **R4.3 — Inherited color modes per view (M).**
+3. **R4.3 — Inherited color modes per view (M, implemented).**
    Extend the central resolver with the precedence above. Add Inherit/reset controls for
    screens, views, frames and component instances, and show effective values and their source.
    Existing local document mode controls remain simulation choices. Authoring a view's mode
@@ -719,6 +725,17 @@ continues working through adapters to the new screen/context projection until R4
    partial inheritance across multiple dimensions, aliases, local vs authored changes,
    ancestor updates, reset, missing modes, packages/copy, undo/concurrent edits, canvas/runtime
    color parity and zero writes caused merely by resolving a view.
+   **Implemented:** schema v15 retains per-dimension overrides on Screens, views, frames and
+   instances. Inspector shows effective choices and sources, with Inherit/reset and recovery
+   from missing references. Defaults come from authored dimension definitions; local document
+   simulation remains a separate, local layer. Canvas, focused masters, nested instances and
+   thumbnails resolve each view independently. Authored choices form distinct shared undo
+   steps; concurrent edits to different dimensions merge. Copy/clone, operations, native token
+   definitions and reload preserve modes. Preview launched from a view captures its effective
+   screen-root modes and initial screen, while descendant overrides remain live; manual launch
+   inherits screen defaults. Resolution never rewrites shared colors or geometry. Library copy
+   and fingerprint helpers load with the editor to preserve the existing bundle budgets.
+   Numeric/text values and contextual geometry remain R4.4.
 
 4. **R4.4 — Geometry-aware mode values (M).**
    Complete the unfinished V3 numeric/text work in supported consumers: spacing and dimensions,
@@ -915,7 +932,7 @@ refused invalid and forbidden requests, retries that change nothing twice) passe
 ### Not planned
 
 - An HTML Canvas renderer replacing the existing SVG editor or prototype artwork renderer.
-  Equal Screen views share the existing design canvas; R4.2 continues with contextual handles and overlays.
+  Equal Screen views share the existing design canvas, with contextual handles and overlays.
 - A 3D view.
 - Native iOS and Android targets.
 - XML.
@@ -928,7 +945,7 @@ Revisit only when users ask for them.
 | Decision               | Default                                                                                                                                                                                                                                                                             | Decide by |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | Semantics              | Roles and props on components and instances; explicit screens reference frame-based layouts; canvas views reference screens                                                                                                                                                                                              | R4.1–R4.2 |
-| Stack positions        | Derived per view/context after authored changes or merges; never shared as computed geometry                                                                                                                                                                                                                 | Implemented; extend in R4.2 |
+| Stack positions        | Derived per view/context after authored changes or merges; never shared as computed geometry                                                                                                                                                                                                                 | Implemented |
 | Where apps run         | Hosted previews and apps, with the exported web package as the exit; self-hosting later                                                                                                                                                                                             | R4 delivery |
 | Models                 | Claude Opus 5.5 for screens from screenshots and for agent mode, and Claude Haiku 5.5 for edits and audits. Claude Sonnet 5.5 is evaluated for generation, chosen by eval score per cost. A server may name another provider speaking OpenAI's Chat Completions API, and its models | Before R2 |
 | AI in shared documents | Proposals that a person accepts                                                                                                                                                                                                                                                     | R2        |

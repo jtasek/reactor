@@ -1,6 +1,11 @@
 import React, { FC } from 'react';
 import { SquarePlus, FileSearch, CircleMinus, RefreshCw, ChevronLeft } from 'lucide-react';
-import { useActions, useCurrentDocument, useComponentSource } from 'src/app/hooks';
+import {
+    useActions,
+    useCurrentDocument,
+    useComponentSource,
+    useVariableContext
+} from 'src/app/hooks';
 import type { InstanceShape } from 'src/app/types';
 import { Icon } from '../Icon';
 import { ObjectTypeSymbol } from '../ObjectTypeSymbol';
@@ -17,6 +22,7 @@ const UPDATE_ICON = { component: RefreshCw, size: 16 };
 export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) => {
     const component = useComponent(componentId);
     const document = useCurrentDocument();
+    const context = useVariableContext();
     const source = useComponentSource(componentId);
     const {
         chooseComponentToPlace,
@@ -86,7 +92,7 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
                     viewBox={`${source.box.topLeft.x - 8} ${source.box.topLeft.y - 8} ${Math.max(1, source.box.width + 16)} ${Math.max(1, source.box.height + 16)}`}
                     preserveAspectRatio="xMidYMid meet"
                 >
-                    <Instance instance={preview} source={source} />
+                    <Instance instance={preview} source={source} context={context} />
                 </svg>
             )}
             <ComponentRole componentId={componentId} />

@@ -14,7 +14,7 @@ import type {
 import type { Context } from './index';
 import type { PasteResult } from './clipboard';
 import { createShape, createGroup, instanceName, shapeNamer } from './factories';
-import { componentSource } from './componentSource';
+import { componentSource, instanceBox } from './componentSource';
 import { focusedSourceOnlyId } from './componentSelection';
 import { shownGroupShapesIds, containersHolding } from './membership';
 import { isShapeLocked, isShapeVisible, shapeGeometry } from './utils';
@@ -31,6 +31,11 @@ import {
     UNAVAILABLE_VIEW_MESSAGE
 } from './screenViewEditing';
 import { reachesComponent } from './actions/components';
+import {
+    componentSourceDelta,
+    componentSourcePoint,
+    transformComponentShape
+} from './componentViewTransform';
 
 const clipboardFormat = () => editorHelpers().clipboard;
 
@@ -268,12 +273,11 @@ function transferTarget(context: Context, placed: ReturnType<typeof editableScre
               x: view.position.x + view.size.width / 2,
               y: view.position.y + view.size.height / 2
           };
-    const offset = component
-        ? {
-              x: component.origin.x - component.position.x,
-              y: component.origin.y - component.position.y
-          }
-        : sourceOffset(view, screen);
+    if (component) {
+        return componentSourcePoint(point, component);
+    }
+
+    const offset = sourceOffset(view, screen);
 
     return { x: point.x + offset.x, y: point.y + offset.y };
 }
@@ -321,6 +325,32 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
 
     if (copied.shapes.length === 0) {
         return 'noShapes';
+    }
+
+    if (placed?.component) {
+        const transform = placed.component;
+        const sources = {
+            ...state.currentDocument,
+            components: {
+                ...state.currentDocument.components,
+                ...Object.fromEntries(
+                    (copied.components ?? []).map((source) => [source.id, source])
+                )
+            }
+        };
+        copied.shapes.forEach((shape) => {
+            const source =
+                shape.type === 'instance' ? componentSource(sources, shape.componentId) : null;
+
+            if (shape.type === 'instance' && source) {
+                shape.bounds = instanceBox(shape, source);
+            }
+
+            transformComponentShape(shape, transform, true);
+        });
+        copied.groups.forEach((group) => {
+            group.rotation = (group.rotation ?? 0) - transform.rotation;
+        });
     }
 
     const operations = pasteOperations(
@@ -426,6 +456,7 @@ export const cloneShapes: ActionWithParam<string[]> = (context, shapeIds) => {
     const present = Object.values(untracked(currentDocument).shapes);
     const nameShape = shapeNamer(present);
     const taken = new Set(present.map((shape) => shape.name));
+    const offset = componentSourceDelta(CLONE_OFFSET, destination.placed?.component);
 
     actions.unselectShapes();
 
@@ -461,7 +492,7 @@ export const cloneShapes: ActionWithParam<string[]> = (context, shapeIds) => {
             selected: true
         });
 
-        translateShape(clone, CLONE_OFFSET);
+        translateShape(clone, offset);
         shapes[clone.id] = clone;
         shapesIds.push(clone.id);
         clonesIds.set(id, clone.id);

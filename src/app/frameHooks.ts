@@ -345,7 +345,11 @@ export const useScreenViewContainers = (
         }
 
         const document = state.currentDocument;
-        const placed = placedScreenDocument(document, projection.shapes);
+        const placed = placedScreenDocument(
+            document,
+            projection.shapes,
+            projection.componentRotation
+        );
         const owners: ScreenViewContainer[] = [
             ...document.selectedGroupsIds.map((groupId) => ({ groupId })),
             ...document.selectedComponentsIds.map((componentId) => ({ componentId }))
@@ -362,7 +366,10 @@ export const useScreenViewContainers = (
                 return [];
             }
 
-            const frame = groupFrame(placed, container);
+            const frame = groupFrame(placed, {
+                ...container,
+                rotation: (container.rotation ?? 0) + (projection.componentRotation ?? 0)
+            });
 
             if (!frame) {
                 return [];
