@@ -7,7 +7,8 @@ import { Selectable } from '../Selectable/Selectable';
 import { getComponentByType } from 'src/tools/components';
 import { Instance } from './Instance';
 import type { Shape as ShapeType } from 'src/app/types';
-import { useVariableContext, useCurrentDocument } from 'src/app/hooks';
+import { useCurrentDocument } from 'src/app/hooks';
+import { useArtworkModes } from 'src/app/modeHooks';
 import { themeColors } from 'src/app/themeColors';
 import { resolveVariable } from 'src/app/variableResolver';
 import { rectToBox, shapeGeometryKey, getShapeBounds, boxCenter } from 'src/app/utils';
@@ -41,7 +42,7 @@ export const Shape = memo((props: Props) => {
     } = props;
     const shape = useShape(shapeId);
     const document = useCurrentDocument();
-    const theme = useVariableContext();
+    const theme = useArtworkModes(shape);
     const painted = themeColors(shape, document, theme);
     const visible = useShapeVisible(shapeId);
     const locked = useShapeLocked(shapeId);
@@ -122,7 +123,7 @@ export const Shape = memo((props: Props) => {
         return (
             <g ref={groupRef} visibility="hidden" pointerEvents="none" aria-hidden="true">
                 {shape.type === 'instance' ? (
-                    <Instance instance={shape} source={source} />
+                    <Instance instance={shape} source={source} context={theme} />
                 ) : (
                     Component && createElement(Component, { ...painted, selected: false })
                 )}
@@ -173,7 +174,7 @@ export const Shape = memo((props: Props) => {
                 onPointerLeave={() => deactivateShape(shapeId)}
             >
                 {shape.type === 'instance' ? (
-                    <Instance instance={shape} source={source} />
+                    <Instance instance={shape} source={source} context={theme} />
                 ) : (
                     Component && createElement(Component, { ...paintedProps, key })
                 )}

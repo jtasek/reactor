@@ -8,6 +8,7 @@ import type {
 } from './types';
 import { SHAPE_PROPERTIES, applyProperty, type ShapeProperty } from './properties';
 import { escapeTemplate, templateWithNames, writeText } from './variables';
+import { variableContext } from './variableModes';
 import { resolveVariable } from './variableResolver';
 import { isHexColor } from './utils';
 
@@ -83,7 +84,11 @@ export function componentPropValue(
         const variable = document.variables[override.variableId];
 
         return variable
-            ? resolveVariable(variable, document.variables, property.kind === 'color' ? theme : {})
+            ? resolveVariable(
+                  variable,
+                  document.variables,
+                  property.kind === 'color' ? variableContext(document, theme) : {}
+              )
             : property.read(source, document);
     }
 

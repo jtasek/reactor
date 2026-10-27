@@ -24,3 +24,6 @@ export const setVariableModeValue: typeof Dimensions.setVariableModeValue = (con
 
 export const setPreviewMode: typeof Dimensions.setPreviewMode = (context, input) =>
     editorHelpers().dimensions.setPreviewMode(context, input);
+
+export const setModeOverride: typeof Dimensions.setModeOverride = (context, input) =>
+    editorHelpers().dimensions.setModeOverride(context, input);

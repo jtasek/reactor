@@ -11,6 +11,7 @@ import type * as Alignment from './alignment';
 import type * as Clipboard from './clipboard';
 import type * as OperationBatches from './operationBatches';
 import type * as Snapping from './snapping';
+import type * as Library from './componentLibrary';
 
 /**
  * Code only the editor's gestures and commands run: snapping, aligning, the
@@ -32,6 +33,7 @@ export interface EditorHelpers {
     clipboard: typeof Clipboard;
     operations: typeof OperationBatches;
     snapping: typeof Snapping;
+    library: typeof Library;
 }
 
 let provided: EditorHelpers | undefined;

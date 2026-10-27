@@ -473,6 +473,16 @@ does not break values or selection because references use IDs. Deleting a mode r
 overrides; deleting a dimension returns its variables to base-only values. These definition
 changes can be undone and are shared; preview selections are not shared.
 
+Select a Screen, Screen view, frame or component instance to set **Color modes** in Inspector.
+Each dimension starts at **Inherit**. The effective mode and its source appear below the field;
+choose a mode to override that dimension, or Inherit to reset it. Screen choices apply to all
+its views; view choices let Home · Mobile and Home · Desktop show different palettes at once.
+Frames and nested instances can override their inherited modes. These authored choices are
+saved, shared and undoable; the Variables panel's preview remains local. A missing mode stays
+listed with a diagnostic and uses the dimension's default until you choose another or reset it.
+Opening Preview from a view captures its screen-root modes for that session. Later canvas
+simulation/view changes do not change the session, while descendant overrides still apply.
+
 Existing Light/Dark documents migrate to an editable Theme dimension, including their local
 Dark preference. Plain documents stay base-only. Text templates and geometry still use base
 values: numeric, text and boolean mode overrides are gated until context-aware measurement

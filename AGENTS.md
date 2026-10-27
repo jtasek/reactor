@@ -662,6 +662,24 @@ override: making another mode the default moves its colors into the base and int
 (`promoteDefaultMode`). `variableContext` holds the locally selected modes other than defaults;
 `themeColors` projects bound fill, stroke and fontColor without writing shared shape values.
 Root `previewModes` is local, keyed by document then dimension, saved only in `reactor:view`.
+Schema v15 adds authored `modeOverrides` maps to frames (including Screens/views) and instances.
+`inheritedModes.ts` resolves each dimension independently: dimension default, local simulation,
+Screen, view, then containing frames and instances from outermost to innermost. Absent keys
+inherit; missing choices stay authored, report a diagnostic and fall back to the dimension's
+default (missing dimensions are ignored). `ModeFields` offers Inherit and shows the effective
+mode and its source. Authored choices are separate undo batches; local simulation stays local.
+Empty maps are initialized at creation/read/migration so independent dimension edits merge.
+Artwork, nested instances, thumbnails and Preview use the same contexts without shared color
+or geometry writes. Default-mode selections always use base values. Instance mode metadata
+does not change `shapeGeometryKey` or force measurements. Preview captures a view's screen-root
+modes and start screen in local `previewModeContext`; descendants still override them. Manual
+launch inherits screen defaults. Session choices stay independent of later view/simulation edits.
+Clipboard transfers retain instance/frame choices and their dimension definitions, including
+dimensions used only by mode overrides. Fingerprints sort override keys. Library fingerprint
+and snapshot helpers load through `editorHelpers().library`, with the editor.
+Detaching bakes authored colors into independent primitives and passes the detached instance's
+explicit mode choices to surviving nested instances, preserving their nearer overrides.
+Coverage: inheritedModes unit/browser tests; R4.4 remains responsible for geometry-aware values.
 Geometry and templates stay at base until context-aware measurement is implemented.
 Definitions use the ordinary shared entity/undo path. Keep all values and dimension IDs
 through serialization, clipboard, operations and alias detachment. Legacy Light/Dark data

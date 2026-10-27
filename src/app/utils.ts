@@ -279,6 +279,7 @@ export function shapeGeometry(shape: Shape): ShapeInput {
             return {
                 type: shape.type,
                 componentId: shape.componentId,
+                ...(shape.modeOverrides ? { modeOverrides: { ...shape.modeOverrides } } : {}),
                 position: { ...shape.position },
                 overrides: { ...shape.overrides }
             };
@@ -344,7 +345,13 @@ export function isClosedShape(shape: Pick<Shape, 'type'>): boolean {
 }
 
 export function shapeGeometryKey(shape: Shape): string {
-    return JSON.stringify(shapeGeometry(shape));
+    const geometry = shapeGeometry(shape);
+
+    if (geometry.type === 'instance') {
+        delete geometry.modeOverrides;
+    }
+
+    return JSON.stringify(geometry);
 }
 
 export function movedEdges(handlerType: ResizeHandlerType) {

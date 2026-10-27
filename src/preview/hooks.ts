@@ -1,5 +1,4 @@
 import { useAppState } from '../app/hooks';
-import { variableContext } from '../app/variableModes';
 import { projectPreview } from './project';
 
 export interface PreviewProjection {
@@ -22,11 +21,7 @@ export const usePreviewProjection = () =>
         const document = state.currentDocument;
         const warnings: string[] = [];
         try {
-            const drawing = projectPreview(
-                document,
-                variableContext(document, state.previewModes[document.id]),
-                warnings
-            );
+            const drawing = projectPreview(document, {}, warnings, state.previewModeContext);
 
             return {
                 serialized: JSON.stringify(drawing),

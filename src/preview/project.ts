@@ -7,6 +7,7 @@ import { componentSource, instanceBox } from '../app/componentSource';
 import { applyInstanceOverrides } from '../app/componentProps';
 import { effectiveRoleSettings, resolveComponentRole } from '../app/componentRoles';
 import { themeColors } from '../app/themeColors';
+import { instanceModes, resolveModes } from '../app/inheritedModes';
 import { assertNever, boxCenter, getShapeBounds, DEFAULT_TEXT_FONT_SIZE } from '../app/utils';
 import type { PreviewDrawing, PreviewNode } from './protocol';
 
@@ -15,7 +16,8 @@ import type { PreviewDrawing, PreviewNode } from './protocol';
 export function projectPreview(
     sourceDocument: Document,
     context: VariableContext,
-    warnings: string[] = []
+    warnings: string[] = [],
+    session?: { modes: VariableContext; screenId?: string } | null
 ): PreviewDrawing {
     const problems = Object.values(frameLayout(sourceDocument).problems);
     if (problems.length) {
@@ -23,7 +25,9 @@ export function projectPreview(
     }
     const document = layoutDocument(sourceDocument);
     const parents = frameParents(document.frames);
-    const roots = screenFrames(document);
+    const roots = screenFrames(document).sort(
+        (a, b) => Number(b.id === session?.screenId) - Number(a.id === session?.screenId)
+    );
     const screenIds = new Set(roots.map((frame) => frame.id));
     const shown = shownShapesIds({ ...document, shownLayerId: undefined }, null);
     const rootOf = (parent: string | undefined): string | undefined => {
@@ -35,7 +39,16 @@ export function projectPreview(
         return next ? rootOf(next) : parent;
     };
     let count = 0;
-    const draw = (shape: Shape, path: string, ancestors: ReadonlySet<string>): PreviewNode => {
+    const draw = (
+        shape: Shape,
+        path: string,
+        ancestors: ReadonlySet<string>,
+        inherited: VariableContext
+    ): PreviewNode => {
+        const context =
+            shape.type === 'instance'
+                ? instanceModes(document, inherited, shape, warnings)
+                : inherited;
         count += 1;
         if (count > 5000) {
             throw new Error('Preview exceeds 5000 drawing nodes.');
@@ -159,7 +172,7 @@ export function projectPreview(
                         context
                     );
 
-                    return resolved.visible ? [draw(resolved, key, next)] : [];
+                    return resolved.visible ? [draw(resolved, key, next, context)] : [];
                 });
                 const role = resolveComponentRole(document, component, shape);
                 if (role.problems.length) {
@@ -214,9 +227,23 @@ export function projectPreview(
                 .filter(
                     (id) => shown.has(id) && rootOf(document.shapes[id].parentFrameId) === frame.id
                 )
-                .map((id) =>
-                    draw(themeColors(document.shapes[id], document, context), frame.id, new Set())
-                )
+                .map((id) => {
+                    const shape = document.shapes[id];
+                    const resolved = resolveModes(document, {
+                        simulation: context,
+                        screenId: frame.id,
+                        frameId: shape.parentFrameId,
+                        session: session?.modes
+                    });
+                    warnings.push(...resolved.problems);
+
+                    return draw(
+                        themeColors(shape, document, resolved.modes),
+                        frame.id,
+                        new Set(),
+                        resolved.modes
+                    );
+                })
         }))
     };
 }

@@ -25,7 +25,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 14;
+export const SCHEMA_VERSION = 15;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -406,6 +406,7 @@ export function readShapeGeometry(value: unknown) {
         case 'instance':
             return {
                 type: s.type,
+                modeOverrides: readBindings(s.modeOverrides ?? {}),
                 ...(s.interaction === undefined
                     ? {}
                     : { interaction: readRoleSettings(s.interaction) }),
@@ -633,6 +634,7 @@ function readFrame(value: unknown): Frame {
     return {
         ...entity(value),
         name,
+        modeOverrides: readBindings(f.modeOverrides ?? {}),
         kind: f.kind ?? 'frame',
         ...(f.kind === 'screen' && f.definitionOnly === true
             ? { definitionOnly: true as const }
@@ -988,6 +990,7 @@ export function migratePersistedState(raw: unknown, onRepair = () => {}): Persis
             data.version !== 11 &&
             data.version !== 12 &&
             data.version !== 13 &&
+            data.version !== 14 &&
             data.version !== SCHEMA_VERSION
         ) {
             return null;

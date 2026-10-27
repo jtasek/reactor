@@ -206,6 +206,8 @@ export interface Text extends ShapeBase {
 
 /** A live reference to a component's source shapes. */
 export interface InstanceShape extends ShapeBase {
+    /** Authored mode IDs by dimension; an absent entry inherits. */
+    modeOverrides?: VariableContext;
     /** Absent inherits the source; none explicitly removes its semantic role. */
     interaction?: RoleSettings;
     type: 'instance';
@@ -321,6 +323,8 @@ export interface StackRules {
 }
 
 export interface Frame {
+    /** Authored mode IDs by dimension; an absent entry inherits. */
+    modeOverrides?: VariableContext;
     kind?: 'frame' | 'screen' | 'view';
     /** Screens are source definitions; every canvas placement is a separate view. */
     definitionOnly?: true;
@@ -588,6 +592,8 @@ export type Application = {
     /** The document a person is asking AI to change, while its chat is open. */
     aiEditDocumentId: string | null;
     previewDocumentId: string | null;
+    /** Modes captured when Preview opens, independent of later canvas simulation changes. */
+    previewModeContext: { modes: VariableContext; screenId?: string } | null;
     devices: HashTable<Device>;
     documents: HashTable<Document>;
     documentsIds: string[];

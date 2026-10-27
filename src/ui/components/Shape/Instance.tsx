@@ -1,23 +1,29 @@
 import React, { CSSProperties, FC } from 'react';
-import type { InstanceShape, Shape } from 'src/app/types';
+import type { InstanceShape, Shape, VariableContext } from 'src/app/types';
 import type { ComponentSource } from 'src/app/componentSource';
 import { componentSource } from 'src/app/componentSource';
 import { applyInstanceOverrides } from 'src/app/componentProps';
 import { boxCenter, getShapeBounds } from 'src/app/utils';
 import { themeColors } from 'src/app/themeColors';
-import { useCurrentDocument, useVariableContext } from 'src/app/hooks';
+import { useCurrentDocument } from 'src/app/hooks';
+import { instanceModes } from 'src/app/inheritedModes';
 import { getComponentByType } from 'src/tools/components';
 
 interface Props {
     instance: InstanceShape;
     source: ComponentSource | null;
     ancestors?: ReadonlySet<string>;
+    context: VariableContext;
 }
 
 /** Draws source primitives in an instance's own frame; source flags do not affect them. */
-export const Instance: FC<Props> = ({ instance, source, ancestors = new Set() }) => {
+export const Instance: FC<Props> = ({
+    instance,
+    source,
+    ancestors = new Set(),
+    context: theme
+}) => {
     const document = useCurrentDocument();
-    const theme = useVariableContext();
 
     if (!source) {
         return (
@@ -64,6 +70,7 @@ export const Instance: FC<Props> = ({ instance, source, ancestors = new Set() })
                                     ancestorComponentIds
                                 )}
                                 ancestors={ancestorComponentIds}
+                                context={instanceModes(document, theme, shape)}
                             />
                         </g>
                     );

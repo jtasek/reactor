@@ -11,6 +11,7 @@ import * as alignment from 'src/app/alignment';
 import * as clipboard from 'src/app/clipboard';
 import * as operations from 'src/app/operationBatches';
 import { provideEditorHelpers } from 'src/app/editorHelpers';
+import * as library from 'src/app/componentLibrary';
 import * as snapping from 'src/app/snapping';
 import {
     AlignBottomCommand,
@@ -157,6 +158,7 @@ export function registerEditor() {
         alignment,
         clipboard,
         operations,
-        snapping
+        snapping,
+        library
     });
 }

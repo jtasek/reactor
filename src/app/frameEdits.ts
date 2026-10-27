@@ -89,6 +89,7 @@ function addFrame(context: Context, input: Extract<FrameEdit, { kind: 'add' | 'p
             ...(source?.parentFrameId === undefined ? {} : { parentFrameId: source.parentFrameId }),
             ...(source?.sizing ? { sizing: source.sizing } : {}),
             ...(source?.stack ? { stack: source.stack } : {}),
+            ...(source?.modeOverrides ? { modeOverrides: source.modeOverrides } : {}),
             locked: false,
             visible: true
         })
@@ -198,7 +199,7 @@ function framePasteOperations(
     return [
         { op: 'addFrame', key: 'frame', frame },
         ...children,
-        ...(artwork.shapes.length > 0
+        ...(artwork.shapes.length > 0 || Object.keys(artwork.dimensions ?? {}).length > 0
             ? editorHelpers().clipboard.pasteOperations(artwork, document, null, delta)
             : [])
     ];
@@ -592,7 +593,10 @@ export function writeClipboard(frame: Frame, document?: Context['state']['curren
                   shapes,
                   Object.values(document.groups),
                   document.variables,
-                  document
+                  document,
+                  [frame, ...contents.frames.map((id) => document.frames[id])].map(
+                      (item) => item.modeOverrides ?? {}
+                  )
               )
             : undefined,
         members: shapes.map((shape) => ({

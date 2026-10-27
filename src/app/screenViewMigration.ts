@@ -5,6 +5,7 @@ export function initialScreenView(screen: Frame, id: string): Frame {
     return {
         id,
         kind: 'view',
+        modeOverrides: {},
         screenId: screen.id,
         name: `${screen.size.width} px`,
         position: { ...screen.position },
