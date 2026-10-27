@@ -186,7 +186,7 @@ it('edits a source-only master at its instance placement and restores the instan
     expect(store.state.events.pointer.screenView?.viewId).toBe(viewId);
 });
 
-it('keeps rotated instances in the standalone source editor and preserves their return view', () => {
+it('opens rotated instances in place and preserves their return view', () => {
     const { store, screenId, viewId } = setup();
     store.actions.unselectShapes();
     store.actions.drawShape({
@@ -204,8 +204,8 @@ it('keeps rotated instances in the standalone source editor and preserves their 
     store.actions.setShapesProperty({ shapeIds: [instanceId], key: 'rotation', value: 90 });
     store.actions.events.setScreenView(viewId);
     store.actions.selectComponentSource(instance.componentId);
-    expect(componentScreenView(store.state)).toBeNull();
-    expect(store.state.events.pointer.screenView).toBeNull();
+    expect(componentScreenView(store.state)?.viewId).toBe(viewId);
+    expect(store.state.events.pointer.screenView?.viewId).toBe(viewId);
     store.actions.leaveComponentSource();
     expect(store.state.events.pointer.screenView?.viewId).toBe(viewId);
     expect(store.state.currentDocument.selectedShapesIds).toEqual([instanceId]);

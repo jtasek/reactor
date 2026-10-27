@@ -106,6 +106,11 @@ source exposes, reset them, or be detached into plain shapes. The Library contro
 copies another document's component here and lists the copies, to place or inspect;
 a copy shows when its source has changed and is updated on request.
 
+Select an instance inside a Screen view and choose **Select component source** to edit its
+children in place, including through rotated instances and instances positioned by a stack.
+The instance keeps its placement while you edit; the stack reflows when you leave. Use
+**Back to canvas** or Escape to restore your original view and selection. Edits update every instance.
+
 Shortcuts do nothing while a text field has focus. The command line runs a command
 by name.
 

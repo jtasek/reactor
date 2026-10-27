@@ -579,7 +579,8 @@ export const editComponentSource: ActionWithParam<string> = ({ state, actions },
                       componentOrigin: {
                           componentId,
                           instanceId,
-                          position: { ...source.box.topLeft }
+                          position: { ...source.box.topLeft },
+                          size: { width: source.box.width, height: source.box.height }
                       }
                   }
                 : {})

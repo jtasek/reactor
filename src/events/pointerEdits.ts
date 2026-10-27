@@ -19,6 +19,11 @@ import { editorHelpers } from 'src/app/editorHelpers';
 import { untracked } from 'src/app/untracked';
 import { getShapeBounds, isShapeLocked } from 'src/app/utils';
 import { keepsAspectRatio } from 'src/app/geometry';
+import {
+    componentSourceDelta,
+    componentSourcePoint,
+    componentViewBox
+} from 'src/app/componentViewTransform';
 import type { RestoredEntity } from 'src/app/services/collaboration';
 import { beyondClickSlip } from './gestures';
 import {
@@ -44,12 +49,13 @@ function sourcePoint(position: Point, view: ScreenViewGesture | undefined): Poin
         return position;
     }
 
-    const origin = view.component?.origin ?? view.sourcePosition;
-    const placed = view.component?.position ?? view.position;
+    if (view.component) {
+        return componentSourcePoint(position, view.component);
+    }
 
     return {
-        x: position.x + origin.x - placed.x,
-        y: position.y + origin.y - placed.y
+        x: position.x + view.sourcePosition.x - view.position.x,
+        y: position.y + view.sourcePosition.y - view.position.y
     };
 }
 
@@ -58,13 +64,13 @@ function placedBox(box: Box | undefined, view: ScreenViewGesture | undefined) {
         return box;
     }
 
+    if (view.component) {
+        return componentViewBox(box, view.component);
+    }
+
     const offset = {
-        x:
-            (view.component?.position.x ?? view.position.x) -
-            (view.component?.origin.x ?? view.sourcePosition.x),
-        y:
-            (view.component?.position.y ?? view.position.y) -
-            (view.component?.origin.y ?? view.sourcePosition.y)
+        x: view.position.x - view.sourcePosition.x,
+        y: view.position.y - view.sourcePosition.y
     };
 
     return {
@@ -206,14 +212,7 @@ export const beginGesture = (
                           ? {
                                 component: {
                                     id: state.enteredComponentId!,
-                                    offset: {
-                                        x:
-                                            projected.component.origin.x -
-                                            projected.component.position.x,
-                                        y:
-                                            projected.component.origin.y -
-                                            projected.component.position.y
-                                    }
+                                    transform: projected.component
                                 }
                             }
                           : {})
@@ -563,7 +562,10 @@ export const movePointer = (
         const step = { x: delta.x - gesture.movedBy.x, y: delta.y - gesture.movedBy.y };
 
         if (step.x !== 0 || step.y !== 0) {
-            actions.moveShapesBy({ shapeIds: gesture.movingIds, delta: step });
+            actions.moveShapesBy({
+                shapeIds: gesture.movingIds,
+                delta: componentSourceDelta(step, gesture.screenView?.component)
+            });
             gesture.movedBy = delta;
         }
 
@@ -589,7 +591,9 @@ export const movePointer = (
         const resizing = gesture.kind === 'resizing';
         const original = resizing ? gesture.shapes[gesture.shapeId] : undefined;
         const changingIds = resizing ? [gesture.shapeId] : Object.keys(gesture.shapes);
-        const rotation = resizing ? (original?.rotation ?? 0) : gesture.frame.rotation;
+        const rotation =
+            (resizing ? (original?.rotation ?? 0) : gesture.frame.rotation) +
+            (gesture.screenView?.component?.rotation ?? 0);
         const upright = rotation % 90 === 0;
         const startBox =
             gesture.kind !== 'resizing'
@@ -648,13 +652,15 @@ export const movePointer = (
         // Its group and layer are shown, so each shape's own flag says whether it is drawn.
         // A View draws its artwork shifted by the View's offset, as no layout moves it.
         const document = untracked(state.currentDocument);
-        const box = placedBox(
-            drawnExtent(
-                document,
-                changingIds.filter((id) => document.shapes[id]?.visible)
-            ) ?? undefined,
-            gesture.screenView
-        );
+        const box = gesture.screenView?.component
+            ? drawnExtent(pointerDocument(state), changingIds)
+            : placedBox(
+                  drawnExtent(
+                      document,
+                      changingIds.filter((id) => document.shapes[id]?.visible)
+                  ) ?? undefined,
+                  gesture.screenView
+              );
         const lines = box ? linesOnEdges(snapped.lines, box) : { x: null, y: null };
 
         if (gesture.snapLines.x !== lines.x || gesture.snapLines.y !== lines.y) {

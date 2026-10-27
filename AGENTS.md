@@ -495,14 +495,18 @@ and free of source/viewport layout offsets. Changed membership or layout cancels
 Instances keep rotation-only handles. Tests: screenViewHandles, screenViewOverlays,
 screenViewContainerHandles and their browser counterparts.
 Focused component children stay in the chosen Screen view. Source-only masters opened through
-a free, unrotated instance project at that instance's placement; `componentEditingReturn`
-keeps a local pinned source origin and restores the original view, selection and camera.
-Master children remain unparented, and new children join the definition. Rotated, stack-managed,
-unplaced or over-budget instance contexts use the standalone source editor. Context expansion
+an instance project at that instance's placed position and rotation, including stack placement.
+`componentEditingReturn` keeps a local pinned source origin and size and restores the original
+view, selection and camera. Master children remain unparented, and new children join the definition.
+Unplaced or over-budget instance contexts use the standalone source editor. Context expansion
 still counts against the shared 5,000-node projection cap. Pointer snapshots capture the local
-component offset; transforms, snapping and two-phase text use it without writing projected
-geometry into source records. Explorer child selection retains focus. Tests:
-screenViewComponentEditing and its browser counterpart.
+component transform; `componentViewTransform.ts` maps points, screen-axis deltas and shapes
+between master and view coordinates. Drawing, handles, snapping, nudging, duplication, clipboard
+and alignment use the same transform. The focused instance's layout footprint is pinned locally
+until exit, so changing master bounds does not move the stack beneath a drag. External placement
+or rotation changes still cancel the gesture. No projected geometry is written into source
+records. Explorer child selection retains focus. Tests: screenViewComponentEditing,
+screenViewTransformedFocus and the component-editing browser tests.
 Clipboard shape transfers read the active view's projection and translate paste targets back to
 source coordinates. Without an active view they read the document, so Screen artwork picked in
 the Layers view still copies. Plain frames pasted through a view join its Screen. Refusals in an

@@ -6,6 +6,7 @@ import { screenOwners } from './screenViews';
 import { editableScreenView, placedScreenDocument } from './screenViewEditing';
 import { isReadOnly } from './documentAccess';
 import type { Context } from './index';
+import { componentSourceDelta } from './componentViewTransform';
 
 /** Where Align puts the items: on a side of their box, or on its center across or down. */
 export type AlignTo = Side | 'center' | 'middle';
@@ -16,6 +17,14 @@ export type Spacing = 'between' | 'centers';
 /** Aligning takes two items at least, and spacing three. */
 export const ALIGN_MINIMUM = 2;
 export const SPACE_MINIMUM = 3;
+
+/** Commands calculate in the displayed axes, then translate shared master geometry. */
+export function sourceOffsets(state: Context['state'], offsets: Point[]) {
+    const address = state.events.pointer.screenView;
+    const component = address ? editableScreenView(state, address)?.component : undefined;
+
+    return offsets.map((offset) => componentSourceDelta(offset, component));
+}
 
 /** Resolve boxes locally; only their translation deltas are written to shared source shapes. */
 export function placedItems(state: Context['state'], sourceItems: string[][]) {

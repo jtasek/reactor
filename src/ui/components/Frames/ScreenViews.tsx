@@ -18,6 +18,7 @@ import {
 } from 'src/app/hooks';
 import {
     canEditThroughView,
+    componentScreenViews,
     componentScreenView,
     projectComponentView
 } from 'src/app/screenViewEditing';
@@ -269,7 +270,7 @@ export const ScreenViews: FC<{ interactive?: boolean }> = ({ interactive = true 
         if (state.currentDocument.editingComponentId && !state.events.pointer.screenView) {
             return [];
         }
-        const views = projectScreenViews(state.currentDocument);
+        const views = componentScreenViews(state);
         const focused = componentScreenView(state, views) !== null;
 
         return state.currentDocument.editingComponentId && !focused
@@ -287,6 +288,7 @@ export const ScreenViews: FC<{ interactive?: boolean }> = ({ interactive = true 
                                     ...item,
                                     projection: {
                                         ...item.projection,
+                                        componentRotation: component.transform.rotation,
                                         shapes: [
                                             ...item.projection.shapes.filter(
                                                 (shape) =>

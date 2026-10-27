@@ -90,7 +90,10 @@ export function componentSource(
 }
 
 /** The instance's unrotated bounds at its independent position. */
-export function instanceBox(instance: InstanceShape, source: ComponentSource): Box {
+export function instanceBox(
+    instance: Pick<InstanceShape, 'position'>,
+    source: ComponentSource
+): Box {
     return rectToBox({
         x: instance.position.x,
         y: instance.position.y,

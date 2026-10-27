@@ -1,5 +1,6 @@
 import { json } from 'overmind';
 import { drawingScreen, pointerDocument } from './screenViewEditing';
+import { transformComponentShape } from './componentViewTransform';
 import { initializeStackOrder } from './stackEdits';
 import { frameLayout, renderedShape, hasLayoutOffset } from './frameLayout';
 import { frameState, lockedFrameForShapes } from './frameState';
@@ -63,7 +64,7 @@ import {
     shapeStyle
 } from './utils';
 import { hasComponentInstances, reachesComponent } from './actions/components';
-import { componentSource } from './componentSource';
+import { componentSource, instanceBox } from './componentSource';
 import { detachedMembers } from './componentDetach';
 
 const getShape = ({ currentDocument }: Application, shapeId: string) => {
@@ -130,7 +131,21 @@ export const drawShape: ActionWithParam<ShapeInput> = ({ state, actions }, optio
 
     if (placed) {
         const drawing = json(options);
-        translateShape(drawing, placed.offset);
+        const source =
+            drawing.type === 'instance' && placed.component
+                ? componentSource(document, drawing.componentId)
+                : null;
+
+        if (drawing.type === 'instance' && source) {
+            drawing.bounds = instanceBox(drawing, source);
+        }
+
+        if (placed.component) {
+            transformComponentShape(drawing, placed.component, true);
+        } else {
+            translateShape(drawing, placed.offset);
+        }
+
         options = { ...drawing, parentFrameId: placed.componentId ? undefined : placed.screen.id };
     }
 

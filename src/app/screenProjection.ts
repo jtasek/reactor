@@ -17,6 +17,8 @@ export interface ScreenProjection {
     problems: string[];
     /** Shapes managed or offset by this viewport's layout, including hidden members. */
     layoutOffsets: Set<string>;
+    /** Local focus composes this rotation with container frames, never durable data. */
+    componentRotation?: number;
     exceedsNodeLimit?: boolean;
 }
 

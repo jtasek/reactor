@@ -582,7 +582,7 @@ export type Application = {
         camera: Camera;
         screenView?: ScreenViewAddress | null;
         selectedComponentId?: string;
-        componentOrigin?: { componentId: string; instanceId: string; position: Point };
+        componentOrigin?: { componentId: string; instanceId: string; position: Point; size: Size };
     } | null;
     resetDocumentId: string | null;
     /** The document a person is asking AI to change, while its chat is open. */

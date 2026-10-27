@@ -51,7 +51,7 @@ export function getDistance(p1: Point, p2: Point): number {
     return Math.hypot(Math.abs(p2.x - p1.x), Math.abs(p2.y - p1.y));
 }
 
-export function getRectBoundingBox(rectangle: Rectangle | Image): Box {
+export function getRectBoundingBox(rectangle: Pick<Rectangle | Image, 'position' | 'size'>): Box {
     const topLeft = { ...rectangle.position };
     const bottomRight = {
         x: rectangle.position.x + rectangle.size.width,
@@ -66,7 +66,7 @@ export function getRectBoundingBox(rectangle: Rectangle | Image): Box {
     };
 }
 
-export function getCircleBoundingBox(circle: Circle): Box {
+export function getCircleBoundingBox(circle: Pick<Circle, 'position' | 'radius'>): Box {
     const topLeft = {
         x: circle.position.x - circle.radius,
         y: circle.position.y - circle.radius
@@ -85,7 +85,7 @@ export function getCircleBoundingBox(circle: Circle): Box {
     };
 }
 
-export function getEllipseBoundingBox(ellipse: Ellipse): Box {
+export function getEllipseBoundingBox(ellipse: Pick<Ellipse, 'position' | 'radius'>): Box {
     const topLeft = {
         x: ellipse.position.x - ellipse.radius.x,
         y: ellipse.position.y - ellipse.radius.y
@@ -105,7 +105,7 @@ export function getEllipseBoundingBox(ellipse: Ellipse): Box {
     };
 }
 
-export function getLineBoundingBox(line: Line): Box {
+export function getLineBoundingBox(line: Pick<Line, 'start' | 'end'>): Box {
     const topLeft = {
         x: Math.min(line.start.x, line.end.x),
         y: Math.min(line.start.y, line.end.y)
@@ -120,7 +120,7 @@ export function getLineBoundingBox(line: Line): Box {
     return { topLeft, bottomRight, height, width };
 }
 
-export function getPathBoundingBox({ points }: Pen) {
+export function getPathBoundingBox({ points }: Pick<Pen, 'points'>) {
     if (points.length === 0) {
         return {
             topLeft: { x: 0, y: 0 },
@@ -162,7 +162,7 @@ export const DEFAULT_TEXT_FONT_SIZE = 24; // matches .shape font-size: 1.5rem
 const TEXT_CHAR_WIDTH_RATIO = 0.6;
 const TEXT_ASCENT_RATIO = 0.8;
 
-export function getTextBoundingBox(text: Text): Box {
+export function getTextBoundingBox(text: Pick<Text, 'position' | 'value' | 'fontSize'>): Box {
     const value = text.value;
     const fontSize = text.fontSize ?? DEFAULT_TEXT_FONT_SIZE;
 
@@ -187,7 +187,7 @@ export function getTextBoundingBox(text: Text): Box {
     };
 }
 
-export function getBoundingBox(shape: Shape): Box {
+export function getBoundingBox(shape: ShapeInput): Box {
     switch (shape.type) {
         case 'line':
             return getLineBoundingBox(shape);
@@ -214,7 +214,7 @@ export function getBoundingBox(shape: Shape): Box {
  * (see getBBox measurement in the Shape component), falling back to the analytic
  * box for shapes that have not been measured yet.
  */
-export function getShapeBounds(shape: Shape): Box {
+export function getShapeBounds(shape: ShapeInput): Box {
     return shape.bounds ?? getBoundingBox(shape);
 }
 

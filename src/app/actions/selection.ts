@@ -102,9 +102,12 @@ export const alignSelection: ActionWithParam<AlignTo> = ({ state }, to) => {
         moveItems(
             currentDocument,
             items,
-            alignment().alignOffsets(
-                items.map(({ box }) => box),
-                to
+            alignment().sourceOffsets(
+                state,
+                alignment().alignOffsets(
+                    items.map(({ box }) => box),
+                    to
+                )
             )
         );
     }
@@ -122,10 +125,13 @@ export const spaceSelection: ActionWithParam<{ axis: Orientation; spacing: Spaci
         moveItems(
             currentDocument,
             items,
-            alignment().spaceOffsets(
-                items.map(({ box }) => box),
-                axis,
-                spacing
+            alignment().sourceOffsets(
+                state,
+                alignment().spaceOffsets(
+                    items.map(({ box }) => box),
+                    axis,
+                    spacing
+                )
             )
         );
     }
