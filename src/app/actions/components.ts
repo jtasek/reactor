@@ -1,4 +1,5 @@
 import { editorHelpers } from '../editorHelpers';
+import { variableDefinition } from '../variableResolver';
 import { Action, ActionWithParam, Application, Component, Point, PropertyValue } from '../types';
 import { createComponent, createShape, instanceName } from '../factories';
 import { componentSource } from '../componentSource';
@@ -355,6 +356,11 @@ export const bindInstanceOverride: ActionWithParam<{
     const variable = state.currentDocument.variables[variableId];
 
     if (!variable || state.currentDocument.locked) {
+        return;
+    }
+    const definition = variableDefinition(variable, state.currentDocument.variables);
+
+    if (definition.type === 'number' && definition.dimensionId !== undefined) {
         return;
     }
     instanceIds.forEach((id) => {

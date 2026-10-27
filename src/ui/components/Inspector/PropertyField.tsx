@@ -17,6 +17,7 @@ interface Props {
     onChange: (shapeIds: string[], key: string, value: PropertyValue) => void;
     /** The variables of the property's kind, which it may use. */
     variables: Variable[];
+    unavailableVariables?: string[];
     /** The variable every shape follows for the property. */
     variable?: Variable;
     /** What the value cannot show, under the field. */
@@ -42,6 +43,7 @@ export const PropertyField: FC<Props> = ({
     shapeIds,
     onChange,
     variables,
+    unavailableVariables = [],
     variable,
     note,
     onBind,
@@ -163,8 +165,15 @@ export const PropertyField: FC<Props> = ({
                             ◇
                         </option>
                         {variables.map((item) => (
-                            <option key={item.id} value={item.id}>
+                            <option
+                                key={item.id}
+                                value={item.id}
+                                disabled={unavailableVariables.includes(item.id)}
+                            >
                                 {item.name}
+                                {unavailableVariables.includes(item.id)
+                                    ? ' — modes unavailable for this property'
+                                    : ''}
                             </option>
                         ))}
                     </select>

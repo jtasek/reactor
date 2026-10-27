@@ -26,7 +26,7 @@ export interface AddVariable {
     darkValue?: string;
     dimensionId?: string;
     dimension?: VariableDimension;
-    modeValues?: Record<string, string>;
+    modeValues?: Record<string, string | number>;
     alias?: string;
 }
 
@@ -63,7 +63,7 @@ export interface UpdateVariable {
     /** Legacy input. */
     darkValue?: string | null;
     dimensionId?: string | null;
-    modeValues?: Record<string, string | null>;
+    modeValues?: Record<string, string | number | null>;
     /** A source reference, or null to keep the resolved value as a literal. */
     alias?: string | null;
 }
@@ -128,7 +128,14 @@ export interface UpdateFrame {
     changes: Partial<
         Pick<
             Frame,
-            'kind' | 'name' | 'position' | 'size' | 'layoutOrder' | 'sizing' | 'modeOverrides'
+            | 'kind'
+            | 'name'
+            | 'position'
+            | 'size'
+            | 'layoutOrder'
+            | 'sizing'
+            | 'modeOverrides'
+            | 'bindings'
         >
     > & {
         parentFrameId?: string | null;

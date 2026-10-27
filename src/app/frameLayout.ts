@@ -8,6 +8,7 @@ import { componentSource, instanceBox } from './componentSource';
 
 const ZERO: Point = { x: 0, y: 0 };
 export interface FrameLayout {
+    modeProblems?: Record<string, string>;
     shapes: Record<string, Point>;
     frames: Record<string, Point>;
     managedShapes: Set<string>;
@@ -38,7 +39,12 @@ interface Item {
 }
 
 /** Authored fallback geometry with local size and position projections only. */
-export function projectFrameLayout(document: Document): FrameLayout {
+export function projectFrameLayout(
+    document: Pick<
+        Document,
+        'frames' | 'shapes' | 'groups' | 'layers' | 'components' | 'variables' | 'shapesIds'
+    >
+): FrameLayout {
     const result: FrameLayout = {
         shapes: {},
         frames: {},
@@ -343,9 +349,7 @@ export function renderedFrame(
 }
 
 /** A read-only view for thumbnails and export; never use this for mutations. */
-export function layoutDocument(document: Document): Document {
-    const layout = frameLayout(document);
-
+export function layoutDocument(document: Document, layout = frameLayout(document)): Document {
     return {
         ...document,
         shapes: Object.fromEntries(
@@ -392,6 +396,8 @@ export function frameSizedByLayout(document: Document, id: string) {
     return Boolean(
         frame &&
         (Object.values(frame.sizing ?? {}).some((rule) => rule.mode !== 'fixed') ||
+            frame.bindings?.width ||
+            frame.bindings?.height ||
             (size && (size.width !== frame.size.width || size.height !== frame.size.height)))
     );
 }

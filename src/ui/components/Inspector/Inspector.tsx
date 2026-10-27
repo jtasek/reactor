@@ -11,7 +11,8 @@ import { InstanceProps } from './InstanceProps';
 import { ComponentDetails, SourceChildBreadcrumb } from './ComponentDetails';
 import { InspectorHeader } from './InspectorHeader';
 import { useComponentExposure, useSelectedComponentContext } from 'src/app/componentHooks';
-import { useActions } from 'src/app/hooks';
+import { useActions, useCurrentDocument } from 'src/app/hooks';
+import { canBind } from 'src/app/variables';
 import type { SelectionIdentity } from '../selectionIdentity';
 import { groupRows, type PropertyRow, type PropertyValue } from 'src/app/properties';
 import type { Variable } from 'src/app/types';
@@ -46,6 +47,7 @@ export const Inspector: FC<Props> = ({
     onUnbind
 }) => {
     const componentContext = useSelectedComponentContext();
+    const document = useCurrentDocument();
     const exposure = useComponentExposure(
         componentContext?.kind === 'child' ? componentContext.componentId : null,
         componentContext?.kind === 'child' ? componentContext.shapeId : null
@@ -58,6 +60,17 @@ export const Inspector: FC<Props> = ({
             shapeIds={shapeIds}
             onChange={onChange}
             variables={variables.filter((variable) => variable.type === row.property.kind)}
+            unavailableVariables={variables
+                .filter(
+                    (variable) =>
+                        variable.type === row.property.kind &&
+                        !shapeIds.every(
+                            (id) =>
+                                document.shapes[id] &&
+                                canBind(row.property, document.shapes[id], document, variable)
+                        )
+                )
+                .map((variable) => variable.id)}
             variable={bound[row.property.key]}
             note={notes[row.property.key]}
             onBind={onBind}

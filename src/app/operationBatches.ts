@@ -1,4 +1,11 @@
 import { initialScreenView } from './screenViewMigration';
+import {
+    acceptsFrameNumber,
+    FRAME_NUMBER_KEYS,
+    frameNumber,
+    writeFrameNumber,
+    updateFrameVariables
+} from './frameVariables';
 import { isScreenDefinition } from './screenViews';
 import { frameLayout, hasLayoutOffset } from './frameLayout';
 import {
@@ -322,7 +329,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                 before.defaultModeId !== dimension.defaultModeId &&
                 Object.values(variables).some(
                     (variable) =>
-                        variable.type === 'color' &&
+                        (variable.type === 'color' || variable.type === 'number') &&
                         variable.dimensionId === dimension.id &&
                         !operations.some(
                             (op) => op.op === 'updateVariable' && op.variable === variable.id
@@ -356,6 +363,47 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         if (modes.some((key) => !dimension.modes[key])) throw new Error('Unknown mode.');
         if (modes.includes(dimension.defaultModeId))
             throw new Error('The default mode uses the base value.');
+    };
+
+    const linkFrameBindings = (frame: Frame, index: number, previous?: Frame) => {
+        const bindings = Object.fromEntries(
+            Object.entries(frame.bindings ?? {}).map(([key, ref]) => [
+                key,
+                previous?.bindings?.[key] === ref && !variables[ref]
+                    ? ref
+                    : reference(ref, 'variables', index)
+            ])
+        );
+        frame.bindings = bindings;
+
+        FRAME_NUMBER_KEYS.forEach((key) => {
+            const id = bindings[key];
+
+            if (!id) {
+                return;
+            }
+
+            const variable = variables[id];
+            const value = variable && resolveVariable(variable, variables);
+
+            if (
+                variable?.type === 'number' &&
+                typeof value === 'number' &&
+                acceptsFrameNumber(frame, key, value)
+            ) {
+                writeFrameNumber(frame, key, value);
+
+                return;
+            }
+
+            if (previous?.bindings?.[key] === id) {
+                return;
+            }
+
+            throw new Error(
+                `A ${key} binding needs a compatible number variable and fixed sizing.`
+            );
+        });
     };
 
     /** Writes into `shape` the variables it follows and its template, and resolves its references. */
@@ -422,10 +470,12 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             throw new Error('it changes nothing.');
         }
         if (
-            (darkValue !== undefined || dimensionId !== undefined || modeValues !== undefined) &&
-            current.type !== 'color'
+            (darkValue !== undefined && current.type !== 'color') ||
+            ((dimensionId !== undefined || modeValues !== undefined) &&
+                current.type !== 'color' &&
+                current.type !== 'number')
         ) {
-            throw new Error('Only colors can vary by Theme.');
+            throw new Error('Only colors and numbers can vary by a dimension.');
         }
         const resolved = resolveVariable(current, variables);
         // A value of either theme set without a source stops following, as alias null does.
@@ -451,7 +501,9 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             dimensionId === null
                 ? undefined
                 : (dimensionId ??
-                  (definition.type === 'color' ? definition.dimensionId : undefined) ??
+                  (definition.type === 'color' || definition.type === 'number'
+                      ? definition.dimensionId
+                      : undefined) ??
                   (darkValue !== undefined ? 'theme' : undefined));
         if (darkValue !== undefined && !dimensions.theme) addDimension(legacyTheme());
         const values = {
@@ -847,6 +899,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                         ...operation.frame,
                         id: ids.get(operation.key)
                     });
+                    linkFrameBindings(frame, index);
                     if (frame.parentFrameId !== undefined) {
                         frame.parentFrameId = frameReference(frame.parentFrameId, index);
                     }
@@ -866,6 +919,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                         'layoutOrder',
                         'sizing',
                         'modeOverrides',
+                        'bindings',
                         'stack'
                     ]);
                     if (Object.keys(operation.changes).some((key) => !allowed.has(key))) {
@@ -878,6 +932,21 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                         ...(parent === null ? { parentFrameId: undefined } : {}),
                         ...(operation.changes.stack === null ? { stack: undefined } : {})
                     });
+                    const previous = document.frames[operation.frame];
+
+                    if (operation.changes.bindings !== undefined) {
+                        linkFrameBindings(frame, index, previous);
+                    } else {
+                        FRAME_NUMBER_KEYS.forEach((key) => {
+                            if (
+                                frameNumber(previous, key) !== frameNumber(frame, key) ||
+                                !acceptsFrameNumber(frame, key, frameNumber(frame, key) ?? NaN)
+                            ) {
+                                delete frame.bindings![key];
+                            }
+                        });
+                        updateFrameVariables({ [frame.id]: frame }, variables, document.variables);
+                    }
                     if (parent !== undefined && parent !== null) {
                         frame.parentFrameId = frameReference(parent, index);
                     }

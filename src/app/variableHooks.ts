@@ -60,6 +60,17 @@ export const useVariableUses = () => {
                 (variableId) => variableId !== variable.id && countVariableUse(variableId)
             );
         });
+        Object.values(document.frames).forEach((frame) => {
+            Object.values(frame.bindings ?? {}).forEach((id) => {
+                countVariableUse(id);
+
+                if (variables[id]) {
+                    variableDependencies(variables[id], variables, new Set([id])).forEach(
+                        (dependency) => dependency !== id && countVariableUse(dependency)
+                    );
+                }
+            });
+        });
 
         return uses;
     });

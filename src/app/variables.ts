@@ -1,4 +1,5 @@
 import { json } from 'overmind';
+import { updateFrameVariables, supportsNumberModes } from './frameVariables';
 import type { Document, Point, Shape, Text, Variable, VariableType } from './types';
 import { isHexColor } from './utils';
 import {
@@ -71,7 +72,10 @@ export const canBind = (
     shape: Shape,
     document: Document,
     variable: Variable
-): boolean => property.kind === variable.type && property.read(shape, document) !== undefined;
+): boolean =>
+    property.kind === variable.type &&
+    property.read(shape, document) !== undefined &&
+    supportsNumberModes(document, shape, property.key, variable);
 
 /** Numbers are compared to a thousandth, so the noise of measuring a shape ends no binding. */
 const COMPARED_PRECISION = 1000;
@@ -96,7 +100,15 @@ export function accepts(property: ShapeProperty, value: PropertyValue): boolean 
 
 /** Whether writing `value` to `property` would leave `shape` as it is. */
 export function bindingHolds(property: ShapeProperty, shape: Shape, value: PropertyValue): boolean {
-    const own = json(shape);
+    const own = { ...json(shape) };
+
+    if (
+        (property.key === 'width' || property.key === 'height') &&
+        (shape.type === 'rectangle' || shape.type === 'image')
+    ) {
+        delete own.bounds;
+    }
+
     const written = structuredClone(own);
 
     applyProperty(property, written, value);
@@ -157,10 +169,11 @@ export function unbindMovedProperties(shape: Shape, delta: Point) {
  * deleted variable; one whose value the property refused is kept.
  */
 export function applyVariableChanges(
-    document: Pick<Document, 'variables' | 'shapes'>,
+    document: Pick<Document, 'variables' | 'shapes'> & Partial<Pick<Document, 'frames'>>,
     before: Record<string, Variable>
 ) {
     const { variables } = document;
+    updateFrameVariables(document.frames ?? {}, variables, before);
 
     Object.values(document.shapes).forEach((shape) => {
         Object.entries(shape.bindings ?? {}).forEach(([key, variableId]) => {
@@ -335,6 +348,13 @@ export function removeVariable(
                 other.values = { ...definition.values };
                 if (definition.dimensionId !== undefined)
                     other.dimensionId = definition.dimensionId;
+            }
+            if (other.type === 'number' && definition.type === 'number') {
+                other.values = { ...definition.values };
+
+                if (definition.dimensionId !== undefined) {
+                    other.dimensionId = definition.dimensionId;
+                }
             }
             delete other.alias;
         }

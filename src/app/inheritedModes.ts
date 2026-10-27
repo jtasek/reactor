@@ -10,6 +10,7 @@ export interface ModeAddress {
     /** Outer instances precede inner instances; source-frame ancestry is not inherited. */
     instances?: readonly InstanceShape[];
     session?: VariableContext;
+    sessionScreenId?: string;
 }
 
 function modeChoice(
@@ -38,7 +39,7 @@ function modeChoice(
     return modeId;
 }
 
-/** Pure color-context resolution. Never repair missing authored references while reading. */
+/** Pure mode-context resolution. Never repair missing authored references while reading. */
 export function resolveModes(document: Document, address: ModeAddress = {}) {
     const modes: Record<string, string> = {};
     const sources: Record<string, string> = {};
@@ -80,7 +81,9 @@ export function resolveModes(document: Document, address: ModeAddress = {}) {
     apply(address.simulation, 'Local simulation');
     apply(screen?.modeOverrides, `Screen ${screen?.name}`);
     apply(view?.modeOverrides, view ? `View ${screenViewName(document, view)}` : 'View');
-    apply(address.session, 'Prototype session');
+    if (!address.sessionScreenId || address.sessionScreenId === screenId) {
+        apply(address.session, 'Prototype session');
+    }
     frames
         .filter((id) => id !== screenId && id !== view?.id)
         .forEach((id) => {

@@ -46,12 +46,16 @@ export function migrateDocument(
         (entity): entity is Yjs.Map<unknown> =>
             entity instanceof yjs.Map && !entity.has('modeOverrides')
     );
+    const frameBindings = [...binding.tables.frames.values()].filter(
+        (entity): entity is Yjs.Map<unknown> => entity instanceof yjs.Map && !entity.has('bindings')
+    );
 
     if (
         legacy.length === 0 &&
         legacyFrames.length === 0 &&
         !legacyScreens &&
-        modeEntities.length === 0
+        modeEntities.length === 0 &&
+        frameBindings.length === 0
     ) {
         return false;
     }
@@ -75,6 +79,7 @@ export function migrateDocument(
     const parents = frameParents(frames);
 
     binding.doc.transact(() => {
+        frameBindings.forEach((entity) => entity.set('bindings', new yjs.Map()));
         modeEntities.forEach((entity) => entity.set('modeOverrides', new yjs.Map()));
         legacy.forEach((entity) => entity.set('dimensionId', 'theme'));
         if (legacy.length > 0 && !binding.tables.dimensions.has('theme')) {

@@ -29,6 +29,7 @@ import { CLONE_OFFSET, translateShape } from './geometry';
 import { frameContents, frameParents, validFrameParent, frameMoveProblem } from './frameMembership';
 import { editorHelpers } from './editorHelpers';
 import { untracked } from './untracked';
+import { FRAME_NUMBER_KEYS, frameNumber, writeFrameNumber } from './frameVariables';
 
 export type FrameEdit =
     | { kind: 'add'; position: Point; size: Frame['size'] }
@@ -90,6 +91,7 @@ function addFrame(context: Context, input: Extract<FrameEdit, { kind: 'add' | 'p
             ...(source?.sizing ? { sizing: source.sizing } : {}),
             ...(source?.stack ? { stack: source.stack } : {}),
             ...(source?.modeOverrides ? { modeOverrides: source.modeOverrides } : {}),
+            bindings: source?.bindings ?? {},
             locked: false,
             visible: true
         })
@@ -192,6 +194,22 @@ function framePasteOperations(
         };
     });
     const artwork = structuredClone(copied.artwork);
+    const clipboard = editorHelpers().clipboard;
+    const references = clipboard.pasteVariables(
+        artwork.variables,
+        document,
+        artwork.dimensions
+    ).references;
+    const remapBindings = <T extends Pick<Frame, 'bindings'>>(frame: T) => ({
+        ...frame,
+        bindings: Object.fromEntries(
+            Object.entries(frame.bindings ?? {}).flatMap(([key, id]) => {
+                const reference = references.get(id) ?? (document.variables[id] ? id : undefined);
+
+                return reference ? [[key, reference]] : [];
+            })
+        )
+    });
     artwork.shapes.forEach((shape) => {
         shape.parentFrameId = keys.get(shape.parentFrameId!);
     });
@@ -200,12 +218,18 @@ function framePasteOperations(
     const withModes = <T extends Pick<Frame, 'modeOverrides'>>(item: T): T =>
         item.modeOverrides ? { ...item, modeOverrides: remapModes(item.modeOverrides) } : item;
 
+    const operations = clipboard.pasteOperations(artwork, document, null, delta);
+    const variableOperation = (operation: import('./operations').Operation) =>
+        operation.op === 'addVariable' || operation.op === 'setDimension';
+
     return [
-        { op: 'addFrame', key: 'frame', frame: withModes(frame) },
-        ...children.map((child) => ({ ...child, frame: withModes(child.frame) })),
-        ...(artwork.shapes.length > 0 || Object.keys(artwork.dimensions ?? {}).length > 0
-            ? editorHelpers().clipboard.pasteOperations(artwork, document, null, delta)
-            : [])
+        ...operations.filter(variableOperation),
+        { op: 'addFrame', key: 'frame', frame: withModes(remapBindings(frame)) },
+        ...children.map((operation) => ({
+            ...operation,
+            frame: withModes(remapBindings(operation.frame))
+        })),
+        ...operations.filter((operation) => !variableOperation(operation))
     ];
 }
 
@@ -570,6 +594,7 @@ export interface CopiedFrame {
 }
 
 export function writeClipboard(frame: Frame, document?: Context['state']['currentDocument']) {
+    const authored = document;
     if (document) {
         document = layoutDocument(document);
         frame = document.frames[frame.id];
@@ -581,17 +606,46 @@ export function writeClipboard(frame: Frame, document?: Context['state']['curren
     const shapes = document
         ? document.shapesIds
               .filter((id) => contents.shapes.includes(id))
-              .map((id) => document.shapes[id])
+              .map((id) => {
+                  const shape = document.shapes[id];
+                  const source = authored?.shapes[id];
+
+                  if (shape.type !== 'rectangle' || source?.type !== 'rectangle') {
+                      return shape;
+                  }
+
+                  const copy = { ...shape, size: { ...shape.size } };
+                  (['width', 'height'] as const).forEach((key) => {
+                      if (source.bindings?.[key]) {
+                          copy.size[key] = source.size[key];
+                          delete copy.bounds;
+                      }
+                  });
+
+                  return copy;
+              })
         : [];
-    const root = { ...readEntity('frames', frame) };
+    const baseInputs = (frame: Frame) => {
+        const copy = readEntity('frames', frame);
+        const source = authored?.frames[frame.id];
+
+        if (source) {
+            FRAME_NUMBER_KEYS.forEach((key) => {
+                if (source.bindings?.[key]) {
+                    writeFrameNumber(copy, key, frameNumber(source, key)!);
+                }
+            });
+        }
+
+        return copy;
+    };
+    const root = baseInputs(frame);
     delete root.parentFrameId;
 
     return JSON.stringify({
         format: FORMAT,
         frame: root,
-        children: document
-            ? contents.frames.map((id) => readEntity('frames', document.frames[id]))
-            : [],
+        children: document ? contents.frames.map((id) => baseInputs(document.frames[id])) : [],
         artwork: document
             ? editorHelpers().clipboard.writeClipboard(
                   shapes,
@@ -600,6 +654,9 @@ export function writeClipboard(frame: Frame, document?: Context['state']['curren
                   document,
                   [frame, ...contents.frames.map((id) => document.frames[id])].map(
                       (item) => item.modeOverrides ?? {}
+                  ),
+                  [frame, ...contents.frames.map((id) => document.frames[id])].flatMap((item) =>
+                      Object.values(item.bindings ?? {})
                   )
               )
             : undefined,

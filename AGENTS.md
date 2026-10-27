@@ -682,8 +682,20 @@ Detaching bakes authored colors into independent primitives and passes the detac
 explicit mode choices to surviving nested instances, preserving their nearer overrides.
 While a component is focused in a view, only its members draw through the host instance's
 modes (`artworkModes`).
-Coverage: inheritedModes unit/browser tests; R4.4 remains responsible for geometry-aware values.
-Geometry and templates stay at base until context-aware measurement is implemented.
+Schema v16 adds number mode values and `Frame.bindings` for width/height/gap/padding. Base
+definition edits use `updateFrameVariables`; explicit numeric frame edits detach their binding.
+Screen views and Preview call the lazy `projectContextualLayout` before stack layout, keeping
+resolved geometry local. Fixed rectangle sizes in stacks and frame numeric inputs are supported;
+component-source geometry, other numeric bindings and standalone Canvas geometry stay at base.
+Inspector disables incompatible new mode bindings and describes the supported scope. Frame
+copying keeps base binding inputs while retaining projected placement, transfers dependencies,
+and remaps references before frame operations. Marquee projection caching is bypassed for numeric
+layout documents so changed inputs cannot leave stale hit bounds. Preview launch snapshots the
+view's viewport as well as its modes. The shared size/cycle evaluator remains authoritative.
+Text/boolean modes stay gated; contextual typography/templates/component measurement are R4.4b.
+The contextual layout module loads with screen/thumbnail/Preview features, outside startup.
+Coverage: inheritedModes and contextualLayout unit/browser tests.
+Unsupported geometry and templates stay at base until context-aware measurement is implemented.
 Definitions use the ordinary shared entity/undo path. Keep all values and dimension IDs
 through serialization, clipboard, operations and alias detachment. Legacy Light/Dark data
 migrates into an editable Theme dimension, never into a dimension for otherwise plain documents,

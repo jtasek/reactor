@@ -96,7 +96,7 @@ type VariableOf<T extends VariableType, V> = {
     id: string;
     name: string;
     type: T;
-    /** Base value; colors may also supply overrides keyed by mode ID. */
+    /** Base value; colors and numbers may also supply overrides keyed by mode ID. */
     values: { default: V };
     /** Same-type source by ID; default is retained as the fallback while following it. */
     alias?: string;
@@ -108,7 +108,10 @@ export type Variable =
           dimensionId?: string;
           values: { default: string; [modeId: string]: string };
       })
-    | VariableOf<'number', number>
+    | (VariableOf<'number', number> & {
+          dimensionId?: string;
+          values: { default: number; [modeId: string]: number };
+      })
     | VariableOf<'text', string>
     | VariableOf<'boolean', boolean>;
 
@@ -323,6 +326,8 @@ export interface StackRules {
 }
 
 export interface Frame {
+    /** Numeric variable IDs for fixed dimensions and stack spacing. */
+    bindings?: Record<string, string>;
     /** Authored mode IDs by dimension; an absent entry inherits. */
     modeOverrides?: VariableContext;
     kind?: 'frame' | 'screen' | 'view';
@@ -593,7 +598,7 @@ export type Application = {
     aiEditDocumentId: string | null;
     previewDocumentId: string | null;
     /** Modes captured when Preview opens, independent of later canvas simulation changes. */
-    previewModeContext: { modes: VariableContext; screenId?: string } | null;
+    previewModeContext: { modes: VariableContext; screenId?: string; viewport?: Size } | null;
     devices: HashTable<Device>;
     documents: HashTable<Document>;
     documentsIds: string[];

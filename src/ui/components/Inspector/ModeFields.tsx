@@ -15,7 +15,7 @@ export const ModeFields: FC<{ target: ModeTarget }> = ({ target }) => {
     }
 
     return (
-        <PropertyGroup name="Color modes">
+        <PropertyGroup name="Modes">
             {dimensions.map((dimension) => (
                 <tr key={dimension.id}>
                     <th scope="row">

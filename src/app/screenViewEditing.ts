@@ -8,6 +8,7 @@ import type { Context } from './index';
 import type { Document, Frame, Point, Shape } from './types';
 import { frameParents, isFrameLocked, isFrameVisible } from './frameState';
 import { MAX_PROJECTED_NODES, projectScreenViews } from './screenProjection';
+import { hasNumericLayout } from './contextualLayout';
 import { untracked } from './untracked';
 import { json } from 'overmind';
 import { componentSource, instanceBox } from './componentSource';
@@ -29,19 +30,22 @@ export function componentScreenViews(state: Context['state']) {
         instance?.type !== 'instance' ||
         instance.componentId !== focus.componentId
     ) {
-        return projectScreenViews(document);
+        return projectScreenViews(document, state.previewModes[document.id]);
     }
 
-    return projectScreenViews({
-        ...document,
-        shapes: {
-            ...document.shapes,
-            [instance.id]: {
-                ...instance,
-                bounds: rectToBox({ ...instance.position, ...focus.size })
+    return projectScreenViews(
+        {
+            ...document,
+            shapes: {
+                ...document.shapes,
+                [instance.id]: {
+                    ...instance,
+                    bounds: rectToBox({ ...instance.position, ...focus.size })
+                }
             }
-        }
-    });
+        },
+        state.previewModes[document.id]
+    );
 }
 
 function screenViewSource(state: Context['state'], address: ScreenViewAddress | null) {
@@ -410,7 +414,9 @@ export function pointerDocument(state: Context['state']): Document {
     }
 
     const { gesture } = state.events.pointer;
-    const key = gesture.kind === 'marquee' ? untracked(gesture) : null;
+    // Numeric inputs can change mid-marquee; those views must not keep stale geometry.
+    const key =
+        gesture.kind === 'marquee' && !hasNumericLayout(document) ? untracked(gesture) : null;
     const cached = key ? marqueeDocuments.get(key) : undefined;
 
     if (cached) {

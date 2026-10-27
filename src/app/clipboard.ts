@@ -117,7 +117,8 @@ export function writeClipboard(
     groups: Group[] = [],
     variables: Record<string, Variable> = {},
     document?: Document,
-    frameModes: readonly VariableContext[] = []
+    frameModes: readonly VariableContext[] = [],
+    frameVariables: readonly string[] = []
 ): string {
     const components = new Map<string, Component>();
 
@@ -186,10 +187,12 @@ export function writeClipboard(
         }
     }
 
+    frameVariables.forEach(holdVariable);
     const copiedDimensions = [...held].flatMap((id) => {
         const variable = variables[id];
         const dimension =
-            variable?.type === 'color' && variable.dimensionId !== undefined
+            (variable?.type === 'color' || variable?.type === 'number') &&
+            variable.dimensionId !== undefined
                 ? document?.dimensions[variable.dimensionId]
                 : undefined;
         return dimension ? [dimension] : [];
@@ -339,7 +342,7 @@ export function readClipboard(text: string): Copied {
  * type is used, else the copied one is added, renamed as `Brand 2` when its name is
  * taken. Answers the operations adding them and each copied variable's reference.
  */
-function pasteVariables(
+export function pasteVariables(
     copied: Variable[],
     document: Document,
     dimensions: Document['dimensions'] = {}
@@ -368,7 +371,8 @@ function pasteVariables(
             name,
             type: variable.type,
             value: variable.values.default,
-            ...(variable.type === 'color' && variable.dimensionId !== undefined
+            ...((variable.type === 'color' || variable.type === 'number') &&
+            variable.dimensionId !== undefined
                 ? {
                       dimensionId: variable.dimensionId,
                       dimension: dimensions[variable.dimensionId],
@@ -434,7 +438,8 @@ export function pasteDimensions(
 ): { operations: Operation[]; remapModes: (modes: VariableContext) => VariableContext } {
     const withVariables = new Set(
         copied.variables.flatMap((variable) =>
-            variable.type === 'color' && variable.dimensionId !== undefined
+            (variable.type === 'color' || variable.type === 'number') &&
+            variable.dimensionId !== undefined
                 ? [variable.dimensionId]
                 : []
         )
@@ -494,11 +499,11 @@ export function pasteOperations(
 ): Operation[] {
     const { operations: dimensions, remapModes } = pasteDimensions(copied, document);
 
-    if (copied.shapes.length === 0) {
-        return dimensions;
-    }
-
     const variables = pasteVariables(copied.variables, document, copied.dimensions);
+
+    if (copied.shapes.length === 0) {
+        return [...dimensions, ...variables.operations];
+    }
     const remapShape = (shape: Shape | ShapeInput) => {
         if (shape.bindings) {
             shape.bindings = Object.fromEntries(

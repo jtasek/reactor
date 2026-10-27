@@ -64,5 +64,5 @@ export function previewModes(state: Context['state']) {
         screenId
     }).modes;
 
-    return { modes, ...(screenId ? { screenId } : {}) };
+    return { modes, ...(screenId ? { screenId } : {}), viewport: { ...view.size } };
 }

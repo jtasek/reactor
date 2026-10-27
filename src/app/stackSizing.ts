@@ -132,7 +132,7 @@ function evaluateNodes(nodes: Map<string, Node>, values: Map<string, number>) {
 }
 
 export function projectStackSizes(
-    document: Document,
+    document: Pick<Document, 'frames' | 'shapes'>,
     items: Map<string, SizingItem[]>,
     parents: Map<string, string | undefined>,
     freeStacks: Set<string>

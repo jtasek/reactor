@@ -8,6 +8,7 @@ import { SizingFields } from './SizingFields';
 import { FrameParent } from './FrameParent';
 import { PropertyGroup } from './PropertyGroup';
 import { ModeFields } from './ModeFields';
+import { FrameVariables } from './FrameVariables';
 import styles from './styles.css';
 import { MIN_FRAME_SIZE } from 'src/app/services/documentStorage';
 import { projectScreenViews } from 'src/app/screenProjection';
@@ -80,8 +81,10 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
             source: state.currentDocument.frames[state.currentDocument.frames[id]?.screenId ?? ''],
             viewProblem:
                 state.currentDocument.frames[id]?.kind === 'view'
-                    ? projectScreenViews(state.currentDocument).find((item) => item.view.id === id)
-                          ?.problem
+                    ? projectScreenViews(
+                          state.currentDocument,
+                          state.previewModes[state.currentDocumentId]
+                      ).find((item) => item.view.id === id)?.problem
                     : undefined,
             nested: Boolean(frameParents(state.currentDocument.frames).get(id)),
             busy: editedOnCanvas(state.events.pointer.gesture, id),
@@ -456,16 +459,17 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                             </tr>
                         </>
                     )}
-                    {layout.problems[id] && (
+                    {(layout.problems[id] || layout.modeProblems?.[id]) && (
                         <tr>
                             <td colSpan={2}>
                                 <small className={styles.frameHint} role="status">
-                                    {layout.problems[id]}
+                                    {layout.problems[id] ?? layout.modeProblems?.[id]}
                                 </small>
                             </td>
                         </tr>
                     )}
                 </PropertyGroup>
+                <FrameVariables id={id} />
             </table>
         </div>
     );
