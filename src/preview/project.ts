@@ -233,7 +233,8 @@ export function projectPreview(
                         simulation: context,
                         screenId: frame.id,
                         frameId: shape.parentFrameId,
-                        session: session?.modes
+                        // The launch snapshot belongs to its own Screen; others keep their choices.
+                        session: frame.id === session?.screenId ? session.modes : undefined
                     });
                     warnings.push(...resolved.problems);
 

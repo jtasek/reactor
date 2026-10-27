@@ -423,6 +423,63 @@ function pasteVariables(
 }
 
 /**
+ * How mode choices copied with shapes or frames land in `document`. A dimension the
+ * document has, by ID or else by name, is reused (its modes matched by ID, then name;
+ * an unmatched choice inherits). Copied variables bring their own dimensions, so only
+ * dimensions that mode choices alone use are added here.
+ */
+export function pasteDimensions(
+    copied: Pick<Copied, 'dimensions' | 'variables'>,
+    document: Document
+): { operations: Operation[]; remapModes: (modes: VariableContext) => VariableContext } {
+    const withVariables = new Set(
+        copied.variables.flatMap((variable) =>
+            variable.type === 'color' && variable.dimensionId !== undefined
+                ? [variable.dimensionId]
+                : []
+        )
+    );
+    const targets = new Map<string, Document['dimensions'][string]>();
+    const operations: Operation[] = [];
+
+    Object.values(copied.dimensions ?? {}).forEach((dimension) => {
+        if (document.dimensions[dimension.id] || withVariables.has(dimension.id)) {
+            return;
+        }
+
+        const same = Object.values(document.dimensions).find(
+            (existing) => existing.name === dimension.name
+        );
+
+        if (same) {
+            targets.set(dimension.id, same);
+        } else {
+            operations.push({ op: 'setDimension', dimension });
+        }
+    });
+
+    const remapModes = (modes: VariableContext): VariableContext =>
+        Object.fromEntries(
+            Object.entries(modes).flatMap(([dimensionId, modeId]) => {
+                const target = targets.get(dimensionId);
+
+                if (!target) {
+                    return [[dimensionId, modeId]];
+                }
+
+                const name = copied.dimensions?.[dimensionId]?.modes[modeId]?.name;
+                const mode = target.modes[modeId]
+                    ? modeId
+                    : Object.values(target.modes).find((item) => item.name === name)?.id;
+
+                return mode === undefined ? [] : [[target.id, mode]];
+            })
+        );
+
+    return { operations, remapModes };
+}
+
+/**
  * Operations that paste `copied` into `document`: its shapes above all others,
  * centered on `target`, or where they were copied without one. Where the first
  * has a shape drawn exactly like it, as when pasting twice, they are offset like
@@ -435,9 +492,7 @@ export function pasteOperations(
     target: Point | null,
     translation?: Point
 ): Operation[] {
-    const dimensions: Operation[] = Object.values(copied.dimensions ?? {})
-        .filter((dimension) => !document.dimensions[dimension.id])
-        .map((dimension) => ({ op: 'setDimension', dimension }));
+    const { operations: dimensions, remapModes } = pasteDimensions(copied, document);
 
     if (copied.shapes.length === 0) {
         return dimensions;
@@ -459,6 +514,9 @@ export function pasteOperations(
         }
         if (shape.type !== 'instance') {
             return;
+        }
+        if (shape.modeOverrides) {
+            shape.modeOverrides = remapModes(shape.modeOverrides);
         }
         const component =
             document.components[shape.componentId] ??

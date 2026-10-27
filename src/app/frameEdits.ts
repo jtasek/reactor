@@ -195,10 +195,14 @@ function framePasteOperations(
     artwork.shapes.forEach((shape) => {
         shape.parentFrameId = keys.get(shape.parentFrameId!);
     });
+    // Frames' mode choices land on the target's dimensions, like the artwork's.
+    const { remapModes } = editorHelpers().clipboard.pasteDimensions(artwork, document);
+    const withModes = <T extends Pick<Frame, 'modeOverrides'>>(item: T): T =>
+        item.modeOverrides ? { ...item, modeOverrides: remapModes(item.modeOverrides) } : item;
 
     return [
-        { op: 'addFrame', key: 'frame', frame },
-        ...children,
+        { op: 'addFrame', key: 'frame', frame: withModes(frame) },
+        ...children.map((child) => ({ ...child, frame: withModes(child.frame) })),
         ...(artwork.shapes.length > 0 || Object.keys(artwork.dimensions ?? {}).length > 0
             ? editorHelpers().clipboard.pasteOperations(artwork, document, null, delta)
             : [])

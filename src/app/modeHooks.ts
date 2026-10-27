@@ -8,13 +8,19 @@ import { isReadOnly } from './documentAccess';
 import { isShapeLocked } from './utils';
 import { isFrameLocked } from './frameState';
 
-function artworkModes(state: Context['state'], shape: Shape, viewId?: string) {
+/** Modes for artwork drawn in `viewId`; a focused component's members go through its instance. */
+export function artworkModes(state: Context['state'], shape: Shape, viewId?: string) {
     const document = state.currentDocument;
     const focus =
-        viewId && document.editingComponentId
-            ? state.componentEditingReturn?.componentOrigin
+        viewId && state.componentEditingReturn?.documentId === document.id
+            ? state.componentEditingReturn.componentOrigin
             : undefined;
-    const host = focus ? document.shapes[focus.instanceId] : undefined;
+    // Only the focused component's own artwork is drawn through its instance.
+    const member =
+        focus !== undefined &&
+        document.editingComponentId === focus.componentId &&
+        Boolean(document.components[focus.componentId]?.shapesIds.includes(shape.id));
+    const host = member ? document.shapes[focus.instanceId] : undefined;
     const instances = [host, shape].filter((item) => item?.type === 'instance');
 
     return resolveModes(document, {
