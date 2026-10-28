@@ -5,6 +5,7 @@ import { Label } from '../Label';
 import { Resizable } from '../Selectable/Resizable';
 import { Selectable } from '../Selectable/Selectable';
 import { getComponentByType } from 'src/tools/components';
+import { instanceComponentId } from 'src/app/componentSource';
 import { Instance } from './Instance';
 import type { Shape as ShapeType } from 'src/app/types';
 import { useCurrentDocument } from 'src/app/hooks';
@@ -51,7 +52,9 @@ export const Shape = memo((props: Props) => {
     const measuredGeometry = useRef<string | null>(null);
     const groupRef = useRef<SVGGElement>(null);
     // The component of this shape's type, which takes this shape's fields.
-    const baseSource = useComponentSource(shape.type === 'instance' ? shape.componentId : null);
+    const baseSource = useComponentSource(
+        shape.type === 'instance' ? instanceComponentId(document, shape) : null
+    );
     const source = shape.type === 'instance' ? (shape.projectedSource ?? baseSource) : baseSource;
     const variableKey = useAppState((state) => {
         if (shape.type !== 'instance') {

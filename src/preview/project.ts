@@ -4,7 +4,7 @@ import { projectContextualLayout } from '../app/contextualLayout';
 import { frameParents } from '../app/frameState';
 import { screenFrames } from '../app/screens';
 import { shownShapesIds } from '../app/membership';
-import { instanceSource, instanceBox } from '../app/componentSource';
+import { instanceComponent, instanceSource, instanceBox } from '../app/componentSource';
 import { applyInstanceOverrides } from '../app/componentProps';
 import { effectiveRoleSettings, resolveComponentRole } from '../app/componentRoles';
 import { themeColors } from '../app/themeColors';
@@ -194,14 +194,15 @@ export function projectPreview(
                 const box = instanceBox(shape, source);
                 const pivot = boxCenter(box);
                 attrs.transform = `${shape.rotation ? `rotate(${shape.rotation} ${pivot.x} ${pivot.y}) ` : ''}translate(${shape.position.x - source.box.topLeft.x} ${shape.position.y - source.box.topLeft.y})`;
-                const next = new Set(ancestors).add(shape.componentId);
+                const drawn = instanceComponent(document, shape) ?? component;
+                const next = new Set(ancestors).add(drawn.id);
                 group.children = source.shapes.flatMap((member) => {
                     const resolved = shape.projectedSource
                         ? themeColors(member, document, context)
                         : applyInstanceOverrides(
                               themeColors(member, document, context),
                               shape,
-                              component,
+                              drawn,
                               document,
                               context
                           );

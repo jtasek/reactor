@@ -19,7 +19,29 @@ export const instanceSource = (
     document: Pick<Document, 'components' | 'shapes' | 'shapesIds' | 'variables'>,
     instance: InstanceShape,
     ancestors?: ReadonlySet<string>
-) => instance.projectedSource ?? componentSource(document, instance.componentId, ancestors);
+) =>
+    instance.projectedSource ??
+    componentSource(document, instanceComponentId(document, instance), ancestors);
+
+/** A missing or unlinked alternate falls back to the family's default source. */
+export function instanceComponentId(
+    document: Pick<Document, 'components'>,
+    instance: Pick<InstanceShape, 'componentId' | 'variantId'>
+): string {
+    const variant = instance.variantId;
+
+    return variant &&
+        document.components[variant] &&
+        document.components[instance.componentId]?.variantIds?.includes(variant)
+        ? variant
+        : instance.componentId;
+}
+
+/** The component an instance draws: its selected alternate, or the family default. */
+export const instanceComponent = (
+    document: Pick<Document, 'components'>,
+    instance: InstanceShape
+) => document.components[instanceComponentId(document, instance)];
 
 const MAX_COMPONENT_DEPTH = 16;
 
@@ -50,7 +72,7 @@ export function componentSource(
         // Keep hidden members in the frame: an instance may expose them through an override.
         const geometryKey = `${shape.id}:${shapeGeometryKey(shape)}:${JSON.stringify(getShapeBounds(shape))}:${shape.visible}`;
         if (shape.type === 'instance') {
-            const nested = componentSource(document, shape.componentId, next);
+            const nested = componentSource(document, instanceComponentId(document, shape), next);
 
             if (!nested) {
                 continue;

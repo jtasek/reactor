@@ -28,6 +28,8 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
         chooseComponentToPlace,
         selectComponentChild,
         removeComponentProp,
+        addComponentVariant,
+        removeComponentVariant,
         updateLibraryComponent
     } = useActions();
     const updateAvailable = useLibraryUpdateAvailable(componentId);
@@ -35,6 +37,22 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
         (shape) => shape.type === 'instance' && shape.componentId === componentId
     ).length;
     const readOnly = Boolean(component.library || component.locked || document.locked);
+    const variantCandidates = Object.values(document.components).filter(
+        (candidate) =>
+            candidate.id !== componentId &&
+            !candidate.library &&
+            !candidate.locked &&
+            !candidate.variantIds?.length &&
+            JSON.stringify(candidate.interaction ?? null) ===
+                JSON.stringify(component.interaction ?? null) &&
+            !Object.values(document.components).some((item) =>
+                item.variantIds?.includes(candidate.id)
+            ) &&
+            (component.props ?? []).length === (candidate.props ?? []).length &&
+            (component.props ?? []).every((prop) =>
+                candidate.props?.some((other) => other.id === prop.id && other.key === prop.key)
+            )
+    );
     const preview: InstanceShape = {
         id: 'component-preview',
         key: 'component-preview',
@@ -96,6 +114,58 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
                 </svg>
             )}
             <ComponentRole componentId={componentId} />
+            {(component.variantIds?.length || variantCandidates.length > 0) && (
+                <div>
+                    <h3 className={styles.heading}>Variants</h3>
+                    <ul className={styles.componentProps}>
+                        <li>
+                            <span>{component.name} (default)</span>
+                        </li>
+                        {(component.variantIds ?? []).map((id) => {
+                            const name = document.components[id]?.name ?? 'Missing variant';
+
+                            return (
+                                <li key={id}>
+                                    <span>{name}</span>
+                                    <div>
+                                        <button
+                                            type="button"
+                                            className={styles.iconButton}
+                                            title={`Unlink ${name}`}
+                                            aria-label={`Unlink variant ${name}`}
+                                            disabled={readOnly}
+                                            onClick={() =>
+                                                removeComponentVariant({
+                                                    componentId,
+                                                    variantId: id
+                                                })
+                                            }
+                                        >
+                                            <Icon icon={REMOVE_ICON} />
+                                        </button>
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                    {!readOnly && variantCandidates.length > 0 && (
+                        <select
+                            aria-label="Add component variant"
+                            value=""
+                            onChange={(event) =>
+                                addComponentVariant({ componentId, variantId: event.target.value })
+                            }
+                        >
+                            <option value="">Add variant…</option>
+                            {variantCandidates.map((candidate) => (
+                                <option key={candidate.id} value={candidate.id}>
+                                    {candidate.name}
+                                </option>
+                            ))}
+                        </select>
+                    )}
+                </div>
+            )}
             <div>
                 <h3 className={styles.heading}>Editable properties</h3>
                 {component.props?.length ? (

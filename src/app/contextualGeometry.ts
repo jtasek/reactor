@@ -1,5 +1,5 @@
 import type { Document, Shape, VariableContext } from './types';
-import { componentSource, instanceBox } from './componentSource';
+import { componentSource, instanceBox, instanceComponentId } from './componentSource';
 import { applyInstanceOverrides } from './componentProps';
 import { instanceModes } from './inheritedModes';
 import { variableContext } from './variableModes';
@@ -79,8 +79,9 @@ export function projectGeometry(
         return shape;
     }
 
-    const component = document.components[shape.componentId];
-    const original = componentSource(document, shape.componentId, ancestors);
+    const selectedId = instanceComponentId(document, shape);
+    const component = document.components[selectedId];
+    const original = componentSource(document, selectedId, ancestors);
     if (!component || !original) {
         return shape;
     }

@@ -1,15 +1,14 @@
 import type * as ComponentPropertyEdits from '../componentPropertyEdits';
 import { editorHelpers } from '../editorHelpers';
 import { Action, ActionWithParam, Application, Component, Point } from '../types';
-import { createComponent, createShape, instanceName } from '../factories';
-import { componentSource } from '../componentSource';
+import { createComponent } from '../factories';
+import { componentSource, instanceComponentId } from '../componentSource';
 import { invalidOverrideIds } from '../componentProps';
 import { isShapeLocked, isShapeVisible } from '../utils';
 import type { GroupDrag } from './group';
 import type { ResizeHandlerType } from '../types';
 import { resizeContainerShapes, rotateContainerShapes } from '../containerTransforms';
-import { ordersBetween, resolveDrawOrderTies } from '../drawOrder';
-import { putShapesOnLayer, putShapesInFrame, shapeLayer } from '../membership';
+import { putShapesOnLayer, putShapesInFrame } from '../membership';
 
 type ComponentDrag = Omit<GroupDrag, 'groupId'> & { componentId: string };
 
@@ -53,6 +52,16 @@ export const hasComponentInstances = (document: Application['currentDocument'], 
         (shape) => shape.type === 'instance' && shape.componentId === id
     );
 
+export const addComponentVariant: typeof ComponentPropertyEdits.addComponentVariant = (...args) =>
+    editorHelpers().componentProperties.addComponentVariant(...args);
+
+export const removeComponentVariant: typeof ComponentPropertyEdits.removeComponentVariant = (
+    ...args
+) => editorHelpers().componentProperties.removeComponentVariant(...args);
+
+export const setInstanceVariant: typeof ComponentPropertyEdits.setInstanceVariant = (...args) =>
+    editorHelpers().componentProperties.setInstanceVariant(...args);
+
 /** Whether adding a nested instance would make its containing source recursive. */
 export function reachesComponent(
     document: Pick<Application['currentDocument'], 'components' | 'shapes'>,
@@ -73,9 +82,15 @@ export function reachesComponent(
     return (component?.shapesIds ?? []).some((id) => {
         const shape = component.sourceShapes?.[id] ?? document.shapes[id];
 
+        if (shape?.type !== 'instance') {
+            return false;
+        }
+        // The selected alternate is drawn instead of the default when it is available.
+        const drawn = instanceComponentId(document, shape);
+
         return (
-            shape?.type === 'instance' &&
-            reachesComponent(document, shape.componentId, target, visited)
+            reachesComponent(document, shape.componentId, target, visited) ||
+            (drawn !== shape.componentId && reachesComponent(document, drawn, target, visited))
         );
     });
 }
@@ -139,7 +154,10 @@ export const addComponent: ActionWithParam<Partial<Component>> = ({ state }, opt
 export const cloneComponent: ActionWithParam<string> = ({ state, effects }, componentId) => {
     const component = getComponent(state, componentId);
 
-    setComponent(state, { ...component, id: effects.newId() });
+    // An alternate belongs to one family, so the copy starts without links.
+    const copy = { ...component, id: effects.newId() };
+    delete copy.variantIds;
+    setComponent(state, copy);
 };
 
 export const removeComponent: ActionWithParam<string> = ({ state, actions }, componentId) => {
@@ -149,76 +167,20 @@ export const removeComponent: ActionWithParam<string> = ({ state, actions }, com
         return;
     }
     deleteComponent(state, componentId);
-};
-
-export const createComponentFromSelection: Action = ({ state, actions }) => {
-    const document = state.currentDocument;
-    const ids = [...document.editableSelectedShapesIds];
-    const members = anyComponentMembers(document);
-
-    if (document.locked || ids.length === 0 || ids.some((id) => members.has(id))) {
-        return;
-    }
-
-    const parentFrameId = document.shapes[ids[ids.length - 1]].parentFrameId;
-    const layoutOrder = Math.min(
-        ...ids.map((id) => document.shapes[id].layoutOrder ?? Number.MAX_SAFE_INTEGER)
-    );
-    editorHelpers().groups.materializeGroupPlacement(document, ids, parentFrameId);
-    const component = createComponent({ shapesIds: ids, sourceOnly: true });
-    setComponent(state, component);
-    const source = componentSource(document, component.id);
-
-    if (!source) {
-        deleteComponent(state, component.id);
-
-        return;
-    }
-
-    const topId = ids[ids.length - 1];
-    const layerId = shapeLayer(document, topId)?.id ?? null;
-    resolveDrawOrderTies(document.shapesIds.map((id) => document.shapes[id]));
-    const index = document.shapesIds.indexOf(topId);
-    const nextId = document.shapesIds[index + 1];
-    const order = ordersBetween(
-        document.shapes[topId].order,
-        document.shapes[nextId]?.order ?? null,
-        1
-    )[0];
-    const position = { ...source.box.topLeft };
-
-    actions.unselectShapes();
-    state.enteredGroupId = null;
-    const instance = createShape({
-        type: 'instance',
-        parentFrameId,
-        ...(layoutOrder === Number.MAX_SAFE_INTEGER ? {} : { layoutOrder }),
-        componentId: component.id,
-        name: instanceName(
-            component.name,
-            new Set(Object.values(document.shapes).map((shape) => shape.name))
-        ),
-        order,
-        position,
-        overrides: {},
-        bounds: {
-            topLeft: position,
-            bottomRight: {
-                x: position.x + source.box.width,
-                y: position.y + source.box.height
-            },
-            width: source.box.width,
-            height: source.box.height
+    Object.values(state.currentDocument.components).forEach((family) => {
+        if (!family.variantIds?.includes(componentId)) {
+            return;
+        }
+        family.variantIds = family.variantIds.filter((id) => id !== componentId);
+        if (family.variantIds.length === 0) {
+            delete family.variantIds;
         }
     });
-    document.shapes[instance.id] = instance;
-    document.shapesIds.splice(index + 1, 0, instance.id);
-    putShapesOnLayer(document, [instance.id], layerId);
-    putShapesOnLayer(document, ids, null);
-    putShapesInFrame(document, ids, undefined);
-    actions.ui.showControl('explorer');
-    actions.ui.showControl('inspector');
+    editorHelpers().componentProperties.clearVariantChoice(state.currentDocument, componentId);
 };
+
+export const createComponentFromSelection: typeof ComponentPropertyEdits.createComponentFromSelection =
+    (context) => editorHelpers().componentProperties.createComponentFromSelection(context);
 
 export const addShapesToComponent: ActionWithParam<{ componentId: string; shapeIds: string[] }> = (
     { state, actions },

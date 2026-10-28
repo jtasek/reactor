@@ -17,6 +17,7 @@ function fingerprint(
 ): string {
     const payload = JSON.stringify({
         name: component.name,
+        variants: component.variantIds?.map((id) => [id, records.get(id)?.hash]),
         props: component.props,
         interaction: roleContent(component.interaction),
         shapes: members.map((shape) => {
@@ -69,13 +70,28 @@ function libraryRecords(document: Document, componentId: string) {
         visiting.add(id);
         const members: Shape[] = [];
 
+        for (const variantId of component.variantIds ?? []) {
+            if (!document.components[variantId]) {
+                continue;
+            }
+            if (!collectComponentDependencies(variantId)) {
+                return false;
+            }
+        }
+
         for (const memberId of component.shapesIds) {
             const shape = component.sourceShapes?.[memberId] ?? document.shapes[memberId];
 
             if (!shape) {
                 return false;
             }
-            if (shape.type === 'instance' && !collectComponentDependencies(shape.componentId)) {
+            if (
+                shape.type === 'instance' &&
+                (!collectComponentDependencies(shape.componentId) ||
+                    (shape.variantId !== undefined &&
+                        document.components[shape.variantId] !== undefined &&
+                        !collectComponentDependencies(shape.variantId)))
+            ) {
                 return false;
             }
             members.push(shape);

@@ -12,7 +12,7 @@ import type {
 import type { AddComponent, AddGroup, AddShape, AddVariable, Operation } from './operations';
 import { getShapeBounds, shapeGeometry, shapeGeometryKey, shapeStyle } from './utils';
 import { librarySnapshot } from './componentLibrary';
-import { componentSource, instanceBox } from './componentSource';
+import { componentSource, instanceSource, instanceBox } from './componentSource';
 import { copyName, createShape, instanceName, numberedName, shapeNamer } from './factories';
 import { CLONE_OFFSET, translateShape } from './geometry';
 import { applyProperty } from './properties';
@@ -677,7 +677,7 @@ export function pasteOperations(
             if (!component?.shapesIds.some((id) => document.shapes[id])) {
                 return false;
             }
-            const source = componentSource(document, shape.componentId);
+            const source = instanceSource(document, shape);
 
             return (
                 source?.box.topLeft.x === shape.position.x &&

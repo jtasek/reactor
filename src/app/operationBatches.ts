@@ -53,7 +53,7 @@ import {
     writeText
 } from './variables';
 import { resolveVariable, variableProblems, variableDefinition } from './variableResolver';
-import { componentSource, instanceBox } from './componentSource';
+import { instanceSource, instanceBox } from './componentSource';
 import { hydrateComponent, readEntity } from './services/documentStorage';
 import { shapeGeometryKey, shapeGeometry } from './utils';
 import { translateShape } from './geometry';
@@ -1338,7 +1338,7 @@ export function writeBatch(document: Document, staged: Staged) {
         if (shape.type !== 'instance') {
             return;
         }
-        const source = componentSource(document, shape.componentId);
+        const source = instanceSource(document, shape);
 
         if (source) {
             shape.bounds = instanceBox(shape, source);

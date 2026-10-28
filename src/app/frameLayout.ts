@@ -14,7 +14,7 @@ import { editorHelpers, editorLoaded } from './editorHelpers';
 import { frameParents, projectFrameStates } from './frameState';
 import { drawnBox } from './membership';
 import { translateShape } from './geometry';
-import { componentSource, instanceBox } from './componentSource';
+import { instanceSource, instanceBox } from './componentSource';
 
 const ZERO: Point = { x: 0, y: 0 };
 export interface FrameLayout {
@@ -112,7 +112,7 @@ export function projectFrameLayout(
     };
     const box = (shape: Shape) => {
         if (shape.type === 'instance' && !shape.bounds) {
-            const source = componentSource(document, shape.componentId);
+            const source = instanceSource(document, shape);
 
             if (source) {
                 return drawnBox({ ...shape, bounds: instanceBox(shape, source) });
@@ -338,7 +338,7 @@ export function renderedShape(document: Document, id: string, layout?: FrameLayo
         copy.bounds = rectToBox({ ...copy.position, ...size });
     }
     if (copy.type === 'instance' && !copy.bounds) {
-        const source = componentSource(document, copy.componentId);
+        const source = instanceSource(document, copy);
         if (source) {
             copy.bounds = instanceBox(copy, source);
         }

@@ -10,7 +10,7 @@ import { SquareDashed } from 'lucide-react';
 import type { Box, Document, Image, InstanceShape, Shape, VariableContext } from 'src/app/types';
 import { instanceModes, resolveModes } from 'src/app/inheritedModes';
 import { applyInstanceOverrides } from 'src/app/componentProps';
-import { instanceSource, instanceBox } from 'src/app/componentSource';
+import { instanceComponent, instanceSource, instanceBox } from 'src/app/componentSource';
 import { drawnBox, shownShapesIds } from 'src/app/membership';
 import {
     assertNever,
@@ -106,8 +106,8 @@ const PreviewInstance: FC<{
         );
     }
 
-    const component = document.components[shape.componentId];
-    const nextAncestors = new Set(ancestors).add(shape.componentId);
+    const component = instanceComponent(document, shape);
+    const nextAncestors = new Set(ancestors).add(component?.id ?? shape.componentId);
     const offsetX = shape.position.x - source.box.topLeft.x;
     const offsetY = shape.position.y - source.box.topLeft.y;
 
