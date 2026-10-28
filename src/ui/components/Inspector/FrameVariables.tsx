@@ -35,9 +35,17 @@ export const FrameVariables: FC<{ id: string }> = ({ id }) => {
     const prefix = useId();
     const { frame, variables, disabled, values } = fields;
 
+    // Only fields that can follow a variable, or already do so they can be cleared.
+    const keys = FRAME_NUMBER_KEYS.filter(
+        (key) =>
+            frame?.bindings?.[key] ||
+            (frame && acceptsFrameNumber(frame, key, frameNumber(frame, key) ?? NaN))
+    );
+
     if (
         !frame ||
         frame.kind === 'view' ||
+        keys.length === 0 ||
         (variables.length === 0 && Object.keys(frame.bindings ?? {}).length === 0)
     ) {
         return null;
@@ -45,7 +53,7 @@ export const FrameVariables: FC<{ id: string }> = ({ id }) => {
 
     return (
         <PropertyGroup name="Layout variables">
-            {FRAME_NUMBER_KEYS.filter((key) => frameNumber(frame, key) !== undefined).map((key) => (
+            {keys.map((key) => (
                 <tr key={key}>
                     <th scope="row">
                         <label htmlFor={`${prefix}-${key}`}>{key}</label>
@@ -55,10 +63,7 @@ export const FrameVariables: FC<{ id: string }> = ({ id }) => {
                             id={`${prefix}-${key}`}
                             aria-label={`Variable for frame ${key}`}
                             value={frame.bindings?.[key] ?? ''}
-                            disabled={
-                                disabled ||
-                                !acceptsFrameNumber(frame, key, frameNumber(frame, key)!)
-                            }
+                            disabled={disabled}
                             onChange={(event) =>
                                 editFrame({
                                     kind: 'update',

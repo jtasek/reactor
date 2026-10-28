@@ -1,6 +1,6 @@
 import type { Document, Frame, Shape, VariableContext } from './types';
 import { resolveModes, type ModeAddress } from './inheritedModes';
-import { resolveVariable } from './variableResolver';
+import { resolveVariable, variableDefinition } from './variableResolver';
 import { variableContext } from './variableModes';
 import { acceptsFrameNumber, FRAME_NUMBER_KEYS, writeFrameNumber } from './frameVariables';
 import { projectFrameLayout } from './frameLayout';
@@ -8,10 +8,23 @@ import { projectFrameLayout } from './frameLayout';
 export const NUMBER_MODE_SUPPORT =
     'In Screen views and Preview, number modes support stack gap, padding and fixed frame/rectangle sizes. Other numeric properties and component sizes currently use base values.';
 
-export const hasNumericLayout = (document: Document) =>
-    Object.values(document.frames).some((frame) => Object.keys(frame.bindings ?? {}).length > 0) ||
-    Object.values(document.variables).some(
-        (variable) => variable.type === 'number' && variable.dimensionId !== undefined
+const hasModes = (document: Pick<Document, 'variables'>, id: string | undefined) => {
+    const variable = id ? document.variables[id] : undefined;
+    const definition = variable && variableDefinition(variable, document.variables);
+
+    return definition?.type === 'number' && definition.dimensionId !== undefined;
+};
+
+/** Whether any frame or rectangle size follows a number variable that varies by mode. */
+export const hasNumericLayout = (document: Pick<Document, 'frames' | 'shapes' | 'variables'>) =>
+    Object.values(document.frames).some((frame) =>
+        Object.values(frame.bindings ?? {}).some((id) => hasModes(document, id))
+    ) ||
+    Object.values(document.shapes).some(
+        (shape) =>
+            shape.type === 'rectangle' &&
+            (hasModes(document, shape.bindings?.width) ||
+                hasModes(document, shape.bindings?.height))
     );
 
 /** One shared geometry projection for view drawing, interaction, thumbnails and Preview. */
@@ -64,6 +77,10 @@ export function contextualDocument(
     };
     const frames = Object.fromEntries(
         Object.values(document.frames).map((source) => {
+            if (Object.keys(source.bindings ?? {}).length === 0) {
+                return [source.id, source];
+            }
+
             const frame: Frame = { ...source };
             const context = contextFor(frame.id);
 
@@ -97,7 +114,8 @@ export function contextualDocument(
             if (
                 source.type !== 'rectangle' ||
                 componentMembers.has(source.id) ||
-                (!source.bindings?.width && !source.bindings?.height)
+                (!source.bindings?.width && !source.bindings?.height) ||
+                !document.frames[source.parentFrameId ?? '']?.stack
             ) {
                 return [source.id, source];
             }
@@ -108,7 +126,7 @@ export function contextualDocument(
             (['width', 'height'] as const).forEach((key) => {
                 const id = source.bindings?.[key];
 
-                if (!id || !document.frames[source.parentFrameId ?? '']?.stack) {
+                if (!id) {
                     return;
                 }
 

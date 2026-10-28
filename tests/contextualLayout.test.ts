@@ -1,7 +1,12 @@
 import { json } from 'overmind';
 import { createTestStore } from './support/store';
 import { projectScreenViews } from 'src/app/screenProjection';
-import { projectContextualLayout as projectFrameLayout } from 'src/app/contextualLayout';
+import {
+    contextualDocument,
+    hasNumericLayout,
+    projectContextualLayout as projectFrameLayout
+} from 'src/app/contextualLayout';
+import { frameHandleBlocked } from 'src/app/frameLayout';
 import { projectPreview } from 'src/preview/project';
 import { resolveVariable } from 'src/app/variableResolver';
 import { pointerDocument } from 'src/app/screenViewEditing';
@@ -258,7 +263,7 @@ it('reflows nested hug stacks from mode spacing and retains sizing-cycle diagnos
 });
 
 it('clamps contextual frame dimensions while each view retains its independent viewport', () => {
-    const { store, document, content, comfortable, screen } = setup();
+    const { store, document, content, comfortable } = setup();
     const result = store.actions.applyOperations({
         documentId: document.id,
         by: { kind: 'person' },
@@ -279,8 +284,7 @@ it('clamps contextual frame dimensions while each view retains its independent v
                     bindings: { ...document.frames[content].bindings, width: 'frameWidth' },
                     sizing: { width: { mode: 'fixed', min: 100, max: 200 } }
                 }
-            },
-            { op: 'updateFrame', frame: screen, changes: { bindings: { width: 'frameWidth' } } }
+            }
         ]
     });
     expect(result.applied).toBe(true);
@@ -296,6 +300,18 @@ it('clamps contextual frame dimensions while each view retains its independent v
             .projection!.frames.find((frame) => frame.id === content)?.size.width
     ).toBe(120);
     expect(views.every((item) => item.projection?.screen.size.width === 400)).toBe(true);
+});
+
+it('refuses a size binding on a top-level Screen, whose views set its size', () => {
+    const { store, document, screen, width } = setup();
+    const result = store.actions.applyOperations({
+        documentId: document.id,
+        by: { kind: 'person' },
+        operations: [{ op: 'updateFrame', frame: screen, changes: { bindings: { width } } }]
+    });
+    expect(result.applied).toBe(false);
+    expect(document.frames[screen].size.width).toBe(400);
+    expect(json(document.frames[screen].bindings)).toEqual({});
 });
 
 it('rejects malformed numeric modes and incompatible frame bindings as a whole batch', () => {
@@ -607,4 +623,58 @@ it('merges independent frame bindings and undoes only the local change', async (
     a.collaboration.undo(DOCUMENT_ID);
     settle(copies);
     expect(shownDocument(b).frames[content].bindings).toEqual({ padding: space });
+});
+
+it('blocks only resize handles whose every axis follows a variable', () => {
+    const { document, content, width } = setup();
+    const frame = { ...json(document.frames[content]), bindings: { width } };
+    expect(frameHandleBlocked(frame, 'middleRight')).toBe(true);
+    expect(frameHandleBlocked(frame, 'middleLeft')).toBe(true);
+    expect(frameHandleBlocked(frame, 'middleBottom')).toBe(false);
+    expect(frameHandleBlocked(frame, 'bottomRight')).toBe(false);
+    expect(frameHandleBlocked({ ...frame, bindings: { width, height: width } }, 'topLeft')).toBe(
+        true
+    );
+});
+
+it('drops a mode size binding when a rectangle leaves its stack, keeping base-only ones', () => {
+    const { store, document, first, second, screen } = setup();
+    const plain = store.actions.applyOperations({
+        documentId: document.id,
+        by: { kind: 'person' },
+        operations: [
+            { op: 'addVariable', key: 'plain', name: 'Plain', type: 'number', value: 30 },
+            { op: 'updateShape', shape: second, changes: { bindings: { height: 'plain' } } }
+        ]
+    });
+    expect(plain.applied).toBe(true);
+    const result = store.actions.applyOperations({
+        documentId: document.id,
+        by: { kind: 'person' },
+        operations: [
+            { op: 'updateShape', shape: first, changes: { parentFrameId: screen } },
+            { op: 'updateShape', shape: second, changes: { parentFrameId: screen } }
+        ]
+    });
+    expect(result.applied).toBe(true);
+    expect(json(document.shapes[first].bindings ?? {})).not.toHaveProperty('width');
+    expect(json(document.shapes[second].bindings)).toHaveProperty('height');
+});
+
+it('skips mode work for documents and frames with no bound mode inputs', () => {
+    const { store, document, content, first, space, alias } = setup();
+    expect(hasNumericLayout(document)).toBe(true);
+    const result = store.actions.applyOperations({
+        documentId: document.id,
+        by: { kind: 'person' },
+        operations: [
+            { op: 'updateFrame', frame: content, changes: { bindings: {} } },
+            { op: 'deleteShapes', shapes: [first] }
+        ]
+    });
+    expect(result.applied).toBe(true);
+    expect(document.variables[space]).toMatchObject({ dimensionId: 'density' });
+    expect(document.variables[alias]).toBeDefined();
+    expect(hasNumericLayout(document)).toBe(false);
+    expect(contextualDocument(document)).toBe(document);
 });

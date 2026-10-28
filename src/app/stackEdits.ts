@@ -6,6 +6,24 @@ import { frameLayout, renderedFrame, renderedShape } from './frameLayout';
 import { frameContents } from './frameMembership';
 import { translateShape } from './geometry';
 import { unbindMovedProperties, unbindEditedProperties } from './variables';
+import { variableDefinition } from './variableResolver';
+
+/** Number modes size rectangles only inside stacks; outside one, such a binding would do nothing. */
+function dropModeSizeBindings(document: Document, shape: Shape) {
+    (['width', 'height'] as const).forEach((key) => {
+        const variable = document.variables[shape.bindings?.[key] ?? ''];
+
+        if (!variable) {
+            return;
+        }
+
+        const definition = variableDefinition(variable, document.variables);
+
+        if (definition.type === 'number' && definition.dimensionId !== undefined) {
+            delete shape.bindings![key];
+        }
+    });
+}
 
 /** Only an explicit detach, free-layout change or boundary deletion authors the visible positions. */
 export function releaseStackPositions(
@@ -92,6 +110,7 @@ export function releaseStackPositions(
     artwork.forEach((shape, id) => applyPlacement(document.shapes[id], shape));
     unsized.forEach((id) => {
         delete document.shapes[id].sizing;
+        dropModeSizeBindings(document, document.shapes[id]);
     });
     frames.forEach((frame, id) => {
         const update = updates.find((item) => item.id === id);

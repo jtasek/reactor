@@ -27,6 +27,10 @@ export function supportsNumberModes(
     );
 }
 
+/** A top-level Screen is drawn at each view's size, so its own size cannot follow a variable. */
+const screenSizedByViews = (frame: Frame) =>
+    frame.kind === 'screen' && frame.parentFrameId === undefined;
+
 export function frameNumber(frame: Frame, key: FrameNumberKey): number | undefined {
     return key === 'width' || key === 'height' ? frame.size[key] : frame.stack?.[key];
 }
@@ -37,7 +41,9 @@ export function acceptsFrameNumber(frame: Frame, key: FrameNumberKey, value: num
     }
 
     return key === 'width' || key === 'height'
-        ? value >= 1 && (frame.sizing?.[key]?.mode ?? 'fixed') === 'fixed'
+        ? !screenSizedByViews(frame) &&
+              value >= 1 &&
+              (frame.sizing?.[key]?.mode ?? 'fixed') === 'fixed'
         : Boolean(frame.stack) && value >= 0;
 }
 

@@ -4,6 +4,7 @@ import {
     layoutDocument,
     frameHasLayoutOffset,
     frameSizedByLayout,
+    frameHandleBlocked,
     hasLayoutOffset
 } from './frameLayout';
 import {
@@ -446,6 +447,24 @@ const shapePlacement = (shape: Shape) => {
     }
 };
 
+/** Keep a resized box's bound dimensions, and their edges, where they were. */
+function keepBoundAxes(
+    frame: Frame,
+    original: Pick<Frame, 'position' | 'size'>,
+    box: Pick<Frame, 'position' | 'size'>
+) {
+    return {
+        position: {
+            x: frame.bindings?.width ? original.position.x : box.position.x,
+            y: frame.bindings?.height ? original.position.y : box.position.y
+        },
+        size: {
+            width: frame.bindings?.width ? original.size.width : box.size.width,
+            height: frame.bindings?.height ? original.size.height : box.size.height
+        }
+    };
+}
+
 export function begin(
     context: Pick<Context, 'state' | 'actions' | 'effects'>,
     owner: { pointerId: number; touch: boolean; moved: boolean; selectedFrameId?: string },
@@ -458,7 +477,9 @@ export function begin(
         !frame ||
         !isFrameVisible(state.currentDocument, frame.id) ||
         frameHasLayoutOffset(state.currentDocument, frame.id) ||
-        (handle.type !== 'move' && frameSizedByLayout(state.currentDocument, frame.id)) ||
+        (handle.type !== 'move' &&
+            (frameSizedByLayout(state.currentDocument, frame.id) ||
+                frameHandleBlocked(frame, handle.type))) ||
         isFrameLocked(state.currentDocument, frame.id) ||
         state.currentDocument.locked ||
         isReadOnly(state)
@@ -558,8 +579,12 @@ export function move({ state, actions }: Pick<Context, 'state' | 'actions'>, pos
         position,
         MIN_FRAME_SIZE
     );
-    frame.position = { ...box.topLeft };
-    frame.size = { width: box.width, height: box.height };
+    const kept = keepBoundAxes(frame, gesture.originalFrame, {
+        position: box.topLeft,
+        size: { width: box.width, height: box.height }
+    });
+    frame.position = kept.position;
+    frame.size = kept.size;
 }
 
 export function cancel({ state }: Pick<Context, 'state'>, restored: RestoredEntity[]) {
@@ -747,7 +772,10 @@ export function gestureBlocked(document: Context['state']['currentDocument'], ge
     if (gesture.kind === 'editingFrame') {
         return (
             frameHasLayoutOffset(document, gesture.frameId) ||
-            (gesture.handle !== 'move' && frameSizedByLayout(document, gesture.frameId)) ||
+            (gesture.handle !== 'move' &&
+                (frameSizedByLayout(document, gesture.frameId) ||
+                    (document.frames[gesture.frameId] &&
+                        frameHandleBlocked(document.frames[gesture.frameId], gesture.handle)))) ||
             !isFrameVisible(document, gesture.frameId) ||
             isFrameLocked(document, gesture.frameId)
         );

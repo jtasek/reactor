@@ -4,7 +4,7 @@ import { serializePersistedState } from 'src/app/services/documentStorage';
 import { openEditor, pointer } from './support/editor';
 import type { Frame } from 'src/app/types';
 
-async function openLayout(page: Page) {
+async function openLayout(page: Page, extraFrames: Record<string, Frame> = {}) {
     const frame = (id: string, name: string, x: number, y: number): Frame => ({
         id,
         name,
@@ -81,7 +81,8 @@ async function openLayout(page: Page) {
                 parentFrameId: 'screen',
                 stack: { direction: 'row', gap: 10, padding: 10, align: 'start' },
                 bindings: { gap: 'space', padding: 'space' }
-            }
+            },
+            ...extraFrames
         },
         shapes: { first, second },
         shapesIds: ['first', 'second']
@@ -197,4 +198,40 @@ test('keeps mode and binding controls usable at narrow widths', async ({ page })
         'space'
     );
     await page.screenshot({ path: 'test-results/reactor-contextual-layout-bindings-narrow.png' });
+});
+
+test('offers no size variables for a Screen and resizes only the unbound axis of a frame', async ({
+    page
+}) => {
+    const { inspector, explorer } = await openLayout(page, {
+        panel: {
+            id: 'panel',
+            name: 'Panel',
+            kind: 'frame',
+            position: { x: 1100, y: 100 },
+            size: { width: 40, height: 200 },
+            bindings: { width: 'width' },
+            visible: true,
+            locked: false
+        }
+    });
+    await explorer.getByRole('button', { name: 'Home', exact: true }).first().click();
+    await expect(inspector.getByLabel('Variable for frame width', { exact: true })).toHaveCount(0);
+    await expect(inspector.getByLabel('Variable for frame height', { exact: true })).toHaveCount(0);
+    await page.locator('#frames > [data-frame="panel"]').press('Enter');
+    const handles = page.locator('#frames > [data-frame="panel"] circle[data-type]');
+    await expect(handles).toHaveCount(4);
+    await expect(inspector.getByLabel('Variable for frame width', { exact: true })).toHaveValue(
+        'width'
+    );
+    const corner = '#frames > [data-frame="panel"] [data-type="bottomRight"]';
+    await pointer(page, 'pointerdown', { x: 1140, y: 300, target: corner });
+    await pointer(page, 'pointermove', { x: 1200, y: 350 });
+    await pointer(page, 'pointerup', { x: 1200, y: 350 });
+    const edge = page.locator('#frames > [data-frame="panel"] rect').first();
+    await expect(edge).toHaveAttribute('height', '250');
+    await expect(edge).toHaveAttribute('width', '40');
+    await expect(inspector.getByLabel('Variable for frame width', { exact: true })).toHaveValue(
+        'width'
+    );
 });

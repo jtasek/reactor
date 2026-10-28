@@ -1,6 +1,6 @@
 import { projectStackSizes } from './stackSizing';
 import { rectToBox } from './utils';
-import type { Size, Document, Frame, Point, Shape, StackRules } from './types';
+import type { Size, Document, Frame, Point, ResizeHandlerType, Shape, StackRules } from './types';
 import { frameParents, projectFrameStates } from './frameState';
 import { drawnBox } from './membership';
 import { translateShape } from './geometry';
@@ -396,10 +396,19 @@ export function frameSizedByLayout(document: Document, id: string) {
     return Boolean(
         frame &&
         (Object.values(frame.sizing ?? {}).some((rule) => rule.mode !== 'fixed') ||
-            frame.bindings?.width ||
-            frame.bindings?.height ||
             (size && (size.width !== frame.size.width || size.height !== frame.size.height)))
     );
+}
+
+/**
+ * Whether a canvas resize handle would only change dimensions that follow a variable.
+ * A corner handle with one bound axis still resizes the other.
+ */
+export function frameHandleBlocked(frame: Frame, handle: ResizeHandlerType) {
+    const width = handle !== 'middleTop' && handle !== 'middleBottom';
+    const height = handle !== 'middleLeft' && handle !== 'middleRight';
+
+    return (!width || !!frame.bindings?.width) && (!height || !!frame.bindings?.height);
 }
 
 const ORDER_STEP = 1;
