@@ -11,7 +11,13 @@ import { CreateVariable } from './CreateVariable';
 import { VariableEditor } from './VariableEditor';
 import styles from './styles.css';
 
-type View = { section: 'variables' | 'dimensions'; id?: string; creating?: boolean };
+/** `returnId` is the variable whose "Manage modes" opened the Dimensions tab. */
+type View = {
+    section: 'variables' | 'dimensions';
+    id?: string;
+    creating?: boolean;
+    returnId?: string;
+};
 
 function VariablePanel() {
     const document = useCurrentDocument();
@@ -21,7 +27,7 @@ function VariablePanel() {
     const [view, setView] = useState<View>({ section: 'variables' });
     const [dirty, setDirty] = useState(false);
     const [pending, setPending] = useState<View>();
-    const [returnId, setReturnId] = useState<string>();
+    const [discarded, setDiscarded] = useState(false);
     const [revision, setRevision] = useState(0);
     const byId = Object.fromEntries(variables.map((variable) => [variable.id, variable]));
     const items = view.section === 'variables' ? variables : dimensions;
@@ -32,16 +38,31 @@ function VariablePanel() {
     const title = view.section === 'variables' ? 'variable' : 'dimension';
 
     useEffect(() => {
-        if (view.creating || !selected || view.id === selected.id) {
+        if (view.creating) {
             return;
         }
+        // The item being edited was deleted elsewhere, so its draft is gone.
+        if (view.id !== undefined && !items.some((item) => item.id === view.id) && dirty) {
+            setDirty(false);
+            setPending(undefined);
+            setDiscarded(true);
+        }
+        if (!selected) {
+            if (view.id !== undefined) {
+                setView({ section: view.section, returnId: view.returnId });
+            }
 
-        setView({ ...view, id: selected.id });
-    }, [view, selected]);
+            return;
+        }
+        if (view.id !== selected.id) {
+            setView({ ...view, id: selected.id });
+        }
+    }, [view, selected, items, dirty]);
 
     const show = (next: View) => {
         setDirty(false);
         setPending(undefined);
+        setDiscarded(false);
         setView(next);
         setRevision((value) => value + 1);
     };
@@ -53,14 +74,15 @@ function VariablePanel() {
         }
         show(next);
     };
-    const create = () => navigate({ section: view.section, creating: true });
+    const create = () =>
+        navigate({ section: view.section, creating: true, returnId: view.returnId });
     const editDimension = (id?: string) => {
-        setReturnId(variable?.id);
-        navigate({ section: 'dimensions', id, creating: !id });
+        navigate({ section: 'dimensions', id, creating: !id, returnId: variable?.id });
     };
     const cancel = () => {
-        show({ section: view.section });
+        show({ section: view.section, returnId: view.returnId });
     };
+    const returnId = view.section === 'dimensions' ? view.returnId : undefined;
 
     return (
         <section className={styles.variables} aria-label="Variables">
@@ -76,6 +98,19 @@ function VariablePanel() {
                     </button>
                 ))}
             </div>
+            {discarded && (
+                <div className={styles.notice} role="status">
+                    <p>
+                        The {title} you were editing was deleted elsewhere, so your unsaved changes
+                        were discarded.
+                    </p>
+                    <div className={styles.actions}>
+                        <button type="button" onClick={() => setDiscarded(false)}>
+                            OK
+                        </button>
+                    </div>
+                </div>
+            )}
             {pending && (
                 <div className={styles.notice} role="alert">
                     <p>You have unfinished changes.</p>
@@ -122,7 +157,11 @@ function VariablePanel() {
                                         aria-label={`Edit ${title} ${item.name}`}
                                         aria-pressed={!view.creating && selected?.id === item.id}
                                         onClick={() =>
-                                            navigate({ section: view.section, id: item.id })
+                                            navigate({
+                                                section: view.section,
+                                                id: item.id,
+                                                returnId: view.returnId
+                                            })
                                         }
                                     >
                                         {color ? (
@@ -165,7 +204,11 @@ function VariablePanel() {
                         aria-label={`Selected ${title}`}
                         value={view.creating ? '' : (selected?.id ?? '')}
                         onChange={(event) =>
-                            navigate({ section: view.section, id: event.target.value })
+                            navigate({
+                                section: view.section,
+                                id: event.target.value,
+                                returnId: view.returnId
+                            })
                         }
                     >
                         {(view.creating || !selected) && (
@@ -214,7 +257,9 @@ function VariablePanel() {
                             dimension={view.creating ? undefined : dimension}
                             onDirty={setDirty}
                             onCancel={cancel}
-                            onSaved={(id) => show({ section: 'dimensions', id })}
+                            onSaved={(id) =>
+                                show({ section: 'dimensions', id, returnId: view.returnId })
+                            }
                         />
                     )}
                     {!view.creating && variable && (

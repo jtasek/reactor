@@ -258,3 +258,41 @@ test('keeps the initial variable selected when renaming changes its sort positio
         'true'
     );
 });
+
+test('says when the dimension being edited is deleted in another tab and clears the draft', async ({
+    page,
+    context
+}) => {
+    await themedDocument(page);
+    await expect(page.locator('#status-save')).toHaveText('Saved');
+    const panel = variablesPanel(page);
+    await panel.getByRole('button', { name: 'Dimensions', exact: true }).click();
+    await panel.getByLabel('Name of dimension Theme').fill('Personal theme');
+    const peer = await context.newPage();
+    await openEditor(peer, ['Variables']);
+    await peer.getByRole('button', { name: 'More panels', exact: true }).click();
+    const other = variablesPanel(peer);
+    await other.getByRole('button', { name: 'Dimensions', exact: true }).click();
+    await other.getByText('Dimension actions', { exact: true }).click();
+    await other.getByRole('button', { name: 'Delete dimension', exact: true }).click();
+    await other.getByRole('button', { name: 'Delete', exact: true }).click();
+    await expect(panel.getByRole('heading', { name: 'No dimensions yet' })).toBeVisible();
+    await expect(panel.getByRole('status')).toContainText('deleted elsewhere');
+    await panel.getByRole('button', { name: 'Variables', exact: true }).click();
+    await expect(panel.getByText('You have unfinished changes.')).toHaveCount(0);
+    await expect(panel.getByRole('status')).toHaveCount(0);
+    await expect(panel.getByLabel('Name of brand/ink', { exact: true })).toBeVisible();
+    await peer.close();
+});
+
+test('offers the way back to a variable only after Manage modes', async ({ page }) => {
+    await themedDocument(page);
+    const panel = variablesPanel(page);
+    await panel.getByRole('button', { name: 'Manage modes', exact: true }).click();
+    const back = panel.getByRole('button', { name: 'Back to brand/ink', exact: true });
+    await expect(back).toBeVisible();
+    await back.click();
+    await panel.getByRole('button', { name: 'Dimensions', exact: true }).click();
+    await expect(panel.getByLabel('Name of dimension Theme')).toBeVisible();
+    await expect(back).toHaveCount(0);
+});
