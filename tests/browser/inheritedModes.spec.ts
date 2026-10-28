@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { createComponent, createDocument, createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
 import { openEditor } from './support/editor';
+import { openModePreview } from './support/variables';
 import type { Frame } from 'src/app/types';
 
 async function openModes(page: Page, missing = false) {
@@ -178,7 +179,7 @@ test('shows two palettes at once, keeps explicit choices ahead of local simulati
     await expect(inspector).toContainText('Day · View Home · Desktop');
     await page.getByRole('button', { name: 'More panels' }).click();
     await page.getByRole('checkbox', { name: 'Variables', exact: true }).check();
-    await page.getByRole('button', { name: 'More panels' }).click();
+    await openModePreview(page);
     await page.getByLabel('Preview Palette', { exact: true }).selectOption('night');
     await expect(mobile.locator('[data-cy="Body"]')).toHaveCSS('fill', 'rgb(221, 238, 255)');
     await expect(desktop.locator('[data-cy="Body"]')).toHaveCSS('fill', 'rgb(17, 34, 51)');

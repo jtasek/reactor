@@ -645,7 +645,11 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                     ...(chosenSize?.width !== undefined && resizesWidth
                         ? {
                               width: Math.min(chosenSize.width, viewport.width),
-                              maxWidth: 'none'
+                              // The wider variable editor still leaves navigation reachable.
+                              maxWidth:
+                                  id === 'variables'
+                                      ? 'calc(100vw - var(--application-bar-space))'
+                                      : 'none'
                           }
                         : {}),
                     ...(chosenSize?.height === undefined

@@ -15,7 +15,8 @@ export const DEFAULT_PANEL_LAYOUT: Record<string, PanelPlacement> = {
     documentInfo: { dock: null, position: { x: 1050, y: 80 } },
     dataView: { dock: null, position: { x: 600, y: 120 } },
     stats: { dock: 'bottom-right', position: { x: 900, y: 550 } },
-    variables: { dock: null, position: { x: 380, y: 360 } }
+    // Offset from Preview's default so both title bars stay reachable when both are open.
+    variables: { dock: null, position: { x: 420, y: 120 }, size: { width: 680, height: 560 } }
 };
 
 const docks = new Set([

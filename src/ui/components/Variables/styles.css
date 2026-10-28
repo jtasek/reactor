@@ -1,212 +1,447 @@
-/* The panel draws the glass; each group of variables is a lighter card on it. */
+/* PanelLayout owns the glass; this optional editor reuses Reactor's panel tokens. */
 .variables {
-    --field-height: 22px;
+    --field-height: 32px;
     --swatch-width: 36px;
     color: var(--text-color);
-    padding: var(--panel-gap);
+    container-type: inline-size;
+    min-width: 0;
     user-select: none;
 }
 
-.groupName {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    line-height: 16px;
-    margin: 0;
-    padding: var(--panel-gap) 10px 6px;
-    text-transform: uppercase;
+.variables button,
+.variables input,
+.variables select {
+    color: var(--text-color-hover);
+    font: inherit;
+    min-width: 0;
 }
 
-.create,
-.rowHeader {
-    align-items: center;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.variables > .field {
-    margin-bottom: var(--panel-gap);
-}
-
-.create {
-    background-color: var(--panel-content-background);
-    border-radius: var(--radius-md);
-    padding: 6px;
-}
-
-.variables input:not([type]),
-.variables input[type='text'],
-.variables input[type='number'],
+.variables input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='color']),
 .variables select {
     background-color: var(--field-background);
-    border: 0;
+    border: 1px solid var(--hairline-color);
     border-radius: var(--radius-sm);
-    color: var(--text-color-hover);
-    flex: 1;
-    font: inherit;
     height: var(--field-height);
-    min-width: 0;
     padding: 0 8px;
-}
-
-.variables select {
-    flex: 0 0 auto;
-    padding: 0 4px;
+    width: 100%;
 }
 
 .variables input[type='color'] {
     background-color: var(--field-background);
-    border: 0;
+    border: 1px solid var(--hairline-color);
     border-radius: var(--radius-sm);
-    cursor: pointer;
-    flex: 0 0 auto;
+    flex: 0 0 var(--swatch-width);
     height: var(--field-height);
     padding: 3px;
     width: var(--swatch-width);
 }
 
-.variables input[type='checkbox'] {
+.variables input[type='checkbox'],
+.variables input[type='radio'] {
     accent-color: var(--selection-color);
-    flex: 0 0 auto;
+    flex: none;
 }
 
 .variables button {
+    align-items: center;
     background-color: var(--field-background);
-    border: 0;
+    border: 1px solid var(--hairline-color);
     border-radius: var(--radius-sm);
-    color: var(--text-color-hover);
     cursor: pointer;
-    flex: 0 0 auto;
-    font: inherit;
-    font-size: 0.75rem;
-    height: var(--field-height);
-    padding: 0 8px;
+    display: inline-flex;
+    gap: 6px;
+    justify-content: center;
+    min-height: var(--field-height);
+    padding: 5px 10px;
+}
+
+.variables button:disabled {
+    cursor: default;
+    opacity: 0.5;
 }
 
 .variables input:focus-visible,
 .variables select:focus-visible,
-.variables button:focus-visible {
+.variables button:focus-visible,
+.variables summary:focus-visible {
     outline: var(--focus-ring-width) solid var(--focus-ring-color);
-    outline-offset: 0;
+    outline-offset: 1px;
 }
 
-.variables ul {
-    background-color: var(--panel-content-background);
-    border-radius: var(--radius-md);
-    list-style: none;
-    margin: 0;
-    padding: 4px 6px;
+.variables summary {
+    cursor: pointer;
+    padding: 8px 0;
 }
 
-.row {
-    display: grid;
+.toolbar {
+    border-bottom: 1px solid var(--hairline-color);
+    display: flex;
     gap: 4px;
-    min-width: 0;
-    padding: 6px 0;
+    padding: var(--panel-gap);
 }
 
-.row + .row {
-    border-top: 1px solid var(--hairline-color);
+.toolbar button {
+    background-color: transparent;
+    border-color: transparent;
+    flex: 1;
 }
 
-.variables .rowHeader input[type='text'] {
+.toolbar button[aria-pressed='true'] {
+    background-color: var(--panel-content-background);
+    border-color: var(--hairline-color);
     font-weight: 600;
 }
 
-.metadata {
-    color: var(--text-secondary-color);
+.workspace {
+    display: grid;
+    min-width: 0;
+}
+
+.sidebar {
+    display: none;
+}
+
+.compactPicker {
+    align-items: center;
+    border-bottom: 1px solid var(--hairline-color);
     display: flex;
+    gap: var(--panel-gap);
+    padding: var(--panel-gap);
+}
+
+.compactPicker select {
+    flex: 1;
+    width: 0;
+}
+
+.detail {
+    background-color: var(--panel-content-background);
+    min-width: 0;
+    padding: 16px;
+}
+
+.variables h3 {
+    color: var(--text-color-hover);
+    font-size: 1rem;
+    margin-bottom: 6px;
+}
+
+.row,
+.editorFields {
+    border: 0;
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    min-width: 0;
+    padding: 0;
+}
+
+.formField {
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+}
+
+.rowHeader {
+    align-items: start;
+    display: flex;
+    gap: var(--panel-gap);
+    min-width: 0;
+}
+
+.rowHeader > input {
+    flex: 1;
+    font-weight: 600;
+}
+
+.metadata,
+.resolution,
+.listHeading {
+    color: var(--text-secondary-color);
     font-size: 0.75rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.metadata {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     justify-content: space-between;
-    line-height: 16px;
 }
 
 .field {
     align-items: center;
     display: flex;
+    flex-wrap: wrap;
     gap: var(--panel-gap);
+    margin: 8px 0;
     min-width: 0;
 }
 
 .fieldLabel {
     color: var(--text-secondary-color);
-    flex: 0 0 44px;
+    flex: 0 0 64px;
     font-size: 0.75rem;
+    overflow-wrap: anywhere;
 }
 
-.confirm {
-    display: flex;
-    flex: 0 0 auto;
-    gap: 4px;
-}
-
-.problem {
-    color: var(--error-color);
-    font-size: 0.75rem;
-    margin: 6px 10px 0;
-}
-
-.empty {
-    color: var(--text-secondary-color);
-    font-size: 0.75rem;
-    margin: var(--panel-gap) 10px 0;
-}
-
-.group + .group,
-.create + .group,
-.problem + .group {
-    margin-top: var(--panel-gap);
-}
-
-/* What a text variable's value cannot show, on a line of its own under the row. */
-.note {
-    color: var(--warning-color);
-    font-size: 0.75rem;
-    line-height: 16px;
+.field > input,
+.field > .valueInput {
+    flex: 1;
+    min-width: 90px;
 }
 
 .variables select.source {
     flex: 1;
-    width: 0;
     max-width: 100%;
+    width: 0;
 }
 
-.resolution {
-    color: var(--text-secondary-color);
+.valueInput {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    min-width: 0;
+}
+
+.valueInput > input:not([type='color']) {
+    flex: 1;
+    width: 0;
+}
+
+.valueInput > span {
+    flex: 0 0 var(--swatch-width);
+}
+
+.valueInput input[type='color'] {
+    width: var(--swatch-width);
+}
+
+.inheritedValue {
+    align-items: center;
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: space-between;
+    min-width: 0;
+}
+
+.inheritedValue small {
+    flex: 1;
+    min-width: 80px;
+}
+
+.section {
+    border-top: 1px solid var(--hairline-color);
+    padding-top: 12px;
+}
+
+.actions,
+.confirm {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+.variables .primary {
+    background-color: var(--selection-color);
+    color: var(--panel-content-background);
+    font-weight: 600;
+}
+
+.variables .quiet,
+.variables .back {
+    background-color: transparent;
+    border-color: transparent;
+    color: var(--selection-color);
+    justify-content: flex-start;
+}
+
+.variables .back {
+    margin-bottom: 12px;
+    overflow-wrap: anywhere;
+    text-align: left;
+}
+
+.notice {
+    background-color: var(--warning-background);
+    border-radius: var(--radius-md);
+    color: var(--text-color);
+    margin: var(--panel-gap);
+    padding: 12px;
+}
+
+.problem,
+.note {
+    color: var(--error-color);
     font-size: 0.75rem;
-    line-height: 16px;
     overflow-wrap: anywhere;
 }
 
-.colorValue {
+.empty {
+    display: grid;
+    gap: 12px;
+    padding: 8px 0;
+}
+
+.empty p {
     color: var(--text-secondary-color);
+}
+
+.modeEdit {
+    align-items: center;
+    border-bottom: 1px solid var(--hairline-color);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 0;
+}
+
+.modeEdit > input {
+    flex: 1;
+    min-width: 80px;
+}
+
+.defaultChoice {
+    align-items: center;
+    display: flex;
+    font-size: 0.75rem;
+    gap: 5px;
+    min-height: var(--field-height);
+}
+
+.itemMenu {
+    flex: none;
     font-size: 0.75rem;
 }
 
-/* The resolved color of a color alias, beside its chain. */
-.swatch {
-    border: 1px solid var(--hairline-color);
-    border-radius: 2px;
-    display: inline-block;
-    height: 10px;
-    margin-right: 4px;
-    vertical-align: -1px;
-    width: 10px;
+.itemMenu summary {
+    border-radius: var(--radius-sm);
+    list-style: none;
+    min-height: var(--field-height);
+    padding: 6px;
 }
 
+.itemMenu[open] {
+    flex: 1 0 100%;
+}
+
+.rowHeader:has(.itemMenu[open]) {
+    flex-wrap: wrap;
+}
+
+.itemMenu > div {
+    display: grid;
+    gap: 4px;
+}
+
+.itemMenu button {
+    justify-content: flex-start;
+    text-align: left;
+    width: 100%;
+}
+
+.footer {
+    border-top: 1px solid var(--hairline-color);
+    padding: var(--panel-gap) 12px;
+}
+
+.secondary,
 .dimensions {
-    margin-bottom: var(--panel-gap);
     font-size: 0.75rem;
 }
 
 .dimension {
+    background-color: var(--panel-content-background);
     border: 1px solid var(--hairline-color);
     border-radius: var(--radius-md);
-    display: flex;
-    flex-direction: column;
+    display: grid;
     gap: var(--panel-gap);
     margin: var(--panel-gap) 0;
     min-width: 0;
     padding: var(--panel-gap);
+}
+
+.swatch {
+    border: 1px solid var(--hairline-color);
+    border-radius: 4px;
+    display: inline-block;
+    flex: none;
+    height: 16px;
+    margin-right: 4px;
+    vertical-align: middle;
+    width: 16px;
+}
+
+@container (min-width: 560px) {
+    .workspace {
+        grid-template-columns: 190px minmax(0, 1fr);
+        min-height: 390px;
+    }
+
+    .sidebar {
+        border-right: 1px solid var(--hairline-color);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px 10px;
+    }
+
+    .compactPicker {
+        display: none;
+    }
+
+    .itemList {
+        display: grid;
+        gap: 4px;
+        list-style: none;
+    }
+
+    .variables .item {
+        background-color: transparent;
+        border-color: transparent;
+        justify-content: flex-start;
+        padding: 10px 8px;
+        text-align: left;
+        width: 100%;
+    }
+
+    .item > span:last-child {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .item small {
+        color: var(--text-secondary-color);
+        display: block;
+        font-size: 0.75rem;
+    }
+
+    .variables .item[aria-pressed='true'] {
+        background-color: var(--tag-blue-background);
+        color: var(--selection-color);
+    }
+
+    .newItem {
+        margin-top: auto;
+    }
+
+    .detail {
+        padding: 24px;
+    }
+}
+
+@media (pointer: coarse) {
+    .variables {
+        --field-height: 44px;
+    }
+
+    .variables input,
+    .variables select {
+        font-size: 16px;
+    }
 }

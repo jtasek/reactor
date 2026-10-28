@@ -1,3 +1,4 @@
+import { selectVariable } from './support/variables';
 import { expect, test, type Page } from '@playwright/test';
 import { createDocument, createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
@@ -169,6 +170,7 @@ test('edits numeric mode values in Variables and keeps Preview geometry equal to
     await page.getByRole('checkbox', { name: 'Variables', exact: true }).check();
     await page.getByRole('button', { name: 'More panels' }).click();
     const variables = page.getByRole('region', { name: 'Variables', exact: true });
+    await selectVariable(page, 'Control width');
     const field = variables.getByLabel('Comfortable value of Control width', { exact: true });
     await field.fill('90');
     await field.press('Enter');

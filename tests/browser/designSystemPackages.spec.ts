@@ -1,3 +1,4 @@
+import { createVariable, selectVariable } from './support/variables';
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { createDocument } from 'src/app/factories';
@@ -26,11 +27,7 @@ test('reviews imports, offers reuse/replace/separate, exports identities and rej
     page
 }) => {
     await openEditor(page, ['Variables']);
-    await page.getByLabel('New variable name', { exact: true }).fill('Ink');
-    await page
-        .getByRole('region', { name: 'Variables' })
-        .getByRole('button', { name: 'Add', exact: true })
-        .click();
+    await createVariable(page, 'Ink', 'Color');
     await page.getByText('Design-system import / export', { exact: true }).click();
     const upload = async (text: string) =>
         page.getByLabel('Design-system package', { exact: true }).setInputFiles({
@@ -40,19 +37,24 @@ test('reviews imports, offers reuse/replace/separate, exports identities and rej
         });
     await upload(packageText());
     await expect(page.getByLabel('Import preview')).toContainText('Ink (color) — matches Ink');
+    await selectVariable(page, 'Ink');
     await expect(page.getByLabel('Value of Ink', { exact: true })).toHaveValue('#000000');
     await page.getByRole('button', { name: 'Apply import', exact: true }).click();
+    await selectVariable(page, 'Ink');
     await expect(page.getByLabel('Value of Ink', { exact: true })).toHaveValue('#000000');
+    await selectVariable(page, 'Foreground');
     await expect(page.getByLabel('Source of Foreground', { exact: true })).toContainText(
         'Follow Ink'
     );
     await upload(packageText());
     await page.getByLabel('Import conflict handling').selectOption('replace');
     await page.getByRole('button', { name: 'Apply import', exact: true }).click();
+    await selectVariable(page, 'Ink');
     await expect(page.getByLabel('Value of Ink', { exact: true })).toHaveValue('#112233');
     await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.reload();
     await openEditor(page, ['Variables']);
+    await selectVariable(page, 'Ink');
     await expect(page.getByLabel('Value of Ink', { exact: true })).toHaveValue('#112233');
     await page.getByText('Design-system import / export', { exact: true }).click();
     await upload(packageText('#aabbcc', 'Brand/Ink'));
@@ -61,10 +63,12 @@ test('reviews imports, offers reuse/replace/separate, exports identities and rej
     );
     await page.getByLabel('Import conflict handling').selectOption('replace');
     await page.getByRole('button', { name: 'Apply import', exact: true }).click();
+    await selectVariable(page, 'Brand/Ink');
     await expect(page.getByLabel('Value of Brand/Ink', { exact: true })).toHaveValue('#aabbcc');
     await upload(packageText('#aabbcc', 'Brand/Ink'));
     await page.getByLabel('Import conflict handling').selectOption('separate');
     await page.getByRole('button', { name: 'Apply import', exact: true }).click();
+    await selectVariable(page, 'Brand/Ink 2');
     await expect(page.getByLabel('Name of Brand/Ink 2', { exact: true })).toBeVisible();
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export design system', exact: true }).click();
@@ -76,9 +80,11 @@ test('reviews imports, offers reuse/replace/separate, exports identities and rej
     await upload('{"format":"wrong","version":1}');
     await expect(page.getByRole('alert')).toContainText('Unsupported');
     await expect(page.getByRole('button', { name: 'Apply import', exact: true })).toHaveCount(0);
+    await selectVariable(page, 'Brand/Ink');
     await expect(page.getByLabel('Value of Brand/Ink', { exact: true })).toHaveValue('#aabbcc');
     await upload(packageText('#ffffff', 'Brand/Ink'));
     await page.getByRole('button', { name: 'Cancel import', exact: true }).click();
+    await selectVariable(page, 'Brand/Ink');
     await expect(page.getByLabel('Value of Brand/Ink', { exact: true })).toHaveValue('#aabbcc');
 });
 
