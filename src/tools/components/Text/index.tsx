@@ -33,6 +33,7 @@ interface Props {
     selected: boolean;
     type: 'text';
     value: string;
+    textLayout?: import('src/app/types').Text['textLayout'];
 }
 
 export const createTextProps = (
@@ -52,7 +53,15 @@ export const createTextProps = (
     };
 };
 
-export const Text: FC<Props> = ({ fontSize, fontColor, name, position, value, selected }) => {
+export const Text: FC<Props> = ({
+    fontSize,
+    fontColor,
+    name,
+    position,
+    value,
+    selected,
+    textLayout
+}) => {
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
     return (
@@ -63,7 +72,17 @@ export const Text: FC<Props> = ({ fontSize, fontColor, name, position, value, se
             x={position.x}
             y={position.y}
         >
-            {value}
+            {textLayout
+                ? textLayout.lines.map((line, index) => (
+                      <tspan
+                          key={index}
+                          x={position.x}
+                          y={position.y + index * textLayout.lineHeight}
+                      >
+                          {line}
+                      </tspan>
+                  ))
+                : value}
         </text>
     );
 };

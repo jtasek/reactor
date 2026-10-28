@@ -1,3 +1,5 @@
+import * as componentProperties from 'src/app/componentPropertyEdits';
+import * as layout from 'src/app/contextualLayout';
 import * as roles from 'src/app/roleEdits';
 import * as pointer from 'src/events/pointerEdits';
 import * as shapes from 'src/app/shapeEdits';
@@ -83,6 +85,8 @@ export function createTestStore(
         options.editorLoaded === false
             ? undefined
             : {
+                  componentProperties,
+                  layout,
                   roles,
                   pointer,
                   clipboardEdits,

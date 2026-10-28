@@ -64,7 +64,7 @@ const notBlank = (value: string) => value.trim() !== '';
 const stackDimensionEditable = (axis: 'width' | 'height') => (shape: Shape, document: Document) =>
     (shape.sizing?.[axis]?.mode ?? 'fixed') === 'fixed' &&
     (shape.type === 'rectangle' || shape.type === 'image') &&
-    hasLayoutOffset(document, [shape.id]) &&
+    (shape.type === 'rectangle' || hasLayoutOffset(document, [shape.id])) &&
     !isShapeLocked(document, shape.id);
 
 function writeStackDimension(shape: Shape, axis: 'width' | 'height', value: number) {
@@ -264,6 +264,19 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         write: (shape, value) => {
             if (shape.type === 'text' && value > 0) {
                 shape.fontSize = value;
+            }
+        }
+    },
+    {
+        key: 'wrapWidth',
+        label: 'Wrap width (0 = auto)',
+        group: 'Text',
+        kind: 'number',
+        read: (shape) => (shape.type === 'text' ? (shape.wrapWidth ?? 0) : undefined),
+        accepts: (value) => value >= 0,
+        write: (shape, value) => {
+            if (shape.type === 'text' && value >= 0) {
+                shape.wrapWidth = value;
             }
         }
     },

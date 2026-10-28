@@ -26,6 +26,30 @@ export function setVariableAlias(
         next.values = { ...definition.values };
         if (definition.dimensionId !== undefined) next.dimensionId = definition.dimensionId;
     }
+    if (next.type === 'text' && definition.type === 'text') {
+        next.values = {
+            default: next.values.default,
+            ...Object.fromEntries(
+                Object.keys(definition.values)
+                    .filter((mode) => mode !== 'default')
+                    .map((mode) => [
+                        mode,
+                        escapeTemplate(
+                            String(
+                                resolveVariable(
+                                    variable,
+                                    before,
+                                    definition.dimensionId ? { [definition.dimensionId]: mode } : {}
+                                )
+                            )
+                        )
+                    ])
+            )
+        };
+        if (definition.dimensionId !== undefined) {
+            next.dimensionId = definition.dimensionId;
+        }
+    }
     if (next.type === 'number' && definition.type === 'number') {
         next.values = { ...definition.values };
 

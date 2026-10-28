@@ -105,9 +105,10 @@ export function resolveComponentRole(
             continue;
         }
         const source =
-            resolved.property.key === 'text' && instance
+            instance?.projectedSource?.shapes.find((shape) => shape.id === resolved.source.id) ??
+            (resolved.property.key === 'text' && instance
                 ? applyInstanceOverrides(resolved.source, instance, component, document)
-                : resolved.source;
+                : resolved.source);
         // Text property readers preserve templates for editing. Semantics use the same
         // rendered value as artwork, including escaping already resolved variable overrides.
         const value =

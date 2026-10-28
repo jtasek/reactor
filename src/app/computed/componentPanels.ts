@@ -2,7 +2,6 @@ import type { Application, Document, InstanceShape } from '../types';
 import { componentPropValue, exposableProperties } from '../componentProps';
 import { editorHelpers, editorLoaded } from '../editorHelpers';
 import { SHAPE_PROPERTIES } from '../properties';
-import { variableDefinition } from '../variableResolver';
 
 export function instanceProperties(document: Document) {
     const selected = document.selectedShapes.filter(
@@ -66,14 +65,11 @@ export function instanceProperties(document: Document) {
             ];
         }),
         variables: Object.values(document.variables).map((variable) => {
-            const definition = variableDefinition(variable, document.variables);
-
             return {
                 id: variable.id,
                 name: variable.name,
                 type: variable.type,
-                modesUnavailable:
-                    definition.type === 'number' && definition.dimensionId !== undefined
+                modesUnavailable: false
             };
         })
     };

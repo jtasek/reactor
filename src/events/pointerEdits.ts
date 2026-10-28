@@ -1,3 +1,9 @@
+export {
+    editableScreenView,
+    pointerDocument,
+    selectedViewProperties,
+    componentEditingOrigin
+} from 'src/app/screenViewEditing';
 import {
     canTransformScreenViewShape,
     canTransformScreenViewContainer,

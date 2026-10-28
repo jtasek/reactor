@@ -1,37 +1,77 @@
-import type { Document, Frame, Shape, VariableContext } from './types';
+import type { Document, Frame, Size, VariableContext } from './types';
 import { resolveModes, type ModeAddress } from './inheritedModes';
 import { resolveVariable, variableDefinition } from './variableResolver';
+import { variableDependencies, templateVariablesIds } from './variables';
 import { variableContext } from './variableModes';
 import { acceptsFrameNumber, FRAME_NUMBER_KEYS, writeFrameNumber } from './frameVariables';
+import { projectGeometry } from './contextualGeometry';
 import { projectFrameLayout } from './frameLayout';
 
 export const NUMBER_MODE_SUPPORT =
-    'In Screen views and Preview, number modes support stack gap, padding and fixed frame/rectangle sizes. Other numeric properties and component sizes currently use base values.';
+    'Modes resolve layout, component sizes, font size, text and wrapping locally. Position and rotation bindings keep their base values.';
 
-const hasModes = (document: Pick<Document, 'variables'>, id: string | undefined) => {
-    const variable = id ? document.variables[id] : undefined;
-    const definition = variable && variableDefinition(variable, document.variables);
+/** Context-dependent geometry and opt-in wrapping need local bounds, including source artwork. */
+export function hasNumericLayout(
+    document: Pick<Document, 'frames' | 'shapes' | 'variables' | 'components'>
+) {
+    const hasModes = (id: string) => {
+        const variable = document.variables[id];
+        if (!variable) {
+            return false;
+        }
+        return [id, ...variableDependencies(variable, document.variables)].some((dependency) => {
+            const definition =
+                document.variables[dependency] &&
+                variableDefinition(document.variables[dependency], document.variables);
+            return (
+                definition &&
+                (definition.type === 'number' || definition.type === 'text') &&
+                definition.dimensionId !== undefined
+            );
+        });
+    };
+    const shapes = [
+        ...Object.values(document.shapes),
+        ...Object.values(document.components).flatMap((component) =>
+            Object.values(component.sourceShapes ?? {})
+        )
+    ];
 
-    return definition?.type === 'number' && definition.dimensionId !== undefined;
-};
-
-/** Whether any frame or rectangle size follows a number variable that varies by mode. */
-export const hasNumericLayout = (document: Pick<Document, 'frames' | 'shapes' | 'variables'>) =>
-    Object.values(document.frames).some((frame) =>
-        Object.values(frame.bindings ?? {}).some((id) => hasModes(document, id))
-    ) ||
-    Object.values(document.shapes).some(
-        (shape) =>
-            shape.type === 'rectangle' &&
-            (hasModes(document, shape.bindings?.width) ||
-                hasModes(document, shape.bindings?.height))
+    return (
+        Object.values(document.frames).some((frame) =>
+            Object.values(frame.bindings ?? {}).some(hasModes)
+        ) ||
+        shapes.some(
+            (shape) =>
+                Object.values(shape.bindings ?? {}).some(hasModes) ||
+                (shape.type === 'instance' &&
+                    Object.values(shape.overrides).some(
+                        (override) =>
+                            (typeof override === 'object' && hasModes(override.variableId)) ||
+                            (typeof override === 'string' &&
+                                [...templateVariablesIds(override, document.variables)].some(
+                                    hasModes
+                                ))
+                    )) ||
+                (shape.type === 'text' &&
+                    (Boolean(shape.wrapWidth) ||
+                        (shape.template !== undefined &&
+                            [...templateVariablesIds(shape.template, document.variables)].some(
+                                hasModes
+                            ))))
+        )
     );
+}
 
 /** One shared geometry projection for view drawing, interaction, thumbnails and Preview. */
 export function projectContextualLayout(document: Document, address: ModeAddress = {}) {
     const modeProblems: Record<string, string> = {};
-    const inputs = contextualDocument(document, address, modeProblems);
-    const layout = projectFrameLayout(inputs);
+    const initial = contextualDocument(document, address, modeProblems);
+    const firstLayout = projectFrameLayout(initial);
+    const inputs = Object.keys(firstLayout.frameSizes).length
+        ? contextualDocument(document, address, modeProblems, firstLayout.frameSizes)
+        : initial;
+    const layout = inputs === initial ? firstLayout : projectFrameLayout(inputs);
     const frameSizes = Object.fromEntries(
         Object.values(inputs.frames)
             .filter((frame) => frame.size !== document.frames[frame.id].size)
@@ -47,6 +87,7 @@ export function projectContextualLayout(document: Document, address: ModeAddress
 
     return {
         ...layout,
+        resolvedShapes: inputs === document ? undefined : inputs.shapes,
         modeProblems,
         frameSizes: { ...frameSizes, ...layout.frameSizes },
         shapeSizes: { ...shapeSizes, ...layout.shapeSizes }
@@ -57,7 +98,8 @@ export function projectContextualLayout(document: Document, address: ModeAddress
 export function contextualDocument(
     document: Document,
     address: ModeAddress = {},
-    problems: Record<string, string> = {}
+    problems: Record<string, string> = {},
+    availableSizes: Record<string, Size> = {}
 ): Pick<
     Document,
     'frames' | 'shapes' | 'groups' | 'layers' | 'components' | 'variables' | 'shapesIds'
@@ -106,48 +148,34 @@ export function contextualDocument(
             return [frame.id, frame];
         })
     );
-    const componentMembers = new Set(
-        Object.values(document.components).flatMap((component) => component.shapesIds)
-    );
     const shapes = Object.fromEntries(
         Object.values(document.shapes).map((source) => {
-            if (
-                source.type !== 'rectangle' ||
-                componentMembers.has(source.id) ||
-                (!source.bindings?.width && !source.bindings?.height) ||
-                !document.frames[source.parentFrameId ?? '']?.stack
-            ) {
-                return [source.id, source];
-            }
+            const modes = resolveModes(document, {
+                ...address,
+                frameId: source.parentFrameId
+            }).modes;
+            const parent = frames[source.parentFrameId ?? ''];
+            const availableWidth =
+                parent && parent.sizing?.width?.mode !== 'hug'
+                    ? Math.max(
+                          1,
+                          (availableSizes[parent.id]?.width ?? parent.size.width) -
+                              2 * (parent.stack?.padding ?? 0)
+                      )
+                    : undefined;
 
-            const context = contextFor(source.parentFrameId);
-            const shape: Shape = { ...source, size: { ...source.size } };
-
-            (['width', 'height'] as const).forEach((key) => {
-                const id = source.bindings?.[key];
-
-                if (!id) {
-                    return;
-                }
-
-                const value = valueFor(id, context);
-
-                if (
-                    typeof value !== 'number' ||
-                    value <= 0 ||
-                    (source.sizing?.[key]?.mode ?? 'fixed') !== 'fixed'
-                ) {
-                    problems[source.id] =
-                        `${source.name}: ${key} mode value is unavailable or invalid; using the authored value.`;
-
-                    return;
-                }
-
-                shape.size[key] = value;
-                delete shape.bounds;
-            });
-
-            return [shape.id, shape];
+            return [
+                source.id,
+                projectGeometry(
+                    source,
+                    document,
+                    modes,
+                    `${address.viewId ?? address.screenId ?? 'canvas'}/${source.id}`,
+                    availableWidth,
+                    undefined,
+                    problems
+                )
+            ];
         })
     );
 

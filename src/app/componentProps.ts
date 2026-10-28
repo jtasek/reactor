@@ -84,11 +84,7 @@ export function componentPropValue(
         const variable = document.variables[override.variableId];
 
         return variable
-            ? resolveVariable(
-                  variable,
-                  document.variables,
-                  property.kind === 'color' ? variableContext(document, theme) : {}
-              )
+            ? resolveVariable(variable, document.variables, variableContext(document, theme))
             : property.read(source, document);
     }
 
@@ -133,7 +129,7 @@ export function applyInstanceOverrides(
         if (copy.type === 'text' && prop.key === 'text' && typeof value === 'string') {
             // A variable's value is already rendered; literal overrides may be templates.
             const text = typeof override === 'string' ? override : escapeTemplate(value);
-            writeText(copy, text, document.variables);
+            writeText(copy, text, document.variables, variableContext(document, theme));
 
             continue;
         }

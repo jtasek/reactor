@@ -16,14 +16,17 @@ export function supportsNumberModes(
         return true;
     }
 
+    if (['fontSize', 'wrapWidth'].includes(key)) {
+        return shape.type === 'text';
+    }
+    if (['cornerRadius', 'opacity'].includes(key)) {
+        return true;
+    }
+
     return (
         shape.type === 'rectangle' &&
         (key === 'width' || key === 'height') &&
-        Boolean(document.frames[shape.parentFrameId ?? '']?.stack) &&
-        (shape.sizing?.[key]?.mode ?? 'fixed') === 'fixed' &&
-        !Object.values(document.components).some((component) =>
-            component.shapesIds.includes(shape.id)
-        )
+        (shape.sizing?.[key]?.mode ?? 'fixed') === 'fixed'
     );
 }
 

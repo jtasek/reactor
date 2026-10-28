@@ -1,7 +1,7 @@
 import React, { CSSProperties, FC } from 'react';
 import type { InstanceShape, Shape, VariableContext } from 'src/app/types';
 import type { ComponentSource } from 'src/app/componentSource';
-import { componentSource } from 'src/app/componentSource';
+import { instanceSource } from 'src/app/componentSource';
 import { applyInstanceOverrides } from 'src/app/componentProps';
 import { boxCenter, getShapeBounds } from 'src/app/utils';
 import { themeColors } from 'src/app/themeColors';
@@ -48,9 +48,10 @@ export const Instance: FC<Props> = ({
         <g transform={`translate(${offsetX} ${offsetY})`}>
             {source.shapes.map((member: Shape) => {
                 const painted = themeColors(member, document, theme);
-                const shape = component
-                    ? applyInstanceOverrides(painted, instance, component, document, theme)
-                    : painted;
+                const shape =
+                    component && !instance.projectedSource
+                        ? applyInstanceOverrides(painted, instance, component, document, theme)
+                        : painted;
                 if (!shape.visible) {
                     return null;
                 }
@@ -64,11 +65,7 @@ export const Instance: FC<Props> = ({
                         <g key={shape.id} transform={transform} opacity={shape.opacity}>
                             <Instance
                                 instance={shape}
-                                source={componentSource(
-                                    document,
-                                    shape.componentId,
-                                    ancestorComponentIds
-                                )}
+                                source={instanceSource(document, shape, ancestorComponentIds)}
                                 ancestors={ancestorComponentIds}
                                 context={instanceModes(document, theme, shape)}
                             />

@@ -4,7 +4,7 @@ import { projectContextualLayout } from '../app/contextualLayout';
 import { frameParents } from '../app/frameState';
 import { screenFrames } from '../app/screens';
 import { shownShapesIds } from '../app/membership';
-import { componentSource, instanceBox } from '../app/componentSource';
+import { instanceSource, instanceBox } from '../app/componentSource';
 import { applyInstanceOverrides } from '../app/componentProps';
 import { effectiveRoleSettings, resolveComponentRole } from '../app/componentRoles';
 import { themeColors } from '../app/themeColors';
@@ -148,18 +148,23 @@ export function projectPreview(
                     ...paint
                 });
                 break;
-            case 'text':
-                primitive(
-                    'text',
-                    {
-                        x: shape.position.x,
-                        y: shape.position.y,
-                        'font-size': shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE,
-                        ...(shape.fontColor === undefined ? {} : { fill: shape.fontColor })
-                    },
-                    shape.value
-                );
+            case 'text': {
+                const lines = shape.textLayout?.lines ?? [shape.value];
+                lines.forEach((line, index) => {
+                    group.children!.push({
+                        key: `${key}/line-${index}`,
+                        tag: 'text',
+                        attrs: {
+                            x: shape.position.x,
+                            y: shape.position.y + index * (shape.textLayout?.lineHeight ?? 0),
+                            'font-size': shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE,
+                            ...(shape.fontColor === undefined ? {} : { fill: shape.fontColor })
+                        },
+                        text: line
+                    });
+                });
                 break;
+            }
             case 'image': {
                 const hash = /^asset:([a-f0-9]{64})$/.exec(shape.source)?.[1];
                 if (!hash) {
@@ -181,7 +186,7 @@ export function projectPreview(
                 break;
             }
             case 'instance': {
-                const source = componentSource(document, shape.componentId, ancestors);
+                const source = instanceSource(document, shape, ancestors);
                 const component = document.components[shape.componentId];
                 if (!source || !component) {
                     throw new Error(`${shape.name}: missing or cyclic component source.`);
@@ -191,13 +196,15 @@ export function projectPreview(
                 attrs.transform = `${shape.rotation ? `rotate(${shape.rotation} ${pivot.x} ${pivot.y}) ` : ''}translate(${shape.position.x - source.box.topLeft.x} ${shape.position.y - source.box.topLeft.y})`;
                 const next = new Set(ancestors).add(shape.componentId);
                 group.children = source.shapes.flatMap((member) => {
-                    const resolved = applyInstanceOverrides(
-                        themeColors(member, document, context),
-                        shape,
-                        component,
-                        document,
-                        context
-                    );
+                    const resolved = shape.projectedSource
+                        ? themeColors(member, document, context)
+                        : applyInstanceOverrides(
+                              themeColors(member, document, context),
+                              shape,
+                              component,
+                              document,
+                              context
+                          );
 
                     return resolved.visible ? [draw(resolved, key, next, context)] : [];
                 });

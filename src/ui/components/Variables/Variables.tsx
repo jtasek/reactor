@@ -8,7 +8,7 @@ import { useActions, useVariableContext, useCurrentDocument } from 'src/app/hook
 import { useVariableUses, useVariables } from 'src/app/variableHooks';
 import { isVariableName, templateWithNames, variableDependencies } from 'src/app/variables';
 import { resolveVariable, variableProblems } from 'src/app/variableResolver';
-import { templateProblems, variableChain } from 'src/app/editorVariables';
+import { variableChain } from 'src/app/editorVariables';
 import { SharedOnRelease } from '../Inspector/SharedOnRelease';
 import styles from './styles.css';
 
@@ -157,18 +157,12 @@ const VariableRow: FC<{
     const document = useCurrentDocument();
     // The default mode's color is the base value, edited in the value field.
     const dimension =
-        (variable.type === 'color' || variable.type === 'number') &&
-        variable.dimensionId !== undefined
+        variable.type !== 'boolean' && variable.dimensionId !== undefined
             ? document.dimensions[variable.dimensionId]
             : undefined;
     const [problem, setProblem] = useState<string>();
     const [confirming, setConfirming] = useState(false);
-    const problems =
-        variable.alias !== undefined
-            ? variableProblems(variable, variables)
-            : variable.type === 'text'
-              ? templateProblems(variable.values.default, variables, [variable.id])
-              : [];
+    const problems = variableProblems(variable, variables);
 
     const ValueCaption = variable.type === 'boolean' ? 'div' : 'label';
     const resolved =
@@ -231,7 +225,7 @@ const VariableRow: FC<{
                 // A caption click would flip a boolean, so only other fields take it as a label.
                 <ValueCaption className={styles.field}>
                     <span className={styles.fieldLabel}>
-                        {variable.type !== 'color' && variable.type !== 'number'
+                        {variable.type === 'boolean'
                             ? 'Value'
                             : (dimension?.modes[dimension.defaultModeId]?.name ?? 'Base')}
                     </span>
@@ -241,7 +235,7 @@ const VariableRow: FC<{
                     )}
                 </ValueCaption>
             )}
-            {(variable.type === 'color' || variable.type === 'number') &&
+            {variable.type !== 'boolean' &&
                 variable.alias === undefined &&
                 Object.keys(document.dimensions).length > 0 && (
                     <>
@@ -277,22 +271,39 @@ const VariableRow: FC<{
                                         >
                                             {mode.name}
                                         </label>
-                                        {variable.type === 'number' ? (
+                                        {variable.type !== 'color' ? (
                                             <DraftField
                                                 label={`${mode.name} value of ${variable.name}`}
-                                                type="number"
-                                                value={String(
-                                                    variable.values[mode.id] ??
-                                                        variable.values.default
-                                                )}
+                                                type={
+                                                    variable.type === 'number' ? 'number' : 'text'
+                                                }
+                                                value={
+                                                    variable.type === 'text'
+                                                        ? templateWithNames(
+                                                              variable.values[mode.id] ??
+                                                                  variable.values.default,
+                                                              variables
+                                                          )
+                                                        : String(
+                                                              variable.values[mode.id] ??
+                                                                  variable.values.default
+                                                          )
+                                                }
                                                 onCommit={(value) => {
-                                                    if (value.trim() !== '') {
-                                                        setVariableModeValue({
-                                                            variableId: variable.id,
-                                                            modeId: mode.id,
-                                                            value: Number(value)
-                                                        });
+                                                    if (
+                                                        variable.type === 'number' &&
+                                                        value.trim() === ''
+                                                    ) {
+                                                        return;
                                                     }
+                                                    setVariableModeValue({
+                                                        variableId: variable.id,
+                                                        modeId: mode.id,
+                                                        value:
+                                                            variable.type === 'number'
+                                                                ? Number(value)
+                                                                : value
+                                                    });
                                                 }}
                                             />
                                         ) : (
@@ -336,12 +347,11 @@ const VariableRow: FC<{
                                 ))}
                     </>
                 )}
-            {(variable.type === 'text' || variable.type === 'boolean') &&
-                Object.keys(document.dimensions).length > 0 && (
-                    <small className={styles.resolution}>
-                        Text and state variables currently have one base value.
-                    </small>
-                )}
+            {variable.type === 'boolean' && Object.keys(document.dimensions).length > 0 && (
+                <small className={styles.resolution}>
+                    State variables currently have one base value.
+                </small>
+            )}
             {sources.length > 0 || variable.alias !== undefined ? (
                 <label className={styles.field}>
                     <span className={styles.fieldLabel}>Source</span>

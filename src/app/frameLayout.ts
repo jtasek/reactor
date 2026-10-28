@@ -8,6 +8,7 @@ import { componentSource, instanceBox } from './componentSource';
 
 const ZERO: Point = { x: 0, y: 0 };
 export interface FrameLayout {
+    resolvedShapes?: Record<string, Shape>;
     modeProblems?: Record<string, string>;
     shapes: Record<string, Point>;
     frames: Record<string, Point>;
@@ -301,12 +302,12 @@ export const frameLayout = (document: Document): FrameLayout =>
     typeof document.frameLayout === 'object' ? document.frameLayout : projectFrameLayout(document);
 
 export function renderedShape(document: Document, id: string, layout?: FrameLayout): Shape {
-    const shape = document.shapes[id];
+    const projection = layout ?? frameLayout(document);
+    const shape = projection.resolvedShapes?.[id] ?? document.shapes[id];
     if (!shape?.parentFrameId) {
         return shape;
     }
 
-    const projection = layout ?? frameLayout(document);
     const delta = projection.shapes[id] ?? ZERO;
     const size = projection.shapeSizes[id];
 

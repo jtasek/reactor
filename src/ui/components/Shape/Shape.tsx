@@ -1,4 +1,4 @@
-import { hasLayoutOffset } from 'src/app/frameLayout';
+import { frameLayout, hasLayoutOffset } from 'src/app/frameLayout';
 import React, { CSSProperties, FC, createElement, memo, useLayoutEffect, useRef } from 'react';
 import { Active } from '../Active/Active';
 import { Label } from '../Label';
@@ -51,7 +51,8 @@ export const Shape = memo((props: Props) => {
     const measuredGeometry = useRef<string | null>(null);
     const groupRef = useRef<SVGGElement>(null);
     // The component of this shape's type, which takes this shape's fields.
-    const source = useComponentSource(shape.type === 'instance' ? shape.componentId : null);
+    const baseSource = useComponentSource(shape.type === 'instance' ? shape.componentId : null);
+    const source = shape.type === 'instance' ? (shape.projectedSource ?? baseSource) : baseSource;
     const variableKey = useAppState((state) => {
         if (shape.type !== 'instance') {
             return '';
@@ -73,6 +74,7 @@ export const Shape = memo((props: Props) => {
             : (getComponentByType(shape.type) as FC<Omit<ShapeType, 'key'>>);
     const authored = useAppState((state) => state.currentDocument.shapes[shapeId]);
     const inLayout = hasLayoutOffset(document, [shapeId]);
+    const contextual = Boolean(frameLayout(document).resolvedShapes?.[shapeId]);
     const geometryKey = `${shapeGeometryKey(authored)}:${source?.key ?? ''}:${variableKey}`;
 
     // Measure the actual rendered geometry so the selection box, handles and
@@ -90,7 +92,7 @@ export const Shape = memo((props: Props) => {
             return;
         }
 
-        if (!measuring || measuredGeometry.current === geometryKey) {
+        if (contextual || !measuring || measuredGeometry.current === geometryKey) {
             return;
         }
 
@@ -107,7 +109,7 @@ export const Shape = memo((props: Props) => {
         } catch {
             // getBBox throws for elements that are not yet renderable; ignore.
         }
-    }, [geometryKey, shapeId, setShapeBounds, measuring, visible]);
+    }, [contextual, geometryKey, shapeId, setShapeBounds, measuring, visible]);
 
     if (!Component && shape.type !== 'instance') {
         console.error(`Component ${shape.type} not found`);

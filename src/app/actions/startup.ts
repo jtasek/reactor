@@ -1,3 +1,4 @@
+import { editorLoaded } from '../editorHelpers';
 import type { Command, CommandPlace, CommandScope } from 'src/app/types';
 import type { Context } from 'src/app';
 import { Tool } from 'src/tools/types';
@@ -7,6 +8,10 @@ import { documentOwner, readAccount } from '../services/accounts';
 import { PANEL_LAYOUT_KEY, readPanelLayout } from '../panelLayout';
 import { DOCUMENTS_LAYOUT_KEY, readDocumentsLayout } from '../documentList';
 import { EXPLORER_VIEW_KEY, readExplorerView } from '../explorerView';
+
+export const setEditorReady = ({ state }: Context) => {
+    state.editorReady = editorLoaded();
+};
 
 const commands: Record<string, Command> = {};
 const tools: Record<string, Tool> = {};

@@ -82,7 +82,7 @@ export function readDesignSystemPackage(input: unknown): DesignSystemPackage {
         if (variable.type === 'text' && variable.alias !== undefined)
             issues.push(...variableProblems({ ...variable, alias: undefined }, byId));
         if (issues.length) throw new Error(`${variable.name}: ${issues.join(', ')}.`);
-        if (variable.type === 'color' || variable.type === 'number') {
+        if (variable.type !== 'boolean') {
             const dimension =
                 variable.dimensionId === undefined
                     ? undefined
@@ -101,8 +101,11 @@ export function readDesignSystemPackage(input: unknown): DesignSystemPackage {
                     throw new Error(`Invalid mode ${mode} for ${variable.name}.`);
             }
         }
-        if (variable.type === 'text')
-            variable.values.default = templateWithIds(variable.values.default, byId);
+        if (variable.type === 'text') {
+            Object.keys(variable.values).forEach((mode) => {
+                variable.values[mode] = templateWithIds(variable.values[mode], byId);
+            });
+        }
     }
     return {
         format: FORMAT,
@@ -230,13 +233,22 @@ export function planDesignSystemImport(
                 ? replaceTemplateIds(variable.values.default, (id) => variableIds.get(id))
                 : variable.values.default;
         const color =
-            variable.type === 'color' || variable.type === 'number'
+            variable.type !== 'boolean'
                 ? {
                       dimensionId: variable.dimensionId
                           ? dimensionIds.get(variable.dimensionId)!
                           : null,
                       modeValues: Object.fromEntries(
-                          Object.entries(variable.values).filter(([key]) => key !== 'default')
+                          Object.entries(variable.values)
+                              .filter(([key]) => key !== 'default')
+                              .map(([key, value]) => [
+                                  key,
+                                  variable.type === 'text'
+                                      ? replaceTemplateIds(String(value), (id) =>
+                                            variableIds.get(id)
+                                        )
+                                      : value
+                              ])
                       )
                   }
                 : {};
@@ -261,7 +273,7 @@ export function planDesignSystemImport(
                       value,
                       source,
                       ...(alias === null ? {} : { alias }),
-                      ...(variable.type === 'color' || variable.type === 'number'
+                      ...(variable.type !== 'boolean'
                           ? { ...color, dimensionId: color.dimensionId ?? undefined }
                           : {})
                   }

@@ -25,7 +25,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 16;
+export const SCHEMA_VERSION = 17;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -33,6 +33,9 @@ export const RUNTIME_FIELDS = new Set([
     'frameLayout',
     'active',
     'bounds',
+    'projectedSource',
+    'layoutSize',
+    'textLayout',
     'filter',
     'history',
     'key',
@@ -401,7 +404,8 @@ export function readShapeGeometry(value: unknown) {
                 position: point(s.position),
                 value: text(s.value ?? s.text),
                 ...(s.template === undefined ? {} : { template: text(s.template) }),
-                ...(s.fontSize === undefined ? {} : { fontSize: positive(s.fontSize) })
+                ...(s.fontSize === undefined ? {} : { fontSize: positive(s.fontSize) }),
+                ...(s.wrapWidth === undefined ? {} : { wrapWidth: number(s.wrapWidth, 0) })
             };
         case 'instance':
             return {
@@ -507,8 +511,8 @@ function readVariable(value: unknown): Variable {
     const values = record(v.values);
     const overrides = Object.entries(values).filter(([key]) => key !== 'default');
     if (overrides.length || v.dimensionId !== undefined) {
-        if (variable.type !== 'color' && variable.type !== 'number') {
-            throw new Error('Only color and number modes are supported');
+        if (variable.type === 'boolean') {
+            throw new Error('Only color, number and text modes are supported');
         }
 
         if (variable.type === 'color') {
@@ -516,10 +520,15 @@ function readVariable(value: unknown): Variable {
                 default: variable.values.default,
                 ...Object.fromEntries(overrides.map(([key, value]) => [id(key), color(value)]))
             };
-        } else {
+        } else if (variable.type === 'number') {
             variable.values = {
                 default: variable.values.default,
                 ...Object.fromEntries(overrides.map(([key, value]) => [id(key), number(value)]))
+            };
+        } else {
+            variable.values = {
+                default: variable.values.default,
+                ...Object.fromEntries(overrides.map(([key, value]) => [id(key), text(value)]))
             };
         }
         if (v.dimensionId !== undefined) {

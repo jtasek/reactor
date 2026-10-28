@@ -5,6 +5,8 @@ import { resolveVariable } from './variableResolver';
 import { inDrawingOrder } from './drawOrder';
 
 export interface ComponentSource {
+    /** Context of a local instance projection, also used when opening its source. */
+    context?: { modes: import('./types').VariableContext; availableWidth?: number };
     /** Bounds in the source's canvas coordinates. */
     box: Box;
     /** Source members in drawing order. */
@@ -12,6 +14,12 @@ export interface ComponentSource {
     /** Changes when any geometry or appearance within the source changes. */
     key: string;
 }
+
+export const instanceSource = (
+    document: Pick<Document, 'components' | 'shapes' | 'shapesIds' | 'variables'>,
+    instance: InstanceShape,
+    ancestors?: ReadonlySet<string>
+) => instance.projectedSource ?? componentSource(document, instance.componentId, ancestors);
 
 const MAX_COMPONENT_DEPTH = 16;
 

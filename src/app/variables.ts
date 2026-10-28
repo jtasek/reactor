@@ -245,9 +245,14 @@ export const templateWithIds = (text: string, variables: Record<string, Variable
  * Gives a text what `typed` makes, keeping `typed` as its template, with the
  * variables it names held by id, when it has a `${...}` or `\${`.
  */
-export function writeText(shape: Text, typed: string, variables: Record<string, Variable>) {
+export function writeText(
+    shape: Text,
+    typed: string,
+    variables: Record<string, Variable>,
+    context: import('./types').VariableContext = {}
+) {
     const template = templateWithIds(typed, variables);
-    const value = resolveTemplate(template, variables);
+    const value = resolveTemplate(template, variables, context);
 
     if (!value.trim()) {
         return;
@@ -298,7 +303,9 @@ export function variableDependencies(
         }
     }
     if (variable.type === 'text') {
-        templateVariablesIds(variable.values.default, variables, found);
+        Object.values(variable.values).forEach((value) =>
+            templateVariablesIds(value, variables, found)
+        );
     }
     return found;
 }
@@ -349,6 +356,32 @@ export function removeVariable(
                 if (definition.dimensionId !== undefined)
                     other.dimensionId = definition.dimensionId;
             }
+            if (other.type === 'text' && definition.type === 'text') {
+                other.values = {
+                    default: other.values.default,
+                    ...Object.fromEntries(
+                        Object.keys(definition.values)
+                            .filter((mode) => mode !== 'default')
+                            .map((mode) => [
+                                mode,
+                                escapeTemplate(
+                                    String(
+                                        resolveVariable(
+                                            other,
+                                            variables,
+                                            definition.dimensionId
+                                                ? { [definition.dimensionId]: mode }
+                                                : {}
+                                        )
+                                    )
+                                )
+                            ])
+                    )
+                };
+                if (definition.dimensionId !== undefined) {
+                    other.dimensionId = definition.dimensionId;
+                }
+            }
             if (other.type === 'number' && definition.type === 'number') {
                 other.values = { ...definition.values };
 
@@ -362,7 +395,9 @@ export function removeVariable(
     delete variables[variableId];
     Object.values(variables).forEach((other) => {
         if (other.type === 'text') {
-            other.values.default = inline(other.values.default);
+            Object.keys(other.values).forEach((mode) => {
+                other.values[mode] = inline(other.values[mode]);
+            });
         }
     });
     Object.values(document.shapes).forEach((shape) => {

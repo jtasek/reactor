@@ -18,7 +18,13 @@ export const commandsIds = derived(({ commands }: Application) => {
     return Object.keys(commands);
 });
 
-export const frameLayout = derived((document: Document) => projectFrameLayout(document));
+export const frameLayout = derived((document: Document, state: Application) =>
+    state.editorReady && editorLoaded()
+        ? editorHelpers().layout.projectContextualLayout(document, {
+              simulation: state.previewModes[document.id]
+          })
+        : projectFrameLayout(document)
+);
 
 export const frameStates = derived((document: Document) => projectFrameStates(document.frames));
 

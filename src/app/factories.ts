@@ -1,3 +1,4 @@
+import { editorLoaded } from './editorHelpers';
 import { currentDocument } from './computed/currentDocument';
 import { documentsIds } from './computed/documents';
 import {
@@ -342,6 +343,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         documentsIds,
         documents: { 'document-1': createDocument({ id: 'document-1' }) },
         loading: true,
+        editorReady: editorLoaded(),
         saveStatus: { kind: 'notSaving', reason: 'Documents are loading.' },
         account: { kind: 'loading' },
         documentAccess: {},

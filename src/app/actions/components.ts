@@ -1,14 +1,9 @@
+import type * as ComponentPropertyEdits from '../componentPropertyEdits';
 import { editorHelpers } from '../editorHelpers';
-import { variableDefinition } from '../variableResolver';
-import { Action, ActionWithParam, Application, Component, Point, PropertyValue } from '../types';
+import { Action, ActionWithParam, Application, Component, Point } from '../types';
 import { createComponent, createShape, instanceName } from '../factories';
 import { componentSource } from '../componentSource';
-import {
-    exposableProperties,
-    resolveComponentProp,
-    acceptsComponentValue,
-    invalidOverrideIds
-} from '../componentProps';
+import { invalidOverrideIds } from '../componentProps';
 import { isShapeLocked, isShapeVisible } from '../utils';
 import type { GroupDrag } from './group';
 import type { ResizeHandlerType } from '../types';
@@ -271,143 +266,30 @@ export const removeShapesFromComponent: ActionWithParam<{
     });
 };
 
-export const exposeComponentProp: ActionWithParam<{
-    componentId: string;
-    shapeId: string;
-    key: string;
-    label: string;
-}> = ({ state, effects }, { componentId, shapeId, key, label }) => {
-    const component = state.currentDocument.components[componentId];
-    const shape = state.currentDocument.shapes[shapeId];
+export const exposeComponentProp: typeof ComponentPropertyEdits.exposeComponentProp = (
+    context,
+    input
+) => editorHelpers().componentProperties.exposeComponentProp(context, input);
 
-    if (
-        !component ||
-        component.library ||
-        component.locked ||
-        state.currentDocument.locked ||
-        !component.shapesIds.includes(shapeId) ||
-        !shape ||
-        !label.trim() ||
-        !exposableProperties(shape, state.currentDocument).some((item) => item.key === key) ||
-        component.props?.some((item) => item.shapeId === shapeId && item.key === key)
-    ) {
-        return;
-    }
-    component.props = [
-        ...(component.props ?? []),
-        { id: effects.newId(), shapeId, key, label: label.trim() }
-    ];
-};
+export const removeComponentProp: typeof ComponentPropertyEdits.removeComponentProp = (
+    context,
+    input
+) => editorHelpers().componentProperties.removeComponentProp(context, input);
 
-export const removeComponentProp: ActionWithParam<{ componentId: string; propId: string }> = (
-    { state },
-    { componentId, propId }
-) => {
-    const component = state.currentDocument.components[componentId];
+export const setInstanceOverride: typeof ComponentPropertyEdits.setInstanceOverride = (
+    context,
+    input
+) => editorHelpers().componentProperties.setInstanceOverride(context, input);
 
-    if (!component || component.library || component.locked || state.currentDocument.locked) {
-        return;
-    }
-    component.props = component.props?.filter((prop) => prop.id !== propId);
-    Object.values(state.currentDocument.shapes).forEach((shape) => {
-        if (shape.type === 'instance' && shape.componentId === componentId) {
-            delete shape.overrides[propId];
-        }
-    });
-};
+export const bindInstanceOverride: typeof ComponentPropertyEdits.bindInstanceOverride = (
+    context,
+    input
+) => editorHelpers().componentProperties.bindInstanceOverride(context, input);
 
-export const setInstanceOverride: ActionWithParam<{
-    instanceIds: string[];
-    propId: string;
-    value: PropertyValue;
-}> = ({ state }, { instanceIds, propId, value }) => {
-    if (state.currentDocument.locked) {
-        return;
-    }
-    instanceIds.forEach((id) => {
-        const shape = state.currentDocument.shapes[id];
-
-        if (shape?.type !== 'instance' || isShapeLocked(state.currentDocument, id)) {
-            return;
-        }
-        const component = state.currentDocument.components[shape.componentId];
-        const resolved = resolveComponentProp(component, propId, state.currentDocument);
-
-        if (!resolved) {
-            return;
-        }
-        const { source, property } = resolved;
-
-        if (!exposableProperties(source, state.currentDocument).includes(property)) {
-            return;
-        }
-        if (!acceptsComponentValue(property, value)) {
-            return;
-        }
-        shape.overrides[propId] = value;
-    });
-};
-
-export const bindInstanceOverride: ActionWithParam<{
-    instanceIds: string[];
-    propId: string;
-    variableId: string;
-}> = ({ state }, { instanceIds, propId, variableId }) => {
-    const variable = state.currentDocument.variables[variableId];
-
-    if (!variable || state.currentDocument.locked) {
-        return;
-    }
-    const definition = variableDefinition(variable, state.currentDocument.variables);
-
-    if (definition.type === 'number' && definition.dimensionId !== undefined) {
-        return;
-    }
-    instanceIds.forEach((id) => {
-        const shape = state.currentDocument.shapes[id];
-
-        if (shape?.type !== 'instance' || isShapeLocked(state.currentDocument, id)) {
-            return;
-        }
-        const component = state.currentDocument.components[shape.componentId];
-        const resolved = resolveComponentProp(component, propId, state.currentDocument);
-
-        if (!resolved) {
-            return;
-        }
-        const { source, property } = resolved;
-
-        if (!exposableProperties(source, state.currentDocument).includes(property)) {
-            return;
-        }
-        if (property.kind !== variable.type) {
-            return;
-        }
-        shape.overrides[propId] = { variableId };
-    });
-};
-
-export const resetInstanceOverrides: ActionWithParam<{
-    instanceIds: string[];
-    propId?: string;
-}> = ({ state }, { instanceIds, propId }) => {
-    if (state.currentDocument.locked) {
-        return;
-    }
-    instanceIds.forEach((id) => {
-        const shape = state.currentDocument.shapes[id];
-
-        if (shape?.type !== 'instance' || isShapeLocked(state.currentDocument, id)) {
-            return;
-        }
-        if (propId) {
-            delete shape.overrides[propId];
-
-            return;
-        }
-        shape.overrides = {};
-    });
-};
+export const resetInstanceOverrides: typeof ComponentPropertyEdits.resetInstanceOverrides = (
+    context,
+    input
+) => editorHelpers().componentProperties.resetInstanceOverrides(context, input);
 
 export const insertComponentAt: ActionWithParam<{ componentId: string; position: Point }> = (
     { state, actions },
@@ -552,13 +434,7 @@ export const editComponentSource: ActionWithParam<string> = ({ state, actions },
         state.componentEditingReturn?.documentId !== state.currentDocumentId
     ) {
         const document = state.currentDocument;
-        const instanceId = document.selectedShapesIds.find(
-            (id) =>
-                document.shapes[id].type === 'instance' &&
-                document.shapes[id].componentId === componentId
-        );
-        const source =
-            component.sourceOnly && instanceId ? componentSource(document, componentId) : null;
+        const componentOrigin = editorHelpers().pointer.componentEditingOrigin(state, component);
         state.componentEditingReturn = {
             documentId: document.id,
             ...(document.selectedComponentsIds.includes(componentId)
@@ -579,16 +455,7 @@ export const editComponentSource: ActionWithParam<string> = ({ state, actions },
                       viewId: state.events.pointer.screenView.viewId
                   }
                 : null,
-            ...(source && instanceId
-                ? {
-                      componentOrigin: {
-                          componentId,
-                          instanceId,
-                          position: { ...source.box.topLeft },
-                          size: { width: source.box.width, height: source.box.height }
-                      }
-                  }
-                : {})
+            ...(componentOrigin ? { componentOrigin } : {})
         };
     }
     actions.unselectShapes();

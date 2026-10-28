@@ -1,3 +1,4 @@
+import { sharedProperties, type PropertyRow } from './properties';
 import { hasLayoutOffset, projectFrameLayout } from './frameLayout';
 import { isShapeLocked, isShapeVisible, rectToBox } from './utils';
 import { screenOwners, screenSourceShapes } from './screenViews';
@@ -5,13 +6,14 @@ import { isReadOnly } from './documentAccess';
 import { groupFrame } from './membership';
 import { localComponents } from './componentSelection';
 import type { Context } from './index';
-import type { Document, Frame, Point, Shape } from './types';
+import type { Component, Document, Frame, Point, Shape } from './types';
 import { frameParents, isFrameLocked, isFrameVisible } from './frameState';
 import { MAX_PROJECTED_NODES, projectScreenViews } from './screenProjection';
 import { hasNumericLayout } from './contextualLayout';
+import { projectGeometry } from './contextualGeometry';
 import { untracked } from './untracked';
 import { json } from 'overmind';
-import { componentSource, instanceBox } from './componentSource';
+import { componentSource, instanceBox, instanceSource } from './componentSource';
 import { transformComponentShape } from './componentViewTransform';
 import type { ScreenProjection } from './screenProjection';
 import type { HandleOwner, ScreenViewAddress, ScreenViewGesture } from 'src/events/types';
@@ -40,6 +42,7 @@ export function componentScreenViews(state: Context['state']) {
                 ...document.shapes,
                 [instance.id]: {
                     ...instance,
+                    layoutSize: focus.size,
                     bounds: rectToBox({ ...instance.position, ...focus.size })
                 }
             }
@@ -207,8 +210,18 @@ export function projectComponentView(state: Context['state'], projection: Screen
         return null;
     }
 
-    const { focus, component, instance } = target;
-    const source = componentSource(document, component.id);
+    const { focus, instance } = target;
+    const context = instance.projectedSource?.context;
+    const master = context
+        ? projectGeometry(
+              { ...instance, overrides: {} },
+              document,
+              context.modes,
+              instance.id,
+              context.availableWidth
+          )
+        : instance;
+    const source = master.type === 'instance' ? instanceSource(document, master) : null;
 
     if (!source) {
         return null;
@@ -225,8 +238,7 @@ export function projectComponentView(state: Context['state'], projection: Screen
         .filter((shape) => shape.visible)
         .map((member) => {
             const shape = json(member);
-            const nested =
-                shape.type === 'instance' ? componentSource(document, shape.componentId) : null;
+            const nested = shape.type === 'instance' ? instanceSource(document, shape) : null;
 
             if (shape.type === 'instance' && nested) {
                 shape.bounds = instanceBox(shape, nested);
@@ -575,4 +587,52 @@ export function reportUnavailableView({ state, actions }: Pick<Context, 'state' 
     if (!state.notifications.some(({ message }) => message === UNAVAILABLE_VIEW_MESSAGE)) {
         actions.displayError(UNAVAILABLE_VIEW_MESSAGE);
     }
+}
+
+/** Use placed dimensions for read-only measurements without replacing authored inputs. */
+export function selectedViewProperties(state: Context['state'], rows: PropertyRow[]) {
+    const placed = pointerDocument(state);
+    const selected = state.currentDocument.selectedShapesIds
+        .map((id) => placed.shapes[id])
+        .filter(Boolean);
+    const projected = sharedProperties(selected, placed);
+
+    return rows.map((row) =>
+        row.readOnly && ['width', 'height'].includes(row.property.key)
+            ? (projected.find((item) => item.property.key === row.property.key) ?? row)
+            : row
+    );
+}
+
+/** Pin the rendered source origin while entering focused editing through an instance. */
+export function componentEditingOrigin(state: Context['state'], component: Component) {
+    if (!component.sourceOnly) {
+        return undefined;
+    }
+    const document = state.currentDocument;
+    const instanceId = document.selectedShapesIds.find((id) => {
+        const shape = document.shapes[id];
+
+        return shape.type === 'instance' && shape.componentId === component.id;
+    });
+    if (!instanceId) {
+        return undefined;
+    }
+    const placed = editableScreenView(
+        state,
+        state.events.pointer.screenView
+    )?.projection.shapes.find((shape) => shape.id === instanceId);
+    const source =
+        (placed?.type === 'instance' ? placed.projectedSource : undefined) ??
+        componentSource(document, component.id);
+    if (!source) {
+        return undefined;
+    }
+
+    return {
+        componentId: component.id,
+        instanceId,
+        position: { ...source.box.topLeft },
+        size: { width: source.box.width, height: source.box.height }
+    };
 }
