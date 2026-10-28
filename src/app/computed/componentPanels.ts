@@ -1,5 +1,6 @@
 import type { Application, Document, InstanceShape } from '../types';
 import { componentPropValue, exposableProperties } from '../componentProps';
+import { instanceComponentId } from '../componentSource';
 import { editorHelpers, editorLoaded } from '../editorHelpers';
 import { SHAPE_PROPERTIES } from '../properties';
 
@@ -22,8 +23,37 @@ export function instanceProperties(document: Document) {
         return null;
     }
 
+    const variantProblems = selected.flatMap((shape) => {
+        if (!shape.variantId) {
+            return [];
+        }
+        const alternate = document.components[shape.variantId];
+        if (!component.variantIds?.includes(shape.variantId) || !alternate) {
+            return [`${shape.name}: selected variant is unavailable; showing the default.`];
+        }
+        const incompatible = (component.props ?? []).some(
+            (prop) =>
+                !alternate.props?.some(
+                    (candidate) => candidate.id === prop.id && candidate.key === prop.key
+                )
+        );
+
+        return incompatible
+            ? [
+                  `${shape.name}: variant has incompatible exposed properties; some overrides may not apply.`
+              ]
+            : [];
+    });
+
     return {
         ids: selected.map((shape) => shape.id),
+        variantProblems,
+        variants: [component, ...(component.variantIds ?? []).map((id) => document.components[id])]
+            .filter((item) => Boolean(item))
+            .map((item) => ({ id: item.id, name: item.name })),
+        selectedVariantId: selected.every((shape) => shape.variantId === selected[0].variantId)
+            ? (selected[0].variantId ?? component.id)
+            : '',
         rows: (component.props ?? []).flatMap((prop) => {
             const property = SHAPE_PROPERTIES.find((item) => item.key === prop.key);
 
@@ -31,7 +61,12 @@ export function instanceProperties(document: Document) {
                 return [];
             }
             const values = selected.map((shape) =>
-                componentPropValue(shape, component, prop.id, document)
+                componentPropValue(
+                    shape,
+                    document.components[instanceComponentId(document, shape)],
+                    prop.id,
+                    document
+                )
             );
             const bindings = selected.map((shape) => shape.overrides[prop.id]);
             const binding = bindings[0];

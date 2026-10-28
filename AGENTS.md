@@ -708,6 +708,13 @@ all mode values retain dependency IDs through copy/package/operation remapping. 
 and position/rotation/image-size modes stay gated. Tests: contextualMeasurement and browser counterpart.
 The contextual layout module loads with screen/thumbnail/Preview features, outside startup.
 Coverage: inheritedModes and contextualLayout unit/browser tests.
+Schema v18 adds `Component.variantIds` and `InstanceShape.variantId` for the first manual
+variant increment. A family links independently editable component sources with matching
+exposed property IDs. `instanceComponentId` selects the authored alternate only while the
+family and source exist; otherwise the instance retains its choice and draws the default.
+Shared property IDs are mirrored to matching source shapes when exposed after linking.
+Keep linked sources in library snapshots and clipboard transfers. Variant selection uses the
+ordinary document mutation and undo path; projection never rewrites it.
 Unsupported geometry properties retain their base values; text templates resolve in context.
 Definitions use the ordinary shared entity/undo path. Keep all values and dimension IDs
 through serialization, clipboard, operations and alias detachment. Legacy Light/Dark data

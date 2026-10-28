@@ -280,6 +280,7 @@ export function shapeGeometry(shape: Shape): ShapeInput {
             return {
                 type: shape.type,
                 componentId: shape.componentId,
+                variantId: shape.variantId,
                 ...(shape.modeOverrides ? { modeOverrides: { ...shape.modeOverrides } } : {}),
                 position: { ...shape.position },
                 overrides: { ...shape.overrides }

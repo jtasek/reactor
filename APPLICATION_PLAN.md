@@ -781,6 +781,13 @@ continues working through adapters to the new screen/context projection until R4
    contextual-layout, variable, component, clipboard and Preview suites.
 
 5. **R4.5 — Manual component variants (M).**
+   **R4.5a — Manual selection (first increment).** A component can link an existing,
+   independently editable component as an alternate when their exposed property IDs and
+   types match. Inspector selects the alternate for an instance; an absent selection uses
+   the default. A missing alternate retains the authored selection and renders the default.
+   Variant identity is saved with the instance, and source snapshots carry the linked
+   components. Full variant tree authoring, compatibility diagnostics and the broader
+   acceptance cases below remain part of R4.5.
    Add a bounded variant family to reusable components, with a default and explicit instance
    selection. Start with default plus one alternate. Variant trees share stable exposed
    property IDs and compatible role/action targets; changing variants retains text, bindings,

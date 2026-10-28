@@ -216,6 +216,8 @@ export interface Text extends ShapeBase {
 
 /** A live reference to a component's source shapes. */
 export interface InstanceShape extends ShapeBase {
+    /** Explicit alternate source within the component family. */
+    variantId?: string;
     /** Local resolved source for this instance path, never serialized or shared. */
     layoutSize?: Size;
     projectedSource?: import('./componentSource').ComponentSource;
@@ -298,6 +300,8 @@ export interface Layer {
 }
 
 export interface Component {
+    /** Alternate components selectable by instances of this component. */
+    variantIds?: string[];
     interaction?: RoleSettings;
     id: string;
     /** Rotation of the source's selection frame; its shapes carry their own geometry. */

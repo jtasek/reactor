@@ -64,7 +64,7 @@ import {
     shapeStyle
 } from './utils';
 import { hasComponentInstances, reachesComponent } from './actions/components';
-import { componentSource, instanceBox } from './componentSource';
+import { componentSource, instanceSource, instanceBox } from './componentSource';
 import { detachedMembers } from './componentDetach';
 
 const getShape = ({ currentDocument }: Application, shapeId: string) => {
@@ -133,7 +133,15 @@ export const drawShape: ActionWithParam<ShapeInput> = ({ state, actions }, optio
         const drawing = json(options);
         const source =
             drawing.type === 'instance' && placed.component
-                ? componentSource(document, drawing.componentId)
+                ? componentSource(
+                      document,
+                      drawing.variantId &&
+                          document.components[drawing.componentId]?.variantIds?.includes(
+                              drawing.variantId
+                          )
+                          ? drawing.variantId
+                          : drawing.componentId
+                  )
                 : null;
 
         if (drawing.type === 'instance' && source) {
@@ -248,7 +256,7 @@ export const detachInstances: ActionWithParam<string[]> = ({ state }, instanceId
         if (instance?.type !== 'instance' || isShapeLocked(document, id)) {
             continue;
         }
-        const source = componentSource(document, instance.componentId);
+        const source = instanceSource(document, instance);
         const component = document.components[instance.componentId];
 
         if (!source || !component) {

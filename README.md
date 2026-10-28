@@ -84,6 +84,13 @@ Frames explicitly designated as screens carry a **Screen** badge. Draw with **Fr
 then select **Screen** in Inspector’s **Type** field. Names, geometry and artwork stay in place;
 many screens and ordinary frames can coexist on the same canvas.
 Component definitions stay under Components, separate from scene objects.
+To try a manual component variant, create two component sources, select the default under
+**Components**, then link the alternate in **Inspector → Variants**. Select an instance to
+choose either source in **Inspector → Component properties → Variant**. Both sources remain
+editable as components. Linking currently requires matching exposed property IDs and types;
+create the family before exposing properties if the sources were authored separately.
+Matching source shape names let later exposed properties share an ID across the family.
+If an alternate is unavailable, the instance keeps its choice and draws the default.
 
 **Layers** lists each global layer once, across all screens. Use its **New layer** button
 to create one. Drag a shape or group onto a layer to move it there, or onto **No layer**
