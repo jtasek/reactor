@@ -583,7 +583,7 @@ it('allows invalid inherited frame inputs to be reset independently', () => {
     expect(document.frames[content].bindings).toEqual({});
 });
 
-it('blocks number modes for typography while retaining ordinary base-only font bindings', () => {
+it('supports number modes for typography while retaining ordinary base-only font bindings', () => {
     const { store, document, width } = setup();
     store.actions.drawShape({
         type: 'text',
@@ -593,8 +593,13 @@ it('blocks number modes for typography while retaining ordinary base-only font b
     });
     const id = document.selectedShapesIds[0];
     store.actions.bindProperty({ shapeIds: [id], key: 'fontSize', variableId: width });
-    expect(document.shapes[id]).toMatchObject({ fontSize: 14 });
-    expect(document.shapes[id].bindings?.fontSize).toBeUndefined();
+    expect(document.shapes[id]).toMatchObject({ fontSize: 40 });
+    expect(document.shapes[id].bindings?.fontSize).toBe(width);
+    expect(
+        projectFrameLayout(document, { simulation: { density: 'comfortable' } }).resolvedShapes?.[
+            id
+        ]
+    ).toMatchObject({ fontSize: 80 });
     const base = store.actions.createVariable({ name: 'Base font', type: 'number', value: 18 })!;
     store.actions.bindProperty({ shapeIds: [id], key: 'fontSize', variableId: base });
     expect(document.shapes[id]).toMatchObject({ fontSize: 18, bindings: { fontSize: base } });

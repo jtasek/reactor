@@ -18,7 +18,19 @@ export const commandsIds = derived(({ commands }: Application) => {
     return Object.keys(commands);
 });
 
-export const frameLayout = derived((document: Document) => projectFrameLayout(document));
+/** Whether Canvas geometry depends on context: see `needsContextualGeometry`. */
+export const contextualGeometry = derived(
+    (document: Document, state: Application) =>
+        state.editorReady &&
+        editorLoaded() &&
+        editorHelpers().layout.needsContextualGeometry(document)
+);
+
+export const frameLayout = derived((document: Document, state: Application) =>
+    document.contextualGeometry
+        ? editorHelpers().layout.canvasLayout(document, state.previewModes[document.id])
+        : projectFrameLayout(document)
+);
 
 export const frameStates = derived((document: Document) => projectFrameStates(document.frames));
 

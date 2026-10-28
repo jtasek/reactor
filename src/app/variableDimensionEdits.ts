@@ -7,7 +7,7 @@ import type {
 } from './types';
 import { readDimension, ordered } from './variableModes';
 import { isHexColor } from './utils';
-import { applyVariableChanges } from './variables';
+import { applyVariableChanges, templateWithIds } from './variables';
 
 export { setModeOverride, previewModes } from './modeEdits';
 
@@ -20,10 +20,7 @@ const validName = (name: string) => name.trim().length > 0 && name.trim().length
 function promoteDefaultMode(document: Document, dimensionId: string, from: string, to: string) {
     const before = structuredClone(json(document.variables));
     Object.values(document.variables).forEach((variable) => {
-        if (
-            (variable.type !== 'color' && variable.type !== 'number') ||
-            variable.dimensionId !== dimensionId
-        ) {
+        if (variable.type === 'boolean' || variable.dimensionId !== dimensionId) {
             return;
         }
         const value = variable.values[to];
@@ -121,10 +118,7 @@ export const deleteDimensionMode: ActionWithParam<{ dimensionId: string; modeId:
     }
     delete dimension.modes[modeId];
     Object.values(document.variables).forEach((variable) => {
-        if (
-            (variable.type === 'color' || variable.type === 'number') &&
-            variable.dimensionId === dimensionId
-        ) {
+        if (variable.type !== 'boolean' && variable.dimensionId === dimensionId) {
             delete variable.values[modeId];
         }
     });
@@ -141,10 +135,7 @@ export const deleteDimension: ActionWithParam<string> = ({ state }, dimensionId)
     }
     delete document.dimensions[dimensionId];
     Object.values(document.variables).forEach((variable) => {
-        if (
-            (variable.type === 'color' || variable.type === 'number') &&
-            variable.dimensionId === dimensionId
-        ) {
+        if (variable.type !== 'boolean' && variable.dimensionId === dimensionId) {
             delete variable.dimensionId;
             Object.keys(variable.values)
                 .filter((key) => key !== 'default')
@@ -161,7 +152,8 @@ export const setVariableDimension: ActionWithParam<{
     const variable = document.variables[variableId];
     if (
         document.locked ||
-        (variable?.type !== 'color' && variable?.type !== 'number') ||
+        !variable ||
+        variable.type === 'boolean' ||
         variable.alias !== undefined ||
         (dimensionId !== null && !document.dimensions[dimensionId]) ||
         variable.dimensionId === dimensionId
@@ -187,7 +179,8 @@ export const setVariableModeValue: ActionWithParam<{
     const variable = document.variables[variableId];
     if (
         document.locked ||
-        (variable?.type !== 'color' && variable?.type !== 'number') ||
+        !variable ||
+        variable.type === 'boolean' ||
         variable.alias !== undefined ||
         !variable.dimensionId ||
         !document.dimensions[variable.dimensionId]?.modes[modeId] ||
@@ -199,6 +192,8 @@ export const setVariableModeValue: ActionWithParam<{
         delete variable.values[modeId];
     } else if (variable.type === 'color' && typeof value === 'string' && isHexColor(value)) {
         variable.values[modeId] = value;
+    } else if (variable.type === 'text' && typeof value === 'string') {
+        variable.values[modeId] = templateWithIds(value, document.variables);
     } else if (variable.type === 'number' && typeof value === 'number' && Number.isFinite(value)) {
         variable.values[modeId] = value;
     }

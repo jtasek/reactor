@@ -409,8 +409,8 @@ work, with V3 extended by R4.3–R4.4 and V5 feeding R6. No speculative plugin o
    the same resolver context without rewriting shared shapes. Existing Light/Dark data migrates
    into editable definitions. Save, copy/paste, operations and undo retain modes.
    R4.4a enables numeric density inputs in Screen views and Preview with shared layout and hit
-   geometry. Remaining work: component-source geometry and text context with consistent
-   measurement and hit testing (R4.4b). Text templates continue to use defaults.
+   geometry. R4.4b adds component-source geometry, contextual typography and templates with
+   consistent measurement and hit testing.
    Acceptance: `tests/variableDimensions.test.ts` and
    `tests/browser/variableDimensions.spec.ts` cover opt-in behavior, custom modes, local
    switching, migration, drawing, selection bounds, hit testing, persistence and collaboration.
@@ -738,7 +738,7 @@ continues working through adapters to the new screen/context projection until R4
    and fingerprint helpers load with the editor to preserve the existing bundle budgets.
    Numeric/text values and contextual geometry remain R4.4.
 
-4. **R4.4 — Geometry-aware mode values (M, in progress).**
+4. **R4.4 — Geometry-aware mode values (implemented for supported consumers).**
    Complete the unfinished V3 numeric/text work in supported consumers: spacing and dimensions,
    then typography/templates with contextual measurement. Keep unsupported bindings disabled
    with an explanation until their renderer, bounds and hit testing agree. Reuse sizing-cycle
@@ -765,11 +765,20 @@ continues working through adapters to the new screen/context projection until R4
    new bindings. Text/boolean modes remain unavailable. Coverage: `contextualLayout.test.ts`
    and its browser counterpart, alongside existing inherited-mode/sizing tests.
 
-   **R4.4b — Contextual measurement (next).** Extend the shared projection to component-source
-   geometry, typography and templates, with contextual text measurement and wrapping. Add
-   cache keys for instance paths, modes and available size; use the resulting bounds for
-   rendering, selection, hit testing and export before enabling those bindings. Complete
-   R4.4 acceptance with text wrapping, nested instance sizing and standalone Canvas contexts.
+   **R4.4b — Contextual measurement (implemented).** Schema v17 adds text mode values and
+   optional text wrap width. Shared local projections resolve nested component geometry,
+   font size, text templates and exposed instance overrides before measuring and laying out.
+   Bounded measurement caches include instance path, modes, content, typography and available
+   width. Screen views, standalone Canvas, focused source editing, selection/hit testing,
+   thumbnails and the Preview drawing consume the same geometry. Text wraps at an explicit
+   maximum and the frame's available width; Hug-width parents use the explicit limit to avoid
+   a circular dependency. Fill-width/Hug-height stacks reflow after width resolution.
+   Clipboard, packages, operations, persistence, collaboration and undo retain authored inputs;
+   measurements and projected sources remain local. Component property editing loads with the
+   editor, preserving startup/file budgets. Unsupported position/rotation/image-size and boolean
+   mode bindings remain gated. SVG export remains R5 and can consume the shared projection.
+   Coverage: `contextualMeasurement.test.ts` and its browser counterpart, with existing
+   contextual-layout, variable, component, clipboard and Preview suites.
 
 5. **R4.5 — Manual component variants (M).**
    Add a bounded variant family to reusable components, with a default and explicit instance

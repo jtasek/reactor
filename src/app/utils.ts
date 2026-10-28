@@ -273,7 +273,8 @@ export function shapeGeometry(shape: Shape): ShapeInput {
                 type: shape.type,
                 position: { ...shape.position },
                 value: shape.value,
-                fontSize: shape.fontSize
+                fontSize: shape.fontSize,
+                ...(shape.wrapWidth === undefined ? {} : { wrapWidth: shape.wrapWidth })
             };
         case 'instance':
             return {

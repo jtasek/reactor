@@ -37,7 +37,8 @@ export function resolveText(
     template: string,
     variables: Readonly<Record<string, Variable>>,
     within: string[],
-    problems?: string[]
+    problems?: string[],
+    context: VariableContext = {}
 ): string {
     return template.replace(
         TEMPLATE_PART,
@@ -60,7 +61,7 @@ export function resolveText(
                 return `\${${variable.name}}`;
             }
 
-            const value = resolveValue(variable, variables, within, problems);
+            const value = resolveValue(variable, variables, within, problems, context);
 
             // Diagnostics follow the same references without building expanded text.
             return problems ? '' : String(value);
@@ -99,11 +100,14 @@ function resolveValue(
         source = target;
         path.push(source.id);
     }
+    const value =
+        source.type !== 'boolean' && source.dimensionId !== undefined
+            ? (source.values[theme[source.dimensionId]] ?? source.values.default)
+            : source.values.default;
+
     return source.type === 'text'
-        ? resolveText(source.values.default, variables, path, problems)
-        : (source.type === 'color' || source.type === 'number') && source.dimensionId !== undefined
-          ? (source.values[theme[source.dimensionId]] ?? source.values.default)
-          : source.values.default;
+        ? resolveText(String(value), variables, path, problems, theme)
+        : value;
 }
 
 /** The value a variable writes, following same-type aliases and text templates. */
@@ -120,14 +124,23 @@ export function variableProblems(
 ): string[] {
     const problems: string[] = [];
     resolveValue(variable, variables, [], problems);
-    return problems;
+    if (variable.type === 'text' && variable.dimensionId) {
+        Object.keys(variable.values)
+            .filter((mode) => mode !== 'default')
+            .forEach((mode) =>
+                resolveValue(variable, variables, [], problems, { [variable.dimensionId!]: mode })
+            );
+    }
+
+    return [...new Set(problems)];
 }
 
 /** The text a template makes, using the document's default variable values. */
 export const resolveTemplate = (
     template: string,
-    variables: Readonly<Record<string, Variable>>
-): string => resolveText(template, variables, []);
+    variables: Readonly<Record<string, Variable>>,
+    context: VariableContext = {}
+): string => resolveText(template, variables, [], undefined, context);
 
 /** The definition behind a valid alias chain; broken/cyclic chains retain their own fallback. */
 export function variableDefinition(

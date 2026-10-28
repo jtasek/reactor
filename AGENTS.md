@@ -685,17 +685,30 @@ modes (`artworkModes`).
 Schema v16 adds number mode values and `Frame.bindings` for width/height/gap/padding. Base
 definition edits use `updateFrameVariables`; explicit numeric frame edits detach their binding.
 Screen views and Preview call the lazy `projectContextualLayout` before stack layout, keeping
-resolved geometry local. Fixed rectangle sizes in stacks and frame numeric inputs are supported;
-component-source geometry, other numeric bindings and standalone Canvas geometry stay at base.
+resolved geometry local. R4.4a supports fixed rectangle sizes in stacks and frame numeric inputs;
+R4.4b extends this to contextual component geometry, typography and standalone Canvas.
 Inspector disables incompatible new mode bindings and describes the supported scope. Frame
 copying keeps base binding inputs while retaining projected placement, transfers dependencies,
 and remaps references before frame operations. Marquee projection caching is bypassed for numeric
 layout documents so changed inputs cannot leave stale hit bounds. Preview launch snapshots the
 view's viewport as well as its modes. The shared size/cycle evaluator remains authoritative.
-Text/boolean modes stay gated; contextual typography/templates/component measurement are R4.4b.
+Schema v17 adds text mode values and optional `Text.wrapWidth`. `contextualGeometry` resolves
+instance paths recursively, respecting explicit property overrides, and `textMeasurement` caches
+lines by resolved text, font size and width (least recently used). Every Shape reading the
+`frameLayout` derived tracks every path it read, so the Canvas goes contextual only when
+`needsContextualGeometry` (number/text modes or wrapped text) and, without stack/sized/bound
+frames, `renderedShape` resolves each shape via `canvasShape`. `FrameLayout.resolvedShapes`
+is local, as are `textLayout`, `projectedSource` and focused `layoutSize`; readers and collaboration
+exclude them. Never call setShapeBounds with contextual measurements. Canvas, Screen views,
+focused masters, thumbnails and Preview use the projection; text wraps only when explicitly
+requested, capped by available frame width. Hug-width parents use the authored wrap limit.
+The local `editorReady` flag invalidates Canvas layout measured before lazy editor registration.
+Component property mutations load via `editorHelpers().componentProperties`. Text templates in
+all mode values retain dependency IDs through copy/package/operation remapping. Boolean modes
+and position/rotation/image-size modes stay gated. Tests: contextualMeasurement and browser counterpart.
 The contextual layout module loads with screen/thumbnail/Preview features, outside startup.
 Coverage: inheritedModes and contextualLayout unit/browser tests.
-Unsupported geometry and templates stay at base until context-aware measurement is implemented.
+Unsupported geometry properties retain their base values; text templates resolve in context.
 Definitions use the ordinary shared entity/undo path. Keep all values and dimension IDs
 through serialization, clipboard, operations and alias detachment. Legacy Light/Dark data
 migrates into an editable Theme dimension, never into a dimension for otherwise plain documents,

@@ -11,7 +11,7 @@ import {
     templateWithIds,
     unbind
 } from '../variables';
-import { variableNamed, resolveVariable, variableDefinition } from '../variableResolver';
+import { variableNamed, resolveVariable } from '../variableResolver';
 
 /**
  * Adds a variable to the current document and answers its id; none when `name` is
@@ -76,18 +76,7 @@ export const setVariableValue: ActionWithParam<{ variableId: string; value: unkn
         return;
     }
 
-    const definition = variableDefinition(variable, before);
-    if (next.type === 'color' && definition.type === 'color') {
-        next.values = { ...definition.values, default: next.values.default };
-        if (definition.dimensionId !== undefined) next.dimensionId = definition.dimensionId;
-    }
-    if (next.type === 'number' && definition.type === 'number') {
-        next.values = { ...definition.values, default: next.values.default };
-
-        if (definition.dimensionId !== undefined) {
-            next.dimensionId = definition.dimensionId;
-        }
-    }
+    editorHelpers().aliases.keepModeValues(next, variable, before);
     if (variable.source) next.source = { ...variable.source };
     document.variables[variableId] = next;
     applyVariableChanges(document, before);

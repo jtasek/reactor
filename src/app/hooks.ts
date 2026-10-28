@@ -13,7 +13,7 @@ import { useCallback, useLayoutEffect, useReducer, useRef, useSyncExternalStore 
 import { isShapeLocked, isShapeVisible } from './utils';
 import type { Command, CommandPlace, CommandScope, Document } from './types';
 import { takesEditorInput } from '../events/input';
-import { editorLoaded, subscribeToEditorHelpers } from './editorHelpers';
+import { editorHelpers, editorLoaded, subscribeToEditorHelpers } from './editorHelpers';
 import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
 import { PropertyRow, sharedProperties } from './properties';
 import { componentSource } from './componentSource';
@@ -174,7 +174,13 @@ export const useSelectedShapesProperties = () => {
             return held.current;
         }
 
-        held.current = sharedProperties(document.selectedShapes, document);
+        const rows = sharedProperties(document.selectedShapes, document);
+        if (state.events.pointer.screenView && editorLoaded()) {
+            held.current = editorHelpers().pointer.selectedViewProperties(state, rows);
+
+            return held.current;
+        }
+        held.current = rows;
 
         return held.current;
     });

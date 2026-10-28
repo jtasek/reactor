@@ -1,9 +1,11 @@
+import { editorLoaded } from './editorHelpers';
 import { currentDocument } from './computed/currentDocument';
 import { documentsIds } from './computed/documents';
 import {
     framesIds,
     frameStates,
     frameLayout,
+    contextualGeometry,
     commandsIds,
     componentsIds,
     sourceOnlyShapesIds,
@@ -266,6 +268,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
         framesIds,
         frameStates,
         frameLayout,
+        contextualGeometry,
         componentsIds,
         sourceOnlyShapesIds,
         selectedComponentsIds,
@@ -342,6 +345,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         documentsIds,
         documents: { 'document-1': createDocument({ id: 'document-1' }) },
         loading: true,
+        editorReady: editorLoaded(),
         saveStatus: { kind: 'notSaving', reason: 'Documents are loading.' },
         account: { kind: 'loading' },
         documentAccess: {},

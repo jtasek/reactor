@@ -112,7 +112,10 @@ export type Variable =
           dimensionId?: string;
           values: { default: number; [modeId: string]: number };
       })
-    | VariableOf<'text', string>
+    | (VariableOf<'text', string> & {
+          dimensionId?: string;
+          values: { default: string; [modeId: string]: string };
+      })
     | VariableOf<'boolean', boolean>;
 
 export interface Grid {
@@ -205,10 +208,17 @@ export interface Text extends ShapeBase {
     template?: string;
     value: string;
     fontSize?: number;
+    /** Optional wrapping limit in canvas units; zero/absent keeps single-line behavior. */
+    wrapWidth?: number;
+    /** Local measured lines, never serialized or shared. */
+    textLayout?: { lines: string[]; lineHeight: number };
 }
 
 /** A live reference to a component's source shapes. */
 export interface InstanceShape extends ShapeBase {
+    /** Local resolved source for this instance path, never serialized or shared. */
+    layoutSize?: Size;
+    projectedSource?: import('./componentSource').ComponentSource;
     /** Authored mode IDs by dimension; an absent entry inherits. */
     modeOverrides?: VariableContext;
     /** Absent inherits the source; none explicitly removes its semantic role. */
@@ -353,6 +363,8 @@ export interface Document {
     /** Local projection; never saved or shared. */
     frameStates: Record<string, FrameState>;
     frameLayout: FrameLayout;
+    /** Local: whether modes or wrapping need contextual geometry on the Canvas. */
+    contextualGeometry: boolean;
     /** Local selection; never saved or shared. */
     selectedFrameId?: string;
     id: string;
@@ -604,6 +616,8 @@ export type Application = {
     documentsIds: string[];
     /** Saved documents are still loading, so the pages wait. */
     loading: boolean;
+    /** Local readiness invalidates geometry computed before the editor loaded. */
+    editorReady: boolean;
     notifications: Notification[];
     providers: HashTable<Provider>;
     saveStatus: SaveStatus;

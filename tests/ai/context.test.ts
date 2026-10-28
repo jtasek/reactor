@@ -1,5 +1,5 @@
 import { documentContext, MAX_CONTEXT_BYTES } from 'src/ai/context';
-import { createComponent, createShape } from 'src/app/factories';
+import { createComponent, createDocument, createShape } from 'src/app/factories';
 import { fixtureDocument } from './harness';
 
 const label = (value: string) => ({ type: 'text', position: { x: 0, y: 0 }, value });
@@ -205,5 +205,39 @@ describe('AI document context', () => {
 
         expect(Object.keys(context.components)).toEqual(['card']);
         expect(Object.keys(context.components.card.shapes)).toEqual([lower.id, upper.id]);
+    });
+
+    it('sends text mode values and the variables they show', () => {
+        const document = createDocument({
+            dimensions: {
+                density: {
+                    id: 'density',
+                    name: 'Density',
+                    order: 0,
+                    defaultModeId: 'small',
+                    modes: {
+                        small: { id: 'small', name: 'Small', order: 0 },
+                        large: { id: 'large', name: 'Large', order: 1 }
+                    }
+                }
+            },
+            variables: {
+                name: { id: 'name', name: 'Name', type: 'text', values: { default: 'Ada' } },
+                copy: {
+                    id: 'copy',
+                    name: 'Copy',
+                    type: 'text',
+                    dimensionId: 'density',
+                    values: { default: 'Hi', large: 'Hello ${name$Name}' }
+                }
+            }
+        });
+        const context = documentContext({ ...document, selectedShapesIds: [] });
+
+        expect(context.variables.copy).toMatchObject({
+            dimensionId: 'density',
+            modeValues: { large: 'Hello ${name$Name}' }
+        });
+        expect(context.variables.name).toMatchObject({ value: 'Ada' });
     });
 });

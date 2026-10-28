@@ -329,7 +329,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                 before.defaultModeId !== dimension.defaultModeId &&
                 Object.values(variables).some(
                     (variable) =>
-                        (variable.type === 'color' || variable.type === 'number') &&
+                        variable.type !== 'boolean' &&
                         variable.dimensionId === dimension.id &&
                         !operations.some(
                             (op) => op.op === 'updateVariable' && op.variable === variable.id
@@ -471,11 +471,9 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         }
         if (
             (darkValue !== undefined && current.type !== 'color') ||
-            ((dimensionId !== undefined || modeValues !== undefined) &&
-                current.type !== 'color' &&
-                current.type !== 'number')
+            ((dimensionId !== undefined || modeValues !== undefined) && current.type === 'boolean')
         ) {
-            throw new Error('Only colors and numbers can vary by a dimension.');
+            throw new Error('Colors, numbers and text can vary by a dimension.');
         }
         const resolved = resolveVariable(current, variables);
         // A value of either theme set without a source stops following, as alias null does.
@@ -501,9 +499,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             dimensionId === null
                 ? undefined
                 : (dimensionId ??
-                  (definition.type === 'color' || definition.type === 'number'
-                      ? definition.dimensionId
-                      : undefined) ??
+                  (definition.type !== 'boolean' ? definition.dimensionId : undefined) ??
                   (darkValue !== undefined ? 'theme' : undefined));
         if (darkValue !== undefined && !dimensions.theme) addDimension(legacyTheme());
         const values = {
@@ -523,7 +519,11 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             throw new Error('Use value to edit the base value.');
         for (const [modeId, override] of Object.entries(overrides)) {
             if (override === null) delete values[modeId];
-            else values[modeId] = override;
+            else
+                values[modeId] =
+                    current.type === 'text' && typeof override === 'string'
+                        ? remapTemplate(override)
+                        : override;
         }
         checkModes(selectedDimension, values);
         const variable = readEntity('variables', {
@@ -573,7 +573,7 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                 operation.dimensionId ??
                 pasted?.id ??
                 (operation.darkValue === undefined ? undefined : 'theme');
-            const values = {
+            const values: Record<string, unknown> = {
                 ...(pasted
                     ? Object.fromEntries(
                           Object.entries(operation.modeValues ?? {}).filter(
@@ -586,6 +586,13 @@ function stage(document: Document, operations: Operation[], newId: () => string)
                 default: value,
                 ...(operation.darkValue === undefined ? {} : { dark: operation.darkValue })
             };
+            if (operation.type === 'text') {
+                Object.keys(values).forEach((mode) => {
+                    if (typeof values[mode] === 'string') {
+                        values[mode] = remapTemplate(values[mode]);
+                    }
+                });
+            }
             checkModes(dimensionId, values);
             const variable = readEntity('variables', {
                 id: ids.get(operation.key),

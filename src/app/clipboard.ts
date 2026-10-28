@@ -120,6 +120,39 @@ export function writeClipboard(
     frameModes: readonly VariableContext[] = [],
     frameVariables: readonly string[] = []
 ): string {
+    shapes = shapes.map((shape) => {
+        const authored = document?.shapes[shape.id];
+        if (!authored || authored === shape) {
+            return shape;
+        }
+        const copy = { ...shape };
+        for (const [key] of holdingBindings(authored, variables)) {
+            if (
+                ![
+                    'width',
+                    'height',
+                    'fontSize',
+                    'wrapWidth',
+                    'text',
+                    'cornerRadius',
+                    'opacity'
+                ].includes(key)
+            ) {
+                continue;
+            }
+            const property = bindableProperty(key)!;
+            const value = property.read(authored, document!);
+            if (value !== undefined) {
+                applyProperty(property, copy, value);
+            }
+        }
+        if (copy.type === 'text' && authored.type === 'text' && authored.template) {
+            copy.template = authored.template;
+            copy.value = authored.value;
+        }
+
+        return copy;
+    });
     const components = new Map<string, Component>();
 
     for (const shape of shapes) {
@@ -191,8 +224,7 @@ export function writeClipboard(
     const copiedDimensions = [...held].flatMap((id) => {
         const variable = variables[id];
         const dimension =
-            (variable?.type === 'color' || variable?.type === 'number') &&
-            variable.dimensionId !== undefined
+            variable && variable.type !== 'boolean' && variable.dimensionId !== undefined
                 ? document?.dimensions[variable.dimensionId]
                 : undefined;
         return dimension ? [dimension] : [];
@@ -371,8 +403,7 @@ export function pasteVariables(
             name,
             type: variable.type,
             value: variable.values.default,
-            ...((variable.type === 'color' || variable.type === 'number') &&
-            variable.dimensionId !== undefined
+            ...(variable.type !== 'boolean' && variable.dimensionId !== undefined
                 ? {
                       dimensionId: variable.dimensionId,
                       dimension: dimensions[variable.dimensionId],
@@ -393,7 +424,16 @@ export function pasteVariables(
             ...(input.alias === undefined ? {} : { alias: references.get(input.alias) })
         };
         return operation.type === 'text' && typeof operation.value === 'string'
-            ? { ...operation, value: remapTemplate(operation.value) }
+            ? {
+                  ...operation,
+                  value: remapTemplate(operation.value),
+                  modeValues: Object.fromEntries(
+                      Object.entries(operation.modeValues ?? {}).map(([id, value]) => [
+                          id,
+                          typeof value === 'string' ? remapTemplate(value) : value
+                      ])
+                  )
+              }
             : operation;
     });
     const operations: AddVariable[] = [];
@@ -438,8 +478,7 @@ export function pasteDimensions(
 ): { operations: Operation[]; remapModes: (modes: VariableContext) => VariableContext } {
     const withVariables = new Set(
         copied.variables.flatMap((variable) =>
-            (variable.type === 'color' || variable.type === 'number') &&
-            variable.dimensionId !== undefined
+            variable.type !== 'boolean' && variable.dimensionId !== undefined
                 ? [variable.dimensionId]
                 : []
         )

@@ -1,5 +1,6 @@
-import React, { FC, Suspense, lazy, useEffect } from 'react';
-import { useCurrentPage, useLoading } from '../hooks';
+import { editorLoaded, subscribeToEditorHelpers } from '../editorHelpers';
+import React, { FC, Suspense, lazy, useEffect, useLayoutEffect, useSyncExternalStore } from 'react';
+import { useActions, useCurrentPage, useLoading } from '../hooks';
 import { useClipboardDriver } from 'src/events/drivers/useClipboardDriver';
 import { useKeyboardDriver } from 'src/events/drivers/useKeyboardDriver';
 import { usePreventNativePinchZoom } from './usePreventNativePinchZoom';
@@ -27,6 +28,12 @@ export const Shell: FC = () => {
     useKeyboardDriver();
     useClipboardDriver();
     usePreventNativePinchZoom();
+
+    const ready = useSyncExternalStore(subscribeToEditorHelpers, editorLoaded);
+    const { setEditorReady } = useActions();
+    useLayoutEffect(() => {
+        setEditorReady();
+    }, [ready, setEditorReady]);
 
     const currentPage = useCurrentPage();
     const loading = useLoading();

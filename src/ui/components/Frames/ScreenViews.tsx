@@ -4,7 +4,7 @@ import {
     useScreenViewContainers
 } from 'src/app/frameHooks';
 import React, { createElement, type CSSProperties, type FC } from 'react';
-import { componentSource, instanceBox } from 'src/app/componentSource';
+import { instanceSource, instanceBox } from 'src/app/componentSource';
 import { projectScreenViews } from 'src/app/screenProjection';
 import { themeColors } from 'src/app/themeColors';
 import { useArtworkModes } from 'src/app/modeHooks';
@@ -77,8 +77,7 @@ const ProjectedShape: FC<{
     const document = useCurrentDocument();
     const context = useArtworkModes(shape, viewId);
     const painted = themeColors(shape, document, context);
-    const source =
-        painted.type === 'instance' ? componentSource(document, painted.componentId) : null;
+    const source = painted.type === 'instance' ? instanceSource(document, painted) : null;
     const bounds =
         painted.type === 'instance' && source
             ? instanceBox(painted, source)

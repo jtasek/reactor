@@ -1,5 +1,6 @@
 import { screenOwners, screenSourceShapes, screenViewName } from 'src/app/screenViews';
 import { layoutDocument } from 'src/app/frameLayout';
+import { projectContextualLayout } from 'src/app/contextualLayout';
 import { projectScreenViews } from 'src/app/screenProjection';
 import React, { FC, ReactNode, useLayoutEffect, useRef } from 'react';
 import { useVariableContext } from 'src/app/hooks';
@@ -9,7 +10,7 @@ import { SquareDashed } from 'lucide-react';
 import type { Box, Document, Image, InstanceShape, Shape, VariableContext } from 'src/app/types';
 import { instanceModes, resolveModes } from 'src/app/inheritedModes';
 import { applyInstanceOverrides } from 'src/app/componentProps';
-import { componentSource, instanceBox } from 'src/app/componentSource';
+import { instanceSource, instanceBox } from 'src/app/componentSource';
 import { drawnBox, shownShapesIds } from 'src/app/membership';
 import {
     assertNever,
@@ -62,7 +63,7 @@ function previewBox(document: Document, shape: Shape): Box {
         return drawnBox(shape);
     }
 
-    const source = componentSource(document, shape.componentId);
+    const source = instanceSource(document, shape);
     const bounds = source
         ? instanceBox(shape, source)
         : rectToBox({
@@ -88,7 +89,7 @@ const PreviewInstance: FC<{
     ancestors: ReadonlySet<string>;
     context: VariableContext;
 }> = ({ document, shape, ancestors, context: theme }) => {
-    const source = componentSource(document, shape.componentId, ancestors);
+    const source = instanceSource(document, shape, ancestors);
 
     if (!source) {
         return (
@@ -114,9 +115,10 @@ const PreviewInstance: FC<{
         <g transform={`translate(${offsetX} ${offsetY})`}>
             {source.shapes.map((member) => {
                 const painted = themeColors(member, document, theme);
-                const resolved = component
-                    ? applyInstanceOverrides(painted, shape, component, document, theme)
-                    : painted;
+                const resolved =
+                    component && !shape.projectedSource
+                        ? applyInstanceOverrides(painted, shape, component, document, theme)
+                        : painted;
 
                 if (!resolved.visible) {
                     return null;
@@ -205,7 +207,17 @@ function geometry(
                     fontSize={shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE}
                     fill={shape.fontColor ?? 'var(--text-color)'}
                 >
-                    {shape.value}
+                    {shape.textLayout
+                        ? shape.textLayout.lines.map((line, index) => (
+                              <tspan
+                                  key={index}
+                                  x={shape.position.x}
+                                  y={shape.position.y + index * shape.textLayout!.lineHeight}
+                              >
+                                  {line}
+                              </tspan>
+                          ))
+                        : shape.value}
                 </text>
             );
         case 'image':
@@ -253,7 +265,10 @@ const PreviewShape: FC<{
 
 export const DocumentThumbnail: FC<{ document: Document }> = ({ document: sourceDocument }) => {
     const simulation = useVariableContext(sourceDocument.id);
-    const document = layoutDocument(sourceDocument);
+    const document = layoutDocument(
+        sourceDocument,
+        projectContextualLayout(sourceDocument, { simulation })
+    );
     const svgRef = useRef<SVGSVGElement>(null);
     const contentRef = useRef<SVGGElement>(null);
     const shown = shownShapesIds({ ...document, shownLayerId: undefined }, null);

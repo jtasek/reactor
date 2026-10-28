@@ -167,13 +167,13 @@ export const config = {
                       },
                       // Numeric view layout is shared by lazy canvas, thumbnail and Preview code.
                       contextualLayout: {
-                          test: /[\\/]src[\\/]app[\\/]contextualLayout\.ts$/,
+                          test: /[\\/]src[\\/]app[\\/](contextualLayout|contextualGeometry|textMeasurement|componentPropertyEdits)\.ts$/,
                           name: 'contextual-layout',
                           enforce: true
                       },
                       // Focused editing and its view hooks load with the editor, not startup.
                       screenEditing: {
-                          test: /[\\/]src[\\/]app[\\/](screenViewEditing|frameHooks)\.ts$/,
+                          test: /[\\/]src[\\/]app[\\/](screenViewEditing|frameHooks|modeHooks|componentViewTransform)\.ts$/,
                           name: 'screen-editing',
                           enforce: true
                       },

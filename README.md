@@ -483,23 +483,30 @@ listed with a diagnostic and uses the dimension's default until you choose anoth
 Opening Preview from a view captures its screen-root modes and viewport for that session. Later canvas
 simulation/view changes do not change the session, while descendant overrides still apply.
 
-Number modes currently affect **Screen views and Preview**: fixed rectangle dimensions and
-frame width/height, stack gap and padding. Select a frame and use **Layout variables** in
-Inspector to bind its numeric inputs. Existing rectangle Width/Height variable controls work
-inside stacks. Layout resolves each view before drawing and hit testing; nested stacks and
-min/max constraints use the same sizing rules. Missing/invalid numeric inputs use authored
-fallbacks with diagnostics. Copy/paste and native packages retain numeric definitions.
-Standalone Canvas geometry, other numeric properties and component-source geometry keep
-their base values. Text/font mode measurement and wrapping are the next R4.4 increment.
+Number and text modes affect **Screen views, Canvas artwork and Preview**, including nested
+component instances. Numeric bindings support fixed rectangle dimensions, frame width/height,
+stack gap/padding, font size, text wrap width, radius and opacity. Use **Layout variables** in
+Inspector for frame inputs; use the variable picker beside a shape property for artwork.
+Instances inherit their view/frame modes, then apply their own overrides. Explicit exposed
+property overrides take precedence over source bindings.
 
-Existing Light/Dark documents migrate to an editable Theme dimension, including their local
-Dark preference. Plain documents stay base-only. Text templates and geometry still use base
-values for unsupported consumers; text and boolean mode overrides remain gated. This changes
-artwork, not the editor's interface theme.
+Text variables can opt into a dimension and supply a different value or template per mode.
+Set **Wrap width (0 = auto)** in the text Inspector to wrap at a maximum width; zero preserves
+single-line text. Wrapped text is also limited to its containing frame's available width.
+A Hug-width frame uses the explicit text wrap limit to avoid a circular width dependency.
+Font metrics, lines and component bounds are measured locally for each instance path, mode
+context and available width. Rendering, selection, hit tests, stack layout, thumbnails and
+Preview share those results; measurements are never saved or synchronized.
+
+Missing/invalid numeric inputs keep authored fallbacks with diagnostics. Position, rotation,
+unsupported shape dimensions and boolean mode values remain at their base values. Existing
+Light/Dark documents migrate to an editable Theme dimension. Dimensions remain opt-in, and
+mode choices affect artwork rather than the editor interface. Native packages and copy/paste
+preserve text mode templates and their dependencies.
 
 Values and template diagnostics share a pure central resolver; saved definitions and clipboard
 transfers retain modes and aliases. The operations API accepts an existing `dimensionId` and
-color or number `modeValues` keyed by mode ID; older `darkValue` inputs remain readable for compatibility.
+color, number or text `modeValues` keyed by mode ID; older `darkValue` inputs remain readable for compatibility.
 Design-system packages follow in the
 [variable roadmap](./APPLICATION_PLAN.md#variable-foundation-v1v5-incremental).
 
