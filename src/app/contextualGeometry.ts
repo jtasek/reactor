@@ -25,7 +25,6 @@ export function projectGeometry(
     source: Shape,
     document: Document,
     inherited: VariableContext,
-    path = source.id,
     availableWidth?: number,
     ancestors: ReadonlySet<string> = new Set(),
     problems: Record<string, string> = {}
@@ -73,7 +72,7 @@ export function projectGeometry(
             }
         }
 
-        return measureContextualText(shape, JSON.stringify([path, context]), availableWidth);
+        return measureContextualText(shape, availableWidth);
     }
 
     if (shape.type !== 'instance') {
@@ -99,7 +98,6 @@ export function projectGeometry(
             { ...overridden, bindings },
             document,
             modes,
-            `${path}/${member.id}`,
             availableWidth,
             next,
             problems

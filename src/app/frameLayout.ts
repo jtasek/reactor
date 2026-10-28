@@ -1,6 +1,16 @@
 import { projectStackSizes } from './stackSizing';
 import { rectToBox } from './utils';
-import type { Size, Document, Frame, Point, ResizeHandlerType, Shape, StackRules } from './types';
+import type {
+    Size,
+    Document,
+    Frame,
+    Point,
+    ResizeHandlerType,
+    Shape,
+    StackRules,
+    VariableContext
+} from './types';
+import { editorHelpers, editorLoaded } from './editorHelpers';
 import { frameParents, projectFrameStates } from './frameState';
 import { drawnBox } from './membership';
 import { translateShape } from './geometry';
@@ -9,6 +19,9 @@ import { componentSource, instanceBox } from './componentSource';
 const ZERO: Point = { x: 0, y: 0 };
 export interface FrameLayout {
     resolvedShapes?: Record<string, Shape>;
+    /** Canvas modes apply, but `resolvedShapes` is absent: resolve each shape when read. */
+    contextual?: boolean;
+    canvasModes?: VariableContext;
     modeProblems?: Record<string, string>;
     shapes: Record<string, Point>;
     frames: Record<string, Point>;
@@ -303,7 +316,11 @@ export const frameLayout = (document: Document): FrameLayout =>
 
 export function renderedShape(document: Document, id: string, layout?: FrameLayout): Shape {
     const projection = layout ?? frameLayout(document);
-    const shape = projection.resolvedShapes?.[id] ?? document.shapes[id];
+    const authored = projection.resolvedShapes?.[id] ?? document.shapes[id];
+    const shape =
+        authored && projection.contextual && !projection.resolvedShapes && editorLoaded()
+            ? editorHelpers().layout.canvasShape(document, authored, projection)
+            : authored;
     if (!shape?.parentFrameId) {
         return shape;
     }

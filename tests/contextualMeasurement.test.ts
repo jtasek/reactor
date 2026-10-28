@@ -3,7 +3,7 @@ import { json } from 'overmind';
 import { createTestStore } from './support/store';
 import { projectScreenViews } from 'src/app/screenProjection';
 import { hasNumericLayout, projectContextualLayout } from 'src/app/contextualLayout';
-import { layoutDocument } from 'src/app/frameLayout';
+import { layoutDocument, renderedShape } from 'src/app/frameLayout';
 import { projectGeometry } from 'src/app/contextualGeometry';
 import { pointerDocument } from 'src/app/screenViewEditing';
 import { resolveVariable } from 'src/app/variableResolver';
@@ -212,7 +212,7 @@ it('shares contextual text lines and bounds with Preview and standalone Canvas',
     expect(text.fontSize).toBe(40);
     expect(text.textLayout!.lines.length).toBeGreaterThan(1);
     expect(document.shapes[canvasId].bounds).toBeUndefined();
-    expect(document.frameLayout.resolvedShapes![canvasId].bounds).toEqual(text.bounds);
+    expect(renderedShape(document, canvasId).bounds).toEqual(text.bounds);
     const copied = readClipboard(writeClipboard([text], [], document.variables, document))!;
     expect(copied.shapes[0]).toMatchObject({
         fontSize: 20,
@@ -397,11 +397,11 @@ it('resolves mode templates transitively and keeps them through save and package
 it('remeasures after a value edit and does not retain bounds from another width or instance path', () => {
     const { store, document, ids } = setup();
     const source = document.shapes[ids.text];
-    const narrow = projectGeometry(source, document, { density: 'large' }, 'narrow', 50);
-    const wide = projectGeometry(source, document, { density: 'large' }, 'wide', 120);
+    const narrow = projectGeometry(source, document, { density: 'large' }, 50);
+    const wide = projectGeometry(source, document, { density: 'large' }, 120);
     expect(narrow.bounds!.height).toBeGreaterThan(wide.bounds!.height);
     store.actions.setVariableModeValue({ variableId: ids.copy, modeId: 'large', value: 'Hi' });
-    const edited = projectGeometry(source, document, { density: 'large' }, 'narrow', 50);
+    const edited = projectGeometry(source, document, { density: 'large' }, 50);
     expect(edited.bounds!.height).toBeLessThan(narrow.bounds!.height);
     const stripped = readEntity('shapes', json(edited));
     expect('textLayout' in stripped).toBe(false);
@@ -412,10 +412,10 @@ it('invalidates Canvas geometry measured before the editor finished loading', ()
     const helpers = editorHelpers();
     provideEditorHelpers(undefined);
     store.actions.setEditorReady();
-    expect(document.frameLayout.resolvedShapes).toBeUndefined();
+    expect(document.frameLayout.contextual).toBeUndefined();
     provideEditorHelpers(helpers);
     store.actions.setEditorReady();
-    expect(document.frameLayout.resolvedShapes).toBeDefined();
+    expect(document.frameLayout.contextual).toBe(true);
 });
 
 it('detects text mode dependencies used only by an instance override template', () => {
@@ -443,4 +443,68 @@ it('detects text mode dependencies used only by an instance override template', 
     });
     instance.overrides.copy = '${Copy}';
     expect(hasNumericLayout(source)).toBe(true);
+});
+
+it('keeps a text variable’s mode values when its base value is edited or detached', () => {
+    const { store, document, ids } = setup();
+    store.actions.setVariableValue({ variableId: ids.copy, value: 'Brief' });
+    expect(document.variables[ids.copy]).toMatchObject({
+        dimensionId: 'density',
+        values: { default: 'Brief', large: 'A much longer label' }
+    });
+    const alias = store.actions.createVariable({ name: 'Alias', type: 'text', value: 'x' })!;
+    store.actions.setVariableAlias({ variableId: alias, sourceId: ids.copy });
+    store.actions.setVariableValue({ variableId: alias, value: 'Own' });
+    expect(document.variables[alias]).toMatchObject({
+        dimensionId: 'density',
+        values: { default: 'Own', large: 'A much longer label' }
+    });
+    expect(document.variables[alias].alias).toBeUndefined();
+});
+
+it('resolves Canvas shapes one at a time unless frames lay shapes out together', () => {
+    const { store, document, ids } = setup();
+    store.actions.setPreviewMode({ dimensionId: 'density', modeId: 'large' });
+    expect(document.frameLayout.contextual).toBe(true);
+    expect(document.frameLayout.resolvedShapes).toBeUndefined();
+    expect(renderedShape(document, ids.rect)).toMatchObject({ size: { width: 40 } });
+    expect(document.shapes[ids.rect]).toMatchObject({ size: { width: 20 } });
+
+    const plain = createTestStore().store;
+    plain.actions.addShape({
+        type: 'text',
+        position: { x: 0, y: 20 },
+        value: 'Plain',
+        fontSize: 20
+    });
+    const textId = plain.state.currentDocument.shapesIds.at(-1)!;
+    expect(plain.state.currentDocument.frameLayout.contextual).toBeUndefined();
+    plain.actions.setShapesProperty({ shapeIds: [textId], key: 'wrapWidth', value: 30 });
+    expect(plain.state.currentDocument.frameLayout.contextual).toBe(true);
+    plain.actions.setShapesProperty({ shapeIds: [textId], key: 'wrapWidth', value: 0 });
+    expect(plain.state.currentDocument.shapes[textId]).not.toHaveProperty('wrapWidth');
+    expect(plain.state.currentDocument.frameLayout.contextual).toBeUndefined();
+});
+
+it('keeps spaces between wrapped lines and wraps inside the frame from where the text starts', () => {
+    const { store, document } = setup();
+    const frameId = store.actions.editFrame({
+        kind: 'add',
+        position: { x: 1000, y: 0 },
+        size: { width: 120, height: 200 }
+    })!;
+    store.actions.addShape({
+        type: 'text',
+        position: { x: 1060, y: 30 },
+        value: 'The quick brown fox jumps over the lazy dog',
+        fontSize: 10,
+        wrapWidth: 400,
+        parentFrameId: frameId
+    });
+    const text = renderedShape(document, document.shapesIds.at(-1)!);
+    if (text.type !== 'text') {
+        throw new Error('Expected text');
+    }
+    expect(text.textLayout!.lines.join('')).toBe('The quick brown fox jumps over the lazy dog');
+    expect(text.bounds!.bottomRight.x).toBeLessThanOrEqual(1120);
 });

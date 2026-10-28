@@ -1,4 +1,6 @@
-import type { Document, Frame, Size, VariableContext } from './types';
+import type { Document, Frame, Shape, Size, Text, VariableContext } from './types';
+import { untracked } from './untracked';
+import type { FrameLayout } from './frameLayout';
 import { resolveModes, type ModeAddress } from './inheritedModes';
 import { resolveVariable, variableDefinition } from './variableResolver';
 import { variableDependencies, templateVariablesIds } from './variables';
@@ -6,6 +8,7 @@ import { variableContext } from './variableModes';
 import { acceptsFrameNumber, FRAME_NUMBER_KEYS, writeFrameNumber } from './frameVariables';
 import { projectGeometry } from './contextualGeometry';
 import { projectFrameLayout } from './frameLayout';
+import { getBoundingBox } from './utils';
 
 export const NUMBER_MODE_SUPPORT =
     'Modes resolve layout, component sizes, font size, text and wrapping locally. Position and rotation bindings keep their base values.';
@@ -94,6 +97,88 @@ export function projectContextualLayout(document: Document, address: ModeAddress
     };
 }
 
+/**
+ * Whether Canvas geometry depends on context: number or text modes, or wrapped text.
+ * Every Shape reading `frameLayout` tracks each path its derived reads, so this reads
+ * variables, the shape list and text wrap limits only, never every shape's fields.
+ */
+export function needsContextualGeometry(document: Document) {
+    if (
+        Object.values(document.variables).some(
+            (variable) =>
+                (variable.type === 'number' || variable.type === 'text') &&
+                variable.dimensionId !== undefined
+        )
+    ) {
+        return true;
+    }
+    const wraps = (shapes: Record<string, Shape>, raw: Record<string, Shape>) =>
+        Object.keys(raw).some(
+            (id) => raw[id].type === 'text' && Boolean((shapes[id] as Text).wrapWidth)
+        );
+    // Adding or removing a shape changes the list, which reruns this check.
+    void document.shapesIds.length;
+
+    return (
+        wraps(document.shapes, untracked(document).shapes) ||
+        Object.values(document.components).some((component) =>
+            wraps(component.sourceShapes ?? {}, untracked(component).sourceShapes ?? {})
+        )
+    );
+}
+
+/**
+ * Frames that lay shapes out together need the whole contextual projection. Otherwise
+ * `renderedShape` resolves each shape on its own, so a Shape tracks only its inputs.
+ */
+export function canvasLayout(document: Document, simulation?: VariableContext): FrameLayout {
+    if (
+        Object.values(document.frames).some(
+            (frame) => frame.stack || frame.sizing || Object.keys(frame.bindings ?? {}).length > 0
+        )
+    ) {
+        return projectContextualLayout(document, { simulation });
+    }
+
+    return { ...projectFrameLayout(document), contextual: true, canvasModes: simulation };
+}
+
+/** Width a wrapped text may use: inside the frame's padding, from where it starts in a free frame. */
+function availableWidthIn(parent: Frame | undefined, shape: Shape, width?: number) {
+    if (!parent || parent.sizing?.width?.mode === 'hug') {
+        return undefined;
+    }
+    const inner = (width ?? parent.size.width) - 2 * (parent.stack?.padding ?? 0);
+    // A stack places its items itself; a free frame keeps the shape where it is.
+    const offset = parent.stack
+        ? 0
+        : Math.max(0, getBoundingBox(shape).topLeft.x - parent.position.x);
+
+    return Math.max(1, inner - offset);
+}
+
+/**
+ * One shape's Canvas geometry when no frame lays shapes out together. Each Shape reads
+ * only its own inputs, instead of a projection that reads, and so tracks, every shape.
+ */
+export function canvasShape(document: Document, source: Shape, layout: FrameLayout): Shape {
+    if (source.type !== 'text' && source.type !== 'instance' && !source.bindings) {
+        return source;
+    }
+    const modes = resolveModes(document, {
+        simulation: layout.canvasModes,
+        frameId: source.parentFrameId
+    }).modes;
+    const parent = document.frames[source.parentFrameId ?? ''];
+
+    return projectGeometry(
+        source,
+        document,
+        modes,
+        availableWidthIn(parent, source, parent && layout.frameSizes[parent.id]?.width)
+    );
+}
+
 /** Apply supported numeric inputs before layout. Returned records are local projections only. */
 export function contextualDocument(
     document: Document,
@@ -155,26 +240,15 @@ export function contextualDocument(
                 frameId: source.parentFrameId
             }).modes;
             const parent = frames[source.parentFrameId ?? ''];
-            const availableWidth =
-                parent && parent.sizing?.width?.mode !== 'hug'
-                    ? Math.max(
-                          1,
-                          (availableSizes[parent.id]?.width ?? parent.size.width) -
-                              2 * (parent.stack?.padding ?? 0)
-                      )
-                    : undefined;
+            const availableWidth = availableWidthIn(
+                parent,
+                source,
+                parent && availableSizes[parent.id]?.width
+            );
 
             return [
                 source.id,
-                projectGeometry(
-                    source,
-                    document,
-                    modes,
-                    `${address.viewId ?? address.screenId ?? 'canvas'}/${source.id}`,
-                    availableWidth,
-                    undefined,
-                    problems
-                )
+                projectGeometry(source, document, modes, availableWidth, undefined, problems)
             ];
         })
     );

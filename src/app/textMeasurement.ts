@@ -39,28 +39,30 @@ function metrics(value: string, fontSize: number) {
     };
 }
 
+/**
+ * Lines that fit `width`. A line that ends between words keeps one trailing space, so
+ * the drawn text still reads, and copies, as words; widths leave that space out.
+ */
 function wrap(value: string, fontSize: number, width: number): string[] {
     const lines: string[] = [];
     let line = '';
 
-    for (const word of value.trim().replace(/\s+/g, ' ').split(/(\s+)/)) {
+    for (const word of value.trim().replace(/\s+/g, ' ').split(' ')) {
         if (line && metrics(line + word, fontSize).width > width) {
-            lines.push(line.trimEnd());
+            lines.push(line);
             line = '';
         }
 
         for (const character of word) {
-            if (!line && /\s/.test(character)) {
-                continue;
-            }
-            if (line && metrics(line + character, fontSize).width > width) {
+            if (line.trim() && metrics(line + character, fontSize).width > width) {
                 lines.push(line);
                 line = '';
             }
             line += character;
         }
+        line += ' ';
     }
-    lines.push(line);
+    lines.push(line.trimEnd());
 
     return lines;
 }
@@ -71,7 +73,7 @@ function measure(value: string, fontSize: number, width?: number) {
         : [value.trim().replace(/\s+/g, ' ')];
     const lineHeight = fontSize * LINE_HEIGHT;
     const boxes = lines.map((line, index) => {
-        const size = metrics(line, fontSize);
+        const size = metrics(line.trimEnd(), fontSize);
 
         return {
             left: -size.left,
@@ -88,23 +90,24 @@ function measure(value: string, fontSize: number, width?: number) {
     return { lines, lineHeight, left, top, width: right - left, height: bottom - top };
 }
 
-/** Measures once per resolved context; positions and selections do not invalidate metrics. */
-export function measureContextualText(
-    shape: Text,
-    contextKey: string,
-    availableWidth?: number
-): Text {
+/**
+ * Measures a text in its resolved context. Metrics depend only on the resolved text,
+ * font size and width, so placements in many views share one entry.
+ */
+export function measureContextualText(shape: Text, availableWidth?: number): Text {
     const fontSize = shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE;
     const width = shape.wrapWidth
         ? Math.max(1, Math.min(shape.wrapWidth, availableWidth ?? shape.wrapWidth))
         : undefined;
-    const key = JSON.stringify([contextKey, shape.value, fontSize, width]);
+    const key = JSON.stringify([shape.value, fontSize, width]);
     const measured = measurements.get(key) ?? measure(shape.value, fontSize, width);
 
-    if (measurements.size >= MAX_CACHE_ENTRIES) {
-        measurements.clear();
-    }
+    // Least recently used first: a hit moves to the end, and only the oldest is dropped.
+    measurements.delete(key);
     measurements.set(key, measured);
+    if (measurements.size > MAX_CACHE_ENTRIES) {
+        measurements.delete(measurements.keys().next().value!);
+    }
 
     return {
         ...shape,

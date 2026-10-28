@@ -1,5 +1,5 @@
 import { json } from 'overmind';
-import type { Document } from './types';
+import type { Document, Variable } from './types';
 import { applyVariableChanges, buildVariable, escapeTemplate } from './variables';
 import { resolveVariable, variableProblems, variableDefinition } from './variableResolver';
 
@@ -67,4 +67,41 @@ export function setVariableAlias(
     if (variable.source) next.source = { ...variable.source };
     document.variables[variableId] = next;
     applyVariableChanges(document, before);
+}
+
+/**
+ * Keeps the mode values `next` replaces when only its base value is edited. A text
+ * that followed a source keeps what each mode showed, as literal text.
+ */
+export function keepModeValues(
+    next: Variable,
+    variable: Variable,
+    before: Record<string, Variable>
+) {
+    const definition = variableDefinition(variable, before);
+    if (next.type === 'boolean' || next.type !== definition.type) {
+        return;
+    }
+    const dimensionId = definition.dimensionId;
+    const modes = Object.keys(definition.values).filter((mode) => mode !== 'default');
+    const values = Object.fromEntries(
+        modes.map((mode) => [
+            mode,
+            next.type === 'text' && variable.alias !== undefined
+                ? escapeTemplate(
+                      String(
+                          resolveVariable(
+                              variable,
+                              before,
+                              dimensionId ? { [dimensionId]: mode } : {}
+                          )
+                      )
+                  )
+                : definition.values[mode]
+        ])
+    );
+    next.values = { ...values, default: next.values.default } as typeof next.values;
+    if (dimensionId !== undefined) {
+        next.dimensionId = dimensionId;
+    }
 }

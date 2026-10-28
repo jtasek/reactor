@@ -92,7 +92,7 @@ export function documentContext(document: Document) {
             name: variable.name,
             type: variable.type,
             value: variable.values.default,
-            ...((variable.type === 'color' || variable.type === 'number') && variable.dimensionId
+            ...(variable.type !== 'boolean' && variable.dimensionId
                 ? {
                       dimensionId: variable.dimensionId,
                       modeValues: Object.fromEntries(
@@ -104,7 +104,7 @@ export function documentContext(document: Document) {
         });
         if (variable.alias !== undefined) addVariable(variable.alias);
         if (variable.type === 'text') {
-            followTemplate(variable.values.default);
+            Object.values(variable.values).forEach(followTemplate);
         }
     };
     const followShape = (shape: Shape) => {

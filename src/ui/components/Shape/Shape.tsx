@@ -1,4 +1,4 @@
-import { frameLayout, hasLayoutOffset } from 'src/app/frameLayout';
+import { hasLayoutOffset } from 'src/app/frameLayout';
 import React, { CSSProperties, FC, createElement, memo, useLayoutEffect, useRef } from 'react';
 import { Active } from '../Active/Active';
 import { Label } from '../Label';
@@ -74,7 +74,11 @@ export const Shape = memo((props: Props) => {
             : (getComponentByType(shape.type) as FC<Omit<ShapeType, 'key'>>);
     const authored = useAppState((state) => state.currentDocument.shapes[shapeId]);
     const inLayout = hasLayoutOffset(document, [shapeId]);
-    const contextual = Boolean(frameLayout(document).resolvedShapes?.[shapeId]);
+    // Measured in context; the DOM box would mix contexts and must not be stored.
+    const contextual =
+        shape.type === 'text'
+            ? Boolean(shape.textLayout)
+            : shape.type === 'instance' && Boolean(shape.projectedSource);
     const geometryKey = `${shapeGeometryKey(authored)}:${source?.key ?? ''}:${variableKey}`;
 
     // Measure the actual rendered geometry so the selection box, handles and

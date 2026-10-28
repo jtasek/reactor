@@ -275,8 +275,10 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         read: (shape) => (shape.type === 'text' ? (shape.wrapWidth ?? 0) : undefined),
         accepts: (value) => value >= 0,
         write: (shape, value) => {
-            if (shape.type === 'text' && value >= 0) {
+            if (shape.type === 'text' && value > 0) {
                 shape.wrapWidth = value;
+            } else if (shape.type === 'text' && value === 0) {
+                delete shape.wrapWidth;
             }
         }
     },

@@ -363,6 +363,8 @@ export interface Document {
     /** Local projection; never saved or shared. */
     frameStates: Record<string, FrameState>;
     frameLayout: FrameLayout;
+    /** Local: whether modes or wrapping need contextual geometry on the Canvas. */
+    contextualGeometry: boolean;
     /** Local selection; never saved or shared. */
     selectedFrameId?: string;
     id: string;

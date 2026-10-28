@@ -217,7 +217,6 @@ export function projectComponentView(state: Context['state'], projection: Screen
               { ...instance, overrides: {} },
               document,
               context.modes,
-              instance.id,
               context.availableWidth
           )
         : instance;

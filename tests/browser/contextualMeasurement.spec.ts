@@ -156,7 +156,7 @@ test('authors text modes and wrapping with usable narrow controls', async ({ pag
     const input = page.getByLabel('Large value of Greeting', { exact: true });
     await input.fill('Good morning');
     await input.blur();
-    await expect(large.locator('text[data-cy="Greeting"]')).toHaveText('Goodmorning');
+    await expect(large.locator('text[data-cy="Greeting"]')).toHaveText('Good morning');
     await page.setViewportSize({ width: 600, height: 900 });
     await expect(input).toBeVisible();
     const reset = page.getByRole('button', {
