@@ -236,13 +236,13 @@ export const TOOLS = [
                 },
                 dimensionId: {
                     type: 'string',
-                    description: 'Optional existing dimension ID, for color variables only.'
+                    description: 'Optional existing dimension ID, for color or number variables.'
                 },
                 modeValues: {
                     type: 'object',
-                    additionalProperties: { type: 'string' },
+                    additionalProperties: { type: ['string', 'number'] },
                     description:
-                        'Optional color overrides keyed by mode ID from that dimension. Missing modes use the base value.'
+                        'Optional color or number overrides keyed by mode ID from that dimension. Missing modes use the base value.'
                 },
                 alias: {
                     type: 'string',
@@ -335,13 +335,13 @@ export const TOOLS = [
                 dimensionId: {
                     type: ['string', 'null'],
                     description:
-                        'Color only: existing dimension ID, or null to remove modes. Changing it clears old mode values.'
+                        'Color or number: existing dimension ID, or null to remove modes. Changing it clears old mode values.'
                 },
                 modeValues: {
                     type: 'object',
-                    additionalProperties: { type: ['string', 'null'] },
+                    additionalProperties: { type: ['string', 'number', 'null'] },
                     description:
-                        'Color overrides keyed by mode ID; null removes an override. Editing without an explicit alias detaches to literal values.'
+                        'Color or number overrides keyed by mode ID; null removes an override. Editing without an explicit alias detaches to literal values.'
                 },
                 alias: {
                     type: ['string', 'null'],

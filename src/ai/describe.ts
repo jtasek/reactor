@@ -5,7 +5,7 @@ import type { ProposedOperation } from './operations';
 const quoted = (text: string) => `“${text}”`;
 
 const modesDescription = (
-    operation: { dimensionId?: string | null; modeValues?: Record<string, string | null> },
+    operation: { dimensionId?: string | null; modeValues?: Record<string, string | number | null> },
     document: Document
 ) => {
     const dimension = operation.dimensionId

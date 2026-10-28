@@ -14,20 +14,26 @@ export { setModeOverride, previewModes } from './modeEdits';
 const validName = (name: string) => name.trim().length > 0 && name.trim().length <= 200;
 
 /**
- * The default mode's colors are the base values shapes hold. Making `to` the default moves
- * each of its colors into the base, writing them into the shapes, and keeps the old base as
- * `from`'s color while `from` is still a mode.
+ * The default mode supplies the base values shapes and frame bindings hold. Promoting `to`
+ * updates those bases and keeps the previous base as `from`'s override while that mode exists.
  */
 function promoteDefaultMode(document: Document, dimensionId: string, from: string, to: string) {
     const before = structuredClone(json(document.variables));
     Object.values(document.variables).forEach((variable) => {
-        if (variable.type !== 'color' || variable.dimensionId !== dimensionId) return;
-        const color = variable.values[to];
-        if (color === undefined) return;
+        if (
+            (variable.type !== 'color' && variable.type !== 'number') ||
+            variable.dimensionId !== dimensionId
+        ) {
+            return;
+        }
+        const value = variable.values[to];
+        if (value === undefined) {
+            return;
+        }
         if (document.dimensions[dimensionId]?.modes[from]) {
             variable.values[from] = variable.values.default;
         }
-        variable.values.default = color;
+        variable.values.default = value;
         delete variable.values[to];
     });
     applyVariableChanges(document, before);
@@ -42,8 +48,9 @@ export const createDimension: ActionWithParamAndResult<string, string | undefine
         document.locked ||
         !validName(name) ||
         Object.values(document.dimensions).some((d) => d.name === name.trim())
-    )
+    ) {
         return;
+    }
     const id = effects.newId();
     const modeId = effects.newId();
     document.dimensions[id] = {
@@ -58,7 +65,9 @@ export const createDimension: ActionWithParamAndResult<string, string | undefine
 
 export const updateDimension: ActionWithParam<VariableDimension> = ({ state }, input) => {
     const document = state.currentDocument;
-    if (document.locked || !document.dimensions[input.id]) return;
+    if (document.locked || !document.dimensions[input.id]) {
+        return;
+    }
     let dimension: VariableDimension;
     try {
         dimension = readDimension(input);
@@ -69,8 +78,9 @@ export const updateDimension: ActionWithParam<VariableDimension> = ({ state }, i
         Object.values(document.dimensions).some(
             (d) => d.id !== dimension.id && d.name === dimension.name
         )
-    )
+    ) {
         return;
+    }
     const previousDefault = document.dimensions[dimension.id].defaultModeId;
     document.dimensions[dimension.id] = dimension;
     if (dimension.defaultModeId !== previousDefault) {
@@ -89,8 +99,9 @@ export const addDimensionMode: ActionWithParam<{ dimensionId: string; name: stri
         !validName(name) ||
         Object.values(dimension.modes).some((m) => m.name === name.trim()) ||
         Object.keys(dimension.modes).length >= 100
-    )
+    ) {
         return;
+    }
     const id = effects.newId();
     dimension.modes[id] = {
         id,
@@ -105,12 +116,17 @@ export const deleteDimensionMode: ActionWithParam<{ dimensionId: string; modeId:
 ) => {
     const document = state.currentDocument;
     const dimension = document.dimensions[dimensionId];
-    if (document.locked || !dimension?.modes[modeId] || Object.keys(dimension.modes).length < 2)
+    if (document.locked || !dimension?.modes[modeId] || Object.keys(dimension.modes).length < 2) {
         return;
+    }
     delete dimension.modes[modeId];
     Object.values(document.variables).forEach((variable) => {
-        if (variable.type === 'color' && variable.dimensionId === dimensionId)
+        if (
+            (variable.type === 'color' || variable.type === 'number') &&
+            variable.dimensionId === dimensionId
+        ) {
             delete variable.values[modeId];
+        }
     });
     if (dimension.defaultModeId === modeId) {
         dimension.defaultModeId = ordered(dimension.modes)[0].id;
@@ -120,12 +136,19 @@ export const deleteDimensionMode: ActionWithParam<{ dimensionId: string; modeId:
 
 export const deleteDimension: ActionWithParam<string> = ({ state }, dimensionId) => {
     const document = state.currentDocument;
-    if (document.locked || !document.dimensions[dimensionId]) return;
+    if (document.locked || !document.dimensions[dimensionId]) {
+        return;
+    }
     delete document.dimensions[dimensionId];
     Object.values(document.variables).forEach((variable) => {
-        if (variable.type === 'color' && variable.dimensionId === dimensionId) {
+        if (
+            (variable.type === 'color' || variable.type === 'number') &&
+            variable.dimensionId === dimensionId
+        ) {
             delete variable.dimensionId;
-            variable.values = { default: variable.values.default };
+            Object.keys(variable.values)
+                .filter((key) => key !== 'default')
+                .forEach((key) => delete variable.values[key]);
         }
     });
 };
@@ -138,35 +161,47 @@ export const setVariableDimension: ActionWithParam<{
     const variable = document.variables[variableId];
     if (
         document.locked ||
-        variable?.type !== 'color' ||
+        (variable?.type !== 'color' && variable?.type !== 'number') ||
         variable.alias !== undefined ||
         (dimensionId !== null && !document.dimensions[dimensionId]) ||
         variable.dimensionId === dimensionId
-    )
+    ) {
         return;
-    variable.values = { default: variable.values.default };
-    if (dimensionId === null) delete variable.dimensionId;
-    else variable.dimensionId = dimensionId;
+    }
+    Object.keys(variable.values)
+        .filter((key) => key !== 'default')
+        .forEach((key) => delete variable.values[key]);
+    if (dimensionId === null) {
+        delete variable.dimensionId;
+    } else {
+        variable.dimensionId = dimensionId;
+    }
 };
 
 export const setVariableModeValue: ActionWithParam<{
     variableId: string;
     modeId: string;
-    value: string | null;
+    value: string | number | null;
 }> = ({ state }, { variableId, modeId, value }) => {
     const document = state.currentDocument;
     const variable = document.variables[variableId];
     if (
         document.locked ||
-        variable?.type !== 'color' ||
+        (variable?.type !== 'color' && variable?.type !== 'number') ||
         variable.alias !== undefined ||
         !variable.dimensionId ||
         !document.dimensions[variable.dimensionId]?.modes[modeId] ||
         document.dimensions[variable.dimensionId].defaultModeId === modeId
-    )
+    ) {
         return;
-    if (value === null) delete variable.values[modeId];
-    else if (isHexColor(value)) variable.values[modeId] = value;
+    }
+    if (value === null) {
+        delete variable.values[modeId];
+    } else if (variable.type === 'color' && typeof value === 'string' && isHexColor(value)) {
+        variable.values[modeId] = value;
+    } else if (variable.type === 'number' && typeof value === 'number' && Number.isFinite(value)) {
+        variable.values[modeId] = value;
+    }
 };
 
 export const setPreviewMode: ActionWithParam<{ dimensionId: string; modeId: string }> = (
@@ -174,7 +209,9 @@ export const setPreviewMode: ActionWithParam<{ dimensionId: string; modeId: stri
     { dimensionId, modeId }
 ) => {
     const document = state.currentDocument;
-    if (!document.dimensions[dimensionId]?.modes[modeId]) return;
+    if (!document.dimensions[dimensionId]?.modes[modeId]) {
+        return;
+    }
     state.previewModes[document.id] = {
         ...json(state.previewModes[document.id] ?? {}),
         [dimensionId]: modeId

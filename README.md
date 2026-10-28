@@ -464,7 +464,7 @@ dependencies and retains the existing name-and-type matching policy.
 Dimensions and modes are **opt-in**. New documents have none, and each variable starts
 with a single **Base** value. Open **Dimensions and modes (optional)** in Variables to
 create a dimension such as Appearance or Brand. Add, rename, reorder or delete its modes
-and choose its default. Assign a color variable using **Vary by**; missing mode overrides
+and choose its default. Assign a color or number variable using **Vary by**; missing mode overrides
 use its base value. **Use base** removes an override.
 
 Each document remembers your selected mode per dimension locally. Aliases follow their
@@ -473,24 +473,33 @@ does not break values or selection because references use IDs. Deleting a mode r
 overrides; deleting a dimension returns its variables to base-only values. These definition
 changes can be undone and are shared; preview selections are not shared.
 
-Select a Screen, Screen view, frame or component instance to set **Color modes** in Inspector.
+Select a Screen, Screen view, frame or component instance to set **Modes** in Inspector.
 Each dimension starts at **Inherit**. The effective mode and its source appear below the field;
 choose a mode to override that dimension, or Inherit to reset it. Screen choices apply to all
 its views; view choices let Home · Mobile and Home · Desktop show different palettes at once.
 Frames and nested instances can override their inherited modes. These authored choices are
 saved, shared and undoable; the Variables panel's preview remains local. A missing mode stays
 listed with a diagnostic and uses the dimension's default until you choose another or reset it.
-Opening Preview from a view captures its screen-root modes for that session. Later canvas
+Opening Preview from a view captures its screen-root modes and viewport for that session. Later canvas
 simulation/view changes do not change the session, while descendant overrides still apply.
+
+Number modes currently affect **Screen views and Preview**: fixed rectangle dimensions and
+frame width/height, stack gap and padding. Select a frame and use **Layout variables** in
+Inspector to bind its numeric inputs. Existing rectangle Width/Height variable controls work
+inside stacks. Layout resolves each view before drawing and hit testing; nested stacks and
+min/max constraints use the same sizing rules. Missing/invalid numeric inputs use authored
+fallbacks with diagnostics. Copy/paste and native packages retain numeric definitions.
+Standalone Canvas geometry, other numeric properties and component-source geometry keep
+their base values. Text/font mode measurement and wrapping are the next R4.4 increment.
 
 Existing Light/Dark documents migrate to an editable Theme dimension, including their local
 Dark preference. Plain documents stay base-only. Text templates and geometry still use base
-values: numeric, text and boolean mode overrides are gated until context-aware measurement
-is implemented. This changes artwork, not the editor's interface theme.
+values for unsupported consumers; text and boolean mode overrides remain gated. This changes
+artwork, not the editor's interface theme.
 
 Values and template diagnostics share a pure central resolver; saved definitions and clipboard
 transfers retain modes and aliases. The operations API accepts an existing `dimensionId` and
-color `modeValues` keyed by mode ID; older `darkValue` inputs remain readable for compatibility.
+color or number `modeValues` keyed by mode ID; older `darkValue` inputs remain readable for compatibility.
 Design-system packages follow in the
 [variable roadmap](./APPLICATION_PLAN.md#variable-foundation-v1v5-incremental).
 

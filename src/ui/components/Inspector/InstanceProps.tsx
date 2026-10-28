@@ -98,8 +98,15 @@ const InstancePropertyRow: FC<{
                         {variables
                             .filter((variable) => variable.type === kind)
                             .map((variable) => (
-                                <option key={variable.id} value={variable.id}>
+                                <option
+                                    key={variable.id}
+                                    value={variable.id}
+                                    disabled={variable.modesUnavailable}
+                                >
                                     {variable.name}
+                                    {variable.modesUnavailable
+                                        ? ' — modes unavailable for component sizes'
+                                        : ''}
                                 </option>
                             ))}
                     </select>

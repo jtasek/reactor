@@ -252,6 +252,7 @@ const PreviewShape: FC<{
 };
 
 export const DocumentThumbnail: FC<{ document: Document }> = ({ document: sourceDocument }) => {
+    const simulation = useVariableContext(sourceDocument.id);
     const document = layoutDocument(sourceDocument);
     const svgRef = useRef<SVGSVGElement>(null);
     const contentRef = useRef<SVGGElement>(null);
@@ -280,7 +281,7 @@ export const DocumentThumbnail: FC<{ document: Document }> = ({ document: source
     const frames = Object.values(document.frames).filter(
         (frame) => !owners.get(frame.id) && isFrameVisible(document, frame.id)
     );
-    const views = projectScreenViews(sourceDocument).flatMap(({ view, projection }) =>
+    const views = projectScreenViews(sourceDocument, simulation).flatMap(({ view, projection }) =>
         projection ? [{ ...projection, viewId: view.id }] : []
     );
 

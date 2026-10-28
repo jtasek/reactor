@@ -101,7 +101,7 @@ function resolveValue(
     }
     return source.type === 'text'
         ? resolveText(source.values.default, variables, path, problems)
-        : source.type === 'color' && source.dimensionId !== undefined
+        : (source.type === 'color' || source.type === 'number') && source.dimensionId !== undefined
           ? (source.values[theme[source.dimensionId]] ?? source.values.default)
           : source.values.default;
 }

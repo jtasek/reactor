@@ -1,6 +1,7 @@
 import { Packages } from './Packages';
 import { Dimensions } from './Dimensions';
 import { ordered } from 'src/app/variableModes';
+import { NUMBER_MODE_SUPPORT } from 'src/app/contextualLayout';
 import React, { FC, FormEvent, KeyboardEvent, useState } from 'react';
 import type { Variable, VariableType } from 'src/app/types';
 import { useActions, useVariableContext, useCurrentDocument } from 'src/app/hooks';
@@ -156,7 +157,8 @@ const VariableRow: FC<{
     const document = useCurrentDocument();
     // The default mode's color is the base value, edited in the value field.
     const dimension =
-        variable.type === 'color' && variable.dimensionId !== undefined
+        (variable.type === 'color' || variable.type === 'number') &&
+        variable.dimensionId !== undefined
             ? document.dimensions[variable.dimensionId]
             : undefined;
     const [problem, setProblem] = useState<string>();
@@ -229,7 +231,7 @@ const VariableRow: FC<{
                 // A caption click would flip a boolean, so only other fields take it as a label.
                 <ValueCaption className={styles.field}>
                     <span className={styles.fieldLabel}>
-                        {variable.type !== 'color'
+                        {variable.type !== 'color' && variable.type !== 'number'
                             ? 'Value'
                             : (dimension?.modes[dimension.defaultModeId]?.name ?? 'Base')}
                     </span>
@@ -239,7 +241,7 @@ const VariableRow: FC<{
                     )}
                 </ValueCaption>
             )}
-            {variable.type === 'color' &&
+            {(variable.type === 'color' || variable.type === 'number') &&
                 variable.alias === undefined &&
                 Object.keys(document.dimensions).length > 0 && (
                     <>
@@ -275,24 +277,44 @@ const VariableRow: FC<{
                                         >
                                             {mode.name}
                                         </label>
-                                        <SharedOnRelease>
-                                            <input
-                                                id={`${variable.id}-${mode.id}`}
-                                                type="color"
-                                                aria-label={`${mode.name} value of ${variable.name}`}
-                                                value={
+                                        {variable.type === 'number' ? (
+                                            <DraftField
+                                                label={`${mode.name} value of ${variable.name}`}
+                                                type="number"
+                                                value={String(
                                                     variable.values[mode.id] ??
-                                                    variable.values.default
-                                                }
-                                                onChange={(event) =>
-                                                    setVariableModeValue({
-                                                        variableId: variable.id,
-                                                        modeId: mode.id,
-                                                        value: event.target.value
-                                                    })
-                                                }
+                                                        variable.values.default
+                                                )}
+                                                onCommit={(value) => {
+                                                    if (value.trim() !== '') {
+                                                        setVariableModeValue({
+                                                            variableId: variable.id,
+                                                            modeId: mode.id,
+                                                            value: Number(value)
+                                                        });
+                                                    }
+                                                }}
                                             />
-                                        </SharedOnRelease>
+                                        ) : (
+                                            <SharedOnRelease>
+                                                <input
+                                                    id={`${variable.id}-${mode.id}`}
+                                                    type="color"
+                                                    aria-label={`${mode.name} value of ${variable.name}`}
+                                                    value={
+                                                        variable.values[mode.id] ??
+                                                        variable.values.default
+                                                    }
+                                                    onChange={(event) =>
+                                                        setVariableModeValue({
+                                                            variableId: variable.id,
+                                                            modeId: mode.id,
+                                                            value: event.target.value
+                                                        })
+                                                    }
+                                                />
+                                            </SharedOnRelease>
+                                        )}
                                         {variable.values[mode.id] === undefined ? (
                                             <small className={styles.colorValue}>Uses base</small>
                                         ) : (
@@ -313,6 +335,12 @@ const VariableRow: FC<{
                                     </div>
                                 ))}
                     </>
+                )}
+            {(variable.type === 'text' || variable.type === 'boolean') &&
+                Object.keys(document.dimensions).length > 0 && (
+                    <small className={styles.resolution}>
+                        Text and state variables currently have one base value.
+                    </small>
                 )}
             {sources.length > 0 || variable.alias !== undefined ? (
                 <label className={styles.field}>
@@ -382,6 +410,7 @@ const VariableRow: FC<{
  */
 export const Variables: FC = () => {
     const variables = useVariables();
+    const document = useCurrentDocument();
     const byId = Object.fromEntries(variables.map((variable) => [variable.id, variable]));
     const uses = useVariableUses();
     const { createVariable } = useActions();
@@ -415,6 +444,10 @@ export const Variables: FC = () => {
         <section className={styles.variables} aria-label="Variables">
             <Packages />
             <Dimensions />
+            {variables.some((variable) => variable.type === 'number') &&
+                Object.keys(document.dimensions).length > 0 && (
+                    <small className={styles.resolution}>{NUMBER_MODE_SUPPORT}</small>
+                )}
             <form className={styles.create} onSubmit={create}>
                 <input
                     type="text"

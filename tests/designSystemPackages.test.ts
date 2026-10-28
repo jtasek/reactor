@@ -322,14 +322,14 @@ it('rejects reuse when a matching dimension lacks imported modes', () => {
     expect(apply(store, document, 'separate').applied).toBe(true);
 });
 
-it('rejects missing text dependencies and unsupported numeric modes', () => {
+it('rejects missing text dependencies and numeric modes without a dimension', () => {
     const data = pack();
     data.variables = data.variables.filter((variable) => variable.id !== 'count');
     expect(() => readDesignSystemPackage(data)).toThrow('Count');
     const numeric = pack();
     const count = numeric.variables.find((variable) => variable.id === 'count')!;
     Reflect.set(count.values, 'night', 1);
-    expect(() => readDesignSystemPackage(numeric)).toThrow('color modes');
+    expect(() => readDesignSystemPackage(numeric)).toThrow('Invalid mode values');
 });
 
 it('replaces tokens whose names were exchanged upstream without breaking references', () => {

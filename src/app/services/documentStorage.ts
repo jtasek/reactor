@@ -25,7 +25,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 15;
+export const SCHEMA_VERSION = 16;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -507,15 +507,32 @@ function readVariable(value: unknown): Variable {
     const values = record(v.values);
     const overrides = Object.entries(values).filter(([key]) => key !== 'default');
     if (overrides.length || v.dimensionId !== undefined) {
-        if (variable.type !== 'color') throw new Error('Only color modes are supported');
-        variable.values = {
-            default: variable.values.default,
-            ...Object.fromEntries(overrides.map(([key, value]) => [id(key), color(value)]))
-        };
-        if (v.dimensionId !== undefined) variable.dimensionId = id(v.dimensionId);
-        else if (values.dark !== undefined) variable.dimensionId = 'theme';
+        if (variable.type !== 'color' && variable.type !== 'number') {
+            throw new Error('Only color and number modes are supported');
+        }
+
+        if (variable.type === 'color') {
+            variable.values = {
+                default: variable.values.default,
+                ...Object.fromEntries(overrides.map(([key, value]) => [id(key), color(value)]))
+            };
+        } else {
+            variable.values = {
+                default: variable.values.default,
+                ...Object.fromEntries(overrides.map(([key, value]) => [id(key), number(value)]))
+            };
+        }
+        if (v.dimensionId !== undefined) {
+            variable.dimensionId = id(v.dimensionId);
+        } else if (variable.type === 'color' && values.dark !== undefined) {
+            variable.dimensionId = 'theme';
+        }
         // A merge can leave values whose dimension another copy removed: read the base alone.
-        else variable.values = { default: variable.values.default };
+        else {
+            Object.keys(variable.values)
+                .filter((key) => key !== 'default')
+                .forEach((key) => delete variable.values[key]);
+        }
     }
     return v.alias === undefined ? variable : { ...variable, alias: id(v.alias) };
 }
@@ -608,6 +625,11 @@ export function readStack(value: unknown): import('../types').StackRules {
 function readFrame(value: unknown): Frame {
     const f = record(value);
     const name = text(f.name).trim();
+    const bindings = readBindings(f.bindings ?? {});
+
+    if (Object.keys(bindings).some((key) => !['width', 'height', 'gap', 'padding'].includes(key))) {
+        throw new Error('Invalid frame variable binding');
+    }
 
     if (!name) {
         throw new Error('Expected a frame name');
@@ -624,6 +646,7 @@ function readFrame(value: unknown): Frame {
     if (
         f.kind === 'view' &&
         (f.parentFrameId !== undefined ||
+            Object.keys(bindings).length > 0 ||
             f.stack !== undefined ||
             f.sizing !== undefined ||
             f.layoutOrder !== undefined)
@@ -634,6 +657,7 @@ function readFrame(value: unknown): Frame {
     return {
         ...entity(value),
         name,
+        bindings,
         modeOverrides: readBindings(f.modeOverrides ?? {}),
         kind: f.kind ?? 'frame',
         ...(f.kind === 'screen' && f.definitionOnly === true
@@ -991,6 +1015,7 @@ export function migratePersistedState(raw: unknown, onRepair = () => {}): Persis
             data.version !== 12 &&
             data.version !== 13 &&
             data.version !== 14 &&
+            data.version !== 15 &&
             data.version !== SCHEMA_VERSION
         ) {
             return null;

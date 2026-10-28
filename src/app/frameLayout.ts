@@ -1,6 +1,6 @@
 import { projectStackSizes } from './stackSizing';
 import { rectToBox } from './utils';
-import type { Size, Document, Frame, Point, Shape, StackRules } from './types';
+import type { Size, Document, Frame, Point, ResizeHandlerType, Shape, StackRules } from './types';
 import { frameParents, projectFrameStates } from './frameState';
 import { drawnBox } from './membership';
 import { translateShape } from './geometry';
@@ -8,6 +8,7 @@ import { componentSource, instanceBox } from './componentSource';
 
 const ZERO: Point = { x: 0, y: 0 };
 export interface FrameLayout {
+    modeProblems?: Record<string, string>;
     shapes: Record<string, Point>;
     frames: Record<string, Point>;
     managedShapes: Set<string>;
@@ -38,7 +39,12 @@ interface Item {
 }
 
 /** Authored fallback geometry with local size and position projections only. */
-export function projectFrameLayout(document: Document): FrameLayout {
+export function projectFrameLayout(
+    document: Pick<
+        Document,
+        'frames' | 'shapes' | 'groups' | 'layers' | 'components' | 'variables' | 'shapesIds'
+    >
+): FrameLayout {
     const result: FrameLayout = {
         shapes: {},
         frames: {},
@@ -343,9 +349,7 @@ export function renderedFrame(
 }
 
 /** A read-only view for thumbnails and export; never use this for mutations. */
-export function layoutDocument(document: Document): Document {
-    const layout = frameLayout(document);
-
+export function layoutDocument(document: Document, layout = frameLayout(document)): Document {
     return {
         ...document,
         shapes: Object.fromEntries(
@@ -394,6 +398,17 @@ export function frameSizedByLayout(document: Document, id: string) {
         (Object.values(frame.sizing ?? {}).some((rule) => rule.mode !== 'fixed') ||
             (size && (size.width !== frame.size.width || size.height !== frame.size.height)))
     );
+}
+
+/**
+ * Whether a canvas resize handle would only change dimensions that follow a variable.
+ * A corner handle with one bound axis still resizes the other.
+ */
+export function frameHandleBlocked(frame: Frame, handle: ResizeHandlerType) {
+    const width = handle !== 'middleTop' && handle !== 'middleBottom';
+    const height = handle !== 'middleLeft' && handle !== 'middleRight';
+
+    return (!width || !!frame.bindings?.width) && (!height || !!frame.bindings?.height);
 }
 
 const ORDER_STEP = 1;

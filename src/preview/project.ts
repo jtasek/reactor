@@ -1,5 +1,6 @@
-import type { Document, Shape, VariableContext } from '../app/types';
-import { layoutDocument, frameLayout } from '../app/frameLayout';
+import type { Document, Shape, VariableContext, Size } from '../app/types';
+import { layoutDocument } from '../app/frameLayout';
+import { projectContextualLayout } from '../app/contextualLayout';
 import { frameParents } from '../app/frameState';
 import { screenFrames } from '../app/screens';
 import { shownShapesIds } from '../app/membership';
@@ -14,16 +15,42 @@ import type { PreviewDrawing, PreviewNode } from './protocol';
 /** A read-only projection. Source component records and bindings never cross the sandbox boundary.
  * Problems that leave the prototype usable, such as a link to a deleted screen, go to `warnings`. */
 export function projectPreview(
-    sourceDocument: Document,
+    authoredDocument: Document,
     context: VariableContext,
     warnings: string[] = [],
-    session?: { modes: VariableContext; screenId?: string } | null
+    session?: { modes: VariableContext; screenId?: string; viewport?: Size } | null
 ): PreviewDrawing {
-    const problems = Object.values(frameLayout(sourceDocument).problems);
+    const launch = authoredDocument.frames[session?.screenId ?? ''];
+    const sourceDocument =
+        launch?.kind === 'screen' && session?.viewport
+            ? {
+                  ...authoredDocument,
+                  frames: {
+                      ...authoredDocument.frames,
+                      [launch.id]: {
+                          ...launch,
+                          size: session.viewport,
+                          sizing: undefined,
+                          bindings: Object.fromEntries(
+                              Object.entries(launch.bindings ?? {}).filter(
+                                  ([key]) => key !== 'width' && key !== 'height'
+                              )
+                          )
+                      }
+                  }
+              }
+            : authoredDocument;
+    const layout = projectContextualLayout(sourceDocument, {
+        simulation: context,
+        session: session?.modes,
+        sessionScreenId: session?.screenId
+    });
+    const problems = Object.values(layout.problems);
+    warnings.push(...Object.values(layout.modeProblems ?? {}));
     if (problems.length) {
         throw new Error(problems.join(' '));
     }
-    const document = layoutDocument(sourceDocument);
+    const document = layoutDocument(sourceDocument, layout);
     const parents = frameParents(document.frames);
     const roots = screenFrames(document).sort(
         (a, b) => Number(b.id === session?.screenId) - Number(a.id === session?.screenId)

@@ -1,5 +1,10 @@
 import { screenViewName } from 'src/app/screenViews';
-import { renderedFrame, frameHasLayoutOffset, frameSizedByLayout } from 'src/app/frameLayout';
+import {
+    renderedFrame,
+    frameHasLayoutOffset,
+    frameHandleBlocked,
+    frameSizedByLayout
+} from 'src/app/frameLayout';
 import React, { type FC } from 'react';
 import { useActions, useAppState, useCameraScale, useGesture } from 'src/app/hooks';
 import { isReadOnly } from 'src/app/documentAccess';
@@ -83,7 +88,7 @@ const CanvasFrame: FC<{ id: string; interactive: boolean }> = ({ id, interactive
                 </text>
             </g>
             {handles &&
-                HANDLES.map(([type, x, y]) => (
+                HANDLES.filter(([type]) => !frameHandleBlocked(frame, type)).map(([type, x, y]) => (
                     <circle
                         key={type}
                         className={`${styles.handle} ${active === type ? styles.active : ''}`}

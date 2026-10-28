@@ -82,7 +82,7 @@ export function readDesignSystemPackage(input: unknown): DesignSystemPackage {
         if (variable.type === 'text' && variable.alias !== undefined)
             issues.push(...variableProblems({ ...variable, alias: undefined }, byId));
         if (issues.length) throw new Error(`${variable.name}: ${issues.join(', ')}.`);
-        if (variable.type === 'color') {
+        if (variable.type === 'color' || variable.type === 'number') {
             const dimension =
                 variable.dimensionId === undefined
                     ? undefined
@@ -230,7 +230,7 @@ export function planDesignSystemImport(
                 ? replaceTemplateIds(variable.values.default, (id) => variableIds.get(id))
                 : variable.values.default;
         const color =
-            variable.type === 'color'
+            variable.type === 'color' || variable.type === 'number'
                 ? {
                       dimensionId: variable.dimensionId
                           ? dimensionIds.get(variable.dimensionId)!
@@ -261,7 +261,7 @@ export function planDesignSystemImport(
                       value,
                       source,
                       ...(alias === null ? {} : { alias }),
-                      ...(variable.type === 'color'
+                      ...(variable.type === 'color' || variable.type === 'number'
                           ? { ...color, dimensionId: color.dimensionId ?? undefined }
                           : {})
                   }

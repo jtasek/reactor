@@ -372,11 +372,11 @@ it('shares custom dimension definitions and restores a deleted dimension and its
     }
 });
 
-it('rejects unknown modes atomically and keeps geometry variables independent of modes', () => {
+it('rejects unknown modes atomically and permits number variables to use dimensions', () => {
     const { store, document, id } = setup();
     const number = store.actions.createVariable({ name: 'Width', type: 'number', value: 50 })!;
     store.actions.setVariableDimension({ variableId: number, dimensionId: 'theme' });
-    expect(document.variables[number]).not.toHaveProperty('dimensionId');
+    expect(document.variables[number]).toHaveProperty('dimensionId', 'theme');
     const result = store.actions.applyOperations({
         documentId: document.id,
         by: { kind: 'person' },

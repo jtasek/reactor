@@ -17,7 +17,7 @@ export const ordered = <T extends { id: string; order: number }>(items: Record<s
     Object.values(items).sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
 
 /**
- * The modes colors resolve in: each dimension's selected mode, unless it is the default,
+ * The modes values resolve in: each dimension's selected mode, unless it is the default,
  * whose colors are the base values. Missing or deleted selections use the default locally,
  * without repairing shared data.
  */

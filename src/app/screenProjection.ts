@@ -1,11 +1,13 @@
-import { projectFrameLayout, renderedFrame, renderedShape } from './frameLayout';
+import { renderedFrame, renderedShape } from './frameLayout';
+import { projectContextualLayout } from './contextualLayout';
 import { frameParents, isFrameVisible } from './frameState';
 import { translateShape } from './geometry';
 import { shownShapesIds } from './membership';
-import type { Document, Frame, Point, Shape, Size } from './types';
+import type { Document, Frame, Point, Shape, Size, VariableContext } from './types';
 import { json } from 'overmind';
 
 export interface ScreenViewport {
+    id?: string;
     position: Point;
     size: Size;
 }
@@ -28,7 +30,8 @@ export const MAX_PROJECTED_NODES = 5000;
 export function projectScreen(
     document: Document,
     screenId: string,
-    viewport: ScreenViewport
+    viewport: ScreenViewport,
+    simulation: VariableContext = {}
 ): ScreenProjection | null {
     const source = document.frames[screenId];
 
@@ -75,10 +78,19 @@ export function projectScreen(
         ...document,
         frames: {
             ...document.frames,
-            [screenId]: { ...source, size: viewport.size, sizing: undefined }
+            [screenId]: {
+                ...source,
+                size: viewport.size,
+                sizing: undefined,
+                bindings: Object.fromEntries(
+                    Object.entries(source.bindings ?? {}).filter(
+                        ([key]) => key !== 'width' && key !== 'height'
+                    )
+                )
+            }
         }
     };
-    const layout = projectFrameLayout(resized);
+    const layout = projectContextualLayout(resized, { viewId: viewport.id, screenId, simulation });
     const involved = new Set([screenId, ...frameIds, ...shapeIds]);
     const offset = {
         x: viewport.position.x - source.position.x,
@@ -105,7 +117,7 @@ export function projectScreen(
 
             return shape;
         }),
-        problems: Object.entries(layout.problems)
+        problems: [...Object.entries(layout.problems), ...Object.entries(layout.modeProblems ?? {})]
             .filter(([id]) => involved.has(id))
             .map(([, problem]) => problem),
         layoutOffsets: new Set(
@@ -119,7 +131,7 @@ export function projectScreen(
 }
 
 /** Bound all placed views together, so adding references cannot multiply render cost without limit. */
-export function projectScreenViews(document: Document) {
+export function projectScreenViews(document: Document, simulation: VariableContext = {}) {
     let nodes = 0;
 
     return Object.values(document.frames)
@@ -134,7 +146,9 @@ export function projectScreenViews(document: Document) {
                 };
             }
 
-            const projection = view.screenId ? projectScreen(document, view.screenId, view) : null;
+            const projection = view.screenId
+                ? projectScreen(document, view.screenId, view, simulation)
+                : null;
             const count = projection ? 1 + projection.frames.length + projection.shapes.length : 0;
             const blocked =
                 !projection || projection.exceedsNodeLimit || nodes + count > MAX_PROJECTED_NODES;

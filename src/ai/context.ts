@@ -92,7 +92,7 @@ export function documentContext(document: Document) {
             name: variable.name,
             type: variable.type,
             value: variable.values.default,
-            ...(variable.type === 'color' && variable.dimensionId
+            ...((variable.type === 'color' || variable.type === 'number') && variable.dimensionId
                 ? {
                       dimensionId: variable.dimensionId,
                       modeValues: Object.fromEntries(

@@ -26,6 +26,13 @@ export function setVariableAlias(
         next.values = { ...definition.values };
         if (definition.dimensionId !== undefined) next.dimensionId = definition.dimensionId;
     }
+    if (next.type === 'number' && definition.type === 'number') {
+        next.values = { ...definition.values };
+
+        if (definition.dimensionId !== undefined) {
+            next.dimensionId = definition.dimensionId;
+        }
+    }
     if (sourceId !== null) {
         next.alias = sourceId;
         const problem = variableProblems(next, { ...before, [variableId]: next })[0];

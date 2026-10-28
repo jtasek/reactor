@@ -75,7 +75,12 @@ export function readOperation(value: unknown): ProposedOperation {
                     : {
                           modeValues: Object.fromEntries(
                               Object.entries(fields(operation.modeValues, 'Its mode values')).map(
-                                  ([id, value]) => [id, text(value, 'A mode value')]
+                                  ([id, value]) => [
+                                      id,
+                                      typeof value === 'number' && Number.isFinite(value)
+                                          ? value
+                                          : text(value, 'A mode value')
+                                  ]
                               )
                           )
                       }),
@@ -131,7 +136,10 @@ export function readOperation(value: unknown): ProposedOperation {
                               Object.entries(fields(operation.modeValues, 'Its mode values')).map(
                                   ([id, value]) => [
                                       id,
-                                      value === null ? null : text(value, 'A mode value')
+                                      value === null ||
+                                      (typeof value === 'number' && Number.isFinite(value))
+                                          ? value
+                                          : text(value, 'A mode value')
                                   ]
                               )
                           )
