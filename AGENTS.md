@@ -694,7 +694,10 @@ layout documents so changed inputs cannot leave stale hit bounds. Preview launch
 view's viewport as well as its modes. The shared size/cycle evaluator remains authoritative.
 Schema v17 adds text mode values and optional `Text.wrapWidth`. `contextualGeometry` resolves
 instance paths recursively, respecting explicit property overrides, and `textMeasurement` caches
-font metrics/lines by path, modes, text, font size and available width. `FrameLayout.resolvedShapes`
+lines by resolved text, font size and width (least recently used). Every Shape reading the
+`frameLayout` derived tracks every path it read, so the Canvas goes contextual only when
+`needsContextualGeometry` (number/text modes or wrapped text) and, without stack/sized/bound
+frames, `renderedShape` resolves each shape via `canvasShape`. `FrameLayout.resolvedShapes`
 is local, as are `textLayout`, `projectedSource` and focused `layoutSize`; readers and collaboration
 exclude them. Never call setShapeBounds with contextual measurements. Canvas, Screen views,
 focused masters, thumbnails and Preview use the projection; text wraps only when explicitly
