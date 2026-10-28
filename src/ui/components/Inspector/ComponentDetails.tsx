@@ -29,6 +29,7 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
         selectComponentChild,
         removeComponentProp,
         addComponentVariant,
+        removeComponentVariant,
         updateLibraryComponent
     } = useActions();
     const updateAvailable = useLibraryUpdateAvailable(componentId);
@@ -116,10 +117,37 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
             {(component.variantIds?.length || variantCandidates.length > 0) && (
                 <div>
                     <h3 className={styles.heading}>Variants</h3>
-                    <p>Default: {component.name}</p>
-                    {(component.variantIds ?? []).map((id) => (
-                        <p key={id}>{document.components[id]?.name ?? 'Missing variant'}</p>
-                    ))}
+                    <ul className={styles.componentProps}>
+                        <li>
+                            <span>{component.name} (default)</span>
+                        </li>
+                        {(component.variantIds ?? []).map((id) => {
+                            const name = document.components[id]?.name ?? 'Missing variant';
+
+                            return (
+                                <li key={id}>
+                                    <span>{name}</span>
+                                    <div>
+                                        <button
+                                            type="button"
+                                            className={styles.iconButton}
+                                            title={`Unlink ${name}`}
+                                            aria-label={`Unlink variant ${name}`}
+                                            disabled={readOnly}
+                                            onClick={() =>
+                                                removeComponentVariant({
+                                                    componentId,
+                                                    variantId: id
+                                                })
+                                            }
+                                        >
+                                            <Icon icon={REMOVE_ICON} />
+                                        </button>
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
                     {!readOnly && variantCandidates.length > 0 && (
                         <select
                             aria-label="Add component variant"

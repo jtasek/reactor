@@ -62,8 +62,14 @@ test('switches an instance between two component sources and keeps the choice af
         .click();
     const variant = page.getByRole('combobox', { name: 'Component variant' });
     await expect(variant).toHaveValue('family');
+    const width = page.getByRole('spinbutton', { name: 'Width' }).first();
+    const drawn = page.locator('svg#surface g[transform="translate(100 200)"] rect');
+    await expect(width).toHaveValue('40');
     await variant.selectOption('wide');
     await expect(variant).toHaveValue('wide');
+    // The canvas draws the alternate and the instance takes its size.
+    await expect(drawn).toHaveAttribute('width', '80');
+    await expect(width).toHaveValue('80');
     await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.reload();
     await expect(page.locator('svg#surface')).toBeVisible();
@@ -72,4 +78,5 @@ test('switches an instance between two component sources and keeps the choice af
         .getByRole('button', { name: 'Card instance', exact: true })
         .click();
     await expect(variant).toHaveValue('wide');
+    await expect(drawn).toHaveAttribute('width', '80');
 });

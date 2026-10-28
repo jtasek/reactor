@@ -21,36 +21,46 @@ export const InstanceProps: FC = () => {
 
     return (
         <section className={styles.instanceProps} aria-label="Component properties">
-            {data.variants.length > 1 && (
-                <label>
-                    Variant
-                    <select
-                        aria-label="Component variant"
-                        value={data.selectedVariantId}
-                        onChange={(event) =>
-                            setInstanceVariant({
-                                instanceIds: data.ids,
-                                variantId:
-                                    event.target.value === data.variants[0].id
-                                        ? undefined
-                                        : event.target.value
-                            })
-                        }
-                    >
-                        {data.selectedVariantId === '' && <option value="">Mixed</option>}
-                        {data.variants.map((variant) => (
-                            <option key={variant.id} value={variant.id}>
-                                {variant.name}
-                            </option>
-                        ))}
-                    </select>
-                </label>
+            {(data.variants.length > 1 || data.variantProblems.length > 0) && (
+                <div className={styles.instanceChild}>
+                    <h4>Variant</h4>
+                    <div className={styles.instanceFields}>
+                        <div className={styles.instanceRow}>
+                            <div className={styles.instanceValue}>
+                                <label htmlFor="component-variant">Source</label>
+                                <select
+                                    id="component-variant"
+                                    aria-label="Component variant"
+                                    value={data.selectedVariantId}
+                                    onChange={(event) =>
+                                        setInstanceVariant({
+                                            instanceIds: data.ids,
+                                            variantId:
+                                                event.target.value === data.variants[0].id
+                                                    ? undefined
+                                                    : event.target.value
+                                        })
+                                    }
+                                >
+                                    {data.selectedVariantId === '' && (
+                                        <option value="">Mixed</option>
+                                    )}
+                                    {data.variants.map((variant) => (
+                                        <option key={variant.id} value={variant.id}>
+                                            {variant.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    {data.variantProblems.map((problem) => (
+                        <p key={problem} role="status" className={styles.componentHint}>
+                            {problem}
+                        </p>
+                    ))}
+                </div>
             )}
-            {data.variantProblems.map((problem) => (
-                <p key={problem} role="status">
-                    {problem}
-                </p>
-            ))}
             <div className={styles.instanceSectionHeading}>
                 <h3 className={styles.heading}>Properties</h3>
                 <span>{changedCount ? `${changedCount} changed` : 'All from source'}</span>

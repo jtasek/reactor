@@ -26,7 +26,7 @@ export const instanceSource = (
 /** A missing or unlinked alternate falls back to the family's default source. */
 export function instanceComponentId(
     document: Pick<Document, 'components'>,
-    instance: InstanceShape
+    instance: Pick<InstanceShape, 'componentId' | 'variantId'>
 ): string {
     const variant = instance.variantId;
 
@@ -36,6 +36,12 @@ export function instanceComponentId(
         ? variant
         : instance.componentId;
 }
+
+/** The component an instance draws: its selected alternate, or the family default. */
+export const instanceComponent = (
+    document: Pick<Document, 'components'>,
+    instance: InstanceShape
+) => document.components[instanceComponentId(document, instance)];
 
 const MAX_COMPONENT_DEPTH = 16;
 

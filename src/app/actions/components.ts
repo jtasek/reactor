@@ -2,7 +2,7 @@ import type * as ComponentPropertyEdits from '../componentPropertyEdits';
 import { editorHelpers } from '../editorHelpers';
 import { Action, ActionWithParam, Application, Component, Point } from '../types';
 import { createComponent } from '../factories';
-import { componentSource } from '../componentSource';
+import { componentSource, instanceComponentId } from '../componentSource';
 import { invalidOverrideIds } from '../componentProps';
 import { isShapeLocked, isShapeVisible } from '../utils';
 import type { GroupDrag } from './group';
@@ -55,6 +55,10 @@ export const hasComponentInstances = (document: Application['currentDocument'], 
 export const addComponentVariant: typeof ComponentPropertyEdits.addComponentVariant = (...args) =>
     editorHelpers().componentProperties.addComponentVariant(...args);
 
+export const removeComponentVariant: typeof ComponentPropertyEdits.removeComponentVariant = (
+    ...args
+) => editorHelpers().componentProperties.removeComponentVariant(...args);
+
 export const setInstanceVariant: typeof ComponentPropertyEdits.setInstanceVariant = (...args) =>
     editorHelpers().componentProperties.setInstanceVariant(...args);
 
@@ -78,9 +82,15 @@ export function reachesComponent(
     return (component?.shapesIds ?? []).some((id) => {
         const shape = component.sourceShapes?.[id] ?? document.shapes[id];
 
+        if (shape?.type !== 'instance') {
+            return false;
+        }
+        // The selected alternate is drawn instead of the default when it is available.
+        const drawn = instanceComponentId(document, shape);
+
         return (
-            shape?.type === 'instance' &&
-            reachesComponent(document, shape.componentId, target, visited)
+            reachesComponent(document, shape.componentId, target, visited) ||
+            (drawn !== shape.componentId && reachesComponent(document, drawn, target, visited))
         );
     });
 }
@@ -144,7 +154,10 @@ export const addComponent: ActionWithParam<Partial<Component>> = ({ state }, opt
 export const cloneComponent: ActionWithParam<string> = ({ state, effects }, componentId) => {
     const component = getComponent(state, componentId);
 
-    setComponent(state, { ...component, id: effects.newId() });
+    // An alternate belongs to one family, so the copy starts without links.
+    const copy = { ...component, id: effects.newId() };
+    delete copy.variantIds;
+    setComponent(state, copy);
 };
 
 export const removeComponent: ActionWithParam<string> = ({ state, actions }, componentId) => {
@@ -154,6 +167,16 @@ export const removeComponent: ActionWithParam<string> = ({ state, actions }, com
         return;
     }
     deleteComponent(state, componentId);
+    Object.values(state.currentDocument.components).forEach((family) => {
+        if (!family.variantIds?.includes(componentId)) {
+            return;
+        }
+        family.variantIds = family.variantIds.filter((id) => id !== componentId);
+        if (family.variantIds.length === 0) {
+            delete family.variantIds;
+        }
+    });
+    editorHelpers().componentProperties.clearVariantChoice(state.currentDocument, componentId);
 };
 
 export const createComponentFromSelection: typeof ComponentPropertyEdits.createComponentFromSelection =

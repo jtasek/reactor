@@ -1,9 +1,10 @@
 import { createComponent, createShape, instanceName } from './factories';
-import { componentSource } from './componentSource';
+import { componentSource, instanceBox, instanceSource } from './componentSource';
+import { reachesComponent } from './actions/components';
 import { ordersBetween, resolveDrawOrderTies } from './drawOrder';
 import { putShapesOnLayer, putShapesInFrame, shapeLayer } from './membership';
 import { editorHelpers } from './editorHelpers';
-import type { Action, ActionWithParam, PropertyValue } from './types';
+import type { Action, ActionWithParam, Document, InstanceShape, PropertyValue } from './types';
 import { exposableProperties, resolveComponentProp, acceptsComponentValue } from './componentProps';
 import { isShapeLocked } from './utils';
 
@@ -204,6 +205,53 @@ export const addComponentVariant: ActionWithParam<{ componentId: string; variant
     family.variantIds = [...(family.variantIds ?? []), variantId];
 };
 
+/** Unlink an alternate; instances that chose it go back to the default. */
+export const removeComponentVariant: ActionWithParam<{ componentId: string; variantId: string }> = (
+    { state },
+    { componentId, variantId }
+) => {
+    const document = state.currentDocument;
+    const family = document.components[componentId];
+
+    if (
+        document.locked ||
+        !family?.variantIds?.includes(variantId) ||
+        family.locked ||
+        family.library
+    ) {
+        return;
+    }
+    family.variantIds = family.variantIds.filter((id) => id !== variantId);
+    if (family.variantIds.length === 0) {
+        delete family.variantIds;
+    }
+    clearVariantChoice(document, variantId, componentId);
+};
+
+/** Instances of `familyId` (any family when omitted) stop choosing `variantId`. */
+export function clearVariantChoice(document: Document, variantId: string, familyId?: string) {
+    Object.values(document.shapes).forEach((shape) => {
+        if (
+            shape.type !== 'instance' ||
+            shape.variantId !== variantId ||
+            (familyId !== undefined && shape.componentId !== familyId)
+        ) {
+            return;
+        }
+        delete shape.variantId;
+        refreshInstanceBounds(document, shape);
+    });
+}
+
+function refreshInstanceBounds(document: Document, shape: InstanceShape) {
+    const source = instanceSource(document, shape);
+    if (source) {
+        shape.bounds = instanceBox(shape, source);
+    } else {
+        delete shape.bounds;
+    }
+}
+
 export const setInstanceVariant: ActionWithParam<{ instanceIds: string[]; variantId?: string }> = (
     { state },
     { instanceIds, variantId }
@@ -221,7 +269,14 @@ export const setInstanceVariant: ActionWithParam<{ instanceIds: string[]; varian
         const family = document.components[shape.componentId];
         if (
             variantId &&
-            (!family?.variantIds?.includes(variantId) || !document.components[variantId])
+            (!family?.variantIds?.includes(variantId) ||
+                !document.components[variantId] ||
+                // A source may not end up drawing itself through the alternate.
+                Object.values(document.components).some(
+                    (owner) =>
+                        owner.shapesIds.includes(id) &&
+                        reachesComponent(document, variantId, owner.id)
+                ))
         ) {
             return;
         }
@@ -231,7 +286,7 @@ export const setInstanceVariant: ActionWithParam<{ instanceIds: string[]; varian
         } else {
             delete shape.variantId;
         }
-        delete shape.bounds;
+        refreshInstanceBounds(document, shape);
     });
 };
 

@@ -91,6 +91,8 @@ editable as components. Linking currently requires matching exposed property IDs
 create the family before exposing properties if the sources were authored separately.
 Matching source shape names let later exposed properties share an ID across the family.
 If an alternate is unavailable, the instance keeps its choice and draws the default.
+Use the remove button next to an alternate under **Variants** to unlink it; instances that chose it
+go back to the default. Deleting an alternate component unlinks it too.
 
 **Layers** lists each global layer once, across all screens. Use its **New layer** button
 to create one. Drag a shape or group onto a layer to move it there, or onto **No layer**

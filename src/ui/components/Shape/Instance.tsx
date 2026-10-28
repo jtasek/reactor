@@ -1,7 +1,7 @@
 import React, { CSSProperties, FC } from 'react';
 import type { InstanceShape, Shape, VariableContext } from 'src/app/types';
 import type { ComponentSource } from 'src/app/componentSource';
-import { instanceSource } from 'src/app/componentSource';
+import { instanceComponent, instanceSource } from 'src/app/componentSource';
 import { applyInstanceOverrides } from 'src/app/componentProps';
 import { boxCenter, getShapeBounds } from 'src/app/utils';
 import { themeColors } from 'src/app/themeColors';
@@ -39,8 +39,8 @@ export const Instance: FC<Props> = ({
         );
     }
 
-    const ancestorComponentIds = new Set(ancestors).add(instance.componentId);
-    const component = document.components[instance.componentId];
+    const component = instanceComponent(document, instance);
+    const ancestorComponentIds = new Set(ancestors).add(component?.id ?? instance.componentId);
     const offsetX = instance.position.x - source.box.topLeft.x;
     const offsetY = instance.position.y - source.box.topLeft.y;
 

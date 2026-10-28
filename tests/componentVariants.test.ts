@@ -98,3 +98,74 @@ it('keeps a shared property ID and explicit override across variants', () => {
     const base = projectGeometry(instance, document, {});
     expect(base.type === 'instance' && base.projectedSource?.shapes[0].opacity).toBe(0.4);
 });
+
+it('gives the instance the alternate size when the choice changes', () => {
+    const { store, document, instanceId } = setup();
+    store.actions.addComponentVariant({ componentId: 'default', variantId: 'alternate' });
+    store.actions.setInstanceVariant({ instanceIds: [instanceId], variantId: 'alternate' });
+    expect(document.shapes[instanceId].bounds?.width).toBe(80);
+    store.actions.setInstanceVariant({ instanceIds: [instanceId] });
+    expect(document.shapes[instanceId].bounds?.width).toBe(40);
+});
+
+it('keeps overrides when an instance showing the alternate is detached', () => {
+    const { store, document, instanceId } = setup();
+    store.actions.addComponentVariant({ componentId: 'default', variantId: 'alternate' });
+    store.actions.exposeComponentProp({
+        componentId: 'default',
+        shapeId: document.components.default.shapesIds[0],
+        key: 'opacity',
+        label: 'Opacity'
+    });
+    const propId = document.components.default.props![0].id;
+    store.actions.setInstanceOverride({ instanceIds: [instanceId], propId, value: 40 });
+    store.actions.setInstanceVariant({ instanceIds: [instanceId], variantId: 'alternate' });
+    const before = new Set(document.shapesIds);
+    store.actions.detachInstances([instanceId]);
+    const detached = document.shapesIds
+        .filter((id) => !before.has(id))
+        .map((id) => document.shapes[id]);
+    expect(detached).toHaveLength(1);
+    expect(detached[0]).toMatchObject({ type: 'rectangle', opacity: 0.4 });
+    expect(detached[0].type === 'rectangle' && detached[0].size.width).toBe(80);
+});
+
+it('refuses a variant choice that would make a source contain itself', () => {
+    const { store, document } = setup();
+    store.actions.addShape({
+        type: 'instance',
+        componentId: 'default',
+        position: { x: 300, y: 0 },
+        overrides: {}
+    });
+    const nested = document.shapesIds.at(-1)!;
+    store.actions.addShapesToComponent({ componentId: 'alternate', shapeIds: [nested] });
+    store.actions.addComponentVariant({ componentId: 'default', variantId: 'alternate' });
+    store.actions.setInstanceVariant({ instanceIds: [nested], variantId: 'alternate' });
+    const shape = document.shapes[nested];
+    expect(shape.type === 'instance' && shape.variantId).toBeUndefined();
+});
+
+it('unlinks variants, and clones and deletes leave no stale links', () => {
+    const { store, document, instanceId } = setup();
+    store.actions.addComponentVariant({ componentId: 'default', variantId: 'alternate' });
+    store.actions.cloneComponent('default');
+    const clone = Object.values(document.components).find(
+        (component) => component.id !== 'default' && component.id !== 'alternate'
+    );
+    expect(clone?.variantIds).toBeUndefined();
+
+    store.actions.setInstanceVariant({ instanceIds: [instanceId], variantId: 'alternate' });
+    store.actions.removeComponentVariant({ componentId: 'default', variantId: 'alternate' });
+    const instance = document.shapes[instanceId];
+    expect(document.components.default.variantIds).toBeUndefined();
+    expect(instance.type === 'instance' && instance.variantId).toBeUndefined();
+    expect(instance.bounds?.width).toBe(40);
+
+    store.actions.addComponentVariant({ componentId: 'default', variantId: 'alternate' });
+    store.actions.setInstanceVariant({ instanceIds: [instanceId], variantId: 'alternate' });
+    store.actions.removeComponent('alternate');
+    expect(document.components.alternate).toBeUndefined();
+    expect(document.components.default.variantIds).toBeUndefined();
+    expect(instance.type === 'instance' && instance.variantId).toBeUndefined();
+});

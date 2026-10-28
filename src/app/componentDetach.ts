@@ -1,5 +1,5 @@
 import type { Document, InstanceShape, Shape } from './types';
-import { instanceBox, type ComponentSource } from './componentSource';
+import { instanceBox, instanceComponent, type ComponentSource } from './componentSource';
 import { applyInstanceOverrides } from './componentProps';
 import { resolveModes } from './inheritedModes';
 import { themeColors } from './themeColors';
@@ -12,7 +12,7 @@ export function detachedMembers(
     instance: InstanceShape,
     source: ComponentSource
 ): Shape[] {
-    const component = document.components[instance.componentId];
+    const component = instanceComponent(document, instance);
     const context = resolveModes(document, {
         frameId: instance.parentFrameId,
         instances: [instance]

@@ -782,6 +782,12 @@
     font-size: 0.75rem;
 }
 
+.instanceValue > select {
+    grid-column: span 2;
+    min-width: 0;
+    width: 100%;
+}
+
 .instanceValue input[type='text'],
 .instanceValue input[type='number'] {
     min-width: 0;
