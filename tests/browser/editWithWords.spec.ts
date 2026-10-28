@@ -1,3 +1,4 @@
+import { createVariable } from './support/variables';
 import { expect, test, type Page } from '@playwright/test';
 import { MAX_CONTEXT_BYTES } from '../../src/ai/context';
 import { drawRect, openEditor, shapes } from './support/editor';
@@ -178,12 +179,7 @@ test('rejects oversized context locally and keeps the prompt available', async (
     const requests = await signInWithAi(page, () => '');
 
     await openEditor(page, ['Variables']);
-    await page.getByLabel('New variable name', { exact: true }).fill('Large text');
-    await page.getByLabel('New variable type', { exact: true }).selectOption({ label: 'Text' });
-    await page
-        .getByRole('region', { name: 'Variables' })
-        .getByRole('button', { name: 'Add', exact: true })
-        .click();
+    await createVariable(page, 'Large text', 'Text');
     await page
         .getByLabel('Value of Large text', { exact: true })
         .fill('x'.repeat(MAX_CONTEXT_BYTES));

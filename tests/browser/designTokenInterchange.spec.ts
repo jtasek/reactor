@@ -1,3 +1,4 @@
+import { createVariable, selectVariable } from './support/variables';
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { openEditor } from './support/editor';
@@ -25,18 +26,24 @@ test('previews and imports DTCG tokens, retains aliases on reload, and exports i
     await expect(page.getByLabel('Import preview')).toContainText('brand/ink (color) — new');
     await expect(page.getByLabel('Name of brand/ink', { exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: 'Apply import', exact: true }).click();
+    await selectVariable(page, 'brand/ink');
     await expect(page.getByLabel('Value of brand/ink', { exact: true })).toHaveValue('#3366ff');
+    await selectVariable(page, 'scale/zero');
     await expect(page.getByLabel('Value of scale/zero', { exact: true })).toHaveValue('0');
+    await selectVariable(page, 'scale/reference');
     await expect(page.getByLabel('Source of scale/reference', { exact: true })).toContainText(
         'Follow scale/zero'
     );
+    await selectVariable(page, 'brand/foreground');
     await expect(page.getByLabel('Source of brand/foreground', { exact: true })).toContainText(
         'Follow brand/ink'
     );
     await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.reload();
     await openEditor(page, ['Variables']);
+    await selectVariable(page, 'brand/ink');
     await expect(page.getByLabel('Value of brand/ink', { exact: true })).toHaveValue('#3366ff');
+    await selectVariable(page, 'brand/foreground');
     await expect(page.getByLabel('Source of brand/foreground', { exact: true })).toContainText(
         'Follow brand/ink'
     );
@@ -63,11 +70,7 @@ test('rejects unsupported DTCG units and clears previews when switching formats'
     page
 }) => {
     await openEditor(page, ['Variables']);
-    await page.getByLabel('New variable name', { exact: true }).fill('Local');
-    await page
-        .getByRole('region', { name: 'Variables' })
-        .getByRole('button', { name: 'Add', exact: true })
-        .click();
+    await createVariable(page, 'Local', 'Color');
     await page.getByText('Design-system import / export', { exact: true }).click();
     await page.getByLabel('Design-system format').selectOption('dtcg');
     const upload = (data: unknown) =>
@@ -81,23 +84,20 @@ test('rejects unsupported DTCG units and clears previews when switching formats'
         'spacing: Unsupported token type dimension'
     );
     await expect(page.getByRole('button', { name: 'Apply import', exact: true })).toHaveCount(0);
+    await selectVariable(page, 'Local');
     await expect(page.getByLabel('Value of Local', { exact: true })).toHaveValue('#000000');
     await upload(tokens);
     await expect(page.getByLabel('Import preview')).toBeVisible();
     await page.getByLabel('Design-system format').selectOption('native');
     await expect(page.getByLabel('Import preview')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Apply import', exact: true })).toHaveCount(0);
+    await selectVariable(page, 'Local');
     await expect(page.getByLabel('Value of Local', { exact: true })).toHaveValue('#000000');
 });
 
 test('refuses a partial DTCG export and leaves native export available', async ({ page }) => {
     await openEditor(page, ['Variables']);
-    await page.getByLabel('New variable name', { exact: true }).fill('Label');
-    await page.getByLabel('New variable type', { exact: true }).selectOption('text');
-    await page
-        .getByRole('region', { name: 'Variables' })
-        .getByRole('button', { name: 'Add', exact: true })
-        .click();
+    await createVariable(page, 'Label', 'Text');
     await page.getByText('Design-system import / export', { exact: true }).click();
     await page.getByLabel('Design-system format').selectOption('dtcg');
     await page.getByRole('button', { name: 'Export design system', exact: true }).click();

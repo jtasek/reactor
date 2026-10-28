@@ -1,3 +1,4 @@
+import { createVariable as addVariable, selectVariable, deleteVariable } from './support/variables';
 import { expect, test, type Page } from '@playwright/test';
 import { createDocument, createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
@@ -5,12 +6,6 @@ import { drawRect, openEditor, pointer, selectTool, shapes } from './support/edi
 
 const field = (page: Page, label: string) => page.getByLabel(label, { exact: true });
 const panel = (page: Page) => page.getByRole('region', { name: 'Variables' });
-
-async function addVariable(page: Page, name: string, type: string) {
-    await field(page, 'New variable name').fill(name);
-    await field(page, 'New variable type').selectOption({ label: type });
-    await panel(page).getByRole('button', { name: 'Add', exact: true }).click();
-}
 
 async function rectangleWithPanels(page: Page) {
     await openEditor(page, ['Inspector', 'Variables']);
@@ -77,14 +72,14 @@ test('deleting a used variable asks first and leaves the shapes as they were', a
     await field(page, 'Value of brand').fill('#3366ff');
     await field(page, 'Variable for Fill').selectOption({ label: 'brand' });
 
-    await page.getByRole('button', { name: 'Delete brand', exact: true }).click();
+    await deleteVariable(page, 'brand');
     await page.getByRole('button', { name: 'Keep', exact: true }).click();
     await expect(field(page, 'Name of brand')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Delete brand', exact: true }).click();
+    await deleteVariable(page, 'brand');
     await page.getByRole('button', { name: 'Confirm deleting brand' }).click();
 
-    await expect(panel(page).getByText('No variables yet')).toBeVisible();
+    await expect(panel(page).getByRole('heading', { name: 'No variables yet' })).toBeVisible();
     await expect(field(page, 'Fill')).toHaveValue('#3366ff');
     await expect.poll(fill).toBe('rgb(51, 102, 255)');
 });
@@ -139,7 +134,7 @@ test('a name that is taken or holds a template mark is refused', async ({ page }
     await expect(panel(page).getByRole('alert')).toHaveText(
         'A name cannot be blank or hold {, } or $.'
     );
-    await expect(panel(page).getByRole('listitem')).toHaveCount(1);
+    await expect(panel(page).getByLabel('Selected variable').locator('option')).toHaveCount(2);
 });
 
 /** Clicks the canvas with the real mouse, which also moves focus like a user would. */
@@ -176,6 +171,7 @@ test('a text shows the variables its template names and follows their changes', 
     await expect(letters).toHaveText('Hi Ada Lovelace');
     await expect(field(page, 'Text')).toHaveValue('Hi ${full name}');
 
+    await selectVariable(page, 'first name');
     await field(page, 'Value of first name').fill('Grace');
     await field(page, 'Value of first name').press('Enter');
     await expect(letters).toHaveText('Hi Grace Lovelace');
@@ -187,7 +183,7 @@ test('a text shows the variables its template names and follows their changes', 
 
     await field(page, 'Text').fill('Hi ${full name}');
     await field(page, 'Text').press('Enter');
-    await page.getByRole('button', { name: 'Delete first name', exact: true }).click();
+    await deleteVariable(page, 'first name');
     await expect(page.getByRole('button', { name: 'Confirm deleting first name' })).toBeVisible();
 });
 
@@ -197,6 +193,7 @@ test('an alias follows its source across reload and detaches to a literal', asyn
     await expect(field(page, 'Source of Brand')).toHaveCount(0);
     await expect(page.getByText('Add another color variable to reference it.')).toBeVisible();
     await addVariable(page, 'Spacing', 'Number');
+    await selectVariable(page, 'Brand');
     await expect(field(page, 'Source of Brand')).toHaveCount(0);
     await field(page, 'Value of Brand').fill('#3366ff');
     await addVariable(page, 'Button', 'Color');
@@ -208,17 +205,20 @@ test('an alias follows its source across reload and detaches to a literal', asyn
         'background-color',
         'rgb(51, 102, 255)'
     );
+    await selectVariable(page, 'Brand');
     await expect(field(page, 'Source of Brand')).toHaveCount(0);
     await expect(page.getByText('Every other color variable follows Brand.')).toBeVisible();
     await field(page, 'Value of Brand').fill('#ff0000');
     await expect.poll(fill).toBe('rgb(255, 0, 0)');
     await page.reload();
     await openEditor(page, ['Inspector', 'Variables']);
+    await selectVariable(page, 'Button');
     await expect(field(page, 'Resolved value of Button')).toHaveText('Button → Brand: #ff0000');
     await page.setViewportSize({ width: 540, height: 740 });
     await expect(field(page, 'Source of Button')).toBeVisible();
     await field(page, 'Source of Button').selectOption({ label: 'Literal value' });
     await expect(field(page, 'Value of Button')).toHaveValue('#ff0000');
+    await selectVariable(page, 'Brand');
     await field(page, 'Value of Brand').fill('#00ff00');
     await expect.poll(fill).toBe('rgb(255, 0, 0)');
 });
@@ -245,6 +245,7 @@ test('moving back to the original position detaches X, while cancel restores it 
     await pointer(page, 'pointerup', { x: 125, y: 125 });
     await expect(field(page, 'X')).toHaveValue('100');
     await expect(field(page, 'Y')).toHaveText('◆ Top');
+    await selectVariable(page, 'Left');
     await field(page, 'Value of Left').fill('200');
     await field(page, 'Value of Left').press('Enter');
     await expect(field(page, 'X')).toHaveValue('100');

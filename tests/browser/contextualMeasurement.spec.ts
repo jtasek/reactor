@@ -1,3 +1,4 @@
+import { selectVariable } from './support/variables';
 import { expect, test, type Page } from '@playwright/test';
 import { createDocument, createShape, createComponent } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
@@ -153,6 +154,7 @@ test('authors text modes and wrapping with usable narrow controls', async ({ pag
     await page.getByRole('button', { name: 'More panels' }).click();
     await page.getByRole('checkbox', { name: 'Variables', exact: true }).check();
     await page.getByRole('button', { name: 'More panels' }).click();
+    await selectVariable(page, 'Greeting');
     const input = page.getByLabel('Large value of Greeting', { exact: true });
     await input.fill('Good morning');
     await input.blur();
@@ -163,7 +165,12 @@ test('authors text modes and wrapping with usable narrow controls', async ({ pag
         name: 'Use base value for Greeting in Large',
         exact: true
     });
-    const resetBounds = await reset.boundingBox();
-    expect(resetBounds!.x + resetBounds!.width).toBeLessThanOrEqual(600);
+    await expect
+        .poll(async () => {
+            const bounds = await reset.boundingBox();
+
+            return bounds!.x + bounds!.width;
+        })
+        .toBeLessThanOrEqual(600);
     await page.screenshot({ path: 'test-results/reactor-contextual-measurement-narrow.png' });
 });

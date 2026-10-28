@@ -451,6 +451,12 @@ The Variables panel creates named colors, numbers, text and booleans. Inspector 
 follow a variable, and text can include `${Name}` templates. Renaming a variable preserves
 its references; deleting one leaves the shapes' values in place.
 
+Choose **New variable** to enter its name, type and base value. The panel shows a list and
+one editor, or an item picker when narrow. The **Dimensions** tab manages optional dimensions
+and modes. Creation and dimension forms protect unfinished changes; dimension edits are
+applied with **Save changes**. If that dimension changes in another tab, reload it before
+saving. Value edits still apply on Enter or blur (Escape cancels a draft).
+
 Inspector and AI edits of a property, and the hide, show, lock and unlock commands, stop it
 following its variable, even when the written value is unchanged. Dragging, arrow keys and
 Align/Space detach only the axes they move, and dragging back does not restore a binding.
@@ -471,10 +477,14 @@ introduced by concurrent edits is bounded and reported in the panel. Copy/paste 
 dependencies and retains the existing name-and-type matching policy.
 
 Dimensions and modes are **opt-in**. New documents have none, and each variable starts
-with a single **Base** value. Open **Dimensions and modes (optional)** in Variables to
+with a single **Base** value. Open the **Dimensions** tab in Variables to
 create a dimension such as Appearance or Brand. Add, rename, reorder or delete its modes
-and choose its default. Assign a color or number variable using **Vary by**; missing mode overrides
-use its base value. **Use base** removes an override.
+and choose its default. Open **Add mode values** on a color, number or text variable and
+choose **Vary by**; missing mode overrides use its base value. **Override** creates a mode
+value and **Use base** removes it. Changing a dimension with existing overrides asks first.
+**Manage modes** opens that dimension and offers a direct return to the variable. Mode and
+dimension action menus retain reordering and confirmed deletion. **Canvas preview** and
+**Design-system import / export** remain available below the editor.
 
 Each document remembers your selected mode per dimension locally. Aliases follow their
 source's dimension; shapes, components and thumbnails use the same context. Renaming a mode
