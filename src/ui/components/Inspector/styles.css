@@ -521,6 +521,34 @@
     flex: 0 0 auto;
 }
 
+.variantActions {
+    display: grid;
+    gap: var(--panel-gap);
+    margin-top: var(--panel-gap);
+}
+
+.variantActions > button,
+.variantActions > select {
+    background: var(--field-background);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-color);
+    font: inherit;
+    min-height: 28px;
+    min-width: 0;
+    padding: 4px 8px;
+    width: 100%;
+}
+
+.variantActions > button:disabled {
+    opacity: 0.5;
+}
+
+.variantActions > button:hover:not(:disabled) {
+    background: var(--control-background-active);
+    cursor: pointer;
+}
+
 .iconButton,
 .exposeButton {
     align-items: center;

@@ -712,9 +712,15 @@ Schema v18 adds `Component.variantIds` and `InstanceShape.variantId` for the fir
 variant increment. A family links independently editable component sources with matching
 exposed property IDs. `instanceComponentId` selects the authored alternate only while the
 family and source exist; otherwise the instance retains its choice and draws the default.
-Shared property IDs are mirrored to matching source shapes when exposed after linking.
+Shared property IDs are mirrored to matching source shapes when exposed after linking: a
+property both already expose pairs shapes first, then a unique name, then drawing position
+when both sources have the same shape types in order (created variants keep that order).
 Keep linked sources in library snapshots and clipboard transfers. Variant selection uses the
 ordinary document mutation and undo path; projection never rewrites it.
+`createComponentVariant` loads through `componentProperties` and copies authored source shapes
+and complete groups into a new source-only alternate. Exposed property IDs survive while their
+shape IDs are remapped; nested components remain shared references. Creation is its own undo
+batch. Inspector opens the new source for editing and offers a link back to its family.
 Unsupported geometry properties retain their base values; text templates resolve in context.
 Definitions use the ordinary shared entity/undo path. Keep all values and dimension IDs
 through serialization, clipboard, operations and alias detachment. Legacy Light/Dark data

@@ -608,7 +608,7 @@ and native SVG default fill. Coverage includes resource validation/cache/cancell
 browser decoding, geometry/style parity, missing-image recovery and normal/narrow visual checks.
 Diagram connector links remain absent, as in the current canvas; this does not introduce them.
 
-#### Increments: R4.1–R4.3 complete; R4.4 in progress; R4.5–R4.10 planned
+#### Increments: R4.1–R4.4 implemented for supported consumers; R4.5 in progress; R4.6–R4.10 planned
 
 Do these in order. Each numbered increment is independently usable and reviewable; do not merge
 an intermediate format that the editor cannot open and edit. New test filenames below are
@@ -781,15 +781,30 @@ continues working through adapters to the new screen/context projection until R4
    contextual-layout, variable, component, clipboard and Preview suites.
 
 5. **R4.5 — Manual component variants (M).**
-   **R4.5a — Manual selection (first increment).** A component can link an existing,
+   **R4.5a — Manual selection (implemented).** A component can link an existing,
    independently editable component as an alternate when their exposed property IDs and
    types match. Inspector selects the alternate for an instance; an absent selection uses
    the default. A missing alternate retains the authored selection and renders the default.
    Variant identity is saved with the instance, and source snapshots carry the linked
    components. Full variant tree authoring, compatibility diagnostics and the broader
    acceptance cases below remain part of R4.5.
+
+   **R4.5b — Create an editable variant (implemented).** Inspector's Create variant copies
+   the default's authored artwork into a new source-only component and links it to the family.
+   Shapes and complete source groups get independent identities; exposed properties keep their
+   IDs while targeting the copied shapes. Bindings, text templates, nested component references,
+   instance mode overrides and role settings are retained. The new source opens for renaming
+   and editing, with a path back to the family and Edit actions for its alternates. Existing
+   instances keep their selection and overrides. Creation is a separate undo step and shares
+   through the existing document model; library sources, locked sources and alternates cannot
+   create a nested family. Tests cover independent edits, switching with overrides, names,
+   permissions, snapshots, reload, collaboration and undo. Broader compatibility repair,
+   property-mapping authoring and concurrent family-edit acceptance remain in R4.5; automatic
+   width-based selection remains R4.6.
+
    Add a bounded variant family to reusable components, with a default and explicit instance
-   selection. Start with default plus one alternate. Variant trees share stable exposed
+   selection. A family is one level deep: a default plus any number of alternates, which cannot
+   have alternates of their own. Variant trees share stable exposed
    property IDs and compatible role/action targets; changing variants retains text, bindings,
    compatible overrides and authored actions. Report incompatible or removed properties instead
    of silently discarding user values. Define retained values and fallback when a selected

@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { SquarePlus, FileSearch, CircleMinus, RefreshCw, ChevronLeft } from 'lucide-react';
+import { SquarePlus, FileSearch, CircleMinus, RefreshCw, ChevronLeft, Pencil } from 'lucide-react';
 import {
     useActions,
     useCurrentDocument,
@@ -16,6 +16,7 @@ import { ComponentRole } from './ComponentRole';
 
 const ACTION_ICON = { component: SquarePlus, size: 16 };
 const FIND_ICON = { component: FileSearch, size: 16 };
+const EDIT_ICON = { component: Pencil, size: 16 };
 const REMOVE_ICON = { component: CircleMinus, size: 16 };
 const UPDATE_ICON = { component: RefreshCw, size: 16 };
 
@@ -28,6 +29,8 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
         chooseComponentToPlace,
         selectComponentChild,
         removeComponentProp,
+        createComponentVariant,
+        selectComponentSource,
         addComponentVariant,
         removeComponentVariant,
         updateLibraryComponent
@@ -37,6 +40,9 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
         (shape) => shape.type === 'instance' && shape.componentId === componentId
     ).length;
     const readOnly = Boolean(component.library || component.locked || document.locked);
+    const variantFamily = Object.values(document.components).find((item) =>
+        item.variantIds?.includes(componentId)
+    );
     const variantCandidates = Object.values(document.components).filter(
         (candidate) =>
             candidate.id !== componentId &&
@@ -114,7 +120,15 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
                 </svg>
             )}
             <ComponentRole componentId={componentId} />
-            {(component.variantIds?.length || variantCandidates.length > 0) && (
+            {variantFamily && (
+                <nav className={styles.sourceChildBreadcrumb} aria-label="Variant family">
+                    <button type="button" onClick={() => selectComponentSource(variantFamily.id)}>
+                        <Icon icon={{ component: ChevronLeft, size: 16 }} />
+                        <span>Variants of {variantFamily.name}</span>
+                    </button>
+                </nav>
+            )}
+            {!variantFamily && (source || component.variantIds?.length) && (
                 <div>
                     <h3 className={styles.heading}>Variants</h3>
                     <ul className={styles.componentProps}>
@@ -128,6 +142,19 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
                                 <li key={id}>
                                     <span>{name}</span>
                                     <div>
+                                        <button
+                                            type="button"
+                                            className={styles.iconButton}
+                                            title={`Edit ${name}`}
+                                            aria-label={`Edit variant ${name}`}
+                                            disabled={
+                                                !document.components[id] ||
+                                                Boolean(document.components[id].library)
+                                            }
+                                            onClick={() => selectComponentSource(id)}
+                                        >
+                                            <Icon icon={EDIT_ICON} />
+                                        </button>
                                         <button
                                             type="button"
                                             className={styles.iconButton}
@@ -148,22 +175,34 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
                             );
                         })}
                     </ul>
-                    {!readOnly && variantCandidates.length > 0 && (
-                        <select
-                            aria-label="Add component variant"
-                            value=""
-                            onChange={(event) =>
-                                addComponentVariant({ componentId, variantId: event.target.value })
-                            }
+                    <div className={styles.variantActions}>
+                        <button
+                            type="button"
+                            disabled={readOnly || !source}
+                            onClick={() => createComponentVariant(componentId)}
                         >
-                            <option value="">Add variant…</option>
-                            {variantCandidates.map((candidate) => (
-                                <option key={candidate.id} value={candidate.id}>
-                                    {candidate.name}
-                                </option>
-                            ))}
-                        </select>
-                    )}
+                            Create variant
+                        </button>
+                        {!readOnly && variantCandidates.length > 0 && (
+                            <select
+                                aria-label="Add component variant"
+                                value=""
+                                onChange={(event) =>
+                                    addComponentVariant({
+                                        componentId,
+                                        variantId: event.target.value
+                                    })
+                                }
+                            >
+                                <option value="">Link existing variant…</option>
+                                {variantCandidates.map((candidate) => (
+                                    <option key={candidate.id} value={candidate.id}>
+                                        {candidate.name}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
                 </div>
             )}
             <div>

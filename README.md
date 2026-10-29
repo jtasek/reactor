@@ -84,8 +84,12 @@ Frames explicitly designated as screens carry a **Screen** badge. Draw with **Fr
 then select **Screen** in Inspector’s **Type** field. Names, geometry and artwork stay in place;
 many screens and ordinary frames can coexist on the same canvas.
 Component definitions stay under Components, separate from scene objects.
-To try a manual component variant, create two component sources, select the default under
-**Components**, then link the alternate in **Inspector → Variants**. Select an instance to
+To create a manual component variant, select a source under **Components** and choose
+**Inspector → Variants → Create variant**. Its artwork is copied into an independently
+editable source, retaining exposed property IDs, bindings and roles. Rename and edit the
+new source, then use **Variants of …** to return to the family. Creation is one undo step.
+You can also link a separately authored compatible source with **Link existing variant…**.
+Select an instance to
 choose either source in **Inspector → Component properties → Variant**. Both sources remain
 editable as components. Linking currently requires matching exposed property IDs and types;
 create the family before exposing properties if the sources were authored separately.

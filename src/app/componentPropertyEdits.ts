@@ -1,10 +1,21 @@
-import { createComponent, createShape, instanceName } from './factories';
+import { json } from 'overmind';
+import { createComponent, createGroup, createShape, instanceName } from './factories';
+import { readCopiedShape } from './services/documentStorage';
 import { componentSource, instanceBox, instanceSource } from './componentSource';
 import { reachesComponent } from './actions/components';
 import { ordersBetween, resolveDrawOrderTies } from './drawOrder';
 import { putShapesOnLayer, putShapesInFrame, shapeLayer } from './membership';
 import { editorHelpers } from './editorHelpers';
-import type { Action, ActionWithParam, Document, InstanceShape, PropertyValue } from './types';
+import type {
+    Action,
+    ActionWithParam,
+    ActionWithParamAndResult,
+    Component,
+    Document,
+    InstanceShape,
+    PropertyValue,
+    Shape
+} from './types';
 import { exposableProperties, resolveComponentProp, acceptsComponentValue } from './componentProps';
 import { isShapeLocked } from './utils';
 
@@ -34,9 +45,8 @@ export const exposeComponentProp: ActionWithParam<{
     component.props = [...(component.props ?? []), prop];
     for (const variantId of component.variantIds ?? []) {
         const alternate = state.currentDocument.components[variantId];
-        const matching = alternate?.shapesIds
-            .map((id) => alternate.sourceShapes?.[id] ?? state.currentDocument.shapes[id])
-            .find((candidate) => candidate?.name === shape.name && candidate.type === shape.type);
+        const matching =
+            alternate && counterpart(state.currentDocument, component, alternate, shape);
         if (
             !matching ||
             !exposableProperties(matching, state.currentDocument).some((item) => item.key === key)
@@ -46,6 +56,52 @@ export const exposeComponentProp: ActionWithParam<{
         alternate.props = [...(alternate.props ?? []), { ...prop, shapeId: matching.id }];
     }
 };
+
+/**
+ * The alternate's shape that corresponds to a default source shape. A property both already
+ * expose pairs them directly. Otherwise a unique name decides; created variants keep the
+ * default's drawing order, so a source with the same shape types in the same order pairs by
+ * position, which also covers repeated names and renamed copies.
+ */
+function counterpart(
+    document: Document,
+    family: Component,
+    alternate: Component,
+    shape: Shape
+): Shape | undefined {
+    const read = (id: string) => alternate.sourceShapes?.[id] ?? document.shapes[id];
+    const shared = family.props?.find(
+        (prop) =>
+            prop.shapeId === shape.id && alternate.props?.some((other) => other.id === prop.id)
+    );
+    const paired =
+        shared && read(alternate.props!.find((other) => other.id === shared.id)!.shapeId);
+
+    if (paired && alternate.shapesIds.includes(paired.id) && paired.type === shape.type) {
+        return paired;
+    }
+    const own = componentSource(document, family.id)?.shapes ?? [];
+    const theirs = componentSource(document, alternate.id)?.shapes ?? [];
+    const named = (shapes: Shape[]) =>
+        shapes.filter(
+            (candidate) => candidate.name === shape.name && candidate.type === shape.type
+        );
+    const ownNamed = named(own);
+    const theirNamed = named(theirs);
+
+    if (ownNamed.length === 1 && theirNamed.length === 1) {
+        return theirNamed[0];
+    }
+    if (
+        own.length === theirs.length &&
+        own.every((candidate, index) => candidate.type === theirs[index].type)
+    ) {
+        return theirs[own.findIndex((candidate) => candidate.id === shape.id)];
+    }
+    return ownNamed.length === theirNamed.length
+        ? theirNamed[ownNamed.findIndex((candidate) => candidate.id === shape.id)]
+        : undefined;
+}
 
 export const removeComponentProp: ActionWithParam<{ componentId: string; propId: string }> = (
     { state },
@@ -157,6 +213,93 @@ export const resetInstanceOverrides: ActionWithParam<{
         }
         shape.overrides = {};
     });
+};
+
+/** Create independent source artwork while retaining the family's exposed property identities. */
+export const createComponentVariant: ActionWithParamAndResult<string, string | undefined> = (
+    { state, actions, effects },
+    componentId
+) => {
+    const document = state.currentDocument;
+    const family = document.components[componentId];
+
+    if (
+        document.locked ||
+        !family ||
+        family.locked ||
+        family.library ||
+        Object.values(document.components).some((item) => item.variantIds?.includes(componentId))
+    ) {
+        return;
+    }
+    const source = componentSource(document, componentId);
+
+    if (!source) {
+        return;
+    }
+    const orders = ordersBetween(
+        document.shapes[document.shapesIds.at(-1) ?? '']?.order ?? null,
+        null,
+        source.shapes.length
+    );
+    const copies = source.shapes.map((shape, index) =>
+        createShape({
+            ...readCopiedShape(shape),
+            name: shape.name,
+            order: orders[index],
+            locked: shape.locked,
+            visible: shape.visible,
+            selected: false,
+            ...(shape.sizing ? { sizing: json(shape.sizing) } : {})
+        })
+    );
+    const ids = new Map(source.shapes.map((shape, index) => [shape.id, copies[index].id]));
+    copies.forEach((copy, index) => {
+        const parent = source.shapes[index].parentShapeId;
+
+        if (parent && ids.has(parent)) {
+            copy.parentShapeId = ids.get(parent);
+        }
+    });
+    const variant = createComponent({
+        name: instanceName(
+            `${family.name} variant`,
+            new Set(Object.values(document.components).map((item) => item.name))
+        ),
+        sourceOnly: true,
+        shapesIds: copies.map((shape) => shape.id),
+        rotation: family.rotation,
+        props: family.props?.map((prop) => ({ ...prop, shapeId: ids.get(prop.shapeId)! })),
+        ...(family.interaction ? { interaction: json(family.interaction) } : {})
+    });
+    // A group also holding shapes outside the source keeps just its source members, when two remain.
+    const groups = Object.values(document.groups)
+        .map((group) => ({ group, members: group.shapesIds.filter((id) => ids.has(id)) }))
+        .filter(({ members }) => members.length >= 2)
+        .map(({ group, members }) =>
+            createGroup({
+                name: group.name,
+                rotation: group.rotation,
+                locked: group.locked,
+                visible: group.visible,
+                shapesIds: members.map((id) => ids.get(id)!)
+            })
+        );
+
+    effects.collaboration.startBatch(document.id, { kind: 'person' });
+    copies.forEach((shape) => {
+        document.shapes[shape.id] = shape;
+    });
+    document.shapesIds.push(...variant.shapesIds);
+    groups.forEach((group) => {
+        document.groups[group.id] = group;
+    });
+    document.components[variant.id] = variant;
+    family.variantIds = [...(family.variantIds ?? []), variant.id];
+    effects.collaboration.flush();
+    actions.selectComponentSource(variant.id);
+
+    return variant.id;
 };
 
 /** Link two independently editable component sources into one manual family. */
