@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { SquarePlus, FileSearch, CircleMinus, RefreshCw, ChevronLeft } from 'lucide-react';
+import { SquarePlus, FileSearch, CircleMinus, RefreshCw, ChevronLeft, Pencil } from 'lucide-react';
 import {
     useActions,
     useCurrentDocument,
@@ -16,6 +16,7 @@ import { ComponentRole } from './ComponentRole';
 
 const ACTION_ICON = { component: SquarePlus, size: 16 };
 const FIND_ICON = { component: FileSearch, size: 16 };
+const EDIT_ICON = { component: Pencil, size: 16 };
 const REMOVE_ICON = { component: CircleMinus, size: 16 };
 const UPDATE_ICON = { component: RefreshCw, size: 16 };
 
@@ -152,7 +153,7 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
                                             }
                                             onClick={() => selectComponentSource(id)}
                                         >
-                                            <Icon icon={FIND_ICON} />
+                                            <Icon icon={EDIT_ICON} />
                                         </button>
                                         <button
                                             type="button"

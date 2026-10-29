@@ -10,9 +10,11 @@ import type {
     Action,
     ActionWithParam,
     ActionWithParamAndResult,
+    Component,
     Document,
     InstanceShape,
-    PropertyValue
+    PropertyValue,
+    Shape
 } from './types';
 import { exposableProperties, resolveComponentProp, acceptsComponentValue } from './componentProps';
 import { isShapeLocked } from './utils';
@@ -43,9 +45,8 @@ export const exposeComponentProp: ActionWithParam<{
     component.props = [...(component.props ?? []), prop];
     for (const variantId of component.variantIds ?? []) {
         const alternate = state.currentDocument.components[variantId];
-        const matching = alternate?.shapesIds
-            .map((id) => alternate.sourceShapes?.[id] ?? state.currentDocument.shapes[id])
-            .find((candidate) => candidate?.name === shape.name && candidate.type === shape.type);
+        const matching =
+            alternate && counterpart(state.currentDocument, component, alternate, shape);
         if (
             !matching ||
             !exposableProperties(matching, state.currentDocument).some((item) => item.key === key)
@@ -55,6 +56,52 @@ export const exposeComponentProp: ActionWithParam<{
         alternate.props = [...(alternate.props ?? []), { ...prop, shapeId: matching.id }];
     }
 };
+
+/**
+ * The alternate's shape that corresponds to a default source shape. A property both already
+ * expose pairs them directly. Otherwise a unique name decides; created variants keep the
+ * default's drawing order, so a source with the same shape types in the same order pairs by
+ * position, which also covers repeated names and renamed copies.
+ */
+function counterpart(
+    document: Document,
+    family: Component,
+    alternate: Component,
+    shape: Shape
+): Shape | undefined {
+    const read = (id: string) => alternate.sourceShapes?.[id] ?? document.shapes[id];
+    const shared = family.props?.find(
+        (prop) =>
+            prop.shapeId === shape.id && alternate.props?.some((other) => other.id === prop.id)
+    );
+    const paired =
+        shared && read(alternate.props!.find((other) => other.id === shared.id)!.shapeId);
+
+    if (paired && alternate.shapesIds.includes(paired.id) && paired.type === shape.type) {
+        return paired;
+    }
+    const own = componentSource(document, family.id)?.shapes ?? [];
+    const theirs = componentSource(document, alternate.id)?.shapes ?? [];
+    const named = (shapes: Shape[]) =>
+        shapes.filter(
+            (candidate) => candidate.name === shape.name && candidate.type === shape.type
+        );
+    const ownNamed = named(own);
+    const theirNamed = named(theirs);
+
+    if (ownNamed.length === 1 && theirNamed.length === 1) {
+        return theirNamed[0];
+    }
+    if (
+        own.length === theirs.length &&
+        own.every((candidate, index) => candidate.type === theirs[index].type)
+    ) {
+        return theirs[own.findIndex((candidate) => candidate.id === shape.id)];
+    }
+    return ownNamed.length === theirNamed.length
+        ? theirNamed[ownNamed.findIndex((candidate) => candidate.id === shape.id)]
+        : undefined;
+}
 
 export const removeComponentProp: ActionWithParam<{ componentId: string; propId: string }> = (
     { state },
@@ -225,15 +272,17 @@ export const createComponentVariant: ActionWithParamAndResult<string, string | u
         props: family.props?.map((prop) => ({ ...prop, shapeId: ids.get(prop.shapeId)! })),
         ...(family.interaction ? { interaction: json(family.interaction) } : {})
     });
+    // A group also holding shapes outside the source keeps just its source members, when two remain.
     const groups = Object.values(document.groups)
-        .filter((group) => group.shapesIds.length > 0 && group.shapesIds.every((id) => ids.has(id)))
-        .map((group) =>
+        .map((group) => ({ group, members: group.shapesIds.filter((id) => ids.has(id)) }))
+        .filter(({ members }) => members.length >= 2)
+        .map(({ group, members }) =>
             createGroup({
                 name: group.name,
                 rotation: group.rotation,
                 locked: group.locked,
                 visible: group.visible,
-                shapesIds: group.shapesIds.map((id) => ids.get(id)!)
+                shapesIds: members.map((id) => ids.get(id)!)
             })
         );
 

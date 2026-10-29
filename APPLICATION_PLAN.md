@@ -803,7 +803,8 @@ continues working through adapters to the new screen/context projection until R4
    width-based selection remains R4.6.
 
    Add a bounded variant family to reusable components, with a default and explicit instance
-   selection. Start with default plus one alternate. Variant trees share stable exposed
+   selection. A family is one level deep: a default plus any number of alternates, which cannot
+   have alternates of their own. Variant trees share stable exposed
    property IDs and compatible role/action targets; changing variants retains text, bindings,
    compatible overrides and authored actions. Report incompatible or removed properties instead
    of silently discarding user values. Define retained values and fallback when a selected

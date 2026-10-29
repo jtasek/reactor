@@ -368,3 +368,91 @@ it('shares and undoes variant creation as one step, separate from neighboring ed
     expect(shownDocument(a).shapesIds).toHaveLength(2);
     expect(sharedContent(b)).toEqual(sharedContent(a));
 });
+
+it('mirrors later exposed properties to the created copy, with repeated names and renamed copies', () => {
+    const { store } = createTestStore();
+    const document = store.state.currentDocument;
+    const label = (y: number) => {
+        store.actions.addShape({
+            type: 'rectangle',
+            name: 'Label',
+            position: { x: 0, y },
+            size: { width: 40, height: 20 }
+        });
+
+        return document.shapesIds.at(-1)!;
+    };
+    const top = label(0);
+    const bottom = label(30);
+    store.actions.addComponent({
+        id: 'family',
+        name: 'Card',
+        sourceOnly: true,
+        shapesIds: [top, bottom]
+    });
+    const id = store.actions.createComponentVariant('family')!;
+    const [topCopy, bottomCopy] = document.components[id].shapesIds;
+
+    store.actions.exposeComponentProp({
+        componentId: 'family',
+        shapeId: bottom,
+        key: 'opacity',
+        label: 'Bottom opacity'
+    });
+    expect(document.components[id].props).toEqual([
+        expect.objectContaining({ key: 'opacity', shapeId: bottomCopy })
+    ]);
+
+    store.actions.updateShape({ id: topCopy, name: 'Heading' });
+    store.actions.exposeComponentProp({
+        componentId: 'family',
+        shapeId: top,
+        key: 'opacity',
+        label: 'Top opacity'
+    });
+    expect(document.components[id].props?.map((prop) => prop.shapeId)).toEqual([
+        bottomCopy,
+        topCopy
+    ]);
+
+    store.actions.exposeComponentProp({
+        componentId: 'family',
+        shapeId: bottom,
+        key: 'fill',
+        label: 'Bottom fill'
+    });
+    expect(document.components[id].props?.at(-1)).toMatchObject({
+        key: 'fill',
+        shapeId: bottomCopy
+    });
+});
+
+it('keeps the source members of a group that also holds other shapes', () => {
+    const { store, document } = setup();
+    const members = [...document.components.default.shapesIds];
+    store.actions.addShape({
+        type: 'rectangle',
+        name: 'Second',
+        position: { x: 0, y: 30 },
+        size: { width: 40, height: 20 }
+    });
+    const second = document.shapesIds.at(-1)!;
+    store.actions.addShapesToComponent({ componentId: 'default', shapeIds: [second] });
+    store.actions.addShape({
+        type: 'rectangle',
+        name: 'Outside',
+        position: { x: 0, y: 60 },
+        size: { width: 40, height: 20 }
+    });
+    const outside = document.shapesIds.at(-1)!;
+    store.actions.addGroup({
+        id: 'mixed',
+        name: 'Mixed',
+        shapesIds: [...members, second, outside]
+    });
+
+    const id = store.actions.createComponentVariant('default')!;
+    const copied = Object.values(document.groups).find((group) => group.id !== 'mixed');
+    expect(copied).toMatchObject({ name: 'Mixed', shapesIds: document.components[id].shapesIds });
+    expect(document.groups.mixed.shapesIds).toEqual([...members, second, outside]);
+});

@@ -712,7 +712,9 @@ Schema v18 adds `Component.variantIds` and `InstanceShape.variantId` for the fir
 variant increment. A family links independently editable component sources with matching
 exposed property IDs. `instanceComponentId` selects the authored alternate only while the
 family and source exist; otherwise the instance retains its choice and draws the default.
-Shared property IDs are mirrored to matching source shapes when exposed after linking.
+Shared property IDs are mirrored to matching source shapes when exposed after linking: a
+property both already expose pairs shapes first, then a unique name, then drawing position
+when both sources have the same shape types in order (created variants keep that order).
 Keep linked sources in library snapshots and clipboard transfers. Variant selection uses the
 ordinary document mutation and undo path; projection never rewrites it.
 `createComponentVariant` loads through `componentProperties` and copies authored source shapes
