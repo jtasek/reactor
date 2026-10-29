@@ -55,6 +55,10 @@ export const hasComponentInstances = (document: Application['currentDocument'], 
 export const addComponentVariant: typeof ComponentPropertyEdits.addComponentVariant = (...args) =>
     editorHelpers().componentProperties.addComponentVariant(...args);
 
+export const createComponentVariant: typeof ComponentPropertyEdits.createComponentVariant = (
+    ...args
+) => editorHelpers().componentProperties.createComponentVariant(...args);
+
 export const removeComponentVariant: typeof ComponentPropertyEdits.removeComponentVariant = (
     ...args
 ) => editorHelpers().componentProperties.removeComponentVariant(...args);

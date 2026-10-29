@@ -38,6 +38,7 @@ declare namespace StylesCssNamespace {
     note: string;
     sourceChildBreadcrumb: string;
     variablePicker: string;
+    variantActions: string;
   }
 }
 

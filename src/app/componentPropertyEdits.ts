@@ -1,10 +1,19 @@
-import { createComponent, createShape, instanceName } from './factories';
+import { json } from 'overmind';
+import { createComponent, createGroup, createShape, instanceName } from './factories';
+import { readCopiedShape } from './services/documentStorage';
 import { componentSource, instanceBox, instanceSource } from './componentSource';
 import { reachesComponent } from './actions/components';
 import { ordersBetween, resolveDrawOrderTies } from './drawOrder';
 import { putShapesOnLayer, putShapesInFrame, shapeLayer } from './membership';
 import { editorHelpers } from './editorHelpers';
-import type { Action, ActionWithParam, Document, InstanceShape, PropertyValue } from './types';
+import type {
+    Action,
+    ActionWithParam,
+    ActionWithParamAndResult,
+    Document,
+    InstanceShape,
+    PropertyValue
+} from './types';
 import { exposableProperties, resolveComponentProp, acceptsComponentValue } from './componentProps';
 import { isShapeLocked } from './utils';
 
@@ -157,6 +166,91 @@ export const resetInstanceOverrides: ActionWithParam<{
         }
         shape.overrides = {};
     });
+};
+
+/** Create independent source artwork while retaining the family's exposed property identities. */
+export const createComponentVariant: ActionWithParamAndResult<string, string | undefined> = (
+    { state, actions, effects },
+    componentId
+) => {
+    const document = state.currentDocument;
+    const family = document.components[componentId];
+
+    if (
+        document.locked ||
+        !family ||
+        family.locked ||
+        family.library ||
+        Object.values(document.components).some((item) => item.variantIds?.includes(componentId))
+    ) {
+        return;
+    }
+    const source = componentSource(document, componentId);
+
+    if (!source) {
+        return;
+    }
+    const orders = ordersBetween(
+        document.shapes[document.shapesIds.at(-1) ?? '']?.order ?? null,
+        null,
+        source.shapes.length
+    );
+    const copies = source.shapes.map((shape, index) =>
+        createShape({
+            ...readCopiedShape(shape),
+            name: shape.name,
+            order: orders[index],
+            locked: shape.locked,
+            visible: shape.visible,
+            selected: false,
+            ...(shape.sizing ? { sizing: json(shape.sizing) } : {})
+        })
+    );
+    const ids = new Map(source.shapes.map((shape, index) => [shape.id, copies[index].id]));
+    copies.forEach((copy, index) => {
+        const parent = source.shapes[index].parentShapeId;
+
+        if (parent && ids.has(parent)) {
+            copy.parentShapeId = ids.get(parent);
+        }
+    });
+    const variant = createComponent({
+        name: instanceName(
+            `${family.name} variant`,
+            new Set(Object.values(document.components).map((item) => item.name))
+        ),
+        sourceOnly: true,
+        shapesIds: copies.map((shape) => shape.id),
+        rotation: family.rotation,
+        props: family.props?.map((prop) => ({ ...prop, shapeId: ids.get(prop.shapeId)! })),
+        ...(family.interaction ? { interaction: json(family.interaction) } : {})
+    });
+    const groups = Object.values(document.groups)
+        .filter((group) => group.shapesIds.length > 0 && group.shapesIds.every((id) => ids.has(id)))
+        .map((group) =>
+            createGroup({
+                name: group.name,
+                rotation: group.rotation,
+                locked: group.locked,
+                visible: group.visible,
+                shapesIds: group.shapesIds.map((id) => ids.get(id)!)
+            })
+        );
+
+    effects.collaboration.startBatch(document.id, { kind: 'person' });
+    copies.forEach((shape) => {
+        document.shapes[shape.id] = shape;
+    });
+    document.shapesIds.push(...variant.shapesIds);
+    groups.forEach((group) => {
+        document.groups[group.id] = group;
+    });
+    document.components[variant.id] = variant;
+    family.variantIds = [...(family.variantIds ?? []), variant.id];
+    effects.collaboration.flush();
+    actions.selectComponentSource(variant.id);
+
+    return variant.id;
 };
 
 /** Link two independently editable component sources into one manual family. */

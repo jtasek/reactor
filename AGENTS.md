@@ -715,6 +715,10 @@ family and source exist; otherwise the instance retains its choice and draws the
 Shared property IDs are mirrored to matching source shapes when exposed after linking.
 Keep linked sources in library snapshots and clipboard transfers. Variant selection uses the
 ordinary document mutation and undo path; projection never rewrites it.
+`createComponentVariant` loads through `componentProperties` and copies authored source shapes
+and complete groups into a new source-only alternate. Exposed property IDs survive while their
+shape IDs are remapped; nested components remain shared references. Creation is its own undo
+batch. Inspector opens the new source for editing and offers a link back to its family.
 Unsupported geometry properties retain their base values; text templates resolve in context.
 Definitions use the ordinary shared entity/undo path. Keep all values and dimension IDs
 through serialization, clipboard, operations and alias detachment. Legacy Light/Dark data
