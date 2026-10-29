@@ -13,7 +13,7 @@ async function closePanelPicker(page: Page) {
 export async function selectVariable(page: Page, name: string) {
     await closePanelPicker(page);
     const panel = variablesPanel(page);
-    await panel.getByRole('button', { name: 'Variables', exact: true }).click();
+    await panel.getByRole('tab', { name: 'Variables', exact: true }).click();
     const picker = panel.getByLabel('Selected variable', { exact: true });
 
     if (await picker.isVisible()) {
@@ -52,29 +52,23 @@ export async function deleteVariable(page: Page, name: string) {
 
 export async function openModePreview(page: Page) {
     await closePanelPicker(page);
-    await openPanelOptions(page);
-    const summary = variablesPanel(page).getByText('Canvas preview', { exact: true });
-    await expect(summary).toBeVisible();
-    if (!(await summary.evaluate((element) => element.closest('details')?.open))) {
-        await summary.click();
-    }
-}
-
-export async function openPanelOptions(page: Page) {
-    await closePanelPicker(page);
-    const button = variablesPanel(page).getByRole('button', { name: 'Panel options', exact: true });
+    const button = variablesPanel(page).getByRole('button', { name: 'Preview modes', exact: true });
     if ((await button.getAttribute('aria-expanded')) !== 'true') {
         await button.click();
     }
+    await expect(page.getByRole('dialog', { name: 'Canvas preview', exact: true })).toBeVisible();
 }
 
-export async function openVariableSettings(page: Page, name: string) {
-    const panel = variablesPanel(page);
-    if (await panel.getByRole('region', { name: 'Variable settings', exact: true }).isVisible()) {
-        return;
-    }
-    await panel.getByRole('button', { name: `Actions for ${name}`, exact: true }).click();
-    await panel.getByRole('button', { name: 'Variable settings', exact: true }).click();
+export async function openPackageDialog(page: Page, mode: 'Import' | 'Export') {
+    await closePanelPicker(page);
+    await variablesPanel(page).getByRole('button', { name: mode, exact: true }).click();
+    await expect(
+        page.getByRole('dialog', { name: `${mode} design system`, exact: true })
+    ).toBeVisible();
+}
+
+export async function closePackageDialog(page: Page) {
+    await page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click();
 }
 
 export async function resetModeValue(page: Page, name: string, mode: string, defaultMode: string) {

@@ -1,8 +1,8 @@
 import {
     createVariable,
     selectVariable,
-    openPanelOptions,
-    openVariableSettings
+    openPackageDialog,
+    closePackageDialog
 } from './support/variables';
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
@@ -21,8 +21,7 @@ test('previews and imports DTCG tokens, retains aliases on reload, and exports i
     page
 }) => {
     await openEditor(page, ['Variables']);
-    await openPanelOptions(page);
-    await page.getByText('Design-system import / export', { exact: true }).click();
+    await openPackageDialog(page, 'Import');
     await page.getByLabel('Design-system format').selectOption('dtcg');
     await page.getByLabel('Design-system package', { exact: true }).setInputFiles({
         name: 'brand.tokens.json',
@@ -32,17 +31,16 @@ test('previews and imports DTCG tokens, retains aliases on reload, and exports i
     await expect(page.getByLabel('Import preview')).toContainText('brand/ink (color) — new');
     await expect(page.getByLabel('Name of brand/ink', { exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: 'Apply import', exact: true }).click();
+    await closePackageDialog(page);
     await selectVariable(page, 'brand/ink');
     await expect(page.getByLabel('Value of brand/ink', { exact: true })).toHaveValue('#3366ff');
     await selectVariable(page, 'scale/zero');
     await expect(page.getByLabel('Value of scale/zero', { exact: true })).toHaveValue('0');
     await selectVariable(page, 'scale/reference');
-    await openVariableSettings(page, 'scale/reference');
     await expect(page.getByLabel('Source of scale/reference', { exact: true })).toContainText(
         'Follow scale/zero'
     );
     await selectVariable(page, 'brand/foreground');
-    await openVariableSettings(page, 'brand/foreground');
     await expect(page.getByLabel('Source of brand/foreground', { exact: true })).toContainText(
         'Follow brand/ink'
     );
@@ -52,12 +50,10 @@ test('previews and imports DTCG tokens, retains aliases on reload, and exports i
     await selectVariable(page, 'brand/ink');
     await expect(page.getByLabel('Value of brand/ink', { exact: true })).toHaveValue('#3366ff');
     await selectVariable(page, 'brand/foreground');
-    await openVariableSettings(page, 'brand/foreground');
     await expect(page.getByLabel('Source of brand/foreground', { exact: true })).toContainText(
         'Follow brand/ink'
     );
-    await openPanelOptions(page);
-    await page.getByText('Design-system import / export', { exact: true }).click();
+    await openPackageDialog(page, 'Export');
     await page.getByLabel('Design-system format').selectOption('dtcg');
     const pending = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export design system', exact: true }).click();
@@ -81,8 +77,7 @@ test('rejects unsupported DTCG units and clears previews when switching formats'
 }) => {
     await openEditor(page, ['Variables']);
     await createVariable(page, 'Local', 'Color');
-    await openPanelOptions(page);
-    await page.getByText('Design-system import / export', { exact: true }).click();
+    await openPackageDialog(page, 'Import');
     await page.getByLabel('Design-system format').selectOption('dtcg');
     const upload = (data: unknown) =>
         page.getByLabel('Design-system package', { exact: true }).setInputFiles({
@@ -95,22 +90,20 @@ test('rejects unsupported DTCG units and clears previews when switching formats'
         'spacing: Unsupported token type dimension'
     );
     await expect(page.getByRole('button', { name: 'Apply import', exact: true })).toHaveCount(0);
-    await selectVariable(page, 'Local');
     await expect(page.getByLabel('Value of Local', { exact: true })).toHaveValue('#000000');
     await upload(tokens);
     await expect(page.getByLabel('Import preview')).toBeVisible();
     await page.getByLabel('Design-system format').selectOption('native');
     await expect(page.getByLabel('Import preview')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Apply import', exact: true })).toHaveCount(0);
-    await selectVariable(page, 'Local');
+    await closePackageDialog(page);
     await expect(page.getByLabel('Value of Local', { exact: true })).toHaveValue('#000000');
 });
 
 test('refuses a partial DTCG export and leaves native export available', async ({ page }) => {
     await openEditor(page, ['Variables']);
     await createVariable(page, 'Label', 'Text');
-    await openPanelOptions(page);
-    await page.getByText('Design-system import / export', { exact: true }).click();
+    await openPackageDialog(page, 'Export');
     await page.getByLabel('Design-system format').selectOption('dtcg');
     await page.getByRole('button', { name: 'Export design system', exact: true }).click();
     await expect(page.getByRole('alert')).toContainText('Use the native format');

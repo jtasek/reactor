@@ -6,7 +6,6 @@ import {
     createVariable,
     deleteVariable,
     selectVariable,
-    openVariableSettings,
     resetModeValue,
     variablesPanel
 } from './support/variables';
@@ -62,9 +61,9 @@ test('protects creation drafts and creates typed base values with the keyboard',
     await panel.getByLabel('New variable name').fill('spacing/large');
     await panel.getByLabel('New variable type').selectOption('number');
     await panel.getByLabel('New variable value').fill('24');
-    await panel.getByRole('button', { name: 'Dimensions', exact: true }).click();
-    await expect(panel.getByRole('alert')).toContainText('unfinished changes');
-    await panel.getByRole('button', { name: 'Keep editing', exact: true }).click();
+    await panel.getByRole('tab', { name: 'Dimensions', exact: true }).click();
+    await expect(page.getByRole('dialog')).toContainText('unfinished changes');
+    await page.getByRole('button', { name: 'Keep editing', exact: true }).click();
     await expect(panel.getByLabel('New variable value')).toHaveValue('24');
     await panel.getByLabel('New variable value').press('Enter');
     await expect(panel.getByLabel('Value of spacing/large', { exact: true })).toHaveValue('24');
@@ -84,21 +83,20 @@ test('preserves mode values on default changes and asks before removing override
     await expect(panel.getByRole('button', { name: 'Save changes', exact: true })).toBeDisabled();
     await panel.getByLabel('Use Dark as default').check();
     await panel.getByRole('button', { name: 'Back to brand/ink', exact: true }).click();
-    await panel.getByRole('button', { name: 'Keep editing', exact: true }).click();
+    await page.getByRole('button', { name: 'Keep editing', exact: true }).click();
     await panel.getByRole('button', { name: 'Save changes', exact: true }).click();
     await panel.getByRole('button', { name: 'Back to brand/ink', exact: true }).click();
     await expect(panel.getByLabel('Value of brand/ink', { exact: true })).toHaveValue('#ddeeff');
     await expect(panel.getByLabel('Light value of brand/ink', { exact: true })).toHaveValue(
         '#112233'
     );
-    await openVariableSettings(page, 'brand/ink');
     await panel.getByLabel('Dimension of brand/ink').selectOption('');
-    await panel.getByRole('button', { name: 'Keep dimension', exact: true }).click();
+    await page.getByRole('button', { name: 'Keep dimension', exact: true }).click();
     await expect(panel.getByLabel('Light value of brand/ink', { exact: true })).toHaveValue(
         '#112233'
     );
     await panel.getByLabel('Dimension of brand/ink').selectOption('');
-    await panel.getByRole('button', { name: 'Change dimension', exact: true }).click();
+    await page.getByRole('button', { name: 'Change dimension', exact: true }).click();
     await expect(panel.getByLabel('Light value of brand/ink', { exact: true })).toHaveCount(0);
     await expect(panel.getByLabel('Value of brand/ink', { exact: true })).toHaveValue('#ddeeff');
 });
@@ -120,9 +118,12 @@ test('keeps editing usable in wide and narrow panels', async ({ page }) => {
     expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
         true
     );
+    await expect(panel.getByRole('tab', { name: 'Variables', exact: true })).toBeInViewport();
+    await expect(panel.getByRole('button', { name: 'New variable', exact: true })).toBeInViewport();
     await page.screenshot({ path: 'test-results/variables-panel-narrow.png' });
     await panel.getByRole('button', { name: 'Manage modes', exact: true }).click();
     await expect(panel.getByLabel('Name of dimension Theme')).toBeVisible();
+    await expect(panel.getByRole('button', { name: 'Save changes', exact: true })).toBeInViewport();
     expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
         true
     );
@@ -132,16 +133,115 @@ test('keeps editing usable in wide and narrow panels', async ({ page }) => {
     await page.screenshot({ path: 'test-results/dimensions-panel-wide.png' });
 });
 
+test('uses keyboard tabs without bypassing unfinished dimension or creation drafts', async ({
+    page
+}) => {
+    await themedDocument(page);
+    const panel = variablesPanel(page);
+    const variables = panel.getByRole('tab', { name: 'Variables', exact: true });
+    const dimensions = panel.getByRole('tab', { name: 'Dimensions', exact: true });
+    await variables.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(dimensions).toBeFocused();
+    await expect(variables).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('Enter');
+    await expect(panel.getByRole('tabpanel', { name: 'Dimensions', exact: true })).toBeVisible();
+    await page.keyboard.press('Home');
+    await expect(variables).toBeFocused();
+    await page.keyboard.press('Space');
+    await expect(variables).toHaveAttribute('aria-selected', 'true');
+    await panel.getByRole('button', { name: 'New variable', exact: true }).click();
+    await panel.getByLabel('New variable name').fill('Unfinished');
+    await dimensions.click();
+    await expect(page.getByRole('dialog', { name: 'Discard unfinished changes?' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(panel.getByLabel('New variable name')).toHaveValue('Unfinished');
+    await expect(variables).toHaveAttribute('aria-selected', 'true');
+    await dimensions.click();
+    await page.getByRole('button', { name: 'Discard changes', exact: true }).click();
+    await expect(dimensions).toHaveAttribute('aria-selected', 'true');
+});
+
+test('opens utilities without shifting the workspace and restores focus after dismissal', async ({
+    page
+}) => {
+    await themedDocument(page);
+    const panel = variablesPanel(page);
+    const name = panel.getByLabel('Name of brand/ink', { exact: true });
+    const bounds = await name.boundingBox();
+    const preview = panel.getByRole('button', { name: 'Preview modes', exact: true });
+    await preview.click();
+    const popover = page.getByRole('dialog', { name: 'Canvas preview', exact: true });
+    await expect(popover).toBeVisible();
+    expect(await popover.evaluate((element) => element.matches(':popover-open'))).toBe(true);
+    expect(await name.boundingBox()).toEqual(bounds);
+    await page.getByLabel('Preview Theme', { exact: true }).selectOption('dark');
+    await page.screenshot({ path: 'test-results/variables-preview-popover.png' });
+    await page.keyboard.press('Escape');
+    await expect(popover).toBeHidden();
+    await expect(preview).toBeFocused();
+    for (const action of ['Import', 'Export']) {
+        const trigger = panel.getByRole('button', { name: action, exact: true });
+        await trigger.click();
+        const dialog = page.getByRole('dialog', { name: `${action} design system`, exact: true });
+        await expect(dialog).toBeVisible();
+        expect(await dialog.evaluate((element) => element.matches(':modal'))).toBe(true);
+        expect(await name.boundingBox()).toEqual(bounds);
+        await page.keyboard.press('Tab');
+        expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBe(
+            true
+        );
+        await page.keyboard.press('Escape');
+        await expect(dialog).toHaveCount(0);
+        await expect(trigger).toBeFocused();
+    }
+    await expect(panel.getByLabel('Dimension of brand/ink', { exact: true })).toBeVisible();
+    await expect(panel.locator('details')).toHaveCount(0);
+});
+
+test('keeps an open mode preview inside the viewport when another tab adds dimensions', async ({
+    page,
+    context
+}) => {
+    await themedDocument(page);
+    await expect(page.locator('#status-save')).toHaveText('Saved');
+    await variablesPanel(page).getByRole('button', { name: 'Preview modes', exact: true }).click();
+    const popover = page.getByRole('dialog', { name: 'Canvas preview', exact: true });
+    await expect(popover).toBeVisible();
+    const peer = await context.newPage();
+    await openEditor(peer, ['Variables']);
+    await peer.getByRole('button', { name: 'More panels', exact: true }).click();
+    const other = variablesPanel(peer);
+    await other.getByRole('tab', { name: 'Dimensions', exact: true }).click();
+
+    for (let index = 1; index <= 6; index++) {
+        await other.getByRole('button', { name: 'New dimension', exact: true }).click();
+        await other.getByLabel('New dimension name', { exact: true }).fill(`Brand ${index}`);
+        await other.getByRole('button', { name: 'Create dimension', exact: true }).click();
+    }
+
+    await expect(popover.getByLabel('Preview Brand 6', { exact: true })).toHaveCount(1);
+    await expect
+        .poll(() => popover.evaluate((element) => element.getBoundingClientRect().bottom))
+        .toBeLessThanOrEqual(page.viewportSize()!.height - 8);
+    await expect(
+        popover.getByRole('button', { name: 'Close preview', exact: true })
+    ).toBeInViewport();
+    await peer.close();
+});
+
 test('locked documents keep browsing and preview available but prevent edits', async ({ page }) => {
     await themedDocument(page, true);
     const panel = variablesPanel(page);
     await selectVariable(page, 'brand/ink');
     await expect(panel.getByLabel('Name of brand/ink')).toBeDisabled();
     await expect(panel.getByLabel('Value of brand/ink', { exact: true })).toBeDisabled();
+    await expect(panel.getByRole('button', { name: 'Import', exact: true })).toBeDisabled();
+    await expect(panel.getByRole('button', { name: 'Export', exact: true })).toBeEnabled();
     await expect(
         panel.getByRole('button', { name: 'New variable', exact: true }).filter({ visible: true })
     ).toBeDisabled();
-    await panel.getByRole('button', { name: 'Dimensions', exact: true }).click();
+    await panel.getByRole('tab', { name: 'Dimensions', exact: true }).click();
     await expect(panel.getByLabel('Name of dimension Theme')).toBeDisabled();
 });
 
@@ -158,7 +258,7 @@ test('requires reloading a dimension changed in another tab before saving a stal
     await openEditor(peer, ['Variables']);
     await peer.getByRole('button', { name: 'More panels', exact: true }).click();
     const other = variablesPanel(peer);
-    await other.getByRole('button', { name: 'Dimensions', exact: true }).click();
+    await other.getByRole('tab', { name: 'Dimensions', exact: true }).click();
     await other.getByLabel('Name of dimension Theme').fill('Shared theme');
     await other.getByRole('button', { name: 'Save changes', exact: true }).click();
     await expect(panel.getByRole('alert')).toContainText('changed elsewhere');
@@ -215,13 +315,13 @@ test('detects a remote default-mode change even without any variable values chan
     await deleteVariable(page, 'brand/ink');
     await expect(page.locator('#status-save')).toHaveText('Saved');
     const panel = variablesPanel(page);
-    await panel.getByRole('button', { name: 'Dimensions', exact: true }).click();
+    await panel.getByRole('tab', { name: 'Dimensions', exact: true }).click();
     await panel.getByLabel('Name of dimension Theme').fill('Personal theme');
     const peer = await context.newPage();
     await openEditor(peer, ['Variables']);
     await peer.getByRole('button', { name: 'More panels', exact: true }).click();
     const other = variablesPanel(peer);
-    await other.getByRole('button', { name: 'Dimensions', exact: true }).click();
+    await other.getByRole('tab', { name: 'Dimensions', exact: true }).click();
     await other.getByLabel('Use Dark as default').check();
     await other.getByRole('button', { name: 'Save changes', exact: true }).click();
     await expect(panel.getByRole('alert')).toContainText('changed elsewhere');
@@ -271,19 +371,19 @@ test('says when the dimension being edited is deleted in another tab and clears 
     await themedDocument(page);
     await expect(page.locator('#status-save')).toHaveText('Saved');
     const panel = variablesPanel(page);
-    await panel.getByRole('button', { name: 'Dimensions', exact: true }).click();
+    await panel.getByRole('tab', { name: 'Dimensions', exact: true }).click();
     await panel.getByLabel('Name of dimension Theme').fill('Personal theme');
     const peer = await context.newPage();
     await openEditor(peer, ['Variables']);
     await peer.getByRole('button', { name: 'More panels', exact: true }).click();
     const other = variablesPanel(peer);
-    await other.getByRole('button', { name: 'Dimensions', exact: true }).click();
+    await other.getByRole('tab', { name: 'Dimensions', exact: true }).click();
     await other.getByRole('button', { name: 'Dimension actions', exact: true }).click();
     await other.getByRole('button', { name: 'Delete dimension', exact: true }).click();
     await other.getByRole('button', { name: 'Delete', exact: true }).click();
     await expect(panel.getByRole('heading', { name: 'No dimensions yet' })).toBeVisible();
     await expect(panel.getByRole('status')).toContainText('deleted elsewhere');
-    await panel.getByRole('button', { name: 'Variables', exact: true }).click();
+    await panel.getByRole('tab', { name: 'Variables', exact: true }).click();
     await expect(panel.getByText('You have unfinished changes.')).toHaveCount(0);
     await expect(panel.getByRole('status')).toHaveCount(0);
     await expect(panel.getByLabel('Name of brand/ink', { exact: true })).toBeVisible();
@@ -297,7 +397,7 @@ test('offers the way back to a variable only after Manage modes', async ({ page 
     const back = panel.getByRole('button', { name: 'Back to brand/ink', exact: true });
     await expect(back).toBeVisible();
     await back.click();
-    await panel.getByRole('button', { name: 'Dimensions', exact: true }).click();
+    await panel.getByRole('tab', { name: 'Dimensions', exact: true }).click();
     await expect(panel.getByLabel('Name of dimension Theme')).toBeVisible();
     await expect(back).toHaveCount(0);
 });
@@ -347,7 +447,7 @@ test('keeps all toolbar labels readable when docked at the standard panel width'
     await page.keyboard.press('Shift+ArrowRight');
     await expect(page.locator('[data-dock="right"] [data-panel="variables"]')).toBeVisible();
     const panel = variablesPanel(page);
-    for (const name of ['Variables', 'Dimensions', 'New variable', 'Panel options']) {
+    for (const name of ['New variable', 'Preview modes', 'Import', 'Export']) {
         const button = panel.getByRole('button', { name, exact: true });
         await expect(button).toBeVisible();
         expect(await button.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
@@ -408,10 +508,6 @@ test('keeps keyboard focus in the panel after deleting from an action menu', asy
     const remove = panel
         .getByRole('group', { name: 'Actions for second menu', exact: true })
         .getByRole('button', { name: 'Delete variable', exact: true });
-    await expect(
-        panel.getByRole('button', { name: 'Variable settings', exact: true })
-    ).toBeFocused();
-    await page.keyboard.press('Tab');
     await expect(remove).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(panel.getByLabel('Name of second')).toHaveCount(0);
@@ -432,7 +528,7 @@ test('shows a named default row and edits inherited colors without an override s
     const values = panel.getByRole('region', { name: 'Values for Theme', exact: true });
     await expect(values.getByRole('group', { name: 'Light (default)', exact: true })).toBeVisible();
     await expect(panel.getByText('Base value', { exact: true })).toHaveCount(0);
-    await expect(panel.getByLabel('Dimension of brand/ink')).toHaveCount(0);
+    await expect(panel.getByLabel('Dimension of brand/ink')).toBeVisible();
     await resetModeValue(page, 'brand/ink', 'Dark', 'Light');
     const dark = panel.getByLabel('Dark value of brand/ink', { exact: true });
     await expect(dark).toBeFocused();
@@ -466,7 +562,6 @@ for (const [type, name, original, changed] of [
         const base = panel.getByLabel(`Value of ${name}`, { exact: true });
         await base.fill(original);
         await base.press('Enter');
-        await panel.getByRole('button', { name: 'Add different values…', exact: true }).click();
         await panel.getByLabel(`Dimension of ${name}`, { exact: true }).selectOption('theme');
         const dark = panel.getByLabel(`Dark value of ${name}`, { exact: true });
         await expect(dark).toHaveValue(original);
@@ -506,7 +601,6 @@ for (const [type, original, changed] of [
         const base = panel.getByLabel(`${baseLabel} of independent`, { exact: true });
         await base.fill(original);
         await base.press('Enter');
-        await panel.getByRole('button', { name: 'Add different values…', exact: true }).click();
         await panel.getByLabel('Dimension of independent', { exact: true }).selectOption('theme');
         const dark = panel.getByLabel(`Dark ${modeLabel} of independent`, { exact: true });
         // Merely focusing and leaving the row must keep inheritance.
@@ -532,7 +626,6 @@ test('adds a first dimension from a variable and returns to its named values', a
     await createVariable(page, 'primaryColor');
     const panel = variablesPanel(page);
     await panel.getByLabel('Value of primaryColor', { exact: true }).fill('#3366ff');
-    await panel.getByRole('button', { name: 'Add different values…', exact: true }).click();
     await panel.getByRole('button', { name: 'New dimension…', exact: true }).click();
     await panel.getByLabel('New dimension name', { exact: true }).fill('Theme');
     await panel.getByLabel('Name of mode Default in new dimension').fill('Light');
@@ -586,8 +679,8 @@ test('assigns a new dimension only to the variable that asked for it', async ({ 
         .filter({ visible: true })
         .click();
     await panel.getByRole('button', { name: 'Cancel', exact: true }).click();
-    await expect(panel.getByRole('button', { name: 'Dimensions', exact: true })).toHaveAttribute(
-        'aria-pressed',
+    await expect(panel.getByRole('tab', { name: 'Dimensions', exact: true })).toHaveAttribute(
+        'aria-selected',
         'true'
     );
     await panel
@@ -596,8 +689,8 @@ test('assigns a new dimension only to the variable that asked for it', async ({ 
         .click();
     await page.getByLabel('New dimension name', { exact: true }).fill('Size');
     await panel.getByRole('button', { name: 'Create dimension', exact: true }).click();
-    await expect(panel.getByRole('button', { name: 'Dimensions', exact: true })).toHaveAttribute(
-        'aria-pressed',
+    await expect(panel.getByRole('tab', { name: 'Dimensions', exact: true })).toHaveAttribute(
+        'aria-selected',
         'true'
     );
     await selectVariable(page, 'brand/ink');
@@ -625,6 +718,5 @@ test('names the default mode on its row and hides empty boolean settings', async
     );
     await page.keyboard.press('Escape');
     await createVariable(page, 'visible', 'Boolean');
-    await openVariableSettings(page, 'visible');
     await expect(panel.getByLabel('Source of visible', { exact: true })).toBeVisible();
 });

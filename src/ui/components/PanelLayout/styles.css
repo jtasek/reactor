@@ -169,6 +169,12 @@
     overflow: auto;
 }
 
+/* The variable workspace scrolls its editor while keeping navigation and actions visible. */
+.panel[data-panel='variables'] > .content {
+    display: flex;
+    overflow: hidden;
+}
+
 .explorerPanel > .content {
     align-items: flex-start;
     display: flex;

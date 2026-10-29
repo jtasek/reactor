@@ -1,52 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { json } from 'overmind';
 import { ActionsMenu } from './ActionsMenu';
-import { useActions, useCurrentDocument, useEffects, useVariableContext } from 'src/app/hooks';
+import { useActions, useCurrentDocument, useEffects } from 'src/app/hooks';
 import { ordered, readDimension } from 'src/app/variableModes';
 import type { VariableDimension } from 'src/app/types';
 import styles from './styles.css';
-
-export function ModePreview() {
-    const document = useCurrentDocument();
-    const context = useVariableContext();
-    const { setPreviewMode } = useActions();
-    const dimensions = ordered(document.dimensions);
-
-    if (!dimensions.length) {
-        return null;
-    }
-
-    return (
-        <details className={styles.secondary}>
-            <summary>Canvas preview</summary>
-            <p className={styles.resolution}>
-                Your preview only. Screen view settings stay unchanged.
-            </p>
-            {dimensions.map((dimension) => (
-                <label className={styles.field} key={dimension.id}>
-                    <span className={styles.fieldLabel}>{dimension.name}</span>
-                    <select
-                        className={styles.source}
-                        aria-label={`Preview ${dimension.name}`}
-                        value={context[dimension.id] ?? dimension.defaultModeId}
-                        onChange={(event) =>
-                            setPreviewMode({
-                                dimensionId: dimension.id,
-                                modeId: event.target.value
-                            })
-                        }
-                    >
-                        {ordered(dimension.modes).map((mode) => (
-                            <option key={mode.id} value={mode.id}>
-                                {mode.name}
-                            </option>
-                        ))}
-                    </select>
-                </label>
-            ))}
-        </details>
-    );
-}
 
 const MAX_MODES = 100;
 

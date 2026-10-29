@@ -14,10 +14,11 @@ import {
 } from 'src/app/designSystemPackages';
 import type { DesignSystemPackage, ImportChoice } from 'src/app/designSystemPackages';
 import styles from './styles.css';
+import { Dialog } from '../Dialog';
 
 const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-function PackageControls() {
+function PackageControls({ mode, onClose }: { mode: 'import' | 'export'; onClose: () => void }) {
     const document = useCurrentDocument();
     const { applyOperations } = useActions();
     const { newId } = useEffects();
@@ -28,6 +29,12 @@ function PackageControls() {
     const [format, setFormat] = useState<'native' | 'dtcg'>('native');
     const [problem, setProblem] = useState('');
     const [notice, setNotice] = useState('');
+    const status = useRef<HTMLParagraphElement>(null);
+    useEffect(() => {
+        if (notice) {
+            status.current?.focus();
+        }
+    }, [notice]);
     useEffect(
         () => () => {
             reading.current++;
@@ -67,11 +74,17 @@ function PackageControls() {
         setData(undefined);
         setProblem('');
         setNotice('');
-        if (!file) return;
+        if (!file) {
+            return;
+        }
         try {
-            if (file.size > PACKAGE_MAX_BYTES) throw new Error('The package is larger than 1 MiB.');
+            if (file.size > PACKAGE_MAX_BYTES) {
+                throw new Error('The package is larger than 1 MiB.');
+            }
             const text = await file.text();
-            if (request !== reading.current) return;
+            if (request !== reading.current) {
+                return;
+            }
             setData(
                 format === 'native'
                     ? parseDesignSystemPackage(text)
@@ -79,11 +92,15 @@ function PackageControls() {
             );
             setChoice('reuse');
         } catch (error) {
-            if (request === reading.current) setProblem(message(error));
+            if (request === reading.current) {
+                setProblem(message(error));
+            }
         }
     };
     const apply = () => {
-        if (!data) return;
+        if (!data) {
+            return;
+        }
         try {
             const operations = planDesignSystemImport(json(document), data, choice, newId);
             if (!operations.length) {
@@ -94,7 +111,9 @@ function PackageControls() {
                     by: { kind: 'person' },
                     operations
                 });
-                if (!result.applied) throw new Error(result.problem);
+                if (!result.applied) {
+                    throw new Error(result.problem);
+                }
                 setNotice('Design system imported. Undo restores the previous definitions.');
             }
             setData(undefined);
@@ -103,10 +122,45 @@ function PackageControls() {
             setProblem(message(error));
         }
     };
+
     return (
-        <details className={styles.dimensions}>
-            <summary>Design-system import / export</summary>
-            <div className={styles.dimension}>
+        <Dialog
+            visible
+            title={mode === 'import' ? 'Import design system' : 'Export design system'}
+            description={
+                mode === 'import'
+                    ? 'Choose a file and review its definitions before applying changes.'
+                    : 'Download variables, dimensions and modes in your chosen format.'
+            }
+            onClose={onClose}
+            actions={
+                mode === 'export' ? (
+                    <>
+                        <button type="button" onClick={onClose}>
+                            Close
+                        </button>
+                        <button type="button" data-variant="primary" onClick={exportPackage}>
+                            Export design system
+                        </button>
+                    </>
+                ) : data ? (
+                    <>
+                        <button type="button" onClick={onClose}>
+                            Cancel import
+                        </button>
+                        <button
+                            type="button"
+                            data-variant="primary"
+                            disabled={document.locked}
+                            onClick={apply}
+                        >
+                            Apply import
+                        </button>
+                    </>
+                ) : undefined
+            }
+        >
+            <div className={`${styles.variables} ${styles.packageContent}`}>
                 <label className={styles.field}>
                     <span>Format</span>
                     <select
@@ -127,34 +181,33 @@ function PackageControls() {
                 </label>
                 {format === 'dtcg' && (
                     <p className={styles.resolution}>
-                        Imports opaque sRGB as 8-bit colors, unitless numbers and aliases.
+                        Supports opaque sRGB as 8-bit colors, unitless numbers and aliases.
                         Unsupported definitions reject the whole file. Use Reactor format for modes,
                         text and booleans.
                     </p>
                 )}
-                <div className={styles.rowHeader}>
-                    <button type="button" onClick={exportPackage}>
-                        Export design system
-                    </button>
-                    <button
-                        type="button"
-                        disabled={document.locked}
-                        onClick={() => input.current?.click()}
-                    >
-                        Import design system
-                    </button>
-                    <input
-                        ref={input}
-                        hidden
-                        type="file"
-                        accept=".json,.tokens,application/json,application/design-tokens+json"
-                        aria-label="Design-system package"
-                        onChange={(event) => {
-                            void load(event.target.files?.[0]);
-                            event.target.value = '';
-                        }}
-                    />
-                </div>
+                {mode === 'import' && (
+                    <div className={styles.rowHeader}>
+                        <button
+                            type="button"
+                            disabled={document.locked}
+                            onClick={() => input.current?.click()}
+                        >
+                            Choose file…
+                        </button>
+                        <input
+                            ref={input}
+                            hidden
+                            type="file"
+                            accept=".json,.tokens,application/json,application/design-tokens+json"
+                            aria-label="Design-system package"
+                            onChange={(event) => {
+                                void load(event.target.files?.[0]);
+                                event.target.value = '';
+                            }}
+                        />
+                    </div>
+                )}
                 {data && (
                     <>
                         <strong>{data.name}</strong>
@@ -216,20 +269,6 @@ function PackageControls() {
                                   ? 'Replace matching definitions, including their names and values. Bound shapes will update.'
                                   : 'Add independent copies with unique names. Keep all existing definitions.'}
                         </p>
-                        <div className={styles.rowHeader}>
-                            <button type="button" disabled={document.locked} onClick={apply}>
-                                Apply import
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setData(undefined);
-                                    setProblem('');
-                                }}
-                            >
-                                Cancel import
-                            </button>
-                        </div>
                     </>
                 )}
                 {problem && (
@@ -238,16 +277,17 @@ function PackageControls() {
                     </p>
                 )}
                 {notice && (
-                    <p role="status" className={styles.resolution}>
+                    <p ref={status} tabIndex={-1} role="status" className={styles.resolution}>
                         {notice}
                     </p>
                 )}
             </div>
-        </details>
+        </Dialog>
     );
 }
 
-export function Packages() {
+export function Packages({ mode, onClose }: { mode: 'import' | 'export'; onClose: () => void }) {
     const document = useCurrentDocument();
-    return <PackageControls key={document.id} />;
+
+    return <PackageControls key={`${document.id}-${mode}`} mode={mode} onClose={onClose} />;
 }

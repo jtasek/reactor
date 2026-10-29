@@ -766,8 +766,12 @@ The Variables panel (`src/ui/components/Variables`, off by default and loaded wh
 creates, renames, edits and deletes them, asking first when one is used. Plain variables show
 one Value; dimension-bound variables show every named mode, including the default, as editable
 rows through the shared `ValueField`. Editing an inherited row creates an override; its action
-menu resets to the named default. Dimension assignment and aliases live in `VariableSettings`,
-separate from everyday values. Creating a dimension from an unbound variable returns to that
+menu resets to the named default. Dimension assignment and aliases stay visible through
+`VariableBindings`. Tabs use tablist/tab/tabpanel
+semantics with manual keyboard activation. Preview is a nonmodal popover; import/export use
+the shared native `Dialog`, outside the panel scroll area. The workspace scrolls below fixed
+navigation and actions, including when docked or resized. Creating a dimension from an unbound
+variable returns to that
 variable and assigns it without changing its value. Changing an existing assignment asks before
 removing overrides. This is a UI over the existing values and actions, not a new storage model.
 In the inspector
