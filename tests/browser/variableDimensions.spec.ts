@@ -16,7 +16,7 @@ test('dimensions are opt-in and custom modes preserve colors, bounds and local s
     await openEditor(page, ['Inspector', 'Variables']);
     await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
     await createVariable(page, 'Ink');
-    await expect(page.getByLabel('Dimension of Ink', { exact: true })).toHaveCount(0);
+    await expect(page.getByLabel('Dimension of Ink', { exact: true })).toHaveValue('');
     await page.getByLabel('Value of Ink', { exact: true }).fill('#112233');
     await page.getByLabel('Variable for Fill', { exact: true }).selectOption({ label: 'Ink' });
     const rect = shapes(page).first().locator('rect[data-cy]');
@@ -24,7 +24,7 @@ test('dimensions are opt-in and custom modes preserve colors, bounds and local s
     await expect.poll(fill).toBe('rgb(17, 34, 51)');
     const bounds = await rect.boundingBox();
     const panel = variablesPanel(page);
-    await panel.getByRole('button', { name: 'Dimensions', exact: true }).click();
+    await panel.getByRole('tab', { name: 'Dimensions', exact: true }).click();
     await panel
         .getByRole('button', { name: 'New dimension', exact: true })
         .filter({ visible: true })
@@ -34,7 +34,6 @@ test('dimensions are opt-in and custom modes preserve colors, bounds and local s
     await panel.getByPlaceholder('Mode name').last().fill('Dim');
     await panel.getByRole('button', { name: 'Create dimension', exact: true }).click();
     await selectVariable(page, 'Ink');
-    await panel.getByRole('button', { name: 'Add different values…', exact: true }).click();
     await expect(page.getByLabel('Dimension of Ink', { exact: true })).toHaveValue('');
     await page
         .getByLabel('Dimension of Ink', { exact: true })
@@ -78,6 +77,7 @@ test('dimensions are opt-in and custom modes preserve colors, bounds and local s
     await pointer(page, 'pointerup', { x: 125, y: 125 });
     await expect(page.getByLabel('Fill', { exact: true })).toHaveText('◆ Ink');
     await page.setViewportSize({ width: 700, height: 800 });
+    await openModePreview(page);
     await expect(page.getByLabel('Preview Appearance', { exact: true })).toBeVisible();
     await resetModeValue(page, 'Ink', 'Night', 'Default');
     await expect.poll(fill).toBe('rgb(17, 34, 51)');
@@ -90,7 +90,7 @@ test('dimensions are opt-in and custom modes preserve colors, bounds and local s
         .click();
     await selectVariable(page, 'Ink');
     await expect(page.getByLabel('Preview Appearance', { exact: true })).toHaveCount(0);
-    await expect(page.getByLabel('Dimension of Ink', { exact: true })).toHaveCount(0);
+    await expect(page.getByLabel('Dimension of Ink', { exact: true })).toHaveValue('');
     await expect.poll(fill).toBe('rgb(17, 34, 51)');
 });
 

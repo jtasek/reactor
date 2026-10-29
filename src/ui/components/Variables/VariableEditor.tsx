@@ -8,7 +8,7 @@ import { variableChain } from 'src/app/editorVariables';
 import styles from './styles.css';
 import { DraftField, ValueField } from './Fields';
 import { TYPES } from './CreateVariable';
-import { hasVariableSettings, VariableSettings } from './VariableSettings';
+import { VariableBindings } from './VariableBindings';
 
 export const VariableEditor: FC<{
     variable: Variable;
@@ -23,7 +23,6 @@ export const VariableEditor: FC<{
     const dimension =
         variable.type !== 'boolean' ? document.dimensions[variable.dimensionId ?? ''] : undefined;
     const [confirming, setConfirming] = useState(false);
-    const [settingsOpen, setSettingsOpen] = useState(false);
     const problems = variableProblems(variable, variables);
     const resolved =
         variable.alias !== undefined ? resolveVariable(variable, variables, context) : undefined;
@@ -38,10 +37,6 @@ export const VariableEditor: FC<{
                 globalThis.document.getElementById(`variable-name-${variable.id}`);
             field?.focus();
         });
-    const closeSettings = () => {
-        setSettingsOpen(false);
-        focusValue();
-    };
 
     return (
         <fieldset disabled={document.locked} className={styles.row}>
@@ -58,11 +53,6 @@ export const VariableEditor: FC<{
                     />
                 </label>
                 <ActionsMenu label={`Actions for ${variable.name}`}>
-                    {hasVariableSettings(variable, variables) && (
-                        <button type="button" onClick={() => setSettingsOpen(true)}>
-                            Variable settings
-                        </button>
-                    )}
                     <button
                         type="button"
                         onClick={() => (uses > 0 ? setConfirming(true) : remove())}
@@ -94,22 +84,22 @@ export const VariableEditor: FC<{
                     {uses === 0 ? 'Not used yet' : `${uses} ${uses === 1 ? 'use' : 'uses'}`}
                 </span>
             </div>
+            <VariableBindings
+                variable={variable}
+                variables={variables}
+                onManageDimension={onManageDimension}
+            />
             {variable.alias === undefined && !dimension && (
                 <div className={styles.formField}>
                     <span className={styles.fieldLabel}>Value</span>
                     <ValueField variable={variable} variables={variables} />
                     <small className={styles.resolution}>The same value everywhere.</small>
-                    {variable.type !== 'boolean' && !settingsOpen && (
-                        <button type="button" onClick={() => setSettingsOpen(true)}>
-                            Add different values…
-                        </button>
-                    )}
                 </div>
             )}
             {variable.alias === undefined && dimension && (
                 <section key={dimension.id} aria-label={`Values for ${dimension.name}`}>
                     <div className={styles.sectionHeading}>
-                        <h4>Values depend on {dimension.name}</h4>
+                        <h4>{dimension.name} values</h4>
                         <button type="button" onClick={() => onManageDimension(dimension.id)}>
                             Manage modes
                         </button>
@@ -201,20 +191,7 @@ export const VariableEditor: FC<{
                         )}
                         {variableChain(variable, variables)}: {String(resolved)}
                     </small>
-                    {!settingsOpen && (
-                        <button type="button" onClick={() => setSettingsOpen(true)}>
-                            Change reference
-                        </button>
-                    )}
                 </div>
-            )}
-            {settingsOpen && (
-                <VariableSettings
-                    variable={variable}
-                    variables={variables}
-                    onDone={closeSettings}
-                    onManageDimension={onManageDimension}
-                />
             )}
             {problems.length > 0 && (
                 <small className={styles.note} role="note">

@@ -124,8 +124,7 @@ export function CreateVariable({
                     )}
                 </label>
                 {type !== 'boolean' && Object.keys(document.dimensions).length > 0 && (
-                    <details>
-                        <summary>Add different values…</summary>
+                    <>
                         <label className={styles.formField}>
                             Values depend on
                             <select
@@ -141,7 +140,7 @@ export function CreateVariable({
                                 ))}
                             </select>
                         </label>
-                    </details>
+                    </>
                 )}
                 {problem && (
                     <p className={styles.problem} role="alert">

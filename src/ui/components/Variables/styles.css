@@ -8,6 +8,13 @@
     user-select: none;
 }
 
+.workspacePanel {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+}
+
 .variables button,
 .variables input,
 .variables select {
@@ -77,8 +84,9 @@
     align-items: center;
     border-bottom: 1px solid var(--hairline-color);
     display: flex;
+    flex-shrink: 0;
     gap: 6px;
-    padding: var(--panel-gap);
+    padding: 0 var(--panel-gap);
 }
 
 .toolbar {
@@ -89,24 +97,25 @@
 }
 
 .variables .toolbar button {
-    padding-inline: 6px;
-}
-
-.toolbar button {
     background-color: transparent;
-    border-color: transparent;
-    flex: 1;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    padding: 10px 12px;
 }
 
-.toolbar button[aria-pressed='true'] {
-    background-color: var(--panel-content-background);
-    border-color: var(--hairline-color);
+.variables .toolbar button[aria-selected='true'] {
+    border-bottom-color: var(--selection-color);
+    color: var(--selection-color);
     font-weight: 600;
 }
 
 .workspace {
     display: grid;
+    flex: 1;
+    min-height: 0;
     min-width: 0;
+    overflow: auto;
 }
 
 .sidebar {
@@ -117,18 +126,64 @@
     align-items: center;
     border-bottom: 1px solid var(--hairline-color);
     display: flex;
-    gap: var(--panel-gap);
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    gap: 8px;
+    justify-content: space-between;
     padding: var(--panel-gap);
 }
 
-.compactPicker {
-    flex: 1;
-    min-width: 0;
+.utilities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
-.options {
+.compactPicker {
     border-bottom: 1px solid var(--hairline-color);
-    padding: 8px 16px;
+    min-width: 0;
+    flex-shrink: 0;
+    padding: var(--panel-gap);
+}
+
+.previewPopover {
+    background: var(--panel-content-background);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--box-shadow);
+    color: var(--text-color);
+    inset: auto;
+    margin: 0;
+    max-height: calc(100vh - 16px);
+    overflow: auto;
+    padding: 16px;
+    position: fixed;
+    width: min(320px, calc(100vw - 16px));
+}
+
+.previewPopover:popover-open {
+    display: grid;
+    gap: 12px;
+}
+
+.packageContent {
+    display: grid;
+    gap: 12px;
+    padding-top: 12px;
+    width: min(360px, calc(90vw - 40px));
+}
+
+.packageContent .rowHeader {
+    flex-wrap: wrap;
+}
+
+.packageContent ul {
+    display: grid;
+    gap: 8px;
+    list-style: none;
+    max-height: 30vh;
+    overflow: auto;
+    overflow-wrap: anywhere;
 }
 
 .detail {
@@ -267,13 +322,6 @@
 
 .modeName small {
     font-weight: 400;
-}
-
-.settings {
-    border-top: 1px solid var(--hairline-color);
-    display: grid;
-    gap: 12px;
-    padding-top: 16px;
 }
 
 .section {
@@ -425,22 +473,6 @@
     opacity: 0.85;
 }
 
-.secondary,
-.dimensions {
-    font-size: 0.75rem;
-}
-
-.dimension {
-    background-color: var(--panel-content-background);
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-md);
-    display: grid;
-    gap: var(--panel-gap);
-    margin: var(--panel-gap) 0;
-    min-width: 0;
-    padding: var(--panel-gap);
-}
-
 .swatch {
     border: 1px solid var(--hairline-color);
     border-radius: 4px;
@@ -450,17 +482,6 @@
     margin-right: 4px;
     vertical-align: middle;
     width: 16px;
-}
-
-@container (max-width: 320px) {
-    .panelToolbar {
-        flex-wrap: wrap;
-        justify-content: flex-end;
-    }
-
-    .toolbar {
-        flex-basis: 100%;
-    }
 }
 
 @container (min-width: 560px) {
@@ -474,7 +495,6 @@
 
     .workspace {
         grid-template-columns: 190px minmax(0, 1fr);
-        min-height: 390px;
     }
 
     .sidebar {
@@ -485,7 +505,7 @@
         padding: 16px 10px;
     }
 
-    .commandBar {
+    .compactPicker {
         display: none;
     }
 

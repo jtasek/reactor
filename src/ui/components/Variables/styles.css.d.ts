@@ -7,8 +7,6 @@ declare namespace StylesCssNamespace {
         compactPicker: string;
         defaultChoice: string;
         detail: string;
-        dimension: string;
-        dimensions: string;
         editorFields: string;
         empty: string;
         field: string;
@@ -26,24 +24,25 @@ declare namespace StylesCssNamespace {
         modeValues: string;
         note: string;
         notice: string;
-        options: string;
+        packageContent: string;
         panelToolbar: string;
+        previewPopover: string;
         primary: string;
         problem: string;
         resolution: string;
         row: string;
         rowHeader: string;
-        secondary: string;
         section: string;
         sectionHeading: string;
-        settings: string;
         sidebar: string;
         source: string;
         swatch: string;
         toolbar: string;
+        utilities: string;
         valueInput: string;
         variables: string;
         workspace: string;
+        workspacePanel: string;
     }
 }
 

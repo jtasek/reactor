@@ -455,9 +455,10 @@ The Variables panel creates named colors, numbers, text and booleans. Inspector 
 follow a variable, and text can include `${Name}` templates. Renaming a variable preserves
 its references; deleting one leaves the shapes' values in place.
 
-Choose **New** in Variables to enter a name, type and value. The panel shows a list and
+Choose **New variable** to enter a name, type and value. The panel shows a list and
 one editor, or an item picker when narrow. The **Dimensions** tab manages optional dimensions
-and modes. **New** stays in the top command bar at every panel width; each variable,
+and modes. The tabs support arrow-key focus and Enter/Space activation. **New variable** or
+**New dimension** stays visible in the toolbar at every panel width; each variable,
 dimension and mode has the same **…** action menu. Creation and dimension forms protect
 unfinished changes; dimension edits are
 applied with **Save changes**. If that dimension changes in another tab, reload it before
@@ -474,7 +475,7 @@ click and measurements preserve bindings. Cancel restores the gesture's bindings
 including concurrent edits; Undo restores the binding together with a completed edit.
 An AI operation can explicitly bind the property again in the same update.
 
-Open **Variable settings** in a variable's **…** menu and choose its **Value source** to follow
+Choose the variable's visible **Value source** to follow
 another of the same type by ID. Renaming the source keeps the alias; the panel shows its chain,
 resolved value and uses. Choose **Own value**
 to detach while keeping the resolved value. Cycles, incompatible types and missing sources
@@ -486,18 +487,21 @@ dependencies and retains the existing name-and-type matching policy.
 Dimensions and modes are **opt-in**. New documents have none, and each variable starts
 with a single **Value**. Open the **Dimensions** tab in Variables to
 create a dimension such as Appearance or Brand. Add, rename, reorder or delete its modes
-and choose its default. Choose **Add different values…** on a color, number or text variable,
-then choose a dimension under **Values depend on**, or create one with **New dimension…**.
+and choose its default. Choose a dimension under **Values depend on** on a color, number or
+text variable, or create one with **New dimension…**. Source and dimension fields stay visible
+in the editor alongside the values.
 The editor shows every mode as a named value row, marking the default. Edit any row directly;
 **Uses Light value**, for example, identifies an unchanged value inherited from Light.
 A value explicitly re-entered in a mode becomes independent even when it matches the default.
 A customized row's **…** menu offers **Reset to Light value** to restore that inheritance.
-Changing the dimension is a separate choice in **Variable settings** and asks before removing
-existing mode values. The default value is preserved.
+Changing the dimension asks for confirmation in a dialog before removing existing mode values.
+The default value is preserved.
 **Manage modes** opens that dimension and offers a direct return to the variable. Mode and
 dimension action menus retain reordering and confirmed deletion without moving the fields.
-**Save changes** and **Cancel** share the bottom action row. **Canvas preview** and
-**Design-system import / export** are available from **Panel options** in the top command bar.
+**Save changes** and **Cancel** share the bottom action row. The editor scrolls independently
+of the tabs and toolbar. **Preview** opens a compact popover; **Import** and **Export** open
+dedicated dialogs with format selection and import review. These tools do not push the editor
+down. Escape dismisses them and returns focus to their toolbar button.
 
 Each document remembers your selected mode per dimension locally. Aliases follow their
 source's dimension; shapes, components and thumbnails use the same context. Renaming a mode

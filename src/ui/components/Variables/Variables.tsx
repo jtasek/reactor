@@ -1,12 +1,13 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
-import { Plus, Hash, Type, ToggleLeft, Layers, ChevronLeft, Settings2 } from 'lucide-react';
+import { Plus, Hash, Type, ToggleLeft, Layers, ChevronLeft } from 'lucide-react';
 import { useActions, useCurrentDocument } from 'src/app/hooks';
 import { useVariables, useVariableUses } from 'src/app/variableHooks';
 import { ordered } from 'src/app/variableModes';
-import { NUMBER_MODE_SUPPORT } from 'src/app/contextualLayout';
 import { Icon } from '../Icon';
+import { Dialog } from '../Dialog';
 import { Packages } from './Packages';
-import { DimensionEditor, ModePreview } from './Dimensions';
+import { DimensionEditor } from './Dimensions';
+import { ModePreview } from './ModePreview';
 import { CreateVariable } from './CreateVariable';
 import { VariableEditor } from './VariableEditor';
 import styles from './styles.css';
@@ -34,8 +35,12 @@ function VariablePanel() {
     const [pending, setPending] = useState<View>();
     const [discarded, setDiscarded] = useState(false);
     const [revision, setRevision] = useState(0);
-    const [optionsOpen, setOptionsOpen] = useState(false);
-    const optionsId = useId();
+    const [packageMode, setPackageMode] = useState<'import' | 'export'>();
+    const [tabFocus, setTabFocus] = useState<View['section']>('variables');
+    const tabsId = useId();
+    const tabs = useRef<HTMLDivElement>(null);
+
+    useEffect(() => setTabFocus(view.section), [view.section]);
     const panel = useRef<HTMLElement>(null);
     const byId = Object.fromEntries(variables.map((variable) => [variable.id, variable]));
     const items = view.section === 'variables' ? variables : dimensions;
@@ -136,76 +141,103 @@ function VariablePanel() {
         });
 
     return (
-        <section ref={panel} className={styles.variables} aria-label="Variables">
+        <section
+            ref={panel}
+            className={`${styles.variables} ${styles.workspacePanel}`}
+            aria-label="Variables"
+        >
             <div className={styles.panelToolbar}>
-                <div className={styles.toolbar} role="group" aria-label="Variable editor sections">
+                <div
+                    ref={tabs}
+                    className={styles.toolbar}
+                    role="tablist"
+                    aria-label="Variable editor sections"
+                >
                     {(['variables', 'dimensions'] as const).map((section) => (
                         <button
                             key={section}
                             type="button"
-                            aria-pressed={view.section === section}
+                            role="tab"
+                            id={`${tabsId}-${section}`}
+                            aria-selected={view.section === section}
+                            aria-controls={`${tabsId}-workspace`}
+                            tabIndex={tabFocus === section ? 0 : -1}
+                            onKeyDown={(event) => {
+                                const buttons = Array.from(
+                                    tabs.current?.querySelectorAll<HTMLButtonElement>(
+                                        '[role="tab"]'
+                                    ) ?? []
+                                );
+                                const current = buttons.indexOf(event.target as HTMLButtonElement);
+                                const destinations: Record<string, number> = {
+                                    ArrowRight: (current + 1) % 2,
+                                    ArrowLeft: (current + 1) % 2,
+                                    Home: 0,
+                                    End: 1
+                                };
+                                const next = destinations[event.key];
+                                if (next === undefined) {
+                                    return;
+                                }
+                                event.preventDefault();
+                                event.stopPropagation();
+                                buttons[next]?.focus();
+                            }}
+                            onFocus={() => setTabFocus(section)}
                             onClick={() => navigate({ section })}
                         >
                             {section === 'variables' ? 'Variables' : 'Dimensions'}
                         </button>
                     ))}
                 </div>
-                <button
-                    type="button"
-                    aria-label={`New ${title}`}
-                    data-variable-new
-                    onClick={create}
-                    disabled={document.locked}
-                >
-                    <Icon icon={{ component: Plus, size: 16 }} />
-                    New
-                </button>
-                <button
-                    type="button"
-                    className={styles.iconButton}
-                    aria-label="Panel options"
-                    title="Panel options: preview and import / export"
-                    aria-expanded={optionsOpen}
-                    aria-controls={optionsId}
-                    onClick={() => setOptionsOpen(!optionsOpen)}
-                >
-                    <Icon icon={{ component: Settings2, size: 16 }} />
-                </button>
             </div>
             <div className={styles.commandBar}>
-                <div className={styles.compactPicker}>
-                    <select
-                        data-variable-picker
-                        aria-label={`Selected ${title}`}
-                        value={view.creating ? '' : (selected?.id ?? '')}
-                        onChange={(event) =>
-                            navigate({
-                                section: view.section,
-                                id: event.target.value,
-                                returnId: view.returnId
-                            })
-                        }
+                <button type="button" data-variable-new onClick={create} disabled={document.locked}>
+                    <Icon icon={{ component: Plus, size: 16 }} />
+                    New {title}
+                </button>
+                <div className={styles.utilities}>
+                    <ModePreview />
+                    <button
+                        type="button"
+                        onClick={() => setPackageMode('import')}
+                        disabled={document.locked}
                     >
-                        {(view.creating || !selected) && (
-                            <option value="">
-                                {view.creating ? `New ${title}` : `No ${view.section} yet`}
-                            </option>
-                        )}
-                        {items.map((item) => (
-                            <option key={item.id} value={item.id}>
-                                {item.name}
-                            </option>
-                        ))}
-                    </select>
+                        Import
+                    </button>
+                    <button type="button" onClick={() => setPackageMode('export')}>
+                        Export
+                    </button>
                 </div>
             </div>
-            <div id={optionsId} className={styles.options} hidden={!optionsOpen}>
-                <ModePreview />
-                {variables.some((item) => item.type === 'number') && dimensions.length > 0 && (
-                    <p className={styles.resolution}>{NUMBER_MODE_SUPPORT}</p>
-                )}
-                <Packages />
+            <div className={styles.compactPicker}>
+                <select
+                    data-variable-picker
+                    aria-label={`Selected ${title}`}
+                    value={view.creating ? '' : (selected?.id ?? '')}
+                    onChange={(event) =>
+                        navigate({
+                            section: view.section,
+                            id: event.target.value,
+                            returnId: view.returnId
+                        })
+                    }
+                >
+                    {(view.creating || !selected) && (
+                        <option value="">
+                            {view.creating ? `New ${title}` : `No ${view.section} yet`}
+                        </option>
+                    )}
+                    {items.map((item) => (
+                        <option key={item.id} value={item.id}>
+                            {item.name}
+                        </option>
+                    ))}
+                </select>
             </div>
+            {packageMode && (
+                <Packages mode={packageMode} onClose={() => setPackageMode(undefined)} />
+            )}
             {discarded && (
                 <div className={styles.notice} role="status">
                     <p>
@@ -220,19 +252,33 @@ function VariablePanel() {
                 </div>
             )}
             {pending && (
-                <div className={styles.notice} role="alert">
-                    <p>You have unfinished changes.</p>
-                    <div className={styles.actions}>
-                        <button type="button" onClick={() => setPending(undefined)}>
-                            Keep editing
-                        </button>
-                        <button type="button" onClick={() => show(pending)}>
-                            Discard changes
-                        </button>
-                    </div>
-                </div>
+                <Dialog
+                    visible
+                    title="Discard unfinished changes?"
+                    description="You have unfinished changes. Keep editing or discard them to continue."
+                    onClose={() => setPending(undefined)}
+                    actions={
+                        <>
+                            <button type="button" onClick={() => setPending(undefined)}>
+                                Keep editing
+                            </button>
+                            <button
+                                type="button"
+                                data-variant="destructive"
+                                onClick={() => show(pending)}
+                            >
+                                Discard changes
+                            </button>
+                        </>
+                    }
+                />
             )}
-            <div className={styles.workspace}>
+            <div
+                className={styles.workspace}
+                role="tabpanel"
+                id={`${tabsId}-workspace`}
+                aria-labelledby={`${tabsId}-${view.section}`}
+            >
                 <aside
                     className={styles.sidebar}
                     aria-label={`${view.section === 'variables' ? 'Variable' : 'Dimension'} list`}
