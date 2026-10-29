@@ -41,7 +41,9 @@ export async function createVariable(page: Page, name: string, type = 'Color') {
 
 export async function deleteVariable(page: Page, name: string) {
     const panel = variablesPanel(page);
-    const remove = panel.getByRole('button', { name: `Delete ${name}`, exact: true });
+    const remove = panel
+        .getByRole('group', { name: `Actions for ${name} menu`, exact: true })
+        .getByRole('button', { name: 'Delete variable', exact: true });
     if (!(await remove.isVisible())) {
         await panel.getByLabel(`Actions for ${name}`, { exact: true }).click();
     }
@@ -50,9 +52,18 @@ export async function deleteVariable(page: Page, name: string) {
 
 export async function openModePreview(page: Page) {
     await closePanelPicker(page);
+    await openPanelOptions(page);
     const summary = variablesPanel(page).getByText('Canvas preview', { exact: true });
     await expect(summary).toBeVisible();
     if (!(await summary.evaluate((element) => element.closest('details')?.open))) {
         await summary.click();
+    }
+}
+
+export async function openPanelOptions(page: Page) {
+    await closePanelPicker(page);
+    const button = variablesPanel(page).getByRole('button', { name: 'Panel options', exact: true });
+    if ((await button.getAttribute('aria-expanded')) !== 'true') {
+        await button.click();
     }
 }

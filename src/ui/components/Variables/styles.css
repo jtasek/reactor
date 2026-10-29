@@ -73,11 +73,23 @@
     padding: 8px 0;
 }
 
-.toolbar {
+.panelToolbar {
+    align-items: center;
     border-bottom: 1px solid var(--hairline-color);
     display: flex;
-    gap: 4px;
+    gap: 6px;
     padding: var(--panel-gap);
+}
+
+.toolbar {
+    display: flex;
+    flex: 1;
+    gap: 2px;
+    min-width: 0;
+}
+
+.variables .toolbar button {
+    padding-inline: 6px;
 }
 
 .toolbar button {
@@ -101,7 +113,7 @@
     display: none;
 }
 
-.compactPicker {
+.commandBar {
     align-items: center;
     border-bottom: 1px solid var(--hairline-color);
     display: flex;
@@ -109,9 +121,14 @@
     padding: var(--panel-gap);
 }
 
-.compactPicker select {
+.compactPicker {
     flex: 1;
-    width: 0;
+    min-width: 0;
+}
+
+.options {
+    border-bottom: 1px solid var(--hairline-color);
+    padding: 8px 16px;
 }
 
 .detail {
@@ -143,14 +160,17 @@
 }
 
 .rowHeader {
-    align-items: start;
+    align-items: end;
     display: flex;
     gap: var(--panel-gap);
     min-width: 0;
 }
 
-.rowHeader > input {
+.rowHeader > .formField {
     flex: 1;
+}
+
+.rowHeader input {
     font-weight: 600;
 }
 
@@ -238,8 +258,7 @@
     padding-top: 12px;
 }
 
-.actions,
-.confirm {
+.actions {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -253,18 +272,32 @@
     font-weight: 600;
 }
 
-.variables .quiet,
-.variables .back {
-    background-color: transparent;
-    border-color: transparent;
-    color: var(--selection-color);
-    justify-content: flex-start;
-}
-
 .variables .back {
     margin-bottom: 12px;
+    max-width: 100%;
     overflow-wrap: anywhere;
     text-align: left;
+}
+
+.sectionHeading {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.formActions {
+    background-color: var(--panel-content-background);
+    border-top: 1px solid var(--hairline-color);
+    bottom: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+    padding: 12px 0;
+    position: sticky;
+    z-index: 1;
 }
 
 .notice {
@@ -314,40 +347,53 @@
     min-height: var(--field-height);
 }
 
-.itemMenu {
+.variables .iconButton {
     flex: none;
-    font-size: 0.75rem;
+    padding: 0;
+    width: var(--field-height);
 }
 
-.itemMenu summary {
-    border-radius: var(--radius-sm);
-    list-style: none;
-    min-height: var(--field-height);
+.actionMenu {
+    background-color: var(--panel-content-background);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--box-shadow);
+    color: var(--text-color);
+    inset: auto;
+    margin: 0;
+    max-height: calc(100vh - 16px);
+    max-width: calc(100vw - 16px);
+    overflow: auto;
     padding: 6px;
+    position: fixed;
+    width: 224px;
 }
 
-.itemMenu[open] {
-    flex: 1 0 100%;
-}
-
-.rowHeader:has(.itemMenu[open]) {
-    flex-wrap: wrap;
-}
-
-.itemMenu > div {
+.actionMenu:popover-open {
     display: grid;
     gap: 4px;
 }
 
-.itemMenu button {
+.variables .actionMenu button {
+    background-color: transparent;
+    border-color: transparent;
     justify-content: flex-start;
     text-align: left;
     width: 100%;
 }
 
-.footer {
-    border-top: 1px solid var(--hairline-color);
-    padding: var(--panel-gap) 12px;
+.variables button:hover:not(:disabled) {
+    background-color: var(--menu-hover);
+}
+
+.variables button:active:not(:disabled) {
+    background-color: var(--menu-pressed);
+}
+
+.variables .primary:hover:not(:disabled),
+.variables .primary:active:not(:disabled) {
+    background-color: var(--selection-color);
+    opacity: 0.85;
 }
 
 .secondary,
@@ -377,6 +423,17 @@
     width: 16px;
 }
 
+@container (max-width: 320px) {
+    .panelToolbar {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .toolbar {
+        flex-basis: 100%;
+    }
+}
+
 @container (min-width: 560px) {
     .workspace {
         grid-template-columns: 190px minmax(0, 1fr);
@@ -391,7 +448,7 @@
         padding: 16px 10px;
     }
 
-    .compactPicker {
+    .commandBar {
         display: none;
     }
 
@@ -424,10 +481,6 @@
     .variables .item[aria-pressed='true'] {
         background-color: var(--tag-blue-background);
         color: var(--selection-color);
-    }
-
-    .newItem {
-        margin-top: auto;
     }
 
     .detail {

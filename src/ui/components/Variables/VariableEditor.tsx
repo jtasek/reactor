@@ -1,7 +1,6 @@
 import { ordered } from 'src/app/variableModes';
 import React, { FC, useState } from 'react';
-import { Ellipsis } from 'lucide-react';
-import { Icon } from '../Icon';
+import { ActionsMenu } from './ActionsMenu';
 import type { Variable } from 'src/app/types';
 import { useActions, useVariableContext, useCurrentDocument } from 'src/app/hooks';
 import { templateWithNames, variableDependencies } from 'src/app/variables';
@@ -17,7 +16,8 @@ export const VariableEditor: FC<{
     variables: Record<string, Variable>;
     uses: number;
     onManageDimension: (id?: string) => void;
-}> = ({ variable, variables, uses, onManageDimension }) => {
+    onDeleted: () => void;
+}> = ({ variable, variables, uses, onManageDimension, onDeleted }) => {
     const {
         deleteVariable,
         renameVariable,
@@ -36,6 +36,10 @@ export const VariableEditor: FC<{
     const [confirming, setConfirming] = useState(false);
     const [pendingDimension, setPendingDimension] = useState<string>();
     const problems = variableProblems(variable, variables);
+    const remove = () => {
+        deleteVariable(variable.id);
+        onDeleted();
+    };
     const focusMode = (modeId: string) =>
         requestAnimationFrame(() => {
             globalThis.document.getElementById(`${variable.id}-${modeId}`)?.focus();
@@ -55,47 +59,43 @@ export const VariableEditor: FC<{
     return (
         <fieldset disabled={document.locked} className={styles.row}>
             <div className={styles.rowHeader}>
-                <DraftField
-                    label={`Name of ${variable.name}`}
-                    value={variable.name}
-                    onCommit={(name) =>
-                        renameVariable({ variableId: variable.id, name: name.trim() })
-                    }
-                />
-                <details className={styles.itemMenu}>
-                    <summary aria-label={`Actions for ${variable.name}`}>
-                        <Icon icon={{ component: Ellipsis, size: 16 }} />
-                    </summary>
-                    {confirming ? (
-                        <span
-                            className={styles.confirm}
-                            role="group"
-                            aria-label={`Delete ${variable.name}?`}
-                        >
-                            <button
-                                type="button"
-                                aria-label={`Confirm deleting ${variable.name}`}
-                                onClick={() => deleteVariable(variable.id)}
-                            >
-                                Delete
-                            </button>
-                            <button type="button" onClick={() => setConfirming(false)}>
-                                Keep
-                            </button>
-                        </span>
-                    ) : (
+                <label className={styles.formField} htmlFor={`variable-name-${variable.id}`}>
+                    Name
+                    <DraftField
+                        id={`variable-name-${variable.id}`}
+                        label={`Name of ${variable.name}`}
+                        value={variable.name}
+                        onCommit={(name) =>
+                            renameVariable({ variableId: variable.id, name: name.trim() })
+                        }
+                    />
+                </label>
+                <ActionsMenu label={`Actions for ${variable.name}`}>
+                    <button
+                        type="button"
+                        onClick={() => (uses > 0 ? setConfirming(true) : remove())}
+                    >
+                        Delete variable
+                    </button>
+                </ActionsMenu>
+            </div>
+            {confirming && (
+                <div className={styles.notice} role="group" aria-label={`Delete ${variable.name}?`}>
+                    <p>Delete {variable.name}? Existing uses keep their current values.</p>
+                    <div className={styles.actions}>
+                        <button type="button" onClick={() => setConfirming(false)}>
+                            Keep
+                        </button>
                         <button
                             type="button"
-                            aria-label={`Delete ${variable.name}`}
-                            onClick={() =>
-                                uses > 0 ? setConfirming(true) : deleteVariable(variable.id)
-                            }
+                            aria-label={`Confirm deleting ${variable.name}`}
+                            onClick={remove}
                         >
-                            Delete {variable.name}
+                            Delete
                         </button>
-                    )}
-                </details>
-            </div>
+                    </div>
+                </div>
+            )}
             <div className={styles.metadata}>
                 <span>{TYPES.find((item) => item.type === variable.type)?.label}</span>
                 <span>
@@ -123,36 +123,44 @@ export const VariableEditor: FC<{
                         <summary>
                             {dimension ? 'Mode values' : 'Add mode values · Optional'}
                         </summary>
-                        <label className={styles.field}>
+                        <div className={styles.formField}>
                             <span className={styles.fieldLabel}>Vary by</span>
-                            <select
-                                className={styles.source}
-                                aria-label={`Dimension of ${variable.name}`}
-                                value={variable.dimensionId ?? ''}
-                                onChange={(event) => {
-                                    if (
-                                        Object.keys(variable.values).some(
-                                            (key) => key !== 'default'
-                                        )
-                                    ) {
-                                        setPendingDimension(event.target.value);
+                            <div className={styles.valueInput}>
+                                <select
+                                    className={styles.source}
+                                    aria-label={`Dimension of ${variable.name}`}
+                                    value={variable.dimensionId ?? ''}
+                                    onChange={(event) => {
+                                        if (
+                                            Object.keys(variable.values).some(
+                                                (key) => key !== 'default'
+                                            )
+                                        ) {
+                                            setPendingDimension(event.target.value);
 
-                                        return;
-                                    }
-                                    setVariableDimension({
-                                        variableId: variable.id,
-                                        dimensionId: event.target.value || null
-                                    });
-                                }}
-                            >
-                                <option value="">None — base value only</option>
-                                {ordered(document.dimensions).map((d) => (
-                                    <option key={d.id} value={d.id}>
-                                        {d.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
+                                            return;
+                                        }
+                                        setVariableDimension({
+                                            variableId: variable.id,
+                                            dimensionId: event.target.value || null
+                                        });
+                                    }}
+                                >
+                                    <option value="">None — base value only</option>
+                                    {ordered(document.dimensions).map((d) => (
+                                        <option key={d.id} value={d.id}>
+                                            {d.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    type="button"
+                                    onClick={() => onManageDimension(dimension?.id)}
+                                >
+                                    {dimension ? 'Manage modes' : 'New dimension…'}
+                                </button>
+                            </div>
+                        </div>
                         {pendingDimension !== undefined && (
                             <div className={styles.notice} role="alert">
                                 <p>
@@ -181,13 +189,6 @@ export const VariableEditor: FC<{
                                 </div>
                             </div>
                         )}
-                        <button
-                            type="button"
-                            className={styles.quiet}
-                            onClick={() => onManageDimension(dimension?.id)}
-                        >
-                            {dimension ? 'Manage modes' : 'New dimension…'}
-                        </button>
                         {dimension &&
                             ordered(dimension.modes)
                                 .filter((mode) => mode.id !== dimension.defaultModeId)

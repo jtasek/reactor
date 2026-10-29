@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Plus, Hash, Type, ToggleLeft, Layers, ChevronLeft } from 'lucide-react';
+import React, { useEffect, useId, useRef, useState } from 'react';
+import { Plus, Hash, Type, ToggleLeft, Layers, ChevronLeft, Settings2 } from 'lucide-react';
 import { useCurrentDocument } from 'src/app/hooks';
 import { useVariables, useVariableUses } from 'src/app/variableHooks';
 import { ordered } from 'src/app/variableModes';
@@ -29,6 +29,9 @@ function VariablePanel() {
     const [pending, setPending] = useState<View>();
     const [discarded, setDiscarded] = useState(false);
     const [revision, setRevision] = useState(0);
+    const [optionsOpen, setOptionsOpen] = useState(false);
+    const optionsId = useId();
+    const panel = useRef<HTMLElement>(null);
     const byId = Object.fromEntries(variables.map((variable) => [variable.id, variable]));
     const items = view.section === 'variables' ? variables : dimensions;
     const selected = items.find((item) => item.id === view.id) ?? items[0];
@@ -83,20 +86,93 @@ function VariablePanel() {
         show({ section: view.section, returnId: view.returnId });
     };
     const returnId = view.section === 'dimensions' ? view.returnId : undefined;
+    // A deletion removes the focused control, so keep the keyboard in the panel.
+    const keepFocus = () =>
+        requestAnimationFrame(() => {
+            const focused = globalThis.document.activeElement;
+            if (!panel.current || (focused && focused !== globalThis.document.body)) {
+                return;
+            }
+            const candidates = [
+                panel.current.querySelector<HTMLElement>('[data-variable-picker]'),
+                panel.current.querySelector<HTMLElement>('aside button[aria-pressed="true"]'),
+                panel.current.querySelector<HTMLElement>('[data-variable-new]')
+            ];
+            candidates
+                .find((element) => element?.checkVisibility() && !element.matches(':disabled'))
+                ?.focus();
+        });
 
     return (
-        <section className={styles.variables} aria-label="Variables">
-            <div className={styles.toolbar} role="group" aria-label="Variable editor sections">
-                {(['variables', 'dimensions'] as const).map((section) => (
-                    <button
-                        key={section}
-                        type="button"
-                        aria-pressed={view.section === section}
-                        onClick={() => navigate({ section })}
+        <section ref={panel} className={styles.variables} aria-label="Variables">
+            <div className={styles.panelToolbar}>
+                <div className={styles.toolbar} role="group" aria-label="Variable editor sections">
+                    {(['variables', 'dimensions'] as const).map((section) => (
+                        <button
+                            key={section}
+                            type="button"
+                            aria-pressed={view.section === section}
+                            onClick={() => navigate({ section })}
+                        >
+                            {section === 'variables' ? 'Variables' : 'Dimensions'}
+                        </button>
+                    ))}
+                </div>
+                <button
+                    type="button"
+                    aria-label={`New ${title}`}
+                    data-variable-new
+                    onClick={create}
+                    disabled={document.locked}
+                >
+                    <Icon icon={{ component: Plus, size: 16 }} />
+                    New
+                </button>
+                <button
+                    type="button"
+                    className={styles.iconButton}
+                    aria-label="Panel options"
+                    title="Panel options: preview and import / export"
+                    aria-expanded={optionsOpen}
+                    aria-controls={optionsId}
+                    onClick={() => setOptionsOpen(!optionsOpen)}
+                >
+                    <Icon icon={{ component: Settings2, size: 16 }} />
+                </button>
+            </div>
+            <div className={styles.commandBar}>
+                <div className={styles.compactPicker}>
+                    <select
+                        data-variable-picker
+                        aria-label={`Selected ${title}`}
+                        value={view.creating ? '' : (selected?.id ?? '')}
+                        onChange={(event) =>
+                            navigate({
+                                section: view.section,
+                                id: event.target.value,
+                                returnId: view.returnId
+                            })
+                        }
                     >
-                        {section === 'variables' ? 'Variables' : 'Dimensions'}
-                    </button>
-                ))}
+                        {(view.creating || !selected) && (
+                            <option value="">
+                                {view.creating ? `New ${title}` : `No ${view.section} yet`}
+                            </option>
+                        )}
+                        {items.map((item) => (
+                            <option key={item.id} value={item.id}>
+                                {item.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+            <div id={optionsId} className={styles.options} hidden={!optionsOpen}>
+                <ModePreview />
+                {variables.some((item) => item.type === 'number') && dimensions.length > 0 && (
+                    <p className={styles.resolution}>{NUMBER_MODE_SUPPORT}</p>
+                )}
+                <Packages />
             </div>
             {discarded && (
                 <div className={styles.notice} role="status">
@@ -189,49 +265,7 @@ function VariablePanel() {
                             );
                         })}
                     </ul>
-                    <button
-                        type="button"
-                        className={styles.newItem}
-                        onClick={create}
-                        disabled={document.locked}
-                    >
-                        <Icon icon={{ component: Plus, size: 16 }} />
-                        New {title}
-                    </button>
                 </aside>
-                <div className={styles.compactPicker}>
-                    <select
-                        aria-label={`Selected ${title}`}
-                        value={view.creating ? '' : (selected?.id ?? '')}
-                        onChange={(event) =>
-                            navigate({
-                                section: view.section,
-                                id: event.target.value,
-                                returnId: view.returnId
-                            })
-                        }
-                    >
-                        {(view.creating || !selected) && (
-                            <option value="">
-                                {view.creating ? `New ${title}` : `No ${view.section} yet`}
-                            </option>
-                        )}
-                        {items.map((item) => (
-                            <option key={item.id} value={item.id}>
-                                {item.name}
-                            </option>
-                        ))}
-                    </select>
-                    <button
-                        type="button"
-                        aria-label={`New ${title}`}
-                        onClick={create}
-                        disabled={document.locked}
-                    >
-                        <Icon icon={{ component: Plus, size: 16 }} />
-                        New
-                    </button>
-                </div>
                 <div className={styles.detail}>
                     {view.section === 'dimensions' && returnId && byId[returnId] && (
                         <button
@@ -260,6 +294,7 @@ function VariablePanel() {
                             onSaved={(id) =>
                                 show({ section: 'dimensions', id, returnId: view.returnId })
                             }
+                            onDeleted={keepFocus}
                         />
                     )}
                     {!view.creating && variable && (
@@ -269,6 +304,7 @@ function VariablePanel() {
                             variables={byId}
                             uses={uses[variable.id] ?? 0}
                             onManageDimension={editDimension}
+                            onDeleted={keepFocus}
                         />
                     )}
                     {!view.creating && !selected && (
@@ -279,19 +315,9 @@ function VariablePanel() {
                                     ? 'Create a named value to reuse across your designs. Modes are optional.'
                                     : 'Add a dimension when you need different values for Theme, Brand or Density.'}
                             </p>
-                            <button type="button" onClick={create} disabled={document.locked}>
-                                Create {title}
-                            </button>
                         </div>
                     )}
                 </div>
-            </div>
-            <div className={styles.footer}>
-                <ModePreview />
-                {variables.some((item) => item.type === 'number') && dimensions.length > 0 && (
-                    <p className={styles.resolution}>{NUMBER_MODE_SUPPORT}</p>
-                )}
-                <Packages />
             </div>
         </section>
     );

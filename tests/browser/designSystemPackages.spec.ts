@@ -1,4 +1,4 @@
-import { createVariable, selectVariable } from './support/variables';
+import { createVariable, selectVariable, openPanelOptions } from './support/variables';
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { createDocument } from 'src/app/factories';
@@ -28,6 +28,7 @@ test('reviews imports, offers reuse/replace/separate, exports identities and rej
 }) => {
     await openEditor(page, ['Variables']);
     await createVariable(page, 'Ink', 'Color');
+    await openPanelOptions(page);
     await page.getByText('Design-system import / export', { exact: true }).click();
     const upload = async (text: string) =>
         page.getByLabel('Design-system package', { exact: true }).setInputFiles({
@@ -56,6 +57,7 @@ test('reviews imports, offers reuse/replace/separate, exports identities and rej
     await openEditor(page, ['Variables']);
     await selectVariable(page, 'Ink');
     await expect(page.getByLabel('Value of Ink', { exact: true })).toHaveValue('#112233');
+    await openPanelOptions(page);
     await page.getByText('Design-system import / export', { exact: true }).click();
     await upload(packageText('#aabbcc', 'Brand/Ink'));
     await expect(page.getByLabel('Import preview')).toContainText(
@@ -91,6 +93,7 @@ test('reviews imports, offers reuse/replace/separate, exports identities and rej
 test('shows a usable import preview at narrow widths', async ({ page }) => {
     await openEditor(page, ['Variables']);
     await page.setViewportSize({ width: 700, height: 800 });
+    await openPanelOptions(page);
     await page.getByText('Design-system import / export', { exact: true }).click();
     await page.getByLabel('Design-system package', { exact: true }).setInputFiles({
         name: 'brand.json',

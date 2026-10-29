@@ -451,9 +451,11 @@ The Variables panel creates named colors, numbers, text and booleans. Inspector 
 follow a variable, and text can include `${Name}` templates. Renaming a variable preserves
 its references; deleting one leaves the shapes' values in place.
 
-Choose **New variable** to enter its name, type and base value. The panel shows a list and
+Choose **New** in Variables to enter a name, type and base value. The panel shows a list and
 one editor, or an item picker when narrow. The **Dimensions** tab manages optional dimensions
-and modes. Creation and dimension forms protect unfinished changes; dimension edits are
+and modes. **New** stays in the top command bar at every panel width; each variable,
+dimension and mode has the same **…** action menu. Creation and dimension forms protect
+unfinished changes; dimension edits are
 applied with **Save changes**. If that dimension changes in another tab, reload it before
 saving. Value edits still apply on Enter or blur (Escape cancels a draft).
 
@@ -483,8 +485,9 @@ and choose its default. Open **Add mode values** on a color, number or text vari
 choose **Vary by**; missing mode overrides use its base value. **Override** creates a mode
 value and **Use base** removes it. Changing a dimension with existing overrides asks first.
 **Manage modes** opens that dimension and offers a direct return to the variable. Mode and
-dimension action menus retain reordering and confirmed deletion. **Canvas preview** and
-**Design-system import / export** remain available below the editor.
+dimension action menus retain reordering and confirmed deletion without moving the fields.
+**Save changes** and **Cancel** share the bottom action row. **Canvas preview** and
+**Design-system import / export** are available from **Panel options** in the top command bar.
 
 Each document remembers your selected mode per dimension locally. Aliases follow their
 source's dimension; shapes, components and thumbnails use the same context. Renaming a mode

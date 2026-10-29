@@ -148,7 +148,7 @@ export function CreateVariable({
                         {problem}
                     </p>
                 )}
-                <div className={styles.actions}>
+                <div className={styles.formActions}>
                     <button type="button" onClick={onCancel}>
                         Cancel
                     </button>
