@@ -28,16 +28,26 @@ export function ActionsMenu({ label, children }: { label: string; children: Reac
         const dismissOnResize = () => {
             menu.current?.hidePopover();
         };
+        // The menu is placed once, so it would drift away from its row as the panel scrolls.
+        const dismissOnScroll = (event: Event) => {
+            if (!(event.target instanceof Node && menu.current?.contains(event.target))) {
+                menu.current?.hidePopover();
+            }
+        };
         window.addEventListener('resize', dismissOnResize);
+        window.addEventListener('scroll', dismissOnScroll, true);
 
-        return () => window.removeEventListener('resize', dismissOnResize);
+        return () => {
+            window.removeEventListener('resize', dismissOnResize);
+            window.removeEventListener('scroll', dismissOnScroll, true);
+        };
     }, [open]);
     const close = () => {
         menu.current?.hidePopover();
         trigger.current?.focus();
     };
     const dismiss = (event: React.KeyboardEvent<HTMLButtonElement>) => {
-        if (event.key !== 'Escape') {
+        if (event.key !== 'Escape' || !menu.current?.matches(':popover-open')) {
             return;
         }
         event.preventDefault();

@@ -54,12 +54,14 @@ export function DimensionEditor({
     dimension,
     onSaved,
     onCancel,
-    onDirty
+    onDirty,
+    onDeleted
 }: {
     dimension?: VariableDimension;
     onSaved: (id: string) => void;
     onCancel: () => void;
     onDirty: (dirty: boolean) => void;
+    onDeleted: () => void;
 }) {
     const document = useCurrentDocument();
     const { newId } = useEffects();
@@ -164,12 +166,14 @@ export function DimensionEditor({
             deleteDimension(dimension.id);
             onDirty(false);
             onCancel();
+            onDeleted();
 
             return;
         }
         deleteDimensionMode({ dimensionId: dimension.id, modeId: deleting });
         onDirty(false);
         onSaved(dimension.id);
+        onDeleted();
     };
 
     return (
@@ -230,7 +234,6 @@ export function DimensionEditor({
                                     <button
                                         key={direction}
                                         type="button"
-                                        aria-label={`Move dimension ${dimension.name} ${direction < 0 ? 'up' : 'down'}`}
                                         disabled={dirty || changedElsewhere || !other}
                                         onClick={() => {
                                             [dimensions[index], dimensions[index + direction]] = [
@@ -323,7 +326,6 @@ export function DimensionEditor({
                             <ActionsMenu label={`Actions for mode ${mode.name}`}>
                                 <button
                                     type="button"
-                                    aria-label={`Move ${mode.name} up`}
                                     disabled={index === 0}
                                     onClick={() => move(mode.id, -1)}
                                 >
@@ -331,7 +333,6 @@ export function DimensionEditor({
                                 </button>
                                 <button
                                     type="button"
-                                    aria-label={`Move ${mode.name} down`}
                                     disabled={index === modes.length - 1}
                                     onClick={() => move(mode.id, 1)}
                                 >

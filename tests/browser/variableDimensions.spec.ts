@@ -51,7 +51,10 @@ test('dimensions are opt-in and custom modes preserve colors, bounds and local s
     await panel.getByRole('button', { name: 'Save changes', exact: true }).click();
     await expect(page.getByLabel('Preview Appearance', { exact: true })).toHaveValue(selectedMode);
     await panel.getByLabel('Actions for mode Night', { exact: true }).click();
-    await panel.getByRole('button', { name: 'Move Night up', exact: true }).click();
+    await panel
+        .getByRole('group', { name: 'Actions for mode Night menu', exact: true })
+        .getByRole('button', { name: 'Move up', exact: true })
+        .click();
     await panel.getByRole('button', { name: 'Save changes', exact: true }).click();
     await panel.getByRole('button', { name: 'Back to Ink', exact: true }).click();
     await expect(page.getByLabel('Night value of Ink', { exact: true })).toHaveValue('#ddeeff');

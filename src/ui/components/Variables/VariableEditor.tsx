@@ -16,7 +16,8 @@ export const VariableEditor: FC<{
     variables: Record<string, Variable>;
     uses: number;
     onManageDimension: (id?: string) => void;
-}> = ({ variable, variables, uses, onManageDimension }) => {
+    onDeleted: () => void;
+}> = ({ variable, variables, uses, onManageDimension, onDeleted }) => {
     const {
         deleteVariable,
         renameVariable,
@@ -35,6 +36,10 @@ export const VariableEditor: FC<{
     const [confirming, setConfirming] = useState(false);
     const [pendingDimension, setPendingDimension] = useState<string>();
     const problems = variableProblems(variable, variables);
+    const remove = () => {
+        deleteVariable(variable.id);
+        onDeleted();
+    };
     const focusMode = (modeId: string) =>
         requestAnimationFrame(() => {
             globalThis.document.getElementById(`${variable.id}-${modeId}`)?.focus();
@@ -68,10 +73,7 @@ export const VariableEditor: FC<{
                 <ActionsMenu label={`Actions for ${variable.name}`}>
                     <button
                         type="button"
-                        aria-label={`Delete ${variable.name}`}
-                        onClick={() =>
-                            uses > 0 ? setConfirming(true) : deleteVariable(variable.id)
-                        }
+                        onClick={() => (uses > 0 ? setConfirming(true) : remove())}
                     >
                         Delete variable
                     </button>
@@ -87,7 +89,7 @@ export const VariableEditor: FC<{
                         <button
                             type="button"
                             aria-label={`Confirm deleting ${variable.name}`}
-                            onClick={() => deleteVariable(variable.id)}
+                            onClick={remove}
                         >
                             Delete
                         </button>

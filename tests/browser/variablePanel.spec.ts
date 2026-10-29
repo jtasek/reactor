@@ -308,7 +308,11 @@ test('keeps creation in one place and opens actions without shifting the fields'
     const before = await field.boundingBox();
     const trigger = panel.getByRole('button', { name: 'Actions for mode Dark', exact: true });
     await trigger.click();
-    await expect(panel.getByRole('button', { name: 'Move Dark up', exact: true })).toBeVisible();
+    await expect(
+        panel
+            .getByRole('group', { name: 'Actions for mode Dark menu', exact: true })
+            .getByRole('button', { name: 'Move up', exact: true })
+    ).toBeVisible();
     expect(await field.boundingBox()).toEqual(before);
     await page.screenshot({ path: 'test-results/variables-action-menu.png' });
     await page.keyboard.press('Escape');
@@ -365,4 +369,70 @@ test('dismisses an open menu when the viewport changes instead of leaving it off
         .getByRole('group', { name: 'Actions for brand/ink menu', exact: true })
         .boundingBox();
     expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
+});
+
+test('closes an open menu when the panel scrolls so it never sits beside another row', async ({
+    page
+}) => {
+    await page.setViewportSize({ width: 1280, height: 520 });
+    await themedDocument(page);
+    const panel = variablesPanel(page);
+    await panel.getByRole('button', { name: 'Manage modes', exact: true }).click();
+    for (let index = 0; index < 6; index++) {
+        await panel.getByRole('button', { name: 'Add mode', exact: true }).click();
+    }
+    const trigger = panel.getByRole('button', { name: 'Actions for mode Dark', exact: true });
+    await trigger.click();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await trigger.hover();
+    await page.mouse.wheel(0, 200);
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(
+        panel.getByRole('group', { name: 'Actions for mode Dark menu', exact: true })
+    ).toBeHidden();
+});
+
+test('keeps keyboard focus in the panel after deleting from an action menu', async ({ page }) => {
+    await openEditor(page, ['Variables']);
+    await createVariable(page, 'first');
+    await createVariable(page, 'second');
+    const panel = variablesPanel(page);
+    const trigger = panel.getByRole('button', { name: 'Actions for second', exact: true });
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    const remove = panel
+        .getByRole('group', { name: 'Actions for second menu', exact: true })
+        .getByRole('button', { name: 'Delete variable', exact: true });
+    await expect(remove).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(panel.getByLabel('Name of second')).toHaveCount(0);
+    await expect
+        .poll(() =>
+            page.evaluate(() =>
+                Boolean(document.activeElement?.closest('[aria-label="Variables"]'))
+            )
+        )
+        .toBe(true);
+});
+
+test('leaves Escape alone on a closed action menu button', async ({ page }) => {
+    await themedDocument(page);
+    const trigger = variablesPanel(page).getByRole('button', {
+        name: 'Actions for brand/ink',
+        exact: true
+    });
+    const reached = await trigger.evaluate((element) => {
+        let heard = false;
+        const listen = () => {
+            heard = true;
+        };
+        document.addEventListener('keydown', listen);
+        element.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
+        );
+        document.removeEventListener('keydown', listen);
+
+        return heard;
+    });
+    expect(reached).toBe(true);
 });

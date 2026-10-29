@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { Plus, Hash, Type, ToggleLeft, Layers, ChevronLeft, Settings2 } from 'lucide-react';
 import { useCurrentDocument } from 'src/app/hooks';
 import { useVariables, useVariableUses } from 'src/app/variableHooks';
@@ -30,6 +30,8 @@ function VariablePanel() {
     const [discarded, setDiscarded] = useState(false);
     const [revision, setRevision] = useState(0);
     const [optionsOpen, setOptionsOpen] = useState(false);
+    const optionsId = useId();
+    const panel = useRef<HTMLElement>(null);
     const byId = Object.fromEntries(variables.map((variable) => [variable.id, variable]));
     const items = view.section === 'variables' ? variables : dimensions;
     const selected = items.find((item) => item.id === view.id) ?? items[0];
@@ -84,9 +86,25 @@ function VariablePanel() {
         show({ section: view.section, returnId: view.returnId });
     };
     const returnId = view.section === 'dimensions' ? view.returnId : undefined;
+    // A deletion removes the focused control, so keep the keyboard in the panel.
+    const keepFocus = () =>
+        requestAnimationFrame(() => {
+            const focused = globalThis.document.activeElement;
+            if (!panel.current || (focused && focused !== globalThis.document.body)) {
+                return;
+            }
+            const candidates = [
+                panel.current.querySelector<HTMLElement>('[data-variable-picker]'),
+                panel.current.querySelector<HTMLElement>('aside button[aria-pressed="true"]'),
+                panel.current.querySelector<HTMLElement>('[data-variable-new]')
+            ];
+            candidates
+                .find((element) => element?.checkVisibility() && !element.matches(':disabled'))
+                ?.focus();
+        });
 
     return (
-        <section className={styles.variables} aria-label="Variables">
+        <section ref={panel} className={styles.variables} aria-label="Variables">
             <div className={styles.panelToolbar}>
                 <div className={styles.toolbar} role="group" aria-label="Variable editor sections">
                     {(['variables', 'dimensions'] as const).map((section) => (
@@ -103,6 +121,7 @@ function VariablePanel() {
                 <button
                     type="button"
                     aria-label={`New ${title}`}
+                    data-variable-new
                     onClick={create}
                     disabled={document.locked}
                 >
@@ -113,8 +132,9 @@ function VariablePanel() {
                     type="button"
                     className={styles.iconButton}
                     aria-label="Panel options"
-                    title="Preview and import / export"
+                    title="Panel options: preview and import / export"
                     aria-expanded={optionsOpen}
+                    aria-controls={optionsId}
                     onClick={() => setOptionsOpen(!optionsOpen)}
                 >
                     <Icon icon={{ component: Settings2, size: 16 }} />
@@ -123,6 +143,7 @@ function VariablePanel() {
             <div className={styles.commandBar}>
                 <div className={styles.compactPicker}>
                     <select
+                        data-variable-picker
                         aria-label={`Selected ${title}`}
                         value={view.creating ? '' : (selected?.id ?? '')}
                         onChange={(event) =>
@@ -146,7 +167,7 @@ function VariablePanel() {
                     </select>
                 </div>
             </div>
-            <div className={styles.options} hidden={!optionsOpen}>
+            <div id={optionsId} className={styles.options} hidden={!optionsOpen}>
                 <ModePreview />
                 {variables.some((item) => item.type === 'number') && dimensions.length > 0 && (
                     <p className={styles.resolution}>{NUMBER_MODE_SUPPORT}</p>
@@ -273,6 +294,7 @@ function VariablePanel() {
                             onSaved={(id) =>
                                 show({ section: 'dimensions', id, returnId: view.returnId })
                             }
+                            onDeleted={keepFocus}
                         />
                     )}
                     {!view.creating && variable && (
@@ -282,6 +304,7 @@ function VariablePanel() {
                             variables={byId}
                             uses={uses[variable.id] ?? 0}
                             onManageDimension={editDimension}
+                            onDeleted={keepFocus}
                         />
                     )}
                     {!view.creating && !selected && (
