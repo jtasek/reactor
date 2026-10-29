@@ -50,9 +50,18 @@ export async function deleteVariable(page: Page, name: string) {
 
 export async function openModePreview(page: Page) {
     await closePanelPicker(page);
+    await openPanelOptions(page);
     const summary = variablesPanel(page).getByText('Canvas preview', { exact: true });
     await expect(summary).toBeVisible();
     if (!(await summary.evaluate((element) => element.closest('details')?.open))) {
         await summary.click();
+    }
+}
+
+export async function openPanelOptions(page: Page) {
+    await closePanelPicker(page);
+    const button = variablesPanel(page).getByRole('button', { name: 'Panel options', exact: true });
+    if ((await button.getAttribute('aria-expanded')) !== 'true') {
+        await button.click();
     }
 }

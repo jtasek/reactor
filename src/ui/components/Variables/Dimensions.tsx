@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { json } from 'overmind';
-import { Ellipsis } from 'lucide-react';
-import { Icon } from '../Icon';
+import { ActionsMenu } from './ActionsMenu';
 import { useActions, useCurrentDocument, useEffects, useVariableContext } from 'src/app/hooks';
 import { ordered, readDimension } from 'src/app/variableModes';
 import type { VariableDimension } from 'src/app/types';
@@ -181,10 +180,7 @@ export function DimensionEditor({
             }}
         >
             <fieldset disabled={document.locked} className={styles.editorFields}>
-                <h3>{dimension?.name ?? 'New dimension'}</h3>
-                <p className={styles.resolution}>
-                    A dimension groups related modes, such as Theme: Light and Dark.
-                </p>
+                {!dimension && <h3>New dimension</h3>}
                 {changedElsewhere && (
                     <div className={styles.notice} role="alert">
                         This dimension changed elsewhere. Reload it before saving to keep those
@@ -200,21 +196,99 @@ export function DimensionEditor({
                         </button>
                     </div>
                 )}
-                <label className={styles.formField}>
-                    Dimension name
-                    <input
-                        ref={nameInput}
-                        aria-label={
-                            dimension ? `Name of dimension ${dimension.name}` : 'New dimension name'
-                        }
-                        value={draft.name}
-                        maxLength={200}
-                        required
-                        onChange={(event) => change({ ...draft, name: event.target.value })}
-                    />
-                </label>
+                <div className={styles.rowHeader}>
+                    <label className={styles.formField}>
+                        Name
+                        <input
+                            ref={nameInput}
+                            aria-label={
+                                dimension
+                                    ? `Name of dimension ${dimension.name}`
+                                    : 'New dimension name'
+                            }
+                            value={draft.name}
+                            maxLength={200}
+                            required
+                            onChange={(event) => change({ ...draft, name: event.target.value })}
+                        />
+                    </label>
+                    {dimension && (
+                        <ActionsMenu label="Dimension actions">
+                            {dirty && (
+                                <p className={styles.resolution}>
+                                    Save changes to reorder or delete.
+                                </p>
+                            )}
+                            {[-1, 1].map((direction) => {
+                                const dimensions = ordered(document.dimensions);
+                                const index = dimensions.findIndex(
+                                    (item) => item.id === dimension.id
+                                );
+                                const other = dimensions[index + direction];
+
+                                return (
+                                    <button
+                                        key={direction}
+                                        type="button"
+                                        aria-label={`Move dimension ${dimension.name} ${direction < 0 ? 'up' : 'down'}`}
+                                        disabled={dirty || changedElsewhere || !other}
+                                        onClick={() => {
+                                            [dimensions[index], dimensions[index + direction]] = [
+                                                other,
+                                                dimension
+                                            ];
+                                            dimensions.forEach((item, order) =>
+                                                updateDimension({ ...json(item), order })
+                                            );
+                                            onSaved(dimension.id);
+                                        }}
+                                    >
+                                        Move {direction < 0 ? 'up' : 'down'}
+                                    </button>
+                                );
+                            })}
+                            <button
+                                type="button"
+                                disabled={dirty || changedElsewhere}
+                                onClick={() => setDeleting(dimension.id)}
+                            >
+                                Delete dimension
+                            </button>
+                        </ActionsMenu>
+                    )}
+                </div>
+                {dimension ? (
+                    <div className={styles.metadata}>
+                        <span>Dimension</span>
+                        <span>
+                            {modes.length} {modes.length === 1 ? 'mode' : 'modes'}
+                        </span>
+                    </div>
+                ) : (
+                    <p className={styles.resolution}>
+                        A dimension groups modes, such as Theme: Light and Dark.
+                    </p>
+                )}
                 <div className={styles.section}>
-                    <h4>Modes</h4>
+                    <div className={styles.sectionHeading}>
+                        <h4>Modes</h4>
+                        <button
+                            type="button"
+                            disabled={modes.length >= MAX_MODES}
+                            onClick={() => {
+                                const id = newId();
+                                change({
+                                    ...draft,
+                                    modes: {
+                                        ...draft.modes,
+                                        [id]: { id, name: '', order: modes.length }
+                                    }
+                                });
+                            }}
+                        >
+                            Add mode
+                        </button>
+                    </div>
                     <p className={styles.resolution}>
                         The default mode uses each variable’s base value.
                     </p>
@@ -246,122 +320,48 @@ export function DimensionEditor({
                                 />{' '}
                                 Default
                             </label>
-                            <details className={styles.itemMenu}>
-                                <summary aria-label={`Actions for mode ${mode.name}`}>
-                                    <Icon icon={{ component: Ellipsis, size: 16 }} />
-                                </summary>
-                                <div>
+                            <ActionsMenu label={`Actions for mode ${mode.name}`}>
+                                <button
+                                    type="button"
+                                    aria-label={`Move ${mode.name} up`}
+                                    disabled={index === 0}
+                                    onClick={() => move(mode.id, -1)}
+                                >
+                                    Move up
+                                </button>
+                                <button
+                                    type="button"
+                                    aria-label={`Move ${mode.name} down`}
+                                    disabled={index === modes.length - 1}
+                                    onClick={() => move(mode.id, 1)}
+                                >
+                                    Move down
+                                </button>
+                                {dimension?.modes[mode.id] ? (
                                     <button
                                         type="button"
-                                        disabled={index === 0}
-                                        onClick={() => move(mode.id, -1)}
+                                        disabled={dirty || modes.length === 1 || changedElsewhere}
+                                        onClick={() => setDeleting(mode.id)}
                                     >
-                                        Move {mode.name} up
+                                        Delete mode {mode.name}
                                     </button>
+                                ) : (
                                     <button
                                         type="button"
-                                        disabled={index === modes.length - 1}
-                                        onClick={() => move(mode.id, 1)}
+                                        disabled={modes.length === 1}
+                                        onClick={() => removeUnsavedMode(mode.id)}
                                     >
-                                        Move {mode.name} down
+                                        Remove unsaved mode {mode.name}
                                     </button>
-                                    {dimension?.modes[mode.id] ? (
-                                        <button
-                                            type="button"
-                                            disabled={
-                                                dirty || modes.length === 1 || changedElsewhere
-                                            }
-                                            onClick={() => setDeleting(mode.id)}
-                                        >
-                                            Delete mode {mode.name}
-                                        </button>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            disabled={modes.length === 1}
-                                            onClick={() => removeUnsavedMode(mode.id)}
-                                        >
-                                            Remove unsaved mode {mode.name}
-                                        </button>
-                                    )}
-                                </div>
-                            </details>
+                                )}
+                            </ActionsMenu>
                         </div>
                     ))}
-                    <button
-                        type="button"
-                        className={styles.quiet}
-                        disabled={modes.length >= MAX_MODES}
-                        onClick={() => {
-                            const id = newId();
-                            change({
-                                ...draft,
-                                modes: {
-                                    ...draft.modes,
-                                    [id]: { id, name: '', order: modes.length }
-                                }
-                            });
-                        }}
-                    >
-                        Add mode
-                    </button>
                 </div>
                 {problem && (
                     <p className={styles.problem} role="alert">
                         {problem}
                     </p>
-                )}
-                <div className={styles.actions}>
-                    <button type="button" onClick={onCancel}>
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        className={styles.primary}
-                        disabled={changedElsewhere || Boolean(dimension && !dirty)}
-                    >
-                        {dimension ? 'Save changes' : 'Create dimension'}
-                    </button>
-                </div>
-                {dimension && (
-                    <details className={styles.secondary}>
-                        <summary>Dimension actions</summary>
-                        <p className={styles.resolution}>
-                            Save your edits before reordering or deleting definitions.
-                        </p>
-                        {[-1, 1].map((direction) => {
-                            const dimensions = ordered(document.dimensions);
-                            const index = dimensions.findIndex((item) => item.id === dimension.id);
-                            const other = dimensions[index + direction];
-
-                            return (
-                                <button
-                                    key={direction}
-                                    type="button"
-                                    disabled={dirty || changedElsewhere || !other}
-                                    onClick={() => {
-                                        [dimensions[index], dimensions[index + direction]] = [
-                                            other,
-                                            dimension
-                                        ];
-                                        dimensions.forEach((item, order) =>
-                                            updateDimension({ ...json(item), order })
-                                        );
-                                        onSaved(dimension.id);
-                                    }}
-                                >
-                                    Move dimension {dimension.name} {direction < 0 ? 'up' : 'down'}
-                                </button>
-                            );
-                        })}
-                        <button
-                            type="button"
-                            disabled={dirty || changedElsewhere}
-                            onClick={() => setDeleting(dimension.id)}
-                        >
-                            Delete dimension
-                        </button>
-                    </details>
                 )}
                 {deleting && (
                     <div role="group" aria-label="Confirm deletion" className={styles.notice}>
@@ -380,6 +380,18 @@ export function DimensionEditor({
                         </div>
                     </div>
                 )}
+                <div className={styles.formActions}>
+                    <button type="button" onClick={onCancel}>
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        className={styles.primary}
+                        disabled={changedElsewhere || Boolean(dimension && !dirty)}
+                    >
+                        {dimension ? 'Save changes' : 'Create dimension'}
+                    </button>
+                </div>
             </fieldset>
         </form>
     );

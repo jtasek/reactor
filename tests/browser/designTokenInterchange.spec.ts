@@ -1,4 +1,4 @@
-import { createVariable, selectVariable } from './support/variables';
+import { createVariable, selectVariable, openPanelOptions } from './support/variables';
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { openEditor } from './support/editor';
@@ -16,6 +16,7 @@ test('previews and imports DTCG tokens, retains aliases on reload, and exports i
     page
 }) => {
     await openEditor(page, ['Variables']);
+    await openPanelOptions(page);
     await page.getByText('Design-system import / export', { exact: true }).click();
     await page.getByLabel('Design-system format').selectOption('dtcg');
     await page.getByLabel('Design-system package', { exact: true }).setInputFiles({
@@ -47,6 +48,7 @@ test('previews and imports DTCG tokens, retains aliases on reload, and exports i
     await expect(page.getByLabel('Source of brand/foreground', { exact: true })).toContainText(
         'Follow brand/ink'
     );
+    await openPanelOptions(page);
     await page.getByText('Design-system import / export', { exact: true }).click();
     await page.getByLabel('Design-system format').selectOption('dtcg');
     const pending = page.waitForEvent('download');
@@ -71,6 +73,7 @@ test('rejects unsupported DTCG units and clears previews when switching formats'
 }) => {
     await openEditor(page, ['Variables']);
     await createVariable(page, 'Local', 'Color');
+    await openPanelOptions(page);
     await page.getByText('Design-system import / export', { exact: true }).click();
     await page.getByLabel('Design-system format').selectOption('dtcg');
     const upload = (data: unknown) =>
@@ -98,6 +101,7 @@ test('rejects unsupported DTCG units and clears previews when switching formats'
 test('refuses a partial DTCG export and leaves native export available', async ({ page }) => {
     await openEditor(page, ['Variables']);
     await createVariable(page, 'Label', 'Text');
+    await openPanelOptions(page);
     await page.getByText('Design-system import / export', { exact: true }).click();
     await page.getByLabel('Design-system format').selectOption('dtcg');
     await page.getByRole('button', { name: 'Export design system', exact: true }).click();

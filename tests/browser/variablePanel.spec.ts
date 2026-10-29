@@ -273,7 +273,7 @@ test('says when the dimension being edited is deleted in another tab and clears 
     await peer.getByRole('button', { name: 'More panels', exact: true }).click();
     const other = variablesPanel(peer);
     await other.getByRole('button', { name: 'Dimensions', exact: true }).click();
-    await other.getByText('Dimension actions', { exact: true }).click();
+    await other.getByRole('button', { name: 'Dimension actions', exact: true }).click();
     await other.getByRole('button', { name: 'Delete dimension', exact: true }).click();
     await other.getByRole('button', { name: 'Delete', exact: true }).click();
     await expect(panel.getByRole('heading', { name: 'No dimensions yet' })).toBeVisible();
@@ -295,4 +295,74 @@ test('offers the way back to a variable only after Manage modes', async ({ page 
     await panel.getByRole('button', { name: 'Dimensions', exact: true }).click();
     await expect(panel.getByLabel('Name of dimension Theme')).toBeVisible();
     await expect(back).toHaveCount(0);
+});
+
+test('keeps creation in one place and opens actions without shifting the fields', async ({
+    page
+}) => {
+    await themedDocument(page);
+    const panel = variablesPanel(page);
+    await expect(panel.getByRole('button', { name: 'New variable', exact: true })).toHaveCount(1);
+    await panel.getByRole('button', { name: 'Manage modes', exact: true }).click();
+    const field = panel.getByLabel('Name of mode Dark in Theme');
+    const before = await field.boundingBox();
+    const trigger = panel.getByRole('button', { name: 'Actions for mode Dark', exact: true });
+    await trigger.click();
+    await expect(panel.getByRole('button', { name: 'Move Dark up', exact: true })).toBeVisible();
+    expect(await field.boundingBox()).toEqual(before);
+    await page.screenshot({ path: 'test-results/variables-action-menu.png' });
+    await page.keyboard.press('Escape');
+    await expect(trigger).toBeFocused();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await trigger.click();
+    await panel.getByLabel('Name of dimension Theme').click();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await page.setViewportSize({ width: 390, height: 800 });
+    await expect(panel.getByRole('button', { name: 'New dimension', exact: true })).toHaveCount(1);
+    await trigger.click();
+    const menu = panel.getByRole('group', { name: 'Actions for mode Dark menu', exact: true });
+    await expect(menu).toBeVisible();
+    const bounds = await menu.boundingBox();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
+    await page.screenshot({ path: 'test-results/variables-action-menu-narrow.png' });
+});
+
+test('keeps all toolbar labels readable when docked at the standard panel width', async ({
+    page
+}) => {
+    await themedDocument(page);
+    const frame = page.locator('[data-panel="variables"]');
+    const header = frame.locator(':scope > button').first();
+    await header.focus();
+    await page.keyboard.press('Shift+ArrowRight');
+    await expect(page.locator('[data-dock="right"] [data-panel="variables"]')).toBeVisible();
+    const panel = variablesPanel(page);
+    for (const name of ['Variables', 'Dimensions', 'New variable', 'Panel options']) {
+        const button = panel.getByRole('button', { name, exact: true });
+        await expect(button).toBeVisible();
+        expect(await button.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+            true
+        );
+    }
+    await panel.getByRole('button', { name: 'New variable', exact: true }).click();
+    await expect(panel.getByLabel('New variable name')).toBeVisible();
+    await page.screenshot({ path: 'test-results/variables-docked.png' });
+});
+
+test('dismisses an open menu when the viewport changes instead of leaving it offscreen', async ({
+    page
+}) => {
+    await themedDocument(page);
+    const panel = variablesPanel(page);
+    const trigger = panel.getByRole('button', { name: 'Actions for brand/ink', exact: true });
+    await trigger.click();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await page.setViewportSize({ width: 390, height: 800 });
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await trigger.click();
+    const bounds = await panel
+        .getByRole('group', { name: 'Actions for brand/ink menu', exact: true })
+        .boundingBox();
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
 });
