@@ -763,7 +763,14 @@ Names are unique, trimmed and without `{`, `}` or `$` (`isVariableName`); one sh
 a merge means the variable with the lowest id (`variableNamed`). Copied shapes carry the
 variables they follow, and a paste uses one of the same name and type or adds it.
 The Variables panel (`src/ui/components/Variables`, off by default and loaded when shown)
-creates, renames, edits and deletes them, asking first when one is used. In the inspector
+creates, renames, edits and deletes them, asking first when one is used. Plain variables show
+one Value; dimension-bound variables show every named mode, including the default, as editable
+rows through the shared `ValueField`. Editing an inherited row creates an override; its action
+menu resets to the named default. Dimension assignment and aliases live in `VariableSettings`,
+separate from everyday values. Creating a dimension from an unbound variable returns to that
+variable and assigns it without changing its value. Changing an existing assignment asks before
+removing overrides. This is a UI over the existing values and actions, not a new storage model.
+In the inspector
 each field that can change has a variable picker beside its label, and a field every
 selected shape takes from one variable shows its name with a button that stops using it,
 so its value changes only in the panel. Their hooks are in `src/app/variableHooks.ts`,

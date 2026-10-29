@@ -16,12 +16,14 @@ declare namespace StylesCssNamespace {
         formActions: string;
         formField: string;
         iconButton: string;
-        inheritedValue: string;
         item: string;
         itemList: string;
         listHeading: string;
         metadata: string;
         modeEdit: string;
+        modeName: string;
+        modeValue: string;
+        modeValues: string;
         note: string;
         notice: string;
         options: string;
@@ -34,6 +36,7 @@ declare namespace StylesCssNamespace {
         secondary: string;
         section: string;
         sectionHeading: string;
+        settings: string;
         sidebar: string;
         source: string;
         swatch: string;

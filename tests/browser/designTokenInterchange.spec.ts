@@ -1,4 +1,9 @@
-import { createVariable, selectVariable, openPanelOptions } from './support/variables';
+import {
+    createVariable,
+    selectVariable,
+    openPanelOptions,
+    openVariableSettings
+} from './support/variables';
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { openEditor } from './support/editor';
@@ -32,10 +37,12 @@ test('previews and imports DTCG tokens, retains aliases on reload, and exports i
     await selectVariable(page, 'scale/zero');
     await expect(page.getByLabel('Value of scale/zero', { exact: true })).toHaveValue('0');
     await selectVariable(page, 'scale/reference');
+    await openVariableSettings(page, 'scale/reference');
     await expect(page.getByLabel('Source of scale/reference', { exact: true })).toContainText(
         'Follow scale/zero'
     );
     await selectVariable(page, 'brand/foreground');
+    await openVariableSettings(page, 'brand/foreground');
     await expect(page.getByLabel('Source of brand/foreground', { exact: true })).toContainText(
         'Follow brand/ink'
     );
@@ -45,6 +52,7 @@ test('previews and imports DTCG tokens, retains aliases on reload, and exports i
     await selectVariable(page, 'brand/ink');
     await expect(page.getByLabel('Value of brand/ink', { exact: true })).toHaveValue('#3366ff');
     await selectVariable(page, 'brand/foreground');
+    await openVariableSettings(page, 'brand/foreground');
     await expect(page.getByLabel('Source of brand/foreground', { exact: true })).toContainText(
         'Follow brand/ink'
     );

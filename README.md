@@ -455,7 +455,7 @@ The Variables panel creates named colors, numbers, text and booleans. Inspector 
 follow a variable, and text can include `${Name}` templates. Renaming a variable preserves
 its references; deleting one leaves the shapes' values in place.
 
-Choose **New** in Variables to enter a name, type and base value. The panel shows a list and
+Choose **New** in Variables to enter a name, type and value. The panel shows a list and
 one editor, or an item picker when narrow. The **Dimensions** tab manages optional dimensions
 and modes. **New** stays in the top command bar at every panel width; each variable,
 dimension and mode has the same **…** action menu. Creation and dimension forms protect
@@ -474,8 +474,9 @@ click and measurements preserve bindings. Cancel restores the gesture's bindings
 including concurrent edits; Undo restores the binding together with a completed edit.
 An AI operation can explicitly bind the property again in the same update.
 
-Choose a variable's **Source** to follow another of the same type by ID. Renaming the source
-keeps the alias; the panel shows its chain, resolved value and uses. Choose **Literal value**
+Open **Variable settings** in a variable's **…** menu and choose its **Value source** to follow
+another of the same type by ID. Renaming the source keeps the alias; the panel shows its chain,
+resolved value and uses. Choose **Own value**
 to detach while keeping the resolved value. Cycles, incompatible types and missing sources
 are rejected. Deleting a source locally converts its direct aliases to resolved literals.
 If a concurrent edit leaves a missing source, the alias uses its retained fallback; a cycle
@@ -483,11 +484,16 @@ introduced by concurrent edits is bounded and reported in the panel. Copy/paste 
 dependencies and retains the existing name-and-type matching policy.
 
 Dimensions and modes are **opt-in**. New documents have none, and each variable starts
-with a single **Base** value. Open the **Dimensions** tab in Variables to
+with a single **Value**. Open the **Dimensions** tab in Variables to
 create a dimension such as Appearance or Brand. Add, rename, reorder or delete its modes
-and choose its default. Open **Add mode values** on a color, number or text variable and
-choose **Vary by**; missing mode overrides use its base value. **Override** creates a mode
-value and **Use base** removes it. Changing a dimension with existing overrides asks first.
+and choose its default. Choose **Add different values…** on a color, number or text variable,
+then choose a dimension under **Values depend on**, or create one with **New dimension…**.
+The editor shows every mode as a named value row, marking the default. Edit any row directly;
+**Uses Light value**, for example, identifies an unchanged value inherited from Light.
+A value explicitly re-entered in a mode becomes independent even when it matches the default.
+A customized row's **…** menu offers **Reset to Light value** to restore that inheritance.
+Changing the dimension is a separate choice in **Variable settings** and asks before removing
+existing mode values. The default value is preserved.
 **Manage modes** opens that dimension and offers a direct return to the variable. Mode and
 dimension action menus retain reordering and confirmed deletion without moving the fields.
 **Save changes** and **Cancel** share the bottom action row. **Canvas preview** and

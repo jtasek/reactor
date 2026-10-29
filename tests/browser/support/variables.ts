@@ -67,3 +67,20 @@ export async function openPanelOptions(page: Page) {
         await button.click();
     }
 }
+
+export async function openVariableSettings(page: Page, name: string) {
+    const panel = variablesPanel(page);
+    if (await panel.getByRole('region', { name: 'Variable settings', exact: true }).isVisible()) {
+        return;
+    }
+    await panel.getByRole('button', { name: `Actions for ${name}`, exact: true }).click();
+    await panel.getByRole('button', { name: 'Variable settings', exact: true }).click();
+}
+
+export async function resetModeValue(page: Page, name: string, mode: string, defaultMode: string) {
+    const panel = variablesPanel(page);
+    await panel
+        .getByRole('button', { name: `Actions for ${mode} value of ${name}`, exact: true })
+        .click();
+    await panel.getByRole('button', { name: `Reset to ${defaultMode} value`, exact: true }).click();
+}

@@ -2,6 +2,7 @@ import {
     createVariable,
     selectVariable,
     openModePreview,
+    resetModeValue,
     variablesPanel
 } from './support/variables';
 import { createDocument } from 'src/app/factories';
@@ -33,12 +34,12 @@ test('dimensions are opt-in and custom modes preserve colors, bounds and local s
     await panel.getByPlaceholder('Mode name').last().fill('Dim');
     await panel.getByRole('button', { name: 'Create dimension', exact: true }).click();
     await selectVariable(page, 'Ink');
-    await panel.getByText('Add mode values · Optional', { exact: true }).click();
+    await panel.getByRole('button', { name: 'Add different values…', exact: true }).click();
     await expect(page.getByLabel('Dimension of Ink', { exact: true })).toHaveValue('');
     await page
         .getByLabel('Dimension of Ink', { exact: true })
         .selectOption({ label: 'Appearance' });
-    await panel.getByRole('button', { name: 'Override Ink in Dim', exact: true }).click();
+    await expect(page.getByText('Uses Default value', { exact: true })).toBeVisible();
     await page.getByLabel('Dim value of Ink', { exact: true }).fill('#ddeeff');
     await expect.poll(fill).toBe('rgb(17, 34, 51)');
     await openModePreview(page);
@@ -78,9 +79,7 @@ test('dimensions are opt-in and custom modes preserve colors, bounds and local s
     await expect(page.getByLabel('Fill', { exact: true })).toHaveText('◆ Ink');
     await page.setViewportSize({ width: 700, height: 800 });
     await expect(page.getByLabel('Preview Appearance', { exact: true })).toBeVisible();
-    await panel
-        .getByRole('button', { name: 'Use base value for Ink in Night', exact: true })
-        .click();
+    await resetModeValue(page, 'Ink', 'Night', 'Default');
     await expect.poll(fill).toBe('rgb(17, 34, 51)');
     await panel.getByRole('button', { name: 'Manage modes', exact: true }).click();
     await panel.getByRole('button', { name: 'Dimension actions', exact: true }).click();
@@ -133,6 +132,9 @@ test('legacy Light/Dark documents preserve their values and local Dark selection
     await expect(page.getByLabel('Preview Theme', { exact: true })).toHaveValue('dark');
     await expect(page.getByLabel('Dark value of Ink', { exact: true })).toHaveValue('#ddeeff');
     await expect(page.getByLabel('Value of Ink', { exact: true })).toHaveValue('#112233');
-    // Light is the default mode, so its color is the base value.
-    await expect(page.getByLabel('Light value of Ink', { exact: true })).toHaveCount(0);
+    await expect(
+        page
+            .getByRole('group', { name: 'Light (default)', exact: true })
+            .getByLabel('Value of Ink', { exact: true })
+    ).toHaveValue('#112233');
 });

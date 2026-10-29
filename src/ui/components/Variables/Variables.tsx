@@ -1,6 +1,6 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { Plus, Hash, Type, ToggleLeft, Layers, ChevronLeft, Settings2 } from 'lucide-react';
-import { useCurrentDocument } from 'src/app/hooks';
+import { useActions, useCurrentDocument } from 'src/app/hooks';
 import { useVariables, useVariableUses } from 'src/app/variableHooks';
 import { ordered } from 'src/app/variableModes';
 import { NUMBER_MODE_SUPPORT } from 'src/app/contextualLayout';
@@ -11,16 +11,21 @@ import { CreateVariable } from './CreateVariable';
 import { VariableEditor } from './VariableEditor';
 import styles from './styles.css';
 
-/** `returnId` is the variable whose "Manage modes" opened the Dimensions tab. */
+/**
+ * `returnId` is the variable whose "Manage modes" or "New dimension…" opened the Dimensions
+ * tab; `assignTo` is set only for "New dimension…", whose new dimension that variable takes.
+ */
 type View = {
     section: 'variables' | 'dimensions';
     id?: string;
     creating?: boolean;
     returnId?: string;
+    assignTo?: string;
 };
 
 function VariablePanel() {
     const document = useCurrentDocument();
+    const { setVariableDimension } = useActions();
     const variables = useVariables();
     const uses = useVariableUses();
     const dimensions = ordered(document.dimensions);
@@ -80,10 +85,37 @@ function VariablePanel() {
     const create = () =>
         navigate({ section: view.section, creating: true, returnId: view.returnId });
     const editDimension = (id?: string) => {
-        navigate({ section: 'dimensions', id, creating: !id, returnId: variable?.id });
+        navigate({
+            section: 'dimensions',
+            id,
+            creating: !id,
+            returnId: variable?.id,
+            assignTo: id ? undefined : variable?.id
+        });
     };
     const cancel = () => {
+        if (view.creating && view.assignTo && byId[view.assignTo]) {
+            show({ section: 'variables', id: view.assignTo });
+
+            return;
+        }
         show({ section: view.section, returnId: view.returnId });
+    };
+    const dimensionSaved = (id: string) => {
+        const owner = byId[view.assignTo ?? ''];
+        if (
+            view.creating &&
+            owner &&
+            owner.type !== 'boolean' &&
+            owner.alias === undefined &&
+            !owner.dimensionId
+        ) {
+            setVariableDimension({ variableId: owner.id, dimensionId: id });
+            show({ section: 'variables', id: owner.id });
+
+            return;
+        }
+        show({ section: 'dimensions', id, returnId: view.returnId });
     };
     const returnId = view.section === 'dimensions' ? view.returnId : undefined;
     // A deletion removes the focused control, so keep the keyboard in the panel.
@@ -291,9 +323,7 @@ function VariablePanel() {
                             dimension={view.creating ? undefined : dimension}
                             onDirty={setDirty}
                             onCancel={cancel}
-                            onSaved={(id) =>
-                                show({ section: 'dimensions', id, returnId: view.returnId })
-                            }
+                            onSaved={dimensionSaved}
                             onDeleted={keepFocus}
                         />
                     )}

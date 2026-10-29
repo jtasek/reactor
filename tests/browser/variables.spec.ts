@@ -1,4 +1,9 @@
-import { createVariable as addVariable, selectVariable, deleteVariable } from './support/variables';
+import {
+    createVariable as addVariable,
+    selectVariable,
+    deleteVariable,
+    openVariableSettings
+} from './support/variables';
 import { expect, test, type Page } from '@playwright/test';
 import { createDocument, createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
@@ -190,13 +195,15 @@ test('a text shows the variables its template names and follows their changes', 
 test('an alias follows its source across reload and detaches to a literal', async ({ page }) => {
     const { fill } = await rectangleWithPanels(page);
     await addVariable(page, 'Brand', 'Color');
+    await openVariableSettings(page, 'Brand');
     await expect(field(page, 'Source of Brand')).toHaveCount(0);
-    await expect(page.getByText('Add another color variable to reference it.')).toBeVisible();
     await addVariable(page, 'Spacing', 'Number');
     await selectVariable(page, 'Brand');
+    await openVariableSettings(page, 'Brand');
     await expect(field(page, 'Source of Brand')).toHaveCount(0);
     await field(page, 'Value of Brand').fill('#3366ff');
     await addVariable(page, 'Button', 'Color');
+    await openVariableSettings(page, 'Button');
     await field(page, 'Source of Button').selectOption({ label: 'Follow Brand' });
     await field(page, 'Variable for Fill').selectOption({ label: 'Button' });
     await expect.poll(fill).toBe('rgb(51, 102, 255)');
@@ -206,8 +213,8 @@ test('an alias follows its source across reload and detaches to a literal', asyn
         'rgb(51, 102, 255)'
     );
     await selectVariable(page, 'Brand');
+    await openVariableSettings(page, 'Brand');
     await expect(field(page, 'Source of Brand')).toHaveCount(0);
-    await expect(page.getByText('Every other color variable follows Brand.')).toBeVisible();
     await field(page, 'Value of Brand').fill('#ff0000');
     await expect.poll(fill).toBe('rgb(255, 0, 0)');
     await page.reload();
@@ -215,8 +222,9 @@ test('an alias follows its source across reload and detaches to a literal', asyn
     await selectVariable(page, 'Button');
     await expect(field(page, 'Resolved value of Button')).toHaveText('Button → Brand: #ff0000');
     await page.setViewportSize({ width: 540, height: 740 });
+    await page.getByRole('button', { name: 'Change reference', exact: true }).click();
     await expect(field(page, 'Source of Button')).toBeVisible();
-    await field(page, 'Source of Button').selectOption({ label: 'Literal value' });
+    await field(page, 'Source of Button').selectOption({ label: 'Own value' });
     await expect(field(page, 'Value of Button')).toHaveValue('#ff0000');
     await selectVariable(page, 'Brand');
     await field(page, 'Value of Brand').fill('#00ff00');

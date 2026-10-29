@@ -6,6 +6,8 @@ import {
     createVariable,
     deleteVariable,
     selectVariable,
+    openVariableSettings,
+    resetModeValue,
     variablesPanel
 } from './support/variables';
 
@@ -67,7 +69,9 @@ test('protects creation drafts and creates typed base values with the keyboard',
     await panel.getByLabel('New variable value').press('Enter');
     await expect(panel.getByLabel('Value of spacing/large', { exact: true })).toHaveValue('24');
     await createVariable(page, 'shown', 'Boolean');
-    await expect(panel.getByText('Add mode values · Optional')).toHaveCount(0);
+    await expect(
+        panel.getByRole('button', { name: 'Add different values…', exact: true })
+    ).toHaveCount(0);
     await expect(panel.getByLabel('Value of shown')).not.toBeChecked();
 });
 
@@ -87,6 +91,7 @@ test('preserves mode values on default changes and asks before removing override
     await expect(panel.getByLabel('Light value of brand/ink', { exact: true })).toHaveValue(
         '#112233'
     );
+    await openVariableSettings(page, 'brand/ink');
     await panel.getByLabel('Dimension of brand/ink').selectOption('');
     await panel.getByRole('button', { name: 'Keep dimension', exact: true }).click();
     await expect(panel.getByLabel('Light value of brand/ink', { exact: true })).toHaveValue(
@@ -403,6 +408,10 @@ test('keeps keyboard focus in the panel after deleting from an action menu', asy
     const remove = panel
         .getByRole('group', { name: 'Actions for second menu', exact: true })
         .getByRole('button', { name: 'Delete variable', exact: true });
+    await expect(
+        panel.getByRole('button', { name: 'Variable settings', exact: true })
+    ).toBeFocused();
+    await page.keyboard.press('Tab');
     await expect(remove).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(panel.getByLabel('Name of second')).toHaveCount(0);
@@ -413,6 +422,129 @@ test('keeps keyboard focus in the panel after deleting from an action menu', asy
             )
         )
         .toBe(true);
+});
+
+test('shows a named default row and edits inherited colors without an override step', async ({
+    page
+}) => {
+    await themedDocument(page);
+    const panel = variablesPanel(page);
+    const values = panel.getByRole('region', { name: 'Values for Theme', exact: true });
+    await expect(values.getByRole('group', { name: 'Light (default)', exact: true })).toBeVisible();
+    await expect(panel.getByText('Base value', { exact: true })).toHaveCount(0);
+    await expect(panel.getByLabel('Dimension of brand/ink')).toHaveCount(0);
+    await resetModeValue(page, 'brand/ink', 'Dark', 'Light');
+    const dark = panel.getByLabel('Dark value of brand/ink', { exact: true });
+    await expect(dark).toBeFocused();
+    await expect(values.getByText('Uses Light value', { exact: true })).toBeVisible();
+    await panel.getByLabel('Hex value of brand/ink', { exact: true }).fill('#223344');
+    await panel.getByLabel('Hex value of brand/ink', { exact: true }).press('Enter');
+    await expect(dark).toHaveValue('#223344');
+    const darkHex = panel.getByLabel('Dark hex value of brand/ink', { exact: true });
+    await darkHex.fill('#556677');
+    await darkHex.press('Enter');
+    await expect(dark).toHaveValue('#556677');
+    await expect(values.getByText('Uses Light value', { exact: true })).toHaveCount(0);
+    await expect(panel.getByLabel('Value of brand/ink', { exact: true })).toHaveValue('#223344');
+    await resetModeValue(page, 'brand/ink', 'Dark', 'Light');
+    await expect(page.locator('#status-save')).toHaveText('Saved');
+    await page.reload();
+    await openEditor(page, ['Variables']);
+    await selectVariable(page, 'brand/ink');
+    await expect(dark).toHaveValue('#223344');
+    await expect(values.getByText('Uses Light value', { exact: true })).toBeVisible();
+});
+
+for (const [type, name, original, changed] of [
+    ['Number', 'spacing', '8', '-12.5'],
+    ['Text', 'greeting', 'Hello', 'Good morning']
+]) {
+    test(`edits and resets inherited ${type.toLowerCase()} values directly`, async ({ page }) => {
+        await themedDocument(page);
+        await createVariable(page, name, type);
+        const panel = variablesPanel(page);
+        const base = panel.getByLabel(`Value of ${name}`, { exact: true });
+        await base.fill(original);
+        await base.press('Enter');
+        await panel.getByRole('button', { name: 'Add different values…', exact: true }).click();
+        await panel.getByLabel(`Dimension of ${name}`, { exact: true }).selectOption('theme');
+        const dark = panel.getByLabel(`Dark value of ${name}`, { exact: true });
+        await expect(dark).toHaveValue(original);
+        await dark.fill(changed);
+        await dark.press('Escape');
+        await expect(dark).toHaveValue(original);
+        await expect(panel.getByText('Uses Light value', { exact: true })).toBeVisible();
+        await dark.fill(changed);
+        await dark.press('Enter');
+        await expect(dark).toHaveValue(changed);
+        await expect(base).toHaveValue(original);
+        await resetModeValue(page, name, 'Dark', 'Light');
+        await expect(dark).toBeFocused();
+        await expect(dark).toHaveValue(original);
+        await expect(page.locator('#status-save')).toHaveText('Saved');
+        await page.reload();
+        await openEditor(page, ['Variables']);
+        await selectVariable(page, name);
+        await expect(dark).toHaveValue(original);
+        await expect(panel.getByText('Uses Light value', { exact: true })).toBeVisible();
+    });
+}
+
+for (const [type, original, changed] of [
+    ['Color', '#112233', '#445566'],
+    ['Number', '8', '16'],
+    ['Text', 'Hello', 'Good morning']
+]) {
+    test(`keeps an explicitly entered ${type.toLowerCase()} mode value independent of the default`, async ({
+        page
+    }) => {
+        await themedDocument(page);
+        await createVariable(page, 'independent', type);
+        const panel = variablesPanel(page);
+        const baseLabel = type === 'Color' ? 'Hex value' : 'Value';
+        const modeLabel = type === 'Color' ? 'hex value' : 'value';
+        const base = panel.getByLabel(`${baseLabel} of independent`, { exact: true });
+        await base.fill(original);
+        await base.press('Enter');
+        await panel.getByRole('button', { name: 'Add different values…', exact: true }).click();
+        await panel.getByLabel('Dimension of independent', { exact: true }).selectOption('theme');
+        const dark = panel.getByLabel(`Dark ${modeLabel} of independent`, { exact: true });
+        // Merely focusing and leaving the row must keep inheritance.
+        await dark.focus();
+        await base.focus();
+        await expect(panel.getByText('Uses Light value', { exact: true })).toBeVisible();
+        // Re-entering the same value is an explicit choice, unlike leaving it untouched.
+        await dark.fill(changed);
+        await dark.fill(original);
+        await dark.press('Enter');
+        await expect(panel.getByText('Uses Light value', { exact: true })).toHaveCount(0);
+        await base.fill(changed);
+        await base.press('Enter');
+        await expect(dark).toHaveValue(original);
+        await resetModeValue(page, 'independent', 'Dark', 'Light');
+        await expect(dark).toHaveValue(changed);
+        await expect(panel.getByText('Uses Light value', { exact: true })).toBeVisible();
+    });
+}
+
+test('adds a first dimension from a variable and returns to its named values', async ({ page }) => {
+    await openEditor(page, ['Variables']);
+    await createVariable(page, 'primaryColor');
+    const panel = variablesPanel(page);
+    await panel.getByLabel('Value of primaryColor', { exact: true }).fill('#3366ff');
+    await panel.getByRole('button', { name: 'Add different values…', exact: true }).click();
+    await panel.getByRole('button', { name: 'New dimension…', exact: true }).click();
+    await panel.getByLabel('New dimension name', { exact: true }).fill('Theme');
+    await panel.getByLabel('Name of mode Default in new dimension').fill('Light');
+    await panel.getByRole('button', { name: 'Add mode', exact: true }).click();
+    await panel.getByPlaceholder('Mode name').last().fill('Dark');
+    await panel.getByRole('button', { name: 'Create dimension', exact: true }).click();
+    await expect(panel.getByRole('region', { name: 'Values for Theme' })).toBeVisible();
+    await expect(panel.getByLabel('Value of primaryColor', { exact: true })).toHaveValue('#3366ff');
+    await expect(panel.getByLabel('Dark value of primaryColor', { exact: true })).toHaveValue(
+        '#3366ff'
+    );
+    await expect(panel.getByText('Uses Light value', { exact: true })).toBeVisible();
 });
 
 test('leaves Escape alone on a closed action menu button', async ({ page }) => {
@@ -435,4 +567,64 @@ test('leaves Escape alone on a closed action menu button', async ({ page }) => {
         return heard;
     });
     expect(reached).toBe(true);
+});
+
+test('assigns a new dimension only to the variable that asked for it', async ({ page }) => {
+    await themedDocument(page);
+    const panel = variablesPanel(page);
+    await selectVariable(page, 'brand/ink');
+    await panel.getByRole('button', { name: 'Manage modes', exact: true }).click();
+    await panel.getByRole('button', { name: 'Dimension actions', exact: true }).click();
+    await panel.getByRole('button', { name: 'Delete dimension', exact: true }).click();
+    await page
+        .getByRole('group', { name: 'Confirm deletion' })
+        .getByRole('button', { name: 'Delete', exact: true })
+        .click();
+    // brand/ink is unbound now, but this dimension is started from the Dimensions tab.
+    await panel
+        .getByRole('button', { name: 'New dimension', exact: true })
+        .filter({ visible: true })
+        .click();
+    await panel.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(panel.getByRole('button', { name: 'Dimensions', exact: true })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+    );
+    await panel
+        .getByRole('button', { name: 'New dimension', exact: true })
+        .filter({ visible: true })
+        .click();
+    await page.getByLabel('New dimension name', { exact: true }).fill('Size');
+    await panel.getByRole('button', { name: 'Create dimension', exact: true }).click();
+    await expect(panel.getByRole('button', { name: 'Dimensions', exact: true })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+    );
+    await selectVariable(page, 'brand/ink');
+    await expect(panel.getByRole('region', { name: 'Values for Size', exact: true })).toHaveCount(
+        0
+    );
+    await expect(panel.getByLabel('Value of brand/ink', { exact: true })).toBeVisible();
+});
+
+test('names the default mode on its row and hides empty boolean settings', async ({ page }) => {
+    await themedDocument(page);
+    const panel = variablesPanel(page);
+    await expect(
+        panel.getByLabel('Value of brand/ink', { exact: true })
+    ).toHaveAccessibleDescription('Light Default');
+    await createVariable(page, 'shown', 'Boolean');
+    await panel.getByRole('button', { name: 'Actions for shown', exact: true }).click();
+    await expect(
+        panel
+            .getByRole('group', { name: 'Actions for shown menu', exact: true })
+            .getByRole('button', { name: 'Delete variable', exact: true })
+    ).toBeVisible();
+    await expect(panel.getByRole('button', { name: 'Variable settings', exact: true })).toHaveCount(
+        0
+    );
+    await page.keyboard.press('Escape');
+    await createVariable(page, 'visible', 'Boolean');
+    await openVariableSettings(page, 'visible');
+    await expect(panel.getByLabel('Source of visible', { exact: true })).toBeVisible();
 });
