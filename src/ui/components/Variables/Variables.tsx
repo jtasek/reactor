@@ -11,12 +11,16 @@ import { CreateVariable } from './CreateVariable';
 import { VariableEditor } from './VariableEditor';
 import styles from './styles.css';
 
-/** `returnId` is the variable that opened dimension creation or "Manage modes". */
+/**
+ * `returnId` is the variable whose "Manage modes" or "New dimension…" opened the Dimensions
+ * tab; `assignTo` is set only for "New dimension…", whose new dimension that variable takes.
+ */
 type View = {
     section: 'variables' | 'dimensions';
     id?: string;
     creating?: boolean;
     returnId?: string;
+    assignTo?: string;
 };
 
 function VariablePanel() {
@@ -81,18 +85,24 @@ function VariablePanel() {
     const create = () =>
         navigate({ section: view.section, creating: true, returnId: view.returnId });
     const editDimension = (id?: string) => {
-        navigate({ section: 'dimensions', id, creating: !id, returnId: variable?.id });
+        navigate({
+            section: 'dimensions',
+            id,
+            creating: !id,
+            returnId: variable?.id,
+            assignTo: id ? undefined : variable?.id
+        });
     };
     const cancel = () => {
-        if (view.creating && view.returnId && byId[view.returnId]) {
-            show({ section: 'variables', id: view.returnId });
+        if (view.creating && view.assignTo && byId[view.assignTo]) {
+            show({ section: 'variables', id: view.assignTo });
 
             return;
         }
         show({ section: view.section, returnId: view.returnId });
     };
     const dimensionSaved = (id: string) => {
-        const owner = byId[view.returnId ?? ''];
+        const owner = byId[view.assignTo ?? ''];
         if (
             view.creating &&
             owner &&

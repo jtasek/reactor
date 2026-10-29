@@ -5,6 +5,20 @@ import { ordered } from 'src/app/variableModes';
 import { variableDependencies } from 'src/app/variables';
 import styles from './styles.css';
 
+/** Variables this one may follow without making a loop, plus the one it follows. */
+export const aliasSources = (variable: Variable, variables: Record<string, Variable>) =>
+    Object.values(variables).filter(
+        (source) =>
+            source.id === variable.alias ||
+            (source.id !== variable.id &&
+                source.type === variable.type &&
+                !variableDependencies(source, variables).has(variable.id))
+    );
+
+/** Whether `VariableSettings` has anything to offer: a dimension or a value source. */
+export const hasVariableSettings = (variable: Variable, variables: Record<string, Variable>) =>
+    variable.type !== 'boolean' || aliasSources(variable, variables).length > 0;
+
 /** Structural choices are separate from everyday value editing. */
 export function VariableSettings({
     variable,
@@ -25,13 +39,7 @@ export function VariableSettings({
     const dimensionId = variable.type === 'boolean' ? undefined : variable.dimensionId;
     const dimension = document.dimensions[dimensionId ?? ''];
     const dimensions = ordered(document.dimensions);
-    const sources = Object.values(variables).filter(
-        (source) =>
-            source.id === variable.alias ||
-            (source.id !== variable.id &&
-                source.type === variable.type &&
-                !variableDependencies(source, variables).has(variable.id))
-    );
+    const sources = aliasSources(variable, variables);
     const confirmation =
         pending && pending.from === dimensionId && (!pending.to || document.dimensions[pending.to])
             ? pending

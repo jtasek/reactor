@@ -13,10 +13,11 @@ export const DraftField: FC<{
     value: string;
     type?: 'text' | 'number';
     id?: string;
+    describedBy?: string;
     /** Typing an inherited mode value makes it independent even if it matches the default. */
     commitUnchanged?: boolean;
     onCommit: (text: string) => void;
-}> = ({ label, value, type = 'text', id, commitUnchanged = false, onCommit }) => {
+}> = ({ label, value, type = 'text', id, describedBy, commitUnchanged = false, onCommit }) => {
     const [draft, setDraft] = useState<string>();
 
     const commit = () => {
@@ -47,6 +48,7 @@ export const DraftField: FC<{
             type={type}
             step={type === 'number' ? 'any' : undefined}
             aria-label={label}
+            aria-describedby={describedBy}
             value={draft ?? value}
             onChange={(event) => setDraft(event.target.value)}
             onBlur={commit}
@@ -59,7 +61,9 @@ export const ValueField: FC<{
     variable: Variable;
     variables: Record<string, Variable>;
     mode?: { id: string; name: string };
-}> = ({ variable, variables, mode }) => {
+    /** An element naming the row, such as the default mode's name. */
+    describedBy?: string;
+}> = ({ variable, variables, mode, describedBy }) => {
     const { setVariableValue, setVariableModeValue } = useActions();
     const label = mode ? `${mode.name} value of ${variable.name}` : `Value of ${variable.name}`;
     const id = `${variable.id}-${mode?.id ?? 'default'}`;
@@ -67,6 +71,9 @@ export const ValueField: FC<{
         variable.type !== 'boolean' && mode
             ? (variable.values[mode.id] ?? variable.values.default)
             : variable.values.default;
+    // Only an inherited row commits a retyped equal value, which makes it independent.
+    const inherited =
+        mode !== undefined && variable.type !== 'boolean' && variable.values[mode.id] === undefined;
     const set = (value: string | number | boolean) => {
         if (mode && typeof value !== 'boolean') {
             setVariableModeValue({ variableId: variable.id, modeId: mode.id, value });
@@ -85,6 +92,7 @@ export const ValueField: FC<{
                             id={id}
                             type="color"
                             aria-label={label}
+                            aria-describedby={describedBy}
                             value={String(value)}
                             onChange={(event) => set(event.target.value)}
                         />
@@ -96,7 +104,8 @@ export const ValueField: FC<{
                                 : `Hex value of ${variable.name}`
                         }
                         value={String(value)}
-                        commitUnchanged={mode !== undefined}
+                        commitUnchanged={inherited}
+                        describedBy={describedBy}
                         onCommit={set}
                     />
                 </div>
@@ -108,7 +117,8 @@ export const ValueField: FC<{
                     label={label}
                     type="number"
                     value={String(value)}
-                    commitUnchanged={mode !== undefined}
+                    commitUnchanged={inherited}
+                    describedBy={describedBy}
                     onCommit={(text) => {
                         if (text.trim() !== '') {
                             set(Number(text));
@@ -122,7 +132,8 @@ export const ValueField: FC<{
                     id={id}
                     label={label}
                     value={templateWithNames(String(value), variables)}
-                    commitUnchanged={mode !== undefined}
+                    commitUnchanged={inherited}
+                    describedBy={describedBy}
                     onCommit={set}
                 />
             );
@@ -132,6 +143,7 @@ export const ValueField: FC<{
                     id={id}
                     type="checkbox"
                     aria-label={label}
+                    aria-describedby={describedBy}
                     checked={variable.values.default}
                     onChange={(event) => set(event.target.checked)}
                 />

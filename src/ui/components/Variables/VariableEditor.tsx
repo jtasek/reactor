@@ -8,7 +8,7 @@ import { variableChain } from 'src/app/editorVariables';
 import styles from './styles.css';
 import { DraftField, ValueField } from './Fields';
 import { TYPES } from './CreateVariable';
-import { VariableSettings } from './VariableSettings';
+import { hasVariableSettings, VariableSettings } from './VariableSettings';
 
 export const VariableEditor: FC<{
     variable: Variable;
@@ -58,9 +58,11 @@ export const VariableEditor: FC<{
                     />
                 </label>
                 <ActionsMenu label={`Actions for ${variable.name}`}>
-                    <button type="button" onClick={() => setSettingsOpen(true)}>
-                        Variable settings
-                    </button>
+                    {hasVariableSettings(variable, variables) && (
+                        <button type="button" onClick={() => setSettingsOpen(true)}>
+                            Variable settings
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={() => (uses > 0 ? setConfirming(true) : remove())}
@@ -129,6 +131,11 @@ export const VariableEditor: FC<{
                                     aria-label={`${mode.name}${isDefault ? ' (default)' : ''}`}
                                 >
                                     <label
+                                        id={
+                                            isDefault
+                                                ? `${variable.id}-default-mode-name`
+                                                : undefined
+                                        }
                                         className={styles.modeName}
                                         htmlFor={`${variable.id}-${isDefault ? 'default' : mode.id}`}
                                     >
@@ -142,6 +149,11 @@ export const VariableEditor: FC<{
                                             variable={variable}
                                             variables={variables}
                                             mode={isDefault ? undefined : mode}
+                                            describedBy={
+                                                isDefault
+                                                    ? `${variable.id}-default-mode-name`
+                                                    : undefined
+                                            }
                                         />
                                         {inherited && (
                                             <small className={styles.resolution}>

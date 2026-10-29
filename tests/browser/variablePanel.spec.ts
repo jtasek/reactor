@@ -568,3 +568,63 @@ test('leaves Escape alone on a closed action menu button', async ({ page }) => {
     });
     expect(reached).toBe(true);
 });
+
+test('assigns a new dimension only to the variable that asked for it', async ({ page }) => {
+    await themedDocument(page);
+    const panel = variablesPanel(page);
+    await selectVariable(page, 'brand/ink');
+    await panel.getByRole('button', { name: 'Manage modes', exact: true }).click();
+    await panel.getByRole('button', { name: 'Dimension actions', exact: true }).click();
+    await panel.getByRole('button', { name: 'Delete dimension', exact: true }).click();
+    await page
+        .getByRole('group', { name: 'Confirm deletion' })
+        .getByRole('button', { name: 'Delete', exact: true })
+        .click();
+    // brand/ink is unbound now, but this dimension is started from the Dimensions tab.
+    await panel
+        .getByRole('button', { name: 'New dimension', exact: true })
+        .filter({ visible: true })
+        .click();
+    await panel.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(panel.getByRole('button', { name: 'Dimensions', exact: true })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+    );
+    await panel
+        .getByRole('button', { name: 'New dimension', exact: true })
+        .filter({ visible: true })
+        .click();
+    await page.getByLabel('New dimension name', { exact: true }).fill('Size');
+    await panel.getByRole('button', { name: 'Create dimension', exact: true }).click();
+    await expect(panel.getByRole('button', { name: 'Dimensions', exact: true })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+    );
+    await selectVariable(page, 'brand/ink');
+    await expect(panel.getByRole('region', { name: 'Values for Size', exact: true })).toHaveCount(
+        0
+    );
+    await expect(panel.getByLabel('Value of brand/ink', { exact: true })).toBeVisible();
+});
+
+test('names the default mode on its row and hides empty boolean settings', async ({ page }) => {
+    await themedDocument(page);
+    const panel = variablesPanel(page);
+    await expect(
+        panel.getByLabel('Value of brand/ink', { exact: true })
+    ).toHaveAccessibleDescription('Light Default');
+    await createVariable(page, 'shown', 'Boolean');
+    await panel.getByRole('button', { name: 'Actions for shown', exact: true }).click();
+    await expect(
+        panel
+            .getByRole('group', { name: 'Actions for shown menu', exact: true })
+            .getByRole('button', { name: 'Delete variable', exact: true })
+    ).toBeVisible();
+    await expect(panel.getByRole('button', { name: 'Variable settings', exact: true })).toHaveCount(
+        0
+    );
+    await page.keyboard.press('Escape');
+    await createVariable(page, 'visible', 'Boolean');
+    await openVariableSettings(page, 'visible');
+    await expect(panel.getByLabel('Source of visible', { exact: true })).toBeVisible();
+});
