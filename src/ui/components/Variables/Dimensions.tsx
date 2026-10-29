@@ -202,7 +202,7 @@ export function DimensionEditor({
                 )}
                 <div className={styles.rowHeader}>
                     <label className={styles.formField}>
-                        Name
+                        Dimension name
                         <input
                             ref={nameInput}
                             aria-label={
@@ -269,7 +269,8 @@ export function DimensionEditor({
                     </div>
                 ) : (
                     <p className={styles.resolution}>
-                        A dimension groups modes, such as Theme: Light and Dark.
+                        A dimension is a category: Theme has Light and Dark modes; Size could have
+                        Small and Large. Choose names that describe your design.
                     </p>
                 )}
                 <div className={styles.section}>
@@ -293,7 +294,8 @@ export function DimensionEditor({
                         </button>
                     </div>
                     <p className={styles.resolution}>
-                        The default mode uses each variable’s base value.
+                        Modes are choices within this dimension. The default supplies the value for
+                        modes you haven’t customized.
                     </p>
                     {modes.map((mode, index) => (
                         <div className={styles.modeEdit} key={mode.id}>

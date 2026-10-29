@@ -238,19 +238,42 @@
     width: var(--swatch-width);
 }
 
-.inheritedValue {
-    align-items: center;
-    display: flex;
-    flex: 1;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: space-between;
-    min-width: 0;
+.modeValues {
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-md);
 }
 
-.inheritedValue small {
-    flex: 1;
-    min-width: 80px;
+.modeValue {
+    align-items: start;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) var(--field-height);
+    padding: 12px;
+}
+
+.modeValue + .modeValue {
+    border-top: 1px solid var(--hairline-color);
+}
+
+.modeName {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    grid-column: 1 / -1;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.modeName small {
+    font-weight: 400;
+}
+
+.settings {
+    border-top: 1px solid var(--hairline-color);
+    display: grid;
+    gap: 12px;
+    padding-top: 16px;
 }
 
 .section {
@@ -282,9 +305,15 @@
 .sectionHeading {
     align-items: center;
     display: flex;
+    flex-wrap: wrap;
     gap: 12px;
     justify-content: space-between;
     margin-bottom: 8px;
+}
+
+.sectionHeading h4 {
+    overflow-wrap: anywhere;
+    min-width: 0;
 }
 
 .formActions {
@@ -435,6 +464,14 @@
 }
 
 @container (min-width: 560px) {
+    .modeValue {
+        grid-template-columns: minmax(80px, 1fr) minmax(0, 2fr) var(--field-height);
+    }
+
+    .modeName {
+        grid-column: auto;
+    }
+
     .workspace {
         grid-template-columns: 190px minmax(0, 1fr);
         min-height: 390px;

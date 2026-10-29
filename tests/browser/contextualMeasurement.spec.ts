@@ -162,7 +162,7 @@ test('authors text modes and wrapping with usable narrow controls', async ({ pag
     await page.setViewportSize({ width: 600, height: 900 });
     await expect(input).toBeVisible();
     const reset = page.getByRole('button', {
-        name: 'Use base value for Greeting in Large',
+        name: 'Actions for Large value of Greeting',
         exact: true
     });
     await expect

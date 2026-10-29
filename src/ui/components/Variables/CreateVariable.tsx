@@ -102,7 +102,7 @@ export function CreateVariable({
                     </select>
                 </label>
                 <label className={styles.formField}>
-                    Base value
+                    Value
                     {type === 'boolean' ? (
                         <input
                             type="checkbox"
@@ -125,15 +125,15 @@ export function CreateVariable({
                 </label>
                 {type !== 'boolean' && Object.keys(document.dimensions).length > 0 && (
                     <details>
-                        <summary>Add mode values · Optional</summary>
+                        <summary>Add different values…</summary>
                         <label className={styles.formField}>
-                            Vary by
+                            Values depend on
                             <select
                                 aria-label="New variable dimension"
                                 value={dimensionId}
                                 onChange={(event) => setDimensionId(event.target.value)}
                             >
-                                <option value="">None — base value only</option>
+                                <option value="">Nothing — one value everywhere</option>
                                 {ordered(document.dimensions).map((dimension) => (
                                     <option key={dimension.id} value={dimension.id}>
                                         {dimension.name}

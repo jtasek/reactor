@@ -3,14 +3,13 @@ import React, { FC, useState } from 'react';
 import { ActionsMenu } from './ActionsMenu';
 import type { Variable } from 'src/app/types';
 import { useActions, useVariableContext, useCurrentDocument } from 'src/app/hooks';
-import { templateWithNames, variableDependencies } from 'src/app/variables';
 import { resolveVariable, variableProblems } from 'src/app/variableResolver';
 import { variableChain } from 'src/app/editorVariables';
-import { SharedOnRelease } from '../Inspector/SharedOnRelease';
 import styles from './styles.css';
-
 import { DraftField, ValueField } from './Fields';
 import { TYPES } from './CreateVariable';
+import { VariableSettings } from './VariableSettings';
+
 export const VariableEditor: FC<{
     variable: Variable;
     variables: Record<string, Variable>;
@@ -18,43 +17,31 @@ export const VariableEditor: FC<{
     onManageDimension: (id?: string) => void;
     onDeleted: () => void;
 }> = ({ variable, variables, uses, onManageDimension, onDeleted }) => {
-    const {
-        deleteVariable,
-        renameVariable,
-        setVariableAlias,
-        setVariableModeValue,
-        setVariableDimension
-    } = useActions();
-    const theme = useVariableContext();
+    const { deleteVariable, renameVariable, setVariableModeValue } = useActions();
+    const context = useVariableContext();
     const document = useCurrentDocument();
-    // The default mode's color is the base value, edited in the value field.
     const dimension =
-        variable.type !== 'boolean' && variable.dimensionId !== undefined
-            ? document.dimensions[variable.dimensionId]
-            : undefined;
-    const [problem, setProblem] = useState<string>();
+        variable.type !== 'boolean' ? document.dimensions[variable.dimensionId ?? ''] : undefined;
     const [confirming, setConfirming] = useState(false);
-    const [pendingDimension, setPendingDimension] = useState<string>();
+    const [settingsOpen, setSettingsOpen] = useState(false);
     const problems = variableProblems(variable, variables);
+    const resolved =
+        variable.alias !== undefined ? resolveVariable(variable, variables, context) : undefined;
     const remove = () => {
         deleteVariable(variable.id);
         onDeleted();
     };
-    const focusMode = (modeId: string) =>
+    const focusValue = (modeId = 'default') =>
         requestAnimationFrame(() => {
-            globalThis.document.getElementById(`${variable.id}-${modeId}`)?.focus();
+            const field =
+                globalThis.document.getElementById(`${variable.id}-${modeId}`) ??
+                globalThis.document.getElementById(`variable-name-${variable.id}`);
+            field?.focus();
         });
-
-    const resolved =
-        variable.alias !== undefined ? resolveVariable(variable, variables, theme) : undefined;
-
-    const sources = Object.values(variables).filter(
-        (source) =>
-            source.id === variable.alias ||
-            (source.id !== variable.id &&
-                source.type === variable.type &&
-                !variableDependencies(source, variables).has(variable.id))
-    );
+    const closeSettings = () => {
+        setSettingsOpen(false);
+        focusValue();
+    };
 
     return (
         <fieldset disabled={document.locked} className={styles.row}>
@@ -71,6 +58,9 @@ export const VariableEditor: FC<{
                     />
                 </label>
                 <ActionsMenu label={`Actions for ${variable.name}`}>
+                    <button type="button" onClick={() => setSettingsOpen(true)}>
+                        Variable settings
+                    </button>
                     <button
                         type="button"
                         onClick={() => (uses > 0 ? setConfirming(true) : remove())}
@@ -102,300 +92,117 @@ export const VariableEditor: FC<{
                     {uses === 0 ? 'Not used yet' : `${uses} ${uses === 1 ? 'use' : 'uses'}`}
                 </span>
             </div>
-            {variable.alias === undefined && (
-                // A caption click would flip a boolean, so only other fields take it as a label.
+            {variable.alias === undefined && !dimension && (
                 <div className={styles.formField}>
-                    <span className={styles.fieldLabel}>
-                        {variable.type === 'boolean' ? 'Value' : 'Base value'}
-                    </span>
+                    <span className={styles.fieldLabel}>Value</span>
                     <ValueField variable={variable} variables={variables} />
-                    <small className={styles.resolution}>
-                        {dimension
-                            ? `Used by ${dimension.modes[dimension.defaultModeId]?.name} and modes without an override.`
-                            : 'The same value everywhere.'}
-                    </small>
+                    <small className={styles.resolution}>The same value everywhere.</small>
+                    {variable.type !== 'boolean' && !settingsOpen && (
+                        <button type="button" onClick={() => setSettingsOpen(true)}>
+                            Add different values…
+                        </button>
+                    )}
                 </div>
             )}
-            {variable.type !== 'boolean' &&
-                variable.alias === undefined &&
-                Object.keys(document.dimensions).length > 0 && (
-                    <details className={styles.section} open={dimension !== undefined}>
-                        <summary>
-                            {dimension ? 'Mode values' : 'Add mode values · Optional'}
-                        </summary>
-                        <div className={styles.formField}>
-                            <span className={styles.fieldLabel}>Vary by</span>
-                            <div className={styles.valueInput}>
-                                <select
-                                    className={styles.source}
-                                    aria-label={`Dimension of ${variable.name}`}
-                                    value={variable.dimensionId ?? ''}
-                                    onChange={(event) => {
-                                        if (
-                                            Object.keys(variable.values).some(
-                                                (key) => key !== 'default'
-                                            )
-                                        ) {
-                                            setPendingDimension(event.target.value);
+            {variable.alias === undefined && dimension && (
+                <section key={dimension.id} aria-label={`Values for ${dimension.name}`}>
+                    <div className={styles.sectionHeading}>
+                        <h4>Values depend on {dimension.name}</h4>
+                        <button type="button" onClick={() => onManageDimension(dimension.id)}>
+                            Manage modes
+                        </button>
+                    </div>
+                    <div className={styles.modeValues}>
+                        {ordered(dimension.modes).map((mode) => {
+                            const isDefault = mode.id === dimension.defaultModeId;
+                            const inherited =
+                                !isDefault &&
+                                variable.type !== 'boolean' &&
+                                variable.values[mode.id] === undefined;
+                            const defaultName = dimension.modes[dimension.defaultModeId].name;
 
-                                            return;
-                                        }
-                                        setVariableDimension({
-                                            variableId: variable.id,
-                                            dimensionId: event.target.value || null
-                                        });
-                                    }}
+                            return (
+                                <div
+                                    className={styles.modeValue}
+                                    key={`${mode.id}-${isDefault}`}
+                                    role="group"
+                                    aria-label={`${mode.name}${isDefault ? ' (default)' : ''}`}
                                 >
-                                    <option value="">None — base value only</option>
-                                    {ordered(document.dimensions).map((d) => (
-                                        <option key={d.id} value={d.id}>
-                                            {d.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <button
-                                    type="button"
-                                    onClick={() => onManageDimension(dimension?.id)}
-                                >
-                                    {dimension ? 'Manage modes' : 'New dimension…'}
-                                </button>
-                            </div>
-                        </div>
-                        {pendingDimension !== undefined && (
-                            <div className={styles.notice} role="alert">
-                                <p>
-                                    Changing this dimension removes this variable’s mode overrides.
-                                    Its base value stays.
-                                </p>
-                                <div className={styles.actions}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setPendingDimension(undefined)}
+                                    <label
+                                        className={styles.modeName}
+                                        htmlFor={`${variable.id}-${isDefault ? 'default' : mode.id}`}
                                     >
-                                        Keep dimension
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setVariableDimension({
-                                                variableId: variable.id,
-                                                dimensionId: pendingDimension || null
-                                            });
-                                            setPendingDimension(undefined);
-                                        }}
-                                    >
-                                        Change dimension
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                        {dimension &&
-                            ordered(dimension.modes)
-                                .filter((mode) => mode.id !== dimension.defaultModeId)
-                                .map((mode) => (
-                                    <div className={styles.field} key={mode.id}>
-                                        <label
-                                            className={styles.fieldLabel}
-                                            htmlFor={`${variable.id}-${mode.id}`}
-                                        >
-                                            {mode.name}
-                                        </label>
-                                        {variable.values[mode.id] === undefined ? (
-                                            <div className={styles.inheritedValue}>
-                                                <small className={styles.resolution}>
-                                                    Uses base ·{' '}
-                                                    {variable.type === 'text'
-                                                        ? templateWithNames(
-                                                              variable.values.default,
-                                                              variables
-                                                          )
-                                                        : String(variable.values.default)}
-                                                </small>
-                                                <button
-                                                    id={`${variable.id}-${mode.id}`}
-                                                    type="button"
-                                                    aria-label={`Override ${variable.name} in ${mode.name}`}
-                                                    onClick={() => {
-                                                        setVariableModeValue({
-                                                            variableId: variable.id,
-                                                            modeId: mode.id,
-                                                            value:
-                                                                variable.type === 'text'
-                                                                    ? templateWithNames(
-                                                                          variable.values.default,
-                                                                          variables
-                                                                      )
-                                                                    : variable.values.default
-                                                        });
-                                                        focusMode(mode.id);
-                                                    }}
-                                                >
-                                                    Override
-                                                </button>
-                                            </div>
-                                        ) : variable.type !== 'color' ? (
-                                            <DraftField
-                                                id={`${variable.id}-${mode.id}`}
-                                                label={`${mode.name} value of ${variable.name}`}
-                                                type={
-                                                    variable.type === 'number' ? 'number' : 'text'
-                                                }
-                                                value={
-                                                    variable.type === 'text'
-                                                        ? templateWithNames(
-                                                              variable.values[mode.id] ??
-                                                                  variable.values.default,
-                                                              variables
-                                                          )
-                                                        : String(
-                                                              variable.values[mode.id] ??
-                                                                  variable.values.default
-                                                          )
-                                                }
-                                                onCommit={(value) => {
-                                                    if (
-                                                        variable.type === 'number' &&
-                                                        value.trim() === ''
-                                                    ) {
-                                                        return;
-                                                    }
-                                                    setVariableModeValue({
-                                                        variableId: variable.id,
-                                                        modeId: mode.id,
-                                                        value:
-                                                            variable.type === 'number'
-                                                                ? Number(value)
-                                                                : value
-                                                    });
-                                                }}
-                                            />
-                                        ) : (
-                                            <div className={styles.valueInput}>
-                                                <SharedOnRelease>
-                                                    <input
-                                                        id={`${variable.id}-${mode.id}`}
-                                                        type="color"
-                                                        aria-label={`${mode.name} value of ${variable.name}`}
-                                                        value={
-                                                            variable.values[mode.id] ??
-                                                            variable.values.default
-                                                        }
-                                                        onChange={(event) =>
-                                                            setVariableModeValue({
-                                                                variableId: variable.id,
-                                                                modeId: mode.id,
-                                                                value: event.target.value
-                                                            })
-                                                        }
-                                                    />
-                                                </SharedOnRelease>
-                                                <DraftField
-                                                    label={`${mode.name} hex value of ${variable.name}`}
-                                                    value={
-                                                        variable.values[mode.id] ??
-                                                        variable.values.default
-                                                    }
-                                                    onCommit={(value) =>
-                                                        setVariableModeValue({
-                                                            variableId: variable.id,
-                                                            modeId: mode.id,
-                                                            value
-                                                        })
-                                                    }
-                                                />
-                                            </div>
+                                        {mode.name}
+                                        {isDefault && (
+                                            <small className={styles.resolution}>Default</small>
                                         )}
-                                        {variable.values[mode.id] !== undefined && (
+                                    </label>
+                                    <div className={styles.formField}>
+                                        <ValueField
+                                            variable={variable}
+                                            variables={variables}
+                                            mode={isDefault ? undefined : mode}
+                                        />
+                                        {inherited && (
+                                            <small className={styles.resolution}>
+                                                Uses {defaultName} value
+                                            </small>
+                                        )}
+                                    </div>
+                                    {!isDefault && !inherited && (
+                                        <ActionsMenu
+                                            label={`Actions for ${mode.name} value of ${variable.name}`}
+                                        >
                                             <button
                                                 type="button"
-                                                aria-label={`Use base value for ${variable.name} in ${mode.name}`}
                                                 onClick={() => {
                                                     setVariableModeValue({
                                                         variableId: variable.id,
                                                         modeId: mode.id,
                                                         value: null
                                                     });
-                                                    focusMode(mode.id);
+                                                    focusValue(mode.id);
                                                 }}
                                             >
-                                                Use base
+                                                Reset to {defaultName} value
                                             </button>
-                                        )}
-                                    </div>
-                                ))}
-                    </details>
-                )}
-            {variable.type !== 'boolean' &&
-                variable.alias === undefined &&
-                Object.keys(document.dimensions).length === 0 && (
-                    <details className={styles.section}>
-                        <summary>Add mode values · Optional</summary>
-                        <p className={styles.resolution}>
-                            Create a dimension to give this variable different values in different
-                            modes.
-                        </p>
-                        <button type="button" onClick={() => onManageDimension()}>
-                            New dimension…
-                        </button>
-                    </details>
-                )}
-            {variable.type === 'boolean' && Object.keys(document.dimensions).length > 0 && (
-                <small className={styles.resolution}>
-                    State variables currently have one base value.
-                </small>
-            )}
-            {sources.length > 0 || variable.alias !== undefined ? (
-                <label className={styles.field}>
-                    <span className={styles.fieldLabel}>Source</span>
-                    <select
-                        className={styles.source}
-                        aria-label={`Source of ${variable.name}`}
-                        value={variable.alias ?? ''}
-                        onChange={(event) =>
-                            setProblem(
-                                setVariableAlias({
-                                    variableId: variable.id,
-                                    sourceId: event.target.value || null
-                                })
-                            )
-                        }
-                    >
-                        <option value="">Literal value</option>
-                        {sources.map((source) => (
-                            <option key={source.id} value={source.id}>
-                                Follow {source.name}
-                            </option>
-                        ))}
-                    </select>
-                </label>
-            ) : (
-                <small className={styles.resolution}>
-                    {Object.values(variables).some(
-                        (other) => other.id !== variable.id && other.type === variable.type
-                    )
-                        ? `Every other ${variable.type} variable follows ${variable.name}.`
-                        : `Add another ${variable.type} variable to reference it.`}
-                </small>
+                                        </ActionsMenu>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </section>
             )}
             {variable.alias !== undefined && (
-                <small
-                    className={styles.resolution}
-                    aria-label={`Resolved value of ${variable.name}`}
-                >
-                    {variable.type === 'color' && typeof resolved === 'string' && (
-                        <span
-                            className={styles.swatch}
-                            style={{ backgroundColor: resolved }}
-                            aria-hidden="true"
-                        />
+                <div className={styles.formField}>
+                    <small
+                        className={styles.resolution}
+                        aria-label={`Resolved value of ${variable.name}`}
+                    >
+                        {variable.type === 'color' && typeof resolved === 'string' && (
+                            <span
+                                className={styles.swatch}
+                                style={{ backgroundColor: resolved }}
+                                aria-hidden="true"
+                            />
+                        )}
+                        {variableChain(variable, variables)}: {String(resolved)}
+                    </small>
+                    {!settingsOpen && (
+                        <button type="button" onClick={() => setSettingsOpen(true)}>
+                            Change reference
+                        </button>
                     )}
-                    {variableChain(variable, variables)}: {String(resolved)}
-                </small>
+                </div>
             )}
-            {problem && (
-                <small className={styles.note} role="alert">
-                    {problem}
-                </small>
+            {settingsOpen && (
+                <VariableSettings
+                    variable={variable}
+                    variables={variables}
+                    onDone={closeSettings}
+                    onManageDimension={onManageDimension}
+                />
             )}
             {problems.length > 0 && (
                 <small className={styles.note} role="note">

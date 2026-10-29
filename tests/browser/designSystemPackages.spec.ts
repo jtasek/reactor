@@ -1,4 +1,9 @@
-import { createVariable, selectVariable, openPanelOptions } from './support/variables';
+import {
+    createVariable,
+    selectVariable,
+    openPanelOptions,
+    openVariableSettings
+} from './support/variables';
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { createDocument } from 'src/app/factories';
@@ -44,6 +49,7 @@ test('reviews imports, offers reuse/replace/separate, exports identities and rej
     await selectVariable(page, 'Ink');
     await expect(page.getByLabel('Value of Ink', { exact: true })).toHaveValue('#000000');
     await selectVariable(page, 'Foreground');
+    await openVariableSettings(page, 'Foreground');
     await expect(page.getByLabel('Source of Foreground', { exact: true })).toContainText(
         'Follow Ink'
     );
