@@ -10,7 +10,11 @@ import type { InstanceShape } from 'src/app/types';
 import { Icon } from '../Icon';
 import { ObjectTypeSymbol } from '../ObjectTypeSymbol';
 import { Instance } from '../Shape/Instance';
-import { useComponent, useLibraryUpdateAvailable } from 'src/app/componentHooks';
+import {
+    useComponent,
+    useComponentVariants,
+    useLibraryUpdateAvailable
+} from 'src/app/componentHooks';
 import styles from './styles.css';
 import { ComponentRole } from './ComponentRole';
 
@@ -40,25 +44,13 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
         (shape) => shape.type === 'instance' && shape.componentId === componentId
     ).length;
     const readOnly = Boolean(component.library || component.locked || document.locked);
-    const variantFamily = Object.values(document.components).find((item) =>
-        item.variantIds?.includes(componentId)
-    );
-    const variantCandidates = Object.values(document.components).filter(
-        (candidate) =>
-            candidate.id !== componentId &&
-            !candidate.library &&
-            !candidate.locked &&
-            !candidate.variantIds?.length &&
-            JSON.stringify(candidate.interaction ?? null) ===
-                JSON.stringify(component.interaction ?? null) &&
-            !Object.values(document.components).some((item) =>
-                item.variantIds?.includes(candidate.id)
-            ) &&
-            (component.props ?? []).length === (candidate.props ?? []).length &&
-            (component.props ?? []).every((prop) =>
-                candidate.props?.some((other) => other.id === prop.id && other.key === prop.key)
-            )
-    );
+    const {
+        family: variantFamily,
+        variants,
+        candidates: variantCandidates,
+        problems: variantProblems,
+        defaultProblems
+    } = useComponentVariants(componentId);
     const preview: InstanceShape = {
         id: 'component-preview',
         key: 'component-preview',
@@ -128,29 +120,45 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
                     </button>
                 </nav>
             )}
+            {variantProblems.map((problem) => (
+                <p key={problem} role="status" className={styles.componentHint}>
+                    {problem}
+                </p>
+            ))}
             {!variantFamily && (source || component.variantIds?.length) && (
                 <div>
                     <h3 className={styles.heading}>Variants</h3>
+                    {defaultProblems.map((problem) => (
+                        <p key={problem} role="status" className={styles.componentHint}>
+                            {problem}
+                        </p>
+                    ))}
                     <ul className={styles.componentProps}>
                         <li>
                             <span>{component.name} (default)</span>
                         </li>
-                        {(component.variantIds ?? []).map((id) => {
-                            const name = document.components[id]?.name ?? 'Missing variant';
-
+                        {variants.map(({ id, name, editable, problems }) => {
                             return (
                                 <li key={id}>
-                                    <span>{name}</span>
+                                    <div className={styles.variantSummary}>
+                                        <span>{name}</span>
+                                        {problems.map((problem) => (
+                                            <p
+                                                key={problem}
+                                                role="status"
+                                                className={styles.componentHint}
+                                            >
+                                                {problem}
+                                            </p>
+                                        ))}
+                                    </div>
                                     <div>
                                         <button
                                             type="button"
                                             className={styles.iconButton}
                                             title={`Edit ${name}`}
                                             aria-label={`Edit variant ${name}`}
-                                            disabled={
-                                                !document.components[id] ||
-                                                Boolean(document.components[id].library)
-                                            }
+                                            disabled={!editable}
                                             onClick={() => selectComponentSource(id)}
                                         >
                                             <Icon icon={EDIT_ICON} />

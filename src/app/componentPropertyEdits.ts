@@ -18,6 +18,7 @@ import type {
 } from './types';
 import { exposableProperties, resolveComponentProp, acceptsComponentValue } from './componentProps';
 import { isShapeLocked } from './utils';
+import { canLinkComponentVariant } from './componentVariants';
 
 export const exposeComponentProp: ActionWithParam<{
     componentId: string;
@@ -308,42 +309,10 @@ export const addComponentVariant: ActionWithParam<{ componentId: string; variant
     { componentId, variantId }
 ) => {
     const document = state.currentDocument;
+    if (!canLinkComponentVariant(document, componentId, variantId)) {
+        return;
+    }
     const family = document.components[componentId];
-    const variant = document.components[variantId];
-
-    if (
-        document.locked ||
-        !family ||
-        !variant ||
-        family.locked ||
-        variant.locked ||
-        family.library ||
-        variant.library ||
-        componentId === variantId ||
-        variant.variantIds?.length ||
-        Object.values(document.components).some((item) => item.variantIds?.includes(componentId)) ||
-        !componentSource(document, componentId) ||
-        !componentSource(document, variantId) ||
-        JSON.stringify(family.interaction ?? null) !==
-            JSON.stringify(variant.interaction ?? null) ||
-        family.variantIds?.includes(variantId) ||
-        Object.values(document.components).some((item) => item.variantIds?.includes(variantId))
-    ) {
-        return;
-    }
-    const defaultProps = family.props ?? [];
-    const alternateProps = variant.props ?? [];
-    if (
-        defaultProps.length !== alternateProps.length ||
-        defaultProps.some(
-            (prop) =>
-                !alternateProps.some(
-                    (candidate) => candidate.id === prop.id && candidate.key === prop.key
-                )
-        )
-    ) {
-        return;
-    }
 
     family.variantIds = [...(family.variantIds ?? []), variantId];
 };

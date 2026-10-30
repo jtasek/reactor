@@ -521,6 +521,14 @@
     flex: 0 0 auto;
 }
 
+.componentProps li .variantSummary {
+    display: grid;
+    flex: 1;
+    gap: 4px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
 .variantActions {
     display: grid;
     gap: var(--panel-gap);

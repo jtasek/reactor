@@ -91,10 +91,17 @@ new source, then use **Variants of …** to return to the family. Creation is on
 You can also link a separately authored compatible source with **Link existing variant…**.
 Select an instance to
 choose either source in **Inspector → Component properties → Variant**. Both sources remain
-editable as components. Linking currently requires matching exposed property IDs and types;
+editable as components. Linking requires matching exposed property IDs, usable fields and role/action settings;
 create the family before exposing properties if the sources were authored separately.
 Matching source shape names let later exposed properties share an ID across the family.
-If an alternate is unavailable, the instance keeps its choice and draws the default.
+Inspector names incompatible or missing shared properties on the family, alternate and selected
+instance. These warnings do not change your selections, overrides or actions. When an alternate
+loses a shared property, its instance override remains available when switching back to the
+default. Property remapping is not yet available; choose a compatible source or create a fresh
+variant from the family. Role/action differences are reported because family instances keep the
+family’s semantics unless explicitly overridden.
+If an alternate is unavailable, the instance keeps its choice and draws the default; its selector
+shows **Unavailable variant — showing default** until you explicitly choose another source.
 Use the remove button next to an alternate under **Variants** to unlink it; instances that chose it
 go back to the default. Deleting an alternate component unlinks it too.
 

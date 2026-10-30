@@ -1,8 +1,18 @@
+import { json } from 'overmind';
+import { componentVariantProblems, canLinkComponentVariant } from 'src/app/componentVariants';
+import { componentVariants, instanceProperties } from 'src/app/computed/componentPanels';
 import { createTestStore } from './support/store';
 import { instanceSource } from 'src/app/componentSource';
 import { projectGeometry } from 'src/app/contextualGeometry';
 import { librarySnapshot } from 'src/app/componentLibrary';
-import { createCopies, edit, settle, shownDocument, sharedContent } from './support/collaboration';
+import {
+    createCopies,
+    edit,
+    settle,
+    shownDocument,
+    sharedContent,
+    DOCUMENT_ID
+} from './support/collaboration';
 import {
     migratePersistedState,
     restoreDocuments,
@@ -455,4 +465,258 @@ it('keeps the source members of a group that also holds other shapes', () => {
     const copied = Object.values(document.groups).find((group) => group.id !== 'mixed');
     expect(copied).toMatchObject({ name: 'Mixed', shapesIds: document.components[id].shapesIds });
     expect(document.groups.mixed.shapesIds).toEqual([...members, second, outside]);
+});
+
+it('names a missing variant property without dropping its override on switch or reload', () => {
+    const { store, document, instanceId } = setup();
+    store.actions.addComponentVariant({ componentId: 'default', variantId: 'alternate' });
+    store.actions.exposeComponentProp({
+        componentId: 'default',
+        shapeId: document.components.default.shapesIds[0],
+        key: 'opacity',
+        label: 'Opacity'
+    });
+    const propId = document.components.default.props![0].id;
+    store.actions.setInstanceOverride({ instanceIds: [instanceId], propId, value: 40 });
+    store.actions.setInstanceVariant({ instanceIds: [instanceId], variantId: 'alternate' });
+    store.actions.removeComponentProp({ componentId: 'alternate', propId });
+    const before = JSON.stringify(serializePersistedState(store.state));
+    expect(componentVariantProblems(document, 'default', 'alternate')).toEqual([
+        'Missing property “Opacity”. Its instance override is kept but cannot apply here.'
+    ]);
+    expect(componentVariants(document, 'default').variants[0].problems).toHaveLength(1);
+    expect(JSON.stringify(serializePersistedState(store.state))).toBe(before);
+    const restored = restoreDocuments(serializePersistedState(store.state))[document.id];
+    expect(restored.shapes[instanceId]).toMatchObject({
+        variantId: 'alternate',
+        overrides: { [propId]: 40 }
+    });
+    store.actions.setInstanceVariant({ instanceIds: [instanceId] });
+    const shape = document.shapes[instanceId];
+    expect(shape.type === 'instance' && projectGeometry(shape, document, {})).toMatchObject({
+        projectedSource: { shapes: [expect.objectContaining({ opacity: 0.4 })] }
+    });
+});
+
+it('diagnoses changed mappings, unusable source fields and family role drift', () => {
+    const { store, document } = setup();
+    store.actions.addComponentVariant({ componentId: 'default', variantId: 'alternate' });
+    store.actions.exposeComponentProp({
+        componentId: 'default',
+        shapeId: document.components.default.shapesIds[0],
+        key: 'opacity',
+        label: 'Opacity'
+    });
+    const copy = restoreDocuments(serializePersistedState(store.state))[document.id];
+    const alternate = copy.components.alternate;
+    const prop = alternate.props![0];
+    prop.key = 'fontSize';
+    alternate.interaction = { role: 'button', props: {} };
+    expect(componentVariantProblems(copy, 'default', 'alternate').join(' ')).toContain(
+        'uses fontSize instead of opacity'
+    );
+    expect(componentVariantProblems(copy, 'default', 'alternate').join(' ')).toContain(
+        'Role or action settings differ'
+    );
+    prop.key = 'opacity';
+    prop.shapeId = 'unavailable';
+    expect(componentVariantProblems(copy, 'default', 'alternate').join(' ')).toContain(
+        'no compatible source field'
+    );
+    alternate.props!.push({
+        id: 'extra',
+        label: 'Extra',
+        key: 'opacity',
+        shapeId: alternate.shapesIds[0]
+    });
+    expect(componentVariantProblems(copy, 'default', 'alternate').join(' ')).toContain(
+        '“Extra” is not shared'
+    );
+    copy.components.default.props![0].shapeId = 'unavailable';
+    expect(componentVariantProblems(copy, 'default', 'alternate').join(' ')).toContain(
+        'Repair the default source first'
+    );
+});
+
+it('uses semantic role comparison and identical compatibility checks for linking and the picker', () => {
+    const { store, document } = setup();
+    const copy = restoreDocuments(serializePersistedState(store.state))[document.id];
+    copy.components.default.interaction = {
+        role: 'button',
+        props: { label: 'label', disabled: 'disabled' },
+        navigateTo: 'home'
+    };
+    copy.components.alternate.interaction = {
+        role: 'button',
+        props: { disabled: 'disabled', label: 'label' },
+        navigateTo: 'home'
+    };
+    expect(canLinkComponentVariant(copy, 'default', 'alternate')).toBe(true);
+    expect(componentVariants(copy, 'default').candidates).toContainEqual({
+        id: 'alternate',
+        name: 'Alternate'
+    });
+    copy.components.alternate.interaction.navigateTo = 'elsewhere';
+    expect(canLinkComponentVariant(copy, 'default', 'alternate')).toBe(false);
+    expect(componentVariants(copy, 'default').candidates).not.toContainEqual({
+        id: 'alternate',
+        name: 'Alternate'
+    });
+    store.actions.editRole({
+        target: 'component',
+        id: 'alternate',
+        settings: { role: 'button', props: {} }
+    });
+    store.actions.addComponentVariant({ componentId: 'default', variantId: 'alternate' });
+    expect(document.components.default.variantIds).toBeUndefined();
+});
+
+it('keeps an unavailable authored selection distinct from the default in Inspector data', () => {
+    const { store, document, instanceId } = setup();
+    store.actions.addComponentVariant({ componentId: 'default', variantId: 'alternate' });
+    store.actions.setInstanceVariant({ instanceIds: [instanceId], variantId: 'alternate' });
+    const copy = restoreDocuments(serializePersistedState(store.state))[document.id];
+    delete copy.components.alternate;
+    const data = instanceProperties({ ...copy, selectedShapes: [copy.shapes[instanceId]] });
+    expect(data?.selectedVariantId).toBe('alternate');
+    expect(data?.variantProblems).toEqual([
+        expect.stringContaining('selected variant is unavailable')
+    ]);
+    expect(data?.variants.map((variant) => variant.id)).toEqual(['default']);
+});
+
+it('reports concurrent property removal while keeping another author’s instance edit through undo', async () => {
+    const { store, document, instanceId } = setup();
+    store.actions.addComponentVariant({ componentId: 'default', variantId: 'alternate' });
+    store.actions.exposeComponentProp({
+        componentId: 'default',
+        shapeId: document.components.default.shapesIds[0],
+        key: 'opacity',
+        label: 'Opacity'
+    });
+    const propId = document.components.default.props![0].id;
+    store.actions.setInstanceVariant({ instanceIds: [instanceId], variantId: 'alternate' });
+    const copies = await createCopies(2, (target) =>
+        target.actions.addDocument({ ...json(document), id: DOCUMENT_ID })
+    );
+    const [first, second] = copies;
+    edit(first, (actions) => actions.removeComponentProp({ componentId: 'alternate', propId }));
+    edit(second, (actions) =>
+        actions.setInstanceOverride({ instanceIds: [instanceId], propId, value: 60 })
+    );
+    settle(copies);
+    for (const copy of copies) {
+        expect(
+            componentVariantProblems(shownDocument(copy), 'default', 'alternate').join(' ')
+        ).toContain('Missing property “Opacity”');
+        expect(shownDocument(copy).shapes[instanceId]).toMatchObject({
+            overrides: { [propId]: 60 }
+        });
+    }
+    first.collaboration.undo(DOCUMENT_ID);
+    settle(copies);
+    expect(componentVariantProblems(shownDocument(second), 'default', 'alternate')).toEqual([]);
+    expect(shownDocument(second).shapes[instanceId]).toMatchObject({ overrides: { [propId]: 60 } });
+    copies.forEach((copy) => copy.collaboration.dispose());
+});
+
+function buttonFamily() {
+    const { store } = createTestStore();
+    const document = store.state.currentDocument;
+    store.actions.addShape({
+        type: 'text',
+        name: 'Label',
+        value: 'Go',
+        fontSize: 16,
+        position: { x: 0, y: 0 }
+    });
+    const shapeId = document.shapesIds.at(-1)!;
+    store.actions.addComponent({ id: 'default', name: 'Button', shapesIds: [shapeId] });
+    store.actions.exposeComponentProp({
+        componentId: 'default',
+        shapeId,
+        key: 'text',
+        label: 'Label'
+    });
+    const first = store.actions.createComponentVariant('default')!;
+    const second = store.actions.createComponentVariant('default')!;
+
+    return { store, document, first, second, label: document.components.default.props![0].id };
+}
+
+it('carries role edits on the default to alternates that matched it', () => {
+    const { store, document, first, second, label } = buttonFamily();
+    store.actions.editRole({
+        target: 'component',
+        id: second,
+        settings: { role: 'text', props: { content: label } }
+    });
+    store.actions.editRole({
+        target: 'component',
+        id: 'default',
+        settings: { role: 'button', props: { label } }
+    });
+    expect(document.components[first].interaction).toEqual({ role: 'button', props: { label } });
+    expect(document.components[second].interaction?.role).toBe('text');
+    expect(componentVariantProblems(document, 'default', first)).toEqual([]);
+    store.actions.editRole({ target: 'component', id: 'default', settings: null });
+    expect(document.components[first].interaction).toBeUndefined();
+    expect(document.components[second].interaction?.role).toBe('text');
+});
+
+it('lists the default’s problems once and repeated instance messages once', () => {
+    const { store, document, first, second, label } = buttonFamily();
+    store.actions.removeComponentProp({ componentId: first, propId: label });
+    const ids: string[] = [];
+    for (const x of [100, 200]) {
+        store.actions.addShape({
+            type: 'instance',
+            name: 'Button',
+            componentId: 'default',
+            position: { x, y: 0 },
+            overrides: {}
+        });
+        ids.push(document.shapesIds.at(-1)!);
+    }
+    store.actions.setInstanceVariant({ instanceIds: ids, variantId: first });
+    const data = instanceProperties({
+        ...document,
+        selectedShapes: ids.map((id) => document.shapes[id])
+    });
+    expect(data?.variantProblems).toEqual([expect.stringContaining('Missing property “Label”')]);
+
+    const copy = restoreDocuments(serializePersistedState(store.state))[document.id];
+    copy.components.default.props![0].shapeId = 'unavailable';
+    const panel = componentVariants(copy, 'default');
+    expect(panel.defaultProblems).toEqual([expect.stringContaining('Repair the default source')]);
+    expect(panel.variants.find((variant) => variant.id === second)?.problems).toEqual([]);
+    expect(componentVariantProblems(copy, 'default', second)).toEqual(panel.defaultProblems);
+});
+
+it('offers exactly the components that linking accepts', () => {
+    const { store, document } = setup();
+    store.actions.addShape({
+        type: 'rectangle',
+        name: 'Other',
+        position: { x: 0, y: 100 },
+        size: { width: 10, height: 10 }
+    });
+    store.actions.addComponent({
+        id: 'other',
+        name: 'Other',
+        shapesIds: [document.shapesIds.at(-1)!]
+    });
+    store.actions.editRole({
+        target: 'component',
+        id: 'other',
+        settings: { role: 'image', props: {} }
+    });
+    const offered = componentVariants(document, 'default').candidates.map(({ id }) => id);
+    const accepted = Object.keys(document.components).filter((id) =>
+        canLinkComponentVariant(document, 'default', id)
+    );
+    expect(offered).toEqual(accepted);
+    expect(offered).toEqual(['alternate']);
+    store.actions.addComponentVariant({ componentId: 'default', variantId: 'alternate' });
+    expect(componentVariants(document, 'alternate').candidates).toEqual([]);
 });
