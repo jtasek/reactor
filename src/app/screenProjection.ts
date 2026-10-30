@@ -9,12 +9,15 @@ import {
     screenLayoutRoot,
     screenLayoutMembers,
     screenLayoutDocument,
-    MISSING_SCREEN_LAYOUT
+    MISSING_SCREEN_LAYOUT,
+    selectScreenLayout,
+    screenLayoutProblems
 } from './screenLayouts';
 
 export interface ScreenViewport {
     id?: string;
     layoutId?: string;
+    layoutMode?: 'auto';
     position: Point;
     size: Size;
 }
@@ -40,13 +43,14 @@ export function projectScreen(
     viewport: ScreenViewport,
     simulation: VariableContext = {}
 ): ScreenProjection | null {
-    const source = screenLayoutRoot(document, screenId, viewport.layoutId);
+    const layoutId = selectScreenLayout(document, screenId, viewport);
+    const source = screenLayoutRoot(document, screenId, layoutId);
 
     if (document.frames[screenId]?.kind !== 'screen') {
         return null;
     }
 
-    const members = screenLayoutMembers(document, screenId, viewport.layoutId);
+    const members = screenLayoutMembers(document, screenId, layoutId);
     const belongsToScreen = (id: string | undefined) => members.has(id ?? '');
     const frameIds = [...members].filter((id) => id !== source.id && isFrameVisible(document, id));
     const shown = shownShapesIds(document, null);
@@ -66,7 +70,7 @@ export function projectScreen(
         };
     }
 
-    const resized = screenLayoutDocument(document, screenId, viewport.layoutId, viewport.size);
+    const resized = screenLayoutDocument(document, screenId, layoutId, viewport.size);
     const layout = projectContextualLayout(resized, { viewId: viewport.id, screenId, simulation });
     const involved = new Set([source.id, ...frameIds, ...shapeIds]);
     const offset = {
@@ -95,9 +99,8 @@ export function projectScreen(
             return shape;
         }),
         problems: [
-            ...(viewport.layoutId && source.id !== viewport.layoutId
-                ? [MISSING_SCREEN_LAYOUT]
-                : []),
+            ...screenLayoutProblems(document, screenId),
+            ...(layoutId && source.id !== layoutId ? [MISSING_SCREEN_LAYOUT] : []),
             ...[...Object.entries(layout.problems), ...Object.entries(layout.modeProblems ?? {})]
                 .filter(([id]) => involved.has(id))
                 .map(([, problem]) => problem)

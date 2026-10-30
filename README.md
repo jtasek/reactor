@@ -203,13 +203,31 @@ clipping and interactive screen behavior remain later increments.
 Select a **Screen view**, then use **Inspector → Layout → Artwork** to choose its layout.
 The existing artwork is the **Default layout**. Enter a **New layout** name and choose
 **Create empty layout** to start a separate tree, then draw or paste into that view.
-**Edit layout settings** opens the layout's name, stack, padding and sizing controls.
+**Edit layout settings** opens the layout's name, stack and padding controls; its size follows the Screen view.
 Views choosing the same layout share its artwork; other layouts stay separate. Place reusable
 component instances in each tree to share component definitions while keeping instance values.
 
 All layouts belong to one screen and retain its navigation destination. Preview starts with
-its launch view's selected layout and viewport. Selection is manual in this increment;
-automatic width rules and input continuity between different layout trees come next.
+its launch view's selected layout and viewport. Choose **Auto · Width** on a view and add
+rules under **Automatic layouts**. Each rule names a layout and its minimum width in pixels.
+The greatest minimum at or below the view's width wins; below all rules, Default is used.
+Rules can also select Default explicitly. Existing views keep their manual choices.
+Duplicate thresholds resolve by layout ID and show an unreachable-rule diagnostic.
+
+Preview's **Width** changes the viewport for every navigation destination. Its **Layout**
+picker inspects Auto, Default or an alternate for the current screen, without saving a choice
+to the document. Explicit inspection choices persist across width changes and navigation,
+and are discarded when Preview closes. Width-selected modes follow the inspection width,
+while explicit modes and Theme remain fixed. Other destinations retain their height constraints.
+Mode authoring and instance values stay intact.
+
+To keep typed input across layouts, select corresponding Input instances and give them the
+same **Role → Input identity**. They must use the same component family and exposed Value
+property ID (text). Labels never establish identity. The identity must be unique within the
+active layout; duplicates warn and do not share values. Inputs without matching identities,
+with different value properties/components, or absent from the newly selected layout reset
+to their authored value. Reset preview clears all typed values. Button actions come from the
+active instance/source configuration and keep their logical screen destinations.
 A missing layout falls back to Default with a diagnostic. Deleting a layout boundary releases
 its artwork to Canvas and retains the screen and its views. Undo restores it.
 

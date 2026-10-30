@@ -3,7 +3,10 @@ import {
     screenLayoutDocument,
     screenLayoutMembers,
     screenLayoutRoot,
-    MISSING_SCREEN_LAYOUT
+    MISSING_SCREEN_LAYOUT,
+    selectScreenLayout,
+    screenLayouts,
+    screenLayoutProblems
 } from '../app/screenLayouts';
 import type { Document, Shape, VariableContext, Size } from '../app/types';
 import { layoutDocument } from '../app/frameLayout';
@@ -18,6 +21,12 @@ import { instanceModes, resolveModes } from '../app/inheritedModes';
 import { assertNever, boxCenter, getShapeBounds, DEFAULT_TEXT_FONT_SIZE } from '../app/utils';
 import type { PreviewDrawing, PreviewNode } from './protocol';
 
+export interface PreviewInspection {
+    width?: number;
+    /** Undefined follows launch choice; null selects Auto; a screen ID selects Default. */
+    layouts?: Record<string, string | null>;
+}
+
 /** A read-only projection. Source component records and bindings never cross the sandbox boundary.
  * Problems that leave the prototype usable, such as a link to a deleted screen, go to `warnings`. */
 export function projectPreview(
@@ -29,27 +38,81 @@ export function projectPreview(
         screenId?: string;
         viewport?: Size;
         layoutId?: string;
-    } | null
+        layoutMode?: 'auto';
+    } | null,
+    inspection: PreviewInspection = {}
 ): PreviewDrawing {
-    const launch = authoredDocument.frames[session?.screenId ?? ''];
-    const sourceDocument =
-        launch?.kind === 'screen'
-            ? screenLayoutDocument(
-                  authoredDocument,
-                  launch.id,
-                  session?.layoutId,
-                  session?.viewport
-              )
+    const screens = screenFrames(authoredDocument);
+    const viewportWidth = inspection.width ?? session?.viewport?.width;
+    const address = {
+        simulation: context,
+        session: session?.modes,
+        sessionScreenId: session?.screenId
+    };
+    // Without an inspection viewport, bindings and Hug/Fill still define each screen's size.
+    const intrinsic =
+        viewportWidth === undefined &&
+        screens.some((screen) => screen.bindings?.width || screen.bindings?.height || screen.sizing)
+            ? layoutDocument(authoredDocument, projectContextualLayout(authoredDocument, address))
             : authoredDocument;
-    const screens = screenFrames(sourceDocument);
+    const choices = new Map(
+        screens.map((screen) => {
+            const explicit = inspection.layouts?.[screen.id];
+            const initial =
+                screen.id === session?.screenId && (session.viewport || session.layoutId)
+                    ? (session.layoutId ?? (session.layoutMode === 'auto' ? null : screen.id))
+                    : null;
+            const choice = explicit === undefined ? initial : explicit;
+            const size = {
+                ...intrinsic.frames[screen.id].size,
+                ...(screen.id === session?.screenId ? session.viewport : {}),
+                width: viewportWidth ?? intrinsic.frames[screen.id].size.width
+            };
+            const layoutId = selectScreenLayout(authoredDocument, screen.id, {
+                layoutId: choice ?? undefined,
+                layoutMode: choice === null ? 'auto' : undefined,
+                size
+            });
+            warnings.push(...screenLayoutProblems(authoredDocument, screen.id));
+            if (
+                layoutId &&
+                screenLayoutRoot(authoredDocument, screen.id, layoutId)?.id !== layoutId
+            ) {
+                warnings.push(MISSING_SCREEN_LAYOUT);
+            }
+
+            return [screen.id, { choice, layoutId, size }] as const;
+        })
+    );
+    const sourceDocument = screens.reduce((document, screen) => {
+        const selected = choices.get(screen.id)!;
+
+        // Only the launch view supplies a height. Width inspection must not clear other
+        // screens' height constraints or height bindings on their layout roots.
+        const size =
+            viewportWidth === undefined
+                ? selected.size
+                : {
+                      width: viewportWidth,
+                      ...(screen.id === session?.screenId && session.viewport
+                          ? { height: session.viewport.height }
+                          : {})
+                  };
+        const resized = screenLayoutDocument(document, screen.id, selected.layoutId, size);
+        if (viewportWidth !== undefined) {
+            return resized;
+        }
+
+        // Fit the alternate tree, but retain the canonical screen's bindings and diagnostics.
+        return {
+            ...resized,
+            frames: { ...resized.frames, [screen.id]: document.frames[screen.id] }
+        };
+    }, authoredDocument);
     const members = new Map(
         screens.map((frame) => [
             frame.id,
-            screenLayoutMembers(
-                sourceDocument,
-                frame.id,
-                frame.id === session?.screenId ? session.layoutId : undefined
-            )
+            screenLayoutMembers(sourceDocument, frame.id, choices.get(frame.id)?.layoutId)
         ])
     );
     const inactiveFrames = new Set(
@@ -66,19 +129,7 @@ export function projectPreview(
             )
             .map(([, problem]) => problem);
 
-    if (
-        session?.layoutId &&
-        launch?.kind === 'screen' &&
-        screenLayoutRoot(sourceDocument, launch.id, session.layoutId).id !== session.layoutId
-    ) {
-        warnings.push(MISSING_SCREEN_LAYOUT);
-    }
-
-    const layout = projectContextualLayout(sourceDocument, {
-        simulation: context,
-        session: session?.modes,
-        sessionScreenId: session?.screenId
-    });
+    const layout = projectContextualLayout(sourceDocument, address);
     const problems = activeProblems(layout.problems);
     warnings.push(...activeProblems(layout.modeProblems ?? {}));
     if (problems.length) {
@@ -91,17 +142,15 @@ export function projectPreview(
     const screenIds = new Set(roots.map((frame) => frame.id));
     const shown = shownShapesIds({ ...document, shownLayerId: undefined }, null);
     const root = (screenId: string) =>
-        screenLayoutRoot(
-            document,
-            screenId,
-            screenId === session?.screenId ? session.layoutId : undefined
-        )!;
+        screenLayoutRoot(document, screenId, choices.get(screenId)?.layoutId)!;
+    const identities = new Map<string, PreviewNode[]>();
     let count = 0;
     const draw = (
         shape: Shape,
         path: string,
         ancestors: ReadonlySet<string>,
-        inherited: VariableContext
+        inherited: VariableContext,
+        screenId: string
     ): PreviewNode => {
         const context =
             shape.type === 'instance'
@@ -238,7 +287,7 @@ export function projectPreview(
                               context
                           );
 
-                    return resolved.visible ? [draw(resolved, key, next, context)] : [];
+                    return resolved.visible ? [draw(resolved, key, next, context, screenId)] : [];
                 });
                 const role = resolveComponentRole(document, component, shape);
                 if (role.problems.length) {
@@ -266,11 +315,33 @@ export function projectPreview(
                                 : undefined,
                         disabled: role.props.disabled === true,
                         navigateTo,
+                        ...(role.role === 'input'
+                            ? {
+                                  stateKey: JSON.stringify([
+                                      screenId,
+                                      shape.interaction?.controlId && settings.props.value
+                                          ? ['shared', shape.interaction.controlId]
+                                          : ['node', key],
+                                      component.id,
+                                      settings.props.value ?? '',
+                                      'text'
+                                  ])
+                              }
+                            : {}),
                         x: source.box.topLeft.x,
                         y: source.box.topLeft.y,
                         width: source.box.width,
                         height: source.box.height
                     };
+                }
+                if (role.role === 'input' && shape.interaction?.controlId) {
+                    const identity = JSON.stringify([screenId, shape.interaction.controlId]);
+                    identities.set(identity, [...(identities.get(identity) ?? []), group]);
+                    if (!settings.props.value) {
+                        warnings.push(
+                            `${shape.name}: link a Value property to preserve input across layouts.`
+                        );
+                    }
                 }
                 break;
             }
@@ -281,7 +352,7 @@ export function projectPreview(
         return group;
     };
 
-    return {
+    const drawing: PreviewDrawing = {
         documentId: document.id,
         screens: roots.map((frame) => ({
             id: frame.id,
@@ -289,6 +360,11 @@ export function projectPreview(
             x: root(frame.id).position.x,
             y: root(frame.id).position.y,
             ...frame.size,
+            layouts: [
+                { id: frame.id, name: 'Default layout' },
+                ...screenLayouts(document, frame.id)
+            ].map(({ id, name }) => ({ id, name })),
+            layoutChoice: choices.get(frame.id)!.choice,
             nodes: document.shapesIds
                 .filter(
                     (id) =>
@@ -310,9 +386,23 @@ export function projectPreview(
                         themeColors(shape, document, resolved.modes),
                         frame.id,
                         new Set(),
-                        resolved.modes
+                        resolved.modes,
+                        frame.id
                     );
                 })
         }))
     };
+    for (const nodes of identities.values()) {
+        if (nodes.length < 2) {
+            continue;
+        }
+        warnings.push(
+            'Duplicate input identity in a screen layout. Give each input a unique identity; these inputs reset when layouts change.'
+        );
+        for (const node of nodes) {
+            delete node.control!.stateKey;
+        }
+    }
+
+    return drawing;
 }

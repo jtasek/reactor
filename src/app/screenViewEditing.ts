@@ -1,6 +1,7 @@
 import {
     isScreenLayout,
     viewLayoutRoot,
+    viewLayoutId,
     screenLayoutMembers,
     screenLayoutDocument
 } from './screenLayouts';
@@ -64,7 +65,7 @@ function screenViewSource(state: Context['state'], address: ScreenViewAddress | 
     const screen = view ? viewLayoutRoot(document, view) : undefined;
     const component = document.components[document.editingComponentId ?? ''];
     const members = component
-        ? screenLayoutMembers(document, definition?.id ?? '', view?.layoutId)
+        ? screenLayoutMembers(document, definition?.id ?? '', viewLayoutId(document, view))
         : null;
     const focus =
         state.componentEditingReturn?.documentId === document.id
@@ -306,7 +307,7 @@ function screenViewMembersTarget(
         return null;
     }
 
-    const members = screenLayoutMembers(document, definition.id, view.layoutId);
+    const members = screenLayoutMembers(document, definition.id, viewLayoutId(document, view));
     const master = document.components[document.editingComponentId ?? ''];
 
     if (
@@ -390,7 +391,12 @@ function placedLayoutOffset(
     }
 
     const { view } = target;
-    const resized = screenLayoutDocument(document, view.screenId!, view.layoutId, view.size);
+    const resized = screenLayoutDocument(
+        document,
+        view.screenId!,
+        viewLayoutId(document, view),
+        view.size
+    );
 
     return hasLayoutOffset({ ...resized, frameLayout: projectFrameLayout(resized) }, shapeIds);
 }

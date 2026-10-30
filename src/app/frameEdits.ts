@@ -89,6 +89,8 @@ function addFrame(context: Context, input: Extract<FrameEdit, { kind: 'add' | 'p
             ...(source?.screenId ? { screenId: source.screenId } : {}),
             ...(source?.definitionOnly ? { definitionOnly: true } : {}),
             ...(source?.layoutId ? { layoutId: source.layoutId } : {}),
+            ...(source?.layoutMode ? { layoutMode: source.layoutMode } : {}),
+            ...(source?.responsiveLayouts ? { responsiveLayouts: source.responsiveLayouts } : {}),
             ...(source?.screenLayout ? { screenLayout: true } : {}),
             position,
             size: input.kind === 'add' ? input.size : input.frame.size,
@@ -221,8 +223,20 @@ function framePasteOperations(
     });
     // Frames' mode choices land on the target's dimensions, like the artwork's.
     const { remapModes } = editorHelpers().clipboard.pasteDimensions(artwork, document);
-    const withModes = <T extends Pick<Frame, 'modeOverrides'>>(item: T): T =>
-        item.modeOverrides ? { ...item, modeOverrides: remapModes(item.modeOverrides) } : item;
+    const withModes = <T extends Pick<Frame, 'modeOverrides' | 'responsiveLayouts'>>(
+        item: T
+    ): T => ({
+        ...item,
+        ...(item.modeOverrides ? { modeOverrides: remapModes(item.modeOverrides) } : {}),
+        ...(item.responsiveLayouts
+            ? {
+                  responsiveLayouts: item.responsiveLayouts.map((rule) => ({
+                      ...rule,
+                      layoutId: keys.get(rule.layoutId) ?? rule.layoutId
+                  }))
+              }
+            : {})
+    });
 
     const operations = clipboard.pasteOperations(artwork, document, null, delta);
     const variableOperation = (operation: import('./operations').Operation) =>
@@ -482,9 +496,15 @@ export function edit(context: Context, input: FrameEdit): string | undefined {
 
     editorHelpers().operations.writeBatch(document, result.staged);
 
-    if ('layoutId' in input.changes) {
+    if (
+        'layoutId' in input.changes ||
+        'layoutMode' in input.changes ||
+        'responsiveLayouts' in input.changes
+    ) {
+        const selectedFrameId = document.selectedFrameId;
         actions.unselectShapes();
-        document.selectedFrameId = frame.id;
+        document.selectedFrameId =
+            'responsiveLayouts' in input.changes ? selectedFrameId : frame.id;
         state.events.pointer.screenView = null;
     }
     const createdView = result.staged.frames.find(

@@ -1,5 +1,5 @@
 import { useAppState } from '../app/hooks';
-import { projectPreview } from './project';
+import { projectPreview, type PreviewInspection } from './project';
 
 export interface PreviewProjection {
     serialized: string | null;
@@ -13,7 +13,7 @@ export interface PreviewProjection {
  * and final validation happen before transmission. Serialization avoids rebuilding an
  * unchanged view after selection-only edits. During a
  * drag only the gesture kind is read, so pointer moves don't rebuild the preview. */
-export const usePreviewProjection = () =>
+export const usePreviewProjection = (inspection: PreviewInspection = {}) =>
     useAppState((state): PreviewProjection => {
         if (state.events.pointer.gesture.kind !== 'idle') {
             return { serialized: null, problem: null, warnings: [], paused: true };
@@ -21,7 +21,13 @@ export const usePreviewProjection = () =>
         const document = state.currentDocument;
         const warnings: string[] = [];
         try {
-            const drawing = projectPreview(document, {}, warnings, state.previewModeContext);
+            const drawing = projectPreview(
+                document,
+                {},
+                warnings,
+                state.previewModeContext,
+                inspection
+            );
 
             return {
                 serialized: JSON.stringify(drawing),

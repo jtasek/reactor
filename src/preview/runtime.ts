@@ -65,7 +65,8 @@ function nodeElement(node: PreviewNode, decorative = false): SVGElement {
     const field = document.createElementNS(XHTML, control.role === 'input' ? 'input' : 'button') as
         | HTMLInputElement
         | HTMLButtonElement;
-    field.dataset.key = node.key;
+    const inputKey = control.stateKey ?? node.key;
+    field.dataset.key = inputKey;
     field.className = control.role;
     field.setAttribute('aria-label', control.label);
     field.disabled = control.disabled ?? false;
@@ -74,9 +75,9 @@ function nodeElement(node: PreviewNode, decorative = false): SVGElement {
     }
     field.type = control.role === 'input' ? 'text' : 'button';
     if (field instanceof HTMLInputElement) {
-        field.value = values.get(node.key) ?? control.value ?? '';
+        field.value = values.get(inputKey) ?? control.value ?? '';
         field.placeholder = control.placeholder ?? control.label;
-        field.addEventListener('input', () => values.set(node.key, field.value));
+        field.addEventListener('input', () => values.set(inputKey, field.value));
     } else {
         field.textContent = control.label;
         field.title = control.label;
@@ -132,7 +133,48 @@ function render() {
         currentScreen = undefined;
         render();
     });
-    navigation.append(label, reset);
+    navigation.append(label);
+    if (screen.layouts) {
+        const widthLabel = document.createElement('label');
+        widthLabel.textContent = 'Width ';
+        const width = document.createElement('input');
+        width.type = 'number';
+        width.min = '1';
+        width.max = '10000';
+        width.value = String(screen.width);
+        width.setAttribute('aria-label', 'Preview width');
+        width.addEventListener('change', () => {
+            if (width.checkValidity() && Number.isFinite(width.valueAsNumber)) {
+                port?.postMessage({ type: 'inspect-width', width: width.valueAsNumber });
+            }
+        });
+        widthLabel.append(width);
+        const layoutLabel = document.createElement('label');
+        layoutLabel.textContent = 'Layout ';
+        const layouts = document.createElement('select');
+        layouts.setAttribute('aria-label', 'Preview layout');
+        const choices = [{ id: null, name: 'Auto · Width' }, ...screen.layouts];
+        if (screen.layoutChoice && !screen.layouts.some(({ id }) => id === screen.layoutChoice)) {
+            choices.push({ id: screen.layoutChoice, name: 'Missing layout — showing default' });
+        }
+        for (const choice of choices) {
+            const option = document.createElement('option');
+            option.value = JSON.stringify(choice.id);
+            option.textContent = choice.name;
+            layouts.append(option);
+        }
+        layouts.value = JSON.stringify(screen.layoutChoice ?? null);
+        layouts.addEventListener('change', () =>
+            port?.postMessage({
+                type: 'inspect-layout',
+                screenId: screen.id,
+                layoutId: JSON.parse(layouts.value)
+            })
+        );
+        layoutLabel.append(layouts);
+        navigation.append(widthLabel, layoutLabel);
+    }
+    navigation.append(reset);
     const svg = document.createElementNS(SVG, 'svg');
     svg.setAttribute('viewBox', `${screen.x} ${screen.y} ${screen.width} ${screen.height}`);
     svg.setAttribute('width', String(screen.width));
@@ -164,7 +206,7 @@ function receive(value: unknown) {
         const keys = new Set<string>();
         const collect = (node: PreviewNode) => {
             if (node.control?.role === 'input') {
-                keys.add(node.key);
+                keys.add(node.control.stateKey ?? node.key);
             }
             node.children?.forEach(collect);
         };

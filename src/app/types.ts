@@ -252,6 +252,8 @@ export interface RoleSettings {
     props: Record<string, string>;
     /** Optional button navigation to a top-level frame. Missing targets remain repairable. */
     navigateTo?: string;
+    /** Explicit input identity shared by compatible instances across screen layouts. */
+    controlId?: string;
 }
 
 export type Shape = Rectangle | Image | Circle | Ellipse | Line | Pen | Text | InstanceShape;
@@ -357,8 +359,11 @@ export interface Frame {
     definitionOnly?: true;
     /** A separate artwork tree owned by its parent screen, never a destination. */
     screenLayout?: true;
+    /** Optional screen rules; a screen ID selects its default artwork. */
+    responsiveLayouts?: { minWidth: number; layoutId: string }[];
     /** Explicit layout inspection choice on a Screen view; absent uses the default. */
     layoutId?: string;
+    layoutMode?: 'auto';
     /** A placed view references its screen definition; its box is view-local. */
     screenId?: string;
     stack?: StackRules;
@@ -633,6 +638,7 @@ export type Application = {
         screenId?: string;
         viewport?: Size;
         layoutId?: string;
+        layoutMode?: 'auto';
     } | null;
     devices: HashTable<Device>;
     documents: HashTable<Document>;

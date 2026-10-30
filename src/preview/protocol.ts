@@ -14,6 +14,7 @@ export interface PreviewNode {
         placeholder?: string;
         disabled?: boolean;
         navigateTo?: string;
+        stateKey?: string;
         x: number;
         y: number;
         width: number;
@@ -32,6 +33,8 @@ export interface PreviewDrawing {
         width: number;
         height: number;
         nodes: PreviewNode[];
+        layouts?: { id: string; name: string }[];
+        layoutChoice?: string | null;
     }[];
 }
 
@@ -46,8 +49,8 @@ export const MAX_PREVIEW_IMAGE_BYTES = 8 * 1024 * 1024;
 /** Matches the editor's per-image limit (`MAX_IMAGE_BYTES`). */
 const MAX_PREVIEW_IMAGE_FILE_BYTES = 5 * 1024 * 1024;
 const IMAGE_URL = /^data:image\/(png|jpeg|gif|webp);base64,([a-z0-9+/]*={0,2})$/i;
-/** Version 2 adds the verified image table; older runtimes silently omit image references. */
-export const PREVIEW_PROTOCOL_VERSION = 2;
+/** Version 3 adds layout inspection and compatible input identities. */
+export const PREVIEW_PROTOCOL_VERSION = 3;
 export const MAX_PREVIEW_NODES = 5000;
 const MAX_DEPTH = 32;
 const TAGS = new Set(['g', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'text', 'image']);
@@ -216,7 +219,7 @@ export function readPreview(
                 !['x', 'y', 'width', 'height'].every((key) => finite(c[key])) ||
                 (c.width as number) < 0 ||
                 (c.height as number) < 0 ||
-                ['value', 'placeholder', 'navigateTo'].some(
+                ['value', 'placeholder', 'navigateTo', 'stateKey'].some(
                     (key) => c[key] !== undefined && !string(c[key])
                 ) ||
                 (c.disabled !== undefined && typeof c.disabled !== 'boolean')
@@ -230,6 +233,7 @@ export function readPreview(
                 placeholder: c.placeholder,
                 disabled: c.disabled,
                 navigateTo: c.navigateTo,
+                ...(c.stateKey === undefined ? {} : { stateKey: c.stateKey }),
                 x: c.x,
                 y: c.y,
                 width: c.width,
@@ -252,6 +256,24 @@ export function readPreview(
         ) {
             throw new Error('Invalid preview screen.');
         }
+        if (
+            screen.layoutChoice !== undefined &&
+            screen.layoutChoice !== null &&
+            !string(screen.layoutChoice)
+        ) {
+            throw new Error('Invalid layout choice.');
+        }
+        if (
+            screen.layouts !== undefined &&
+            (!Array.isArray(screen.layouts) ||
+                screen.layouts.some((entry) => {
+                    const layout = object(entry);
+
+                    return !string(layout.id) || !string(layout.name);
+                }))
+        ) {
+            throw new Error('Invalid layout choices.');
+        }
         screenIds.add(screen.id);
         // Keys need only be unique within a screen; a document instance belongs to one root.
         keys.clear();
@@ -263,7 +285,17 @@ export function readPreview(
             y: screen.y as number,
             width: screen.width as number,
             height: screen.height as number,
-            nodes: screen.nodes.map((node) => readNode(node, 0))
+            nodes: screen.nodes.map((node) => readNode(node, 0)),
+            ...(screen.layouts === undefined
+                ? {}
+                : {
+                      layouts: (screen.layouts as { id: string; name: string }[]).map(
+                          ({ id, name }) => ({ id, name })
+                      )
+                  }),
+            ...(screen.layoutChoice === undefined
+                ? {}
+                : { layoutChoice: screen.layoutChoice as string | null })
         };
     });
     if (nodes.some((node) => node.control?.navigateTo && !screenIds.has(node.control.navigateTo))) {

@@ -977,3 +977,10 @@
     outline: var(--focus-ring-width) solid var(--focus-ring-color);
     outline-offset: 1px;
 }
+
+/* Long layout names stay inside a compact Inspector column. */
+.layoutChoice {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+}

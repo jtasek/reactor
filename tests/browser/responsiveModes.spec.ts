@@ -96,3 +96,25 @@ test('authors optional rules without changing values, rejects duplicate widths a
     await panel.getByLabel('Selected dimension').selectOption('theme');
     await expect(panel.getByLabel('Select modes by')).toHaveValue('manual');
 });
+
+for (const explicit of [false, true]) {
+    test(`Preview width ${explicit ? 'preserves explicit modes' : 'recomputes automatic modes'} while keeping Theme`, async ({
+        page
+    }) => {
+        const { mobile, inspector } = await openResponsive(page);
+        await page.locator('#frames > [data-frame="mobile"]').press('Enter');
+        if (explicit) {
+            await inspector.getByLabel('MediaSize mode', { exact: true }).selectOption('xs');
+        }
+        await page.getByRole('button', { name: 'Preview', exact: true }).click();
+        const runtime = page.frameLocator('iframe[title="Application preview"]');
+        await expect(runtime.locator('rect')).toHaveAttribute('width', '80');
+        await runtime.getByLabel('Preview width').fill('800');
+        await runtime.getByLabel('Preview width').press('Tab');
+        await expect(runtime.locator('svg')).toHaveAttribute('width', '800');
+        await expect(runtime.locator('rect')).toHaveAttribute('width', explicit ? '80' : '240');
+        await expect(runtime.locator('text')).toHaveAttribute('font-size', explicit ? '14' : '20');
+        await expect(runtime.locator('rect')).toHaveAttribute('fill', '#ddeeff');
+        await expect(mobile.locator('[data-cy="Button"]')).toHaveAttribute('width', '80');
+    });
+}
