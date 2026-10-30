@@ -1,11 +1,40 @@
 import type { Context } from './index';
-import type { RoleSettings } from './types';
+import type { Component, Document, RoleSettings } from './types';
 import { readRoleSettings, orUndefined } from './services/documentStorage';
 import { isReadOnly } from './documentAccess';
 import { isShapeLocked } from './utils';
 import { ROLE_PROPERTIES, effectiveRoleSettings } from './componentRoles';
 import { resolveComponentProp } from './componentProps';
 import { frameParents, isFrameVisible } from './frameState';
+import { sameRoleSettings } from './componentVariants';
+
+/**
+ * A family's instances take the default's role, so a role edit on the default carries over
+ * to alternates that matched it. Alternates someone set up differently keep their settings.
+ */
+function mirrorToAlternates(
+    document: Document,
+    family: Component,
+    previous: RoleSettings,
+    settings: RoleSettings | null
+) {
+    for (const id of family.variantIds ?? []) {
+        const alternate = document.components[id];
+        if (
+            !alternate ||
+            alternate.library ||
+            alternate.locked ||
+            !sameRoleSettings(previous, effectiveRoleSettings(alternate))
+        ) {
+            continue;
+        }
+        if (settings === null) {
+            delete alternate.interaction;
+        } else {
+            alternate.interaction = { ...settings, props: { ...settings.props } };
+        }
+    }
+}
 
 export interface RoleEdit {
     target: 'component' | 'instance';
@@ -33,6 +62,9 @@ export function editRole({ state }: Context, edit: RoleEdit) {
     }
     const target = instance?.type === 'instance' ? instance : component;
     if (edit.settings === null) {
+        if (target === component) {
+            mirrorToAlternates(document, component, effectiveRoleSettings(component), null);
+        }
         delete target.interaction;
 
         return;
@@ -70,6 +102,9 @@ export function editRole({ state }: Context, edit: RoleEdit) {
     }
     if (JSON.stringify(target.interaction) === JSON.stringify(settings)) {
         return;
+    }
+    if (target === component) {
+        mirrorToAlternates(document, component, previous, settings);
     }
     target.interaction = settings;
 }

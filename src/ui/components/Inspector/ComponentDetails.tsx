@@ -48,7 +48,8 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
         family: variantFamily,
         variants,
         candidates: variantCandidates,
-        problems: variantProblems
+        problems: variantProblems,
+        defaultProblems
     } = useComponentVariants(componentId);
     const preview: InstanceShape = {
         id: 'component-preview',
@@ -127,6 +128,11 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
             {!variantFamily && (source || component.variantIds?.length) && (
                 <div>
                     <h3 className={styles.heading}>Variants</h3>
+                    {defaultProblems.map((problem) => (
+                        <p key={problem} role="status" className={styles.componentHint}>
+                            {problem}
+                        </p>
+                    ))}
                     <ul className={styles.componentProps}>
                         <li>
                             <span>{component.name} (default)</span>

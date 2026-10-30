@@ -726,6 +726,10 @@ on map insertion order. Missing mappings, wrong fields, unshared properties and 
 links remain authored; diagnostics do not mutate overrides or source records. Missing selected
 variants retain their ID and an explicit unavailable option in Inspector. Manual mapping repair
 and broader library update behavior remain future work.
+A role edit on a family default carries over to alternates whose role matched it before
+the edit; alternates set up differently keep theirs. The link picker runs the family checks
+once and cheap prop/role checks before looking at a candidate's artwork, so it stays fast
+with many components. The default's own problems are listed once above its variants.
 Shared property IDs are mirrored to matching source shapes when exposed after linking: a
 property both already expose pairs shapes first, then a unique name, then drawing position
 when both sources have the same shape types in order (created variants keep that order).
