@@ -18,7 +18,7 @@ import type {
 } from './types';
 import { exposableProperties, resolveComponentProp, acceptsComponentValue } from './componentProps';
 import { isShapeLocked } from './utils';
-import { canLinkComponentVariant } from './componentVariants';
+import { canLinkComponentVariant, componentPropertyMappings } from './componentVariants';
 
 export const exposeComponentProp: ActionWithParam<{
     componentId: string;
@@ -103,6 +103,36 @@ function counterpart(
         ? theirNamed[ownNamed.findIndex((candidate) => candidate.id === shape.id)]
         : undefined;
 }
+
+/** Repair one mapping without replacing its identity, instance values or role links. */
+export const setComponentPropTarget: ActionWithParam<{
+    componentId: string;
+    propId: string;
+    shapeId: string;
+}> = ({ state, effects }, { componentId, propId, shapeId }) => {
+    const document = state.currentDocument;
+    const row = componentPropertyMappings(document, componentId).find(
+        (item) => item.prop.id === propId
+    );
+    if (
+        !row?.editable ||
+        !row.targets.some((target) => target.id === shapeId && !target.disabled)
+    ) {
+        return;
+    }
+    const component = document.components[componentId];
+    const existing = component.props?.find((prop) => prop.id === propId);
+    if (existing?.shapeId === shapeId && existing.key === row.prop.key) {
+        return;
+    }
+    const mapped = { ...row.prop, ...existing, shapeId, key: row.prop.key };
+
+    effects.collaboration.startBatch(document.id, { kind: 'person' });
+    component.props = existing
+        ? component.props!.map((prop) => (prop.id === propId ? mapped : prop))
+        : [...(component.props ?? []), mapped];
+    effects.collaboration.flush();
+};
 
 export const removeComponentProp: ActionWithParam<{ componentId: string; propId: string }> = (
     { state },

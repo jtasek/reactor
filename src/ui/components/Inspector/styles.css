@@ -536,7 +536,8 @@
 }
 
 .variantActions > button,
-.variantActions > select {
+.variantActions > select,
+.propertyMapping > select {
     background: var(--field-background);
     border: 1px solid var(--hairline-color);
     border-radius: var(--radius-sm);
@@ -921,4 +922,22 @@
     font-size: 0.7rem;
     gap: 3px;
     padding: 0;
+}
+
+.componentProps li .propertyMapping {
+    display: grid;
+    flex: 1;
+    gap: 4px;
+    min-width: 0;
+    padding: 6px 0;
+}
+
+.propertyMapping label {
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
+}
+
+.propertyMapping select:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 1px;
 }

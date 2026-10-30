@@ -237,6 +237,11 @@ export const exposeComponentProp: typeof ComponentPropertyEdits.exposeComponentP
     input
 ) => editorHelpers().componentProperties.exposeComponentProp(context, input);
 
+export const setComponentPropTarget: typeof ComponentPropertyEdits.setComponentPropTarget = (
+    context,
+    input
+) => editorHelpers().componentProperties.setComponentPropTarget(context, input);
+
 export const removeComponentProp: typeof ComponentPropertyEdits.removeComponentProp = (
     context,
     input

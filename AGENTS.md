@@ -724,8 +724,14 @@ family and source exist; otherwise the instance retains its choice and draws the
 Inspectors and the shared link eligibility check. Compare semantic role links without depending
 on map insertion order. Missing mappings, wrong fields, unshared properties and invalid family
 links remain authored; diagnostics do not mutate overrides or source records. Missing selected
-variants retain their ID and an explicit unavailable option in Inspector. Manual mapping repair
-and broader library update behavior remain future work.
+variants retain their ID and an explicit unavailable option in Inspector.
+`componentPropertyMappings` lists the default's stable property IDs and compatible source
+fields, including missing alternate mappings. `setComponentPropTarget` repairs or retargets one
+mapping in a separate undo batch without changing source values, instance overrides or role
+links. Fields already exposed by another ID cannot be claimed; read-only sources and ambiguous
+families cannot be edited. The source Inspector uses the same target eligibility as the action.
+Library updates carry repaired mappings while retaining recipient instance values. Broader
+variant-family removal/replacement acceptance remains future work.
 A role edit on a family default carries over to alternates whose role matched it before
 the edit; alternates set up differently keep theirs. The link picker runs the family checks
 once and cheap prop/role checks before looking at a candidate's artwork, so it stays fast
