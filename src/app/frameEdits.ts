@@ -626,7 +626,7 @@ export function move({ state, actions }: Pick<Context, 'state' | 'actions'>, pos
 
     if (gesture.handle === 'move') {
         const delta = { x: position.x - start.x, y: position.y - start.y };
-        Object.entries(gesture.childFrames).forEach(([id, original]) => {
+        Object.entries(untracked(gesture).childFrames).forEach(([id, original]) => {
             const child = state.currentDocument.frames[id];
 
             if (child) {
@@ -636,11 +636,13 @@ export function move({ state, actions }: Pick<Context, 'state' | 'actions'>, pos
                 };
             }
         });
-        Object.entries(gesture.shapes).forEach(([id, original]) => {
+        Object.entries(untracked(gesture).shapes).forEach(([id, original]) => {
             const child = state.currentDocument.shapes[id];
 
             if (child) {
-                const translated = json(original);
+                // Translation replaces geometry fields; the immutable snapshot's
+                // style, text and component data need no deep clone on every move.
+                const translated = { ...original };
                 translateShape(translated, delta);
                 Object.assign(child, shapePlacement(translated));
                 unbindMovedProperties(child, delta);

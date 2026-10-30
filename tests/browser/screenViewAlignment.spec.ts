@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createComponent, createDocument, createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
-import { openEditor, pointer } from './support/editor';
+import { expectPlacedCoordinate, openEditor, pointer } from './support/editor';
 
 async function openViews(page: Page, { stack = false, component = false } = {}) {
     const shapes = [
@@ -110,12 +110,12 @@ test('aligns shared artwork from the Inspector and keyboard in the active Screen
     await expect(align.getByRole('button', { name: 'Align left', exact: true })).toBeEnabled();
     await page.keyboard.press('Shift+A');
     for (const name of ['Part 1', 'Part 2', 'Part 3']) {
-        await expect(desktop.locator(`[data-cy="${name}"]`)).toHaveAttribute('x', '540');
-        await expect(mobile.locator(`[data-cy="${name}"]`)).toHaveAttribute('x', '120');
+        await expectPlacedCoordinate(desktop.locator(`[data-cy="${name}"]`), 'x', '540');
+        await expectPlacedCoordinate(mobile.locator(`[data-cy="${name}"]`), 'x', '120');
     }
     await align.getByRole('button', { name: 'Align bottom', exact: true }).click();
-    await expect(desktop.locator('[data-cy="Part 1"]')).toHaveAttribute('y', '570');
-    await expect(mobile.locator('[data-cy="Part 1"]')).toHaveAttribute('y', '350');
+    await expectPlacedCoordinate(desktop.locator('[data-cy="Part 1"]'), 'y', '570');
+    await expectPlacedCoordinate(mobile.locator('[data-cy="Part 1"]'), 'y', '350');
     await page.screenshot({ path: 'test-results/screen-view-alignment.png' });
 });
 
@@ -124,7 +124,7 @@ for (const [name, axis, coordinate] of [
     ['Space equally horizontally', 'x', '675'],
     ['Space between vertically', 'y', '420'],
     ['Space equally vertically', 'y', '430']
-]) {
+] as const) {
     test(`${name} uses placed bounds and keeps its spacing meaning`, async ({ page }) => {
         const { desktop } = await openViews(page);
         await selectView(page);
@@ -132,9 +132,9 @@ for (const [name, axis, coordinate] of [
             .getByRole('toolbar', { name: 'Space menu' })
             .getByRole('button', { name, exact: true })
             .click();
-        await expect(desktop.locator('[data-cy="Part 2"]')).toHaveAttribute(axis, coordinate);
-        await expect(desktop.locator('[data-cy="Part 1"]')).toHaveAttribute('x', '540');
-        await expect(desktop.locator('[data-cy="Part 3"]')).toHaveAttribute('x', '840');
+        await expectPlacedCoordinate(desktop.locator('[data-cy="Part 2"]'), axis, coordinate);
+        await expectPlacedCoordinate(desktop.locator('[data-cy="Part 1"]'), 'x', '540');
+        await expectPlacedCoordinate(desktop.locator('[data-cy="Part 3"]'), 'x', '840');
     });
 }
 
@@ -155,9 +155,9 @@ test('the context menu counts a local component as one item and aligns it as a w
     const menu = page.locator('[data-cy="context-menu"]');
     await menu.getByRole('menuitem', { name: 'Align', exact: true }).click();
     await menu.getByRole('menuitem', { name: /^Align bottom/ }).click();
-    await expect(desktop.locator('[data-cy="Part 1"]')).toHaveAttribute('y', '490');
-    await expect(desktop.locator('[data-cy="Part 2"]')).toHaveAttribute('y', '550');
-    await expect(desktop.locator('[data-cy="Part 3"]')).toHaveAttribute('y', '530');
+    await expectPlacedCoordinate(desktop.locator('[data-cy="Part 1"]'), 'y', '490');
+    await expectPlacedCoordinate(desktop.locator('[data-cy="Part 2"]'), 'y', '550');
+    await expectPlacedCoordinate(desktop.locator('[data-cy="Part 3"]'), 'y', '530');
 });
 
 test('keeps stack-controlled artwork selectable while alignment stays unavailable', async ({
@@ -191,7 +191,7 @@ test('aligns through the Mobile view at narrow widths', async ({ page }) => {
     await selectView(page, 'mobile');
     await page.keyboard.press('Shift+A');
     for (const name of ['Part 1', 'Part 2', 'Part 3']) {
-        await expect(mobile.locator(`[data-cy="${name}"]`)).toHaveAttribute('x', '120');
+        await expectPlacedCoordinate(mobile.locator(`[data-cy="${name}"]`), 'x', '120');
     }
     await page.screenshot({ path: 'test-results/screen-view-alignment-narrow.png' });
 });

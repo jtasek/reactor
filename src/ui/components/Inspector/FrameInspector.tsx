@@ -1,7 +1,7 @@
 import type { Gesture } from 'src/events/types';
 import { frameParents } from 'src/app/frameMembership';
 import { renderedFrame, frameLayout } from 'src/app/frameLayout';
-import React, { type FC, useEffect, useState } from 'react';
+import React, { type FC, memo, useEffect, useState } from 'react';
 import { useActions, useAppState } from 'src/app/hooks';
 import { useFrameMoveProblem, useFrameLocked } from 'src/app/frameHooks';
 import { ScreenLayouts } from './ScreenLayouts';
@@ -76,38 +76,47 @@ const editedOnCanvas = (gesture: Gesture, id: string) =>
     gesture.kind === 'editingFrame' &&
     (gesture.frameId === id || Object.hasOwn(gesture.childFrames, id));
 
+/** Diagnostics depend on artwork and viewport size, not its canvas position. */
+const ScreenViewStatus = memo(function ScreenViewStatus({ id }: { id: string }) {
+    const message = useAppState((state) => {
+        const document = state.currentDocument;
+        const frame = document.frames[id];
+        const source = document.frames[frame?.screenId ?? ''];
+        const problem = projectScreenViews(document, state.previewModes[document.id], {
+            x: 0,
+            y: 0
+        }).find((item) => item.view.id === id)?.problem;
+
+        return (
+            problem ??
+            (source?.kind === 'screen'
+                ? `${source.name} · ${frame.name}. Artwork is shared by views using the same layout.`
+                : 'The source screen is missing. Delete this view or restore its screen.')
+        );
+    });
+
+    return (
+        <small className={styles.frameHint} role="status">
+            {message}
+        </small>
+    );
+});
+
 export const FrameInspector: FC<{ id: string }> = ({ id }) => {
-    const {
-        frame,
-        source,
-        viewProblem,
-        authoredSize,
-        locked,
-        layout,
-        nested,
-        busy,
-        screenLayout,
-        hasLayouts
-    } = useAppState((state) => ({
-        frame: renderedFrame(state.currentDocument, id),
-        screenLayout: isScreenLayout(state.currentDocument.frames, id),
-        hasLayouts: Object.values(state.currentDocument.frames).some(
-            (child) => child.screenLayout && child.parentFrameId === id
-        ),
-        source: state.currentDocument.frames[state.currentDocument.frames[id]?.screenId ?? ''],
-        viewProblem:
-            state.currentDocument.frames[id]?.kind === 'view'
-                ? projectScreenViews(
-                      state.currentDocument,
-                      state.previewModes[state.currentDocumentId]
-                  ).find((item) => item.view.id === id)?.problem
-                : undefined,
-        nested: Boolean(frameParents(state.currentDocument.frames).get(id)),
-        busy: editedOnCanvas(state.events.pointer.gesture, id),
-        layout: frameLayout(state.currentDocument),
-        authoredSize: state.currentDocument.frames[id]?.size,
-        locked: state.currentDocument.locked
-    }));
+    const { frame, source, authoredSize, locked, layout, nested, busy, screenLayout, hasLayouts } =
+        useAppState((state) => ({
+            frame: renderedFrame(state.currentDocument, id),
+            source: state.currentDocument.frames[state.currentDocument.frames[id]?.screenId ?? ''],
+            screenLayout: isScreenLayout(state.currentDocument.frames, id),
+            hasLayouts: Object.values(state.currentDocument.frames).some(
+                (child) => child.screenLayout && child.parentFrameId === id
+            ),
+            nested: Boolean(frameParents(state.currentDocument.frames).get(id)),
+            busy: editedOnCanvas(state.events.pointer.gesture, id),
+            layout: frameLayout(state.currentDocument),
+            authoredSize: state.currentDocument.frames[id]?.size,
+            locked: state.currentDocument.locked
+        }));
     const { editFrame } = useActions();
     const moveProblem = useFrameMoveProblem(id);
     const inheritedLocked = useFrameLocked(id);
@@ -130,12 +139,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                     <PropertyGroup name="Screen view">
                         <tr>
                             <td colSpan={2}>
-                                <small className={styles.frameHint} role="status">
-                                    {viewProblem ??
-                                        (source?.kind === 'screen'
-                                            ? `${source.name} · ${frame.name}. Artwork is shared by views using the same layout.`
-                                            : 'The source screen is missing. Delete this view or restore its screen.')}
-                                </small>
+                                <ScreenViewStatus id={id} />
                             </td>
                         </tr>
                         <Field

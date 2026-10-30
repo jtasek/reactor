@@ -28,7 +28,7 @@ import type { HandleOwner, ScreenViewAddress, ScreenViewGesture } from 'src/even
 export type ScreenViewContainer = Exclude<HandleOwner, { shapeId: string }>;
 
 /** Keep the focused instance's layout footprint stable while its master bounds change. */
-export function componentScreenViews(state: Context['state']) {
+export function componentScreenViews(state: Context['state'], position?: Point) {
     const document = state.currentDocument;
     const focus = state.componentEditingReturn?.componentOrigin;
     const instance = focus ? document.shapes[focus.instanceId] : undefined;
@@ -39,7 +39,7 @@ export function componentScreenViews(state: Context['state']) {
         instance?.type !== 'instance' ||
         instance.componentId !== focus.componentId
     ) {
-        return projectScreenViews(document, state.previewModes[document.id]);
+        return projectScreenViews(document, state.previewModes[document.id], position);
     }
 
     return projectScreenViews(
@@ -54,7 +54,8 @@ export function componentScreenViews(state: Context['state']) {
                 }
             }
         },
-        state.previewModes[document.id]
+        state.previewModes[document.id],
+        position
     );
 }
 

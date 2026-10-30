@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { createDocument, createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
-import { openEditor } from './support/editor';
+import { expectPlacedCoordinate, openEditor } from './support/editor';
 
 test('treats Mobile and Desktop as equal Screen views and preserves a screen with no placements', async ({
     page
@@ -63,14 +63,14 @@ test('treats Mobile and Desktop as equal Screen views and preserves a screen wit
         'svg#surface #screen-views > [data-screen-view="desktop"] rect[data-cy="Body"]'
     );
     await expect(page.locator('svg#surface #frames > [data-frame="home"]')).toHaveCount(0);
-    await expect(mobile).toHaveAttribute('x', '100');
-    await expect(desktop).toHaveAttribute('x', '540');
+    await expectPlacedCoordinate(mobile, 'x', '100');
+    await expectPlacedCoordinate(desktop, 'x', '540');
     await page.getByLabel('View x').fill('180');
     await page.getByLabel('View x').press('Enter');
     await page.getByLabel('View width').fill('430');
     await page.getByLabel('View width').press('Enter');
-    await expect(mobile).toHaveAttribute('x', '200');
-    await expect(desktop).toHaveAttribute('x', '540');
+    await expectPlacedCoordinate(mobile, 'x', '200');
+    await expectPlacedCoordinate(desktop, 'x', '540');
     await page.getByRole('button', { name: 'Delete Screen view', exact: true }).click();
     await expect(mobile).toHaveCount(0);
     await expect(desktop).toBeVisible();

@@ -233,10 +233,8 @@ export function projectFrameLayout(
 
     for (let index = 0; index < pending.length; index++) {
         const id = pending[index];
-        const frame = {
-            ...document.frames[id],
-            size: sizes.frames[id] ?? document.frames[id].size
-        };
+        const frame = document.frames[id];
+        const size = sizes.frames[id] ?? frame.size;
         const offset = result.frames[id] ?? ZERO;
         const rules = freeStacks.has(id) ? undefined : frame.stack;
         const members = items.get(id) ?? [];
@@ -252,12 +250,14 @@ export function projectFrameLayout(
         }
 
         for (const item of members) {
-            const delta = rules ? stackOffset(frame, offset, rules, item, cursor) : offset;
+            const delta = rules
+                ? stackOffset({ position: frame.position, size }, offset, rules, item, cursor)
+                : offset;
 
             if (rules) {
                 cursor += (rules.direction === 'row' ? item.width : item.height) + rules.gap;
-                const main = rules.direction === 'row' ? frame.size.width : frame.size.height;
-                const cross = rules.direction === 'row' ? frame.size.height : frame.size.width;
+                const main = rules.direction === 'row' ? size.width : size.height;
+                const cross = rules.direction === 'row' ? size.height : size.width;
                 const itemCross = rules.direction === 'row' ? item.height : item.width;
 
                 if (
@@ -297,7 +297,7 @@ export function projectFrameLayout(
 }
 
 function stackOffset(
-    frame: Frame,
+    frame: Pick<Frame, 'position' | 'size'>,
     offset: Point,
     rules: StackRules,
     item: Item,

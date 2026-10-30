@@ -115,8 +115,15 @@ export function projectScreen(
     };
 }
 
-/** Bound all placed views together, so adding references cannot multiply render cost without limit. */
-export function projectScreenViews(document: Document, simulation: VariableContext = {}) {
+/**
+ * Bound all placed views together. An explicit origin projects content independently
+ * of canvas placement, so moving a view need not resolve its artwork again.
+ */
+export function projectScreenViews(
+    document: Document,
+    simulation: VariableContext = {},
+    position?: Point
+) {
     let nodes = 0;
 
     return Object.values(document.frames)
@@ -132,7 +139,20 @@ export function projectScreenViews(document: Document, simulation: VariableConte
             }
 
             const projection = view.screenId
-                ? projectScreen(document, view.screenId, view, simulation)
+                ? projectScreen(
+                      document,
+                      view.screenId,
+                      position
+                          ? {
+                                id: view.id,
+                                layoutId: view.layoutId,
+                                layoutMode: view.layoutMode,
+                                size: view.size,
+                                position
+                            }
+                          : view,
+                      simulation
+                  )
                 : null;
             const count = projection ? 1 + projection.frames.length + projection.shapes.length : 0;
             const blocked =

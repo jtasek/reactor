@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 type PointerInit = {
     pointerId?: number;
@@ -73,3 +73,22 @@ export async function drawRect(
 }
 
 export const firstShape = (page: Page) => shapes(page).first();
+
+/** Coordinates remain in canvas space even when a Screen view uses an SVG translation. */
+export async function expectPlacedCoordinate(
+    locator: Locator,
+    attribute: 'x' | 'y' | 'cx' | 'cy',
+    expected: string | number
+) {
+    await expect
+        .poll(() =>
+            locator.evaluate((element, name) => {
+                const view = element.closest('#screen-views > g') as SVGGElement | null;
+                const placement = view?.transform.baseVal.consolidate()?.matrix;
+                const offset = name === 'x' || name === 'cx' ? placement?.e : placement?.f;
+
+                return Number(element.getAttribute(name)) + (offset ?? 0);
+            }, attribute)
+        )
+        .toBe(Number(expected));
+}
