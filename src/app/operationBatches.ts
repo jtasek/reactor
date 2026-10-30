@@ -1,3 +1,4 @@
+import { isScreenLayout } from './screenLayouts';
 import { initialScreenView } from './screenViewMigration';
 import {
     acceptsFrameNumber,
@@ -961,7 +962,8 @@ function stage(
                         'sizing',
                         'modeOverrides',
                         'bindings',
-                        'stack'
+                        'stack',
+                        'layoutId'
                     ]);
                     if (Object.keys(operation.changes).some((key) => !allowed.has(key))) {
                         throw new Error('Unsupported frame field.');
@@ -971,8 +973,14 @@ function stage(
                         ...json(document.frames[operation.frame]),
                         ...operation.changes,
                         ...(parent === null ? { parentFrameId: undefined } : {}),
-                        ...(operation.changes.stack === null ? { stack: undefined } : {})
+                        ...(operation.changes.stack === null ? { stack: undefined } : {}),
+                        ...(operation.changes.layoutId === null ? { layoutId: undefined } : {}),
+                        ...(operation.changes.kind === 'screen' ? { screenLayout: undefined } : {})
                     });
+                    if (frame.layoutId && 'layoutId' in operation.changes) {
+                        frame.layoutId = reference(frame.layoutId, 'frames', index);
+                    }
+
                     const previous = document.frames[operation.frame];
 
                     if (operation.changes.bindings !== undefined) {
@@ -1167,6 +1175,18 @@ function stage(
         )
     };
     operations.forEach((operation, index) => {
+        const changedFrame = operation.op === 'updateFrame' ? frames[operation.frame] : undefined;
+
+        if (
+            changedFrame?.layoutId &&
+            operation.op === 'updateFrame' &&
+            'layoutId' in operation.changes &&
+            (!isScreenLayout(frames, changedFrame.layoutId) ||
+                frames[changedFrame.layoutId].parentFrameId !== changedFrame.screenId)
+        ) {
+            throw problem(index, 'Choose a layout owned by this Screen view’s screen.');
+        }
+
         const id =
             operation.op === 'addFrame'
                 ? ids.get(operation.key)

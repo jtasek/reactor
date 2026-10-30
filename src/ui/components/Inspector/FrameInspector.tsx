@@ -4,6 +4,8 @@ import { renderedFrame, frameLayout } from 'src/app/frameLayout';
 import React, { type FC, useEffect, useState } from 'react';
 import { useActions, useAppState } from 'src/app/hooks';
 import { useFrameMoveProblem, useFrameLocked } from 'src/app/frameHooks';
+import { ScreenLayouts } from './ScreenLayouts';
+import { isScreenLayout } from 'src/app/screenLayouts';
 import { SizingFields } from './SizingFields';
 import { FrameParent } from './FrameParent';
 import { PropertyGroup } from './PropertyGroup';
@@ -75,9 +77,10 @@ const editedOnCanvas = (gesture: Gesture, id: string) =>
     (gesture.frameId === id || Object.hasOwn(gesture.childFrames, id));
 
 export const FrameInspector: FC<{ id: string }> = ({ id }) => {
-    const { frame, source, viewProblem, authoredSize, locked, layout, nested, busy } = useAppState(
-        (state) => ({
+    const { frame, source, viewProblem, authoredSize, locked, layout, nested, busy, screenLayout } =
+        useAppState((state) => ({
             frame: renderedFrame(state.currentDocument, id),
+            screenLayout: isScreenLayout(state.currentDocument.frames, id),
             source: state.currentDocument.frames[state.currentDocument.frames[id]?.screenId ?? ''],
             viewProblem:
                 state.currentDocument.frames[id]?.kind === 'view'
@@ -91,8 +94,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
             layout: frameLayout(state.currentDocument),
             authoredSize: state.currentDocument.frames[id]?.size,
             locked: state.currentDocument.locked
-        })
-    );
+        }));
     const { editFrame } = useActions();
     const moveProblem = useFrameMoveProblem(id);
     const inheritedLocked = useFrameLocked(id);
@@ -110,6 +112,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                     <strong>Screen view</strong>
                 </header>
                 <table>
+                    <ScreenLayouts key={id} viewId={id} disabled={disabled} />
                     <ModeFields target={{ frameId: id }} />
                     <PropertyGroup name="Screen view">
                         <tr>
@@ -117,7 +120,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                                 <small className={styles.frameHint} role="status">
                                     {viewProblem ??
                                         (source?.kind === 'screen'
-                                            ? `${source.name} · ${frame.name}. Artwork is shared across all Screen views.`
+                                            ? `${source.name} · ${frame.name}. Artwork is shared by views using the same layout.`
                                             : 'The source screen is missing. Delete this view or restore its screen.')}
                                 </small>
                             </td>
@@ -221,7 +224,9 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
     return (
         <div className={styles.inspector} aria-label="Frame properties">
             <header className={styles.inspectorHeader}>
-                <strong>{frame.kind === 'screen' ? 'Screen' : 'Frame'}</strong>
+                <strong>
+                    {screenLayout ? 'Screen layout' : frame.kind === 'screen' ? 'Screen' : 'Frame'}
+                </strong>
             </header>
             <table>
                 <ModeFields target={{ frameId: id }} />
@@ -234,7 +239,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                             <select
                                 id="frame-kind"
                                 aria-label="Frame type"
-                                disabled={disabled}
+                                disabled={disabled || screenLayout}
                                 value={frame.kind ?? 'frame'}
                                 onChange={(event) =>
                                     editFrame({
@@ -255,11 +260,13 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                     <tr>
                         <td colSpan={2}>
                             <small className={styles.frameHint} role="status">
-                                {frame.kind !== 'screen'
-                                    ? 'Choose Screen to make this frame a prototype destination.'
-                                    : nested
-                                      ? 'Move this screen to Canvas to use it as a prototype destination.'
-                                      : 'Shared artwork and layout. Place Screen views on Canvas.'}
+                                {screenLayout
+                                    ? 'Separate artwork for this screen. Choose it in a Screen view to draw or edit its contents.'
+                                    : frame.kind !== 'screen'
+                                      ? 'Choose Screen to make this frame a prototype destination.'
+                                      : nested
+                                        ? 'Move this screen to Canvas to use it as a prototype destination.'
+                                        : 'Shared artwork and layout. Place Screen views on Canvas.'}
                             </small>
                         </td>
                     </tr>
@@ -299,7 +306,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                             </td>
                         </tr>
                     )}
-                    <FrameParent frameId={id} />
+                    {!screenLayout && <FrameParent frameId={id} />}
                     <Field
                         label="Name"
                         value={frame.name}

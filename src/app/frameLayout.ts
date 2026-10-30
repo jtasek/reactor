@@ -193,7 +193,15 @@ export function projectFrameLayout(
             members.push(frame.id);
             children.set(parent, members);
         }
-        if (document.frames[parent ?? '']?.stack && !states[frame.id]?.hiddenBy) {
+        if (
+            document.frames[parent ?? '']?.stack &&
+            !states[frame.id]?.hiddenBy &&
+            !(
+                frame.screenLayout &&
+                document.frames[parent ?? '']?.kind === 'screen' &&
+                !parents.get(parent ?? '')
+            )
+        ) {
             append(parent, {
                 id: frame.id,
                 kind: 'frame',

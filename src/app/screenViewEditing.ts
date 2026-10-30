@@ -1,7 +1,13 @@
+import {
+    isScreenLayout,
+    viewLayoutRoot,
+    screenLayoutMembers,
+    screenLayoutDocument
+} from './screenLayouts';
 import { sharedProperties, type PropertyRow } from './properties';
 import { hasLayoutOffset, projectFrameLayout } from './frameLayout';
 import { isShapeLocked, isShapeVisible, rectToBox } from './utils';
-import { screenOwners, screenSourceShapes } from './screenViews';
+import { screenSourceShapes } from './screenViews';
 import { isReadOnly } from './documentAccess';
 import { groupFrame } from './membership';
 import { localComponents } from './componentSelection';
@@ -54,9 +60,12 @@ export function componentScreenViews(state: Context['state']) {
 function screenViewSource(state: Context['state'], address: ScreenViewAddress | null) {
     const document = state.currentDocument;
     const view = address?.documentId === document.id ? document.frames[address.viewId] : undefined;
-    const screen = view?.screenId ? document.frames[view.screenId] : undefined;
+    const definition = view?.screenId ? document.frames[view.screenId] : undefined;
+    const screen = view ? viewLayoutRoot(document, view) : undefined;
     const component = document.components[document.editingComponentId ?? ''];
-    const owners = component ? screenOwners(document.frames) : null;
+    const members = component
+        ? screenLayoutMembers(document, definition?.id ?? '', view?.layoutId)
+        : null;
     const focus =
         state.componentEditingReturn?.documentId === document.id
             ? state.componentEditingReturn.componentOrigin
@@ -69,16 +78,17 @@ function screenViewSource(state: Context['state'], address: ScreenViewAddress | 
         component?.sourceOnly &&
         instance?.type === 'instance' &&
         instance.componentId === component.id &&
-        owners?.get(instance.parentFrameId ?? '') === screen?.id &&
+        members?.has(instance.parentFrameId ?? '') &&
         !isShapeLocked(document, instance.id);
 
     if (
         isReadOnly(state) ||
         document.locked ||
         view?.kind !== 'view' ||
-        screen?.kind !== 'screen' ||
+        definition?.kind !== 'screen' ||
+        !screen ||
         (address?.drawingOrigin && address.drawingOrigin.screenId !== screen.id) ||
-        frameParents(document.frames).get(screen.id) ||
+        frameParents(document.frames).get(definition.id) ||
         !isFrameVisible(document, view.id) ||
         !isFrameVisible(document, screen.id) ||
         isFrameLocked(document, view.id) ||
@@ -87,9 +97,8 @@ function screenViewSource(state: Context['state'], address: ScreenViewAddress | 
             (component.library ||
                 (component.sourceOnly
                     ? !throughInstance
-                    : !component.shapesIds.every(
-                          (id) =>
-                              owners?.get(document.shapes[id]?.parentFrameId ?? '') === screen.id
+                    : !component.shapesIds.every((id) =>
+                          members?.has(document.shapes[id]?.parentFrameId ?? '')
                       ))))
     ) {
         return null;
@@ -285,13 +294,19 @@ function screenViewMembersTarget(
     includeHidden: boolean
 ) {
     const view = document.frames[viewId];
-    const screen = view?.screenId ? document.frames[view.screenId] : undefined;
+    const definition = view?.screenId ? document.frames[view.screenId] : undefined;
+    const screen = view ? viewLayoutRoot(document, view) : undefined;
 
-    if (view?.kind !== 'view' || screen?.kind !== 'screen' || shapeIds.length === 0) {
+    if (
+        view?.kind !== 'view' ||
+        definition?.kind !== 'screen' ||
+        !screen ||
+        shapeIds.length === 0
+    ) {
         return null;
     }
 
-    const owners = screenOwners(document.frames);
+    const members = screenLayoutMembers(document, definition.id, view.layoutId);
     const master = document.components[document.editingComponentId ?? ''];
 
     if (
@@ -299,7 +314,7 @@ function screenViewMembersTarget(
             (id) =>
                 !document.shapes[id] ||
                 (!(master?.sourceOnly && master.shapesIds.includes(id)) &&
-                    owners.get(document.shapes[id].parentFrameId ?? '') !== screen.id) ||
+                    !members.has(document.shapes[id].parentFrameId ?? '')) ||
                 (!includeHidden && !isShapeVisible(document, id)) ||
                 isShapeLocked(document, id)
         ) ||
@@ -374,15 +389,8 @@ function placedLayoutOffset(
         return false;
     }
 
-    const { view, screen } = target;
-    // Match the viewport layout used by projectScreen before editing authored geometry.
-    const resized = {
-        ...document,
-        frames: {
-            ...document.frames,
-            [screen.id]: { ...screen, size: view.size, sizing: undefined }
-        }
-    };
+    const { view } = target;
+    const resized = screenLayoutDocument(document, view.screenId!, view.layoutId, view.size);
 
     return hasLayoutOffset({ ...resized, frameLayout: projectFrameLayout(resized) }, shapeIds);
 }
@@ -565,8 +573,9 @@ export function drawingScreen(state: Context['state'], address: ScreenViewAddres
         address?.documentId !== document.id ||
         isReadOnly(state) ||
         document.locked ||
-        screen?.kind !== 'screen' ||
-        frameParents(document.frames).get(screen.id)
+        !screen ||
+        (!(screen.kind === 'screen' && !frameParents(document.frames).get(screen.id)) &&
+            !isScreenLayout(document.frames, screen.id))
     ) {
         return null;
     }

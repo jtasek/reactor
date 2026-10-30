@@ -1,3 +1,4 @@
+import { isScreenLayout, viewLayoutRoot } from 'src/app/screenLayouts';
 import { screenOwners } from 'src/app/screenViews';
 import React, { FC, MouseEvent, memo, useMemo, useState } from 'react';
 import { Frame as FrameIcon, CircleHelp, Star, Trash2 } from 'lucide-react';
@@ -355,6 +356,8 @@ export const Explorer: FC = () => {
             viewCount: frames.filter((view) => view.kind === 'view' && view.screenId === screen.id)
                 .length
         }));
+    const contentRoot = (frame: (typeof shownFrames)[number]) =>
+        frame.kind === 'view' ? viewLayoutRoot(document, document.frames[frame.id])?.id : frame.id;
     const frameItem = (frame: (typeof shownFrames)[number], branchId?: string): React.ReactNode => (
         <ExplorerItem
             key={`frame:${frame.id}`}
@@ -383,7 +386,7 @@ export const Explorer: FC = () => {
                     : (dragged) =>
                           moveIntoFrame(
                               dragged,
-                              frame.kind === 'view' ? (frame.screenId ?? frame.id) : frame.id
+                              frame.kind === 'view' ? (contentRoot(frame) ?? frame.id) : frame.id
                           )
             }
             menuActions={[
@@ -405,12 +408,13 @@ export const Explorer: FC = () => {
                 .filter(
                     (child) =>
                         owners.get(child.id) !== child.id &&
-                        child.parentFrameId === (frame.kind === 'view' ? frame.screenId : frame.id)
+                        child.parentFrameId === contentRoot(frame) &&
+                        (frame.kind !== 'view' || !isScreenLayout(document.frames, child.id))
                 )
                 .map((child) => frameItem(child, branchId ?? frame.id))}
             <ObjectContents
                 {...(frame.kind === 'view'
-                    ? (frameContents.get(frame.screenId ?? '')?.contents ?? {
+                    ? (frameContents.get(contentRoot(frame) ?? '')?.contents ?? {
                           groups: [],
                           shapesIds: []
                       })

@@ -1,3 +1,4 @@
+import { isScreenLayout, screenLayouts } from './screenLayouts';
 import { editableScreenView, sourceOffset } from './screenViewEditing';
 import { initializeStackOrder } from './stackEdits';
 import {
@@ -35,6 +36,7 @@ import { FRAME_NUMBER_KEYS, frameNumber, writeFrameNumber } from './frameVariabl
 export type FrameEdit =
     | { kind: 'add'; position: Point; size: Frame['size'] }
     | { kind: 'addView'; screenId: string; position: Point; size: Frame['size']; name?: string }
+    | { kind: 'addLayout'; viewId: string; name: string }
     | { kind: 'select'; id: string }
     | { kind: 'reparentShapes'; ids: string[]; parentFrameId: string | null }
     | { kind: 'update'; id: string; changes: import('./operations').UpdateFrame['changes'] }
@@ -86,6 +88,8 @@ function addFrame(context: Context, input: Extract<FrameEdit, { kind: 'add' | 'p
             kind: source?.kind ?? 'frame',
             ...(source?.screenId ? { screenId: source.screenId } : {}),
             ...(source?.definitionOnly ? { definitionOnly: true } : {}),
+            ...(source?.layoutId ? { layoutId: source.layoutId } : {}),
+            ...(source?.screenLayout ? { screenLayout: true } : {}),
             position,
             size: input.kind === 'add' ? input.size : input.frame.size,
             ...(source?.parentFrameId === undefined ? {} : { parentFrameId: source.parentFrameId }),
@@ -262,6 +266,56 @@ export function edit(context: Context, input: FrameEdit): string | undefined {
         return;
     }
 
+    if (input.kind === 'addLayout') {
+        const view = document.frames[input.viewId];
+        const screen = document.frames[view?.screenId ?? ''];
+        const name = input.name.trim();
+
+        if (
+            view?.kind !== 'view' ||
+            screen?.kind !== 'screen' ||
+            !name ||
+            frameParents(document.frames).get(screen.id) ||
+            isFrameLocked(document, view.id) ||
+            isFrameLocked(document, screen.id) ||
+            screenLayouts(document, screen.id).some((layout) => layout.name === name)
+        ) {
+            return;
+        }
+
+        const result = actions.applyOperations({
+            documentId: document.id,
+            by: { kind: 'person' },
+            operations: [
+                {
+                    op: 'addFrame',
+                    key: 'layout',
+                    frame: {
+                        kind: 'frame',
+                        screenLayout: true,
+                        parentFrameId: screen.id,
+                        name,
+                        position: { ...screen.position },
+                        size: { ...view.size },
+                        visible: true,
+                        locked: false
+                    }
+                },
+                { op: 'updateFrame', frame: view.id, changes: { layoutId: 'layout' } }
+            ]
+        });
+
+        if (!result.applied) {
+            return;
+        }
+
+        actions.unselectShapes();
+        state.events.pointer.screenView = null;
+        document.selectedFrameId = view.id;
+
+        return result.ids.layout;
+    }
+
     if (input.kind === 'add' || input.kind === 'paste') {
         return addFrame(context, input);
     }
@@ -408,6 +462,14 @@ export function edit(context: Context, input: FrameEdit): string | undefined {
             : undefined;
     }
 
+    if (
+        input.changes.layoutId &&
+        (!isScreenLayout(document.frames, input.changes.layoutId) ||
+            document.frames[input.changes.layoutId].parentFrameId !== frame.screenId)
+    ) {
+        return;
+    }
+
     const result = editorHelpers().operations.stageBatch(
         untracked(document),
         [{ op: 'updateFrame', frame: frame.id, changes: input.changes }],
@@ -419,6 +481,12 @@ export function edit(context: Context, input: FrameEdit): string | undefined {
     }
 
     editorHelpers().operations.writeBatch(document, result.staged);
+
+    if ('layoutId' in input.changes) {
+        actions.unselectShapes();
+        document.selectedFrameId = frame.id;
+        state.events.pointer.screenView = null;
+    }
     const createdView = result.staged.frames.find(
         (view) => view.kind === 'view' && view.screenId === frame.id
     );
