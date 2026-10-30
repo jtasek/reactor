@@ -295,6 +295,31 @@ const inSelectedFrame = (document: Document, frameId: string | undefined) => {
     return false;
 };
 
+/**
+ * Whether a shape of the component's source is selected, or of the source of an
+ * instance in it, however deep: moving it changes the component's instances.
+ */
+const sourceSelected = (
+    document: Document,
+    componentId: string,
+    seen: Set<string> = new Set()
+): boolean => {
+    if (seen.has(componentId)) {
+        return false;
+    }
+    seen.add(componentId);
+
+    return (document.components[componentId]?.shapesIds ?? []).some((memberId) => {
+        const member = document.shapes[memberId];
+
+        return (
+            member?.selected ||
+            (member?.type === 'instance' &&
+                sourceSelected(document, instanceComponentId(document, member), seen))
+        );
+    });
+};
+
 /** Whether the shape is drawn: see `isShapeVisible`. */
 /**
  * Whether a shape is measured where drawn: not while a gesture keeps its bounds
@@ -316,15 +341,19 @@ export const useMeasuringShape = (id: string) =>
         }
 
         // Editing a component's source changes its instances though they are not
-        // selected, so then they wait for the gesture to end too. Other instances
-        // do not read the gesture, so they do not render again as drags begin and end.
+        // selected, so then they wait for the gesture to end too. Other instances,
+        // and hidden ones, which are not measured, do not read the gesture, so they
+        // do not render again as drags begin and end.
         if (shape?.type === 'instance' && !shape.selected) {
             const document = state.currentDocument;
+
+            if (!isShapeVisible(document, id)) {
+                return true;
+            }
+
             const sourceEdited =
                 state.enteredComponentId !== null ||
-                document.components[instanceComponentId(document, shape)]?.shapesIds.some(
-                    (memberId) => document.shapes[memberId]?.selected
-                );
+                sourceSelected(document, instanceComponentId(document, shape));
 
             return !sourceEdited || !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind];
         }
