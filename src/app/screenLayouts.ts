@@ -45,11 +45,69 @@ export function screenLayoutRoot(
     return document.frames[screenId];
 }
 
+export type LayoutChoice = {
+    layoutId?: string;
+    layoutMode?: 'auto';
+    size: Size;
+};
+
+/** Explicit choices always win. Equal thresholds resolve deterministically after a merge. */
+export function selectScreenLayout(
+    document: Pick<Document, 'frames'>,
+    screenId: string,
+    choice: LayoutChoice
+) {
+    if (choice.layoutId || choice.layoutMode !== 'auto') {
+        return choice.layoutId;
+    }
+    const rules = document.frames[screenId]?.responsiveLayouts ?? [];
+    const rule = [...rules]
+        .sort(
+            (a, b) =>
+                b.minWidth - a.minWidth ||
+                (a.layoutId < b.layoutId ? -1 : Number(a.layoutId > b.layoutId))
+        )
+        .find((rule) => rule.minWidth <= choice.size.width);
+
+    return rule?.layoutId;
+}
+
+export function screenLayoutProblems(document: Pick<Document, 'frames'>, screenId: string) {
+    const rules = document.frames[screenId]?.responsiveLayouts ?? [];
+    const ordered = [...rules].sort(
+        (a, b) =>
+            a.minWidth - b.minWidth ||
+            (a.layoutId < b.layoutId ? -1 : Number(a.layoutId > b.layoutId))
+    );
+
+    return ordered.flatMap((rule, index) => {
+        if (index > 0 && ordered[index - 1].minWidth === rule.minWidth) {
+            return [
+                `A layout rule at ${rule.minWidth}px is unreachable because another rule has the same minimum width.`
+            ];
+        }
+        if (screenLayoutRoot(document, screenId, rule.layoutId)?.id !== rule.layoutId) {
+            return [
+                `The layout rule at ${rule.minWidth}px references a missing layout. It uses the default.`
+            ];
+        }
+
+        return [];
+    });
+}
+
+export function viewLayoutId(
+    document: Pick<Document, 'frames'>,
+    view: (LayoutChoice & Pick<Frame, 'screenId'>) | undefined
+) {
+    return view ? selectScreenLayout(document, view.screenId ?? '', view) : undefined;
+}
+
 export function viewLayoutRoot(
     document: Pick<Document, 'frames'>,
-    view: Pick<Frame, 'screenId' | 'layoutId'> | undefined
+    view: (LayoutChoice & Pick<Frame, 'screenId'>) | undefined
 ) {
-    return screenLayoutRoot(document, view?.screenId ?? '', view?.layoutId);
+    return screenLayoutRoot(document, view?.screenId ?? '', viewLayoutId(document, view));
 }
 
 /** Active members only; another layout is never a nested frame in this tree. */
@@ -84,7 +142,7 @@ export function screenLayoutDocument(
     document: Document,
     screenId: string,
     layoutId?: string,
-    size?: Size
+    size?: Partial<Size>
 ) {
     const screen = document.frames[screenId];
     const root = screenLayoutRoot(document, screenId, layoutId);
@@ -97,11 +155,17 @@ export function screenLayoutDocument(
         size
             ? {
                   ...frame,
-                  size,
-                  sizing: undefined,
+                  size: { ...frame.size, ...size },
+                  sizing:
+                      frame.sizing &&
+                      Object.fromEntries(
+                          Object.entries(frame.sizing).filter(
+                              ([axis]) => !Object.hasOwn(size, axis)
+                          )
+                      ),
                   bindings: Object.fromEntries(
                       Object.entries(frame.bindings ?? {}).filter(
-                          ([key]) => key !== 'width' && key !== 'height'
+                          ([key]) => !Object.hasOwn(size, key)
                       )
                   )
               }

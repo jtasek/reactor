@@ -7,12 +7,14 @@ import {
     type PreviewDrawing
 } from 'src/preview/protocol';
 import { createPreviewResources } from 'src/preview/resources';
+import type { PreviewInspection } from 'src/preview/project';
 import styles from './styles.css';
 
 export default function InteractivePreview() {
     const { assets } = useEffects();
     const prepare = useMemo(() => createPreviewResources(assets), [assets]);
-    const live = usePreviewProjection();
+    const [inspection, setInspection] = useState<PreviewInspection>({});
+    const live = usePreviewProjection(inspection);
     // Keep showing the last result while a drag pauses updates.
     const settled = useRef<PreviewProjection>(live);
     if (!live.paused) {
@@ -143,6 +145,32 @@ export default function InteractivePreview() {
                 setProblem(
                     typeof event.data.message === 'string' ? event.data.message : 'Preview failed.'
                 );
+
+                return;
+            }
+            if (
+                event.data?.type === 'inspect-width' &&
+                typeof event.data.width === 'number' &&
+                Number.isFinite(event.data.width) &&
+                event.data.width >= 1 &&
+                event.data.width <= 10000
+            ) {
+                setInspection((previous) => ({ ...previous, width: event.data.width }));
+
+                return;
+            }
+            if (event.data?.type === 'inspect-layout') {
+                const { screenId, layoutId } = event.data;
+                const screen = latest.current?.screens.find((screen) => screen.id === screenId);
+                if (
+                    screen &&
+                    (layoutId === null || screen.layouts?.some((layout) => layout.id === layoutId))
+                ) {
+                    setInspection((previous) => ({
+                        ...previous,
+                        layouts: { ...previous.layouts, [screen.id]: layoutId }
+                    }));
+                }
 
                 return;
             }

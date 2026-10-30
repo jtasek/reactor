@@ -580,6 +580,19 @@ collaboration and undo. Tests are `tests/stackSizing.test.ts` and `tests/browser
 Gesture implementations (`src/events/pointerEdits.ts`) load through `editorHelpers().pointer`;
 startup delegates retain a safe no-op cancellation before editor loading.
 
+Schema v22 adds optional `Frame.responsiveLayouts` on screens and `layoutMode: 'auto'` on
+views. `screenLayouts.ts` resolves the greatest inclusive width threshold; explicit layout IDs
+win, and absent Auto preserves legacy Default. Rules may target the screen ID for Default.
+Missing targets and duplicate thresholds remain durable and diagnosable; ties sort by layout ID.
+Clone/paste remaps rules to the copied trees (rule links may reference later frames in that batch).
+Preview protocol v3 carries local layout choices and explicit input state keys. Width inspection
+applies to every destination; per-screen choices survive navigation but never enter document data.
+`RoleSettings.controlId` on an Input instance links it across layouts only with the same screen,
+component family and exposed Value property. Duplicate identities disable sharing with a warning;
+absent/incompatible controls reset. Buttons always use the active instance's authored action.
+Tests: `automaticScreenLayouts.test.ts` and its browser counterpart. Clipboard/AI shape readers
+live in `services/clipboardStorage.ts` to keep them outside the startup bundle.
+
 ## Groups and layers
 
 A group is one object. Pressing or boxing any of its shapes selects it, which selects all
@@ -679,9 +692,11 @@ mode and its source. Authored choices are separate undo batches; local simulatio
 Empty maps are initialized at creation/read/migration so independent dimension edits merge.
 Artwork, nested instances, thumbnails and Preview use the same contexts without shared color
 or geometry writes. Default-mode selections always use base values. Instance mode metadata
-does not change `shapeGeometryKey` or force measurements. Preview captures a view's screen-root
+does not change `shapeGeometryKey` or force measurements. Preview captures a view's manual/explicit screen-root
 modes and start screen in local `previewModeContext`; descendants still override them, and
-other Screens keep their own choices. Manual launch inherits screen defaults. Session choices stay independent of later view/simulation edits.
+other Screens keep their own choices. Automatic width-selected modes are omitted from the
+snapshot so they follow Preview width changes; explicit Screen/view choices still win.
+Manual launch inherits screen defaults. Session choices stay independent of later view/simulation edits.
 Clipboard transfers retain instance/frame choices and their dimension definitions, including
 dimensions used only by mode overrides; `pasteDimensions` reuses a target dimension with the
 same name (modes matched by ID, then name; unmatched choices inherit). Fingerprints sort override keys. Library fingerprint

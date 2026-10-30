@@ -8,7 +8,7 @@ import type {
     UpdateShape,
     UpdateVariable
 } from 'src/app/operations';
-import { readCopiedShape } from 'src/app/services/documentStorage';
+import { readCopiedShape } from 'src/app/services/clipboardStorage';
 import { isVariableType } from 'src/app/variables';
 
 /** The operations a model may propose. */

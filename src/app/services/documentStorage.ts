@@ -7,7 +7,6 @@ import type {
     Camera,
     Document,
     Shape,
-    ShapeInput,
     Point,
     Size,
     Group,
@@ -25,7 +24,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 21;
+export const SCHEMA_VERSION = 22;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -124,7 +123,7 @@ export interface PersistedState {
     documents: Record<string, DocumentData>;
 }
 
-function record(value: unknown): Record<string, unknown> {
+export function record(value: unknown): Record<string, unknown> {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
         throw new Error('Expected an object');
     }
@@ -132,7 +131,7 @@ function record(value: unknown): Record<string, unknown> {
     return Object.fromEntries(Object.entries(value));
 }
 
-function text(value: unknown): string {
+export function text(value: unknown): string {
     if (typeof value !== 'string') {
         throw new Error('Expected text');
     }
@@ -150,7 +149,7 @@ function id(value: unknown): string {
     return result;
 }
 
-function number(value: unknown, minimum = -Infinity): number {
+export function number(value: unknown, minimum = -Infinity): number {
     if (typeof value !== 'number' || !Number.isFinite(value) || value < minimum) {
         throw new Error('Invalid number');
     }
@@ -232,7 +231,7 @@ function tones(value: unknown): Record<string, string> {
     );
 }
 
-function list<T>(value: unknown, read: (item: unknown) => T): T[] {
+export function list<T>(value: unknown, read: (item: unknown) => T): T[] {
     if (!Array.isArray(value)) {
         throw new Error('Expected array');
     }
@@ -355,7 +354,7 @@ function readShape(value: unknown, readChild: (child: unknown) => ShapeData): Sh
 }
 
 /** The variable each property follows, by property key. */
-function readBindings(value: unknown): Record<string, string> {
+export function readBindings(value: unknown): Record<string, string> {
     return Object.fromEntries(
         Object.entries(record(value)).map(([key, variableId]) => [id(key), id(variableId)])
     );
@@ -469,50 +468,6 @@ export function readShapeGeometry(value: unknown) {
  * Reads a copied group: its name, rotation and the positions of its shapes among
  * `shapeCount` copied shapes, two or more, each in no other group of `taken`.
  */
-export function readCopiedGroup(value: unknown, shapeCount: number, taken: Set<number>) {
-    const g = record(value);
-    const members = list(g.members, (member) => {
-        const index = number(member, 0);
-
-        if (!Number.isInteger(index) || index >= shapeCount || taken.has(index)) {
-            throw new Error('Invalid group member');
-        }
-
-        taken.add(index);
-
-        return index;
-    });
-
-    if (members.length < 2) {
-        throw new Error('A group needs two shapes');
-    }
-
-    return {
-        name: text(g.name),
-        rotation: g.rotation === undefined ? 0 : number(g.rotation),
-        members
-    };
-}
-
-/** Reads a copied shape: what it draws, its name, description, rotation and bindings. */
-export function readCopiedShape(value: unknown): ShapeInput {
-    const s = record(value);
-    const geometry = readShapeGeometry(value);
-
-    if (geometry.type === 'pen' && geometry.points.length === 0) {
-        throw new Error('A pen needs a point');
-    }
-
-    return {
-        ...geometry,
-        ...readShapeStyle(value, geometry),
-        name: text(s.name),
-        rotation: s.rotation === undefined ? 0 : number(s.rotation),
-        ...(s.description === undefined ? {} : { description: text(s.description) }),
-        ...(s.bindings === undefined ? {} : { bindings: readBindings(s.bindings) })
-    };
-}
-
 function readLink(value: unknown): LinkData {
     const l = record(value);
 
@@ -610,6 +565,7 @@ export function readRoleSettings(value: unknown): import('../types').RoleSetting
         ...(settings.navigateTo === undefined || settings.role !== 'button'
             ? {}
             : { navigateTo: id(settings.navigateTo) }),
+        ...(settings.controlId === undefined ? {} : { controlId: id(settings.controlId) }),
         props: Object.fromEntries(
             Object.entries(record(settings.props)).map(([key, value]) => [id(key), id(value)])
         )
@@ -679,7 +635,9 @@ function readFrame(value: unknown): Frame {
     if (
         (f.screenLayout !== undefined &&
             (f.screenLayout !== true || f.kind === 'screen' || f.kind === 'view')) ||
-        (f.layoutId !== undefined && f.kind !== 'view')
+        ((f.layoutId !== undefined || f.layoutMode !== undefined) && f.kind !== 'view') ||
+        (f.layoutMode !== undefined && f.layoutMode !== 'auto') ||
+        (f.responsiveLayouts !== undefined && f.kind !== 'screen')
     ) {
         throw new Error('Invalid screen layout fields');
     }
@@ -711,6 +669,16 @@ function readFrame(value: unknown): Frame {
         ...(f.screenId === undefined ? {} : { screenId: id(f.screenId) }),
         ...(f.screenLayout === true ? { screenLayout: true as const } : {}),
         ...(f.layoutId === undefined ? {} : { layoutId: id(f.layoutId) }),
+        ...(f.layoutMode === 'auto' ? { layoutMode: 'auto' as const } : {}),
+        ...(f.responsiveLayouts === undefined
+            ? {}
+            : {
+                  responsiveLayouts: list(f.responsiveLayouts, (entry) => {
+                      const rule = record(entry);
+
+                      return { minWidth: number(rule.minWidth, 0), layoutId: id(rule.layoutId) };
+                  })
+              }),
         ...(f.parentFrameId === undefined ? {} : { parentFrameId: id(f.parentFrameId) }),
         ...(f.stack === undefined ? {} : { stack: readStack(f.stack) }),
         ...(f.sizing === undefined ? {} : { sizing: readSizing(f.sizing) }),

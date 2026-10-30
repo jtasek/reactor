@@ -941,6 +941,16 @@ function stage(
                         ...operation.frame,
                         id: ids.get(operation.key)
                     });
+                    // Layout rules may point forward to an artwork tree added with its screen.
+                    if (frame.responsiveLayouts) {
+                        frame.responsiveLayouts = frame.responsiveLayouts.map((rule) => ({
+                            ...rule,
+                            layoutId:
+                                declared.get(rule.layoutId)?.collection === 'frames'
+                                    ? ids.get(rule.layoutId)!
+                                    : rule.layoutId
+                        }));
+                    }
                     linkFrameBindings(frame, index);
                     if (frame.parentFrameId !== undefined) {
                         frame.parentFrameId = frameReference(frame.parentFrameId, index);
@@ -963,7 +973,9 @@ function stage(
                         'modeOverrides',
                         'bindings',
                         'stack',
-                        'layoutId'
+                        'layoutId',
+                        'layoutMode',
+                        'responsiveLayouts'
                     ]);
                     if (Object.keys(operation.changes).some((key) => !allowed.has(key))) {
                         throw new Error('Unsupported frame field.');
@@ -975,6 +987,13 @@ function stage(
                         ...(parent === null ? { parentFrameId: undefined } : {}),
                         ...(operation.changes.stack === null ? { stack: undefined } : {}),
                         ...(operation.changes.layoutId === null ? { layoutId: undefined } : {}),
+                        ...(operation.changes.layoutMode === null ? { layoutMode: undefined } : {}),
+                        ...(operation.changes.responsiveLayouts === null
+                            ? { responsiveLayouts: undefined }
+                            : {}),
+                        ...(operation.changes.kind === 'frame'
+                            ? { responsiveLayouts: undefined }
+                            : {}),
                         ...(operation.changes.kind === 'screen' ? { screenLayout: undefined } : {})
                     });
                     if (frame.layoutId && 'layoutId' in operation.changes) {

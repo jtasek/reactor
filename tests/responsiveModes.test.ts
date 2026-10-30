@@ -282,3 +282,50 @@ it('keeps a dimension when concurrent edits give two modes the same minimum widt
     });
     copies.forEach(({ collaboration }) => collaboration.dispose());
 });
+
+it('recomputes width-selected modes in Preview without changing the launch Theme or authored data', () => {
+    const { store } = createTestStore();
+    store.actions.addDocument(responsiveDocument(store.state.currentDocumentId));
+    store.actions.editFrame({ kind: 'select', id: 'mobile' });
+    store.actions.togglePreview();
+    const document = store.state.currentDocument;
+    const session = json(store.state.previewModeContext)!;
+    const before = serializePersistedState(store.state);
+    const drawing = projectPreview(document, {}, [], session, { width: 800 });
+    const nodes = drawing.screens.find((screen) => screen.id === 'screen')!.nodes;
+    expect(nodes.find((node) => node.key === 'screen/button')!.children![0].attrs).toMatchObject({
+        width: 240,
+        fill: '#ddeeff'
+    });
+    expect(nodes.find((node) => node.key === 'screen/label')!.children![0].attrs['font-size']).toBe(
+        20
+    );
+    expect(serializePersistedState(store.state)).toEqual(before);
+    expect(store.state.previewModeContext).toEqual(session);
+});
+
+it.each(['screen', 'mobile'])(
+    'keeps an explicit %s mode fixed through Preview width changes',
+    (frameId) => {
+        const { store } = createTestStore();
+        const source = responsiveDocument(store.state.currentDocumentId);
+        source.frames[frameId].modeOverrides = {
+            ...source.frames[frameId].modeOverrides,
+            media: 'xs'
+        };
+        store.actions.addDocument(source);
+        store.actions.editFrame({ kind: 'select', id: 'mobile' });
+        store.actions.togglePreview();
+        const session = json(store.state.previewModeContext)!;
+        const drawing = projectPreview(store.state.currentDocument, {}, [], session, {
+            width: 800
+        });
+        const nodes = drawing.screens.find((screen) => screen.id === 'screen')!.nodes;
+        expect(
+            nodes.find((node) => node.key === 'screen/button')!.children![0].attrs
+        ).toMatchObject({ width: 80, fill: '#ddeeff' });
+        expect(
+            nodes.find((node) => node.key === 'screen/label')!.children![0].attrs['font-size']
+        ).toBe(14);
+    }
+);

@@ -46,7 +46,7 @@ export const setModeOverride: ActionWithParam<{
     effects.collaboration.flush();
 };
 
-/** Snapshot the selected view's screen-root modes; descendants apply afterwards in Preview. */
+/** Snapshot manual/explicit modes; width-selected modes resolve against the Preview viewport. */
 export function previewModes(state: Context['state']) {
     const document = state.currentDocument;
     const selected = document.frames[document.selectedFrameId ?? ''];
@@ -64,10 +64,21 @@ export function previewModes(state: Context['state']) {
         screenId
     }).modes;
 
+    const screen = document.frames[screenId ?? ''];
+    const fixedModes = Object.fromEntries(
+        Object.entries(modes).filter(
+            ([dimensionId]) =>
+                document.dimensions[dimensionId]?.selection !== 'width' ||
+                Object.hasOwn(screen?.modeOverrides ?? {}, dimensionId) ||
+                Object.hasOwn(view.modeOverrides ?? {}, dimensionId)
+        )
+    );
+
     return {
-        modes,
+        modes: fixedModes,
         ...(screenId ? { screenId } : {}),
         viewport: { ...view.size },
-        ...(view.layoutId ? { layoutId: view.layoutId } : {})
+        ...(view.layoutId ? { layoutId: view.layoutId } : {}),
+        ...(view.layoutMode ? { layoutMode: view.layoutMode } : {})
     };
 }

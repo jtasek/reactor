@@ -1,6 +1,6 @@
 import { json } from 'overmind';
 import { createComponent, createGroup, createShape, instanceName } from './factories';
-import { readCopiedShape } from './services/documentStorage';
+import { readCopiedShape } from './services/clipboardStorage';
 import { componentSource, instanceBox, instanceSource } from './componentSource';
 import { reachesComponent } from './actions/components';
 import { ordersBetween, resolveDrawOrderTies } from './drawOrder';

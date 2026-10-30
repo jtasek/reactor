@@ -16,6 +16,7 @@ export function sameRoleSettings(expected: RoleSettings, actual: RoleSettings): 
 
     return (
         expected.navigateTo === actual.navigateTo &&
+        expected.controlId === actual.controlId &&
         Object.keys(expectedLinks).length === Object.keys(actualLinks).length &&
         Object.entries(expectedLinks).every(([key, value]) => actualLinks[key] === value)
     );

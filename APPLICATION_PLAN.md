@@ -897,19 +897,28 @@ continues working through adapters to the new screen/context projection until R4
    Choices and roots survive schema v21, collaboration, undo and reload. Missing choices retain
    their references and show the default with a diagnostic. Deleting a layout boundary releases
    its artwork to Canvas, as with frames, and keeps the screen and views. The Inspector's
-   Edit layout settings opens its name, stack and sizing controls.
+   Edit layout settings opens its name and stack controls; sizing follows each view.
    **Acceptance:** `tests/screenLayouts.test.ts` and `tests/browser/screenLayouts.spec.ts` cover
    default/alternate isolation, stack reflow, drawing, Preview, shared components, stale choices,
    deletion, locking, atomic undo, collaboration, reload, inactive-layout diagnostic isolation,
    missing-layout Preview warnings, promotion of released layouts and narrow-width controls.
 
-   **R4.7b — Automatic selection and prototype continuity (next).** Add opt-in minimum-width
-   rules with greatest inclusive threshold selection, an explicit local inspection override
-   including the default layout, and diagnostics for missing/unreachable layouts. Preserve
-   compatible input values/actions through explicit stable control/property identities when
-   switching trees; document reset behavior for incompatible controls. Do not infer identity
-   from labels or component type. Verify threshold boundaries, viewport/navigation continuity,
-   rules edited concurrently, undo/reload and preservation of explicit inspection choices.
+   **R4.7b — Automatic selection and prototype continuity (implemented).** Schema v22 adds
+   opt-in screen minimum-width rules and Auto on each Screen view. Greatest inclusive threshold
+   wins; explicit choices (including Default) are preserved. Missing targets fall back with a
+   diagnostic, and duplicate thresholds resolve deterministically with an unreachable-rule
+   warning. Rendering, Explorer, drawing and focused editing use the same selected tree.
+   Preview has local Width and per-screen Layout controls, including Default; width applies
+   across navigation while destination height constraints remain active and inspection choices
+   stay local until Preview closes. Automatic modes follow the new width; explicit/manual
+   launch modes remain fixed. Explicit Input
+   identities share typed state only within one logical screen and the same component family
+   and exposed text Value property. Duplicate, missing or incompatible inputs reset; button
+   destinations remain authored. Authored values, geometry and modes are never rewritten.
+   **Acceptance:** `tests/automaticScreenLayouts.test.ts` and its browser counterpart cover
+   exact thresholds, legacy/manual preservation, editing, missing/duplicate rules, local
+   inspection, navigation, compatible/incompatible input continuity, cloning, undo, sync and
+   reload. Runtime protocol v3 validates layout inspection and input state metadata.
 
 8. **R4.8 — Explicit interactions independent of roles (M).**
    Provide a small Inspector editor for a control's Activate trigger and Navigate action with a

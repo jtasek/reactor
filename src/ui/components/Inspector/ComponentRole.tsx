@@ -120,6 +120,33 @@ export const ComponentRole: FC<{ componentId?: string; instanceId?: string }> = 
                             </tr>
                         );
                     })}
+                    {instanceId && data.settings.role === 'input' && (
+                        <tr>
+                            <th scope="row">
+                                <label htmlFor="input-identity">Input identity</label>
+                            </th>
+                            <td>
+                                <input
+                                    id="input-identity"
+                                    type="text"
+                                    aria-label="Input identity"
+                                    disabled={data.disabled}
+                                    value={data.settings.controlId ?? ''}
+                                    placeholder="e.g. contact-email"
+                                    onChange={(event) =>
+                                        update({
+                                            ...data.settings,
+                                            controlId: event.target.value.trim() || undefined
+                                        })
+                                    }
+                                />
+                                <small className={styles.frameHint}>
+                                    Use the same identity and value property in another layout to
+                                    keep typed input in Preview. Unique within each screen layout.
+                                </small>
+                            </td>
+                        </tr>
+                    )}
                     {data.settings.role === 'button' && (
                         <tr>
                             <th scope="row">

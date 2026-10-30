@@ -1,3 +1,4 @@
+import { readCopiedGroup, readCopiedShape } from './services/clipboardStorage';
 import type {
     Component,
     Document,
@@ -16,12 +17,7 @@ import { componentSource, instanceSource, instanceBox } from './componentSource'
 import { copyName, createShape, instanceName, numberedName, shapeNamer } from './factories';
 import { CLONE_OFFSET, translateShape } from './geometry';
 import { applyProperty } from './properties';
-import {
-    hydrateComponent,
-    readCopiedGroup,
-    readCopiedShape,
-    readEntity
-} from './services/documentStorage';
+import { hydrateComponent, readEntity } from './services/documentStorage';
 import {
     bindableProperty,
     bindingHolds,

@@ -141,6 +141,8 @@ export interface UpdateFrame {
         parentFrameId?: string | null;
         stack?: Frame['stack'] | null;
         layoutId?: string | null;
+        layoutMode?: 'auto' | null;
+        responsiveLayouts?: Frame['responsiveLayouts'] | null;
     };
 }
 export interface DeleteFrame {
