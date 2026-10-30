@@ -181,6 +181,89 @@ export const DesignText: FC = () => {
     );
 };
 
+interface TextEditorProps {
+    shapeId: string;
+    position: Point;
+    fontSize: number;
+    width: number;
+    /** The words as the Inspector's Text field shows them. */
+    value: string;
+}
+
+/**
+ * A field over a double-clicked text shape: Enter or clicking away keeps the
+ * words, Escape leaves them as they were.
+ */
+export const TextEditor: FC<TextEditorProps> = ({ shapeId, position, fontSize, width, value }) => {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const done = useRef(false);
+    const { endTextEditing, setShapesProperty } = useActions();
+
+    useEffect(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+
+        return () => {
+            if (!done.current) {
+                done.current = true;
+                endTextEditing();
+            }
+        };
+    }, [endTextEditing]);
+
+    const finish = (keep: boolean) => {
+        if (done.current) {
+            return;
+        }
+        done.current = true;
+
+        const text = inputRef.current?.value ?? value;
+
+        // Empty words would leave nothing to click, so they keep the shape as it was.
+        if (keep && text !== value && text.length > 0) {
+            setShapesProperty({ shapeIds: [shapeId], key: 'text', value: text });
+        }
+        endTextEditing();
+    };
+
+    const handleSubmit = (event: SubmitEvent) => {
+        event.preventDefault();
+        finish(true);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            finish(false);
+        }
+    };
+
+    return (
+        <foreignObject
+            x={position.x}
+            y={position.y - fontSize}
+            width={width}
+            height={fontSize * 2}
+            // Presses in the field place its caret instead of selecting or moving shapes.
+            onPointerDown={(event) => event.stopPropagation()}
+            onDoubleClick={(event) => event.stopPropagation()}
+        >
+            <form onSubmit={handleSubmit}>
+                <input
+                    ref={inputRef}
+                    aria-label="Text"
+                    className={styles.shape}
+                    defaultValue={value}
+                    style={{ fontSize }}
+                    type="text"
+                    onBlur={() => finish(true)}
+                    onKeyDown={handleKeyDown}
+                />
+            </form>
+        </foreignObject>
+    );
+};
+
 export const TextCommand: Command = {
     id: 'text',
     name: 'Text',

@@ -5,6 +5,8 @@ import { Label } from '../Label';
 import { Resizable } from '../Selectable/Resizable';
 import { Selectable } from '../Selectable/Selectable';
 import { getComponentByType } from 'src/tools/components';
+import { TextEditor } from 'src/tools/components/Text';
+import { SHAPE_PROPERTIES } from 'src/app/properties';
 import { instanceComponentId } from 'src/app/componentSource';
 import { Instance } from './Instance';
 import type { Shape as ShapeType } from 'src/app/types';
@@ -12,7 +14,13 @@ import { useCurrentDocument } from 'src/app/hooks';
 import { useArtworkModes } from 'src/app/modeHooks';
 import { themeColors } from 'src/app/themeColors';
 import { resolveVariable } from 'src/app/variableResolver';
-import { rectToBox, shapeGeometryKey, getShapeBounds, boxCenter } from 'src/app/utils';
+import {
+    DEFAULT_TEXT_FONT_SIZE,
+    rectToBox,
+    shapeGeometryKey,
+    getShapeBounds,
+    boxCenter
+} from 'src/app/utils';
 import {
     useActions,
     useAppState,
@@ -76,6 +84,11 @@ export const Shape = memo((props: Props) => {
             ? null
             : (getComponentByType(shape.type) as FC<Omit<ShapeType, 'key'>>);
     const authored = useAppState((state) => state.currentDocument.shapes[shapeId]);
+    const editingText = useAppState(
+        (state) =>
+            state.editingText?.documentId === state.currentDocumentId &&
+            state.editingText.shapeId === shapeId
+    );
     const inLayout = hasLayoutOffset(document, [shapeId]);
     // Measured in context; the DOM box would mix contexts and must not be stored.
     const contextual =
@@ -171,7 +184,8 @@ export const Shape = memo((props: Props) => {
         <g transform={transform}>
             <g
                 ref={groupRef}
-                opacity={shape.opacity}
+                // The field drawn over it shows the words while they change.
+                opacity={editingText ? 0 : shape.opacity}
                 style={
                     {
                         pointerEvents: 'all',
@@ -188,6 +202,23 @@ export const Shape = memo((props: Props) => {
                     Component && createElement(Component, { ...paintedProps, key })
                 )}
             </g>
+            {editingText && shape.type === 'text' && authored?.type === 'text' && (
+                <TextEditor
+                    shapeId={shapeId}
+                    position={shape.position}
+                    fontSize={shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE}
+                    width={Math.max(
+                        200,
+                        getShapeBounds(shape).width + (shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE) * 4
+                    )}
+                    value={String(
+                        SHAPE_PROPERTIES.find((item) => item.key === 'text')?.read(
+                            authored,
+                            document
+                        ) ?? shape.value
+                    )}
+                />
+            )}
             {shape.active && !shape.selected && !inClosedGroup && (
                 <Active key={`active-${shape.type}-${shape.id}`} shape={shape} />
             )}
