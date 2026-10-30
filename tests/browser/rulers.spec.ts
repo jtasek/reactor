@@ -68,7 +68,7 @@ test('drawing starts and ends snapped to guides instead of dragging them', async
     await expect(guideLines(page).last()).toHaveAttribute('y1', '400');
 });
 
-test('the command bar moves below the top ruler, so a guide is dragged out anywhere', async ({
+test('the application and command bars leave the rulers available for guide creation', async ({
     page
 }) => {
     await openWithRulers(page);
@@ -76,6 +76,12 @@ test('the command bar moves below the top ruler, so a guide is dragged out anywh
     const ruler = (await page.locator('svg#surface [data-ruler="top"]').boundingBox())!;
 
     expect(bar.y).toBeGreaterThanOrEqual(ruler.y + ruler.height);
+    const application = (await page
+        .getByRole('navigation', { name: 'Application' })
+        .boundingBox())!;
+    const leftRuler = (await page.locator('svg#surface [data-ruler="left"] > rect').boundingBox())!;
+    expect(application.x).toBeGreaterThanOrEqual(leftRuler.x + leftRuler.width);
+    expect(application.y).toBeGreaterThanOrEqual(ruler.y + ruler.height);
 
     // Where the command bar is across, on the ruler above it.
     const across = bar.x + bar.width / 2;

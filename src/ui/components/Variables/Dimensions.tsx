@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { json } from 'overmind';
 import { ActionsMenu } from './ActionsMenu';
 import { useActions, useCurrentDocument, useEffects } from 'src/app/hooks';
-import { ordered, readDimension } from 'src/app/variableModes';
+import { minWidthProblem, ordered, readDimension } from 'src/app/variableModes';
 import type { VariableDimension } from 'src/app/types';
 import styles from './styles.css';
 
@@ -92,6 +92,12 @@ export function DimensionEditor({
         }
         try {
             const validated = readDimension(draft);
+            const widthProblem = minWidthProblem(validated);
+            if (widthProblem) {
+                setProblem(widthProblem);
+
+                return;
+            }
             if (
                 Object.values(document.dimensions).some(
                     (item) => item.id !== dimension?.id && item.name === validated.name
@@ -232,6 +238,30 @@ export function DimensionEditor({
                     </p>
                 )}
                 <div className={styles.section}>
+                    <label className={styles.formField}>
+                        Select modes by
+                        <select
+                            aria-label="Select modes by"
+                            value={draft.selection ?? 'manual'}
+                            onChange={(event) =>
+                                change({
+                                    ...draft,
+                                    selection: event.target.value === 'width' ? 'width' : undefined
+                                })
+                            }
+                        >
+                            <option value="manual">Manual selection</option>
+                            <option value="width">Screen view width</option>
+                        </select>
+                    </label>
+                    {draft.selection === 'width' && (
+                        <p className={styles.resolution}>
+                            The mode with the highest minimum at or below the Screen view’s width
+                            wins. Below all minimums, the default applies. Leave a minimum empty to
+                            keep that mode manual. Explicit mode overrides still win; other
+                            dimensions stay independent.
+                        </p>
+                    )}
                     <div className={styles.sectionHeading}>
                         <h4>Modes</h4>
                         <button
@@ -316,6 +346,34 @@ export function DimensionEditor({
                                     </button>
                                 )}
                             </ActionsMenu>
+                            {draft.selection === 'width' && (
+                                <label className={`${styles.formField} ${styles.widthRule}`}>
+                                    Minimum screen width (px)
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="any"
+                                        aria-label={`Minimum screen width for ${mode.name}`}
+                                        placeholder="Manual only"
+                                        value={mode.minWidth ?? ''}
+                                        onChange={(event) =>
+                                            change({
+                                                ...draft,
+                                                modes: {
+                                                    ...draft.modes,
+                                                    [mode.id]: {
+                                                        ...mode,
+                                                        minWidth:
+                                                            event.target.value === ''
+                                                                ? undefined
+                                                                : event.target.valueAsNumber
+                                                    }
+                                                }
+                                            })
+                                        }
+                                    />
+                                </label>
+                            )}
                         </div>
                     ))}
                 </div>

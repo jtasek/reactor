@@ -85,7 +85,9 @@ export interface VariableDimension {
     name: string;
     order: number;
     defaultModeId: string;
-    modes: Record<string, { id: string; name: string; order: number }>;
+    /** Absent means manual selection; thresholds are opt-in and independent per dimension. */
+    selection?: 'width';
+    modes: Record<string, { id: string; name: string; order: number; minWidth?: number }>;
 }
 
 /** What a variable holds; a property may use a variable of its own kind. */

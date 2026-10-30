@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { type CSSProperties, FC } from 'react';
 import {
     FolderOpen,
     ListTree,
@@ -7,25 +7,36 @@ import {
     Ellipsis,
     Sparkles,
     Play,
-    Share2
+    Share2,
+    Braces
 } from 'lucide-react';
 
 import { usePreviewOpen } from 'src/app/previewHooks';
 import { useAiAvailable } from 'src/app/aiHooks';
 import { useAccount, useActions, useControls } from 'src/app/hooks';
+import { RULER_SIZE_PX } from 'src/app/rulers';
 import { Icon } from '../Icon';
 import { DOCK_GEOMETRY_STYLE } from '../PanelLayout/geometry';
 import styles from './styles.css';
 
 export const ApplicationBar: FC = () => {
-    const { explorer, components, inspector, controlPanel } = useControls();
+    const { explorer, components, inspector, controlPanel, rulers } = useControls();
     const previewOpen = usePreviewOpen();
     const { ui, requestAiEdit, togglePreview } = useActions();
     const aiAvailable = useAiAvailable();
     const account = useAccount();
 
     return (
-        <nav className={styles.applicationBar} aria-label="Application" style={DOCK_GEOMETRY_STYLE}>
+        <nav
+            className={styles.applicationBar}
+            aria-label="Application"
+            style={
+                {
+                    ...DOCK_GEOMETRY_STYLE,
+                    '--ruler-size': rulers.visible ? `${RULER_SIZE_PX}px` : undefined
+                } as CSSProperties
+            }
+        >
             <a className={styles.button} href="/documents" aria-label="Documents" title="Documents">
                 <Icon icon={{ component: FolderOpen, size: 20 }} />
             </a>
@@ -35,6 +46,9 @@ export const ApplicationBar: FC = () => {
                 </a>
             )}
             <span className={styles.divider} aria-hidden="true" />
+            <a className={styles.button} href="/variables" aria-label="Variables" title="Variables">
+                <Icon icon={{ component: Braces, size: 20 }} />
+            </a>
             <button
                 className={styles.button}
                 type="button"

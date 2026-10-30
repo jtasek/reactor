@@ -5,7 +5,7 @@ import type {
     Document,
     VariableDimension
 } from './types';
-import { readDimension, ordered } from './variableModes';
+import { minWidthProblem, readDimension, ordered } from './variableModes';
 import { isHexColor } from './utils';
 import { applyVariableChanges, templateWithIds } from './variables';
 
@@ -69,6 +69,9 @@ export const updateDimension: ActionWithParam<VariableDimension> = ({ state }, i
     try {
         dimension = readDimension(input);
     } catch {
+        return;
+    }
+    if (minWidthProblem(dimension)) {
         return;
     }
     if (

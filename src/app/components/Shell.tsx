@@ -16,6 +16,9 @@ const Account = lazy(() =>
 const Documents = lazy(() =>
     import('../../pages/Documents').then((module) => ({ default: module.Documents }))
 );
+const Variables = lazy(() =>
+    import('../../pages/Variables').then((module) => ({ default: module.VariablesPage }))
+);
 
 const Sharing = lazy(() =>
     import('../../pages/Sharing').then((module) => ({ default: module.Sharing }))
@@ -52,6 +55,7 @@ export const Shell: FC = () => {
                 <Suspense fallback={null}>
                     {currentPage === 'designer' && <Designer />}
                     {currentPage === 'documents' && <Documents />}
+                    {currentPage === 'variables' && <Variables />}
                     {(currentPage === 'account' || currentPage === 'login') && (
                         <Account login={currentPage === 'login'} />
                     )}

@@ -241,6 +241,11 @@ test('cached viewers can read and zoom but cannot use editor controls or rename/
     await page.keyboard.press('r');
     await page.keyboard.press('Delete');
     await expect(page.locator('svg#surface')).toHaveCount(0);
+    await page.goto('/variables');
+    await expect(
+        page.getByText('View only — changes from editors appear here automatically.')
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'New variable', exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: 'Zoom in', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Zoom out', exact: true })).toBeEnabled();
     await page.reload();
