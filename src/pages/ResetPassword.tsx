@@ -70,7 +70,11 @@ export const ResetPassword: FC = () => {
             return;
         }
 
-        window.history.replaceState({}, '', window.location.pathname + window.location.search);
+        window.history.replaceState(
+            window.history.state,
+            '',
+            window.location.pathname + window.location.search
+        );
         setPassword('');
         setConfirmation('');
         setDone(true);

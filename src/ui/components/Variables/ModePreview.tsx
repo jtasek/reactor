@@ -106,6 +106,11 @@ export function ModePreview() {
                                 </option>
                             ))}
                         </select>
+                        {dimension.selection === 'width' && (
+                            <span className={styles.resolution}>
+                                Inside Screens, the Screen view width picks this mode.
+                            </span>
+                        )}
                     </label>
                 ))}
                 {Object.values(document.variables).some((item) => item.type === 'number') && (

@@ -54,7 +54,7 @@ const InvitationDetails: FC<{ token?: string }> = ({ token }) => {
             await invitations.accept(token, acceptController.signal);
             if (acceptController.signal.aborted) return;
             forgetInvitationToken();
-            window.history.replaceState({}, '', '/invite');
+            window.history.replaceState(window.history.state, '', '/invite');
             // A fresh document list and permission snapshot load before any editor is shown.
             reload('/documents');
         } catch (error) {

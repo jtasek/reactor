@@ -77,6 +77,39 @@ function VariablePanel({ fullPage = false }: { fullPage?: boolean }) {
         };
     }, [fullPage, dirty, effects]);
 
+    const canUndo = !document.locked && !dirty && document.history.canUndo;
+    const canRedo = !document.locked && !dirty && document.history.canRedo;
+    useEffect(() => {
+        if (!fullPage) {
+            return;
+        }
+        // Canvas shortcuts are off on this page; the history keys work outside text fields.
+        const onKeyDown = (event: KeyboardEvent) => {
+            const target = event.target as HTMLElement | null;
+            if (
+                !(event.metaKey || event.ctrlKey) ||
+                event.altKey ||
+                target?.closest('input, textarea, select, [contenteditable="true"]')
+            ) {
+                return;
+            }
+            const key = event.key.toLowerCase();
+            const redo = key === 'y' || (key === 'z' && event.shiftKey);
+            if (key !== 'z' && key !== 'y') {
+                return;
+            }
+            event.preventDefault();
+            if (redo && canRedo) {
+                effects.collaboration.redo(document.id);
+            } else if (!redo && canUndo) {
+                effects.collaboration.undo(document.id);
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [fullPage, canUndo, canRedo, effects, document.id]);
+
     useEffect(() => {
         if (view.creating) {
             return;
@@ -204,14 +237,14 @@ function VariablePanel({ fullPage = false }: { fullPage?: boolean }) {
                     <div className={styles.utilities} aria-label="Document history">
                         <button
                             type="button"
-                            disabled={document.locked || dirty || !document.history.canUndo}
+                            disabled={!canUndo}
                             onClick={() => effects.collaboration.undo(document.id)}
                         >
                             Undo
                         </button>
                         <button
                             type="button"
-                            disabled={document.locked || dirty || !document.history.canRedo}
+                            disabled={!canRedo}
                             onClick={() => effects.collaboration.redo(document.id)}
                         >
                             Redo
