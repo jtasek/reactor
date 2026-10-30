@@ -8,6 +8,7 @@ import { screenViewName } from './screenViews';
 import { componentScreenView } from './screenViewEditing';
 import {
     componentCandidates,
+    componentVariants,
     componentLibraries,
     instanceProperties,
     libraryUpdateAvailable
@@ -111,3 +112,6 @@ export const useComponentLocked = (id: string) =>
             !component || component.shapesIds.some((shapeId) => isShapeLocked(document, shapeId))
         );
     });
+
+export const useComponentVariants = (componentId: string) =>
+    useAppState((state) => componentVariants(state.currentDocument, componentId));

@@ -3,6 +3,7 @@ import { componentPropValue, exposableProperties } from '../componentProps';
 import { instanceComponentId } from '../componentSource';
 import { editorHelpers, editorLoaded } from '../editorHelpers';
 import { SHAPE_PROPERTIES } from '../properties';
+import { canLinkComponentVariant, componentVariantProblems } from '../componentVariants';
 
 export function instanceProperties(document: Document) {
     const selected = document.selectedShapes.filter(
@@ -31,18 +32,9 @@ export function instanceProperties(document: Document) {
         if (!component.variantIds?.includes(shape.variantId) || !alternate) {
             return [`${shape.name}: selected variant is unavailable; showing the default.`];
         }
-        const incompatible = (component.props ?? []).some(
-            (prop) =>
-                !alternate.props?.some(
-                    (candidate) => candidate.id === prop.id && candidate.key === prop.key
-                )
+        return componentVariantProblems(document, componentId, alternate.id).map(
+            (problem) => `${shape.name}: ${problem}`
         );
-
-        return incompatible
-            ? [
-                  `${shape.name}: variant has incompatible exposed properties; some overrides may not apply.`
-              ]
-            : [];
     });
 
     return {
@@ -153,4 +145,26 @@ export function componentCandidates(document: Document, componentId: string) {
             label: `${shape.name}: ${property.label}`
         }));
     });
+}
+
+/** The source Inspector's family diagnostics and compatible link targets. */
+export function componentVariants(document: Document, componentId: string) {
+    const component = document.components[componentId];
+    const family = Object.values(document.components).find((item) =>
+        item.variantIds?.includes(componentId)
+    );
+
+    return {
+        family: family ? { id: family.id, name: family.name } : undefined,
+        problems: family ? componentVariantProblems(document, family.id, componentId) : [],
+        variants: (component?.variantIds ?? []).map((id) => ({
+            id,
+            name: document.components[id]?.name ?? 'Missing variant',
+            editable: Boolean(document.components[id] && !document.components[id].library),
+            problems: componentVariantProblems(document, componentId, id)
+        })),
+        candidates: Object.values(document.components)
+            .filter((candidate) => canLinkComponentVariant(document, componentId, candidate.id))
+            .map((candidate) => ({ id: candidate.id, name: candidate.name }))
+    };
 }

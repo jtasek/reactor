@@ -720,6 +720,12 @@ Schema v18 adds `Component.variantIds` and `InstanceShape.variantId` for the fir
 variant increment. A family links independently editable component sources with matching
 exposed property IDs. `instanceComponentId` selects the authored alternate only while the
 family and source exist; otherwise the instance retains its choice and draws the default.
+`componentVariants.ts` provides lazy, read-only compatibility diagnostics for source and instance
+Inspectors and the shared link eligibility check. Compare semantic role links without depending
+on map insertion order. Missing mappings, wrong fields, unshared properties and invalid family
+links remain authored; diagnostics do not mutate overrides or source records. Missing selected
+variants retain their ID and an explicit unavailable option in Inspector. Manual mapping repair
+and broader library update behavior remain future work.
 Shared property IDs are mirrored to matching source shapes when exposed after linking: a
 property both already expose pairs shapes first, then a unique name, then drawing position
 when both sources have the same shape types in order (created variants keep that order).

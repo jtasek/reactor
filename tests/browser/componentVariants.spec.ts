@@ -167,4 +167,93 @@ test('creates and edits a variant without changing the default or losing instanc
     await expect(variant.locator('option:checked')).toHaveText('Card Wide');
     await expect(width).toHaveValue('80');
     await expect(opacity).toHaveValue('40');
+    await explorer.getByRole('button', { name: 'Card Wide', exact: true }).click();
+    await inspector.getByRole('button', { name: 'Stop exposing Opacity', exact: true }).click();
+    await expect(inspector.getByRole('status')).toContainText('Missing property “Opacity”');
+    await inspector.getByRole('button', { name: 'Variants of Card', exact: true }).click();
+    await expect(inspector.getByRole('status')).toContainText('Missing property “Opacity”');
+    await page.setViewportSize({ width: 390, height: 800 });
+    await inspector.getByRole('status').scrollIntoViewIfNeeded();
+    expect(await inspector.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+        true
+    );
+    await page.screenshot({ path: 'test-results/variant-diagnostics-narrow.png' });
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await explorer.getByRole('button', { name: 'Card instance', exact: true }).click();
+    await expect(inspector.getByRole('status')).toContainText('Missing property “Opacity”');
+    await variant.selectOption('family');
+    await expect(opacity).toHaveValue('40');
+    await variant.selectOption({ label: 'Card Wide' });
+    await expect(page.locator('#status-save')).toHaveText('Saved');
+    await page.reload();
+    await explorer.getByRole('button', { name: 'Card instance', exact: true }).click();
+    await expect(inspector.getByRole('status')).toContainText('Missing property “Opacity”');
+    await variant.selectOption('family');
+    await expect(opacity).toHaveValue('40');
+});
+
+test('shows an unavailable saved variant and lets the author explicitly return to default', async ({
+    page
+}) => {
+    const base = createShape({
+        type: 'rectangle',
+        name: 'Artwork',
+        order: 'a0',
+        position: { x: 0, y: 0 },
+        size: { width: 40, height: 40 }
+    });
+    const family = createComponent({
+        id: 'family',
+        name: 'Card',
+        sourceOnly: true,
+        shapesIds: [base.id],
+        variantIds: ['missing']
+    });
+    const instance = createShape({
+        type: 'instance',
+        name: 'Card instance',
+        order: 'a1',
+        componentId: family.id,
+        variantId: 'missing',
+        position: { x: 200, y: 200 },
+        overrides: {}
+    });
+    const document = createDocument({
+        id: 'missing-variant',
+        shapes: { [base.id]: base, [instance.id]: instance },
+        components: { [family.id]: family }
+    });
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await openEditor(page, ['Explorer', 'Inspector']);
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Card instance', exact: true })
+        .click();
+    const inspector = page.locator('[data-panel="inspector"]');
+    const variant = inspector.getByRole('combobox', { name: 'Component variant' });
+    await expect(variant).toHaveValue('missing');
+    await expect(variant.locator('option:checked')).toHaveText(
+        'Unavailable variant — showing default'
+    );
+    await expect(inspector.getByRole('status')).toContainText('selected variant is unavailable');
+    await variant.selectOption('family');
+    await expect(variant).toHaveCount(0);
+    await expect(
+        inspector.getByRole('spinbutton', { name: 'Width', exact: true }).first()
+    ).toHaveValue('40');
+    await expect(inspector.getByRole('status')).toHaveCount(0);
+    await expect(page.locator('#status-save')).toHaveText('Saved');
+    await page.reload();
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Card instance', exact: true })
+        .click();
+    await expect(variant).toHaveCount(0);
+    await expect(
+        inspector.getByRole('spinbutton', { name: 'Width', exact: true }).first()
+    ).toHaveValue('40');
 });

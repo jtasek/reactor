@@ -45,6 +45,14 @@ export const InstanceProps: FC = () => {
                                     {data.selectedVariantId === '' && (
                                         <option value="">Mixed</option>
                                     )}
+                                    {data.selectedVariantId !== '' &&
+                                        !data.variants.some(
+                                            (variant) => variant.id === data.selectedVariantId
+                                        ) && (
+                                            <option value={data.selectedVariantId} disabled>
+                                                Unavailable variant — showing default
+                                            </option>
+                                        )}
                                     {data.variants.map((variant) => (
                                         <option key={variant.id} value={variant.id}>
                                             {variant.name}

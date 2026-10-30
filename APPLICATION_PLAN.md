@@ -807,6 +807,15 @@ continues working through adapters to the new screen/context projection until R4
    property-mapping authoring and concurrent family-edit acceptance remain in R4.5; automatic
    width-based selection remains R4.6.
 
+   **R4.5c — Compatibility diagnostics (implemented).** Family, alternate and instance
+   Inspectors name missing shared properties, changed field mappings, unusable targets,
+   extra unshared fields, role/action drift and invalid family links. The link picker and
+   action use the same compatibility checks, comparing semantic role links independently
+   of object key order. Unavailable saved choices remain visibly distinct from the default.
+   Diagnostics are read-only; compatible instance values survive alternate property removal,
+   switching, reload and concurrent edits/undo. Explicit property-mapping repair and broader
+   library-update acceptance remain a subsequent R4.5 increment, before R4.6 automation.
+
    Add a bounded variant family to reusable components, with a default and explicit instance
    selection. A family is one level deep: a default plus any number of alternates, which cannot
    have alternates of their own. Variant trees share stable exposed
