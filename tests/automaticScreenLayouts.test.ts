@@ -17,10 +17,10 @@ import { editableScreenView } from 'src/app/screenViewEditing';
 
 it('uses inclusive minimum widths while explicit and legacy default choices win', () => {
     const document = screenLayoutsDocument();
-    document.frames.home.responsiveLayouts = [
-        { minWidth: 400, layoutId: 'compact' },
-        { minWidth: 800, layoutId: 'home' }
-    ];
+    document.frames.home.responsiveLayouts = {
+        compact: { minWidth: 400, layoutId: 'compact' },
+        wide: { minWidth: 800, layoutId: 'home' }
+    };
     const before = json(document);
     for (const [width, expected] of [
         [399, undefined],
@@ -40,7 +40,7 @@ it('uses inclusive minimum widths while explicit and legacy default choices win'
 
 it('uses the automatic artwork for projection and editing without changing explicit views', () => {
     const document = screenLayoutsDocument();
-    document.frames.home.responsiveLayouts = [{ minWidth: 200, layoutId: 'compact' }];
+    document.frames.home.responsiveLayouts = { compact: { minWidth: 200, layoutId: 'compact' } };
     document.frames.desktop.layoutMode = 'auto';
     const { store } = createTestStore();
     document.id = store.state.currentDocumentId;
@@ -63,15 +63,20 @@ it('uses the automatic artwork for projection and editing without changing expli
 
 it('keeps missing rules repairable and resolves duplicate widths deterministically with diagnostics', () => {
     const document = screenLayoutsDocument();
-    document.frames.home.responsiveLayouts = [
-        { minWidth: 100, layoutId: 'missing' },
-        { minWidth: 200, layoutId: 'home' },
-        { minWidth: 200, layoutId: 'compact' }
-    ];
+    document.frames.home.responsiveLayouts = {
+        c: { minWidth: 100, layoutId: 'missing' },
+        b: { minWidth: 200, layoutId: 'home' },
+        a: { minWidth: 200, layoutId: 'compact' }
+    };
     const choice = { layoutMode: 'auto' as const, size: { width: 200, height: 250 } };
+    // Equal widths: the first by rule ID wins, as the Inspector lists it first.
     expect(selectScreenLayout(document, 'home', choice)).toBe('compact');
-    document.frames.home.responsiveLayouts.reverse();
-    expect(selectScreenLayout(document, 'home', choice)).toBe('compact');
+    document.frames.home.responsiveLayouts = {
+        c: { minWidth: 100, layoutId: 'missing' },
+        a: { minWidth: 200, layoutId: 'home' },
+        b: { minWidth: 200, layoutId: 'compact' }
+    };
+    expect(selectScreenLayout(document, 'home', choice)).toBe('home');
     expect(screenLayoutProblems(document, 'home').join(' ')).toMatch(/missing layout.*unreachable/);
     const projected = projectScreen(document, 'home', {
         ...choice,
@@ -79,7 +84,9 @@ it('keeps missing rules repairable and resolves duplicate widths deterministical
         size: { width: 150, height: 250 }
     })!;
     expect(projected.screen.id).toBe('home');
-    expect(projected.problems.join()).toContain('chosen layout is unavailable');
+    // The rule's own problem explains the missing layout; no second, generic warning.
+    expect(projected.problems.join()).toContain('references a missing layout');
+    expect(projected.problems.join()).not.toContain('chosen layout is unavailable');
 });
 
 it('persists rules, Auto and explicit choices and rejects invalid durable settings', () => {
@@ -97,14 +104,24 @@ it('persists rules, Auto and explicit choices and rejects invalid durable settin
     expect(() =>
         readEntity('frames', {
             ...document.frames.home,
-            responsiveLayouts: [{ minWidth: -1, layoutId: 'wide' }]
+            responsiveLayouts: { rule: { minWidth: -1, layoutId: 'wide' } }
         })
     ).toThrow();
+    // Lists from early saves of this version read with position IDs.
+    expect(
+        readEntity('frames', {
+            ...document.frames.home,
+            responsiveLayouts: [{ minWidth: 640, layoutId: 'wide' }]
+        }).responsiveLayouts
+    ).toEqual({ 'rule-0': { minWidth: 640, layoutId: 'wide' } });
     expect(() =>
         readEntity('frames', { ...document.frames.view, layoutMode: 'automatic' })
     ).toThrow();
     expect(() =>
-        readEntity('frames', { ...document.frames.view, responsiveLayouts: [] })
+        readEntity('frames', {
+            ...document.frames.view,
+            responsiveLayouts: { rule: { minWidth: 0, layoutId: 'wide' } }
+        })
     ).toThrow();
 });
 
@@ -179,7 +196,7 @@ it('converges concurrent rules and manual choices, and undo preserves the other 
         actions.editFrame({
             kind: 'update',
             id: 'home',
-            changes: { responsiveLayouts: [{ minWidth: 200, layoutId: 'compact' }] }
+            changes: { responsiveLayouts: { compact: { minWidth: 200, layoutId: 'compact' } } }
         })
     );
     edit(b, (actions) =>
@@ -214,10 +231,10 @@ it('clones screen rules onto the cloned artwork and keeps the Inspector on its v
         kind: 'update',
         id: 'home',
         changes: {
-            responsiveLayouts: [
-                { minWidth: 700, layoutId: 'wide' },
-                { minWidth: 900, layoutId: 'home' }
-            ]
+            responsiveLayouts: {
+                wide: { minWidth: 700, layoutId: 'wide' },
+                home: { minWidth: 900, layoutId: 'home' }
+            }
         }
     });
     expect(store.state.currentDocument.selectedFrameId).toBe('view');
@@ -225,8 +242,8 @@ it('clones screen rules onto the cloned artwork and keeps the Inspector on its v
     const current = store.state.currentDocument;
     const clone = current.frames[cloneId];
     expect(clone).toBeDefined();
-    expect(clone.responsiveLayouts![1].layoutId).toBe(clone.id);
-    expect(current.frames[clone.responsiveLayouts![0].layoutId].parentFrameId).toBe(clone.id);
+    expect(clone.responsiveLayouts!.home.layoutId).toBe(clone.id);
+    expect(current.frames[clone.responsiveLayouts!.wide.layoutId].parentFrameId).toBe(clone.id);
 });
 
 it('keeps authored screen sizing constraints when no Preview viewport is specified', () => {
@@ -250,14 +267,14 @@ it('converges simultaneous edits to the shared rule set without rewriting view c
         actions.editFrame({
             kind: 'update',
             id: 'home',
-            changes: { responsiveLayouts: [{ minWidth: 200, layoutId: 'compact' }] }
+            changes: { responsiveLayouts: { rule: { minWidth: 200, layoutId: 'compact' } } }
         })
     );
     edit(b, (actions) =>
         actions.editFrame({
             kind: 'update',
             id: 'home',
-            changes: { responsiveLayouts: [{ minWidth: 500, layoutId: 'compact' }] }
+            changes: { responsiveLayouts: { rule: { minWidth: 500, layoutId: 'compact' } } }
         })
     );
     settle(copies);
@@ -275,7 +292,7 @@ it('refuses rule edits on locked screens and validates the extended Preview cont
     document.id = store.state.currentDocumentId;
     document.frames.home.locked = true;
     store.actions.addDocument(document);
-    store.actions.editFrame({ kind: 'update', id: 'home', changes: { responsiveLayouts: [] } });
+    store.actions.editFrame({ kind: 'update', id: 'home', changes: { responsiveLayouts: {} } });
     expect(store.state.currentDocument.frames.home.responsiveLayouts).toEqual(
         document.frames.home.responsiveLayouts
     );
@@ -327,3 +344,76 @@ it.each(['launch', 'inspection'] as const)(
         expect(json(document.frames)).toEqual(before);
     }
 );
+
+it('keeps both rules when two people add rules at the same time', async () => {
+    const copies = await createCopies(2, (store) =>
+        store.actions.addDocument(screenLayoutsDocument(DOCUMENT_ID))
+    );
+    const [a, b] = copies;
+    edit(a, (actions) =>
+        actions.editFrame({
+            kind: 'update',
+            id: 'home',
+            changes: { responsiveLayouts: { first: { minWidth: 200, layoutId: 'compact' } } }
+        })
+    );
+    edit(b, (actions) =>
+        actions.editFrame({
+            kind: 'update',
+            id: 'home',
+            changes: { responsiveLayouts: { second: { minWidth: 800, layoutId: 'home' } } }
+        })
+    );
+    settle(copies);
+    expect(shownDocument(a).frames.home.responsiveLayouts).toEqual({
+        first: { minWidth: 200, layoutId: 'compact' },
+        second: { minWidth: 800, layoutId: 'home' }
+    });
+    expect(shownDocument(b).frames.home.responsiveLayouts).toEqual(
+        shownDocument(a).frames.home.responsiveLayouts
+    );
+    copies.forEach(({ collaboration }) => collaboration.dispose());
+});
+
+it('drops a copied input identity beside its original but keeps it in another layout', () => {
+    const { store } = createTestStore();
+    const document = automaticLayoutsPrototype();
+    document.id = store.state.currentDocumentId;
+    delete (document.shapes['wide-name'] as { interaction?: unknown }).interaction;
+    store.actions.addDocument(document);
+    store.actions.cloneShapes(['name']);
+    const current = store.state.currentDocument;
+    const clone = Object.values(current.shapes).find(
+        (shape) => shape.selected && shape.id !== 'name'
+    );
+    expect(clone?.type === 'instance' && clone.interaction).toMatchObject({ role: 'input' });
+    expect(clone?.type === 'instance' && clone.interaction?.controlId).toBeUndefined();
+    const warnings: string[] = [];
+    projectPreview(json(current), {}, warnings);
+    expect(warnings.filter((warning) => warning.startsWith('Duplicate input identity'))).toEqual(
+        []
+    );
+});
+
+it('keeps a pasted input identity in another layout and drops it beside its original', () => {
+    const { store } = createTestStore();
+    const document = automaticLayoutsPrototype();
+    document.id = store.state.currentDocumentId;
+    delete (document.shapes['wide-name'] as { interaction?: unknown }).interaction;
+    store.actions.addDocument(document);
+    store.actions.unselectShapes();
+    store.actions.selectShape('name');
+    const text = store.actions.copySelection()!;
+    const pasted = (layoutId: string | null) => {
+        store.actions.editFrame({ kind: 'update', id: 'view', changes: { layoutId } });
+        store.actions.events.setScreenView('view');
+        expect(store.actions.pasteShapes(text)).toBe('pasted');
+        const current = store.state.currentDocument;
+        const shape = current.shapes[current.selectedShapesIds[0]];
+        expect(shape.parentFrameId).toBe(layoutId ?? 'home');
+
+        return shape.type === 'instance' ? shape.interaction : undefined;
+    };
+    expect(pasted(null)?.controlId).toBeUndefined();
+    expect(pasted('wide')?.controlId).toBe('person-name');
+});

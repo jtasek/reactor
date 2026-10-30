@@ -1,4 +1,4 @@
-import React, { type FC } from 'react';
+import React, { useEffect, useState, type FC } from 'react';
 import type { ComponentRole as ComponentRoleName, RoleSettings } from 'src/app/types';
 import { roleLinks } from 'src/app/componentRoles';
 import { useActions } from 'src/app/hooks';
@@ -7,6 +7,41 @@ import { PropertyGroup } from './PropertyGroup';
 import styles from './styles.css';
 
 const ROLES = ['none', 'text', 'input', 'button', 'list', 'image'] as const;
+
+/** Saves the identity once, on Enter or leaving the field, so it can hold spaces. */
+const InputIdentity: FC<{
+    value: string | undefined;
+    disabled: boolean;
+    onCommit: (controlId: string | undefined) => void;
+}> = ({ value, disabled, onCommit }) => {
+    const [draft, setDraft] = useState(value ?? '');
+    useEffect(() => setDraft(value ?? ''), [value]);
+
+    return (
+        <input
+            id="input-identity"
+            type="text"
+            aria-label="Input identity"
+            disabled={disabled}
+            value={draft}
+            placeholder="e.g. contact-email"
+            onChange={(event) => setDraft(event.target.value)}
+            onBlur={() => {
+                const controlId = draft.trim() || undefined;
+                setDraft(controlId ?? '');
+                if (controlId !== value) {
+                    onCommit(controlId);
+                }
+            }}
+            onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    event.currentTarget.blur();
+                }
+            }}
+        />
+    );
+};
 
 export const ComponentRole: FC<{ componentId?: string; instanceId?: string }> = ({
     componentId,
@@ -126,18 +161,11 @@ export const ComponentRole: FC<{ componentId?: string; instanceId?: string }> = 
                                 <label htmlFor="input-identity">Input identity</label>
                             </th>
                             <td>
-                                <input
-                                    id="input-identity"
-                                    type="text"
-                                    aria-label="Input identity"
+                                <InputIdentity
+                                    value={data.settings.controlId}
                                     disabled={data.disabled}
-                                    value={data.settings.controlId ?? ''}
-                                    placeholder="e.g. contact-email"
-                                    onChange={(event) =>
-                                        update({
-                                            ...data.settings,
-                                            controlId: event.target.value.trim() || undefined
-                                        })
+                                    onCommit={(controlId) =>
+                                        update({ ...data.settings, controlId })
                                     }
                                 />
                                 <small className={styles.frameHint}>

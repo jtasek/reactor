@@ -30,6 +30,7 @@ import {
     sourceOffset,
     UNAVAILABLE_VIEW_MESSAGE
 } from './screenViewEditing';
+import { inputIdentityGuard } from './screenLayouts';
 import { reachesComponent } from './actions/components';
 import {
     componentSourceDelta,
@@ -366,6 +367,10 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
         });
     }
 
+    // A paste beside the original drops its input identity; into another layout it pairs them.
+    const guardIdentity = inputIdentityGuard(untracked(state.currentDocument));
+    additions.forEach(({ shape }) => guardIdentity(shape));
+
     // Imported definitions participate in the same recursion guard as local sources.
     const dependencies = {
         shapes: state.currentDocument.shapes,
@@ -458,6 +463,8 @@ export const cloneShapes: ActionWithParam<string[]> = (context, shapeIds) => {
     const nameShape = shapeNamer(present);
     const taken = new Set(present.map((shape) => shape.name));
     const offset = componentSourceDelta(CLONE_OFFSET, destination.placed?.component);
+    // Clones sit beside their originals, so they never keep an input identity already in use.
+    const guardIdentity = inputIdentityGuard(untracked(currentDocument));
 
     actions.unselectShapes();
 
@@ -494,6 +501,7 @@ export const cloneShapes: ActionWithParam<string[]> = (context, shapeIds) => {
         });
 
         translateShape(clone, offset);
+        guardIdentity(clone);
         shapes[clone.id] = clone;
         shapesIds.push(clone.id);
         clonesIds.set(id, clone.id);

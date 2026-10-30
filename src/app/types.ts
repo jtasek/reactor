@@ -349,6 +349,11 @@ export interface StackRules {
     align: 'start' | 'center' | 'end';
 }
 
+export interface ResponsiveLayoutRule {
+    minWidth: number;
+    layoutId: string;
+}
+
 export interface Frame {
     /** Numeric variable IDs for fixed dimensions and stack spacing. */
     bindings?: Record<string, string>;
@@ -359,8 +364,9 @@ export interface Frame {
     definitionOnly?: true;
     /** A separate artwork tree owned by its parent screen, never a destination. */
     screenLayout?: true;
-    /** Optional screen rules; a screen ID selects its default artwork. */
-    responsiveLayouts?: { minWidth: number; layoutId: string }[];
+    /** Screen rules by rule ID, so people adding rules at once keep both; a rule's
+     * screen ID selects its default artwork. */
+    responsiveLayouts?: Record<string, ResponsiveLayoutRule>;
     /** Explicit layout inspection choice on a Screen view; absent uses the default. */
     layoutId?: string;
     layoutMode?: 'auto';

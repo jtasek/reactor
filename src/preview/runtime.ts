@@ -131,6 +131,8 @@ function render() {
     reset.addEventListener('click', () => {
         values.clear();
         currentScreen = undefined;
+        // Inspected Width and Layout return to the launch view's too.
+        port?.postMessage({ type: 'inspect-reset' });
         render();
     });
     navigation.append(label);

@@ -943,13 +943,18 @@ function stage(
                     });
                     // Layout rules may point forward to an artwork tree added with its screen.
                     if (frame.responsiveLayouts) {
-                        frame.responsiveLayouts = frame.responsiveLayouts.map((rule) => ({
-                            ...rule,
-                            layoutId:
-                                declared.get(rule.layoutId)?.collection === 'frames'
-                                    ? ids.get(rule.layoutId)!
-                                    : rule.layoutId
-                        }));
+                        frame.responsiveLayouts = Object.fromEntries(
+                            Object.entries(frame.responsiveLayouts).map(([id, rule]) => [
+                                id,
+                                {
+                                    ...rule,
+                                    layoutId:
+                                        declared.get(rule.layoutId)?.collection === 'frames'
+                                            ? ids.get(rule.layoutId)!
+                                            : rule.layoutId
+                                }
+                            ])
+                        );
                     }
                     linkFrameBindings(frame, index);
                     if (frame.parentFrameId !== undefined) {

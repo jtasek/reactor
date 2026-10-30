@@ -1,4 +1,4 @@
-import type { Document, Frame, Size } from './types';
+import type { Document, Frame, RoleSettings, Size } from './types';
 import { frameParents } from './frameState';
 
 export const MISSING_SCREEN_LAYOUT =
@@ -51,6 +51,13 @@ export type LayoutChoice = {
     size: Size;
 };
 
+/** A screen's width rules with their IDs, narrowest first; equal widths in ID order. */
+export function screenLayoutRules(document: Pick<Document, 'frames'>, screenId: string) {
+    return Object.entries(document.frames[screenId]?.responsiveLayouts ?? {})
+        .map(([id, rule]) => ({ id, ...rule }))
+        .sort((a, b) => a.minWidth - b.minWidth || (a.id < b.id ? -1 : Number(a.id > b.id)));
+}
+
 /** Explicit choices always win. Equal thresholds resolve deterministically after a merge. */
 export function selectScreenLayout(
     document: Pick<Document, 'frames'>,
@@ -60,25 +67,19 @@ export function selectScreenLayout(
     if (choice.layoutId || choice.layoutMode !== 'auto') {
         return choice.layoutId;
     }
-    const rules = document.frames[screenId]?.responsiveLayouts ?? [];
-    const rule = [...rules]
-        .sort(
-            (a, b) =>
-                b.minWidth - a.minWidth ||
-                (a.layoutId < b.layoutId ? -1 : Number(a.layoutId > b.layoutId))
-        )
-        .find((rule) => rule.minWidth <= choice.size.width);
+    // The first of equal widths wins, as the Inspector lists them.
+    const rules = screenLayoutRules(document, screenId);
+    const width = Math.max(
+        -1,
+        ...rules.filter((rule) => rule.minWidth <= choice.size.width).map((rule) => rule.minWidth)
+    );
+    const rule = rules.find((rule) => rule.minWidth === width);
 
     return rule?.layoutId;
 }
 
 export function screenLayoutProblems(document: Pick<Document, 'frames'>, screenId: string) {
-    const rules = document.frames[screenId]?.responsiveLayouts ?? [];
-    const ordered = [...rules].sort(
-        (a, b) =>
-            a.minWidth - b.minWidth ||
-            (a.layoutId < b.layoutId ? -1 : Number(a.layoutId > b.layoutId))
-    );
+    const ordered = screenLayoutRules(document, screenId);
 
     return ordered.flatMap((rule, index) => {
         if (index > 0 && ordered[index - 1].minWidth === rule.minWidth) {
@@ -177,6 +178,50 @@ export function screenLayoutDocument(
             ...document.frames,
             [screenId]: resize(screen),
             ...(root.id === screenId ? {} : { [root.id]: resize(root) })
+        }
+    };
+}
+
+/** The Screen or alternate layout whose artwork tree holds a frame, if any. */
+export function layoutTreeRoot(document: Pick<Document, 'frames'>, frameId: string | undefined) {
+    const seen = new Set<string>();
+    let frame = document.frames[frameId ?? ''];
+
+    while (frame && !frame.screenLayout && frame.kind !== 'screen' && !seen.has(frame.id)) {
+        seen.add(frame.id);
+        frame = document.frames[frame.parentFrameId ?? ''];
+    }
+
+    return frame && (frame.screenLayout || frame.kind === 'screen') ? frame.id : undefined;
+}
+
+/**
+ * Returns a check that drops a new input's identity when another input in the same
+ * layout tree already has it, as a clone or a paste beside its original would.
+ * Pasting into another layout keeps the identity, which pairs the two inputs in Preview.
+ */
+export function inputIdentityGuard(document: Pick<Document, 'frames' | 'shapes'>) {
+    type Input = { type: string; parentFrameId?: string; interaction?: RoleSettings };
+    const key = (shape: Input) =>
+        shape.type === 'instance' && shape.interaction?.controlId
+            ? JSON.stringify([
+                  layoutTreeRoot(document, shape.parentFrameId) ?? null,
+                  shape.interaction.controlId
+              ])
+            : undefined;
+    const taken = new Set(Object.values(document.shapes).map(key));
+
+    return (shape: Input) => {
+        const identity = key(shape);
+
+        if (identity === undefined || !shape.interaction) {
+            return;
+        }
+        if (taken.has(identity)) {
+            shape.interaction = { ...shape.interaction };
+            delete shape.interaction.controlId;
+        } else {
+            taken.add(identity);
         }
     };
 }

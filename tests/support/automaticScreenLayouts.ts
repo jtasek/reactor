@@ -10,7 +10,7 @@ export function automaticLayoutsPrototype(compatible = true) {
         throw new Error('Expected prototype instances');
     }
     document.frames.home.definitionOnly = true;
-    document.frames.home.responsiveLayouts = [{ minWidth: 640, layoutId: 'wide' }];
+    document.frames.home.responsiveLayouts = { wide: { minWidth: 640, layoutId: 'wide' } };
     document.frames.wide = {
         id: 'wide',
         kind: 'frame',
