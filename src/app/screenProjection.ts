@@ -100,7 +100,10 @@ export function projectScreen(
         }),
         problems: [
             ...screenLayoutProblems(document, screenId),
-            ...(layoutId && source.id !== layoutId ? [MISSING_SCREEN_LAYOUT] : []),
+            // A rule's missing target is already among the rule problems.
+            ...(viewport.layoutId && source.id !== viewport.layoutId
+                ? [MISSING_SCREEN_LAYOUT]
+                : []),
             ...[...Object.entries(layout.problems), ...Object.entries(layout.modeProblems ?? {})]
                 .filter(([id]) => involved.has(id))
                 .map(([, problem]) => problem)

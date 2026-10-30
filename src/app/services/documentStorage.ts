@@ -637,7 +637,8 @@ function readFrame(value: unknown): Frame {
             (f.screenLayout !== true || f.kind === 'screen' || f.kind === 'view')) ||
         ((f.layoutId !== undefined || f.layoutMode !== undefined) && f.kind !== 'view') ||
         (f.layoutMode !== undefined && f.layoutMode !== 'auto') ||
-        (f.responsiveLayouts !== undefined && f.kind !== 'screen')
+        // Only a screen holds rules; an empty set left on another frame is ignored.
+        (f.kind !== 'screen' && Object.keys(readLayoutRules(f.responsiveLayouts)).length > 0)
     ) {
         throw new Error('Invalid screen layout fields');
     }
@@ -670,15 +671,7 @@ function readFrame(value: unknown): Frame {
         ...(f.screenLayout === true ? { screenLayout: true as const } : {}),
         ...(f.layoutId === undefined ? {} : { layoutId: id(f.layoutId) }),
         ...(f.layoutMode === 'auto' ? { layoutMode: 'auto' as const } : {}),
-        ...(f.responsiveLayouts === undefined
-            ? {}
-            : {
-                  responsiveLayouts: list(f.responsiveLayouts, (entry) => {
-                      const rule = record(entry);
-
-                      return { minWidth: number(rule.minWidth, 0), layoutId: id(rule.layoutId) };
-                  })
-              }),
+        ...(f.kind === 'screen' ? { responsiveLayouts: readLayoutRules(f.responsiveLayouts) } : {}),
         ...(f.parentFrameId === undefined ? {} : { parentFrameId: id(f.parentFrameId) }),
         ...(f.stack === undefined ? {} : { stack: readStack(f.stack) }),
         ...(f.sizing === undefined ? {} : { sizing: readSizing(f.sizing) }),
@@ -689,6 +682,28 @@ function readFrame(value: unknown): Frame {
             height: number(record(f.size).height, MIN_FRAME_SIZE)
         }
     };
+}
+
+function readLayoutRule(value: unknown) {
+    const rule = record(value);
+
+    return { minWidth: number(rule.minWidth, 0), layoutId: id(rule.layoutId) };
+}
+
+/** Rules by rule ID. A list, as early v22 saves held, gets IDs from its positions. */
+function readLayoutRules(value: unknown): Record<string, import('../types').ResponsiveLayoutRule> {
+    if (value === undefined) {
+        return {};
+    }
+    if (Array.isArray(value)) {
+        return Object.fromEntries(
+            list(value, readLayoutRule).map((rule, index) => [`rule-${index}`, rule])
+        );
+    }
+
+    return Object.fromEntries(
+        Object.entries(record(value)).map(([key, rule]) => [id(key), readLayoutRule(rule)])
+    );
 }
 
 const entityReaders: { [C in Collection]: (value: unknown) => SavedEntities[C] } = {

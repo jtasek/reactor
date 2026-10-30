@@ -1,15 +1,61 @@
-import React from 'react';
-import { useActions, useAppState } from 'src/app/hooks';
-import { screenLayouts, screenLayoutProblems } from 'src/app/screenLayouts';
+import React, { useEffect, useState } from 'react';
+import { useActions, useAppState, useEffects } from 'src/app/hooks';
+import { screenLayouts, screenLayoutProblems, screenLayoutRules } from 'src/app/screenLayouts';
+import type { ResponsiveLayoutRule } from 'src/app/types';
 import { PropertyGroup } from './PropertyGroup';
 import styles from './styles.css';
+
+/** Saves a rule's width once, on Enter or leaving the field, not per keystroke. */
+function RuleWidth({
+    index,
+    value,
+    disabled,
+    onCommit
+}: {
+    index: number;
+    value: number;
+    disabled: boolean;
+    onCommit: (minWidth: number) => void;
+}) {
+    const [draft, setDraft] = useState(String(value));
+    useEffect(() => setDraft(String(value)), [value]);
+
+    return (
+        <input
+            id={`layout-width-${index}`}
+            aria-label={`Layout rule ${index + 1} minimum width`}
+            type="number"
+            min={0}
+            value={draft}
+            disabled={disabled}
+            onChange={(event) => setDraft(event.target.value)}
+            onBlur={() => {
+                const minWidth = Number(draft);
+                if (!draft.trim() || !Number.isFinite(minWidth) || minWidth < 0) {
+                    setDraft(String(value));
+
+                    return;
+                }
+                if (minWidth !== value) {
+                    onCommit(minWidth);
+                }
+            }}
+            onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    event.currentTarget.blur();
+                }
+            }}
+        />
+    );
+}
 
 export function ResponsiveLayouts({ screenId, disabled }: { screenId: string; disabled: boolean }) {
     const { rules, choices, problems } = useAppState((state) => {
         const document = state.currentDocument;
 
         return {
-            rules: document.frames[screenId]?.responsiveLayouts ?? [],
+            rules: screenLayoutRules(document, screenId),
             choices: [
                 { id: screenId, name: 'Default layout' },
                 ...screenLayouts(document, screenId)
@@ -18,11 +64,20 @@ export function ResponsiveLayouts({ screenId, disabled }: { screenId: string; di
         };
     });
     const { editFrame } = useActions();
-    const update = (responsiveLayouts: typeof rules) =>
+    const { newId } = useEffects();
+    // Rules are keyed by ID, so this copy's edit touches only the rule it changes.
+    const update = (id: string, rule: ResponsiveLayoutRule | undefined) =>
         editFrame({
             kind: 'update',
             id: screenId,
-            changes: { responsiveLayouts }
+            changes: {
+                responsiveLayouts: Object.fromEntries([
+                    ...rules
+                        .filter((entry) => entry.id !== id)
+                        .map(({ id: key, minWidth, layoutId }) => [key, { minWidth, layoutId }]),
+                    ...(rule ? [[id, rule]] : [])
+                ])
+            }
         });
 
     return (
@@ -36,27 +91,16 @@ export function ResponsiveLayouts({ screenId, disabled }: { screenId: string; di
                 </td>
             </tr>
             {rules.map((rule, index) => (
-                <tr key={index}>
+                <tr key={rule.id}>
                     <th scope="row">
                         <label htmlFor={`layout-width-${index}`}>From width</label>
-                        <input
-                            id={`layout-width-${index}`}
-                            aria-label={`Layout rule ${index + 1} minimum width`}
-                            type="number"
-                            min={0}
+                        <RuleWidth
+                            index={index}
                             value={rule.minWidth}
                             disabled={disabled}
-                            onChange={(event) => {
-                                const minWidth = event.target.valueAsNumber;
-                                if (!Number.isFinite(minWidth) || minWidth < 0) {
-                                    return;
-                                }
-                                update(
-                                    rules.map((entry, i) =>
-                                        i === index ? { ...entry, minWidth } : entry
-                                    )
-                                );
-                            }}
+                            onCommit={(minWidth) =>
+                                update(rule.id, { minWidth, layoutId: rule.layoutId })
+                            }
                         />
                     </th>
                     <td>
@@ -66,13 +110,10 @@ export function ResponsiveLayouts({ screenId, disabled }: { screenId: string; di
                             value={rule.layoutId}
                             disabled={disabled}
                             onChange={(event) =>
-                                update(
-                                    rules.map((entry, i) =>
-                                        i === index
-                                            ? { ...entry, layoutId: event.target.value }
-                                            : entry
-                                    )
-                                )
+                                update(rule.id, {
+                                    minWidth: rule.minWidth,
+                                    layoutId: event.target.value
+                                })
                             }
                         >
                             {!choices.some(({ id }) => id === rule.layoutId) && (
@@ -88,7 +129,7 @@ export function ResponsiveLayouts({ screenId, disabled }: { screenId: string; di
                             type="button"
                             disabled={disabled}
                             aria-label={`Remove layout rule ${index + 1}`}
-                            onClick={() => update(rules.filter((_entry, i) => i !== index))}
+                            onClick={() => update(rule.id, undefined)}
                         >
                             Remove rule
                         </button>
@@ -101,15 +142,12 @@ export function ResponsiveLayouts({ screenId, disabled }: { screenId: string; di
                         type="button"
                         disabled={disabled}
                         onClick={() =>
-                            update([
-                                ...rules,
-                                {
-                                    minWidth: rules.length
-                                        ? Math.max(...rules.map((rule) => rule.minWidth)) + 1
-                                        : 0,
-                                    layoutId: screenId
-                                }
-                            ])
+                            update(newId(), {
+                                minWidth: rules.length
+                                    ? Math.max(...rules.map((rule) => rule.minWidth)) + 1
+                                    : 0,
+                                layoutId: screenId
+                            })
                         }
                     >
                         Add width rule

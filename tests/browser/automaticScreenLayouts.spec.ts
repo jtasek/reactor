@@ -38,13 +38,24 @@ test('authors width rules and preserves Auto and manual choices through resize a
     await inspector.getByLabel('View width', { exact: true }).press('Tab');
     await expect(artwork.locator('[data-shape-id="name"]')).toHaveCount(1);
 
-    await inspector.getByLabel('Layout rule 1 minimum width').fill('300');
-    await inspector.getByLabel('Layout rule 1 minimum width').press('Tab');
+    // Typing a width saves once, on leaving the field: one undo restores 640.
+    const ruleWidth = inspector.getByLabel('Layout rule 1 minimum width');
+    await ruleWidth.fill('');
+    await ruleWidth.pressSequentially('300');
+    await expect(artwork.locator('[data-shape-id="name"]')).toHaveCount(1);
+    await ruleWidth.press('Tab');
+    await expect(artwork.locator('[data-shape-id="wide-name"]')).toHaveCount(1);
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(ruleWidth).toHaveValue('640');
+    await page.keyboard.press('ControlOrMeta+Shift+z');
+    await expect(ruleWidth).toHaveValue('300');
     await expect(artwork.locator('[data-shape-id="wide-name"]')).toHaveCount(1);
     await expect(inspector.getByLabel('Screen view layout')).toHaveValue('__auto');
     await inspector.getByLabel('Screen view layout').selectOption('');
     await expect(artwork.locator('[data-shape-id="name"]')).toHaveCount(1);
     await inspector.getByLabel('Layout rule 1 minimum width').fill('0');
+    await inspector.getByLabel('Layout rule 1 minimum width').press('Tab');
     await expect(artwork.locator('[data-shape-id="name"]')).toHaveCount(1);
     await inspector.getByLabel('Screen view layout').selectOption('__auto');
     await expect(artwork.locator('[data-shape-id="wide-name"]')).toHaveCount(1);
@@ -149,12 +160,16 @@ test('edits an instance input identity through the Inspector and persists it', a
     await explorer.getByRole('button', { name: 'Name field', exact: true }).click();
     const identity = page.getByLabel('Input identity', { exact: true });
     await expect(identity).toHaveValue('person-name');
-    await identity.fill('billing-name');
+    // Typed key by key, so a space survives until the field saves on leaving it.
+    await identity.fill('');
+    await identity.pressSequentially('billing name ');
+    await expect(identity).toHaveValue('billing name ');
     await identity.press('Tab');
+    await expect(identity).toHaveValue('billing name');
     await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.reload();
     await explorer.getByRole('button', { name: 'Name field', exact: true }).click();
-    await expect(identity).toHaveValue('billing-name');
+    await expect(identity).toHaveValue('billing name');
 });
 
 test('width inspection keeps another destination’s height constraint', async ({ page }) => {
@@ -175,4 +190,8 @@ test('width inspection keeps another destination’s height constraint', async (
     await runtime.getByLabel('Preview width').press('Tab');
     await expect(runtime.locator('svg')).toHaveAttribute('width', '800');
     await expect(runtime.locator('svg')).toHaveAttribute('height', '700');
+    // Reset returns to the launch view's screen, width and layout.
+    await runtime.getByRole('button', { name: 'Reset preview' }).click();
+    await expect(runtime.locator('svg')).toHaveAttribute('width', '320');
+    await expect(runtime.getByLabel('Preview width')).toHaveValue('320');
 });

@@ -159,6 +159,11 @@ export default function InteractivePreview() {
 
                 return;
             }
+            if (event.data?.type === 'inspect-reset') {
+                setInspection({});
+
+                return;
+            }
             if (event.data?.type === 'inspect-layout') {
                 const { screenId, layoutId } = event.data;
                 const screen = latest.current?.screens.find((screen) => screen.id === screenId);

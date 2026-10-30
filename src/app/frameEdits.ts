@@ -230,10 +230,12 @@ function framePasteOperations(
         ...(item.modeOverrides ? { modeOverrides: remapModes(item.modeOverrides) } : {}),
         ...(item.responsiveLayouts
             ? {
-                  responsiveLayouts: item.responsiveLayouts.map((rule) => ({
-                      ...rule,
-                      layoutId: keys.get(rule.layoutId) ?? rule.layoutId
-                  }))
+                  responsiveLayouts: Object.fromEntries(
+                      Object.entries(item.responsiveLayouts).map(([id, rule]) => [
+                          id,
+                          { ...rule, layoutId: keys.get(rule.layoutId) ?? rule.layoutId }
+                      ])
+                  )
               }
             : {})
     });

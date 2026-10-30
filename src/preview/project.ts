@@ -74,10 +74,8 @@ export function projectPreview(
                 size
             });
             warnings.push(...screenLayoutProblems(authoredDocument, screen.id));
-            if (
-                layoutId &&
-                screenLayoutRoot(authoredDocument, screen.id, layoutId)?.id !== layoutId
-            ) {
+            // A rule's missing target is already among the rule problems.
+            if (choice && screenLayoutRoot(authoredDocument, screen.id, choice)?.id !== choice) {
                 warnings.push(MISSING_SCREEN_LAYOUT);
             }
 
