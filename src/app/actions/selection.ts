@@ -5,6 +5,7 @@ import { editorHelpers } from '../editorHelpers';
 import { translateShape } from '../geometry';
 import { getCommand } from './startup';
 import { shapeGroup } from '../membership';
+import { deleteIfPresent } from '../untracked';
 
 /** Aligning, which the editor provides as it loads. */
 const alignment = () => editorHelpers().alignment;
@@ -57,7 +58,7 @@ export const runCommandOn: ActionWithParam<{ shapeIds: string[]; commandId: stri
         });
 
     actions.unselectGuides();
-    delete state.currentDocument.selectedFrameId;
+    deleteIfPresent(state.currentDocument, 'selectedFrameId');
     select(chosen);
     // One shape of a group is selected alone, as inside its group.
     state.enteredGroupId =

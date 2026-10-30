@@ -24,6 +24,7 @@ import {
     shapeLayer
 } from './membership';
 import { isShapeLocked, isShapeVisible } from './utils';
+import { deleteIfPresent } from './untracked';
 
 const getGroup = ({ currentDocument }: Application, groupId: string) => {
     const group = currentDocument.groups[groupId];
@@ -160,7 +161,7 @@ export const toggleGroupSelected: ActionWithParam<string> = ({ state, actions },
     if (!selected) {
         return;
     }
-    delete currentDocument.selectedFrameId;
+    deleteIfPresent(currentDocument, 'selectedFrameId');
     actions.unselectGuides();
 };
 

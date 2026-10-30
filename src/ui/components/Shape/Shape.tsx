@@ -59,9 +59,11 @@ export const Shape = memo((props: Props) => {
     const measuring = useMeasuringShape(shapeId);
     const measuredGeometry = useRef<string | null>(null);
     const groupRef = useRef<SVGGElement>(null);
-    // The component of this shape's type, which takes this shape's fields.
+    // The component of this shape's type, which takes this shape's fields. A hidden
+    // instance draws nothing, so it does not read its source, and does not render
+    // again as the source changes, as it does while the source is being edited.
     const baseSource = useComponentSource(
-        shape.type === 'instance' ? instanceComponentId(document, shape) : null
+        shape.type === 'instance' && visible ? instanceComponentId(document, shape) : null
     );
     const source = shape.type === 'instance' ? (shape.projectedSource ?? baseSource) : baseSource;
     const variableKey = useAppState((state) => {

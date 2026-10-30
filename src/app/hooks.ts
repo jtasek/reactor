@@ -16,7 +16,7 @@ import { takesEditorInput } from '../events/input';
 import { editorHelpers, editorLoaded, subscribeToEditorHelpers } from './editorHelpers';
 import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
 import { PropertyRow, sharedProperties } from './properties';
-import { componentSource } from './componentSource';
+import { componentSource, instanceComponentId } from './componentSource';
 import { localComponents } from './componentSelection';
 import { groupFrame, hoveredGroupsIds, selectionScope } from './membership';
 
@@ -315,8 +315,18 @@ export const useMeasuringShape = (id: string) =>
             }
         }
 
-        if (shape?.type === 'instance') {
-            return !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind];
+        // Editing a component's source changes its instances though they are not
+        // selected, so then they wait for the gesture to end too. Other instances
+        // do not read the gesture, so they do not render again as drags begin and end.
+        if (shape?.type === 'instance' && !shape.selected) {
+            const document = state.currentDocument;
+            const sourceEdited =
+                state.enteredComponentId !== null ||
+                document.components[instanceComponentId(document, shape)]?.shapesIds.some(
+                    (memberId) => document.shapes[memberId]?.selected
+                );
+
+            return !sourceEdited || !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind];
         }
 
         return !shape?.selected || !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind];

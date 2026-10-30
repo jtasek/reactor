@@ -4,7 +4,7 @@ import { transformComponentShape } from './componentViewTransform';
 import { initializeStackOrder } from './stackEdits';
 import { frameLayout, renderedShape, hasLayoutOffset } from './frameLayout';
 import { frameState, lockedFrameForShapes } from './frameState';
-import { untracked } from './untracked';
+import { deleteIfPresent, untracked } from './untracked';
 import {
     Action,
     ActionGuard,
@@ -386,7 +386,7 @@ export const toggleShapeSelected: ActionWithParam<string> = ({ state, actions },
     if (!shape.selected) {
         return;
     }
-    delete state.currentDocument.selectedFrameId;
+    deleteIfPresent(state.currentDocument, 'selectedFrameId');
     actions.unselectGuides();
 };
 
@@ -395,7 +395,7 @@ export const selectShape: ActionWithParam<string> = ({ state, actions }, shapeId
     const shape = getShape(state, shapeId);
 
     shape.selected = true;
-    delete state.currentDocument.selectedFrameId;
+    deleteIfPresent(state.currentDocument, 'selectedFrameId');
     actions.unselectGuides();
 };
 
@@ -827,8 +827,8 @@ export const setShapeBounds: ActionWithParam<{ id: string; bounds: Box }> = (
 export const unselectShapes: Action = ({ state, actions }) => {
     state.selectedComponent = null;
     state.enteredComponentId = null;
-    delete state.currentDocument.selectedFrameId;
-    delete state.currentDocument.surfaceSelected;
+    deleteIfPresent(state.currentDocument, 'selectedFrameId');
+    deleteIfPresent(state.currentDocument, 'surfaceSelected');
     actions.unselectGuides();
     Object.values(state.currentDocument.layers).forEach((layer) => {
         layer.selected = false;
