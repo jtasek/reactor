@@ -314,7 +314,9 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
 
     // The release before it left the pointer where the shape was double-clicked.
     const handleDoubleClick = useCallback(() => {
-        actions.enterGroupAtPointer();
+        if (!actions.enterGroupAtPointer()) {
+            actions.editTextAtPointer();
+        }
     }, [actions]);
 
     const handlePointerLeave = useCallback(() => {

@@ -528,6 +528,30 @@ export const enterGroupAtPointer: ActionGuard = (context) => {
     );
 };
 
+/** Double-clicking a text shape with the select tool starts changing its words on the canvas. */
+export const editTextAtPointer: ActionGuard = ({ state }) => {
+    if (state.tools.activeToolsIds[0] !== 'select' || state.events.pointer.screenView) {
+        return false;
+    }
+
+    const hitId = shapeAtPointer(state);
+    const shape = hitId === null ? undefined : state.currentDocument.shapes[hitId];
+    const property = SHAPE_PROPERTIES.find((item) => item.key === 'text');
+
+    if (shape?.type !== 'text' || !property || !canEdit(property, shape, state.currentDocument)) {
+        return false;
+    }
+
+    state.editingText = { documentId: state.currentDocumentId, shapeId: shape.id };
+
+    return true;
+};
+
+/** Stops changing a text shape's words on the canvas. */
+export const endTextEditing = ({ state }: Context) => {
+    state.editingText = null;
+};
+
 /**
  * Clicking a shape of a group that was already selected enters the group.
  * `selection` is the selection before the press, as the press itself selects.

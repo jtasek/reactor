@@ -53,6 +53,12 @@ export const selectShapeByPoint: typeof ShapeEdits.selectShapeByPoint = (context
 export const enterGroupAtPointer: typeof ShapeEdits.enterGroupAtPointer = (context) =>
     editorHelpers().shapes.enterGroupAtPointer(context);
 
+export const editTextAtPointer: typeof ShapeEdits.editTextAtPointer = (context) =>
+    editorHelpers().shapes.editTextAtPointer(context);
+
+export const endTextEditing: typeof ShapeEdits.endTextEditing = (context) =>
+    editorHelpers().shapes.endTextEditing(context);
+
 export const enterClickedGroup: typeof ShapeEdits.enterClickedGroup = (context, input) =>
     editorHelpers().shapes.enterClickedGroup(context, input);
 
