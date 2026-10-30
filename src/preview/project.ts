@@ -1,7 +1,13 @@
+import { screenOwners } from '../app/screenViews';
+import {
+    screenLayoutDocument,
+    screenLayoutMembers,
+    screenLayoutRoot,
+    MISSING_SCREEN_LAYOUT
+} from '../app/screenLayouts';
 import type { Document, Shape, VariableContext, Size } from '../app/types';
 import { layoutDocument } from '../app/frameLayout';
 import { projectContextualLayout } from '../app/contextualLayout';
-import { frameParents } from '../app/frameState';
 import { screenFrames } from '../app/screens';
 import { shownShapesIds } from '../app/membership';
 import { instanceComponent, instanceSource, instanceBox } from '../app/componentSource';
@@ -18,53 +24,78 @@ export function projectPreview(
     authoredDocument: Document,
     context: VariableContext,
     warnings: string[] = [],
-    session?: { modes: VariableContext; screenId?: string; viewport?: Size } | null
+    session?: {
+        modes: VariableContext;
+        screenId?: string;
+        viewport?: Size;
+        layoutId?: string;
+    } | null
 ): PreviewDrawing {
     const launch = authoredDocument.frames[session?.screenId ?? ''];
     const sourceDocument =
-        launch?.kind === 'screen' && session?.viewport
-            ? {
-                  ...authoredDocument,
-                  frames: {
-                      ...authoredDocument.frames,
-                      [launch.id]: {
-                          ...launch,
-                          size: session.viewport,
-                          sizing: undefined,
-                          bindings: Object.fromEntries(
-                              Object.entries(launch.bindings ?? {}).filter(
-                                  ([key]) => key !== 'width' && key !== 'height'
-                              )
-                          )
-                      }
-                  }
-              }
+        launch?.kind === 'screen'
+            ? screenLayoutDocument(
+                  authoredDocument,
+                  launch.id,
+                  session?.layoutId,
+                  session?.viewport
+              )
             : authoredDocument;
+    const screens = screenFrames(sourceDocument);
+    const members = new Map(
+        screens.map((frame) => [
+            frame.id,
+            screenLayoutMembers(
+                sourceDocument,
+                frame.id,
+                frame.id === session?.screenId ? session.layoutId : undefined
+            )
+        ])
+    );
+    const inactiveFrames = new Set(
+        [...screenOwners(sourceDocument.frames)].flatMap(([id, owner]) =>
+            owner && members.has(owner) && !members.get(owner)!.has(id) ? [id] : []
+        )
+    );
+    const activeProblems = (problems: Record<string, string>) =>
+        Object.entries(problems)
+            .filter(
+                ([id]) =>
+                    !inactiveFrames.has(id) &&
+                    !inactiveFrames.has(sourceDocument.shapes[id]?.parentFrameId ?? '')
+            )
+            .map(([, problem]) => problem);
+
+    if (
+        session?.layoutId &&
+        launch?.kind === 'screen' &&
+        screenLayoutRoot(sourceDocument, launch.id, session.layoutId).id !== session.layoutId
+    ) {
+        warnings.push(MISSING_SCREEN_LAYOUT);
+    }
+
     const layout = projectContextualLayout(sourceDocument, {
         simulation: context,
         session: session?.modes,
         sessionScreenId: session?.screenId
     });
-    const problems = Object.values(layout.problems);
-    warnings.push(...Object.values(layout.modeProblems ?? {}));
+    const problems = activeProblems(layout.problems);
+    warnings.push(...activeProblems(layout.modeProblems ?? {}));
     if (problems.length) {
         throw new Error(problems.join(' '));
     }
     const document = layoutDocument(sourceDocument, layout);
-    const parents = frameParents(document.frames);
     const roots = screenFrames(document).sort(
         (a, b) => Number(b.id === session?.screenId) - Number(a.id === session?.screenId)
     );
     const screenIds = new Set(roots.map((frame) => frame.id));
     const shown = shownShapesIds({ ...document, shownLayerId: undefined }, null);
-    const rootOf = (parent: string | undefined): string | undefined => {
-        if (!parent) {
-            return undefined;
-        }
-        const next = parents.get(parent);
-
-        return next ? rootOf(next) : parent;
-    };
+    const root = (screenId: string) =>
+        screenLayoutRoot(
+            document,
+            screenId,
+            screenId === session?.screenId ? session.layoutId : undefined
+        )!;
     let count = 0;
     const draw = (
         shape: Shape,
@@ -255,12 +286,14 @@ export function projectPreview(
         screens: roots.map((frame) => ({
             id: frame.id,
             name: frame.name,
-            x: frame.position.x,
-            y: frame.position.y,
+            x: root(frame.id).position.x,
+            y: root(frame.id).position.y,
             ...frame.size,
             nodes: document.shapesIds
                 .filter(
-                    (id) => shown.has(id) && rootOf(document.shapes[id].parentFrameId) === frame.id
+                    (id) =>
+                        shown.has(id) &&
+                        members.get(frame.id)!.has(document.shapes[id].parentFrameId ?? '')
                 )
                 .map((id) => {
                     const shape = document.shapes[id];

@@ -193,7 +193,14 @@ export function projectFrameLayout(
             members.push(frame.id);
             children.set(parent, members);
         }
-        if (document.frames[parent ?? '']?.stack && !states[frame.id]?.hiddenBy) {
+        const container = document.frames[parent ?? ''];
+
+        // A screen's alternate layout is a separate tree, never one of its stack items.
+        if (
+            container?.stack &&
+            !states[frame.id]?.hiddenBy &&
+            !(frame.screenLayout && container.kind === 'screen' && !parents.get(container.id))
+        ) {
             append(parent, {
                 id: frame.id,
                 kind: 'frame',

@@ -887,6 +887,30 @@ continues working through adapters to the new screen/context projection until R4
    Home destination at multiple widths, layout-specific edits, shared component updates,
    missing layouts, rule boundaries, navigation targets, state continuity and undo/reload.
 
+   **R4.7a — Alternate layouts and manual selection (implemented).** Existing screen artwork
+   remains the default. A Screen view's Inspector creates a named empty layout and chooses
+   which tree that view edits. Alternate layout roots are ordinary frames owned by the same
+   screen; they never become navigation destinations or slots in its default stack. Canvas
+   drawing, transforms, component focus and Explorer use the chosen tree. Preview snapshots
+   the launch view's layout and viewport while retaining the screen's destination ID. Reusable
+   components share definitions; instance values and layout-specific artwork remain separate.
+   Choices and roots survive schema v21, collaboration, undo and reload. Missing choices retain
+   their references and show the default with a diagnostic. Deleting a layout boundary releases
+   its artwork to Canvas, as with frames, and keeps the screen and views. The Inspector's
+   Edit layout settings opens its name, stack and sizing controls.
+   **Acceptance:** `tests/screenLayouts.test.ts` and `tests/browser/screenLayouts.spec.ts` cover
+   default/alternate isolation, stack reflow, drawing, Preview, shared components, stale choices,
+   deletion, locking, atomic undo, collaboration, reload, inactive-layout diagnostic isolation,
+   missing-layout Preview warnings, promotion of released layouts and narrow-width controls.
+
+   **R4.7b — Automatic selection and prototype continuity (next).** Add opt-in minimum-width
+   rules with greatest inclusive threshold selection, an explicit local inspection override
+   including the default layout, and diagnostics for missing/unreachable layouts. Preserve
+   compatible input values/actions through explicit stable control/property identities when
+   switching trees; document reset behavior for incompatible controls. Do not infer identity
+   from labels or component type. Verify threshold boundaries, viewport/navigation continuity,
+   rules edited concurrently, undo/reload and preservation of explicit inspection choices.
+
 8. **R4.8 — Explicit interactions independent of roles (M).**
    Provide a small Inspector editor for a control's Activate trigger and Navigate action with a
    screen-ID target. Preserve existing Button navigation through a tested conversion/adapter;

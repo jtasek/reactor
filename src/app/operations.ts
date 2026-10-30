@@ -140,6 +140,7 @@ export interface UpdateFrame {
     > & {
         parentFrameId?: string | null;
         stack?: Frame['stack'] | null;
+        layoutId?: string | null;
     };
 }
 export interface DeleteFrame {

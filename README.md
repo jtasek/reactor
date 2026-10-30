@@ -198,6 +198,21 @@ Images retain intrinsic aspect ratio, while text, groups and instances keep thei
 sizes; new sizing rules on these or rotated rectangles are not exposed. Drag-to-reorder,
 clipping and interactive screen behavior remain later increments.
 
+### Alternate screen layouts
+
+Select a **Screen view**, then use **Inspector → Layout → Artwork** to choose its layout.
+The existing artwork is the **Default layout**. Enter a **New layout** name and choose
+**Create empty layout** to start a separate tree, then draw or paste into that view.
+**Edit layout settings** opens the layout's name, stack, padding and sizing controls.
+Views choosing the same layout share its artwork; other layouts stay separate. Place reusable
+component instances in each tree to share component definitions while keeping instance values.
+
+All layouts belong to one screen and retain its navigation destination. Preview starts with
+its launch view's selected layout and viewport. Selection is manual in this increment;
+automatic width rules and input continuity between different layout trees come next.
+A missing layout falls back to Default with a diagnostic. Deleting a layout boundary releases
+its artwork to Canvas and retains the screen and its views. Undo restores it.
+
 ### Component roles
 
 Select a component source or one instance and use **Inspector → Role** to choose Text, Input,

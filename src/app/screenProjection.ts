@@ -1,13 +1,20 @@
 import { renderedFrame, renderedShape } from './frameLayout';
 import { projectContextualLayout } from './contextualLayout';
-import { frameParents, isFrameVisible } from './frameState';
+import { isFrameVisible } from './frameState';
 import { translateShape } from './geometry';
 import { shownShapesIds } from './membership';
 import type { Document, Frame, Point, Shape, Size, VariableContext } from './types';
 import { json } from 'overmind';
+import {
+    screenLayoutRoot,
+    screenLayoutMembers,
+    screenLayoutDocument,
+    MISSING_SCREEN_LAYOUT
+} from './screenLayouts';
 
 export interface ScreenViewport {
     id?: string;
+    layoutId?: string;
     position: Point;
     size: Size;
 }
@@ -33,30 +40,15 @@ export function projectScreen(
     viewport: ScreenViewport,
     simulation: VariableContext = {}
 ): ScreenProjection | null {
-    const source = document.frames[screenId];
+    const source = screenLayoutRoot(document, screenId, viewport.layoutId);
 
-    if (source?.kind !== 'screen') {
+    if (document.frames[screenId]?.kind !== 'screen') {
         return null;
     }
 
-    const parents = frameParents(document.frames);
-    const belongsToScreen = (frameId: string | undefined): boolean => {
-        const seen = new Set<string>();
-
-        while (frameId !== undefined && !seen.has(frameId)) {
-            if (frameId === screenId) {
-                return true;
-            }
-
-            seen.add(frameId);
-            frameId = parents.get(frameId);
-        }
-
-        return false;
-    };
-    const frameIds = Object.keys(document.frames).filter(
-        (id) => id !== screenId && belongsToScreen(id) && isFrameVisible(document, id)
-    );
+    const members = screenLayoutMembers(document, screenId, viewport.layoutId);
+    const belongsToScreen = (id: string | undefined) => members.has(id ?? '');
+    const frameIds = [...members].filter((id) => id !== source.id && isFrameVisible(document, id));
     const shown = shownShapesIds(document, null);
     const memberIds = document.shapesIds.filter((id) =>
         belongsToScreen(document.shapes[id]?.parentFrameId)
@@ -74,24 +66,9 @@ export function projectScreen(
         };
     }
 
-    const resized = {
-        ...document,
-        frames: {
-            ...document.frames,
-            [screenId]: {
-                ...source,
-                size: viewport.size,
-                sizing: undefined,
-                bindings: Object.fromEntries(
-                    Object.entries(source.bindings ?? {}).filter(
-                        ([key]) => key !== 'width' && key !== 'height'
-                    )
-                )
-            }
-        }
-    };
+    const resized = screenLayoutDocument(document, screenId, viewport.layoutId, viewport.size);
     const layout = projectContextualLayout(resized, { viewId: viewport.id, screenId, simulation });
-    const involved = new Set([screenId, ...frameIds, ...shapeIds]);
+    const involved = new Set([source.id, ...frameIds, ...shapeIds]);
     const offset = {
         x: viewport.position.x - source.position.x,
         y: viewport.position.y - source.position.y
@@ -99,7 +76,7 @@ export function projectScreen(
 
     return {
         screen: {
-            ...renderedFrame(resized, screenId, layout),
+            ...renderedFrame(resized, source.id, layout),
             position: viewport.position,
             size: viewport.size
         },
@@ -117,9 +94,14 @@ export function projectScreen(
 
             return shape;
         }),
-        problems: [...Object.entries(layout.problems), ...Object.entries(layout.modeProblems ?? {})]
-            .filter(([id]) => involved.has(id))
-            .map(([, problem]) => problem),
+        problems: [
+            ...(viewport.layoutId && source.id !== viewport.layoutId
+                ? [MISSING_SCREEN_LAYOUT]
+                : []),
+            ...[...Object.entries(layout.problems), ...Object.entries(layout.modeProblems ?? {})]
+                .filter(([id]) => involved.has(id))
+                .map(([, problem]) => problem)
+        ],
         layoutOffsets: new Set(
             memberIds.filter(
                 (id) =>

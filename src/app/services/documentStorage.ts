@@ -25,7 +25,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 20;
+export const SCHEMA_VERSION = 21;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -676,6 +676,14 @@ function readFrame(value: unknown): Frame {
         throw new Error('Expected frame, screen or view identity');
     }
 
+    if (
+        (f.screenLayout !== undefined &&
+            (f.screenLayout !== true || f.kind === 'screen' || f.kind === 'view')) ||
+        (f.layoutId !== undefined && f.kind !== 'view')
+    ) {
+        throw new Error('Invalid screen layout fields');
+    }
+
     if ((f.kind === 'view') !== (f.screenId !== undefined)) {
         throw new Error('A screen view needs a screen reference');
     }
@@ -701,6 +709,8 @@ function readFrame(value: unknown): Frame {
             ? { definitionOnly: true as const }
             : {}),
         ...(f.screenId === undefined ? {} : { screenId: id(f.screenId) }),
+        ...(f.screenLayout === true ? { screenLayout: true as const } : {}),
+        ...(f.layoutId === undefined ? {} : { layoutId: id(f.layoutId) }),
         ...(f.parentFrameId === undefined ? {} : { parentFrameId: id(f.parentFrameId) }),
         ...(f.stack === undefined ? {} : { stack: readStack(f.stack) }),
         ...(f.sizing === undefined ? {} : { sizing: readSizing(f.sizing) }),
@@ -1036,29 +1046,9 @@ function showContainers(document: DocumentData): DocumentData {
 export function migratePersistedState(raw: unknown, onRepair = () => {}): PersistedState | null {
     try {
         const data = record(raw);
+        const version = number(data.version, 1);
 
-        if (
-            data.version !== 1 &&
-            data.version !== 2 &&
-            data.version !== 3 &&
-            data.version !== 4 &&
-            data.version !== 5 &&
-            data.version !== 6 &&
-            data.version !== 7 &&
-            data.version !== 8 &&
-            data.version !== 9 &&
-            data.version !== 10 &&
-            data.version !== 11 &&
-            data.version !== 12 &&
-            data.version !== 13 &&
-            data.version !== 14 &&
-            data.version !== 15 &&
-            data.version !== 16 &&
-            data.version !== 17 &&
-            data.version !== 18 &&
-            data.version !== 19 &&
-            data.version !== SCHEMA_VERSION
-        ) {
+        if (!Number.isInteger(version) || version > SCHEMA_VERSION) {
             return null;
         }
 
@@ -1067,10 +1057,10 @@ export function migratePersistedState(raw: unknown, onRepair = () => {}): Persis
         let currentDocumentId = text(data.currentDocumentId);
 
         for (const [key, value] of entries) {
-            const read = readDocument(value, onRepair, data.version < 12);
-            const document = data.version === 1 || data.version === 2 ? showContainers(read) : read;
+            const read = readDocument(value, onRepair, version < 12);
+            const document = version === 1 || version === 2 ? showContainers(read) : read;
 
-            if (data.version !== 1 && key !== document.id) {
+            if (version !== 1 && key !== document.id) {
                 return null;
             }
 

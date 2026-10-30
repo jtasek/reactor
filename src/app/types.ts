@@ -355,6 +355,10 @@ export interface Frame {
     kind?: 'frame' | 'screen' | 'view';
     /** Screens are source definitions; every canvas placement is a separate view. */
     definitionOnly?: true;
+    /** A separate artwork tree owned by its parent screen, never a destination. */
+    screenLayout?: true;
+    /** Explicit layout inspection choice on a Screen view; absent uses the default. */
+    layoutId?: string;
     /** A placed view references its screen definition; its box is view-local. */
     screenId?: string;
     stack?: StackRules;
@@ -624,7 +628,12 @@ export type Application = {
     aiEditDocumentId: string | null;
     previewDocumentId: string | null;
     /** Modes captured when Preview opens, independent of later canvas simulation changes. */
-    previewModeContext: { modes: VariableContext; screenId?: string; viewport?: Size } | null;
+    previewModeContext: {
+        modes: VariableContext;
+        screenId?: string;
+        viewport?: Size;
+        layoutId?: string;
+    } | null;
     devices: HashTable<Device>;
     documents: HashTable<Document>;
     documentsIds: string[];
