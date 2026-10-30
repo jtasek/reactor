@@ -11,10 +11,9 @@ import { commandsFor, commandsIn, getCommand, getCommands } from './actions';
 import { Context } from '.';
 import { useCallback, useLayoutEffect, useReducer, useRef, useSyncExternalStore } from 'react';
 import { isShapeLocked, isShapeVisible } from './utils';
-import type { Command, CommandPlace, CommandScope, Document } from './types';
+import type { Command, CommandPlace, CommandScope } from './types';
 import { takesEditorInput } from '../events/input';
 import { editorHelpers, editorLoaded, subscribeToEditorHelpers } from './editorHelpers';
-import { KEEPS_SHAPE_BOUNDS } from '../events/gestures';
 import { PropertyRow, sharedProperties } from './properties';
 import { componentSource } from './componentSource';
 import { localComponents } from './componentSelection';
@@ -274,54 +273,7 @@ export const useShape = (id: string) => {
     return useAppState((state) => renderedShape(state.currentDocument, id));
 };
 
-/** Whether a frame, or a frame it is in, is the selected frame. */
-const inSelectedFrame = (document: Document, frameId: string | undefined) => {
-    const selected = document.selectedFrameId;
-    const seen = new Set<string>();
-
-    for (let id = frameId; selected !== undefined && id !== undefined; ) {
-        if (id === selected) {
-            return true;
-        }
-
-        if (seen.has(id)) {
-            return false;
-        }
-
-        seen.add(id);
-        id = document.frames[id]?.parentFrameId;
-    }
-
-    return false;
-};
-
 /** Whether the shape is drawn: see `isShapeVisible`. */
-/**
- * Whether a shape is measured where drawn: not while a gesture keeps its bounds
- * itself. Gestures change selected shapes only, so a shape not selected never
- * reads the gesture, and does not render again as gestures begin and end.
- */
-export const useMeasuringShape = (id: string) =>
-    useAppState((state) => {
-        const shape = state.currentDocument.shapes[id];
-
-        // A frame drag moves its descendants, and only a selected frame is dragged, so
-        // only the selected frame's descendants read the gesture besides selected shapes.
-        if (inSelectedFrame(state.currentDocument, shape?.parentFrameId)) {
-            const gesture = state.events.pointer.gesture;
-
-            if (gesture.kind === 'editingFrame' && gesture.shapes[id]) {
-                return false;
-            }
-        }
-
-        if (shape?.type === 'instance') {
-            return !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind];
-        }
-
-        return !shape?.selected || !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind];
-    });
-
 export const useShapeVisible = (id: string) => {
     return useAppState((state) => isShapeVisible(state.currentDocument, id));
 };

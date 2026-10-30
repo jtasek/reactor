@@ -22,7 +22,7 @@ import { ActionWithParam, Box, Point, Shape } from 'src/app/types';
 import { screenToWorld } from 'src/app/camera';
 import { drawnBox, drawnExtent, groupFrame, shownShapesIds } from 'src/app/membership';
 import { editorHelpers } from 'src/app/editorHelpers';
-import { untracked } from 'src/app/untracked';
+import { deleteIfPresent, untracked } from 'src/app/untracked';
 import { getShapeBounds, isShapeLocked } from 'src/app/utils';
 import { keepsAspectRatio } from 'src/app/geometry';
 import {
@@ -226,7 +226,7 @@ export const beginGesture = (
               }
             : address;
     state.selectedComponent = null;
-    delete state.currentDocument.surfaceSelected;
+    deleteIfPresent(state.currentDocument, 'surfaceSelected');
     effects.collaboration.pause();
 
     const owner = {
@@ -279,7 +279,7 @@ export const beginGesture = (
         return false;
     }
 
-    delete state.currentDocument.selectedFrameId;
+    deleteIfPresent(state.currentDocument, 'selectedFrameId');
 
     if (handle && 'componentId' in handle) {
         const component = state.currentDocument.components[handle.componentId];
@@ -840,7 +840,7 @@ export const cancelGesture = (
         });
     }
 
-    delete state.currentDocument.selectedFrameId;
+    deleteIfPresent(state.currentDocument, 'selectedFrameId');
 
     if (gesture.selectedFrameId && isFrameVisible(state.currentDocument, gesture.selectedFrameId)) {
         state.currentDocument.selectedFrameId = gesture.selectedFrameId;

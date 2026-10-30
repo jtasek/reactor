@@ -1,5 +1,5 @@
 import { screenOwners } from 'src/app/screenViews';
-import React, { FC, MouseEvent, useState } from 'react';
+import React, { FC, MouseEvent, memo, useMemo, useState } from 'react';
 import { Frame as FrameIcon, CircleHelp, Star, Trash2 } from 'lucide-react';
 import styles from './styles.css';
 import { CollapsedItems, Dragged, ExplorerItem } from './ExplorerItem';
@@ -80,11 +80,12 @@ const RootItem: FC<{
     );
 };
 
-const ShapeItem: FC<{ shapeId: string; sourceId?: string; viewId?: string }> = ({
+/** A shape's row; memoized so a list rendering again does not render every row. */
+const ShapeItem = memo<{ shapeId: string; sourceId?: string; viewId?: string }>(function ShapeItem({
     shapeId,
     sourceId,
     viewId
-}) => {
+}) {
     const shape = useShape(shapeId);
     const inherited = useShapesFrameState([shapeId]);
     const sourceSelected = useSourceSelected(sourceId ?? null);
@@ -148,7 +149,7 @@ const ShapeItem: FC<{ shapeId: string; sourceId?: string; viewId?: string }> = (
             ]}
         />
     );
-};
+});
 
 const GroupItem: FC<{
     groupId: string;
@@ -459,6 +460,22 @@ export const Explorer: FC = () => {
     const { explorer } = useControls();
     const { moveShapesToLayer, selectExplorerLayer, showAllLayers } = useActions();
     const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+    // Kept while nothing is collapsed or expanded, so every row does not render
+    // again whenever the explorer does.
+    const collapsedItems = useMemo(
+        () => ({
+            collapsed,
+            toggle: (collapseId: string) => {
+                const next = new Set(collapsed);
+
+                if (!next.delete(collapseId)) {
+                    next.add(collapseId);
+                }
+                setCollapsed(next);
+            }
+        }),
+        [collapsed]
+    );
     const handleCanvasSelect = () => selectExplorerLayer(null);
 
     if (!explorer.visible) {
@@ -481,19 +498,7 @@ export const Explorer: FC = () => {
     };
 
     return (
-        <CollapsedItems.Provider
-            value={{
-                collapsed,
-                toggle: (collapseId) => {
-                    const next = new Set(collapsed);
-
-                    if (!next.delete(collapseId)) {
-                        next.add(collapseId);
-                    }
-                    setCollapsed(next);
-                }
-            }}
-        >
+        <CollapsedItems.Provider value={collapsedItems}>
             <section className={styles.explorer} aria-label="Explorer">
                 <div className={styles.views} role="group" aria-label="Explorer view">
                     <button
