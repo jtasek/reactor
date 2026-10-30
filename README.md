@@ -218,7 +218,7 @@ Preview's **Width** changes the viewport for every navigation destination. Its *
 picker inspects Auto, Default or an alternate for the current screen, without saving a choice
 to the document. Explicit inspection choices persist across width changes and navigation,
 and are discarded when Preview closes. Width-selected modes follow the inspection width,
-while explicit modes and Theme remain fixed. Other destinations retain their height constraints.
+while explicit and manual mode choices remain fixed. Other destinations retain their height constraints.
 Mode authoring and instance values stay intact.
 
 To keep typed input across layouts, select corresponding Input instances and give them the

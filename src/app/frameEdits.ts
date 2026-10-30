@@ -1,4 +1,4 @@
-import { isScreenLayout, screenLayouts } from './screenLayouts';
+import { screenLayouts } from './screenLayouts';
 import { editableScreenView, sourceOffset } from './screenViewEditing';
 import { initializeStackOrder } from './stackEdits';
 import {
@@ -474,14 +474,6 @@ export function edit(context: Context, input: FrameEdit): string | undefined {
                   target: null
               })
             : undefined;
-    }
-
-    if (
-        input.changes.layoutId &&
-        (!isScreenLayout(document.frames, input.changes.layoutId) ||
-            document.frames[input.changes.layoutId].parentFrameId !== frame.screenId)
-    ) {
-        return;
     }
 
     const result = editorHelpers().operations.stageBatch(

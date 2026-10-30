@@ -83,6 +83,10 @@ test('creates a named empty layout and draws into it without modifying the defau
     await inspector.getByLabel('Screen view layout').selectOption('compact');
     await expect(mobile.locator('[data-cy="Compact body"]')).toHaveCount(1);
     await expect(mobile.locator('g[data-shape-id]')).toHaveCount(1);
+    await inspector.getByRole('button', { name: 'Edit layout settings', exact: true }).click();
+    await expect(inspector).toContainText('Size and position follow each Screen view');
+    await expect(inspector.getByLabel('Width', { exact: true })).toHaveCount(0);
+    await expect(inspector.getByLabel('Frame parent', { exact: true })).toHaveCount(0);
 });
 
 test('previews an alternate while the unused default layout overflows', async ({ page }) => {

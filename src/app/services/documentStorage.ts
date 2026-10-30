@@ -634,7 +634,7 @@ function readFrame(value: unknown): Frame {
 
     if (
         (f.screenLayout !== undefined &&
-            (f.screenLayout !== true || (f.kind ?? 'frame') !== 'frame')) ||
+            (f.screenLayout !== true || f.kind === 'screen' || f.kind === 'view')) ||
         ((f.layoutId !== undefined || f.layoutMode !== undefined) && f.kind !== 'view') ||
         (f.layoutMode !== undefined && f.layoutMode !== 'auto') ||
         (f.responsiveLayouts !== undefined && f.kind !== 'screen')

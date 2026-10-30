@@ -77,24 +77,37 @@ const editedOnCanvas = (gesture: Gesture, id: string) =>
     (gesture.frameId === id || Object.hasOwn(gesture.childFrames, id));
 
 export const FrameInspector: FC<{ id: string }> = ({ id }) => {
-    const { frame, source, viewProblem, authoredSize, locked, layout, nested, busy, screenLayout } =
-        useAppState((state) => ({
-            frame: renderedFrame(state.currentDocument, id),
-            screenLayout: isScreenLayout(state.currentDocument.frames, id),
-            source: state.currentDocument.frames[state.currentDocument.frames[id]?.screenId ?? ''],
-            viewProblem:
-                state.currentDocument.frames[id]?.kind === 'view'
-                    ? projectScreenViews(
-                          state.currentDocument,
-                          state.previewModes[state.currentDocumentId]
-                      ).find((item) => item.view.id === id)?.problem
-                    : undefined,
-            nested: Boolean(frameParents(state.currentDocument.frames).get(id)),
-            busy: editedOnCanvas(state.events.pointer.gesture, id),
-            layout: frameLayout(state.currentDocument),
-            authoredSize: state.currentDocument.frames[id]?.size,
-            locked: state.currentDocument.locked
-        }));
+    const {
+        frame,
+        source,
+        viewProblem,
+        authoredSize,
+        locked,
+        layout,
+        nested,
+        busy,
+        screenLayout,
+        hasLayouts
+    } = useAppState((state) => ({
+        frame: renderedFrame(state.currentDocument, id),
+        screenLayout: isScreenLayout(state.currentDocument.frames, id),
+        hasLayouts: Object.values(state.currentDocument.frames).some(
+            (child) => child.screenLayout && child.parentFrameId === id
+        ),
+        source: state.currentDocument.frames[state.currentDocument.frames[id]?.screenId ?? ''],
+        viewProblem:
+            state.currentDocument.frames[id]?.kind === 'view'
+                ? projectScreenViews(
+                      state.currentDocument,
+                      state.previewModes[state.currentDocumentId]
+                  ).find((item) => item.view.id === id)?.problem
+                : undefined,
+        nested: Boolean(frameParents(state.currentDocument.frames).get(id)),
+        busy: editedOnCanvas(state.events.pointer.gesture, id),
+        layout: frameLayout(state.currentDocument),
+        authoredSize: state.currentDocument.frames[id]?.size,
+        locked: state.currentDocument.locked
+    }));
     const { editFrame } = useActions();
     const moveProblem = useFrameMoveProblem(id);
     const inheritedLocked = useFrameLocked(id);
@@ -306,65 +319,99 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                             </td>
                         </tr>
                     )}
-                    {!screenLayout && <FrameParent frameId={id} />}
+                    {!screenLayout && (
+                        <FrameParent
+                            frameId={id}
+                            canvasOnly={
+                                frame.kind === 'screen' && hasLayouts
+                                    ? 'A screen with alternate layouts stays on Canvas.'
+                                    : undefined
+                            }
+                        />
+                    )}
                     <Field
                         label="Name"
                         value={frame.name}
                         disabled={disabled}
                         onCommit={(name) => editFrame({ kind: 'update', id, changes: { name } })}
                     />
-                    {(['x', 'y'] as const).map((key) => (
-                        <Field
-                            key={key}
-                            label={key.toUpperCase()}
-                            value={frame.position[key]}
-                            disabled={
-                                disabled || Boolean(moveProblem) || layout.managedFrames.has(id)
-                            }
-                            onCommit={(value) =>
-                                editFrame({
-                                    kind: 'update',
-                                    id,
-                                    changes: {
-                                        position: {
-                                            x: frame.position.x - (layout.frames[id]?.x ?? 0),
-                                            y: frame.position.y - (layout.frames[id]?.y ?? 0),
-                                            [key]: Number(value) - (layout.frames[id]?.[key] ?? 0)
-                                        }
-                                    }
-                                })
-                            }
-                        />
-                    ))}
-                    {moveProblem && (
+                    {screenLayout && (
                         <tr>
                             <td colSpan={2}>
                                 <small className={styles.frameHint} role="status">
-                                    {moveProblem}
+                                    Size and position follow each Screen view that shows this
+                                    layout.
                                 </small>
                             </td>
                         </tr>
                     )}
-                    {(['width', 'height'] as const).map((key) => (
-                        <Field
-                            key={key}
-                            label={key === 'width' ? 'Width' : 'Height'}
-                            value={frame.size[key]}
-                            minimum={MIN_FRAME_SIZE}
-                            disabled={
-                                disabled || (frame.sizing?.[key]?.mode ?? 'fixed') !== 'fixed'
-                            }
-                            onCommit={(value) =>
-                                editFrame({
-                                    kind: 'update',
-                                    id,
-                                    changes: { size: { ...authoredSize!, [key]: Number(value) } }
-                                })
-                            }
-                        />
-                    ))}
+                    {!screenLayout && (
+                        <>
+                            {(['x', 'y'] as const).map((key) => (
+                                <Field
+                                    key={key}
+                                    label={key.toUpperCase()}
+                                    value={frame.position[key]}
+                                    disabled={
+                                        disabled ||
+                                        Boolean(moveProblem) ||
+                                        layout.managedFrames.has(id)
+                                    }
+                                    onCommit={(value) =>
+                                        editFrame({
+                                            kind: 'update',
+                                            id,
+                                            changes: {
+                                                position: {
+                                                    x:
+                                                        frame.position.x -
+                                                        (layout.frames[id]?.x ?? 0),
+                                                    y:
+                                                        frame.position.y -
+                                                        (layout.frames[id]?.y ?? 0),
+                                                    [key]:
+                                                        Number(value) -
+                                                        (layout.frames[id]?.[key] ?? 0)
+                                                }
+                                            }
+                                        })
+                                    }
+                                />
+                            ))}
+                            {moveProblem && (
+                                <tr>
+                                    <td colSpan={2}>
+                                        <small className={styles.frameHint} role="status">
+                                            {moveProblem}
+                                        </small>
+                                    </td>
+                                </tr>
+                            )}
+                            {(['width', 'height'] as const).map((key) => (
+                                <Field
+                                    key={key}
+                                    label={key === 'width' ? 'Width' : 'Height'}
+                                    value={frame.size[key]}
+                                    minimum={MIN_FRAME_SIZE}
+                                    disabled={
+                                        disabled ||
+                                        (frame.sizing?.[key]?.mode ?? 'fixed') !== 'fixed'
+                                    }
+                                    onCommit={(value) =>
+                                        editFrame({
+                                            kind: 'update',
+                                            id,
+                                            changes: {
+                                                size: { ...authoredSize!, [key]: Number(value) }
+                                            }
+                                        })
+                                    }
+                                />
+                            ))}
+                        </>
+                    )}
                 </PropertyGroup>
-                <SizingFields frameId={id} />
+                {!screenLayout && <SizingFields frameId={id} />}
                 <PropertyGroup name="Layout">
                     <tr>
                         <th scope="row">
