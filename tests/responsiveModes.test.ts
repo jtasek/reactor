@@ -3,7 +3,7 @@ import { responsiveDocument } from './support/responsiveModes';
 import { createTestStore } from './support/store';
 import { createCopies, DOCUMENT_ID, edit, settle, shownDocument } from './support/collaboration';
 import { resolveModes } from 'src/app/inheritedModes';
-import { readDimension } from 'src/app/variableModes';
+import { minWidthProblem, readDimension } from 'src/app/variableModes';
 import { projectScreen } from 'src/app/screenProjection';
 import { projectPreview } from 'src/preview/project';
 import {
@@ -178,7 +178,9 @@ it('keeps thresholds independent from names, order and defaults and drops a dele
 it('rejects ambiguous thresholds and unknown selection methods', () => {
     const dimension = responsiveDocument().dimensions.media;
     dimension.modes.lg.minWidth = 400;
-    expect(() => readDimension(dimension)).toThrow('different minimum width');
+    // Readers accept what concurrent edits can merge into; edits refuse it.
+    expect(readDimension(dimension).modes.lg.minWidth).toBe(400);
+    expect(minWidthProblem(dimension)).toContain('different minimum width');
     expect(() => readDimension({ ...dimension, selection: 'viewport' })).toThrow(
         'Invalid mode selection'
     );
@@ -251,4 +253,32 @@ it('shares rule edits and undo without losing modes or variable values', async (
     expect(resolveModes(shownDocument(second), { viewId: 'mobile' }).modes.media).toBe('xs');
     expect(json(shownDocument(second).variables)).toEqual(before);
     copies.forEach((copy) => copy.collaboration.dispose());
+});
+
+it('keeps a dimension when concurrent edits give two modes the same minimum width', async () => {
+    let dimensionId = '';
+    const copies = await createCopies(2, (store) => {
+        dimensionId = store.actions.createDimension('Size')!;
+        store.actions.addDimensionMode({ dimensionId, name: 'Tablet' });
+        store.actions.addDimensionMode({ dimensionId, name: 'Desktop' });
+        const dimension = json(store.state.currentDocument.dimensions[dimensionId]);
+        store.actions.updateDimension({ ...dimension, selection: 'width' });
+    });
+    const [a, b] = copies;
+    const base = json(shownDocument(a).dimensions[dimensionId]);
+    const [, tablet, desktop] = Object.values(base.modes).sort((x, y) => x.order - y.order);
+    const withWidth = (mode: typeof tablet) => ({
+        ...base,
+        modes: { ...base.modes, [mode.id]: { ...mode, minWidth: 768 } }
+    });
+    edit(a, (actions) => actions.updateDimension(withWidth(tablet)));
+    edit(b, (actions) => actions.updateDimension(withWidth(desktop)));
+    settle(copies);
+
+    copies.forEach((copy) => {
+        const dimension = shownDocument(copy).dimensions[dimensionId];
+        expect(dimension.modes[tablet.id].minWidth).toBe(768);
+        expect(dimension.modes[desktop.id].minWidth).toBe(768);
+    });
+    copies.forEach(({ collaboration }) => collaboration.dispose());
 });

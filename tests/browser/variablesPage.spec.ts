@@ -71,7 +71,7 @@ test('opens directly, searches a large library, edits values and retains them on
     await page.screenshot({ path: 'test-results/variables-page-narrow.png' });
 });
 
-test('opens from the canvas, keeps canvas shortcuts inactive and provides undo and redo', async ({
+test('opens from the canvas, keeps canvas shortcuts inactive and provides undo and redo, by button and key', async ({
     page
 }) => {
     await seed(page);
@@ -88,6 +88,10 @@ test('opens from the canvas, keeps canvas shortcuts inactive and provides undo a
     await page.getByRole('button', { name: 'Redo', exact: true }).click();
     await expect(page.getByLabel('Value of Ink', { exact: true })).toHaveValue('#ff0000');
     await page.getByRole('heading', { name: 'Variables', exact: true }).click();
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(page.getByLabel('Value of Ink', { exact: true })).toHaveValue('#112233');
+    await page.keyboard.press('ControlOrMeta+Shift+z');
+    await expect(page.getByLabel('Value of Ink', { exact: true })).toHaveValue('#ff0000');
     await page.keyboard.press('Delete');
     await page.keyboard.press('r');
     await page.getByRole('button', { name: 'Back to canvas', exact: true }).click();

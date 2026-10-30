@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { json } from 'overmind';
 import { ActionsMenu } from './ActionsMenu';
 import { useActions, useCurrentDocument, useEffects } from 'src/app/hooks';
-import { ordered, readDimension } from 'src/app/variableModes';
+import { minWidthProblem, ordered, readDimension } from 'src/app/variableModes';
 import type { VariableDimension } from 'src/app/types';
 import styles from './styles.css';
 
@@ -92,6 +92,12 @@ export function DimensionEditor({
         }
         try {
             const validated = readDimension(draft);
+            const widthProblem = minWidthProblem(validated);
+            if (widthProblem) {
+                setProblem(widthProblem);
+
+                return;
+            }
             if (
                 Object.values(document.dimensions).some(
                     (item) => item.id !== dimension?.id && item.name === validated.name

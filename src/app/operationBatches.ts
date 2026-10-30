@@ -15,7 +15,7 @@ import {
 } from './stackEdits';
 import { frameParents, projectFrameStates } from './frameState';
 import { deleteFrame, validFrameParent, frameContents, frameMoveProblem } from './frameMembership';
-import { legacyTheme, readDimension } from './variableModes';
+import { legacyTheme, minWidthProblem, readDimension } from './variableModes';
 import { json } from 'overmind';
 import type {
     Frame,
@@ -321,6 +321,8 @@ function stage(document: Document, operations: Operation[], newId: () => string)
         if (operation.op !== 'setDimension') return;
         try {
             const dimension = readDimension(operation.dimension);
+            const widthProblem = minWidthProblem(dimension);
+            if (widthProblem) throw new Error(widthProblem);
             if (dimensionIds.has(dimension.id)) throw new Error('Dimension changed twice.');
             dimensionIds.add(dimension.id);
             const before = dimensions[dimension.id];

@@ -35,6 +35,20 @@ export function variableContext(
     );
 }
 
+/**
+ * Why a dimension's minimum widths are ambiguous, for edits only. Readers accept
+ * equal minimums, which concurrent edits can merge into; the resolver breaks ties by ID.
+ */
+export function minWidthProblem(dimension: VariableDimension): string | undefined {
+    const widths = Object.values(dimension.modes).flatMap((mode) =>
+        mode.minWidth === undefined ? [] : [mode.minWidth]
+    );
+
+    return new Set(widths).size === widths.length
+        ? undefined
+        : 'Each mode must have a different minimum width.';
+}
+
 /** Validate at every persistence/import boundary, without trusting property names. */
 export function readDimension(value: unknown): VariableDimension {
     if (!value || typeof value !== 'object') {
@@ -107,12 +121,6 @@ export function readDimension(value: unknown): VariableDimension {
     }
     if (d.selection !== undefined && d.selection !== 'width') {
         throw new Error('Invalid mode selection.');
-    }
-    const widths = Object.values(modes).flatMap((mode) =>
-        mode.minWidth === undefined ? [] : [mode.minWidth]
-    );
-    if (new Set(widths).size !== widths.length) {
-        throw new Error('Each mode must have a different minimum width.');
     }
 
     return {
