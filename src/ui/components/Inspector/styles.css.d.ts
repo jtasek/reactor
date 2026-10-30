@@ -35,6 +35,7 @@ declare namespace StylesCssNamespace {
     instanceSectionHeading: string;
     instanceStatus: string;
     instanceValue: string;
+    interactions: string;
     layoutChoice: string;
     note: string;
     propertyMapping: string;

@@ -1,3 +1,4 @@
+import { legacyActivation, separateInteractions } from './screenInteractions';
 import { isScreenLayout } from './screenLayouts';
 import { initialScreenView } from './screenViewMigration';
 import {
@@ -72,6 +73,7 @@ const CHANGEABLE_FIELDS = new Set([
     'layoutOrder',
     'sizing',
     'interaction',
+    'interactions',
     'modeOverrides',
     'description',
     'rotation',
@@ -797,12 +799,28 @@ function stage(
         if ('interaction' in changes && current.type !== 'instance') {
             throw new Error('Only an instance can declare a role.');
         }
+        if ('interactions' in changes && current.type !== 'instance') {
+            throw new Error('Only an instance can declare interactions.');
+        }
         if ('modeOverrides' in changes && current.type !== 'instance') {
             throw new Error('Only an instance can override color modes.');
         }
         const shape = structuredClone(json(current));
         unbindEditedProperties(shape, fields);
         const bindings = shape.bindings ?? {};
+        if (shape.type === 'instance' && 'interaction' in changes) {
+            separateInteractions(shape);
+        }
+        if (
+            shape.type === 'instance' &&
+            changes.interaction &&
+            'navigateTo' in changes.interaction &&
+            changes.interaction.navigateTo !==
+                (current.type === 'instance' ? current.interaction?.navigateTo : undefined) &&
+            (!('interactions' in changes) || changes.interactions === undefined)
+        ) {
+            shape.interactions = { activate: legacyActivation(changes.interaction) };
+        }
         Object.assign(shape, structuredClone(changes));
         if (shape.type === 'instance' && changes.interaction === null) {
             delete shape.interaction;

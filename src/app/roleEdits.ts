@@ -1,3 +1,4 @@
+import { legacyActivation, separateInteractions } from './screenInteractions';
 import type { Context } from './index';
 import type { Component, Document, RoleSettings } from './types';
 import { readRoleSettings, orUndefined } from './services/documentStorage';
@@ -28,11 +29,16 @@ function mirrorToAlternates(
         ) {
             continue;
         }
+        separateInteractions(alternate);
         if (settings === null) {
             delete alternate.interaction;
-        } else {
-            alternate.interaction = { ...settings, props: { ...settings.props } };
+
+            continue;
         }
+        if (settings.navigateTo !== previous.navigateTo && settings.role === 'button') {
+            alternate.interactions = { activate: legacyActivation(settings) };
+        }
+        alternate.interaction = { ...settings, props: { ...settings.props } };
     }
 }
 
@@ -62,6 +68,7 @@ export function editRole({ state }: Context, edit: RoleEdit) {
     }
     const target = instance?.type === 'instance' ? instance : component;
     if (edit.settings === null) {
+        separateInteractions(target);
         if (target === component) {
             mirrorToAlternates(document, component, effectiveRoleSettings(component), null);
         }
@@ -103,8 +110,15 @@ export function editRole({ state }: Context, edit: RoleEdit) {
     if (JSON.stringify(target.interaction) === JSON.stringify(settings)) {
         return;
     }
+    separateInteractions(target);
+    // Keep the former public role-edit API usable for callers that still author navigation.
+    if ('navigateTo' in edit.settings && settings.navigateTo !== previous.navigateTo) {
+        target.interactions = { activate: legacyActivation(settings) };
+    }
     if (target === component) {
         mirrorToAlternates(document, component, previous, settings);
     }
     target.interaction = settings;
 }
+
+export { editInteractions } from './interactionEdits';

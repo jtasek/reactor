@@ -243,8 +243,23 @@ missing required fields or broken links without discarding the settings.
 An instance starts **From source**. Editing its role settings creates a custom configuration;
 **None** removes its role, and **From source** restores inheritance while keeping its visual
 property overrides. Imported library sources stay read-only; their instances may customize
-roles locally. These settings are saved, copied, shared and undoable. Interactive preview is
-not available yet. List currently declares its label; item data and repetition come later.
+roles locally. These settings are saved, copied, shared and undoable. List currently declares
+its label; item data and repetition come later.
+
+### Component interactions
+
+Select a component source or instance and open **Inspector → Interactions**. **Activate** can
+navigate to a logical screen or do nothing. An instance can also choose **From source** to follow
+the component's action independently of its role and visual values. Screen names update in the
+picker after a rename; deleted, hidden or nested destinations remain saved as unavailable until
+you choose another destination or remove the action. Library imports omit document-local targets.
+
+Use **Preview** to run the action: click or activate a focused button with the keyboard; inputs
+activate on Enter. Canvas clicks always select and edit. Existing Button navigation keeps working,
+and changing a role no longer removes its action. Legacy custom instance roles retain their old
+action (including no action); choose **From source** in Interactions to opt into independent
+action inheritance. Responsive variants use the family action, while each screen layout keeps
+its authored instances. Flow authoring is a separate, later roadmap step.
 
 ## Saving
 

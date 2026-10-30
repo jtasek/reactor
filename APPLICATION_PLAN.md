@@ -920,13 +920,19 @@ continues working through adapters to the new screen/context projection until R4
    inspection, navigation, compatible/incompatible input continuity, cloning, undo, sync and
    reload. Runtime protocol v3 validates layout inspection and input state metadata.
 
-8. **R4.8 — Explicit interactions independent of roles (M).**
+8. **R4.8 — Explicit interactions independent of roles (M, implemented).**
    Provide a small Inspector editor for a control's Activate trigger and Navigate action with a
    screen-ID target. Preserve existing Button navigation through a tested conversion/adapter;
    do not introduce an arbitrary expression engine. Role semantics, visual variants and action
    targets stay separate. Source actions may be inherited or explicitly overridden by instances.
    Canvas clicks always select/edit and never execute actions. The existing invoked Preview
    executes the same action definitions, so this increment is usable without a Flow feature.
+   **Delivered:** schema v23 adds typed Activate → Navigate metadata to sources and instances.
+   The Inspector offers From source, No action and named screen destinations independently of
+   Role. Legacy whole-role navigation overrides are initialized on creation/load and in shared
+   document migration before role edits, preserving concurrent explicit action changes. Missing
+   targets remain authored and show diagnostics. Preview uses native keyboard controls (Enter for inputs); library transfers
+   strip document-local targets and remain editor-loaded within the existing bundle budgets.
    **Acceptance:** `tests/screenInteractions.test.ts` and `tests/browser/screenInteractions.spec.ts`:
    role without action, inherited/custom actions, renamed/deleted targets, variant/layout
    continuity, atomic operations, undo, concurrent edits and no canvas-side execution.

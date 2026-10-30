@@ -1,3 +1,4 @@
+import { effectiveActivation } from 'src/app/screenInteractions';
 import { screenOwners } from '../app/screenViews';
 import {
     screenLayoutDocument,
@@ -292,20 +293,25 @@ export function projectPreview(
                     throw new Error(`${shape.name}: ${role.problems.join(' ')}`);
                 }
                 const settings = effectiveRoleSettings(component, shape);
-                let navigateTo = role.role === 'button' ? settings.navigateTo : undefined;
-                if (navigateTo && !screenIds.has(navigateTo)) {
-                    // The button stays clickable; it just goes nowhere until relinked.
+                const activation = effectiveActivation(component, shape);
+                const target = activation?.screenId;
+                const navigateTo = target && screenIds.has(target) ? target : undefined;
+                if (target && !navigateTo) {
                     warnings.push(
-                        `${shape.name} links to an unavailable screen and does nothing. Choose another screen in its role settings.`
+                        `${shape.name} links to an unavailable screen and does nothing. Choose another screen in Interactions.`
                     );
-                    navigateTo = undefined;
                 }
-                if (role.role !== 'none') {
+                const label = String(
+                    role.props.label ?? role.props.content ?? role.props.alt ?? ''
+                );
+                if (role.role !== 'none' || activation) {
                     group.control = {
-                        role: role.role,
-                        label: String(
-                            role.props.label ?? role.props.content ?? role.props.alt ?? ''
-                        ),
+                        // An Activate action needs a native keyboard-operable control.
+                        role:
+                            role.role === 'none' || (activation && role.role !== 'input')
+                                ? 'button'
+                                : role.role,
+                        label: activation && !label ? shape.name : label,
                         value: typeof role.props.value === 'string' ? role.props.value : undefined,
                         placeholder:
                             typeof role.props.placeholder === 'string'

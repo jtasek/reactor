@@ -33,6 +33,8 @@ export function automaticLayoutsPrototype(compatible = true) {
         visible: true,
         locked: false
     };
+    // Keep this fixture representative of pre-interaction documents with whole-role overrides.
+    delete input.interactions;
     input.interaction = {
         role: 'input',
         controlId: 'person-name',

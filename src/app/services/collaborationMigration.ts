@@ -1,4 +1,5 @@
 import type * as Yjs from 'yjs';
+import { migrateInteractions } from './interactionMigration';
 import { frameParents } from '../frameState';
 import { extractScreenViews } from '../screenViewMigration';
 import { legacyTheme } from '../variableModes';
@@ -50,6 +51,8 @@ export function migrateDocument(
         (entity): entity is Yjs.Map<unknown> => entity instanceof yjs.Map && !entity.has('bindings')
     );
 
+    const interactionsMigrated = migrateInteractions(binding.doc, yjs, origin);
+
     if (
         legacy.length === 0 &&
         legacyFrames.length === 0 &&
@@ -57,7 +60,7 @@ export function migrateDocument(
         modeEntities.length === 0 &&
         frameBindings.length === 0
     ) {
-        return false;
+        return interactionsMigrated;
     }
 
     const frames: Record<string, Frame> = {};

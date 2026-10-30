@@ -439,6 +439,17 @@
     width: var(--field-height);
 }
 
+.interactions {
+    margin-top: var(--section-gap);
+    margin-bottom: var(--section-gap);
+}
+
+.interactions select {
+    box-sizing: border-box;
+    min-width: 0;
+    width: 100%;
+}
+
 /* Inherited frame restrictions must wrap, including in a narrow Inspector. */
 .frameHint {
     color: var(--text-secondary-color);

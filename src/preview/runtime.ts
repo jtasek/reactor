@@ -78,6 +78,14 @@ function nodeElement(node: PreviewNode, decorative = false): SVGElement {
         field.value = values.get(inputKey) ?? control.value ?? '';
         field.placeholder = control.placeholder ?? control.label;
         field.addEventListener('input', () => values.set(inputKey, field.value));
+        field.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' || event.isComposing || !control.navigateTo) {
+                return;
+            }
+            event.preventDefault();
+            currentScreen = control.navigateTo;
+            render();
+        });
     } else {
         field.textContent = control.label;
         field.title = control.label;

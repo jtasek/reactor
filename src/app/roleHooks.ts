@@ -10,6 +10,7 @@ import { resolveComponentProp } from './componentProps';
 import { isReadOnly } from './documentAccess';
 import { isShapeLocked } from './utils';
 import { screenFrames } from './screens';
+import { effectiveActivation, inheritedActivation } from './screenInteractions';
 
 export const useRoleEditor = (componentId?: string, instanceId?: string) =>
     useAppState((state) => {
@@ -25,6 +26,8 @@ export const useRoleEditor = (componentId?: string, instanceId?: string) =>
 
         return {
             settings: { ...settings, props: { ...settings.props } },
+            activation: effectiveActivation(component, instance),
+            actionInherited: Boolean(instance && inheritedActivation(instance)),
             screens: screenFrames(document).map((frame) => ({ id: frame.id, name: frame.name })),
             inherited: Boolean(instance && !instance.interaction),
             sourceRole: component.interaction?.role ?? 'none',

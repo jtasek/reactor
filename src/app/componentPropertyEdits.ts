@@ -329,7 +329,8 @@ export const createComponentVariant: ActionWithParamAndResult<string, string | u
         shapesIds: copies.map((shape) => shape.id),
         rotation: family.rotation,
         props: family.props?.map((prop) => ({ ...prop, shapeId: ids.get(prop.shapeId)! })),
-        ...(family.interaction ? { interaction: json(family.interaction) } : {})
+        ...(family.interaction ? { interaction: json(family.interaction) } : {}),
+        ...(family.interactions ? { interactions: json(family.interactions) } : {})
     });
     // A group also holding shapes outside the source keeps just its source members, when two remain.
     const groups = Object.values(document.groups)
@@ -570,4 +571,18 @@ export const createComponentFromSelection: Action = ({ state, actions }) => {
     putShapesInFrame(document, ids, undefined);
     actions.ui.showControl('explorer');
     actions.ui.showControl('inspector');
+};
+
+export const chooseComponentToPlace: ActionWithParam<string> = (
+    { state, actions },
+    componentId
+) => {
+    if (!state.currentDocument.components[componentId]) {
+        return;
+    }
+    if (state.enteredComponentId === componentId) {
+        actions.leaveComponentSource();
+    }
+    state.tools.componentToPlace = componentId;
+    actions.tools.activateTool('instance');
 };
