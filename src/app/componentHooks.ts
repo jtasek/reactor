@@ -26,14 +26,21 @@ export const useInstanceProperties = () =>
         ) {
             return instanceProperties(document);
         }
-        const placed = editableScreenView(state, state.events.pointer.screenView)?.projection
-            .shapes;
-        const shapes =
-            placed ?? document.selectedShapes.map((shape) => renderedShape(document, shape.id));
+        const placed = new Map(
+            (
+                editableScreenView(state, state.events.pointer.screenView)?.projection.shapes ?? []
+            ).map((shape) => [shape.id, shape])
+        );
 
+        // Shapes outside the hovered view explain their Canvas decision.
         return instanceProperties(
             document,
-            Object.fromEntries(shapes.map((shape) => [shape.id, shape]))
+            Object.fromEntries(
+                document.selectedShapes.map((shape) => [
+                    shape.id,
+                    placed.get(shape.id) ?? renderedShape(document, shape.id)
+                ])
+            )
         );
     });
 

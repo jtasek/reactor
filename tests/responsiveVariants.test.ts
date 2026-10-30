@@ -419,3 +419,41 @@ it('uses the supplied viewport when projecting a resized view with an existing I
     expect(instanceComponentId(document, projection.shapes[0] as InstanceShape)).toBe('wide');
     expect(document.frames.mobile.size.width).toBe(360);
 });
+
+it('publishes only rules whose alternate is in the library snapshot', () => {
+    const document = responsiveVariantsDocument();
+    document.components.family.variantIds!.push('gone');
+    document.components.family.responsiveVariants!.rules.push({ minWidth: 900, variantId: 'gone' });
+    const family = librarySnapshot(document, 'family', { components: {} })!.find(
+        (component) => component.id === 'family'
+    )!;
+    expect(family.variantIds).toEqual(['wide']);
+    expect(family.responsiveVariants).toEqual({
+        source: 'screen',
+        rules: [{ minWidth: 600, variantId: 'wide' }]
+    });
+    expect(document.components.family.responsiveVariants!.rules).toHaveLength(2);
+});
+
+it('detaches the variant that Auto draws, with the instance values', () => {
+    const detached = (auto: boolean) => {
+        const { store } = createTestStore();
+        const seed = responsiveVariantsDocument(store.state.currentDocumentId);
+        // Show the 800px screen on the canvas, where the rule picks Button Wide.
+        delete seed.frames.screen.definitionOnly;
+        if (!auto) {
+            (seed.shapes.button as InstanceShape).variantMode = undefined;
+        }
+        store.actions.addDocument(seed);
+        const document = store.state.currentDocument;
+        const before = new Set(Object.keys(document.shapes));
+        store.actions.detachInstances(['button']);
+
+        return Object.values(json(document.shapes))
+            .filter((shape) => !before.has(shape.id))
+            .map((shape) => [(shape as Text).value, (shape as Text).fontSize]);
+    };
+
+    expect(detached(true)).toEqual([['Continue', 32]]);
+    expect(detached(false)).toEqual([['Continue', 16]]);
+});

@@ -3,6 +3,15 @@ import type { Component } from 'src/app/types';
 import { useActions } from 'src/app/hooks';
 import styles from './styles.css';
 
+function savedRules(component: Component) {
+    const saved = component.responsiveVariants ?? { source: 'screen' as const, rules: [] };
+
+    return {
+        source: saved.source,
+        rules: saved.rules.map((rule) => ({ ...rule, minWidth: String(rule.minWidth) }))
+    };
+}
+
 /** Author rules on the family; choosing Auto remains an explicit instance action. */
 export function ResponsiveVariants({
     component,
@@ -14,17 +23,20 @@ export function ResponsiveVariants({
     variants: { id: string; name: string }[];
 }) {
     const { setResponsiveVariants } = useActions();
-    const saved = component.responsiveVariants ?? { source: 'screen' as const, rules: [] };
+    const saved = savedRules(component);
+    const [base, setBase] = useState(saved);
     const [source, setSource] = useState(saved.source);
-    const [rules, setRules] = useState(
-        saved.rules.map((rule) => ({ ...rule, minWidth: String(rule.minWidth) }))
-    );
+    const [rules, setRules] = useState(saved.rules);
     const changed =
-        source !== saved.source ||
-        JSON.stringify(rules) !==
-            JSON.stringify(
-                saved.rules.map((rule) => ({ ...rule, minWidth: String(rule.minWidth) }))
-            );
+        source !== saved.source || JSON.stringify(rules) !== JSON.stringify(saved.rules);
+    if (JSON.stringify(base) !== JSON.stringify(saved)) {
+        // Follow saves from elsewhere unless this editor has unsaved changes of its own.
+        setBase(saved);
+        if (source === base.source && JSON.stringify(rules) === JSON.stringify(base.rules)) {
+            setSource(saved.source);
+            setRules(saved.rules);
+        }
+    }
     const thresholds = rules.map((rule) => Number(rule.minWidth));
     const invalid = rules.some(
         (rule) =>
@@ -116,9 +128,9 @@ export function ResponsiveVariants({
             </div>
             {(invalid || duplicate) && (
                 <p role="alert" className={styles.componentHint}>
-                    {duplicate
-                        ? 'Minimum widths must be different.'
-                        : 'Choose an available variant and a minimum width of zero or greater.'}
+                    {invalid
+                        ? 'Choose an available variant and a minimum width of zero or greater.'
+                        : 'Minimum widths must be different.'}
                 </p>
             )}
             <div className={styles.variantActions}>

@@ -194,10 +194,10 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
                         })}
                     </ul>
                     <ResponsiveVariants
-                        key={`${componentId}:${JSON.stringify(component.responsiveVariants)}`}
+                        key={componentId}
                         component={component}
                         readOnly={readOnly}
-                        variants={variants}
+                        variants={variants.filter(({ id }) => document.components[id])}
                     />
                     <div className={styles.variantActions}>
                         <button

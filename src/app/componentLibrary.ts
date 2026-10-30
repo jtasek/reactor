@@ -175,6 +175,17 @@ export function librarySnapshot(
         ...(component.variantIds
             ? { variantIds: component.variantIds.filter((id) => records.has(id)) }
             : {}),
+        // Rules for a dropped alternate could never apply, and consumers can't repair them.
+        ...(component.responsiveVariants
+            ? {
+                  responsiveVariants: {
+                      ...component.responsiveVariants,
+                      rules: component.responsiveVariants.rules.filter((rule) =>
+                          records.has(rule.variantId)
+                      )
+                  }
+              }
+            : {}),
         sourceShapes: Object.fromEntries(
             members.map((shape) => [shape.id, withoutNavigation(structuredClone(json(shape)))])
         ),

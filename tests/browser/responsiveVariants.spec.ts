@@ -97,7 +97,21 @@ test('authors width rules, rejects duplicates and keeps the controls usable at n
     await expect(rules.getByRole('alert')).toContainText('must be different');
     await expect(rules.getByRole('button', { name: 'Save rules', exact: true })).toBeDisabled();
     await rules.getByRole('button', { name: 'Remove rule 2', exact: true }).click();
+    // An empty threshold asks for a number even when it would also read as a duplicate 0.
+    await rules.getByRole('button', { name: 'Add width rule', exact: true }).click();
+    await rules
+        .getByRole('spinbutton', { name: 'Minimum width (px)', exact: true })
+        .nth(1)
+        .fill('0');
+    await rules.getByRole('button', { name: 'Add width rule', exact: true }).click();
+    await expect(rules.getByRole('alert')).toContainText('minimum width of zero or greater');
+    await rules.getByRole('button', { name: 'Remove rule 3', exact: true }).click();
+    await rules.getByRole('button', { name: 'Remove rule 2', exact: true }).click();
     await rules.getByRole('button', { name: 'Save rules', exact: true }).click();
+    // The saved rule stays in the editor after the save.
+    await expect(
+        rules.getByRole('spinbutton', { name: 'Minimum width (px)', exact: true })
+    ).toHaveValue('200');
     await expect(rules.getByRole('button', { name: 'Save rules', exact: true })).toBeDisabled();
     await page.screenshot({ path: 'test-results/responsive-variants-rules.png' });
     await page.setViewportSize({ width: 390, height: 800 });
