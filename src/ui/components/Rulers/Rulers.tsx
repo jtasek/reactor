@@ -16,13 +16,17 @@ const LABEL_INSET_PX = 3;
 /** Keeps a ruler's input from the canvas under it. */
 const keepToRuler = (event: SyntheticEvent) => event.stopPropagation();
 
-/** The path of a ruler's marks, drawn up from its inner edge as if it were the top one. */
+/**
+ * The path of a ruler's marks, drawn up from its inner edge as if it were the top
+ * one. Each mark is centred on its exact position, like the grid's lines and the
+ * guides: rounding it to a whole pixel first put marks up to a pixel off the grid.
+ */
 const marksPath = (marks: RulerMark[]) =>
     marks
         .map(({ at, label }) => {
             const length = label === null ? RULER_SIZE_PX * SHORT_MARK : RULER_SIZE_PX;
 
-            return `M${Math.round(at) + 0.5} ${RULER_SIZE_PX}v${-length}`;
+            return `M${at} ${RULER_SIZE_PX}v${-length}`;
         })
         .join('');
 
