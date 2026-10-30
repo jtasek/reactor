@@ -562,17 +562,9 @@ export function pasteOperations(
         if (shape.modeOverrides) {
             shape.modeOverrides = remapModes(shape.modeOverrides);
         }
-        const component =
-            document.components[shape.componentId] ??
-            copied.components?.find(({ id }) => id === shape.componentId);
-        const props = component?.props ?? [];
-
         shape.overrides = Object.fromEntries(
             Object.entries(shape.overrides).flatMap(
                 ([id, value]): Array<[string, InstanceShape['overrides'][string]]> => {
-                    if (!props.some((prop) => prop.id === id)) {
-                        return [];
-                    }
                     if (typeof value === 'string') {
                         return [[id, variables.remapTemplate(value)]];
                     }

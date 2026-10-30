@@ -1,5 +1,4 @@
 import type { Document, Shape } from './types';
-import { invalidOverrideIds } from './componentProps';
 
 /** Makes merged component membership safe and deterministic on every copy. */
 export function repairComponents(document: Document): void {
@@ -64,15 +63,6 @@ export function repairComponents(document: Document): void {
             component.props = props;
         }
     }
-    for (const shape of Object.values(document.shapes)) {
-        if (shape.type !== 'instance') {
-            continue;
-        }
-        if (!components[shape.componentId]) {
-            continue;
-        }
-        invalidOverrideIds(shape, components[shape.componentId]).forEach((id) => {
-            delete shape.overrides[id];
-        });
-    }
+    // Missing exposed properties may return in a later library version. Keep their saved
+    // instance values through loading and remote updates; only explicit editor actions remove them.
 }

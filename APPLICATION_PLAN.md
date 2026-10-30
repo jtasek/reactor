@@ -613,7 +613,7 @@ and native SVG default fill. Coverage includes resource validation/cache/cancell
 browser decoding, geometry/style parity, missing-image recovery and normal/narrow visual checks.
 Diagram connector links remain absent, as in the current canvas; this does not introduce them.
 
-#### Increments: R4.1–R4.4 implemented for supported consumers; R4.5 in progress; R4.6–R4.10 planned
+#### Increments: R4.1–R4.4 implemented for supported consumers; R4.5 implemented; R4.6–R4.10 planned
 
 Do these in order. Each numbered increment is independently usable and reviewable; do not merge
 an intermediate format that the editor cannot open and edit. New test filenames below are
@@ -785,14 +785,14 @@ continues working through adapters to the new screen/context projection until R4
    Coverage: `contextualMeasurement.test.ts` and its browser counterpart, with existing
    contextual-layout, variable, component, clipboard and Preview suites.
 
-5. **R4.5 — Manual component variants (M).**
+5. **R4.5 — Manual component variants (M, implemented).**
    **R4.5a — Manual selection (implemented).** A component can link an existing,
    independently editable component as an alternate when their exposed property IDs and
    types match. Inspector selects the alternate for an instance; an absent selection uses
    the default. A missing alternate retains the authored selection and renders the default.
    Variant identity is saved with the instance, and source snapshots carry the linked
-   components. Full variant tree authoring, compatibility diagnostics and the broader
-   acceptance cases below remain part of R4.5.
+   components. Source authoring, diagnostics, mapping repair and library lifecycle coverage
+   follow in R4.5b–e below.
 
    **R4.5b — Create an editable variant (implemented).** Inspector's Create variant copies
    the default's authored artwork into a new source-only component and links it to the family.
@@ -803,8 +803,8 @@ continues working through adapters to the new screen/context projection until R4
    instances keep their selection and overrides. Creation is a separate undo step and shares
    through the existing document model; library sources, locked sources and alternates cannot
    create a nested family. Tests cover independent edits, switching with overrides, names,
-   permissions, snapshots, reload, collaboration and undo. Compatibility diagnostics and mapping repair follow in R4.5c–d. Broader concurrent
-   family-edit acceptance remains in R4.5; automatic width-based selection remains R4.6.
+   permissions, snapshots, reload, collaboration and undo. Diagnostics, mapping repair and
+   concurrent library updates follow in R4.5c–e; automatic width-based selection remains R4.6.
 
    **R4.5c — Compatibility diagnostics (implemented).** Family, alternate and instance
    Inspectors name missing shared properties, changed field mappings, unusable targets,
@@ -823,8 +823,23 @@ continues working through adapters to the new screen/context projection until R4
    one undo step; source artwork, instance overrides/bindings, variant choices and role links
    stay unchanged. Tests cover switching, save/reload, concurrent instance edits with local
    undo/redo, and library updates carrying the repaired mapping into existing instances.
-   Inspector controls are checked at normal and narrow widths. Broader variant-family
-   library removal/replacement acceptance remains before R4.6 automation.
+   Inspector controls are checked at normal and narrow widths.
+
+   **R4.5e — Library lifecycle acceptance (implemented).** Compatible updates replace artwork
+   under stable IDs and retain instance choices, values, bindings and authored actions, including
+   nested instances. Removed/unlinked variants fall back to the default while keeping the saved
+   choice and explaining its unavailability. A replacement with a new ID is offered for explicit
+   selection; the same ID returning restores the saved choice. Published family snapshots omit
+   missing upstream alternates so an old cached source cannot accidentally rejoin the family;
+   cached sources remain available to independent instances. A missing family, an update with
+   empty source artwork, or an unavailable/trashed library leaves the last usable snapshot intact. Removed/incompatible property values
+   remain stored through updates, reload, collaboration and paste, with diagnostics and safe
+   source-value fallback until compatible properties return. Library updates validate their
+   complete dependency set and apply as one undo step, preserving concurrent instance edits.
+   Imported source-only components can be inspected to apply updates. Acceptance:
+   `tests/variantLibrary.test.ts` and `tests/browser/variantLibrary.spec.ts` cover replacements,
+   removals, restored IDs, nested instances, read-only guards, dependency collisions, library
+   disappearance, reload, clipboard, undo/redo and narrow-width diagnostics.
 
    Add a bounded variant family to reusable components, with a default and explicit instance
    selection. A family is one level deep: a default plus any number of alternates, which cannot

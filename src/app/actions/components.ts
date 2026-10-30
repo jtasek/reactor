@@ -314,7 +314,13 @@ export const importLibraryComponent: ActionWithParam<{
     const source = state.documents[documentId];
     const target = state.currentDocument;
 
-    if (!source || source === target || target.locked || target.components[componentId]) {
+    if (
+        !source ||
+        source.deleted ||
+        source === target ||
+        target.locked ||
+        target.components[componentId]
+    ) {
         return;
     }
     const copies = editorHelpers().library.librarySnapshot(source, componentId, target);
@@ -331,14 +337,14 @@ export const importLibraryComponent: ActionWithParam<{
 };
 
 export const updateLibraryComponent: ActionWithParam<string> = (
-    { state, actions },
+    { state, actions, effects },
     componentId
 ) => {
     const target = state.currentDocument;
     const existing = target.components[componentId];
     const source = existing?.library && state.documents[existing.library.documentId];
 
-    if (!source || target.locked) {
+    if (!source || source.deleted || target.locked) {
         return;
     }
     const hash = editorHelpers().library.componentFingerprint(source, componentId);
@@ -353,18 +359,11 @@ export const updateLibraryComponent: ActionWithParam<string> = (
 
         return;
     }
+    effects.collaboration.startBatch(target.id, { kind: 'person' });
     copies.forEach((component) => {
         target.components[component.id] = component;
-
-        Object.values(target.shapes).forEach((shape) => {
-            if (shape.type !== 'instance' || shape.componentId !== component.id) {
-                return;
-            }
-            invalidOverrideIds(shape, component).forEach((id) => {
-                delete shape.overrides[id];
-            });
-        });
     });
+    effects.collaboration.flush();
 };
 
 export const selectComponentSource: ActionWithParam<string> = ({ state, actions }, componentId) => {
@@ -373,7 +372,7 @@ export const selectComponentSource: ActionWithParam<string> = ({ state, actions 
     if (!component) {
         return;
     }
-    if (component.sourceOnly) {
+    if (component.sourceOnly && !component.library) {
         actions.editComponentSource(componentId);
 
         return;

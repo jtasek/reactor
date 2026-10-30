@@ -64,7 +64,7 @@ function libraryRecords(document: Document, componentId: string) {
         }
         const component = document.components[id];
 
-        if (!component || visiting.has(id)) {
+        if (!component || component.shapesIds.length === 0 || visiting.has(id)) {
             return false;
         }
         visiting.add(id);
@@ -145,6 +145,11 @@ export function librarySnapshot(
 
     return [...records.values()].map(({ component, members, hash }) => ({
         ...withoutNavigation(structuredClone(json(component))),
+        // A missing upstream alternate must not reconnect to an old destination snapshot.
+        // Keep that snapshot for independent instances, but remove it from this published family.
+        ...(component.variantIds
+            ? { variantIds: component.variantIds.filter((id) => records.has(id)) }
+            : {}),
         sourceShapes: Object.fromEntries(
             members.map((shape) => [shape.id, withoutNavigation(structuredClone(json(shape)))])
         ),

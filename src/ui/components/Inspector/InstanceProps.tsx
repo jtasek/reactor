@@ -73,6 +73,11 @@ export const InstanceProps: FC = () => {
                 <h3 className={styles.heading}>Properties</h3>
                 <span>{changedCount ? `${changedCount} changed` : 'All from source'}</span>
             </div>
+            {data.propertyProblems.map((problem) => (
+                <p key={problem} role="status" className={styles.componentHint}>
+                    {problem}
+                </p>
+            ))}
             {data.rows.length === 0 && (
                 <p className={styles.instanceEmpty}>
                     No editable properties yet. Edit the component and select a shape to expose its

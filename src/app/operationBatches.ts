@@ -430,11 +430,23 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             return;
         }
         shape.componentId = reference(shape.componentId, 'components', index);
-        const props = components[shape.componentId].props ?? [];
+        const component = components[shape.componentId];
+        const props = component.props ?? [];
 
         shape.overrides = Object.fromEntries(
             Object.entries(shape.overrides).map(([id, value]) => {
-                if (!props.some((prop) => prop.id === id)) {
+                // Retain imported values and dormant IDs already present here, while still
+                // rejecting newly authored references to nonexistent properties.
+                if (
+                    !props.some((prop) => prop.id === id) &&
+                    !component.library &&
+                    !Object.values(document.shapes).some(
+                        (existing) =>
+                            existing.type === 'instance' &&
+                            existing.componentId === shape.componentId &&
+                            Object.hasOwn(existing.overrides, id)
+                    )
+                ) {
                     throw new Error(`${id} is not a prop of the component ${shape.componentId}.`);
                 }
                 if (typeof value === 'object') {
