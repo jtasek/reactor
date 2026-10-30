@@ -399,6 +399,7 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
         const result = actions.applyOperations({
             documentId: state.currentDocumentId,
             by: { kind: 'person' },
+            retainOverrides: true,
             operations
         });
 

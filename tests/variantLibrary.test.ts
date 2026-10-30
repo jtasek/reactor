@@ -1,7 +1,11 @@
 import { json } from 'overmind';
 import type { Document, InstanceShape } from 'src/app/types';
 import { componentPropValue } from 'src/app/componentProps';
-import { instanceProperties, libraryUpdateAvailable } from 'src/app/computed/componentPanels';
+import {
+    instanceProperties,
+    libraryUpdateAvailable,
+    libraryUpdateProblem
+} from 'src/app/computed/componentPanels';
 import { instanceComponentId } from 'src/app/componentSource';
 import { projectGeometry } from 'src/app/contextualGeometry';
 import { restoreDocuments, serializePersistedState } from 'src/app/services/documentStorage';
@@ -267,6 +271,13 @@ it.each(['missing-family', 'trashed-library', 'removed-library'])(
             store.actions.removeDocument(sourceId);
         }
         expect(libraryUpdateAvailable(store.state, 'family')).toBe(false);
+        expect(libraryUpdateProblem(store.state, 'family')).toEqual(
+            change === 'removed-library'
+                ? null
+                : expect.stringContaining(
+                      change === 'trashed-library' ? 'Recently Deleted' : 'no longer has'
+                  )
+        );
         store.actions.updateLibraryComponent('family');
         expect(json(store.state.currentDocument.components)).toEqual(before);
         expect(drawn(store.state.currentDocument).projectedSource?.shapes[0]).toMatchObject({
@@ -401,10 +412,81 @@ it.each(['family', 'wide'])('keeps the previous snapshot when %s loses all its a
     });
     store.actions.openDocument(targetId);
     expect(libraryUpdateAvailable(store.state, 'family')).toBe(false);
+    expect(libraryUpdateProblem(store.state, 'family')).toBe(
+        `${id === 'family' ? 'Button' : 'Button Wide'} has no usable artwork in the library. ` +
+            "Updates wait until it's fixed; the last copy stays in use."
+    );
     store.actions.updateLibraryComponent('family');
     expect(json(store.state.currentDocument.components)).toEqual(before);
     expect(drawn(store.state.currentDocument).projectedSource?.shapes[0]).toMatchObject({
         value: 'Continue',
         fontSize: 32
     });
+});
+
+function withRetainedValue() {
+    const { source, target } = variantLibrary();
+    const button = target.shapes.button;
+    if (button.type === 'instance') {
+        button.overrides.retired = 'Old';
+    }
+    const { store } = createTestStore();
+    store.actions.addDocument(source);
+    store.actions.addDocument(target);
+    store.actions.openDocument(target.id);
+
+    return { store, sourceId: source.id, targetId: target.id };
+}
+
+it('pastes into a document whose own component lacks a retained property, dropping that value', () => {
+    const { store, sourceId } = withRetainedValue();
+    store.actions.unselectShapes();
+    store.actions.selectShape('button');
+    const clipboard = store.actions.copySelection()!;
+    store.actions.openDocument(sourceId);
+    expect(store.actions.pasteShapes(clipboard)).toBe('pasted');
+    const document = store.state.currentDocument;
+    expect(instance(document, document.shapesIds.at(-1)).overrides).toEqual({
+        label: 'Continue'
+    });
+});
+
+it('rejects made-up property IDs on library instances outside paste', () => {
+    const { store } = withRetainedValue();
+    const document = store.state.currentDocument;
+    const add = (overrides: Record<string, string>) => ({
+        documentId: document.id,
+        operations: [
+            {
+                op: 'addShape' as const,
+                key: 'copy',
+                shape: {
+                    type: 'instance' as const,
+                    componentId: 'family',
+                    position: { x: 0, y: 0 },
+                    overrides
+                }
+            }
+        ]
+    });
+    expect(store.actions.checkOperations(add({ 'made-up': 'Hello' })).valid).toBe(false);
+    // An ID an instance here already keeps a value for may be written again.
+    expect(store.actions.checkOperations(add({ retired: 'Again' })).valid).toBe(true);
+    expect(
+        store.actions.applyOperations({
+            ...add({ 'made-up': 'Hello' }),
+            by: { kind: 'person' },
+            retainOverrides: true
+        }).applied
+    ).toBe(true);
+});
+
+it('discards only the values kept for properties the source no longer exposes', () => {
+    const { store } = withRetainedValue();
+    const document = store.state.currentDocument;
+    expect(inspector(document).hasRetainedValues).toBe(true);
+    store.actions.discardRetainedOverrides({ instanceIds: ['button'] });
+    expect(instance(document).overrides).toEqual({ label: 'Continue' });
+    expect(inspector(document).hasRetainedValues).toBe(false);
+    expect(inspector(document).propertyProblems).toEqual([]);
 });

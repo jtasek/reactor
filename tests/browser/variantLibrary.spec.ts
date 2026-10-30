@@ -55,6 +55,13 @@ test('updates a source-only library family, explains retained values and undoes 
         true
     );
     await page.screenshot({ path: 'test-results/variant-library-removed-narrow.png' });
+    await inspector.getByRole('button', { name: 'Discard kept values', exact: true }).click();
+    await expect(
+        inspector.getByRole('status').filter({ hasText: 'no longer exposed' })
+    ).toHaveCount(0);
+    await expect(
+        inspector.getByRole('button', { name: 'Discard kept values', exact: true })
+    ).toHaveCount(0);
 });
 
 test('offers a replacement variant without choosing it automatically or losing the saved label', async ({

@@ -132,6 +132,7 @@ function addFrame(context: Context, input: Extract<FrameEdit, { kind: 'add' | 'p
     const result = actions.applyOperations({
         documentId: document.id,
         by: { kind: 'person' },
+        retainOverrides: true,
         operations: framePasteOperations(input, frame, document)
     });
 

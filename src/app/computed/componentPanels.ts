@@ -45,6 +45,12 @@ export function instanceProperties(document: Document) {
 
     return {
         ids: selected.map((shape) => shape.id),
+        /** Whether a selected instance keeps values for properties the source no longer exposes. */
+        hasRetainedValues: selected.some((shape) =>
+            Object.keys(shape.overrides).some(
+                (id) => !component.props?.some((prop) => prop.id === id)
+            )
+        ),
         propertyProblems: [
             ...new Set(
                 selected.flatMap((shape) => {
@@ -163,6 +169,25 @@ export function libraryUpdateAvailable(state: Application, componentId: string) 
             : null;
 
     return Boolean(hash && hash !== library?.hash);
+}
+
+/** Why an imported component can't take its library's current version, or null. */
+export function libraryUpdateProblem(state: Application, componentId: string): string | null {
+    const library = state.currentDocument.components[componentId]?.library;
+    const source = library && state.documents[library.documentId];
+
+    if (!source || !editorLoaded()) {
+        return null;
+    }
+    if (source.deleted) {
+        return `${source.name} is in Recently Deleted. Restore it to get library updates.`;
+    }
+    if (!source.components[componentId]) {
+        return `${source.name} no longer has this component. The last copy stays in use.`;
+    }
+    const problem = editorHelpers().library.libraryVersionProblem(source, componentId);
+
+    return problem && `${problem} Updates wait until it's fixed; the last copy stays in use.`;
 }
 
 export function componentCandidates(document: Document, componentId: string) {

@@ -166,6 +166,15 @@ export interface Batch {
     documentId: string;
     by: Provenance;
     operations: Operation[];
+    /**
+     * Paste only: keep values copied instances saved for properties an imported
+     * component no longer exposes. Authored batches cannot add unknown properties.
+     */
+    retainOverrides?: boolean;
+}
+
+export interface StageOptions {
+    retainOverrides?: boolean;
 }
 
 /** Whether a batch would apply, or why not: the operation, by its place in the batch, and the problem. */

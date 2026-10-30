@@ -13,7 +13,8 @@ import { Instance } from '../Shape/Instance';
 import {
     useComponent,
     useComponentVariants,
-    useLibraryUpdateAvailable
+    useLibraryUpdateAvailable,
+    useLibraryUpdateProblem
 } from 'src/app/componentHooks';
 import styles from './styles.css';
 import { ComponentRole } from './ComponentRole';
@@ -41,6 +42,7 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
         updateLibraryComponent
     } = useActions();
     const updateAvailable = useLibraryUpdateAvailable(componentId);
+    const updateProblem = useLibraryUpdateProblem(componentId);
     const instances = Object.values(document.shapes).filter(
         (shape) => shape.type === 'instance' && shape.componentId === componentId
     ).length;
@@ -102,6 +104,11 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
                     <Icon icon={ACTION_ICON} />
                 </button>
             </div>
+            {updateProblem && (
+                <p role="status" className={styles.componentHint}>
+                    {updateProblem}
+                </p>
+            )}
             {source && (
                 <svg
                     className={styles.componentPreview}

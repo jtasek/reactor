@@ -54,8 +54,15 @@ function fingerprint(
     return `${(first >>> 0).toString(16).padStart(8, '0')}${(second >>> 0).toString(16).padStart(8, '0')}`;
 }
 
-/** Collect dependencies before their parents, visiting shared sources only once. */
-function libraryRecords(document: Document, componentId: string) {
+/**
+ * Collect dependencies before their parents, visiting shared sources only once.
+ * `unusable` hears of the source that stops the collection, when there is one.
+ */
+function libraryRecords(
+    document: Document,
+    componentId: string,
+    unusable: (component: Component | undefined) => void = () => undefined
+) {
     const records = new Map<string, { component: Component; members: Shape[]; hash: string }>();
     const visiting = new Set<string>();
     const collectComponentDependencies = (id: string): boolean => {
@@ -65,6 +72,8 @@ function libraryRecords(document: Document, componentId: string) {
         const component = document.components[id];
 
         if (!component || component.shapesIds.length === 0 || visiting.has(id)) {
+            unusable(component);
+
             return false;
         }
         visiting.add(id);
@@ -83,6 +92,8 @@ function libraryRecords(document: Document, componentId: string) {
             const shape = component.sourceShapes?.[memberId] ?? document.shapes[memberId];
 
             if (!shape) {
+                unusable(component);
+
                 return false;
             }
             if (
@@ -113,6 +124,19 @@ function libraryRecords(document: Document, componentId: string) {
 /** A stable fingerprint of the source content, including nested sources. */
 export function componentFingerprint(document: Document, componentId: string): string | null {
     return libraryRecords(document, componentId)?.get(componentId)?.hash ?? null;
+}
+
+/** Why the library's current version of a component cannot be copied, or null when it can. */
+export function libraryVersionProblem(document: Document, componentId: string): string | null {
+    let problem: string | null = null;
+
+    libraryRecords(document, componentId, (component) => {
+        problem ??= component
+            ? `${component.name} has no usable artwork in the library.`
+            : 'A component it needs is missing from the library.';
+    });
+
+    return problem;
 }
 
 /** Screen links point at the library document's frames, which the destination does not have. */

@@ -32,6 +32,7 @@ import type {
     AddShape,
     Operation,
     OperationsCheck,
+    StageOptions,
     UpdateShape,
     UpdateVariable
 } from './operations';
@@ -170,7 +171,12 @@ const problem = (index: number, error: unknown) =>
  * as saved documents are, with its references resolved. Throws, naming the
  * operation, at the first that is invalid.
  */
-function stage(document: Document, operations: Operation[], newId: () => string): StagedBatch {
+function stage(
+    document: Document,
+    operations: Operation[],
+    newId: () => string,
+    { retainOverrides = false }: StageOptions = {}
+): StagedBatch {
     if (operations.length === 0) {
         throw new Error('The batch has no operations.');
     }
@@ -192,6 +198,25 @@ function stage(document: Document, operations: Operation[], newId: () => string)
             ...Object.values(document.layers),
             ...Object.values(document.components)
         ].some((container) => container.locked && container.shapesIds.includes(id));
+
+    const retained = new Map<string, Set<string>>();
+    /** Property IDs instances of a component here already hold values for, found once per batch. */
+    const retainedOverrideIds = (componentId: string) => {
+        let ids = retained.get(componentId);
+
+        if (!ids) {
+            ids = new Set(
+                Object.values(document.shapes).flatMap((shape) =>
+                    shape.type === 'instance' && shape.componentId === componentId
+                        ? Object.keys(shape.overrides)
+                        : []
+                )
+            );
+            retained.set(componentId, ids);
+        }
+
+        return ids;
+    };
 
     /** Notes the records an operation changes, each the document's, unlocked and changed once. */
     const change = (operation: Operation, index: number) => {
@@ -435,17 +460,12 @@ function stage(document: Document, operations: Operation[], newId: () => string)
 
         shape.overrides = Object.fromEntries(
             Object.entries(shape.overrides).map(([id, value]) => {
-                // Retain imported values and dormant IDs already present here, while still
-                // rejecting newly authored references to nonexistent properties.
+                // Keep values an instance here already retains, and those a paste copies onto
+                // an imported component; reject other references to nonexistent properties.
                 if (
                     !props.some((prop) => prop.id === id) &&
-                    !component.library &&
-                    !Object.values(document.shapes).some(
-                        (existing) =>
-                            existing.type === 'instance' &&
-                            existing.componentId === shape.componentId &&
-                            Object.hasOwn(existing.overrides, id)
-                    )
+                    !(retainOverrides && component.library) &&
+                    !retainedOverrideIds(shape.componentId).has(id)
                 ) {
                     throw new Error(`${id} is not a prop of the component ${shape.componentId}.`);
                 }
@@ -1249,10 +1269,11 @@ function stage(document: Document, operations: Operation[], newId: () => string)
 export function stageBatch(
     document: Document,
     operations: Operation[],
-    newId: () => string
+    newId: () => string,
+    options?: StageOptions
 ): { valid: true; staged: StagedBatch } | Extract<OperationsCheck, { valid: false }> {
     try {
-        return { valid: true, staged: stage(document, operations, newId) };
+        return { valid: true, staged: stage(document, operations, newId, options) };
     } catch (error) {
         const operation: unknown = Reflect.get(Object(error), 'operation');
 

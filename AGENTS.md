@@ -734,7 +734,10 @@ Library updates carry repaired mappings while retaining recipient instance value
 one undo batch, never discard missing property overrides, and leave the last snapshot when the
 origin family is missing, source artwork is empty, or its document is trashed/unavailable. Loading, remote repair and
 clipboard transfers retain dormant overrides too; operation batches accept missing property IDs
-on imported sources or already retained by an instance of that component in the destination.
+already retained by an instance of that component in the destination, and on imported sources
+only for paste batches (`retainOverrides`). Paste drops values a local destination component
+would reject. Inspector's "Discard kept values" removes them; ComponentDetails says why a
+library version can't be used (trashed library, missing component, empty artwork).
 New unknown property references and missing component/variable references remain errors. Incompatible values do not apply or detach source
 bindings; Inspector explains retained values. Published snapshots omit missing upstream variant
 links without deleting cached sources independently used elsewhere. Missing choices keep their

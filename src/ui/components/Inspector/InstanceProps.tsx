@@ -10,7 +10,7 @@ import type { PropertyValue } from 'src/app/types';
 /** The values exposed by one source, shared across selected instances. */
 export const InstanceProps: FC = () => {
     const data = useInstanceProperties();
-    const { setInstanceVariant } = useActions();
+    const { setInstanceVariant, discardRetainedOverrides } = useActions();
 
     if (!data) {
         return null;
@@ -78,6 +78,16 @@ export const InstanceProps: FC = () => {
                     {problem}
                 </p>
             ))}
+            {data.hasRetainedValues && (
+                <div className={styles.variantActions}>
+                    <button
+                        type="button"
+                        onClick={() => discardRetainedOverrides({ instanceIds: data.ids })}
+                    >
+                        Discard kept values
+                    </button>
+                </div>
+            )}
             {data.rows.length === 0 && (
                 <p className={styles.instanceEmpty}>
                     No editable properties yet. Edit the component and select a shape to expose its

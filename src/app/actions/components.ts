@@ -262,6 +262,11 @@ export const resetInstanceOverrides: typeof ComponentPropertyEdits.resetInstance
     input
 ) => editorHelpers().componentProperties.resetInstanceOverrides(context, input);
 
+export const discardRetainedOverrides: typeof ComponentPropertyEdits.discardRetainedOverrides = (
+    context,
+    input
+) => editorHelpers().componentProperties.discardRetainedOverrides(context, input);
+
 export const insertComponentAt: ActionWithParam<{ componentId: string; position: Point }> = (
     { state, actions },
     { componentId, position }
