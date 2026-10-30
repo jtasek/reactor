@@ -16,7 +16,12 @@ import type {
     PropertyValue,
     Shape
 } from './types';
-import { exposableProperties, resolveComponentProp, acceptsComponentValue } from './componentProps';
+import {
+    exposableProperties,
+    invalidOverrideIds,
+    resolveComponentProp,
+    acceptsComponentValue
+} from './componentProps';
 import { isShapeLocked } from './utils';
 import { canLinkComponentVariant, componentPropertyMappings } from './componentVariants';
 
@@ -243,6 +248,29 @@ export const resetInstanceOverrides: ActionWithParam<{
             return;
         }
         shape.overrides = {};
+    });
+};
+
+/** Drops the values instances kept for properties their component no longer exposes. */
+export const discardRetainedOverrides: ActionWithParam<{ instanceIds: string[] }> = (
+    { state },
+    { instanceIds }
+) => {
+    const document = state.currentDocument;
+
+    if (document.locked) {
+        return;
+    }
+    instanceIds.forEach((id) => {
+        const shape = document.shapes[id];
+        const component = shape?.type === 'instance' && document.components[shape.componentId];
+
+        if (shape?.type !== 'instance' || !component || isShapeLocked(document, id)) {
+            return;
+        }
+        invalidOverrideIds(shape, component).forEach((propId) => {
+            delete shape.overrides[propId];
+        });
     });
 };
 

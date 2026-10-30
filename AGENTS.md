@@ -730,8 +730,20 @@ fields, including missing alternate mappings. `setComponentPropTarget` repairs o
 mapping in a separate undo batch without changing source values, instance overrides or role
 links. Fields already exposed by another ID cannot be claimed; read-only sources and ambiguous
 families cannot be edited. The source Inspector uses the same target eligibility as the action.
-Library updates carry repaired mappings while retaining recipient instance values. Broader
-variant-family removal/replacement acceptance remains future work.
+Library updates carry repaired mappings while retaining recipient instance values. Updates are
+one undo batch, never discard missing property overrides, and leave the last snapshot when the
+origin family is missing, source artwork is empty, or its document is trashed/unavailable. Loading, remote repair and
+clipboard transfers retain dormant overrides too; operation batches accept missing property IDs
+already retained by an instance of that component in the destination, and on imported sources
+only for paste batches (`retainOverrides`). Paste drops values a local destination component
+would reject. Inspector's "Discard kept values" removes them; ComponentDetails says why a
+library version can't be used (trashed library, missing component, empty artwork).
+New unknown property references and missing component/variable references remain errors. Incompatible values do not apply or detach source
+bindings; Inspector explains retained values. Published snapshots omit missing upstream variant
+links without deleting cached sources independently used elsewhere. Missing choices keep their
+ID and fall back; restored IDs reactivate them, while new replacement IDs need an explicit
+selection. Source-only imported components open for inspection without entering source editing.
+Coverage: variantLibrary unit/browser tests, including concurrent instance edits and update undo.
 A role edit on a family default carries over to alternates whose role matched it before
 the edit; alternates set up differently keep theirs. The link picker runs the family checks
 once and cheap prop/role checks before looking at a candidate's artwork, so it stays fast

@@ -1,6 +1,6 @@
 import type { Document, Shape, VariableContext } from './types';
 import { componentSource, instanceBox, instanceComponentId } from './componentSource';
-import { applyInstanceOverrides } from './componentProps';
+import { componentOverrideValue, applyInstanceOverrides } from './componentProps';
 import { instanceModes } from './inheritedModes';
 import { variableContext } from './variableModes';
 import { resolveTemplate, resolveVariable } from './variableResolver';
@@ -90,7 +90,10 @@ export function projectGeometry(
         const overridden = applyInstanceOverrides(member, shape, component, document, modes);
         const bindings = { ...overridden.bindings };
         component.props?.forEach((prop) => {
-            if (prop.shapeId === member.id && shape.overrides[prop.id] !== undefined) {
+            if (
+                prop.shapeId === member.id &&
+                componentOverrideValue(shape, component, prop.id, document, modes) !== undefined
+            ) {
                 delete bindings[prop.key];
             }
         });

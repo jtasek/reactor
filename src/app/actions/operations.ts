@@ -18,7 +18,9 @@ export const applyOperations: ActionWithParamAndResult<Batch, BatchResult> = (
     }
 
     const { stageBatch, writeBatch } = editorHelpers().operations;
-    const result = stageBatch(untracked(document), batch.operations, effects.newId);
+    const result = stageBatch(untracked(document), batch.operations, effects.newId, {
+        retainOverrides: batch.retainOverrides
+    });
 
     if (!result.valid) {
         return { applied: false, problem: result.problem };

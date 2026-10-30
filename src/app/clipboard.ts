@@ -543,6 +543,28 @@ export function pasteOperations(
     if (copied.shapes.length === 0) {
         return [...dimensions, ...variables.operations];
     }
+    /**
+     * Whether the destination keeps a value for a property its component no longer
+     * exposes: imported components and values an instance here already retains keep
+     * it for when the property returns; a local component without it drops it.
+     */
+    const keepsOverride = (componentId: string, id: string) => {
+        const component =
+            document.components[componentId] ??
+            copied.components?.find((item) => item.id === componentId);
+
+        return (
+            !component ||
+            Boolean(component.library) ||
+            Boolean(component.props?.some((prop) => prop.id === id)) ||
+            Object.values(document.shapes).some(
+                (shape) =>
+                    shape.type === 'instance' &&
+                    shape.componentId === componentId &&
+                    Object.hasOwn(shape.overrides, id)
+            )
+        );
+    };
     const remapShape = (shape: Shape | ShapeInput) => {
         if (shape.bindings) {
             shape.bindings = Object.fromEntries(
@@ -562,15 +584,10 @@ export function pasteOperations(
         if (shape.modeOverrides) {
             shape.modeOverrides = remapModes(shape.modeOverrides);
         }
-        const component =
-            document.components[shape.componentId] ??
-            copied.components?.find(({ id }) => id === shape.componentId);
-        const props = component?.props ?? [];
-
         shape.overrides = Object.fromEntries(
             Object.entries(shape.overrides).flatMap(
                 ([id, value]): Array<[string, InstanceShape['overrides'][string]]> => {
-                    if (!props.some((prop) => prop.id === id)) {
+                    if (!keepsOverride(shape.componentId, id)) {
                         return [];
                     }
                     if (typeof value === 'string') {

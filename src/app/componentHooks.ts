@@ -11,7 +11,8 @@ import {
     componentVariants,
     componentLibraries,
     instanceProperties,
-    libraryUpdateAvailable
+    libraryUpdateAvailable,
+    libraryUpdateProblem
 } from './computed/componentPanels';
 
 export const useInstanceProperties = () =>
@@ -21,6 +22,8 @@ export const useComponentLibraries = () => useAppState(componentLibraries);
 
 export const useLibraryUpdateAvailable = (componentId: string) =>
     useAppState((state) => libraryUpdateAvailable(state, componentId));
+export const useLibraryUpdateProblem = (componentId: string) =>
+    useAppState((state) => libraryUpdateProblem(state, componentId));
 
 export const useComponentCandidates = (componentId: string) =>
     useAppState((state) => componentCandidates(state.currentDocument, componentId));

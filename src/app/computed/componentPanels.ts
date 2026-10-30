@@ -1,5 +1,5 @@
 import type { Application, Document, InstanceShape } from '../types';
-import { componentPropValue, exposableProperties } from '../componentProps';
+import { componentPropValue, componentOverrideValue, exposableProperties } from '../componentProps';
 import { instanceComponentId } from '../componentSource';
 import { editorHelpers, editorLoaded } from '../editorHelpers';
 import { SHAPE_PROPERTIES } from '../properties';
@@ -45,6 +45,42 @@ export function instanceProperties(document: Document) {
 
     return {
         ids: selected.map((shape) => shape.id),
+        /** Whether a selected instance keeps values for properties the source no longer exposes. */
+        hasRetainedValues: selected.some((shape) =>
+            Object.keys(shape.overrides).some(
+                (id) => !component.props?.some((prop) => prop.id === id)
+            )
+        ),
+        propertyProblems: [
+            ...new Set(
+                selected.flatMap((shape) => {
+                    const active = document.components[instanceComponentId(document, shape)];
+                    const missing = Object.keys(shape.overrides).filter(
+                        (id) => !component.props?.some((prop) => prop.id === id)
+                    );
+                    const incompatible = (component.props ?? []).filter(
+                        (prop) =>
+                            shape.overrides[prop.id] !== undefined &&
+                            active.props?.some(
+                                (other) => other.id === prop.id && other.key === prop.key
+                            ) &&
+                            componentOverrideValue(shape, active, prop.id, document) === undefined
+                    );
+
+                    return [
+                        ...(missing.length
+                            ? [
+                                  `${shape.name}: ${missing.length} saved property ${missing.length === 1 ? 'value is' : 'values are'} no longer exposed. Kept for when those properties return.`
+                              ]
+                            : []),
+                        ...incompatible.map(
+                            (prop) =>
+                                `${shape.name}: saved value for “${prop.label}” cannot apply to this source. The value is kept.`
+                        )
+                    ];
+                })
+            )
+        ],
         // Copies often share a name, so several instances can report the same line.
         variantProblems: [...new Set(variantProblems)],
         variants: [component, ...(component.variantIds ?? []).map((id) => document.components[id])]
@@ -128,11 +164,30 @@ export function libraryUpdateAvailable(state: Application, componentId: string) 
     const library = state.currentDocument.components[componentId]?.library;
     const source = library && state.documents[library.documentId];
     const hash =
-        source && editorLoaded()
+        source && !source.deleted && editorLoaded()
             ? editorHelpers().library.componentFingerprint(source, componentId)
             : null;
 
     return Boolean(hash && hash !== library?.hash);
+}
+
+/** Why an imported component can't take its library's current version, or null. */
+export function libraryUpdateProblem(state: Application, componentId: string): string | null {
+    const library = state.currentDocument.components[componentId]?.library;
+    const source = library && state.documents[library.documentId];
+
+    if (!source || !editorLoaded()) {
+        return null;
+    }
+    if (source.deleted) {
+        return `${source.name} is in Recently Deleted. Restore it to get library updates.`;
+    }
+    if (!source.components[componentId]) {
+        return `${source.name} no longer has this component. The last copy stays in use.`;
+    }
+    const problem = editorHelpers().library.libraryVersionProblem(source, componentId);
+
+    return problem && `${problem} Updates wait until it's fixed; the last copy stays in use.`;
 }
 
 export function componentCandidates(document: Document, componentId: string) {

@@ -14,13 +14,13 @@ import { isHexColor } from './utils';
 
 const SOURCE_ONLY = new Set(['name', 'x', 'y', 'width', 'height', 'rotation', 'locked']);
 
+const isExposable = (property: ShapeProperty, shape: Shape, document: Document) =>
+    !SOURCE_ONLY.has(property.key) &&
+    Boolean(property.write) &&
+    property.read(shape, document) !== undefined;
+
 export const exposableProperties = (shape: Shape, document: Document) =>
-    SHAPE_PROPERTIES.filter(
-        (property) =>
-            !SOURCE_ONLY.has(property.key) &&
-            property.write &&
-            property.read(shape, document) !== undefined
-    );
+    SHAPE_PROPERTIES.filter((property) => isExposable(property, shape, document));
 
 export function resolveComponentProp(
     component: Component | undefined,
@@ -65,6 +65,37 @@ export function invalidOverrideIds(instance: InstanceShape, component: Component
     return Object.keys(instance.overrides).filter((id) => !valid.has(id));
 }
 
+/** A saved value only applies while the source still exposes a compatible field. */
+export function componentOverrideValue(
+    instance: InstanceShape,
+    component: Component,
+    propId: string,
+    document: Document,
+    theme: VariableContext = {}
+): PropertyValue | undefined {
+    const resolved = resolveComponentProp(component, propId, document);
+    const override = instance.overrides[propId];
+    if (
+        !resolved ||
+        override === undefined ||
+        !component.shapesIds.includes(resolved.prop.shapeId) ||
+        !isExposable(resolved.property, resolved.source, document)
+    ) {
+        return undefined;
+    }
+    const { property } = resolved;
+    if (typeof override !== 'object') {
+        return acceptsComponentValue(property, override) ? override : undefined;
+    }
+    const variable = document.variables[override.variableId];
+    if (!variable || variable.type !== property.kind) {
+        return undefined;
+    }
+    const value = resolveVariable(variable, document.variables, variableContext(document, theme));
+
+    return acceptsComponentValue(property, value) ? value : undefined;
+}
+
 export function componentPropValue(
     instance: InstanceShape,
     component: Component,
@@ -73,26 +104,22 @@ export function componentPropValue(
     theme: VariableContext = {}
 ): PropertyValue | undefined {
     const resolved = resolveComponentProp(component, propId, document);
-
     if (!resolved) {
         return undefined;
     }
-    const { source, property } = resolved;
-    const override = instance.overrides[propId];
-
-    if (typeof override === 'object') {
-        const variable = document.variables[override.variableId];
-
-        return variable
-            ? resolveVariable(variable, document.variables, variableContext(document, theme))
-            : property.read(source, document);
+    const value = componentOverrideValue(instance, component, propId, document, theme);
+    if (value === undefined) {
+        return resolved.property.read(resolved.source, document);
+    }
+    if (
+        resolved.property.key === 'text' &&
+        typeof instance.overrides[propId] === 'string' &&
+        typeof value === 'string'
+    ) {
+        return templateWithNames(value, document.variables);
     }
 
-    if (property.key === 'text' && typeof override === 'string') {
-        return templateWithNames(override, document.variables);
-    }
-
-    return override ?? property.read(source, document);
+    return value;
 }
 
 /** Applies only the props exposed by this source to one drawn copy. */
@@ -114,13 +141,7 @@ export function applyInstanceOverrides(
     for (const prop of props) {
         const override = instance.overrides[prop.id];
 
-        if (override === undefined) {
-            continue;
-        }
-        if (typeof override === 'object' && !document.variables[override.variableId]) {
-            continue;
-        }
-        const value = componentPropValue(instance, component, prop.id, document, theme);
+        const value = componentOverrideValue(instance, component, prop.id, document, theme);
         const property = SHAPE_PROPERTIES.find((item) => item.key === prop.key);
 
         if (value === undefined || !property) {
