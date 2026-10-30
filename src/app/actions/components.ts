@@ -63,6 +63,10 @@ export const removeComponentVariant: typeof ComponentPropertyEdits.removeCompone
     ...args
 ) => editorHelpers().componentProperties.removeComponentVariant(...args);
 
+export const setResponsiveVariants: typeof ComponentPropertyEdits.setResponsiveVariants = (
+    ...args
+) => editorHelpers().componentProperties.setResponsiveVariants(...args);
+
 export const setInstanceVariant: typeof ComponentPropertyEdits.setInstanceVariant = (...args) =>
     editorHelpers().componentProperties.setInstanceVariant(...args);
 
@@ -161,6 +165,7 @@ export const cloneComponent: ActionWithParam<string> = ({ state, effects }, comp
     // An alternate belongs to one family, so the copy starts without links.
     const copy = { ...component, id: effects.newId() };
     delete copy.variantIds;
+    delete copy.responsiveVariants;
     setComponent(state, copy);
 };
 

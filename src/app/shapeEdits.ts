@@ -64,12 +64,7 @@ import {
     shapeStyle
 } from './utils';
 import { hasComponentInstances, reachesComponent } from './actions/components';
-import {
-    componentSource,
-    instanceComponentId,
-    instanceSource,
-    instanceBox
-} from './componentSource';
+import { componentSource, instanceComponentId, instanceBox } from './componentSource';
 import { detachedMembers } from './componentDetach';
 
 const getShape = ({ currentDocument }: Application, shapeId: string) => {
@@ -253,10 +248,18 @@ export const detachInstances: ActionWithParam<string[]> = ({ state }, instanceId
         if (instance?.type !== 'instance' || isShapeLocked(document, id)) {
             continue;
         }
-        const source = instanceSource(document, instance);
         const component = document.components[instance.componentId];
+        if (!component) {
+            continue;
+        }
+        const shownInstance = renderedShape(document, id);
+        if (shownInstance.type !== 'instance') {
+            continue;
+        }
+        // Auto picks its variant per projection; detach the one the canvas draws.
+        const source = componentSource(document, instanceComponentId(document, shownInstance));
 
-        if (!source || !component) {
+        if (!source) {
             continue;
         }
         const sources = containersHolding(document.components, [id]);
@@ -267,10 +270,6 @@ export const detachInstances: ActionWithParam<string[]> = ({ state }, instanceId
         resolveDrawOrderTies(document.shapesIds.map((shapeId) => document.shapes[shapeId]));
         const index = document.shapesIds.indexOf(id);
         const next = document.shapes[document.shapesIds[index + 1]];
-        const shownInstance = renderedShape(document, id);
-        if (shownInstance.type !== 'instance') {
-            continue;
-        }
         const members = detachedMembers(document, shownInstance, source);
         const orders = ordersBetween(instance.order, next?.order ?? null, members.length);
 

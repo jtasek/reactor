@@ -37,6 +37,9 @@ declare namespace StylesCssNamespace {
     instanceValue: string;
     note: string;
     propertyMapping: string;
+    responsiveField: string;
+    responsiveRule: string;
+    responsiveRules: string;
     sourceChildBreadcrumb: string;
     variablePicker: string;
     variantActions: string;

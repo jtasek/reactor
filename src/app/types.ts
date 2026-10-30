@@ -220,6 +220,8 @@ export interface Text extends ShapeBase {
 export interface InstanceShape extends ShapeBase {
     /** Explicit alternate source within the component family. */
     variantId?: string;
+    /** Opt-in automatic selection; absent preserves the explicit/default source. */
+    variantMode?: 'auto';
     /** Local resolved source for this instance path, never serialized or shared. */
     layoutSize?: Size;
     projectedSource?: import('./componentSource').ComponentSource;
@@ -304,6 +306,10 @@ export interface Layer {
 export interface Component {
     /** Alternate components selectable by instances of this component. */
     variantIds?: string[];
+    responsiveVariants?: {
+        source: 'screen' | 'parent';
+        rules: { minWidth: number; variantId: string }[];
+    };
     interaction?: RoleSettings;
     id: string;
     /** Rotation of the source's selection frame; its shapes carry their own geometry. */

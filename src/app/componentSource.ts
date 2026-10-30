@@ -6,8 +6,15 @@ import { inDrawingOrder } from './drawOrder';
 import { untracked } from './untracked';
 
 export interface ComponentSource {
+    /** Local responsive decision, never persisted with an instance. */
+    variant?: { componentId: string; explanation: string; problem?: string };
+
     /** Context of a local instance projection, also used when opening its source. */
-    context?: { modes: import('./types').VariableContext; availableWidth?: number };
+    context?: {
+        modes: import('./types').VariableContext;
+        availableWidth?: number;
+        widths?: import('./responsiveVariants').VariantWidths;
+    };
     /** Bounds in the source's canvas coordinates. */
     box: Box;
     /** Source members in drawing order. */
@@ -27,9 +34,9 @@ export const instanceSource = (
 /** A missing or unlinked alternate falls back to the family's default source. */
 export function instanceComponentId(
     document: Pick<Document, 'components'>,
-    instance: Pick<InstanceShape, 'componentId' | 'variantId'>
+    instance: Pick<InstanceShape, 'componentId' | 'variantId' | 'projectedSource'>
 ): string {
-    const variant = instance.variantId;
+    const variant = instance.projectedSource?.variant?.componentId ?? instance.variantId;
 
     return variant &&
         document.components[variant] &&

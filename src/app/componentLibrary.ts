@@ -18,6 +18,7 @@ function fingerprint(
     const payload = JSON.stringify({
         name: component.name,
         variants: component.variantIds?.map((id) => [id, records.get(id)?.hash]),
+        responsiveVariants: component.responsiveVariants,
         props: component.props,
         interaction: roleContent(component.interaction),
         shapes: members.map((shape) => {
@@ -173,6 +174,17 @@ export function librarySnapshot(
         // Keep that snapshot for independent instances, but remove it from this published family.
         ...(component.variantIds
             ? { variantIds: component.variantIds.filter((id) => records.has(id)) }
+            : {}),
+        // Rules for a dropped alternate could never apply, and consumers can't repair them.
+        ...(component.responsiveVariants
+            ? {
+                  responsiveVariants: {
+                      ...component.responsiveVariants,
+                      rules: component.responsiveVariants.rules.filter((rule) =>
+                          records.has(rule.variantId)
+                      )
+                  }
+              }
             : {}),
         sourceShapes: Object.fromEntries(
             members.map((shape) => [shape.id, withoutNavigation(structuredClone(json(shape)))])

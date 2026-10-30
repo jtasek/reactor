@@ -422,10 +422,11 @@ function refreshInstanceBounds(document: Document, shape: InstanceShape) {
     }
 }
 
-export const setInstanceVariant: ActionWithParam<{ instanceIds: string[]; variantId?: string }> = (
-    { state },
-    { instanceIds, variantId }
-) => {
+export const setInstanceVariant: ActionWithParam<{
+    instanceIds: string[];
+    variantId?: string;
+    automatic?: boolean;
+}> = ({ state }, { instanceIds, variantId, automatic }) => {
     const document = state.currentDocument;
     if (document.locked) {
         return;
@@ -456,8 +457,48 @@ export const setInstanceVariant: ActionWithParam<{ instanceIds: string[]; varian
         } else {
             delete shape.variantId;
         }
+        if (automatic && !variantId) {
+            shape.variantMode = 'auto';
+        } else {
+            delete shape.variantMode;
+        }
         refreshInstanceBounds(document, shape);
     });
+};
+
+export const setResponsiveVariants: ActionWithParam<{
+    componentId: string;
+    settings?: Component['responsiveVariants'];
+}> = ({ state, effects }, { componentId, settings }) => {
+    const document = state.currentDocument;
+    const family = document.components[componentId];
+    if (document.locked || !family || family.locked || family.library) {
+        return;
+    }
+    if (
+        settings &&
+        (!['screen', 'parent'].includes(settings.source) ||
+            new Set(settings.rules.map((rule) => rule.minWidth)).size !== settings.rules.length ||
+            settings.rules.some(
+                (rule) =>
+                    !Number.isFinite(rule.minWidth) ||
+                    rule.minWidth < 0 ||
+                    !family.variantIds?.includes(rule.variantId) ||
+                    !document.components[rule.variantId]
+            ))
+    ) {
+        return;
+    }
+    effects.collaboration.startBatch(document.id, { kind: 'person' });
+    if (settings) {
+        family.responsiveVariants = {
+            source: settings.source,
+            rules: settings.rules.map((rule) => ({ ...rule }))
+        };
+    } else {
+        delete family.responsiveVariants;
+    }
+    effects.collaboration.flush();
 };
 
 export const createComponentFromSelection: Action = ({ state, actions }) => {

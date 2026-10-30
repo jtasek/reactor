@@ -6,7 +6,7 @@ import { isReadOnly } from './documentAccess';
 import { groupFrame } from './membership';
 import { localComponents } from './componentSelection';
 import type { Context } from './index';
-import type { Component, Document, Frame, Point, Shape } from './types';
+import type { Component, Document, Frame, InstanceShape, Point, Shape } from './types';
 import { frameParents, isFrameLocked, isFrameVisible } from './frameState';
 import { MAX_PROJECTED_NODES, projectScreenViews } from './screenProjection';
 import { hasNumericLayout } from './contextualLayout';
@@ -201,6 +201,29 @@ function componentFocus(state: Context['state'], projection: ScreenProjection) {
     return { focus, component, instance };
 }
 
+/** Pin the requested definition while retaining the placed instance's mode and width context. */
+function componentMasterSource(document: Document, instance: InstanceShape, componentId: string) {
+    const context = instance.projectedSource?.context;
+    const master = projectGeometry(
+        {
+            ...instance,
+            componentId,
+            variantMode: undefined,
+            variantId: undefined,
+            projectedSource: undefined,
+            overrides: {}
+        },
+        document,
+        context?.modes ?? {},
+        context?.availableWidth,
+        undefined,
+        undefined,
+        context?.widths
+    );
+
+    return master.type === 'instance' ? instanceSource(document, master) : null;
+}
+
 /** Master geometry stays unchanged; the chosen instance supplies its local editing placement. */
 export function projectComponentView(state: Context['state'], projection: ScreenProjection) {
     const document = state.currentDocument;
@@ -210,17 +233,8 @@ export function projectComponentView(state: Context['state'], projection: Screen
         return null;
     }
 
-    const { focus, instance } = target;
-    const context = instance.projectedSource?.context;
-    const master = context
-        ? projectGeometry(
-              { ...instance, overrides: {} },
-              document,
-              context.modes,
-              context.availableWidth
-          )
-        : instance;
-    const source = master.type === 'instance' ? instanceSource(document, master) : null;
+    const { focus, component, instance } = target;
+    const source = componentMasterSource(document, instance, component.id);
 
     if (!source) {
         return null;
@@ -628,10 +642,13 @@ export function componentEditingOrigin(state: Context['state'], component: Compo
         return undefined;
     }
 
+    const master =
+        placed?.type === 'instance' ? componentMasterSource(document, placed, component.id) : null;
+
     return {
         componentId: component.id,
         instanceId,
-        position: { ...source.box.topLeft },
+        position: { ...(master ?? source).box.topLeft },
         size: { width: source.box.width, height: source.box.height }
     };
 }
