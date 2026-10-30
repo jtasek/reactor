@@ -21,7 +21,7 @@ export const InstanceProps: FC = () => {
 
     return (
         <section className={styles.instanceProps} aria-label="Component properties">
-            {(data.variants.length > 1 || data.variantProblems.length > 0) && (
+            {(data.variants.length > 1 || data.variantProblems.length > 0 || data.automatic) && (
                 <div className={styles.instanceChild}>
                     <h4>Variant</h4>
                     <div className={styles.instanceFields}>
@@ -35,7 +35,9 @@ export const InstanceProps: FC = () => {
                                     onChange={(event) =>
                                         setInstanceVariant({
                                             instanceIds: data.ids,
+                                            automatic: event.target.value === '__auto',
                                             variantId:
+                                                event.target.value === '__auto' ||
                                                 event.target.value === data.variants[0].id
                                                     ? undefined
                                                     : event.target.value
@@ -45,7 +47,8 @@ export const InstanceProps: FC = () => {
                                     {data.selectedVariantId === '' && (
                                         <option value="">Mixed</option>
                                     )}
-                                    {data.selectedVariantId !== '' &&
+                                    {data.selectedVariantId !== '__auto' &&
+                                        data.selectedVariantId !== '' &&
                                         !data.variants.some(
                                             (variant) => variant.id === data.selectedVariantId
                                         ) && (
@@ -53,6 +56,7 @@ export const InstanceProps: FC = () => {
                                                 Unavailable variant — showing default
                                             </option>
                                         )}
+                                    <option value="__auto">Auto — follow width</option>
                                     {data.variants.map((variant) => (
                                         <option key={variant.id} value={variant.id}>
                                             {variant.name}
@@ -62,6 +66,11 @@ export const InstanceProps: FC = () => {
                             </div>
                         </div>
                     </div>
+                    {data.responsiveDescriptions.map((description) => (
+                        <p key={description} role="status" className={styles.componentHint}>
+                            {description}
+                        </p>
+                    ))}
                     {data.variantProblems.map((problem) => (
                         <p key={problem} role="status" className={styles.componentHint}>
                             {problem}

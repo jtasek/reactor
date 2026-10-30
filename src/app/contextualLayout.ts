@@ -1,4 +1,4 @@
-import type { Document, Frame, Shape, Size, Text, VariableContext } from './types';
+import type { Document, Frame, Shape, Size, Text, InstanceShape, VariableContext } from './types';
 import { untracked } from './untracked';
 import type { FrameLayout } from './frameLayout';
 import { resolveModes, type ModeAddress } from './inheritedModes';
@@ -9,6 +9,7 @@ import { acceptsFrameNumber, FRAME_NUMBER_KEYS, writeFrameNumber } from './frame
 import { projectGeometry } from './contextualGeometry';
 import { projectFrameLayout } from './frameLayout';
 import { getBoundingBox } from './utils';
+import { variantWidths } from './responsiveVariants';
 
 export const NUMBER_MODE_SUPPORT =
     'Modes resolve layout, component sizes, font size, text and wrapping locally. Position and rotation bindings keep their base values.';
@@ -41,6 +42,7 @@ export function hasNumericLayout(
     ];
 
     return (
+        shapes.some((shape) => shape.type === 'instance' && shape.variantMode === 'auto') ||
         Object.values(document.frames).some((frame) =>
             Object.values(frame.bindings ?? {}).some(hasModes)
         ) ||
@@ -112,17 +114,20 @@ export function needsContextualGeometry(document: Document) {
     ) {
         return true;
     }
-    const wraps = (shapes: Record<string, Shape>, raw: Record<string, Shape>) =>
+    const dependsOnContext = (shapes: Record<string, Shape>, raw: Record<string, Shape>) =>
         Object.keys(raw).some(
-            (id) => raw[id].type === 'text' && Boolean((shapes[id] as Text).wrapWidth)
+            (id) =>
+                (raw[id].type === 'text' && Boolean((shapes[id] as Text).wrapWidth)) ||
+                (raw[id].type === 'instance' &&
+                    (shapes[id] as InstanceShape).variantMode === 'auto')
         );
     // Adding or removing a shape changes the list, which reruns this check.
     void document.shapesIds.length;
 
     return (
-        wraps(document.shapes, untracked(document).shapes) ||
+        dependsOnContext(document.shapes, untracked(document).shapes) ||
         Object.values(document.components).some((component) =>
-            wraps(component.sourceShapes ?? {}, untracked(component).sourceShapes ?? {})
+            dependsOnContext(component.sourceShapes ?? {}, untracked(component).sourceShapes ?? {})
         )
     );
 }
@@ -175,7 +180,10 @@ export function canvasShape(document: Document, source: Shape, layout: FrameLayo
         source,
         document,
         modes,
-        availableWidthIn(parent, source, parent && layout.frameSizes[parent.id]?.width)
+        availableWidthIn(parent, source, parent && layout.frameSizes[parent.id]?.width),
+        undefined,
+        undefined,
+        variantWidths(document, source.parentFrameId, {}, layout.frameSizes)
     );
 }
 
@@ -248,7 +256,15 @@ export function contextualDocument(
 
             return [
                 source.id,
-                projectGeometry(source, document, modes, availableWidth, undefined, problems)
+                projectGeometry(
+                    source,
+                    document,
+                    modes,
+                    availableWidth,
+                    undefined,
+                    problems,
+                    variantWidths({ frames }, source.parentFrameId, address, availableSizes)
+                )
             ];
         })
     );

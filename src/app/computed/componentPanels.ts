@@ -1,4 +1,4 @@
-import type { Application, Document, InstanceShape } from '../types';
+import type { Application, Document, InstanceShape, Shape } from '../types';
 import { componentPropValue, componentOverrideValue, exposableProperties } from '../componentProps';
 import { instanceComponentId } from '../componentSource';
 import { editorHelpers, editorLoaded } from '../editorHelpers';
@@ -11,7 +11,7 @@ import {
     componentVariantProblems
 } from '../componentVariants';
 
-export function instanceProperties(document: Document) {
+export function instanceProperties(document: Document, projected: Record<string, Shape> = {}) {
     const selected = document.selectedShapes.filter(
         (shape): shape is InstanceShape => shape.type === 'instance'
     );
@@ -30,12 +30,18 @@ export function instanceProperties(document: Document) {
         return null;
     }
 
+    const drawn = (shape: InstanceShape) => {
+        const candidate = projected[shape.id];
+
+        return candidate?.type === 'instance' ? candidate : shape;
+    };
     const variantProblems = selected.flatMap((shape) => {
-        if (!shape.variantId) {
+        const selectedId = instanceComponentId(document, drawn(shape));
+        if (selectedId === component.id && !shape.variantId) {
             return [];
         }
-        const alternate = document.components[shape.variantId];
-        if (!component.variantIds?.includes(shape.variantId) || !alternate) {
+        const alternate = document.components[shape.variantId ?? selectedId];
+        if (!component.variantIds?.includes(shape.variantId ?? selectedId) || !alternate) {
             return [`${shape.name}: selected variant is unavailable; showing the default.`];
         }
         return componentVariantProblems(document, componentId, alternate.id).map(
@@ -54,7 +60,7 @@ export function instanceProperties(document: Document) {
         propertyProblems: [
             ...new Set(
                 selected.flatMap((shape) => {
-                    const active = document.components[instanceComponentId(document, shape)];
+                    const active = document.components[instanceComponentId(document, drawn(shape))];
                     const missing = Object.keys(shape.overrides).filter(
                         (id) => !component.props?.some((prop) => prop.id === id)
                     );
@@ -86,8 +92,23 @@ export function instanceProperties(document: Document) {
         variants: [component, ...(component.variantIds ?? []).map((id) => document.components[id])]
             .filter((item) => Boolean(item))
             .map((item) => ({ id: item.id, name: item.name })),
-        selectedVariantId: selected.every((shape) => shape.variantId === selected[0].variantId)
-            ? (selected[0].variantId ?? component.id)
+        automatic: selected.some((shape) => shape.variantMode === 'auto'),
+        responsiveDescriptions: selected.flatMap((shape) => {
+            const decision = drawn(shape).projectedSource?.variant;
+
+            return shape.variantMode === 'auto' && decision
+                ? [
+                      `${shape.name}: ${decision.explanation}${decision.problem ? `. ${decision.problem} Using the default source.` : ''}`
+                  ]
+                : [];
+        }),
+        selectedVariantId: selected.every(
+            (shape) =>
+                shape.variantId === selected[0].variantId &&
+                shape.variantMode === selected[0].variantMode
+        )
+            ? (selected[0].variantId ??
+              (selected[0].variantMode === 'auto' ? '__auto' : component.id))
             : '',
         rows: (component.props ?? []).flatMap((prop) => {
             const property = SHAPE_PROPERTIES.find((item) => item.key === prop.key);
@@ -98,7 +119,7 @@ export function instanceProperties(document: Document) {
             const values = selected.map((shape) =>
                 componentPropValue(
                     shape,
-                    document.components[instanceComponentId(document, shape)],
+                    document.components[instanceComponentId(document, drawn(shape))],
                     prop.id,
                     document
                 )

@@ -25,7 +25,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 19;
+export const SCHEMA_VERSION = 20;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -274,11 +274,31 @@ function readMember(value: unknown): MemberData {
     };
 }
 
+function readResponsiveVariants(value: unknown): NonNullable<Component['responsiveVariants']> {
+    const settings = record(value);
+    if (settings.source !== 'screen' && settings.source !== 'parent') {
+        throw new Error('Invalid responsive variant width source');
+    }
+    const rules = list(settings.rules, (entry) => {
+        const rule = record(entry);
+
+        return { minWidth: number(rule.minWidth, 0), variantId: id(rule.variantId) };
+    });
+    if (new Set(rules.map((rule) => rule.minWidth)).size !== rules.length) {
+        throw new Error('Duplicate responsive variant thresholds');
+    }
+
+    return { source: settings.source, rules };
+}
+
 function readComponent(value: unknown): ComponentData {
     const c = record(value);
 
     return {
         ...readMember(value),
+        ...(c.responsiveVariants === undefined
+            ? {}
+            : { responsiveVariants: readResponsiveVariants(c.responsiveVariants) }),
         ...(c.variantIds === undefined ? {} : { variantIds: list(c.variantIds, id) }),
         ...(c.interaction === undefined ? {} : { interaction: readRoleSettings(c.interaction) }),
         ...(c.sourceOnly === undefined ? {} : { sourceOnly: bool(c.sourceOnly) }),
@@ -410,8 +430,13 @@ export function readShapeGeometry(value: unknown) {
                 ...(s.wrapWidth === undefined ? {} : { wrapWidth: number(s.wrapWidth, 0) })
             };
         case 'instance':
+            if (s.variantMode !== undefined && s.variantMode !== 'auto') {
+                throw new Error('Invalid variant selection mode');
+            }
+
             return {
                 type: s.type,
+                ...(s.variantMode === 'auto' ? { variantMode: 'auto' as const } : {}),
                 ...(s.variantId === undefined ? {} : { variantId: id(s.variantId) }),
                 modeOverrides: readBindings(s.modeOverrides ?? {}),
                 ...(s.interaction === undefined
@@ -1031,6 +1056,7 @@ export function migratePersistedState(raw: unknown, onRepair = () => {}): Persis
             data.version !== 16 &&
             data.version !== 17 &&
             data.version !== 18 &&
+            data.version !== 19 &&
             data.version !== SCHEMA_VERSION
         ) {
             return null;

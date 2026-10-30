@@ -18,6 +18,7 @@ import {
 } from 'src/app/componentHooks';
 import styles from './styles.css';
 import { ComponentRole } from './ComponentRole';
+import { ResponsiveVariants } from './ResponsiveVariants';
 
 const ACTION_ICON = { component: SquarePlus, size: 16 };
 const FIND_ICON = { component: FileSearch, size: 16 };
@@ -192,6 +193,12 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
                             );
                         })}
                     </ul>
+                    <ResponsiveVariants
+                        key={`${componentId}:${JSON.stringify(component.responsiveVariants)}`}
+                        component={component}
+                        readOnly={readOnly}
+                        variants={variants}
+                    />
                     <div className={styles.variantActions}>
                         <button
                             type="button"

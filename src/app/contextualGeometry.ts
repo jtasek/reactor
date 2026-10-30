@@ -1,5 +1,5 @@
 import type { Document, Shape, VariableContext } from './types';
-import { componentSource, instanceBox, instanceComponentId } from './componentSource';
+import { componentSource, instanceBox } from './componentSource';
 import { componentOverrideValue, applyInstanceOverrides } from './componentProps';
 import { instanceModes } from './inheritedModes';
 import { variableContext } from './variableModes';
@@ -9,6 +9,7 @@ import { applyProperty } from './properties';
 import { drawnBox } from './membership';
 import { rectToBox } from './utils';
 import { measureContextualText } from './textMeasurement';
+import { responsiveVariant, type VariantWidths } from './responsiveVariants';
 
 /** Only supported properties participate; identity and editor state always stay authored. */
 const GEOMETRY_KEYS = new Set([
@@ -27,7 +28,8 @@ export function projectGeometry(
     inherited: VariableContext,
     availableWidth?: number,
     ancestors: ReadonlySet<string> = new Set(),
-    problems: Record<string, string> = {}
+    problems: Record<string, string> = {},
+    widths: VariantWidths = {}
 ): Shape {
     const modes =
         source.type === 'instance' ? instanceModes(document, inherited, source) : inherited;
@@ -79,13 +81,30 @@ export function projectGeometry(
         return shape;
     }
 
-    const selectedId = instanceComponentId(document, shape);
+    const selected = responsiveVariant(document, shape, widths);
+    const selectedSource = componentSource(document, selected.componentId, ancestors);
+    const decision =
+        !selectedSource && shape.variantMode === 'auto' && !shape.variantId
+            ? {
+                  componentId: shape.componentId,
+                  explanation: 'Auto · default source',
+                  problem: 'Selected variant has missing or cyclic artwork. Repair its source.'
+              }
+            : selected;
+    const selectedId = decision.componentId;
+    if (decision.problem) {
+        problems[source.id] = `${source.name}: ${decision.problem} Using the default source.`;
+    }
     const component = document.components[selectedId];
-    const original = componentSource(document, selectedId, ancestors);
+    const original =
+        selectedId === selected.componentId
+            ? selectedSource
+            : componentSource(document, selectedId, ancestors);
     if (!component || !original) {
         return shape;
     }
     const next = new Set(ancestors).add(component.id);
+    const memberProblems: Record<string, string> = {};
     const members = original.shapes.map((member) => {
         const overridden = applyInstanceOverrides(member, shape, component, document, modes);
         const bindings = { ...overridden.bindings };
@@ -104,16 +123,28 @@ export function projectGeometry(
             modes,
             availableWidth,
             next,
-            problems
+            memberProblems,
+            {
+                screen: widths.screen,
+                screenProblem: widths.screenProblem,
+                parentProblem:
+                    'Component width depends on its artwork. Use Screen view width for nested responsive instances.'
+            }
         );
     });
+    if (Object.keys(memberProblems).length > 0) {
+        problems[source.id] = [problems[source.id], ...Object.values(memberProblems)]
+            .filter(Boolean)
+            .join(' ');
+    }
     const boxes = members.map(drawnBox);
     const left = Math.min(...boxes.map((box) => box.topLeft.x));
     const top = Math.min(...boxes.map((box) => box.topLeft.y));
     const right = Math.max(...boxes.map((box) => box.bottomRight.x));
     const bottom = Math.max(...boxes.map((box) => box.bottomRight.y));
     const projectedSource = {
-        context: { modes, availableWidth },
+        variant: decision,
+        context: { modes, availableWidth, widths },
         box: rectToBox({ x: left, y: top, width: right - left, height: bottom - top }),
         shapes: members,
         key: original.key

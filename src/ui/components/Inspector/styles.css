@@ -537,7 +537,9 @@
 
 .variantActions > button,
 .variantActions > select,
-.propertyMapping > select {
+.propertyMapping > select,
+.responsiveField > select,
+.responsiveField > input {
     background: var(--field-background);
     border: 1px solid var(--hairline-color);
     border-radius: var(--radius-sm);
@@ -938,6 +940,40 @@
 }
 
 .propertyMapping select:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 1px;
+}
+
+.responsiveRules,
+.responsiveRule,
+.responsiveField {
+    display: grid;
+    gap: var(--panel-gap);
+    min-width: 0;
+}
+
+.responsiveRules {
+    margin-top: var(--panel-gap);
+}
+
+.responsiveRules h4 {
+    color: var(--text-secondary-color);
+    font-size: 0.75rem;
+    margin: 0;
+}
+
+.responsiveRule {
+    border-top: 1px solid var(--hairline-color);
+    padding-top: var(--panel-gap);
+}
+
+.responsiveField label {
+    color: var(--text-secondary-color);
+    font-size: 0.75rem;
+}
+
+.responsiveField input:focus-visible,
+.responsiveField select:focus-visible {
     outline: var(--focus-ring-width) solid var(--focus-ring-color);
     outline-offset: 1px;
 }

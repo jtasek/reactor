@@ -744,6 +744,22 @@ links without deleting cached sources independently used elsewhere. Missing choi
 ID and fall back; restored IDs reactivate them, while new replacement IDs need an explicit
 selection. Source-only imported components open for inspection without entering source editing.
 Coverage: variantLibrary unit/browser tests, including concurrent instance edits and update undo.
+Schema v20 adds `Component.responsiveVariants` (screen/parent width and inclusive minimum rules)
+and opt-in `InstanceShape.variantMode = 'auto'`. Absent mode keeps existing explicit/default choices;
+an explicit `variantId` wins even if Auto is also present. The lazy `responsiveVariants.ts` resolver
+selects the greatest matching threshold independently per projection. `projectedSource.variant`
+holds the runtime decision; never write it to an instance's authored selection or overrides.
+Parent widths use resolved frame sizes minus padding. Hug and Fill-to-Hug dependencies, or a
+nested component's intrinsic artwork width, fall back to the family default with a diagnostic;
+use an independent parent width or Screen width to repair. Missing rules/context/sources also
+fall back without deleting references. Nested instances inherit Screen width. The same contextual
+layout serves canvas, Screen views and Preview, including local prototype viewport changes.
+Focused source editing pins the requested definition in the placed instance’s mode/width context;
+leaving it restores Auto without changing saved selection or overrides.
+Inspector edits family rules and selects Auto per instance, explains the measured width/rule,
+and rejects duplicate thresholds. Rule edits use a separate undo batch. Library fingerprints,
+snapshots and clipboard retain rules and opt-in choices. Coverage: responsiveVariants unit/browser.
+
 A role edit on a family default carries over to alternates whose role matched it before
 the edit; alternates set up differently keep theirs. The link picker runs the family checks
 once and cheap prop/role checks before looking at a candidate's artwork, so it stays fast

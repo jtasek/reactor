@@ -853,23 +853,27 @@ continues working through adapters to the new screen/context projection until R4
    manual switch and return, shared property edits, nested instances, library updates, missing
    variants, incompatibility diagnostics, reload, concurrent edits and undo.
 
-6. **R4.6 — Automatic responsive component variants (M).**
-   **Responsive mode foundation (implemented):** optional Screen view width selection on a
-   dimension, with inclusive minimum-width rules per mode and a default fallback. Theme and
-   other dimensions remain independent. Explicit authored mode overrides win. Bound geometry
-   and typography resolve separately in each view and Preview without rewriting shared values.
-   Rule definitions survive save/reload, native packages, clipboard, collaboration and undo.
-   This does not yet automatically choose a component variant or alternate screen layout.
-   Add Auto alongside explicit variant selection. Author minimum-width thresholds and choose
-   screen width or layout-parent inner width as the rule input. Resolve each instance separately;
-   authoring an explicit selection wins over Auto. A local inspection override must not save a
-   different instance selection. Explain the winning rule and measured width in Inspector.
-   Reject duplicate thresholds and detect dependencies where a chosen variant determines its
-   own selecting width; keep a documented fallback and a repairable diagnostic.
+6. **R4.6 — Automatic responsive component variants (implemented).**
+   Families author inclusive minimum-width rules in Inspector, using Screen view width or
+   layout-parent inner width (after padding). Instances opt into **Auto — follow width**;
+   existing and explicit default/alternate choices stay fixed. The highest matching threshold
+   wins, with the family default below all thresholds. Theme and other mode dimensions remain
+   independent. Each Screen view and local Preview viewport resolves its own geometry, text and
+   variant without saving a new instance choice, value or action. Inspector explains the winning
+   rule and measured width. Duplicate/invalid thresholds are rejected before saving.
+   Missing/unlinked variants and missing/cyclic artwork retain authored rules and fall back to
+   the default with diagnostics. Parent Hug, including a Fill chain to Hug, uses the default
+   until the parent has an independent width or the rule uses Screen view width. Nested
+   instances inherit the Screen width; their component parent's intrinsic artwork width is
+   not an independent selecting width, so Parent selection also reports a repairable fallback.
+   Schema v20 persists rules and opt-in selection through reload, clipboard, library snapshots,
+   collaboration and undo. Rules change in a separate undo batch; instance values are retained.
+   Rule evaluation loads with contextual layout, not startup. Alternate screen trees remain R4.7.
    **Acceptance:** `tests/responsiveVariants.test.ts` and `tests/browser/responsiveVariants.spec.ts`:
-   exact thresholds, base fallback, narrow/wide instances on one screen, two screen views,
-   parent vs screen sizing, padding, fixed vs Auto, preserved content/actions, no oscillation,
-   canvas/runtime parity and no shared writes from resizing a local prototype viewport.
+   exact thresholds, greatest-match/default fallback, narrow/wide parents, padding and Fill,
+   two Screen views, fixed vs Auto, preserved content/actions, nested instances, stable cycle
+   fallback, persistence/library fingerprints, invalid rules, concurrent values and rule undo,
+   Inspector explanations, narrow controls, canvas/Preview parity and local viewport isolation.
 
 7. **R4.7 — Optional responsive screen layouts (M).**
    Keep continuous frame/stack reflow as the default. Add explicit alternate layout trees only

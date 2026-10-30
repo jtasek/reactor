@@ -18,6 +18,7 @@ function fingerprint(
     const payload = JSON.stringify({
         name: component.name,
         variants: component.variantIds?.map((id) => [id, records.get(id)?.hash]),
+        responsiveVariants: component.responsiveVariants,
         props: component.props,
         interaction: roleContent(component.interaction),
         shapes: members.map((shape) => {

@@ -5,7 +5,8 @@ import { hoveredComponentsIds } from './componentSelection';
 import { isShapeLocked } from './utils';
 import { selectedComponentContext } from './componentTree';
 import { screenViewName } from './screenViews';
-import { componentScreenView } from './screenViewEditing';
+import { componentScreenView, editableScreenView } from './screenViewEditing';
+import { renderedShape } from './frameLayout';
 import {
     componentCandidates,
     componentVariants,
@@ -16,7 +17,25 @@ import {
 } from './computed/componentPanels';
 
 export const useInstanceProperties = () =>
-    useAppState((state) => instanceProperties(state.currentDocument));
+    useAppState((state) => {
+        const document = state.currentDocument;
+        if (
+            !document.selectedShapes.some(
+                (shape) => shape.type === 'instance' && shape.variantMode === 'auto'
+            )
+        ) {
+            return instanceProperties(document);
+        }
+        const placed = editableScreenView(state, state.events.pointer.screenView)?.projection
+            .shapes;
+        const shapes =
+            placed ?? document.selectedShapes.map((shape) => renderedShape(document, shape.id));
+
+        return instanceProperties(
+            document,
+            Object.fromEntries(shapes.map((shape) => [shape.id, shape]))
+        );
+    });
 
 export const useComponentLibraries = () => useAppState(componentLibraries);
 
