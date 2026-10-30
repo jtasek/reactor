@@ -678,7 +678,7 @@ function readFrame(value: unknown): Frame {
 
     if (
         (f.screenLayout !== undefined &&
-            (f.screenLayout !== true || (f.kind ?? 'frame') !== 'frame')) ||
+            (f.screenLayout !== true || f.kind === 'screen' || f.kind === 'view')) ||
         (f.layoutId !== undefined && f.kind !== 'view')
     ) {
         throw new Error('Invalid screen layout fields');

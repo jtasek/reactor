@@ -4,16 +4,18 @@ import { useFrameParent } from 'src/app/frameHooks';
 import styles from './styles.css';
 
 /** Membership is explicit; changing it never converts the canvas coordinates. */
-export const FrameParent: FC<{ frameId?: string; shapeIds?: string[] }> = ({
-    frameId,
-    shapeIds = []
-}) => {
+export const FrameParent: FC<{
+    frameId?: string;
+    shapeIds?: string[];
+    /** Why only Canvas can be chosen; the current parent stays listed so it can be left. */
+    canvasOnly?: string;
+}> = ({ frameId, shapeIds = [], canvasOnly }) => {
     const {
         value,
-        choices,
+        choices: allChoices,
         disabled,
         problem,
-        restriction,
+        restriction: frameRestriction,
         inStack,
         stackPosition,
         stackSize,
@@ -23,6 +25,8 @@ export const FrameParent: FC<{ frameId?: string; shapeIds?: string[] }> = ({
     const { editFrame, applyOperations } = useActions();
     const documentId = useAppState((state) => state.currentDocumentId);
     const id = frameId ? 'frame-parent' : 'shape-frame-parent';
+    const choices = canvasOnly ? allChoices.filter((frame) => frame.id === value) : allChoices;
+    const restriction = [frameRestriction, canvasOnly].filter(Boolean).join(' ');
 
     return (
         <>

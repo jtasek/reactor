@@ -263,3 +263,39 @@ it('converts a layout released by screen deletion into a new screen', () => {
     expect(Object.values(document.frames).some((frame) => frame.screenId === 'compact')).toBe(true);
     expect(document.shapes['compact-body'].parentFrameId).toBe('compact');
 });
+
+it('keeps a screen with alternate layouts on Canvas, so its layouts never merge', () => {
+    const { store } = createTestStore();
+    const source = screenLayoutsDocument(store.state.currentDocumentId);
+    source.frames.box = {
+        id: 'box',
+        kind: 'frame',
+        name: 'Box',
+        position: { x: 0, y: 0 },
+        size: { width: 3000, height: 3000 },
+        visible: true,
+        locked: false
+    };
+    store.actions.addDocument(source);
+    store.actions.editFrame({ kind: 'update', id: 'home', changes: { parentFrameId: 'box' } });
+    const document = store.state.currentDocument;
+    expect(document.frames.home.parentFrameId).toBeUndefined();
+    expect(
+        projectScreen(document, 'home', document.frames.desktop)!.shapes.map((shape) => shape.id)
+    ).toEqual(['body']);
+
+    // Without layouts, a screen can still be nested as before.
+    store.actions.editFrame({ kind: 'delete', id: 'compact' });
+    store.actions.editFrame({ kind: 'update', id: 'home', changes: { parentFrameId: 'box' } });
+    expect(store.state.currentDocument.frames.home.parentFrameId).toBe('box');
+});
+
+it('refuses a layout name another layout of the same screen already has', () => {
+    const { store } = createTestStore();
+    store.actions.addDocument(screenLayoutsDocument(store.state.currentDocumentId));
+    const id = store.actions.editFrame({ kind: 'addLayout', viewId: 'desktop', name: 'Wide' })!;
+    store.actions.editFrame({ kind: 'update', id, changes: { name: 'Compact' } });
+    expect(store.state.currentDocument.frames[id].name).toBe('Wide');
+    store.actions.editFrame({ kind: 'update', id, changes: { name: 'Tablet' } });
+    expect(store.state.currentDocument.frames[id].name).toBe('Tablet');
+});

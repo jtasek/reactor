@@ -1187,6 +1187,35 @@ function stage(
             throw problem(index, 'Choose a layout owned by this Screen view’s screen.');
         }
 
+        if (changedFrame && operation.op === 'updateFrame') {
+            const { changes } = operation;
+            const layouts = Object.values(frames).filter(
+                (frame) => frame.screenLayout && frame.id !== changedFrame.id
+            );
+
+            // Only Canvas screens keep their layouts apart; nested, every tree would show at once.
+            if (
+                ('parentFrameId' in changes || 'kind' in changes) &&
+                changedFrame.kind === 'screen' &&
+                frames[changedFrame.parentFrameId ?? ''] &&
+                layouts.some((frame) => frame.parentFrameId === changedFrame.id)
+            ) {
+                throw problem(index, 'A screen with alternate layouts stays on Canvas.');
+            }
+
+            if (
+                ('name' in changes || 'parentFrameId' in changes) &&
+                changedFrame.screenLayout &&
+                layouts.some(
+                    (frame) =>
+                        frame.parentFrameId === changedFrame.parentFrameId &&
+                        frame.name === changedFrame.name
+                )
+            ) {
+                throw problem(index, 'Another layout of this screen already has this name.');
+            }
+        }
+
         const id =
             operation.op === 'addFrame'
                 ? ids.get(operation.key)
