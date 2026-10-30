@@ -9,6 +9,7 @@ import { TextEditor } from 'src/tools/components/Text';
 import { SHAPE_PROPERTIES } from 'src/app/properties';
 import { instanceComponentId } from 'src/app/componentSource';
 import { Instance } from './Instance';
+import { useMeasuringShape } from './measuring';
 import type { Shape as ShapeType } from 'src/app/types';
 import { useCurrentDocument } from 'src/app/hooks';
 import { useArtworkModes } from 'src/app/modeHooks';
@@ -25,7 +26,6 @@ import {
     useActions,
     useAppState,
     useComponentSource,
-    useMeasuringShape,
     useShape,
     useShapeLocked,
     useShapeVisible
@@ -56,7 +56,7 @@ export const Shape = memo((props: Props) => {
     const visible = useShapeVisible(shapeId);
     const locked = useShapeLocked(shapeId);
     const { setShapeBounds, activateShape, deactivateShape } = useActions();
-    const measuring = useMeasuringShape(shapeId);
+    const measuring = useMeasuringShape(shapeId, visible);
     const measuredGeometry = useRef<string | null>(null);
     const groupRef = useRef<SVGGElement>(null);
     // The component of this shape's type, which takes this shape's fields. A hidden
