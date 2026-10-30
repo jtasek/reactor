@@ -212,3 +212,68 @@ export function componentVariantCandidates(document: Document, familyId: string)
             componentAlternateProblems(document, familyId, candidate.id, false).length === 0
     );
 }
+
+/** Shared property identities with explicit, compatible targets in this source. */
+export function componentPropertyMappings(document: Document, componentId: string) {
+    const component = document.components[componentId];
+    if (!component) {
+        return [];
+    }
+    const families = Object.values(document.components).filter((item) =>
+        item.variantIds?.includes(componentId)
+    );
+    const family = families[0];
+    const shared = family?.props ?? [];
+    const props = [
+        ...shared,
+        ...(component.props ?? []).filter((prop) => !shared.some((item) => item.id === prop.id))
+    ];
+    const editable = !(
+        document.locked ||
+        component.locked ||
+        component.library ||
+        family?.locked ||
+        family?.library ||
+        families.length > 1
+    );
+    const shapes = component.shapesIds.flatMap((id) => {
+        const shape = component.sourceShapes?.[id] ?? document.shapes[id];
+
+        return shape ? [{ shape, fields: exposableProperties(shape, document) }] : [];
+    });
+
+    return props.map((prop) => {
+        const mapped = component.props?.find((item) => item.id === prop.id);
+        const targets = shapes.flatMap(({ shape, fields }) => {
+            const field = fields.find((item) => item.key === prop.key);
+            if (!field) {
+                return [];
+            }
+            const occupied = component.props?.some(
+                (item) => item.id !== prop.id && item.shapeId === shape.id && item.key === prop.key
+            );
+
+            return [
+                {
+                    id: shape.id,
+                    label: `${shape.name} · ${field.label}${occupied ? ' (already exposed)' : ''}`,
+                    disabled: Boolean(occupied)
+                }
+            ];
+        });
+        const valid =
+            mapped?.key === prop.key && targets.some((target) => target.id === mapped.shapeId);
+        const defaultUsable =
+            !family ||
+            !shared.includes(prop) ||
+            usableProp(document, family, prop.id, prop.shapeId);
+
+        return {
+            prop,
+            exposed: Boolean(mapped),
+            shapeId: valid ? mapped!.shapeId : '',
+            editable: editable && defaultUsable,
+            targets
+        };
+    });
+}

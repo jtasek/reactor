@@ -33,6 +33,7 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
         chooseComponentToPlace,
         selectComponentChild,
         removeComponentProp,
+        setComponentPropTarget,
         createComponentVariant,
         selectComponentSource,
         addComponentVariant,
@@ -49,7 +50,8 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
         variants,
         candidates: variantCandidates,
         problems: variantProblems,
-        defaultProblems
+        defaultProblems,
+        mappings
     } = useComponentVariants(componentId);
     const preview: InstanceShape = {
         id: 'component-preview',
@@ -215,13 +217,49 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
             )}
             <div>
                 <h3 className={styles.heading}>Editable properties</h3>
-                {component.props?.length ? (
+                {mappings.length > 0 ? (
                     <ul className={styles.componentProps}>
-                        {component.props.map((prop) => (
+                        {mappings.map(({ prop, shapeId, exposed, editable, targets }) => (
                             <li key={prop.id}>
-                                <span>{prop.label}</span>
+                                <div className={styles.propertyMapping}>
+                                    <label htmlFor={`mapping-${componentId}-${prop.id}`}>
+                                        {prop.label}
+                                    </label>
+                                    <select
+                                        id={`mapping-${componentId}-${prop.id}`}
+                                        aria-label={`Source for ${prop.label}`}
+                                        value={shapeId}
+                                        disabled={
+                                            !editable || !targets.some((target) => !target.disabled)
+                                        }
+                                        onChange={(event) =>
+                                            setComponentPropTarget({
+                                                componentId,
+                                                propId: prop.id,
+                                                shapeId: event.target.value
+                                            })
+                                        }
+                                    >
+                                        {!shapeId && (
+                                            <option value="" disabled>
+                                                {targets.some((target) => !target.disabled)
+                                                    ? 'Choose a source shape…'
+                                                    : 'No compatible source shape'}
+                                            </option>
+                                        )}
+                                        {targets.map((target) => (
+                                            <option
+                                                key={target.id}
+                                                value={target.id}
+                                                disabled={target.disabled}
+                                            >
+                                                {target.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                                 <div>
-                                    {!component.library && (
+                                    {!component.library && shapeId && (
                                         <button
                                             type="button"
                                             className={styles.iconButton}
@@ -230,7 +268,7 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
                                             onClick={() =>
                                                 selectComponentChild({
                                                     componentId,
-                                                    shapeId: prop.shapeId
+                                                    shapeId
                                                 })
                                             }
                                         >
@@ -242,7 +280,7 @@ export const ComponentDetails: FC<{ componentId: string }> = ({ componentId }) =
                                         className={styles.iconButton}
                                         title={`Stop exposing ${prop.label}`}
                                         aria-label={`Stop exposing ${prop.label}`}
-                                        disabled={readOnly}
+                                        disabled={readOnly || !exposed}
                                         onClick={() =>
                                             removeComponentProp({ componentId, propId: prop.id })
                                         }

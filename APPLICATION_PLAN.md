@@ -803,9 +803,8 @@ continues working through adapters to the new screen/context projection until R4
    instances keep their selection and overrides. Creation is a separate undo step and shares
    through the existing document model; library sources, locked sources and alternates cannot
    create a nested family. Tests cover independent edits, switching with overrides, names,
-   permissions, snapshots, reload, collaboration and undo. Broader compatibility repair,
-   property-mapping authoring and concurrent family-edit acceptance remain in R4.5; automatic
-   width-based selection remains R4.6.
+   permissions, snapshots, reload, collaboration and undo. Compatibility diagnostics and mapping repair follow in R4.5c–d. Broader concurrent
+   family-edit acceptance remains in R4.5; automatic width-based selection remains R4.6.
 
    **R4.5c — Compatibility diagnostics (implemented).** Family, alternate and instance
    Inspectors name missing shared properties, changed field mappings, unusable targets,
@@ -813,8 +812,19 @@ continues working through adapters to the new screen/context projection until R4
    action use the same compatibility checks, comparing semantic role links independently
    of object key order. Unavailable saved choices remain visibly distinct from the default.
    Diagnostics are read-only; compatible instance values survive alternate property removal,
-   switching, reload and concurrent edits/undo. Explicit property-mapping repair and broader
-   library-update acceptance remain a subsequent R4.5 increment, before R4.6 automation.
+   switching, reload and concurrent edits/undo. Property-mapping repair is covered by R4.5d below.
+
+   **R4.5d — Explicit property mapping repair (implemented).** Each exposed property in the
+   source Inspector names its target shape and field. An alternate lists missing shared
+   properties too, so an author can reconnect them to a compatible field without removing
+   and recreating their IDs. The same picker can repair a default source's stale target.
+   Field kinds/keys stay fixed; another exposed property's target cannot be claimed.
+   Read-only/library sources and ambiguous family membership block edits. Each repair is
+   one undo step; source artwork, instance overrides/bindings, variant choices and role links
+   stay unchanged. Tests cover switching, save/reload, concurrent instance edits with local
+   undo/redo, and library updates carrying the repaired mapping into existing instances.
+   Inspector controls are checked at normal and narrow widths. Broader variant-family
+   library removal/replacement acceptance remains before R4.6 automation.
 
    Add a bounded variant family to reusable components, with a default and explicit instance
    selection. A family is one level deep: a default plus any number of alternates, which cannot

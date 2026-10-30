@@ -7,6 +7,7 @@ import {
     componentAlternateProblems,
     componentDefaultProblems,
     componentVariantCandidates,
+    componentPropertyMappings,
     componentVariantProblems
 } from '../componentVariants';
 
@@ -162,6 +163,7 @@ export function componentVariants(document: Document, componentId: string) {
 
     return {
         family: family ? { id: family.id, name: family.name } : undefined,
+        mappings: componentPropertyMappings(document, componentId),
         problems: family ? componentVariantProblems(document, family.id, componentId) : [],
         /** The default's own problems, shown once above its variants. */
         defaultProblems: component?.variantIds?.length
