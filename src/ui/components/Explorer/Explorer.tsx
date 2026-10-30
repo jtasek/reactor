@@ -1,7 +1,7 @@
 import { isScreenLayout, viewLayoutRoot } from 'src/app/screenLayouts';
 import { screenOwners } from 'src/app/screenViews';
 import React, { FC, MouseEvent, memo, useMemo, useState } from 'react';
-import { Frame as FrameIcon, CircleHelp, Star, Trash2 } from 'lucide-react';
+import { AppWindow, Frame as FrameIcon, CircleHelp, Star, Trash2 } from 'lucide-react';
 import styles from './styles.css';
 import { CollapsedItems, Dragged, ExplorerItem } from './ExplorerItem';
 import { SearchBoxContainer } from '../SearchBox';
@@ -375,7 +375,17 @@ export const Explorer: FC = () => {
                     ? `${document.frames[frame.screenId ?? '']?.name ?? 'Missing screen'} · ${frame.size.width} × ${frame.size.height}`
                     : undefined
             }
-            icon={<FrameIcon size={16} aria-hidden="true" />}
+            icon={
+                <Icon
+                    icon={{
+                        component:
+                            frame.kind === 'screen' || frame.kind === 'view'
+                                ? AppWindow
+                                : FrameIcon,
+                        size: 16
+                    }}
+                />
+            }
             selected={selectedFrameId === frame.id}
             visible={frame.shown}
             collapseId={`frame:${branchId ?? frame.id}:${frame.id}`}
@@ -622,7 +632,9 @@ export const Explorer: FC = () => {
                                             kind="frame"
                                             name={screen.name}
                                             badge="Screen"
-                                            icon={<FrameIcon size={16} aria-hidden="true" />}
+                                            icon={
+                                                <Icon icon={{ component: AppWindow, size: 16 }} />
+                                            }
                                             secondary={`${screen.viewCount} Screen ${screen.viewCount === 1 ? 'view' : 'views'}`}
                                             selected={selectedFrameId === screen.id}
                                             visible={screen.shown}

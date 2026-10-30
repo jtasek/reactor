@@ -100,6 +100,18 @@ test('nests frame artwork once, keeps group controls and sorts shapes by drawing
     await page.screenshot({ path: '/tmp/reactor-explorer-objects-narrow.png' });
 });
 
+test('screens and Screen views show a window icon, ordinary frames a frame icon', async ({
+    page
+}) => {
+    for (const text of ['Home', 'Settings', viewName('Home'), viewName('Settings')]) {
+        await expect(name(page, text).locator('svg.lucide-app-window')).toHaveCount(1);
+        await expect(name(page, text).locator('svg.lucide-frame')).toHaveCount(0);
+    }
+
+    await expect(name(page, 'Card').locator('svg.lucide-frame')).toHaveCount(1);
+    await expect(name(page, 'Card').locator('svg.lucide-app-window')).toHaveCount(0);
+});
+
 test('search reveals frame ancestry and matching frame contents without forgetting collapse state', async ({
     page
 }) => {
