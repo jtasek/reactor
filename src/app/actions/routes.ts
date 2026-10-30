@@ -12,6 +12,10 @@ export const showDocuments: Action = ({ state }) => {
     state.currentPage = 'documents';
 };
 
+export const showVariables: Action = ({ state }) => {
+    state.currentPage = 'variables';
+};
+
 export const showSharing: Action = ({ state }) => {
     state.currentPage = 'sharing';
 };

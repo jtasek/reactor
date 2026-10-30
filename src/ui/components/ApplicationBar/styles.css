@@ -9,10 +9,10 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    left: var(--panel-gap);
+    left: max(var(--panel-gap), calc(var(--ruler-size, 0px) + var(--panel-gap) / 2));
     padding: 4px;
     position: fixed;
-    top: var(--panel-gap);
+    top: max(var(--panel-gap), calc(var(--ruler-size, 0px) + var(--panel-gap) / 2));
     width: calc(var(--application-bar-space) - 2 * var(--panel-gap));
     z-index: 101;
 }

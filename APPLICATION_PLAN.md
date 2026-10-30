@@ -385,6 +385,11 @@ work, with V3 extended by R4.3–R4.4 and V5 feeding R6. No speculative plugin o
    operation bindings take precedence. Shared undo restores the references with their values.
    Covered by `tests/variables.test.ts`, `tests/operations.test.ts` and
    `tests/browser/variables.spec.ts`.
+   **Large-library workspace (implemented):** `/variables` provides a full-page editor,
+   name/path search, independent list/editor scrolling and direct canvas navigation. Existing
+   definitions, mode rules and import/export use the same editing logic. The compact panel
+   remains available for canvas-side editing. Browser coverage exercises 600 variables,
+   direct visits, reload, narrow layouts, draft protection, history and view-only access.
    Second increment implemented: same-type aliases reference stable IDs, retain a literal
    fallback and resolve through the shared resolver. Source selection, chain/value display,
    detach, local source deletion, durable readers, operations, clipboard dependencies,
@@ -815,6 +820,12 @@ continues working through adapters to the new screen/context projection until R4
    variants, incompatibility diagnostics, reload, concurrent edits and undo.
 
 6. **R4.6 — Automatic responsive component variants (M).**
+   **Responsive mode foundation (implemented):** optional Screen view width selection on a
+   dimension, with inclusive minimum-width rules per mode and a default fallback. Theme and
+   other dimensions remain independent. Explicit authored mode overrides win. Bound geometry
+   and typography resolve separately in each view and Preview without rewriting shared values.
+   Rule definitions survive save/reload, native packages, clipboard, collaboration and undo.
+   This does not yet automatically choose a component variant or alternate screen layout.
    Add Auto alongside explicit variant selection. Author minimum-width thresholds and choose
    screen width or layout-parent inner width as the rule input. Resolve each instance separately;
    authoring an explicit selection wins over Auto. A local inspection override must not save a

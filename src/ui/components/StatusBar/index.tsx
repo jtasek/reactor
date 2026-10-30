@@ -7,8 +7,7 @@ import {
     useCurrentPage,
     useDocumentName,
     useKeyboard,
-    usePointerPosition,
-    useSaveStatus
+    usePointerPosition
 } from 'src/app/hooks';
 import { accountLabel, loginFrom } from 'src/app/services/accounts';
 import { useSelectionCount } from 'src/app/frameHooks';
@@ -19,6 +18,9 @@ import styles from './styles.css';
 import { ZoomSlider } from './ZoomSlider';
 import { StatusBarSlot } from './StatusBarSlot';
 import { StatusBar } from './StatusBar';
+import { SaveStatusInfo } from './SaveStatusInfo';
+
+export { SaveStatusInfo } from './SaveStatusInfo';
 
 export const KeyboardInfo: FC = () => {
     const keyboard = useKeyboard();
@@ -40,35 +42,6 @@ export const KeyboardInfo: FC = () => {
     result.push(']');
 
     return <span>{result.join(' ')}</span>;
-};
-
-const SAVE_LABELS = {
-    saved: 'Saved',
-    saving: 'Saving…',
-    syncing: 'Syncing…',
-    offline: 'Offline',
-    notSaving: 'Not saving'
-};
-
-const OFFLINE =
-    'The server cannot be reached. Changes are kept in this browser and sync once it can.';
-
-export const SaveStatusInfo: FC = () => {
-    const status = useSaveStatus();
-
-    return (
-        <span
-            title={
-                status.kind === 'notSaving'
-                    ? status.reason
-                    : status.kind === 'offline'
-                      ? OFFLINE
-                      : undefined
-            }
-        >
-            {SAVE_LABELS[status.kind]}
-        </span>
-    );
 };
 
 /** Leads to the account page: to sign in, or showing who is signed in. */

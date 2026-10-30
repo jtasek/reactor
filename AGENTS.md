@@ -185,8 +185,8 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   (not suppressed). `pnpm lint:baseline` fails on any finding in a file changed relative to
   `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
   recorded counts: fix a touched file's existing findings rather than adding exceptions.
-- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 492 KiB or
-  any file 248 KiB (the budget in `webpack.config.mjs`, measured at 491.2 and 227.8 KiB); raise
+- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 494 KiB or
+  any file 248 KiB (the budget in `webpack.config.mjs`, entry measured at 493.4 KiB); raise
   it only for code every page needs as it opens, after checking what grew. Commands and
   tools load with the editor page, which registers them (`src/pages/registerEditor.ts`),
   not at startup: the store keeps only the tools namespace's state and actions
@@ -663,8 +663,16 @@ override: making another mode the default moves its colors into the base and int
 `themeColors` projects bound fill, stroke and fontColor without writing shared shape values.
 Root `previewModes` is local, keyed by document then dimension, saved only in `reactor:view`.
 Schema v15 adds authored `modeOverrides` maps to frames (including Screens/views) and instances.
+Schema v19 adds opt-in `VariableDimension.selection = 'width'` and optional `minWidth` on
+modes. `readDimension` validates finite non-negative, unique thresholds; missing selection
+retains manual behavior. `resolveModes` picks the greatest inclusive minimum from the Screen
+view's authored width (or the screen viewport in Preview), falling back to the dimension
+default below every threshold. Width selection follows local simulation and precedes explicit
+Screen/view/frame/instance choices, independently per dimension. Thresholds are unrelated to
+mode display order or default choice. Disabling selection retains thresholds and values.
+Rule resolution stays with the lazy renderer; only schema validation adds startup code.
 `inheritedModes.ts` resolves each dimension independently: dimension default, local simulation,
-Screen, view, then containing frames and instances from outermost to innermost. Absent keys
+optional width rule, Screen, view, then containing frames and instances from outermost to innermost. Absent keys
 inherit; missing choices stay authored, report a diagnostic and fall back to the dimension's
 default (missing dimensions are ignored). `ModeFields` offers Inherit and shows the effective
 mode and its source. Authored choices are separate undo batches; local simulation stays local.
@@ -763,6 +771,12 @@ Names are unique, trimmed and without `{`, `}` or `$` (`isVariableName`); one sh
 a merge means the variable with the lowest id (`variableNamed`). Copied shapes carry the
 variables they follow, and a paste uses one of the same name and type or adds it.
 The Variables panel (`src/ui/components/Variables`, off by default and loaded when shown)
+also supplies the full-page `/variables` workspace (`pages/Variables.tsx`). The application
+rail opens the page; the compact panel remains optional. The page registers editing helpers
+on demand, checks document access before exposing editors, and keeps canvas shortcuts disabled.
+`fullPage` adds name/path search, independently scrolling list/editor, document save status,
+Undo/Redo and guarded navigation, including browser Back/Forward. Both surfaces use the same editors and data.
+The workspace
 creates, renames, edits and deletes them, asking first when one is used. Plain variables show
 one Value; dimension-bound variables show every named mode, including the default, as editable
 rows through the shared `ValueField`. Editing an inherited row creates an override; its action

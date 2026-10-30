@@ -455,7 +455,14 @@ The Variables panel creates named colors, numbers, text and booleans. Inspector 
 follow a variable, and text can include `${Name}` templates. Renaming a variable preserves
 its references; deleting one leaves the shapes' values in place.
 
-Choose **New variable** to enter a name, type and value. The panel shows a list and
+Open **Variables** from the canvas navigation for a full-page workspace at `/variables`.
+The page shows the current document name and save status, Undo/Redo and **Back to canvas**.
+Search variables by name or path, or search the Dimensions tab; the list and editor scroll
+independently. Editing uses the same document values as the canvas, and returning to the
+canvas or using browser Back/Forward asks before discarding an unfinished creation or dimension draft. The compact
+Variables panel remains available under **More panels** for edits beside the canvas.
+
+Choose **New variable** to enter a name, type and value. The workspace shows a list and
 one editor, or an item picker when narrow. The **Dimensions** tab manages optional dimensions
 and modes. The tabs support arrow-key focus and Enter/Space activation. **New variable** or
 **New dimension** stays visible in the toolbar at every panel width; each variable,
@@ -502,6 +509,17 @@ dimension action menus retain reordering and confirmed deletion without moving t
 of the tabs and toolbar. **Preview** opens a compact popover; **Import** and **Export** open
 dedicated dialogs with format selection and import review. These tools do not push the editor
 down. Escape dismisses them and returns focus to their toolbar button.
+
+For responsive sizing, open **Dimensions**, select your size dimension,
+and set **Select modes by → Screen view width**. Enter a minimum width in pixels for each
+automatic mode (for example xs: 0, sm: 400, lg: 600). The greatest minimum at or below the
+Screen view's width wins, including exact boundaries. Below every threshold the dimension's
+default applies; an empty minimum leaves that mode available for manual selection only.
+Each Screen view resolves independently as it resizes, including bound font sizes and button
+widths. Theme stays manual unless you explicitly configure width rules for it too.
+Explicit Screen, view, frame and instance mode overrides take precedence; choose **Inherit**
+in Inspector to use the width result. Switching back to Manual selection retains thresholds,
+mode IDs and variable values. Preview uses the launched view's size and resolved modes.
 
 Each document remembers your selected mode per dimension locally. Aliases follow their
 source's dimension; shapes, components and thumbnails use the same context. Renaming a mode

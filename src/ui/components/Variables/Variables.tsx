@@ -1,6 +1,6 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { Plus, Hash, Type, ToggleLeft, Layers, ChevronLeft } from 'lucide-react';
-import { useActions, useCurrentDocument } from 'src/app/hooks';
+import { useActions, useCurrentDocument, useEffects } from 'src/app/hooks';
 import { useVariables, useVariableUses } from 'src/app/variableHooks';
 import { ordered } from 'src/app/variableModes';
 import { Icon } from '../Icon';
@@ -10,6 +10,7 @@ import { DimensionEditor } from './Dimensions';
 import { ModePreview } from './ModePreview';
 import { CreateVariable } from './CreateVariable';
 import { VariableEditor } from './VariableEditor';
+import { SaveStatusInfo } from '../StatusBar/SaveStatusInfo';
 import styles from './styles.css';
 
 /**
@@ -24,31 +25,57 @@ type View = {
     assignTo?: string;
 };
 
-function VariablePanel() {
+function VariablePanel({ fullPage = false }: { fullPage?: boolean }) {
     const document = useCurrentDocument();
+    const effects = useEffects();
     const { setVariableDimension } = useActions();
     const variables = useVariables();
     const uses = useVariableUses();
     const dimensions = ordered(document.dimensions);
     const [view, setView] = useState<View>({ section: 'variables' });
     const [dirty, setDirty] = useState(false);
-    const [pending, setPending] = useState<View>();
+    const [pending, setPending] = useState<View | 'canvas'>();
+    const [query, setQuery] = useState('');
     const [discarded, setDiscarded] = useState(false);
     const [revision, setRevision] = useState(0);
     const [packageMode, setPackageMode] = useState<'import' | 'export'>();
     const [tabFocus, setTabFocus] = useState<View['section']>('variables');
     const tabsId = useId();
     const tabs = useRef<HTMLDivElement>(null);
+    const releaseNavigationGuard = useRef<(() => void) | undefined>(undefined);
 
     useEffect(() => setTabFocus(view.section), [view.section]);
     const panel = useRef<HTMLElement>(null);
     const byId = Object.fromEntries(variables.map((variable) => [variable.id, variable]));
     const items = view.section === 'variables' ? variables : dimensions;
+    const matches = items.filter((item) =>
+        item.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
+    );
     const selected = items.find((item) => item.id === view.id) ?? items[0];
     const variable = view.section === 'variables' && selected ? byId[selected.id] : undefined;
     const dimension =
         view.section === 'dimensions' && selected ? document.dimensions[selected.id] : undefined;
     const title = view.section === 'variables' ? 'variable' : 'dimension';
+
+    useEffect(() => {
+        if (!fullPage || !dirty) {
+            return;
+        }
+        const protectDraft = (event: BeforeUnloadEvent) => {
+            event.preventDefault();
+            event.returnValue = '';
+        };
+        window.addEventListener('beforeunload', protectDraft);
+        const release = effects.guardNavigation(() =>
+            window.confirm('Discard unfinished variable or dimension changes?')
+        );
+        releaseNavigationGuard.current = release;
+
+        return () => {
+            window.removeEventListener('beforeunload', protectDraft);
+            release();
+        };
+    }, [fullPage, dirty, effects]);
 
     useEffect(() => {
         if (view.creating) {
@@ -73,6 +100,9 @@ function VariablePanel() {
     }, [view, selected, items, dirty]);
 
     const show = (next: View) => {
+        if (next.section !== view.section || view.creating) {
+            setQuery('');
+        }
         setDirty(false);
         setPending(undefined);
         setDiscarded(false);
@@ -89,6 +119,18 @@ function VariablePanel() {
     };
     const create = () =>
         navigate({ section: view.section, creating: true, returnId: view.returnId });
+    const returnToCanvas = () => {
+        releaseNavigationGuard.current?.();
+        effects.navigate('/');
+    };
+    const backToCanvas = () => {
+        if (dirty) {
+            setPending('canvas');
+
+            return;
+        }
+        effects.navigate('/');
+    };
     const editDimension = (id?: string) => {
         navigate({
             section: 'dimensions',
@@ -143,9 +185,40 @@ function VariablePanel() {
     return (
         <section
             ref={panel}
-            className={`${styles.variables} ${styles.workspacePanel}`}
+            className={`${styles.variables} ${styles.workspacePanel} ${fullPage ? styles.pageWorkspace : ''}`}
             aria-label="Variables"
         >
+            {fullPage && (
+                <header className={styles.pageHeader}>
+                    <button type="button" onClick={backToCanvas}>
+                        <Icon icon={{ component: ChevronLeft, size: 16 }} />
+                        Back to canvas
+                    </button>
+                    <div className={styles.pageTitle}>
+                        <h1>Variables</h1>
+                        <span>{document.name}</span>
+                    </div>
+                    <span role="status">
+                        <SaveStatusInfo />
+                    </span>
+                    <div className={styles.utilities} aria-label="Document history">
+                        <button
+                            type="button"
+                            disabled={document.locked || dirty || !document.history.canUndo}
+                            onClick={() => effects.collaboration.undo(document.id)}
+                        >
+                            Undo
+                        </button>
+                        <button
+                            type="button"
+                            disabled={document.locked || dirty || !document.history.canRedo}
+                            onClick={() => effects.collaboration.redo(document.id)}
+                        >
+                            Redo
+                        </button>
+                    </div>
+                </header>
+            )}
             <div className={styles.panelToolbar}>
                 <div
                     ref={tabs}
@@ -197,7 +270,7 @@ function VariablePanel() {
                     New {title}
                 </button>
                 <div className={styles.utilities}>
-                    <ModePreview />
+                    {!fullPage && <ModePreview />}
                     <button
                         type="button"
                         onClick={() => setPackageMode('import')}
@@ -210,6 +283,27 @@ function VariablePanel() {
                     </button>
                 </div>
             </div>
+            {fullPage && (
+                <div className={styles.searchBar}>
+                    <label className={styles.formField}>
+                        Search {view.section}
+                        <input
+                            type="search"
+                            value={query}
+                            placeholder={
+                                view.section === 'variables'
+                                    ? 'Name or path, e.g. color/'
+                                    : 'Dimension name'
+                            }
+                            onChange={(event) => setQuery(event.target.value)}
+                        />
+                    </label>
+                    <span role="status" className={styles.resolution}>
+                        {query.trim() ? `${matches.length} of ${items.length}` : items.length}{' '}
+                        {items.length === 1 ? title : view.section}
+                    </span>
+                </div>
+            )}
             <div className={styles.compactPicker}>
                 <select
                     data-variable-picker
@@ -228,7 +322,10 @@ function VariablePanel() {
                             {view.creating ? `New ${title}` : `No ${view.section} yet`}
                         </option>
                     )}
-                    {items.map((item) => (
+                    {selected && !matches.some((item) => item.id === selected.id) && (
+                        <option value={selected.id}>{selected.name} (current)</option>
+                    )}
+                    {matches.map((item) => (
                         <option key={item.id} value={item.id}>
                             {item.name}
                         </option>
@@ -265,7 +362,9 @@ function VariablePanel() {
                             <button
                                 type="button"
                                 data-variant="destructive"
-                                onClick={() => show(pending)}
+                                onClick={() =>
+                                    pending === 'canvas' ? returnToCanvas() : show(pending)
+                                }
                             >
                                 Discard changes
                             </button>
@@ -287,7 +386,7 @@ function VariablePanel() {
                         {items.length} {items.length === 1 ? title : view.section}
                     </p>
                     <ul className={styles.itemList}>
-                        {items.map((item) => {
+                        {matches.map((item) => {
                             const entry = byId[item.id];
                             const split = item.name.lastIndexOf('/');
                             const color =
@@ -343,6 +442,9 @@ function VariablePanel() {
                             );
                         })}
                     </ul>
+                    {items.length > 0 && matches.length === 0 && (
+                        <p className={styles.resolution}>No matching {view.section}.</p>
+                    )}
                 </aside>
                 <div className={styles.detail}>
                     {view.section === 'dimensions' && returnId && byId[returnId] && (
@@ -399,8 +501,8 @@ function VariablePanel() {
     );
 }
 
-export function Variables() {
+export function Variables({ fullPage = false }: { fullPage?: boolean }) {
     const document = useCurrentDocument();
 
-    return <VariablePanel key={document.id} />;
+    return <VariablePanel key={document.id} fullPage={fullPage} />;
 }

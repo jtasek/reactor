@@ -410,8 +410,10 @@ test('keeps creation in one place and opens actions without shifting the fields'
     await expect(panel.getByRole('button', { name: 'New variable', exact: true })).toHaveCount(1);
     await panel.getByRole('button', { name: 'Manage modes', exact: true }).click();
     const field = panel.getByLabel('Name of mode Dark in Theme');
-    const before = await field.boundingBox();
     const trigger = panel.getByRole('button', { name: 'Actions for mode Dark', exact: true });
+    // Keep the row clear of the sticky Save/Cancel footer before measuring menu movement.
+    await trigger.evaluate((element) => element.scrollIntoView({ block: 'center' }));
+    const before = await field.boundingBox();
     await trigger.click();
     await expect(
         panel

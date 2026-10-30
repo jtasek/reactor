@@ -25,6 +25,9 @@ declare namespace StylesCssNamespace {
         note: string;
         notice: string;
         packageContent: string;
+        pageHeader: string;
+        pageTitle: string;
+        pageWorkspace: string;
         panelToolbar: string;
         previewPopover: string;
         primary: string;
@@ -32,6 +35,7 @@ declare namespace StylesCssNamespace {
         resolution: string;
         row: string;
         rowHeader: string;
+        searchBar: string;
         section: string;
         sectionHeading: string;
         sidebar: string;
@@ -41,6 +45,7 @@ declare namespace StylesCssNamespace {
         utilities: string;
         valueInput: string;
         variables: string;
+        widthRule: string;
         workspace: string;
         workspacePanel: string;
     }

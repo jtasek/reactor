@@ -25,7 +25,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 18;
+export const SCHEMA_VERSION = 19;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -1030,6 +1030,7 @@ export function migratePersistedState(raw: unknown, onRepair = () => {}): Persis
             data.version !== 15 &&
             data.version !== 16 &&
             data.version !== 17 &&
+            data.version !== 18 &&
             data.version !== SCHEMA_VERSION
         ) {
             return null;

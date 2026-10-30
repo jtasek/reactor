@@ -2,6 +2,19 @@ type RouteHandler = (params: Record<string, string>) => void;
 type Routes = Record<string, RouteHandler>;
 
 let registered: Routes = {};
+let historyIndex = 0;
+let canLeave: (() => boolean) | undefined;
+
+/** A page with an unfinished draft may guard client-side navigation until it unmounts. */
+export const guardNavigation = (guard: () => boolean): (() => void) => {
+    canLeave = guard;
+
+    return () => {
+        if (canLeave === guard) {
+            canLeave = undefined;
+        }
+    };
+};
 
 const normalize = (path: string): string => {
     if (!path) {
@@ -60,7 +73,22 @@ export const initializeRoutes = (routes: Routes): void => {
         return acc;
     }, {});
 
-    window.addEventListener('popstate', () => dispatch(window.location.pathname));
+    historyIndex = window.history.state?.reactorIndex ?? 0;
+    window.history.replaceState(
+        Object.assign({}, window.history.state, { reactorIndex: historyIndex }),
+        ''
+    );
+    window.addEventListener('popstate', (event) => {
+        const next = event.state?.reactorIndex ?? 0;
+        // A refused traversal returns to the current index without asking again.
+        if (next !== historyIndex && canLeave && !canLeave()) {
+            window.history.go(historyIndex - next);
+
+            return;
+        }
+        historyIndex = next;
+        dispatch(window.location.pathname);
+    });
     document.addEventListener('click', onClick);
 
     dispatch(window.location.pathname);
@@ -74,16 +102,27 @@ const split = (url: string) => {
 
 export const navigate = (url: string): void => {
     const { path, search } = split(url);
-    if (path + search !== normalize(window.location.pathname) + window.location.search) {
-        window.history.pushState({}, '', path + search);
+    if (path + search === normalize(window.location.pathname) + window.location.search) {
+        dispatch(path);
+
+        return;
     }
+    if (canLeave && !canLeave()) {
+        return;
+    }
+    historyIndex += 1;
+    window.history.pushState({ reactorIndex: historyIndex }, '', path + search);
     dispatch(path);
 };
 
 /** Shows `url` in place of the current entry, as a redirect, without loading the page again. */
 export const redirect = (url: string): void => {
     const { path, search } = split(url);
-    window.history.replaceState({}, '', path + search);
+    window.history.replaceState(
+        Object.assign({}, window.history.state, { reactorIndex: historyIndex }),
+        '',
+        path + search
+    );
     dispatch(path);
 };
 
