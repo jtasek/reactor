@@ -2,7 +2,7 @@ import { selectVariable } from './support/variables';
 import { expect, test, type Page } from '@playwright/test';
 import { createDocument, createShape, createComponent } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
-import { openEditor, pointer } from './support/editor';
+import { openEditor } from './support/editor';
 import type { Frame } from 'src/app/types';
 
 async function openMeasurement(page: Page) {
@@ -118,17 +118,7 @@ test('draws different measured text per view and selects the full wrapped instan
     const smallHit = await small.locator('[data-view-instance-hit]').boundingBox();
     const largeHit = await large.locator('[data-view-instance-hit]').boundingBox();
     expect(largeHit!.height).toBeGreaterThan(smallHit!.height);
-    const bounds = await large.locator('[data-view-instance-hit]').evaluate((element) => ({
-        x: Number(element.getAttribute('x')),
-        y: Number(element.getAttribute('y')),
-        height: Number(element.getAttribute('height'))
-    }));
-    await pointer(page, 'pointerdown', {
-        x: bounds.x + 10,
-        y: bounds.y + bounds.height - 4,
-        target: '#screen-views > [data-screen-view="large"]'
-    });
-    await pointer(page, 'pointerup', { x: bounds.x + 10, y: bounds.y + bounds.height - 4 });
+    await page.mouse.click(largeHit!.x + 10, largeHit!.y + largeHit!.height - 4);
     await expect(
         page.locator('[data-panel="inspector"]').getByLabel('Name', { exact: true })
     ).toHaveValue('Label instance');

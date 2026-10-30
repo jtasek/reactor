@@ -222,3 +222,50 @@ it('keeps overflowing screen artwork visible with its layout diagnostic', () => 
     expect(view.problem).toContain('overflow');
     expect(view.projection?.shapes).toHaveLength(1);
 });
+
+it('keeps local view content independent of placement while tracking layout and artwork changes', () => {
+    const { store } = createTestStore();
+    const screenId = store.actions.editFrame({ kind: 'add', ...geometry })!;
+    store.actions.editFrame({
+        kind: 'update',
+        id: screenId,
+        changes: {
+            kind: 'screen',
+            stack: { direction: 'column', padding: 10, gap: 0, align: 'start' }
+        }
+    });
+    store.actions.addShape({
+        type: 'rectangle',
+        name: 'Body',
+        position: { x: 120, y: 100 },
+        size: { width: 40, height: 30 },
+        parentFrameId: screenId,
+        sizing: { width: { mode: 'fill' } }
+    });
+    const document = store.state.currentDocument;
+    const view = Object.values(document.frames).find((frame) => frame.kind === 'view')!;
+    const tree = store.getTrackStateTree();
+    const origin = { x: 0, y: 0 };
+    tree.trackScope(() => {
+        projectScreenViews((tree.state as typeof store.state).currentDocument, {}, origin);
+    });
+    const dependencies = [...tree.pathDependencies];
+    expect(dependencies.some((path) => path.includes(`frames.${view.id}.position`))).toBe(false);
+    expect(dependencies.some((path) => path.includes(`frames.${view.id}.size`))).toBe(true);
+    const before = json(projectScreenViews(document, {}, origin)[0].projection);
+    store.actions.editFrame({
+        kind: 'update',
+        id: view.id,
+        changes: { position: { x: 600, y: 300 } }
+    });
+    expect(json(projectScreenViews(document, {}, origin)[0].projection)).toEqual(before);
+    store.actions.editFrame({
+        kind: 'update',
+        id: view.id,
+        changes: { size: { width: 500, height: 200 } }
+    });
+    expect(projectScreenViews(document, {}, origin)[0].projection?.shapes[0]).toMatchObject({
+        position: { x: 10, y: 10 },
+        size: { width: 480 }
+    });
+});

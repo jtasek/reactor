@@ -22,7 +22,7 @@ import {
     componentScreenView,
     projectComponentView
 } from 'src/app/screenViewEditing';
-import type { Frame, Shape } from 'src/app/types';
+import type { Frame, Point, Shape } from 'src/app/types';
 import { getComponentByType } from 'src/tools/components';
 import { Label } from '../Label';
 import { Handles } from '../Selectable/Resizable';
@@ -152,14 +152,14 @@ const FRAME_GRIP_WIDTH_PX = 12;
  * Where an editable View takes presses: its viewport, less the inner half of its
  * own edge grip, which is drawn underneath and must still move the View.
  */
-const ViewHitArea: FC<{ view: Frame }> = ({ view }) => {
+const ViewHitArea: FC<{ view: Frame; position: Point }> = ({ view, position }) => {
     const scale = useCameraScale();
     const inset = FRAME_GRIP_WIDTH_PX / 2 / scale;
 
     return (
         <rect
-            x={view.position.x + inset}
-            y={view.position.y + inset}
+            x={position.x + inset}
+            y={position.y + inset}
             width={Math.max(0, view.size.width - 2 * inset)}
             height={Math.max(0, view.size.height - 2 * inset)}
             fill="transparent"
@@ -171,53 +171,53 @@ const ScreenView: FC<{
     item: ReturnType<typeof projectScreenViews>[number];
     editable: boolean;
     focused: boolean;
-}> = ({ item, editable, focused }) => {
+    relative: boolean;
+}> = ({ item, editable, focused, relative }) => {
     const { view, projection, problem } = item;
     const name = useFrameName(view.id);
+    const position = relative ? VIEW_ORIGIN : view.position;
     const selections = useScreenViewContainers(view.id, projection, editable);
     const contained = new Set(selections.flatMap((selection) => selection.shapeIds));
 
     if (!projection) {
         // Nothing here can be edited, so presses reach the canvas underneath.
         return problem ? (
-            <text
-                x={view.position.x + 8}
-                y={view.position.y + 20}
-                className={styles.label}
-                pointerEvents="none"
-            >
-                {problem}
-            </text>
+            <ScreenViewPlacement id={view.id} relative={relative} name={name} editable={false}>
+                <text
+                    x={position.x + 8}
+                    y={position.y + 20}
+                    className={styles.label}
+                    pointerEvents="none"
+                >
+                    {problem}
+                </text>
+            </ScreenViewPlacement>
         ) : null;
     }
 
     const { frames, shapes, layoutOffsets } = projection;
 
     return (
-        <g
-            aria-label={`Screen view ${name}`}
-            data-screen-view={editable ? view.id : undefined}
-            pointerEvents={editable ? undefined : 'none'}
-        >
-            {editable && <ViewHitArea view={view} />}
+        <ScreenViewPlacement id={view.id} relative={relative} name={name} editable={editable}>
+            {editable && <ViewHitArea view={view} position={position} />}
             {focused && (
                 <g pointerEvents="none">
                     <rect
                         className={styles.edge}
-                        x={view.position.x}
-                        y={view.position.y}
+                        x={position.x}
+                        y={position.y}
                         width={view.size.width}
                         height={view.size.height}
                     />
-                    <text className={styles.label} x={view.position.x} y={view.position.y - 8}>
+                    <text className={styles.label} x={position.x} y={position.y - 8}>
                         {name}
                     </text>
                 </g>
             )}
             {problem && (
                 <text
-                    x={view.position.x + 8}
-                    y={view.position.y + 20}
+                    x={position.x + 8}
+                    y={position.y + 20}
                     className={styles.label}
                     pointerEvents="none"
                 >
@@ -259,6 +259,32 @@ const ScreenView: FC<{
                     viewId={view.id}
                 />
             ))}
+        </ScreenViewPlacement>
+    );
+};
+
+const VIEW_ORIGIN: Point = { x: 0, y: 0 };
+
+/** Only this wrapper tracks placement; its content keeps the same layout while dragged. */
+const ScreenViewPlacement: FC<{
+    id: string;
+    relative: boolean;
+    name: string;
+    editable: boolean;
+    children: React.ReactNode;
+}> = ({ id, relative, name, editable, children }) => {
+    const position = useAppState((state) =>
+        relative ? state.currentDocument.frames[id]?.position : null
+    );
+
+    return (
+        <g
+            aria-label={`Screen view ${name}`}
+            data-screen-view={editable ? id : undefined}
+            pointerEvents={editable ? undefined : 'none'}
+            transform={position ? `translate(${position.x} ${position.y})` : undefined}
+        >
+            {children}
         </g>
     );
 };
@@ -269,7 +295,10 @@ export const ScreenViews: FC<{ interactive?: boolean }> = ({ interactive = true 
         if (state.currentDocument.editingComponentId && !state.events.pointer.screenView) {
             return [];
         }
-        const views = componentScreenViews(state);
+        // Focused component controls use absolute canvas coordinates. Ordinary view
+        // content is local to its SVG placement and does not depend on drag position.
+        const relative = !state.currentDocument.editingComponentId;
+        const views = componentScreenViews(state, relative ? VIEW_ORIGIN : undefined);
         const focused = componentScreenView(state, views) !== null;
 
         return state.currentDocument.editingComponentId && !focused
@@ -299,6 +328,7 @@ export const ScreenViews: FC<{ interactive?: boolean }> = ({ interactive = true 
                                 }
                               : item,
                       focused,
+                      relative,
                       // A locked, hidden or read-only View lets presses through, as before.
                       editable:
                           interactive &&
@@ -310,8 +340,14 @@ export const ScreenViews: FC<{ interactive?: boolean }> = ({ interactive = true 
 
     return (
         <g id="screen-views">
-            {items.map(({ item, editable, focused }) => (
-                <ScreenView key={item.view.id} item={item} editable={editable} focused={focused} />
+            {items.map(({ item, editable, focused, relative }) => (
+                <ScreenView
+                    key={item.view.id}
+                    item={item}
+                    editable={editable}
+                    focused={focused}
+                    relative={relative}
+                />
             ))}
         </g>
     );

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { createComponent, createDocument, createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
-import { openEditor, pointer, selectTool } from './support/editor';
+import { expectPlacedCoordinate, openEditor, pointer, selectTool } from './support/editor';
 
 test('places a second view, resolves its width, edits shared content and deletes only the view', async ({
     page
@@ -55,7 +55,7 @@ test('places a second view, resolves its width, edits shared content and deletes
         'svg#surface #screen-views > g:not([data-screen-view="home:view"]) rect[data-cy="Body"]'
     );
     await expect(original).toHaveAttribute('width', '280');
-    await expect(projected).toHaveAttribute('x', '450');
+    await expectPlacedCoordinate(projected, 'x', '450');
     const viewId = await page
         .locator('svg#surface #frames > [data-frame]')
         .filter({ hasText: 'Home · Desktop' })
@@ -68,7 +68,7 @@ test('places a second view, resolves its width, edits shared content and deletes
     await pointer(page, 'pointermove', { x: 470, y: 140 });
     await pointer(page, 'pointercancel', { x: 470, y: 140 });
     await expect(page.getByLabel('View x')).toHaveValue('440');
-    await expect(projected).toHaveAttribute('x', '450');
+    await expectPlacedCoordinate(projected, 'x', '450');
     await page.getByLabel('View width').fill('500');
     await page.getByLabel('View width').press('Enter');
     await expect(projected).toHaveAttribute('width', '480');
@@ -170,8 +170,8 @@ test('selects projected instances and ignores secondary presses during a gesture
     await page.mouse.down();
     await page.mouse.move(hitBox.x + 34, hitBox.y + 22);
     await page.mouse.up();
-    await expect(hit).toHaveAttribute('x', '453');
-    await expect(hit).toHaveAttribute('y', '121');
+    await expectPlacedCoordinate(hit, 'x', '453');
+    await expectPlacedCoordinate(hit, 'y', '121');
 
     const explorer = page.getByRole('region', { name: 'Explorer' });
     await explorer.getByRole('button', { name: 'Home · Second', exact: true }).click();
@@ -241,7 +241,7 @@ test('draws and drags source artwork through a Screen view, cancels a drag and r
     await page.mouse.move(box.x + 550, box.y + 170);
     await page.mouse.down();
     await page.mouse.move(box.x + 610, box.y + 210, { steps: 3 });
-    await expect(page.locator('#tools rect')).toHaveAttribute('x', '550');
+    await expectPlacedCoordinate(page.locator('#tools rect'), 'x', '550');
     await page.mouse.up();
     const original = page.locator(
         'svg#surface #screen-views > [data-screen-view="home:view"] rect[data-cy="rectangle-1"]'
@@ -249,24 +249,24 @@ test('draws and drags source artwork through a Screen view, cancels a drag and r
     const projected = page.locator(
         'svg#surface #screen-views > [data-screen-view="view"] rect[data-cy="rectangle-1"]'
     );
-    await expect(original).toHaveAttribute('x', '200');
-    await expect(projected).toHaveAttribute('x', '550');
+    await expectPlacedCoordinate(original, 'x', '200');
+    await expectPlacedCoordinate(projected, 'x', '550');
     await expect(page.getByLabel('Selection parent')).toContainText('Home');
     await page.mouse.move(box.x + 550, box.y + 170);
     await page.mouse.down();
     await page.mouse.move(box.x + 587, box.y + 197, { steps: 3 });
     await page.mouse.up();
-    await expect(projected).toHaveAttribute('x', '587');
-    await expect(original).toHaveAttribute('x', '237');
+    await expectPlacedCoordinate(projected, 'x', '587');
+    await expectPlacedCoordinate(original, 'x', '237');
     await page.mouse.down();
     await page.mouse.move(box.x + 617, box.y + 227);
     await surface.dispatchEvent('pointercancel', { pointerId: 1 });
     await page.mouse.up();
-    await expect(projected).toHaveAttribute('x', '587');
-    await expect(original).toHaveAttribute('x', '237');
+    await expectPlacedCoordinate(projected, 'x', '587');
+    await expectPlacedCoordinate(original, 'x', '237');
     await page.reload();
-    await expect(projected).toHaveAttribute('x', '587');
-    await expect(original).toHaveAttribute('x', '237');
+    await expectPlacedCoordinate(projected, 'x', '587');
+    await expectPlacedCoordinate(original, 'x', '237');
     await selectTool(page, 'Type a text');
     await pointer(page, 'pointerdown', {
         x: 520,
@@ -282,15 +282,20 @@ test('draws and drags source artwork through a Screen view, cancels a drag and r
         .click();
     await page.getByLabel('View x').fill('650');
     await page.getByLabel('View x').press('Enter');
-    await expect(page.locator('#tools foreignObject')).toHaveAttribute('x', '720');
+    await expectPlacedCoordinate(page.locator('#tools foreignObject'), 'x', '720');
     await text.press('Enter');
-    await expect(page.locator('svg#surface #shapes text[data-cy="text-1"]')).toHaveAttribute(
+    await expectPlacedCoordinate(
+        page.locator('svg#surface #shapes text[data-cy="text-1"]'),
         'x',
         '170'
     );
-    await expect(
-        page.locator('svg#surface #screen-views > [data-screen-view="view"] text[data-cy="text-1"]')
-    ).toHaveAttribute('x', '720');
+    await expectPlacedCoordinate(
+        page.locator(
+            'svg#surface #screen-views > [data-screen-view="view"] text[data-cy="text-1"]'
+        ),
+        'x',
+        '720'
+    );
     await page.screenshot({ path: '/tmp/reactor-screen-view-gestures.png' });
 });
 

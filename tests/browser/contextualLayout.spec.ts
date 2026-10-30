@@ -2,7 +2,7 @@ import { selectVariable } from './support/variables';
 import { expect, test, type Page } from '@playwright/test';
 import { createDocument, createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
-import { openEditor, pointer } from './support/editor';
+import { expectPlacedCoordinate, openEditor, pointer } from './support/editor';
 import type { Frame } from 'src/app/types';
 
 async function openLayout(page: Page, extraFrames: Record<string, Frame> = {}) {
@@ -114,7 +114,7 @@ test('draws and hit-tests the per-view sizes and preserves stack gesture restric
     const { compact, comfortable, inspector } = await openLayout(page);
     await expect(compact.locator('[data-cy="First"]')).toHaveAttribute('width', '40');
     await expect(comfortable.locator('[data-cy="First"]')).toHaveAttribute('width', '80');
-    await expect(comfortable.locator('[data-cy="Second"]')).toHaveAttribute('x', '730');
+    await expectPlacedCoordinate(comfortable.locator('[data-cy="Second"]'), 'x', '730');
     // This point is inside only the contextual 80px rectangle, beyond its base width.
     await pointer(page, 'pointerdown', {
         x: 700,
@@ -133,7 +133,7 @@ test('draws and hit-tests the per-view sizes and preserves stack gesture restric
     });
     await pointer(page, 'pointermove', { x: 740, y: 420 });
     await pointer(page, 'pointerup', { x: 740, y: 420 });
-    await expect(comfortable.locator('[data-cy="First"]')).toHaveAttribute('x', '630');
+    await expectPlacedCoordinate(comfortable.locator('[data-cy="First"]'), 'x', '630');
     await expect(comfortable.locator('[data-cy="First"]')).toHaveAttribute('width', '80');
 });
 
@@ -151,9 +151,9 @@ test('authors number overrides and frame bindings, with inheritance, reload and 
     await inspector.getByLabel('Variable for frame gap', { exact: true }).scrollIntoViewIfNeeded();
     await page.screenshot({ path: 'test-results/reactor-contextual-layout-bindings.png' });
     await inspector.getByLabel('Variable for frame gap', { exact: true }).selectOption('');
-    await expect(comfortable.locator('[data-cy="Second"]')).toHaveAttribute('x', '720');
+    await expectPlacedCoordinate(comfortable.locator('[data-cy="Second"]'), 'x', '720');
     await page.getByRole('button', { name: /Undo/ }).first().click();
-    await expect(comfortable.locator('[data-cy="Second"]')).toHaveAttribute('x', '730');
+    await expectPlacedCoordinate(comfortable.locator('[data-cy="Second"]'), 'x', '730');
     await page.locator('#frames > [data-frame="comfortable"]').press('Enter');
     await inspector.getByLabel('Density mode', { exact: true }).selectOption('compact');
     await expect(comfortable.locator('[data-cy="First"]')).toHaveAttribute('width', '40');

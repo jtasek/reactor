@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createDocument, createShape, createComponent } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
-import { openEditor, pointer, selectTool } from './support/editor';
+import { expectPlacedCoordinate, openEditor, pointer, selectTool } from './support/editor';
 
 async function openComponent(
     page: Page,
@@ -190,7 +190,7 @@ test('Explorer child selection retains view focus and Escape returns to the orig
         .locator('xpath=ancestor::li[1]');
     await row.getByRole('button', { name: 'Part 2', exact: true }).click();
     await expect(navigation).toBeVisible();
-    await expect(desktop.locator('[data-type="bottomRight"]')).toHaveAttribute('cx', '620');
+    await expectPlacedCoordinate(desktop.locator('[data-type="bottomRight"]'), 'cx', '620');
     await page.setViewportSize({ width: 600, height: 850 });
     // Use the equal Mobile view while the Desktop placement is offscreen.
     await pointer(page, 'pointerdown', {
@@ -200,7 +200,7 @@ test('Explorer child selection retains view focus and Escape returns to the orig
     });
     await pointer(page, 'pointermove', { x: 210, y: 120 });
     await pointer(page, 'pointerup', { x: 210, y: 120 });
-    await expect(mobile.locator('[data-cy="Part 2"]')).toHaveAttribute('x', '200');
+    await expectPlacedCoordinate(mobile.locator('[data-cy="Part 2"]'), 'x', '200');
     await expect(navigation).toContainText('Home · 300 px');
     await page.setViewportSize({ width: 1280, height: 850 });
     await page.locator('svg#surface').focus();
@@ -314,15 +314,15 @@ test.describe('Screen view keyboard editing', () => {
         await page.mouse.click(surface.x + 800, surface.y + 450);
         await page.keyboard.press('ControlOrMeta+v');
         const pasted = desktop.locator('[data-cy="Part 4"]');
-        await expect(pasted).toHaveAttribute('x', '780');
-        await expect(pasted).toHaveAttribute('y', '430');
-        await expect(mobile.locator('[data-cy="Part 4"]')).toHaveAttribute('x', '380');
+        await expectPlacedCoordinate(pasted, 'x', '780');
+        await expectPlacedCoordinate(pasted, 'y', '430');
+        await expectPlacedCoordinate(mobile.locator('[data-cy="Part 4"]'), 'x', '380');
         await page.keyboard.press('ControlOrMeta+d');
         const clone = desktop.locator('[data-cy="rectangle-1"]');
-        await expect(clone).toHaveAttribute('x', '790');
+        await expectPlacedCoordinate(clone, 'x', '790');
         await page.keyboard.press('ArrowRight');
-        await expect(clone).toHaveAttribute('x', '800');
-        await expect(mobile.locator('[data-cy="rectangle-1"]')).toHaveAttribute('x', '400');
+        await expectPlacedCoordinate(clone, 'x', '800');
+        await expectPlacedCoordinate(mobile.locator('[data-cy="rectangle-1"]'), 'x', '400');
         await page.keyboard.press('Delete');
         await expect(clone).toHaveCount(0);
         await expect(pasted).toBeVisible();
@@ -331,8 +331,8 @@ test.describe('Screen view keyboard editing', () => {
         await page.keyboard.press('ControlOrMeta+c');
         await page.mouse.click(surface.x + 240, surface.y + 230);
         await page.keyboard.press('ControlOrMeta+v');
-        await expect(mobile.locator('[data-cy="Part 5"]')).toHaveAttribute('x', '220');
-        await expect(mobile.locator('[data-cy="Part 5"]')).toHaveAttribute('y', '210');
+        await expectPlacedCoordinate(mobile.locator('[data-cy="Part 5"]'), 'x', '220');
+        await expectPlacedCoordinate(mobile.locator('[data-cy="Part 5"]'), 'y', '210');
         await page.screenshot({ path: 'test-results/reactor-screen-view-keyboard-narrow.png' });
     });
 
@@ -353,10 +353,10 @@ test.describe('Screen view keyboard editing', () => {
         await page.mouse.click(surface.x + 550, surface.y + 390);
         await page.keyboard.press('ControlOrMeta+d');
         const clone = desktop.locator('[data-cy="rectangle-1"]');
-        await expect(clone).toHaveAttribute('x', '550');
+        await expectPlacedCoordinate(clone, 'x', '550');
         await expect(navigation).toContainText('Home · Desktop');
         await page.keyboard.press('ArrowRight');
-        await expect(clone).toHaveAttribute('x', '560');
+        await expectPlacedCoordinate(clone, 'x', '560');
         await page.keyboard.press('ControlOrMeta+c');
         await page.keyboard.press('ControlOrMeta+v');
         const pasted = desktop.locator('[data-cy="rectangle-2"]');

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createDocument, createShape, createGroup, createComponent } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
-import { openEditor, pointer } from './support/editor';
+import { expectPlacedCoordinate, openEditor, pointer } from './support/editor';
 
 async function openContainer(
     page: Page,
@@ -89,8 +89,8 @@ for (const kind of ['group', 'component'] as const) {
         await expect(selection.locator('[data-handle]')).toHaveCount(9);
         await expect(desktop.locator('[data-shape-id] [data-handle]')).toHaveCount(0);
         const corner = selection.locator('[data-type="bottomRight"]');
-        await expect(corner).toHaveAttribute('cx', '620');
-        await expect(corner).toHaveAttribute('cy', '370');
+        await expectPlacedCoordinate(corner, 'cx', '620');
+        await expectPlacedCoordinate(corner, 'cy', '370');
         const box = (await corner.boundingBox())!;
         const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
         await page.mouse.move(from.x, from.y);
@@ -132,7 +132,8 @@ for (const kind of ['group', 'component'] as const) {
         await expect(mobile.locator('[data-cy="Part 1"]')).toHaveAttribute('width', '80');
         await pointer(page, 'pointercancel', { x: 320, y: 190 });
         await expect(mobile.locator('[data-cy="Part 1"]')).toHaveAttribute('width', '40');
-        await expect(mobile.locator(selector).locator('[data-type="bottomRight"]')).toHaveAttribute(
+        await expectPlacedCoordinate(
+            mobile.locator(selector).locator('[data-type="bottomRight"]'),
             'cx',
             '220'
         );

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { createDocument, createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
-import { openEditor, pointer } from './support/editor';
+import { expectPlacedCoordinate, openEditor, pointer } from './support/editor';
 
 function fixture(restriction?: 'locked' | 'stack' | 'nested-stack') {
     const shape = createShape({
@@ -82,8 +82,8 @@ test('resizes and rotates shared artwork through real Screen view handles', asyn
     await page.mouse.click(bodyBox.x + bodyBox.width / 2, bodyBox.y + bodyBox.height / 2);
     const bottomRight = desktop.locator('[data-handle][data-type="bottomRight"]');
     await expect(bottomRight).toBeVisible();
-    await expect(bottomRight).toHaveAttribute('cx', '600');
-    await expect(bottomRight).toHaveAttribute('cy', '390');
+    await expectPlacedCoordinate(bottomRight, 'cx', '600');
+    await expectPlacedCoordinate(bottomRight, 'cy', '390');
     const handle = (await bottomRight.boundingBox())!;
     await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
     await page.mouse.down();
@@ -102,9 +102,11 @@ test('resizes and rotates shared artwork through real Screen view handles', asyn
     const rotate = '#screen-views > [data-screen-view="desktop"] [data-handle][data-type="rotate"]';
     await pointer(page, 'pointerdown', { x: 580, y: 306, target: rotate });
     await pointer(page, 'pointermove', { x: 700, y: 375 });
+    // Local rotation plus view placement retains the canvas center at (580, 375).
+    await expect(desktop).toHaveAttribute('transform', 'translate(500 300)');
     await expect(desktop.locator('g[data-shape-id]')).toHaveAttribute(
         'transform',
-        'rotate(90 580 375)'
+        'rotate(90 80 75)'
     );
     await pointer(page, 'pointercancel', { x: 700, y: 375 });
     await expect(desktop.locator('g[data-shape-id]')).not.toHaveAttribute('transform');
@@ -112,7 +114,7 @@ test('resizes and rotates shared artwork through real Screen view handles', asyn
     await pointer(page, 'pointerup', { x: 700, y: 375 });
     await expect(desktop.locator('g[data-shape-id]')).toHaveAttribute(
         'transform',
-        'rotate(90 580 375)'
+        'rotate(90 80 75)'
     );
 
     await page.setViewportSize({ width: 600, height: 850 });

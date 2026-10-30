@@ -859,3 +859,59 @@ it('leaves what a locked frame holds hidden on Show all, as it is', () => {
     expect(document.frames[child].visible).toBe(true);
     expect(document.shapes[shape].visible).toBe(true);
 });
+
+it('moves line and pen geometry without changing the snapshots used by later moves and cancel', () => {
+    const { store } = createTestStore();
+    const root = addFrame(store, 'Artwork');
+    store.actions.addShape({
+        type: 'line',
+        start: { x: 120, y: 100 },
+        end: { x: 160, y: 130 },
+        parentFrameId: root,
+        selected: false
+    });
+    store.actions.addShape({
+        type: 'pen',
+        points: [
+            { x: 130, y: 110 },
+            { x: 150, y: 140 }
+        ],
+        parentFrameId: root,
+        selected: false,
+        bounds: {
+            topLeft: { x: 130, y: 110 },
+            bottomRight: { x: 150, y: 140 },
+            width: 20,
+            height: 30
+        }
+    });
+    const document = store.state.currentDocument;
+    const [lineId, penId] = document.shapesIds;
+    store.actions.events.beginGesture({
+        pointerId: 1,
+        position: { x: 100, y: 80 },
+        handle: { frameId: root, type: 'move' }
+    });
+    const gesture = store.state.events.pointer.gesture;
+    if (gesture.kind !== 'editingFrame') {
+        throw new Error('Expected a frame drag');
+    }
+    const snapshots = json(gesture.shapes);
+    store.actions.events.movePointer({ pointerId: 1, position: { x: 150, y: 100 } });
+    store.actions.events.movePointer({ pointerId: 1, position: { x: 160, y: 110 } });
+    expect(json(gesture.shapes)).toEqual(snapshots);
+    expect(document.shapes[lineId]).toMatchObject({
+        start: { x: 180, y: 130 },
+        end: { x: 220, y: 160 }
+    });
+    expect(document.shapes[penId]).toMatchObject({
+        points: [
+            { x: 190, y: 140 },
+            { x: 210, y: 170 }
+        ],
+        bounds: { topLeft: { x: 190, y: 140 }, bottomRight: { x: 210, y: 170 } }
+    });
+    store.actions.events.cancelGesture();
+    expect(json(document.shapes[lineId])).toEqual(snapshots[lineId]);
+    expect(json(document.shapes[penId])).toEqual(snapshots[penId]);
+});
