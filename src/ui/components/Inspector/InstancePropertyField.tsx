@@ -1,6 +1,7 @@
 import React, { ChangeEvent, FC, memo } from 'react';
 import type { ShapeProperty, PropertyValue } from 'src/app/properties';
 import { isHexColor } from 'src/app/utils';
+import { ColorInput } from '../ColorInput';
 import styles from './styles.css';
 
 export const InstancePropertyField: FC<{
@@ -40,12 +41,12 @@ export const InstancePropertyField: FC<{
     if (kind === 'color') {
         return (
             <span className={styles.instanceColor}>
-                <input
+                <ColorInput
                     id={id}
                     aria-label={label}
-                    type="color"
+                    label={label}
                     value={typeof value === 'string' && isHexColor(value) ? value : '#000000'}
-                    onChange={handleChange}
+                    onValue={onChange}
                 />
                 <span>
                     {typeof value === 'string' && value ? value.slice(1).toUpperCase() : 'None'}

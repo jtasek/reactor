@@ -5,6 +5,7 @@ import type { Variable } from 'src/app/types';
 import { Slider } from '../Slider';
 import { SharedOnRelease } from './SharedOnRelease';
 import { Icon } from '../Icon';
+import { ColorInput } from '../ColorInput';
 import styles from './styles.css';
 
 /** The picker's color for no color, or mixed colors, whose swatch is drawn struck through. */
@@ -210,18 +211,16 @@ export const PropertyField: FC<Props> = ({
                 ) : property.kind === 'color' ? (
                     <>
                         <SharedOnRelease>
-                            <input
+                            <ColorInput
                                 id={id}
-                                type="color"
+                                label={property.label}
                                 className={styles.color}
                                 data-no-color={mixed || !value ? '' : undefined}
                                 value={
                                     !mixed && typeof value === 'string' && value ? value : NO_COLOR
                                 }
                                 disabled={readOnly}
-                                onChange={(event) =>
-                                    onChange(shapeIds, property.key, event.target.value)
-                                }
+                                onValue={(color) => onChange(shapeIds, property.key, color)}
                             />
                         </SharedOnRelease>
                         {mixed && <span>Mixed</span>}

@@ -3,6 +3,7 @@ import type { Variable } from 'src/app/types';
 import { useActions } from 'src/app/hooks';
 import { templateWithNames } from 'src/app/variables';
 import { SharedOnRelease } from '../Inspector/SharedOnRelease';
+import { ColorInput } from '../ColorInput';
 import styles from './styles.css';
 /**
  * A text or number field whose typing is a draft: applied on Enter or blur, dropped
@@ -88,13 +89,13 @@ export const ValueField: FC<{
             return (
                 <div className={styles.valueInput}>
                     <SharedOnRelease>
-                        <input
+                        <ColorInput
                             id={id}
-                            type="color"
                             aria-label={label}
+                            label={mode ? `${mode.name} · ${variable.name}` : variable.name}
                             aria-describedby={describedBy}
                             value={String(value)}
-                            onChange={(event) => set(event.target.value)}
+                            onValue={set}
                         />
                     </SharedOnRelease>
                     <DraftField

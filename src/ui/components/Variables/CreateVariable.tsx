@@ -3,6 +3,7 @@ import type { Variable, VariableType } from 'src/app/types';
 import { useActions, useCurrentDocument } from 'src/app/hooks';
 import { isVariableName } from 'src/app/variables';
 import { ordered } from 'src/app/variableModes';
+import { ColorInput } from '../ColorInput';
 import styles from './styles.css';
 
 export const TYPES: { type: VariableType; label: string; value: Variable['values']['default'] }[] =
@@ -110,11 +111,16 @@ export function CreateVariable({
                             checked={Boolean(value)}
                             onChange={(event) => setValue(event.target.checked)}
                         />
+                    ) : type === 'color' ? (
+                        <ColorInput
+                            aria-label="New variable value"
+                            label="New variable"
+                            value={String(value)}
+                            onValue={setValue}
+                        />
                     ) : (
                         <input
-                            type={
-                                type === 'color' ? 'color' : type === 'number' ? 'number' : 'text'
-                            }
+                            type={type === 'number' ? 'number' : 'text'}
                             step={type === 'number' ? 'any' : undefined}
                             required={type === 'number'}
                             aria-label="New variable value"
