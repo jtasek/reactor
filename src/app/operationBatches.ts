@@ -815,8 +815,12 @@ function stage(
             shape.type === 'instance' &&
             changes.interaction &&
             'navigateTo' in changes.interaction &&
+            // Compare with the role the instance shows, which it may inherit from its source.
             changes.interaction.navigateTo !==
-                (current.type === 'instance' ? current.interaction?.navigateTo : undefined) &&
+                (current.type === 'instance'
+                    ? (current.interaction ?? document.components[current.componentId]?.interaction)
+                          ?.navigateTo
+                    : undefined) &&
             (!('interactions' in changes) || changes.interactions === undefined)
         ) {
             shape.interactions = { activate: legacyActivation(changes.interaction) };

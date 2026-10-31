@@ -36,7 +36,7 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                             <select
                                 id="activate-target"
                                 aria-label="Navigate to screen"
-                                disabled={data.disabled}
+                                disabled={data.disabled || data.actionFamily !== undefined}
                                 value={
                                     data.actionInherited
                                         ? 'inherit'
@@ -77,6 +77,8 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                     <tr>
                         <td colSpan={2}>
                             <small className={styles.frameHint}>
+                                {data.actionFamily !== undefined &&
+                                    `Variants use the action of ${data.actionFamily}. `}
                                 {data.actionInherited &&
                                     (target
                                         ? `From source: navigate to ${data.screens.find((screen) => screen.id === target)?.name ?? 'unavailable screen'}. `

@@ -26,7 +26,16 @@ export function editInteractions({ state }: Context, edit: InteractionEdit) {
     }
     const component =
         document.components[instance?.type === 'instance' ? instance.componentId : edit.id];
-    if (!component || (edit.target === 'component' && (component.library || component.locked))) {
+    if (
+        !component ||
+        (edit.target === 'component' &&
+            (component.library ||
+                component.locked ||
+                // Variants take their family's action, so their own would never apply.
+                Object.values(document.components).some((item) =>
+                    item.variantIds?.includes(component.id)
+                )))
+    ) {
         return;
     }
     const settings = orUndefined(() => readInteractions(edit.settings));

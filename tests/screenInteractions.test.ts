@@ -407,3 +407,63 @@ it.each([false, true])(
         legacy.destroy();
     }
 );
+
+it('keeps an inherited action when an operation customizes the role with the source destination', () => {
+    const { store, document, instance, resolve, change } = fixture();
+    const customize = () =>
+        store.actions.applyOperations({
+            documentId: document.id,
+            by: { kind: 'person' },
+            operations: [
+                {
+                    op: 'updateShape',
+                    shape: 'next',
+                    changes: {
+                        interaction: {
+                            role: 'button',
+                            props: { label: 'label' },
+                            navigateTo: 'details'
+                        }
+                    }
+                }
+            ]
+        }).applied;
+    expect(customize()).toBe(true);
+    expect(inheritedActivation(instance())).toBe(true);
+    change('component', navigate('home'));
+    expect(resolve()).toEqual(navigate('home').activate);
+    // The source's role still carries its old destination; echoing it changes nothing.
+    expect(document.components.button.interaction?.navigateTo).toBe('details');
+    store.actions.editRole({ target: 'instance', id: 'next', settings: null });
+    expect(customize()).toBe(true);
+    expect(resolve()).toEqual(navigate('home').activate);
+});
+
+it('keeps variant actions with the family', () => {
+    const { store } = createTestStore();
+    const document = store.state.currentDocument;
+    store.actions.addShape({
+        type: 'rectangle',
+        name: 'Artwork',
+        position: { x: 0, y: 0 },
+        size: { width: 40, height: 20 }
+    });
+    store.actions.addComponent({
+        id: 'family',
+        name: 'Family',
+        shapesIds: [document.shapesIds.at(-1)!]
+    });
+    const variantId = store.actions.createComponentVariant('family')!;
+    store.actions.editInteractions({
+        target: 'component',
+        id: variantId,
+        settings: { activate: null }
+    });
+    expect(document.components[variantId].interactions).toEqual({});
+    store.actions.editInteractions({
+        target: 'component',
+        id: 'family',
+        settings: { activate: null }
+    });
+    expect(document.components.family.interactions).toEqual({ activate: null });
+});

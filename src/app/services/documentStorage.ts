@@ -562,22 +562,15 @@ function readRoleAndInteractions(value: Record<string, unknown>) {
 }
 
 export function readInteractions(value: unknown): import('../types').InteractionSettings {
-    const settings = record(value);
-    if (Object.keys(settings).some((key) => key !== 'activate')) {
-        throw new Error('Invalid interaction trigger');
-    }
-    if (settings.activate === undefined) {
-        return {};
-    }
-    if (settings.activate === null) {
-        return { activate: null };
-    }
-    const action = record(settings.activate);
-    if (action.type !== 'navigate') {
-        throw new Error('Invalid interaction action');
+    const { activate, ...rest } = record(value);
+    const action = activate == null ? {} : record(activate);
+    if (Object.keys(rest).length || (activate != null && action.type !== 'navigate')) {
+        throw new Error('Invalid interactions');
     }
 
-    return { activate: { type: 'navigate', screenId: id(action.screenId) } };
+    return activate === undefined
+        ? {}
+        : { activate: activate && { type: 'navigate', screenId: id(action.screenId) } };
 }
 
 export function readRoleSettings(value: unknown): import('../types').RoleSettings {
