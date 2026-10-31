@@ -1,0 +1,273 @@
+/* A Liquid Glass popover: a bright, blurred sheet with a soft rim and a lifted shadow.
+   Its tokens live here, with the editor's own chunk, not in the startup stylesheet. */
+.editor {
+    --editor-width: 248px;
+    --editor-radius: 20px;
+    --editor-padding: 14px;
+    --editor-gap: 12px;
+    --control-radius: 10px;
+    --control-height: 28px;
+    --glass-sheet: rgb(255 255 255 / 62%);
+    --glass-rim: rgb(255 255 255 / 75%);
+    --glass-filter: blur(28px) saturate(180%);
+    --glass-shadow:
+        0 0 0 0.5px rgb(0 0 0 / 12%), 0 18px 40px -8px rgb(0 0 0 / 28%), 0 2px 8px rgb(0 0 0 / 8%),
+        inset 0 1px 0 rgb(255 255 255 / 90%);
+    --glass-field: rgb(255 255 255 / 55%);
+    --glass-field-hover: rgb(255 255 255 / 80%);
+    --field-rim: inset 0 0 0 0.5px rgb(0 0 0 / 6%);
+    --thumb-rim: #fff;
+    --thumb-shadow: 0 0 0 0.5px rgb(0 0 0 / 30%), 0 2px 6px rgb(0 0 0 / 30%);
+    --well-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 14%);
+
+    backdrop-filter: var(--glass-filter);
+    background-color: var(--glass-sheet);
+    border: 1px solid var(--glass-rim);
+    border-radius: var(--editor-radius);
+    box-shadow: var(--glass-shadow);
+    box-sizing: border-box;
+    color: var(--ink-strong);
+    font-family: inherit;
+    font-size: 12px;
+    inset: auto;
+    margin: 0;
+    overflow: visible;
+    padding: var(--editor-padding);
+    position: fixed;
+    user-select: none;
+    width: var(--editor-width);
+}
+
+.editor:focus {
+    outline: none;
+}
+
+.editor:popover-open {
+    display: grid;
+    gap: var(--editor-gap);
+    animation: appear 160ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+@keyframes appear {
+    from {
+        opacity: 0;
+        transform: scale(0.96) translateY(-4px);
+    }
+}
+
+.header {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin: -4px -4px -2px 2px;
+}
+
+.title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.close,
+.tool {
+    align-items: center;
+    background-color: var(--glass-field);
+    border: 0;
+    border-radius: 50%;
+    box-shadow: var(--well-shadow);
+    color: var(--text-secondary-color);
+    cursor: pointer;
+    display: inline-flex;
+    flex: none;
+    height: 24px;
+    justify-content: center;
+    padding: 0;
+    transition:
+        background-color 120ms,
+        color 120ms;
+    width: 24px;
+}
+
+.tool {
+    border-radius: var(--control-radius);
+    height: var(--control-height);
+    width: var(--control-height);
+}
+
+.close:hover,
+.tool:hover {
+    background-color: var(--glass-field-hover);
+    color: var(--ink-strong);
+}
+
+.close:active,
+.tool:active {
+    transform: scale(0.94);
+}
+
+.editor :focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 2px;
+}
+
+/* Saturation runs left to right, brightness bottom to top, over the hue. */
+.area {
+    aspect-ratio: 4 / 3;
+    background-image:
+        linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent);
+    border-radius: 12px;
+    box-shadow: var(--well-shadow);
+    cursor: crosshair;
+    position: relative;
+    touch-action: none;
+}
+
+.thumb,
+.hueThumb {
+    border: 3px solid var(--thumb-rim);
+    border-radius: 50%;
+    box-shadow: var(--thumb-shadow);
+    box-sizing: border-box;
+    height: 18px;
+    pointer-events: none;
+    position: absolute;
+    transform: translate(-50%, -50%);
+    width: 18px;
+}
+
+.row {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+}
+
+.hue {
+    background-image: linear-gradient(
+        to right,
+        #f00,
+        #ff0 16.67%,
+        #0f0 33.33%,
+        #0ff 50%,
+        #00f 66.67%,
+        #f0f 83.33%,
+        #f00
+    );
+    border-radius: 999px;
+    box-shadow: var(--well-shadow);
+    cursor: pointer;
+    flex: 1;
+    height: 12px;
+    margin: 0 9px;
+    position: relative;
+    touch-action: none;
+}
+
+.hueThumb {
+    height: 20px;
+    top: 50%;
+    width: 20px;
+}
+
+.values {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+}
+
+.swatch {
+    border-radius: var(--control-radius);
+    box-shadow: var(--well-shadow);
+    flex: none;
+    height: var(--control-height);
+    width: var(--control-height);
+}
+
+.hex,
+.channel {
+    align-items: center;
+    background-color: var(--glass-field);
+    border-radius: var(--control-radius);
+    box-shadow: var(--field-rim);
+    color: var(--text-secondary-color);
+    display: flex;
+    gap: 2px;
+    height: var(--control-height);
+    min-width: 0;
+    padding: 0 8px;
+    transition: background-color 120ms;
+}
+
+.hex {
+    flex: 1;
+}
+
+.hex:hover,
+.channel:hover,
+.hex:focus-within,
+.channel:focus-within {
+    background-color: var(--glass-field-hover);
+}
+
+.hex:focus-within,
+.channel:focus-within {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 0;
+}
+
+.editor .hex input,
+.editor .channel input {
+    appearance: textfield;
+    background-color: transparent;
+    border: 0;
+    color: var(--ink-strong);
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    min-width: 0;
+    outline: none;
+    padding: 0;
+    width: 100%;
+}
+
+.editor .hex input {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.editor .channel input {
+    text-align: right;
+}
+
+.editor .channel input::-webkit-inner-spin-button {
+    appearance: none;
+}
+
+.channels {
+    display: grid;
+    gap: 6px;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.channel > span {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+    .editor {
+        background-color: var(--surface);
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    .editor {
+        backdrop-filter: none;
+        background-color: var(--surface);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .editor:popover-open {
+        animation: none;
+    }
+}
