@@ -358,7 +358,9 @@ export const ColorEditor: FC<{
             }}
         >
             <header className={styles.header}>
-                <span className={styles.title}>{label}</span>
+                <span className={styles.title} title={label}>
+                    {label}
+                </span>
                 <div className={styles.formats} role="group" aria-label="Number format">
                     {(['RGB', 'HSL', 'HSB'] as const).map((choice) => (
                         <button
@@ -494,7 +496,8 @@ export const ColorEditor: FC<{
             <div className={styles.channels}>
                 {CHANNELS[format].map((channel, index) => (
                     <ChannelField
-                        key={channel.name}
+                        // Each format's fields are its own, so a half-typed value never moves across.
+                        key={`${format}-${channel.name}`}
                         {...channel}
                         value={channelValues[index]}
                         onCommit={(value) => setChannel(index, value)}

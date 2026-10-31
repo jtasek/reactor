@@ -65,6 +65,7 @@
 
 /* A segmented control: the chosen format is a raised white chip on a recessed track. */
 .formats {
+    flex: none;
     background-color: var(--field-background);
     border-radius: 999px;
     display: flex;
@@ -102,6 +103,10 @@
     font-size: 13px;
     font-weight: 600;
     letter-spacing: -0.01em;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .close,
