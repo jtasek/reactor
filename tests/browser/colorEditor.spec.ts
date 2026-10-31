@@ -28,12 +28,37 @@ test('a color field opens the color editor, which edits by hex, RGB and keys', a
     await editor.getByLabel('Blue').press('Enter');
     await expect.poll(shown).toBe('rgb(255, 136, 255)');
 
+    // HSL shows the same color, edits it, and stays chosen for the next opening.
+    await editor.getByRole('button', { name: 'HSL' }).click();
+    await expect(editor.getByRole('button', { name: 'HSL' })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+    );
+    await expect(editor.getByLabel('Hue (degrees)')).toHaveValue('300');
+    await expect(editor.getByLabel('Saturation (%)')).toHaveValue('100');
+    await expect(editor.getByLabel('Lightness (%)')).toHaveValue('77');
+    await editor.getByLabel('Lightness (%)').fill('50');
+    await editor.getByLabel('Lightness (%)').press('Enter');
+    await expect(fill).toHaveValue('#ff00ff');
+    await editor.getByRole('button', { name: 'Close' }).click();
+    await fill.click();
+    await expect(editor.getByLabel('Hue (degrees)')).toHaveValue('300');
+    await editor.getByRole('button', { name: 'HSB' }).click();
+    await expect(editor.getByLabel('Brightness (%)')).toHaveValue('100');
+    await editor.getByLabel('Brightness (%)').fill('50');
+    await editor.getByLabel('Brightness (%)').press('Enter');
+    await expect(fill).toHaveValue('#800080');
+    await editor.getByLabel('Brightness (%)').fill('100');
+    await editor.getByLabel('Brightness (%)').press('Enter');
+    await editor.getByRole('button', { name: 'RGB' }).click();
+    await expect(editor.getByLabel('Green')).toHaveValue('0');
+
     // Brightness down by ten steps, from the keyboard.
     const area = editor.getByRole('slider', { name: 'Saturation and brightness' });
     await area.focus();
     await page.keyboard.press('Shift+ArrowDown');
     await expect(area).toHaveAttribute('aria-valuetext', /brightness 90%/);
-    await expect(fill).not.toHaveValue('#ff88ff');
+    await expect(fill).not.toHaveValue('#ff00ff');
 
     // Escape closes the editor and gives the field its focus back, keeping the shape.
     await page.keyboard.press('Escape');
