@@ -37,6 +37,8 @@ import {
     Application,
     Camera,
     Component,
+    RoleSettings,
+    InteractionSettings,
     Document,
     Grid,
     Group,
@@ -181,7 +183,9 @@ export function createShape(input: ShapeInput & Pick<Shape, 'order' | 'name'>): 
         rotation: 0,
         selected: true,
         visible: true,
-        ...(input.type === 'instance' ? { modeOverrides: {} } : {}),
+        ...(input.type === 'instance'
+            ? { modeOverrides: {}, interactions: createInteractions(input.interaction) }
+            : {}),
         ...input,
         id,
         key: `${input.type}-${id}`
@@ -292,8 +296,23 @@ export function createDocument(options: Partial<Document> = {}): Document {
     };
 }
 
+/** Initialize the independent action boundary before any concurrent role edits. */
+export function createInteractions(settings?: RoleSettings): InteractionSettings {
+    if (!settings) {
+        return {};
+    }
+
+    return {
+        activate:
+            settings.role === 'button' && settings.navigateTo
+                ? { type: 'navigate', screenId: settings.navigateTo }
+                : null
+    };
+}
+
 export function createComponent(options: Partial<Component> = {}): Component {
     return {
+        interactions: createInteractions(options.interaction),
         id: newId(),
         locked: false,
         name: newComponentName(),

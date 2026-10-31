@@ -17,14 +17,14 @@ import type {
     VariableDimension,
     Frame
 } from '../types';
-import { createDocument } from '../factories';
+import { createDocument, createInteractions } from '../factories';
 import { orderAbove, resolveDrawOrderTies, validDrawOrder } from '../drawOrder';
 import { isClosedShape, isHexColor, isStrokedShape } from '../utils';
 import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 22;
+export const SCHEMA_VERSION = 23;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -299,7 +299,7 @@ function readComponent(value: unknown): ComponentData {
             ? {}
             : { responsiveVariants: readResponsiveVariants(c.responsiveVariants) }),
         ...(c.variantIds === undefined ? {} : { variantIds: list(c.variantIds, id) }),
-        ...(c.interaction === undefined ? {} : { interaction: readRoleSettings(c.interaction) }),
+        ...readRoleAndInteractions(c),
         ...(c.sourceOnly === undefined ? {} : { sourceOnly: bool(c.sourceOnly) }),
         ...(c.sourceShapes === undefined
             ? {}
@@ -438,9 +438,7 @@ export function readShapeGeometry(value: unknown) {
                 ...(s.variantMode === 'auto' ? { variantMode: 'auto' as const } : {}),
                 ...(s.variantId === undefined ? {} : { variantId: id(s.variantId) }),
                 modeOverrides: readBindings(s.modeOverrides ?? {}),
-                ...(s.interaction === undefined
-                    ? {}
-                    : { interaction: readRoleSettings(s.interaction) }),
+                ...readRoleAndInteractions(s),
                 componentId: id(s.componentId),
                 position: point(s.position),
                 overrides: Object.fromEntries(
@@ -548,6 +546,31 @@ function readOrderedShape(value: unknown): ShapeData {
     }
 
     return shape;
+}
+
+function readRoleAndInteractions(value: Record<string, unknown>) {
+    const interaction =
+        value.interaction === undefined ? undefined : readRoleSettings(value.interaction);
+
+    return {
+        ...(interaction ? { interaction } : {}),
+        interactions:
+            value.interactions === undefined
+                ? createInteractions(interaction)
+                : readInteractions(value.interactions)
+    };
+}
+
+export function readInteractions(value: unknown): import('../types').InteractionSettings {
+    const { activate, ...rest } = record(value);
+    const action = activate == null ? {} : record(activate);
+    if (Object.keys(rest).length || (activate != null && action.type !== 'navigate')) {
+        throw new Error('Invalid interactions');
+    }
+
+    return activate === undefined
+        ? {}
+        : { activate: activate && { type: 'navigate', screenId: id(action.screenId) } };
 }
 
 export function readRoleSettings(value: unknown): import('../types').RoleSettings {

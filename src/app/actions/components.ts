@@ -1,3 +1,4 @@
+import type * as ComponentLibrary from '../componentLibrary';
 import type * as ComponentPropertyEdits from '../componentPropertyEdits';
 import { editorHelpers } from '../editorHelpers';
 import { Action, ActionWithParam, Application, Component, Point } from '../types';
@@ -303,78 +304,16 @@ export const insertComponentAt: ActionWithParam<{ componentId: string; position:
     });
 };
 
-export const chooseComponentToPlace: ActionWithParam<string> = (
-    { state, actions },
-    componentId
-) => {
-    if (!state.currentDocument.components[componentId]) {
-        return;
-    }
-    if (state.enteredComponentId === componentId) {
-        actions.leaveComponentSource();
-    }
-    state.tools.componentToPlace = componentId;
-    actions.tools.activateTool('instance');
-};
+export const chooseComponentToPlace: typeof ComponentPropertyEdits.chooseComponentToPlace = (
+    ...args
+) => editorHelpers().componentProperties.chooseComponentToPlace(...args);
 
-export const importLibraryComponent: ActionWithParam<{
-    documentId: string;
-    componentId: string;
-}> = ({ state, actions }, { documentId, componentId }) => {
-    const source = state.documents[documentId];
-    const target = state.currentDocument;
+// Library transfers are editor operations and load with their snapshot implementation.
+export const importLibraryComponent: typeof ComponentLibrary.importLibraryComponent = (...args) =>
+    editorHelpers().library.importLibraryComponent(...args);
 
-    if (
-        !source ||
-        source.deleted ||
-        source === target ||
-        target.locked ||
-        target.components[componentId]
-    ) {
-        return;
-    }
-    const copies = editorHelpers().library.librarySnapshot(source, componentId, target);
-
-    if (!copies) {
-        actions.displayWarning('This component cannot be copied into this document.');
-
-        return;
-    }
-    copies.forEach((component) => {
-        target.components[component.id] = component;
-    });
-    actions.ui.showControl('components');
-};
-
-export const updateLibraryComponent: ActionWithParam<string> = (
-    { state, actions, effects },
-    componentId
-) => {
-    const target = state.currentDocument;
-    const existing = target.components[componentId];
-    const source = existing?.library && state.documents[existing.library.documentId];
-
-    if (!source || source.deleted || target.locked) {
-        return;
-    }
-    const hash = editorHelpers().library.componentFingerprint(source, componentId);
-
-    if (!hash || hash === existing.library?.hash) {
-        return;
-    }
-    const copies = editorHelpers().library.librarySnapshot(source, componentId, target);
-
-    if (!copies) {
-        actions.displayWarning('This component update cannot be applied.');
-
-        return;
-    }
-    effects.collaboration.startBatch(target.id, { kind: 'person' });
-    copies.forEach((component) => {
-        target.components[component.id] = component;
-    });
-    effects.collaboration.flush();
-};
+export const updateLibraryComponent: typeof ComponentLibrary.updateLibraryComponent = (...args) =>
+    editorHelpers().library.updateLibraryComponent(...args);
 
 export const selectComponentSource: ActionWithParam<string> = ({ state, actions }, componentId) => {
     const component = state.currentDocument.components[componentId];

@@ -1,3 +1,4 @@
+import { json } from 'overmind';
 import { renderedShape } from './frameLayout';
 import { initializeStackOrder } from './stackEdits';
 import { isFrameLocked, lockedFrameForShapes } from './frameState';
@@ -484,6 +485,9 @@ export const cloneShapes: ActionWithParam<string[]> = (context, shapeIds) => {
             ...(original.type === 'instance'
                 ? {
                       bounds: original.bounds,
+                      interactions: original.interactions
+                          ? structuredClone(json(original.interactions))
+                          : undefined,
                       interaction: original.interaction
                           ? { ...original.interaction, props: { ...original.interaction.props } }
                           : undefined

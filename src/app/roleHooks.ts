@@ -10,6 +10,7 @@ import { resolveComponentProp } from './componentProps';
 import { isReadOnly } from './documentAccess';
 import { isShapeLocked } from './utils';
 import { screenFrames } from './screens';
+import { effectiveActivation, inheritedActivation } from './screenInteractions';
 
 export const useRoleEditor = (componentId?: string, instanceId?: string) =>
     useAppState((state) => {
@@ -23,8 +24,18 @@ export const useRoleEditor = (componentId?: string, instanceId?: string) =>
         const settings = effectiveRoleSettings(component, instance);
         const fields = settings.role === 'none' ? [] : ROLE_PROPERTIES[settings.role];
 
+        // A variant draws for its family, whose action applies to every variant.
+        const family = instance
+            ? undefined
+            : Object.values(document.components).find((item) =>
+                  item.variantIds?.includes(component.id)
+              );
+
         return {
             settings: { ...settings, props: { ...settings.props } },
+            activation: effectiveActivation(family ?? component, instance),
+            actionFamily: family?.name,
+            actionInherited: Boolean(instance && inheritedActivation(instance)),
             screens: screenFrames(document).map((frame) => ({ id: frame.id, name: frame.name })),
             inherited: Boolean(instance && !instance.interaction),
             sourceRole: component.interaction?.role ?? 'none',

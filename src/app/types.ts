@@ -229,10 +229,21 @@ export interface InstanceShape extends ShapeBase {
     modeOverrides?: VariableContext;
     /** Absent inherits the source; none explicitly removes its semantic role. */
     interaction?: RoleSettings;
+    /** Independent actions. Empty instance settings inherit; null Activate explicitly does nothing. */
+    interactions?: InteractionSettings;
     type: 'instance';
     componentId: string;
     position: Point;
     overrides: Record<string, PropertyValue | { variableId: string }>;
+}
+
+export interface NavigateAction {
+    type: 'navigate';
+    screenId: string;
+}
+
+export interface InteractionSettings {
+    activate?: NavigateAction | null;
 }
 
 export type PropertyValue = string | number | boolean;
@@ -250,7 +261,7 @@ export type ComponentRole = 'text' | 'input' | 'button' | 'list' | 'image';
 export interface RoleSettings {
     role: ComponentRole | 'none';
     props: Record<string, string>;
-    /** Optional button navigation to a top-level frame. Missing targets remain repairable. */
+    /** Legacy Button navigation, adapted by screenInteractions. New edits use interactions. */
     navigateTo?: string;
     /** Explicit input identity shared by compatible instances across screen layouts. */
     controlId?: string;
@@ -313,6 +324,8 @@ export interface Component {
         rules: { minWidth: number; variantId: string }[];
     };
     interaction?: RoleSettings;
+    /** Independent source actions; empty settings or null Activate explicitly do nothing. */
+    interactions?: InteractionSettings;
     id: string;
     /** Rotation of the source's selection frame; its shapes carry their own geometry. */
     rotation?: number;

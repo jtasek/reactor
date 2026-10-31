@@ -1128,6 +1128,28 @@ fingerprints/snapshots, sync and undo. Library hashes sort semantic map keys. Co
 in `tests/componentRoles.test.ts` and `tests/browser/componentRoles.spec.ts`.
 
 
+## Screen interactions
+
+Schema v23 adds optional `interactions: { activate?: { type: 'navigate', screenId } | null }`
+to components and instances. `screenInteractions.ts` resolves actions separately from role
+settings: an instance's empty settings inherit the family, null Activate explicitly does nothing,
+and an action overrides the source. Absent metadata adapts legacy Button navigation, including
+legacy instance whole-role overrides. Factories and readers initialize the independent action
+boundary, and `interactionMigration.ts` installs shared maps with deterministic per-entity
+identities before editing. Independently loaded peers can edit before exchanging migration
+updates without losing actions to competing maps. Explicit action edits never mutate roles, variants or property values. Keep rendering functions
+out of these durable records. `interactionEdits.ts` loads via `editorHelpers().roles`; library
+import/update actions load with `componentLibrary.ts`, and component placement selection with
+`componentPropertyEdits.ts`, not startup.
+
+Inspector Interactions edits Activate destinations by screen ID. Unavailable targets stay authored
+and diagnosable; new destinations must be visible root screen definitions. Preview projects an
+actionable non-input as a native button, using the instance name when no role label exists;
+inputs activate on Enter, never focus. Canvas never executes actions. Library snapshots strip
+both legacy and new document-local navigation; fingerprints exclude destinations. Coverage:
+`tests/screenInteractions.test.ts` and its browser counterpart.
+
+
 ## Interactive preview
 
 Schema v11 adds optional `RoleSettings.navigateTo`, naming a screen frame ID for button navigation.

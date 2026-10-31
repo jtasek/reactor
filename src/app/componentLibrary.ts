@@ -1,4 +1,5 @@
-import type { Component, Document, Shape, RoleSettings } from './types';
+import type { ActionWithParam } from './types';
+import type { Component, Document, Shape, RoleSettings, InteractionSettings } from './types';
 import { json } from 'overmind';
 import { shapeGeometry, shapeStyle } from './utils';
 
@@ -142,9 +143,15 @@ export function libraryVersionProblem(document: Document, componentId: string): 
 }
 
 /** Screen links point at the library document's frames, which the destination does not have. */
-function withoutNavigation<T extends { interaction?: RoleSettings } | Shape>(record: T): T {
+function withoutNavigation<
+    T extends { interaction?: RoleSettings; interactions?: InteractionSettings } | Shape
+>(record: T): T {
     if ('interaction' in record && record.interaction) {
         delete record.interaction.navigateTo;
+    }
+
+    if ('interactions' in record && record.interactions?.activate) {
+        record.interactions.activate = null;
     }
 
     return record;
@@ -194,3 +201,62 @@ export function librarySnapshot(
         selected: false
     }));
 }
+
+export const importLibraryComponent: ActionWithParam<{
+    documentId: string;
+    componentId: string;
+}> = ({ state, actions }, { documentId, componentId }) => {
+    const source = state.documents[documentId];
+    const target = state.currentDocument;
+
+    if (
+        !source ||
+        source.deleted ||
+        source === target ||
+        target.locked ||
+        target.components[componentId]
+    ) {
+        return;
+    }
+    const copies = librarySnapshot(source, componentId, target);
+
+    if (!copies) {
+        actions.displayWarning('This component cannot be copied into this document.');
+
+        return;
+    }
+    copies.forEach((component) => {
+        target.components[component.id] = component;
+    });
+    actions.ui.showControl('components');
+};
+
+export const updateLibraryComponent: ActionWithParam<string> = (
+    { state, actions, effects },
+    componentId
+) => {
+    const target = state.currentDocument;
+    const existing = target.components[componentId];
+    const source = existing?.library && state.documents[existing.library.documentId];
+
+    if (!source || source.deleted || target.locked) {
+        return;
+    }
+    const hash = componentFingerprint(source, componentId);
+
+    if (!hash || hash === existing.library?.hash) {
+        return;
+    }
+    const copies = librarySnapshot(source, componentId, target);
+
+    if (!copies) {
+        actions.displayWarning('This component update cannot be applied.');
+
+        return;
+    }
+    effects.collaboration.startBatch(target.id, { kind: 'person' });
+    copies.forEach((component) => {
+        target.components[component.id] = component;
+    });
+    effects.collaboration.flush();
+};
