@@ -170,6 +170,7 @@ export const ColorEditor: FC<{
 }> = ({ anchor, label, value, onValue, onClose }) => {
     const { releaseSharing } = useActions();
     const popover = useRef<HTMLDivElement>(null);
+    const outsidePress = useRef(false);
     // The editor keeps its own hue and saturation, which grays and black do not carry.
     const [hsv, setHsv] = useState(() => toHsv(value));
     const [hexDraft, setHexDraft] = useState<string>();
@@ -219,14 +220,21 @@ export const ColorEditor: FC<{
     useEffect(() => {
         const element = popover.current;
         // The editor's keys are its own, not the canvas shortcuts'. Stopped on the document,
-        // after React has handled them on the page (the editor's portal container).
+        // after React has handled them on the page (the editor's portal container). Releases
+        // still pass, so a key held as the editor opened is not left pressed.
         const keep = (event: Event) => {
             if (event.target instanceof Node && element?.contains(event.target)) {
                 event.stopPropagation();
             }
         };
+        // A press elsewhere closes the editor and keeps the focus it gives, as on the canvas.
+        const pressOutside = (event: Event) => {
+            outsidePress.current = !(
+                event.target instanceof Node && element?.contains(event.target)
+            );
+        };
         document.addEventListener('keydown', keep);
-        document.addEventListener('keyup', keep);
+        document.addEventListener('pointerdown', pressOutside, true);
         const close = () => popover.current?.hidePopover();
         // Placed once, the editor would drift away from its field as the page scrolls.
         const closeOnScroll = (event: Event) => {
@@ -241,7 +249,7 @@ export const ColorEditor: FC<{
             window.removeEventListener('resize', close);
             window.removeEventListener('scroll', closeOnScroll, true);
             document.removeEventListener('keydown', keep);
-            document.removeEventListener('keyup', keep);
+            document.removeEventListener('pointerdown', pressOutside, true);
             releaseSharing();
         };
     }, [releaseSharing]);
@@ -262,11 +270,9 @@ export const ColorEditor: FC<{
             className={styles.editor}
             onToggle={(event) => {
                 if (event.newState === 'closed') {
-                    const focusWasInside =
-                        document.activeElement === document.body ||
-                        popover.current?.contains(document.activeElement);
                     onClose();
-                    if (focusWasInside) {
+                    // Escape and the close button hand the focus back to the field.
+                    if (!outsidePress.current) {
                         anchor.current?.focus();
                     }
                 }

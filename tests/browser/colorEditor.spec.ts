@@ -46,6 +46,14 @@ test('a color field opens the color editor, which edits by hex, RGB and keys', a
     await expect(editor).toBeVisible();
     await editor.getByRole('button', { name: 'Close' }).click();
     await expect(editor).toBeHidden();
+    await expect(fill).toBeFocused();
+
+    // A press elsewhere closes it without taking the focus back to the field.
+    await fill.click();
+    await expect(editor).toBeVisible();
+    await page.getByRole('columnheader', { name: 'Appearance', exact: true }).click();
+    await expect(editor).toBeHidden();
+    await expect(fill).not.toBeFocused();
 });
 
 test('dragging across the color editor picks saturation, brightness and hue', async ({ page }) => {
