@@ -6,6 +6,7 @@ declare namespace StylesCssNamespace {
     channels: string;
     close: string;
     editor: string;
+    formats: string;
     header: string;
     hex: string;
     hue: string;

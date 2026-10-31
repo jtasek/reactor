@@ -18,6 +18,7 @@
     --field-rim: inset 0 0 0 0.5px rgb(0 0 0 / 6%);
     --thumb-rim: #fff;
     --thumb-shadow: 0 0 0 0.5px rgb(0 0 0 / 30%), 0 2px 6px rgb(0 0 0 / 30%);
+    --chip-shadow: 0 1px 2px rgb(0 0 0 / 15%), 0 0 0 0.5px rgb(0 0 0 / 6%);
     --well-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 14%);
 
     backdrop-filter: var(--glass-filter);
@@ -58,14 +59,54 @@
 .header {
     align-items: center;
     display: flex;
-    justify-content: space-between;
+    gap: 8px;
     margin: -4px -4px -2px 2px;
 }
 
+/* A segmented control: the chosen format is a raised white chip on a recessed track. */
+.formats {
+    flex: none;
+    background-color: var(--field-background);
+    border-radius: 999px;
+    display: flex;
+    padding: 2px;
+}
+
+.formats button {
+    background-color: transparent;
+    border: 0;
+    border-radius: 999px;
+    color: var(--text-secondary-color);
+    cursor: pointer;
+    font: inherit;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 3px 8px;
+    transition:
+        background-color 120ms,
+        color 120ms;
+}
+
+.formats button:hover {
+    color: var(--ink-strong);
+}
+
+.formats button[aria-pressed='true'] {
+    background-color: var(--surface);
+    box-shadow: var(--chip-shadow);
+    color: var(--ink-strong);
+}
+
 .title {
+    flex: 1;
     font-size: 13px;
     font-weight: 600;
     letter-spacing: -0.01em;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .close,

@@ -65,6 +65,51 @@ export const hsvToRgb = ({ h, s, v }: Hsv): Rgb => {
 
 const toHsv = (hex: string) => rgbToHsv(hexToRgb(hex) ?? [0, 0, 0]);
 
+/** Saturation and lightness, from 0 to 1, for the hue an Hsv color already has. */
+export const hsvToHsl = ({ s, v }: Hsv) => {
+    const l = v * (1 - s / 2);
+
+    return { s: l === 0 || l === 1 ? 0 : (v - l) / Math.min(l, 1 - l), l };
+};
+
+export const hslToHsv = (h: number, s: number, l: number): Hsv => {
+    const v = l + s * Math.min(l, 1 - l);
+
+    return { h, s: v === 0 ? 0 : 2 * (1 - l / v), v };
+};
+
+type Format = 'RGB' | 'HSL' | 'HSB';
+const FORMAT_KEY = 'reactor:color-format';
+
+/** The number fields' format, remembered on this device between openings. */
+const readFormat = (): Format => {
+    try {
+        const stored = localStorage.getItem(FORMAT_KEY);
+
+        return stored === 'HSL' || stored === 'HSB' ? stored : 'RGB';
+    } catch {
+        return 'RGB';
+    }
+};
+
+const CHANNELS: Record<Format, { name: string; label: string; max: number }[]> = {
+    RGB: [
+        { name: 'R', label: 'Red', max: 255 },
+        { name: 'G', label: 'Green', max: 255 },
+        { name: 'B', label: 'Blue', max: 255 }
+    ],
+    HSL: [
+        { name: 'H', label: 'Hue (degrees)', max: 360 },
+        { name: 'S', label: 'Saturation (%)', max: 100 },
+        { name: 'L', label: 'Lightness (%)', max: 100 }
+    ],
+    HSB: [
+        { name: 'H', label: 'Hue (degrees)', max: 360 },
+        { name: 'S', label: 'Saturation (%)', max: 100 },
+        { name: 'B', label: 'Brightness (%)', max: 100 }
+    ]
+};
+
 /** Follows a press across an element, reporting where it is as fractions of its box. */
 function useDrag(onMove: (x: number, y: number) => void) {
     const { holdSharing, releaseSharing } = useActions();
@@ -110,16 +155,18 @@ const step = (event: KeyboardEvent, keys: { less: string[]; more: string[] }) =>
     return 0;
 };
 
-const ChannelField: FC<{ name: string; value: number; onCommit: (value: number) => void }> = ({
-    name,
-    value,
-    onCommit
-}) => {
+const ChannelField: FC<{
+    name: string;
+    label: string;
+    max: number;
+    value: number;
+    onCommit: (value: number) => void;
+}> = ({ name, label, max, value, onCommit }) => {
     const [draft, setDraft] = useState<string>();
     const commit = () => {
         const number = Number(draft);
         if (draft !== undefined && draft.trim() !== '' && Number.isFinite(number)) {
-            onCommit(clamp(Math.round(number), 0, 255));
+            onCommit(clamp(Math.round(number), 0, max));
         }
         setDraft(undefined);
     };
@@ -130,15 +177,15 @@ const ChannelField: FC<{ name: string; value: number; onCommit: (value: number) 
             <input
                 type="number"
                 min={0}
-                max={255}
+                max={max}
                 step={1}
                 inputMode="numeric"
-                aria-label={name === 'R' ? 'Red' : name === 'G' ? 'Green' : 'Blue'}
+                aria-label={label}
                 value={draft ?? Math.round(value)}
                 onChange={(event) => {
                     // The spinner's arrows apply at once; typing waits for Enter or blur.
                     if ((event.nativeEvent as InputEvent).inputType === undefined) {
-                        onCommit(clamp(Number(event.target.value), 0, 255));
+                        onCommit(clamp(Number(event.target.value), 0, max));
                         setDraft(undefined);
 
                         return;
@@ -174,6 +221,7 @@ export const ColorEditor: FC<{
     // The editor keeps its own hue and saturation, which grays and black do not carry.
     const [hsv, setHsv] = useState(() => toHsv(value));
     const [hexDraft, setHexDraft] = useState<string>();
+    const [format, setFormat] = useState(readFormat);
     const shown = rgbToHex(hsvToRgb(hsv));
     const rgb = hexToRgb(shown) ?? [0, 0, 0];
     const EyeDropper = (window as EyeDropperWindow).EyeDropper;
@@ -258,6 +306,37 @@ export const ColorEditor: FC<{
     const hueDrag = useDrag((x) => apply({ ...hsv, h: x * 360 }));
     const hueColor = rgbToHex(hsvToRgb({ h: hsv.h, s: 1, v: 1 }));
     const percent = (fraction: number) => `${Math.round(fraction * 100)}%`;
+    const hsl = hsvToHsl(hsv);
+    const channelValues =
+        format === 'RGB'
+            ? rgb
+            : format === 'HSL'
+              ? [hsv.h, hsl.s * 100, hsl.l * 100]
+              : [hsv.h, hsv.s * 100, hsv.v * 100];
+    const setChannel = (index: number, channel: number) => {
+        if (format === 'RGB') {
+            const next = [...rgb] as Rgb;
+            next[index] = channel;
+            apply(rgbToHsv(next));
+
+            return;
+        }
+        const next = [...channelValues];
+        next[index] = channel;
+        apply(
+            format === 'HSL'
+                ? hslToHsv(next[0], next[1] / 100, next[2] / 100)
+                : { h: next[0], s: next[1] / 100, v: next[2] / 100 }
+        );
+    };
+    const chooseFormat = (next: Format) => {
+        setFormat(next);
+        try {
+            localStorage.setItem(FORMAT_KEY, next);
+        } catch {
+            // Without storage the choice lasts until the editor closes.
+        }
+    };
 
     // On the page itself, so the panel's own field and button styles stay out of the editor.
     return createPortal(
@@ -279,7 +358,21 @@ export const ColorEditor: FC<{
             }}
         >
             <header className={styles.header}>
-                <span className={styles.title}>{label}</span>
+                <span className={styles.title} title={label}>
+                    {label}
+                </span>
+                <div className={styles.formats} role="group" aria-label="Number format">
+                    {(['RGB', 'HSL', 'HSB'] as const).map((choice) => (
+                        <button
+                            key={choice}
+                            type="button"
+                            aria-pressed={format === choice}
+                            onClick={() => chooseFormat(choice)}
+                        >
+                            {choice}
+                        </button>
+                    ))}
+                </div>
                 <button
                     type="button"
                     className={styles.close}
@@ -401,16 +494,13 @@ export const ColorEditor: FC<{
                 </label>
             </div>
             <div className={styles.channels}>
-                {(['R', 'G', 'B'] as const).map((name, index) => (
+                {CHANNELS[format].map((channel, index) => (
                     <ChannelField
-                        key={name}
-                        name={name}
-                        value={rgb[index]}
-                        onCommit={(channel) => {
-                            const next = [...rgb] as Rgb;
-                            next[index] = channel;
-                            apply(rgbToHsv(next));
-                        }}
+                        // Each format's fields are its own, so a half-typed value never moves across.
+                        key={`${format}-${channel.name}`}
+                        {...channel}
+                        value={channelValues[index]}
+                        onCommit={(value) => setChannel(index, value)}
                     />
                 ))}
             </div>
