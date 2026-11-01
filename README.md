@@ -790,3 +790,19 @@ only its hash. The embedded editor preview retains its network-blocked policy. D
 servers from the same release. A release that changes the preview protocol leaves older links
 unable to open: recipients are told to ask for a new link, and **Share prototype** marks them
 out of date so an admin can revoke them and share again.
+
+### Export SVG
+
+Select a Screen view, a Screen (for example from the Explorer) or visible shapes, then choose
+**Export SVG** on the command bar (or run `export-svg` in the command line).
+The download preserves the canvas's inherited modes, responsive or explicit layout, component
+variants, text and transforms. A Screen view exports its viewport. A Screen exports as authored:
+its own size, default layout and modes, without any view's overrides. Selected objects export
+their artwork bounds with space for strokes. Images are verified and embedded. Like Preview, an
+export takes at most 8 MiB of image data (decoded) in total, and the finished SVG file is
+limited to 32 MiB. Missing images, too many images or invalid geometry show an error instead of
+a partial file.
+
+SVG contains static artwork only: no guides, selection handles, frame labels, navigation or form
+controls. Its background is transparent. Text remains editable SVG text using the canvas font
+fallback (Roboto, then sans-serif); fonts are not embedded. Diagram connectors are not exported.

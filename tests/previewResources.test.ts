@@ -267,3 +267,17 @@ it('lets a drawing refer to images received earlier and keeps only the ones it u
     expect(result.images).toEqual({ [asset.hash]: url });
     expect(() => readPreview(drawing, { [unused]: url })).toThrow('resource is missing');
 });
+
+it('names SVG export, not Preview, in export errors', async () => {
+    const asset = await previewImageAsset();
+    const drawing = projectPreview(previewImageFixture(asset.hash), {});
+    await expect(
+        createPreviewResources({ read: vi.fn().mockResolvedValue(undefined) })(drawing, signal())
+    ).rejects.toThrow('retry the preview');
+    await expect(
+        createPreviewResources({ read: vi.fn().mockResolvedValue(undefined) }, 'export')(
+            drawing,
+            signal()
+        )
+    ).rejects.toThrow('then export again');
+});

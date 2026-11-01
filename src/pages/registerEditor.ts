@@ -1,3 +1,4 @@
+import { ExportSvgCommand } from 'src/commands/export';
 import { OpenPrototypeCommand } from 'src/commands/prototype';
 import { OpenFlowCommand } from 'src/commands/flow';
 import * as componentProperties from 'src/app/componentPropertyEdits';
@@ -125,6 +126,8 @@ function registerCommands() {
     registerCommand(ZoomOutCommand);
     registerCommand(ZoomResetCommand);
     registerCommand(ResetDocumentCommand);
+    // Registered after Reset document, so the document group keeps its place in the bar.
+    registerCommand(ExportSvgCommand);
     registerCommand(EditWithWordsCommand);
 }
 

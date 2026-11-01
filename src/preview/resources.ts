@@ -21,7 +21,14 @@ const encode = (bytes: Uint8Array) => {
 
 /** One open panel's image cache. All IO stays in the editor; the sandbox receives only
  * verified bytes as raster data URLs. Failed reads can be retried when sync catches up. */
-export function createPreviewResources(assets: Pick<ReturnType<typeof createAssets>, 'read'>) {
+export function createPreviewResources(
+    assets: Pick<ReturnType<typeof createAssets>, 'read'>,
+    purpose: 'preview' | 'export' = 'preview'
+) {
+    // Messages name the feature in use; both share the same limits.
+    const subject = purpose === 'preview' ? 'Preview' : 'SVG export';
+    const retry = purpose === 'preview' ? 'retry the preview' : 'export again';
+    const verb = purpose === 'preview' ? 'previewing' : 'exporting';
     const cache = new Map<string, Promise<{ url: string; bytes: number }>>();
     const load = (hash: string, documentId: string) => {
         const known = cache.get(hash);
@@ -31,12 +38,12 @@ export function createPreviewResources(assets: Pick<ReturnType<typeof createAsse
         const pending = assets.read(hash, documentId).then(async (asset) => {
             if (!asset) {
                 throw new Error(
-                    'An image is not available yet. Wait for it to sync, then retry the preview.'
+                    `An image is not available yet. Wait for it to sync, then ${retry}.`
                 );
             }
             const image = await readImage(new Blob([asset.bytes], { type: asset.type }));
             if (!image || image.hash !== hash) {
-                throw new Error('An image failed verification. Replace it before previewing.');
+                throw new Error(`An image failed verification. Replace it before ${verb}.`);
             }
             try {
                 const bitmap = await createImageBitmap(
@@ -44,7 +51,7 @@ export function createPreviewResources(assets: Pick<ReturnType<typeof createAsse
                 );
                 bitmap.close();
             } catch {
-                throw new Error('An image could not be decoded. Replace it before previewing.');
+                throw new Error(`An image could not be decoded. Replace it before ${verb}.`);
             }
 
             const url = `data:${image.type};base64,${encode(image.bytes)}`;
@@ -66,14 +73,16 @@ export function createPreviewResources(assets: Pick<ReturnType<typeof createAsse
     return async (drawing: PreviewDrawing, signal: AbortSignal) => {
         signal.throwIfAborted();
         if (new TextEncoder().encode(JSON.stringify(drawing)).byteLength > MAX_PREVIEW_BYTES) {
-            throw new Error('Preview exceeds the 8 MiB limit.');
+            throw new Error(`${subject} exceeds the 8 MiB limit.`);
         }
         const hashes = new Set<string>();
         let nodes = 0;
         const collect = (node: PreviewNode) => {
             nodes += 1;
             if (nodes > MAX_PREVIEW_NODES) {
-                throw new Error('Invalid or excessively complex preview content.');
+                throw new Error(
+                    `Invalid or excessively complex ${purpose === 'preview' ? 'preview' : 'SVG'} content.`
+                );
             }
             if (node.image && !/^[a-f0-9]{64}$/.test(node.image)) {
                 throw new Error('Invalid preview image reference.');
@@ -99,7 +108,7 @@ export function createPreviewResources(assets: Pick<ReturnType<typeof createAsse
             size += image.bytes;
             if (size > MAX_PREVIEW_IMAGE_BYTES) {
                 throw new Error(
-                    'Preview images exceed the 8 MiB limit. Remove or reduce some images.'
+                    `${subject} images exceed the 8 MiB limit. Remove or reduce some images.`
                 );
             }
         }
