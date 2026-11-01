@@ -781,7 +781,7 @@ adapters to the shared screen/context projection alongside the standalone Protot
    Clipboard, packages, operations, persistence, collaboration and undo retain authored inputs;
    measurements and projected sources remain local. Component property editing loads with the
    editor, preserving startup/file budgets. Unsupported position/rotation/image-size and boolean
-   mode bindings remain gated. SVG export remains R5 and can consume the shared projection.
+   mode bindings remain gated. SVG export now consumes the shared projection in R4 delivery.
    Coverage: `contextualMeasurement.test.ts` and its browser counterpart, with existing
    contextual-layout, variable, component, clipboard and Preview suites.
 
@@ -970,7 +970,14 @@ adapters to the shared screen/context projection alongside the standalone Protot
 #### R4 delivery after the responsive foundation
 
 - Read-only prototype links on the separate domain, with a defined starting screen and context.
-- SVG export of a selected canvas view or selection, using its resolved modes/layout/variants.
+- **SVG export (complete).** Export SVG on the command bar or command line
+  downloads the selected Screen view or selected visible artwork. Export uses Canvas projections
+  for inherited modes, responsive/explicit layouts and component variants, and shares the
+  primitive artwork projection with Preview. Views retain viewport bounds; selections use
+  rotated artwork bounds with stroke padding. Raster assets are verified and embedded; controls,
+  guides and editor overlays are omitted. Invalid geometry or missing assets fail with an error.
+  `tests/screenExport.test.ts` and `tests/browser/screenExport.spec.ts` cover resolved context,
+  deterministic safe SVG, standalone rendering and embedded-image downloads.
 - Starter templates (list/detail, form, sign-in, settings) and empty states.
 - AI: create screens, views and responsive rules through the same validated operations and
   acceptance UI. Screenshot-generation targets remain: 80% of 30 screenshots rated a usable

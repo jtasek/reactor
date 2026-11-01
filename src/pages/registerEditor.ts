@@ -1,3 +1,4 @@
+import { ExportSvgCommand } from 'src/commands/export';
 import { OpenPrototypeCommand } from 'src/commands/prototype';
 import { OpenFlowCommand } from 'src/commands/flow';
 import * as componentProperties from 'src/app/componentPropertyEdits';
@@ -80,6 +81,7 @@ import {
 import { registerCommand, registerTool } from 'src/app/actions/startup';
 
 function registerCommands() {
+    registerCommand(ExportSvgCommand);
     registerCommand(OpenFlowCommand);
     registerCommand(OpenPrototypeCommand);
     registerCommand(UndoCommand);

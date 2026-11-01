@@ -766,3 +766,16 @@ PORT=4001 HOST=127.0.0.1 PREVIEW_ORIGIN=http://127.0.0.1:4001 EDITOR_ORIGIN=http
 Use `http://127.0.0.1:4000` for the editor, matching `EDITOR_ORIGIN` exactly. The runtime does
 not hot-reload; rebuild/reopen Preview after changing its implementation. Browser tests start
 both origins automatically and verify native controls, live updates, recovery and isolation.
+
+### Export SVG
+
+Select a Screen view or visible shapes, then choose **Export SVG** on the command bar
+(or run `export-svg` in the command line).
+The download preserves the canvas's inherited modes, responsive or explicit layout, component
+variants, text and transforms. A Screen view exports its viewport; selected objects export their
+artwork bounds with space for strokes. Images are embedded, with the same verified-image and
+size limits as Preview; expanded SVG artwork is limited to 32 MiB. Missing images or invalid geometry show an error instead of a partial file.
+
+SVG contains static artwork only: no guides, selection handles, frame labels, navigation or form
+controls. Its background is transparent. Text remains editable SVG text using the canvas font
+fallback (Roboto, then sans-serif); fonts are not embedded. Diagram connectors are not exported.

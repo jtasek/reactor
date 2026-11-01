@@ -171,6 +171,74 @@ export function projectPreview(
     const shown = shownShapesIds({ ...document, shownLayerId: undefined }, null);
     const root = (screenId: string) =>
         screenLayoutRoot(document, screenId, choices.get(screenId)?.layoutId)!;
+    const { draw, identities } = createArtworkProjector(document, warnings, diagnostics, screenIds);
+
+    const drawing: PreviewDrawing = {
+        documentId: document.id,
+        screens: roots.map((frame) => ({
+            id: frame.id,
+            name: frame.name,
+            x: root(frame.id).position.x,
+            y: root(frame.id).position.y,
+            ...frame.size,
+            layouts: [
+                { id: frame.id, name: 'Default layout' },
+                ...screenLayouts(document, frame.id)
+            ].map(({ id, name }) => ({ id, name })),
+            layoutChoice: choices.get(frame.id)!.choice,
+            nodes: document.shapesIds
+                .filter(
+                    (id) =>
+                        shown.has(id) &&
+                        members.get(frame.id)!.has(document.shapes[id].parentFrameId ?? '')
+                )
+                .map((id) => {
+                    const shape = document.shapes[id];
+                    const resolved = resolveModes(document, {
+                        simulation: context,
+                        screenId: frame.id,
+                        frameId: shape.parentFrameId,
+                        // The launch snapshot belongs to its own Screen; others keep their choices.
+                        session:
+                            session?.scope === 'all-screens' || frame.id === session?.screenId
+                                ? session?.modes
+                                : undefined
+                    });
+                    warnings.push(...resolved.problems);
+
+                    return draw(
+                        themeColors(shape, document, resolved.modes),
+                        frame.id,
+                        new Set(),
+                        resolved.modes,
+                        frame.id
+                    );
+                })
+        }))
+    };
+    for (const nodes of identities.values()) {
+        if (nodes.length < 2) {
+            continue;
+        }
+        warnings.push(
+            'Duplicate input identity in a screen layout. Give each input a unique identity; these inputs reset when layouts change.'
+        );
+        for (const node of nodes) {
+            delete node.control!.stateKey;
+        }
+    }
+
+    return drawing;
+}
+
+/** Canvas artwork projection shared by Preview and SVG export. Without screen IDs it omits
+ * interactive roles entirely: export must not depend on navigation or form configuration. */
+export function createArtworkProjector(
+    document: Document,
+    warnings: string[] = [],
+    diagnostics: PreviewDiagnostic[] = [],
+    screenIds?: ReadonlySet<string>
+) {
     const identities = new Map<string, PreviewNode[]>();
     let count = 0;
     const draw = (
@@ -319,6 +387,9 @@ export function projectPreview(
 
                     return resolved.visible ? [draw(resolved, key, next, context, screenId)] : [];
                 });
+                if (!screenIds) {
+                    break;
+                }
                 const role = resolveComponentRole(document, component, shape);
                 if (role.problems.length) {
                     const message = `${shape.name}: ${role.problems.join(' ')}`;
@@ -389,60 +460,5 @@ export function projectPreview(
         return group;
     };
 
-    const drawing: PreviewDrawing = {
-        documentId: document.id,
-        screens: roots.map((frame) => ({
-            id: frame.id,
-            name: frame.name,
-            x: root(frame.id).position.x,
-            y: root(frame.id).position.y,
-            ...frame.size,
-            layouts: [
-                { id: frame.id, name: 'Default layout' },
-                ...screenLayouts(document, frame.id)
-            ].map(({ id, name }) => ({ id, name })),
-            layoutChoice: choices.get(frame.id)!.choice,
-            nodes: document.shapesIds
-                .filter(
-                    (id) =>
-                        shown.has(id) &&
-                        members.get(frame.id)!.has(document.shapes[id].parentFrameId ?? '')
-                )
-                .map((id) => {
-                    const shape = document.shapes[id];
-                    const resolved = resolveModes(document, {
-                        simulation: context,
-                        screenId: frame.id,
-                        frameId: shape.parentFrameId,
-                        // The launch snapshot belongs to its own Screen; others keep their choices.
-                        session:
-                            session?.scope === 'all-screens' || frame.id === session?.screenId
-                                ? session?.modes
-                                : undefined
-                    });
-                    warnings.push(...resolved.problems);
-
-                    return draw(
-                        themeColors(shape, document, resolved.modes),
-                        frame.id,
-                        new Set(),
-                        resolved.modes,
-                        frame.id
-                    );
-                })
-        }))
-    };
-    for (const nodes of identities.values()) {
-        if (nodes.length < 2) {
-            continue;
-        }
-        warnings.push(
-            'Duplicate input identity in a screen layout. Give each input a unique identity; these inputs reset when layouts change.'
-        );
-        for (const node of nodes) {
-            delete node.control!.stateKey;
-        }
-    }
-
-    return drawing;
+    return { draw, identities };
 }

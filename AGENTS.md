@@ -1210,3 +1210,15 @@ viewport/mode changes keep it alive, preserving compatible state keys. Layout in
 per-screen and local. `PreviewDiagnostic` IDs stay in the editor, with Inspect links selecting
 source records; diagnostic metadata is never sent into the sandbox. Tests: `preview.test.ts`
 and `tests/browser/responsivePrototype.spec.ts`, including simultaneous sessions and live edits.
+
+
+## SVG export
+
+The lazy `src/export/` feature exports a selected Screen view or selected visible objects through
+the Export SVG command. `projectSvg` uses Canvas/Screen projections and artwork mode resolution;
+Preview and export share `createArtworkProjector`. Export omits interactive control metadata and
+never changes authored records. Reuse verified raster preparation, allowlisted SVG attributes and
+XML escaping; embed assets rather than exporting editor URLs. Views retain viewport bounds and
+selections retain rotated artwork bounds with stroke padding. Fonts remain SVG text with the
+canvas fallback. Keep the implementation out of startup and editor-entry bundles. Tests live in
+`tests/screenExport.test.ts` and `tests/browser/screenExport.spec.ts`.
