@@ -918,7 +918,15 @@ does not start during one or while the context menu is open. One runs at a time;
 its pointer's events and the keys before the canvas does and changes the document once, on
 release, so Escape or a lost pointer leaves it as it was. Guide lines are drawn over the shapes and what grabs
 them under the shapes, so a shape, or a highlighted group, on a guide takes the press.
-Hidden guides are not drawn and locked ones do not move.
+Hidden guides are not drawn and locked ones do not move. Selecting a guide shows its name,
+orientation and a single X (vertical) or Y (horizontal) field in the Inspector. Orientation
+changes retain the active coordinate; Inspector commits use guarded, separate undo batches.
+The existing two-coordinate guide data format remains unchanged. A local `guideDragActive`
+flag prevents Inspector edits and competing guide selections during a drag.
+Dragged guides show temporary outline crossings (`guideIntersections`): rendered SVG artwork
+is measured once, then refreshed only after artwork/camera mutations. Text uses its measured
+box. Markers exclude hidden measurement copies and selection controls, do not change snapping,
+and disappear on release/cancel. Tests: `guideInspector` and `guideIntersections` unit/browser suites.
 
 ## Bounding boxes & selection
 

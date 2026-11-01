@@ -2,7 +2,14 @@ import React, { FC } from 'react';
 import type { MouseEvent } from 'react';
 import { Guide } from './Guide';
 import { useGuideDrag } from './useGuideDrag';
-import { useActiveToolsIds, useCamera, useGuides, useHoveredGroupsIds } from 'src/app/hooks';
+import {
+    useActions,
+    useAppState,
+    useActiveToolsIds,
+    useCamera,
+    useGuides,
+    useHoveredGroupsIds
+} from 'src/app/hooks';
 import { Camera, Guide as GuideType } from 'src/app/types';
 
 import styles from './styles.css';
@@ -31,7 +38,7 @@ export const Guides: FC<Props> = ({ camera }) => {
             {Object.values(guides)
                 .filter((guide) => guide.visible)
                 .map((guide) => {
-                    const dragged = drag?.guideId === guide.id ? drag : null;
+                    const dragged = !camera && drag?.guideId === guide.id ? drag : null;
 
                     return (
                         <Guide
@@ -41,6 +48,7 @@ export const Guides: FC<Props> = ({ camera }) => {
                             removing={dragged?.removing}
                             selected={!camera && guide.selected}
                             position={dragged?.offset}
+                            marks={dragged?.marks}
                         />
                     );
                 })}
@@ -49,20 +57,27 @@ export const Guides: FC<Props> = ({ camera }) => {
 };
 
 /**
- * What grabs the shown, unlocked guides, under the shapes so a shape on a guide
+ * What selects shown guides and grabs unlocked guides, under the shapes so a shape on a guide
  * takes the press, as does a group whose box the pointer highlights.
  */
 export const GuideGrips: FC = () => {
+    const { selectGuide } = useActions();
     const guides = useGuides();
     const camera = useCamera();
     const hoveredGroups = useHoveredGroupsIds();
     const activeTools = useActiveToolsIds();
     const { begin } = useGuideDrag();
+    const inputBlocked = useAppState(
+        (state) =>
+            state.guideDragActive ||
+            state.events.pointer.gesture.kind !== 'idle' ||
+            state.ui.contextMenu.visible
+    );
 
     return (
         <g className={styles.grips}>
             {Object.values(guides)
-                .filter((guide) => guide.visible && !guide.locked)
+                .filter((guide) => guide.visible)
                 .map((guide) => {
                     const at = screenOffset(guide, camera);
                     const horizontal = guide.orientation === 'horizontal';
@@ -71,12 +86,23 @@ export const GuideGrips: FC = () => {
                         <line
                             key={guide.id}
                             className={horizontal ? styles.rowGrip : styles.columnGrip}
+                            style={{ cursor: guide.locked ? 'default' : undefined }}
                             x1={horizontal ? 0 : at}
                             y1={horizontal ? at : 0}
                             x2={horizontal ? '100%' : at}
                             y2={horizontal ? at : '100%'}
                             onPointerDown={(event) => {
-                                if (hoveredGroups.length > 0 || activeTools[0] !== 'select') {
+                                if (
+                                    inputBlocked ||
+                                    hoveredGroups.length > 0 ||
+                                    activeTools[0] !== 'select'
+                                ) {
+                                    return;
+                                }
+                                if (guide.locked && event.button === 0) {
+                                    event.stopPropagation();
+                                    selectGuide(guide.id);
+
                                     return;
                                 }
                                 begin(event, guide.orientation, guide.id);

@@ -1,5 +1,6 @@
 import React, { FC, useRef } from 'react';
 
+import { GuideInspector } from './GuideInspector';
 import { FrameInspector } from './FrameInspector';
 import { useSelectedFrameId } from 'src/app/frameHooks';
 import { Inspector } from './Inspector';
@@ -11,6 +12,13 @@ const cannotShow = (names: string[]) => `Cannot show ${names.join(', ')}`;
 
 export const InspectorContainer: FC = () => {
     const selectedFrameId = useSelectedFrameId();
+    const selectedGuideId = useAppState((state) =>
+        state.ui.guides.visible
+            ? Object.values(state.currentDocument.guides).find(
+                  (guide) => guide.selected && guide.visible
+              )?.id
+            : undefined
+    );
     const rows = useSelectedShapesProperties();
     const heldSelection = useRef<{ shapeIds: string[]; identity: SelectionIdentity | null }>({
         shapeIds: [],
@@ -34,6 +42,10 @@ export const InspectorContainer: FC = () => {
     const bound = useSelectedVariables();
     const problems = useTextTemplateProblems();
     const { bindProperty, setShapesProperty, unbindProperty } = useActions();
+
+    if (selectedGuideId) {
+        return <GuideInspector key={selectedGuideId} id={selectedGuideId} />;
+    }
 
     if (selectedFrameId) {
         return <FrameInspector key={selectedFrameId} id={selectedFrameId} />;

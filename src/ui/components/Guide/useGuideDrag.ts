@@ -1,3 +1,5 @@
+import { guideIntersections } from 'src/app/guideIntersections';
+import { readGuideOutlines } from './guideOutlines';
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import {
@@ -10,7 +12,7 @@ import {
     useGuides
 } from 'src/app/hooks';
 import { guidePlace, removesGuide, RULER_SIZE_PX } from 'src/app/rulers';
-import type { Camera, Orientation } from 'src/app/types';
+import type { Camera, Orientation, Point } from 'src/app/types';
 import { clientToSurface } from 'src/events/drivers/helpers';
 import { tryReleasePointerCapture, trySetPointerCapture } from 'src/events/drivers/pointerCapture';
 import { beyondClickSlip } from 'src/events/gestures';
@@ -21,10 +23,17 @@ import { beyondClickSlip } from 'src/events/gestures';
  * guide is horizontal and its left edge when vertical, on a canvas `length` long
  * along that axis.
  */
-type Drag = { orientation: Orientation; guideId: string | null; pointer: number; length: number };
+type Drag = {
+    orientation: Orientation;
+    guideId: string | null;
+    pointer: number;
+    length: number;
+    marks: Point[];
+};
 
 /** A dragged guide where it would be released: `at` screen pixels from its canvas edge. */
 export type PlacedDrag = {
+    marks: Point[];
     orientation: Orientation;
     guideId: string | null;
     at: number;
@@ -58,14 +67,17 @@ const subscribe = (listener: () => void) => {
 
 const takeCurrent = () => current;
 
-const placeOnCamera = ({ orientation, pointer }: Drag, { position, scale }: Camera) =>
-    guidePlace(pointer, orientation === 'horizontal' ? position.y : position.x, scale);
+const placeOnCamera = (
+    { orientation, pointer }: Pick<Drag, 'orientation' | 'pointer'>,
+    { position, scale }: Camera
+) => guidePlace(pointer, orientation === 'horizontal' ? position.y : position.x, scale);
 
 const placeDrag = (drag: Drag, camera: Camera, rulerSize: number): PlacedDrag => {
     const { at, offset } = placeOnCamera(drag, camera);
 
     return {
         orientation: drag.orientation,
+        marks: drag.marks,
         guideId: drag.guideId,
         at,
         offset,
@@ -115,11 +127,14 @@ export function useGuideDrag() {
         const { orientation, guideId } = released;
         const { offset, at } = placeOnCamera(released, view);
 
-        // Another copy removed, hid or locked it meanwhile.
+        // Another copy removed, hid, locked or reoriented it meanwhile.
         if (
             latest.current.locked ||
             (guideId !== null &&
-                (!guidesShown || !present[guideId]?.visible || present[guideId].locked))
+                (!guidesShown ||
+                    !present[guideId]?.visible ||
+                    present[guideId].locked ||
+                    present[guideId].orientation !== orientation))
         ) {
             return;
         }
@@ -167,7 +182,7 @@ export function useGuideDrag() {
         }
 
         const { pointerId } = event;
-        const bounds = surface.getBoundingClientRect();
+        const bounds = { width: surface.clientWidth, height: surface.clientHeight };
         const along = (input: { clientX: number; clientY: number }) => {
             const point = clientToSurface(input, surface);
 
@@ -183,6 +198,42 @@ export function useGuideDrag() {
 
         const length = orientation === 'horizontal' ? bounds.height : bounds.width;
         let movedBeyondClick = false;
+        let outlines = readGuideOutlines(surface);
+        let dirty = false;
+        const observer = new MutationObserver(() => {
+            dirty = true;
+        });
+        surface.querySelectorAll('#shapes, #screen-views').forEach((node) => {
+            observer.observe(node, {
+                subtree: true,
+                attributes: true,
+                childList: true,
+                characterData: true
+            });
+            // Camera placement lives above the artwork, outside these subtrees.
+            for (
+                let parent: Element | null = node.parentElement;
+                parent && parent !== surface;
+                parent = parent.parentElement
+            ) {
+                observer.observe(parent, { attributes: true, attributeFilter: ['transform'] });
+            }
+        });
+        const marksAt = (pointer: number) => {
+            if (dirty) {
+                outlines = readGuideOutlines(surface);
+                dirty = false;
+            }
+            const { at } = placeOnCamera({ orientation, pointer }, latest.current.camera);
+
+            return guideIntersections(outlines, orientation, at).filter(
+                (point) =>
+                    point.x >= 0 &&
+                    point.y >= 0 &&
+                    point.x <= bounds.width &&
+                    point.y <= bounds.height
+            );
+        };
 
         const onPointer = (input: PointerEvent) => {
             if (input.pointerId !== pointerId || !current) {
@@ -191,7 +242,8 @@ export function useGuideDrag() {
 
             input.stopPropagation();
 
-            const moved = { ...current, pointer: along(input) ?? current.pointer };
+            const pointer = along(input) ?? current.pointer;
+            const moved = { ...current, pointer, marks: marksAt(pointer) };
             movedBeyondClick ||= beyondClickSlip({ x: start, y: 0 }, { x: moved.pointer, y: 0 }, 1);
 
             if (input.type === 'pointermove') {
@@ -224,6 +276,7 @@ export function useGuideDrag() {
         const onBlur = () => stopCurrent?.();
 
         stopCurrent = () => {
+            observer.disconnect();
             DRAG_EVENTS.forEach((type) => window.removeEventListener(type, onPointer, true));
             window.removeEventListener('keydown', onKey, true);
             window.removeEventListener('blur', onBlur);
@@ -231,6 +284,7 @@ export function useGuideDrag() {
             stopCurrent = null;
             owner.current = false;
             setCurrent(null);
+            actions.setGuideDragActive(false);
         };
 
         DRAG_EVENTS.forEach((type) => window.addEventListener(type, onPointer, true));
@@ -238,7 +292,8 @@ export function useGuideDrag() {
         window.addEventListener('blur', onBlur);
         trySetPointerCapture(surface, pointerId);
         owner.current = true;
-        setCurrent({ orientation, guideId, pointer: start, length });
+        actions.setGuideDragActive(true);
+        setCurrent({ orientation, guideId, pointer: start, length, marks: marksAt(start) });
     };
 
     return { drag: drag && placeDrag(drag, camera, rulerSize), begin };

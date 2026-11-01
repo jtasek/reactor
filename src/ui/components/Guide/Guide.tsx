@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { Orientation } from 'src/app/types';
+import { Orientation, Point } from 'src/app/types';
 
 import styles from './styles.css';
 
@@ -17,6 +17,7 @@ export interface Props {
     /** Its position in canvas units, shown beside it while it is dragged. */
     position?: number;
     selected?: boolean;
+    marks?: Point[];
 }
 
 /** A guide's line across the canvas. */
@@ -25,7 +26,8 @@ export const Guide: FC<Props> = ({
     at,
     removing = false,
     position,
-    selected = false
+    selected = false,
+    marks = []
 }) => {
     const horizontal = orientation === 'horizontal';
 
@@ -39,6 +41,18 @@ export const Guide: FC<Props> = ({
                 x2={horizontal ? '100%' : at}
                 y2={horizontal ? at : '100%'}
             />
+            {position !== undefined &&
+                !removing &&
+                marks.map((point, index) => (
+                    <circle
+                        key={index}
+                        data-guide-intersection=""
+                        className={styles.intersection}
+                        cx={point.x}
+                        cy={point.y}
+                        r={3}
+                    />
+                ))}
             {position !== undefined && (
                 <text
                     className={styles.position}
