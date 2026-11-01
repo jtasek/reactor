@@ -104,7 +104,7 @@ const ProjectedShape: FC<{
                 } as CSSProperties
             }
         >
-            <g opacity={painted.opacity}>
+            <g opacity={painted.opacity} data-guide-outline="">
                 {painted.type === 'instance' ? (
                     <>
                         <Instance instance={painted} source={source} context={context} />

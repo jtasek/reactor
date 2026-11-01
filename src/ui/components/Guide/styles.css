@@ -39,3 +39,10 @@
 .columnGrip {
     cursor: col-resize;
 }
+
+.intersection {
+    fill: var(--surface);
+    pointer-events: none;
+    stroke: var(--primary-action-color);
+    stroke-width: 1.5;
+}

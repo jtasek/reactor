@@ -186,6 +186,7 @@ export const Shape = memo((props: Props) => {
         <g transform={transform}>
             <g
                 ref={groupRef}
+                data-guide-outline=""
                 // The field drawn over it shows the words while they change.
                 opacity={editingText ? 0 : shape.opacity}
                 style={

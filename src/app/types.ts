@@ -650,6 +650,7 @@ export type Application = {
     resetDocumentId: string | null;
     /** The document a person is asking AI to change, while its chat is open. */
     aiEditDocumentId: string | null;
+    guideDragActive: boolean;
     previewDocumentId: string | null;
     /** Modes captured when Preview opens, independent of later canvas simulation changes. */
     previewModeContext: {

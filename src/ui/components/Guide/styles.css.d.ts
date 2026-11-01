@@ -2,6 +2,7 @@ declare namespace StylesCssNamespace {
   export interface IStylesCss {
     columnGrip: string;
     grips: string;
+    intersection: string;
     line: string;
     position: string;
     removing: string;

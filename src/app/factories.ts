@@ -356,6 +356,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         enteredComponentId: null,
         resetDocumentId: null,
         aiEditDocumentId: null,
+        guideDragActive: false,
         previewDocumentId: null,
         previewModeContext: null,
         devices: {},
