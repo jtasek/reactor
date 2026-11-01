@@ -93,6 +93,14 @@
     stroke: var(--focus-ring-color);
     stroke-width: 3;
 }
+.connections > path[data-inactive='true'] {
+    stroke-dasharray: 6 4;
+    opacity: 0.6;
+}
+.flow li small {
+    display: block;
+    color: var(--text-secondary-color);
+}
 .connections marker {
     fill: var(--text-color);
 }

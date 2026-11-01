@@ -1,5 +1,5 @@
 import { registerEditor } from './registerEditor';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useActions, useAppState, useEffects } from 'src/app/hooks';
 import { projectFlow } from 'src/app/flowProjection';
 import { ComponentInteractions } from 'src/ui/components/Inspector/ComponentInteractions';
@@ -40,7 +40,8 @@ function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
         graph
             .find((screen) => screen.id === id)
             ?.controls.forEach((item) => {
-                if (item.target && !item.missing) {
+                // Preview cannot activate what it never draws.
+                if (item.target && !item.missing && !item.hidden && !item.unusedVariant) {
                     visit(item.target);
                 }
             });
@@ -48,6 +49,33 @@ function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
     if (start) {
         visit(start);
     }
+    const canUndo = !disabled && document.history.canUndo;
+    const canRedo = !disabled && document.history.canRedo;
+    useEffect(() => {
+        // The designer's shortcuts run only on the canvas page.
+        const onKeyDown = (event: KeyboardEvent) => {
+            const target = event.target as HTMLElement | null;
+            const key = event.key.toLowerCase();
+            if (
+                !(event.metaKey || event.ctrlKey) ||
+                event.altKey ||
+                (key !== 'z' && key !== 'y') ||
+                target?.closest('input, textarea, select, [contenteditable="true"]')
+            ) {
+                return;
+            }
+            event.preventDefault();
+            const redo = key === 'y' || event.shiftKey;
+            if (redo && canRedo) {
+                effects.collaboration.redo(document.id);
+            } else if (!redo && canUndo) {
+                effects.collaboration.undo(document.id);
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [canUndo, canRedo, effects, document.id]);
 
     return (
         <main className={styles.flow}>
@@ -55,13 +83,15 @@ function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
                 <a href="/">Back to canvas</a>
                 <h1>Flow</h1>
                 <button
-                    disabled={disabled || !document.history.canUndo}
+                    disabled={!canUndo}
+                    title="Undo (Ctrl/⌘ Z)"
                     onClick={() => effects.collaboration.undo(document.id)}
                 >
                     Undo
                 </button>
                 <button
-                    disabled={disabled || !document.history.canRedo}
+                    disabled={!canRedo}
+                    title="Redo (Ctrl/⌘ Shift Z)"
                     onClick={() => effects.collaboration.redo(document.id)}
                 >
                     Redo
@@ -69,7 +99,8 @@ function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
             </header>
             <p>
                 Select a control, then connect it to a screen. Actions run only in Preview.
-                Connections include all authored layouts and variants.
+                Connections include all authored layouts and variants. Reachability skips hidden
+                controls and variants an instance never draws.
             </p>
             <label>
                 Check reachability from{' '}
