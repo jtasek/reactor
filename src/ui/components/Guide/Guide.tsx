@@ -57,6 +57,7 @@ export const Guide: FC<Props> = ({
                 <text
                     className={styles.position}
                     data-guide-position=""
+                    dominantBaseline={horizontal ? undefined : 'hanging'}
                     x={horizontal ? LABEL_INSET : at + LABEL_GAP}
                     y={horizontal ? at - LABEL_GAP : LABEL_INSET}
                 >

@@ -101,8 +101,24 @@ test('a guide stands out from the grid and shows its position while dragged', as
     await page.mouse.up();
 
     await expect(label).toHaveCount(0);
+
+    // The vertical label's inset is its top, not its text baseline.
+    await page.mouse.move(10, 300);
+    await page.mouse.down();
+    await page.mouse.move(200, 300, { steps: 6 });
+    await expect(label).toHaveText('200');
+    const rulerBox = (await page.locator('svg#surface [data-ruler="top"]').boundingBox())!;
+    const labelBox = (await label.boundingBox())!;
+    expect(labelBox.y).toBeGreaterThan(rulerBox.y + rulerBox.height);
+    await page.screenshot({ path: 'test-results/vertical-guide-label.png' });
+    await page.mouse.up();
+    await expect(label).toHaveCount(0);
     await expect
-        .poll(() => guideLines(page).evaluate((line) => getComputedStyle(line).stroke))
+        .poll(() =>
+            guideLines(page)
+                .first()
+                .evaluate((line) => getComputedStyle(line).stroke)
+        )
         .toBe('rgb(234, 2, 130)');
 });
 
