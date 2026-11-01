@@ -1,3 +1,4 @@
+import { OpenFlowCommand } from 'src/commands/flow';
 import * as componentProperties from 'src/app/componentPropertyEdits';
 import * as layout from 'src/app/contextualLayout';
 import * as roles from 'src/app/roleEdits';
@@ -78,6 +79,7 @@ import {
 import { registerCommand, registerTool } from 'src/app/actions/startup';
 
 function registerCommands() {
+    registerCommand(OpenFlowCommand);
     registerCommand(UndoCommand);
     registerCommand(RedoCommand);
     registerCommand(DeleteCommand);

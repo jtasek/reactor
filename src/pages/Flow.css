@@ -1,0 +1,128 @@
+.flow {
+    box-sizing: border-box;
+    height: 100%;
+    overflow: auto;
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        Segoe UI,
+        sans-serif;
+    padding: 24px;
+    color: var(--text-color);
+    background: var(--surface);
+}
+.flow header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.flow button,
+.flow select {
+    font: inherit;
+    color: var(--text-color);
+    background: var(--control-background);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-sm);
+    padding: 8px;
+    max-width: 100%;
+}
+.flow button:focus-visible,
+.flow select:focus-visible,
+.flow a:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+}
+.flow button[aria-pressed='true'] {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+}
+.workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+    gap: 24px;
+    margin-top: 24px;
+}
+.screen,
+.workspace aside {
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    background: var(--panel-content-background);
+    overflow-wrap: anywhere;
+}
+.flow ul {
+    list-style: none;
+    padding: 0;
+}
+.flow li {
+    margin-top: 12px;
+}
+@media (max-width: 700px) {
+    .workspace {
+        grid-template-columns: 1fr;
+    }
+}
+.diagram {
+    overflow: auto;
+    min-height: 400px;
+    max-height: 75vh;
+}
+.board {
+    display: grid;
+    position: relative;
+    grid-template-columns: repeat(2, 280px);
+    align-items: start;
+    gap: 80px;
+    padding: 32px;
+    width: max-content;
+    min-height: 400px;
+}
+.connections {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+}
+.connections > path {
+    fill: none;
+    stroke: var(--text-color);
+    stroke-width: 2;
+}
+.connections > path[data-selected='true'] {
+    stroke: var(--focus-ring-color);
+    stroke-width: 3;
+}
+.connections marker {
+    fill: var(--text-color);
+}
+.screen {
+    position: relative;
+}
+.flow .handle {
+    cursor: grab;
+    touch-action: none;
+    width: 100%;
+    font-weight: 600;
+}
+.flow button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+.workspace aside {
+    align-self: start;
+}
+
+.flow h1 {
+    font-size: 24px;
+}
+.flow h2 {
+    font-size: 18px;
+    margin: 0 0 16px;
+}
+.flow p {
+    line-height: 1.5;
+}
+.flow a {
+    color: var(--selection-color);
+}

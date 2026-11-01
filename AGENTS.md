@@ -1149,6 +1149,18 @@ inputs activate on Enter, never focus. Canvas never executes actions. Library sn
 both legacy and new document-local navigation; fingerprints exclude destinations. Coverage:
 `tests/screenInteractions.test.ts` and its browser counterpart.
 
+Flow (`/flow`, `pages/Flow.tsx`) is a separately invoked, lazy workspace, available on the
+application bar and through the Open flow command. `flowProjection.ts` projects one node per
+screen definition and controls from all authored layouts and nested component variants.
+Connections are the same interaction records Inspector edits, including explicit none and
+source inheritance; locked/read-only edits still pass through `editInteractions`. Missing
+navigation destinations and reachability from a chosen root are diagnostics, never repairs.
+Nested source controls are labeled as shared. Diagram offsets are device-local
+`reactor:flow:<documentId>` storage, validated by `pages/flowPositions.ts`, not document data,
+canvas geometry or prototype session state. Opening Flow does not instantiate Preview.
+Tests: `tests/flowProjection.test.ts` and `tests/browser/flows.spec.ts`.
+
+
 
 ## Interactive preview
 

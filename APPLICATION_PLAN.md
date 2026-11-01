@@ -937,16 +937,17 @@ continues working through adapters to the new screen/context projection until R4
    role without action, inherited/custom actions, renamed/deleted targets, variant/layout
    continuity, atomic operations, undo, concurrent edits and no canvas-side execution.
 
-9. **R4.9 — Separately invoked Flow view (M).**
-   Add an explicit Open flow command and a lazily loaded view of logical screens and their
-   actions. All Home canvas views map to one Home node. Let the person select a source control,
-   connect a destination and edit/remove the same action Inspector edits. Surface unreachable
-   screens and unresolved targets as diagnostics, without deleting authored content. Store
-   optional diagram positions independently from screen/view geometry; opening or arranging
-   Flow never runs a prototype or changes behavior. Keep Inspector-based authoring available.
-   **Acceptance:** `tests/flowProjection.test.ts` and `tests/browser/flows.spec.ts`: one node per
-   definition, round-trip edits between Flow/Inspector, missing targets, diagram-only movement,
-   undo/collaboration and no session execution or loading while Flow is closed.
+9. **R4.9 — Separately invoked Flow view (complete).**
+   Open flow on the application bar or command line opens lazy `/flow`. All canvas views of
+   Home map to one Home node. Select a component control and connect a destination, or use
+   the shared Interactions editor to remove its action or restore source inheritance. Authored
+   alternate layouts and nested variant controls are included; shared source edits are labeled.
+   Missing/hidden targets and reachability from a chosen screen are diagnostics only. Drag or
+   arrow-key arrange screen nodes; optional device-local offsets are saved separately from the
+   document, canvas positions and prototype state. Opening Flow never starts Preview.
+   **Verification:** `tests/flowProjection.test.ts` and `tests/browser/flows.spec.ts` cover one
+   node per definition, Flow/Inspector round trips, missing targets, diagram-only movement,
+   undo/collaboration, local arrangement and lazy loading without prototype execution.
 
 10. **R4.10 — Contextual Prototype player (M).**
     Evolve the existing Preview command/panel into an explicitly invoked Prototype feature with

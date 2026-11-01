@@ -20,6 +20,12 @@ const Variables = lazy(() =>
     import('../../pages/Variables').then((module) => ({ default: module.VariablesPage }))
 );
 
+const Flow = lazy(() =>
+    import(/* webpackChunkName: "flow" */ '../../pages/Flow').then((module) => ({
+        default: module.FlowPage
+    }))
+);
+
 const Sharing = lazy(() =>
     import('../../pages/Sharing').then((module) => ({ default: module.Sharing }))
 );
@@ -56,6 +62,7 @@ export const Shell: FC = () => {
                     {currentPage === 'designer' && <Designer />}
                     {currentPage === 'documents' && <Documents />}
                     {currentPage === 'variables' && <Variables />}
+                    {currentPage === 'flow' && <Flow />}
                     {(currentPage === 'account' || currentPage === 'login') && (
                         <Account login={currentPage === 'login'} />
                     )}

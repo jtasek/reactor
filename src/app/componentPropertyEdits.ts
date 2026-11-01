@@ -2,7 +2,7 @@ import { json } from 'overmind';
 import { createComponent, createGroup, createShape, instanceName } from './factories';
 import { readCopiedShape } from './services/clipboardStorage';
 import { componentSource, instanceBox, instanceSource } from './componentSource';
-import { reachesComponent } from './actions/components';
+import { reachesComponent, hasComponentInstances } from './actions/components';
 import { ordersBetween, resolveDrawOrderTies } from './drawOrder';
 import { putShapesOnLayer, putShapesInFrame, shapeLayer } from './membership';
 import { editorHelpers } from './editorHelpers';
@@ -585,4 +585,35 @@ export const chooseComponentToPlace: ActionWithParam<string> = (
     }
     state.tools.componentToPlace = componentId;
     actions.tools.activateTool('instance');
+};
+
+export const removeShapesFromComponent: ActionWithParam<{
+    componentId: string;
+    shapeIds: string[];
+}> = ({ state, actions }, { componentId, shapeIds }) => {
+    const component = state.currentDocument.components[componentId];
+    if (!component) {
+        return;
+    }
+    const removing = new Set(shapeIds);
+    const remaining = component.shapesIds.filter((id) => !removing.has(id));
+
+    if (state.currentDocument.locked || component.library || component.locked) {
+        return;
+    }
+    if (remaining.length === 0 && hasComponentInstances(state.currentDocument, componentId)) {
+        actions.displayWarning('A component with instances must keep at least one shape.');
+
+        return;
+    }
+    component.shapesIds = remaining;
+    component.props = component.props?.filter((prop) => remaining.includes(prop.shapeId));
+    Object.values(state.currentDocument.shapes).forEach((shape) => {
+        if (shape.type !== 'instance' || shape.componentId !== componentId) {
+            return;
+        }
+        invalidOverrideIds(shape, component).forEach((id) => {
+            delete shape.overrides[id];
+        });
+    });
 };

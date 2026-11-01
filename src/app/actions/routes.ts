@@ -22,3 +22,7 @@ export const showSharing: Action = ({ state }) => {
 export const showInvitation: Action = ({ state }) => {
     state.currentPage = 'invitation';
 };
+
+export const showFlow: Action = ({ state }) => {
+    state.currentPage = 'flow';
+};
