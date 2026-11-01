@@ -1,3 +1,4 @@
+import type { StarterDocument } from 'src/templates/build';
 import { isReadOnly, canDeleteDocument } from '../documentAccess';
 import {
     Action,
@@ -263,4 +264,16 @@ export const updateDocument: ActionWithParam<Partial<Document> & { id: string }>
     const document = getDocument(state, options.id);
 
     setDocument(state, createDocument({ ...document, ...options }));
+};
+
+/** The chooser builds a complete independent graph before this synchronous commit. */
+export const newDocumentFromTemplate: ActionWithParam<StarterDocument> = (
+    { state, effects },
+    template
+) => {
+    const document = createOwnDocument(state, template);
+    setDocument(state, document);
+    state.currentDocumentId = document.id;
+    state.enteredComponentId = null;
+    effects.navigate('/');
 };

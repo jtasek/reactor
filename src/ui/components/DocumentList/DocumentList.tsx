@@ -1,4 +1,13 @@
-import React, { ChangeEvent, FC, useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+    ChangeEvent,
+    FC,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+    lazy,
+    Suspense
+} from 'react';
 import type { Document, DocumentsLayout } from 'src/app/types';
 import type { TagTone } from 'src/app/tagTones';
 import {
@@ -27,6 +36,10 @@ import { DocumentsBar } from './DocumentsBar';
 import { FilterMenu } from './FilterMenu';
 import tagStyles from './tags.css';
 import styles from './styles.css';
+
+const TemplatePicker = lazy(
+    () => import(/* webpackChunkName: "starter-templates" */ './TemplatePicker')
+);
 
 interface Props {
     documents: Pick<
@@ -81,6 +94,7 @@ export const DocumentList: FC<Props> = ({
     onTagTone
 }) => {
     const { restoreDocument } = useActions();
+    const [templatesOpen, setTemplatesOpen] = useState(false);
     const [showDeleted, setShowDeleted] = useState(false);
     const [trashed, setTrashed] = useState<{ id: string; name: string } | null>(null);
     const undoButton = useRef<HTMLButtonElement>(null);
@@ -167,6 +181,11 @@ export const DocumentList: FC<Props> = ({
 
     return (
         <main className={styles.documentList}>
+            {templatesOpen && (
+                <Suspense fallback={<p role="status">Loading templates…</p>}>
+                    <TemplatePicker onClose={() => setTemplatesOpen(false)} />
+                </Suspense>
+            )}
             <div className={styles.panel}>
                 <DocumentsBar />
                 <header className={styles.header}>
@@ -179,10 +198,19 @@ export const DocumentList: FC<Props> = ({
                             </p>
                         )}
                     </div>
-                    <button className={styles.newButton} type="button" onClick={onCreate}>
-                        <Plus size={18} strokeWidth={1.5} aria-hidden="true" />
-                        New document
-                    </button>
+                    <div className={styles.creationActions}>
+                        <button
+                            className={styles.newButton}
+                            type="button"
+                            onClick={() => setTemplatesOpen(true)}
+                        >
+                            Templates
+                        </button>
+                        <button className={styles.newButton} type="button" onClick={onCreate}>
+                            <Plus size={18} strokeWidth={1.5} aria-hidden="true" />
+                            New document
+                        </button>
+                    </div>
                 </header>
                 <div className={styles.browseControls}>
                     <label className={styles.search}>
@@ -315,8 +343,16 @@ export const DocumentList: FC<Props> = ({
                         <h2>
                             {showDeleted && !filtered
                                 ? 'Recently Deleted is empty'
-                                : 'No documents found'}
+                                : filtered
+                                  ? 'No documents found'
+                                  : 'Start your first document'}
                         </h2>
+                        {!filtered && !showDeleted && (
+                            <p>
+                                Create a blank document or choose Templates to start with an
+                                editable example.
+                            </p>
+                        )}
                         {filtered && (
                             <button type="button" onClick={clearFilters}>
                                 Clear filters
