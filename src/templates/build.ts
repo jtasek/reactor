@@ -5,7 +5,7 @@ import { STARTER_TEMPLATES, type StarterTemplateId } from './catalog';
 
 export type StarterDocument = Pick<
     Document,
-    'name' | 'frames' | 'shapes' | 'shapesIds' | 'components'
+    'name' | 'frames' | 'shapes' | 'shapesIds' | 'components' | 'camera'
 >;
 const WIDTH = 480;
 const HEIGHT = 640;
@@ -17,6 +17,8 @@ const MUTED = '#626b78';
 const ACCENT = '#275de5';
 const WHITE = '#ffffff';
 const LINE = '#dce1e9';
+/** Opens the three views to the right of the Explorer, with all three in a laptop-wide window. */
+const CAMERA = { position: { x: 360, y: 80 }, scale: 0.75 };
 
 /** Ordinary editable graph records. No template runtime or account integration is required. */
 export function buildStarterTemplate(
@@ -32,7 +34,7 @@ export function buildStarterTemplate(
     const shapes: Record<string, Shape> = {};
     const components: Record<string, Component> = {};
     const frames: Record<string, Frame> = {};
-    const add = (input: ShapeInput & Pick<Shape, 'name'>) => {
+    const add = (input: ShapeInput & Pick<Shape, 'name'> & Partial<Pick<Shape, 'visible'>>) => {
         const previous = Object.values(shapes).at(-1);
         const id = newId();
         const shape = {
@@ -72,16 +74,44 @@ export function buildStarterTemplate(
             value: name,
             position: { x: 16, y: 30 },
             fontSize: 16,
-            fontColor: role === 'button' ? WHITE : MUTED
+            fontColor: role === 'button' ? WHITE : MUTED,
+            // A field shows its hint; its label is drawn above it on the screen and only named here.
+            ...(role === 'input' ? { visible: false } : {})
         });
+        const hint =
+            role === 'input'
+                ? add({
+                      type: 'text',
+                      name: `${name} placeholder`,
+                      value: 'Placeholder',
+                      position: { x: 16, y: 30 },
+                      fontSize: 16,
+                      fontColor: MUTED
+                  })
+                : undefined;
         const id = newId();
         components[id] = createComponent({
             id,
             name,
             sourceOnly: true,
-            shapesIds: [background, label],
-            props: [{ id: 'label', label: 'Label', shapeId: label, key: 'text' }],
-            interaction: { role, props: { label: 'label' } }
+            shapesIds: hint ? [background, label, hint] : [background, label],
+            props: [
+                { id: 'label', label: 'Label', shapeId: label, key: 'text' },
+                ...(hint
+                    ? [
+                          {
+                              id: 'placeholder',
+                              label: 'Placeholder',
+                              shapeId: hint,
+                              key: 'text'
+                          }
+                      ]
+                    : [])
+            ],
+            interaction: {
+                role,
+                props: hint ? { label: 'label', placeholder: 'placeholder' } : { label: 'label' }
+            }
         });
 
         return id;
@@ -138,7 +168,7 @@ export function buildStarterTemplate(
             overrides: { label },
             interactions: { activate: { type: 'navigate', screenId: screenIds[destination] } }
         });
-    const field = (screenId: string, label: string, y: number) => {
+    const field = (screenId: string, label: string, y: number, placeholder: string) => {
         text(label, y, screenId, 14);
         add({
             type: 'instance',
@@ -146,7 +176,7 @@ export function buildStarterTemplate(
             componentId: input,
             position: { x: INSET, y: y + 12 },
             parentFrameId: screenId,
-            overrides: { label }
+            overrides: { label, placeholder }
         });
     };
 
@@ -186,9 +216,9 @@ export function buildStarterTemplate(
             'New request',
             'Try the fields below. Nothing will be submitted.'
         );
-        field(form, 'Your name', 204);
-        field(form, 'Email', 300);
-        field(form, 'Request summary', 396);
+        field(form, 'Your name', 204, 'Ada Lovelace');
+        field(form, 'Email', 300, 'name@example.com');
+        field(form, 'Request summary', 396, 'What do you need?');
         action(form, 'Preview confirmation', 496, 2);
         const done = screen(
             2,
@@ -206,7 +236,7 @@ export function buildStarterTemplate(
             'Welcome back',
             'Try an email sign-in flow. No account is required.'
         );
-        field(signIn, 'Email address', 220);
+        field(signIn, 'Email address', 220, 'name@example.com');
         action(signIn, 'Preview email link', 328, 1);
         const email = screen(
             1,
@@ -233,8 +263,8 @@ export function buildStarterTemplate(
             'Your profile',
             'Update the details people see about you.'
         );
-        field(settings, 'Display name', 204);
-        field(settings, 'Email address', 300);
+        field(settings, 'Display name', 204, 'Alex Morgan');
+        field(settings, 'Email address', 300, 'alex@example.com');
         action(settings, 'Preview saved state', 408, 1);
         action(settings, 'Connected accounts', 476, 2);
         const saved = screen(
@@ -258,6 +288,7 @@ export function buildStarterTemplate(
         shapes,
         shapesIds: Object.keys(shapes),
         frames,
-        components
+        components,
+        camera: { position: { ...CAMERA.position }, scale: CAMERA.scale }
     };
 }

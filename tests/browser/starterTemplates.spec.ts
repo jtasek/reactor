@@ -14,6 +14,10 @@ test('creates, reopens and plays a form starter with editable input and an empty
     await page.getByRole('link', { name: 'Open prototype' }).click();
     const player = page.frameLocator('iframe[title="Application preview"]');
     await player.getByRole('button', { name: 'New request', exact: true }).click();
+    await expect(player.getByRole('textbox', { name: 'Your name', exact: true })).toHaveAttribute(
+        'placeholder',
+        'Ada Lovelace'
+    );
     await player.getByRole('textbox', { name: 'Your name', exact: true }).fill('Ada');
     await expect(player.getByRole('textbox', { name: 'Your name', exact: true })).toHaveValue(
         'Ada'
@@ -32,6 +36,11 @@ test('fits narrow screens and restores focus when dismissed', async ({ page }) =
     await open.click();
     const dialog = page.getByRole('dialog');
     await expect(dialog.getByRole('button', { name: 'Use Settings template' })).toBeVisible();
+    await expect(
+        dialog.getByRole('button', { name: 'Use Settings template' })
+    ).toHaveAccessibleDescription(
+        'Edit a profile, review a saved state and manage connections. 3 Screen views · Includes an empty state'
+    );
     await page.screenshot({ path: 'test-results/starter-picker-narrow.png' });
     expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
         true

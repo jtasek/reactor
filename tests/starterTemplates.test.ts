@@ -10,6 +10,13 @@ import {
 import { projectPreview } from 'src/preview/project';
 import { createTestStore } from './support/store';
 
+const EMPTY_STATES = {
+    'list-detail': 'No projects yet',
+    forms: 'No requests yet',
+    'sign-in': 'No projects yet',
+    settings: 'No connected accounts'
+} as const;
+
 it.each(STARTER_TEMPLATES)('keeps $name screens and native controls after saving', ({ id }) => {
     const document = createDocument(buildStarterTemplate(id, newId));
     const saved = serializePersistedState({
@@ -34,7 +41,25 @@ it.each(STARTER_TEMPLATES)('keeps $name screens and native controls after saving
         destinations.every((destination) => restored.frames[destination]?.kind === 'screen')
     ).toBe(true);
     expect(JSON.stringify(preview)).toContain('button');
-    expect(JSON.stringify(preview)).toContain('No ');
+    expect(
+        Object.values(restored.shapes).some(
+            (shape) => shape.type === 'text' && shape.value === EMPTY_STATES[id]
+        )
+    ).toBe(true);
+    const controls = JSON.stringify(preview);
+    const fields = Object.values(restored.shapes).filter(
+        (shape) =>
+            shape.type === 'instance' &&
+            restored.components[shape.componentId]?.name === 'Text field'
+    );
+    // Fields show a hint, not their label a second time.
+    fields.forEach((field) => {
+        const { label, placeholder } = field.type === 'instance' ? field.overrides : {};
+        expect(placeholder).toBeTruthy();
+        expect(placeholder).not.toBe(label);
+        expect(controls).toContain(`"placeholder":"${placeholder}"`);
+    });
+    expect(restored.camera.scale).toBeLessThan(1);
     expect(restored.dimensions).toEqual({});
 });
 
@@ -52,4 +77,16 @@ it('creates independent documents with access and leaves existing artwork alone'
     expect(store.state.documentAccess[firstId]).toEqual({ role: 'admin' });
     expect(Object.keys(first.shapes).some((id) => id in second.shapes)).toBe(false);
     expect(Object.keys(first.frames).some((id) => id in second.frames)).toBe(false);
+});
+
+it('numbers repeated starters like new documents', async () => {
+    const { store } = createTestStore();
+    await store.onInitialize();
+    store.actions.newDocumentFromTemplate(buildStarterTemplate('forms', newId));
+    store.actions.newDocumentFromTemplate(buildStarterTemplate('forms', newId));
+    store.actions.newDocumentFromTemplate(buildStarterTemplate('forms', newId));
+    const names = Object.values(store.state.documents).map(({ name }) => name);
+    expect(names).toEqual(
+        expect.arrayContaining(['Forms starter', 'Forms starter 2', 'Forms starter 3'])
+    );
 });

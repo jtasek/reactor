@@ -69,11 +69,16 @@ export default function TemplatePicker({ onClose }: { onClose: () => void }) {
                         className={styles.card}
                         type="button"
                         aria-label={`Use ${template.name} template`}
+                        aria-describedby={`template-${template.id}-description template-${template.id}-contents`}
                         onClick={() => create(template.id)}
                     >
                         <strong>{template.name}</strong>
-                        <span>{template.description}</span>
-                        <small>3 Screen views · Includes an empty state</small>
+                        <span id={`template-${template.id}-description`}>
+                            {template.description}
+                        </span>
+                        <small id={`template-${template.id}-contents`}>
+                            3 Screen views · Includes an empty state
+                        </small>
                     </button>
                 ))}
             </div>
