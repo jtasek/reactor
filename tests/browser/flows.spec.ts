@@ -114,3 +114,42 @@ test('shows unavailable destinations and prevents edits to locked controls on di
     await expect(page.getByLabel('Navigate to screen')).toHaveValue('none');
     await expect(page.locator('iframe')).toHaveCount(0);
 });
+
+test('undoes and redoes with keyboard shortcuts', async ({ page }) => {
+    const document = automaticLayoutsPrototype();
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await page.goto('/flow');
+    await page.locator('[data-flow-control="next"]').click();
+    await page.getByRole('button', { name: 'Connect to Home', exact: true }).click();
+    await expect(page.getByLabel('Navigate to screen')).toHaveValue('"home"');
+    await page.locator('[data-flow-control="next"]').focus();
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(page.getByLabel('Navigate to screen')).toHaveValue('inherit');
+    await page.keyboard.press('ControlOrMeta+Shift+z');
+    await expect(page.getByLabel('Navigate to screen')).toHaveValue('"home"');
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(page.getByLabel('Navigate to screen')).toHaveValue('inherit');
+});
+
+test('marks hidden controls and leaves them out of reachability', async ({ page }) => {
+    const document = automaticLayoutsPrototype();
+    document.shapes.next.visible = false;
+    document.shapes['wide-next'].visible = false;
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await page.goto('/flow');
+    await expect(page.getByText('Hidden, not in Preview')).toHaveCount(2);
+    await page.getByLabel('Check reachability from').selectOption('home');
+    await expect(
+        page
+            .locator('[data-flow-screen="details"]')
+            .getByText('Not reachable from the chosen screen.')
+    ).toBeVisible();
+});

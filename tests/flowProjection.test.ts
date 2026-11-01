@@ -139,3 +139,74 @@ it('ignores invalid local diagram positions without reading them as document geo
         })
     ).toEqual({ home: { x: 20, y: 40 } });
 });
+
+it('marks hidden controls and controls in variants an instance never draws', () => {
+    const document = live(previewFixture());
+    const row = (id: string) =>
+        projectFlow(document)[0].controls.find((item) => item.instanceId === id);
+    const control = () => row('next');
+    expect(control()).toMatchObject({ hidden: false, unusedVariant: false });
+    document.shapes.next.visible = false;
+    expect(control()).toMatchObject({ hidden: true, target: 'details' });
+    document.shapes.next.visible = true;
+    document.groups.hidden = {
+        id: 'hidden',
+        name: 'Hidden group',
+        locked: false,
+        selected: false,
+        shapesIds: ['next'],
+        visible: false
+    };
+    expect(control()?.hidden).toBe(true);
+    delete document.groups.hidden;
+
+    const nested = (id: string, componentId = 'button') => {
+        const shape = createShape({
+            type: 'instance',
+            name: id,
+            order: 'a5',
+            componentId,
+            position: { x: 0, y: 0 },
+            overrides: {}
+        });
+        shape.id = id;
+        shape.name = id;
+        document.shapes[id] = shape;
+        return shape;
+    };
+    nested('base-child');
+    nested('wide-child');
+    document.components.card = createComponent({
+        id: 'card',
+        name: 'Card',
+        sourceOnly: true,
+        shapesIds: ['base-child'],
+        variantIds: ['card-wide']
+    });
+    document.components['card-wide'] = createComponent({
+        id: 'card-wide',
+        name: 'Card wide',
+        sourceOnly: true,
+        shapesIds: ['wide-child']
+    });
+    const card = nested('card', 'card');
+    card.parentFrameId = 'home';
+    document.shapesIds.push('card');
+    expect(row('card')?.hidden).toBe(false);
+    expect(row('base-child')?.unusedVariant).toBe(false);
+    expect(row('wide-child')?.unusedVariant).toBe(true);
+    if (card.type !== 'instance') {
+        throw new Error('Expected instance');
+    }
+    card.variantId = 'card-wide';
+    expect(row('base-child')?.unusedVariant).toBe(true);
+    expect(row('wide-child')?.unusedVariant).toBe(false);
+    delete card.variantId;
+    card.variantMode = 'auto';
+    document.components.card.responsiveVariants = {
+        source: 'screen',
+        rules: [{ minWidth: 600, variantId: 'card-wide' }]
+    };
+    expect(row('base-child')?.unusedVariant).toBe(false);
+    expect(row('wide-child')?.unusedVariant).toBe(false);
+});

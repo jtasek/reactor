@@ -47,7 +47,9 @@ export function FlowDiagram({
     const drag = useRef<{ id: string; pointer: number; origin: Point; offset: Point } | undefined>(
         undefined
     );
-    const [lines, setLines] = useState<{ key: string; path: string; selected: boolean }[]>([]);
+    const [lines, setLines] = useState<
+        { key: string; path: string; selected: boolean; inactive: boolean }[]
+    >([]);
     useLayoutEffect(() => {
         const element = board.current;
         if (!element) {
@@ -83,6 +85,7 @@ export function FlowDiagram({
                             {
                                 key: control.key,
                                 selected: selected === control.key,
+                                inactive: control.hidden || control.unusedVariant,
                                 path: `M ${x} ${y} C ${x + 48} ${y}, ${tx + (self ? 48 : -48)} ${ty}, ${tx} ${ty}`
                             }
                         ];
@@ -140,6 +143,7 @@ export function FlowDiagram({
                             key={line.key}
                             d={line.path}
                             data-selected={line.selected}
+                            data-inactive={line.inactive}
                             markerEnd="url(#flow-arrow)"
                         />
                     ))}
@@ -255,6 +259,10 @@ export function FlowDiagram({
                                             : 'No action'}
                                     </div>
                                     {control.missing && <strong>Unavailable target</strong>}
+                                    {control.hidden && <small>Hidden, not in Preview</small>}
+                                    {!control.hidden && control.unusedVariant && (
+                                        <small>Not drawn: this instance uses another variant</small>
+                                    )}
                                 </li>
                             ))}
                         </ul>
