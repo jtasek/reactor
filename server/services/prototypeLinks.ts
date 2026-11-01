@@ -13,12 +13,15 @@ const failed = (problem: ShareProblem): Failure => ({ ok: false, problem });
 
 /** Public snapshots are validated render DTOs, never editable document records. */
 export function createPrototypeLinkService(db: Db) {
-    async function access(database: Db, actorId: string, documentId: string) {
+    /** Locking keeps quota checks and revocations in order with membership changes. */
+    async function access(database: Db, actorId: string, documentId: string, lock = true) {
         const document = await repository.documentWorkspace(database, documentId);
         if (!document) {
             return failed('NOT_FOUND');
         }
-        await repository.lockWorkspace(database, document.workspace_id);
+        if (lock) {
+            await repository.lockWorkspace(database, document.workspace_id);
+        }
         const role = await repository.workspaceRole(database, actorId, document.workspace_id);
         if (!role) {
             return failed('NOT_FOUND');
@@ -26,26 +29,35 @@ export function createPrototypeLinkService(db: Db) {
         if (role !== 'admin') {
             return failed('FORBIDDEN');
         }
-        if (!(await repository.lockDocument(database, documentId))) {
+        if (
+            !(await (lock
+                ? repository.lockDocument(database, documentId)
+                : repository.documentExists(database, documentId)))
+        ) {
             return failed('NOT_FOUND');
         }
 
         return { ok: true as const, workspaceId: document.workspace_id };
     }
 
-    return {
-        list: (actorId: string, documentId: string) =>
-            db.transaction().execute(async (tx) => {
-                const permitted = await access(tx, actorId, documentId);
-                if (!permitted.ok) {
-                    return permitted;
-                }
+    /** Snapshots from another protocol can't be drawn by the deployed runtime. */
+    const described = <T extends { version: number }>({ version, ...link }: T) => ({
+        ...link,
+        outdated: version !== PREVIEW_PROTOCOL_VERSION
+    });
 
-                return {
-                    ok: true as const,
-                    links: await repository.listLinks(tx, documentId, new Date())
-                };
-            }),
+    return {
+        /** A quick check before the snapshot body is read; `create` checks again. */
+        authorize: (actorId: string, documentId: string) => access(db, actorId, documentId, false),
+        list: async (actorId: string, documentId: string) => {
+            const permitted = await access(db, actorId, documentId, false);
+            if (!permitted.ok) {
+                return permitted;
+            }
+            const links = await repository.listLinks(db, documentId, new Date());
+
+            return { ok: true as const, links: links.map(described) };
+        },
         create: (actorId: string, documentId: string, body: unknown) =>
             db.transaction().execute(async (tx) => {
                 const permitted = await access(tx, actorId, documentId);
@@ -102,11 +114,12 @@ export function createPrototypeLinkService(db: Db) {
                     name: body.name.trim(),
                     token_hash: tokenHash(token),
                     snapshot,
+                    version: PREVIEW_PROTOCOL_VERSION,
                     size,
                     expires_at: new Date(now.getTime() + LINK_LIFETIME_MS)
                 });
 
-                return { ok: true as const, link, token };
+                return { ok: true as const, link: described(link), token };
             }),
         revoke: (actorId: string, documentId: string, id: string) =>
             db.transaction().execute(async (tx) => {
@@ -118,13 +131,18 @@ export function createPrototypeLinkService(db: Db) {
 
                 return removed ? { ok: true as const } : failed('NOT_FOUND');
             }),
-        open: async (token: unknown) => {
+        open: async (token: unknown): Promise<{ snapshot: string } | 'OUTDATED' | null> => {
             if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(token)) {
                 return null;
             }
             const link = await repository.snapshotForToken(db, tokenHash(token), new Date());
+            if (!link) {
+                return null;
+            }
 
-            return link?.snapshot ?? null;
+            return link.version === PREVIEW_PROTOCOL_VERSION
+                ? { snapshot: link.snapshot }
+                : 'OUTDATED';
         }
     };
 }

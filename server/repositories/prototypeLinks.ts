@@ -9,10 +9,13 @@ export const documentWorkspace = (db: Db, id: string) =>
 export const lockDocument = (db: Db, id: string) =>
     db.selectFrom('documents').select('id').where('id', '=', id).forUpdate().executeTakeFirst();
 
+export const documentExists = (db: Db, id: string) =>
+    db.selectFrom('documents').select('id').where('id', '=', id).executeTakeFirst();
+
 export const listLinks = (db: Db, documentId: string, now: Date) =>
     db
         .selectFrom('prototype_links')
-        .select(['id', 'name', 'created_at', 'expires_at'])
+        .select(['id', 'name', 'version', 'created_at', 'expires_at'])
         .where('document_id', '=', documentId)
         .where('expires_at', '>', now)
         .orderBy('created_at', 'desc')
@@ -41,6 +44,7 @@ export const insertLink = (
         name: string;
         token_hash: string;
         snapshot: string;
+        version: number;
         size: number;
         expires_at: Date;
     }
@@ -48,7 +52,7 @@ export const insertLink = (
     db
         .insertInto('prototype_links')
         .values(link)
-        .returning(['id', 'name', 'created_at', 'expires_at'])
+        .returning(['id', 'name', 'version', 'created_at', 'expires_at'])
         .executeTakeFirstOrThrow();
 
 export const deleteLink = (db: Db, documentId: string, id: string) =>
@@ -62,7 +66,7 @@ export const deleteLink = (db: Db, documentId: string, id: string) =>
 export const snapshotForToken = (db: Db, hash: string, now: Date) =>
     db
         .selectFrom('prototype_links')
-        .select('snapshot')
+        .select(['snapshot', 'version'])
         .where('token_hash', '=', hash)
         .where('expires_at', '>', now)
         .executeTakeFirst();

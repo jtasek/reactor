@@ -288,7 +288,9 @@ async function openSharedPrototype() {
             throw new Error(
                 response.status === 404
                     ? 'This prototype link has expired or been revoked.'
-                    : 'The shared prototype could not be loaded. Try reloading.'
+                    : response.status === 410
+                      ? 'This prototype link is out of date. Ask whoever shared it for a new link.'
+                      : 'The shared prototype could not be loaded. Try reloading.'
             );
         }
         const data = await response.json();

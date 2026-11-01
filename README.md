@@ -787,5 +787,6 @@ a workspace can store 64 MiB of snapshots. Expired snapshots are removed by peri
 The public `/share` page runs on the preview domain and can fetch only from the configured
 editor origin. It sends the fragment token in a JSON request without cookies; the server stores
 only its hash. The embedded editor preview retains its network-blocked policy. Deploy both
-servers from the same release; shared snapshots with an unsupported protocol version show an
-explicit error instead of rendering.
+servers from the same release. A release that changes the preview protocol leaves older links
+unable to open: recipients are told to ask for a new link, and **Share prototype** marks them
+out of date so an admin can revoke them and share again.

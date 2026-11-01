@@ -67,6 +67,8 @@ export interface Database {
         name: string;
         token_hash: string;
         snapshot: string;
+        /** The preview protocol the snapshot was written for. */
+        version: number;
         size: number;
         created_at: Generated<Date>;
         expires_at: Date;

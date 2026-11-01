@@ -5,6 +5,8 @@ export interface PrototypeLink {
     name: string;
     created_at: string;
     expires_at: string;
+    /** Written for an older preview version, so it no longer opens. */
+    outdated: boolean;
     url?: string;
 }
 

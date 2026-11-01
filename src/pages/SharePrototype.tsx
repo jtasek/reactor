@@ -17,11 +17,14 @@ export function SharePrototype({
     session: PreviewSession;
     inspection: PreviewInspection;
 }) {
-    const { document, allowed, busy } = useAppState((state) => ({
+    const { document, allowed, member, busy } = useAppState((state) => ({
         document: state.currentDocument,
         allowed:
             state.account.kind === 'signedIn' &&
             state.documentAccess[state.currentDocumentId]?.role === 'admin',
+        member:
+            state.account.kind === 'signedIn' &&
+            state.documentAccess[state.currentDocumentId] !== undefined,
         busy: state.events.pointer.gesture.kind !== 'idle' || state.guideDragActive
     }));
     const { assets } = useEffects();
@@ -96,8 +99,10 @@ export function SharePrototype({
                 throw new Error('Choose an available start screen before sharing.');
             }
             const application = await createPreviewResources(assets)(drawing, controller.signal);
+            // Start screen and viewport tell links apart when one is revoked later.
+            const start = document.frames[session.screenId!]?.name ?? 'Screen';
             const name =
-                `${document.name} · ${session.viewport?.width} × ${session.viewport?.height}`.slice(
+                `${document.name} · ${start} · ${session.viewport?.width} × ${session.viewport?.height}`.slice(
                     0,
                     200
                 );
@@ -158,10 +163,17 @@ export function SharePrototype({
                         erase a copy already opened or downloaded.
                     </p>
                     {!allowed ? (
-                        <p>
-                            Save this document to your account. A workspace admin can then create
-                            and revoke public links.
-                        </p>
+                        member ? (
+                            <p>
+                                Only workspace admins can create and revoke public links for this
+                                document.
+                            </p>
+                        ) : (
+                            <p>
+                                Save this document to your account. A workspace admin can then
+                                create and revoke public links.
+                            </p>
+                        )
                     ) : (
                         <>
                             <button
@@ -210,8 +222,11 @@ export function SharePrototype({
                                 {links.map((link) => (
                                     <li key={link.id}>
                                         <span>
-                                            {link.name} · Expires{' '}
-                                            {new Date(link.expires_at).toLocaleDateString()}
+                                            {link.name} · Created{' '}
+                                            {new Date(link.created_at).toLocaleDateString()} ·{' '}
+                                            {link.outdated
+                                                ? 'Out of date, no longer opens. Revoke it and create a new link.'
+                                                : `Expires ${new Date(link.expires_at).toLocaleDateString()}`}
                                         </span>
                                         <button
                                             disabled={pending}

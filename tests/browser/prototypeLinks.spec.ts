@@ -7,7 +7,7 @@ const user = { id: 'prototype-author', name: 'Ada', email: 'ada@example.com' };
 const token = 'a'.repeat(43);
 const shareURL = `http://127.0.0.1:4194/share#${token}`;
 
-async function openAuthor(page: Page) {
+async function openAuthor(page: Page, role: 'admin' | 'editor' = 'admin') {
     const document = prototypeDocument();
     const collaboration = new Collaboration();
     await collaboration.initialize({
@@ -21,7 +21,7 @@ async function openAuthor(page: Page) {
     await page.route('**/api/auth/get-session', (route) => route.fulfill({ json: null }));
     await page.goto('/login');
     await page.evaluate(
-        async ({ update, id, user }) => {
+        async ({ update, id, user, role }) => {
             localStorage.setItem('reactor:account', user.id);
             localStorage.setItem(
                 `reactor:view:${user.id}`,
@@ -33,7 +33,7 @@ async function openAuthor(page: Page) {
             );
             localStorage.setItem(
                 `reactor:server:${user.id}:access`,
-                JSON.stringify({ [id]: { workspaceId: 'workspace', role: 'admin' } })
+                JSON.stringify({ [id]: { workspaceId: 'workspace', role } })
             );
             const opening = indexedDB.open(`reactor-${user.id}`, 2);
             opening.onupgradeneeded = () => {
@@ -62,7 +62,7 @@ async function openAuthor(page: Page) {
                 };
             });
         },
-        { update, id: document.id, user }
+        { update, id: document.id, user, role }
     );
     await page.route('**/api/auth/get-session', (route) => route.fulfill({ json: { user } }));
     await page.route('**/api/workspaces', (route) =>
@@ -90,6 +90,7 @@ test('shares the chosen context as an independent snapshot, plays without cookie
         name: 'Mobile dark',
         created_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 86400000).toISOString(),
+        outdated: false,
         url: shareURL
     };
     await page.route('**/api/documents/*/prototype-links', async (route) => {
@@ -212,4 +213,52 @@ test('signed-out authors get a clear sharing requirement without a publish actio
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Share prototype', exact: true })).toBeFocused();
+});
+
+test('links from an older preview version show as out of date to admins and recipients', async ({
+    page,
+    context
+}) => {
+    await page.route('**/api/documents/*/prototype-links', (route) =>
+        route.fulfill({
+            json: [
+                {
+                    id: 'old',
+                    name: 'App · Details · 390 × 844',
+                    created_at: new Date().toISOString(),
+                    expires_at: new Date(Date.now() + 86400000).toISOString(),
+                    outdated: true
+                }
+            ]
+        })
+    );
+    await context.route('**/api/prototype-links/open', (route) =>
+        route.fulfill({
+            status: route.request().method() === 'OPTIONS' ? 204 : 410,
+            headers: {
+                'access-control-allow-origin': 'http://127.0.0.1:4194',
+                'access-control-allow-headers': 'Content-Type',
+                'access-control-allow-methods': 'POST'
+            },
+            json: { code: 'OUTDATED' }
+        })
+    );
+    await openAuthor(page);
+    await page.getByRole('button', { name: 'Share prototype', exact: true }).click();
+    await expect(page.getByRole('dialog')).toContainText('Out of date, no longer opens');
+    const recipient = await context.newPage();
+    await recipient.goto(shareURL);
+    await expect(recipient.getByRole('status')).toHaveText(
+        'This prototype link is out of date. Ask whoever shared it for a new link.'
+    );
+});
+
+test('workspace members who are not admins are told only admins can share', async ({ page }) => {
+    await openAuthor(page, 'editor');
+    await page.getByRole('button', { name: 'Share prototype', exact: true }).click();
+    await expect(page.getByRole('dialog')).toContainText(
+        'Only workspace admins can create and revoke public links for this document.'
+    );
+    await expect(page.getByRole('dialog')).not.toContainText('Save this document');
+    await expect(page.getByRole('button', { name: 'Create snapshot link' })).toHaveCount(0);
 });

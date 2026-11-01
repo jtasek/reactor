@@ -238,3 +238,39 @@ it('enforces the workspace byte limit and releases expired snapshot storage', as
             .executeTakeFirst()
     ).toBeUndefined();
 });
+
+it('refuses people who may not share before reading their snapshot body', async () => {
+    const server = await setup();
+    const outsider = await server.user('outsider@example.com');
+    // Larger than the snapshot limit: reading it first would answer 413.
+    const body = { name: 'Large', application: { padding: 'x'.repeat(25 * 1024 * 1024) } };
+    expect((await server.create(body, outsider.cookie)).status).toBe(404);
+    expect(
+        (
+            await server.call('POST', '/documents/missing/prototype-links', {
+                cookie: outsider.cookie,
+                body
+            })
+        ).status
+    ).toBe(404);
+    expect((await server.create(body)).status).toBe(413);
+});
+
+it('marks snapshots from another preview version as outdated instead of opening them', async () => {
+    const server = await setup();
+    const created = await (await server.create()).json();
+    expect(created.outdated).toBe(false);
+    await server.db
+        .updateTable('prototype_links')
+        .set({ version: PREVIEW_PROTOCOL_VERSION - 1 })
+        .where('id', '=', created.id)
+        .execute();
+    const opened = await server.open(new URL(created.url).hash.slice(1));
+    expect(opened.status).toBe(410);
+    expect(await opened.json()).toEqual({ code: 'OUTDATED' });
+    const [listed] = await (
+        await server.call('GET', server.path, { cookie: server.admin.cookie })
+    ).json();
+    expect(listed).toMatchObject({ id: created.id, outdated: true });
+    expect(listed.version).toBeUndefined();
+});

@@ -212,6 +212,7 @@ const migrations: Record<string, Migration> = {
                 .addColumn('name', 'text', (c) => c.notNull())
                 .addColumn('token_hash', 'text', (c) => c.notNull().unique())
                 .addColumn('snapshot', 'text', (c) => c.notNull())
+                .addColumn('version', 'integer', (c) => c.notNull())
                 .addColumn('size', 'integer', (c) => c.notNull())
                 .addColumn('created_at', 'timestamptz', (c) => c.notNull().defaultTo(sql`now()`))
                 .addColumn('expires_at', 'timestamptz', (c) => c.notNull())

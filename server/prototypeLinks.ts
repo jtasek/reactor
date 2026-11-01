@@ -3,6 +3,7 @@ import type { Db } from './schema.ts';
 import { createPrototypeLinkService, type ShareProblem } from './services/prototypeLinks.ts';
 
 const PATH = '/documents/:documentId/prototype-links';
+const readSnapshot = express.json({ limit: '24mb' });
 const STATUS: Record<ShareProblem, number> = {
     NOT_FOUND: 404,
     FORBIDDEN: 403,
@@ -38,13 +39,18 @@ export function publicPrototypeLinks(db: Db, previewOrigin?: string) {
         next();
     });
     api.post('/prototype-links/open', express.json({ limit: '1kb' }), async (req, res) => {
-        const snapshot = await service.open(req.body?.token);
-        if (!snapshot) {
+        const opened = await service.open(req.body?.token);
+        if (!opened) {
             res.status(404).json({ code: 'NOT_FOUND' });
 
             return;
         }
-        res.type('application/json').send(snapshot);
+        if (opened === 'OUTDATED') {
+            res.status(410).json({ code: 'OUTDATED' });
+
+            return;
+        }
+        res.type('application/json').send(opened.snapshot);
     });
 
     return api;
@@ -67,12 +73,23 @@ export function prototypeLinks(db: Db, previewOrigin?: string) {
         }
         res.json(result.links);
     });
-    api.post(PATH, express.json({ limit: '24mb' }), async (req, res) => {
+    api.post(PATH, async (req, res) => {
         if (!previewOrigin) {
             res.status(503).json({ code: 'PREVIEW_UNAVAILABLE' });
 
             return;
         }
+        // The large body is read only once the person may share, so nobody else makes the
+        // server hold it.
+        const permitted = await service.authorize(req.userId, req.params.documentId);
+        if (!permitted.ok) {
+            res.status(STATUS[permitted.problem]).json({ code: permitted.problem });
+
+            return;
+        }
+        await new Promise<void>((resolve, reject) =>
+            readSnapshot(req, res, (error?: unknown) => (error ? reject(error) : resolve()))
+        );
         const result = await service.create(req.userId, req.params.documentId, req.body);
         if (!result.ok) {
             res.status(STATUS[result.problem]).json({ code: result.problem });
