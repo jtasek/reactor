@@ -80,6 +80,7 @@ function registerRoutes(effects: Context['effects'], actions: Context['actions']
         '/documents': actions.showDocuments,
         '/variables': actions.showVariables,
         '/flow': actions.showFlow,
+        '/prototype': actions.showPrototype,
         '/account': () => actions.showAccount('account'),
         '/login': () => actions.showAccount('login'),
         // The alias shows as /login, keeping the query.

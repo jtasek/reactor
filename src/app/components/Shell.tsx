@@ -26,6 +26,12 @@ const Flow = lazy(() =>
     }))
 );
 
+const Prototype = lazy(() =>
+    import(/* webpackChunkName: "prototype" */ '../../pages/Prototype').then((module) => ({
+        default: module.PrototypePage
+    }))
+);
+
 const Sharing = lazy(() =>
     import('../../pages/Sharing').then((module) => ({ default: module.Sharing }))
 );
@@ -63,6 +69,7 @@ export const Shell: FC = () => {
                     {currentPage === 'documents' && <Documents />}
                     {currentPage === 'variables' && <Variables />}
                     {currentPage === 'flow' && <Flow />}
+                    {currentPage === 'prototype' && <Prototype />}
                     {(currentPage === 'account' || currentPage === 'login') && (
                         <Account login={currentPage === 'login'} />
                     )}

@@ -7,20 +7,32 @@ import {
     type PreviewDrawing
 } from 'src/preview/protocol';
 import { createPreviewResources } from 'src/preview/resources';
-import type { PreviewInspection } from 'src/preview/project';
+import type { PreviewInspection, PreviewSession, PreviewDiagnostic } from 'src/preview/project';
 import styles from './styles.css';
 
-export default function InteractivePreview() {
+export default function InteractivePreview({
+    session,
+    onWidth,
+    onReset,
+    onLocate
+}: {
+    session?: PreviewSession;
+    onWidth?: (width: number) => void;
+    onReset?: () => void;
+    onLocate?: (diagnostic: PreviewDiagnostic) => void;
+} = {}) {
     const { assets } = useEffects();
     const prepare = useMemo(() => createPreviewResources(assets), [assets]);
     const [inspection, setInspection] = useState<PreviewInspection>({});
-    const live = usePreviewProjection(inspection);
+    const live = usePreviewProjection(inspection, session);
     // Keep showing the last result while a drag pauses updates.
     const settled = useRef<PreviewProjection>(live);
     if (!live.paused) {
         settled.current = live;
     }
     const projection = settled.current;
+    const callbacks = useRef({ onWidth, onReset });
+    callbacks.current = { onWidth, onReset };
     const frame = useRef<HTMLIFrameElement>(null);
     const connection = useRef<MessagePort | null>(null);
     const channelPort = useRef<MessagePort | null>(null);
@@ -155,12 +167,17 @@ export default function InteractivePreview() {
                 event.data.width >= 1 &&
                 event.data.width <= 10000
             ) {
-                setInspection((previous) => ({ ...previous, width: event.data.width }));
+                if (callbacks.current.onWidth) {
+                    callbacks.current.onWidth(event.data.width);
+                } else {
+                    setInspection((previous) => ({ ...previous, width: event.data.width }));
+                }
 
                 return;
             }
             if (event.data?.type === 'inspect-reset') {
                 setInspection({});
+                callbacks.current.onReset?.();
 
                 return;
             }
@@ -233,11 +250,24 @@ export default function InteractivePreview() {
                     ))}
                 </div>
             )}
+            {onLocate && projection.diagnostics.length > 0 && (
+                <nav aria-label="Prototype diagnostics">
+                    {projection.diagnostics.map((item, index) => (
+                        <button
+                            key={`${item.kind}:${item.id}:${index}`}
+                            onClick={() => onLocate(item)}
+                            title={item.message}
+                        >
+                            Inspect {item.name ?? item.kind}
+                        </button>
+                    ))}
+                </nav>
+            )}
             {origin && (
                 <iframe
                     ref={frame}
                     title="Application preview"
-                    src={`${origin}/`}
+                    src={`${origin}/${session ? '?player=prototype' : ''}`}
                     sandbox="allow-scripts"
                     referrerPolicy="no-referrer"
                     onLoad={connect}

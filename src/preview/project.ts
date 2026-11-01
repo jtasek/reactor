@@ -28,27 +28,39 @@ export interface PreviewInspection {
     layouts?: Record<string, string | null>;
 }
 
+export interface PreviewSession {
+    modes: VariableContext;
+    screenId?: string;
+    viewport?: Size;
+    layoutId?: string;
+    layoutMode?: 'auto';
+    /** Full Prototype sessions carry their viewport and modes across navigation. */
+    scope?: 'all-screens';
+}
+
+export interface PreviewDiagnostic {
+    kind: 'shape' | 'frame';
+    id: string;
+    name?: string;
+    message: string;
+}
+
 /** A read-only projection. Source component records and bindings never cross the sandbox boundary.
  * Problems that leave the prototype usable, such as a link to a deleted screen, go to `warnings`. */
 export function projectPreview(
     authoredDocument: Document,
     context: VariableContext,
     warnings: string[] = [],
-    session?: {
-        modes: VariableContext;
-        screenId?: string;
-        viewport?: Size;
-        layoutId?: string;
-        layoutMode?: 'auto';
-    } | null,
-    inspection: PreviewInspection = {}
+    session?: PreviewSession | null,
+    inspection: PreviewInspection = {},
+    diagnostics: PreviewDiagnostic[] = []
 ): PreviewDrawing {
     const screens = screenFrames(authoredDocument);
     const viewportWidth = inspection.width ?? session?.viewport?.width;
     const address = {
         simulation: context,
         session: session?.modes,
-        sessionScreenId: session?.screenId
+        sessionScreenId: session?.scope === 'all-screens' ? undefined : session?.screenId
     };
     // Without an inspection viewport, bindings and Hug/Fill still define each screen's size.
     const intrinsic =
@@ -66,7 +78,9 @@ export function projectPreview(
             const choice = explicit === undefined ? initial : explicit;
             const size = {
                 ...intrinsic.frames[screen.id].size,
-                ...(screen.id === session?.screenId ? session.viewport : {}),
+                ...(session?.scope === 'all-screens' || screen.id === session?.screenId
+                    ? session?.viewport
+                    : {}),
                 width: viewportWidth ?? intrinsic.frames[screen.id].size.width
             };
             const layoutId = selectScreenLayout(authoredDocument, screen.id, {
@@ -74,7 +88,15 @@ export function projectPreview(
                 layoutMode: choice === null ? 'auto' : undefined,
                 size
             });
-            warnings.push(...screenLayoutProblems(authoredDocument, screen.id));
+            const layoutProblems = screenLayoutProblems(authoredDocument, screen.id);
+            warnings.push(...layoutProblems);
+            diagnostics.push(
+                ...layoutProblems.map((message) => ({
+                    kind: 'frame' as const,
+                    id: screen.id,
+                    message
+                }))
+            );
             // A rule's missing target is already among the rule problems.
             if (choice && screenLayoutRoot(authoredDocument, screen.id, choice)?.id !== choice) {
                 warnings.push(MISSING_SCREEN_LAYOUT);
@@ -93,7 +115,8 @@ export function projectPreview(
                 ? selected.size
                 : {
                       width: viewportWidth,
-                      ...(screen.id === session?.screenId && session.viewport
+                      ...((session?.scope === 'all-screens' || screen.id === session?.screenId) &&
+                      session?.viewport
                           ? { height: session.viewport.height }
                           : {})
                   };
@@ -119,20 +142,26 @@ export function projectPreview(
             owner && members.has(owner) && !members.get(owner)!.has(id) ? [id] : []
         )
     );
-    const activeProblems = (problems: Record<string, string>) =>
+    const activeProblems = (problems: Record<string, string>): PreviewDiagnostic[] =>
         Object.entries(problems)
             .filter(
                 ([id]) =>
                     !inactiveFrames.has(id) &&
                     !inactiveFrames.has(sourceDocument.shapes[id]?.parentFrameId ?? '')
             )
-            .map(([, problem]) => problem);
+            .map(([id, message]) => ({
+                kind: sourceDocument.frames[id] ? 'frame' : 'shape',
+                id,
+                message
+            }));
 
     const layout = projectContextualLayout(sourceDocument, address);
     const problems = activeProblems(layout.problems);
-    warnings.push(...activeProblems(layout.modeProblems ?? {}));
+    const modeProblems = activeProblems(layout.modeProblems ?? {});
+    warnings.push(...modeProblems.map(({ message }) => message));
+    diagnostics.push(...problems, ...modeProblems);
     if (problems.length) {
-        throw new Error(problems.join(' '));
+        throw new Error(problems.map(({ message }) => message).join(' '));
     }
     const document = layoutDocument(sourceDocument, layout);
     const roots = screenFrames(document).sort(
@@ -247,9 +276,9 @@ export function projectPreview(
             case 'image': {
                 const hash = /^asset:([a-f0-9]{64})$/.exec(shape.source)?.[1];
                 if (!hash) {
-                    throw new Error(
-                        `${shape.name}: preview images must be stored Reactor assets. Import this image before previewing.`
-                    );
+                    const message = `${shape.name}: preview images must be stored Reactor assets. Import this image before previewing.`;
+                    diagnostics.push({ kind: 'shape', id: shape.id, message });
+                    throw new Error(message);
                 }
                 group.children!.push({
                     key: `${key}/art`,
@@ -268,7 +297,9 @@ export function projectPreview(
                 const source = instanceSource(document, shape, ancestors);
                 const component = document.components[shape.componentId];
                 if (!source || !component) {
-                    throw new Error(`${shape.name}: missing or cyclic component source.`);
+                    const message = `${shape.name}: missing or cyclic component source.`;
+                    diagnostics.push({ kind: 'shape', id: shape.id, message });
+                    throw new Error(message);
                 }
                 const box = instanceBox(shape, source);
                 const pivot = boxCenter(box);
@@ -290,16 +321,18 @@ export function projectPreview(
                 });
                 const role = resolveComponentRole(document, component, shape);
                 if (role.problems.length) {
-                    throw new Error(`${shape.name}: ${role.problems.join(' ')}`);
+                    const message = `${shape.name}: ${role.problems.join(' ')}`;
+                    diagnostics.push({ kind: 'shape', id: shape.id, message });
+                    throw new Error(message);
                 }
                 const settings = effectiveRoleSettings(component, shape);
                 const activation = effectiveActivation(component, shape);
                 const target = activation?.screenId;
                 const navigateTo = target && screenIds.has(target) ? target : undefined;
                 if (target && !navigateTo) {
-                    warnings.push(
-                        `${shape.name} links to an unavailable screen and does nothing. Choose another screen in Interactions.`
-                    );
+                    const message = `${shape.name} links to an unavailable screen and does nothing. Choose another screen in Interactions.`;
+                    warnings.push(message);
+                    diagnostics.push({ kind: 'shape', id: shape.id, message });
                 }
                 const label = String(
                     role.props.label ?? role.props.content ?? role.props.alt ?? ''
@@ -382,7 +415,10 @@ export function projectPreview(
                         screenId: frame.id,
                         frameId: shape.parentFrameId,
                         // The launch snapshot belongs to its own Screen; others keep their choices.
-                        session: frame.id === session?.screenId ? session.modes : undefined
+                        session:
+                            session?.scope === 'all-screens' || frame.id === session?.screenId
+                                ? session?.modes
+                                : undefined
                     });
                     warnings.push(...resolved.problems);
 

@@ -54,6 +54,9 @@ function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
             <header>
                 <a href="/">Back to canvas</a>
                 <h1>Flow</h1>
+                <a href={`/prototype${start ? `?screen=${encodeURIComponent(start)}` : ''}`}>
+                    Open prototype
+                </a>
                 <button
                     disabled={disabled || !document.history.canUndo}
                     onClick={() => effects.collaboration.undo(document.id)}
