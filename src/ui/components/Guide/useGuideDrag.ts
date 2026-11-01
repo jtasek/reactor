@@ -203,7 +203,7 @@ export function useGuideDrag() {
         const observer = new MutationObserver(() => {
             dirty = true;
         });
-        surface.querySelectorAll('#shapes, #screen-views').forEach((node) => {
+        surface.querySelectorAll('#shapes, #screen-views, #frames').forEach((node) => {
             observer.observe(node, {
                 subtree: true,
                 attributes: true,

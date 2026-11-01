@@ -136,11 +136,12 @@ test('uses placed Screen view geometry and excludes its hidden source artwork', 
     await page.mouse.move(10, 700);
     await page.mouse.down();
     await page.mouse.move(850, 700, { steps: 6 });
-    await expect(markers(page)).toHaveCount(2);
+    // The view's own top and bottom edges, then the projected shape.
+    await expect(markers(page)).toHaveCount(4);
     const ys = await markers(page).evaluateAll((nodes) =>
         nodes.map((node) => Number(node.getAttribute('cy'))).sort((a, b) => a - b)
     );
-    expect(ys).toEqual([130, 190]);
+    expect(ys).toEqual([100, 130, 190, 300]);
     await page.mouse.move(150, 700, { steps: 6 });
     await expect(markers(page)).toHaveCount(0);
     await page.keyboard.press('Escape');

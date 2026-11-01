@@ -12,7 +12,10 @@ export function readGuideOutlines(surface: SVGSVGElement): GuideOutline[] {
     const inverse = matrix.inverse();
 
     return [
-        ...surface.querySelectorAll<SVGGraphicsElement>(`[data-guide-outline] :is(${GEOMETRY})`)
+        // Artwork groups are tagged; a frame tags its edge rectangle itself.
+        ...surface.querySelectorAll<SVGGraphicsElement>(
+            `[data-guide-outline] :is(${GEOMETRY}), :is(${GEOMETRY})[data-guide-outline]`
+        )
     ].flatMap((node) => {
         if (node.hasAttribute('data-view-instance-hit') || !isVisible(node, surface)) {
             return [];

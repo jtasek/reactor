@@ -73,8 +73,10 @@ const CanvasFrame: FC<{ id: string; interactive: boolean }> = ({ id, interactive
             }
         >
             <g data-handle={interactive ? true : undefined} data-frame-id={id} data-type="move">
+                {/* Only the edge, not the label, gives dragged guides their crossings. */}
                 <rect
                     className={styles.edge}
+                    data-guide-outline={interactive ? '' : undefined}
                     x={position.x}
                     y={position.y}
                     width={size.width}
