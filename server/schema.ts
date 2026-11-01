@@ -60,6 +60,17 @@ export interface Database {
         document_id: string;
         hash: string;
     };
+    prototype_links: {
+        id: string;
+        workspace_id: string;
+        document_id: string;
+        name: string;
+        token_hash: string;
+        snapshot: string;
+        size: number;
+        created_at: Generated<Date>;
+        expires_at: Date;
+    };
     ai_requests: {
         id: string;
         workspace_id: string;

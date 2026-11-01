@@ -17,7 +17,9 @@ const SVG = 'http://www.w3.org/2000/svg';
 const XHTML = 'http://www.w3.org/1999/xhtml';
 const root = document.getElementById('preview')!;
 // The standalone player owns viewport and reset controls outside the sandbox.
-const externalControls = new URLSearchParams(window.location.search).get('player') === 'prototype';
+const shared = window.location.pathname.replace(/\/$/, '') === '/share';
+const externalControls =
+    !shared && new URLSearchParams(window.location.search).get('player') === 'prototype';
 const values = new Map<string, string>();
 let application: PreviewApplication | undefined;
 /** Images received so far. The editor sends each image once and later updates only refer to it. */
@@ -137,7 +139,7 @@ function render() {
     label.append(select);
     const reset = document.createElement('button');
     reset.type = 'button';
-    reset.textContent = 'Reset preview';
+    reset.textContent = shared ? 'Reset prototype' : 'Reset preview';
     reset.addEventListener('click', () => {
         values.clear();
         currentScreen = undefined;
@@ -146,7 +148,7 @@ function render() {
         render();
     });
     navigation.append(label);
-    if (screen.layouts) {
+    if (screen.layouts && !shared) {
         const widthLabel = document.createElement('label');
         widthLabel.textContent = 'Width ';
         const width = document.createElement('input');
@@ -248,6 +250,7 @@ function receive(value: unknown) {
 
 window.addEventListener('message', (event) => {
     if (
+        shared ||
         port ||
         event.source !== window.parent ||
         event.origin !== window.REACTOR_EDITOR_ORIGIN ||
@@ -261,3 +264,48 @@ window.addEventListener('message', (event) => {
     port.postMessage({ type: 'ready', version: PREVIEW_PROTOCOL_VERSION });
 });
 window.addEventListener('pagehide', () => port?.close());
+
+/** Public links load one immutable validated snapshot, without cookies or an editor channel. */
+async function openSharedPrototype() {
+    root.textContent = 'Loading shared prototype…';
+    const token = window.location.hash.slice(1);
+    const controller = new AbortController();
+    window.addEventListener('pagehide', () => controller.abort(), { once: true });
+    try {
+        if (!/^[A-Za-z0-9_-]{43}$/.test(token) || !window.REACTOR_EDITOR_ORIGIN) {
+            throw new Error('This prototype link is invalid.');
+        }
+        const response = await fetch(`${window.REACTOR_EDITOR_ORIGIN}/api/prototype-links/open`, {
+            method: 'POST',
+            credentials: 'omit',
+            cache: 'no-store',
+            referrerPolicy: 'no-referrer',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token }),
+            signal: controller.signal
+        });
+        if (!response.ok) {
+            throw new Error(
+                response.status === 404
+                    ? 'This prototype link has expired or been revoked.'
+                    : 'The shared prototype could not be loaded. Try reloading.'
+            );
+        }
+        const data = await response.json();
+        if (data.version !== PREVIEW_PROTOCOL_VERSION) {
+            throw new Error('This shared prototype uses an unsupported version.');
+        }
+        const snapshot = readPreview(data.application);
+        receive(snapshot);
+    } catch (error) {
+        if (controller.signal.aborted) {
+            return;
+        }
+        root.textContent =
+            error instanceof Error ? error.message : 'The shared prototype could not be loaded.';
+        root.setAttribute('role', 'status');
+    }
+}
+if (shared) {
+    void openSharedPrototype();
+}

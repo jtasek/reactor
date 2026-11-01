@@ -50,6 +50,9 @@ COPY --chown=node:node server ./server
 # Password reset and browser sign-in share the allowed return destinations.
 COPY --chown=node:node src/app/authenticationDestination.ts ./src/app/authenticationDestination.ts
 
+# Public snapshots use the same strict render-protocol validation as the browser.
+COPY --chown=node:node src/preview/protocol.ts ./src/preview/protocol.ts
+
 # Drop privileges; the app never writes to disk so the FS can be mounted read-only.
 USER node
 

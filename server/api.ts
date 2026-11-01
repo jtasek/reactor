@@ -1,3 +1,4 @@
+import { prototypeLinks, publicPrototypeLinks, sendsPrototypeSnapshot } from './prototypeLinks.ts';
 import { createMembers, type AccessChanged } from './members.ts';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { fromNodeHeaders } from 'better-auth/node';
@@ -81,9 +82,11 @@ export function createApi({
     log = console,
     blobs = postgresBlobs(db),
     assetQuota = WORKSPACE_ASSET_BYTES,
-    ai
+    ai,
+    previewOrigin
 }: {
     db: Db;
+    previewOrigin?: string;
     auth: Auth;
     origin: string;
     onDeleted?: (documentId: string) => void;
@@ -96,6 +99,7 @@ export function createApi({
     ai?: { provider: AiProvider; limits?: AiLimits };
 }) {
     const api = express.Router();
+    api.use(publicPrototypeLinks(db, previewOrigin));
 
     // Only public provider names, so signed-out people see the configured sign-in choices.
     api.get('/sign-in/providers', (_req, res) => {
@@ -129,7 +133,9 @@ export function createApi({
     const readJson = express.json({ limit: '16kb' });
 
     // An AI request reads its larger body once the user may make one.
-    api.use((req, res, next) => (sendsAiRequest(req) ? next() : readJson(req, res, next)));
+    api.use((req, res, next) =>
+        sendsAiRequest(req) || sendsPrototypeSnapshot(req) ? next() : readJson(req, res, next)
+    );
     api.use(async (req, res, next) => {
         const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
 
@@ -144,6 +150,7 @@ export function createApi({
         return next();
     });
 
+    api.use(prototypeLinks(db, previewOrigin));
     api.use(createInvitations(db));
     api.use(createMembers(db, onAccessChanged, log));
 
