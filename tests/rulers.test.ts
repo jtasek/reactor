@@ -1,4 +1,4 @@
-import { guidePlace, removesGuide, rulerMarks } from 'src/app/rulers';
+import { guideLabelPlace, guidePlace, removesGuide, rulerMarks } from 'src/app/rulers';
 
 const firstLabels = (scale: number) =>
     rulerMarks(0, scale, 400)
@@ -68,5 +68,48 @@ describe('removesGuide', () => {
         expect(removesGuide(700, 20, 700)).toBe(false);
         expect(removesGuide(701, 20, 700)).toBe(true);
         expect(removesGuide(-1, 0, 700)).toBe(true);
+    });
+});
+
+describe('guideLabelPlace', () => {
+    const bounds = { width: 1000, height: 700 };
+
+    it('puts a vertical guide label right of its line, level with the pointer', () => {
+        expect(guideLabelPlace('vertical', 600, 300, bounds, 20)).toEqual({
+            x: 612,
+            y: 300,
+            anchor: 'start',
+            baseline: 'middle'
+        });
+    });
+
+    it('puts a horizontal guide label above its line, right of the pointer', () => {
+        expect(guideLabelPlace('horizontal', 200, 300, bounds, 20)).toEqual({
+            x: 312,
+            y: 194,
+            anchor: 'start',
+            baseline: 'auto'
+        });
+    });
+
+    it('keeps the label clear of the rulers and inside the canvas', () => {
+        expect(guideLabelPlace('vertical', 600, 5, bounds, 20).y).toBe(30);
+        expect(guideLabelPlace('vertical', 600, 699, bounds, 20).y).toBe(690);
+        expect(guideLabelPlace('horizontal', 200, 5, bounds, 20).x).toBe(32);
+        expect(guideLabelPlace('horizontal', 30, 300, bounds, 20)).toMatchObject({
+            y: 36,
+            baseline: 'hanging'
+        });
+    });
+
+    it("flips to the pointer's left near the right edge", () => {
+        expect(guideLabelPlace('vertical', 980, 300, bounds, 20)).toMatchObject({
+            x: 968,
+            anchor: 'end'
+        });
+        expect(guideLabelPlace('horizontal', 200, 980, bounds, 20)).toMatchObject({
+            x: 968,
+            anchor: 'end'
+        });
     });
 });
