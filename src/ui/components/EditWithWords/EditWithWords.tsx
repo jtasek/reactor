@@ -154,7 +154,11 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
                                 <ol className={styles.operations}>
                                     {turn.operations.map((operation, index) => (
                                         <li key={index}>
-                                            {describeOperation(operation, document)}
+                                            {describeOperation(
+                                                operation,
+                                                document,
+                                                turn.operations
+                                            )}
                                         </li>
                                     ))}
                                 </ol>
@@ -203,7 +207,7 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
             >
                 <p className={styles.status}>
                     {selectedFrameId
-                        ? 'Using the selected frame or Screen view, its artwork and dependencies.'
+                        ? 'Using the selected frame or Screen view, its screen’s artwork and views, and the document’s variables and components.'
                         : selected.length > 0
                           ? 'Using selected items, their groups, owning frames and the variables and components they use.'
                           : 'Using this document. Select items first to share a smaller part.'}

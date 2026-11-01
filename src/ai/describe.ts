@@ -38,11 +38,27 @@ const variableLabel = (document: Document, id: string) => {
         : `variable ${quoted(id)}`;
 };
 
+/** A frame's name, from the document or from a frame an earlier call of the batch adds. */
+const frameName = (document: Document, batch: readonly ProposedOperation[], id: string) =>
+    document.frames[id]?.name ??
+    batch.find(
+        (operation): operation is Extract<ProposedOperation, { op: 'addFrame' }> =>
+            operation.op === 'addFrame' && operation.key === id
+    )?.frame.name ??
+    id;
+
 /**
  * One line saying what a proposed operation adds, changes or deletes in
- * `document`, for the person reviewing the proposal.
+ * `document`, for the person reviewing the proposal. `batch` is the whole
+ * proposal, so records it adds are named rather than shown by key.
  */
-export function describeOperation(operation: ProposedOperation, document: Document): string {
+export function describeOperation(
+    operation: ProposedOperation,
+    document: Document,
+    batch: readonly ProposedOperation[] = []
+): string {
+    const frameLabel = (id: string) => quoted(frameName(document, batch, id));
+
     switch (operation.op) {
         case 'addFrame': {
             const frame = operation.frame;
@@ -54,11 +70,12 @@ export function describeOperation(operation: ProposedOperation, document: Docume
                       : frame.screenLayout
                         ? 'screen layout'
                         : 'frame';
+            const owner = frame.screenId ?? (frame.screenLayout ? frame.parentFrameId : undefined);
             const rules = Object.values(frame.responsiveLayouts ?? {}).map(
-                (rule) => `${rule.minWidth}px → ${quoted(rule.layoutId)}`
+                (rule) => `${rule.minWidth}px → ${frameLabel(rule.layoutId)}`
             );
 
-            return `Add ${kind} ${quoted(frame.name)} (${frame.size.width} × ${frame.size.height})${frame.screenId ? ` for ${quoted(document.frames[frame.screenId]?.name ?? frame.screenId)}` : ''}${rules.length ? `; responsive layouts: ${rules.join(', ')}` : ''}`;
+            return `Add ${kind} ${quoted(frame.name)} (${frame.size.width} × ${frame.size.height})${owner ? ` for ${frameLabel(owner)}` : ''}${rules.length ? `; responsive layouts: ${rules.join(', ')}` : ''}`;
         }
         case 'updateFrame': {
             const frame = document.frames[operation.frame];
@@ -70,10 +87,7 @@ export function describeOperation(operation: ProposedOperation, document: Docume
                     responsiveLayouts === null || Object.keys(responsiveLayouts).length === 0
                         ? 'remove responsive layout rules'
                         : `responsive layouts: ${Object.values(responsiveLayouts)
-                              .map(
-                                  (rule) =>
-                                      `${rule.minWidth}px → ${quoted(document.frames[rule.layoutId]?.name ?? rule.layoutId)}`
-                              )
+                              .map((rule) => `${rule.minWidth}px → ${frameLabel(rule.layoutId)}`)
                               .join(', ')}`
                 );
             }
@@ -85,10 +99,11 @@ export function describeOperation(operation: ProposedOperation, document: Docume
         case 'addShape': {
             const { shape } = operation;
             const named = shape.name ? ` ${quoted(shape.name)}` : '';
+            const placed = shape.parentFrameId ? ` in ${frameLabel(shape.parentFrameId)}` : '';
 
             return shape.type === 'text'
-                ? `Add text${named}: ${quoted(shape.value)}`
-                : `Add ${shape.type}${named}`;
+                ? `Add text${named}${placed}: ${quoted(shape.value)}`
+                : `Add ${shape.type}${named}${placed}`;
         }
         case 'addGroup':
             return `Group ${operation.shapes.length} shapes as ${quoted(operation.name)}`;
