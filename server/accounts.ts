@@ -1,3 +1,5 @@
+import { deleteExpiredLinks } from './repositories/prototypeLinks.ts';
+import { previewConfiguration } from './preview.ts';
 import { configuresAi, providerFromEnv } from './ai.ts';
 import { createApi } from './api.ts';
 import { UNUSED_ASSET_GRACE_MS, deleteUnusedAssets, postgresBlobs } from './assets.ts';
@@ -66,9 +68,10 @@ export async function startAccounts(
     const sync = createSync({ db, auth, origin, log });
     const blobs = postgresBlobs(db);
     const cleanUp = () =>
-        deleteUnusedAssets(db, blobs, new Date(Date.now() - UNUSED_ASSET_GRACE_MS)).catch(
-            (error: unknown) => log.error(error)
-        );
+        Promise.all([
+            deleteUnusedAssets(db, blobs, new Date(Date.now() - UNUSED_ASSET_GRACE_MS)),
+            deleteExpiredLinks(db, new Date())
+        ]).catch((error: unknown) => log.error(error));
     // Soon after start as well, so a server restarted within the hour still cleans up.
     const firstCleanup = setTimeout(cleanUp, FIRST_ASSET_CLEANUP_MS);
     const cleanups = setInterval(cleanUp, ASSET_CLEANUP_INTERVAL_MS);
@@ -87,7 +90,8 @@ export async function startAccounts(
             onAccessChanged: sync.closeMember,
             log,
             blobs,
-            ai
+            ai,
+            previewOrigin: previewConfiguration(env)?.previewOrigin
         }),
         sync,
         close: () => {

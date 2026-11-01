@@ -734,8 +734,8 @@ cannot fetch images. Missing, invalid or oversized resources retain the last val
 transforms and opacity, including in nested/library components. Import external images into
 Reactor first. Each image can be up to 5 MiB and a preview's images up to 8 MiB together, counted
 as image file sizes; the drawing has its own 8 MiB limit. Each image is sent to the preview once. Diagram
-connector links are not rendered. List roles are labeled containers; record repetition,
-validation and shared preview links come later.
+connector links are not rendered. List roles are labeled containers; record repetition and
+validation come later.
 
 The runtime is a separate static server. It must be on a **different registrable domain** from
 the editor, on an app subdomain, without the editor's cookies. Configure the same
@@ -766,3 +766,27 @@ PORT=4001 HOST=127.0.0.1 PREVIEW_ORIGIN=http://127.0.0.1:4001 EDITOR_ORIGIN=http
 Use `http://127.0.0.1:4000` for the editor, matching `EDITOR_ORIGIN` exactly. The runtime does
 not hot-reload; rebuild/reopen Preview after changing its implementation. Browser tests start
 both origins automatically and verify native controls, live updates, recovery and isolation.
+
+### Share a prototype
+
+Open **Prototype**, choose its start screen, viewport and modes, then select **Share prototype →
+Create snapshot link**. This requires an account document, a workspace admin and the separate
+preview server configured above. Copy the new link before closing; saved links can be revoked,
+but their secret URLs cannot be retrieved later.
+
+Anyone with the link can play all screens in that snapshot without signing in. The chosen
+viewport, modes, layouts and variants are resolved at publication; recipients can navigate,
+enter local input and reset, but cannot edit the document or change the snapshot's viewport
+context. Later canvas edits stay private. Verified images are embedded in the snapshot.
+
+Links expire after 30 days. **Share prototype** lists active links and offers **Revoke link**.
+Revocation stops future loads, but cannot erase an already opened or downloaded copy. Deleting
+the source document permanently also deletes its links. Each document can have 20 active links;
+a workspace can store 64 MiB of snapshots. Expired snapshots are removed by periodic cleanup.
+
+The public `/share` page runs on the preview domain and can fetch only from the configured
+editor origin. It sends the fragment token in a JSON request without cookies; the server stores
+only its hash. The embedded editor preview retains its network-blocked policy. Deploy both
+servers from the same release. A release that changes the preview protocol leaves older links
+unable to open: recipients are told to ask for a new link, and **Share prototype** marks them
+out of date so an admin can revoke them and share again.

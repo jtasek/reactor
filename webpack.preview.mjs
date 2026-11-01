@@ -10,6 +10,7 @@ export default {
     output: {
         path: path.join(root, 'dist-preview'),
         filename: '[name].[contenthash].js',
+        publicPath: '/',
         clean: true
     },
     module: {

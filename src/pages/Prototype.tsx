@@ -1,10 +1,11 @@
+import { SharePrototype } from './SharePrototype';
 import { registerEditor } from './registerEditor';
 import React, { useEffect, useState } from 'react';
 import { useActions, useAppState, useEffects } from 'src/app/hooks';
 import { screenFrames } from 'src/app/screens';
 import { prototypeModes } from 'src/app/modeEdits';
 import { ordered } from 'src/app/variableModes';
-import type { PreviewDiagnostic, PreviewSession } from 'src/preview/project';
+import type { PreviewDiagnostic, PreviewSession, PreviewInspection } from 'src/preview/project';
 import InteractivePreview from 'src/ui/components/InteractivePreview/InteractivePreview';
 import styles from './Prototype.css';
 
@@ -84,6 +85,7 @@ function PrototypeWorkspace() {
             scope: 'all-screens'
         };
     });
+    const [inspection, setInspection] = useState<PreviewInspection>({});
     const [restart, setRestart] = useState(0);
     const reset = () => setRestart((value) => value + 1);
     const resize = (axis: 'width' | 'height', value: number) =>
@@ -207,6 +209,7 @@ function PrototypeWorkspace() {
                     </label>
                 ))}
             </section>
+            <SharePrototype session={session} inspection={inspection} />
             {session.screenId && !screens.some((screen) => screen.id === session.screenId) && (
                 <p role="status">The start screen is unavailable. Choose another start screen.</p>
             )}
@@ -219,6 +222,7 @@ function PrototypeWorkspace() {
                         session={session}
                         onWidth={(value) => resize('width', value)}
                         onReset={reset}
+                        onInspection={setInspection}
                         onLocate={locate}
                     />
                 </div>
