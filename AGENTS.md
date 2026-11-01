@@ -1184,3 +1184,19 @@ abort stale preparations. The sandbox receives only raster data URLs, with no ne
 must succeed before the editor sends any application data; mismatches show an update notice.
 The canvas and runtime share the default outline token; text keeps the canvas font fallback.
 List repetition and shared links remain later increments. See README for hosting configuration.
+
+
+## Prototype workspace
+
+`/prototype` (`pages/Prototype.tsx`) is a separately invoked lazy player. Its local `PreviewSession`
+is seeded once from `previewModes` or a validated Flow screen query, never stored in a document.
+`scope: all-screens` applies session viewport height as well as width and mode choices across
+navigation. Compact Preview retains its launch-screen scope and other destinations' height
+constraints. Both use `InteractivePreview`, its abortable image preparation, validated channel,
+opaque sandbox and last-valid projection. The runtime's `player=prototype` display hint hides
+its duplicate width/reset controls; it grants no permissions and changes no protocol payload.
+Changing start screen, Reset or closing remounts/ends the runtime and clears local input state;
+viewport/mode changes keep it alive, preserving compatible state keys. Layout inspection remains
+per-screen and local. `PreviewDiagnostic` IDs stay in the editor, with Inspect links selecting
+source records; diagnostic metadata is never sent into the sandbox. Tests: `preview.test.ts`
+and `tests/browser/responsivePrototype.spec.ts`, including simultaneous sessions and live edits.

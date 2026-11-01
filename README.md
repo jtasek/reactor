@@ -696,6 +696,25 @@ rejects unsupported definitions, including units, transparency, other color spac
 tokens, descriptions/deprecation and unknown extensions, rather than producing a partial file.
 See [the supported subset](design/design-token-interchange.md) for details and identity rules.
 
+### Prototype player
+
+Choose **Open prototype** on the application bar, run the **Open prototype** command, or open
+`/prototype`. Flow also offers an **Open prototype** link for its chosen starting screen.
+Selecting a canvas Screen view first seeds its viewport, modes and explicit layout choice.
+The standalone player's **Start screen**, **Width**, **Height** and dimension controls affect
+only that session. Width-selected dimensions offer **Auto · Viewport width**; other dimensions
+can inherit from each screen or use an explicit mode. Descendant frame and instance overrides
+continue to apply. Navigation retains the session viewport and modes, and compatible input
+values survive responsive layout and component-variant changes. The runtime's Layout control
+can inspect Auto or an explicit layout without editing the document.
+
+**Reset prototype** clears typed values and temporary layout inspection, returning to the chosen
+start screen with the current viewport/modes. Changing the start screen starts a fresh runtime.
+**Close prototype** ends the session. Other open players remain independent. Invalid live edits
+retain the last valid output; diagnostic **Inspect** buttons return to the affected authored
+record. The player requires the separate preview server configured below. The compact canvas
+Preview remains available for side-by-side edits.
+
 ### Interactive prototype preview
 
 Designate frames as **Screen** in Inspector, keep them visible directly on **Canvas**, then

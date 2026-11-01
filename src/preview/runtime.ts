@@ -16,6 +16,8 @@ declare global {
 const SVG = 'http://www.w3.org/2000/svg';
 const XHTML = 'http://www.w3.org/1999/xhtml';
 const root = document.getElementById('preview')!;
+// The standalone player owns viewport and reset controls outside the sandbox.
+const externalControls = new URLSearchParams(window.location.search).get('player') === 'prototype';
 const values = new Map<string, string>();
 let application: PreviewApplication | undefined;
 /** Images received so far. The editor sends each image once and later updates only refer to it. */
@@ -182,9 +184,14 @@ function render() {
             })
         );
         layoutLabel.append(layouts);
-        navigation.append(widthLabel, layoutLabel);
+        if (!externalControls) {
+            navigation.append(widthLabel);
+        }
+        navigation.append(layoutLabel);
     }
-    navigation.append(reset);
+    if (!externalControls) {
+        navigation.append(reset);
+    }
     const svg = document.createElementNS(SVG, 'svg');
     svg.setAttribute('viewBox', `${screen.x} ${screen.y} ${screen.width} ${screen.height}`);
     svg.setAttribute('width', String(screen.width));

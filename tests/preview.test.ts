@@ -227,3 +227,79 @@ it('diagnoses image sources that are not stored assets explicitly', () => {
     document.shapesIds.push('photo');
     expect(() => projectPreview(document, {})).toThrow('must be stored Reactor assets');
 });
+
+it('carries a Prototype viewport and modes to every destination while preserving the compact Preview launch scope', async () => {
+    const { prototypeDocument } = await import('./support/prototype');
+    const document = prototypeDocument();
+    const before = JSON.stringify(document);
+    const session = {
+        scope: 'all-screens' as const,
+        screenId: 'home',
+        modes: { theme: 'dark' },
+        viewport: { width: 800, height: 900 },
+        layoutMode: 'auto' as const
+    };
+    const application = projectPreview(document, {}, [], session);
+    expect(application.screens.map(({ width, height }) => ({ width, height }))).toEqual([
+        { width: 800, height: 900 },
+        { width: 800, height: 900 }
+    ]);
+    const details = application.screens.find((screen) => screen.id === 'details')!;
+    expect(JSON.stringify(details.nodes)).toContain('#ddeeff');
+    expect(JSON.stringify(details.nodes)).toContain('"font-size":20');
+    const compact = projectPreview(document, {}, [], { ...session, scope: undefined });
+    expect(compact.screens.find((screen) => screen.id === 'details')!.height).toBe(480);
+    expect(
+        JSON.stringify(compact.screens.find((screen) => screen.id === 'details')!.nodes)
+    ).toContain('#112233');
+    expect(JSON.stringify(document)).toBe(before);
+});
+
+it('provides authored record diagnostics for broken navigation and invalid semantic roles', () => {
+    const document = previewFixture();
+    document.components.button.interactions = {
+        activate: { type: 'navigate', screenId: 'missing' }
+    };
+    const diagnostics: import('src/preview/project').PreviewDiagnostic[] = [];
+    projectPreview(document, {}, [], undefined, {}, diagnostics);
+    expect(diagnostics).toContainEqual(
+        expect.objectContaining({
+            kind: 'shape',
+            id: 'next',
+            message: expect.stringContaining('unavailable screen')
+        })
+    );
+    document.components.button.interaction = { role: 'button', props: {} };
+    diagnostics.length = 0;
+    expect(() => projectPreview(document, {}, [], undefined, {}, diagnostics)).toThrow();
+    expect(diagnostics).toContainEqual(expect.objectContaining({ kind: 'shape', id: 'next' }));
+});
+
+it('seeds a Prototype from the launch view’s own modes so other screens keep their overrides', async () => {
+    const { prototypeDocument } = await import('./support/prototype');
+    const { prototypeModes } = await import('src/app/modeEdits');
+    const document = prototypeDocument();
+    document.frames.details.modeOverrides = { theme: 'dark' };
+    document.selectedFrameId = 'view';
+    const state = (previewModes: Record<string, unknown> = {}) =>
+        ({ currentDocument: document, events: { pointer: {} }, previewModes }) as never;
+    // The view's own Dark choice carries to every screen.
+    expect(prototypeModes(state()).modes).toEqual({ theme: 'dark' });
+    // Without one, defaults and local simulation stay out of the session.
+    delete document.frames.view.modeOverrides;
+    const seed = prototypeModes(state({ [document.id]: { theme: 'light' } }));
+    expect(seed).toMatchObject({
+        screenId: 'home',
+        modes: {},
+        viewport: { width: 320, height: 480 }
+    });
+    const application = projectPreview(document, {}, [], { ...seed, scope: 'all-screens' });
+    expect(
+        JSON.stringify(application.screens.find((screen) => screen.id === 'details')!.nodes)
+    ).toContain('#ddeeff');
+    document.frames.details.modeOverrides = {};
+    const light = projectPreview(document, {}, [], { ...seed, scope: 'all-screens' });
+    expect(
+        JSON.stringify(light.screens.find((screen) => screen.id === 'details')!.nodes)
+    ).toContain('#112233');
+});

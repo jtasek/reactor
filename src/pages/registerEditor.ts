@@ -1,3 +1,4 @@
+import { OpenPrototypeCommand } from 'src/commands/prototype';
 import { OpenFlowCommand } from 'src/commands/flow';
 import * as componentProperties from 'src/app/componentPropertyEdits';
 import * as layout from 'src/app/contextualLayout';
@@ -80,6 +81,7 @@ import { registerCommand, registerTool } from 'src/app/actions/startup';
 
 function registerCommands() {
     registerCommand(OpenFlowCommand);
+    registerCommand(OpenPrototypeCommand);
     registerCommand(UndoCommand);
     registerCommand(RedoCommand);
     registerCommand(DeleteCommand);

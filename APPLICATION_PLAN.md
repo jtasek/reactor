@@ -613,12 +613,12 @@ and native SVG default fill. Coverage includes resource validation/cache/cancell
 browser decoding, geometry/style parity, missing-image recovery and normal/narrow visual checks.
 Diagram connector links remain absent, as in the current canvas; this does not introduce them.
 
-#### Increments: R4.1–R4.4 implemented for supported consumers; R4.5 implemented; R4.6–R4.10 planned
+#### Increments: R4.1–R4.10 implemented for supported consumers
 
 Do these in order. Each numbered increment is independently usable and reviewable; do not merge
-an intermediate format that the editor cannot open and edit. New test filenames below are
-acceptance targets for planned increments; R4.1 names its implemented coverage. The existing Preview
-continues working through adapters to the new screen/context projection until R4.10 completes.
+an intermediate format that the editor cannot open and edit. Test filenames below record
+acceptance coverage for the delivered increments. The existing Preview continues working through
+adapters to the shared screen/context projection alongside the standalone Prototype player.
 
 1. **R4.1 — Explicit screen identity (implemented).**
    A frame explicitly declares Frame or Screen in Inspector. Its existing ID is the stable
@@ -949,18 +949,23 @@ continues working through adapters to the new screen/context projection until R4
    node per definition, Flow/Inspector round trips, missing targets, diagram-only movement,
    undo/collaboration, local arrangement and lazy loading without prototype execution.
 
-10. **R4.10 — Contextual Prototype player (M).**
-    Evolve the existing Preview command/panel into an explicitly invoked Prototype feature with
-    start-screen, viewport and mode controls. Launch independently of Flow, or seed from a chosen
-    canvas view. Navigate by screen ID, retaining session size/modes and resolving each target's
-    layout and component variants. Preserve compatible input state across live edits and responsive
-    switches; Reset/close clears it. Keep canvas configuration and other sessions independent.
-    Retain the existing sandbox, validated protocol, resource limits, cancellation and last-valid
-    projection behavior. Expose diagnostics with links back to the relevant authored record.
-    **Acceptance:** extend `tests/preview.test.ts` and `tests/browser/preview.spec.ts`, and add
-    `tests/browser/responsivePrototype.spec.ts`: launch/reset/close, navigation through two
-    screens at multiple widths/modes, keyboard-native controls, variant/layout switches, live
-    invalid/valid edits, session isolation, unchanged canvas data and separate feature loading.
+10. **R4.10 — Contextual Prototype player (complete).**
+    Open prototype on the application bar, command line or Flow opens lazy `/prototype`.
+    Select a start screen, viewport width/height and any opt-in dimension's mode. A selected
+    canvas view seeds the initial context; direct launches follow screen defaults. Navigation
+    carries the session viewport and mode choices to every destination, resolving responsive
+    layouts and component variants while preserving explicit layout/variant choices and
+    compatible input identities. Reset restarts at the chosen start screen and clears inputs
+    and temporary layout inspection; close ends the session. Context and inputs stay local,
+    independent of canvas configuration and other players. The compact Preview remains available.
+    The player reuses the opaque sandbox, validated protocol, image limits, cancellation and
+    last-valid projection behavior. Projection diagnostics link to the relevant authored shape
+    or frame in Inspector. Unavailable start screens remain visible for an explicit new choice.
+    **Verification:** `tests/preview.test.ts`, existing compact Preview tests and
+    `tests/browser/responsivePrototype.spec.ts` cover launching from a view, reset/close,
+    multi-screen width/height/mode navigation, keyboard-native controls, explicit and automatic
+    variants/layouts, compatible inputs, independent sessions, live invalid/valid edits,
+    diagnostic selection, unchanged canvas settings and lazy feature loading.
 
 #### R4 delivery after the responsive foundation
 

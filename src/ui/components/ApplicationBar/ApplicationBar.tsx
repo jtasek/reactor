@@ -9,7 +9,8 @@ import {
     Play,
     Share2,
     Braces,
-    Workflow
+    Workflow,
+    MonitorPlay
 } from 'lucide-react';
 
 import { usePreviewOpen } from 'src/app/previewHooks';
@@ -43,6 +44,14 @@ export const ApplicationBar: FC = () => {
             </a>
             <a className={styles.button} href="/flow" aria-label="Open flow" title="Open flow">
                 <Icon icon={{ component: Workflow, size: 20 }} />
+            </a>
+            <a
+                className={styles.button}
+                href="/prototype"
+                aria-label="Open prototype"
+                title="Open prototype"
+            >
+                <Icon icon={{ component: MonitorPlay, size: 20 }} />
             </a>
             {account.kind === 'signedIn' && (
                 <a className={styles.button} href="/sharing" aria-label="Sharing" title="Sharing">

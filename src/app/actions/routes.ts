@@ -26,3 +26,7 @@ export const showInvitation: Action = ({ state }) => {
 export const showFlow: Action = ({ state }) => {
     state.currentPage = 'flow';
 };
+
+export const showPrototype: Action = ({ state }) => {
+    state.currentPage = 'prototype';
+};
