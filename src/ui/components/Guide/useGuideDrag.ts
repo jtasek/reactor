@@ -11,7 +11,13 @@ import {
     useGestureInProgress,
     useGuides
 } from 'src/app/hooks';
-import { guidePlace, removesGuide, RULER_SIZE_PX } from 'src/app/rulers';
+import {
+    guideLabelPlace,
+    guidePlace,
+    removesGuide,
+    RULER_SIZE_PX,
+    type GuideLabelPlace
+} from 'src/app/rulers';
 import type { Camera, Orientation, Point } from 'src/app/types';
 import { clientToSurface } from 'src/events/drivers/helpers';
 import { tryReleasePointerCapture, trySetPointerCapture } from 'src/events/drivers/pointerCapture';
@@ -20,14 +26,16 @@ import { beyondClickSlip } from 'src/events/gestures';
 /**
  * A guide being dragged: a new one out of a ruler (`guideId` null) or an existing
  * one, with the pointer `pointer` screen pixels from the canvas's top edge when the
- * guide is horizontal and its left edge when vertical, on a canvas `length` long
- * along that axis.
+ * guide is horizontal and its left edge when vertical, and `across` pixels along
+ * the guide, on a canvas `bounds` big and `length` long along the guide's axis.
  */
 type Drag = {
     orientation: Orientation;
     guideId: string | null;
     pointer: number;
+    across: number;
     length: number;
+    bounds: { width: number; height: number };
     marks: Point[];
 };
 
@@ -41,6 +49,8 @@ export type PlacedDrag = {
     offset: number;
     /** Whether releasing it here removes it. */
     removing: boolean;
+    /** Where its position is shown, beside the pointer. */
+    label: GuideLabelPlace;
 };
 
 /** The pointer events a drag takes for itself, so the canvas starts no gesture of its own. */
@@ -81,7 +91,8 @@ const placeDrag = (drag: Drag, camera: Camera, rulerSize: number): PlacedDrag =>
         guideId: drag.guideId,
         at,
         offset,
-        removing: removesGuide(at, rulerSize, drag.length)
+        removing: removesGuide(at, rulerSize, drag.length),
+        label: guideLabelPlace(drag.orientation, at, drag.across, drag.bounds, rulerSize)
     };
 };
 
@@ -186,7 +197,12 @@ export function useGuideDrag() {
         const along = (input: { clientX: number; clientY: number }) => {
             const point = clientToSurface(input, surface);
 
-            return point && (orientation === 'horizontal' ? point.y : point.x);
+            return (
+                point &&
+                (orientation === 'horizontal'
+                    ? { pointer: point.y, across: point.x }
+                    : { pointer: point.x, across: point.y })
+            );
         };
         const start = along(event);
 
@@ -242,9 +258,13 @@ export function useGuideDrag() {
 
             input.stopPropagation();
 
-            const pointer = along(input) ?? current.pointer;
-            const moved = { ...current, pointer, marks: marksAt(pointer) };
-            movedBeyondClick ||= beyondClickSlip({ x: start, y: 0 }, { x: moved.pointer, y: 0 }, 1);
+            const { pointer, across } = along(input) ?? current;
+            const moved = { ...current, pointer, across, marks: marksAt(pointer) };
+            movedBeyondClick ||= beyondClickSlip(
+                { x: start.pointer, y: 0 },
+                { x: moved.pointer, y: 0 },
+                1
+            );
 
             if (input.type === 'pointermove') {
                 setCurrent(moved);
@@ -293,7 +313,14 @@ export function useGuideDrag() {
         trySetPointerCapture(surface, pointerId);
         owner.current = true;
         actions.setGuideDragActive(true);
-        setCurrent({ orientation, guideId, pointer: start, length, marks: marksAt(start) });
+        setCurrent({
+            orientation,
+            guideId,
+            ...start,
+            length,
+            bounds,
+            marks: marksAt(start.pointer)
+        });
     };
 
     return { drag: drag && placeDrag(drag, camera, rulerSize), begin };

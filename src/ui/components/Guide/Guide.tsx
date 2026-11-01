@@ -1,12 +1,8 @@
 import React, { FC } from 'react';
+import type { GuideLabelPlace } from 'src/app/rulers';
 import { Orientation, Point } from 'src/app/types';
 
 import styles from './styles.css';
-
-/** How far from the canvas's edge, in screen pixels, a dragged guide's position is shown. */
-const LABEL_INSET = 28;
-/** How far from its line, in screen pixels, a dragged guide's position is shown. */
-const LABEL_GAP = 6;
 
 export interface Props {
     orientation: Orientation;
@@ -14,8 +10,10 @@ export interface Props {
     at: number;
     /** Whether releasing the guide here removes it. */
     removing?: boolean;
-    /** Its position in canvas units, shown beside it while it is dragged. */
+    /** Its position in canvas units, shown beside the pointer while it is dragged. */
     position?: number;
+    /** Where `position` is shown. */
+    label?: GuideLabelPlace;
     selected?: boolean;
     marks?: Point[];
 }
@@ -26,6 +24,7 @@ export const Guide: FC<Props> = ({
     at,
     removing = false,
     position,
+    label,
     selected = false,
     marks = []
 }) => {
@@ -53,13 +52,14 @@ export const Guide: FC<Props> = ({
                         r={3}
                     />
                 ))}
-            {position !== undefined && (
+            {position !== undefined && label && (
                 <text
                     className={styles.position}
                     data-guide-position=""
-                    dominantBaseline={horizontal ? undefined : 'hanging'}
-                    x={horizontal ? LABEL_INSET : at + LABEL_GAP}
-                    y={horizontal ? at - LABEL_GAP : LABEL_INSET}
+                    dominantBaseline={label.baseline}
+                    textAnchor={label.anchor}
+                    x={label.x}
+                    y={label.y}
                 >
                     {position}
                 </text>

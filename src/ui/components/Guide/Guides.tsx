@@ -48,6 +48,7 @@ export const Guides: FC<Props> = ({ camera }) => {
                             removing={dragged?.removing}
                             selected={!camera && guide.selected}
                             position={dragged?.offset}
+                            label={dragged?.label}
                             marks={dragged?.marks}
                         />
                     );

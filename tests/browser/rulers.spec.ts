@@ -18,6 +18,16 @@ async function openWithRulers(page: Page) {
     await expect(page.locator('svg#surface [data-ruler="top"]')).toBeVisible();
 }
 
+/**
+ * Whether nothing floats over the canvas at a label's centre. The label takes no
+ * pointer events, so the canvas under it is what is found there when it shows.
+ */
+const onTop = (page: Page, box: { x: number; y: number; width: number; height: number }) =>
+    page.evaluate(
+        ([x, y]) => document.elementFromPoint(x, y)?.closest('svg#surface') != null,
+        [box.x + box.width / 2, box.y + box.height / 2]
+    );
+
 async function drag(page: Page, from: [number, number], to: [number, number]) {
     await page.mouse.move(...from);
     await page.mouse.down();
@@ -102,15 +112,25 @@ test('a guide stands out from the grid and shows its position while dragged', as
 
     await expect(label).toHaveCount(0);
 
-    // The vertical label's inset is its top, not its text baseline.
+    // Beside the pointer, where the bars over the canvas's edges do not cover it.
     await page.mouse.move(10, 300);
     await page.mouse.down();
-    await page.mouse.move(200, 300, { steps: 6 });
-    await expect(label).toHaveText('200');
-    const rulerBox = (await page.locator('svg#surface [data-ruler="top"]').boundingBox())!;
-    const labelBox = (await label.boundingBox())!;
-    expect(labelBox.y).toBeGreaterThan(rulerBox.y + rulerBox.height);
-    await page.screenshot({ path: 'test-results/vertical-guide-label.png' });
+    await page.mouse.move(600, 300, { steps: 6 });
+    await expect(label).toHaveText('600');
+    const vertical = (await label.boundingBox())!;
+    expect(vertical.x).toBeGreaterThan(600);
+    expect(Math.abs(vertical.y + vertical.height / 2 - 300)).toBeLessThan(4);
+    expect(await onTop(page, vertical)).toBe(true);
+    await page.mouse.up();
+
+    await page.mouse.move(300, 10);
+    await page.mouse.down();
+    await page.mouse.move(300, 250, { steps: 6 });
+    await expect(label).toHaveText('250');
+    const horizontal = (await label.boundingBox())!;
+    expect(horizontal.x).toBeGreaterThan(300);
+    expect(horizontal.y + horizontal.height).toBeLessThan(252);
+    expect(await onTop(page, horizontal)).toBe(true);
     await page.mouse.up();
     await expect(label).toHaveCount(0);
     await expect

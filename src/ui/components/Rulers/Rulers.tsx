@@ -81,6 +81,7 @@ export const Rulers: FC = () => {
                     at={drag.at}
                     removing={drag.removing}
                     position={drag.offset}
+                    label={drag.label}
                     marks={drag.marks}
                 />
             )}
