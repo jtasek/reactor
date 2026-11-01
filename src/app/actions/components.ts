@@ -4,7 +4,6 @@ import { editorHelpers } from '../editorHelpers';
 import { Action, ActionWithParam, Application, Component, Point } from '../types';
 import { createComponent } from '../factories';
 import { componentSource, instanceComponentId } from '../componentSource';
-import { invalidOverrideIds } from '../componentProps';
 import { isShapeLocked, isShapeVisible } from '../utils';
 import type { GroupDrag } from './group';
 import type { ResizeHandlerType } from '../types';
@@ -210,33 +209,10 @@ export const addShapesToComponent: ActionWithParam<{ componentId: string; shapeI
     }
 };
 
-export const removeShapesFromComponent: ActionWithParam<{
-    componentId: string;
-    shapeIds: string[];
-}> = ({ state, actions }, { componentId, shapeIds }) => {
-    const component = getComponent(state, componentId);
-    const removing = new Set(shapeIds);
-    const remaining = component.shapesIds.filter((id) => !removing.has(id));
-
-    if (state.currentDocument.locked || component.library || component.locked) {
-        return;
-    }
-    if (remaining.length === 0 && hasComponentInstances(state.currentDocument, componentId)) {
-        actions.displayWarning('A component with instances must keep at least one shape.');
-
-        return;
-    }
-    component.shapesIds = remaining;
-    component.props = component.props?.filter((prop) => remaining.includes(prop.shapeId));
-    Object.values(state.currentDocument.shapes).forEach((shape) => {
-        if (shape.type !== 'instance' || shape.componentId !== componentId) {
-            return;
-        }
-        invalidOverrideIds(shape, component).forEach((id) => {
-            delete shape.overrides[id];
-        });
-    });
-};
+// Editor-only mutation: keep it out of the application entry bundle.
+export const removeShapesFromComponent: typeof ComponentPropertyEdits.removeShapesFromComponent = (
+    ...args
+) => editorHelpers().componentProperties.removeShapesFromComponent(...args);
 
 export const exposeComponentProp: typeof ComponentPropertyEdits.exposeComponentProp = (
     context,

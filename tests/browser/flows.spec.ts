@@ -1,0 +1,116 @@
+import { expect, test } from '@playwright/test';
+import { serializePersistedState } from 'src/app/services/documentStorage';
+import { automaticLayoutsPrototype } from '../support/automaticScreenLayouts';
+import { openEditor } from './support/editor';
+
+test('connects and removes actions in Flow, reflects them in Inspector, and arranges only the diagram', async ({
+    page
+}) => {
+    const document = automaticLayoutsPrototype();
+    document.frames.view.position = { x: 400, y: 200 };
+    document.frames.desktop = {
+        ...document.frames.view,
+        id: 'desktop',
+        name: 'Desktop',
+        position: { x: 1200, y: 200 }
+    };
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await openEditor(page, ['Inspector']);
+    await page.getByRole('button', { name: 'More panels', exact: true }).click();
+    const hit = page.locator(
+        '#screen-views > [data-screen-view="view"] [data-shape-id="next"] [data-view-instance-hit]'
+    );
+    await hit.click();
+    const geometry = await hit.boundingBox();
+    const beforeResources = await page.evaluate(() =>
+        performance.getEntriesByType('resource').map((entry) => entry.name)
+    );
+    expect(beforeResources.some((url) => /\/flow\.[^/]+\.js$/.test(url))).toBe(false);
+    await page.getByRole('link', { name: 'Open flow' }).click();
+    await expect(page.getByRole('heading', { name: 'Flow', exact: true })).toBeVisible();
+    await expect(page.locator('[data-flow-screen]')).toHaveCount(2);
+    await expect(page.locator('iframe')).toHaveCount(0);
+    const afterResources = await page.evaluate(() =>
+        performance.getEntriesByType('resource').map((entry) => entry.name)
+    );
+    expect(
+        afterResources.filter((url) => url.endsWith('.js') && !beforeResources.includes(url)).length
+    ).toBeGreaterThan(0);
+    await page.locator('[data-flow-control="next"]').click();
+    await page.getByRole('button', { name: 'Connect to Home', exact: true }).click();
+    await expect(page.getByLabel('Navigate to screen')).toHaveValue('"home"');
+    await page.getByRole('button', { name: 'Undo', exact: true }).click();
+    await expect(page.getByLabel('Navigate to screen')).toHaveValue('inherit');
+    await page.getByRole('button', { name: 'Redo', exact: true }).click();
+    await expect(page.getByLabel('Navigate to screen')).toHaveValue('"home"');
+    await page.getByLabel('Check reachability from').selectOption('details');
+    await expect(page.getByText('Not reachable from the chosen screen.')).toBeVisible();
+    const node = page.locator('[data-flow-screen="home"]');
+    const before = await node.boundingBox();
+    await page.getByRole('button', { name: 'Arrange Home' }).press('ArrowDown');
+    expect((await node.boundingBox())!.y).toBe(before!.y + 20);
+    const heading = page.getByRole('button', { name: 'Arrange Details' });
+    const location = await heading.boundingBox();
+    await page.mouse.move(location!.x + 40, location!.y + 20);
+    await page.mouse.down();
+    await page.mouse.move(location!.x - 20, location!.y + 50, { steps: 3 });
+    await page.mouse.up();
+    await expect(page.locator('[data-flow-screen="details"]')).toHaveCSS(
+        'transform',
+        'matrix(1, 0, 0, 1, -60, 30)'
+    );
+    await page.screenshot({ path: 'test-results/flow.png' });
+    await page.setViewportSize({ width: 600, height: 850 });
+    await expect(page.getByLabel('Navigate to screen')).toBeVisible();
+    await page.screenshot({ path: 'test-results/flow-narrow.png' });
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.getByRole('link', { name: 'Back to canvas' }).click();
+    await expect(page.getByLabel('Navigate to screen')).toHaveValue('"home"');
+    expect(await hit.boundingBox()).toEqual(geometry);
+    await page.getByLabel('Navigate to screen').selectOption('none');
+    await page.getByRole('link', { name: 'Open flow' }).click();
+    await page.locator('[data-flow-control="next"]').click();
+    await expect(page.getByLabel('Navigate to screen')).toHaveValue('none');
+    await expect(node).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 20)');
+    await page.getByLabel('Navigate to screen').selectOption('inherit');
+    await expect(
+        page.getByText('From source: navigate to Details.', { exact: false })
+    ).toBeVisible();
+    await expect(page.locator('iframe')).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Flow', exact: true })).toBeVisible();
+});
+
+test('shows unavailable destinations and prevents edits to locked controls on direct visits', async ({
+    page
+}) => {
+    const document = automaticLayoutsPrototype();
+    document.components.button.interactions = {
+        activate: { type: 'navigate', screenId: 'deleted-screen' }
+    };
+    document.shapes.next.locked = true;
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await page.goto('/flow');
+    await expect(page.getByText('Unavailable target').first()).toBeVisible();
+    await page.locator('[data-flow-control="next"]').click();
+    await expect(page.getByRole('button', { name: 'Connect to Home', exact: true })).toBeDisabled();
+    await expect(
+        page.getByText('This control is locked or belongs to an imported component.', {
+            exact: false
+        })
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Wide continue', exact: true }).click();
+    await expect(page.getByLabel('Navigate to screen')).toBeEnabled();
+    await page.getByLabel('Navigate to screen').selectOption('none');
+    await expect(page.getByLabel('Navigate to screen')).toHaveValue('none');
+    await expect(page.locator('iframe')).toHaveCount(0);
+});

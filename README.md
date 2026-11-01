@@ -259,7 +259,14 @@ activate on Enter. Canvas clicks always select and edit. Existing Button navigat
 and changing a role no longer removes its action. Legacy custom instance roles retain their old
 action (including no action); choose **From source** in Interactions to opt into independent
 action inheritance. Responsive variants use the family action, while each screen layout keeps
-its authored instances. Flow authoring is a separate, later roadmap step.
+its authored instances. Open **Flow** from the application bar or the `Open flow` command to connect screens in a
+separate workspace. Each screen definition appears once, including its controls across authored
+layouts and variants. Select a control and **Connect to** a screen, or use **Activate** to remove
+an action or restore **From source** inheritance. Shared source controls are labeled because
+editing them affects every use. Choose a starting screen to check reachability; unavailable
+navigation targets remain visible for repair. Arrange the diagram by dragging screen headings
+or using their arrow keys. These device-local positions do not change canvas geometry. Flow
+edits actions; only explicitly opened Preview executes them.
 
 ## Saving
 
