@@ -1,3 +1,4 @@
+import { operations as screenOperations } from './cases/create-responsive-screen/case';
 import { propose, type ProposalEvent } from 'src/ai/client';
 import { DOCUMENT_ID, createCopies, sharedContent, shownDocument } from '../support/collaboration';
 import { startHarness } from './harness';
@@ -139,6 +140,35 @@ describe.each(PROVIDERS)('proposals from $provider', (each) => {
         });
         expect(events.map(({ type }) => type)).toEqual(['operation', 'repairing', 'operation']);
         expect(each.secondResult(replayed.sent[1])).toEqual(each.failedSecond);
+    });
+
+    it('repairs an invalid responsive target before offering the complete screen proposal', async () => {
+        const calls = screenOperations.map(({ op, ...input }) => ({ name: op, input }));
+        const broken = {
+            name: 'addFrame',
+            input: {
+                key: 'home',
+                frame: {
+                    kind: 'screen',
+                    name: 'Home',
+                    position: { x: 0, y: 0 },
+                    size: { width: 320, height: 480 },
+                    responsiveLayouts: { wide: { minWidth: 600, layoutId: 'missing' } }
+                }
+            }
+        };
+        const { result, events } = await ask([stream({ calls: [broken] }), stream({ calls })]);
+        expect(result).toMatchObject({
+            kind: 'proposed',
+            operations: expect.arrayContaining([
+                {
+                    op: 'addShape',
+                    key: 'wide-heading',
+                    shape: expect.objectContaining({ parentFrameId: 'wide' })
+                }
+            ])
+        });
+        expect(events.some((event) => event.type === 'repairing')).toBe(true);
     });
 
     it('gives up after one repair, with the problem', async () => {

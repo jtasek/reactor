@@ -988,8 +988,13 @@ adapters to the shared screen/context projection alongside the standalone Protot
   `tests/screenExport.test.ts` and `tests/browser/screenExport.spec.ts` cover resolved context,
   deterministic safe SVG, standalone rendering and embedded-image downloads.
 - Starter templates (list/detail, form, sign-in, settings) and empty states.
-- AI: create screens, views and responsive rules through the same validated operations and
-  acceptance UI. Screenshot-generation targets remain: 80% of 30 screenshots rated a usable
+- **AI screen/layout operations (complete).** Provider-neutral `addFrame` and `updateFrame`
+  tools create screens, equal Screen views and alternate layouts, attach artwork and author
+  width-based layout rules. Selected frames/views provide bounded source context. Proposals
+  remain unapplied until Accept; validation rejects invalid ownership, references and thresholds,
+  and acceptance stays one collaborative undo step. Explicit layouts and Theme stay independent.
+  Offline reference evaluation covers both adapters; browser coverage checks acceptance, resolved
+  artwork, undo/redo and reload. Screenshot-generation targets remain: 80% of 30 screenshots rated a usable
   start by two reviewers; 70% component reuse when suitable definitions exist; colors within
   ΔE 2 bound to matching variables; completion within 20 s at p95. Measure these, do not infer
   quality from deterministic replay tests.

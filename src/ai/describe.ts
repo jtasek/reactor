@@ -44,6 +44,42 @@ const variableLabel = (document: Document, id: string) => {
  */
 export function describeOperation(operation: ProposedOperation, document: Document): string {
     switch (operation.op) {
+        case 'addFrame': {
+            const frame = operation.frame;
+            const kind =
+                frame.kind === 'view'
+                    ? 'Screen view'
+                    : frame.kind === 'screen'
+                      ? 'screen'
+                      : frame.screenLayout
+                        ? 'screen layout'
+                        : 'frame';
+            const rules = Object.values(frame.responsiveLayouts ?? {}).map(
+                (rule) => `${rule.minWidth}px → ${quoted(rule.layoutId)}`
+            );
+
+            return `Add ${kind} ${quoted(frame.name)} (${frame.size.width} × ${frame.size.height})${frame.screenId ? ` for ${quoted(document.frames[frame.screenId]?.name ?? frame.screenId)}` : ''}${rules.length ? `; responsive layouts: ${rules.join(', ')}` : ''}`;
+        }
+        case 'updateFrame': {
+            const frame = document.frames[operation.frame];
+            const { responsiveLayouts, ...changes } = operation.changes;
+            const fields = Object.keys(changes);
+
+            if (responsiveLayouts !== undefined) {
+                fields.push(
+                    responsiveLayouts === null || Object.keys(responsiveLayouts).length === 0
+                        ? 'remove responsive layout rules'
+                        : `responsive layouts: ${Object.values(responsiveLayouts)
+                              .map(
+                                  (rule) =>
+                                      `${rule.minWidth}px → ${quoted(document.frames[rule.layoutId]?.name ?? rule.layoutId)}`
+                              )
+                              .join(', ')}`
+                );
+            }
+
+            return `Change ${quoted(frame?.name ?? operation.frame)}: ${fields.join('; ')}`;
+        }
         case 'addVariable':
             return `Add ${operation.type} variable ${quoted(operation.name)}: ${operation.alias === undefined ? String(operation.value) : `follow ${variableLabel(document, operation.alias)}`}${operation.darkValue === undefined ? '' : `; Dark: ${operation.darkValue}`}${modesDescription(operation, document)}`;
         case 'addShape': {

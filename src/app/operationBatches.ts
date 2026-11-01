@@ -985,6 +985,9 @@ function stage(
                     if (frame.kind === 'view' && frame.screenId) {
                         frame.screenId = reference(frame.screenId, 'frames', index);
                     }
+                    if (frame.layoutId) {
+                        frame.layoutId = reference(frame.layoutId, 'frames', index);
+                    }
                     staged.frames.push(frame);
                     return;
                 }
@@ -1025,6 +1028,28 @@ function stage(
                     });
                     if (frame.layoutId && 'layoutId' in operation.changes) {
                         frame.layoutId = reference(frame.layoutId, 'frames', index);
+                    }
+
+                    if (operation.changes.responsiveLayouts && frame.responsiveLayouts) {
+                        frame.responsiveLayouts = Object.fromEntries(
+                            Object.entries(frame.responsiveLayouts).map(([id, rule]) => {
+                                const previous =
+                                    document.frames[operation.frame].responsiveLayouts?.[id];
+                                const unchanged =
+                                    previous?.layoutId === rule.layoutId &&
+                                    previous.minWidth === rule.minWidth;
+
+                                return [
+                                    id,
+                                    unchanged
+                                        ? rule
+                                        : {
+                                              ...rule,
+                                              layoutId: reference(rule.layoutId, 'frames', index)
+                                          }
+                                ];
+                            })
+                        );
                     }
 
                     const previous = document.frames[operation.frame];
@@ -1221,6 +1246,86 @@ function stage(
         )
     };
     operations.forEach((operation, index) => {
+        const authoredFrame =
+            operation.op === 'addFrame'
+                ? frames[ids.get(operation.key)!]
+                : operation.op === 'updateFrame'
+                  ? frames[operation.frame]
+                  : undefined;
+        if (
+            operation.op === 'addFrame' &&
+            authoredFrame?.screenLayout &&
+            !isScreenLayout(frames, authoredFrame.id)
+        ) {
+            throw problem(index, 'An alternate layout must belong to a Canvas screen.');
+        }
+
+        if (
+            operation.op === 'addFrame' &&
+            authoredFrame?.screenLayout &&
+            Object.values(frames).some(
+                (frame) =>
+                    frame.id !== authoredFrame.id &&
+                    frame.screenLayout &&
+                    frame.parentFrameId === authoredFrame.parentFrameId &&
+                    frame.name === authoredFrame.name &&
+                    !staged.deletedFrames.includes(frame.id)
+            )
+        ) {
+            throw problem(index, 'Another layout of this screen already has this name.');
+        }
+
+        const authorsRules =
+            operation.op === 'addFrame'
+                ? operation.frame.responsiveLayouts !== undefined
+                : operation.op === 'updateFrame' &&
+                  operation.changes.responsiveLayouts !== undefined;
+
+        if (authoredFrame && authorsRules) {
+            const rules = Object.entries(authoredFrame.responsiveLayouts ?? {});
+
+            for (const [ruleId, rule] of rules) {
+                const previous =
+                    operation.op === 'updateFrame'
+                        ? document.frames[operation.frame].responsiveLayouts?.[ruleId]
+                        : undefined;
+
+                // Keep already broken references for diagnostics when editing a different rule.
+                if (previous?.layoutId === rule.layoutId && previous.minWidth === rule.minWidth) {
+                    continue;
+                }
+                const target = frames[rule.layoutId];
+
+                if (
+                    staged.deletedFrames.includes(rule.layoutId) ||
+                    !target ||
+                    (target.id !== authoredFrame.id &&
+                        (!isScreenLayout(frames, target.id) ||
+                            target.parentFrameId !== authoredFrame.id))
+                ) {
+                    throw problem(
+                        index,
+                        'A responsive rule must target this screen or one of its layouts.'
+                    );
+                }
+                if (
+                    rules.some(([id, other]) => id !== ruleId && other.minWidth === rule.minWidth)
+                ) {
+                    throw problem(index, 'Responsive rules need distinct minimum widths.');
+                }
+            }
+        }
+
+        if (
+            operation.op === 'addFrame' &&
+            authoredFrame?.layoutId &&
+            (!isScreenLayout(frames, authoredFrame.layoutId) ||
+                frames[authoredFrame.layoutId].parentFrameId !== authoredFrame.screenId ||
+                staged.deletedFrames.includes(authoredFrame.layoutId))
+        ) {
+            throw problem(index, 'Choose a layout owned by this Screen view’s screen.');
+        }
+
         const changedFrame = operation.op === 'updateFrame' ? frames[operation.frame] : undefined;
 
         if (

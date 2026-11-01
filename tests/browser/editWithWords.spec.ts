@@ -1,3 +1,4 @@
+import { operations as responsiveScreenOperations } from '../ai/cases/create-responsive-screen/case';
 import { createVariable } from './support/variables';
 import { expect, test, type Page } from '@playwright/test';
 import { MAX_CONTEXT_BYTES } from '../../src/ai/context';
@@ -246,4 +247,40 @@ test('chat stays beside an editable canvas and keeps its conversation when docke
     await chat.getByRole('button', { name: 'Close AI chat' }).click();
     await expect(chat).toHaveCount(0);
     await expect(editWithWords(page)).toBeFocused();
+});
+
+test('accepts AI screens and responsive views together, with correct artwork and one undo', async ({
+    page
+}) => {
+    await signInWithAi(page, () =>
+        lines(
+            { type: 'start', requestId: 'screen-request', model: 'test-model' },
+            ...responsiveScreenOperations.map((operation) => ({ type: 'operation', operation })),
+            { type: 'done' }
+        )
+    );
+    await openEditor(page);
+    await editWithWords(page).click();
+    const chat = page.getByRole('region', { name: 'AI chat', exact: true });
+    await chat
+        .getByRole('textbox', { name: 'Change to make' })
+        .fill('Create responsive Home views');
+    await chat.getByRole('button', { name: 'Send' }).click();
+    await expect(chat.getByRole('region', { name: 'Proposal' })).toContainText(
+        'Add Screen view “Desktop”'
+    );
+    await expect(page.locator('#screen-views > g')).toHaveCount(0);
+    await chat.getByRole('button', { name: 'Accept' }).click();
+    await expect(page.locator('#screen-views > g')).toHaveCount(2);
+    const views = page.locator('#screen-views > g');
+    await expect(views.filter({ hasText: 'Hello mobile' })).toHaveCount(1);
+    await expect(views.filter({ hasText: 'Hello desktop' })).toHaveCount(1);
+    await page.keyboard.press('Escape');
+    await page.locator('svg#surface').click({ position: { x: 50, y: 600 } });
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(views).toHaveCount(0);
+    await page.keyboard.press('ControlOrMeta+Shift+z');
+    await expect(views).toHaveCount(2);
+    await page.reload();
+    await expect(page.locator('#screen-views > g')).toHaveCount(2);
 });

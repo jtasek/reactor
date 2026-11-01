@@ -1,4 +1,6 @@
 import type {
+    AddFrame,
+    UpdateFrame,
     AddGroup,
     AddShape,
     AddVariable,
@@ -8,11 +10,14 @@ import type {
     UpdateShape,
     UpdateVariable
 } from 'src/app/operations';
+import { readEntity } from 'src/app/services/documentStorage';
 import { readCopiedShape } from 'src/app/services/clipboardStorage';
 import { isVariableType } from 'src/app/variables';
 
 /** The operations a model may propose. */
 export type ProposedOperation =
+    | AddFrame
+    | UpdateFrame
     | AddVariable
     | AddShape
     | AddGroup
@@ -54,6 +59,26 @@ export function readOperation(value: unknown): ProposedOperation {
     const operation = fields(value, 'The operation');
 
     switch (operation.op) {
+        case 'addFrame': {
+            const frame = fields(operation.frame, 'Its frame');
+            const key = text(operation.key, 'Its key');
+            const input = readEntity('frames', {
+                visible: true,
+                locked: false,
+                ...frame,
+                id: key
+            });
+
+            const { id, ...frameInput } = input;
+
+            return { op: 'addFrame', key: id, frame: frameInput };
+        }
+        case 'updateFrame':
+            return {
+                op: 'updateFrame',
+                frame: text(operation.frame, 'Its frame'),
+                changes: fields(operation.changes, 'Its changes')
+            };
         case 'addVariable': {
             const type = text(operation.type, 'Its type');
 
@@ -100,6 +125,10 @@ export function readOperation(value: unknown): ProposedOperation {
             }
 
             const input = readCopiedShape({ name: '', ...shape });
+
+            if (shape.parentFrameId !== undefined) {
+                input.parentFrameId = text(shape.parentFrameId, 'Its parent frame');
+            }
 
             // Named by the store, as a tool names what it draws.
             if (shape.name === undefined) {

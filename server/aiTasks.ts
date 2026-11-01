@@ -74,18 +74,35 @@ export interface AiProvider {
 
 export const INSTRUCTIONS = `You change a Reactor design document by calling tools: each call is one operation.
 Reactor draws shapes on a canvas measured in pixels, with x to the right and y down. The person's
-message starts with the document's records as JSON: its shapes, groups, variables and components,
+message starts with the document's records as JSON: its frames (screens, Screen views and alternate layouts), shapes, groups, variables and components,
 each under its ID.
 
 - Make the whole change in one answer, calling the tools in order. An operation may refer only to
   an ID the document has, or to the key of a record an earlier call of this answer adds.
-- Give each new shape and variable a short key of your own; later calls use it as an ID.
+- Give each new frame, shape and variable a short key of your own; later calls use it as an ID.
 - To change or delete what the document has, name it by its ID. Change each record in one call at
   most, giving only the fields that change, and refer to nothing you delete. Locked records stay.
 - Colors are #rrggbb. A shape's property may follow a variable of its kind: its bindings map the
   property's key, such as fill, to the variable's ID or key. Setting the property, even to the
   value it has, stops it following the variable unless bindings names it again; changing the
   variable changes every shape following it.
+- Use addFrame with kind screen for a shared screen definition. It creates one initial Screen view
+  unless the batch adds explicit views for it. Use kind view with screenId for a canvas placement;
+  every view is equal, has its own name/position/size, and cannot contain artwork.
+- Put artwork inside the screen (or its alternate layout) using shape.parentFrameId. Coordinates
+  are absolute within the source tree: for a screen at x=100, a 24px inset starts at x=124.
+  Do not add the Screen view's canvas placement to artwork coordinates.
+- An alternate layout is kind frame, screenLayout true, parentFrameId set to its screen.
+  A screen's responsiveLayouts maps rule keys to {minWidth, layoutId}; thresholds are inclusive,
+  unique nonnegative widths and the greatest matching width wins. A target is that screen for
+  its default artwork or an alternate layout it owns. With no matching rule, use default artwork.
+  When adding a screen, rules may refer forward to layout keys added later in the same answer
+  (the only forward-reference exception). Updates target existing frames; add their layouts first.
+- Set layoutMode auto on views to use width rules. An explicit layoutId wins over auto; preserve
+  existing explicit choices unless asked to change them. Use null in updateFrame to clear a
+  layoutId. Updating responsiveLayouts replaces the whole rule map: preserve rules not being edited.
+- Theme and other modeOverrides stay independent of layout width rules; use existing dimension
+  and mode IDs from context. Do not create dimensions or modes unless supported and requested.
 - A group needs two or more shapes, each in no other group.
 - Do only what was asked, and leave the rest of the document as it is.
 - When the tools cannot make the change, say why in one sentence and call none.`;
@@ -127,6 +144,10 @@ const color = { type: 'string', pattern: '^#[0-9a-fA-F]{6}$' };
 const shapeFields = {
     name: { type: 'string' },
     description: { type: 'string' },
+    parentFrameId: {
+        type: 'string',
+        description: 'Screen or ordinary frame ID/key owning the artwork; never a Screen view.'
+    },
     rotation: { type: 'number', description: 'Degrees, clockwise.' },
     opacity: { type: 'number', minimum: 0, maximum: 1 },
     fill: color,
@@ -220,8 +241,100 @@ SHAPE.anyOf.forEach(({ properties }) =>
     })
 );
 
+SHAPE_CHANGES.parentFrameId = { type: ['string', 'null'] };
+
+const size = {
+    type: 'object',
+    properties: { width: { type: 'number', minimum: 1 }, height: { type: 'number', minimum: 1 } },
+    required: ['width', 'height']
+};
+const referenceMap = { type: 'object', additionalProperties: { type: 'string' } };
+const layoutRules = {
+    type: 'object',
+    description:
+        'Complete rule map. Distinct inclusive minimum widths; target the screen itself or one of its alternate layouts.',
+    additionalProperties: {
+        type: 'object',
+        properties: { minWidth: { type: 'number', minimum: 0 }, layoutId: { type: 'string' } },
+        required: ['minWidth', 'layoutId'],
+        additionalProperties: false
+    }
+};
+const frameFields = {
+    kind: { type: 'string', enum: ['frame', 'screen', 'view'] },
+    name: { type: 'string', minLength: 1 },
+    position: point,
+    size,
+    parentFrameId: { type: 'string' },
+    modeOverrides: referenceMap,
+    bindings: referenceMap,
+    layoutId: {
+        type: 'string',
+        description:
+            'Explicit alternate layout choice for a view. Takes precedence over automatic selection.'
+    },
+    layoutMode: { type: 'string', enum: ['auto'] },
+    responsiveLayouts: layoutRules
+};
+
 /** One tool per kind of operation, each with a JSON schema of its input. */
 export const TOOLS = [
+    {
+        name: 'addFrame',
+        description:
+            'Creates a screen definition, Screen view, alternate screen layout or ordinary frame. New screens get an initial view unless this batch adds explicit views.',
+        parameters: {
+            type: 'object',
+            properties: {
+                key: { type: 'string' },
+                frame: {
+                    type: 'object',
+                    properties: {
+                        ...frameFields,
+                        screenId: {
+                            type: 'string',
+                            description:
+                                'Required only for a Screen view: screen ID or earlier key.'
+                        },
+                        screenLayout: {
+                            type: 'boolean',
+                            enum: [true],
+                            description:
+                                'Alternate artwork: kind frame and parentFrameId naming its screen.'
+                        }
+                    },
+                    required: ['kind', 'name', 'position', 'size'],
+                    additionalProperties: false
+                }
+            },
+            required: ['key', 'frame'],
+            additionalProperties: false
+        }
+    },
+    {
+        name: 'updateFrame',
+        description:
+            'Updates an existing screen, view or frame. Responsive rules replace the complete map. Explicit view layout choices stay unchanged unless included.',
+        parameters: {
+            type: 'object',
+            properties: {
+                frame: { type: 'string', description: 'Existing frame ID, not a batch key.' },
+                changes: {
+                    type: 'object',
+                    properties: {
+                        ...frameFields,
+                        parentFrameId: { type: ['string', 'null'] },
+                        layoutId: { type: ['string', 'null'] },
+                        layoutMode: { type: ['string', 'null'], enum: ['auto', null] },
+                        responsiveLayouts: { anyOf: [layoutRules, { type: 'null' }] }
+                    },
+                    additionalProperties: false
+                }
+            },
+            required: ['frame', 'changes'],
+            additionalProperties: false
+        }
+    },
     {
         name: 'addVariable',
         description: 'Adds a variable: a named value shapes may follow.',
