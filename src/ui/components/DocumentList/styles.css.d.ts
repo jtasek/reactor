@@ -9,6 +9,7 @@ declare namespace StylesCssNamespace {
     cardHeader: string;
     cardTitle: string;
     clearFilters: string;
+    creationActions: string;
     current: string;
     dateFilter: string;
     deletedName: string;

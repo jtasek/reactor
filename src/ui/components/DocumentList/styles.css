@@ -633,3 +633,9 @@
     display: inline-flex;
     gap: 4px;
 }
+
+.creationActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
