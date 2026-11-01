@@ -922,10 +922,12 @@ Hidden guides are not drawn and locked ones do not move. Selecting a guide shows
 orientation and a single X (vertical) or Y (horizontal) field in the Inspector. Orientation
 changes retain the active coordinate; Inspector commits use guarded, separate undo batches.
 The existing two-coordinate guide data format remains unchanged. A local `guideDragActive`
-flag prevents Inspector edits and competing guide selections during a drag.
+flag prevents Inspector edits and competing guide selections during a drag. Guide fields save
+their draft on a press anywhere else, before that press's gesture starts. A press on a locked
+guide still reaches the canvas (a drag draws a marquee); only a click selects the guide.
 Dragged guides show temporary outline crossings (`guideIntersections`): rendered SVG artwork
-is measured once, then refreshed only after artwork/camera mutations. Text uses its measured
-box. Markers exclude hidden measurement copies and selection controls, do not change snapping,
+is measured once, then refreshed only after artwork/camera mutations. Frame and Screen view
+edges count too (not their labels). Text uses its measured box. Markers exclude hidden measurement copies and selection controls, do not change snapping,
 and disappear on release/cancel. Tests: `guideInspector` and `guideIntersections` unit/browser suites.
 
 ## Bounding boxes & selection

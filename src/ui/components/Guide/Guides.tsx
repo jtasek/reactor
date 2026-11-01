@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import type { MouseEvent } from 'react';
+import type { MouseEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { Guide } from './Guide';
 import { useGuideDrag } from './useGuideDrag';
 import {
@@ -11,6 +11,7 @@ import {
     useHoveredGroupsIds
 } from 'src/app/hooks';
 import { Camera, Guide as GuideType } from 'src/app/types';
+import { beyondClickSlip } from 'src/events/gestures';
 
 import styles from './styles.css';
 
@@ -57,6 +58,31 @@ export const Guides: FC<Props> = ({ camera }) => {
 };
 
 /**
+ * Selects a locked guide when its press ends as a click. The press still reaches the
+ * canvas, so a drag that starts on a locked guide draws a marquee as before; the
+ * selection waits until the canvas has handled the release, which clears guides.
+ */
+const selectOnClick = (event: ReactPointerEvent<SVGElement>, select: () => void) => {
+    const { pointerId } = event;
+    const start = { x: event.clientX, y: event.clientY };
+    const onEnd = (end: PointerEvent) => {
+        if (end.pointerId !== pointerId) {
+            return;
+        }
+        window.removeEventListener('pointerup', onEnd, true);
+        window.removeEventListener('pointercancel', onEnd, true);
+        if (
+            end.type === 'pointerup' &&
+            !beyondClickSlip(start, { x: end.clientX, y: end.clientY }, 1)
+        ) {
+            setTimeout(select);
+        }
+    };
+    window.addEventListener('pointerup', onEnd, true);
+    window.addEventListener('pointercancel', onEnd, true);
+};
+
+/**
  * What selects shown guides and grabs unlocked guides, under the shapes so a shape on a guide
  * takes the press, as does a group whose box the pointer highlights.
  */
@@ -99,9 +125,10 @@ export const GuideGrips: FC = () => {
                                 ) {
                                     return;
                                 }
-                                if (guide.locked && event.button === 0) {
-                                    event.stopPropagation();
-                                    selectGuide(guide.id);
+                                if (guide.locked) {
+                                    if (event.button === 0) {
+                                        selectOnClick(event, () => selectGuide(guide.id));
+                                    }
 
                                     return;
                                 }

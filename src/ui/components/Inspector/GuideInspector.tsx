@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Lock, LockOpen, Ruler } from 'lucide-react';
 import { useActions, useAppState } from 'src/app/hooks';
 import { isReadOnly } from 'src/app/documentAccess';
@@ -19,7 +19,32 @@ function GuideField({
     commit: (value: string) => void;
 }) {
     const [draft, setDraft] = useState(String(value));
+    const input = useRef<HTMLInputElement>(null);
+    const latest = useRef({ draft, value, commit });
+    latest.current = { draft, value, commit };
     useEffect(() => setDraft(String(value)), [value]);
+
+    // A press elsewhere starts its gesture before this field blurs, and guide edits wait
+    // for gestures to end, so the draft is saved when the press begins instead.
+    useEffect(() => {
+        const onPress = (event: PointerEvent) => {
+            const field = input.current;
+            if (
+                !field ||
+                document.activeElement !== field ||
+                field.contains(event.target as Node)
+            ) {
+                return;
+            }
+            const { draft: typed, value: shown, commit: save } = latest.current;
+            if (typed !== String(shown)) {
+                save(typed);
+            }
+        };
+        window.addEventListener('pointerdown', onPress, true);
+
+        return () => window.removeEventListener('pointerdown', onPress, true);
+    }, []);
 
     return (
         <tr>
@@ -28,6 +53,7 @@ function GuideField({
             </th>
             <td>
                 <input
+                    ref={input}
                     id={`guide-${label}`}
                     aria-label={`Guide ${label}`}
                     type={typeof value === 'number' ? 'number' : 'text'}
@@ -36,8 +62,11 @@ function GuideField({
                     disabled={disabled}
                     onChange={(event) => setDraft(event.target.value)}
                     onBlur={() => {
-                        commit(draft);
-                        setDraft(String(value));
+                        const { draft: typed, value: shown, commit: save } = latest.current;
+                        if (typed !== String(shown)) {
+                            save(typed);
+                        }
+                        setDraft(String(latest.current.value));
                     }}
                     onKeyDown={(event) => {
                         if (event.key === 'Enter') {

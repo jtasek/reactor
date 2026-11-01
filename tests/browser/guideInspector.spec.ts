@@ -1,5 +1,24 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import { createDocument, createGuide, createShape } from 'src/app/factories';
+import { serializePersistedState } from 'src/app/services/documentStorage';
 import { openEditor } from './support/editor';
+
+async function openWithGuide(page: Page) {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await openEditor(page, ['Inspector', 'Rulers', 'Guides']);
+    await page.getByRole('checkbox', { name: 'Tool Bar', exact: true }).uncheck();
+    await page.getByRole('button', { name: 'More panels' }).click();
+    await expect(page.locator('svg#surface [data-ruler]')).toHaveCount(2);
+    await page.mouse.move(10, 300);
+    await page.mouse.down();
+    await page.mouse.move(400, 300, { steps: 6 });
+    await page.mouse.up();
+    const line = page.locator('svg#surface #guides > line');
+    await expect(line).toHaveAttribute('x1', '400');
+    await page.mouse.click(400, 550);
+
+    return { line, x: page.getByRole('spinbutton', { name: 'Guide X', exact: true }) };
+}
 
 test('edits guide orientation and one coordinate, with cancel, locking and dragging', async ({
     page
@@ -63,4 +82,66 @@ test('edits guide orientation and one coordinate, with cancel, locking and dragg
     await page.setViewportSize({ width: 600, height: 800 });
     await expect(y).toBeVisible();
     await page.screenshot({ path: 'test-results/guide-inspector-narrow.png' });
+});
+
+test('keeps typed values when a press on the canvas or the guide leaves the field', async ({
+    page
+}) => {
+    const { line, x } = await openWithGuide(page);
+    await x.fill('250');
+    await page.mouse.click(900, 700);
+    await expect(line).toHaveAttribute('x1', '250');
+    await page.mouse.click(250, 550);
+    await x.fill('260');
+    await page.mouse.click(250, 550);
+    await expect(line).toHaveAttribute('x1', '260');
+    const name = page.getByRole('textbox', { name: 'Guide Name', exact: true });
+    await name.fill('Margin');
+    await page.mouse.click(260, 550);
+    await expect(name).toHaveValue('Margin');
+});
+
+test('a drag that starts on a locked guide draws a marquee; a click selects it', async ({
+    page
+}) => {
+    const shape = createShape({
+        type: 'rectangle',
+        name: 'box',
+        order: 'a0',
+        position: { x: 500, y: 300 },
+        size: { width: 100, height: 100 }
+    });
+    const guide = createGuide({
+        id: 'locked',
+        orientation: 'vertical',
+        position: { x: 400, y: 0 },
+        locked: true
+    });
+    const document = createDocument({
+        id: 'locked-guide-marquee',
+        shapes: { [shape.id]: shape },
+        guides: { [guide.id]: guide }
+    });
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await openEditor(page, ['Inspector', 'Rulers', 'Guides']);
+    await page.getByRole('checkbox', { name: 'Tool Bar', exact: true }).uncheck();
+    await page.getByRole('button', { name: 'More panels' }).click();
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    const at = Number(await page.locator('svg#surface #guides > line').getAttribute('x1'));
+    const guideX = page.getByRole('spinbutton', { name: 'Guide X', exact: true });
+    await page.mouse.move(surface.x + at, surface.y + 150);
+    await page.mouse.down();
+    await page.mouse.move(surface.x + 1000, surface.y + 700, { steps: 8 });
+    await page.mouse.up();
+    await expect(guideX).toHaveCount(0);
+    // The marquee selected the rectangle: its selection box is drawn at its bounds.
+    await expect(page.locator('svg#surface rect[x="500"][y="300"][width="100"]')).toHaveCount(2);
+    await page.mouse.click(surface.x + at, surface.y + 150);
+    await expect(guideX).toHaveValue('400');
+    await expect(guideX).toBeDisabled();
 });
