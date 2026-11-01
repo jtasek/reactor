@@ -47,12 +47,40 @@ export const setModeOverride: ActionWithParam<{
 };
 
 /** Snapshot manual/explicit modes; width-selected modes resolve against the Preview viewport. */
-export function previewModes(state: Context['state']) {
+/** The Screen view a preview launches from: the selected view, or the view under the pointer. */
+function launchView(state: Context['state']) {
     const document = state.currentDocument;
     const selected = document.frames[document.selectedFrameId ?? ''];
     const viewId =
         selected?.kind === 'view' ? selected.id : state.events.pointer.screenView?.viewId;
     const view = selected?.kind === 'screen' ? undefined : document.frames[viewId ?? ''];
+
+    return { selected, view };
+}
+
+/** A Prototype session applies its modes to every screen, so it starts from the launch view's
+ * own choices only. Dimension defaults and the start Screen's overrides stay with their Screens. */
+export function prototypeModes(state: Context['state']) {
+    const seed = previewModes(state);
+    const { view } = launchView(state);
+    if (view?.kind !== 'view') {
+        return seed;
+    }
+    const { dimensions } = state.currentDocument;
+
+    return {
+        ...seed,
+        modes: Object.fromEntries(
+            Object.entries(view.modeOverrides ?? {}).filter(
+                ([dimensionId, modeId]) => dimensions[dimensionId]?.modes[modeId]
+            )
+        )
+    };
+}
+
+export function previewModes(state: Context['state']) {
+    const document = state.currentDocument;
+    const { selected, view } = launchView(state);
     const screenId = view?.screenId ?? (selected?.kind === 'screen' ? selected.id : undefined);
     if (view?.kind !== 'view') {
         return { modes: {}, ...(screenId ? { screenId } : {}) };

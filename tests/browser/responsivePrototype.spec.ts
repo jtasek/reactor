@@ -125,6 +125,9 @@ test('keeps simultaneous sessions independent and retains valid output through l
     await expect(
         page.getByRole('button', { name: 'Inspect Wide continue', exact: true })
     ).toBeVisible();
+    await expect(
+        page.getByRole('button', { name: 'Inspect Wide continue', exact: true })
+    ).toHaveAccessibleDescription(/^Wide continue: /);
     await editor.getByLabel('Role label', { exact: true }).selectOption('label');
     await expect(page.getByText('Showing the last valid preview.')).toHaveCount(0);
     await expect(player(page).getByRole('textbox', { name: 'Your name', exact: true })).toHaveValue(

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useEffects } from 'src/app/hooks';
 import { usePreviewProjection, type PreviewProjection } from 'src/preview/hooks';
 import {
@@ -22,6 +22,7 @@ export default function InteractivePreview({
     onLocate?: (diagnostic: PreviewDiagnostic) => void;
 } = {}) {
     const { assets } = useEffects();
+    const diagnosticId = useId();
     const prepare = useMemo(() => createPreviewResources(assets), [assets]);
     const [inspection, setInspection] = useState<PreviewInspection>({});
     const live = usePreviewProjection(inspection, session);
@@ -253,13 +254,19 @@ export default function InteractivePreview({
             {onLocate && projection.diagnostics.length > 0 && (
                 <nav aria-label="Prototype diagnostics">
                     {projection.diagnostics.map((item, index) => (
-                        <button
-                            key={`${item.kind}:${item.id}:${index}`}
-                            onClick={() => onLocate(item)}
-                            title={item.message}
-                        >
-                            Inspect {item.name ?? item.kind}
-                        </button>
+                        <React.Fragment key={`${item.kind}:${item.id}:${index}`}>
+                            <button
+                                onClick={() => onLocate(item)}
+                                title={item.message}
+                                aria-describedby={`${diagnosticId}-${index}`}
+                            >
+                                Inspect {item.name ?? item.kind}
+                            </button>
+                            {/* Screen readers get the reason, which the title only shows on hover. */}
+                            <span id={`${diagnosticId}-${index}`} hidden>
+                                {item.message}
+                            </span>
+                        </React.Fragment>
                     ))}
                 </nav>
             )}

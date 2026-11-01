@@ -274,3 +274,32 @@ it('provides authored record diagnostics for broken navigation and invalid seman
     expect(() => projectPreview(document, {}, [], undefined, {}, diagnostics)).toThrow();
     expect(diagnostics).toContainEqual(expect.objectContaining({ kind: 'shape', id: 'next' }));
 });
+
+it('seeds a Prototype from the launch view’s own modes so other screens keep their overrides', async () => {
+    const { prototypeDocument } = await import('./support/prototype');
+    const { prototypeModes } = await import('src/app/modeEdits');
+    const document = prototypeDocument();
+    document.frames.details.modeOverrides = { theme: 'dark' };
+    document.selectedFrameId = 'view';
+    const state = (previewModes: Record<string, unknown> = {}) =>
+        ({ currentDocument: document, events: { pointer: {} }, previewModes }) as never;
+    // The view's own Dark choice carries to every screen.
+    expect(prototypeModes(state()).modes).toEqual({ theme: 'dark' });
+    // Without one, defaults and local simulation stay out of the session.
+    delete document.frames.view.modeOverrides;
+    const seed = prototypeModes(state({ [document.id]: { theme: 'light' } }));
+    expect(seed).toMatchObject({
+        screenId: 'home',
+        modes: {},
+        viewport: { width: 320, height: 480 }
+    });
+    const application = projectPreview(document, {}, [], { ...seed, scope: 'all-screens' });
+    expect(
+        JSON.stringify(application.screens.find((screen) => screen.id === 'details')!.nodes)
+    ).toContain('#ddeeff');
+    document.frames.details.modeOverrides = {};
+    const light = projectPreview(document, {}, [], { ...seed, scope: 'all-screens' });
+    expect(
+        JSON.stringify(light.screens.find((screen) => screen.id === 'details')!.nodes)
+    ).toContain('#112233');
+});

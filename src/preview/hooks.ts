@@ -30,8 +30,13 @@ export const usePreviewProjection = (
         const document = state.currentDocument;
         const warnings: string[] = [];
         const diagnostics: PreviewDiagnostic[] = [];
+        // One entry per record and message, even when a source child is drawn by many instances.
         const namedDiagnostics = () =>
-            diagnostics.map((item) => ({
+            [
+                ...new Map(
+                    diagnostics.map((item) => [`${item.kind}\n${item.id}\n${item.message}`, item])
+                ).values()
+            ].map((item) => ({
                 ...item,
                 name:
                     document.frames[item.id]?.name ??

@@ -2,7 +2,7 @@ import { registerEditor } from './registerEditor';
 import React, { useEffect, useState } from 'react';
 import { useActions, useAppState, useEffects } from 'src/app/hooks';
 import { screenFrames } from 'src/app/screens';
-import { previewModes } from 'src/app/modeEdits';
+import { prototypeModes } from 'src/app/modeEdits';
 import { ordered } from 'src/app/variableModes';
 import type { PreviewDiagnostic, PreviewSession } from 'src/preview/project';
 import InteractivePreview from 'src/ui/components/InteractivePreview/InteractivePreview';
@@ -60,7 +60,7 @@ function ViewportField({
 
 function PrototypeWorkspace() {
     const document = useAppState((state) => state.currentDocument);
-    const seed: PreviewSession = useAppState(previewModes);
+    const seed: PreviewSession = useAppState(prototypeModes);
     const screens = screenFrames(document);
     const effects = useEffects();
     const actions = useActions();
