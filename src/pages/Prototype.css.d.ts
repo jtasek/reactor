@@ -3,6 +3,8 @@ declare namespace PrototypeCssNamespace {
     controls: string;
     player: string;
     prototype: string;
+    sharedLink: string;
+    sharing: string;
   }
 }
 

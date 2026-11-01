@@ -969,7 +969,14 @@ adapters to the shared screen/context projection alongside the standalone Protot
 
 #### R4 delivery after the responsive foundation
 
-- Read-only prototype links on the separate domain, with a defined starting screen and context.
+- **Read-only prototype links (complete).** From Prototype, workspace admins publish a
+  validated snapshot with the chosen start screen, viewport and resolved modes, layouts and
+  component variants. Recipients play on the separate preview domain without signing in;
+  navigation and reset use local input state. Later canvas edits do not change the snapshot.
+  Links expire after 30 days and admins can revoke future loads. Verified raster images are
+  embedded; only token hashes are stored. Limits: 20 active links per document and 64 MiB per
+  workspace. Server and browser `prototypeLinks` tests cover access, validation, chosen context,
+  snapshot independence, expiry, revocation and the public page's restricted network policy.
 - **SVG export (complete).** Export SVG on the command bar or command line
   downloads the selected Screen view or selected visible artwork. Export uses Canvas projections
   for inherited modes, responsive/explicit layouts and component variants, and shares the

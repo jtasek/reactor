@@ -197,6 +197,37 @@ const migrations: Record<string, Migration> = {
                 .column('workspace_id')
                 .execute();
         }
+    },
+    '0007_prototype_links': {
+        async up(db) {
+            await db.schema
+                .createTable('prototype_links')
+                .addColumn('id', 'text', (c) => c.primaryKey())
+                .addColumn('workspace_id', 'text', (c) =>
+                    c.notNull().references('workspaces.id').onDelete('cascade')
+                )
+                .addColumn('document_id', 'text', (c) =>
+                    c.notNull().references('documents.id').onDelete('cascade')
+                )
+                .addColumn('name', 'text', (c) => c.notNull())
+                .addColumn('token_hash', 'text', (c) => c.notNull().unique())
+                .addColumn('snapshot', 'text', (c) => c.notNull())
+                .addColumn('version', 'integer', (c) => c.notNull())
+                .addColumn('size', 'integer', (c) => c.notNull())
+                .addColumn('created_at', 'timestamptz', (c) => c.notNull().defaultTo(sql`now()`))
+                .addColumn('expires_at', 'timestamptz', (c) => c.notNull())
+                .execute();
+            await db.schema
+                .createIndex('prototype_links_workspace')
+                .on('prototype_links')
+                .column('workspace_id')
+                .execute();
+            await db.schema
+                .createIndex('prototype_links_document')
+                .on('prototype_links')
+                .column('document_id')
+                .execute();
+        }
     }
 };
 

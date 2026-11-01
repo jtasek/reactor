@@ -144,6 +144,7 @@ const sentBody = (body: unknown) => {
 let clients = 0;
 
 export interface ServeOptions {
+    previewOrigin?: string;
     socialProviders?: Parameters<typeof createAuth>[0]['socialProviders'];
     databasePlugins?: KyselyPlugin[];
     sessionCheck?: number;
@@ -167,6 +168,7 @@ export async function serve(options: ServeOptions = {}) {
 /** As `serve`, until `close` is called, so one server may last for several tests. */
 export async function startServer({
     socialProviders,
+    previewOrigin,
     sessionCheck,
     assetQuota,
     ai,
@@ -194,6 +196,7 @@ export async function startServer({
             onAccessChanged: sync.closeMember,
             log,
             assetQuota,
+            previewOrigin,
             ai
         })
     );

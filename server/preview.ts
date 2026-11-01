@@ -1,4 +1,5 @@
 import { isIP } from 'node:net';
+import path from 'node:path';
 import express from 'express';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -76,7 +77,12 @@ export function previewServer(
                     scriptSrc: ["'self'"],
                     styleSrc: ["'self'", "'unsafe-inline'"],
                     imgSrc: ['data:'],
-                    connectSrc: ["'none'"],
+                    connectSrc: [
+                        (req) =>
+                            req.url?.split('?')[0].replace(/\/$/, '') === '/share'
+                                ? config.editorOrigin
+                                : "'none'"
+                    ],
                     baseUri: ["'none'"],
                     formAction: ["'none'"],
                     objectSrc: ["'none'"],
@@ -98,6 +104,11 @@ export function previewServer(
         res.type('application/javascript').send(
             `window.REACTOR_EDITOR_ORIGIN=${JSON.stringify(config.editorOrigin)};`
         );
+    });
+    app.get('/share', (_req, res) => {
+        res.set('Cache-Control', 'no-store');
+        res.set('X-Robots-Tag', 'noindex, nofollow');
+        res.sendFile('index.html', { root: path.resolve(directory) });
     });
     app.use(
         express.static(directory, {

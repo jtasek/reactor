@@ -14,17 +14,20 @@ export default function InteractivePreview({
     session,
     onWidth,
     onReset,
+    onInspection,
     onLocate
 }: {
     session?: PreviewSession;
     onWidth?: (width: number) => void;
     onReset?: () => void;
+    onInspection?: (inspection: PreviewInspection) => void;
     onLocate?: (diagnostic: PreviewDiagnostic) => void;
 } = {}) {
     const { assets } = useEffects();
     const diagnosticId = useId();
     const prepare = useMemo(() => createPreviewResources(assets), [assets]);
     const [inspection, setInspection] = useState<PreviewInspection>({});
+    useEffect(() => onInspection?.(inspection), [inspection, onInspection]);
     const live = usePreviewProjection(inspection, session);
     // Keep showing the last result while a drag pauses updates.
     const settled = useRef<PreviewProjection>(live);

@@ -1182,7 +1182,9 @@ component overrides. `src/preview/hooks.ts` reads it inside `useAppState` to tra
 MessageChannel. The iframe has `sandbox="allow-scripts"`, no same-origin access; bootstrap checks
 both the parent Window and configured editor origin. The static `server.preview.ts` runtime
 requires a configured separate site, with an explicit two-loopback-origin opt-in for local tests.
-Keep its CSP network-free and its server free of account/API routes. Do not move its code into
+Keep the embedded preview CSP network-free and its server free of account/API routes.
+The public `/share` page alone may fetch validated snapshots from the configured editor origin,
+without cookies. Do not move its code into
 the startup bundle. Runtime screen/input state never reaches document data. Invalid updates retain
 the last valid preview. `projectPreview` returns a drawing with image hash references;
 `createPreviewResources` prepares its deduplicated image table before `readPreview` validates
@@ -1193,7 +1195,7 @@ Each channel sends an image once; later updates refer to it and `readPreview(val
 abort stale preparations. The sandbox receives only raster data URLs, with no new CSP origins. Its version handshake
 must succeed before the editor sends any application data; mismatches show an update notice.
 The canvas and runtime share the default outline token; text keeps the canvas font fallback.
-List repetition and shared links remain later increments. See README for hosting configuration.
+List repetition remains a later increment. See README for hosting configuration.
 
 
 ## Prototype workspace
@@ -1207,7 +1209,7 @@ opaque sandbox and last-valid projection. The runtime's `player=prototype` displ
 its duplicate width/reset controls; it grants no permissions and changes no protocol payload.
 Changing start screen, Reset or closing remounts/ends the runtime and clears local input state;
 viewport/mode changes keep it alive, preserving compatible state keys. Layout inspection remains
-per-screen and local. `PreviewDiagnostic` IDs stay in the editor, with Inspect links selecting
+per-screen and local; Prototype also receives inspection choices to include in shared snapshots. `PreviewDiagnostic` IDs stay in the editor, with Inspect links selecting
 source records; diagnostic metadata is never sent into the sandbox. Tests: `preview.test.ts`
 and `tests/browser/responsivePrototype.spec.ts`, including simultaneous sessions and live edits.
 
