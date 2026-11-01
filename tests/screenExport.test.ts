@@ -5,6 +5,7 @@ import { createDocument, createShape } from 'src/app/factories';
 import { prototypeDocument } from './support/prototype';
 import { responsiveVariantsDocument } from './support/responsiveVariants';
 import { projectSvg, serializeSvg } from 'src/export/svg';
+import { ExportSvgCommand } from 'src/commands/export';
 import type { Document } from 'src/app/types';
 
 async function open(document: Document) {
@@ -88,7 +89,7 @@ it('exports selected rotated artwork with escaping and stroke bounds, excluding 
 
 it('rejects empty selections and unsafe attributes rather than creating partial files', async () => {
     const store = await open(createDocument());
-    expect(() => projectSvg(store.state)).toThrow('Select a Screen view');
+    expect(() => projectSvg(store.state)).toThrow('Select a Screen, Screen view');
     expect(() =>
         serializeSvg({
             documentId: 'test',
@@ -171,4 +172,39 @@ it('bounds expanded SVG when many shapes reuse a large embedded image', () => {
             ]
         })
     ).toThrow('SVG exceeds 32 MiB');
+});
+
+it('exports a selected Screen as authored: its own box, default layout and no view modes', async () => {
+    const store = await open(prototypeDocument());
+    store.actions.editFrame({ kind: 'select', id: 'home' });
+    expect(ExportSvgCommand.canExecute({ state: store.state } as never)).toBe(true);
+    const drawing = projectSvg(store.state);
+    expect(drawing.screens[0]).toMatchObject({ name: 'Home', x: 0, y: 0, width: 320, height: 480 });
+    const svg = serializeSvg({ ...drawing, images: {} });
+    expect(svg).toContain('<title>Home</title>');
+    expect(svg).toContain('Your name');
+    // The view's dark theme belongs to the view, not to the Screen.
+    expect(svg).not.toContain('#ddeeff');
+});
+
+it('does not treat an alternate Screen layout as an artboard', async () => {
+    const store = await open(prototypeDocument());
+    store.actions.editFrame({ kind: 'select', id: 'wide' });
+    expect(store.state.currentDocument.selectedFrameId).toBe('wide');
+    expect(ExportSvgCommand.canExecute({ state: store.state } as never)).toBe(false);
+});
+
+it('names SVG export in projection errors', async () => {
+    const image = createShape({
+        id: 'image',
+        name: 'Linked',
+        order: 'a0',
+        type: 'image',
+        source: 'https://example.com/a.png',
+        position: { x: 0, y: 0 },
+        size: { width: 10, height: 10 }
+    });
+    const store = await open(createDocument({ shapes: { [image.id]: image } }));
+    store.actions.selectShape(image.id);
+    expect(() => projectSvg(store.state)).toThrow('Import this image before exporting.');
 });

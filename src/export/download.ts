@@ -4,7 +4,7 @@ import { projectSvg, serializeSvg } from './svg';
 
 export async function downloadSvg({ state, effects }: Context) {
     const drawing = projectSvg(state);
-    const application = await createPreviewResources(effects.assets)(
+    const application = await createPreviewResources(effects.assets, 'export')(
         drawing,
         new AbortController().signal
     );

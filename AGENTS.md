@@ -1216,11 +1216,13 @@ and `tests/browser/responsivePrototype.spec.ts`, including simultaneous sessions
 
 ## SVG export
 
-The lazy `src/export/` feature exports a selected Screen view or selected visible objects through
-the Export SVG command. `projectSvg` uses Canvas/Screen projections and artwork mode resolution;
+The lazy `src/export/` feature exports a selected Screen view, a root Screen as authored
+(`exportableFrame` in `src/app/screens.ts`) or selected visible objects through the Export SVG
+command. `projectSvg` uses Canvas/Screen projections and artwork mode resolution;
 Preview and export share `createArtworkProjector`. Export omits interactive control metadata and
 never changes authored records. Reuse verified raster preparation, allowlisted SVG attributes and
-XML escaping; embed assets rather than exporting editor URLs. Views retain viewport bounds and
+XML escaping; embed assets rather than exporting editor URLs. Shared projection and
+`createPreviewResources(assets, 'export')` errors name SVG export, not Preview. Views retain viewport bounds and
 selections retain rotated artwork bounds with stroke padding. Fonts remain SVG text with the
 canvas fallback. Keep the implementation out of startup and editor-entry bundles. Tests live in
 `tests/screenExport.test.ts` and `tests/browser/screenExport.spec.ts`.

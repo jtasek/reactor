@@ -1,20 +1,20 @@
-import { Download } from 'lucide-react';
+import { ImageDown } from 'lucide-react';
 import type { Command } from 'src/app/types';
 import { takesEditorInput } from 'src/events/input';
+import { exportableFrame } from 'src/app/screens';
 
 export const ExportSvgCommand: Command = {
     id: 'export-svg',
     name: 'Export SVG',
-    description: 'Download the selected Screen view or objects as SVG',
+    description: 'Download the selected Screen, Screen view or objects as SVG',
     category: 'document',
-    icon: { component: Download, size: 24 },
+    icon: { component: ImageDown, size: 24 },
     canExecute: ({ state }) =>
         takesEditorInput(state) &&
         state.events.pointer.gesture.kind === 'idle' &&
         !state.guideDragActive &&
-        (state.currentDocument.frames[state.currentDocument.selectedFrameId ?? '']?.kind ===
-            'view' ||
-            state.currentDocument.selectedShapesIds.length > 0),
+        (state.currentDocument.selectedShapesIds.length > 0 ||
+            Boolean(exportableFrame(state.currentDocument, state.currentDocument.selectedFrameId))),
     execute: async (context) => {
         const documentId = context.state.currentDocumentId;
         const selection = () =>

@@ -81,7 +81,6 @@ import {
 import { registerCommand, registerTool } from 'src/app/actions/startup';
 
 function registerCommands() {
-    registerCommand(ExportSvgCommand);
     registerCommand(OpenFlowCommand);
     registerCommand(OpenPrototypeCommand);
     registerCommand(UndoCommand);
@@ -127,6 +126,8 @@ function registerCommands() {
     registerCommand(ZoomOutCommand);
     registerCommand(ZoomResetCommand);
     registerCommand(ResetDocumentCommand);
+    // Registered after Reset document, so the document group keeps its place in the bar.
+    registerCommand(ExportSvgCommand);
     registerCommand(EditWithWordsCommand);
 }
 

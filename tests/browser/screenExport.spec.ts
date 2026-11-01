@@ -93,3 +93,15 @@ test('embeds a selected raster image', async ({ page }) => {
     expect(svg).not.toMatch(/blob:|asset:/);
     expect(svg).toContain('width="128" height="68"');
 });
+
+test('keeps the command bar order, with Export SVG beside Reset document', async ({ page }) => {
+    await openEditor(page);
+    const names = await page
+        .getByRole('list', { name: 'Commands' })
+        .getByRole('button')
+        .evaluateAll((buttons) =>
+            buttons.map((button) => button.getAttribute('aria-label') ?? button.textContent)
+        );
+    expect(names[0]).not.toBe('Export SVG');
+    expect(names.indexOf('Export SVG')).toBe(names.indexOf('Reset document') + 1);
+});

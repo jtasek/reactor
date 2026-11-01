@@ -240,6 +240,9 @@ export function createArtworkProjector(
     screenIds?: ReadonlySet<string>
 ) {
     const identities = new Map<string, PreviewNode[]>();
+    // Errors name the feature the person used; export has no screen set.
+    const subject = screenIds ? 'Preview' : 'SVG export';
+    const verb = screenIds ? 'previewing' : 'exporting';
     let count = 0;
     const draw = (
         shape: Shape,
@@ -254,7 +257,7 @@ export function createArtworkProjector(
                 : inherited;
         count += 1;
         if (count > 5000) {
-            throw new Error('Preview exceeds 5000 drawing nodes.');
+            throw new Error(`${subject} exceeds 5000 drawing nodes.`);
         }
         const key = `${path}/${shape.id}`;
         const bounds = getShapeBounds(shape);
@@ -344,7 +347,7 @@ export function createArtworkProjector(
             case 'image': {
                 const hash = /^asset:([a-f0-9]{64})$/.exec(shape.source)?.[1];
                 if (!hash) {
-                    const message = `${shape.name}: preview images must be stored Reactor assets. Import this image before previewing.`;
+                    const message = `${shape.name}: ${screenIds ? 'preview' : 'exported'} images must be stored Reactor assets. Import this image before ${verb}.`;
                     diagnostics.push({ kind: 'shape', id: shape.id, message });
                     throw new Error(message);
                 }

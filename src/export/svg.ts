@@ -1,5 +1,6 @@
 import type { Context } from 'src/app';
 import type { Shape } from 'src/app/types';
+import { exportableFrame } from 'src/app/screens';
 import { renderedShape } from 'src/app/frameLayout';
 import { canvasLayout } from 'src/app/contextualLayout';
 import { projectScreen } from 'src/app/screenProjection';
@@ -20,16 +21,18 @@ import {
 /** Export the same placed artwork as Canvas, independently of camera zoom and editor overlays. */
 export function projectSvg(state: Context['state']): PreviewDrawing {
     const document = state.currentDocument;
-    const frame = document.frames[document.selectedFrameId ?? ''];
-    const wholeView = frame?.kind === 'view' ? frame : undefined;
+    const wholeView = exportableFrame(document, document.selectedFrameId);
     const address = state.events.pointer.screenView;
     const addressed =
         address?.documentId === document.id ? document.frames[address.viewId] : undefined;
     const placed = wholeView
         ? projectScreen(
               document,
-              wholeView.screenId ?? '',
-              wholeView,
+              wholeView.kind === 'view' ? (wholeView.screenId ?? '') : wholeView.id,
+              // A Screen exports as authored: its own box, default layout and no view modes.
+              wholeView.kind === 'view'
+                  ? wholeView
+                  : { position: wholeView.position, size: wholeView.size },
               state.previewModes[document.id]
           )
         : (editableScreenView(state, address)?.projection ??
@@ -42,12 +45,18 @@ export function projectSvg(state: Context['state']): PreviewDrawing {
                 )
               : undefined));
     if (wholeView && !placed) {
-        throw new Error('The selected Screen view is unavailable.');
+        throw new Error('The selected Screen or Screen view is unavailable.');
     }
     if (placed?.problems.length) {
         throw new Error(placed.problems.join(' '));
     }
-    const viewId = wholeView?.id ?? (placed ? state.events.pointer.screenView?.viewId : undefined);
+    const viewId = wholeView
+        ? wholeView.kind === 'view'
+            ? wholeView.id
+            : undefined
+        : placed
+          ? state.events.pointer.screenView?.viewId
+          : undefined;
     const layout = canvasLayout(document, state.previewModes[document.id]);
     const placedShapes = new Map(placed?.shapes.map((shape) => [shape.id, shape]));
     const selected = new Set(document.selectedShapesIds);
@@ -58,7 +67,7 @@ export function projectSvg(state: Context['state']): PreviewDrawing {
                   .filter((id) => selected.has(id))
                   .map((id) => placedShapes.get(id) ?? renderedShape(document, id, layout));
     if (!wholeView && !shapes.length) {
-        throw new Error('Select a Screen view or visible shapes to export.');
+        throw new Error('Select a Screen, Screen view or visible shapes to export.');
     }
     const problems = Object.entries(layout?.problems ?? {}).filter(([id]) => selected.has(id));
     if (problems.length) {
@@ -97,7 +106,9 @@ export function projectSvg(state: Context['state']): PreviewDrawing {
             {
                 id: 'export',
                 name: wholeView
-                    ? screenViewName(document, wholeView)
+                    ? wholeView.kind === 'view'
+                        ? screenViewName(document, wholeView)
+                        : wholeView.name
                     : `${document.name} selection`,
                 ...bounds,
                 nodes

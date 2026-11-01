@@ -978,10 +978,12 @@ adapters to the shared screen/context projection alongside the standalone Protot
   workspace. Server and browser `prototypeLinks` tests cover access, validation, chosen context,
   snapshot independence, expiry, revocation and the public page's restricted network policy.
 - **SVG export (complete).** Export SVG on the command bar or command line
-  downloads the selected Screen view or selected visible artwork. Export uses Canvas projections
+  downloads the selected Screen view, root Screen (as authored) or selected visible artwork.
+  Export uses Canvas projections
   for inherited modes, responsive/explicit layouts and component variants, and shares the
   primitive artwork projection with Preview. Views retain viewport bounds; selections use
-  rotated artwork bounds with stroke padding. Raster assets are verified and embedded; controls,
+  rotated artwork bounds with stroke padding. Raster assets are verified and embedded (8 MiB
+  of decoded images, as in Preview; 32 MiB of SVG output); controls,
   guides and editor overlays are omitted. Invalid geometry or missing assets fail with an error.
   `tests/screenExport.test.ts` and `tests/browser/screenExport.spec.ts` cover resolved context,
   deterministic safe SVG, standalone rendering and embedded-image downloads.
