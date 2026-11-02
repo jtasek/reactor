@@ -372,3 +372,24 @@ it('offers separate control roles without irrelevant component IDs for unique ch
         expect.objectContaining({ shape: expect.objectContaining({ componentId: 'action' }) })
     );
 });
+
+it('offers only control roles the library can supply, with an ID choice when several match', () => {
+    const branches = (components: object) => {
+        const tool = toolsFor({ task: 'edit', prompt: 'Screen', context: { components } }).find(
+            (tool) => tool.name === 'composeScreen'
+        )!;
+
+        return JSON.parse(JSON.stringify(tool.parameters)).properties.content.items.anyOf;
+    };
+    const role = (name: string) => ({ interaction: { role: name, props: {} } });
+
+    expect(
+        branches({}).map(
+            (branch: { properties: { kind: { enum: string[] } } }) => branch.properties.kind.enum
+        )
+    ).toEqual([['text']]);
+    const [, button] = branches({ primary: role('button'), quiet: role('button') });
+    expect(button.properties.kind.enum).toEqual(['button']);
+    expect(button.properties.componentId.enum).toEqual(['primary', 'quiet']);
+    expect(button.required).toContain('componentId');
+});
