@@ -987,7 +987,12 @@ adapters to the shared screen/context projection alongside the standalone Protot
   guides and editor overlays are omitted. Invalid geometry or missing assets fail with an error.
   `tests/screenExport.test.ts` and `tests/browser/screenExport.spec.ts` cover resolved context,
   deterministic safe SVG, standalone rendering and embedded-image downloads.
-- Starter templates (list/detail, form, sign-in, settings) and empty states.
+- **Starter templates (complete).** Documents → Templates creates an independent, editable
+  list/detail, forms, sign-in or settings starter. Each includes three equal Screen views,
+  reusable button/input components, explicit navigation and an actionable empty state.
+  Prototype runs local input and navigation only: no data submission, email or authentication
+  is implied. Dimensions and modes remain opt-in. Persistence, independent IDs and playable
+  journeys are covered by `starterTemplates` unit and browser tests.
 - **AI screen/layout operations (complete).** Provider-neutral `addFrame` and `updateFrame`
   tools create screens, equal Screen views and alternate layouts, attach artwork and author
   width-based layout rules. Selected frames/views provide bounded source context. Proposals

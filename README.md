@@ -813,3 +813,14 @@ a partial file.
 SVG contains static artwork only: no guides, selection handles, frame labels, navigation or form
 controls. Its background is transparent. Text remains editable SVG text using the canvas font
 fallback (Roboto, then sans-serif); fonts are not embedded. Diagram connectors are not exported.
+
+### Starter templates
+
+On **Documents**, choose **Templates**, then List / detail, Forms, Sign-in or Settings.
+Each creates a new editable document with three Screen views, reusable controls and a
+connected journey. **New document** still creates a blank document. Open **Prototype**
+to try the buttons and text fields; open **Flow** to change navigation.
+
+The starters include clear empty states with a next action. They are sample prototypes:
+forms do not submit data, sign-in does not authenticate or send email, and settings do not
+change an account. Dimensions and modes are not added automatically.

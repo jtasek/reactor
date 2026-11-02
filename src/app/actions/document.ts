@@ -1,3 +1,4 @@
+import type { StarterDocument } from 'src/templates/build';
 import { isReadOnly, canDeleteDocument } from '../documentAccess';
 import {
     Action,
@@ -90,15 +91,22 @@ export const setDocumentsLayout: ActionWithParam<DocumentsLayout> = (
     }
 };
 
-export const newDocument: Action = ({ state, effects }) => {
-    const names = new Set(Object.values(state.documents).map(({ name }) => name));
+/** The first of `name`, `name 2`, `name 3`… that no document uses yet. */
+const unusedDocumentName = (state: Application, name: (number: number) => string) => {
+    const names = new Set(Object.values(state.documents).map((document) => document.name));
     let number = 1;
 
-    while (names.has(newDocumentName(number))) {
+    while (names.has(name(number))) {
         number++;
     }
 
-    const document = createOwnDocument(state, { name: newDocumentName(number) });
+    return name(number);
+};
+
+export const newDocument: Action = ({ state, effects }) => {
+    const document = createOwnDocument(state, {
+        name: unusedDocumentName(state, newDocumentName)
+    });
 
     setDocument(state, document);
     state.currentDocumentId = document.id;
@@ -263,4 +271,21 @@ export const updateDocument: ActionWithParam<Partial<Document> & { id: string }>
     const document = getDocument(state, options.id);
 
     setDocument(state, createDocument({ ...document, ...options }));
+};
+
+/** The chooser builds a complete independent graph before this synchronous commit. */
+export const newDocumentFromTemplate: ActionWithParam<StarterDocument> = (
+    { state, effects },
+    template
+) => {
+    const document = createOwnDocument(state, {
+        ...template,
+        name: unusedDocumentName(state, (number) =>
+            number === 1 ? template.name : `${template.name} ${number}`
+        )
+    });
+    setDocument(state, document);
+    state.currentDocumentId = document.id;
+    state.enteredComponentId = null;
+    effects.navigate('/');
 };
