@@ -476,6 +476,10 @@ one-time authoring layout; the resulting shapes remain ordinary editable artwork
 components and resolve their public label/placeholder property IDs. Each control declares
 Button or Input; a unique matching library component can be selected without an ID, while
 ambiguous libraries require an explicit choice. An ID with the wrong role is rejected.
+Provider schemas separate buttons from inputs and omit component IDs when there is only one
+matching component. A dedicated footer owns matching text and removes its duplicate from the
+column. Repairs of a composed screen must still supply a screen and its artwork; unrelated
+edits or empty frames cannot replace the failed composition.
 Color variable IDs produce
 bindings, as do exact, unambiguous palette matches. Ambiguous matches require an explicit ID.
 Overlapping text/controls and content outside the screen are rejected through the existing repair
@@ -527,7 +531,8 @@ context and prompts, proposals, raw provider events, per-case diagnostics, timin
 mode, `kind: prepared` is not a model-quality result. Ordinary tests never call the model.
 
 Automated diagnostics check one 480×640 screen/view, unchanged library artwork, matched
-control labels, button/input roles and input hints reusing supplied component IDs (70% per screen), and authored colors within
+control labels, button/input roles and input hints reusing supplied component IDs (70% per screen),
+unexpected repeated screen text, and authored colors within
 CIE76 ΔE 2 of a supplied palette color using its variable binding. These are structural
 checks, not pixel similarity or proof of visual fidelity. The run fails if any case fails its
 automated checks; the report retains failures instead of retrying until a passing sample.

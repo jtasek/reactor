@@ -3,6 +3,7 @@ import { documentContext } from 'src/ai/context';
 import {
     screenshotReferences,
     reusedControls,
+    repeatedScreenText,
     isolatedDocument,
     unboundPaletteColors
 } from './references';
@@ -90,4 +91,17 @@ it('keeps the comparison baseline isolated from edits and detects unbound near-p
         locked: false
     };
     expect(seed.frames).toEqual({});
+});
+
+it('detects extra screen text without rejecting repetitions already present in the reference', () => {
+    const reference = screenshotReferences()[0];
+    const text = Object.values(reference.target.shapes).find(
+        (shape) => shape.type === 'text' && shape.parentFrameId
+    )!;
+    const duplicate = { ...text, id: 'duplicate' };
+    expect(repeatedScreenText([text, duplicate], [text])).toEqual([
+        text.type === 'text' ? text.value.trim() : ''
+    ]);
+    expect(repeatedScreenText([text, duplicate], [text, duplicate])).toEqual([]);
+    expect(repeatedScreenText([{ ...text, parentFrameId: undefined }], [text])).toEqual([]);
 });

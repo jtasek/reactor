@@ -33,7 +33,13 @@ export function columnComposition(
             wrapWidth: width,
             position: { x: 0, y: 0 }
         }).bounds.height;
-    const end = content.reduce((bottom, item, index) => {
+    // The dedicated footer owns matching text; do not also lay it out in the column. Models
+    // often repeat the footer as body text. The cost: a screen that really shows the footer's
+    // exact words twice keeps only the footer.
+    const body = content.filter(
+        (item) => item.kind !== 'text' || !footer || item.text.trim() !== footer.text.trim()
+    );
+    const end = body.reduce((bottom, item, index) => {
         const y = bottom + (item.gapBefore ?? (index === 0 ? 0 : gap));
         if (item.kind === 'text') {
             texts.push({

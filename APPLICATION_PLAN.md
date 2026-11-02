@@ -1032,10 +1032,13 @@ adapters to the shared screen/context projection alongside the standalone Protot
   creation can now group a complete screen and its artwork in one tool call, expanded into
   validated operations before acceptance; detached legacy proposals receive a repair diagnostic.
   The latest local Qwen rerun uses ordered screen composition with measured text layout,
-  labeled role-checked controls and palette bindings: 28/30 nonblank exports, 26/30 passing
-  automated checks and 51.3 s completion p95. The preceding complete run had 27/30 nonblank
-  exports, 0/30 passing checks and 59.1 s p95. Four cases still fail, duplicated footer text
-  and spacing differences remain, and human usability ratings are unfilled; see
+  labeled role-checked controls and palette bindings. The reliability follow-up separates
+  button/input schemas, requires complete screen repairs and renders dedicated footers once:
+  30/30 nonblank exports and first-attempt passes, 52/52 correctly reused controls and 34.4 s
+  completion p95. Repeated text now fails the benchmark; the preceding run's reported 26/30
+  rescored to 13/30 under that stricter check. The four prior failures and duplicated footers
+  are resolved in this run. Spacing, typography and footer placement still differ from references,
+  and human usability ratings are unfilled; see
   `tests/ai/screenshots/RESULTS.md`. This supports evaluation; it does not
   establish general screenshot quality or replace human ratings. Screenshot-generation targets
   remain: 80% of 30 screenshots rated a usable

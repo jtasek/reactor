@@ -201,6 +201,90 @@ describe.each(PROVIDERS)('proposals from $provider', (each) => {
         expect(JSON.stringify(replayed.sent[0].body)).toContain('composeScreen');
     });
 
+    it.each([
+        label,
+        {
+            name: 'addFrame',
+            input: {
+                key: 'empty',
+                frame: {
+                    kind: 'screen',
+                    name: 'Empty',
+                    position: { x: 0, y: 0 },
+                    size: { width: 320, height: 480 }
+                }
+            }
+        }
+    ])('does not accept incomplete screenshot screen repairs: %j', async (repair) => {
+        const { result } = await ask(
+            [
+                stream({ calls: [{ name: 'composeScreen', input: { key: 'screen' } }] }),
+                stream({ calls: [repair] })
+            ],
+            { screenshot: true }
+        );
+        expect(result).toMatchObject({
+            kind: 'failed',
+            problem: expect.stringContaining('could not finish the screen from this screenshot')
+        });
+    });
+
+    it.each([false, true])(
+        'accepts repairs that do not add new artwork after a composition (screenshot: %s)',
+        async (screenshot) => {
+            const accent = {
+                name: 'addVariable',
+                input: { key: 'accent', name: 'Accent', type: 'color', value: '#ff6600' }
+            };
+            const { result } = await ask(
+                [
+                    stream({ calls: [{ name: 'composeScreen', input: { key: 'screen' } }] }),
+                    stream({ calls: [accent] })
+                ],
+                { screenshot }
+            );
+            expect(result).toMatchObject({ kind: 'proposed', operations: [{ op: 'addVariable' }] });
+        }
+    );
+
+    it('accepts a non-screen repair when a text request misused composeScreen', async () => {
+        const { result } = await ask([
+            stream({ calls: [{ name: 'composeScreen', input: { key: 'screen' } }] }),
+            stream({
+                calls: [
+                    {
+                        name: 'addFrame',
+                        input: {
+                            key: 'card',
+                            frame: {
+                                kind: 'frame',
+                                name: 'Card',
+                                position: { x: 0, y: 0 },
+                                size: { width: 200, height: 100 }
+                            }
+                        }
+                    },
+                    {
+                        name: 'addShape',
+                        input: {
+                            key: 'title',
+                            shape: {
+                                type: 'text',
+                                position: { x: 10, y: 10 },
+                                value: 'Hi',
+                                parentFrameId: 'card'
+                            }
+                        }
+                    }
+                ]
+            })
+        ]);
+        expect(result).toMatchObject({
+            kind: 'proposed',
+            operations: [{ op: 'addFrame' }, { op: 'addShape' }]
+        });
+    });
+
     it('repairs an invalid responsive target before offering the complete screen proposal', async () => {
         const calls = screenOperations.map(({ op, ...input }) => ({ name: op, input }));
         const broken = {

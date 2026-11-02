@@ -285,7 +285,11 @@ re-renders.** Components never mutate state directly.
   bottom footer. `columnComposition.ts` measures wrapped text and computes one-time column
   positions; it does not introduce a durable stack or template. The positioned reader remains
   compatible. Column controls declare button/input roles; an omitted component ID resolves
-  only when that role has one candidate. Explicit IDs must match the role. The pure
+  only when that role has one candidate. Explicit IDs must match the role. Provider schemas
+  expose separate button/input branches and omit IDs for unique candidates.
+  Dedicated footer text is excluded from the column body to prevent duplicate rendering.
+  A repair after `composeScreen` must retain screen creation and artwork, not an unrelated edit.
+  The pure
   `screenComposition.ts` compiler maps role links to exposed property IDs, binds explicit color
   IDs and unambiguous exact palette matches (an alias wins over the variable it points at), and converts top-left text placement using the
   existing text measurement. Content outside the screen or overlapping text/controls is rejected

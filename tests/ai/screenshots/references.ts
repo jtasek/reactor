@@ -193,6 +193,24 @@ export function unboundPaletteColors(shapes: Shape[], seed: Document) {
     );
 }
 
+/** Exact authored repetitions, independent of wrapping and layout coordinates. */
+export function repeatedScreenText(shapes: Shape[], reference: Shape[]) {
+    const counts = (items: Shape[]) =>
+        items.reduce<Record<string, number>>((result, shape) => {
+            if (shape.type === 'text' && shape.parentFrameId) {
+                const text = shape.value.trim();
+                result[text] = (result[text] ?? 0) + 1;
+            }
+
+            return result;
+        }, Object.create(null));
+    const expected = counts(reference);
+
+    return Object.entries(counts(shapes))
+        .filter(([text, count]) => expected[text] !== undefined && count > expected[text])
+        .map(([text]) => text);
+}
+
 /** Store actions own these records; never lend them the benchmark's baseline objects. */
 export function isolatedDocument(document: Document): Document {
     return hydrateDocument(JSON.parse(JSON.stringify(document)));

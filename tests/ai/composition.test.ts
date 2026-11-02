@@ -10,7 +10,7 @@ import {
     shownDocument
 } from '../support/collaboration';
 import { measureContextualText } from 'src/app/textMeasurement';
-import { TOOLS } from '../../server/aiTasks';
+import { TOOLS, toolsFor } from '../../server/aiTasks';
 
 const seed = () =>
     fixtureDocument({
@@ -335,4 +335,61 @@ it('says when the library has no component for a control role', () => {
             withoutInputs
         )
     ).toThrow('The library has no input component.');
+});
+
+it('renders a dedicated footer once and removes its duplicate from column spacing', () => {
+    const context = documentContext({ ...seed(), selectedShapesIds: [] });
+    const input = column();
+    const expected = readOperations(input, [], context);
+    const duplicated = {
+        ...input,
+        content: [
+            { kind: 'text', ...input.footer, gapBefore: 400 },
+            ...input.content,
+            { kind: 'text', ...input.footer }
+        ]
+    };
+    expect(readOperations(duplicated, [], context)).toEqual(expected);
+});
+
+it('offers separate control roles without irrelevant component IDs for unique choices', () => {
+    const context = documentContext({ ...seed(), selectedShapesIds: [] });
+    const tools = toolsFor({ task: 'edit', prompt: 'Screen', context });
+    const tool = tools.find((tool) => tool.name === 'composeScreen')!;
+    const schema = JSON.parse(JSON.stringify(tool.parameters));
+    const [, button, input] = schema.properties.content.items.anyOf;
+    expect(button.properties.kind.enum).toEqual(['button']);
+    expect(input.properties.kind.enum).toEqual(['input']);
+    expect(button.properties.componentId).toBeUndefined();
+    expect(input.required).toContain('placeholder');
+    expect(button.required).not.toContain('placeholder');
+    const operations = readOperations(
+        { ...column(), content: [{ kind: 'button', label: 'Continue' }] },
+        [],
+        context
+    );
+    expect(operations).toContainEqual(
+        expect.objectContaining({ shape: expect.objectContaining({ componentId: 'action' }) })
+    );
+});
+
+it('offers only control roles the library can supply, with an ID choice when several match', () => {
+    const branches = (components: object) => {
+        const tool = toolsFor({ task: 'edit', prompt: 'Screen', context: { components } }).find(
+            (tool) => tool.name === 'composeScreen'
+        )!;
+
+        return JSON.parse(JSON.stringify(tool.parameters)).properties.content.items.anyOf;
+    };
+    const role = (name: string) => ({ interaction: { role: name, props: {} } });
+
+    expect(
+        branches({}).map(
+            (branch: { properties: { kind: { enum: string[] } } }) => branch.properties.kind.enum
+        )
+    ).toEqual([['text']]);
+    const [, button] = branches({ primary: role('button'), quiet: role('button') });
+    expect(button.properties.kind.enum).toEqual(['button']);
+    expect(button.properties.componentId.enum).toEqual(['primary', 'quiet']);
+    expect(button.required).toContain('componentId');
 });

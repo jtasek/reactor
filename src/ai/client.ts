@@ -60,6 +60,7 @@ interface Answer {
     readings: Array<{ operation: ProposedOperation } | { problem: string }>;
     messages: string[];
     sourceIndices: number[];
+    composed: boolean;
 }
 
 async function* readLines(body: ReadableStream<Uint8Array>): AsyncGenerator<GatewayEvent> {
@@ -98,7 +99,8 @@ async function receive(
         model: '',
         readings: [],
         messages: [],
-        sourceIndices: []
+        sourceIndices: [],
+        composed: false
     };
     let sourceIndex = 0;
     const keys = new Set(reservedKeys);
@@ -112,6 +114,14 @@ async function receive(
                 break;
             case 'operation': {
                 const source = sourceIndex++;
+                if (
+                    event.operation &&
+                    typeof event.operation === 'object' &&
+                    'op' in event.operation &&
+                    event.operation.op === 'composeScreen'
+                ) {
+                    answer.composed = true;
+                }
 
                 try {
                     const operations = readOperations(event.operation, keys, context);
@@ -220,6 +230,30 @@ function checkScreenshotArtwork(operations: ProposedOperation[]): OperationsChec
     };
 }
 
+/** Shown to the person when a screenshot repair drops the screen it was asked to fix. */
+const ABANDONED_SCREEN =
+    'The AI could not finish the screen from this screenshot, and its retry added unrelated artwork instead. Nothing was changed. Try again, or describe the screen in more detail.';
+
+/**
+ * Whether a repair of a failed screenshot composition adds new artwork without the screen it
+ * was fixing. Repairs that only edit existing records (a restyle from a screenshot) still pass.
+ */
+function abandonsScreen(operations: ProposedOperation[]) {
+    const adds = operations.some(
+        (operation) => operation.op === 'addShape' || operation.op === 'addFrame'
+    );
+    const screen = operations.some(
+        (operation) => operation.op === 'addFrame' && operation.frame.kind === 'screen'
+    );
+    const artwork = operations.some(
+        (operation) =>
+            (operation.op === 'addShape' && Boolean(operation.shape.parentFrameId)) ||
+            (operation.op === 'updateShape' && typeof operation.changes.parentFrameId === 'string')
+    );
+
+    return adds && (!screen || !artwork);
+}
+
 /**
  * Asks the model for a change to a document and checks the operations it
  * proposes with `check`. When they would not apply, the problem goes back to the
@@ -285,7 +319,11 @@ export async function propose({
             problem
         });
 
-        const repairedCheck = examine(repaired, checkProposal);
+        const repairedCheck = examine(repaired, (operations) =>
+            request.image && first.composed && abandonsScreen(operations)
+                ? { valid: false, problem: ABANDONED_SCREEN }
+                : checkProposal(operations)
+        );
 
         signal.throwIfAborted();
 
