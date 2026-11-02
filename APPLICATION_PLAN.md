@@ -361,6 +361,32 @@ Done when, on 40 eval cases:
 Gate: ten people outside the team use it in their own work. Their accept and undo rates are
 recorded.
 
+Authoring usability follow-up, driven by the local screenshot benchmark:
+
+1. **Shared descriptions (implemented).** AI and Inspector share component property metadata;
+   AI receives property types and source defaults, semantic role links and variant dependencies.
+   Variable context distinguishes authored values from effective values and their mode sources.
+   A selected Screen view supplies its inherited context; source selections and document defaults
+   are explicitly labelled. Existing context size limits and document data remain unchanged.
+2. **Scoped screen artwork (implemented).** A screen authoring helper compiles local artwork
+   references into the existing validated operation batch. Existing IDs and repeated local names
+   on different screens cannot redirect instance references. Repeated names within one screen
+   are rejected. Acceptance, collaboration and one-step undo retain the existing behavior.
+3. **Layout intent (first increment implemented).** `composeScreen` provides explicit visible
+   text, labeled component controls, ordered column content, padding/gaps, a bottom footer
+   and palette bindings. Reactor computes positions using text measurement and natural control sizes.
+   It rejects clipped/overlapping content through the existing repair flow. It compiles into
+   existing frame/shape operations, without a template lookup or new document schema.
+   Next: expose existing stack, sizing and constraints through validated authoring commands,
+   with diagnostics that identify which constraint needs attention.
+4. **Consistent editing context.** Show shared source, per-view context and instance overrides
+   consistently in Inspector; use the same descriptions for AI explanations.
+5. **Rendered proposals.** Show a temporary visual draft before Accept and allow targeted repair.
+   Keep drafts outside durable document data and apply only through the existing atomic batch.
+
+Steps 1–2 address authoring ambiguity; they do not complete the live screenshot-quality gate.
+Measure the same 30 references again before claiming a quality or latency improvement.
+
 ### Variable foundation V1–V5 (incremental)
 
 Each step ships a usable editor. V1 precedes R4; the later steps can proceed alongside screen
@@ -999,7 +1025,20 @@ adapters to the shared screen/context projection alongside the standalone Protot
   remain unapplied until Accept; validation rejects invalid ownership, references and thresholds,
   and acceptance stays one collaborative undo step. Explicit layouts and Theme stay independent.
   Offline reference evaluation covers both adapters; browser coverage checks acceptance, resolved
-  artwork, undo/redo and reload. Screenshot-generation targets remain: 80% of 30 screenshots rated a usable
+  artwork, undo/redo and reload. A template-based screenshot benchmark now renders 30
+  correlated references (12 starter screens,
+  12 palette variants and six copy variants), runs live provider proposals through acceptance,
+  and saves paired images, raw provider events and two-reviewer rating sheets. Screenshot
+  creation can now group a complete screen and its artwork in one tool call, expanded into
+  validated operations before acceptance; detached legacy proposals receive a repair diagnostic.
+  The latest local Qwen rerun uses ordered screen composition with measured text layout,
+  labeled role-checked controls and palette bindings: 28/30 nonblank exports, 26/30 passing
+  automated checks and 51.3 s completion p95. The preceding complete run had 27/30 nonblank
+  exports, 0/30 passing checks and 59.1 s p95. Four cases still fail, duplicated footer text
+  and spacing differences remain, and human usability ratings are unfilled; see
+  `tests/ai/screenshots/RESULTS.md`. This supports evaluation; it does not
+  establish general screenshot quality or replace human ratings. Screenshot-generation targets
+  remain: 80% of 30 screenshots rated a usable
   start by two reviewers; 70% component reuse when suitable definitions exist; colors within
   ΔE 2 bound to matching variables; completion within 20 s at p95. Measure these, do not infer
   quality from deterministic replay tests.

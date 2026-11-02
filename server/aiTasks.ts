@@ -77,9 +77,36 @@ Reactor draws shapes on a canvas measured in pixels, with x to the right and y d
 message starts with the document's records as JSON: its frames (screens, Screen views and alternate layouts), shapes, groups, variables and components,
 each under its ID.
 
+SCREENSHOT RECREATION: prefer composeScreen for a complete screen. Inspect the whole image
+from top to bottom before composing. Include EVERY heading, paragraph, small caption, footer,
+button and input; do not stop after the first control. Read each control's exact label and hint.
+composeScreen takes ordered content, padding and gap; Reactor calculates vertical positions.
+Use gapBefore for larger spaces between sections. Text fills the available column width and wraps.
+Keep font sizes and spacing close to the screenshot. Use color variable IDs when available.
+Each control declares kind button or input, label and placeholder (empty for buttons).
+Omit componentId when the library has only one matching role; otherwise choose its ID. These become
+actual property overrides; do not repeat button labels as separate text items.
+Input labels drawn ABOVE the input need a preceding text item; the control label preserves semantics.
+Put bottom captions in footer, not in content. Use lower-level tools for non-column artwork.
+Controls keep the supplied component's natural size, shown in context.size. Choose that component
+when suitable; draw unavailable controls using rectangles and text. Do not invent component IDs.
+The compiler creates the screen, one view, background, bindings and labeled component instances.
+Use addScreen/addFrame/addShape for artwork that needs lower-level capabilities. Do not create
+variables with existing names or add another frame/view for the same composed screen.
+
 - Make the whole change in one answer, calling the tools in order. An operation may refer only to
   an ID the document has, or to the key of a record an earlier call of this answer adds.
 - Give each new frame, shape and variable a short key of your own; later calls use it as an ID.
+- Inside addScreen, artwork keys are local to that screen, not persistent document IDs. They
+  must be unique within its shapes array, but may match existing artwork IDs or other screens'
+  local keys. Do not reference those local keys from other calls. The screen key remains a
+  unique batch key. Component IDs, exposed property IDs and variable IDs always keep their meaning.
+- Component props describe their type, source defaultValue and optional variableId. Set instance
+  overrides by exposed property id, not by display label or source shape id. interaction maps
+  semantic role fields (such as label) to those property ids; role describes their source values.
+- Variable value is its authored base; resolved.value is the effective value in resolution's
+  named context. Keep bindings when matching that context. Other Screen views may resolve
+  differently. Never copy a resolved value into the variable merely to preserve its appearance.
 - To change or delete what the document has, name it by its ID. Change each record in one call at
   most, giving only the fields that change, and refer to nothing you delete. Locked records stay.
 - Colors are #rrggbb. A shape's property may follow a variable of its kind: its bindings map the
@@ -109,6 +136,33 @@ each under its ID.
 
 const REPAIR = `None of these operations were applied. Call the tools again with every operation of
 the corrected change, from the first.`;
+
+/** Image requests need room for both vision tokens and the complete composed screen. */
+export const instructionsFor = (request: AiRequest) =>
+    request.image
+        ? `You edit a Reactor document with tools. Context contains records under their stable IDs.
+Do only what was requested. Never change the supplied library unless explicitly asked.
+The context ALREADY contains the listed variables and components. Reuse their IDs; do not
+add them again. Never call addVariable with an existing name. For a new single-column screen
+from an image, call composeScreen with the COMPLETE content, not addFrame/addVariable.
+composeScreen already creates the screen and its view; do not add either separately.
+Inspect the entire image top to bottom.
+Include EVERY heading, paragraph, caption, footer, button and input, preserving exact text.
+Supply ordered content, padding and gap. Reactor calculates vertical positions and wraps text.
+Match fontSize in pixels; use gapBefore for larger section spacing. Put bottom captions in footer.
+Use kind button or input with exact label and placeholder (empty for buttons).
+Omit componentId when only one library component has that role; otherwise choose the matching ID.
+Controls retain context.size; padding must leave enough width. Do not repeat button text as a
+text item. Input labels above fields need a preceding text item. Use color variable IDs in
+all matching color fields. The compiler creates background, bindings, overrides, screen and one view.
+For existing artwork or unsupported compositions use the other tools. New keys must be unique;
+references name existing IDs or keys added earlier. Update/delete existing records only, once each.
+Never reference a deleted record or edit a locked record. Put new artwork in its screen/frame,
+not a view; raw shape coordinates are absolute. Use other tools for multi-column/decorative layouts.
+Keep variable bindings when changing a bound property. Preserve independent modes and explicit
+layout choices. For screenshot recreation, empty screen/view frames are not a complete answer: include the artwork.
+Return the whole proposal in one answer. Say why if tools cannot do the task.`
+        : INSTRUCTIONS;
 
 /** The person's message: the document, then their words. */
 export const documentText = ({ context }: AiRequest) =>
@@ -218,7 +272,20 @@ const SHAPE = {
                 position: point,
                 overrides: {
                     type: 'object',
-                    description: 'Prop ID to its value, or to {"variableId": ID or key}.'
+                    description:
+                        'Prop ID to its value, or to {"variableId": ID or key}. Set these while adding the instance.',
+                    additionalProperties: {
+                        anyOf: [
+                            { type: 'string' },
+                            { type: 'number' },
+                            { type: 'boolean' },
+                            {
+                                type: 'object',
+                                properties: { variableId: { type: 'string' } },
+                                required: ['variableId']
+                            }
+                        ]
+                    }
                 }
             },
             ['componentId', 'position'],
@@ -240,6 +307,28 @@ SHAPE.anyOf.forEach(({ properties }) =>
         SHAPE_CHANGES[field] = known ? { anyOf: [known, schema] } : schema;
     })
 );
+
+// Keep common fields visible to tool-template renderers that do not expand nested anyOf branches.
+// Durable operation readers still enforce the geometry required by the chosen shape type.
+const ADD_SHAPE = {
+    type: 'object',
+    description:
+        'Rectangle: top-left position and size. Circle/ellipse: center position and radius. Line: start/end. Pen: points. Text: position/value. Instance: componentId/position.',
+    properties: {
+        ...SHAPE_CHANGES,
+        type: {
+            type: 'string',
+            enum: SHAPE.anyOf.flatMap(({ properties }) => properties.type.enum)
+        },
+        componentId: { type: 'string' },
+        position: {
+            ...point,
+            description:
+                'Required for text, instance, rectangle, circle and ellipse. Supply both x and y.'
+        }
+    },
+    required: ['type']
+};
 
 SHAPE_CHANGES.parentFrameId = { type: ['string', 'null'] };
 
@@ -279,6 +368,157 @@ const frameFields = {
 
 /** One tool per kind of operation, each with a JSON schema of its input. */
 export const TOOLS = [
+    {
+        name: 'composeScreen',
+        description:
+            'Create a complete single-column screen from ordered content. Reactor calculates non-overlapping positions and wraps text within padding. Include all text and controls in reading order, and optionally a bottom footer. Use other drawing tools for multi-column or decorative artwork.',
+        parameters: {
+            type: 'object',
+            properties: {
+                key: { type: 'string', description: 'Unique screen reference for this proposal.' },
+                name: { type: 'string' },
+                x: { type: 'number', description: 'Canvas X; defaults to 0.' },
+                y: { type: 'number', description: 'Canvas Y; defaults to 0.' },
+                width: { type: 'number', minimum: 1 },
+                height: { type: 'number', minimum: 1 },
+                background: { type: 'string', description: 'Color variable ID or #rrggbb.' },
+                padding: {
+                    type: 'number',
+                    minimum: 0,
+                    description:
+                        'Inset on all four sides; leave room for the natural control width.'
+                },
+                gap: {
+                    type: 'number',
+                    minimum: 0,
+                    description: 'Default vertical gap between content items.'
+                },
+                content: {
+                    type: 'array',
+                    minItems: 1,
+                    maxItems: 100,
+                    description:
+                        'All content in top-to-bottom order. A control supplies its own visible text: do not repeat button text as a separate item. Input captions above fields are separate text items.',
+                    items: {
+                        anyOf: [
+                            {
+                                type: 'object',
+                                properties: {
+                                    kind: { type: 'string', enum: ['text'] },
+                                    text: { type: 'string', minLength: 1 },
+                                    fontSize: {
+                                        type: 'number',
+                                        minimum: 1,
+                                        description: 'Pixel font size, matching the image.'
+                                    },
+                                    color: {
+                                        type: 'string',
+                                        description: 'Color variable ID or #rrggbb.'
+                                    },
+                                    gapBefore: {
+                                        type: 'number',
+                                        minimum: 0,
+                                        description:
+                                            'Optional gap before this item, replacing the default gap.'
+                                    }
+                                },
+                                required: ['kind', 'text', 'fontSize', 'color'],
+                                additionalProperties: false
+                            },
+                            {
+                                type: 'object',
+                                properties: {
+                                    kind: { type: 'string', enum: ['button', 'input'] },
+                                    componentId: {
+                                        type: 'string',
+                                        description:
+                                            'Optional when only one component has this role. Otherwise choose its matching component ID; retains its natural size.'
+                                    },
+                                    label: {
+                                        type: 'string',
+                                        minLength: 1,
+                                        description: 'Exact button text or input label.'
+                                    },
+                                    placeholder: {
+                                        type: 'string',
+                                        description:
+                                            'Visible input hint or value; empty for buttons.'
+                                    },
+                                    gapBefore: { type: 'number', minimum: 0 }
+                                },
+                                required: ['kind', 'label', 'placeholder'],
+                                additionalProperties: false
+                            }
+                        ]
+                    }
+                },
+                footer: {
+                    type: 'object',
+                    description:
+                        'Optional text anchored above the bottom padding. Do not repeat it in content.',
+                    properties: {
+                        text: { type: 'string', minLength: 1 },
+                        fontSize: { type: 'number', minimum: 1 },
+                        color: { type: 'string', description: 'Color variable ID or #rrggbb.' }
+                    },
+                    required: ['text', 'fontSize', 'color'],
+                    additionalProperties: false
+                }
+            },
+            required: ['key', 'name', 'width', 'height', 'background', 'padding', 'gap', 'content'],
+            additionalProperties: false
+        }
+    },
+    {
+        name: 'addScreen',
+        description:
+            'Creates a complete screen from a screenshot in one call. Includes its visible artwork and creates one Screen view. Every supplied shape belongs to this screen automatically. Use existing components and color variables.',
+        parameters: {
+            type: 'object',
+            properties: {
+                key: {
+                    type: 'string',
+                    description:
+                        'Unique proposal reference for this screen. Other calls may reference it.'
+                },
+                screen: {
+                    type: 'object',
+                    properties: { name: { type: 'string' }, position: point, size },
+                    required: ['name', 'position', 'size']
+                },
+                shapes: {
+                    type: 'array',
+                    minItems: 1,
+                    maxItems: 100,
+                    items: {
+                        type: 'object',
+                        properties: {
+                            key: {
+                                type: 'string',
+                                description:
+                                    'Local artwork reference, unique only within this screen. Not a component ID or property ID; no other call may reference it.'
+                            },
+                            shape: {
+                                ...ADD_SHAPE,
+                                description:
+                                    'Screenshot artwork: rectangle, text or an existing component instance. Position is always required. Rectangles also need size; text needs value; instances need componentId and overrides.',
+                                properties: {
+                                    ...ADD_SHAPE.properties,
+                                    type: {
+                                        type: 'string',
+                                        enum: ['rectangle', 'text', 'instance']
+                                    }
+                                },
+                                required: ['type', 'position']
+                            }
+                        },
+                        required: ['key', 'shape']
+                    }
+                }
+            },
+            required: ['key', 'screen', 'shapes']
+        }
+    },
     {
         name: 'addFrame',
         description:
@@ -369,10 +609,11 @@ export const TOOLS = [
     },
     {
         name: 'addShape',
-        description: 'Adds a shape on top of the others.',
+        description:
+            'Adds a shape on top of the others. Include parentFrameId, bindings and instance overrides inside shape now; do not update this new key later.',
         parameters: {
             type: 'object',
-            properties: { key: { type: 'string' }, shape: SHAPE },
+            properties: { key: { type: 'string' }, shape: ADD_SHAPE },
             required: ['key', 'shape']
         }
     },
@@ -395,7 +636,8 @@ export const TOOLS = [
     },
     {
         name: 'updateShape',
-        description: 'Changes fields of a shape the document has. Its type cannot change.',
+        description:
+            'Changes an existing document shape by ID, never a key added in this answer. Its type cannot change.',
         parameters: {
             type: 'object',
             properties: {
@@ -477,6 +719,10 @@ export const TOOLS = [
         }
     }
 ];
+
+/** Keep all editing operations; avoid two overlapping complete-screen schemas in image requests. */
+export const toolsFor = (request: AiRequest) =>
+    request.image ? TOOLS.filter((tool) => tool.name !== 'addScreen') : TOOLS;
 
 /** A tool call as the gateway streams it: an operation named after its tool. */
 export const callOperation = ({ name, input }: ToolCall) => ({ ...input, op: name });

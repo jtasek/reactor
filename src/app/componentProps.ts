@@ -42,6 +42,31 @@ export function resolveComponentProp(
     return { prop, source, property };
 }
 
+/** The same public property contract for the Inspector and authoring clients. */
+export function describeComponentProp(component: Component, propId: string, document: Document) {
+    const prop = component.props?.find((item) => item.id === propId);
+    const property = SHAPE_PROPERTIES.find((item) => item.key === prop?.key);
+
+    if (!prop || !property) {
+        return undefined;
+    }
+    const source = component.sourceShapes?.[prop.shapeId] ?? document.shapes[prop.shapeId];
+    const shapeName = source?.name ?? 'Shape';
+    const prefix = `${shapeName}: `;
+
+    return {
+        id: prop.id,
+        label: prop.label,
+        shapeId: prop.shapeId,
+        shapeName,
+        fieldLabel: prop.label.startsWith(prefix) ? prop.label.slice(prefix.length) : prop.label,
+        key: prop.key,
+        type: property.kind,
+        defaultValue: source ? property.read(source, document) : undefined,
+        variableId: source?.bindings?.[prop.key]
+    };
+}
+
 export function acceptsComponentValue(property: ShapeProperty, value: PropertyValue): boolean {
     switch (property.kind) {
         case 'number':

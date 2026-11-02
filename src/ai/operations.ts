@@ -13,6 +13,8 @@ import type {
 import { readEntity } from 'src/app/services/documentStorage';
 import { readCopiedShape } from 'src/app/services/clipboardStorage';
 import { isVariableType } from 'src/app/variables';
+import { screenOperations } from 'src/app/screenAuthoring';
+import { readScreenComposition } from './composition';
 
 /** The operations a model may propose. */
 export type ProposedOperation =
@@ -209,4 +211,47 @@ export function readOperation(value: unknown): ProposedOperation {
         default:
             throw new Error(`${String(operation.op)} is not an operation.`);
     }
+}
+
+/** A screen authoring tool expands to ordinary operations before validation or acceptance. */
+export function readOperations(
+    value: unknown,
+    reservedKeys: Iterable<string> = [],
+    context: object = {}
+): ProposedOperation[] {
+    const operation = fields(value, 'The operation');
+    if (operation.op === 'composeScreen') {
+        return readScreenComposition(value, context, reservedKeys);
+    }
+    if (operation.op !== 'addScreen') {
+        return [readOperation(value)];
+    }
+    const key = text(operation.key, 'Its key');
+    const screen = fields(operation.screen, 'Its screen');
+    const shapes = operation.shapes;
+    const maxShapes = 100;
+    if (!Array.isArray(shapes) || shapes.length === 0 || shapes.length > maxShapes) {
+        throw new Error(`A screen needs between 1 and ${maxShapes} artwork records.`);
+    }
+
+    const frame = readOperation({
+        op: 'addFrame',
+        key,
+        frame: { ...screen, kind: 'screen' }
+    }) as AddFrame;
+    const artwork = shapes.map((value) => {
+        const item = fields(value, 'Its artwork record');
+        const shape = fields(item.shape, 'Its artwork shape');
+        if (shape.parentFrameId !== undefined && shape.parentFrameId !== key) {
+            throw new Error('Included artwork must belong to this screen, not another frame.');
+        }
+
+        return readOperation({
+            op: 'addShape',
+            key: item.key,
+            shape: { ...shape, parentFrameId: key }
+        }) as AddShape;
+    });
+
+    return screenOperations(frame, artwork, reservedKeys);
 }

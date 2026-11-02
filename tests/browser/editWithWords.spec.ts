@@ -3,6 +3,9 @@ import { createVariable } from './support/variables';
 import { expect, test, type Page } from '@playwright/test';
 import { MAX_CONTEXT_BYTES } from '../../src/ai/context';
 import { drawRect, openEditor, shapes } from './support/editor';
+import { buildStarterTemplate } from 'src/templates/build';
+import { createDocument } from 'src/app/factories';
+import { Collaboration } from 'src/app/services/collaboration';
 
 const SIGN_IN_BUTTON = {
     op: 'addShape',
@@ -43,6 +46,144 @@ const editWithWords = (page: Page) =>
     page.getByRole('navigation', { name: 'Application' }).getByRole('button', {
         name: 'Edit with words'
     });
+
+test('composed screens show actual component labels and top-left text after acceptance and reload', async ({
+    page
+}) => {
+    let sequence = 0;
+    const library = buildStarterTemplate('forms', () => `source-${++sequence}`);
+    const sourceIds = new Set(
+        Object.values(library.components).flatMap((component) => component.shapesIds)
+    );
+    const document = createDocument({
+        id: 'composition',
+        name: 'Composition',
+        components: library.components,
+        shapes: Object.fromEntries(
+            Object.entries(library.shapes).filter(([id]) => sourceIds.has(id))
+        ),
+        shapesIds: [...sourceIds],
+        variables: {
+            ink: { id: 'ink', name: 'Ink', type: 'color', values: { default: '#20242c' } },
+            surface: {
+                id: 'surface',
+                name: 'Surface',
+                type: 'color',
+                values: { default: '#ffffff' }
+            }
+        }
+    });
+    const button = Object.values(document.components).find(
+        (component) => component.interaction?.role === 'button'
+    )!;
+    const input = Object.values(document.components).find(
+        (component) => component.interaction?.role === 'input'
+    )!;
+    const collaboration = new Collaboration();
+    await collaboration.initialize({
+        getDocument: () => document,
+        applyRemoteChanges: () => {},
+        addMutationListener: () => () => {}
+    });
+    collaboration.open(document.id);
+    const update = Array.from(collaboration.state(document.id));
+    collaboration.dispose();
+    await page.route('**/api/auth/get-session', (route) => route.fulfill({ json: null }));
+    await page.goto('/login');
+    await page.evaluate(
+        async ({ update, id }) => {
+            localStorage.setItem('reactor:account', 'user-ada');
+            localStorage.setItem(
+                'reactor:view:user-ada',
+                JSON.stringify({ currentDocumentId: id })
+            );
+            localStorage.setItem(
+                'reactor:server:user-ada',
+                JSON.stringify({ unsent: [id], deleting: [] })
+            );
+            const opening = indexedDB.open('reactor-user-ada', 2);
+            opening.onupgradeneeded = () => {
+                const db = opening.result;
+                db.createObjectStore('documents', { keyPath: 'id' });
+                db.createObjectStore('updates', { autoIncrement: true }).createIndex(
+                    'documentId',
+                    'documentId'
+                );
+                db.createObjectStore('assets', { keyPath: 'hash' });
+            };
+            await new Promise<void>((resolve, reject) => {
+                opening.onerror = () => reject(opening.error);
+                opening.onsuccess = () => {
+                    const db = opening.result;
+                    const transaction = db.transaction(['documents', 'updates'], 'readwrite');
+                    transaction.objectStore('documents').put({ id });
+                    transaction
+                        .objectStore('updates')
+                        .add({ documentId: id, update: new Uint8Array(update) });
+                    transaction.oncomplete = () => {
+                        db.close();
+                        resolve();
+                    };
+                    transaction.onerror = () => reject(transaction.error);
+                };
+            });
+        },
+        { update, id: document.id }
+    );
+    await signInWithAi(page, () =>
+        lines(
+            { type: 'start', requestId: 'composition-request', model: 'test' },
+            {
+                type: 'operation',
+                operation: {
+                    op: 'composeScreen',
+                    key: 'screen',
+                    name: 'Contact',
+                    width: 480,
+                    height: 640,
+                    background: 'surface',
+                    padding: 32,
+                    gap: 24,
+                    content: [
+                        { kind: 'text', text: 'Contact us', fontSize: 28, color: 'ink' },
+                        {
+                            kind: 'input',
+                            componentId: input.id,
+                            label: 'Email',
+                            placeholder: 'you@example.com'
+                        },
+                        {
+                            kind: 'button',
+                            componentId: button.id,
+                            label: 'Send request',
+                            placeholder: ''
+                        }
+                    ]
+                }
+            },
+            { type: 'done' }
+        )
+    );
+    await openEditor(page);
+    await editWithWords(page).click();
+    const chat = page.getByRole('region', { name: 'AI chat', exact: true });
+    await chat.getByRole('textbox', { name: 'Change to make' }).fill('Create a contact screen');
+    await chat.getByRole('button', { name: 'Send' }).click();
+    await expect(chat.getByRole('region', { name: 'Proposal' })).toContainText('Send request');
+    await expect(page.locator('#screen-views > g')).toHaveCount(0);
+    await chat.getByRole('button', { name: 'Accept' }).click();
+    const views = page.locator('#screen-views > g');
+    await expect(views.getByText('Send request', { exact: true })).toBeVisible();
+    await expect(views.getByText('you@example.com', { exact: true })).toBeVisible();
+    await expect(views.getByText('Contact us', { exact: true })).toHaveCSS(
+        'fill',
+        'rgb(32, 36, 44)'
+    );
+    await expect(page.locator('#status-save')).toHaveText('Saved');
+    await page.reload();
+    await expect(views.getByText('Send request', { exact: true })).toBeVisible();
+    await expect(views.getByText('you@example.com', { exact: true })).toBeVisible();
+});
 
 test('a change described in words is proposed, then applied once accepted, as one undo step', async ({
     page
@@ -281,6 +422,63 @@ test('accepts AI screens and responsive views together, with correct artwork and
     await expect(views).toHaveCount(0);
     await page.keyboard.press('ControlOrMeta+Shift+z');
     await expect(views).toHaveCount(2);
+    await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.reload();
     await expect(page.locator('#screen-views > g')).toHaveCount(2);
+});
+
+test('a complete-screen tool produces visible artwork after acceptance, undo and reload', async ({
+    page
+}) => {
+    await signInWithAi(page, () =>
+        lines(
+            { type: 'start', requestId: 'composed-screen-request', model: 'test-model' },
+            {
+                type: 'operation',
+                operation: {
+                    op: 'addScreen',
+                    key: 'screen',
+                    screen: {
+                        name: 'Screenshot',
+                        position: { x: 0, y: 0 },
+                        size: { width: 480, height: 640 }
+                    },
+                    shapes: [
+                        {
+                            key: 'heading',
+                            shape: {
+                                type: 'text',
+                                position: { x: 32, y: 64 },
+                                value: 'Visible screenshot artwork',
+                                fontSize: 20
+                            }
+                        }
+                    ]
+                }
+            },
+            { type: 'done' }
+        )
+    );
+    await openEditor(page);
+    await editWithWords(page).click();
+    const chat = page.getByRole('region', { name: 'AI chat', exact: true });
+    await chat.getByRole('textbox', { name: 'Change to make' }).fill('Create this screen');
+    await chat.getByRole('button', { name: 'Send' }).click();
+    await expect(chat.getByRole('region', { name: 'Proposal' })).toContainText('Screenshot');
+    const views = page.locator('#screen-views > g');
+    await expect(views).toHaveCount(0);
+    await chat.getByRole('button', { name: 'Accept' }).click();
+    await expect(views).toHaveCount(1);
+    await expect(views.getByText('Visible screenshot artwork', { exact: true })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.locator('svg#surface').click({ position: { x: 50, y: 600 } });
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(views).toHaveCount(0);
+    await page.keyboard.press('ControlOrMeta+Shift+z');
+    await expect(views).toHaveCount(1);
+    await expect(page.locator('#status-save')).toHaveText('Saved');
+    await page.reload();
+    await expect(
+        page.locator('#screen-views > g').getByText('Visible screenshot artwork', { exact: true })
+    ).toBeVisible();
 });

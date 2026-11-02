@@ -1,10 +1,140 @@
 import { documentContext, MAX_CONTEXT_BYTES } from 'src/ai/context';
 import { createComponent, createDocument, createShape } from 'src/app/factories';
 import { fixtureDocument } from './harness';
+import { prototypeDocument } from '../support/prototype';
+import { describeComponentProp } from 'src/app/componentProps';
+import { responsiveDocument } from '../support/responsiveModes';
 
 const label = (value: string) => ({ type: 'text', position: { x: 0, y: 0 }, value });
 
 describe('AI document context', () => {
+    it('resolves width-selected modes independently of Theme for each selected Screen view', () => {
+        const document = responsiveDocument();
+        const mobile = documentContext({
+            ...document,
+            selectedShapesIds: [],
+            selectedFrameId: 'mobile'
+        });
+        const desktop = documentContext({
+            ...document,
+            selectedShapesIds: [],
+            selectedFrameId: 'desktop'
+        });
+
+        expect(mobile.variables.font.resolved).toMatchObject({
+            value: 14,
+            modeId: 'xs',
+            usesBaseValue: false
+        });
+        expect(mobile.variables.ink.resolved.value).toBe('#ddeeff');
+        expect(mobile.resolution.sources.media).toBe('Screen width · 360px');
+        expect(desktop.variables.font.resolved.value).toBe(20);
+        expect(desktop.variables.ink.resolved).toMatchObject({
+            value: '#112233',
+            modeId: 'light',
+            usesBaseValue: true
+        });
+    });
+
+    it('describes component property types, source defaults, role links and alternate dependencies', () => {
+        const document = fixtureDocument({ shapes: { title: label('Continue') } });
+        document.components.button = createComponent({
+            id: 'button',
+            name: 'Button',
+            shapesIds: ['title'],
+            props: [{ id: 'caption', label: 'Title: Text', shapeId: 'title', key: 'text' }],
+            interaction: { role: 'button', props: { label: 'caption' } },
+            variantIds: ['compact']
+        });
+        document.components.compact = createComponent({ id: 'compact', name: 'Compact' });
+        document.shapes.instance = createShape({
+            id: 'instance',
+            name: 'Button',
+            order: 'a1',
+            type: 'instance',
+            componentId: 'button',
+            position: { x: 0, y: 0 },
+            overrides: {}
+        });
+        document.shapesIds.push('instance');
+        document.selectedShapesIds = ['instance'];
+        const before = JSON.stringify(document);
+        const { components } = documentContext(document);
+
+        expect(components.button.props).toEqual([
+            describeComponentProp(document.components.button, 'caption', document)
+        ]);
+        expect(components.button.props[0]).toMatchObject({
+            id: 'caption',
+            type: 'text',
+            defaultValue: 'Continue',
+            key: 'text'
+        });
+        expect(components.button.interaction).toEqual({
+            role: 'button',
+            props: { label: 'caption' }
+        });
+        expect(components.button.role).toEqual({
+            role: 'button',
+            props: { label: 'Continue' },
+            problems: []
+        });
+        expect(components.compact.name).toBe('Compact');
+        expect(JSON.stringify(document)).toBe(before);
+    });
+
+    it('keeps authored alias values and describes resolution in the selected view', () => {
+        const document = prototypeDocument();
+        document.variables.palette = {
+            id: 'palette',
+            name: 'Palette',
+            type: 'color',
+            dimensionId: 'theme',
+            values: { default: '#ffffff', dark: '#111111' }
+        };
+        document.variables.surface = {
+            id: 'surface',
+            name: 'Surface',
+            type: 'color',
+            alias: 'palette',
+            values: { default: '#ff0000' }
+        };
+        const context = documentContext({
+            ...document,
+            selectedShapesIds: [],
+            selectedFrameId: 'view'
+        });
+
+        expect(context.resolution).toMatchObject({
+            scope: 'frame',
+            frameId: 'view',
+            modes: { theme: 'dark' }
+        });
+        expect(context.variables.surface).toMatchObject({
+            value: '#ff0000',
+            alias: 'palette',
+            resolved: {
+                value: '#111111',
+                definitionId: 'palette',
+                dimensionId: 'theme',
+                modeId: 'dark',
+                usesBaseValue: false,
+                problems: []
+            }
+        });
+        delete document.variables.palette.values.dark;
+        const fallback = documentContext({
+            ...document,
+            selectedShapesIds: [],
+            selectedFrameId: 'view'
+        });
+        expect(fallback.variables.surface.resolved).toMatchObject({
+            value: '#ffffff',
+            usesBaseValue: true
+        });
+        expect(document.variables.surface.values.default).toBe('#ff0000');
+    });
+
     it('sends the selection and its group, without unrelated shapes or variables', () => {
         const document = fixtureDocument({
             shapes: {

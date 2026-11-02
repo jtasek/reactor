@@ -1,5 +1,5 @@
 import type { OperationsCheck } from 'src/app/operations';
-import { readOperation, type ProposedOperation } from './operations';
+import { readOperations, type ProposedOperation } from './operations';
 
 /** What a person asks of the model: the task, their words, the document and an attached image. */
 export interface AiRequest {
@@ -59,6 +59,7 @@ interface Answer {
     model: string;
     readings: Array<{ operation: ProposedOperation } | { problem: string }>;
     messages: string[];
+    sourceIndices: number[];
 }
 
 async function* readLines(body: ReadableStream<Uint8Array>): AsyncGenerator<GatewayEvent> {
@@ -82,7 +83,9 @@ async function* readLines(body: ReadableStream<Uint8Array>): AsyncGenerator<Gate
 async function receive(
     response: Response,
     onEvent: (event: ProposalEvent) => void,
-    signal: AbortSignal
+    signal: AbortSignal,
+    reservedKeys: readonly string[],
+    context: object
 ): Promise<Answer> {
     if (!response.ok || !response.body) {
         const { code } = (await response.json().catch(() => ({}))) as { code?: string };
@@ -90,7 +93,15 @@ async function receive(
         throw new Refusal((code && PROBLEMS[code]) ?? FAILED);
     }
 
-    const answer: Answer = { requestId: '', model: '', readings: [], messages: [] };
+    const answer: Answer = {
+        requestId: '',
+        model: '',
+        readings: [],
+        messages: [],
+        sourceIndices: []
+    };
+    let sourceIndex = 0;
+    const keys = new Set(reservedKeys);
 
     for await (const event of readLines(response.body)) {
         signal.throwIfAborted();
@@ -100,17 +111,23 @@ async function receive(
                 answer.model = event.model;
                 break;
             case 'operation': {
-                const index = answer.readings.length;
+                const source = sourceIndex++;
 
                 try {
-                    const operation = readOperation(event.operation);
-
-                    answer.readings.push({ operation });
-                    onEvent({ type: 'operation', operation });
+                    const operations = readOperations(event.operation, keys, context);
+                    operations.forEach((operation) => {
+                        if ('key' in operation) {
+                            keys.add(operation.key);
+                        }
+                        answer.readings.push({ operation });
+                        answer.sourceIndices.push(source);
+                        onEvent({ type: 'operation', operation });
+                    });
                 } catch (error) {
                     const message = error instanceof Error ? error.message : String(error);
 
-                    answer.readings.push({ problem: `Operation ${index + 1}: ${message}` });
+                    answer.readings.push({ problem: `Operation ${source + 1}: ${message}` });
+                    answer.sourceIndices.push(source);
                 }
                 break;
             }
@@ -130,7 +147,7 @@ async function receive(
 
 /** The answer's operations if each was read and they apply together, else the first problem. */
 function examine(
-    { readings }: Answer,
+    { readings, sourceIndices }: Answer,
     check: (operations: ProposedOperation[]) => OperationsCheck
 ): OperationsCheck & { operations: ProposedOperation[] } {
     const operations = readings.flatMap((reading) =>
@@ -140,10 +157,27 @@ function examine(
     const reading = readings[unread];
 
     if (reading && 'problem' in reading) {
-        return { valid: false, operation: unread, problem: reading.problem, operations };
+        return {
+            valid: false,
+            operation: sourceIndices[unread],
+            problem: reading.problem,
+            operations
+        };
     }
 
-    return { ...check(operations), operations };
+    const checked = check(operations);
+    if (checked.valid || checked.operation === undefined) {
+        return { ...checked, operations };
+    }
+    // One composed tool call expands to many operations: name the call the model made.
+    const source = sourceIndices[checked.operation];
+
+    return {
+        ...checked,
+        operation: source,
+        problem: checked.problem.replace(/^Operation \d+:/, `Operation ${source + 1}:`),
+        operations
+    };
 }
 
 /** The proposal an answer makes, or why it makes none, as when the model only answered in words. */
@@ -160,6 +194,32 @@ function conclude(
         : { kind: 'failed', problem: checked.problem };
 }
 
+/** Catch detached artwork in screenshot-created screens without changing general operation rules. */
+function checkScreenshotArtwork(operations: ProposedOperation[]): OperationsCheck {
+    const screen = operations.find(
+        (operation) => operation.op === 'addFrame' && operation.frame.kind === 'screen'
+    );
+    if (!screen || screen.op !== 'addFrame') {
+        return { valid: true };
+    }
+    const added = operations.findIndex((operation) => operation.op === 'addShape');
+    const hasParent = operations.some(
+        (operation) =>
+            (operation.op === 'addShape' && Boolean(operation.shape.parentFrameId)) ||
+            (operation.op === 'updateShape' && typeof operation.changes.parentFrameId === 'string')
+    );
+    // Empty screens and Canvas-only edits remain valid. Never silently reparent artwork.
+    if (added < 0 || hasParent) {
+        return { valid: true };
+    }
+
+    return {
+        valid: false,
+        operation: added,
+        problem: `The new screenshot screen is blank: all added artwork is on Canvas. Set shape.parentFrameId to the screen key "${screen.key}" (or its child layout/frame) in every addShape call for that screen, including instances. Do not use the Screen view key. Return the complete corrected batch.`
+    };
+}
+
 /**
  * Asks the model for a change to a document and checks the operations it
  * proposes with `check`. When they would not apply, the problem goes back to the
@@ -171,6 +231,7 @@ export async function propose({
     documentId,
     request,
     check,
+    reservedKeys = [],
     signal,
     onEvent = () => {}
 }: {
@@ -178,12 +239,28 @@ export async function propose({
     documentId: string;
     request: AiRequest;
     check: (operations: ProposedOperation[]) => OperationsCheck;
+    /** Complete local IDs, including records omitted from the bounded model context. */
+    reservedKeys?: readonly string[];
     signal: AbortSignal;
     onEvent?: (event: ProposalEvent) => void;
 }): Promise<ProposalResult> {
+    const checkProposal = (operations: ProposedOperation[]): OperationsCheck => {
+        const checked = check(operations);
+        if (!checked.valid || !request.image) {
+            return checked;
+        }
+
+        return checkScreenshotArtwork(operations);
+    };
     const ask = async (path: string, body: object) => {
         signal.throwIfAborted();
-        const answer = await receive(await send(path, body, signal), onEvent, signal);
+        const answer = await receive(
+            await send(path, body, signal),
+            onEvent,
+            signal,
+            reservedKeys,
+            request.context
+        );
 
         signal.throwIfAborted();
 
@@ -192,7 +269,7 @@ export async function propose({
 
     try {
         const first = await ask(`/documents/${encodeURIComponent(documentId)}/requests`, request);
-        const firstCheck = examine(first, check);
+        const firstCheck = examine(first, checkProposal);
 
         signal.throwIfAborted();
         if (firstCheck.valid || first.readings.length === 0) {
@@ -208,7 +285,7 @@ export async function propose({
             problem
         });
 
-        const repairedCheck = examine(repaired, check);
+        const repairedCheck = examine(repaired, checkProposal);
 
         signal.throwIfAborted();
 

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { operations as screenOperations } from './cases/create-responsive-screen/case';
 import { propose, type ProposalEvent } from 'src/ai/client';
 import { DOCUMENT_ID, createCopies, sharedContent, shownDocument } from '../support/collaboration';
@@ -96,7 +97,11 @@ describe.each(PROVIDERS)('proposals from $provider', (each) => {
     /** Asks for a change of an empty document, the model answering with `rounds`. */
     async function ask(
         rounds: StreamEvent[][],
-        { holdAfter, cancel }: { holdAfter?: number; cancel?: AbortController } = {}
+        {
+            holdAfter,
+            cancel,
+            screenshot
+        }: { holdAfter?: number; cancel?: AbortController; screenshot?: boolean } = {}
     ) {
         const replayed = replay(rounds, { holdAfter, provider });
         const [copy] = await createCopies(1);
@@ -109,7 +114,23 @@ describe.each(PROVIDERS)('proposals from $provider', (each) => {
         const result = await propose({
             send: harness.send,
             documentId: await harness.createServerDocument(),
-            request: { task: 'edit', prompt: 'Add a box', context: {} },
+            request: {
+                task: 'edit',
+                prompt: screenshot ? 'Recreate this screenshot as a screen' : 'Add a box',
+                context: {},
+                ...(screenshot
+                    ? {
+                          image: {
+                              data: readFileSync(
+                                  new URL(
+                                      './cases/color-from-screenshot/screenshot.png',
+                                      import.meta.url
+                                  )
+                              ).toString('base64')
+                          }
+                      }
+                    : {})
+            },
             check: (operations) =>
                 copy.store.actions.checkOperations({ documentId: DOCUMENT_ID, operations }),
             signal: controller.signal,
@@ -142,6 +163,44 @@ describe.each(PROVIDERS)('proposals from $provider', (each) => {
         expect(each.secondResult(replayed.sent[1])).toEqual(each.failedSecond);
     });
 
+    it('compiles a composed screenshot through the provider and repairs clipping once', async () => {
+        const input = {
+            key: 'screen',
+            name: 'Greeting',
+            width: 320,
+            height: 480,
+            background: '#ffffff',
+            controls: [],
+            rectangles: [],
+            texts: [{ text: 'Welcome', x: 24, y: 24, width: 272, fontSize: 28, color: '#20242c' }]
+        };
+        const { result, replayed } = await ask(
+            [
+                stream({
+                    calls: [
+                        {
+                            name: 'composeScreen',
+                            input: { ...input, texts: [{ ...input.texts[0], y: 479 }] }
+                        }
+                    ]
+                }),
+                stream({ calls: [{ name: 'composeScreen', input }] })
+            ],
+            { screenshot: true }
+        );
+
+        expect(result).toMatchObject({
+            kind: 'proposed',
+            operations: [
+                { op: 'addFrame', frame: { kind: 'screen', name: 'Greeting' } },
+                { op: 'addShape', shape: { type: 'rectangle', fill: '#ffffff' } },
+                { op: 'addShape', shape: { type: 'text', value: 'Welcome', wrapWidth: 272 } }
+            ]
+        });
+        expect(JSON.stringify(replayed.sent[1].body)).toContain('extends outside the screen');
+        expect(JSON.stringify(replayed.sent[0].body)).toContain('composeScreen');
+    });
+
     it('repairs an invalid responsive target before offering the complete screen proposal', async () => {
         const calls = screenOperations.map(({ op, ...input }) => ({ name: op, input }));
         const broken = {
@@ -169,6 +228,76 @@ describe.each(PROVIDERS)('proposals from $provider', (each) => {
             ])
         });
         expect(events.some((event) => event.type === 'repairing')).toBe(true);
+    });
+
+    it('repairs screenshot membership through the gateway without changing the document', async () => {
+        const screen = {
+            name: 'addFrame',
+            input: {
+                key: 'screen',
+                frame: {
+                    kind: 'screen',
+                    name: 'Screenshot',
+                    position: { x: 0, y: 0 },
+                    size: { width: 480, height: 640 }
+                }
+            }
+        };
+        const attached = {
+            ...label,
+            input: { ...label.input, shape: { ...label.input.shape, parentFrameId: 'screen' } }
+        };
+        const { result, replayed, events } = await ask(
+            [stream({ calls: [screen, label] }), stream({ calls: [screen, attached] })],
+            { screenshot: true }
+        );
+        expect(result).toMatchObject({
+            kind: 'proposed',
+            operations: expect.arrayContaining([
+                expect.objectContaining({
+                    shape: expect.objectContaining({ parentFrameId: 'screen' })
+                })
+            ])
+        });
+        expect(replayed.sent).toHaveLength(2);
+        expect(JSON.stringify(replayed.sent[1].body)).toContain('shape.parentFrameId');
+        expect(events.filter((event) => event.type === 'repairing')).toHaveLength(1);
+    });
+
+    it('repairs a composed screen using the original tool-call index', async () => {
+        const compose = (bindings: object) => ({
+            name: 'addScreen',
+            input: {
+                key: 'screen',
+                screen: {
+                    name: 'Screenshot',
+                    position: { x: 0, y: 0 },
+                    size: { width: 480, height: 640 }
+                },
+                shapes: [{ key: 'heading', shape: { ...label.input.shape, bindings } }]
+            }
+        });
+        const { result, replayed } = await ask(
+            [
+                stream({ calls: [compose({ fontColor: 'missing' })] }),
+                stream({ calls: [compose({})] })
+            ],
+            { screenshot: true }
+        );
+        expect(result).toMatchObject({
+            kind: 'proposed',
+            operations: [
+                expect.objectContaining({ op: 'addFrame' }),
+                expect.objectContaining({
+                    op: 'addShape',
+                    shape: expect.objectContaining({ parentFrameId: 'screen' })
+                })
+            ]
+        });
+        expect(replayed.sent).toHaveLength(2);
+        const reply = JSON.stringify(replayed.sent[1].body);
+        expect(reply).toContain('missing');
+        expect(reply).toContain(provider === 'openai' ? 'Error:' : '"is_error":true');
     });
 
     it('gives up after one repair, with the problem', async () => {

@@ -469,12 +469,79 @@ is too large, nothing is sent: select fewer items or shorten their text. Context
 whole rather than being silently truncated. These are transport limits, not a count of any
 provider's tokens; the gateway still accounts for provider-reported token use.
 
+For single-column screenshot recreation, the AI can call `composeScreen` with ordered text and
+labeled controls, padding, gaps and an optional bottom footer. Reactor measures wrapped text
+and calculates vertical positions rather than asking the model to guess baselines. This is
+one-time authoring layout; the resulting shapes remain ordinary editable artwork. Controls reuse the supplied
+components and resolve their public label/placeholder property IDs. Each control declares
+Button or Input; a unique matching library component can be selected without an ID, while
+ambiguous libraries require an explicit choice. An ID with the wrong role is rejected.
+Color variable IDs produce
+bindings, as do exact, unambiguous palette matches. Ambiguous matches require an explicit ID.
+Overlapping text/controls and content outside the screen are rejected through the existing repair
+flow. The positioned composition reader remains compatible; other drawing tools support
+multi-column and decorative artwork. These checks do not establish screenshot fidelity.
+
+The client expands the composition into ordinary frame/shape operations, assigns ownership from
+the explicit screen container and validates the whole batch before offering Accept. No document
+changes occur during generation. The lower-level `addScreen` and individual operations remain
+compatible. Entirely detached artwork in legacy screenshot proposals is sent through
+the existing single repair; ordinary Canvas edits and intentionally empty screens stay supported.
+
 AI proposals can also create shared screens, equal Screen views and alternate screen layouts,
 and edit existing frames or width-based layout rules. Shapes belong to a screen or layout,
 never to a view. Explicit view choices and independent theme modes stay unchanged unless
 requested. A selected frame or Screen view sends its source artwork and frame dependencies;
 shape selections include their owning frames. All operations are checked together before Accept,
 including rule ownership, distinct width thresholds, locked records and reference validity.
+
+### Screenshot-generation evaluation
+
+`pnpm ai:screenshots:prepare` renders 30 reproducible references through Reactor's SVG
+export and Chromium: all 12 starter-template screens, 12 alternate-palette versions and
+six heading-copy variants. These are correlated synthetic designs, not 30 independent
+real-world examples. No production documents are used. The model sees only the screenshot,
+the template's reusable controls and five color variables, never the target screen graph.
+
+`pnpm ai:screenshots:eval` uses the configured provider through the real gateway, validation,
+one repair, proposal acceptance, collaboration and undo. For example, with an image-capable
+model available in LM Studio:
+
+```sh
+AI_PROVIDER=openai \
+AI_BASE_URL=http://127.0.0.1:1234/v1 \
+AI_EDIT_MODEL=qwen3-vl-8b-instruct \
+AI_SCREENSHOT_OUTPUT=test-results/qwen-screenshots-run-1 \
+pnpm ai:screenshots:eval
+```
+
+Set `AI_SCREENSHOT_OUTPUT` to a fresh directory for every preparation or live run. The default
+is `test-results/ai-screenshots`; existing reports are never overwritten. The local endpoint
+needs no API key unless configured to require one. Model availability does not establish
+image/tool support: the live run measures the actual installed model. Keep normal gateway
+timeouts and run serially; do not run other heavy workloads during latency measurements.
+
+The output includes `index.html` with reference/generated PNG pairs, source SVGs, supplied
+context and prompts, proposals, raw provider events, per-case diagnostics, timings and provider-reported usage.
+`report.json` updates after every case; `complete: false` means the run is partial. In preparation
+mode, `kind: prepared` is not a model-quality result. Ordinary tests never call the model.
+
+Automated diagnostics check one 480×640 screen/view, unchanged library artwork, matched
+control labels, button/input roles and input hints reusing supplied component IDs (70% per screen), and authored colors within
+CIE76 ΔE 2 of a supplied palette color using its variable binding. These are structural
+checks, not pixel similarity or proof of visual fidelity. The run fails if any case fails its
+automated checks; the report retains failures instead of retrying until a passing sample.
+Completion p95 is measured against the roadmap's 20-second target separately from the
+five-second editing target used by `ai:eval`.
+
+Two independent people must fill in `ratings.json` after comparing the image pairs. A
+**usable start** preserves the main hierarchy, visible content and control layout, with no
+major omissions, overlaps or clipping, and can be refined without rebuilding the screen.
+Record concrete defects in notes. A missing generated image is not a usable start. At least
+24 of the 30 cases must receive a positive rating from both reviewers for the 80% target;
+missing ratings are unreviewed, never passes. The generated report leaves human quality
+unrated; do not infer it from automated pass rates. Broader screenshot quality needs a
+separate, independently sourced reference set.
 
 ### AI evaluations
 

@@ -1,5 +1,5 @@
 import { prototypeDocument } from '../support/prototype';
-import { readOperation } from 'src/ai/operations';
+import { readOperation, readOperations } from 'src/ai/operations';
 import { describeOperation } from 'src/ai/describe';
 import { documentContext } from 'src/ai/context';
 import {
@@ -12,6 +12,7 @@ import {
 import { screenLayoutsDocument } from '../support/screenLayouts';
 import { operations } from './cases/create-responsive-screen/case';
 import { TOOLS } from '../../server/aiTasks';
+import { authoringKeys } from 'src/app/screenAuthoring';
 
 it('validates without writing, then accepts screens and views as one collaborative undo step', async () => {
     const copies = await createCopies(2);
@@ -393,4 +394,191 @@ it('rejects duplicate alternate-layout names within a screen, including two new 
     expect(check([layout('unique', 'Wide')]).valid).toBe(true);
     expect(sharedContent(copy)).toEqual(before);
     copy.collaboration.dispose();
+});
+
+it('exposes shape ownership and bindings directly to compatible tool templates', () => {
+    expect(TOOLS.find((tool) => tool.name === 'addShape')).toMatchObject({
+        parameters: {
+            properties: {
+                shape: {
+                    type: 'object',
+                    properties: {
+                        parentFrameId: { type: 'string' },
+                        bindings: { type: 'object' },
+                        componentId: { type: 'string' },
+                        type: { enum: expect.arrayContaining(['text', 'instance', 'rectangle']) }
+                    }
+                }
+            }
+        }
+    });
+});
+
+it('expands complete-screen artwork into the existing atomic operation batch', async () => {
+    const [copy, peer] = await createCopies(2);
+    const operations = readOperations({
+        op: 'addScreen',
+        key: 'screen',
+        screen: { name: 'Screenshot', position: { x: 0, y: 0 }, size: { width: 480, height: 640 } },
+        shapes: [
+            { key: 'heading', shape: { type: 'text', position: { x: 32, y: 64 }, value: 'Hello' } }
+        ]
+    });
+    expect(copy.store.actions.checkOperations({ documentId: DOCUMENT_ID, operations })).toEqual({
+        valid: true
+    });
+    expect(Object.values(shownDocument(copy).frames)).toHaveLength(0);
+    expect(
+        copy.store.actions.applyOperations({
+            documentId: DOCUMENT_ID,
+            operations,
+            by: { kind: 'ai', model: 'test', requestId: 'screen-test' }
+        })
+    ).toMatchObject({ applied: true });
+    settle([copy, peer]);
+    const document = shownDocument(copy);
+    const screen = Object.values(document.frames).find((frame) => frame.kind === 'screen')!;
+    expect(Object.values(document.shapes).some((shape) => shape.parentFrameId === screen.id)).toBe(
+        true
+    );
+    expect(Object.values(shownDocument(peer).frames)).toHaveLength(2);
+    copy.collaboration.undo(DOCUMENT_ID);
+    settle([copy, peer]);
+    expect(Object.values(shownDocument(copy).frames)).toHaveLength(0);
+    expect(Object.values(shownDocument(peer).shapes)).toHaveLength(0);
+    [copy, peer].forEach(({ collaboration }) => collaboration.dispose());
+});
+
+it.each(
+    [
+        [],
+        [
+            {
+                key: 'heading',
+                shape: {
+                    type: 'text',
+                    position: { x: 0, y: 0 },
+                    value: 'Hello',
+                    parentFrameId: 'other'
+                }
+            }
+        ],
+        [{ key: 'heading', shape: { type: 'text', value: 'No position' } }]
+    ].map((shapes) => ({ shapes }))
+)('rejects incomplete or conflicting screen artwork before it can be proposed', ({ shapes }) => {
+    expect(() =>
+        readOperations({
+            op: 'addScreen',
+            key: 'screen',
+            screen: {
+                name: 'Screenshot',
+                position: { x: 0, y: 0 },
+                size: { width: 480, height: 640 }
+            },
+            shapes
+        })
+    ).toThrow();
+});
+
+it('requires geometry in the screenshot authoring schema', () => {
+    expect(TOOLS.find((tool) => tool.name === 'addScreen')).toMatchObject({
+        parameters: {
+            properties: {
+                shapes: {
+                    minItems: 1,
+                    items: { properties: { shape: { required: ['type', 'position'] } } }
+                }
+            }
+        }
+    });
+});
+
+it('scopes artwork names without rewriting persistent component, property or variable references', async () => {
+    const copies = await createCopies(2, (store) => {
+        const fixture = prototypeDocument();
+        fixture.frames.details.definitionOnly = true;
+        store.actions.addDocument({ ...fixture, id: DOCUMENT_ID });
+    });
+    const [copy, peer] = copies;
+    const document = shownDocument(copy);
+    const before = sharedContent(copy);
+    const component = Object.values(document.components)[0];
+    const prop = component.props![0];
+    const sourceId = component.shapesIds[0];
+    const screen = (key: string) => ({
+        op: 'addScreen',
+        key,
+        screen: { name: key, position: { x: 0, y: 0 }, size: { width: 480, height: 640 } },
+        shapes: [
+            {
+                key: sourceId,
+                shape: {
+                    type: 'instance',
+                    position: { x: 24, y: 24 },
+                    componentId: component.id,
+                    overrides: { [prop.id]: 'New label' }
+                }
+            },
+            {
+                key: 'background',
+                shape: {
+                    type: 'rectangle',
+                    position: { x: 0, y: 0 },
+                    size: { width: 480, height: 640 },
+                    bindings: { fill: 'ink' }
+                }
+            }
+        ]
+    });
+    const reserved = [
+        ...authoringKeys(document),
+        `artwork:${JSON.stringify(['new-screen', sourceId])}`
+    ];
+    const first = readOperations(screen('new-screen'), reserved);
+    const second = readOperations(screen('other-screen'), reserved);
+    const operations = [...first, ...second];
+    expect(first[1]).toMatchObject({
+        key: `artwork:${JSON.stringify(['new-screen', sourceId])}:2`,
+        shape: {
+            componentId: component.id,
+            overrides: { [prop.id]: 'New label' },
+            parentFrameId: 'new-screen'
+        }
+    });
+    expect(first[2]).toMatchObject({ shape: { bindings: { fill: 'ink' } } });
+    expect(copy.store.actions.checkOperations({ documentId: DOCUMENT_ID, operations })).toEqual({
+        valid: true
+    });
+    expect(sharedContent(copy)).toEqual(before);
+    expect(
+        copy.store.actions.applyOperations({
+            documentId: DOCUMENT_ID,
+            operations,
+            by: { kind: 'person' }
+        }).applied
+    ).toBe(true);
+    settle(copies);
+    expect(sharedContent(copy)).toEqual(sharedContent(peer));
+    copy.collaboration.undo(DOCUMENT_ID);
+    settle(copies);
+    expect(sharedContent(copy)).toEqual(before);
+    copies.forEach(({ collaboration }) => collaboration.dispose());
+});
+
+it('rejects repeated local artwork keys and keeps ordinary addShape keys unchanged', () => {
+    const shape = { type: 'text', position: { x: 0, y: 0 }, value: 'Hello' };
+    expect(() =>
+        readOperations({
+            op: 'addScreen',
+            key: 'screen',
+            screen: { name: 'Home', position: { x: 0, y: 0 }, size: { width: 480, height: 640 } },
+            shapes: [
+                { key: 'title', shape },
+                { key: 'title', shape }
+            ]
+        })
+    ).toThrow(/repeated within this screen/);
+    expect(readOperations({ op: 'addShape', key: 'title', shape })[0]).toMatchObject({
+        key: 'title'
+    });
 });

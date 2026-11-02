@@ -1,6 +1,6 @@
 import {
-    INSTRUCTIONS,
-    TOOLS,
+    instructionsFor,
+    toolsFor,
     callOperation,
     documentText,
     readEvents,
@@ -52,12 +52,6 @@ interface StreamEvent {
     usage?: ProviderUsage;
     error?: { type?: string; message?: string };
 }
-
-const TOOL_DEFINITIONS = TOOLS.map(({ name, description, parameters }) => ({
-    name,
-    description,
-    input_schema: parameters
-}));
 
 /** The first message: the document, cached for a repair, any image, then the words. */
 const firstMessage = (request: AiRequest) => ({
@@ -152,11 +146,17 @@ export function anthropicProvider({
                         max_tokens: taskMaxTokens(task),
                         stream: true,
                         output_config: { effort: TASKS[task].effort },
-                        tools: TOOL_DEFINITIONS,
+                        tools: toolsFor(conversation.request).map(
+                            ({ name, description, parameters }) => ({
+                                name,
+                                description,
+                                input_schema: parameters
+                            })
+                        ),
                         system: [
                             {
                                 type: 'text',
-                                text: INSTRUCTIONS,
+                                text: instructionsFor(conversation.request),
                                 cache_control: { type: 'ephemeral' }
                             }
                         ],
