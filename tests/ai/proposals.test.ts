@@ -201,6 +201,31 @@ describe.each(PROVIDERS)('proposals from $provider', (each) => {
         expect(JSON.stringify(replayed.sent[0].body)).toContain('composeScreen');
     });
 
+    it.each([
+        label,
+        {
+            name: 'addFrame',
+            input: {
+                key: 'empty',
+                frame: {
+                    kind: 'screen',
+                    name: 'Empty',
+                    position: { x: 0, y: 0 },
+                    size: { width: 320, height: 480 }
+                }
+            }
+        }
+    ])('does not accept incomplete screen repairs: %j', async (repair) => {
+        const { result } = await ask([
+            stream({ calls: [{ name: 'composeScreen', input: { key: 'screen' } }] }),
+            stream({ calls: [repair] })
+        ]);
+        expect(result).toMatchObject({
+            kind: 'failed',
+            problem: expect.stringContaining('abandoned the requested screen')
+        });
+    });
+
     it('repairs an invalid responsive target before offering the complete screen proposal', async () => {
         const calls = screenOperations.map(({ op, ...input }) => ({ name: op, input }));
         const broken = {

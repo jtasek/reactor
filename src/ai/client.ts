@@ -60,6 +60,7 @@ interface Answer {
     readings: Array<{ operation: ProposedOperation } | { problem: string }>;
     messages: string[];
     sourceIndices: number[];
+    composed: boolean;
 }
 
 async function* readLines(body: ReadableStream<Uint8Array>): AsyncGenerator<GatewayEvent> {
@@ -98,7 +99,8 @@ async function receive(
         model: '',
         readings: [],
         messages: [],
-        sourceIndices: []
+        sourceIndices: [],
+        composed: false
     };
     let sourceIndex = 0;
     const keys = new Set(reservedKeys);
@@ -112,6 +114,14 @@ async function receive(
                 break;
             case 'operation': {
                 const source = sourceIndex++;
+                if (
+                    event.operation &&
+                    typeof event.operation === 'object' &&
+                    'op' in event.operation &&
+                    event.operation.op === 'composeScreen'
+                ) {
+                    answer.composed = true;
+                }
 
                 try {
                     const operations = readOperations(event.operation, keys, context);
@@ -285,7 +295,30 @@ export async function propose({
             problem
         });
 
-        const repairedCheck = examine(repaired, checkProposal);
+        const repairedCheck = examine(repaired, (operations) => {
+            const hasArtwork = operations.some(
+                (operation) =>
+                    (operation.op === 'addShape' && Boolean(operation.shape.parentFrameId)) ||
+                    (operation.op === 'updateShape' &&
+                        typeof operation.changes.parentFrameId === 'string')
+            );
+            if (
+                first.composed &&
+                (!hasArtwork ||
+                    !operations.some(
+                        (operation) =>
+                            operation.op === 'addFrame' && operation.frame.kind === 'screen'
+                    ))
+            ) {
+                return {
+                    valid: false,
+                    problem:
+                        'The repair abandoned the requested screen. Return the complete screen and its content, not an unrelated edit.'
+                };
+            }
+
+            return checkProposal(operations);
+        });
 
         signal.throwIfAborted();
 

@@ -225,3 +225,62 @@ run retained at `/tmp/reactor-qwen-composition-final-20261102/`. The persistent 
 `reactor-ai-composition-comparison/index.html` in this chat's visualizations directory. It
 contains all 30 reference/previous/current comparisons, raw responses, source snapshots,
 metrics, text diagnostics, representative comparison images and the unfilled rating sheet.
+
+
+## Reliability follow-up — 2026-11-02
+
+All 30 cases passed on the first attempt in one serial local `qwen3-vl-8b-instruct` run
+(11.8 minutes). All four prior failures passed: `list-detail-1-original`,
+`sign-in-2-original`, `list-detail-1-palette` and `list-detail-1-copy`. Reference PNGs,
+user prompts and context are unchanged; the suite hash remains
+`e8334141013021b232c9cdad732cf4b48da66673db8027fb0a81c953ab59aa9b`.
+The changed tool schemas and repair instructions are captured separately in source snapshots.
+
+Provider schemas now distinguish buttons from inputs. For an unambiguous role, the model
+supplies its label/hint without selecting an opaque component ID; ambiguous choices retain
+role-specific ID enums. The compiler still validates explicit IDs. Matching dedicated footer
+text is removed from column content before layout, so it renders once. Repairs receive the
+problem in the continuation message as well as tool results, and a failed composition cannot
+be replaced by an unrelated edit or an empty frame. Existing ordinary empty-frame operations
+remain supported.
+
+The benchmark now rejects unexpected repeated authored screen text. This is a stricter gate:
+rescoring archived outputs changes the previous 26/30 to **13/30**, because 13 previously
+passing screens duplicated their footer. The new result is **30/30 under the stricter gate**.
+The targeted five-case diagnostic run passed too and is excluded from the full-run totals.
+
+| Measurement | Previous composition run | Reliability run |
+| --- | --- | --- |
+| First-attempt valid | 24/30 | 30/30 |
+| Valid after at most one repair | 29/30 | 30/30 |
+| Nonblank exported screens | 28/30 | 30/30 |
+| Passing with repeated-text check | 13/30 (rescored) | 30/30 |
+| Correct controls in accepted outputs | 46/50 | 52/52 |
+| Outputs with duplicated footers | 13 | 0 |
+| Unbound matching palette fields | 0 | 0 |
+| First operation p50 | 23.54 s | 22.22 s |
+| Completion p95 | 51.31 s | 34.45 s |
+
+All 30 accepted batches preserved the library, changed nothing before acceptance, converged
+through collaboration and undid as one batch. The live suite exited successfully. Usage was
+192,675 input and 8,837 output tokens; no repairs were needed in this complete run.
+
+Assistant inspection included the previously failing project list, its palette variant,
+email-confirmation screen, and form/confirmation outputs. Buttons now show both navigation
+labels instead of an input placeholder; dedicated footers are not duplicated. Some captions
+are still placed in the content column, and margins/font sizes differ from the references.
+The separate exported-text diagnostic improved from 178/195 to 193/195 exact matches; the
+remaining two differences are footer punctuation substitutions. It does not measure pixels,
+contrast, geometry or typography. Human ratings remain unfilled, the 20-second p95 target is
+still unmet, and these correlated template cases do not establish general screenshot fidelity.
+
+Verification: 1,923 unit/server tests, all 11 AI browser tests, type-checking, production build
+and lint baseline gate passed. Regression cases cover duplicate-footer layout, distinct role
+schemas, unrelated/empty repair rejection through both adapters, and the repeated-text check.
+
+Artifacts: `test-results/ai-screenshots-qwen-reliability-2026-11-02/`, also retained at
+`/tmp/reactor-qwen-reliability-final-20261102/`. The persistent gallery is
+`reactor-ai-reliability-comparison/index.html` in this chat's visualizations directory. It
+includes reference/previous/current screenshots, raw responses, source provenance, the
+rescored baseline, text diagnostics and unfilled human rating sheets. The model's sampling,
+quantization and hardware settings were not captured; timings are single-run observations.

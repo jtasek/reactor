@@ -182,7 +182,7 @@ export function repairReply({ calls }: Answer, { operation, problem }: Problem) 
 
     return {
         results: calls.map(({ id }, index) => ({ id, ...result(index) })),
-        text: operation === undefined ? `${problem}\n${REPAIR}` : REPAIR
+        text: `${problem}\n${REPAIR}`
     };
 }
 
@@ -721,8 +721,75 @@ export const TOOLS = [
 ];
 
 /** Keep all editing operations; avoid two overlapping complete-screen schemas in image requests. */
+function componentChoices(context: object, role: string) {
+    const components: unknown = Reflect.get(context, 'components');
+    if (!components || typeof components !== 'object') {
+        return [];
+    }
+
+    return Object.entries(components).flatMap(([id, component]) => {
+        const interaction: unknown =
+            component && typeof component === 'object'
+                ? Reflect.get(component, 'interaction')
+                : undefined;
+
+        return interaction &&
+            typeof interaction === 'object' &&
+            Reflect.get(interaction, 'role') === role
+            ? [id]
+            : [];
+    });
+}
+
 export const toolsFor = (request: AiRequest) =>
-    request.image ? TOOLS.filter((tool) => tool.name !== 'addScreen') : TOOLS;
+    TOOLS.filter((tool) => !request.image || tool.name !== 'addScreen').map((tool) => {
+        if (tool.name !== 'composeScreen') {
+            return tool;
+        }
+        const content = tool.parameters.properties.content!;
+        const [text, control] = content.items.anyOf;
+        const controls = ['button', 'input'].map((role) => {
+            const choices = componentChoices(request.context, role);
+            const { componentId, ...properties } = control.properties;
+
+            return {
+                ...control,
+                description:
+                    role === 'button'
+                        ? 'Clickable action or navigation with visible text. Not a text-entry field.'
+                        : 'Text-entry field with a visible hint or value. Not a clickable action.',
+                properties: {
+                    ...properties,
+                    kind: { type: 'string', enum: [role] },
+                    ...(choices.length === 1
+                        ? {}
+                        : {
+                              componentId: {
+                                  ...componentId,
+                                  ...(choices.length ? { enum: choices } : {})
+                              }
+                          })
+                },
+                required: [
+                    'kind',
+                    'label',
+                    ...(role === 'input' ? ['placeholder'] : []),
+                    ...(choices.length === 1 ? [] : ['componentId'])
+                ]
+            };
+        });
+
+        return {
+            ...tool,
+            parameters: {
+                ...tool.parameters,
+                properties: {
+                    ...tool.parameters.properties,
+                    content: { ...content, items: { anyOf: [text, ...controls] } }
+                }
+            }
+        };
+    });
 
 /** A tool call as the gateway streams it: an operation named after its tool. */
 export const callOperation = ({ name, input }: ToolCall) => ({ ...input, op: name });

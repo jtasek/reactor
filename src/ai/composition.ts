@@ -154,7 +154,11 @@ export function readScreenComposition(
                     kind: item.kind,
                     componentId,
                     label: string(item.label, 'control label'),
-                    placeholder: string(item.placeholder, 'placeholder (empty for buttons)', true),
+                    placeholder: string(
+                        item.placeholder ?? (item.kind === 'button' ? '' : undefined),
+                        'placeholder (empty for buttons)',
+                        true
+                    ),
                     ...spacing
                 };
             }),

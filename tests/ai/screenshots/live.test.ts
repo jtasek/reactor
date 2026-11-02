@@ -27,6 +27,7 @@ import {
     isolatedDocument,
     screenshotReferences,
     reusedControls,
+    repeatedScreenText,
     unboundPaletteColors
 } from './references';
 
@@ -331,6 +332,17 @@ describe.skipIf(!PREPARE && !LIVE)('template screenshot benchmark', () => {
                 const generated = Object.values(document.shapes).filter(
                     (shape) => !reference.seed.shapes[shape.id]
                 );
+                const repeated = repeatedScreenText(
+                    generated,
+                    Object.values(reference.target.shapes).filter(
+                        (shape) =>
+                            shape.parentFrameId ===
+                            reference.target.frames[reference.viewId].screenId
+                    )
+                );
+                if (repeated.length) {
+                    sample.problems.push(`Repeated screen text: ${repeated.join('; ')}`);
+                }
                 if (!generated.some((shape) => shape.parentFrameId)) {
                     sample.problems.push('No generated artwork belongs to the screen.');
                 }
