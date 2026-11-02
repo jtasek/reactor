@@ -184,3 +184,50 @@ it('maps a failing expanded screen operation back to its single source tool call
     expect(send.mock.calls[1][1]).toEqual({ operation: 0, problem: 'Fix the label' });
     expect(result.kind).toBe('proposed');
 });
+
+it('numbers problems by the tool call the model made, not by expanded operations', async () => {
+    const screenTool = {
+        op: 'addScreen',
+        key: 'screen',
+        screen: screen.frame,
+        shapes: [
+            { key: 'one', shape: operation.shape },
+            { key: 'two', shape: operation.shape }
+        ]
+    };
+    const send = vi.fn<Send>(async () => answerWith([screenTool, operation, { op: 'nope' }]));
+    const check = vi.fn(() => ({ valid: true as const }));
+    await propose({
+        send,
+        documentId: 'document',
+        request: { task: 'edit', prompt: 'Create screen', context: {} },
+        check,
+        signal: new AbortController().signal
+    });
+    // Three calls expand to five readings; the unreadable one is the third call.
+    expect(send.mock.calls[1][1]).toMatchObject({
+        operation: 2,
+        problem: expect.stringMatching(/^Operation 3: /)
+    });
+
+    const checked = vi
+        .fn()
+        .mockReturnValueOnce({
+            valid: false,
+            operation: 3,
+            problem: 'Operation 4: the key label is taken.'
+        })
+        .mockReturnValueOnce({ valid: true });
+    const repaired = vi.fn<Send>(async () => answerWith([screenTool, operation]));
+    await propose({
+        send: repaired,
+        documentId: 'document',
+        request: { task: 'edit', prompt: 'Create screen', context: {} },
+        check: checked,
+        signal: new AbortController().signal
+    });
+    expect(repaired.mock.calls[1][1]).toEqual({
+        operation: 1,
+        problem: 'Operation 2: the key label is taken.'
+    });
+});

@@ -287,7 +287,7 @@ re-renders.** Components never mutate state directly.
   compatible. Column controls declare button/input roles; an omitted component ID resolves
   only when that role has one candidate. Explicit IDs must match the role. The pure
   `screenComposition.ts` compiler maps role links to exposed property IDs, binds explicit color
-  IDs and unambiguous exact palette matches, and converts top-left text placement using the
+  IDs and unambiguous exact palette matches (an alias wins over the variable it points at), and converts top-left text placement using the
   existing text measurement. Content outside the screen or overlapping text/controls is rejected
   through the existing single repair; lower-level operations still support deliberate overlaps.
   Image requests use concise shared instructions and omit the redundant `addScreen` schema;

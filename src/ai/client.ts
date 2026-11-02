@@ -111,7 +111,6 @@ async function receive(
                 answer.model = event.model;
                 break;
             case 'operation': {
-                const index = answer.readings.length;
                 const source = sourceIndex++;
 
                 try {
@@ -127,7 +126,7 @@ async function receive(
                 } catch (error) {
                     const message = error instanceof Error ? error.message : String(error);
 
-                    answer.readings.push({ problem: `Operation ${index + 1}: ${message}` });
+                    answer.readings.push({ problem: `Operation ${source + 1}: ${message}` });
                     answer.sourceIndices.push(source);
                 }
                 break;
@@ -148,7 +147,7 @@ async function receive(
 
 /** The answer's operations if each was read and they apply together, else the first problem. */
 function examine(
-    { readings }: Answer,
+    { readings, sourceIndices }: Answer,
     check: (operations: ProposedOperation[]) => OperationsCheck
 ): OperationsCheck & { operations: ProposedOperation[] } {
     const operations = readings.flatMap((reading) =>
@@ -158,10 +157,27 @@ function examine(
     const reading = readings[unread];
 
     if (reading && 'problem' in reading) {
-        return { valid: false, operation: unread, problem: reading.problem, operations };
+        return {
+            valid: false,
+            operation: sourceIndices[unread],
+            problem: reading.problem,
+            operations
+        };
     }
 
-    return { ...check(operations), operations };
+    const checked = check(operations);
+    if (checked.valid || checked.operation === undefined) {
+        return { ...checked, operations };
+    }
+    // One composed tool call expands to many operations: name the call the model made.
+    const source = sourceIndices[checked.operation];
+
+    return {
+        ...checked,
+        operation: source,
+        problem: checked.problem.replace(/^Operation \d+:/, `Operation ${source + 1}:`),
+        operations
+    };
 }
 
 /** The proposal an answer makes, or why it makes none, as when the model only answered in words. */
@@ -265,7 +281,7 @@ export async function propose({
         onEvent({ type: 'repairing', problem });
 
         const repaired = await ask(`/requests/${encodeURIComponent(first.requestId)}/repairs`, {
-            operation: operation === undefined ? undefined : first.sourceIndices[operation],
+            operation,
             problem
         });
 

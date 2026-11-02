@@ -46,7 +46,8 @@ function libraryFrom(context: unknown): CompositionLibrary {
                 id,
                 {
                     type: string(variable.type, 'variable type'),
-                    value: resolved.value as PropertyValue
+                    value: resolved.value as PropertyValue,
+                    ...(typeof variable.alias === 'string' ? { alias: variable.alias } : {})
                 }
             ];
         })
@@ -131,6 +132,11 @@ export function readScreenComposition(
                 const candidates = Object.keys(library.components).filter(
                     (id) => library.components[id].role === item.kind
                 );
+                if (!candidates.length) {
+                    throw new Error(
+                        `The library has no ${item.kind} component. Draw this ${item.kind} with addShape rectangles and text instead of composeScreen.`
+                    );
+                }
                 const componentId =
                     item.componentId === undefined && candidates.length === 1
                         ? candidates[0]

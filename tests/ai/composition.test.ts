@@ -294,3 +294,45 @@ it('chooses an unambiguous role and rejects a component with the wrong control r
     };
     expect(() => readOperations({ ...column(), content }, [], ambiguous)).toThrow(/component ID/);
 });
+
+it('binds a palette color to the alias rather than the primitive it points at', () => {
+    const document = seed();
+    document.variables.brand = {
+        id: 'brand',
+        name: 'Brand ink',
+        type: 'color',
+        values: { default: '#000000' },
+        alias: 'ink'
+    };
+    document.variables.text = {
+        id: 'text',
+        name: 'Text',
+        type: 'color',
+        values: { default: '#000000' },
+        alias: 'brand'
+    };
+    const context = documentContext({ ...document, selectedShapesIds: [] });
+    const operations = readOperations(composition(), [], context);
+    const title = operations.find((op) => op.op === 'addShape' && op.shape.type === 'text');
+    expect(title).toMatchObject({ shape: { bindings: { fontColor: 'text' } } });
+
+    // Two aliases of one primitive are still a choice for the model.
+    document.variables.heading = { ...document.variables.text, id: 'heading', name: 'Heading' };
+    const twoAliases = documentContext({ ...document, selectedShapesIds: [] });
+    expect(() => readOperations(composition(), [], twoAliases)).toThrow(/Several variables/);
+});
+
+it('says when the library has no component for a control role', () => {
+    const context = documentContext({ ...seed(), selectedShapesIds: [] });
+    const withoutInputs = {
+        ...context,
+        components: { action: context.components.action }
+    };
+    expect(() =>
+        readOperations(
+            { ...column(), content: [{ kind: 'input', label: 'Email', placeholder: '' }] },
+            [],
+            withoutInputs
+        )
+    ).toThrow('The library has no input component.');
+});

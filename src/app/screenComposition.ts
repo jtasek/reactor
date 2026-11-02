@@ -5,7 +5,7 @@ import { screenOperations } from './screenAuthoring';
 import { escapeTemplate } from './variables';
 
 export interface CompositionLibrary {
-    variables: Record<string, { type: string; value: PropertyValue }>;
+    variables: Record<string, { type: string; value: PropertyValue; alias?: string }>;
     components: Record<
         string,
         {
@@ -67,11 +67,14 @@ function color(value: string, field: string, library: CompositionLibrary) {
     if (!/^#[\da-f]{6}$/i.test(value)) {
         throw new Error(`${value} must be a color variable ID or #rrggbb.`);
     }
-    const matches = Object.entries(library.variables).filter(
+    const exact = Object.entries(library.variables).filter(
         ([, variable]) =>
             variable.type === 'color' &&
             String(variable.value).toLowerCase() === value.toLowerCase()
     );
+    // A semantic alias and the primitive it points at show the same color: prefer the alias.
+    const aliased = new Set(exact.flatMap(([, variable]) => variable.alias ?? []));
+    const matches = exact.filter(([id]) => !aliased.has(id));
     if (matches.length > 1) {
         throw new Error(
             `Several variables match ${value}; specify the intended color variable ID.`
