@@ -275,13 +275,19 @@ re-renders.** Components never mutate state directly.
   controller stay local in `src/ai/chat.ts`, surviving panel docking but cleared on close;
   keys stay in the chat only while it has focus. `documentContext` sends the selection with
   its group, variable and component dependencies, or the document without a selection,
-  bounded to 32 KiB of UTF-8 JSON and 300 records before sending. Eval cases are folders of
+  bounded to 32 KiB of UTF-8 JSON and 300 records before sending. Frame/view selections include
+  source artwork and frame dependencies; frames and dimensions count toward that bound.
+  AI `addFrame`/`updateFrame` tools use the same validated operations for screens, equal views
+  and responsive layout rules. A new screen's rules may point forward to layouts in its batch;
+  updates use earlier layout keys or existing IDs. New invalid rule targets and repeated thresholds
+  are refused before acceptance; unchanged stale references remain for diagnostics and explicit
+  view choices remain unchanged unless edited. Eval cases are folders of
   `tests/ai/cases/`: a fixture document with IDs of its own, a prompt, an optional image,
   checks of the document after
   applying, and a provider's recorded events for each provider (`recordings/anthropic.json`,
   `recordings/openai.json`), which the tests replay through that provider's adapter, the server
   and the editor's code; `pnpm ai:record` asks the provider `AI_PROVIDER` and the rest configure
-  and records its answers. Forty cases run for each adapter offline; cases without a provider
+  and records its answers. Forty-one cases run for each adapter offline; cases without a provider
   recording use explicit hand-authored `reference` rounds, never counted as live quality.
   `pnpm ai:eval` runs the configured provider without changing recordings and writes
   `test-results/ai-eval.json` with validity, semantic checks, latency, usage and optional cost

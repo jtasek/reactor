@@ -993,8 +993,13 @@ adapters to the shared screen/context projection alongside the standalone Protot
   Prototype runs local input and navigation only: no data submission, email or authentication
   is implied. Dimensions and modes remain opt-in. Persistence, independent IDs and playable
   journeys are covered by `starterTemplates` unit and browser tests.
-- AI: create screens, views and responsive rules through the same validated operations and
-  acceptance UI. Screenshot-generation targets remain: 80% of 30 screenshots rated a usable
+- **AI screen/layout operations (complete).** Provider-neutral `addFrame` and `updateFrame`
+  tools create screens, equal Screen views and alternate layouts, attach artwork and author
+  width-based layout rules. Selected frames/views provide bounded source context. Proposals
+  remain unapplied until Accept; validation rejects invalid ownership, references and thresholds,
+  and acceptance stays one collaborative undo step. Explicit layouts and Theme stay independent.
+  Offline reference evaluation covers both adapters; browser coverage checks acceptance, resolved
+  artwork, undo/redo and reload. Screenshot-generation targets remain: 80% of 30 screenshots rated a usable
   start by two reviewers; 70% component reuse when suitable definitions exist; colors within
   ΔE 2 bound to matching variables; completion within 20 s at p95. Measure these, do not infer
   quality from deterministic replay tests.

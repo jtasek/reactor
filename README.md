@@ -464,23 +464,30 @@ chat. Stop cancels a request, and New chat clears the local conversation. With a
 selection, it sends only those shapes, their groups, and the variables and component
 sources they use. Without a selection it uses the document and its design system. Each
 message uses the current context, which the chat shows above its composer. Context is
-limited to 32 KiB of UTF-8 JSON and 300 records, including component-source shapes. If it
+limited to 32 KiB of UTF-8 JSON and 300 records, including frames, dimensions and component-source shapes. If it
 is too large, nothing is sent: select fewer items or shorten their text. Context stays
 whole rather than being silently truncated. These are transport limits, not a count of any
 provider's tokens; the gateway still accounts for provider-reported token use.
 
+AI proposals can also create shared screens, equal Screen views and alternate screen layouts,
+and edit existing frames or width-based layout rules. Shapes belong to a screen or layout,
+never to a view. Explicit view choices and independent theme modes stay unchanged unless
+requested. A selected frame or Screen view sends its source artwork and frame dependencies;
+shape selections include their owning frames. All operations are checked together before Accept,
+including rule ownership, distinct width thresholds, locked records and reference validity.
+
 ### AI evaluations
 
-`pnpm test tests/ai/cases.test.ts` runs forty edit cases through both provider adapters,
+`pnpm test tests/ai/cases.test.ts` runs forty-one edit cases through both provider adapters,
 the real gateway and two collaborating editor copies. It checks the requested result,
 no changes before acceptance, sharing after acceptance and one-step undo. Separate proposal
 tests check cancellation, refusals, malformed replies and the one-repair limit.
-The original six cases use saved event fixtures; the other thirty-four have explicitly
+The original six cases use saved event fixtures; the other thirty-five have explicitly
 hand-authored `reference` rounds in their `case.ts`. These exercise the protocol and editor,
 not model quality. A provider recording, when present, takes precedence over a reference.
 
 With the provider environment above configured, `pnpm ai:eval` makes live calls on the
-forty fixtures without replacing recordings. It writes `test-results/ai-eval.json`, including
+forty-one fixtures without replacing recordings. It writes `test-results/ai-eval.json`, including
 per-case diagnostics, first-try and after-repair validity, semantic pass rate, first-operation
 p50 and completion p95, and provider-reported tokens across both attempts. These timings
 include the local gateway and validation, exclude test setup, and preserve provider streaming.

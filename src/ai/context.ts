@@ -1,4 +1,4 @@
-import type { Document, Shape } from 'src/app/types';
+import type { Document, Shape, Frame } from 'src/app/types';
 import { readEntity } from 'src/app/services/documentStorage';
 import { inDrawingOrder } from 'src/app/drawOrder';
 import { TEMPLATE_PART, templateVariable } from 'src/app/variableResolver';
@@ -40,14 +40,39 @@ interface ComponentContext {
 
 /**
  * The selection, its groups and dependencies, in drawing order. With no
- * selection, a small document and its design system remain available. Nothing
- * is silently truncated: oversized context is refused before sending it.
+ * selection, a small document and its design system remain available; a selected
+ * frame keeps the design system too. Nothing is silently truncated: oversized
+ * context is refused before sending it.
  */
 export function documentContext(document: Document) {
     const selection = [...document.selectedShapesIds];
     const selected = new Set(selection);
-    const whole = selection.length === 0;
+    const selectedFrame = document.frames[document.selectedFrameId ?? ''];
+    const whole = selection.length === 0 && !selectedFrame;
+    const frameSelection = new Set<string>();
+
+    if (selectedFrame) {
+        const root = selectedFrame.screenId ?? selectedFrame.id;
+        frameSelection.add(root);
+        // Iterate to a fixed point; malformed/cyclic remote ancestry cannot recurse forever.
+        for (let previous = -1; previous !== frameSelection.size; ) {
+            previous = frameSelection.size;
+            Object.values(document.frames).forEach((frame) => {
+                if (frameSelection.has(frame.parentFrameId ?? '')) {
+                    frameSelection.add(frame.id);
+                }
+            });
+        }
+    }
     const shapeIds = new Set(whole ? document.shapesIds : selection);
+    Object.values(document.shapes).forEach((shape) => {
+        if (frameSelection.has(shape.parentFrameId ?? '')) {
+            shapeIds.add(shape.id);
+            selected.add(shape.id);
+        }
+    });
+    const frames = new Map<string, Omit<Frame, 'id'>>();
+    const dimensionIds = new Set<string>();
     const groups = new Map<string, { name: string; shapes: string[] }>();
     const variables = new Map<
         string,
@@ -102,12 +127,53 @@ export function documentContext(document: Document) {
                 : {}),
             ...(variable.alias === undefined ? {} : { alias: variable.alias })
         });
-        if (variable.alias !== undefined) addVariable(variable.alias);
+        if (variable.alias !== undefined) {
+            addVariable(variable.alias);
+        }
         if (variable.type === 'text') {
             Object.values(variable.values).forEach(followTemplate);
         }
     };
+    const addFrame = (id: string): void => {
+        const frame = document.frames[id];
+
+        if (!Object.hasOwn(document.frames, id) || frames.has(id)) {
+            return;
+        }
+        reserve();
+        const { id: frameId, ...fields } = readEntity('frames', frame);
+        frames.set(frameId, fields);
+        Object.values(frame.bindings ?? {}).forEach(addVariable);
+        Object.keys(frame.modeOverrides ?? {}).forEach((id) => dimensionIds.add(id));
+        [
+            frame.parentFrameId,
+            frame.screenId,
+            frame.layoutId,
+            ...Object.values(frame.responsiveLayouts ?? {}).map((rule) => rule.layoutId)
+        ].forEach((reference) => {
+            if (reference) {
+                addFrame(reference);
+            }
+        });
+    };
+    if (whole) {
+        Object.keys(document.frames).forEach(addFrame);
+    }
+    frameSelection.forEach(addFrame);
+    if (selectedFrame) {
+        addFrame(selectedFrame.id);
+        // Other placements of the same screen, so new views can sit beside them.
+        Object.values(document.frames).forEach((frame) => {
+            if (frame.kind === 'view' && frameSelection.has(frame.screenId ?? '')) {
+                addFrame(frame.id);
+            }
+        });
+    }
+
     const followShape = (shape: Shape) => {
+        if (shape.parentFrameId) {
+            addFrame(shape.parentFrameId);
+        }
         Object.values(shape.bindings ?? {}).forEach(addVariable);
         if (shape.type === 'text' && shape.template !== undefined) {
             followTemplate(shape.template);
@@ -180,20 +246,32 @@ export function documentContext(document: Document) {
             })
     );
 
-    if (whole) {
+    // A selected frame is often where new work starts, so it keeps the design system.
+    if (whole || selectedFrame) {
         Object.keys(document.variables).forEach(addVariable);
         Object.keys(document.components).forEach(addComponent);
     }
     const context = {
         selection,
+        ...(selectedFrame ? { selectedFrameId: selectedFrame.id } : {}),
+        frames: Object.fromEntries(frames),
         shapes,
         groups: Object.fromEntries(groups),
         variables: Object.fromEntries(variables),
         dimensions: Object.fromEntries(
-            Object.entries(document.dimensions).filter(
-                ([id]) =>
-                    whole || [...variables.values()].some((variable) => variable.dimensionId === id)
-            )
+            Object.entries(document.dimensions)
+                .filter(
+                    ([id]) =>
+                        whole ||
+                        selectedFrame !== undefined ||
+                        dimensionIds.has(id) ||
+                        [...variables.values()].some((variable) => variable.dimensionId === id)
+                )
+                .map((entry) => {
+                    reserve();
+
+                    return entry;
+                })
         ),
         components: Object.fromEntries(components)
     };

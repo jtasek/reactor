@@ -3,6 +3,7 @@ import { chatFor } from 'src/ai/chat';
 import { ContextTooLarge, documentContext } from 'src/ai/context';
 import { describeOperation } from 'src/ai/describe';
 import { useActions, useCurrentDocument, useSelectedShapesIds } from 'src/app/hooks';
+import { useSelectedFrameId } from 'src/app/frameHooks';
 import styles from './styles.css';
 
 const SCROLL_BOTTOM_REACH_PX = 32;
@@ -12,6 +13,7 @@ const MAX_PROMPT_LENGTH = 2000;
 export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
     const document = useCurrentDocument();
     const selected = useSelectedShapesIds();
+    const selectedFrameId = useSelectedFrameId();
     const { applyOperations, checkOperations, closeAiEdit } = useActions();
     const chat = chatFor(documentId);
     const { draft, turns, problem } = useSyncExternalStore(chat.subscribe, chat.getSnapshot);
@@ -152,7 +154,11 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
                                 <ol className={styles.operations}>
                                     {turn.operations.map((operation, index) => (
                                         <li key={index}>
-                                            {describeOperation(operation, document)}
+                                            {describeOperation(
+                                                operation,
+                                                document,
+                                                turn.operations
+                                            )}
                                         </li>
                                     ))}
                                 </ol>
@@ -200,9 +206,11 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
                 }}
             >
                 <p className={styles.status}>
-                    {selected.length > 0
-                        ? 'Using selected items, their groups and the variables and components they use.'
-                        : 'Using this document. Select items first to share a smaller part.'}
+                    {selectedFrameId
+                        ? 'Using the selected frame or Screen view, its screen’s artwork and views, and the document’s variables and components.'
+                        : selected.length > 0
+                          ? 'Using selected items, their groups, owning frames and the variables and components they use.'
+                          : 'Using this document. Select items first to share a smaller part.'}
                 </p>
                 {problem && (
                     <p className={styles.problem} role="alert">
