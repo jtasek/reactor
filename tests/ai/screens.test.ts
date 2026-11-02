@@ -104,9 +104,90 @@ it('provides selected-view source artwork and rule dependencies without unrelate
     copy.store.actions.editFrame({ kind: 'select', id: 'mobile' });
     const context = documentContext(document);
     expect(context.selectedFrameId).toBe('mobile');
-    expect(Object.keys(context.frames).sort()).toEqual(['compact', 'home', 'mobile']);
+    // The screen's other view comes along, so a new view can be placed beside it.
+    expect(Object.keys(context.frames).sort()).toEqual(['compact', 'desktop', 'home', 'mobile']);
     expect(Object.keys(context.shapes).sort()).toEqual(['body', 'compact-body']);
     expect(context.frames.mobile.screenId).toBe('home');
+});
+
+it('keeps the design system available with a frame selected, but not with shapes selected', () => {
+    const document = {
+        ...screenLayoutsDocument(),
+        variables: {
+            primary: {
+                id: 'primary',
+                name: 'Primary',
+                type: 'color',
+                values: { default: '#3366ff' }
+            }
+        }
+    } as ReturnType<typeof screenLayoutsDocument>;
+
+    expect(
+        documentContext({ ...document, selectedShapesIds: [], selectedFrameId: 'desktop' })
+            .variables
+    ).toHaveProperty('primary');
+    expect(
+        documentContext({ ...document, selectedShapesIds: ['body'], selectedFrameId: undefined })
+            .variables
+    ).toEqual({});
+});
+
+it('names records added earlier in the same proposal instead of showing their keys', () => {
+    const document = screenLayoutsDocument();
+    const batch = [
+        {
+            op: 'addFrame',
+            key: 'shop',
+            frame: {
+                kind: 'screen',
+                name: 'Shop',
+                position: { x: 0, y: 900 },
+                size: { width: 300, height: 300 },
+                responsiveLayouts: { wide: { minWidth: 600, layoutId: 'shop-wide' } }
+            }
+        },
+        {
+            op: 'addFrame',
+            key: 'shop-wide',
+            frame: {
+                kind: 'frame',
+                screenLayout: true,
+                parentFrameId: 'shop',
+                name: 'Wide',
+                position: { x: 0, y: 1300 },
+                size: { width: 700, height: 300 }
+            }
+        },
+        {
+            op: 'addFrame',
+            key: 'tablet',
+            frame: {
+                kind: 'view',
+                screenId: 'shop',
+                name: 'Tablet',
+                position: { x: 400, y: 900 },
+                size: { width: 700, height: 300 }
+            }
+        },
+        {
+            op: 'addShape',
+            key: 'title',
+            shape: {
+                type: 'text',
+                value: 'Hi',
+                parentFrameId: 'shop',
+                position: { x: 24, y: 924 }
+            }
+        }
+    ].map(readOperation);
+    const lines = batch.map((operation) => describeOperation(operation, document, batch));
+
+    expect(lines[0]).toContain('600px → “Wide”');
+    expect(lines[1]).toContain('Add screen layout “Wide” (700 × 300) for “Shop”');
+    expect(lines[2]).toContain('Add Screen view “Tablet” (700 × 300) for “Shop”');
+    expect(lines[3]).toBe('Add text in “Shop”: “Hi”');
+    expect(describeOperation(batch[3], document)).toBe('Add text in “shop”: “Hi”');
 });
 
 it('describes frame identity and responsive changes and exposes both tools to providers', () => {

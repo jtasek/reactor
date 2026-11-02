@@ -40,8 +40,9 @@ interface ComponentContext {
 
 /**
  * The selection, its groups and dependencies, in drawing order. With no
- * selection, a small document and its design system remain available. Nothing
- * is silently truncated: oversized context is refused before sending it.
+ * selection, a small document and its design system remain available; a selected
+ * frame keeps the design system too. Nothing is silently truncated: oversized
+ * context is refused before sending it.
  */
 export function documentContext(document: Document) {
     const selection = [...document.selectedShapesIds];
@@ -161,6 +162,12 @@ export function documentContext(document: Document) {
     frameSelection.forEach(addFrame);
     if (selectedFrame) {
         addFrame(selectedFrame.id);
+        // Other placements of the same screen, so new views can sit beside them.
+        Object.values(document.frames).forEach((frame) => {
+            if (frame.kind === 'view' && frameSelection.has(frame.screenId ?? '')) {
+                addFrame(frame.id);
+            }
+        });
     }
 
     const followShape = (shape: Shape) => {
@@ -239,7 +246,8 @@ export function documentContext(document: Document) {
             })
     );
 
-    if (whole) {
+    // A selected frame is often where new work starts, so it keeps the design system.
+    if (whole || selectedFrame) {
         Object.keys(document.variables).forEach(addVariable);
         Object.keys(document.components).forEach(addComponent);
     }
@@ -255,6 +263,7 @@ export function documentContext(document: Document) {
                 .filter(
                     ([id]) =>
                         whole ||
+                        selectedFrame !== undefined ||
                         dimensionIds.has(id) ||
                         [...variables.values()].some((variable) => variable.dimensionId === id)
                 )
