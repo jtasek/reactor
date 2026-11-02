@@ -1,8 +1,12 @@
 import type { Application, Document, InstanceShape, Shape } from '../types';
-import { componentPropValue, componentOverrideValue, exposableProperties } from '../componentProps';
+import {
+    componentPropValue,
+    componentOverrideValue,
+    describeComponentProp,
+    exposableProperties
+} from '../componentProps';
 import { instanceComponentId } from '../componentSource';
 import { editorHelpers, editorLoaded } from '../editorHelpers';
-import { SHAPE_PROPERTIES } from '../properties';
 import {
     componentAlternateProblems,
     componentDefaultProblems,
@@ -111,9 +115,9 @@ export function instanceProperties(document: Document, projected: Record<string,
               (selected[0].variantMode === 'auto' ? '__auto' : component.id))
             : '',
         rows: (component.props ?? []).flatMap((prop) => {
-            const property = SHAPE_PROPERTIES.find((item) => item.key === prop.key);
+            const description = describeComponentProp(component, prop.id, document);
 
-            if (!property) {
+            if (!description) {
                 return [];
             }
             const values = selected.map((shape) =>
@@ -126,20 +130,14 @@ export function instanceProperties(document: Document, projected: Record<string,
             );
             const bindings = selected.map((shape) => shape.overrides[prop.id]);
             const binding = bindings[0];
-            const shapeName =
-                (component.sourceShapes?.[prop.shapeId] ?? document.shapes[prop.shapeId])?.name ??
-                'Shape';
-            const prefix = `${shapeName}: `;
 
             return [
                 {
                     prop: { id: prop.id, label: prop.label },
                     shapeId: prop.shapeId,
-                    shapeName,
-                    fieldLabel: prop.label.startsWith(prefix)
-                        ? prop.label.slice(prefix.length)
-                        : prop.label,
-                    kind: property.kind,
+                    shapeName: description.shapeName,
+                    fieldLabel: description.fieldLabel,
+                    kind: description.type,
                     value: values[0],
                     mixed: values.some((value) => value !== values[0]),
                     overridden: selected.some((shape) => prop.id in shape.overrides),

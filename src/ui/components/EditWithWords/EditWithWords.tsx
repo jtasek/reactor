@@ -4,6 +4,7 @@ import { ContextTooLarge, documentContext } from 'src/ai/context';
 import { describeOperation } from 'src/ai/describe';
 import { useActions, useCurrentDocument, useSelectedShapesIds } from 'src/app/hooks';
 import { useSelectedFrameId } from 'src/app/frameHooks';
+import { authoringKeys } from 'src/app/screenAuthoring';
 import styles from './styles.css';
 
 const SCROLL_BOTTOM_REACH_PX = 32;
@@ -86,6 +87,7 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
         followsBottom.current = true;
         void chat.send({
             context,
+            reservedKeys: authoringKeys(document),
             check: (operations) => checkOperations({ documentId, operations })
         });
     };

@@ -79,9 +79,11 @@ export class Chat {
     async send({
         context,
         check,
+        reservedKeys,
         send
     }: {
         context: object;
+        reservedKeys?: readonly string[];
         check: (operations: ProposedOperation[]) => OperationsCheck;
         send?: Send;
     }) {
@@ -113,6 +115,7 @@ export class Chat {
             documentId: this.documentId,
             request: { task: 'edit', prompt, context },
             check,
+            reservedKeys,
             signal: controller.signal,
             onEvent: (event) =>
                 this.update(id, (turn) => {

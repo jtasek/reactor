@@ -94,7 +94,9 @@ function measure(value: string, fontSize: number, width?: number) {
  * Measures a text in its resolved context. Metrics depend only on the resolved text,
  * font size and width, so placements in many views share one entry.
  */
-export function measureContextualText(shape: Text, availableWidth?: number): Text {
+export function measureContextualText<
+    T extends Pick<Text, 'value' | 'fontSize' | 'wrapWidth' | 'position'>
+>(shape: T, availableWidth?: number): T & Required<Pick<Text, 'textLayout' | 'bounds'>> {
     const fontSize = shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE;
     const width = shape.wrapWidth
         ? Math.max(1, Math.min(shape.wrapWidth, availableWidth ?? shape.wrapWidth))

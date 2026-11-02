@@ -277,7 +277,29 @@ re-renders.** Components never mutate state directly.
   its group, variable and component dependencies, or the document without a selection,
   bounded to 32 KiB of UTF-8 JSON and 300 records before sending. Frame/view selections include
   source artwork and frame dependencies; frames and dimensions count toward that bound.
-  AI `addFrame`/`updateFrame` tools use the same validated operations for screens, equal views
+  AI context uses `describeComponentProp` (also used by the Inspector) for typed source defaults,
+  role links and variant dependencies. Variables retain authored values alongside `describeVariable`
+  resolution and its mode provenance. A selected view resolves its inherited modes; shape selections
+  describe source context, and whole/multiple selections use document defaults, not local simulation.
+  AI `composeScreen` takes ordered text and labeled controls, padding, gaps and an optional
+  bottom footer. `columnComposition.ts` measures wrapped text and computes one-time column
+  positions; it does not introduce a durable stack or template. The positioned reader remains
+  compatible. Column controls declare button/input roles; an omitted component ID resolves
+  only when that role has one candidate. Explicit IDs must match the role. The pure
+  `screenComposition.ts` compiler maps role links to exposed property IDs, binds explicit color
+  IDs and unambiguous exact palette matches, and converts top-left text placement using the
+  existing text measurement. Content outside the screen or overlapping text/controls is rejected
+  through the existing single repair; lower-level operations still support deliberate overlaps.
+  Image requests use concise shared instructions and omit the redundant `addScreen` schema;
+  both adapters retain the other editing tools. Legacy `addScreen` payloads remain readable.
+  No target screenshot graph or template lookup enters composition. Acceptance, undo and sync
+  still use the existing operation batch. AI `addScreen` groups a screen and its artwork in one call; `readOperations` expands it into
+  ordinary frame/shape operations with explicit ownership before validation. `screenAuthoring.ts`
+  scopes artwork keys within their screen and allocates around existing local IDs; the screen key
+  remains public to the batch. Chat supplies the full local key inventory without sending it to
+  the provider. Persistent component/property/variable references are never remapped. Repair indices map
+  expanded operations back to the original provider call. Legacy screenshot proposals with new
+  screens and entirely detached added artwork use the same single repair. AI `addFrame`/`updateFrame` tools use the same validated operations for screens, equal views
   and responsive layout rules. A new screen's rules may point forward to layouts in its batch;
   updates use earlier layout keys or existing IDs. New invalid rule targets and repeated thresholds
   are refused before acceptance; unchanged stale references remain for diagnostics and explicit

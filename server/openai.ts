@@ -1,6 +1,6 @@
 import {
-    INSTRUCTIONS,
-    TOOLS,
+    instructionsFor,
+    toolsFor,
     callOperation,
     documentText,
     readEvents,
@@ -40,8 +40,6 @@ interface StreamedCall {
     arguments: string;
 }
 
-const TOOL_DEFINITIONS = TOOLS.map((tool) => ({ type: 'function', function: tool }));
-
 const firstMessage = (request: AiRequest) => ({
     role: 'user',
     content: [
@@ -62,7 +60,7 @@ const firstMessage = (request: AiRequest) => ({
 
 /** Each refused answer as the model gave it, a tool message for each of its calls, then what to do. */
 const messages = ({ request, repairs }: Conversation) => [
-    { role: 'system', content: INSTRUCTIONS },
+    { role: 'system', content: instructionsFor(request) },
     firstMessage(request),
     ...repairs.flatMap(({ answer, problem }) => {
         const { results, text } = repairReply(answer, problem);
@@ -125,7 +123,10 @@ export function openAiProvider({
                         model: models[conversation.request.task],
                         stream: true,
                         stream_options: { include_usage: true },
-                        tools: TOOL_DEFINITIONS,
+                        tools: toolsFor(conversation.request).map((tool) => ({
+                            type: 'function',
+                            function: tool
+                        })),
                         tool_choice: 'auto',
                         messages: messages(conversation)
                     }),
