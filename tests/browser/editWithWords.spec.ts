@@ -587,6 +587,8 @@ test('command line opens an unsent AI draft without making a request', async ({ 
         'Make a welcome screen'
     );
     expect(requests).toHaveLength(0);
+    await expect(input).toHaveCount(0);
+    await page.getByRole('checkbox', { name: 'Command Line', exact: true }).check();
     await input.fill('Another idea');
     await page.getByRole('button', { name: 'Ask AI', exact: true }).click();
     await expect(input).toHaveValue('Another idea');

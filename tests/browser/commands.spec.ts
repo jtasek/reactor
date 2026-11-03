@@ -328,7 +328,7 @@ test('command line creates with guided parameters, preserves errors and supports
     await input.press('ArrowDown');
     await input.press('Enter');
     await form.getByRole('textbox', { name: 'width', exact: true }).fill('200');
-    await form.getByRole('button', { name: 'Run', exact: true }).click();
+    await form.getByRole('button', { name: 'Create rectangle', exact: false }).click();
     await expect(shapes(page)).toHaveCount(1);
     await expect(shapes(page).first().locator('rect')).toHaveAttribute('width', '200');
     await page.locator('svg#surface').click({ position: { x: 600, y: 600 } });
@@ -345,7 +345,7 @@ test('command line creates with guided parameters, preserves errors and supports
     await input.press('Enter');
     await page.screenshot({ path: testInfo.outputPath('command-line.png') });
     await page.setViewportSize({ width: 390, height: 800 });
-    await expect(form.getByRole('button', { name: 'Run', exact: true })).toBeVisible();
+    await expect(form.getByRole('button', { name: 'Create text', exact: false })).toBeVisible();
     const bounds = (await form.boundingBox())!;
     expect(bounds.x).toBeGreaterThanOrEqual(0);
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
@@ -375,11 +375,13 @@ test('command line accepts property aliases and rejects conflicting spellings', 
     await expect(shapes(page)).toHaveCount(3);
 });
 
-test('command line closes on one Escape when no suggestion is shown', async ({ page }) => {
+test('Escape returns from a typed edit to search, then closes the palette', async ({ page }) => {
     await openEditor(page, ['Command Line']);
     const input = page.getByRole('combobox', { name: 'Command' });
     await input.fill('rectangle w=80');
     await expect(page.getByRole('listbox', { name: 'Commands' })).toHaveCount(0);
+    await input.press('Escape');
+    await expect(input).toHaveValue('');
     await input.press('Escape');
     await expect(input).toHaveCount(0);
 });
@@ -400,7 +402,7 @@ test('Escape in a guided parameter returns to the command field', async ({ page 
     await expect(form.getByRole('status')).toHaveText('radius needs a value.');
     await radius.press('Escape');
     await expect(input).toBeFocused();
-    await expect(page.getByRole('listbox', { name: 'Commands' })).toHaveCount(0);
+    await expect(page.getByRole('listbox', { name: 'Commands' })).toBeVisible();
     await input.press('Escape');
     await expect(input).toHaveCount(0);
 });
@@ -415,4 +417,49 @@ test('command line shows selection edit help only when it applies', async ({ pag
     await input.fill('w=120');
     await expect(help).toBeVisible();
     await expect(form.getByText(/shared Screen artwork/)).toHaveCount(0);
+});
+
+test('guided selection edits keep blank values unchanged and undo together', async ({ page }) => {
+    await openEditor(page, ['Command Line', 'Explorer']);
+    const input = page.getByRole('combobox', { name: 'Command' });
+    await input.fill('rectangle w=80 h=40 name="Box"');
+    await input.press('Enter');
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Box', exact: true })
+        .click();
+    await input.fill('resize');
+    await input.press('Enter');
+    const form = page.locator('form', { has: input });
+    await form.getByRole('textbox', { name: 'width', exact: true }).fill('240');
+    await expect(form.getByRole('textbox', { name: 'height', exact: true })).toHaveValue('');
+    await form.getByRole('button', { name: 'Apply changes', exact: false }).click();
+    await expect(shapes(page).locator('rect[data-cy="Box"]')).toHaveAttribute('width', '240');
+    await expect(shapes(page).locator('rect[data-cy="Box"]')).toHaveAttribute('height', '40');
+    await input.fill('undo');
+    await input.press('Enter');
+    await expect(shapes(page).locator('rect[data-cy="Box"]')).toHaveAttribute('width', '80');
+    await input.fill('rectangle tool');
+    await input.press('Enter');
+    await expect(input).toHaveCount(0);
+});
+
+test('composition Enter does not execute a command', async ({ page }) => {
+    await openEditor(page, ['Command Line']);
+    const input = page.getByRole('combobox', { name: 'Command' });
+    await input.fill('rectangle w=80');
+    const accepted = await input.evaluate((element) =>
+        element.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                key: 'Enter',
+                code: 'Enter',
+                isComposing: true,
+                bubbles: true,
+                cancelable: true
+            })
+        )
+    );
+    expect(accepted).toBe(false);
+    await expect(shapes(page)).toHaveCount(0);
+    await expect(input).toHaveValue('rectangle w=80');
 });

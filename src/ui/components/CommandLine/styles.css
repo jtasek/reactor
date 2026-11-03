@@ -1,117 +1,246 @@
-/* One pane of glass, centered over the canvas; the field sits on it without a well of its own. */
+/* The glass belongs to the floating frame; content stays on a readable surface. */
 .commandLine {
-    --command-line-width: 420px;
-    --command-line-inset: 6px;
-    align-items: center;
+    --command-line-width: 600px;
     backdrop-filter: var(--backdrop-filter);
-    background-color: var(--control-background);
-    border-radius: var(--border-radius);
+    background: var(--control-background);
+    border: 1px solid var(--hairline-color);
+    border-radius: calc(var(--radius-md) * 2);
     box-shadow: var(--box-shadow-hover);
     box-sizing: border-box;
-    color: var(--text-color);
+    color: var(--text-color-hover);
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     left: 50%;
     max-width: calc(100vw - 2 * var(--panel-gap));
     max-height: 75vh;
-    overflow-y: auto;
-    padding: var(--command-line-inset);
+    overflow: hidden;
     position: absolute;
-    top: 20%;
+    top: 12%;
     transform: translateX(-50%);
-    transition: box-shadow 0.2s ease-in-out;
     width: var(--command-line-width);
     z-index: calc(var(--control-zindex) + 5);
 }
 
-.commandLine:focus-within {
-    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+.search {
+    align-items: center;
+    display: flex;
+    flex-shrink: 0;
+    gap: var(--panel-gap);
+    padding: calc(var(--panel-gap) * 2);
 }
 
-.commandLine input {
-    background: transparent;
-    border: 0;
-    border-radius: var(--radius-sm);
-    color: var(--text-color-hover);
-    flex: 1 1 auto;
-    font: inherit;
-    font-size: 1rem;
-    height: 2.5rem;
-    line-height: 2.5rem;
-    min-width: 0;
-    outline: none;
-    padding: 0 10px;
-}
-
-.commandLine input::placeholder {
-    color: var(--text-color);
-}
-
-/* Why the command could not run, on a line of its own under the field. */
-.commandLine [role='status'] {
-    border-top: 1px solid var(--hairline-color);
-    flex-basis: 100%;
-    font-size: 0.75rem;
-    line-height: 16px;
-    padding: 6px 10px 2px;
-}
-
-.commandLine small,
-.commandLine ul {
-    flex-basis: 100%;
-    margin: 4px 10px;
-    font-size: 12px;
-}
-
-.commandLine ul {
-    padding: 0;
-    max-height: 240px;
-    overflow-y: auto;
-    list-style: none;
-}
-
-.commandLine li {
-    padding: 8px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-}
-
-.commandLine li span {
-    display: block;
+.search > svg {
+    flex-shrink: 0;
     color: var(--text-secondary-color);
 }
 
+.commandLine input {
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-md);
+    background: var(--panel-content-background);
+    color: var(--text-color-hover);
+    box-sizing: border-box;
+    font: inherit;
+    min-width: 0;
+    padding: 10px;
+    width: 100%;
+}
+
+.search input {
+    background: transparent;
+    border-color: transparent;
+    flex: 1;
+    font-size: 18px;
+    padding: 6px;
+}
+
+.commandLine input:focus-visible,
+.commandLine button:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 1px;
+}
+
+.commandLine input::placeholder {
+    color: var(--text-secondary-color);
+}
+
+.context {
+    background: var(--field-background);
+    border-block: 1px solid var(--hairline-color);
+    flex-shrink: 0;
+    padding: 10px 18px;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.content {
+    background: var(--panel-content-background);
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--panel-gap);
+}
+
+.heading {
+    color: var(--text-secondary-color);
+    font-size: 12px;
+    padding: 8px 10px;
+}
+.commandLine small {
+    color: var(--text-secondary-color);
+    font-size: 12px;
+    line-height: 1.5;
+}
+.content > small {
+    display: block;
+    margin: 8px 10px;
+}
+.commandLine ul {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+.commandLine li {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    padding: 10px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+}
+.commandLine li > svg {
+    flex-shrink: 0;
+    color: var(--text-secondary-color);
+}
+.commandLine li > div {
+    flex: 1;
+    min-width: 0;
+}
+.commandLine li strong {
+    font-size: 14px;
+    font-weight: 600;
+}
+.commandLine li span {
+    display: block;
+    color: var(--text-secondary-color);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
 .commandLine li:hover,
 .commandLine li[aria-selected='true'] {
     background: var(--field-background);
 }
-
+.commandLine li[aria-disabled='true'] {
+    color: var(--text-secondary-color);
+}
 .commandLine button {
-    background: var(--control-background);
-    color: var(--text-color);
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-sm);
-    padding: 6px 10px;
-    margin: 4px;
-}
-
-.commandLine button:focus-visible {
-    outline: var(--focus-ring-width) solid var(--focus-ring-color);
-}
-
-.commandLine fieldset {
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-sm);
-    min-width: 0;
-    width: 100%;
-}
-
-.commandLine label {
-    display: flex;
     align-items: center;
-    gap: 8px;
+    display: inline-flex;
+    gap: 6px;
+    background: transparent;
+    color: var(--text-color-hover);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    padding: 8px 10px;
+    font: inherit;
+    cursor: pointer;
+}
+.commandLine button:hover {
+    background: var(--field-background);
+}
+.commandLine button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+.commandLine fieldset {
+    border: 0;
+    padding: 10px;
+    margin: 0;
+    min-width: 0;
+}
+.commandLine legend {
+    padding: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+.fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin: 12px 0;
+}
+.commandLine label {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    font-size: 12px;
+    color: var(--text-secondary-color);
+}
+.commandLine label input {
+    font-size: 16px;
+}
+.message {
+    background: var(--panel-content-background);
+    border-top: 1px solid var(--hairline-color);
+    flex-shrink: 0;
+    padding: 12px 18px;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+.footer {
+    align-items: center;
+    display: flex;
+    flex-shrink: 0;
+    justify-content: space-between;
+    gap: var(--panel-gap);
+    padding: 10px 16px;
+    border-top: 1px solid var(--hairline-color);
+}
+.footer > div {
+    display: flex;
+    gap: var(--panel-gap);
+    flex-wrap: wrap;
+}
+.footer kbd {
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-sm);
+    padding: 1px 3px;
+    font-size: 11px;
+}
+.commandLine .primary {
+    background: var(--ink-strong);
+    color: var(--panel-content-background);
+}
+.commandLine .primary:hover {
+    background: var(--selection-color);
 }
 
-.commandLine label input {
-    width: 100%;
+@media (width <= 540px) {
+    .commandLine {
+        top: 8%;
+        max-height: 84vh;
+    }
+    .search {
+        padding: 10px;
+    }
+    .search input {
+        font-size: 16px;
+    }
+    .footer {
+        flex-wrap: wrap;
+        padding: 10px;
+    }
+    .footer > small {
+        display: none;
+    }
+    .footer > div {
+        margin-left: auto;
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    .commandLine {
+        background: var(--panel-content-background);
+        backdrop-filter: none;
+    }
 }

@@ -1,12 +1,13 @@
 import type { Document, Shape } from 'src/app/types';
 import type { Context } from 'src/app';
-import type { UpdateShape } from 'src/app/operations';
+import type { UpdateShape, UpdateFrame } from 'src/app/operations';
 import { SHAPE_PROPERTIES, canEdit, applyProperty } from 'src/app/properties';
 import { isShapeVisible } from 'src/app/utils';
 import { translateShape } from 'src/app/geometry';
 import { componentSourceNudge } from 'src/app/componentViewTransform';
 import { editableScreenView } from 'src/app/screenViewEditing';
 import { unbind, unbindMovedProperties } from 'src/app/variables';
+import { frameSelectionOperations } from './frameSelection';
 import { readParameters } from './creation';
 
 export const SELECTION_PATTERN = /^(?:move\s+\w+\s*=|[a-z-]+=)/i;
@@ -15,7 +16,14 @@ export const SELECTION_HELP =
 export const SHARED_ARTWORK_HELP = 'Edits in this view change the shared Screen artwork.';
 
 /** Compile the complete selection before committing a single undoable batch. */
-export function selectionOperations(input: string, state: Context['state']): UpdateShape[] {
+export function selectionOperations(
+    input: string,
+    state: Context['state']
+): (UpdateShape | UpdateFrame)[] {
+    if (state.currentDocument.selectedFrameId) {
+        return frameSelectionOperations(input, state);
+    }
+
     const moving = /^move\s/i.test(input.trim());
     const values = readParameters(` ${input.trim().replace(/^move\s+/i, '')}`);
     const allowed = moving ? ['x', 'y'] : ['width', 'height', 'radius'];
@@ -42,8 +50,8 @@ export function selectionOperations(input: string, state: Context['state']): Upd
     }
     const document = state.currentDocument;
     const ids = document.selectedShapesIds;
-    if (!ids.length || document.selectedFrameId) {
-        throw new Error('Select shapes to edit. Frame editing is available in the Inspector.');
+    if (!ids.length) {
+        throw new Error('Select shapes, a frame or a Screen view to edit.');
     }
 
     const address = state.events.pointer.screenView;
