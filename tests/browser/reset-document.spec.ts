@@ -42,7 +42,7 @@ test('reset document asks for confirmation before clearing the current document'
 
 test('the command line requests the same confirmation', async ({ page }) => {
     await openEditor(page, ['Command Line']);
-    const input = page.getByRole('searchbox', { name: 'Command' });
+    const input = page.getByRole('combobox', { name: 'Command' });
     await input.fill('reset document');
     await input.press('Enter');
     await expect(page.getByRole('dialog', { name: 'Reset document?' })).toBeVisible();

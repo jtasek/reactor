@@ -35,7 +35,7 @@ test('leaves copying and pasting in a text field to the field', async ({ page })
     await drawRect(page, { x: 100, y: 100 }, { x: 160, y: 140 });
     await press(page, 'c');
 
-    const input = page.getByRole('searchbox', { name: 'Command' });
+    const input = page.getByRole('combobox', { name: 'Command' });
 
     await input.focus();
     await press(page, 'v');
@@ -107,7 +107,7 @@ test('the command bar and the command line copy, cut and paste', async ({ page }
     const copy = page.locator('button[title="Copy"]');
     const cut = page.locator('button[title="Cut"]');
     const paste = page.locator('button[title="Paste"]');
-    const input = page.getByRole('searchbox', { name: 'Command' });
+    const input = page.getByRole('combobox', { name: 'Command' });
 
     await expect(copy).toBeDisabled();
     await drawRect(page, { x: 100, y: 100 }, { x: 160, y: 140 });

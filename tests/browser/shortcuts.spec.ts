@@ -62,7 +62,7 @@ test('the editor opened from the documents list has its tools and shortcuts', as
 test('typing in a text field does not trigger shortcuts', async ({ page }) => {
     await openEditor(page, ['Command Line']);
 
-    const input = page.getByRole('searchbox', { name: 'Command' });
+    const input = page.getByRole('combobox', { name: 'Command' });
 
     await input.click();
     await page.keyboard.type('rect');
