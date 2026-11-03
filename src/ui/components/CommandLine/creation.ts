@@ -8,7 +8,7 @@ export const CREATIONS = [
         description: 'width=160 height=48 fill=#3366ff'
     },
     { id: 'create circle', name: 'Create circle', description: 'radius=24 fill=#3366ff' },
-    { id: 'create text', name: 'Create text', description: 'value="Hello world" fontSize=24' }
+    { id: 'create text', name: 'Create text', description: 'value="Text" fontSize=24' }
 ];
 
 const PROPERTY_ALIASES = new Map([
@@ -21,12 +21,15 @@ const PROPERTY_ALIASES = new Map([
     ['text', 'value']
 ]);
 
+/** Whether the input names a shape to create, before any parameters. */
+export const CREATION_PATTERN = /^(?:create\s+)?(rectangle|circle|text)\b/i;
+
 export const PROPERTY_ALIAS_HELP =
     'Aliases: w=width, h=height, r=radius, fs/font-size=fontSize, text=value.';
 
 /** A deliberately small named-argument syntax; quoted strings use JSON escaping. */
 export function creationOperation(input: string, center: Point): AddShape | undefined {
-    const match = /^(?:create\s+)?(rectangle|circle|text)\b/i.exec(input.trim());
+    const match = CREATION_PATTERN.exec(input.trim());
 
     if (!match) {
         return undefined;
@@ -35,7 +38,7 @@ export function creationOperation(input: string, center: Point): AddShape | unde
     const type = match[1].toLowerCase();
     const rest = input.trim().slice(match[0].length);
     const values: Record<string, string> = {};
-    const token = /\s+([a-zA-Z][a-zA-Z-]*)=("(?:[^"\\]|\\.)*"|[^\s"]+)/y;
+    const token = /\s+([a-zA-Z][a-zA-Z-]*)=("(?:[^"\\]|\\.)*"|[^\s"]*)/y;
     let offset = 0;
 
     while (rest.slice(offset).trim()) {
@@ -55,7 +58,11 @@ export function creationOperation(input: string, center: Point): AddShape | unde
             throw new Error(`Parameter ${key} is repeated.`);
         }
 
-        values[key] = raw.startsWith('"') ? JSON.parse(raw) : raw;
+        if (raw === '') {
+            throw new Error(`${key} needs a value.`);
+        }
+
+        values[key] = raw.startsWith('"') ? quoted(key, raw) : raw;
         offset = token.lastIndex;
     }
 
@@ -122,15 +129,29 @@ export function creationOperation(input: string, center: Point): AddShape | unde
         };
     }
 
+    // Text takes its color from fontColor, so fill colors the text.
+    const { fill, ...named } = common;
+
     return {
         op: 'addShape',
         key: 'created',
         shape: {
-            ...common,
+            ...named,
+            ...(fill !== undefined ? { fontColor: fill } : {}),
             type: 'text',
             position,
             value: values.value ?? 'Text',
             fontSize: number('fontSize', 24, true)
         }
     };
+}
+
+function quoted(key: string, raw: string): string {
+    try {
+        return JSON.parse(raw) as string;
+    } catch {
+        throw new Error(
+            `${key} has an invalid escape. Use \\" for a quote and \\\\ for a backslash.`
+        );
+    }
 }

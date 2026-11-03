@@ -70,3 +70,33 @@ it.each(['circle w=40', 'rectangle r=10', 'rectangle h=-4', 'text fs=0'])(
         expect(() => creationOperation(input, center)).toThrow();
     }
 );
+
+it('colors text with fill through fontColor', () => {
+    const shape = creationOperation('text value="Hi" fill=#ff0000', center)?.shape;
+    expect(shape).toMatchObject({ type: 'text', fontColor: '#ff0000' });
+    expect(shape).not.toHaveProperty('fill');
+
+    const { store } = createTestStore();
+    const result = store.actions.applyOperations({
+        documentId: store.state.currentDocumentId,
+        by: { kind: 'person' },
+        operations: [creationOperation('text value="Hi" fill=#ff0000', center)!]
+    });
+    expect(result.applied).toBe(true);
+    expect(Object.values(store.state.currentDocument.shapes)[0]).toMatchObject({
+        fontColor: '#ff0000'
+    });
+});
+
+it('names a parameter that has no value', () => {
+    expect(() => creationOperation('circle radius=', center)).toThrow('radius needs a value.');
+    expect(() => creationOperation('rectangle width= height=4', center)).toThrow(
+        'width needs a value.'
+    );
+});
+
+it('explains an invalid escape in quoted text', () => {
+    expect(() => creationOperation('text value="a\\qb"', center)).toThrow(
+        'value has an invalid escape'
+    );
+});
