@@ -77,6 +77,7 @@ bar, side bar, panels and other parts of the editor.
 | Shift+H, Alt+Shift+H | Hide the selection; show every hidden shape, group and layer |
 | `k`, Shift+K | Lock and unlock the selection |
 | `+` or `=`, `-`, `0` | Zoom in, zoom out, reset zoom |
+| Ctrl/Cmd+K | Open the Command Line |
 
 The Explorer has two views. **Objects** shows actual containment: Canvas holds top-level
 frames and loose artwork, and frames contain their child frames, groups and shapes.
@@ -133,7 +134,7 @@ The instance keeps its placement while you edit; the stack reflows when you leav
 
 Shortcuts do nothing while a text field has focus. Enable **Command Line** in the Control Panel
 to search commands by name or description. Arrow keys select suggestions; Enter chooses one,
-then Enter or **Run** executes it. Creation suggestions expose editable parameters. A command
+then Enter or the named action button executes it. Creation and selection-edit suggestions expose editable parameters. A command
 such as `Rectangle tool` activates drawing; `rectangle w=160 h=48` creates a shape immediately.
 
 Command Line selection edits use `width=240 height=48` (or `w=240 h=48`),
@@ -144,6 +145,28 @@ width or its height, not both. Stack-managed positions cannot be moved, and a mo
 needs a non-zero offset.
 Each command edits the complete selection as one undo step, or reports a problem
 without changing anything. Screen view edits change shared source artwork.
+
+With a frame or Screen view selected, `w=390 h=844` resizes it and
+`move x=24 y=-8` moves it. A frame moves with its contents; a Screen view moves
+independently. `gap=16 padding=24` edits an existing Row or Column stack, keeping
+its direction and alignment. For a Screen view, these stack inputs belong to the
+active shared layout and affect every view using that layout. Resize a view first,
+then edit its stack in a separate command, since its width may select another layout.
+Hug/fill dimensions and stack-managed positions remain controlled by layout.
+Explicit numeric edits detach only the edited inputs from their variables.
+
+The Command Line opens as a searchable command palette. Exact matches rank first;
+the target stays visible above the results or parameter editor. Choose Resize selection,
+Move selection, Set radius or Edit stack spacing to edit without remembering syntax.
+Blank selection fields stay unchanged. Typed aliases and guided fields use the same
+validated commands. Escape returns from parameters to search, then closes the palette;
+Tab moves between fields. Successful edits keep it open, while activating a drawing tool
+closes it. Ask AI opens an unsent draft in the existing chat and closes the palette only
+when the handoff succeeds; existing drafts and proposals are preserved. The palette loads
+on demand when enabled from More panels → Command Line, or with Ctrl/Cmd+K. If the
+selection changes while a typed edit waits, the first Enter only confirms the new target;
+press it again to apply. Edit stack spacing is unavailable until the frame (or a view's
+active layout) has a Row or Column stack.
 
 Examples:
 

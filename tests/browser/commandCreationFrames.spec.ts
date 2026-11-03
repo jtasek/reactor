@@ -46,13 +46,34 @@ for (const kind of ['frame', 'view'] as const) {
             (raw) => localStorage.setItem('reactor', raw),
             JSON.stringify(saved)
         );
-        await openEditor(page, ['Explorer', 'Command Line']);
+        await openEditor(page, ['Explorer', 'Command Line', 'Inspector']);
         const name = kind === 'frame' ? 'Home' : 'Home · Desktop';
         await page
             .getByRole('region', { name: 'Explorer' })
             .getByRole('button', { name, exact: true })
             .click();
         const input = page.getByRole('combobox', { name: 'Command' });
+        const prefix = kind === 'view' ? 'View' : 'Frame';
+        await input.fill('w=390 h=844');
+        await input.press('Enter');
+        await expect(
+            page.getByRole('spinbutton', { name: `${prefix} width`, exact: true })
+        ).toHaveValue('390');
+        await expect(
+            page.getByRole('spinbutton', { name: `${prefix} height`, exact: true })
+        ).toHaveValue('844');
+        await input.fill('undo');
+        await input.press('Enter');
+        await expect(
+            page.getByRole('spinbutton', { name: `${prefix} width`, exact: true })
+        ).toHaveValue(kind === 'view' ? '500' : '300');
+        await input.fill('move x=24 y=-8');
+        await input.press('Enter');
+        await expect(
+            page.getByRole('spinbutton', { name: `${prefix} x`, exact: true })
+        ).toHaveValue(kind === 'view' ? '524' : '124');
+        await input.fill('undo');
+        await input.press('Enter');
         await input.fill('rectangle w=40 h=20 x=12 y=30 name="Created here"');
         await input.press('Enter');
         const shape = page.locator(
