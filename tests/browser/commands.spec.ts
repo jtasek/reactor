@@ -404,3 +404,15 @@ test('Escape in a guided parameter returns to the command field', async ({ page 
     await input.press('Escape');
     await expect(input).toHaveCount(0);
 });
+
+test('command line shows selection edit help only when it applies', async ({ page }) => {
+    await openEditor(page, ['Command Line']);
+    const input = page.getByRole('combobox', { name: 'Command' });
+    const form = page.locator('form', { has: input });
+    const help = form.getByText(/^Edit selection:/);
+    await input.fill('und');
+    await expect(help).toHaveCount(0);
+    await input.fill('w=120');
+    await expect(help).toBeVisible();
+    await expect(form.getByText(/shared Screen artwork/)).toHaveCount(0);
+});

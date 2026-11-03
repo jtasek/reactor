@@ -1,4 +1,5 @@
 import React, { FC, SubmitEvent, useId, useRef, useState } from 'react';
+import { SELECTION_HELP, SELECTION_PATTERN } from './selection';
 import styles from './styles.css';
 import { CREATION_PATTERN, PROPERTY_ALIAS_HELP } from './creation';
 
@@ -14,6 +15,8 @@ export interface Props {
     suggestions?: Suggestion[];
     context?: string;
     placement?: string;
+    /** Selection edit help for the current selection; without it, help shows once an edit is typed. */
+    selectionHelp?: string;
     onClose?: () => void;
     onAskAi?: (text: string) => Promise<string | undefined>;
 }
@@ -24,7 +27,8 @@ export const CommandLine: FC<Props> = ({
     context,
     placement = 'Visible canvas center. Optional x/y override placement.',
     onAskAi,
-    onClose
+    onClose,
+    selectionHelp
 }) => {
     const [value, setValue] = useState('');
     const [message, setMessage] = useState<string>();
@@ -209,6 +213,9 @@ export const CommandLine: FC<Props> = ({
                     </small>
                     <small>{PROPERTY_ALIAS_HELP}</small>
                 </>
+            )}
+            {!creating && (selectionHelp || SELECTION_PATTERN.test(value.trim())) && (
+                <small>{selectionHelp ?? SELECTION_HELP}</small>
             )}
             {message && <span role="status">{message}</span>}
             <button type="submit" disabled={pending || !value.trim()}>

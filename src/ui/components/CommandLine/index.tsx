@@ -13,6 +13,12 @@ import { isFrameLocked, isFrameVisible } from 'src/app/frameState';
 import { getTools } from 'src/app/actions/startup';
 import { screenToWorld } from 'src/app/camera';
 import { CommandLine } from './CommandLine';
+import {
+    SELECTION_HELP,
+    SELECTION_PATTERN,
+    SHARED_ARTWORK_HELP,
+    selectionOperations
+} from './selection';
 import { creationTarget } from './creationTarget';
 import { CREATIONS, CREATION_PATTERN, creationOperation } from './creation';
 
@@ -45,6 +51,21 @@ const ActiveCommandLine: FC = () => {
                 actions.tools.activateTool(tool.id);
 
                 return undefined;
+            }
+
+            if (SELECTION_PATTERN.test(input.trim())) {
+                if (!canEdit) {
+                    return 'Selection editing is unavailable right now.';
+                }
+
+                const operations = selectionOperations(input, state);
+                const result = actions.applyOperations({
+                    documentId: state.currentDocumentId,
+                    by: { kind: 'person' },
+                    operations
+                });
+
+                return result.applied ? undefined : result.problem;
             }
 
             if (!CREATION_PATTERN.test(input.trim())) {
@@ -138,6 +159,13 @@ const ActiveCommandLine: FC = () => {
             onClose={() => actions.ui.toggleControlVisibility('commandLine')}
             context={`${selection} · ${creationContext}`}
             placement={placement}
+            selectionHelp={
+                !frame && document.selectedShapesIds.length > 0
+                    ? state.events.pointer.screenView
+                        ? `${SELECTION_HELP} ${SHARED_ARTWORK_HELP}`
+                        : SELECTION_HELP
+                    : undefined
+            }
             suggestions={[
                 ...getTools().map((tool) => ({
                     id: `${tool.name} tool`,

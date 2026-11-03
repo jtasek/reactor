@@ -131,7 +131,8 @@ export function unbind(shape: Shape, key: string) {
 
 /**
  * The bindings of `shape` an explicit edit of `fields` replaces, even when the new
- * value equals the variable's. Position vectors replace both coordinate bindings; text
+ * value equals the variable's. Size vectors replace both dimension bindings, position
+ * vectors replace both coordinate bindings; text
  * content and templates replace the text binding. Geometry actions name their writes
  * explicitly; measurements and variable application do not detach bindings.
  */
@@ -140,6 +141,7 @@ export function editedBindings(shape: Shape, fields: string[]): string[] {
         fields.some(
             (field) =>
                 field === key ||
+                (field === 'size' && (key === 'width' || key === 'height')) ||
                 (key === 'text' && (field === 'value' || field === 'template')) ||
                 ((key === 'x' || key === 'y') &&
                     (['position', 'start', 'end', 'points'].includes(field) ||
