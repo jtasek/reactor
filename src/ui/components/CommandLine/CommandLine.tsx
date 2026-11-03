@@ -1,6 +1,6 @@
-import React, { FC, SubmitEvent, useId, useState } from 'react';
+import React, { FC, SubmitEvent, useId, useRef, useState } from 'react';
 import styles from './styles.css';
-import { PROPERTY_ALIAS_HELP } from './creation';
+import { CREATION_PATTERN, PROPERTY_ALIAS_HELP } from './creation';
 
 interface Suggestion {
     id: string;
@@ -32,11 +32,14 @@ export const CommandLine: FC<Props> = ({
     const [fields, setFields] = useState<Record<string, string>>({});
     const [pending, setPending] = useState(false);
     const listId = useId();
+    const inputRef = useRef<HTMLInputElement>(null);
     const matches = suggestions
         .filter(({ id, name, description }) =>
             `${id} ${name} ${description}`.toLowerCase().includes(value.toLowerCase().trim())
         )
         .slice(0, 8);
+    const listShown = open && matches.length > 0;
+    const creating = creation !== undefined || CREATION_PATTERN.test(value.trim());
     const choose = (item: Suggestion) => {
         setValue(item.id);
         const kind = item.id.startsWith('create ') ? item.id.slice(7) : undefined;
@@ -84,19 +87,20 @@ export const CommandLine: FC<Props> = ({
     return (
         <form className={styles.commandLine} onSubmit={handleSubmit}>
             <input
+                ref={inputRef}
                 type="text"
                 role="combobox"
                 aria-label="Command"
-                aria-expanded={open && matches.length > 0}
+                aria-expanded={listShown}
                 aria-controls={listId}
                 aria-autocomplete="list"
                 aria-activedescendant={
-                    open && active >= 0 && matches[active] ? `${listId}-${active}` : undefined
+                    listShown && active >= 0 && matches[active] ? `${listId}-${active}` : undefined
                 }
                 placeholder="Search commands or create a shape…"
                 value={value}
                 readOnly={pending}
-                onFocus={() => setOpen(true)}
+                onFocus={() => setOpen(creation === undefined)}
                 onChange={(event) => {
                     setValue(event.target.value);
                     setCreation(undefined);
@@ -107,7 +111,8 @@ export const CommandLine: FC<Props> = ({
                 onKeyDown={(event) => {
                     if (event.key === 'Escape') {
                         event.stopPropagation();
-                        if (!open) {
+                        // A list that is open but empty is not shown, so Escape closes.
+                        if (!listShown) {
                             onClose?.();
                         }
                         setOpen(false);
@@ -143,6 +148,13 @@ export const CommandLine: FC<Props> = ({
                             <input
                                 aria-label={key}
                                 value={value}
+                                onKeyDown={(event) => {
+                                    // Escape in a parameter returns to the command field.
+                                    if (event.key === 'Escape') {
+                                        event.stopPropagation();
+                                        inputRef.current?.focus();
+                                    }
+                                }}
                                 onChange={(event) => {
                                     const next = { ...fields, [key]: event.target.value };
                                     setFields(next);
@@ -160,7 +172,7 @@ export const CommandLine: FC<Props> = ({
                     ))}
                 </fieldset>
             )}
-            {open && matches.length > 0 && (
+            {listShown && (
                 <ul id={listId} role="listbox" aria-label="Commands">
                     {matches.map((item, index) => (
                         <li
@@ -187,11 +199,15 @@ export const CommandLine: FC<Props> = ({
                     ))}
                 </ul>
             )}
-            <small>
-                Defaults: rectangle 160 × 48 · circle radius 24 · text 24 px. Placement: visible
-                canvas center. Optional x/y override placement.
-            </small>
-            <small>{PROPERTY_ALIAS_HELP}</small>
+            {creating && (
+                <>
+                    <small>
+                        Defaults: rectangle 160 × 48 · circle radius 24 · text 24 px. Placement:
+                        visible canvas center. Optional x/y override placement.
+                    </small>
+                    <small>{PROPERTY_ALIAS_HELP}</small>
+                </>
+            )}
             {message && <span role="status">{message}</span>}
             <button type="submit" disabled={pending || !value.trim()}>
                 Run

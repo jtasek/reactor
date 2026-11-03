@@ -374,3 +374,33 @@ test('command line accepts property aliases and rejects conflicting spellings', 
     await expect(input).toHaveValue('rectangle w=120 width=240');
     await expect(shapes(page)).toHaveCount(3);
 });
+
+test('command line closes on one Escape when no suggestion is shown', async ({ page }) => {
+    await openEditor(page, ['Command Line']);
+    const input = page.getByRole('combobox', { name: 'Command' });
+    await input.fill('rectangle w=80');
+    await expect(page.getByRole('listbox', { name: 'Commands' })).toHaveCount(0);
+    await input.press('Escape');
+    await expect(input).toHaveCount(0);
+});
+
+test('Escape in a guided parameter returns to the command field', async ({ page }) => {
+    await openEditor(page, ['Command Line']);
+    const input = page.getByRole('combobox', { name: 'Command' });
+    const form = page.locator('form', { has: input });
+    await input.fill('undo');
+    await expect(form.getByText(/^Aliases:/)).toHaveCount(0);
+    await input.fill('create circle');
+    await input.press('ArrowDown');
+    await input.press('Enter');
+    await expect(form.getByText(/^Aliases:/)).toBeVisible();
+    const radius = form.getByRole('textbox', { name: 'radius', exact: true });
+    await radius.fill('');
+    await radius.press('Enter');
+    await expect(form.getByRole('status')).toHaveText('radius needs a value.');
+    await radius.press('Escape');
+    await expect(input).toBeFocused();
+    await expect(page.getByRole('listbox', { name: 'Commands' })).toHaveCount(0);
+    await input.press('Escape');
+    await expect(input).toHaveCount(0);
+});
