@@ -50,11 +50,56 @@ describe('visual proposal drafts', () => {
         }
 
         expect(result.document.shapes[id].name).toBe('Proposed');
+        expect([...result.changes.ids]).toEqual([id]);
+        expect(result.changes.removed).toEqual([]);
         store.actions.applyOperations({
             documentId: document.id,
             by: { kind: 'person' },
             operations: [{ op: 'deleteShapes', shapes: [id] }]
         });
         expect(previewProposal(document, operations).valid).toBe(false);
+    });
+
+    it('names what a proposal adds and changes, and where deleted shapes were', () => {
+        const { store } = createTestStore();
+        const document = store.state.currentDocument;
+        store.actions.addShape({
+            type: 'rectangle',
+            name: 'Kept',
+            position: { x: 0, y: 0 },
+            size: { width: 40, height: 20 }
+        });
+        store.actions.addShape({
+            type: 'rectangle',
+            name: 'Removed',
+            position: { x: 100, y: 50 },
+            size: { width: 30, height: 10 }
+        });
+        const [kept, removed] = document.shapesIds;
+        const result = previewProposal(document, [
+            { op: 'updateShape', shape: kept, changes: { fill: '#ff0000' } },
+            { op: 'deleteShapes', shapes: [removed] },
+            {
+                op: 'addShape',
+                key: 'added',
+                shape: {
+                    type: 'rectangle',
+                    name: 'Added',
+                    position: { x: 200, y: 0 },
+                    size: { width: 10, height: 10 }
+                }
+            }
+        ]);
+
+        if (!result.valid) {
+            throw new Error(result.problem);
+        }
+
+        const added = result.document.shapesIds.find((id) => id !== kept)!;
+
+        expect(new Set(result.changes.ids)).toEqual(new Set([kept, added]));
+        expect(result.changes.removed).toHaveLength(1);
+        expect(result.changes.removed[0].topLeft).toEqual({ x: 100, y: 50 });
+        expect(result.changes.removed[0].width).toBe(30);
     });
 });

@@ -1,4 +1,11 @@
-import React, { FC, KeyboardEvent, useEffect, useRef, useSyncExternalStore } from 'react';
+import React, {
+    FC,
+    KeyboardEvent,
+    useCallback,
+    useEffect,
+    useRef,
+    useSyncExternalStore
+} from 'react';
 import { chatFor } from 'src/ai/chat';
 import { ContextTooLarge, documentContext } from 'src/ai/context';
 import { describeOperation } from 'src/ai/describe';
@@ -98,14 +105,17 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
             ask();
         }
     };
-    const accept = () =>
-        chat.accept((proposal) =>
-            applyOperations({
-                documentId,
-                by: { kind: 'ai', model: proposal.model, requestId: proposal.requestId },
-                operations: proposal.operations
-            })
-        );
+    const accept = useCallback(
+        () =>
+            chat.accept((proposal) =>
+                applyOperations({
+                    documentId,
+                    by: { kind: 'ai', model: proposal.model, requestId: proposal.requestId },
+                    operations: proposal.operations
+                })
+            ),
+        [chat, applyOperations, documentId]
+    );
 
     return (
         <div className={styles.chat} ref={chatRoot} role="group" aria-label="Chat controls">
@@ -188,17 +198,11 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
                                 <p className={styles.status}>Cancelled. Nothing changed.</p>
                             )}
                             {turn.status === 'proposed' && (
-                                <ProposalPreview operations={turn.operations} />
-                            )}
-                            {turn.status === 'proposed' && (
-                                <div className={styles.actions}>
-                                    <button type="button" onClick={chat.discard}>
-                                        Discard
-                                    </button>
-                                    <button type="button" data-variant="primary" onClick={accept}>
-                                        Accept
-                                    </button>
-                                </div>
+                                <ProposalPreview
+                                    operations={turn.operations}
+                                    onDiscard={chat.discard}
+                                    onAccept={accept}
+                                />
                             )}
                         </section>
                     </article>

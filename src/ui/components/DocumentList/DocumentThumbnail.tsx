@@ -2,7 +2,7 @@ import { screenOwners, screenSourceShapes, screenViewName } from 'src/app/screen
 import { layoutDocument } from 'src/app/frameLayout';
 import { projectContextualLayout } from 'src/app/contextualLayout';
 import { projectScreenViews } from 'src/app/screenProjection';
-import React, { FC, ReactNode, useLayoutEffect, useRef } from 'react';
+import React, { FC, ReactNode, useEffect, useLayoutEffect, useRef } from 'react';
 import { useVariableContext } from 'src/app/hooks';
 import { isFrameVisible } from 'src/app/frameState';
 import { themeColors } from 'src/app/themeColors';
@@ -25,6 +25,35 @@ import styles from './styles.css';
 /** The size of the mark drawn for an instance whose component is missing. */
 const MISSING_INSTANCE_SIZE = 24;
 const FRAME_LABEL_OFFSET = 8;
+/** How far the marked changes' outline sits outside them, as a share of their size. */
+const CHANGE_OUTLINE_MARGIN = 0.04;
+/** How much surrounding artwork a view fitted to the changes keeps, as a share of their size. */
+const CHANGE_CONTEXT = 0.75;
+const MIN_CHANGE_CONTEXT = 48;
+
+/** Draws `children` marked as changed, so the outline and fitting can find them. */
+const Marked: FC<{ changed: boolean; children: ReactNode }> = ({ changed, children }) =>
+    changed ? <g data-changed="">{children}</g> : <>{children}</>;
+
+function unionBox(boxes: DOMRect[]) {
+    const left = Math.min(...boxes.map((box) => box.x));
+    const top = Math.min(...boxes.map((box) => box.y));
+    const right = Math.max(...boxes.map((box) => box.x + box.width));
+    const bottom = Math.max(...boxes.map((box) => box.y + box.height));
+
+    return rectToBox({ x: left, y: top, width: right - left, height: bottom - top });
+}
+
+function grow(box: Box, share: number, minimum = 0): Box {
+    const margin = Math.max(minimum, Math.max(box.width, box.height) * share);
+
+    return rectToBox({
+        x: box.topLeft.x - margin,
+        y: box.topLeft.y - margin,
+        width: box.width + margin * 2,
+        height: box.height + margin * 2
+    });
+}
 
 const imageFallback = (shape: Image) => (
     <rect
@@ -263,7 +292,20 @@ const PreviewShape: FC<{
     );
 };
 
-export const DocumentThumbnail: FC<{ document: Document }> = ({ document: sourceDocument }) => {
+export interface ThumbnailChanges {
+    /** What to outline: the IDs of added or changed shapes and frames. */
+    ids: ReadonlySet<string>;
+    /** Where deleted items were. */
+    removed: Box[];
+}
+
+export const DocumentThumbnail: FC<{
+    document: Document;
+    /** Outlines these changes. */
+    changes?: ThumbnailChanges;
+    /** Fits the view to the outlined changes, with some artwork around them, instead of everything. */
+    fitChanges?: boolean;
+}> = ({ document: sourceDocument, changes, fitChanges = false }) => {
     const simulation = useVariableContext(sourceDocument.id);
     const document = layoutDocument(
         sourceDocument,
@@ -271,25 +313,77 @@ export const DocumentThumbnail: FC<{ document: Document }> = ({ document: source
     );
     const svgRef = useRef<SVGSVGElement>(null);
     const contentRef = useRef<SVGGElement>(null);
+    const outlineRef = useRef<SVGRectElement>(null);
+    const fitChangesRef = useRef(fitChanges);
+    fitChangesRef.current = fitChanges;
+    const changed = (id: string) => changes?.ids.has(id) ?? false;
     const shown = shownShapesIds({ ...document, shownLayerId: undefined }, null);
     const sourceShapes = screenSourceShapes(document);
     const shapes = document.shapesIds
         .filter((id) => shown.has(id) && !sourceShapes.has(id))
         .map((id) => document.shapes[id]);
 
-    useLayoutEffect(() => {
+    /**
+     * Fits the view to what is drawn. An SVG that is not displayed yet, such as one
+     * in a dialog about to open, measures as empty, so it is measured again once shown.
+     */
+    const measure = () => {
         const content = contentRef.current;
+        const outline = outlineRef.current;
 
         if (!content) {
             return;
         }
 
         try {
-            const bounds = rectToBox(content.getBBox());
-            svgRef.current?.setAttribute('viewBox', paddedViewBox(bounds));
+            const drawn = content.getBBox();
+
+            if (drawn.width === 0 && drawn.height === 0) {
+                return;
+            }
+
+            const marked = [...content.querySelectorAll<SVGGraphicsElement>('[data-changed]')]
+                .map((element) => element.getBBox())
+                .filter((box) => box.width > 0 || box.height > 0);
+            const changedBox = marked.length > 0 ? unionBox(marked) : undefined;
+
+            if (outline) {
+                if (changedBox) {
+                    const ring = grow(changedBox, CHANGE_OUTLINE_MARGIN, 2);
+                    outline.setAttribute('x', String(ring.topLeft.x));
+                    outline.setAttribute('y', String(ring.topLeft.y));
+                    outline.setAttribute('width', String(ring.width));
+                    outline.setAttribute('height', String(ring.height));
+                    outline.removeAttribute('visibility');
+                } else {
+                    outline.setAttribute('visibility', 'hidden');
+                }
+            }
+
+            const fitted =
+                fitChangesRef.current && changedBox
+                    ? grow(changedBox, CHANGE_CONTEXT, MIN_CHANGE_CONTEXT)
+                    : rectToBox(drawn);
+            svgRef.current?.setAttribute('viewBox', paddedViewBox(fitted));
         } catch {
             // An SVG that is not yet renderable has no measurable box.
         }
+    };
+    const measureRef = useRef(measure);
+    measureRef.current = measure;
+
+    useLayoutEffect(measure);
+    useEffect(() => {
+        const svg = svgRef.current;
+
+        if (!svg || typeof ResizeObserver === 'undefined') {
+            return;
+        }
+
+        const observer = new ResizeObserver(() => measureRef.current());
+        observer.observe(svg);
+
+        return () => observer.disconnect();
     });
 
     const owners = screenOwners(document.frames);
@@ -330,7 +424,7 @@ export const DocumentThumbnail: FC<{ document: Document }> = ({ document: source
         >
             <g ref={contentRef}>
                 {frames.map((frame) => (
-                    <g key={frame.id}>
+                    <g key={frame.id} {...(changed(frame.id) ? { 'data-changed': '' } : {})}>
                         <rect
                             x={frame.position.x}
                             y={frame.position.y}
@@ -351,17 +445,15 @@ export const DocumentThumbnail: FC<{ document: Document }> = ({ document: source
                     </g>
                 ))}
                 {shapes.map((shape) => (
-                    <PreviewShape
-                        key={shape.id}
-                        document={document}
-                        shape={shape}
-                        ancestors={new Set()}
-                    />
+                    <Marked key={shape.id} changed={changed(shape.id)}>
+                        <PreviewShape document={document} shape={shape} ancestors={new Set()} />
+                    </Marked>
                 ))}
                 {views.flatMap((view) =>
                     view.frames.map((frame) => (
                         <rect
                             key={`${view.viewId}:${frame.id}`}
+                            {...(changed(frame.id) ? { 'data-changed': '' } : {})}
                             x={frame.position.x}
                             y={frame.position.y}
                             width={frame.size.width}
@@ -374,16 +466,39 @@ export const DocumentThumbnail: FC<{ document: Document }> = ({ document: source
                 )}
                 {views.flatMap((view) =>
                     view.shapes.map((shape) => (
-                        <PreviewShape
-                            key={`${view.viewId}:${shape.id}`}
-                            document={document}
-                            shape={shape}
-                            ancestors={new Set()}
-                            viewId={view.viewId}
-                        />
+                        <Marked key={`${view.viewId}:${shape.id}`} changed={changed(shape.id)}>
+                            <PreviewShape
+                                document={document}
+                                shape={shape}
+                                ancestors={new Set()}
+                                viewId={view.viewId}
+                            />
+                        </Marked>
                     ))
                 )}
+                {changes?.removed.map((box, index) => (
+                    <rect
+                        key={`removed-${index}`}
+                        data-changed=""
+                        x={box.topLeft.x}
+                        y={box.topLeft.y}
+                        width={box.width}
+                        height={box.height}
+                        fill="none"
+                        stroke="none"
+                    />
+                ))}
             </g>
+            {changes && (
+                <rect
+                    ref={outlineRef}
+                    className={styles.changeOutline}
+                    visibility="hidden"
+                    fill="none"
+                    vectorEffect="non-scaling-stroke"
+                    data-change-outline=""
+                />
+            )}
         </svg>
     );
 };
