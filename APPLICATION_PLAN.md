@@ -381,8 +381,11 @@ Authoring usability follow-up, driven by the local screenshot benchmark:
    with diagnostics that identify which constraint needs attention.
 4. **Consistent editing context.** Show shared source, per-view context and instance overrides
    consistently in Inspector; use the same descriptions for AI explanations.
-5. **Rendered proposals.** Show a temporary visual draft before Accept and allow targeted repair.
-   Keep drafts outside durable document data and apply only through the existing atomic batch.
+5. **Rendered proposals (first increment implemented).** Completed proposals show a temporary
+   visual draft in chat, with an enlarged inspection view. The draft uses the existing operation
+   staging and artwork renderer, refreshes against current document edits, and reports invalidated
+   proposals. Drafts stay outside durable document data; Accept still applies the atomic batch.
+   Next: targeted repair of a proposed result without accepting it first.
 
 Steps 1–2 address authoring ambiguity; they do not complete the live screenshot-quality gate.
 Measure the same 30 references again before claiming a quality or latency improvement.

@@ -171,6 +171,13 @@ test('composed screens show actual component labels and top-left text after acce
     await chat.getByRole('button', { name: 'Send' }).click();
     await expect(chat.getByRole('region', { name: 'Proposal' })).toContainText('Send request');
     await expect(page.locator('#screen-views > g')).toHaveCount(0);
+    const visualDraft = chat.getByRole('figure', { name: 'Proposed result' });
+    await expect(
+        visualDraft.locator('svg').getByText('Send request', { exact: true })
+    ).toBeVisible();
+    await expect(
+        visualDraft.locator('svg').getByText('you@example.com', { exact: true })
+    ).toBeVisible();
     await chat.getByRole('button', { name: 'Accept' }).click();
     const views = page.locator('#screen-views > g');
     await expect(views.getByText('Send request', { exact: true })).toBeVisible();
@@ -216,7 +223,18 @@ test('a change described in words is proposed, then applied once accepted, as on
     ]);
     await expect(shapes(page)).toHaveCount(0);
 
+    const preview = chat.getByRole('figure', { name: 'Proposed result' });
+    await expect(preview).toBeVisible();
+    await expect(preview.locator('svg rect')).toHaveCount(1);
+    await chat.getByRole('button', { name: 'Inspect preview' }).click();
+    const expanded = page.getByRole('dialog', { name: 'Proposed result' });
+    await expect(expanded.locator('svg rect')).toHaveCount(1);
+    await page.keyboard.press('Escape');
+    await expect(expanded).toHaveCount(0);
+    await expect(chat.getByRole('button', { name: 'Inspect preview' })).toBeFocused();
+
     await chat.getByRole('button', { name: 'Accept' }).click();
+    await expect(preview).toHaveCount(0);
     await expect(chat).toContainText('Applied. You can undo this change.');
     await expect(shapes(page)).toHaveCount(1);
 
@@ -311,6 +329,8 @@ for (const width of [1280, 390]) {
         expect(box.x + box.width).toBeLessThanOrEqual(width);
         await page.screenshot({ path: testInfo.outputPath('proposal.png') });
         await chat.getByRole('button', { name: 'Discard' }).click();
+        await expect(chat.getByRole('figure', { name: 'Proposed result' })).toHaveCount(0);
+        await expect(shapes(page)).toHaveCount(2);
         await expect(chat.getByRole('textbox', { name: 'Change to make' })).toHaveValue(
             'Add a button below this'
         );
@@ -366,6 +386,11 @@ test('chat stays beside an editable canvas and keeps its conversation when docke
     await prompt.press('Enter');
     await expect(chat.getByRole('button', { name: 'Accept' })).toBeVisible();
 
+    const visualDraft = chat.getByRole('figure', { name: 'Proposed result' });
+    await expect(visualDraft.locator('svg rect')).toHaveCount(2);
+    await drawRect(page, { x: 500, y: 300 }, { x: 550, y: 350 });
+    await expect(visualDraft.locator('svg rect')).toHaveCount(3);
+
     const header = chat.getByRole('button', { name: /^Move AI chat/ });
 
     await header.focus();
@@ -374,7 +399,7 @@ test('chat stays beside an editable canvas and keeps its conversation when docke
     await expect(chat.getByRole('log')).toContainText('Add a sign-in button');
     expect(requests).toHaveLength(1);
     await chat.getByRole('button', { name: 'Accept' }).click();
-    await expect(shapes(page)).toHaveCount(2);
+    await expect(shapes(page)).toHaveCount(3);
     await expect(chat).toContainText('Applied. You can undo this change.');
     await prompt.fill('Add another button');
     await prompt.press('Enter');
@@ -384,7 +409,7 @@ test('chat stays beside an editable canvas and keeps its conversation when docke
     await chat.getByRole('button', { name: 'New chat' }).click();
     await expect(chat.getByRole('log')).not.toContainText('Add another button');
     await expect(chat.getByRole('button', { name: 'Accept' })).toHaveCount(0);
-    await expect(shapes(page)).toHaveCount(2);
+    await expect(shapes(page)).toHaveCount(3);
     await chat.getByRole('button', { name: 'Close AI chat' }).click();
     await expect(chat).toHaveCount(0);
     await expect(editWithWords(page)).toBeFocused();

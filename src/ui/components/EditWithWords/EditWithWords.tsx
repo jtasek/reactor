@@ -6,6 +6,7 @@ import { useActions, useCurrentDocument, useSelectedShapesIds } from 'src/app/ho
 import { useSelectedFrameId } from 'src/app/frameHooks';
 import { authoringKeys } from 'src/app/screenAuthoring';
 import styles from './styles.css';
+import { ProposalPreview } from './ProposalPreview';
 
 const SCROLL_BOTTOM_REACH_PX = 32;
 const MAX_PROMPT_LENGTH = 2000;
@@ -185,6 +186,9 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
                             )}
                             {turn.status === 'cancelled' && (
                                 <p className={styles.status}>Cancelled. Nothing changed.</p>
+                            )}
+                            {turn.status === 'proposed' && (
+                                <ProposalPreview operations={turn.operations} />
                             )}
                             {turn.status === 'proposed' && (
                                 <div className={styles.actions}>
