@@ -56,12 +56,28 @@ it('uses resized view dimensions but persists membership and coordinates in its 
         size: { width: 500, height: 250 }
     })!;
     const shape = create('rectangle w=40 h=20');
-    expect(shape).toMatchObject({ parentFrameId: frameId, position: { x: 330, y: 195 } });
+    // The 500 × 250 view shows a 300 × 200 Screen: center inside the Screen.
+    expect(shape).toMatchObject({ parentFrameId: frameId, position: { x: 230, y: 170 } });
     expect(
         projectScreenViews(store.state.currentDocument)
             .find(({ view }) => view.id === viewId)
             ?.projection?.shapes.find(({ id }) => id === shape.id)
-    ).toMatchObject({ position: { x: 830, y: 515 } });
+    ).toMatchObject({ position: { x: 730, y: 490 } });
+});
+
+it('centers in a view narrower than its Screen on the visible part', () => {
+    const { store, frameId, create } = setup();
+    store.actions.editFrame({ kind: 'update', id: frameId, changes: { kind: 'screen' } });
+    store.actions.editFrame({
+        kind: 'addView',
+        screenId: frameId,
+        position: { x: 600, y: 400 },
+        size: { width: 200, height: 100 }
+    });
+    expect(create('circle r=10')).toMatchObject({
+        parentFrameId: frameId,
+        position: { x: 200, y: 130 }
+    });
 });
 
 it('uses explicit and automatically selected alternate layouts', () => {

@@ -9,6 +9,7 @@ import {
 } from 'src/app/hooks';
 import { takesEditorInput } from 'src/events/input';
 import { screenViewName } from 'src/app/screenViews';
+import { isFrameLocked, isFrameVisible } from 'src/app/frameState';
 import { getTools } from 'src/app/actions/startup';
 import { screenToWorld } from 'src/app/camera';
 import { CommandLine } from './CommandLine';
@@ -59,15 +60,15 @@ const ActiveCommandLine: FC = () => {
                 return 'Canvas position is unavailable.';
             }
 
+            if (!canCreate) {
+                return 'Creation is unavailable. Return to an editable canvas and finish the current gesture.';
+            }
+
             const target = creationTarget(state, center);
             const operation = creationOperation(input, target.center, target);
 
             if (!operation) {
                 return actions.submitCommandLine(input);
-            }
-
-            if (!canCreate) {
-                return 'Creation is unavailable. Return to an editable canvas and finish the current gesture.';
             }
 
             const result = actions.applyOperations({
@@ -118,17 +119,25 @@ const ActiveCommandLine: FC = () => {
     const selection = frame
         ? screenViewName(document, frame)
         : `${document.selectedShapesIds.length} selected`;
+    const editable =
+        frame && isFrameVisible(document, frame.id) && !isFrameLocked(document, frame.id);
+    const creationContext = !frame
+        ? 'New shapes on canvas'
+        : editable
+          ? `New shapes inside this ${frame.kind === 'view' ? 'view' : 'frame'}`
+          : 'Selection is locked or hidden';
+    const placement = !frame
+        ? undefined
+        : frame.kind === 'view'
+          ? "Center of the view, kept inside its Screen. Optional x/y are relative to the Screen's top-left; stack layout controls placement where applicable. Edits update the shared Screen layout."
+          : 'Frame center. Optional x/y are relative to its top-left; stack layout controls placement where applicable.';
 
     return (
         <CommandLine
             onSubmit={submit}
             onClose={() => actions.ui.toggleControlVisibility('commandLine')}
-            context={`${selection} · New shapes ${frame ? 'inside this container' : 'on canvas'}`}
-            placement={
-                frame
-                    ? 'Container center. Optional x/y are relative to its top-left; stack layout controls placement where applicable. Screen view edits update the shared layout.'
-                    : undefined
-            }
+            context={`${selection} · ${creationContext}`}
+            placement={placement}
             suggestions={[
                 ...getTools().map((tool) => ({
                     id: `${tool.name} tool`,

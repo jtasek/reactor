@@ -31,10 +31,15 @@ export function creationTarget(state: Context['state'], canvasCenter: Point) {
             );
         }
 
+        // A view wider or taller than its Screen still centers inside the Screen,
+        // so the new shape stays visible in the Screen and its other views.
+        const shown = placed.projection.screen.size;
+        const source = placed.screen.size;
+
         return {
             center: {
-                x: placed.projection.screen.size.width / 2,
-                y: placed.projection.screen.size.height / 2
+                x: Math.min(shown.width, source.width) / 2,
+                y: Math.min(shown.height, source.height) / 2
             },
             origin: placed.screen.position,
             parentFrameId: placed.screen.id

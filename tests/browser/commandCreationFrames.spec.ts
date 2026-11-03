@@ -75,3 +75,47 @@ for (const kind of ['frame', 'view'] as const) {
         await expectPlacedCoordinate(shape, 'x', kind === 'frame' ? '112' : '512');
     });
 }
+
+for (const lock of ['frame', 'document'] as const) {
+    test(`command creation explains a locked ${lock}`, async ({ page }) => {
+        const document = createDocument({
+            id: 'command-locked',
+            ...(lock === 'document' ? { locked: true } : {}),
+            frames: {
+                home: {
+                    id: 'home',
+                    name: 'Home',
+                    kind: 'frame',
+                    visible: true,
+                    locked: lock === 'frame',
+                    position: { x: 100, y: 80 },
+                    size: { width: 300, height: 200 }
+                }
+            }
+        });
+        const saved = serializePersistedState({
+            currentDocumentId: document.id,
+            documents: { [document.id]: document }
+        });
+        await page.addInitScript(
+            (raw) => localStorage.setItem('reactor', raw),
+            JSON.stringify(saved)
+        );
+        await openEditor(page, ['Explorer', 'Command Line']);
+        await page
+            .getByRole('region', { name: 'Explorer' })
+            .getByRole('button', { name: 'Home', exact: true })
+            .click();
+        const input = page.getByRole('combobox', { name: 'Command' });
+        const form = page.locator('form', { has: input });
+        await expect(form).toContainText('Selection is locked or hidden');
+        await input.fill('rectangle');
+        await input.press('Enter');
+        await expect(form.getByRole('status')).toHaveText(
+            lock === 'document'
+                ? /^Creation is unavailable/
+                : /^The selected frame is unavailable, hidden or locked/
+        );
+        await expect(page.locator('svg#surface rect[data-cy="Rectangle 1"]')).toHaveCount(0);
+    });
+}
