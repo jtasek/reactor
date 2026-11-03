@@ -486,3 +486,30 @@ test('composition Enter does not execute a command', async ({ page }) => {
     await expect(shapes(page)).toHaveCount(0);
     await expect(input).toHaveValue('rectangle w=80');
 });
+
+test('cached palette results use current selection permissions and latest input', async ({
+    page
+}) => {
+    await openEditor(page, ['Command Line', 'Explorer']);
+    const input = page.getByRole('combobox', { name: 'Command' });
+    await input.fill('rectangle w=80 h=40 name="Cached target"');
+    await input.press('Enter');
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Cached target', exact: true })
+        .click();
+    await input.fill('delete');
+    const option = page
+        .getByRole('option')
+        .filter({ has: page.locator('strong', { hasText: /^Delete$/ }) });
+    await expect(option).toHaveAttribute('aria-disabled', 'false');
+    await page.locator('svg#surface').click({ position: { x: 600, y: 600 } });
+    await expect(option).toHaveAttribute('aria-disabled', 'true');
+    await input.press('Enter');
+    await expect(shapes(page)).toHaveCount(1);
+    await input.fill('create circle');
+    await input.fill('undo');
+    await input.press('Enter');
+    await expect(shapes(page)).toHaveCount(0);
+    await expect(page.getByRole('textbox', { name: 'Radius', exact: true })).toHaveCount(0);
+});

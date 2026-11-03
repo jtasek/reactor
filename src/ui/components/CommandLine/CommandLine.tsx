@@ -7,14 +7,8 @@ import { CREATION_PATTERN, PROPERTY_ALIAS_HELP } from './creation';
 import { editorForAction, editorForInput, editorInput, parameterLabel } from './parameters';
 import type { ParameterEditor } from './parameters';
 
-interface Suggestion {
-    id: string;
-    name: string;
-    description: string;
-    enabled: boolean;
-    /** Why the action is unavailable, shown in place of the generic reason. */
-    unavailable?: string;
-}
+import type { Suggestion } from './search';
+import { useCommandSearch } from './useCommandSearch';
 
 const STALE_TARGET = 'Selection changed. Check the target above, then apply again.';
 
@@ -56,18 +50,11 @@ export const CommandLine: FC<Props> = ({
     const formRef = useRef<HTMLFormElement>(null);
     const priorContext = useRef(targetKey);
     const query = value.trim().toLowerCase();
-    const rank = (item: Suggestion) =>
-        (item.id.toLowerCase() === query || item.name.toLowerCase() === query
-            ? 100
-            : item.name.toLowerCase().startsWith(query)
-              ? 20
-              : 0) + Number(item.enabled);
-    const matches = suggestions
-        .filter(({ id, name, description }) =>
-            `${id} ${name} ${description}`.toLowerCase().includes(query)
-        )
-        .sort((a, b) => rank(b) - rank(a))
-        .slice(0, 8);
+    const { matches, waiting, resolve } = useCommandSearch(
+        suggestions,
+        query,
+        open && !editor && !value.includes('=')
+    );
     const listShown = open && !editor && matches.length > 0;
     const directInput =
         (CREATION_PATTERN.test(value.trim()) && !/^create\s/i.test(value.trim())) ||
@@ -77,7 +64,7 @@ export const CommandLine: FC<Props> = ({
                 !editorForAction(item.id)
         );
     const choosing = listShown && (active >= 0 || !directInput);
-    const chosenIndex = Math.max(0, active);
+    const chosenIndex = Math.max(0, Math.min(active, matches.length - 1));
     const creating = editor?.creation || CREATION_PATTERN.test(value.trim());
     const displayContext =
         editor && ('gap' in editor.values || 'padding' in editor.values)
@@ -154,8 +141,10 @@ export const CommandLine: FC<Props> = ({
         if (pending) {
             return;
         }
-        if (choosing && matches[chosenIndex]) {
-            choose(matches[chosenIndex]);
+        const candidate =
+            waiting && !directInput ? resolve()[0] : choosing ? matches[chosenIndex] : undefined;
+        if (candidate) {
+            choose(candidate);
 
             return;
         }
@@ -276,7 +265,8 @@ export const CommandLine: FC<Props> = ({
                 )}
             </header>
             {displayContext && <div className={styles.context}>{displayContext}</div>}
-            <div className={styles.content}>
+            <div className={styles.content} aria-busy={waiting}>
+                {waiting && <small role="status">Searching commands…</small>}
                 {editor && (
                     <fieldset>
                         <legend>
@@ -378,6 +368,7 @@ export const CommandLine: FC<Props> = ({
                     open &&
                     query &&
                     !matches.length &&
+                    !waiting &&
                     !SELECTION_PATTERN.test(value.trim()) &&
                     !creating && (
                         <small>
@@ -434,7 +425,7 @@ export const CommandLine: FC<Props> = ({
                         type="submit"
                         disabled={pending || (!value.trim() && !choosing)}
                     >
-                        {choosing
+                        {choosing || waiting
                             ? 'Choose action'
                             : editor?.creation
                               ? editor.title
