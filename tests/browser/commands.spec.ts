@@ -327,7 +327,7 @@ test('command line creates with guided parameters, preserves errors and supports
     await input.fill('create rectangle');
     await input.press('ArrowDown');
     await input.press('Enter');
-    await form.getByRole('textbox', { name: 'width', exact: true }).fill('200');
+    await form.getByRole('textbox', { name: 'Width', exact: true }).fill('200');
     await form.getByRole('button', { name: 'Create rectangle', exact: false }).click();
     await expect(shapes(page)).toHaveCount(1);
     await expect(shapes(page).first().locator('rect')).toHaveAttribute('width', '200');
@@ -396,7 +396,7 @@ test('Escape in a guided parameter returns to the command field', async ({ page 
     await input.press('ArrowDown');
     await input.press('Enter');
     await expect(form.getByText(/^Aliases:/)).toBeVisible();
-    const radius = form.getByRole('textbox', { name: 'radius', exact: true });
+    const radius = form.getByRole('textbox', { name: 'Radius', exact: true });
     await radius.fill('');
     await radius.press('Enter');
     await expect(form.getByRole('status')).toHaveText('radius needs a value.');
@@ -431,8 +431,8 @@ test('guided selection edits keep blank values unchanged and undo together', asy
     await input.fill('resize');
     await input.press('Enter');
     const form = page.locator('form', { has: input });
-    await form.getByRole('textbox', { name: 'width', exact: true }).fill('240');
-    await expect(form.getByRole('textbox', { name: 'height', exact: true })).toHaveValue('');
+    await form.getByRole('textbox', { name: 'Width', exact: true }).fill('240');
+    await expect(form.getByRole('textbox', { name: 'Height', exact: true })).toHaveValue('');
     await form.getByRole('button', { name: 'Apply changes', exact: false }).click();
     await expect(shapes(page).locator('rect[data-cy="Box"]')).toHaveAttribute('width', '240');
     await expect(shapes(page).locator('rect[data-cy="Box"]')).toHaveAttribute('height', '40');
@@ -442,6 +442,29 @@ test('guided selection edits keep blank values unchanged and undo together', asy
     await input.fill('rectangle tool');
     await input.press('Enter');
     await expect(input).toHaveCount(0);
+});
+
+test('a selection change holds a typed edit until it is applied again', async ({ page }) => {
+    await openEditor(page, ['Command Line', 'Explorer']);
+    const input = page.getByRole('combobox', { name: 'Command' });
+    const form = page.locator('form', { has: input });
+    await input.fill('rectangle w=80 h=40 name="First"');
+    await input.press('Enter');
+    await input.fill('rectangle w=80 h=40 name="Second"');
+    await input.press('Enter');
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    await explorer.getByRole('button', { name: 'First', exact: true }).click();
+    await input.fill('w=200');
+    await explorer.getByRole('button', { name: 'Second', exact: true }).click();
+    await expect(form.getByRole('status')).toHaveText(
+        'Selection changed. Check the target above, then apply again.'
+    );
+    await input.press('Enter');
+    await expect(shapes(page).locator('rect[data-cy="First"]')).toHaveAttribute('width', '80');
+    await expect(shapes(page).locator('rect[data-cy="Second"]')).toHaveAttribute('width', '80');
+    await input.press('Enter');
+    await expect(shapes(page).locator('rect[data-cy="Second"]')).toHaveAttribute('width', '200');
+    await expect(shapes(page).locator('rect[data-cy="First"]')).toHaveAttribute('width', '80');
 });
 
 test('composition Enter does not execute a command', async ({ page }) => {

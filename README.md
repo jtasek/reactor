@@ -77,6 +77,7 @@ bar, side bar, panels and other parts of the editor.
 | Shift+H, Alt+Shift+H | Hide the selection; show every hidden shape, group and layer |
 | `k`, Shift+K | Lock and unlock the selection |
 | `+` or `=`, `-`, `0` | Zoom in, zoom out, reset zoom |
+| Ctrl/Cmd+K | Open the Command Line |
 
 The Explorer has two views. **Objects** shows actual containment: Canvas holds top-level
 frames and loose artwork, and frames contain their child frames, groups and shapes.
@@ -162,7 +163,10 @@ validated commands. Escape returns from parameters to search, then closes the pa
 Tab moves between fields. Successful edits keep it open, while activating a drawing tool
 closes it. Ask AI opens an unsent draft in the existing chat and closes the palette only
 when the handoff succeeds; existing drafts and proposals are preserved. The palette loads
-on demand when enabled from More panels → Command Line.
+on demand when enabled from More panels → Command Line, or with Ctrl/Cmd+K. If the
+selection changes while a typed edit waits, the first Enter only confirms the new target;
+press it again to apply. Edit stack spacing is unavailable until the frame (or a view's
+active layout) has a Row or Column stack.
 
 Examples:
 

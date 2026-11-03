@@ -12,7 +12,11 @@ interface Suggestion {
     name: string;
     description: string;
     enabled: boolean;
+    /** Why the action is unavailable, shown in place of the generic reason. */
+    unavailable?: string;
 }
+
+const STALE_TARGET = 'Selection changed. Check the target above, then apply again.';
 
 export interface Props {
     onSubmit: (command: string) => string | undefined;
@@ -43,6 +47,10 @@ export const CommandLine: FC<Props> = ({
     const [active, setActive] = useState(-1);
     const [editor, setEditor] = useState<ParameterEditor>();
     const [pending, setPending] = useState(false);
+    /** The selection changed under a typed command; the next submit only confirms it. */
+    const [staleTarget, setStaleTarget] = useState(false);
+    /** The editor was opened from a suggestion, so its fields replace the typed syntax help. */
+    const [guided, setGuided] = useState(false);
     const listId = useId();
     const inputRef = useRef<HTMLInputElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
@@ -97,7 +105,7 @@ export const CommandLine: FC<Props> = ({
 
     useEffect(() => {
         if (priorContext.current !== targetKey && value.trim()) {
-            setMessage('Selection changed. Review the target before applying.');
+            setStaleTarget(true);
         }
         priorContext.current = targetKey;
     }, [targetKey, value]);
@@ -112,6 +120,8 @@ export const CommandLine: FC<Props> = ({
 
     const back = () => {
         setEditor(undefined);
+        setGuided(false);
+        setStaleTarget(false);
         setValue('');
         setMessage(undefined);
         setActive(-1);
@@ -124,12 +134,16 @@ export const CommandLine: FC<Props> = ({
         }
 
         if (!item.enabled) {
-            setMessage(`${item.name} is not available for the current selection.`);
+            setMessage(
+                item.unavailable ?? `${item.name} is not available for the current selection.`
+            );
 
             return;
         }
         const next = editorForAction(item.id);
         setEditor(next);
+        setGuided(Boolean(next));
+        setStaleTarget(false);
         setValue(next ? editorInput(next) : item.id);
         setMessage(undefined);
         setOpen(false);
@@ -150,6 +164,12 @@ export const CommandLine: FC<Props> = ({
 
             return;
         }
+        if (staleTarget) {
+            setStaleTarget(false);
+            setMessage(STALE_TARGET);
+
+            return;
+        }
         const problem = onSubmit(value);
         setMessage(problem);
         setOpen(false);
@@ -163,6 +183,7 @@ export const CommandLine: FC<Props> = ({
         }
         setValue('');
         setEditor(undefined);
+        setGuided(false);
         setMessage('Command completed.');
         inputRef.current?.focus();
     };
@@ -212,6 +233,10 @@ export const CommandLine: FC<Props> = ({
                     onChange={(event) => {
                         setValue(event.target.value);
                         setEditor(editorForInput(event.target.value));
+                        setGuided(false);
+                        if (!event.target.value.trim()) {
+                            setStaleTarget(false);
+                        }
                         setMessage(undefined);
                         setOpen(true);
                         setActive(-1);
@@ -271,20 +296,21 @@ export const CommandLine: FC<Props> = ({
                                     {editor.creation && ['x', 'y'].includes(key)
                                         ? key.toUpperCase()
                                         : parameterLabel(key)}
-                                    {[
-                                        'width',
-                                        'height',
-                                        'radius',
-                                        'x',
-                                        'y',
-                                        'gap',
-                                        'padding',
-                                        'fontSize'
-                                    ].includes(key)
-                                        ? ' · px'
-                                        : ''}
+                                    <span aria-hidden="true">
+                                        {[
+                                            'width',
+                                            'height',
+                                            'radius',
+                                            'x',
+                                            'y',
+                                            'gap',
+                                            'padding',
+                                            'fontSize'
+                                        ].includes(key)
+                                            ? ' · px'
+                                            : ''}
+                                    </span>
                                     <input
-                                        aria-label={key}
                                         value={fieldValue}
                                         disabled={pending}
                                         placeholder={editor.creation ? undefined : 'Unchanged'}
@@ -338,7 +364,8 @@ export const CommandLine: FC<Props> = ({
                                         <span>
                                             {item.enabled
                                                 ? item.description
-                                                : 'Unavailable for the current selection'}
+                                                : (item.unavailable ??
+                                                  'Unavailable for the current selection')}
                                         </span>
                                     </div>
                                     <Icon icon={{ component: ChevronRight, size: 14 }} />
@@ -361,13 +388,15 @@ export const CommandLine: FC<Props> = ({
                         </small>
                     )}
                 {creating && <small>{PROPERTY_ALIAS_HELP}</small>}
-                {!creating && (selectionHelp || SELECTION_PATTERN.test(value.trim())) && (
-                    <small>{selectionHelp ?? SELECTION_HELP}</small>
-                )}
+                {!creating &&
+                    !guided &&
+                    (selectionHelp || SELECTION_PATTERN.test(value.trim())) && (
+                        <small>{selectionHelp ?? SELECTION_HELP}</small>
+                    )}
             </div>
-            {message && (
+            {(staleTarget || message) && (
                 <div role="status" className={styles.message}>
-                    {message}
+                    {staleTarget ? STALE_TARGET : message}
                 </div>
             )}
             <footer className={styles.footer}>

@@ -157,7 +157,16 @@ const ActiveCommandLine: FC = () => {
         frame ? item.id !== 'edit radius' : item.id !== 'edit stack'
     ).map((item) => ({
         ...item,
-        enabled: canEdit && Boolean(frame || document.selectedShapesIds.length),
+        enabled:
+            canEdit &&
+            Boolean(frame || document.selectedShapesIds.length) &&
+            (item.id !== 'edit stack' || Boolean(layout?.stack)),
+        unavailable:
+            item.id === 'edit stack' && frame && !layout?.stack
+                ? frame.kind === 'view'
+                    ? 'Its active layout has no stack. Choose Row or Column in the Inspector first.'
+                    : 'This frame has no stack. Choose Row or Column in the Inspector first.'
+                : undefined,
         description:
             item.id === 'edit stack' && frame?.kind === 'view'
                 ? 'Edit the active shared layout; resize the view separately'
@@ -197,7 +206,12 @@ const ActiveCommandLine: FC = () => {
                     enabled: canCreate
                 })),
                 ...commands
-                    .filter((command) => !['rectangle', 'circle', 'text'].includes(command.id))
+                    .filter(
+                        (command) =>
+                            !['rectangle', 'circle', 'text', 'open-command-line'].includes(
+                                command.id
+                            )
+                    )
                     .map((command) => ({
                         id: command.id,
                         name: command.name,
