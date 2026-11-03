@@ -1,31 +1,26 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     availableMatches,
     createCommandSearch,
-    LARGE_CATALOGUE_SIZE,
-    scheduleSearch
+    sameMetadata,
+    scheduleSearch,
+    shouldDelay
 } from './search';
 import type { Suggestion } from './search';
 
 export function useCommandSearch(suggestions: Suggestion[], query: string, active: boolean) {
-    const catalogue = useMemo(
-        () =>
-            JSON.stringify(
-                suggestions.map(({ id, name, description }) => ({ id, name, description }))
-            ),
-        [suggestions]
-    );
-    const index = useMemo(() => createCommandSearch(JSON.parse(catalogue)), [catalogue]);
+    // The caller builds a new array each render, so compare the searchable text
+    // entry by entry instead of by identity; rebuild only when it changed.
+    const built = useRef<{
+        catalogue: Suggestion[];
+        index: ReturnType<typeof createCommandSearch>;
+    }>(undefined);
+    if (!built.current || !sameMetadata(built.current.catalogue, suggestions)) {
+        built.current = { catalogue: suggestions, index: createCommandSearch(suggestions) };
+    }
+    const { index } = built.current;
     const [, refresh] = useState(0);
-    const exact = suggestions.some(
-        (item) => item.id.toLowerCase() === query || item.name.toLowerCase() === query
-    );
-    const waiting =
-        active &&
-        Boolean(query) &&
-        !exact &&
-        suggestions.length >= LARGE_CATALOGUE_SIZE &&
-        !index.has(query);
+    const waiting = shouldDelay(suggestions, query, active, index.has);
 
     useEffect(() => {
         if (!waiting) {

@@ -79,6 +79,64 @@ export function availableMatches(groups: number[][], suggestions: Suggestion[]):
     return result;
 }
 
+/** True when two catalogues have the same searchable text, entry by entry. */
+export function sameMetadata(previous: Metadata[], next: Metadata[]): boolean {
+    if (previous.length !== next.length) {
+        return false;
+    }
+    for (let i = 0; i < next.length; i++) {
+        const a = previous[i];
+        const b = next[i];
+        if (a.id !== b.id || a.name !== b.name || a.description !== b.description) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/** Whether this query should wait for the debounce instead of searching now. */
+export function shouldDelay(
+    catalogue: Metadata[],
+    query: string,
+    active: boolean,
+    cached: (query: string) => boolean,
+    largeSize = LARGE_CATALOGUE_SIZE
+): boolean {
+    return (
+        active &&
+        Boolean(query) &&
+        catalogue.length >= largeSize &&
+        !cached(query) &&
+        !catalogue.some(
+            (item) => item.id.toLowerCase() === query || item.name.toLowerCase() === query
+        )
+    );
+}
+
+/** The suggestion Enter picks: the latest input's best match while a search is pending. */
+export function submitCandidate({
+    waiting,
+    directInput,
+    choosing,
+    matches,
+    chosenIndex,
+    resolve
+}: {
+    waiting: boolean;
+    directInput: boolean;
+    choosing: boolean;
+    matches: Suggestion[];
+    chosenIndex: number;
+    resolve: () => Suggestion[];
+}): Suggestion | undefined {
+    if (waiting) {
+        return directInput ? undefined : resolve()[0];
+    }
+
+    return choosing ? matches[chosenIndex] : undefined;
+}
+
 export function scheduleSearch(search: () => void): () => void {
     const timer = setTimeout(search, SEARCH_DELAY_MS);
 

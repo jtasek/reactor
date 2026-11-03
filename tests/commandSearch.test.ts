@@ -1,8 +1,11 @@
 import {
     availableMatches,
     createCommandSearch,
+    sameMetadata,
     scheduleSearch,
-    SEARCH_DELAY_MS
+    SEARCH_DELAY_MS,
+    shouldDelay,
+    submitCandidate
 } from 'src/ui/components/CommandLine/search';
 import type { Suggestion } from 'src/ui/components/CommandLine/search';
 
@@ -108,5 +111,62 @@ it('matches the existing ranking across large catalogues and changing guards', (
             .sort((a, b) => rank(b) - rank(a))
             .slice(0, 8);
         expect(availableMatches(index.search(query), catalogue)).toEqual(expected);
+    }
+});
+
+it('treats a rebuilt catalogue with the same text as unchanged', () => {
+    const copy = suggestions.map((item) => ({ ...item, enabled: !item.enabled }));
+    expect(sameMetadata(suggestions, copy)).toBe(true);
+    expect(sameMetadata(suggestions, copy.slice(1))).toBe(false);
+    expect(
+        sameMetadata(
+            suggestions,
+            copy.map((item, i) => (i === 2 ? { ...item, description: 'Changed' } : item))
+        )
+    ).toBe(false);
+});
+
+it('waits only for uncached partial queries in large catalogues', () => {
+    const index = createCommandSearch(suggestions);
+    // Lower the threshold so the three-entry fixture counts as large.
+    const delay = (query: string, active = true) =>
+        shouldDelay(suggestions, query, active, index.has, 3);
+    expect(delay('mov')).toBe(true);
+    expect(delay('mov', false)).toBe(false);
+    expect(delay('')).toBe(false);
+    expect(delay('move left')).toBe(false);
+    expect(delay('select tool')).toBe(false);
+    index.search('mov');
+    expect(delay(' MOV ')).toBe(false);
+    expect(shouldDelay(suggestions, 'nudge', true, index.has)).toBe(false);
+});
+
+it('Enter while waiting picks the latest input, not the hidden list', () => {
+    const index = createCommandSearch(suggestions);
+    const resolve = () => availableMatches(index.search('nudge'), suggestions);
+    const stale = [suggestions[2]];
+    const base = { matches: stale, chosenIndex: 0, choosing: true, resolve };
+    expect(submitCandidate({ ...base, waiting: true, directInput: false })?.id).toBe('move-left');
+    expect(submitCandidate({ ...base, waiting: true, directInput: true })).toBeUndefined();
+    expect(submitCandidate({ ...base, waiting: false, directInput: false })?.id).toBe('tool');
+    expect(
+        submitCandidate({ ...base, waiting: false, directInput: false, choosing: false })
+    ).toBeUndefined();
+});
+
+it('a scheduled search fills the cache so the next render stops waiting', () => {
+    vi.useFakeTimers();
+    try {
+        const index = createCommandSearch(suggestions);
+        const delay = () => shouldDelay(suggestions, 'left', true, index.has, 3);
+        expect(delay()).toBe(true);
+        scheduleSearch(() => index.search('left'));
+        vi.advanceTimersByTime(SEARCH_DELAY_MS);
+        expect(delay()).toBe(false);
+        expect(availableMatches(index.search('left'), suggestions).map(({ id }) => id)).toEqual([
+            'move-left'
+        ]);
+    } finally {
+        vi.useRealTimers();
     }
 });

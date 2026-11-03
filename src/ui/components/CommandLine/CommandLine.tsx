@@ -7,6 +7,7 @@ import { CREATION_PATTERN, PROPERTY_ALIAS_HELP } from './creation';
 import { editorForAction, editorForInput, editorInput, parameterLabel } from './parameters';
 import type { ParameterEditor } from './parameters';
 
+import { submitCandidate } from './search';
 import type { Suggestion } from './search';
 import { useCommandSearch } from './useCommandSearch';
 
@@ -141,8 +142,14 @@ export const CommandLine: FC<Props> = ({
         if (pending) {
             return;
         }
-        const candidate =
-            waiting && !directInput ? resolve()[0] : choosing ? matches[chosenIndex] : undefined;
+        const candidate = submitCandidate({
+            waiting,
+            directInput,
+            choosing,
+            matches,
+            chosenIndex,
+            resolve
+        });
         if (candidate) {
             choose(candidate);
 
@@ -266,7 +273,8 @@ export const CommandLine: FC<Props> = ({
             </header>
             {displayContext && <div className={styles.context}>{displayContext}</div>}
             <div className={styles.content} aria-busy={waiting}>
-                {waiting && <small role="status">Searching commands…</small>}
+                {/* Not a live region: it would be announced on every keystroke; aria-busy covers it. */}
+                {waiting && <small>Searching commands…</small>}
                 {editor && (
                     <fieldset>
                         <legend>
