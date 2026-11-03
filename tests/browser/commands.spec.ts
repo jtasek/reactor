@@ -113,7 +113,7 @@ for (const width of [360, 700]) {
         await openEditor(page);
         const commandLine = page.getByRole('checkbox', { name: 'Command Line', exact: true });
         await commandLine.check();
-        await expect(page.getByRole('searchbox', { name: 'Command' })).toBeVisible();
+        await expect(page.getByRole('combobox', { name: 'Command' })).toBeVisible();
         await commandLine.uncheck();
         await drawRect(page, { x: 150, y: 300 }, { x: 190, y: 340 });
 
@@ -150,7 +150,7 @@ test('the command line runs a command on Enter and reports what it cannot run', 
 }) => {
     await openEditor(page, ['Command Line']);
 
-    const input = page.getByRole('searchbox', { name: 'Command' });
+    const input = page.getByRole('combobox', { name: 'Command' });
     const camera = page.locator('svg#surface #camera');
     const message = page.locator('form', { has: input }).getByRole('status');
 
@@ -316,4 +316,61 @@ test('a group is selected and dragged by its box, between its shapes', async ({ 
     await expect(rects.nth(0)).toHaveAttribute('y', '200');
     await expect(rects.nth(1)).toHaveAttribute('y', '200');
     await expect(page.locator('[data-handle][data-group-id]')).toHaveCount(9);
+});
+
+test('command line creates with guided parameters, preserves errors and supports undo', async ({
+    page
+}, testInfo) => {
+    await openEditor(page, ['Command Line']);
+    const input = page.getByRole('combobox', { name: 'Command' });
+    const form = page.locator('form', { has: input });
+    await input.fill('create rectangle');
+    await input.press('ArrowDown');
+    await input.press('Enter');
+    await form.getByRole('textbox', { name: 'width', exact: true }).fill('200');
+    await form.getByRole('button', { name: 'Run', exact: true }).click();
+    await expect(shapes(page)).toHaveCount(1);
+    await expect(shapes(page).first().locator('rect')).toHaveAttribute('width', '200');
+    await page.locator('svg#surface').click({ position: { x: 600, y: 600 } });
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(shapes(page)).toHaveCount(0);
+    await input.fill('circle radius=-2');
+    await input.press('Enter');
+    await expect(form.getByRole('status')).toContainText('radius must be');
+    await expect(input).toHaveValue('circle radius=-2');
+    await expect(shapes(page)).toHaveCount(0);
+    await expect(form.getByRole('button', { name: 'Ask AI' })).toHaveCount(0);
+    await input.fill('create text');
+    await input.press('ArrowDown');
+    await input.press('Enter');
+    await page.screenshot({ path: testInfo.outputPath('command-line.png') });
+    await page.setViewportSize({ width: 390, height: 800 });
+    await expect(form.getByRole('button', { name: 'Run', exact: true })).toBeVisible();
+    const bounds = (await form.boundingBox())!;
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+    await page.screenshot({ path: testInfo.outputPath('command-line-narrow.png') });
+});
+
+test('command line accepts property aliases and rejects conflicting spellings', async ({
+    page
+}) => {
+    await openEditor(page, ['Command Line']);
+    const input = page.getByRole('combobox', { name: 'Command' });
+    const form = page.locator('form', { has: input });
+    await input.fill('rectangle w=120 h=32');
+    await input.press('Enter');
+    await expect(shapes(page).locator('rect')).toHaveAttribute('width', '120');
+    await expect(shapes(page).locator('rect')).toHaveAttribute('height', '32');
+    await input.fill('circle r=18');
+    await input.press('Enter');
+    await expect(shapes(page).locator('circle')).toHaveAttribute('r', '18');
+    await input.fill('text text="Welcome home" fs=20');
+    await input.press('Enter');
+    await expect(shapes(page).locator('text')).toContainText('Welcome home');
+    await input.fill('rectangle w=120 width=240');
+    await input.press('Enter');
+    await expect(form.getByRole('status')).toContainText('Parameter width is repeated');
+    await expect(input).toHaveValue('rectangle w=120 width=240');
+    await expect(shapes(page)).toHaveCount(3);
 });

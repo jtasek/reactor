@@ -575,3 +575,23 @@ test('a proposal whose shape is deleted on the canvas can no longer be accepted'
     await expect(chat.getByRole('button', { name: 'Accept' })).toBeDisabled();
     await expect(chat.getByRole('button', { name: 'Discard' })).toBeEnabled();
 });
+
+test('command line opens an unsent AI draft without making a request', async ({ page }) => {
+    const requests = await signInWithAi(page, () => lines({ type: 'done' }));
+    await openEditor(page, ['Command Line']);
+    const input = page.getByRole('combobox', { name: 'Command' });
+    await input.fill('Make a welcome screen');
+    await page.getByRole('button', { name: 'Ask AI', exact: true }).click();
+    const chat = page.getByRole('region', { name: 'AI chat', exact: true });
+    await expect(chat.getByRole('textbox', { name: 'Change to make' })).toHaveValue(
+        'Make a welcome screen'
+    );
+    expect(requests).toHaveLength(0);
+    await input.fill('Another idea');
+    await page.getByRole('button', { name: 'Ask AI', exact: true }).click();
+    await expect(input).toHaveValue('Another idea');
+    await expect(chat.getByRole('textbox', { name: 'Change to make' })).toHaveValue(
+        'Make a welcome screen'
+    );
+    expect(requests).toHaveLength(0);
+});

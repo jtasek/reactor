@@ -131,8 +131,25 @@ children in place, including through rotated instances and instances positioned 
 The instance keeps its placement while you edit; the stack reflows when you leave. Use
 **Back to canvas** or Escape to restore your original view and selection. Edits update every instance.
 
-Shortcuts do nothing while a text field has focus. The command line runs a command
-by name.
+Shortcuts do nothing while a text field has focus. Enable **Command Line** in the Control Panel
+to search commands by name or description. Arrow keys select suggestions; Enter chooses one,
+then Enter or **Run** executes it. Creation suggestions expose editable parameters. A command
+such as `Rectangle tool` activates drawing; `rectangle w=160 h=48` creates a shape immediately.
+
+Examples:
+
+- `rectangle w=160 h=48 fill=#3366ff`
+- `circle r=24 x=100 y=100`
+- `text text="Hello world" fs=24`
+
+Aliases are `w` → `width`, `h` → `height`, `r` → `radius`, `fs` / `font-size` → `fontSize`,
+and `text` → `value`. Property names ignore case. Supplying an alias and its full name together
+is an error. New shapes are placed on the canvas at the visible center unless coordinates are
+provided; rectangle coordinates specify its top-left, circle coordinates its center, and text
+coordinates its text origin. Creation uses the normal validation and undo flow.
+
+When AI is available, **Ask AI** opens the existing chat with an unsent draft. Existing chat drafts
+and pending proposals are preserved. Text is only sent to the model when you send it from chat.
 
 Input:
 
