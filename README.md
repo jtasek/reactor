@@ -144,9 +144,13 @@ Examples:
 
 Aliases are `w` → `width`, `h` → `height`, `r` → `radius`, `fs` / `font-size` → `fontSize`,
 and `text` → `value`. Property names ignore case. Supplying an alias and its full name together
-is an error. New shapes are placed on the canvas at the visible center unless coordinates are
-provided; rectangle coordinates specify its top-left, circle coordinates its center, and text
-coordinates its text origin. Creation uses the normal validation and undo flow.
+is an error. New shapes are centered inside the selected frame or Screen view, or in the visible canvas
+when no container is selected. A view wider or taller than its Screen centers inside the Screen, so
+the shape stays visible everywhere the Screen is shown. With a container selected, `x` and `y` are relative to its top-left;
+a Screen view edits its active shared layout, including automatic width selection. Stack layout
+controls child placement where applicable. Locked or unavailable targets refuse creation.
+Without a selected container, coordinates are canvas coordinates. Rectangle coordinates specify
+its top-left, circle coordinates its center, and text coordinates its text origin. Creation uses the normal validation and undo flow.
 
 When AI is available, **Ask AI** opens the existing chat with an unsent draft. Existing chat drafts
 and pending proposals are preserved. Text is only sent to the model when you send it from chat.

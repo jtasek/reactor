@@ -9,10 +9,12 @@ import {
 } from 'src/app/hooks';
 import { takesEditorInput } from 'src/events/input';
 import { screenViewName } from 'src/app/screenViews';
+import { isFrameLocked, isFrameVisible } from 'src/app/frameState';
 import { getTools } from 'src/app/actions/startup';
 import { screenToWorld } from 'src/app/camera';
 import { CommandLine } from './CommandLine';
-import { CREATIONS, creationOperation } from './creation';
+import { creationTarget } from './creationTarget';
+import { CREATIONS, CREATION_PATTERN, creationOperation } from './creation';
 
 export const ConnectedCommandLine: FC = () => {
     const { commandLine } = useControls();
@@ -45,6 +47,10 @@ const ActiveCommandLine: FC = () => {
                 return undefined;
             }
 
+            if (!CREATION_PATTERN.test(input.trim())) {
+                return actions.submitCommandLine(input);
+            }
+
             const size = effects.viewSize();
             const center = screenToWorld(
                 { x: size.width / 2, y: size.height / 2 },
@@ -54,14 +60,15 @@ const ActiveCommandLine: FC = () => {
                 return 'Canvas position is unavailable.';
             }
 
-            const operation = creationOperation(input, center);
+            if (!canCreate) {
+                return 'Creation is unavailable. Return to an editable canvas and finish the current gesture.';
+            }
+
+            const target = creationTarget(state, center);
+            const operation = creationOperation(input, target.center, target);
 
             if (!operation) {
                 return actions.submitCommandLine(input);
-            }
-
-            if (!canCreate) {
-                return 'Creation is unavailable. Return to an editable canvas and finish the current gesture.';
             }
 
             const result = actions.applyOperations({
@@ -112,12 +119,25 @@ const ActiveCommandLine: FC = () => {
     const selection = frame
         ? screenViewName(document, frame)
         : `${document.selectedShapesIds.length} selected`;
+    const editable =
+        frame && isFrameVisible(document, frame.id) && !isFrameLocked(document, frame.id);
+    const creationContext = !frame
+        ? 'New shapes on canvas'
+        : editable
+          ? `New shapes inside this ${frame.kind === 'view' ? 'view' : 'frame'}`
+          : 'Selection is locked or hidden';
+    const placement = !frame
+        ? undefined
+        : frame.kind === 'view'
+          ? "Center of the view, kept inside its Screen. Optional x/y are relative to the Screen's top-left; stack layout controls placement where applicable. Edits update the shared Screen layout."
+          : 'Frame center. Optional x/y are relative to its top-left; stack layout controls placement where applicable.';
 
     return (
         <CommandLine
             onSubmit={submit}
             onClose={() => actions.ui.toggleControlVisibility('commandLine')}
-            context={`${selection} · New shapes on canvas`}
+            context={`${selection} · ${creationContext}`}
+            placement={placement}
             suggestions={[
                 ...getTools().map((tool) => ({
                     id: `${tool.name} tool`,
