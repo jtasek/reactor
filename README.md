@@ -160,7 +160,9 @@ the target stays visible above the results or parameter editor. Choose Resize se
 Move selection, Set radius or Edit stack spacing to edit without remembering syntax.
 Blank selection fields stay unchanged. Typed aliases and guided fields use the same
 validated commands. Escape returns from parameters to search, then closes the palette;
-Tab moves between fields. Successful edits keep it open, while activating a drawing tool
+Choosing a guided action focuses its first field; Tab moves between fields. Results use action icons
+and show existing canvas shortcuts beside commands and tools. Arrow keys move from the highlighted
+result. Successful edits keep it open, while activating a drawing tool
 closes it. Ask AI opens an unsent draft in the existing chat and closes the palette only
 when the handoff succeeds; existing drafts and proposals are preserved. The palette loads
 on demand when enabled from More panels → Command Line, or with Ctrl/Cmd+K. If the

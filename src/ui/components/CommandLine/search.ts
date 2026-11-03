@@ -1,8 +1,12 @@
+import type { Icon } from 'src/app/types';
+
 export interface Suggestion {
     id: string;
     name: string;
     description: string;
     enabled: boolean;
+    icon?: Icon;
+    shortcut?: string;
     /** Current context-specific reason; never part of the search cache. */
     unavailable?: string;
 }

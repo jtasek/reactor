@@ -1,6 +1,7 @@
 import React, { FC, SubmitEvent, useEffect, useId, useRef, useState } from 'react';
 import { ArrowLeft, ChevronRight, Command, Search, Sparkles, X } from 'lucide-react';
 import { Icon } from '../Icon';
+import { shortcutLabel, usesCommandKey } from '../CommandBar/shortcutLabel';
 import { SELECTION_HELP, SELECTION_PATTERN } from './selection';
 import styles from './styles.css';
 import { CREATION_PATTERN, PROPERTY_ALIAS_HELP } from './creation';
@@ -50,6 +51,7 @@ export const CommandLine: FC<Props> = ({
     const inputRef = useRef<HTMLInputElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
     const priorContext = useRef(targetKey);
+    const focusParameters = useRef(false);
     const query = value.trim().toLowerCase();
     const { matches, waiting, resolve } = useCommandSearch(
         suggestions,
@@ -106,6 +108,17 @@ export const CommandLine: FC<Props> = ({
         }
     }, [active, listShown]);
 
+    useEffect(() => {
+        if (!focusParameters.current || !editor) {
+            return;
+        }
+
+        focusParameters.current = false;
+        const field = formRef.current?.querySelector<HTMLInputElement>('fieldset input');
+        field?.focus();
+        field?.select();
+    }, [editor]);
+
     const back = () => {
         setEditor(undefined);
         setGuided(false);
@@ -129,6 +142,7 @@ export const CommandLine: FC<Props> = ({
             return;
         }
         const next = editorForAction(item.id);
+        focusParameters.current = Boolean(next);
         setEditor(next);
         setGuided(Boolean(next));
         setStaleTarget(false);
@@ -245,19 +259,19 @@ export const CommandLine: FC<Props> = ({
 
                             return;
                         }
-                        if (!editor && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
-                            event.preventDefault();
-                            setOpen(true);
-                            setActive((index) =>
-                                Math.max(
-                                    0,
-                                    Math.min(
-                                        matches.length - 1,
-                                        index + (event.key === 'ArrowDown' ? 1 : -1)
-                                    )
-                                )
-                            );
+                        if (pending || editor || !['ArrowDown', 'ArrowUp'].includes(event.key)) {
+                            return;
                         }
+
+                        event.preventDefault();
+                        const options = listShown ? matches : resolve();
+                        const current = listShown ? chosenIndex : -1;
+                        const next =
+                            event.key === 'ArrowDown'
+                                ? Math.min(current + 1, options.length - 1)
+                                : Math.max(current < 0 ? options.length - 1 : current - 1, 0);
+                        setOpen(true);
+                        setActive(next);
                     }}
                 />
                 {onClose && (
@@ -356,7 +370,13 @@ export const CommandLine: FC<Props> = ({
                                         }
                                     }}
                                 >
-                                    <Icon icon={{ component: Command, size: 18 }} />
+                                    <Icon
+                                        icon={
+                                            item.icon
+                                                ? { ...item.icon, size: 18 }
+                                                : { component: Command, size: 18 }
+                                        }
+                                    />
                                     <div>
                                         <strong>{item.name}</strong>
                                         <span>
@@ -366,6 +386,14 @@ export const CommandLine: FC<Props> = ({
                                                   'Unavailable for the current selection')}
                                         </span>
                                     </div>
+                                    {item.shortcut && (
+                                        <kbd
+                                            title="Canvas shortcut"
+                                            aria-label={`Canvas shortcut: ${shortcutLabel(item.shortcut, usesCommandKey())}`}
+                                        >
+                                            {shortcutLabel(item.shortcut, usesCommandKey())}
+                                        </kbd>
+                                    )}
                                     <Icon icon={{ component: ChevronRight, size: 14 }} />
                                 </li>
                             ))}

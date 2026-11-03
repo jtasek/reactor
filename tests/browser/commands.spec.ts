@@ -513,3 +513,54 @@ test('cached palette results use current selection permissions and latest input'
     await expect(shapes(page)).toHaveCount(0);
     await expect(page.getByRole('textbox', { name: 'Radius', exact: true })).toHaveCount(0);
 });
+
+test('palette arrow navigation follows the highlighted result and focuses guided fields', async ({
+    page
+}) => {
+    await openEditor(page, ['Command Line']);
+    const input = page.getByRole('combobox', { name: 'Command' });
+    await input.fill('create');
+    const selected = page.getByRole('option', { selected: true });
+    await expect(selected).toContainText('Create rectangle');
+    await page.keyboard.press('ArrowDown');
+    await expect(selected).toContainText('Create circle');
+    await page.keyboard.press('ArrowUp');
+    await expect(selected).toContainText('Create rectangle');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('textbox', { name: 'Radius', exact: true })).toBeFocused();
+    await page.keyboard.type('36');
+    await page.keyboard.press('Enter');
+    await expect(shapes(page).locator('circle[data-cy]')).toHaveAttribute('r', '36');
+    await expect(input).toBeFocused();
+    await input.fill('create rectangle');
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('textbox', { name: 'Width', exact: true })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('textbox', { name: 'Height', exact: true })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(input).toBeFocused();
+    await expect(input).toHaveValue('');
+});
+
+test('palette results show action icons and distinguish tool shortcuts from creation', async ({
+    page
+}, testInfo) => {
+    await openEditor(page, ['Command Line']);
+    const input = page.getByRole('combobox', { name: 'Command' });
+    await input.fill('create rectangle');
+    const result = page.getByRole('option').first();
+    await expect(result.locator('svg').first()).toHaveClass(/lucide-rectangle-horizontal/);
+    await expect(result.locator('kbd')).toHaveCount(0);
+    await input.fill('rectangle tool');
+    await expect(result.locator('svg').first()).toHaveClass(/lucide-rectangle-horizontal/);
+    await expect(result.locator('kbd')).toHaveText('R');
+    await expect(result.locator('kbd')).toHaveAttribute('title', 'Canvas shortcut');
+    await input.fill('undo');
+    await expect(result.locator('kbd')).toHaveText(/⌘Z|Ctrl\+Z/);
+    await expect(result.locator('svg').first()).toHaveAttribute('aria-hidden', 'true');
+    await page.screenshot({ path: testInfo.outputPath('palette-shortcuts.png') });
+    await page.setViewportSize({ width: 390, height: 800 });
+    await expect(result.locator('kbd')).toBeInViewport();
+    await page.screenshot({ path: testInfo.outputPath('palette-shortcuts-narrow.png') });
+});
