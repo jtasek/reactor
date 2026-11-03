@@ -8,6 +8,7 @@ declare namespace StylesCssNamespace {
     cardFooter: string;
     cardHeader: string;
     cardTitle: string;
+    changeOutline: string;
     clearFilters: string;
     creationActions: string;
     current: string;

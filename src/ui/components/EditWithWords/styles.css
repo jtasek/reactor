@@ -137,3 +137,32 @@
     border-color: var(--hairline-color);
     color: var(--text-secondary-color);
 }
+.preview {
+    margin: var(--panel-gap) 0;
+}
+
+.preview figcaption {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.preview figcaption span {
+    color: var(--text-secondary-color);
+    font-size: 12px;
+}
+
+.previewArtwork {
+    height: 120px;
+    overflow: hidden;
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-md);
+    background: var(--field-background);
+}
+
+.expandedArtwork {
+    height: min(60vh, 500px);
+    width: min(75vw, 380px);
+    background: var(--field-background);
+}

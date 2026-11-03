@@ -1,6 +1,6 @@
 import { operations as responsiveScreenOperations } from '../ai/cases/create-responsive-screen/case';
 import { createVariable } from './support/variables';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { MAX_CONTEXT_BYTES } from '../../src/ai/context';
 import { drawRect, openEditor, shapes } from './support/editor';
 import { buildStarterTemplate } from 'src/templates/build';
@@ -38,6 +38,26 @@ async function signInWithAi(page: Page, answer: (body: object) => Promise<string
     await page.routeWebSocket('**/sync', () => {});
 
     return requests;
+}
+
+/** Rectangles drawn in a preview, without the outline that marks the changes. */
+const ARTWORK_RECTS = 'svg rect:not([data-change-outline])';
+
+/** Whether the preview's view shows the whole of `element`. */
+async function shownWhole(preview: Locator, element: Locator) {
+    const view = (await preview.locator('svg').getAttribute('viewBox'))!.split(' ').map(Number);
+    const [x, y, width, height] = await element.evaluate((item) => {
+        const box = (item as SVGGraphicsElement).getBBox();
+
+        return [box.x, box.y, box.width, box.height];
+    });
+
+    return (
+        x >= view[0] &&
+        y >= view[1] &&
+        x + width <= view[0] + view[2] &&
+        y + height <= view[1] + view[3]
+    );
 }
 
 const lines = (...events: object[]) => events.map((event) => `${JSON.stringify(event)}\n`).join('');
@@ -171,6 +191,13 @@ test('composed screens show actual component labels and top-left text after acce
     await chat.getByRole('button', { name: 'Send' }).click();
     await expect(chat.getByRole('region', { name: 'Proposal' })).toContainText('Send request');
     await expect(page.locator('#screen-views > g')).toHaveCount(0);
+    const visualDraft = chat.getByRole('figure', { name: 'Proposed result' });
+    await expect(
+        visualDraft.locator('svg').getByText('Send request', { exact: true })
+    ).toBeVisible();
+    await expect(
+        visualDraft.locator('svg').getByText('you@example.com', { exact: true })
+    ).toBeVisible();
     await chat.getByRole('button', { name: 'Accept' }).click();
     const views = page.locator('#screen-views > g');
     await expect(views.getByText('Send request', { exact: true })).toBeVisible();
@@ -216,7 +243,22 @@ test('a change described in words is proposed, then applied once accepted, as on
     ]);
     await expect(shapes(page)).toHaveCount(0);
 
+    const preview = chat.getByRole('figure', { name: 'Proposed result' });
+    await expect(preview).toBeVisible();
+    await expect(preview.locator(ARTWORK_RECTS)).toHaveCount(1);
+    await expect(preview.locator('[data-change-outline]')).not.toHaveAttribute('visibility');
+    await chat.getByRole('button', { name: 'Inspect preview' }).click();
+    const expanded = page.getByRole('dialog', { name: 'Proposed result' });
+    await expect(expanded.locator(ARTWORK_RECTS)).toHaveCount(1);
+    // The enlarged view is measured once its dialog shows, not while it is still hidden.
+    await expect.poll(() => shownWhole(expanded, expanded.locator(ARTWORK_RECTS))).toBe(true);
+    await expect(expanded.locator('[data-change-outline]')).not.toHaveAttribute('visibility');
+    await page.keyboard.press('Escape');
+    await expect(expanded).toHaveCount(0);
+    await expect(chat.getByRole('button', { name: 'Inspect preview' })).toBeFocused();
+
     await chat.getByRole('button', { name: 'Accept' }).click();
+    await expect(preview).toHaveCount(0);
     await expect(chat).toContainText('Applied. You can undo this change.');
     await expect(shapes(page)).toHaveCount(1);
 
@@ -311,6 +353,8 @@ for (const width of [1280, 390]) {
         expect(box.x + box.width).toBeLessThanOrEqual(width);
         await page.screenshot({ path: testInfo.outputPath('proposal.png') });
         await chat.getByRole('button', { name: 'Discard' }).click();
+        await expect(chat.getByRole('figure', { name: 'Proposed result' })).toHaveCount(0);
+        await expect(shapes(page)).toHaveCount(2);
         await expect(chat.getByRole('textbox', { name: 'Change to make' })).toHaveValue(
             'Add a button below this'
         );
@@ -366,6 +410,15 @@ test('chat stays beside an editable canvas and keeps its conversation when docke
     await prompt.press('Enter');
     await expect(chat.getByRole('button', { name: 'Accept' })).toBeVisible();
 
+    const visualDraft = chat.getByRole('figure', { name: 'Proposed result' });
+    await expect(visualDraft.locator(ARTWORK_RECTS)).toHaveCount(2);
+    await drawRect(page, { x: 500, y: 300 }, { x: 550, y: 350 });
+    await expect(visualDraft.locator(ARTWORK_RECTS)).toHaveCount(3);
+    // The view stays fitted to what the proposal adds, outlined.
+    await expect
+        .poll(() => shownWhole(visualDraft, visualDraft.locator('[data-changed] rect')))
+        .toBe(true);
+
     const header = chat.getByRole('button', { name: /^Move AI chat/ });
 
     await header.focus();
@@ -374,7 +427,7 @@ test('chat stays beside an editable canvas and keeps its conversation when docke
     await expect(chat.getByRole('log')).toContainText('Add a sign-in button');
     expect(requests).toHaveLength(1);
     await chat.getByRole('button', { name: 'Accept' }).click();
-    await expect(shapes(page)).toHaveCount(2);
+    await expect(shapes(page)).toHaveCount(3);
     await expect(chat).toContainText('Applied. You can undo this change.');
     await prompt.fill('Add another button');
     await prompt.press('Enter');
@@ -384,7 +437,7 @@ test('chat stays beside an editable canvas and keeps its conversation when docke
     await chat.getByRole('button', { name: 'New chat' }).click();
     await expect(chat.getByRole('log')).not.toContainText('Add another button');
     await expect(chat.getByRole('button', { name: 'Accept' })).toHaveCount(0);
-    await expect(shapes(page)).toHaveCount(2);
+    await expect(shapes(page)).toHaveCount(3);
     await chat.getByRole('button', { name: 'Close AI chat' }).click();
     await expect(chat).toHaveCount(0);
     await expect(editWithWords(page)).toBeFocused();
@@ -481,4 +534,44 @@ test('a complete-screen tool produces visible artwork after acceptance, undo and
     await expect(
         page.locator('#screen-views > g').getByText('Visible screenshot artwork', { exact: true })
     ).toBeVisible();
+});
+
+test('a proposal whose shape is deleted on the canvas can no longer be accepted', async ({
+    page
+}) => {
+    await signInWithAi(page, (body) => {
+        const { context } = body as { context: { selection: string[] } };
+
+        return lines(
+            { type: 'start', requestId: 'rename-request', model: 'example-model' },
+            {
+                type: 'operation',
+                operation: {
+                    op: 'updateShape',
+                    shape: context.selection[0],
+                    changes: { name: 'Renamed' }
+                }
+            },
+            { type: 'done' }
+        );
+    });
+    await openEditor(page);
+    await drawRect(page, { x: 400, y: 300 }, { x: 450, y: 350 });
+    await editWithWords(page).click();
+
+    const chat = page.getByRole('region', { name: 'AI chat', exact: true });
+
+    await chat.getByRole('textbox', { name: 'Change to make' }).fill('Rename this');
+    await chat.getByRole('button', { name: 'Send' }).click();
+    await expect(chat.getByRole('figure', { name: 'Proposed result' })).toBeVisible();
+    await expect(chat.getByRole('button', { name: 'Accept' })).toBeEnabled();
+
+    await page
+        .getByRole('list', { name: 'Commands' })
+        .getByRole('button', { name: 'Delete', exact: true })
+        .click();
+    await expect(shapes(page)).toHaveCount(0);
+    await expect(chat.getByRole('status')).toContainText('Preview unavailable');
+    await expect(chat.getByRole('button', { name: 'Accept' })).toBeDisabled();
+    await expect(chat.getByRole('button', { name: 'Discard' })).toBeEnabled();
 });

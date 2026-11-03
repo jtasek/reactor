@@ -376,6 +376,13 @@
     width: 100%;
 }
 
+.changeOutline {
+    pointer-events: none;
+    stroke: var(--selection-color);
+    stroke-dasharray: 4 3;
+    stroke-width: 2px;
+}
+
 .thumbnailEmpty {
     align-items: center;
     color: var(--document-secondary-color);
