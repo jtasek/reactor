@@ -136,6 +136,13 @@ to search commands by name or description. Arrow keys select suggestions; Enter 
 then Enter or **Run** executes it. Creation suggestions expose editable parameters. A command
 such as `Rectangle tool` activates drawing; `rectangle w=160 h=48` creates a shape immediately.
 
+Command Line selection edits use `width=240 height=48` (or `w=240 h=48`),
+`radius=12` (or `r=12`), and `move x=16 y=-8` for relative movement.
+Radius rounds rectangles or changes a circle’s radius. Width and height follow
+the Inspector’s editable sizing rules; stack-managed positions cannot be moved.
+Each command edits the complete selection as one undo step, or reports a problem
+without changing anything. Screen view edits change shared source artwork.
+
 Examples:
 
 - `rectangle w=160 h=48 fill=#3366ff`

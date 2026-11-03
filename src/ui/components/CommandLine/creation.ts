@@ -41,34 +41,7 @@ export function creationOperation(
 
     const type = match[1].toLowerCase();
     const rest = input.trim().slice(match[0].length);
-    const values: Record<string, string> = {};
-    const token = /\s+([a-zA-Z][a-zA-Z-]*)=("(?:[^"\\]|\\.)*"|[^\s"]*)/y;
-    let offset = 0;
-
-    while (rest.slice(offset).trim()) {
-        token.lastIndex = offset;
-        const found = token.exec(rest);
-
-        if (!found) {
-            throw new Error(
-                'Use name=value parameters. Put text containing spaces in double quotes.'
-            );
-        }
-
-        const [, spelling, raw] = found;
-        const key = PROPERTY_ALIASES.get(spelling.toLowerCase()) ?? spelling.toLowerCase();
-
-        if (Object.hasOwn(values, key)) {
-            throw new Error(`Parameter ${key} is repeated.`);
-        }
-
-        if (raw === '') {
-            throw new Error(`${key} needs a value.`);
-        }
-
-        values[key] = raw.startsWith('"') ? quoted(key, raw) : raw;
-        offset = token.lastIndex;
-    }
+    const values = readParameters(rest);
 
     const allowed = [
         'x',
@@ -150,6 +123,39 @@ export function creationOperation(
             fontSize: number('fontSize', 24, true)
         }
     };
+}
+
+export function readParameters(rest: string): Record<string, string> {
+    const values: Record<string, string> = {};
+    const token = /\s+([a-zA-Z][a-zA-Z-]*)=("(?:[^"\\]|\\.)*"|[^\s"]*)/y;
+    let offset = 0;
+
+    while (rest.slice(offset).trim()) {
+        token.lastIndex = offset;
+        const found = token.exec(rest);
+
+        if (!found) {
+            throw new Error(
+                'Use name=value parameters. Put text containing spaces in double quotes.'
+            );
+        }
+
+        const [, spelling, raw] = found;
+        const key = PROPERTY_ALIASES.get(spelling.toLowerCase()) ?? spelling.toLowerCase();
+
+        if (Object.hasOwn(values, key)) {
+            throw new Error(`Parameter ${key} is repeated.`);
+        }
+
+        if (raw === '') {
+            throw new Error(`${key} needs a value.`);
+        }
+
+        values[key] = raw.startsWith('"') ? quoted(key, raw) : raw;
+        offset = token.lastIndex;
+    }
+
+    return values;
 }
 
 function quoted(key: string, raw: string): string {

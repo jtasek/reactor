@@ -69,6 +69,25 @@ for (const kind of ['frame', 'view'] as const) {
         await input.fill('redo');
         await input.press('Enter');
         await expect(shape).toHaveCount(1);
+        await page
+            .getByRole('region', { name: 'Explorer' })
+            .getByRole('button', { name: 'Created here', exact: true })
+            .click();
+        await input.fill('w=120 h=60 r=12');
+        await input.press('Enter');
+        await expect(shape).toHaveAttribute('width', '120');
+        await expect(shape).toHaveAttribute('height', '60');
+        await expect(shape).toHaveAttribute('rx', '12');
+        await input.fill('undo');
+        await input.press('Enter');
+        await expect(shape).toHaveAttribute('width', '40');
+        await expect(shape).toHaveAttribute('height', '20');
+        await input.fill('move x=16 y=-8');
+        await input.press('Enter');
+        await expectPlacedCoordinate(shape, 'x', kind === 'frame' ? '128' : '528');
+        await expectPlacedCoordinate(shape, 'y', kind === 'frame' ? '102' : '322');
+        await input.fill('undo');
+        await input.press('Enter');
         await expect(page.locator('#status-save')).toHaveText('Saved');
         await page.reload();
         await expect(shape).toHaveCount(1);

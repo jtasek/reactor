@@ -1,4 +1,5 @@
 import React, { FC, SubmitEvent, useId, useRef, useState } from 'react';
+import { SELECTION_HELP } from './selection';
 import styles from './styles.css';
 import { CREATION_PATTERN, PROPERTY_ALIAS_HELP } from './creation';
 
@@ -210,6 +211,7 @@ export const CommandLine: FC<Props> = ({
                     <small>{PROPERTY_ALIAS_HELP}</small>
                 </>
             )}
+            {!creating && <small>{SELECTION_HELP}</small>}
             {message && <span role="status">{message}</span>}
             <button type="submit" disabled={pending || !value.trim()}>
                 Run
