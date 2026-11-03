@@ -28,7 +28,11 @@ export const PROPERTY_ALIAS_HELP =
     'Aliases: w=width, h=height, r=radius, fs/font-size=fontSize, text=value.';
 
 /** A deliberately small named-argument syntax; quoted strings use JSON escaping. */
-export function creationOperation(input: string, center: Point): AddShape | undefined {
+export function creationOperation(
+    input: string,
+    center: Point,
+    target?: { origin: Point; parentFrameId?: string }
+): AddShape | undefined {
     const match = CREATION_PATTERN.exec(input.trim());
 
     if (!match) {
@@ -97,11 +101,13 @@ export function creationOperation(input: string, center: Point): AddShape | unde
         throw new Error('fill must be a six-digit hex color, such as #3366ff.');
     }
 
+    const origin = target?.origin ?? { x: 0, y: 0 };
     const common = {
+        ...(target?.parentFrameId ? { parentFrameId: target.parentFrameId } : {}),
         ...(values.name !== undefined ? { name: values.name } : {}),
         ...(values.fill !== undefined ? { fill: values.fill } : {})
     };
-    const position = { x: number('x', center.x), y: number('y', center.y) };
+    const position = { x: number('x', center.x) + origin.x, y: number('y', center.y) + origin.y };
 
     if (type === 'rectangle') {
         const size = { width: number('width', 160, true), height: number('height', 48, true) };
@@ -113,8 +119,8 @@ export function creationOperation(input: string, center: Point): AddShape | unde
                 ...common,
                 type,
                 position: {
-                    x: number('x', center.x - size.width / 2),
-                    y: number('y', center.y - size.height / 2)
+                    x: number('x', center.x - size.width / 2) + origin.x,
+                    y: number('y', center.y - size.height / 2) + origin.y
                 },
                 size
             }

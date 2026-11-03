@@ -13,6 +13,7 @@ export interface Props {
     onSubmit: (command: string) => string | undefined;
     suggestions?: Suggestion[];
     context?: string;
+    placement?: string;
     onClose?: () => void;
     onAskAi?: (text: string) => Promise<string | undefined>;
 }
@@ -21,6 +22,7 @@ export const CommandLine: FC<Props> = ({
     onSubmit,
     suggestions = [],
     context,
+    placement = 'Visible canvas center. Optional x/y override placement.',
     onAskAi,
     onClose
 }) => {
@@ -203,7 +205,7 @@ export const CommandLine: FC<Props> = ({
                 <>
                     <small>
                         Defaults: rectangle 160 × 48 · circle radius 24 · text 24 px. Placement:
-                        visible canvas center. Optional x/y override placement.
+                        {placement}
                     </small>
                     <small>{PROPERTY_ALIAS_HELP}</small>
                 </>
