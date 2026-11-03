@@ -108,3 +108,24 @@ it('detaches an explicitly assigned width even when equal, keeping the height bi
     expect(run('w=80').applied).toBe(true);
     expect(shape().bindings).toEqual({ height });
 });
+
+it('refuses a move that changes nothing', () => {
+    const { run, shape } = setup();
+    expect(() => run('move x=0 y=0')).toThrow(/non-zero/);
+    expect(() => run('move x=0')).toThrow(/non-zero/);
+    expect(shape()).toMatchObject({ position: { x: 10, y: 20 } });
+});
+
+it('refuses width and height together on an image, which keeps its proportions', () => {
+    const { store, run } = setup();
+    store.actions.addShape({
+        type: 'image',
+        position: { x: 0, y: 0 },
+        size: { width: 100, height: 50 },
+        href: 'data:image/png;base64,iVBORw0KGgo='
+    } as never);
+    const id = store.state.currentDocument.shapesIds.at(-1)!;
+    store.actions.unselectShapes();
+    store.actions.selectShape(id);
+    expect(() => run('w=240 h=48')).toThrow(/keeps its proportions/);
+});

@@ -4,14 +4,15 @@ import type { UpdateShape } from 'src/app/operations';
 import { SHAPE_PROPERTIES, canEdit, applyProperty } from 'src/app/properties';
 import { isShapeVisible } from 'src/app/utils';
 import { translateShape } from 'src/app/geometry';
-import { componentSourceDelta } from 'src/app/componentViewTransform';
+import { componentSourceNudge } from 'src/app/componentViewTransform';
 import { editableScreenView } from 'src/app/screenViewEditing';
 import { unbind, unbindMovedProperties } from 'src/app/variables';
 import { readParameters } from './creation';
 
 export const SELECTION_PATTERN = /^(?:move\s+\w+\s*=|[a-z-]+=)/i;
 export const SELECTION_HELP =
-    'Edit selection: w=240 h=48 · r=12 · move x=16 y=-8. Radius rounds rectangles or sizes circles. Edits affect shared source artwork.';
+    'Edit selection: w=240 h=48 · r=12 · move x=16 y=-8. Radius rounds rectangles or sizes circles.';
+export const SHARED_ARTWORK_HELP = 'Edits in this view change the shared Screen artwork.';
 
 /** Compile the complete selection before committing a single undoable batch. */
 export function selectionOperations(input: string, state: Context['state']): UpdateShape[] {
@@ -36,6 +37,9 @@ export function selectionOperations(input: string, state: Context['state']): Upd
 
         return [key, value] as const;
     });
+    if (moving && entries.every(([, value]) => value === 0)) {
+        throw new Error('Move needs a non-zero x or y.');
+    }
     const document = state.currentDocument;
     const ids = document.selectedShapesIds;
     if (!ids.length || document.selectedFrameId) {
@@ -49,7 +53,8 @@ export function selectionOperations(input: string, state: Context['state']): Upd
     }
 
     const shown = new Set(placed?.projection.shapes.map(({ id }) => id));
-    const delta = componentSourceDelta(
+    // Turned views round to whole pixels, as arrow-key nudges do.
+    const delta = componentSourceNudge(
         { x: Number(values.x ?? 0), y: Number(values.y ?? 0) },
         placed?.component
     );
@@ -66,6 +71,12 @@ export function selectionOperations(input: string, state: Context['state']): Upd
         }
         if (moving && placed?.projection.layoutOffsets.has(id)) {
             throw new Error('Stack layout controls the selection’s position.');
+        }
+
+        if (source.type === 'image' && 'width' in values && 'height' in values) {
+            throw new Error(
+                `${source.name} keeps its proportions. Set its width or its height, not both.`
+            );
         }
 
         const copy = JSON.parse(JSON.stringify(source)) as Shape;

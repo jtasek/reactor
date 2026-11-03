@@ -13,7 +13,12 @@ import { isFrameLocked, isFrameVisible } from 'src/app/frameState';
 import { getTools } from 'src/app/actions/startup';
 import { screenToWorld } from 'src/app/camera';
 import { CommandLine } from './CommandLine';
-import { SELECTION_PATTERN, selectionOperations } from './selection';
+import {
+    SELECTION_HELP,
+    SELECTION_PATTERN,
+    SHARED_ARTWORK_HELP,
+    selectionOperations
+} from './selection';
 import { creationTarget } from './creationTarget';
 import { CREATIONS, CREATION_PATTERN, creationOperation } from './creation';
 
@@ -154,6 +159,13 @@ const ActiveCommandLine: FC = () => {
             onClose={() => actions.ui.toggleControlVisibility('commandLine')}
             context={`${selection} · ${creationContext}`}
             placement={placement}
+            selectionHelp={
+                !frame && document.selectedShapesIds.length > 0
+                    ? state.events.pointer.screenView
+                        ? `${SELECTION_HELP} ${SHARED_ARTWORK_HELP}`
+                        : SELECTION_HELP
+                    : undefined
+            }
             suggestions={[
                 ...getTools().map((tool) => ({
                     id: `${tool.name} tool`,
