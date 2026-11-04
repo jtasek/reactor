@@ -287,7 +287,7 @@ test('an exposed fill changes one instance without changing its source', async (
     expect(await fill(0)).toBe(original);
 
     const properties = page.getByRole('region', { name: 'Component properties' });
-    await expect(properties.getByRole('heading', { name: 'rectangle-1' })).toBeVisible();
+    await expect(properties.getByLabel('rectangle-1: Fill', { exact: true })).toBeVisible();
     await expect(properties.getByText('1 changed')).toBeVisible();
     await properties
         .getByRole('button', { name: 'Reset rectangle-1: Fill to source value' })

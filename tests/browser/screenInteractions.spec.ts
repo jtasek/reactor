@@ -48,9 +48,9 @@ test('edits source and instance actions independently, preserves them on reload,
     await preview.getByRole('button', { name: 'Continue button', exact: true }).press('Enter');
     await expect(preview.getByLabel('Preview screen')).toHaveValue('details');
     await action.selectOption('inherit');
-    await expect(
-        page.getByText('From source: navigate to Details.', { exact: false })
-    ).toBeVisible();
+    await expect(page.getByLabel('Navigate to screen').locator('option:checked')).toHaveText(
+        'Source: Details'
+    );
     await action.selectOption({ label: 'Navigate to Home' });
     await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.getByRole('button', { name: 'Preview', exact: true }).click();

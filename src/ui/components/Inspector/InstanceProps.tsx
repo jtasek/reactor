@@ -105,7 +105,14 @@ export const InstanceProps: FC = () => {
             )}
             {children.map(([shapeId, shapeName]) => (
                 <div className={styles.instanceChild} key={shapeId}>
-                    <h4>{shapeName}</h4>
+                    {data.rows.some(
+                        (row) =>
+                            row.shapeId === shapeId &&
+                            data.rows.some(
+                                (other) =>
+                                    other.shapeId !== shapeId && other.fieldLabel === row.fieldLabel
+                            )
+                    ) && <h4>{shapeName}</h4>}
                     <div className={styles.instanceFields}>
                         {data.rows
                             .filter((row) => row.shapeId === shapeId)
@@ -185,9 +192,8 @@ const InstancePropertyRow: FC<{
                     </select>
                 </details>
             </div>
-            <div className={styles.instanceStatus}>
-                <span>{overridden ? 'Changed' : 'From source'}</span>
-                {overridden && (
+            {overridden && (
+                <div className={styles.instanceStatus}>
                     <button
                         type="button"
                         className={styles.instanceReset}
@@ -198,8 +204,8 @@ const InstancePropertyRow: FC<{
                         <Icon icon={{ component: RotateCcw, size: 14 }} />
                         Reset
                     </button>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 };

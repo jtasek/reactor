@@ -22,6 +22,7 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
             settings
         });
     const target = data.activation?.screenId;
+    const sourceTarget = data.sourceActivation?.screenId;
     const unavailable = target && !data.screens.some((screen) => screen.id === target);
 
     return (
@@ -29,70 +30,77 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
             <table>
                 <PropertyGroup name="Interactions">
                     <tr>
-                        <th scope="row">
-                            <label htmlFor="activate-target">Activate</label>
-                        </th>
-                        <td>
-                            <select
-                                id="activate-target"
-                                aria-label="Navigate to screen"
-                                disabled={data.disabled || data.actionFamily !== undefined}
-                                value={
-                                    data.actionInherited
-                                        ? 'inherit'
-                                        : target
-                                          ? JSON.stringify(target)
-                                          : 'none'
-                                }
-                                onChange={(event) => {
-                                    const choice = event.target.value;
-                                    if (choice === 'inherit') {
-                                        update({});
-
-                                        return;
-                                    }
-                                    update({
-                                        activate:
-                                            choice === 'none'
-                                                ? null
-                                                : { type: 'navigate', screenId: JSON.parse(choice) }
-                                    });
-                                }}
-                            >
-                                {instanceId && <option value="inherit">From source</option>}
-                                <option value="none">No action</option>
-                                {unavailable && (
-                                    <option value={JSON.stringify(target)}>
-                                        Unavailable screen
-                                    </option>
-                                )}
-                                {data.screens.map((screen) => (
-                                    <option key={screen.id} value={JSON.stringify(screen.id)}>
-                                        Navigate to {screen.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
                         <td colSpan={2}>
-                            <small className={styles.frameHint}>
-                                {data.actionFamily !== undefined &&
-                                    `Variants use the action of ${data.actionFamily}. `}
-                                {data.actionInherited &&
-                                    (target
-                                        ? `From source: navigate to ${data.screens.find((screen) => screen.id === target)?.name ?? 'unavailable screen'}. `
-                                        : 'From source: no action. ')}
-                                {unavailable
-                                    ? 'Choose an available screen to restore navigation. '
-                                    : ''}
-                                {data.settings.role === 'input'
-                                    ? 'Press Enter in Preview to activate. '
-                                    : 'Click or use the keyboard in Preview to activate. '}
-                                Canvas clicks select and edit.
-                            </small>
+                            <div className={styles.interactionField}>
+                                <label htmlFor="activate-target">
+                                    {data.settings.role === 'input' ? 'On Enter' : 'On activation'}
+                                </label>
+                                <select
+                                    id="activate-target"
+                                    aria-label="Navigate to screen"
+                                    disabled={data.disabled || data.actionFamily !== undefined}
+                                    value={
+                                        data.actionInherited
+                                            ? 'inherit'
+                                            : target
+                                              ? JSON.stringify(target)
+                                              : 'none'
+                                    }
+                                    onChange={(event) => {
+                                        const choice = event.target.value;
+                                        if (choice === 'inherit') {
+                                            update({});
+
+                                            return;
+                                        }
+                                        update({
+                                            activate:
+                                                choice === 'none'
+                                                    ? null
+                                                    : {
+                                                          type: 'navigate',
+                                                          screenId: JSON.parse(choice)
+                                                      }
+                                        });
+                                    }}
+                                >
+                                    {instanceId && (
+                                        <option value="inherit">
+                                            Source:{' '}
+                                            {sourceTarget
+                                                ? (data.screens.find(
+                                                      (screen) => screen.id === sourceTarget
+                                                  )?.name ?? 'Unavailable screen')
+                                                : 'No action'}
+                                        </option>
+                                    )}
+                                    <option value="none">No action</option>
+                                    {unavailable && (
+                                        <option value={JSON.stringify(target)}>
+                                            Unavailable screen
+                                        </option>
+                                    )}
+                                    {data.screens.map((screen) => (
+                                        <option key={screen.id} value={JSON.stringify(screen.id)}>
+                                            Navigate to {screen.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </td>
                     </tr>
+                    {(data.actionFamily !== undefined || unavailable) && (
+                        <tr>
+                            <td colSpan={2}>
+                                <small className={styles.frameHint} role="status">
+                                    {data.actionFamily !== undefined &&
+                                        `Action managed by ${data.actionFamily}. `}
+                                    {unavailable &&
+                                        'Choose an available screen to restore navigation.'}
+                                </small>
+                            </td>
+                        </tr>
+                    )}
                 </PropertyGroup>
             </table>
         </section>

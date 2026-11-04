@@ -186,7 +186,6 @@ export const Inspector: FC<Props> = ({
                 visibleExposure={exposureFor('visible')}
                 lockedExposure={exposureFor('locked')}
             />
-            {instance && shapeIds.length === 1 && <ComponentRole instanceId={shapeIds[0]} />}
             {instance && <InstanceProps />}
             <AlignSection />
             <table>
@@ -203,6 +202,7 @@ export const Inspector: FC<Props> = ({
                     </PropertyGroup>
                 ))}
             </table>
+            {instance && shapeIds.length === 1 && <ComponentRole instanceId={shapeIds[0]} />}
         </div>
     );
 };
