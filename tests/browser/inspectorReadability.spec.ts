@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { previewFixture } from '../support/preview';
+import { createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
 import { openEditor } from './support/editor';
 
@@ -85,4 +86,41 @@ test('long component labels do not overlap values and help stays out of the edit
     await panel.getByText('About prototype behavior', { exact: true }).click();
     await expect(help).toHaveAttribute('open', '');
     await expect(help).toContainText('Each identity must be unique');
+});
+
+test('every exposed child keeps a heading once any heading is needed', async ({ page }) => {
+    const document = previewFixture();
+    const extra = (id: string, name: string, order: string) => ({
+        ...createShape({ type: 'text', name, order, value: name, position: { x: 0, y: 48 } }),
+        id,
+        selected: false
+    });
+    document.shapes.hint = extra('hint', 'Hint', 'a5');
+    document.shapes.note = extra('note', 'Note', 'a6');
+    const input = document.components.input;
+    input.shapesIds = ['field', 'hint', 'note'];
+    input.props = [
+        { id: 'label', shapeId: 'field', key: 'text', label: 'Field label: Text' },
+        { id: 'hintText', shapeId: 'hint', key: 'text', label: 'Hint: Text' },
+        { id: 'noteSize', shapeId: 'note', key: 'fontSize', label: 'Note: Font size' }
+    ];
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript(
+        (value) => localStorage.setItem('reactor', value),
+        JSON.stringify(saved)
+    );
+    await openEditor(page, ['Inspector', 'Explorer']);
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Name field', exact: true })
+        .click();
+    const properties = page.getByRole('region', { name: 'Component properties', exact: true });
+    await expect(
+        properties.getByRole('heading', { name: 'Field label', exact: true })
+    ).toBeVisible();
+    await expect(properties.getByRole('heading', { name: 'Hint', exact: true })).toBeVisible();
+    await expect(properties.getByRole('heading', { name: 'Note', exact: true })).toBeVisible();
 });

@@ -913,15 +913,11 @@
 
 .instanceStatus {
     align-items: center;
-    color: var(--text-secondary-color);
+    color: var(--component-color);
     display: flex;
     font-size: 0.7rem;
     justify-content: flex-end;
     margin-top: 4px;
-}
-
-.instanceStatus:has(.instanceReset) {
-    color: var(--component-color);
 }
 
 .instanceReset {

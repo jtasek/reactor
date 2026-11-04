@@ -24,6 +24,7 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
     const target = data.activation?.screenId;
     const sourceTarget = data.sourceActivation?.screenId;
     const unavailable = target && !data.screens.some((screen) => screen.id === target);
+    const trigger = data.settings.role === 'input' ? 'On Enter' : 'On activation';
 
     return (
         <section aria-label="Interactions" className={styles.interactions}>
@@ -32,12 +33,10 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                     <tr>
                         <td colSpan={2}>
                             <div className={styles.interactionField}>
-                                <label htmlFor="activate-target">
-                                    {data.settings.role === 'input' ? 'On Enter' : 'On activation'}
-                                </label>
+                                <label htmlFor="activate-target">{trigger}</label>
                                 <select
                                     id="activate-target"
-                                    aria-label="Navigate to screen"
+                                    aria-label={`${trigger}: navigate to screen`}
                                     disabled={data.disabled || data.actionFamily !== undefined}
                                     value={
                                         data.actionInherited
@@ -92,7 +91,7 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                     {(data.actionFamily !== undefined || unavailable) && (
                         <tr>
                             <td colSpan={2}>
-                                <small className={styles.frameHint} role="status">
+                                <small className={styles.frameHint}>
                                     {data.actionFamily !== undefined &&
                                         `Action managed by ${data.actionFamily}. `}
                                     {unavailable &&
