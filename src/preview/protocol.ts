@@ -7,6 +7,9 @@ export interface PreviewNode {
     /** SHA-256 key into the application's verified raster image table. */
     image?: string;
     children?: PreviewNode[];
+    variantKey?: string;
+    initialVariant?: string;
+    variants?: Record<string, PreviewNode>;
     control?: {
         role: 'text' | 'input' | 'button' | 'list' | 'image';
         label: string;
@@ -14,6 +17,7 @@ export interface PreviewNode {
         placeholder?: string;
         disabled?: boolean;
         navigateTo?: string;
+        changeVariant?: { key: string; variantId: string };
         stateKey?: string;
         x: number;
         y: number;
@@ -49,7 +53,8 @@ export const MAX_PREVIEW_IMAGE_BYTES = 8 * 1024 * 1024;
 /** Matches the editor's per-image limit (`MAX_IMAGE_BYTES`). */
 const MAX_PREVIEW_IMAGE_FILE_BYTES = 5 * 1024 * 1024;
 const IMAGE_URL = /^data:image\/(png|jpeg|gif|webp);base64,([a-z0-9+/]*={0,2})$/i;
-/** Version 3 adds layout inspection and compatible input identities. */
+/** Version 3 supports layout inspection and compatible input identities. Optional variant
+ * artwork/actions extend the payload without invalidating existing shared snapshots. */
 export const PREVIEW_PROTOCOL_VERSION = 3;
 export const MAX_PREVIEW_NODES = 5000;
 const MAX_DEPTH = 32;
@@ -70,7 +75,8 @@ const NUMBERS = new Set([
     'y2',
     'opacity',
     'stroke-width',
-    'font-size'
+    'font-size',
+    'font-weight'
 ]);
 const finite = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
 const object = (value: unknown): Record<string, unknown> => {
@@ -211,6 +217,28 @@ export function readPreview(
             }
             result.children = node.children.map((child) => readNode(child, depth + 1));
         }
+        if (node.variants !== undefined) {
+            if (!string(node.variantKey)) {
+                throw new Error('Invalid variant identity.');
+            }
+            if (
+                !string(node.initialVariant) ||
+                !Object.hasOwn(object(node.variants), node.initialVariant)
+            ) {
+                throw new Error('Invalid initial variant.');
+            }
+            result.initialVariant = node.initialVariant;
+            result.variantKey = node.variantKey;
+            result.variants = Object.fromEntries(
+                Object.entries(object(node.variants)).map(([id, variant]) => {
+                    if (!string(id)) {
+                        throw new Error('Invalid variant ID.');
+                    }
+
+                    return [id, readNode(variant, depth + 1)];
+                })
+            );
+        }
         if (node.control !== undefined) {
             const c = object(node.control);
             if (
@@ -226,6 +254,11 @@ export function readPreview(
             ) {
                 throw new Error('Invalid preview control.');
             }
+            const changeVariant =
+                c.changeVariant === undefined ? undefined : object(c.changeVariant);
+            if (changeVariant && (!string(changeVariant.key) || !string(changeVariant.variantId))) {
+                throw new Error('Invalid variant action.');
+            }
             result.control = {
                 role: c.role,
                 label: c.label,
@@ -233,6 +266,14 @@ export function readPreview(
                 placeholder: c.placeholder,
                 disabled: c.disabled,
                 navigateTo: c.navigateTo,
+                ...(changeVariant
+                    ? {
+                          changeVariant: {
+                              key: changeVariant.key as string,
+                              variantId: changeVariant.variantId as string
+                          }
+                      }
+                    : {}),
                 ...(c.stateKey === undefined ? {} : { stateKey: c.stateKey }),
                 x: c.x,
                 y: c.y,
@@ -305,6 +346,22 @@ export function readPreview(
     const imageTotal = Object.values(images).reduce((total, url) => total + imageBytes(url)!, 0);
     if (imageTotal > MAX_PREVIEW_IMAGE_BYTES) {
         throw new Error('Preview images exceed the 8 MiB limit. Remove or reduce some images.');
+    }
+
+    const targets = new Map<string, Record<string, PreviewNode>>();
+    for (const node of nodes) {
+        if (node.variantKey && node.variants) {
+            if (targets.has(node.variantKey)) {
+                throw new Error('Duplicate variant identity.');
+            }
+            targets.set(node.variantKey, node.variants);
+        }
+    }
+    for (const node of nodes) {
+        const action = node.control?.changeVariant;
+        if (action && !Object.hasOwn(targets.get(action.key) ?? {}, action.variantId)) {
+            throw new Error('Unavailable variant action target.');
+        }
     }
 
     return { documentId: app.documentId, screens, images };

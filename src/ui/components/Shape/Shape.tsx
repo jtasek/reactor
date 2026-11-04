@@ -210,6 +210,7 @@ export const Shape = memo((props: Props) => {
                     shapeId={shapeId}
                     position={shape.position}
                     fontSize={shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE}
+                    fontWeight={shape.fontWeight}
                     width={Math.max(
                         200,
                         getShapeBounds(shape).width + (shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE) * 4

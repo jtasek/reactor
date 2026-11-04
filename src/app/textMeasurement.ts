@@ -9,7 +9,7 @@ const FALLBACK_DESCENT = 0.2;
 const measurements = new Map<string, ReturnType<typeof measure>>();
 let canvas: CanvasRenderingContext2D | null | undefined;
 
-function metrics(value: string, fontSize: number) {
+function metrics(value: string, fontSize: number, fontWeight: number) {
     if (canvas === undefined) {
         canvas =
             typeof document === 'undefined'
@@ -27,7 +27,7 @@ function metrics(value: string, fontSize: number) {
         };
     }
 
-    canvas.font = `${fontSize}px Roboto, sans-serif`;
+    canvas.font = `${fontWeight} ${fontSize}px Roboto, sans-serif`;
     const measured = canvas.measureText(value);
 
     return {
@@ -43,18 +43,18 @@ function metrics(value: string, fontSize: number) {
  * Lines that fit `width`. A line that ends between words keeps one trailing space, so
  * the drawn text still reads, and copies, as words; widths leave that space out.
  */
-function wrap(value: string, fontSize: number, width: number): string[] {
+function wrap(value: string, fontSize: number, width: number, fontWeight: number): string[] {
     const lines: string[] = [];
     let line = '';
 
     for (const word of value.trim().replace(/\s+/g, ' ').split(' ')) {
-        if (line && metrics(line + word, fontSize).width > width) {
+        if (line && metrics(line + word, fontSize, fontWeight).width > width) {
             lines.push(line);
             line = '';
         }
 
         for (const character of word) {
-            if (line.trim() && metrics(line + character, fontSize).width > width) {
+            if (line.trim() && metrics(line + character, fontSize, fontWeight).width > width) {
                 lines.push(line);
                 line = '';
             }
@@ -67,13 +67,13 @@ function wrap(value: string, fontSize: number, width: number): string[] {
     return lines;
 }
 
-function measure(value: string, fontSize: number, width?: number) {
+function measure(value: string, fontSize: number, width: number | undefined, fontWeight: number) {
     const lines = width
-        ? value.split(/\r?\n/).flatMap((line) => wrap(line, fontSize, width))
+        ? value.split(/\r?\n/).flatMap((line) => wrap(line, fontSize, width, fontWeight))
         : [value.trim().replace(/\s+/g, ' ')];
     const lineHeight = fontSize * LINE_HEIGHT;
     const boxes = lines.map((line, index) => {
-        const size = metrics(line.trimEnd(), fontSize);
+        const size = metrics(line.trimEnd(), fontSize, fontWeight);
 
         return {
             left: -size.left,
@@ -95,14 +95,15 @@ function measure(value: string, fontSize: number, width?: number) {
  * font size and width, so placements in many views share one entry.
  */
 export function measureContextualText<
-    T extends Pick<Text, 'value' | 'fontSize' | 'wrapWidth' | 'position'>
+    T extends Pick<Text, 'value' | 'fontSize' | 'fontWeight' | 'wrapWidth' | 'position'>
 >(shape: T, availableWidth?: number): T & Required<Pick<Text, 'textLayout' | 'bounds'>> {
     const fontSize = shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE;
     const width = shape.wrapWidth
         ? Math.max(1, Math.min(shape.wrapWidth, availableWidth ?? shape.wrapWidth))
         : undefined;
-    const key = JSON.stringify([shape.value, fontSize, width]);
-    const measured = measurements.get(key) ?? measure(shape.value, fontSize, width);
+    const fontWeight = shape.fontWeight ?? 400;
+    const key = JSON.stringify([shape.value, fontSize, width, fontWeight]);
+    const measured = measurements.get(key) ?? measure(shape.value, fontSize, width, fontWeight);
 
     // Least recently used first: a hit moves to the end, and only the oldest is dropped.
     measurements.delete(key);

@@ -211,6 +211,7 @@ export interface Text extends ShapeBase {
     template?: string;
     value: string;
     fontSize?: number;
+    fontWeight?: number;
     /** Optional wrapping limit in canvas units; zero/absent keeps single-line behavior. */
     wrapWidth?: number;
     /** Local measured lines, never serialized or shared. */
@@ -245,8 +246,17 @@ export interface NavigateAction {
     screenId: string;
 }
 
+export interface ChangeVariantAction {
+    type: 'changeVariant';
+    instanceId: string;
+    variantId: string;
+    screenId?: never;
+}
+
+export type ActivationAction = NavigateAction | ChangeVariantAction;
+
 export interface InteractionSettings {
-    activate?: NavigateAction | null;
+    activate?: ActivationAction | null;
 }
 
 export type PropertyValue = string | number | boolean;

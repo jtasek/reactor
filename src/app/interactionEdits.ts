@@ -1,9 +1,11 @@
+import { screenOwners } from './screenViews';
 import type { Context } from './index';
 import type { InteractionSettings } from './types';
 import { isReadOnly } from './documentAccess';
 import { isShapeLocked } from './utils';
 import { orUndefined, readInteractions } from './services/documentStorage';
 import { screenFrames } from './screens';
+import { validVariantAction } from './interactiveVariants';
 import { effectiveActivation } from './screenInteractions';
 
 export interface InteractionEdit {
@@ -47,6 +49,15 @@ export function editInteractions({ state }: Context, edit: InteractionEdit) {
         component,
         instance?.type === 'instance' ? instance : undefined
     );
+    const owner = instance?.parentFrameId
+        ? screenOwners(document.frames).get(instance.parentFrameId)
+        : undefined;
+    if (
+        settings.activate?.type === 'changeVariant' &&
+        (!owner || !validVariantAction(document, settings.activate, owner, instance?.parentFrameId))
+    ) {
+        return;
+    }
     const destination = settings.activate?.screenId;
     if (
         destination &&

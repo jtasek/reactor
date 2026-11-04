@@ -4,6 +4,7 @@ import type {
     Document,
     Group,
     InstanceShape,
+    InteractionSettings,
     Point,
     Shape,
     ShapeInput,
@@ -258,7 +259,7 @@ export function writeClipboard(
                       dataList: shape.dataList,
                       overrides: copiedOverrides(shape, variables),
                       interaction: shape.interaction,
-                      interactions: shape.interactions
+                      interactions: copiedInteractions(shape.interactions, shapes)
                   }
                 : {}),
             ...shapeStyle(shape),
@@ -738,4 +739,21 @@ export function pasteOperations(
         ...shapeOperations,
         ...groupOperations
     ];
+}
+
+/**
+ * A variant action aimed at another copied shape names that shape's paste key, so the
+ * pasted control changes the pasted target; other targets keep their IDs.
+ */
+function copiedInteractions(
+    interactions: InteractionSettings | undefined,
+    shapes: readonly Shape[]
+): InteractionSettings | undefined {
+    const action = interactions?.activate;
+    if (action?.type !== 'changeVariant') {
+        return interactions;
+    }
+    const index = shapes.findIndex((shape) => shape.id === action.instanceId);
+
+    return index < 0 ? interactions : { activate: { ...action, instanceId: `shape:${index}` } };
 }

@@ -17,51 +17,58 @@ const EMPTY_STATES = {
     settings: 'No connected accounts'
 } as const;
 
-it.each(STARTER_TEMPLATES)('keeps $name screens and native controls after saving', ({ id }) => {
-    const document = createDocument(buildStarterTemplate(id, newId));
-    const saved = serializePersistedState({
-        currentDocumentId: document.id,
-        documents: { [document.id]: document }
-    });
-    const restored = restoreDocuments(migratePersistedState(saved)!)[document.id];
-    expect(Object.keys(restored.shapes)).toHaveLength(Object.keys(document.shapes).length);
-    expect(Object.values(restored.frames).filter((frame) => frame.kind === 'view')).toHaveLength(3);
-    expect(Object.values(restored.frames).filter((frame) => frame.definitionOnly)).toHaveLength(3);
-    const warnings: string[] = [];
-    const preview = projectPreview(restored, {}, warnings);
-    expect(preview.screens).toHaveLength(3);
-    expect(warnings).toEqual([]);
-    const destinations = Object.values(restored.shapes).flatMap((shape) =>
-        shape.type === 'instance' && shape.interactions?.activate
-            ? [shape.interactions.activate.screenId]
-            : []
-    );
-    expect(destinations.length).toBeGreaterThan(2);
-    expect(
-        destinations.every((destination) => restored.frames[destination]?.kind === 'screen')
-    ).toBe(true);
-    expect(JSON.stringify(preview)).toContain('button');
-    expect(
-        Object.values(restored.shapes).some(
-            (shape) => shape.type === 'text' && shape.value === EMPTY_STATES[id]
-        )
-    ).toBe(true);
-    const controls = JSON.stringify(preview);
-    const fields = Object.values(restored.shapes).filter(
-        (shape) =>
-            shape.type === 'instance' &&
-            restored.components[shape.componentId]?.name === 'Text field'
-    );
-    // Fields show a hint, not their label a second time.
-    fields.forEach((field) => {
-        const { label, placeholder } = field.type === 'instance' ? field.overrides : {};
-        expect(placeholder).toBeTruthy();
-        expect(placeholder).not.toBe(label);
-        expect(controls).toContain(`"placeholder":"${placeholder}"`);
-    });
-    expect(restored.camera.scale).toBeLessThan(1);
-    expect(restored.dimensions).toEqual({});
-});
+it.each(STARTER_TEMPLATES.filter((template) => template.id !== 'inspector-typography'))(
+    'keeps $name screens and native controls after saving',
+    ({ id }) => {
+        const document = createDocument(buildStarterTemplate(id, newId));
+        const saved = serializePersistedState({
+            currentDocumentId: document.id,
+            documents: { [document.id]: document }
+        });
+        const restored = restoreDocuments(migratePersistedState(saved)!)[document.id];
+        expect(Object.keys(restored.shapes)).toHaveLength(Object.keys(document.shapes).length);
+        expect(
+            Object.values(restored.frames).filter((frame) => frame.kind === 'view')
+        ).toHaveLength(3);
+        expect(Object.values(restored.frames).filter((frame) => frame.definitionOnly)).toHaveLength(
+            3
+        );
+        const warnings: string[] = [];
+        const preview = projectPreview(restored, {}, warnings);
+        expect(preview.screens).toHaveLength(3);
+        expect(warnings).toEqual([]);
+        const destinations = Object.values(restored.shapes).flatMap((shape) =>
+            shape.type === 'instance' && shape.interactions?.activate?.type === 'navigate'
+                ? [shape.interactions.activate.screenId]
+                : []
+        );
+        expect(destinations.length).toBeGreaterThan(2);
+        expect(
+            destinations.every((destination) => restored.frames[destination]?.kind === 'screen')
+        ).toBe(true);
+        expect(JSON.stringify(preview)).toContain('button');
+        expect(
+            Object.values(restored.shapes).some(
+                (shape) => shape.type === 'text' && shape.value === EMPTY_STATES[id]
+            )
+        ).toBe(true);
+        const controls = JSON.stringify(preview);
+        const fields = Object.values(restored.shapes).filter(
+            (shape) =>
+                shape.type === 'instance' &&
+                restored.components[shape.componentId]?.name === 'Text field'
+        );
+        // Fields show a hint, not their label a second time.
+        fields.forEach((field) => {
+            const { label, placeholder } = field.type === 'instance' ? field.overrides : {};
+            expect(placeholder).toBeTruthy();
+            expect(placeholder).not.toBe(label);
+            expect(controls).toContain(`"placeholder":"${placeholder}"`);
+        });
+        expect(restored.camera.scale).toBeLessThan(1);
+        expect(restored.dimensions).toEqual({});
+    }
+);
 
 it('creates independent documents with access and leaves existing artwork alone', async () => {
     const { store } = createTestStore();

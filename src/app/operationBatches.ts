@@ -91,6 +91,7 @@ const CHANGEABLE_FIELDS = new Set([
     'value',
     'template',
     'fontSize',
+    'fontWeight',
     'fontColor',
     'overrides'
 ]);
@@ -1104,6 +1105,15 @@ function stage(
             }
         } catch (error) {
             throw problem(index, error);
+        }
+    });
+
+    // A variant action may name a shape the batch adds, before or after it (pasted pairs).
+    staged.shapes.forEach((shape) => {
+        const action = shape.type === 'instance' ? shape.interactions?.activate : undefined;
+        const key = action?.type === 'changeVariant' ? action.instanceId : undefined;
+        if (action?.type === 'changeVariant' && key && declared.get(key)?.collection === 'shapes') {
+            action.instanceId = ids.get(key) ?? key;
         }
     });
 

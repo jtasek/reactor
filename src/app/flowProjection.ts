@@ -21,6 +21,8 @@ export function projectFlow(document: Document) {
         instanceId: string;
         name: string;
         target?: string;
+        /** A change-variant action: the instance it changes and the variant it shows. */
+        changes?: { instance: string; variant: string };
         editable: boolean;
         shared: boolean;
         /** Preview never draws it: hidden here or in a hidden container. */
@@ -39,6 +41,7 @@ export function projectFlow(document: Document) {
         if (!component || ancestors.has(component.id)) {
             return;
         }
+        const activation = effectiveActivation(component, instance);
         controls.push({
             key: path,
             screenId,
@@ -46,7 +49,17 @@ export function projectFlow(document: Document) {
             name: instance.name,
             shared: path !== instance.id,
             ...state,
-            target: effectiveActivation(component, instance)?.screenId,
+            target: activation?.screenId,
+            ...(activation?.type === 'changeVariant'
+                ? {
+                      changes: {
+                          instance:
+                              document.shapes[activation.instanceId]?.name ?? 'Missing instance',
+                          variant:
+                              document.components[activation.variantId]?.name ?? 'Missing variant'
+                      }
+                  }
+                : {}),
             editable:
                 document.shapes[instance.id] === instance && !isShapeLocked(document, instance.id)
         });

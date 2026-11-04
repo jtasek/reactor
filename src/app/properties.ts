@@ -268,6 +268,19 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         }
     },
     {
+        key: 'fontWeight',
+        label: 'Font weight',
+        group: 'Text',
+        kind: 'number',
+        read: (shape) => (shape.type === 'text' ? (shape.fontWeight ?? 400) : undefined),
+        accepts: (value) => Number.isInteger(value) && value >= 100 && value <= 900,
+        write: (shape, value) => {
+            if (shape.type === 'text' && Number.isInteger(value) && value >= 100 && value <= 900) {
+                shape.fontWeight = value;
+            }
+        }
+    },
+    {
         key: 'wrapWidth',
         label: 'Wrap width (0 = auto)',
         group: 'Text',

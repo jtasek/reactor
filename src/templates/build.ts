@@ -1,3 +1,4 @@
+import { buildInspectorTypography } from './inspectorTypography';
 import { createComponent, createShape } from 'src/app/factories';
 import { orderAbove } from 'src/app/drawOrder';
 import type { Document, Shape, ShapeInput, Component, Frame } from 'src/app/types';
@@ -25,6 +26,9 @@ export function buildStarterTemplate(
     templateId: StarterTemplateId,
     newId: () => string
 ): StarterDocument {
+    if (templateId === 'inspector-typography') {
+        return buildInspectorTypography(newId);
+    }
     const template = STARTER_TEMPLATES.find(({ id }) => id === templateId);
 
     if (!template) {

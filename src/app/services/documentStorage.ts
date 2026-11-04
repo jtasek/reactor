@@ -25,7 +25,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 25;
+export const SCHEMA_VERSION = 26;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -433,6 +433,7 @@ export function readShapeGeometry(value: unknown) {
                 value: text(s.value ?? s.text),
                 ...(s.template === undefined ? {} : { template: text(s.template) }),
                 ...(s.fontSize === undefined ? {} : { fontSize: positive(s.fontSize) }),
+                ...(s.fontWeight === undefined ? {} : { fontWeight: readFontWeight(s.fontWeight) }),
                 ...(s.wrapWidth === undefined ? {} : { wrapWidth: number(s.wrapWidth, 0) })
             };
         case 'instance':
@@ -572,8 +573,21 @@ function readRoleAndInteractions(value: Record<string, unknown>) {
 export function readInteractions(value: unknown): import('../types').InteractionSettings {
     const { activate, ...rest } = record(value);
     const action = activate == null ? {} : record(activate);
-    if (Object.keys(rest).length || (activate != null && action.type !== 'navigate')) {
+    if (
+        Object.keys(rest).length ||
+        (activate != null && !['navigate', 'changeVariant'].includes(String(action.type)))
+    ) {
         throw new Error('Invalid interactions');
+    }
+
+    if (action.type === 'changeVariant') {
+        return {
+            activate: {
+                type: 'changeVariant',
+                instanceId: id(action.instanceId),
+                variantId: id(action.variantId)
+            }
+        };
     }
 
     return activate === undefined
@@ -1272,4 +1286,12 @@ export function restoreDocuments(data: PersistedState): Record<string, Document>
 /** IDs inside a document are document-scoped, so cloning preserves internal references. */
 export function copyDocument(document: Document, newId: string): Document {
     return hydrateDocument({ ...readDocument(document), id: newId });
+}
+
+function readFontWeight(value: unknown): number {
+    if (typeof value !== 'number' || !Number.isInteger(value) || value < 100 || value > 900) {
+        throw new Error('Invalid font weight');
+    }
+
+    return value;
 }

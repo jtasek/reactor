@@ -77,7 +77,9 @@ export default function TemplatePicker({ onClose }: { onClose: () => void }) {
                             {template.description}
                         </span>
                         <small id={`template-${template.id}-contents`}>
-                            3 Screen views · Includes an empty state
+                            {template.id === 'inspector-typography'
+                                ? '1 Screen view · Four interactive styles'
+                                : '3 Screen views · Includes an empty state'}
                         </small>
                     </button>
                 ))}

@@ -21,13 +21,17 @@ const shared = window.location.pathname.replace(/\/$/, '') === '/share';
 const externalControls =
     !shared && new URLSearchParams(window.location.search).get('player') === 'prototype';
 const values = new Map<string, string>();
+const variants = new Map<string, string>();
+const initialVariants = new Map<string, string>();
 let application: PreviewApplication | undefined;
 /** Images received so far. The editor sends each image once and later updates only refer to it. */
 let images: Record<string, string> = {};
 let currentScreen: string | undefined;
 let port: MessagePort | undefined;
 
-function nodeElement(node: PreviewNode, decorative = false): SVGElement {
+function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
+    const choice = authored.variantKey ? variants.get(authored.variantKey) : undefined;
+    const node = choice && authored.variants?.[choice] ? authored.variants[choice] : authored;
     const element = document.createElementNS(SVG, node.tag);
     Object.entries(node.attrs).forEach(([key, value]) => element.setAttribute(key, String(value)));
     if (node.image) {
@@ -80,6 +84,15 @@ function nodeElement(node: PreviewNode, decorative = false): SVGElement {
     field.className = control.role;
     field.setAttribute('aria-label', control.label);
     field.disabled = control.disabled ?? false;
+    if (control.changeVariant && control.role === 'button') {
+        const action = control.changeVariant;
+        field.setAttribute(
+            'aria-pressed',
+            String(
+                (variants.get(action.key) ?? initialVariants.get(action.key)) === action.variantId
+            )
+        );
+    }
     if (control.disabled) {
         element.setAttribute('opacity', String(Number(node.attrs.opacity ?? 1) * 0.5));
     }
@@ -89,27 +102,40 @@ function nodeElement(node: PreviewNode, decorative = false): SVGElement {
         field.placeholder = control.placeholder ?? control.label;
         field.addEventListener('input', () => values.set(inputKey, field.value));
         field.addEventListener('keydown', (event) => {
-            if (event.key !== 'Enter' || event.isComposing || !control.navigateTo) {
+            if (
+                event.key !== 'Enter' ||
+                event.isComposing ||
+                (!control.navigateTo && !control.changeVariant)
+            ) {
                 return;
             }
             event.preventDefault();
-            currentScreen = control.navigateTo;
-            render();
+            activate(control);
         });
     } else {
         field.textContent = control.label;
         field.title = control.label;
         field.addEventListener('click', () => {
-            if (control.navigateTo) {
-                currentScreen = control.navigateTo;
-                render();
-            }
+            activate(control);
         });
     }
     box.append(field);
     element.append(box);
 
     return element;
+}
+
+function activate(control: NonNullable<PreviewNode['control']>) {
+    if (!control.changeVariant && !control.navigateTo) {
+        return;
+    }
+    if (control.changeVariant) {
+        variants.set(control.changeVariant.key, control.changeVariant.variantId);
+    }
+    if (control.navigateTo) {
+        currentScreen = control.navigateTo;
+    }
+    render();
 }
 
 function render() {
@@ -120,10 +146,14 @@ function render() {
         application.screens.find((screen) => screen.id === currentScreen) ?? application.screens[0];
     currentScreen = screen.id;
     const focused =
-        document.activeElement instanceof HTMLInputElement ? document.activeElement : undefined;
-    const selection = focused
-        ? ([focused.selectionStart, focused.selectionEnd] as const)
-        : undefined;
+        document.activeElement instanceof HTMLInputElement ||
+        document.activeElement instanceof HTMLButtonElement
+            ? document.activeElement
+            : undefined;
+    const selection =
+        focused instanceof HTMLInputElement
+            ? ([focused.selectionStart, focused.selectionEnd] as const)
+            : undefined;
     const key = focused?.dataset.key;
     const navigation = document.createElement('nav');
     navigation.setAttribute('aria-label', 'Preview controls');
@@ -148,6 +178,7 @@ function render() {
     reset.textContent = shared ? 'Reset prototype' : 'Reset preview';
     reset.addEventListener('click', () => {
         values.clear();
+        variants.clear();
         currentScreen = undefined;
         // Inspected Width and Layout return to the launch view's too.
         port?.postMessage({ type: 'inspect-reset' });
@@ -208,11 +239,11 @@ function render() {
     screen.nodes.forEach((node) => svg.append(nodeElement(node)));
     root.replaceChildren(navigation, svg);
     if (key) {
-        const input = Array.from(root.querySelectorAll('input')).find(
-            (input) => input.dataset.key === key
-        );
+        const input = Array.from(
+            root.querySelectorAll<HTMLInputElement | HTMLButtonElement>('input, button')
+        ).find((input) => input.dataset.key === key);
         input?.focus();
-        if (input && selection) {
+        if (input instanceof HTMLInputElement && selection) {
             input.setSelectionRange(selection[0], selection[1]);
         }
     }
@@ -226,19 +257,36 @@ function receive(value: unknown) {
         const next = readPreview({ ...update, images: undefined }, images);
         if (application?.documentId !== next.documentId) {
             values.clear();
+            variants.clear();
             currentScreen = undefined;
         }
         const keys = new Set<string>();
+        initialVariants.clear();
         const collect = (node: PreviewNode) => {
             if (node.control?.role === 'input') {
                 keys.add(node.control.stateKey ?? node.key);
             }
             node.children?.forEach(collect);
+            Object.values(node.variants ?? {}).forEach(collect);
+            if (node.variantKey && node.initialVariant) {
+                initialVariants.set(node.variantKey, node.initialVariant);
+            }
+            if (
+                node.variantKey &&
+                !Object.hasOwn(node.variants ?? {}, variants.get(node.variantKey) ?? '')
+            ) {
+                variants.delete(node.variantKey);
+            }
         };
         next.screens.forEach((screen) => screen.nodes.forEach(collect));
         values.forEach((_value, key) => {
             if (!keys.has(key)) {
                 values.delete(key);
+            }
+        });
+        variants.forEach((_value, key) => {
+            if (!initialVariants.has(key)) {
+                variants.delete(key);
             }
         });
         application = next;
