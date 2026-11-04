@@ -1,7 +1,7 @@
 import type { Document, InstanceShape, Shape, VariableContext } from '../app/types';
 import type { PreviewNode } from './protocol';
 import { dataRecords } from '../app/data';
-import { dataListProblems, recordOverrides } from '../app/dataLists';
+import { recordOverrides } from '../app/dataLists';
 import { projectGeometry } from '../app/contextualGeometry';
 import { DEFAULT_TEXT_FONT_SIZE } from '../app/utils';
 import { drawnBox } from '../app/membership';
@@ -13,24 +13,23 @@ export function projectDataList(
     key: string,
     modes: VariableContext,
     ancestors: ReadonlySet<string>,
-    draw: (shape: Shape, path: string, recordId: string) => PreviewNode
+    draw: (shape: Shape, path: string, recordId: string) => PreviewNode,
+    report: (problem: string) => void
 ): PreviewNode {
     const binding = instance.dataList!;
-    const problems = dataListProblems(document, instance, binding);
-    if (problems.length) {
-        throw new Error(problems.join(' '));
-    }
     const records = dataRecords(document, binding.entityId);
     const context = instance.projectedSource?.context;
     const result = records.reduce<{ children: PreviewNode[]; height: number }>(
-        (result, record) => {
+        (result, record, index) => {
             const localProblems: Record<string, string> = {};
+            const { overrides, problems } = recordOverrides(document, instance, record, index + 1);
+            problems.forEach(report);
             const item = projectGeometry(
                 {
                     ...instance,
                     dataList: undefined,
                     projectedSource: undefined,
-                    overrides: recordOverrides(document, instance, record)
+                    overrides
                 },
                 document,
                 modes,
@@ -39,8 +38,11 @@ export function projectDataList(
                 localProblems,
                 context?.widths
             );
+            // The item template's own problems stop Preview, as they do for any instance.
             if (Object.keys(localProblems).length) {
-                throw new Error(Object.values(localProblems).join(' '));
+                const message = Object.values(localProblems).join(' ');
+                report(message);
+                throw new Error(`${instance.name}: ${message}`);
             }
             const path = `${key}/record:${encodeURIComponent(record.id)}`;
             result.children.push({

@@ -6,6 +6,7 @@ import { compatibleListField, dataListProblems, DEFAULT_LIST_GAP } from 'src/app
 import { dataFields, dataRecords } from 'src/app/data';
 import type { DataList as ListBinding } from 'src/app/dataTypes';
 import { PropertyGroup } from './PropertyGroup';
+import { instanceComponent } from 'src/app/componentSource';
 
 /** A component instance supplies the item artwork; bindings never alter its source. */
 export function DataList({ instanceId }: { instanceId: string }) {
@@ -17,7 +18,8 @@ export function DataList({ instanceId }: { instanceId: string }) {
         if (instance?.type !== 'instance') {
             return null;
         }
-        const component = document.components[instance.componentId];
+        // The selected variant's properties, the same ones Prototype maps.
+        const component = instanceComponent(document, instance);
         const list = instance.dataList;
         const fields = dataFields(document, list?.entityId ?? '');
         const props = component?.props ?? [];

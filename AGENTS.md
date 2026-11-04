@@ -1286,6 +1286,9 @@ Inspector's Repeat with data uses the selected instance's component as its item 
 `preview/dataLists.ts` repeats items only in Preview/Prototype using `projectGeometry` for
 contextual measurement and variants, retaining per-record input identities. Only projected
 artwork crosses the existing sandbox protocol. Canvas/SVG export stay authored, and surrounding
-stack siblings are not reflowed. Missing references remain durable and diagnostic. Clipboard
+stack siblings are not reflowed. Missing references remain durable and diagnostic: a blank or
+invalid record value, a stale mapping or a missing entity shows the template value (or the template
+once) with a Preview warning, never stopping Preview. Data View's delete confirmation counts the
+lists that use a field or entity (`listsUsing`). Clipboard
 and clone retain bindings; library snapshots strip these document-local references.
 Tests: `tests/dataLists.test.ts` and `tests/browser/dataLists.spec.ts`.

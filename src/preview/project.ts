@@ -263,28 +263,46 @@ export function createArtworkProjector(
         }
         const key = `${path}/${shape.id}`;
         if (screenIds && shape.type === 'instance' && shape.dataList) {
-            try {
-                return projectDataList(
-                    document,
-                    shape,
-                    key,
-                    inherited,
+            const reported = new Set<string>();
+            // Unfinished data warns and falls back to the template; it never stops Preview.
+            const report = (problem: string) => {
+                const message = `${shape.name}: ${problem}`;
+                if (!reported.has(message)) {
+                    reported.add(message);
+                    warnings.push(message);
+                    diagnostics.push({ kind: 'shape', id: shape.id, message });
+                }
+            };
+            if (!document.dataEntities[shape.dataList.entityId]) {
+                report('The list entity is unavailable, so the template is shown once.');
+
+                return draw(
+                    { ...shape, dataList: undefined },
+                    path,
                     ancestors,
-                    (item, path, recordId) =>
-                        draw(
-                            item,
-                            path,
-                            ancestors,
-                            inherited,
-                            screenId,
-                            JSON.stringify([recordScope, key, recordId])
-                        )
+                    inherited,
+                    screenId,
+                    recordScope
                 );
-            } catch (error) {
-                const message = `${shape.name}: ${error instanceof Error ? error.message : 'Invalid list binding.'}`;
-                diagnostics.push({ kind: 'shape', id: shape.id, message });
-                throw new Error(message, { cause: error });
             }
+
+            return projectDataList(
+                document,
+                shape,
+                key,
+                inherited,
+                ancestors,
+                (item, path, recordId) =>
+                    draw(
+                        item,
+                        path,
+                        ancestors,
+                        inherited,
+                        screenId,
+                        JSON.stringify([recordScope, key, recordId])
+                    ),
+                report
+            );
         }
         const bounds = getShapeBounds(shape);
         const center = boxCenter(bounds);

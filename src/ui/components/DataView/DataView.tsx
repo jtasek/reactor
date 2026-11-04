@@ -8,6 +8,7 @@ import {
     dataRecords,
     dataValueProblem
 } from 'src/app/data';
+import { listsUsing } from 'src/app/dataLists';
 import type { DataChange, DataEdit, DataEditResult } from 'src/app/dataEdits';
 import type { DataType, DataValue } from 'src/app/dataTypes';
 import styles from './styles.css';
@@ -94,11 +95,13 @@ function ValueEditor({
 /** Shown beside the button that asked, so it is in view and has focus. */
 function DeleteConfirmation({
     deletion,
+    lists,
     disabled,
     cancel,
     confirm
 }: {
     deletion: DataEdit;
+    lists: number;
     disabled: boolean;
     cancel: () => void;
     confirm: () => void;
@@ -118,6 +121,14 @@ function DeleteConfirmation({
                     : 'field and its record values'}
                 ? You can undo this change.
             </p>
+            {lists > 0 && (
+                <p>
+                    {lists === 1 ? 'A repeated list uses' : `${lists} repeated lists use`} this{' '}
+                    {deletion.kind === 'deleteEntity'
+                        ? 'entity. Prototype will show its item template once instead.'
+                        : 'field. Its items will show the template value instead.'}
+                </p>
+            )}
             <button ref={cancelButton} type="button" onClick={cancel}>
                 Cancel
             </button>
@@ -155,6 +166,14 @@ function DataEditor() {
             values: { ...record.values }
         }));
         const leftovers = dataLeftovers(document);
+        const target =
+            deletion && 'id' in deletion
+                ? deletion.kind === 'deleteEntity'
+                    ? { entityId: deletion.id }
+                    : deletion.kind === 'deleteField'
+                      ? { fieldId: deletion.id }
+                      : undefined
+                : undefined;
 
         return {
             documentId: document.id,
@@ -163,6 +182,7 @@ function DataEditor() {
             fields,
             records,
             problems: dataProblems(document),
+            listsUsingDeletion: target ? listsUsing(document, target) : 0,
             hasLeftovers:
                 leftovers.fields.length + leftovers.records.length + leftovers.values.length > 0,
             disabled:
@@ -191,6 +211,7 @@ function DataEditor() {
         deletion.id === id && (
             <DeleteConfirmation
                 deletion={deletion}
+                lists={data.listsUsingDeletion}
                 disabled={data.disabled}
                 cancel={() => setDeletion(undefined)}
                 confirm={() => {
@@ -203,7 +224,10 @@ function DataEditor() {
 
     return (
         <section className={styles.dataView} aria-label="Data View">
-            <p>Define your data, then add sample records. Screen bindings come in the next step.</p>
+            <p>
+                Define your data, then add sample records. To repeat a component over records,
+                select an instance and use Inspector → Repeat with data.
+            </p>
             <form
                 onSubmit={(event) => {
                     event.preventDefault();
