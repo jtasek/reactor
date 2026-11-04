@@ -23,6 +23,7 @@ declare namespace StylesCssNamespace {
     iconButton: string;
     inspector: string;
     inspectorHeader: string;
+    inspectorHelp: string;
     instanceChild: string;
     instanceColor: string;
     instanceEmpty: string;
@@ -35,6 +36,7 @@ declare namespace StylesCssNamespace {
     instanceSectionHeading: string;
     instanceStatus: string;
     instanceValue: string;
+    interactionField: string;
     interactions: string;
     layoutChoice: string;
     note: string;

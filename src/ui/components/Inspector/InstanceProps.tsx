@@ -18,6 +18,13 @@ export const InstanceProps: FC = () => {
 
     const children = [...new Map(data.rows.map((row) => [row.shapeId, row.shapeName])).entries()];
     const changedCount = data.rows.filter((row) => row.overridden).length;
+    // Child headings appear only when two children expose the same field name; then every
+    // child gets one, so no field reads as belonging to the child above it.
+    const labels = new Map<string, Set<string>>();
+    data.rows.forEach((row) =>
+        labels.set(row.fieldLabel, (labels.get(row.fieldLabel) ?? new Set()).add(row.shapeId))
+    );
+    const showChildHeadings = [...labels.values()].some((shapes) => shapes.size > 1);
 
     return (
         <section className={styles.instanceProps} aria-label="Component properties">
@@ -105,7 +112,7 @@ export const InstanceProps: FC = () => {
             )}
             {children.map(([shapeId, shapeName]) => (
                 <div className={styles.instanceChild} key={shapeId}>
-                    <h4>{shapeName}</h4>
+                    {showChildHeadings && <h4>{shapeName}</h4>}
                     <div className={styles.instanceFields}>
                         {data.rows
                             .filter((row) => row.shapeId === shapeId)
@@ -185,9 +192,8 @@ const InstancePropertyRow: FC<{
                     </select>
                 </details>
             </div>
-            <div className={styles.instanceStatus}>
-                <span>{overridden ? 'Changed' : 'From source'}</span>
-                {overridden && (
+            {overridden && (
+                <div className={styles.instanceStatus}>
                     <button
                         type="button"
                         className={styles.instanceReset}
@@ -198,8 +204,8 @@ const InstancePropertyRow: FC<{
                         <Icon icon={{ component: RotateCcw, size: 14 }} />
                         Reset
                     </button>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 };

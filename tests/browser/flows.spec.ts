@@ -78,9 +78,9 @@ test('connects and removes actions in Flow, reflects them in Inspector, and arra
     await expect(page.getByLabel('Navigate to screen')).toHaveValue('none');
     await expect(node).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 20)');
     await page.getByLabel('Navigate to screen').selectOption('inherit');
-    await expect(
-        page.getByText('From source: navigate to Details.', { exact: false })
-    ).toBeVisible();
+    await expect(page.getByLabel('Navigate to screen').locator('option:checked')).toHaveText(
+        'Source: Details'
+    );
     await expect(page.locator('iframe')).toHaveCount(0);
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Flow', exact: true })).toBeVisible();

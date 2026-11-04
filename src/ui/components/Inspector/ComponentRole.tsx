@@ -177,26 +177,9 @@ export const ComponentRole: FC<{ componentId?: string; instanceId?: string }> = 
                                             update({ ...data.settings, controlId })
                                         }
                                     />
-                                    <small className={styles.frameHint}>
-                                        Use the same identity and value property in another layout
-                                        to keep typed input in Preview. Unique within each screen
-                                        layout.
-                                    </small>
                                 </td>
                             </tr>
                         )}
-                        <tr>
-                            <td colSpan={2}>
-                                <small className={styles.frameHint}>
-                                    {data.settings.role === 'none'
-                                        ? 'Choose a role for this component.'
-                                        : 'Choose the exposed property for each role field. Test controls in Preview.'}
-                                    {instanceId &&
-                                        !data.inherited &&
-                                        ' Custom role settings; choose From source to reset.'}
-                                </small>
-                            </td>
-                        </tr>
                         {data.problems.map((problem) => (
                             <tr key={problem}>
                                 <td colSpan={2}>
@@ -210,6 +193,25 @@ export const ComponentRole: FC<{ componentId?: string; instanceId?: string }> = 
                 </table>
             </section>
             <ComponentInteractions componentId={componentId} instanceId={instanceId} />
+            <details className={styles.inspectorHelp}>
+                <summary>About prototype behavior</summary>
+                <p>
+                    Roles connect exposed properties to controls. Actions run in Preview and
+                    Prototype; canvas clicks select and edit.
+                </p>
+                {data.settings.role === 'input' && (
+                    <p>
+                        Input actions run on Enter. Use the same input identity and Value property
+                        across layouts to keep typed input. Each identity must be unique within a
+                        screen layout.
+                    </p>
+                )}
+                {instanceId && (
+                    <p>
+                        From source follows the component. Choose it again to restore inheritance.
+                    </p>
+                )}
+            </details>
         </>
     );
 };

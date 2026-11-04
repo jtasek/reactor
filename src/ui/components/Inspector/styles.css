@@ -179,12 +179,12 @@
 .inspector th,
 .heading {
     font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
+    font-weight: 500;
+    letter-spacing: normal;
     line-height: 16px;
     padding: 0 var(--card-padding) 6px;
     text-align: left;
-    text-transform: uppercase;
+    text-transform: none;
 }
 
 .inspector th {
@@ -671,6 +671,8 @@
 .instanceSectionHeading {
     align-items: baseline;
     display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
     justify-content: space-between;
     padding: 12px calc(var(--inspector-inset) + var(--card-padding)) 8px;
 }
@@ -680,6 +682,7 @@
 }
 
 .instanceSectionHeading span {
+    white-space: nowrap;
     color: var(--component-color);
     font-size: 0.7rem;
 }
@@ -755,10 +758,7 @@
     padding: 5px 8px;
 }
 
-.instanceInspector
-    > table
-    > tbody
-    > tr[data-property='rotation'] {
+.instanceInspector > table > tbody > tr[data-property='rotation'] {
     grid-column: 1 / -1;
 }
 
@@ -777,11 +777,7 @@
     white-space: nowrap;
 }
 
-.instanceInspector
-    > table
-    > tbody
-    > tr[data-property='rotation']
-    > td:first-child,
+.instanceInspector > table > tbody > tr[data-property='rotation'] > td:first-child,
 .instanceInspector > table > tbody:not([data-property-group='Layout']) > tr > td:first-child {
     flex-basis: 72px;
 }
@@ -825,11 +821,15 @@
     align-items: center;
     display: grid;
     gap: 6px;
-    grid-template-columns: 43px minmax(0, 1fr) 22px;
+    grid-template-columns: minmax(0, 1fr) 22px;
 }
 
 .instanceValue label {
+    grid-column: 1 / -1;
+    color: var(--text-secondary-color);
     font-size: 0.75rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .instanceValue > select {
@@ -913,16 +913,11 @@
 
 .instanceStatus {
     align-items: center;
-    color: var(--text-secondary-color);
+    color: var(--component-color);
     display: flex;
     font-size: 0.7rem;
-    justify-content: space-between;
-    margin-left: 49px;
-    min-height: 18px;
-}
-
-.instanceStatus:has(.instanceReset) {
-    color: var(--component-color);
+    justify-content: flex-end;
+    margin-top: 4px;
 }
 
 .instanceReset {
@@ -994,4 +989,38 @@
     min-width: 0;
     max-width: 100%;
     width: 100%;
+}
+
+.inspectorHelp {
+    color: var(--text-secondary-color);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    margin: var(--panel-gap) 0 var(--section-gap);
+    overflow-wrap: anywhere;
+}
+
+.inspectorHelp summary {
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.inspectorHelp summary:focus-visible,
+.instanceOptions summary:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 2px;
+}
+
+.inspectorHelp p {
+    margin: 4px 0;
+}
+
+.interactionField {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.interactionField label {
+    color: var(--text-secondary-color);
+    font-size: 0.75rem;
 }

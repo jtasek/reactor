@@ -34,6 +34,7 @@ export const useRoleEditor = (componentId?: string, instanceId?: string) =>
         return {
             settings: { ...settings, props: { ...settings.props } },
             activation: effectiveActivation(family ?? component, instance),
+            sourceActivation: effectiveActivation(family ?? component),
             actionFamily: family?.name,
             actionInherited: Boolean(instance && inheritedActivation(instance)),
             screens: screenFrames(document).map((frame) => ({ id: frame.id, name: frame.name })),
