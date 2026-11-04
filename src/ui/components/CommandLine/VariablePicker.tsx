@@ -34,6 +34,14 @@ export function VariablePicker({
                             return;
                         }
 
+                        if (event.key === 'Escape' && query) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            setQuery('');
+
+                            return;
+                        }
+
                         if (event.key === 'Enter' || event.key === 'ArrowDown') {
                             event.preventDefault();
                             list.current?.focus();

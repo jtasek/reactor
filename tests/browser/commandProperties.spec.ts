@@ -77,6 +77,11 @@ test('guided bindings, literal colors and text remain undoable', async ({ page }
     await expect(picker).toBeFocused();
     await picker.press('ArrowDown');
     await expect(picker).toHaveValue('brand');
+    // Escape clears the search first and keeps the draft.
+    await search.press('Escape');
+    await expect(search).toHaveValue('');
+    await expect(property).toHaveValue('fill');
+    await expect(picker).toHaveValue('brand');
     await expect(shapes(page).locator('rect[data-cy="Card"]')).toHaveCSS('fill', 'rgb(17, 34, 51)');
     await page.screenshot({ path: testInfo.outputPath('binding.png') });
     await page.setViewportSize({ width: 390, height: 800 });

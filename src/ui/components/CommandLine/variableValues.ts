@@ -39,20 +39,31 @@ export function variableValues(state: Context['state'], variables: CompletionVar
             const dimension = document.dimensions[resolved.dimensionId ?? ''];
             const mode = dimension?.modes[resolved.modeId ?? ''];
             const source = dimension ? context.sources[dimension.id] : undefined;
-            const provenance = mode
-                ? `${dimension.name}: ${mode.name} · ${source}${resolved.usesBaseValue ? ' · Base value' : ''}`
-                : 'Base value';
+            const base = resolved.usesBaseValue ? ' · Base value' : '';
 
-            return { value: String(resolved.value), provenance };
+            return {
+                value: String(resolved.value),
+                mode: mode ? `${dimension.name}: ${mode.name}${base}` : 'Base value',
+                provenance: mode
+                    ? `${dimension.name}: ${mode.name} · ${source}${base}`
+                    : 'Base value'
+            };
         });
         const values = [...new Set(descriptions.map(({ value }) => value))];
+        const modes = [...new Set(descriptions.map(({ mode }) => mode))];
         const sources = [...new Set(descriptions.map(({ provenance }) => provenance))];
+        // The same mode reached from several places is still one mode.
+        const provenance =
+            sources.length === 1
+                ? sources[0]
+                : modes.length === 1
+                  ? `${modes[0]} · from several sources`
+                  : 'Different inherited modes across selection';
 
         return {
             ...variable,
             resolvedValue: values.length === 1 ? values[0] : 'Mixed values',
-            provenance:
-                sources.length === 1 ? sources[0] : 'Different inherited modes across selection'
+            provenance
         };
     });
 }

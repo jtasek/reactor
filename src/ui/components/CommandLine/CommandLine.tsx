@@ -1,7 +1,7 @@
-import { VariablePicker } from './VariablePicker';
 import React, { FC, SubmitEvent, useEffect, useId, useRef, useState } from 'react';
 import { ArrowLeft, ChevronRight, Command, Search, Sparkles, X, Repeat2 } from 'lucide-react';
 import { Icon } from '../Icon';
+import { VariablePicker } from './VariablePicker';
 import { shortcutKeys, shortcutLabel, usesCommandKey } from '../CommandBar/shortcutLabel';
 import { SELECTION_HELP, SELECTION_PATTERN } from './selection';
 import styles from './styles.css';
@@ -306,6 +306,15 @@ export const CommandLine: FC<Props> = ({
                     event.stopPropagation();
                     setOpen(false);
 
+                    return;
+                }
+                // A search field with text clears itself first; the next Escape goes back.
+                if (
+                    event.key === 'Escape' &&
+                    event.target instanceof HTMLInputElement &&
+                    event.target.type === 'search' &&
+                    event.target.value
+                ) {
                     return;
                 }
                 if (event.key === 'Escape') {

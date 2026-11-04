@@ -138,3 +138,57 @@ it('resolves selected artwork in its Screen view and distinguishes mixed context
     };
     expect(variableValues(selection, variables)[0].resolvedValue).toBe('Mixed values');
 });
+
+it('reports one mode when several Screens choose the same mode', () => {
+    const { store } = createTestStore();
+    store.actions.addDocument({
+        id: store.state.currentDocumentId,
+        dimensions: { theme: legacyTheme() }
+    });
+    const id = store.actions.createVariable({ name: 'Ink', type: 'color', value: '#112233' })!;
+    store.actions.setVariableDimension({ variableId: id, dimensionId: 'theme' });
+    store.actions.setVariableModeValue({ variableId: id, modeId: 'dark', value: '#ddeeff' });
+    const screens = [0, 400].map((x) => {
+        const screen = store.actions.editFrame({
+            kind: 'add',
+            position: { x, y: 0 },
+            size: { width: 300, height: 200 }
+        })!;
+        store.actions.editFrame({
+            kind: 'update',
+            id: screen,
+            changes: { kind: 'screen', modeOverrides: { theme: 'dark' } }
+        });
+        store.actions.addShape({
+            type: 'rectangle',
+            position: { x: x + 10, y: 10 },
+            size: { width: 40, height: 40 },
+            parentFrameId: screen
+        });
+
+        return screen;
+    });
+    const select = () => ({
+        ...store.state,
+        currentDocument: {
+            ...store.state.currentDocument,
+            selectedFrameId: undefined,
+            selectedShapesIds: store.state.currentDocument.shapesIds
+        }
+    });
+    const variables = [{ id, name: 'Ink', type: 'color' }];
+    expect(variableValues(select(), variables)[0]).toMatchObject({
+        resolvedValue: '#ddeeff',
+        provenance: 'Theme: Dark · from several sources'
+    });
+
+    store.actions.editFrame({
+        kind: 'update',
+        id: screens[1],
+        changes: { modeOverrides: { theme: 'light' } }
+    });
+    expect(variableValues(select(), variables)[0]).toMatchObject({
+        resolvedValue: 'Mixed values',
+        provenance: 'Different inherited modes across selection'
+    });
+});
