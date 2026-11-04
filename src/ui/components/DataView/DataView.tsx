@@ -1,7 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useActions, useAppState } from 'src/app/hooks';
 import { isReadOnly } from 'src/app/documentAccess';
-import { dataFields, dataProblems, dataValueProblem } from 'src/app/data';
+import {
+    dataFields,
+    dataLeftovers,
+    dataProblems,
+    dataRecords,
+    dataValueProblem
+} from 'src/app/data';
 import type { DataChange, DataEdit, DataEditResult } from 'src/app/dataEdits';
 import type { DataType, DataValue } from 'src/app/dataTypes';
 import styles from './styles.css';
@@ -85,6 +91,43 @@ function ValueEditor({
     );
 }
 
+/** Shown beside the button that asked, so it is in view and has focus. */
+function DeleteConfirmation({
+    deletion,
+    disabled,
+    cancel,
+    confirm
+}: {
+    deletion: DataEdit;
+    disabled: boolean;
+    cancel: () => void;
+    confirm: () => void;
+}) {
+    const cancelButton = useRef<HTMLButtonElement>(null);
+    useEffect(() => {
+        cancelButton.current?.focus();
+        cancelButton.current?.scrollIntoView?.({ block: 'nearest' });
+    }, []);
+
+    return (
+        <div role="alert" className={styles.confirmation}>
+            <p>
+                Delete this{' '}
+                {deletion.kind === 'deleteEntity'
+                    ? 'entity and its fields and records'
+                    : 'field and its record values'}
+                ? You can undo this change.
+            </p>
+            <button ref={cancelButton} type="button" onClick={cancel}>
+                Cancel
+            </button>
+            <button type="button" disabled={disabled} onClick={confirm}>
+                Delete
+            </button>
+        </div>
+    );
+}
+
 export default function DataView() {
     const documentId = useAppState((state) => state.currentDocumentId);
 
@@ -107,10 +150,11 @@ function DataEditor() {
             .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
         const entity = entities.find((item) => item.id === selectedId) ?? entities[0];
         const fields = dataFields(document, entity?.id ?? '').map((field) => ({ ...field }));
-        const records = Object.values(document.dataRecords)
-            .filter((record) => record.entityId === entity?.id)
-            .map((record) => ({ ...record, values: { ...record.values } }))
-            .sort((a, b) => a.id.localeCompare(b.id));
+        const records = dataRecords(document, entity?.id ?? '').map((record) => ({
+            ...record,
+            values: { ...record.values }
+        }));
+        const leftovers = dataLeftovers(document);
 
         return {
             documentId: document.id,
@@ -119,6 +163,8 @@ function DataEditor() {
             fields,
             records,
             problems: dataProblems(document),
+            hasLeftovers:
+                leftovers.fields.length + leftovers.records.length + leftovers.values.length > 0,
             disabled:
                 document.locked ||
                 isReadOnly(state) ||
@@ -139,6 +185,21 @@ function DataEditor() {
 
         return result;
     };
+    const confirmation = (kind: DataEdit['kind'], id: string) =>
+        deletion?.kind === kind &&
+        'id' in deletion &&
+        deletion.id === id && (
+            <DeleteConfirmation
+                deletion={deletion}
+                disabled={data.disabled}
+                cancel={() => setDeletion(undefined)}
+                confirm={() => {
+                    if (edit(deletion).applied) {
+                        setDeletion(undefined);
+                    }
+                }}
+            />
+        );
 
     return (
         <section className={styles.dataView} aria-label="Data View">
@@ -211,6 +272,7 @@ function DataEditor() {
                             >
                                 Delete entity…
                             </button>
+                            {confirmation('deleteEntity', data.entity.id)}
                             <h3>Fields</h3>
                             <form
                                 onSubmit={(event) => {
@@ -329,6 +391,7 @@ function DataEditor() {
                                     >
                                         Delete {field.name}…
                                     </button>
+                                    {confirmation('deleteField', field.id)}
                                 </div>
                             ))}
                             <h3>Sample records</h3>
@@ -407,29 +470,6 @@ function DataEditor() {
                     )}
                 </>
             )}
-            {deletion && (
-                <div role="alert">
-                    <p>
-                        Delete this{' '}
-                        {deletion.kind === 'deleteEntity'
-                            ? 'entity and its fields and records'
-                            : 'field and its record values'}
-                        ? You can undo this change.
-                    </p>
-                    <button onClick={() => setDeletion(undefined)}>Cancel</button>
-                    <button
-                        disabled={data.disabled}
-                        onClick={() => {
-                            const result = edit(deletion);
-                            if (result.applied) {
-                                setDeletion(undefined);
-                            }
-                        }}
-                    >
-                        Delete
-                    </button>
-                </div>
-            )}
             {message && <p role="status">{message}</p>}
             {data.problems.length > 0 && (
                 <section aria-label="Data diagnostics">
@@ -439,6 +479,14 @@ function DataEditor() {
                             <li key={index}>{problem}</li>
                         ))}
                     </ul>
+                    {data.hasLeftovers && (
+                        <button
+                            disabled={data.disabled}
+                            onClick={() => edit({ kind: 'removeLeftovers' })}
+                        >
+                            Remove leftovers
+                        </button>
+                    )}
                 </section>
             )}
         </section>

@@ -1269,5 +1269,8 @@ mismatches and missing references for `dataProblems` diagnostics, never destruct
 `editData` delegates to the editor-loaded `dataEdits.ts`, validates before writing, guards
 read-only/locked/stale document edits, and commits one collaboration batch per edit.
 Renames and type changes preserve values; explicit field/entity deletion cascades and is
-undoable. Concurrent record cells use the existing nested-map merge. Data View loads its UI
+undoable. Concurrent record cells use the existing nested-map merge. Records keep an `order`
+(added order; ties fall back to ID). Concurrent deletes can leave fields/records without an
+entity or values without a field; `dataLeftovers` finds them and `removeLeftovers` (Data View's
+"Remove leftovers") deletes them as one undoable edit. Data View loads its UI
 on demand and owns only drafts/selection locally. List/form/runtime bindings are not yet built.

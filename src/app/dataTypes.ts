@@ -13,5 +13,7 @@ export interface DataField extends DataEntity {
 export interface DataRecord {
     id: string;
     entityId: string;
+    /** Rows show in this order; ties (from concurrent adds) fall back to the ID. */
+    order: number;
     values: Record<string, DataValue>;
 }

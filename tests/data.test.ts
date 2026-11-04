@@ -1,6 +1,6 @@
 import { createTestStore } from './support/store';
 import { createCopies, edit, settle, shownDocument, DOCUMENT_ID } from './support/collaboration';
-import { dataProblems } from 'src/app/data';
+import { dataLeftovers, dataProblems, dataRecords } from 'src/app/data';
 import type { DataChange, DataEditResult } from 'src/app/dataEdits';
 import {
     hydrateDocument,
@@ -33,7 +33,7 @@ function setup(store = createTestStore().store) {
 it('uses stable field IDs and preserves values across renames and schema changes', () => {
     const { store, change, entityId, fieldId, recordId } = setup();
     expect(dataProblems(store.state.currentDocument)).toContain(
-        `Record ${recordId}: Name is required.`
+        'Customers record 1: Name is required.'
     );
     applied(change({ kind: 'setValue', recordId, fieldId, value: 'Ada' }));
     applied(change({ kind: 'updateField', id: fieldId, changes: { name: 'Full name' } }));
@@ -182,5 +182,82 @@ it('deletes an entity and its contents as one reversible edit', async () => {
     expect(shownDocument(b).dataEntities[fixture!.entityId].name).toBe('Customers');
     expect(shownDocument(b).dataFields[fixture!.fieldId].name).toBe('Name');
     expect(shownDocument(b).dataRecords[fixture!.recordId]).toBeDefined();
+    copies.forEach((copy) => copy.collaboration.dispose());
+});
+
+it('keeps records in the order they were added', () => {
+    const { store, change, entityId, recordId } = setup();
+    const added = [recordId];
+    for (let index = 0; index < 5; index++) {
+        added.push(applied(change({ kind: 'addRecord', entityId })));
+    }
+    applied(change({ kind: 'deleteRecord', id: added[2] }));
+    added.splice(2, 1);
+    added.push(applied(change({ kind: 'addRecord', entityId })));
+    expect(dataRecords(store.state.currentDocument, entityId).map(({ id }) => id)).toEqual(added);
+});
+
+it('removes what concurrent deletes leave behind, as one reversible edit', async () => {
+    let fixture: ReturnType<typeof setup>;
+    const copies = await createCopies(2, (store) => {
+        fixture = setup(store);
+    });
+    const [a, b] = copies;
+    const { entityId, fieldId, recordId } = fixture!;
+    const other = applied(
+        a.store.actions.editData({ kind: 'addEntity', name: 'Orders', documentId: DOCUMENT_ID })
+    );
+    settle(copies);
+    // b's new IDs must differ from a's: every refused add still draws one.
+    for (let index = 0; index < 20; index++) {
+        b.store.actions.editData({ kind: 'addEntity', name: 'Orders', documentId: DOCUMENT_ID });
+    }
+    edit(a, (actions) => {
+        applied(actions.editData({ kind: 'deleteField', id: fieldId, documentId: DOCUMENT_ID }));
+        applied(actions.editData({ kind: 'deleteEntity', id: other, documentId: DOCUMENT_ID }));
+    });
+    edit(b, (actions) => {
+        applied(
+            actions.editData({
+                kind: 'setValue',
+                recordId,
+                fieldId,
+                value: 'Ada',
+                documentId: DOCUMENT_ID
+            })
+        );
+        applied(actions.editData({ kind: 'addRecord', entityId: other, documentId: DOCUMENT_ID }));
+        applied(
+            actions.editData({
+                kind: 'addField',
+                entityId: other,
+                name: 'Total',
+                type: 'number',
+                required: false,
+                documentId: DOCUMENT_ID
+            })
+        );
+    });
+    settle(copies);
+    const before = dataLeftovers(shownDocument(a));
+    expect([before.fields.length, before.records.length, before.values.length]).toEqual([1, 1, 1]);
+    expect(dataProblems(shownDocument(a))).toEqual([
+        'Left over from deleted entities or fields: 1 fields, 1 records, 1 values.'
+    ]);
+    edit(a, (actions) => {
+        applied(actions.editData({ kind: 'removeLeftovers', documentId: DOCUMENT_ID }));
+    });
+    settle(copies);
+    for (const copy of copies) {
+        expect(dataProblems(shownDocument(copy))).toEqual([]);
+        expect(shownDocument(copy).dataRecords[recordId].values).toEqual({});
+        expect(shownDocument(copy).dataEntities[entityId]).toBeDefined();
+    }
+    expect(
+        a.store.actions.editData({ kind: 'removeLeftovers', documentId: DOCUMENT_ID }).applied
+    ).toBe(false);
+    a.collaboration.undo(DOCUMENT_ID);
+    settle(copies);
+    expect(dataProblems(shownDocument(b))).toHaveLength(1);
     copies.forEach((copy) => copy.collaboration.dispose());
 });

@@ -2,7 +2,7 @@ import type { ActionWithParamAndResult, Document } from './types';
 import type { DataField, DataType, DataValue } from './dataTypes';
 import { isReadOnly } from './documentAccess';
 import { readEntity } from './services/documentStorage';
-import { dataValueProblem } from './data';
+import { dataLeftovers, dataRecords, dataValueProblem } from './data';
 
 export type DataChange =
     | { kind: 'addEntity'; name: string }
@@ -17,7 +17,8 @@ export type DataChange =
     | { kind: 'deleteField'; id: string }
     | { kind: 'addRecord'; entityId: string }
     | { kind: 'deleteRecord'; id: string }
-    | { kind: 'setValue'; recordId: string; fieldId: string; value: DataValue };
+    | { kind: 'setValue'; recordId: string; fieldId: string; value: DataValue }
+    | { kind: 'removeLeftovers' };
 export type DataEdit = DataChange & { documentId: string };
 export type DataEditResult = { applied: true; id?: string } | { applied: false; problem: string };
 
@@ -118,7 +119,13 @@ function prepare(
     }
     if (edit.kind === 'addRecord') {
         entity(document, edit.entityId);
-        const record = { id: newId(), entityId: edit.entityId, values: {} };
+        const last = dataRecords(document, edit.entityId).at(-1);
+        const record = {
+            id: newId(),
+            entityId: edit.entityId,
+            order: last ? last.order + 1 : 0,
+            values: {}
+        };
 
         return {
             id: record.id,
@@ -135,6 +142,22 @@ function prepare(
         return {
             write: () => {
                 delete document.dataRecords[edit.id];
+            }
+        };
+    }
+    if (edit.kind === 'removeLeftovers') {
+        const leftovers = dataLeftovers(document);
+        if (!leftovers.fields.length && !leftovers.records.length && !leftovers.values.length) {
+            throw new Error('Nothing is left over.');
+        }
+
+        return {
+            write: () => {
+                leftovers.fields.forEach((id) => delete document.dataFields[id]);
+                leftovers.records.forEach((id) => delete document.dataRecords[id]);
+                leftovers.values.forEach(
+                    ({ recordId, fieldId }) => delete document.dataRecords[recordId].values[fieldId]
+                );
             }
         };
     }

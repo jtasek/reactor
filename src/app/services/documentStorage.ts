@@ -777,7 +777,12 @@ function readDataRecord(value: unknown): DataRecord {
         })
     );
 
-    return { id: id(data.id), entityId: id(data.entityId), values };
+    return {
+        id: id(data.id),
+        entityId: id(data.entityId),
+        order: data.order === undefined ? 0 : number(data.order),
+        values
+    };
 }
 
 const entityReaders: { [C in Collection]: (value: unknown) => SavedEntities[C] } = {
