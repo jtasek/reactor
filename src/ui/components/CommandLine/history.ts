@@ -1,5 +1,5 @@
 import { CREATION_PATTERN } from './creation';
-import { editorForInput } from './parameters';
+import { editorForInput, editorInput } from './parameters';
 import type { Suggestion } from './search';
 
 const RECENT_LIMIT = 8;
@@ -29,30 +29,71 @@ export const clearRecentCommands = (documentId: string) => {
 };
 
 /** Resolve presentation and availability from today's catalogue, not recorded metadata. */
-export function recentSuggestion(input: string, suggestions: Suggestion[]): Suggestion {
+/** A bind command shows its variable by current name; the input keeps the stable ID. */
+export function readableCommand(
+    input: string,
+    variables: { id: string; name: string }[] = []
+): string {
+    const editor = editorForInput(input);
+    const variable =
+        editor?.prefix === 'bind'
+            ? variables.find(({ id }) => id === editor.values.variable)
+            : undefined;
+
+    return editor && variable
+        ? editorInput({ ...editor, values: { ...editor.values, variable: variable.name } })
+        : input;
+}
+
+export function recentSuggestion(
+    input: string,
+    suggestions: Suggestion[],
+    variables: { id: string; name: string }[] = []
+): Suggestion {
     const query = input.toLowerCase();
     const exact = suggestions.find(
         (item) => item.id.toLowerCase() === query || item.name.toLowerCase() === query
     );
     const creation = CREATION_PATTERN.exec(input);
     const editor = editorForInput(input);
-    const actionId = creation
-        ? `create ${creation[1].toLowerCase()}`
-        : editor?.prefix === 'move'
-          ? 'edit position'
-          : editor && ('gap' in editor.values || 'padding' in editor.values)
-            ? 'edit stack'
-            : editor && 'radius' in editor.values && Object.keys(editor.values).length === 1
-              ? 'edit radius'
-              : editor
-                ? 'edit size'
-                : undefined;
+    const actionId = recentAction();
+    function recentAction() {
+        if (creation) {
+            return `create ${creation[1].toLowerCase()}`;
+        }
+        if (!editor) {
+            return undefined;
+        }
+        if (editor.prefix === 'bind') {
+            return 'bind variable';
+        }
+        if (editor.prefix === 'unbind') {
+            return 'unbind variable';
+        }
+        if (editor.prefix === 'move') {
+            return 'edit position';
+        }
+        if (['value', 'fontSize', 'fontColor'].some((key) => key in editor.values)) {
+            return 'edit text';
+        }
+        if (['fill', 'stroke'].some((key) => key in editor.values)) {
+            return 'edit colors';
+        }
+        if (['gap', 'padding'].some((key) => key in editor.values)) {
+            return 'edit stack';
+        }
+        if ('radius' in editor.values && Object.keys(editor.values).length === 1) {
+            return 'edit radius';
+        }
+
+        return 'edit size';
+    }
     const action = exact ?? suggestions.find((item) => item.id === actionId);
 
     return {
         id: `recent:${input}`,
         name: action?.name ?? input,
-        description: input,
+        description: readableCommand(input, variables),
         input,
         icon: action?.icon,
         enabled: action?.enabled ?? false,

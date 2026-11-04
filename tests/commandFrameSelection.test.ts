@@ -200,3 +200,15 @@ it.each(['move x=0', 'move x=0 y=0'])(
         }
     }
 );
+
+it('binds and unbinds frame spacing while preserving the stored value', () => {
+    const { store, run, stack, frame } = setup();
+    stack();
+    store.actions.createVariable({ name: 'space', type: 'number', value: 24 });
+    expect(run('bind property=gap variable=space').applied).toBe(true);
+    expect(frame().stack?.gap).toBe(24);
+    expect(frame().bindings?.gap).toBeDefined();
+    expect(run('unbind property=gap').applied).toBe(true);
+    expect(frame().stack?.gap).toBe(24);
+    expect(frame().bindings?.gap).toBeUndefined();
+});

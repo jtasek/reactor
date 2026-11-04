@@ -2,17 +2,23 @@ import type { Document, Shape } from 'src/app/types';
 import type { Context } from 'src/app';
 import type { UpdateShape, UpdateFrame } from 'src/app/operations';
 import { SHAPE_PROPERTIES, canEdit, applyProperty } from 'src/app/properties';
-import { isShapeVisible } from 'src/app/utils';
+import { isHexColor, isShapeVisible } from 'src/app/utils';
 import { translateShape } from 'src/app/geometry';
 import { componentSourceNudge } from 'src/app/componentViewTransform';
 import { editableScreenView } from 'src/app/screenViewEditing';
-import { unbind, unbindMovedProperties } from 'src/app/variables';
+import {
+    unbindEditedProperties,
+    unbind,
+    unbindMovedProperties,
+    writeText
+} from 'src/app/variables';
 import { frameSelectionOperations } from './frameSelection';
 import { readParameters } from './creation';
+import { bindingEdit, shapeBindingChanges } from './bindings';
 
-export const SELECTION_PATTERN = /^(?:move\s+\w+\s*=|[a-z-]+=)/i;
+export const SELECTION_PATTERN = /^(?:(?:move|bind|unbind)\s+\w+\s*=|[a-z-]+=)/i;
 export const SELECTION_HELP =
-    'Edit selection: w=240 h=48 · r=12 · move x=16 y=-8. Radius rounds rectangles or sizes circles.';
+    'Edit selection: w=240 h=48 · r=12 · fill=#3366ff · text="Continue" fs=18 · move x=16 y=-8. Bind: bind property=fill variable="brand/primary".';
 export const SHARED_ARTWORK_HELP = 'Edits in this view change the shared Screen artwork.';
 
 /** Compile the complete selection before committing a single undoable batch. */
@@ -24,12 +30,30 @@ export function selectionOperations(
         return frameSelectionOperations(input, state);
     }
 
+    const binding = bindingEdit(input);
     const moving = /^move\s/i.test(input.trim());
-    const values = readParameters(` ${input.trim().replace(/^move\s+/i, '')}`);
-    const allowed = moving ? ['x', 'y'] : ['width', 'height', 'radius'];
+    const values = binding ? {} : readParameters(` ${input.trim().replace(/^move\s+/i, '')}`);
+    const allowed = moving
+        ? ['x', 'y']
+        : ['width', 'height', 'radius', 'fill', 'stroke', 'fontColor', 'value', 'fontSize'];
     const entries = Object.entries(values).map(([key, text]) => {
         if (!allowed.includes(key)) {
             throw new Error(`Unknown parameter ${key}. Available: ${allowed.join(', ')}.`);
+        }
+
+        if (['fill', 'stroke', 'fontColor'].includes(key)) {
+            if (!isHexColor(text)) {
+                throw new Error(`${key} must be a six-digit hex color, such as #3366ff.`);
+            }
+
+            return [key, text] as const;
+        }
+        if (key === 'value') {
+            if (!text.trim()) {
+                throw new Error('Text must not be blank.');
+            }
+
+            return [key, text] as const;
         }
 
         const value = Number(text);
@@ -81,6 +105,14 @@ export function selectionOperations(
             throw new Error('Stack layout controls the selection’s position.');
         }
 
+        if (binding) {
+            return {
+                op: 'updateShape',
+                shape: id,
+                changes: shapeBindingChanges(source, document, binding)
+            };
+        }
+
         if (source.type === 'image' && 'width' in values && 'height' in values) {
             throw new Error(
                 `${source.name} keeps its proportions. Set its width or its height, not both.`
@@ -102,7 +134,7 @@ export function selectionOperations(
             for (const [key, value] of [...entries].sort(
                 ([a], [b]) => Number(a === 'radius') - Number(b === 'radius')
             )) {
-                resizeProperty(copy, source, document, key, value);
+                editProperty(copy, source, document, key, value);
             }
         }
 
@@ -115,9 +147,15 @@ export function selectionOperations(
                               ? source.type === 'rectangle'
                                   ? 'cornerRadius'
                                   : 'radius'
-                              : 'size'
+                              : ['width', 'height'].includes(key)
+                                ? 'size'
+                                : key
                       )
-                  )
+                  ),
+                  // Text typed with `${...}` keeps its template, as in the Inspector.
+                  ...(entries.some(([key]) => key === 'value') && copy.type === 'text'
+                      ? ['template']
+                      : [])
               ];
         const changes = Object.fromEntries(
             fields.filter((key) => key in copy).map((key) => [key, copy[key as keyof Shape]])
@@ -131,18 +169,18 @@ export function selectionOperations(
     });
 }
 
-function resizeProperty(
+function editProperty(
     copy: Shape,
     source: Shape,
     document: Document,
     key: string,
-    value: number
+    value: number | string
 ) {
     if (key === 'radius' && copy.type === 'circle' && value === 0) {
         throw new Error('Circle radius must be positive.');
     }
     if (key === 'radius' && copy.type === 'circle') {
-        copy.radius = value;
+        copy.radius = Number(value);
         unbind(copy, 'x');
         unbind(copy, 'y');
 
@@ -150,13 +188,23 @@ function resizeProperty(
     }
 
     const property = SHAPE_PROPERTIES.find(
-        (item) => item.key === (key === 'radius' ? 'cornerRadius' : key)
+        (item) => item.key === (key === 'radius' ? 'cornerRadius' : key === 'value' ? 'text' : key)
     )!;
     if (property.read(source, document) === undefined || !canEdit(property, source, document)) {
         throw new Error(
             `${key} cannot be edited on ${source.name}. Check its shape type, sizing and locks in the Inspector.`
         );
     }
-    applyProperty(property, copy, value);
-    unbind(copy, property.key);
+    if (key === 'value' && copy.type === 'text') {
+        // The same template rules as the Inspector: `${name}` follows a variable.
+        copy.value = '';
+        delete copy.template;
+        writeText(copy, String(value), document.variables);
+        if (!copy.value.trim()) {
+            throw new Error('Text must not be blank.');
+        }
+    } else {
+        applyProperty(property, copy, value);
+    }
+    unbindEditedProperties(copy, [property.key]);
 }

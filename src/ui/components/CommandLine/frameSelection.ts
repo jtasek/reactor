@@ -6,6 +6,10 @@ import { isScreenLayout } from 'src/app/screenLayouts';
 import { editableScreenView } from 'src/app/screenViewEditing';
 import { MIN_FRAME_SIZE } from 'src/app/services/documentStorage';
 import { readParameters } from './creation';
+import { bindingEdit, bindingVariable } from './bindings';
+import { FRAME_NUMBER_KEYS, acceptsFrameNumber, frameNumber } from 'src/app/frameVariables';
+import type { FrameNumberKey } from 'src/app/frameVariables';
+import { resolveVariable } from 'src/app/variableResolver';
 
 export const FRAME_SELECTION_HELP =
     'Edit frame: w=390 h=844 · move x=24 y=-8 · gap=16 padding=24. Gap and padding require an existing stack.';
@@ -23,6 +27,38 @@ export function frameSelectionOperations(input: string, state: Context['state'])
         isFrameLocked(document, frame.id)
     ) {
         throw new Error('Select an editable frame or Screen view.');
+    }
+
+    const binding = bindingEdit(input);
+    if (binding) {
+        if (!FRAME_NUMBER_KEYS.includes(binding.key as FrameNumberKey)) {
+            throw new Error('Frames can bind width, height, gap or padding.');
+        }
+        const key = binding.key as FrameNumberKey;
+        const target = ['gap', 'padding'].includes(key) ? stackTarget(state, frame) : frame;
+        const variable =
+            binding.variable === undefined
+                ? undefined
+                : bindingVariable(document, binding.variable);
+        const value = variable
+            ? resolveVariable(variable, document.variables)
+            : frameNumber(target, key);
+        if (
+            (variable && variable.type !== 'number') ||
+            typeof value !== 'number' ||
+            !acceptsFrameNumber(target, key, value)
+        ) {
+            throw new Error(
+                'This property needs a compatible number variable, fixed sizing, and an existing stack for gap or padding. Screen view dimensions cannot be bound.'
+            );
+        }
+        const bindings = { ...target.bindings };
+        delete bindings[key];
+        if (variable) {
+            bindings[key] = variable.id;
+        }
+
+        return [{ op: 'updateFrame', frame: target.id, changes: { bindings } }];
     }
 
     const moving = /^move\s/i.test(input.trim());

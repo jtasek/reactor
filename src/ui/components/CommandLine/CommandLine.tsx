@@ -16,6 +16,8 @@ import { recentCommands, rememberCommand, clearRecentCommands, recentSuggestion 
 const STALE_TARGET = 'Selection changed. Check the target above, then apply again.';
 
 export interface Props {
+    bindingProperties?: { key: string; label: string; kind: string }[];
+    variables?: { id: string; name: string; type: string }[];
     historyKey: string;
     onSubmit: (command: string) => string | undefined;
     suggestions?: Suggestion[];
@@ -29,6 +31,8 @@ export interface Props {
 }
 
 export const CommandLine: FC<Props> = ({
+    bindingProperties = [],
+    variables = [],
     historyKey,
     onSubmit,
     suggestions = [],
@@ -65,7 +69,7 @@ export const CommandLine: FC<Props> = ({
     const query = value.trim().toLowerCase();
     const mac = usesCommandKey();
     const showingRecent = !query && recent.length > 0;
-    const recentItems = recent.map((input) => recentSuggestion(input, suggestions));
+    const recentItems = recent.map((input) => recentSuggestion(input, suggestions, variables));
     const search = useCommandSearch(
         suggestions,
         query,
@@ -86,7 +90,10 @@ export const CommandLine: FC<Props> = ({
     const chosenIndex = Math.max(0, Math.min(active, matches.length - 1));
     const creating = editor?.creation || CREATION_PATTERN.test(value.trim());
     const displayContext =
-        editor && ('gap' in editor.values || 'padding' in editor.values)
+        editor &&
+        ('gap' in editor.values ||
+            'padding' in editor.values ||
+            ['gap', 'padding'].includes(editor.values.property))
             ? (stackContext ?? context)
             : context;
     const commandName = suggestions.find(
@@ -130,11 +137,27 @@ export const CommandLine: FC<Props> = ({
         }
 
         focusParameters.current = false;
-        const field = formRef.current?.querySelector<HTMLInputElement>('fieldset input');
+        const field = formRef.current?.querySelector<HTMLInputElement | HTMLSelectElement>(
+            'fieldset input, fieldset select'
+        );
         field?.focus();
-        field?.select();
+        if (field instanceof HTMLInputElement) {
+            field.select();
+        }
     }, [editor]);
 
+    const changeParameter = (key: string, value: string) => {
+        if (!editor) {
+            return;
+        }
+        const next = { ...editor, values: { ...editor.values, [key]: value } };
+        if (key === 'property' && 'variable' in next.values) {
+            next.values.variable = '';
+        }
+        setEditor(next);
+        setValue(editorInput(next));
+        setMessage(undefined);
+    };
     const back = () => {
         setEditor(undefined);
         setGuided(false);
@@ -161,7 +184,7 @@ export const CommandLine: FC<Props> = ({
             item.input !== undefined ? editorForInput(item.input) : editorForAction(item.id);
         focusParameters.current = Boolean(next);
         setEditor(next);
-        setGuided(Boolean(next));
+        setGuided(Boolean(next) && item.input === undefined);
         setStaleTarget(false);
         setValue(item.input ?? (next ? editorInput(next) : item.id));
         setMessage(undefined);
@@ -343,30 +366,64 @@ export const CommandLine: FC<Props> = ({
                                             ? ' · px'
                                             : ''}
                                     </span>
-                                    <input
-                                        value={fieldValue}
-                                        disabled={pending}
-                                        placeholder={editor.creation ? undefined : 'Unchanged'}
-                                        onChange={(event) => {
-                                            const next = {
-                                                ...editor,
-                                                values: {
-                                                    ...editor.values,
-                                                    [key]: event.target.value
-                                                }
-                                            };
-                                            setEditor(next);
-                                            setValue(editorInput(next));
-                                            setMessage(undefined);
-                                        }}
-                                    />
+                                    {guided && ['property', 'variable'].includes(key) ? (
+                                        <select
+                                            value={fieldValue}
+                                            disabled={pending}
+                                            onChange={(event) =>
+                                                changeParameter(key, event.target.value)
+                                            }
+                                        >
+                                            <option value="">Choose {key}</option>
+                                            {key === 'property'
+                                                ? bindingProperties.map((property) => (
+                                                      <option
+                                                          key={property.key}
+                                                          value={property.key}
+                                                      >
+                                                          {property.label}
+                                                      </option>
+                                                  ))
+                                                : variables
+                                                      .filter(
+                                                          (variable) =>
+                                                              variable.type ===
+                                                              bindingProperties.find(
+                                                                  (property) =>
+                                                                      property.key ===
+                                                                      editor.values.property
+                                                              )?.kind
+                                                      )
+                                                      .map((variable) => (
+                                                          <option
+                                                              key={variable.id}
+                                                              value={variable.id}
+                                                          >
+                                                              {variable.name} · {variable.type}
+                                                          </option>
+                                                      ))}
+                                        </select>
+                                    ) : (
+                                        <input
+                                            value={fieldValue}
+                                            disabled={pending}
+                                            placeholder={editor.creation ? undefined : 'Unchanged'}
+                                            onChange={(event) =>
+                                                changeParameter(key, event.target.value)
+                                            }
+                                        />
+                                    )}
                                 </label>
                             ))}
                         </div>
                         <small>
                             {editor.creation
                                 ? placement
-                                : 'Only entered values change. Blank fields and their bindings stay unchanged.'}
+                                : editor.prefix === 'bind'
+                                  ? 'Choose a property and a compatible variable. Its modes are inherited automatically.'
+                                  : editor.prefix === 'unbind'
+                                    ? 'The stored base value stays; this property stops following its variable.'
+                                    : 'Only entered values change. Blank fields and their bindings stay unchanged.'}
                         </small>
                     </fieldset>
                 )}
