@@ -257,3 +257,17 @@
         backdrop-filter: none;
     }
 }
+
+.editPreview {
+    border-top: 1px solid var(--hairline-color);
+    padding: 12px 10px;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+.editPreview > div {
+    margin: 12px 0;
+}
+.editPreview p {
+    margin: 6px 0;
+    white-space: pre-wrap;
+}

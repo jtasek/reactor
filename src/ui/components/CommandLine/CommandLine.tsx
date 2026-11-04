@@ -21,6 +21,7 @@ const isCompletion = (item?: Suggestion) => Boolean(item?.id.startsWith('complet
 const STALE_TARGET = 'Selection changed. Check the target above, then apply again.';
 
 export interface Props {
+    renderEditPreview?: (input: string) => React.ReactNode;
     literalProperties?: string[];
     bindingProperties?: CompletionProperty[];
     variables?: CompletionVariable[];
@@ -37,6 +38,7 @@ export interface Props {
 }
 
 export const CommandLine: FC<Props> = ({
+    renderEditPreview,
     literalProperties,
     bindingProperties = [],
     variables = [],
@@ -613,6 +615,7 @@ export const CommandLine: FC<Props> = ({
                                 : 'Try a command name or an edit such as w=240.'}
                         </small>
                     )}
+                {!completing && renderEditPreview?.(value)}
                 {creating && <small>{PROPERTY_ALIAS_HELP}</small>}
                 {!creating &&
                     !guided &&

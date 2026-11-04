@@ -172,6 +172,11 @@ end of the command. Tab inserts the highlighted suggestion; arrow keys followed 
 also insert it. Completion never applies an edit. Enter otherwise keeps its existing apply
 behavior. Escape dismisses suggestions without clearing the command. Variable suggestions
 insert stable IDs and preserve preceding arguments, including quoted text.
+Typed and guided selection edits show a live, read-only summary before Apply: affected
+objects, stored before/after values, binding changes and validation errors. Typing validation
+waits 120 ms; selection and value changes refresh the summary. Nothing is applied until Apply
+(or Enter), which revalidates the current selection and creates one undo step. The existing
+selection-change confirmation still applies. Summaries show up to eight affected objects.
 Blank selection fields stay unchanged. Typed aliases and guided fields use the same
 validated commands. Escape returns from parameters to search, then closes the palette;
 Choosing a guided action focuses its first field; Tab moves between fields. Results use action icons

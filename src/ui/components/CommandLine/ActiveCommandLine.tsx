@@ -33,6 +33,7 @@ import { accepts, canBind } from 'src/app/variables';
 import { resolveVariable, variableProblems } from 'src/app/variableResolver';
 import type { Document, Frame, Shape } from 'src/app/types';
 import { EDIT_ACTIONS, parameterLabel } from './parameters';
+import { LiveEditPreview } from './LiveEditPreview';
 import { CommandLine } from './CommandLine';
 import {
     SELECTION_HELP,
@@ -272,6 +273,7 @@ const ActiveCommandLine: FC = () => {
     return (
         <CommandLine
             historyKey={document.id}
+            renderEditPreview={(input) => <LiveEditPreview input={input} />}
             literalProperties={
                 frame
                     ? ['width', 'height', ...(layout?.stack ? ['gap', 'padding'] : [])]
