@@ -578,7 +578,7 @@ export const CommandLine: FC<Props> = ({
                 )}
                 {lastCommand && (
                     <small id={repeatHintId}>
-                        Repeat runs <code>{recent[0]}</code>
+                        Repeat runs <code>{lastCommand.description}</code>
                         {repeatReason ? ` · ${repeatReason}` : '.'}
                     </small>
                 )}

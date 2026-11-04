@@ -39,7 +39,6 @@ export const clearRecentCommands = (documentId: string) => {
     histories.delete(documentId);
 };
 
-/** Resolve presentation and availability from today's catalogue, not recorded metadata. */
 /** A bind command shows its variable by current name; the input keeps the stable ID. */
 export function readableCommand(
     input: string,
@@ -56,6 +55,7 @@ export function readableCommand(
         : input;
 }
 
+/** Resolve presentation and availability from today's catalogue, not recorded metadata. */
 export function recentSuggestion(
     input: string,
     suggestions: Suggestion[],

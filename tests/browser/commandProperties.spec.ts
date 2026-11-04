@@ -90,6 +90,10 @@ test('guided bindings, literal colors and text remain undoable', async ({ page }
     await page.getByRole('button', { name: 'Apply changes' }).click();
     const card = shapes(page).locator('rect[data-cy="Card"]');
     await expect(card).toHaveCSS('fill', 'rgb(51, 102, 255)');
+    // The Repeat hint names the variable like the recent row, not by its stable ID.
+    await expect(
+        page.getByRole('button', { name: 'Repeat last command' })
+    ).toHaveAccessibleDescription(/Repeat runs bind .*variable="brand\/primary"/);
     await run('fill=#abcdef');
     await expect(card).toHaveCSS('fill', 'rgb(171, 205, 239)');
     await run('undo');
