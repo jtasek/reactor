@@ -28,9 +28,14 @@ test('recent commands survive closing, preserve parameters, deduplicate and clea
     await expect(page.getByRole('status')).toContainText('positive');
     await reopen(page);
     await expect(page.getByText('Recent commands', { exact: true })).toBeVisible();
-    await expect(page.getByRole('option')).toHaveCount(2);
-    await expect(page.getByRole('option').first()).toContainText('Undo');
-    await page.getByRole('option').filter({ hasText: 'Create rectangle' }).click();
+    // Undo is not recorded, and suggested actions stay listed below the recent ones.
+    const recentList = page.getByRole('listbox', { name: 'Recent commands' });
+    await expect(recentList.getByRole('option')).toHaveCount(1);
+    await expect(page.getByText('Suggested actions', { exact: true })).toBeVisible();
+    await expect(
+        page.getByRole('listbox', { name: 'Commands' }).getByRole('option').first()
+    ).toBeVisible();
+    await recentList.getByRole('option').filter({ hasText: 'Create rectangle' }).click();
     const width = page.getByRole('textbox', { name: 'Width', exact: true });
     await expect(width).toBeFocused();
     await expect(width).toHaveValue('80');
@@ -46,6 +51,7 @@ test('recent commands survive closing, preserve parameters, deduplicate and clea
     await page.screenshot({ path: testInfo.outputPath('recent-commands-narrow.png') });
     await page.getByRole('button', { name: 'Clear recent commands' }).click();
     await expect(page.getByText('Recent commands', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Suggested actions', { exact: true })).toBeVisible();
     await expect(repeat(page)).toHaveCount(0);
 });
 
@@ -60,6 +66,7 @@ test('repeat uses current selection, remains one undo step and rechecks locks', 
     await run(page, 'move x=10');
     await expect(shapes(page).locator('rect[data-cy="First"]')).toHaveAttribute('x', '20');
     await explorer.getByRole('button', { name: 'Second', exact: true }).click();
+    await expect(repeat(page)).toHaveAccessibleDescription(/Repeat runs move x=10/);
     await repeat(page).click();
     await expect(shapes(page).locator('rect[data-cy="Second"]')).toHaveAttribute('x', '110');
     const bar = page.getByRole('list', { name: 'Commands' });
@@ -68,7 +75,7 @@ test('repeat uses current selection, remains one undo step and rechecks locks', 
     await expect(shapes(page).locator('rect[data-cy="First"]')).toHaveAttribute('x', '20');
     await bar.getByRole('button', { name: 'Lock', exact: true }).click();
     await repeat(page).click();
-    await expect(page.getByRole('status')).toContainText('editable');
+    await expect(page.getByRole('status', { name: 'Command result' })).toContainText('editable');
     await expect(shapes(page).locator('rect[data-cy="Second"]')).toHaveAttribute('x', '100');
 });
 
@@ -91,4 +98,23 @@ test('history is scoped to its document and is cleared by reload', async ({ page
     await page.keyboard.press('ControlOrMeta+k');
     await expect(command(page)).toBeVisible();
     await expect(repeat(page)).toHaveCount(0);
+});
+
+test('an unavailable repeat names its command and says why when pressed', async ({ page }) => {
+    await openEditor(page, ['Command Line', 'Explorer']);
+    await run(page, 'rectangle x=10 y=20 w=40 h=30 name="First"');
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'First', exact: true })
+        .click();
+    await run(page, 'r=4');
+    await page.keyboard.press('Escape');
+    await page.locator('svg#surface').click({ position: { x: 600, y: 500 } });
+    await page.keyboard.press('ControlOrMeta+k');
+    await expect(repeat(page)).toHaveAttribute('aria-disabled', 'true');
+    await expect(page.getByText(/Repeat runs r=4/)).toBeVisible();
+    // Playwright won't click aria-disabled; keyboard users can still reach and press it.
+    await repeat(page).focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('status')).toContainText('not available');
 });

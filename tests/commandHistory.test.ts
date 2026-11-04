@@ -5,17 +5,32 @@ import {
     rememberCommand
 } from 'src/ui/components/CommandLine/history';
 
-it('keeps eight invocations in recency order, deduplicating exact commands without changing text', () => {
+it('keeps five invocations in recency order, deduplicating exact commands without changing text', () => {
     for (let i = 0; i < 10; i++) {
         rememberCommand('recent-order', `text value="Title ${i}"`);
     }
-    expect(recentCommands('recent-order')).toHaveLength(8);
-    expect(recentCommands('recent-order').at(-1)).toBe('text value="Title 2"');
+    expect(recentCommands('recent-order')).toHaveLength(5);
+    expect(recentCommands('recent-order').at(-1)).toBe('text value="Title 5"');
     rememberCommand('recent-order', '  text value="Title 5"  ');
     expect(recentCommands('recent-order')[0]).toBe('text value="Title 5"');
     expect(
         recentCommands('recent-order').filter((value) => value === 'text value="Title 5"')
     ).toHaveLength(1);
+});
+
+it('leaves out undo and redo, and treats bare command names case-insensitively', () => {
+    rememberCommand('recent-case', 'group');
+    expect(rememberCommand('recent-case', 'Undo')).toEqual(['group']);
+    rememberCommand('recent-case', 'redo');
+    rememberCommand('recent-case', 'Rectangle tool');
+    rememberCommand('recent-case', 'rectangle tool');
+    expect(recentCommands('recent-case')).toEqual(['rectangle tool', 'group']);
+    rememberCommand('recent-case', 'text value="Hi"');
+    rememberCommand('recent-case', 'text value="hi"');
+    expect(recentCommands('recent-case').slice(0, 2)).toEqual([
+        'text value="hi"',
+        'text value="Hi"'
+    ]);
 });
 
 it('isolates documents and clears only the requested history', () => {
@@ -50,7 +65,15 @@ it('uses current action availability and preserves the exact invocation for repl
     expect(
         recentSuggestion(input, [{ ...action, enabled: false, unavailable: 'Document is locked' }])
     ).toMatchObject({ enabled: false, unavailable: 'Document is locked' });
-    expect(recentSuggestion('removed command', [])).toMatchObject({ enabled: false });
+    expect(recentSuggestion('removed command', [])).toMatchObject({
+        enabled: false,
+        unavailable: 'This command is no longer available.'
+    });
+    // Radius is hidden while a frame is selected; it still exists.
+    expect(recentSuggestion('r=12', [])).toMatchObject({
+        enabled: false,
+        unavailable: 'Not available for the current selection.'
+    });
 });
 
 it('distinguishes drawing tools, creation and selection-edit parameters', () => {
