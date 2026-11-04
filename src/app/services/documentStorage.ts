@@ -1,4 +1,4 @@
-import type { DataEntity, DataField, DataRecord, DataValue } from '../dataTypes';
+import type { DataEntity, DataField, DataRecord, DataValue, DataList } from '../dataTypes';
 import { extractScreenViews } from '../screenViewMigration';
 import { frameParents } from '../frameState';
 import { readPackageIdentity } from '../packageIdentity';
@@ -25,7 +25,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 24;
+export const SCHEMA_VERSION = 25;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -446,6 +446,7 @@ export function readShapeGeometry(value: unknown) {
                 ...(s.variantId === undefined ? {} : { variantId: id(s.variantId) }),
                 modeOverrides: readBindings(s.modeOverrides ?? {}),
                 ...readRoleAndInteractions(s),
+                ...(s.dataList === undefined ? {} : { dataList: readDataList(s.dataList) }),
                 componentId: id(s.componentId),
                 position: point(s.position),
                 overrides: Object.fromEntries(
@@ -734,6 +735,16 @@ function readLayoutRules(value: unknown): Record<string, import('../types').Resp
     return Object.fromEntries(
         Object.entries(record(value)).map(([key, rule]) => [id(key), readLayoutRule(rule)])
     );
+}
+
+export function readDataList(value: unknown): DataList {
+    const data = record(value);
+
+    return {
+        entityId: id(data.entityId),
+        fields: readBindings(data.fields),
+        gap: number(data.gap, 0)
+    };
 }
 
 function readDataEntity(value: unknown): DataEntity {

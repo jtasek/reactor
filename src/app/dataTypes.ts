@@ -1,6 +1,13 @@
 /** Stable IDs, rather than names, connect schema fields to record values. */
 export type DataType = 'text' | 'number' | 'boolean';
 export type DataValue = string | number | boolean | null;
+/** Document-local bindings; the instance's component is the repeated item template. */
+export interface DataList {
+    entityId: string;
+    /** Exposed component property ID → entity field ID. */
+    fields: Record<string, string>;
+    gap: number;
+}
 export interface DataEntity {
     id: string;
     name: string;

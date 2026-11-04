@@ -995,3 +995,22 @@ and deletions use document undo and collaboration, and persist across reloads.
 
 Data is local sample content stored with the document. List/detail bindings, form expressions,
 external connectors and runtime submission are subsequent R5 increments.
+
+
+### Bound sample lists
+
+Select a component instance and open **Inspector → Repeat with data**. Choose an entity,
+then map the component's exposed properties to compatible fields. The instance's component
+is the item template; unmapped properties and unset optional values keep the template value.
+Set **Item gap** to adjust the space between rows.
+
+Open **Prototype** or **Preview** to see one item per record in Data View order. Inputs keep
+independent local values per item; editing them does not update sample records. The canvas
+and SVG export show the single authored template. Repeated rows extend vertically from its
+position and stay clipped to the screen, without pushing surrounding artwork or creating a
+scrollable list viewport. Detail navigation carrying a selected record comes next.
+
+Changing names preserves bindings. Missing entities, fields or incompatible values show
+validation diagnostics; fix the mapping or choose **Do not repeat**. Copying within a document
+and cloning retain bindings; copying to another document requires matching data IDs or
+rebinding. Published library components omit document-local list bindings.

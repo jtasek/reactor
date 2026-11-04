@@ -146,6 +146,9 @@ export function libraryVersionProblem(document: Document, componentId: string): 
 function withoutNavigation<
     T extends { interaction?: RoleSettings; interactions?: InteractionSettings } | Shape
 >(record: T): T {
+    if ('type' in record && record.type === 'instance') {
+        delete record.dataList;
+    }
     if ('interaction' in record && record.interaction) {
         delete record.interaction.navigateTo;
     }

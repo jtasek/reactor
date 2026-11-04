@@ -1,10 +1,13 @@
 import type { ActionWithParamAndResult, Document } from './types';
-import type { DataField, DataType, DataValue } from './dataTypes';
+import type { DataField, DataType, DataValue, DataList } from './dataTypes';
 import { isReadOnly } from './documentAccess';
-import { readEntity } from './services/documentStorage';
+import { readEntity, readDataList } from './services/documentStorage';
 import { dataLeftovers, dataRecords, dataValueProblem } from './data';
+import { dataListProblems } from './dataLists';
+import { isShapeLocked } from './utils';
 
 export type DataChange =
+    | { kind: 'setList'; instanceId: string; list: DataList | null }
     | { kind: 'addEntity'; name: string }
     | { kind: 'renameEntity'; id: string; name: string }
     | { kind: 'deleteEntity'; id: string }
@@ -40,6 +43,38 @@ function prepare(
     edit: DataChange,
     newId: () => string
 ): { id?: string; write: () => void } {
+    if (edit.kind === 'setList') {
+        const instance = document.shapes[edit.instanceId];
+        if (instance?.type !== 'instance' || isShapeLocked(document, instance.id)) {
+            throw new Error('Select an unlocked component instance.');
+        }
+        const list = edit.list === null ? undefined : readDataList(edit.list);
+        const previous = instance.dataList;
+        const changed = list && {
+            ...list,
+            fields: Object.fromEntries(
+                Object.entries(list.fields).filter(
+                    ([prop, field]) =>
+                        list.entityId !== previous?.entityId || previous.fields[prop] !== field
+                )
+            )
+        };
+        const problems = changed ? dataListProblems(document, instance, changed) : [];
+        if (problems.length) {
+            throw new Error(problems.join(' '));
+        }
+
+        return {
+            write: () => {
+                if (!list) {
+                    delete instance.dataList;
+
+                    return;
+                }
+                instance.dataList = list;
+            }
+        };
+    }
     if (edit.kind === 'addEntity' || edit.kind === 'renameEntity') {
         const id = edit.kind === 'addEntity' ? newId() : edit.id;
         if (edit.kind === 'renameEntity') {
