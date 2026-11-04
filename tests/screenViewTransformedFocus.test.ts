@@ -365,7 +365,10 @@ it('anchors two-phase text in source space even when its rotated view is removed
             links: {},
             guides: {},
             variables: {},
-            dimensions: {}
+            dimensions: {},
+            dataEntities: {},
+            dataFields: {},
+            dataRecords: {}
         }
     });
     store.actions.tools.executeToolCommands();
@@ -412,7 +415,10 @@ it.each(['rotation', 'stack', 'view', 'lock', 'delete'] as const)(
                     links: {},
                     guides: {},
                     variables: {},
-                    dimensions: {}
+                    dimensions: {},
+                    dataEntities: {},
+                    dataFields: {},
+                    dataRecords: {}
                 }
             });
         }
@@ -436,7 +442,10 @@ it.each(['rotation', 'stack', 'view', 'lock', 'delete'] as const)(
                     links: {},
                     guides: {},
                     variables: {},
-                    dimensions: {}
+                    dimensions: {},
+                    dataEntities: {},
+                    dataFields: {},
+                    dataRecords: {}
                 }
             });
         }

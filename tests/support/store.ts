@@ -1,3 +1,4 @@
+import * as data from 'src/app/dataEdits';
 import * as componentProperties from 'src/app/componentPropertyEdits';
 import * as layout from 'src/app/contextualLayout';
 import * as roles from 'src/app/roleEdits';
@@ -85,6 +86,7 @@ export function createTestStore(
         options.editorLoaded === false
             ? undefined
             : {
+                  data,
                   componentProperties,
                   layout,
                   roles,

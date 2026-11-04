@@ -1,3 +1,4 @@
+import type { DataEntity, DataField, DataRecord, DataValue } from '../dataTypes';
 import { extractScreenViews } from '../screenViewMigration';
 import { frameParents } from '../frameState';
 import { readPackageIdentity } from '../packageIdentity';
@@ -24,7 +25,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 23;
+export const SCHEMA_VERSION = 24;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -54,7 +55,10 @@ export const COLLECTIONS = [
     'links',
     'guides',
     'variables',
-    'dimensions'
+    'dimensions',
+    'dataEntities',
+    'dataFields',
+    'dataRecords'
 ] as const;
 
 export type Collection = (typeof COLLECTIONS)[number];
@@ -98,6 +102,9 @@ export type DocumentFields = Pick<
 
 /** The durable form of each kind of entity a document holds. */
 export interface SavedEntities {
+    dataEntities: DataEntity;
+    dataFields: DataField;
+    dataRecords: DataRecord;
     frames: Frame;
     shapes: ShapeData;
     groups: MemberData;
@@ -729,6 +736,50 @@ function readLayoutRules(value: unknown): Record<string, import('../types').Resp
     );
 }
 
+function readDataEntity(value: unknown): DataEntity {
+    const data = record(value);
+    const name = text(data.name).trim();
+    if (!name || name.length > 200) {
+        throw new Error('Name must have 1–200 characters');
+    }
+
+    return { id: id(data.id), name };
+}
+
+function readDataField(value: unknown): DataField {
+    const data = record(value);
+    if (data.type !== 'text' && data.type !== 'number' && data.type !== 'boolean') {
+        throw new Error('Invalid field type');
+    }
+
+    return {
+        ...readDataEntity(data),
+        entityId: id(data.entityId),
+        type: data.type,
+        required: bool(data.required)
+    };
+}
+
+function readDataRecord(value: unknown): DataRecord {
+    const data = record(value);
+    const values = Object.fromEntries(
+        Object.entries(record(data.values)).map(([key, value]) => {
+            if (
+                value !== null &&
+                typeof value !== 'string' &&
+                typeof value !== 'boolean' &&
+                !(typeof value === 'number' && Number.isFinite(value))
+            ) {
+                throw new Error('Invalid record value');
+            }
+
+            return [id(key), value as DataValue];
+        })
+    );
+
+    return { id: id(data.id), entityId: id(data.entityId), values };
+}
+
 const entityReaders: { [C in Collection]: (value: unknown) => SavedEntities[C] } = {
     frames: readFrame,
     shapes: readOrderedShape,
@@ -737,6 +788,9 @@ const entityReaders: { [C in Collection]: (value: unknown) => SavedEntities[C] }
     components: readComponent,
     links: readLink,
     guides: readGuide,
+    dataEntities: readDataEntity,
+    dataFields: readDataField,
+    dataRecords: readDataRecord,
     dimensions: readDimension,
     variables: readVariable
 };
@@ -766,6 +820,9 @@ const withoutMissingFrame = <T extends { parentFrameId?: string }>(item: T, exis
 const referenceRepairs: {
     [C in Collection]: (entity: SavedEntities[C], exists: Exists) => SavedEntities[C] | null;
 } = {
+    dataEntities: (entity) => entity,
+    dataFields: (field) => field,
+    dataRecords: (record) => record,
     shapes: (shape, exists) => {
         const next = withoutMissingFrame(shape, exists);
 
@@ -1012,6 +1069,9 @@ function readDocument(value: unknown, onRepair = () => {}, legacyScreens = false
         components: repair('components', components),
         links: repair('links', table(d.links, readLink)),
         guides: table(d.guides, readGuide),
+        dataEntities: d.dataEntities === undefined ? {} : table(d.dataEntities, readDataEntity),
+        dataFields: d.dataFields === undefined ? {} : table(d.dataFields, readDataField),
+        dataRecords: d.dataRecords === undefined ? {} : table(d.dataRecords, readDataRecord),
         dimensions,
         variables: repair('variables', variables)
     };
@@ -1134,6 +1194,9 @@ const hydrateVariable = (variable: Variable): Variable => structuredClone(variab
 const entityHydrators: {
     [C in Collection]: (entity: SavedEntities[C]) => Document[C][string];
 } = {
+    dataEntities: (entity) => structuredClone(entity),
+    dataFields: (field) => structuredClone(field),
+    dataRecords: (dataRecord) => structuredClone(dataRecord),
     frames: (frame) => structuredClone(frame),
     shapes: hydrateShape,
     groups: hydrateMember,

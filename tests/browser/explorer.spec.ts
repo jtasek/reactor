@@ -286,6 +286,9 @@ test('an empty layer has nothing to collapse', async ({ page }) => {
                 frames: {},
                 variables: {},
                 dimensions: {},
+                dataEntities: {},
+                dataFields: {},
+                dataRecords: {},
                 shapes: {
                     box: {
                         ...metadata,

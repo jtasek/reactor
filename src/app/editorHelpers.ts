@@ -1,3 +1,4 @@
+import type * as Data from './dataEdits';
 import type * as ComponentProperties from './componentPropertyEdits';
 import type * as Layout from './contextualLayout';
 import type * as Roles from './roleEdits';
@@ -22,6 +23,7 @@ import type * as Library from './componentLibrary';
  * `editorHelpers`, which only runs once the editor has loaded.
  */
 export interface EditorHelpers {
+    data: typeof Data;
     layout: typeof Layout;
     componentProperties: typeof ComponentProperties;
     roles: typeof Roles;

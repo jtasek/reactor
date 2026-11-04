@@ -110,11 +110,12 @@ export const config = {
     // Raise it only for code every page needs as it opens, after checking what grew.
     // Documents controls and icons load with their page; commands and tools load with
     // the editor page (`registerEditor`). The individual-file limit stays at 248 KiB.
+    // Schema v24 adds required entity/field/record readers (~1.6 KiB); the data UI loads on demand.
     performance: isDev
         ? false
         : {
               hints: 'error',
-              maxEntrypointSize: 494 * 1024,
+              maxEntrypointSize: 496 * 1024,
               maxAssetSize: 248 * 1024
           },
     optimization: {

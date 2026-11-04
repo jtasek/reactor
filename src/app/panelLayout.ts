@@ -13,7 +13,7 @@ export const DEFAULT_PANEL_LAYOUT: Record<string, PanelPlacement> = {
     groupPanel: { dock: null, position: { x: 900, y: 60 } },
     miniMap: { dock: null, position: { x: 1030, y: 550 } },
     documentInfo: { dock: null, position: { x: 1050, y: 80 } },
-    dataView: { dock: null, position: { x: 600, y: 120 } },
+    dataView: { dock: null, position: { x: 300, y: 80 }, size: { width: 720, height: 520 } },
     stats: { dock: 'bottom-right', position: { x: 900, y: 550 } },
     // Offset from Preview's default so both title bars stay reachable when both are open.
     variables: { dock: null, position: { x: 420, y: 120 }, size: { width: 680, height: 560 } }

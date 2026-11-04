@@ -30,6 +30,9 @@ function layeredDocument(): PersistedState {
                 frames: {},
                 variables: {},
                 dimensions: {},
+                dataEntities: {},
+                dataFields: {},
+                dataRecords: {},
                 shapes: {
                     box: {
                         ...metadata,

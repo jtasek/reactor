@@ -630,7 +630,10 @@ it.each([false, true])('detaches at the original stacking position (tied order: 
                 links: {},
                 guides: {},
                 variables: {},
-                dimensions: {}
+                dimensions: {},
+                dataEntities: {},
+                dataFields: {},
+                dataRecords: {}
             }
         });
     }
