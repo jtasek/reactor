@@ -1,5 +1,15 @@
 import React, { FC } from 'react';
 import {
+    RectangleHorizontal,
+    Circle,
+    Type,
+    Scaling,
+    Radius,
+    Move,
+    BetweenHorizontalStart
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import {
     useActions,
     useAppState,
     useCommands,
@@ -23,6 +33,16 @@ import {
 import { FRAME_SELECTION_HELP, VIEW_SELECTION_HELP } from './frameSelection';
 import { creationTarget } from './creationTarget';
 import { CREATIONS, CREATION_PATTERN, creationOperation } from './creation';
+
+const GUIDED_ICONS: Record<string, LucideIcon> = {
+    'create rectangle': RectangleHorizontal,
+    'create circle': Circle,
+    'create text': Type,
+    'edit size': Scaling,
+    'edit radius': Radius,
+    'edit position': Move,
+    'edit stack': BetweenHorizontalStart
+};
 
 const ActiveCommandLine: FC = () => {
     const actions = useActions();
@@ -157,6 +177,7 @@ const ActiveCommandLine: FC = () => {
         frame ? item.id !== 'edit radius' : item.id !== 'edit stack'
     ).map((item) => ({
         ...item,
+        icon: { component: GUIDED_ICONS[item.id], size: 18 },
         enabled:
             canEdit &&
             Boolean(frame || document.selectedShapesIds.length) &&
@@ -198,11 +219,17 @@ const ActiveCommandLine: FC = () => {
             }
             suggestions={[
                 ...edits,
-                ...CREATIONS.map((command) => ({ ...command, enabled: canCreate })),
+                ...CREATIONS.map((command) => ({
+                    ...command,
+                    icon: { component: GUIDED_ICONS[command.id], size: 18 },
+                    enabled: canCreate
+                })),
                 ...getTools().map((tool) => ({
                     id: `${tool.name} tool`,
                     name: `${tool.name} tool`,
                     description: 'Activate drawing on the canvas',
+                    icon: tool.icon,
+                    shortcut: tool.shortcut,
                     enabled: canCreate
                 })),
                 ...commands
@@ -215,6 +242,8 @@ const ActiveCommandLine: FC = () => {
                     .map((command) => ({
                         id: command.id,
                         name: command.name,
+                        icon: command.icon,
+                        shortcut: command.shortcut,
                         description: command.description ?? '',
                         enabled: enabled[commands.indexOf(command)]
                     }))
