@@ -244,6 +244,17 @@ const ActiveCommandLine: FC = () => {
     return (
         <CommandLine
             historyKey={document.id}
+            literalProperties={
+                frame
+                    ? ['width', 'height', ...(layout?.stack ? ['gap', 'padding'] : [])]
+                    : [
+                          ...bindingProperties.map(({ key }) => key),
+                          ...(selectedShapes.length > 0 &&
+                          selectedShapes.every((shape) => shape.type === 'circle')
+                              ? ['radius']
+                              : [])
+                      ]
+            }
             bindingProperties={bindingProperties}
             variables={Object.values(document.variables).map(({ id, name, type }) => ({
                 id,

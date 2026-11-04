@@ -8,6 +8,7 @@ import { CREATION_PATTERN, PROPERTY_ALIAS_HELP } from './creation';
 import { editorForAction, editorForInput, editorInput, parameterLabel } from './parameters';
 import type { ParameterEditor } from './parameters';
 
+import { completeParameters } from './completion';
 import { submitCandidate } from './search';
 import type { Suggestion } from './search';
 import { useCommandSearch } from './useCommandSearch';
@@ -16,6 +17,7 @@ import { recentCommands, rememberCommand, clearRecentCommands, recentSuggestion 
 const STALE_TARGET = 'Selection changed. Check the target above, then apply again.';
 
 export interface Props {
+    literalProperties?: string[];
     bindingProperties?: { key: string; label: string; kind: string }[];
     variables?: { id: string; name: string; type: string }[];
     historyKey: string;
@@ -31,6 +33,7 @@ export interface Props {
 }
 
 export const CommandLine: FC<Props> = ({
+    literalProperties,
     bindingProperties = [],
     variables = [],
     historyKey,
@@ -55,6 +58,8 @@ export const CommandLine: FC<Props> = ({
     const [message, setMessage] = useState<string>();
     const [open, setOpen] = useState(true);
     const [active, setActive] = useState(-1);
+    const [commandFocused, setCommandFocused] = useState(true);
+    const [caretAtEnd, setCaretAtEnd] = useState(true);
     const [editor, setEditor] = useState<ParameterEditor>();
     const [pending, setPending] = useState(false);
     /** The selection changed under a typed command; the next submit only confirms it. */
@@ -75,10 +80,21 @@ export const CommandLine: FC<Props> = ({
         query,
         open && !editor && !showingRecent && !value.includes('=')
     );
-    const matches = showingRecent ? recentItems : search.matches;
-    const waiting = search.waiting;
+    const completions =
+        open &&
+        commandFocused &&
+        caretAtEnd &&
+        !suggestions.some(
+            (item) => item.id.toLowerCase() === query || item.name.toLowerCase() === query
+        )
+            ? completeParameters(value, bindingProperties, variables, literalProperties)
+            : [];
+    const completing = completions.length > 0;
+    const completingBareQuery = completing && !/[\s=]/.test(value.trim());
+    const matches = completing ? completions : showingRecent ? recentItems : search.matches;
+    const waiting = !completing && search.waiting;
     const resolve = showingRecent ? () => recentItems : search.resolve;
-    const listShown = open && !editor && matches.length > 0;
+    const listShown = open && (completing || !editor) && matches.length > 0;
     const directInput =
         (CREATION_PATTERN.test(value.trim()) && !/^create\s/i.test(value.trim())) ||
         suggestions.some(
@@ -86,7 +102,7 @@ export const CommandLine: FC<Props> = ({
                 (item.id.toLowerCase() === query || item.name.toLowerCase() === query) &&
                 !editorForAction(item.id)
         );
-    const choosing = listShown && (active >= 0 || !directInput);
+    const choosing = !completing && listShown && (active >= 0 || !directInput);
     const chosenIndex = Math.max(0, Math.min(active, matches.length - 1));
     const creating = editor?.creation || CREATION_PATTERN.test(value.trim());
     const displayContext =
@@ -158,6 +174,18 @@ export const CommandLine: FC<Props> = ({
         setValue(editorInput(next));
         setMessage(undefined);
     };
+    const acceptCompletion = (item: Suggestion) => {
+        if (pending || item.input === undefined) {
+            return;
+        }
+        setValue(item.input);
+        setEditor(editorForInput(item.input));
+        setGuided(false);
+        setMessage(undefined);
+        setOpen(false);
+        setActive(-1);
+        inputRef.current?.focus();
+    };
     const back = () => {
         setEditor(undefined);
         setGuided(false);
@@ -196,14 +224,17 @@ export const CommandLine: FC<Props> = ({
         if (pending) {
             return;
         }
-        const candidate = submitCandidate({
-            waiting,
-            directInput,
-            choosing,
-            matches,
-            chosenIndex,
-            resolve
-        });
+        const commandMatch = completingBareQuery ? search.resolve()[0] : undefined;
+        const candidate =
+            commandMatch ??
+            submitCandidate({
+                waiting,
+                directInput,
+                choosing,
+                matches,
+                chosenIndex,
+                resolve
+            });
         if (candidate) {
             choose(candidate);
 
@@ -256,6 +287,13 @@ export const CommandLine: FC<Props> = ({
 
                     return;
                 }
+                if (event.key === 'Escape' && completing) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setOpen(false);
+
+                    return;
+                }
                 if (event.key === 'Escape') {
                     event.preventDefault();
                     event.stopPropagation();
@@ -284,7 +322,16 @@ export const CommandLine: FC<Props> = ({
                     placeholder="What would you like to do?"
                     value={value}
                     readOnly={pending}
+                    onFocus={() => setCommandFocused(true)}
+                    onBlur={() => setCommandFocused(false)}
+                    onSelect={(event) =>
+                        setCaretAtEnd(
+                            event.currentTarget.selectionStart === value.length &&
+                                event.currentTarget.selectionEnd === value.length
+                        )
+                    }
                     onChange={(event) => {
+                        setCaretAtEnd(event.target.selectionStart === event.target.value.length);
                         setValue(event.target.value);
                         setEditor(editorForInput(event.target.value));
                         setGuided(false);
@@ -303,7 +350,22 @@ export const CommandLine: FC<Props> = ({
 
                             return;
                         }
-                        if (pending || editor || !['ArrowDown', 'ArrowUp'].includes(event.key)) {
+                        if (
+                            !pending &&
+                            completing &&
+                            ((event.key === 'Tab' && !event.shiftKey) ||
+                                (event.key === 'Enter' && active >= 0))
+                        ) {
+                            event.preventDefault();
+                            acceptCompletion(matches[chosenIndex]);
+
+                            return;
+                        }
+                        if (
+                            pending ||
+                            (editor && !completing) ||
+                            !['ArrowDown', 'ArrowUp'].includes(event.key)
+                        ) {
                             return;
                         }
 
@@ -333,7 +395,7 @@ export const CommandLine: FC<Props> = ({
             <div className={styles.content} aria-busy={waiting}>
                 {/* Not a live region: it would be announced on every keystroke; aria-busy covers it. */}
                 {waiting && <small>Searching commands…</small>}
-                {editor && (
+                {editor && !completing && (
                     <fieldset>
                         <legend>
                             <button
@@ -431,11 +493,15 @@ export const CommandLine: FC<Props> = ({
                     <>
                         <div className={styles.heading}>
                             <span>
-                                {query
-                                    ? 'Matching actions'
-                                    : showingRecent
-                                      ? 'Recent commands'
-                                      : 'Suggested actions'}
+                                {completing
+                                    ? completingBareQuery
+                                        ? 'Tab to insert · Enter to search commands'
+                                        : 'Suggestions · Tab to insert'
+                                    : query
+                                      ? 'Matching actions'
+                                      : showingRecent
+                                        ? 'Recent commands'
+                                        : 'Suggested actions'}
                             </span>
                             {showingRecent && (
                                 <button
@@ -451,7 +517,11 @@ export const CommandLine: FC<Props> = ({
                                 </button>
                             )}
                         </div>
-                        <ul id={listId} role="listbox" aria-label="Commands">
+                        <ul
+                            id={listId}
+                            role="listbox"
+                            aria-label={completing ? 'Parameter suggestions' : 'Commands'}
+                        >
                             {matches.map((item, index) => (
                                 <li
                                     key={item.id}
@@ -463,9 +533,16 @@ export const CommandLine: FC<Props> = ({
                                         item.shortcut ? shortcutKeys(item.shortcut, mac) : undefined
                                     }
                                     onMouseDown={(event) => event.preventDefault()}
-                                    onClick={() => choose(item)}
+                                    onClick={() =>
+                                        completing ? acceptCompletion(item) : choose(item)
+                                    }
                                     onKeyDown={(event) => {
                                         if (event.key === 'Enter') {
+                                            if (completing) {
+                                                acceptCompletion(item);
+
+                                                return;
+                                            }
                                             choose(item);
                                         }
                                     }}
