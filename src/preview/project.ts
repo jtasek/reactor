@@ -1,4 +1,4 @@
-import { variantActionCheck } from 'src/app/interactiveVariants';
+import { variantActionCheck, prototypeTargetCheck } from 'src/app/interactiveVariants';
 import { projectGeometry } from 'src/app/contextualGeometry';
 import { projectDataList } from './dataLists';
 import { effectiveActivation } from 'src/app/screenInteractions';
@@ -277,6 +277,7 @@ export function createArtworkProjector(
 ) {
     const identities = new Map<string, PreviewNode[]>();
     const checkVariantAction = variantActionCheck(document);
+    const checkVisibilityTarget = prototypeTargetCheck(document);
     const requestedVariants = new Map<string, Set<string>>();
     for (const shape of Object.values(document.shapes)) {
         if (
@@ -529,6 +530,43 @@ export function createArtworkProjector(
                 if (variantAction && !changeVariant && !warnings.includes(unavailable)) {
                     warnings.push(unavailable);
                 }
+                const visibilityAction =
+                    activation?.type === 'toggleVisibility' ? activation : undefined;
+                const visibilityTarget = visibilityAction
+                    ? document.shapes[visibilityAction.instanceId]
+                    : undefined;
+                const toggleVisibility =
+                    visibilityAction &&
+                    visibilityTarget?.type === 'instance' &&
+                    !recordScope &&
+                    (path === screenId || controlKey !== undefined) &&
+                    activeInstances?.has(visibilityTarget.id) &&
+                    checkVisibilityTarget(visibilityTarget.id, screenId)
+                        ? JSON.stringify([
+                              screenId,
+                              visibilityTarget.id,
+                              visibilityTarget.componentId
+                          ])
+                        : undefined;
+                if (visibilityAction && !toggleVisibility) {
+                    const message = `${shape.name}: visibility target is unavailable in this screen. Choose another instance in Interactions.`;
+                    if (!warnings.includes(message)) {
+                        warnings.push(message);
+                        diagnostics.push({ kind: 'shape', id: shape.id, message });
+                    }
+                }
+                if (
+                    includeVariants &&
+                    !recordScope &&
+                    path === screenId &&
+                    activeInstances?.has(shape.id) &&
+                    checkVisibilityTarget(shape.id, screenId)
+                ) {
+                    group.visibility = {
+                        key: JSON.stringify([screenId, shape.id, component.id]),
+                        initial: shape.prototypeVisible ?? true
+                    };
+                }
                 const target = activation?.screenId;
                 const navigateTo = target && screenIds.has(target) ? target : undefined;
                 if (target && !navigateTo) {
@@ -555,6 +593,7 @@ export function createArtworkProjector(
                         disabled: role.props.disabled === true,
                         navigateTo,
                         ...(changeVariant ? { changeVariant } : {}),
+                        ...(toggleVisibility ? { toggleVisibility } : {}),
                         ...(controlKey ? { stateKey: controlKey } : {}),
                         ...(role.role === 'input'
                             ? {

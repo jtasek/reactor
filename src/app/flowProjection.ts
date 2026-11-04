@@ -23,6 +23,7 @@ export function projectFlow(document: Document) {
         target?: string;
         /** A change-variant action: the instance it changes and the variant it shows. */
         changes?: { instance: string; variant: string };
+        toggles?: string;
         editable: boolean;
         shared: boolean;
         /** Preview never draws it: hidden here or in a hidden container. */
@@ -50,6 +51,9 @@ export function projectFlow(document: Document) {
             shared: path !== instance.id,
             ...state,
             target: activation?.screenId,
+            ...(activation?.type === 'toggleVisibility'
+                ? { toggles: document.shapes[activation.instanceId]?.name ?? 'Missing instance' }
+                : {}),
             ...(activation?.type === 'changeVariant'
                 ? {
                       changes: {

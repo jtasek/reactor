@@ -5,7 +5,7 @@ import { isReadOnly } from './documentAccess';
 import { isShapeLocked } from './utils';
 import { orUndefined, readInteractions } from './services/documentStorage';
 import { screenFrames } from './screens';
-import { validVariantAction } from './interactiveVariants';
+import { validVariantAction, prototypeTargets } from './interactiveVariants';
 import { effectiveActivation } from './screenInteractions';
 
 export interface InteractionEdit {
@@ -14,7 +14,19 @@ export interface InteractionEdit {
     settings: InteractionSettings;
 }
 
-export function editInteractions({ state }: Context, edit: InteractionEdit) {
+export interface VisibilityEdit {
+    target: 'visibility';
+    instanceId: string;
+    visible: boolean;
+}
+
+export function editInteractions(context: Context, edit: InteractionEdit | VisibilityEdit) {
+    if (edit.target === 'visibility') {
+        editPrototypeVisibility(context, edit);
+
+        return;
+    }
+    const { state } = context;
     const document = state.currentDocument;
     if (document.locked || isReadOnly(state) || state.events.pointer.gesture.kind !== 'idle') {
         return;
@@ -58,6 +70,17 @@ export function editInteractions({ state }: Context, edit: InteractionEdit) {
     ) {
         return;
     }
+    const visibilityTarget =
+        settings.activate?.type === 'toggleVisibility' ? settings.activate.instanceId : undefined;
+    if (
+        visibilityTarget !== undefined &&
+        (!owner ||
+            !prototypeTargets(document, owner, instance?.parentFrameId).some(
+                (shape) => shape.id === visibilityTarget
+            ))
+    ) {
+        return;
+    }
     const destination = settings.activate?.screenId;
     if (
         destination &&
@@ -70,4 +93,31 @@ export function editInteractions({ state }: Context, edit: InteractionEdit) {
         return;
     }
     target.interactions = settings;
+}
+
+/** Edits only the launch default, never a running player's boolean state. */
+function editPrototypeVisibility(
+    { state }: Context,
+    edit: { instanceId: string; visible: boolean }
+) {
+    const document = state.currentDocument;
+    if (
+        typeof edit.visible !== 'boolean' ||
+        document.locked ||
+        isReadOnly(state) ||
+        state.events.pointer.gesture.kind !== 'idle' ||
+        isShapeLocked(document, edit.instanceId)
+    ) {
+        return;
+    }
+    const target = prototypeTargets(document).find((shape) => shape.id === edit.instanceId);
+    if (!target) {
+        return;
+    }
+    if (edit.visible) {
+        delete target.prototypeVisible;
+
+        return;
+    }
+    target.prototypeVisible = false;
 }

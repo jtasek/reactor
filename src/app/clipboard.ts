@@ -742,7 +742,7 @@ export function pasteOperations(
 }
 
 /**
- * A variant action aimed at another copied shape names that shape's paste key, so the
+ * An instance action aimed at another copied shape names that shape's paste key, so the
  * pasted control changes the pasted target; other targets keep their IDs.
  */
 function copiedInteractions(
@@ -750,7 +750,7 @@ function copiedInteractions(
     shapes: readonly Shape[]
 ): InteractionSettings | undefined {
     const action = interactions?.activate;
-    if (action?.type !== 'changeVariant') {
+    if (!action || action.type === 'navigate') {
         return interactions;
     }
     const index = shapes.findIndex((shape) => shape.id === action.instanceId);

@@ -21,6 +21,8 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
             id: instanceId ?? componentId!,
             settings
         });
+    const visibilityAction =
+        data.activation?.type === 'toggleVisibility' ? data.activation : undefined;
     const variantAction = data.activation?.type === 'changeVariant' ? data.activation : undefined;
     const target = data.activation?.screenId;
     const sourceTarget = data.sourceActivation?.screenId;
@@ -42,14 +44,16 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                                     value={
                                         data.actionInherited
                                             ? 'inherit'
-                                            : variantAction
-                                              ? variantChoice(
-                                                    variantAction.instanceId,
-                                                    variantAction.variantId
-                                                )
-                                              : target
-                                                ? JSON.stringify(target)
-                                                : 'none'
+                                            : visibilityAction
+                                              ? JSON.stringify(visibilityAction)
+                                              : variantAction
+                                                ? variantChoice(
+                                                      variantAction.instanceId,
+                                                      variantAction.variantId
+                                                  )
+                                                : target
+                                                  ? JSON.stringify(target)
+                                                  : 'none'
                                     }
                                     onChange={(event) => {
                                         const choice = event.target.value;
@@ -74,13 +78,15 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                                     {instanceId && (
                                         <option value="inherit">
                                             Source:{' '}
-                                            {data.sourceActivation?.type === 'changeVariant'
-                                                ? 'Change variant'
-                                                : sourceTarget
-                                                  ? (data.screens.find(
-                                                        (screen) => screen.id === sourceTarget
-                                                    )?.name ?? 'Unavailable screen')
-                                                  : 'No action'}
+                                            {data.sourceActivation?.type === 'toggleVisibility'
+                                                ? 'Toggle visibility'
+                                                : data.sourceActivation?.type === 'changeVariant'
+                                                  ? 'Change variant'
+                                                  : sourceTarget
+                                                    ? (data.screens.find(
+                                                          (screen) => screen.id === sourceTarget
+                                                      )?.name ?? 'Unavailable screen')
+                                                    : 'No action'}
                                         </option>
                                     )}
                                     <option value="none">No action</option>
@@ -102,6 +108,29 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                                                 Unavailable variant
                                             </option>
                                         )}
+                                    {visibilityAction &&
+                                        !data.visibilityTargets.some(
+                                            (item) => item.id === visibilityAction.instanceId
+                                        ) && (
+                                            <option value={JSON.stringify(visibilityAction)}>
+                                                Unavailable visibility target
+                                            </option>
+                                        )}
+                                    {data.visibilityTargets.length > 0 && (
+                                        <optgroup label="Toggle visibility">
+                                            {data.visibilityTargets.map((item) => (
+                                                <option
+                                                    key={item.id}
+                                                    value={JSON.stringify({
+                                                        type: 'toggleVisibility',
+                                                        instanceId: item.id
+                                                    })}
+                                                >
+                                                    Toggle {item.name}
+                                                </option>
+                                            ))}
+                                        </optgroup>
+                                    )}
                                     {data.variantTargets.map((item) => (
                                         <optgroup key={item.id} label={`Change ${item.name}`}>
                                             {item.variants.map((variant) => (
@@ -128,6 +157,27 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                             </div>
                         </td>
                     </tr>
+                    {instanceId && data.prototypeVisible !== undefined && (
+                        <tr>
+                            <td colSpan={2}>
+                                <label className={styles.prototypeVisibility}>
+                                    <input
+                                        type="checkbox"
+                                        checked={data.prototypeVisible}
+                                        disabled={data.disabled}
+                                        onChange={(event) =>
+                                            editInteractions({
+                                                target: 'visibility',
+                                                instanceId,
+                                                visible: event.target.checked
+                                            })
+                                        }
+                                    />{' '}
+                                    Show initially in prototype
+                                </label>
+                            </td>
+                        </tr>
+                    )}
                     {(data.actionFamily !== undefined || unavailable) && (
                         <tr>
                             <td colSpan={2}>

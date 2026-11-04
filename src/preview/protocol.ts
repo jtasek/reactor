@@ -7,6 +7,7 @@ export interface PreviewNode {
     /** SHA-256 key into the application's verified raster image table. */
     image?: string;
     children?: PreviewNode[];
+    visibility?: { key: string; initial: boolean };
     variantKey?: string;
     initialVariant?: string;
     variants?: Record<string, PreviewNode>;
@@ -18,6 +19,7 @@ export interface PreviewNode {
         disabled?: boolean;
         navigateTo?: string;
         changeVariant?: { key: string; variantId: string };
+        toggleVisibility?: string;
         stateKey?: string;
         x: number;
         y: number;
@@ -217,6 +219,13 @@ export function readPreview(
             }
             result.children = node.children.map((child) => readNode(child, depth + 1));
         }
+        if (node.visibility !== undefined) {
+            const visibility = object(node.visibility);
+            if (!string(visibility.key) || typeof visibility.initial !== 'boolean') {
+                throw new Error('Invalid prototype visibility.');
+            }
+            result.visibility = { key: visibility.key, initial: visibility.initial };
+        }
         if (node.variants !== undefined) {
             if (!string(node.variantKey)) {
                 throw new Error('Invalid variant identity.');
@@ -247,7 +256,7 @@ export function readPreview(
                 !['x', 'y', 'width', 'height'].every((key) => finite(c[key])) ||
                 (c.width as number) < 0 ||
                 (c.height as number) < 0 ||
-                ['value', 'placeholder', 'navigateTo', 'stateKey'].some(
+                ['value', 'placeholder', 'navigateTo', 'stateKey', 'toggleVisibility'].some(
                     (key) => c[key] !== undefined && !string(c[key])
                 ) ||
                 (c.disabled !== undefined && typeof c.disabled !== 'boolean')
@@ -266,6 +275,9 @@ export function readPreview(
                 placeholder: c.placeholder,
                 disabled: c.disabled,
                 navigateTo: c.navigateTo,
+                ...(c.toggleVisibility === undefined
+                    ? {}
+                    : { toggleVisibility: c.toggleVisibility as string }),
                 ...(changeVariant
                     ? {
                           changeVariant: {
@@ -348,6 +360,24 @@ export function readPreview(
         throw new Error('Preview images exceed the 8 MiB limit. Remove or reduce some images.');
     }
 
+    const visibilityKeys = new Set<string>();
+    for (const node of nodes) {
+        if (node.visibility) {
+            if (visibilityKeys.has(node.visibility.key)) {
+                throw new Error('Duplicate visibility identity.');
+            }
+            visibilityKeys.add(node.visibility.key);
+        }
+    }
+    if (
+        nodes.some(
+            (node) =>
+                node.control?.toggleVisibility !== undefined &&
+                !visibilityKeys.has(node.control.toggleVisibility)
+        )
+    ) {
+        throw new Error('Unavailable visibility target.');
+    }
     const targets = new Map<string, Record<string, PreviewNode>>();
     for (const node of nodes) {
         if (node.variantKey && node.variants) {

@@ -23,6 +23,9 @@ const externalControls =
 const values = new Map<string, string>();
 const variants = new Map<string, string>();
 const initialVariants = new Map<string, string>();
+const visibility = new Map<string, boolean>();
+const initialVisibility = new Map<string, boolean>();
+const visibilityId = (key: string) => `visibility-${encodeURIComponent(key)}`;
 let application: PreviewApplication | undefined;
 /** Images received so far. The editor sends each image once and later updates only refer to it. */
 let images: Record<string, string> = {};
@@ -33,6 +36,14 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
     const choice = authored.variantKey ? variants.get(authored.variantKey) : undefined;
     const node = choice && authored.variants?.[choice] ? authored.variants[choice] : authored;
     const element = document.createElementNS(SVG, node.tag);
+    if (authored.visibility) {
+        element.id = visibilityId(authored.visibility.key);
+        if (!(visibility.get(authored.visibility.key) ?? authored.visibility.initial)) {
+            element.setAttribute('display', 'none');
+
+            return element;
+        }
+    }
     Object.entries(node.attrs).forEach(([key, value]) => element.setAttribute(key, String(value)));
     if (node.image) {
         element.setAttribute('href', application!.images[node.image]);
@@ -93,6 +104,17 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
             )
         );
     }
+    if (control.toggleVisibility !== undefined && control.role === 'button') {
+        field.setAttribute(
+            'aria-expanded',
+            String(
+                visibility.get(control.toggleVisibility) ??
+                    initialVisibility.get(control.toggleVisibility) ??
+                    true
+            )
+        );
+        field.setAttribute('aria-controls', visibilityId(control.toggleVisibility));
+    }
     if (control.disabled) {
         element.setAttribute('opacity', String(Number(node.attrs.opacity ?? 1) * 0.5));
     }
@@ -105,7 +127,9 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
             if (
                 event.key !== 'Enter' ||
                 event.isComposing ||
-                (!control.navigateTo && !control.changeVariant)
+                (!control.navigateTo &&
+                    !control.changeVariant &&
+                    control.toggleVisibility === undefined)
             ) {
                 return;
             }
@@ -126,8 +150,12 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
 }
 
 function activate(control: NonNullable<PreviewNode['control']>) {
-    if (!control.changeVariant && !control.navigateTo) {
+    if (!control.changeVariant && !control.navigateTo && control.toggleVisibility === undefined) {
         return;
+    }
+    if (control.toggleVisibility !== undefined) {
+        const key = control.toggleVisibility;
+        visibility.set(key, !(visibility.get(key) ?? initialVisibility.get(key) ?? true));
     }
     if (control.changeVariant) {
         variants.set(control.changeVariant.key, control.changeVariant.variantId);
@@ -179,6 +207,7 @@ function render() {
     reset.addEventListener('click', () => {
         values.clear();
         variants.clear();
+        visibility.clear();
         currentScreen = undefined;
         // Inspected Width and Layout return to the launch view's too.
         port?.postMessage({ type: 'inspect-reset' });
@@ -242,7 +271,7 @@ function render() {
         const input = Array.from(
             root.querySelectorAll<HTMLInputElement | HTMLButtonElement>('input, button')
         ).find((input) => input.dataset.key === key);
-        input?.focus();
+        (input ?? select).focus();
         if (input instanceof HTMLInputElement && selection) {
             input.setSelectionRange(selection[0], selection[1]);
         }
@@ -258,11 +287,16 @@ function receive(value: unknown) {
         if (application?.documentId !== next.documentId) {
             values.clear();
             variants.clear();
+            visibility.clear();
             currentScreen = undefined;
         }
         const keys = new Set<string>();
         initialVariants.clear();
+        initialVisibility.clear();
         const collect = (node: PreviewNode) => {
+            if (node.visibility) {
+                initialVisibility.set(node.visibility.key, node.visibility.initial);
+            }
             if (node.control?.role === 'input') {
                 keys.add(node.control.stateKey ?? node.key);
             }
@@ -287,6 +321,11 @@ function receive(value: unknown) {
         variants.forEach((_value, key) => {
             if (!initialVariants.has(key)) {
                 variants.delete(key);
+            }
+        });
+        visibility.forEach((_value, key) => {
+            if (!initialVisibility.has(key)) {
+                visibility.delete(key);
             }
         });
         application = next;
