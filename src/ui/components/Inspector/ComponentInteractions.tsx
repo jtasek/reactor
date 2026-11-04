@@ -21,6 +21,7 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
             id: instanceId ?? componentId!,
             settings
         });
+    const variantAction = data.activation?.type === 'changeVariant' ? data.activation : undefined;
     const target = data.activation?.screenId;
     const sourceTarget = data.sourceActivation?.screenId;
     const unavailable = target && !data.screens.some((screen) => screen.id === target);
@@ -36,14 +37,16 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                                 <label htmlFor="activate-target">{trigger}</label>
                                 <select
                                     id="activate-target"
-                                    aria-label={`${trigger}: navigate to screen`}
+                                    aria-label={`${trigger}: action`}
                                     disabled={data.disabled || data.actionFamily !== undefined}
                                     value={
                                         data.actionInherited
                                             ? 'inherit'
-                                            : target
-                                              ? JSON.stringify(target)
-                                              : 'none'
+                                            : variantAction
+                                              ? JSON.stringify(variantAction)
+                                              : target
+                                                ? JSON.stringify(target)
+                                                : 'none'
                                     }
                                     onChange={(event) => {
                                         const choice = event.target.value;
@@ -56,24 +59,57 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                                             activate:
                                                 choice === 'none'
                                                     ? null
-                                                    : {
-                                                          type: 'navigate',
-                                                          screenId: JSON.parse(choice)
-                                                      }
+                                                    : typeof JSON.parse(choice) === 'string'
+                                                      ? {
+                                                            type: 'navigate',
+                                                            screenId: JSON.parse(choice)
+                                                        }
+                                                      : JSON.parse(choice)
                                         });
                                     }}
                                 >
                                     {instanceId && (
                                         <option value="inherit">
                                             Source:{' '}
-                                            {sourceTarget
-                                                ? (data.screens.find(
-                                                      (screen) => screen.id === sourceTarget
-                                                  )?.name ?? 'Unavailable screen')
-                                                : 'No action'}
+                                            {data.sourceActivation?.type === 'changeVariant'
+                                                ? 'Change variant'
+                                                : sourceTarget
+                                                  ? (data.screens.find(
+                                                        (screen) => screen.id === sourceTarget
+                                                    )?.name ?? 'Unavailable screen')
+                                                  : 'No action'}
                                         </option>
                                     )}
                                     <option value="none">No action</option>
+                                    {variantAction &&
+                                        !data.variantTargets.some(
+                                            (item) =>
+                                                item.id === variantAction.instanceId &&
+                                                item.variants.some(
+                                                    (variant) =>
+                                                        variant.id === variantAction.variantId
+                                                )
+                                        ) && (
+                                            <option value={JSON.stringify(variantAction)}>
+                                                Unavailable variant
+                                            </option>
+                                        )}
+                                    {data.variantTargets.map((item) => (
+                                        <optgroup key={item.id} label={`Change ${item.name}`}>
+                                            {item.variants.map((variant) => (
+                                                <option
+                                                    key={variant.id}
+                                                    value={JSON.stringify({
+                                                        type: 'changeVariant',
+                                                        instanceId: item.id,
+                                                        variantId: variant.id
+                                                    })}
+                                                >
+                                                    {item.name} → {variant.name}
+                                                </option>
+                                            ))}
+                                        </optgroup>
+                                    ))}
                                     {unavailable && (
                                         <option value={JSON.stringify(target)}>
                                             Unavailable screen

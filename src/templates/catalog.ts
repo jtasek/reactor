@@ -1,5 +1,10 @@
 export const STARTER_TEMPLATES = [
     {
+        id: 'inspector-typography',
+        name: 'Inspector typography',
+        description: 'Compare heading styles with interactive component variants.'
+    },
+    {
         id: 'list-detail',
         name: 'List / detail',
         description: 'Browse projects, open a detail and recover from an empty list.'

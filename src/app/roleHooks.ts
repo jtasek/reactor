@@ -1,3 +1,5 @@
+import { screenOwners } from './screenViews';
+import { variantTargets } from './interactiveVariants';
 import { useAppState } from './hooks';
 import {
     effectiveRoleSettings,
@@ -31,10 +33,27 @@ export const useRoleEditor = (componentId?: string, instanceId?: string) =>
                   item.variantIds?.includes(component.id)
               );
 
+        const owner = instance?.parentFrameId
+            ? screenOwners(document.frames).get(instance.parentFrameId)
+            : undefined;
+
         return {
             settings: { ...settings, props: { ...settings.props } },
             activation: effectiveActivation(family ?? component, instance),
             sourceActivation: effectiveActivation(family ?? component),
+            variantTargets: (owner
+                ? variantTargets(document, owner, instance?.parentFrameId)
+                : []
+            ).map((target) => ({
+                id: target.id,
+                name: target.name,
+                variants: [
+                    target.componentId,
+                    ...(document.components[target.componentId].variantIds ?? [])
+                ]
+                    .filter((id) => Boolean(document.components[id]))
+                    .map((id) => ({ id, name: document.components[id].name }))
+            })),
             actionFamily: family?.name,
             actionInherited: Boolean(instance && inheritedActivation(instance)),
             screens: screenFrames(document).map((frame) => ({ id: frame.id, name: frame.name })),

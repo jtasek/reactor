@@ -24,7 +24,7 @@ test('edits source and instance actions independently, preserves them on reload,
     const explorer = await openInteractions(page);
     await explorer.getByRole('button', { name: 'Button', exact: true }).click();
     const role = page.getByRole('combobox', { name: 'Semantic role', exact: true });
-    const action = page.getByLabel('Navigate to screen');
+    const action = page.getByLabel(/^On (activation|Enter): action$/);
     await expect(action).toHaveValue('"details"');
     await role.selectOption('none');
     await expect(action).toHaveValue('"details"');
@@ -48,9 +48,9 @@ test('edits source and instance actions independently, preserves them on reload,
     await preview.getByRole('button', { name: 'Continue button', exact: true }).press('Enter');
     await expect(preview.getByLabel('Preview screen')).toHaveValue('details');
     await action.selectOption('inherit');
-    await expect(page.getByLabel('Navigate to screen').locator('option:checked')).toHaveText(
-        'Source: Details'
-    );
+    await expect(
+        page.getByLabel(/^On (activation|Enter): action$/).locator('option:checked')
+    ).toHaveText('Source: Details');
     await action.selectOption({ label: 'Navigate to Home' });
     await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.getByRole('button', { name: 'Preview', exact: true }).click();
@@ -74,14 +74,16 @@ test('activates an input on Enter without navigating on focus and retains typed 
 }) => {
     const explorer = await openInteractions(page);
     await explorer.getByRole('button', { name: 'Input', exact: true }).click();
-    await page.getByLabel('Navigate to screen').selectOption({ label: 'Navigate to Details' });
+    await page
+        .getByLabel(/^On (activation|Enter): action$/)
+        .selectOption({ label: 'Navigate to Details' });
     await page.getByRole('button', { name: 'Back to canvas', exact: true }).click();
     // Old input role overrides retain the former no-action behavior until inheritance is chosen.
     const inputHit = page.locator(
         '#screen-views > [data-screen-view="view"] [data-shape-id="name"] [data-view-instance-hit]'
     );
     await inputHit.click();
-    await page.getByLabel('Navigate to screen').selectOption('inherit');
+    await page.getByLabel(/^On (activation|Enter): action$/).selectOption('inherit');
     await page.getByRole('button', { name: 'Preview', exact: true }).click();
     const preview = page.frameLocator('iframe[title="Application preview"]');
     const input = preview.getByRole('textbox', { name: 'Your name', exact: true });
@@ -93,6 +95,8 @@ test('activates an input on Enter without navigating on focus and retains typed 
     await expect(input).toHaveValue('Ada');
     await preview.getByLabel('Preview width').fill('800');
     await preview.getByLabel('Preview width').press('Tab');
+    // Wait for the asynchronous layout projection, not the unchanged input value.
+    await expect(preview.locator('svg[aria-label="Home"]')).toHaveAttribute('width', '800');
     await expect(input).toHaveValue('Ada');
     // The alternate's legacy role override remains independent of the source action.
     await input.press('Enter');

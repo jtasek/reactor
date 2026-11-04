@@ -43,11 +43,11 @@ test('connects and removes actions in Flow, reflects them in Inspector, and arra
     ).toBeGreaterThan(0);
     await page.locator('[data-flow-control="next"]').click();
     await page.getByRole('button', { name: 'Connect to Home', exact: true }).click();
-    await expect(page.getByLabel('Navigate to screen')).toHaveValue('"home"');
+    await expect(page.getByLabel(/^On (activation|Enter): action$/)).toHaveValue('"home"');
     await page.getByRole('button', { name: 'Undo', exact: true }).click();
-    await expect(page.getByLabel('Navigate to screen')).toHaveValue('inherit');
+    await expect(page.getByLabel(/^On (activation|Enter): action$/)).toHaveValue('inherit');
     await page.getByRole('button', { name: 'Redo', exact: true }).click();
-    await expect(page.getByLabel('Navigate to screen')).toHaveValue('"home"');
+    await expect(page.getByLabel(/^On (activation|Enter): action$/)).toHaveValue('"home"');
     await page.getByLabel('Check reachability from').selectOption('details');
     await expect(page.getByText('Not reachable from the chosen screen.')).toBeVisible();
     const node = page.locator('[data-flow-screen="home"]');
@@ -66,21 +66,21 @@ test('connects and removes actions in Flow, reflects them in Inspector, and arra
     );
     await page.screenshot({ path: 'test-results/flow.png' });
     await page.setViewportSize({ width: 600, height: 850 });
-    await expect(page.getByLabel('Navigate to screen')).toBeVisible();
+    await expect(page.getByLabel(/^On (activation|Enter): action$/)).toBeVisible();
     await page.screenshot({ path: 'test-results/flow-narrow.png' });
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.getByRole('link', { name: 'Back to canvas' }).click();
-    await expect(page.getByLabel('Navigate to screen')).toHaveValue('"home"');
+    await expect(page.getByLabel(/^On (activation|Enter): action$/)).toHaveValue('"home"');
     expect(await hit.boundingBox()).toEqual(geometry);
-    await page.getByLabel('Navigate to screen').selectOption('none');
+    await page.getByLabel(/^On (activation|Enter): action$/).selectOption('none');
     await page.getByRole('link', { name: 'Open flow' }).click();
     await page.locator('[data-flow-control="next"]').click();
-    await expect(page.getByLabel('Navigate to screen')).toHaveValue('none');
+    await expect(page.getByLabel(/^On (activation|Enter): action$/)).toHaveValue('none');
     await expect(node).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 20)');
-    await page.getByLabel('Navigate to screen').selectOption('inherit');
-    await expect(page.getByLabel('Navigate to screen').locator('option:checked')).toHaveText(
-        'Source: Details'
-    );
+    await page.getByLabel(/^On (activation|Enter): action$/).selectOption('inherit');
+    await expect(
+        page.getByLabel(/^On (activation|Enter): action$/).locator('option:checked')
+    ).toHaveText('Source: Details');
     await expect(page.locator('iframe')).toHaveCount(0);
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Flow', exact: true })).toBeVisible();
@@ -109,9 +109,9 @@ test('shows unavailable destinations and prevents edits to locked controls on di
         })
     ).toBeVisible();
     await page.getByRole('button', { name: 'Wide continue', exact: true }).click();
-    await expect(page.getByLabel('Navigate to screen')).toBeEnabled();
-    await page.getByLabel('Navigate to screen').selectOption('none');
-    await expect(page.getByLabel('Navigate to screen')).toHaveValue('none');
+    await expect(page.getByLabel(/^On (activation|Enter): action$/)).toBeEnabled();
+    await page.getByLabel(/^On (activation|Enter): action$/).selectOption('none');
+    await expect(page.getByLabel(/^On (activation|Enter): action$/)).toHaveValue('none');
     await expect(page.locator('iframe')).toHaveCount(0);
 });
 
@@ -125,14 +125,14 @@ test('undoes and redoes with keyboard shortcuts', async ({ page }) => {
     await page.goto('/flow');
     await page.locator('[data-flow-control="next"]').click();
     await page.getByRole('button', { name: 'Connect to Home', exact: true }).click();
-    await expect(page.getByLabel('Navigate to screen')).toHaveValue('"home"');
+    await expect(page.getByLabel(/^On (activation|Enter): action$/)).toHaveValue('"home"');
     await page.locator('[data-flow-control="next"]').focus();
     await page.keyboard.press('ControlOrMeta+z');
-    await expect(page.getByLabel('Navigate to screen')).toHaveValue('inherit');
+    await expect(page.getByLabel(/^On (activation|Enter): action$/)).toHaveValue('inherit');
     await page.keyboard.press('ControlOrMeta+Shift+z');
-    await expect(page.getByLabel('Navigate to screen')).toHaveValue('"home"');
+    await expect(page.getByLabel(/^On (activation|Enter): action$/)).toHaveValue('"home"');
     await page.keyboard.press('ControlOrMeta+z');
-    await expect(page.getByLabel('Navigate to screen')).toHaveValue('inherit');
+    await expect(page.getByLabel(/^On (activation|Enter): action$/)).toHaveValue('inherit');
 });
 
 test('marks hidden controls and leaves them out of reachability', async ({ page }) => {

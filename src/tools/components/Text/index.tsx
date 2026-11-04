@@ -27,6 +27,7 @@ import { componentSourcePoint, componentViewPoint } from 'src/app/componentViewT
 
 interface Props {
     fontSize: number;
+    fontWeight?: number;
     fontColor?: string;
     name?: string;
     position: Point;
@@ -55,6 +56,7 @@ export const createTextProps = (
 
 export const Text: FC<Props> = ({
     fontSize,
+    fontWeight,
     fontColor,
     name,
     position,
@@ -68,7 +70,7 @@ export const Text: FC<Props> = ({
         <text
             className={className}
             data-cy={name}
-            style={{ fontSize, fill: fontColor }}
+            style={{ fontSize, fontWeight, fill: fontColor }}
             x={position.x}
             y={position.y}
         >
@@ -185,6 +187,7 @@ interface TextEditorProps {
     shapeId: string;
     position: Point;
     fontSize: number;
+    fontWeight?: number;
     width: number;
     /** The words as the Inspector's Text field shows them. */
     value: string;
@@ -194,7 +197,14 @@ interface TextEditorProps {
  * A field over a double-clicked text shape: Enter or clicking away keeps the
  * words, Escape leaves them as they were.
  */
-export const TextEditor: FC<TextEditorProps> = ({ shapeId, position, fontSize, width, value }) => {
+export const TextEditor: FC<TextEditorProps> = ({
+    shapeId,
+    position,
+    fontSize,
+    fontWeight,
+    width,
+    value
+}) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const done = useRef(false);
     const { endTextEditing, setShapesProperty } = useActions();
@@ -254,7 +264,7 @@ export const TextEditor: FC<TextEditorProps> = ({ shapeId, position, fontSize, w
                     aria-label="Text"
                     className={styles.shape}
                     defaultValue={value}
-                    style={{ fontSize }}
+                    style={{ fontSize, fontWeight }}
                     type="text"
                     onBlur={() => finish(true)}
                     onKeyDown={handleKeyDown}

@@ -274,6 +274,7 @@ export function shapeGeometry(shape: Shape): ShapeInput {
                 position: { ...shape.position },
                 value: shape.value,
                 fontSize: shape.fontSize,
+                ...(shape.fontWeight === undefined ? {} : { fontWeight: shape.fontWeight }),
                 ...(shape.wrapWidth === undefined ? {} : { wrapWidth: shape.wrapWidth })
             };
         case 'instance':

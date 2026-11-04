@@ -1292,3 +1292,17 @@ once) with a Preview warning, never stopping Preview. Data View's delete confirm
 lists that use a field or entity (`listsUsing`). Clipboard
 and clone retain bindings; library snapshots strip these document-local references.
 Tests: `tests/dataLists.test.ts` and `tests/browser/dataLists.spec.ts`.
+
+
+## Interactive variants
+
+Schema v26 adds `changeVariant` activation actions targeting an ordinary screen instance and a
+family member ID. Inspector authors same-layout instance actions; readers retain stale references
+for preview diagnostics. Preview preprojects targeted alternatives using contextual geometry and
+instance overrides, and validates their resources and references through the sandbox protocol.
+The runtime keeps choices per session, clears them on reset/document change, and never mutates
+the graph. Switching does not reflow surrounding stacks. Nested and repeated targets are excluded.
+Optional protocol fields preserve existing v3 shared snapshots. The Inspector typography starter
+is editable graph data and exercises the same player, not a custom HTML runtime. Text fontWeight
+is optional (100–900, regular by default), participates in geometry/cache keys and renders in
+canvas, thumbnails, text editing, preview and SVG export. Tests: interactiveVariants unit/browser.

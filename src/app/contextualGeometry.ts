@@ -16,6 +16,7 @@ const GEOMETRY_KEYS = new Set([
     'width',
     'height',
     'fontSize',
+    'fontWeight',
     'wrapWidth',
     'text',
     'cornerRadius',

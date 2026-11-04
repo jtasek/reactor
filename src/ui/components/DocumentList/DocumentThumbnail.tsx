@@ -234,6 +234,7 @@ function geometry(
                     x={shape.position.x}
                     y={shape.position.y}
                     fontSize={shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE}
+                    fontWeight={shape.fontWeight}
                     fill={shape.fontColor ?? 'var(--text-color)'}
                 >
                     {shape.textLayout

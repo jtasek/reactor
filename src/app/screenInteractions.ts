@@ -1,4 +1,10 @@
-import type { Component, InstanceShape, NavigateAction, RoleSettings } from './types';
+import type {
+    Component,
+    InstanceShape,
+    ActivationAction,
+    NavigateAction,
+    RoleSettings
+} from './types';
 
 /** Old documents retain Button navigation and whole-role instance overrides. */
 export function legacyActivation(settings?: RoleSettings): NavigateAction | null {
@@ -7,7 +13,7 @@ export function legacyActivation(settings?: RoleSettings): NavigateAction | null
         : null;
 }
 
-export function sourceActivation(component: Component): NavigateAction | null {
+export function sourceActivation(component: Component): ActivationAction | null {
     return component.interactions === undefined
         ? legacyActivation(component.interaction)
         : (component.interactions.activate ?? null);
@@ -23,7 +29,7 @@ export function inheritedActivation(instance: InstanceShape): boolean {
 export function effectiveActivation(
     component: Component,
     instance?: InstanceShape
-): NavigateAction | null {
+): ActivationAction | null {
     if (!instance || inheritedActivation(instance)) {
         return sourceActivation(component);
     }

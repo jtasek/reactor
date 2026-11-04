@@ -91,6 +91,7 @@ const CHANGEABLE_FIELDS = new Set([
     'value',
     'template',
     'fontSize',
+    'fontWeight',
     'fontColor',
     'overrides'
 ]);

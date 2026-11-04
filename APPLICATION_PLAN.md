@@ -1056,6 +1056,37 @@ editing shared content once, authoring navigation in an explicitly opened Flow v
 it in a separately opened Prototype without modifying those canvas views. People outside the
 team can then send a working prototype link to others.
 
+### Interactive visualization increments
+
+1. **Interactive component variants (implemented).** An ordinary instance on a Screen can
+   activate a named variant of another ordinary instance in that same screen layout, including itself.
+   Inspector → Interactions lists targets and their variants. The choice is local to each Preview,
+   Prototype or shared-link session; Reset and a new session restore the authored/responsive
+   initial choice. Compatible instance overrides and inherited modes are resolved into each
+   alternative. No interaction writes document state or creates undo history. Authored action
+   edits use the existing guarded editor, persistence and collaboration path.
+
+   **Working example:** Documents → Templates → **Inspector typography** → Open prototype.
+   Four editable component variants compare sentence/medium, sentence/regular, title/semibold
+   and uppercase/semibold headings. Buttons switch the same Inspector artwork and indicate the
+   selected style. Text shapes now carry an optional weight, shared by canvas, measurement,
+   preview and SVG export; missing weight retains the existing regular default.
+
+   Scope: ordinary screen instances, with artwork replaced at the existing position. Repeated
+   data-list items, nested source targets, cross-screen targets and surrounding stack reflow are
+   not supported in this increment. Referenced alternatives are preprojected and validated under existing
+   preview size/node/resource limits; no executable document code enters the player. SVG export
+   remains the authored design. Existing shared snapshots remain readable.
+   Verification: `tests/interactiveVariants.test.ts`, `tests/browser/interactiveVariants.spec.ts`
+   cover persistence, invalid references, overrides, keyboard switching, session isolation and reset.
+2. **Typed prototype state and bindings (next, planned).** Add local text/number/boolean values,
+   set/toggle/reset actions and compatible control/property bindings. Keep runtime values separate
+   from design-system variables and document mutations. Recreate the variable-editor comparison
+   with selection and optional details before adding a general expression language.
+3. **Portable interactive output (planned, R5.4).** Export the same validated prototype runtime,
+   artwork and assets used by Preview and shared links. Verify interactions and Reset work offline;
+   add a small embedding/event bridge only when a concrete host needs it.
+
 ### R5 Data and forms (L)
 
 The user shows a list of customers, opens one, edits it with validation, and exports the

@@ -1,3 +1,5 @@
+import { validVariantAction } from 'src/app/interactiveVariants';
+import { projectGeometry } from 'src/app/contextualGeometry';
 import { projectDataList } from './dataLists';
 import { effectiveActivation } from 'src/app/screenInteractions';
 import { screenOwners } from '../app/screenViews';
@@ -172,7 +174,23 @@ export function projectPreview(
     const shown = shownShapesIds({ ...document, shownLayerId: undefined }, null);
     const root = (screenId: string) =>
         screenLayoutRoot(document, screenId, choices.get(screenId)?.layoutId)!;
-    const { draw, identities } = createArtworkProjector(document, warnings, diagnostics, screenIds);
+    const activeInstances = new Set(
+        document.shapesIds.filter(
+            (id) =>
+                shown.has(id) &&
+                [...members.values()].some((ids) =>
+                    ids.has(document.shapes[id].parentFrameId ?? '')
+                )
+        )
+    );
+    const { draw, identities } = createArtworkProjector(
+        document,
+        warnings,
+        diagnostics,
+        screenIds,
+        true,
+        activeInstances
+    );
 
     const drawing: PreviewDrawing = {
         documentId: document.id,
@@ -217,6 +235,7 @@ export function projectPreview(
                 })
         }))
     };
+    const duplicateInputKeys = new Set<string>();
     for (const nodes of identities.values()) {
         if (nodes.length < 2) {
             continue;
@@ -225,9 +244,21 @@ export function projectPreview(
             'Duplicate input identity in a screen layout. Give each input a unique identity; these inputs reset when layouts change.'
         );
         for (const node of nodes) {
+            if (node.control?.stateKey) {
+                duplicateInputKeys.add(node.control.stateKey);
+            }
             delete node.control!.stateKey;
         }
     }
+
+    const clearDuplicateInputs = (node: PreviewNode) => {
+        if (node.control?.stateKey && duplicateInputKeys.has(node.control.stateKey)) {
+            delete node.control.stateKey;
+        }
+        node.children?.forEach(clearDuplicateInputs);
+        Object.values(node.variants ?? {}).forEach(clearDuplicateInputs);
+    };
+    drawing.screens.forEach((screen) => screen.nodes.forEach(clearDuplicateInputs));
 
     return drawing;
 }
@@ -238,9 +269,30 @@ export function createArtworkProjector(
     document: Document,
     warnings: string[] = [],
     diagnostics: PreviewDiagnostic[] = [],
-    screenIds?: ReadonlySet<string>
+    screenIds?: ReadonlySet<string>,
+    includeVariants = true,
+    activeInstances?: ReadonlySet<string>
 ) {
     const identities = new Map<string, PreviewNode[]>();
+    const requestedVariants = new Map<string, Set<string>>();
+    for (const shape of Object.values(document.shapes)) {
+        if (
+            !includeVariants ||
+            shape.type !== 'instance' ||
+            !activeInstances?.has(shape.id) ||
+            shape.dataList
+        ) {
+            continue;
+        }
+        const component = document.components[shape.componentId];
+        const action = component && effectiveActivation(component, shape);
+        if (action?.type !== 'changeVariant') {
+            continue;
+        }
+        const variants = requestedVariants.get(action.instanceId) ?? new Set<string>();
+        variants.add(action.variantId);
+        requestedVariants.set(action.instanceId, variants);
+    }
     // Errors name the feature the person used; export has no screen set.
     const subject = screenIds ? 'Preview' : 'SVG export';
     const verb = screenIds ? 'previewing' : 'exporting';
@@ -251,7 +303,8 @@ export function createArtworkProjector(
         ancestors: ReadonlySet<string>,
         inherited: VariableContext,
         screenId: string,
-        recordScope?: string
+        recordScope?: string,
+        controlKey?: string
     ): PreviewNode => {
         const context =
             shape.type === 'instance'
@@ -381,6 +434,9 @@ export function createArtworkProjector(
                             x: shape.position.x,
                             y: shape.position.y + index * (shape.textLayout?.lineHeight ?? 0),
                             'font-size': shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE,
+                            ...(shape.fontWeight === undefined
+                                ? {}
+                                : { 'font-weight': shape.fontWeight }),
                             ...(shape.fontColor === undefined ? {} : { fill: shape.fontColor })
                         },
                         text: line
@@ -447,6 +503,34 @@ export function createArtworkProjector(
                 }
                 const settings = effectiveRoleSettings(component, shape);
                 const activation = effectiveActivation(component, shape);
+                const variantAction = activation?.type === 'changeVariant' ? activation : undefined;
+                const variantTarget = variantAction
+                    ? document.shapes[variantAction.instanceId]
+                    : undefined;
+                const changeVariant =
+                    variantAction &&
+                    variantTarget?.type === 'instance' &&
+                    !recordScope &&
+                    (path === screenId || controlKey !== undefined) &&
+                    validVariantAction(document, variantAction, screenId) &&
+                    activeInstances?.has(variantTarget.id) &&
+                    shownShapesIds({ ...document, shownLayerId: undefined }, null).has(
+                        variantTarget.id
+                    )
+                        ? {
+                              key: JSON.stringify([
+                                  screenId,
+                                  variantTarget.id,
+                                  variantTarget.componentId
+                              ]),
+                              variantId: variantAction.variantId
+                          }
+                        : undefined;
+                if (variantAction && !changeVariant) {
+                    warnings.push(
+                        `${shape.name}: variant target is unavailable in this screen. Choose an available instance and variant.`
+                    );
+                }
                 const target = activation?.screenId;
                 const navigateTo = target && screenIds.has(target) ? target : undefined;
                 if (target && !navigateTo) {
@@ -472,6 +556,8 @@ export function createArtworkProjector(
                                 : undefined,
                         disabled: role.props.disabled === true,
                         navigateTo,
+                        ...(changeVariant ? { changeVariant } : {}),
+                        ...(controlKey ? { stateKey: controlKey } : {}),
                         ...(role.role === 'input'
                             ? {
                                   stateKey: JSON.stringify([
@@ -479,7 +565,7 @@ export function createArtworkProjector(
                                       ...(recordScope ? [recordScope] : []),
                                       shape.interaction?.controlId && settings.props.value
                                           ? ['shared', shape.interaction.controlId]
-                                          : ['node', key],
+                                          : ['node', controlKey ?? key],
                                       component.id,
                                       settings.props.value ?? '',
                                       'text'
@@ -491,6 +577,62 @@ export function createArtworkProjector(
                         width: source.box.width,
                         height: source.box.height
                     };
+                }
+                if (
+                    includeVariants &&
+                    requestedVariants.has(shape.id) &&
+                    !recordScope &&
+                    path === screenId &&
+                    component.variantIds?.length
+                ) {
+                    const variants = [
+                        ...new Set([drawn.id, ...requestedVariants.get(shape.id)!])
+                    ].filter(
+                        (id) =>
+                            Boolean(document.components[id]) &&
+                            (id === component.id || component.variantIds?.includes(id))
+                    );
+                    group.variantKey = JSON.stringify([screenId, shape.id, component.id]);
+                    group.initialVariant = drawn.id;
+                    const projector = createArtworkProjector(
+                        document,
+                        warnings,
+                        diagnostics,
+                        screenIds,
+                        false,
+                        activeInstances
+                    );
+                    group.variants = Object.fromEntries(
+                        variants.map((variantId) => {
+                            const projected = projectGeometry(
+                                {
+                                    ...shape,
+                                    variantId: variantId === component.id ? undefined : variantId,
+                                    variantMode: undefined,
+                                    projectedSource: undefined
+                                },
+                                document,
+                                inherited,
+                                shape.projectedSource?.context?.availableWidth,
+                                ancestors,
+                                {},
+                                shape.projectedSource?.context?.widths
+                            );
+
+                            return [
+                                variantId,
+                                projector.draw(
+                                    projected,
+                                    `${path}/variant-${variantId}`,
+                                    ancestors,
+                                    inherited,
+                                    screenId,
+                                    undefined,
+                                    key
+                                )
+                            ];
+                        })
+                    );
                 }
                 if (role.role === 'input' && shape.interaction?.controlId) {
                     const identity = JSON.stringify([

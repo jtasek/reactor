@@ -2,7 +2,6 @@ import { hydrateDocument } from 'src/app/services/documentStorage';
 import { createDocument } from 'src/app/factories';
 import type { Document, Shape } from 'src/app/types';
 import { buildStarterTemplate } from 'src/templates/build';
-import { STARTER_TEMPLATES } from 'src/templates/catalog';
 import { colorDistance } from './color';
 import { DOCUMENT_ID } from '../../support/collaboration';
 
@@ -23,7 +22,9 @@ interface ExpectedControl {
 }
 
 export function screenshotReferences() {
-    const originals = STARTER_TEMPLATES.flatMap(({ id }) => {
+    // Keep the established 30-case baseline independent of newly added examples.
+    const templates = ['list-detail', 'forms', 'sign-in', 'settings'] as const;
+    const originals = templates.flatMap((id) => {
         let sequence = 0;
         const template = buildStarterTemplate(id, () => `${id}-${++sequence}`);
         const views = Object.values(template.frames).filter((frame) => frame.kind === 'view');

@@ -67,3 +67,8 @@ foreignObject button:disabled {
     outline: 2px solid var(--selection-color);
     outline-offset: 2px;
 }
+
+button[aria-pressed='true'] {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: -2px;
+}
