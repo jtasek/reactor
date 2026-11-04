@@ -119,3 +119,29 @@ test('Enter keeps command search available when a query also matches a property'
     await input.press('Enter');
     await expect(page.getByRole('textbox', { name: 'Fill', exact: true })).toBeFocused();
 });
+
+test('a bare word lists matching commands below property suggestions', async ({ page }) => {
+    await openEditor(page, ['Command Line', 'Explorer']);
+    const input = page.getByRole('combobox', { name: 'Command' });
+    await input.fill('rectangle w=80 h=40 name="Card"');
+    await input.press('Enter');
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Card', exact: true })
+        .click();
+    await input.fill('radius');
+    const list = page.getByRole('listbox', { name: 'Parameter suggestions and commands' });
+    await expect(list.getByRole('option').first()).toContainText('radius');
+    await expect(list.getByRole('option', { name: /Set radius/ })).toBeVisible();
+    await input.press('ArrowDown');
+    await input.press('ArrowDown');
+    await input.press('Enter');
+    await expect(page.getByRole('textbox', { name: 'Radius', exact: true })).toBeFocused();
+});
+
+test('rectangle creation does not suggest radius', async ({ page }) => {
+    await openEditor(page, ['Command Line']);
+    const input = page.getByRole('combobox', { name: 'Command' });
+    await input.fill('rectangle w=20 ra');
+    await expect(page.getByRole('listbox', { name: 'Parameter suggestions' })).toHaveCount(0);
+});

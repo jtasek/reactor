@@ -1,16 +1,27 @@
-import { CREATION_PATTERN, parameterKey, readParameters } from './creation';
+import { CREATION_PARAMETERS, CREATION_PATTERN, parameterKey, readParameters } from './creation';
 import type { Suggestion } from './search';
 
 export interface CompletionProperty {
     key: string;
     label: string;
     kind: string;
+    /** Whether a selected target follows a variable here; unbind offers only these. */
+    bound?: boolean;
 }
 export interface CompletionVariable {
     id: string;
     name: string;
     type: string;
+    /** Property keys this variable can bind to on the current selection, when known. */
+    bindsTo?: string[];
 }
+
+/** Whether a variable can follow this property; without `bindsTo`, only the type is known. */
+export const canSuggestBinding = (variable: CompletionVariable, property?: CompletionProperty) =>
+    Boolean(property) &&
+    (variable.bindsTo
+        ? variable.bindsTo.includes(property!.key)
+        : variable.type === property!.kind);
 
 /** Complete only the trailing token; quoted text and earlier arguments remain untouched. */
 export function completeParameters(
@@ -44,7 +55,7 @@ export function completeParameters(
             const property = properties.find((item) => bindingKey(item.key) === propertyKey);
 
             return variables
-                .filter((variable) => variable.type === property?.kind)
+                .filter((variable) => canSuggestBinding(variable, property))
                 .map((variable) => ({
                     value: JSON.stringify(variable.id),
                     name: variable.name,
@@ -53,12 +64,16 @@ export function completeParameters(
                 }));
         }
         if (key === 'property' && binding) {
-            return properties.map((property) => ({
-                value: property.key,
-                name: property.label,
-                description: property.key,
-                search: [property.key, property.label]
-            }));
+            return properties
+                .filter(
+                    (property) => binding[1].toLowerCase() === 'bind' || property.bound !== false
+                )
+                .map((property) => ({
+                    value: property.key,
+                    name: property.label,
+                    description: property.key,
+                    search: [property.key, property.label]
+                }));
         }
         if (equals >= 0 || (!prefix && !input.includes('=') && token.length < 2)) {
             return [];
@@ -70,11 +85,7 @@ export function completeParameters(
             : moving
               ? ['x', 'y']
               : creation
-                ? creation[1].toLowerCase() === 'text'
-                    ? ['value', 'fontSize', 'fill', 'x', 'y', 'name']
-                    : creation[1].toLowerCase() === 'circle'
-                      ? ['radius', 'fill', 'x', 'y', 'name']
-                      : ['width', 'height', 'radius', 'fill', 'x', 'y', 'name']
+                ? CREATION_PARAMETERS[creation[1].toLowerCase()]
                 : literalProperties.map((key) => (key === 'cornerRadius' ? 'radius' : key));
 
         return keys

@@ -70,3 +70,30 @@ it('matches JSON-escaped variable names without rewriting preceding arguments', 
     ]);
     expect(result[0]?.input).toBe('bind property=fill variable="quoted-brand"');
 });
+
+it('suggests only parameters that creation accepts', () => {
+    expect(complete('rectangle w=20 ')).not.toContainEqual(
+        expect.objectContaining({ name: 'radius' })
+    );
+    expect(complete('circle ra')[0].input).toBe('circle radius=');
+});
+
+it('suggests only variables the selection can bind and only bound properties to unbind', () => {
+    const known = [
+        { id: 'ok', name: 'Size OK', type: 'number', bindsTo: ['width'] },
+        { id: 'negative', name: 'Size negative', type: 'number', bindsTo: [] }
+    ];
+    expect(
+        completeParameters('bind property=width variable=Size', properties, known).map(
+            ({ name }) => name
+        )
+    ).toEqual(['Size OK']);
+    const bound = properties.map((property) => ({
+        ...property,
+        bound: property.key === 'fill'
+    }));
+    expect(completeParameters('unbind property=', bound, []).map(({ name }) => name)).toEqual([
+        'Fill'
+    ]);
+    expect(completeParameters('bind property=', bound, [])).toHaveLength(3);
+});

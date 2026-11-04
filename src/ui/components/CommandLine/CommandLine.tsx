@@ -8,18 +8,22 @@ import { CREATION_PATTERN, PROPERTY_ALIAS_HELP } from './creation';
 import { editorForAction, editorForInput, editorInput, parameterLabel } from './parameters';
 import type { ParameterEditor } from './parameters';
 
-import { completeParameters } from './completion';
+import { canSuggestBinding, completeParameters } from './completion';
+import type { CompletionProperty, CompletionVariable } from './completion';
 import { submitCandidate } from './search';
 import type { Suggestion } from './search';
 import { useCommandSearch } from './useCommandSearch';
 import { recentCommands, rememberCommand, clearRecentCommands, recentSuggestion } from './history';
 
+/** Property suggestions listed above command matches for a bare word. */
+const BARE_COMPLETIONS = 3;
+const isCompletion = (item?: Suggestion) => Boolean(item?.id.startsWith('complete:'));
 const STALE_TARGET = 'Selection changed. Check the target above, then apply again.';
 
 export interface Props {
     literalProperties?: string[];
-    bindingProperties?: { key: string; label: string; kind: string }[];
-    variables?: { id: string; name: string; type: string }[];
+    bindingProperties?: CompletionProperty[];
+    variables?: CompletionVariable[];
     historyKey: string;
     onSubmit: (command: string) => string | undefined;
     suggestions?: Suggestion[];
@@ -91,7 +95,14 @@ export const CommandLine: FC<Props> = ({
             : [];
     const completing = completions.length > 0;
     const completingBareQuery = completing && !/[\s=]/.test(value.trim());
-    const matches = completing ? completions : showingRecent ? recentItems : search.matches;
+    // A bare word can name a property or a command, so keep both in reach.
+    const matches = completing
+        ? completingBareQuery
+            ? [...completions.slice(0, BARE_COMPLETIONS), ...search.matches]
+            : completions
+        : showingRecent
+          ? recentItems
+          : search.matches;
     const waiting = !completing && search.waiting;
     const resolve = showingRecent ? () => recentItems : search.resolve;
     const listShown = open && (completing || !editor) && matches.length > 0;
@@ -357,7 +368,13 @@ export const CommandLine: FC<Props> = ({
                                 (event.key === 'Enter' && active >= 0))
                         ) {
                             event.preventDefault();
-                            acceptCompletion(matches[chosenIndex]);
+                            const item = matches[chosenIndex];
+                            if (event.key === 'Enter' && !isCompletion(item)) {
+                                choose(item);
+                            } else {
+                                // Tab on a highlighted command inserts the first suggestion.
+                                acceptCompletion(isCompletion(item) ? item : completions[0]);
+                            }
 
                             return;
                         }
@@ -447,14 +464,15 @@ export const CommandLine: FC<Props> = ({
                                                       </option>
                                                   ))
                                                 : variables
-                                                      .filter(
-                                                          (variable) =>
-                                                              variable.type ===
+                                                      .filter((variable) =>
+                                                          canSuggestBinding(
+                                                              variable,
                                                               bindingProperties.find(
                                                                   (property) =>
                                                                       property.key ===
                                                                       editor.values.property
-                                                              )?.kind
+                                                              )
+                                                          )
                                                       )
                                                       .map((variable) => (
                                                           <option
@@ -495,7 +513,7 @@ export const CommandLine: FC<Props> = ({
                             <span>
                                 {completing
                                     ? completingBareQuery
-                                        ? 'Tab to insert · Enter to search commands'
+                                        ? 'Properties and actions · Tab inserts a property'
                                         : 'Suggestions · Tab to insert'
                                     : query
                                       ? 'Matching actions'
@@ -520,7 +538,13 @@ export const CommandLine: FC<Props> = ({
                         <ul
                             id={listId}
                             role="listbox"
-                            aria-label={completing ? 'Parameter suggestions' : 'Commands'}
+                            aria-label={
+                                completingBareQuery
+                                    ? 'Parameter suggestions and commands'
+                                    : completing
+                                      ? 'Parameter suggestions'
+                                      : 'Commands'
+                            }
                         >
                             {matches.map((item, index) => (
                                 <li
@@ -534,11 +558,11 @@ export const CommandLine: FC<Props> = ({
                                     }
                                     onMouseDown={(event) => event.preventDefault()}
                                     onClick={() =>
-                                        completing ? acceptCompletion(item) : choose(item)
+                                        isCompletion(item) ? acceptCompletion(item) : choose(item)
                                     }
                                     onKeyDown={(event) => {
                                         if (event.key === 'Enter') {
-                                            if (completing) {
+                                            if (isCompletion(item)) {
                                                 acceptCompletion(item);
 
                                                 return;
