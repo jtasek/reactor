@@ -10,6 +10,7 @@ import {
 } from 'src/app/services/documentStorage';
 import { projectPreview } from 'src/preview/project';
 import { readPreview } from 'src/preview/protocol';
+import type { InstanceShape, Shape } from 'src/app/types';
 
 it('projects an editable typography example with validated local variants and preserves authored values', () => {
     const document = createDocument(buildInspectorTypography(newId));
@@ -214,4 +215,79 @@ it('excludes targets in another layout from authoring and rejects those action e
         }
     });
     expect(JSON.stringify(store.state.currentDocument.shapes[button.id])).toBe(before);
+});
+
+describe('copied variant actions', () => {
+    const load = async () => {
+        const { createTestStore } = await import('./support/store');
+        const { store } = createTestStore();
+        const document = createDocument(buildInspectorTypography(newId));
+        document.id = store.state.currentDocumentId;
+        store.actions.addDocument(document);
+        const doc = store.state.currentDocument;
+        const find = (name: string) =>
+            Object.values(doc.shapes).find(
+                (shape): shape is InstanceShape => shape.type === 'instance' && shape.name === name
+            )!;
+
+        return {
+            store,
+            doc,
+            target: find('Inspector comparison'),
+            button: find('Sentence · Regular')
+        };
+    };
+    const targetOf = (shape: Shape) =>
+        shape.type === 'instance' && shape.interactions?.activate?.type === 'changeVariant'
+            ? shape.interactions.activate.instanceId
+            : undefined;
+
+    it('pairs a cloned control with the cloned target', async () => {
+        const { store, doc, target, button } = await load();
+        const before = new Set(doc.shapesIds);
+        store.actions.cloneShapes([button.id, target.id]);
+        const clones = doc.shapesIds.filter((id) => !before.has(id)).map((id) => doc.shapes[id]);
+        const clonedButton = clones.find((shape) => targetOf(shape))!;
+        const clonedTarget = clones.find((shape) => shape !== clonedButton)!;
+        expect(targetOf(clonedButton)).toBe(clonedTarget.id);
+        expect(targetOf(button)).toBe(target.id);
+    });
+
+    it('keeps the original target when only the control is cloned', async () => {
+        const { store, doc, target, button } = await load();
+        const before = new Set(doc.shapesIds);
+        store.actions.cloneShapes([button.id]);
+        const clone = doc.shapes[doc.shapesIds.find((id) => !before.has(id))!];
+        expect(targetOf(clone)).toBe(target.id);
+    });
+
+    it('keeps a pasted Screen working on its own copy of the target', async () => {
+        const { store, doc, target, button } = await load();
+        const screenId = Object.values(doc.frames).find((frame) => frame.kind === 'screen')!.id;
+        store.actions.editFrame({ kind: 'select', id: screenId });
+        const before = new Set(doc.shapesIds);
+        expect(store.actions.pasteShapes(store.actions.copySelection()!)).toBe('pasted');
+        const pasted = doc.shapesIds.filter((id) => !before.has(id)).map((id) => doc.shapes[id]);
+        const pastedTarget = pasted.find((shape) => shape.name.startsWith(target.name))!;
+        const pastedButtons = pasted.filter((shape) => targetOf(shape));
+        expect(pastedButtons).toHaveLength(4);
+        expect(pastedButtons.every((shape) => targetOf(shape) === pastedTarget.id)).toBe(true);
+        expect(targetOf(button)).toBe(target.id);
+        const warnings: string[] = [];
+        readPreview(projectPreview(doc, {}, warnings));
+        expect(warnings).toEqual([]);
+    });
+
+    it('shows the change in Flow instead of No action', async () => {
+        const { doc, button } = await load();
+        const { projectFlow } = await import('src/app/flowProjection');
+        const control = projectFlow(doc)
+            .flatMap((screen) => screen.controls)
+            .find((item) => item.instanceId === button.id)!;
+        expect(control.target).toBeUndefined();
+        expect(control.changes).toEqual({
+            instance: 'Inspector comparison',
+            variant: 'Sentence · Regular'
+        });
+    });
 });

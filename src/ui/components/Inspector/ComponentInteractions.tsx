@@ -43,7 +43,10 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                                         data.actionInherited
                                             ? 'inherit'
                                             : variantAction
-                                              ? JSON.stringify(variantAction)
+                                              ? variantChoice(
+                                                    variantAction.instanceId,
+                                                    variantAction.variantId
+                                                )
                                               : target
                                                 ? JSON.stringify(target)
                                                 : 'none'
@@ -90,7 +93,12 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                                                         variant.id === variantAction.variantId
                                                 )
                                         ) && (
-                                            <option value={JSON.stringify(variantAction)}>
+                                            <option
+                                                value={variantChoice(
+                                                    variantAction.instanceId,
+                                                    variantAction.variantId
+                                                )}
+                                            >
                                                 Unavailable variant
                                             </option>
                                         )}
@@ -99,11 +107,7 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                                             {item.variants.map((variant) => (
                                                 <option
                                                     key={variant.id}
-                                                    value={JSON.stringify({
-                                                        type: 'changeVariant',
-                                                        instanceId: item.id,
-                                                        variantId: variant.id
-                                                    })}
+                                                    value={variantChoice(item.id, variant.id)}
                                                 >
                                                     {item.name} → {variant.name}
                                                 </option>
@@ -141,3 +145,8 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
         </section>
     );
 };
+
+/** One spelling per action, whatever order a stored action's keys are in. */
+function variantChoice(instanceId: string, variantId: string) {
+    return JSON.stringify({ type: 'changeVariant', instanceId, variantId });
+}

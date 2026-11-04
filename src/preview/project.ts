@@ -1,4 +1,4 @@
-import { validVariantAction } from 'src/app/interactiveVariants';
+import { variantActionCheck } from 'src/app/interactiveVariants';
 import { projectGeometry } from 'src/app/contextualGeometry';
 import { projectDataList } from './dataLists';
 import { effectiveActivation } from 'src/app/screenInteractions';
@@ -271,9 +271,12 @@ export function createArtworkProjector(
     diagnostics: PreviewDiagnostic[] = [],
     screenIds?: ReadonlySet<string>,
     includeVariants = true,
-    activeInstances?: ReadonlySet<string>
+    activeInstances?: ReadonlySet<string>,
+    /** Shared with the projectors that draw variant alternatives, so they count toward one limit. */
+    nodes = { count: 0 }
 ) {
     const identities = new Map<string, PreviewNode[]>();
+    const checkVariantAction = variantActionCheck(document);
     const requestedVariants = new Map<string, Set<string>>();
     for (const shape of Object.values(document.shapes)) {
         if (
@@ -296,7 +299,6 @@ export function createArtworkProjector(
     // Errors name the feature the person used; export has no screen set.
     const subject = screenIds ? 'Preview' : 'SVG export';
     const verb = screenIds ? 'previewing' : 'exporting';
-    let count = 0;
     const draw = (
         shape: Shape,
         path: string,
@@ -310,8 +312,8 @@ export function createArtworkProjector(
             shape.type === 'instance'
                 ? instanceModes(document, inherited, shape, warnings)
                 : inherited;
-        count += 1;
-        if (count > 5000) {
+        nodes.count += 1;
+        if (nodes.count > 5000) {
             throw new Error(`${subject} exceeds 5000 drawing nodes.`);
         }
         const key = `${path}/${shape.id}`;
@@ -512,11 +514,8 @@ export function createArtworkProjector(
                     variantTarget?.type === 'instance' &&
                     !recordScope &&
                     (path === screenId || controlKey !== undefined) &&
-                    validVariantAction(document, variantAction, screenId) &&
                     activeInstances?.has(variantTarget.id) &&
-                    shownShapesIds({ ...document, shownLayerId: undefined }, null).has(
-                        variantTarget.id
-                    )
+                    checkVariantAction(variantAction, screenId)
                         ? {
                               key: JSON.stringify([
                                   screenId,
@@ -526,10 +525,9 @@ export function createArtworkProjector(
                               variantId: variantAction.variantId
                           }
                         : undefined;
-                if (variantAction && !changeVariant) {
-                    warnings.push(
-                        `${shape.name}: variant target is unavailable in this screen. Choose an available instance and variant.`
-                    );
+                const unavailable = `${shape.name}: variant target is unavailable in this screen. Choose an available instance and variant.`;
+                if (variantAction && !changeVariant && !warnings.includes(unavailable)) {
+                    warnings.push(unavailable);
                 }
                 const target = activation?.screenId;
                 const navigateTo = target && screenIds.has(target) ? target : undefined;
@@ -600,7 +598,8 @@ export function createArtworkProjector(
                         diagnostics,
                         screenIds,
                         false,
-                        activeInstances
+                        activeInstances,
+                        nodes
                     );
                     group.variants = Object.fromEntries(
                         variants.map((variantId) => {

@@ -1,3 +1,4 @@
+import { remapVariantTargets } from './interactiveVariants';
 import { json } from 'overmind';
 import { renderedShape } from './frameLayout';
 import { initializeStackOrder } from './stackEdits';
@@ -513,6 +514,12 @@ export const cloneShapes: ActionWithParam<string[]> = (context, shapeIds) => {
         shapesIds.push(clone.id);
         clonesIds.set(id, clone.id);
     }
+
+    // Clones of a control and its variant target pair up, like the originals.
+    remapVariantTargets(
+        [...clonesIds.values()].map((id) => shapes[id]),
+        clonesIds
+    );
 
     const clonesOf = (ids: string[]) =>
         ids.map((id) => clonesIds.get(id)).filter((id) => id !== undefined);

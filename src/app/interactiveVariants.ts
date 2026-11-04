@@ -1,5 +1,5 @@
 import { layoutTreeRoot } from './screenLayouts';
-import type { Document, ChangeVariantAction, InstanceShape } from './types';
+import type { Document, ChangeVariantAction, InstanceShape, Shape } from './types';
 import { screenOwners } from './screenViews';
 
 /** First increment: ordinary screen instances; repeated and nested source instances are excluded. */
@@ -31,6 +31,36 @@ export function variantTargets(document: Document, screenId?: string, fromFrameI
     });
 }
 
+/**
+ * `validVariantAction` for many controls of one projection: finds the document's targets once
+ * instead of walking every shape and component for each control.
+ */
+export function variantActionCheck(document: Document) {
+    let targets: Map<string, InstanceShape> | undefined;
+    let owners: ReturnType<typeof screenOwners> | undefined;
+
+    return (action: ChangeVariantAction, screenId: string) => {
+        targets ??= new Map(variantTargets(document).map((shape) => [shape.id, shape]));
+        owners ??= screenOwners(document.frames);
+        const target = targets.get(action.instanceId);
+
+        return Boolean(
+            target &&
+            owners.get(target.parentFrameId!) === screenId &&
+            validFamilyMember(document, target, action.variantId)
+        );
+    };
+}
+
+function validFamilyMember(document: Document, target: InstanceShape, variantId: string) {
+    const family = document.components[target.componentId];
+
+    return Boolean(
+        document.components[variantId] &&
+        (variantId === family.id || family.variantIds?.includes(variantId))
+    );
+}
+
 export function validVariantAction(
     document: Document,
     action: ChangeVariantAction,
@@ -43,10 +73,19 @@ export function validVariantAction(
     if (!target) {
         return false;
     }
-    const family = document.components[target.componentId];
+    return validFamilyMember(document, target, action.variantId);
+}
 
-    return Boolean(
-        document.components[action.variantId] &&
-        (action.variantId === family.id || family.variantIds?.includes(action.variantId))
-    );
+/**
+ * Points copied variant actions at the copies of their targets. A target left out of the
+ * copy keeps its original ID, so the copied control still changes the original instance.
+ */
+export function remapVariantTargets(shapes: Shape[], ids: ReadonlyMap<string, string>) {
+    for (const shape of shapes) {
+        const action = shape.type === 'instance' ? shape.interactions?.activate : undefined;
+        const copy = action?.type === 'changeVariant' ? ids.get(action.instanceId) : undefined;
+        if (action?.type === 'changeVariant' && copy) {
+            action.instanceId = copy;
+        }
+    }
 }

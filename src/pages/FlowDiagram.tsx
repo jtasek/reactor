@@ -256,7 +256,9 @@ export function FlowDiagram({
                                         {control.target
                                             ? (graph.find((target) => target.id === control.target)
                                                   ?.name ?? 'Missing screen')
-                                            : 'No action'}
+                                            : control.changes
+                                              ? `Changes ${control.changes.instance} to ${control.changes.variant}`
+                                              : 'No action'}
                                     </div>
                                     {control.missing && <strong>Unavailable target</strong>}
                                     {control.hidden && <small>Hidden, not in Preview</small>}
