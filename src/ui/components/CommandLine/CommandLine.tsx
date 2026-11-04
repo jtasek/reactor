@@ -58,6 +58,8 @@ export const CommandLine: FC<Props> = ({
     /** The editor was opened from a suggestion, so its fields replace the typed syntax help. */
     const [guided, setGuided] = useState(false);
     const listId = useId();
+    const recentListId = useId();
+    const repeatHintId = useId();
     const inputRef = useRef<HTMLInputElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
     const priorContext = useRef(targetKey);
@@ -66,14 +68,18 @@ export const CommandLine: FC<Props> = ({
     const mac = usesCommandKey();
     const showingRecent = !query && recent.length > 0;
     const recentItems = recent.map((input) => recentSuggestion(input, suggestions));
-    const search = useCommandSearch(
-        suggestions,
-        query,
-        open && !editor && !showingRecent && !value.includes('=')
-    );
-    const matches = showingRecent ? recentItems : search.matches;
+    const search = useCommandSearch(suggestions, query, open && !editor && !value.includes('='));
+    // Recent commands lead the empty palette; suggested actions stay below them.
+    const shownRecent = showingRecent ? recentItems : [];
+    const matches = [...shownRecent, ...search.matches];
     const waiting = search.waiting;
-    const resolve = showingRecent ? () => recentItems : search.resolve;
+    const resolve = () => [...shownRecent, ...search.resolve()];
+    const lastCommand = !query && !editor ? recentItems[0] : undefined;
+    const repeatReason =
+        lastCommand && !lastCommand.enabled
+            ? (lastCommand.unavailable ??
+              `${lastCommand.name} is not available for the current selection.`)
+            : undefined;
     const listShown = open && !editor && matches.length > 0;
     const directInput =
         (CREATION_PATTERN.test(value.trim()) && !/^create\s/i.test(value.trim())) ||
@@ -219,6 +225,47 @@ export const CommandLine: FC<Props> = ({
         inputRef.current?.focus();
     };
 
+    const option = (item: Suggestion, index: number) => (
+        <li
+            key={item.id}
+            id={`${listId}-${index}`}
+            role="option"
+            aria-selected={index === chosenIndex}
+            aria-disabled={!item.enabled}
+            aria-keyshortcuts={item.shortcut ? shortcutKeys(item.shortcut, mac) : undefined}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => choose(item)}
+            onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                    choose(item);
+                }
+            }}
+        >
+            {/* Tool metadata may color an icon; rows use the palette's ink. */}
+            <Icon
+                icon={{
+                    component: item.icon?.component ?? Command,
+                    size: 18
+                }}
+            />
+            <div>
+                <strong>{item.name}</strong>
+                <span>
+                    {item.enabled
+                        ? item.description
+                        : (item.unavailable ?? 'Unavailable for the current selection')}
+                </span>
+            </div>
+            {item.shortcut && (
+                // Announced through the option's aria-keyshortcuts.
+                <kbd title="Canvas shortcut" aria-hidden="true">
+                    {shortcutLabel(item.shortcut, mac)}
+                </kbd>
+            )}
+            <Icon icon={{ component: ChevronRight, size: 14 }} />
+        </li>
+    );
+
     return (
         <form
             ref={formRef}
@@ -253,7 +300,16 @@ export const CommandLine: FC<Props> = ({
                     role="combobox"
                     aria-label="Command"
                     aria-expanded={listShown}
-                    aria-controls={listShown ? listId : undefined}
+                    aria-controls={
+                        listShown
+                            ? [
+                                  shownRecent.length ? recentListId : '',
+                                  search.matches.length ? listId : ''
+                              ]
+                                  .filter(Boolean)
+                                  .join(' ')
+                            : undefined
+                    }
                     aria-autocomplete="list"
                     aria-activedescendant={
                         listShown && matches[chosenIndex] ? `${listId}-${chosenIndex}` : undefined
@@ -370,74 +426,42 @@ export const CommandLine: FC<Props> = ({
                         </small>
                     </fieldset>
                 )}
-                {listShown && (
+                {lastCommand && (
+                    <small id={repeatHintId}>
+                        Repeat runs <code>{recent[0]}</code>
+                        {repeatReason ? ` · ${repeatReason}` : '.'}
+                    </small>
+                )}
+                {listShown && shownRecent.length > 0 && (
                     <>
                         <div className={styles.heading}>
-                            <span>
-                                {query
-                                    ? 'Matching actions'
-                                    : showingRecent
-                                      ? 'Recent commands'
-                                      : 'Suggested actions'}
-                            </span>
-                            {showingRecent && (
-                                <button
-                                    type="button"
-                                    disabled={pending}
-                                    onClick={() => {
-                                        clearRecentCommands(historyKey);
-                                        setRecent([]);
-                                        setActive(-1);
-                                    }}
-                                >
-                                    Clear recent commands
-                                </button>
-                            )}
+                            <span>Recent commands</span>
+                            <button
+                                type="button"
+                                disabled={pending}
+                                onClick={() => {
+                                    clearRecentCommands(historyKey);
+                                    setRecent([]);
+                                    setActive(-1);
+                                }}
+                            >
+                                Clear recent commands
+                            </button>
+                        </div>
+                        <ul id={recentListId} role="listbox" aria-label="Recent commands">
+                            {shownRecent.map((item, index) => option(item, index))}
+                        </ul>
+                    </>
+                )}
+                {listShown && search.matches.length > 0 && (
+                    <>
+                        <div className={styles.heading}>
+                            <span>{query ? 'Matching actions' : 'Suggested actions'}</span>
                         </div>
                         <ul id={listId} role="listbox" aria-label="Commands">
-                            {matches.map((item, index) => (
-                                <li
-                                    key={item.id}
-                                    id={`${listId}-${index}`}
-                                    role="option"
-                                    aria-selected={index === chosenIndex}
-                                    aria-disabled={!item.enabled}
-                                    aria-keyshortcuts={
-                                        item.shortcut ? shortcutKeys(item.shortcut, mac) : undefined
-                                    }
-                                    onMouseDown={(event) => event.preventDefault()}
-                                    onClick={() => choose(item)}
-                                    onKeyDown={(event) => {
-                                        if (event.key === 'Enter') {
-                                            choose(item);
-                                        }
-                                    }}
-                                >
-                                    {/* Tool metadata may color an icon; rows use the palette's ink. */}
-                                    <Icon
-                                        icon={{
-                                            component: item.icon?.component ?? Command,
-                                            size: 18
-                                        }}
-                                    />
-                                    <div>
-                                        <strong>{item.name}</strong>
-                                        <span>
-                                            {item.enabled
-                                                ? item.description
-                                                : (item.unavailable ??
-                                                  'Unavailable for the current selection')}
-                                        </span>
-                                    </div>
-                                    {item.shortcut && (
-                                        // Announced through the option's aria-keyshortcuts.
-                                        <kbd title="Canvas shortcut" aria-hidden="true">
-                                            {shortcutLabel(item.shortcut, mac)}
-                                        </kbd>
-                                    )}
-                                    <Icon icon={{ component: ChevronRight, size: 14 }} />
-                                </li>
-                            ))}
+                            {search.matches.map((item, index) =>
+                                option(item, shownRecent.length + index)
+                            )}
                         </ul>
                     </>
                 )}
@@ -472,12 +496,19 @@ export const CommandLine: FC<Props> = ({
                     <kbd>↑</kbd> <kbd>↓</kbd> choose · <kbd>esc</kbd> {editor ? 'back' : 'close'}
                 </small>
                 <div>
-                    {!query && !editor && recentItems[0] && (
+                    {lastCommand && (
                         <button
                             type="button"
-                            disabled={pending || !recentItems[0].enabled}
-                            title={`Repeat on current selection: ${recent[0]}`}
+                            disabled={pending}
+                            // Focusable while unavailable, so a press can say why.
+                            aria-disabled={Boolean(repeatReason)}
+                            aria-describedby={repeatHintId}
                             onClick={() => {
+                                if (repeatReason) {
+                                    setMessage(repeatReason);
+
+                                    return;
+                                }
                                 setStaleTarget(false);
                                 setValue(recent[0]);
                                 setEditor(editorForInput(recent[0]));

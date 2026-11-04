@@ -170,12 +170,13 @@ selection changes while a typed edit waits, the first Enter only confirms the ne
 press it again to apply. Edit stack spacing is unavailable until the frame (or a view's
 active layout) has a Row or Column stack.
 
-The empty palette shows up to eight recent successful commands for the current document.
-Choose one to review or adjust its parameters, or use **Repeat last command** to run it
-on the current selection. Repeats use the normal validation and undo path. History stays
+The empty palette shows up to five recent successful commands for the current document,
+above the suggested actions. Choose one to review or adjust its parameters, or use
+**Repeat last command** to run it on the current selection; the palette shows which command
+it runs, and why when it can't. Repeats use the normal validation and undo path. History stays
 in this tab session, survives closing the palette, and clears on reload; it is never part
 of the document or shared with collaborators. **Clear recent commands** clears this document’s
-list. Failed commands and AI chat drafts are not recorded.
+list. Failed commands, Undo/Redo and AI chat drafts are not recorded.
 
 Examples:
 

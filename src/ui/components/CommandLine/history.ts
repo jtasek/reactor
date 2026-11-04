@@ -1,20 +1,31 @@
 import { CREATION_PATTERN } from './creation';
-import { editorForInput } from './parameters';
+import { EDIT_ACTIONS, editorForInput } from './parameters';
 import type { Suggestion } from './search';
 
-const RECENT_LIMIT = 8;
+// Kept short so suggested actions stay visible below the recent list.
+const RECENT_LIMIT = 5;
 const DOCUMENT_LIMIT = 16;
 // Palette UI state only: never saved into documents, storage, or collaboration.
 const histories = new Map<string, string[]>();
 
 export const recentCommands = (documentId: string): string[] => histories.get(documentId) ?? [];
 
+/** Undo and redo would only repeat themselves and push real edits out of the list. */
+const NOT_RECORDED = /^(?:undo|redo)$/i;
+
+/** Parameters keep their case (text values differ); bare command names do not. */
+const sameCommand = (a: string, b: string) =>
+    a.includes('=') || b.includes('=') ? a === b : a.toLowerCase() === b.toLowerCase();
+
 export function rememberCommand(documentId: string, command: string): string[] {
     const input = command.trim();
-    const next = [input, ...recentCommands(documentId).filter((item) => item !== input)].slice(
-        0,
-        RECENT_LIMIT
-    );
+    if (NOT_RECORDED.test(input)) {
+        return recentCommands(documentId);
+    }
+    const next = [
+        input,
+        ...recentCommands(documentId).filter((item) => !sameCommand(item, input))
+    ].slice(0, RECENT_LIMIT);
     histories.delete(documentId);
     histories.set(documentId, next);
     if (histories.size > DOCUMENT_LIMIT) {
@@ -57,6 +68,12 @@ export function recentSuggestion(input: string, suggestions: Suggestion[]): Sugg
         icon: action?.icon,
         enabled: action?.enabled ?? false,
         unavailable:
-            action?.unavailable ?? (!action ? 'This command is no longer available.' : undefined)
+            action?.unavailable ??
+            (action
+                ? undefined
+                : actionId && EDIT_ACTIONS.some((item) => item.id === actionId)
+                  ? // Hidden for this kind of selection (e.g. radius on frames), not removed.
+                    'Not available for the current selection.'
+                  : 'This command is no longer available.')
     };
 }
