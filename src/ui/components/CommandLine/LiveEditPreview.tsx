@@ -1,11 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import { useAppState } from 'src/app/hooks';
 import { previewEdit } from './editPreview';
 import { SELECTION_PATTERN } from './selection';
 import styles from './styles.css';
 
-/** Delay typing work, but track live selection and value changes through the store. */
-export function LiveEditPreview({ input }: { input: string }) {
+/**
+ * Delay typing work, but track live selection and value changes through the store.
+ * Memoized so palette redraws (arrow keys, messages) do not stage the edit again.
+ */
+export const LiveEditPreview = memo(function LiveEditPreview({ input }: { input: string }) {
     const [settled, setSettled] = useState('');
     useEffect(() => {
         const timer = setTimeout(() => setSettled(input), 120);
@@ -32,7 +35,8 @@ export function LiveEditPreview({ input }: { input: string }) {
                 <p role="status">{preview.problem}</p>
             ) : (
                 <>
-                    <p>
+                    {/* Polite, without the status role the palette's own message uses. */}
+                    <p aria-live="polite">
                         {preview.items.length === 0
                             ? 'No values would change.'
                             : `${preview.items.length} ${preview.items.length === 1 ? 'object' : 'objects'} will change. Nothing has been applied.`}
@@ -56,4 +60,4 @@ export function LiveEditPreview({ input }: { input: string }) {
             )}
         </section>
     );
-}
+});

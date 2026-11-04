@@ -96,3 +96,15 @@ it('ignores obsolete measured bounds when previewing changed geometry', () => {
         size: { width: 80, height: 40 }
     });
 });
+
+it('lists only the fields an edit writes, not bounds that follow from them', () => {
+    const { store } = createTestStore();
+    store.actions.addShape({ type: 'circle', name: 'Dot', position: { x: 50, y: 50 }, radius: 20 });
+    store.actions.selectShape(store.state.currentDocument.shapesIds.at(-1)!);
+    expect(previewEdit('r=30', store.state)?.items).toEqual([
+        { name: 'Dot', changes: ['Radius: 20 → 30'] }
+    ]);
+    expect(previewEdit('move x=10', store.state)?.items).toEqual([
+        { name: 'Dot', changes: ['X: 30 → 40'] }
+    ]);
+});

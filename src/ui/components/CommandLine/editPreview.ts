@@ -40,7 +40,10 @@ export function previewEdit(input: string, state: Context['state']): EditPreview
                 delete after.bounds;
             }
 
-            return { name: before.name, changes: shapeChanges(before, after, document) };
+            return {
+                name: before.name,
+                changes: shapeChanges(before, after, document, Object.keys(fields))
+            };
         });
         for (const after of result.staged.updatedFrames) {
             const before = document.frames[after.id];
@@ -78,22 +81,28 @@ function bindingChanges(before: Shape | Frame, after: Shape | Frame, document: D
     });
 }
 
-function shapeChanges(before: Shape, after: Shape, document: Document) {
-    const keys = [
-        'x',
-        'y',
-        'width',
-        'height',
-        'cornerRadius',
-        'fill',
-        'stroke',
-        'fontColor',
-        'text',
-        'fontSize'
-    ];
+/** Summary rows each stored field feeds; bounds that merely follow are left out. */
+const FIELD_PROPERTIES: Record<string, string[]> = {
+    position: ['x', 'y'],
+    start: ['x', 'y'],
+    end: ['x', 'y'],
+    points: ['x', 'y'],
+    size: ['width', 'height'],
+    cornerRadius: ['cornerRadius'],
+    fill: ['fill'],
+    stroke: ['stroke'],
+    fontColor: ['fontColor'],
+    value: ['text'],
+    template: ['text'],
+    fontSize: ['fontSize']
+};
+
+/** Lists only what the edit writes, so a circle's radius is not also shown as bounds. */
+function shapeChanges(before: Shape, after: Shape, document: Document, fields: string[]) {
+    const keys = new Set(fields.flatMap((field) => FIELD_PROPERTIES[field] ?? []));
     const changes = SHAPE_PROPERTIES.filter(
         ({ key }) =>
-            keys.includes(key) &&
+            keys.has(key) &&
             !(before.type === 'text' && ['x', 'y', 'width', 'height'].includes(key))
     ).flatMap((property) =>
         difference(property.label, property.read(before, document), property.read(after, document))

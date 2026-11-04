@@ -20,6 +20,9 @@ test('live validation does not apply, then Apply and undo change both fields tog
     await input.fill('w=120 h=60');
     await expect(preview).toContainText('Width: 80 → 120');
     await expect(preview).toContainText('Height: 40 → 60');
+    await expect(preview.locator('[aria-live="polite"]')).toHaveText(
+        '1 object will change. Nothing has been applied.'
+    );
     await expect(card).toHaveAttribute('width', '80');
     await page.screenshot({ path: testInfo.outputPath('preview.png') });
     await page.setViewportSize({ width: 390, height: 800 });
