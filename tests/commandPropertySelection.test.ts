@@ -108,3 +108,26 @@ it('does not remove a text template when removing an absent property binding', (
     store.actions.setVariableValue({ variableId: person, value: 'Grace' });
     expect(shape()).toMatchObject({ value: 'Hi Grace' });
 });
+
+it('typed text follows variables like the Inspector, and plain text clears a template', () => {
+    const { variable, run, shape, store } = setup('text');
+    const person = variable('Person', 'text', 'Ada');
+    expect(run('text="Hi ${Person}"').applied).toBe(true);
+    expect(shape()).toMatchObject({ value: 'Hi Ada' });
+    expect((shape() as { template?: string }).template).toContain(person);
+    store.actions.setVariableValue({ variableId: person, value: 'Grace' });
+    expect(shape()).toMatchObject({ value: 'Hi Grace' });
+    expect(run('text="Plain \\\\${Person}"').applied).toBe(true);
+    expect(shape()).toMatchObject({ value: 'Plain ${Person}' });
+    expect(run('text="Plain"').applied).toBe(true);
+    expect(shape()).toMatchObject({ value: 'Plain' });
+    expect((shape() as { template?: string }).template).toBeUndefined();
+});
+
+it('rejects typed text whose variables resolve to blank', () => {
+    const { variable, run, shape } = setup('text');
+    variable('Empty', 'text', ' ');
+    const before = JSON.stringify(shape());
+    expect(() => run('text="${Empty}"')).toThrow(/blank/);
+    expect(JSON.stringify(shape())).toBe(before);
+});

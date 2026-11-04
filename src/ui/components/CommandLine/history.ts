@@ -1,5 +1,5 @@
 import { CREATION_PATTERN } from './creation';
-import { editorForInput } from './parameters';
+import { editorForInput, editorInput } from './parameters';
 import type { Suggestion } from './search';
 
 const RECENT_LIMIT = 8;
@@ -29,7 +29,27 @@ export const clearRecentCommands = (documentId: string) => {
 };
 
 /** Resolve presentation and availability from today's catalogue, not recorded metadata. */
-export function recentSuggestion(input: string, suggestions: Suggestion[]): Suggestion {
+/** A bind command shows its variable by current name; the input keeps the stable ID. */
+export function readableCommand(
+    input: string,
+    variables: { id: string; name: string }[] = []
+): string {
+    const editor = editorForInput(input);
+    const variable =
+        editor?.prefix === 'bind'
+            ? variables.find(({ id }) => id === editor.values.variable)
+            : undefined;
+
+    return editor && variable
+        ? editorInput({ ...editor, values: { ...editor.values, variable: variable.name } })
+        : input;
+}
+
+export function recentSuggestion(
+    input: string,
+    suggestions: Suggestion[],
+    variables: { id: string; name: string }[] = []
+): Suggestion {
     const query = input.toLowerCase();
     const exact = suggestions.find(
         (item) => item.id.toLowerCase() === query || item.name.toLowerCase() === query
@@ -73,7 +93,7 @@ export function recentSuggestion(input: string, suggestions: Suggestion[]): Sugg
     return {
         id: `recent:${input}`,
         name: action?.name ?? input,
-        description: input,
+        description: readableCommand(input, variables),
         input,
         icon: action?.icon,
         enabled: action?.enabled ?? false,

@@ -69,7 +69,7 @@ export const CommandLine: FC<Props> = ({
     const query = value.trim().toLowerCase();
     const mac = usesCommandKey();
     const showingRecent = !query && recent.length > 0;
-    const recentItems = recent.map((input) => recentSuggestion(input, suggestions));
+    const recentItems = recent.map((input) => recentSuggestion(input, suggestions, variables));
     const search = useCommandSearch(
         suggestions,
         query,

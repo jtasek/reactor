@@ -71,4 +71,19 @@ test('guided bindings, literal colors and text remain undoable', async ({ page }
     await expect(shapes(page).locator('text')).toContainText(['Continue']);
     await run('undo');
     await expect(shapes(page).locator('text')).toContainText(['Original']);
+    await input.fill('Edit colors');
+    const colors = page
+        .getByRole('option')
+        .filter({ has: page.locator('strong', { hasText: /^Edit colors$/ }) });
+    await expect(colors).toHaveAttribute('aria-disabled', 'true');
+    await expect(colors).toContainText('Text color is in Edit text');
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Card', exact: true })
+        .click();
+    await expect(colors).toHaveAttribute('aria-disabled', 'false');
+    await input.fill('');
+    await expect(
+        page.getByRole('option').filter({ hasText: 'variable="brand/primary"' })
+    ).toHaveCount(1);
 });

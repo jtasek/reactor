@@ -28,7 +28,7 @@ import { screenToWorld } from 'src/app/camera';
 import { SHAPE_PROPERTIES, canEdit as canEditProperty } from 'src/app/properties';
 import { SHAPE_BINDING_KEYS } from './bindings';
 import { FRAME_NUMBER_KEYS, acceptsFrameNumber, frameNumber } from 'src/app/frameVariables';
-import { EDIT_ACTIONS } from './parameters';
+import { EDIT_ACTIONS, parameterLabel } from './parameters';
 import { CommandLine } from './CommandLine';
 import {
     SELECTION_HELP,
@@ -191,7 +191,7 @@ const ActiveCommandLine: FC = () => {
               const value = target ? frameNumber(target, key) : undefined;
 
               return target && value !== undefined && acceptsFrameNumber(target, key, value);
-          }).map((key) => ({ key, label: key, kind: 'number' }))
+          }).map((key) => ({ key, label: parameterLabel(key), kind: 'number' }))
         : SHAPE_PROPERTIES.filter(
               (property) =>
                   SHAPE_BINDING_KEYS.includes(property.key) &&
@@ -202,6 +202,16 @@ const ActiveCommandLine: FC = () => {
                           canEditProperty(property, shape, document)
                   )
           ).map(({ key, label, kind }) => ({ key, label, kind }));
+    const colorProperties = SHAPE_PROPERTIES.filter(({ key }) => ['fill', 'stroke'].includes(key));
+    // Text color lives in Edit text, so offer colors only where fill or stroke applies.
+    const colorable = selectedShapes.every((shape) =>
+        colorProperties.some(
+            (property) =>
+                shape &&
+                property.read(shape, document) !== undefined &&
+                canEditProperty(property, shape, document)
+        )
+    );
     const edits = EDIT_ACTIONS.filter((item) =>
         frame
             ? !['edit radius', 'edit colors', 'edit text'].includes(item.id)
@@ -214,6 +224,7 @@ const ActiveCommandLine: FC = () => {
             Boolean(frame || document.selectedShapesIds.length) &&
             (item.id !== 'edit stack' || Boolean(layout?.stack)) &&
             (item.id !== 'edit text' || selectedShapes.every((shape) => shape.type === 'text')) &&
+            (item.id !== 'edit colors' || colorable) &&
             (!['bind variable', 'unbind variable'].includes(item.id) ||
                 bindingProperties.length > 0),
         unavailable:
@@ -221,7 +232,9 @@ const ActiveCommandLine: FC = () => {
                 ? frame.kind === 'view'
                     ? 'Its active layout has no stack. Choose Row or Column in the Inspector first.'
                     : 'This frame has no stack. Choose Row or Column in the Inspector first.'
-                : undefined,
+                : item.id === 'edit colors' && !frame && selectedShapes.length && !colorable
+                  ? 'Some selected shapes have no fill or stroke. Text color is in Edit text.'
+                  : undefined,
         description:
             item.id === 'edit stack' && frame?.kind === 'view'
                 ? 'Edit the active shared layout; resize the view separately'

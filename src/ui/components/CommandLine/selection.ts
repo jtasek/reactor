@@ -6,7 +6,12 @@ import { isHexColor, isShapeVisible } from 'src/app/utils';
 import { translateShape } from 'src/app/geometry';
 import { componentSourceNudge } from 'src/app/componentViewTransform';
 import { editableScreenView } from 'src/app/screenViewEditing';
-import { unbindEditedProperties, unbind, unbindMovedProperties } from 'src/app/variables';
+import {
+    unbindEditedProperties,
+    unbind,
+    unbindMovedProperties,
+    writeText
+} from 'src/app/variables';
 import { frameSelectionOperations } from './frameSelection';
 import { readParameters } from './creation';
 import { bindingEdit, shapeBindingChanges } from './bindings';
@@ -146,7 +151,11 @@ export function selectionOperations(
                                 ? 'size'
                                 : key
                       )
-                  )
+                  ),
+                  // Text typed with `${...}` keeps its template, as in the Inspector.
+                  ...(entries.some(([key]) => key === 'value') && copy.type === 'text'
+                      ? ['template']
+                      : [])
               ];
         const changes = Object.fromEntries(
             fields.filter((key) => key in copy).map((key) => [key, copy[key as keyof Shape]])
@@ -186,6 +195,16 @@ function editProperty(
             `${key} cannot be edited on ${source.name}. Check its shape type, sizing and locks in the Inspector.`
         );
     }
-    applyProperty(property, copy, value);
+    if (key === 'value' && copy.type === 'text') {
+        // The same template rules as the Inspector: `${name}` follows a variable.
+        copy.value = '';
+        delete copy.template;
+        writeText(copy, String(value), document.variables);
+        if (!copy.value.trim()) {
+            throw new Error('Text must not be blank.');
+        }
+    } else {
+        applyProperty(property, copy, value);
+    }
     unbindEditedProperties(copy, [property.key]);
 }
