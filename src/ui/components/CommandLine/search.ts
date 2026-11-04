@@ -7,6 +7,8 @@ export interface Suggestion {
     enabled: boolean;
     icon?: Icon;
     shortcut?: string;
+    /** A local recent invocation to load for review, never an execution result. */
+    input?: string;
     /** Current context-specific reason; never part of the search cache. */
     unavailable?: string;
 }
