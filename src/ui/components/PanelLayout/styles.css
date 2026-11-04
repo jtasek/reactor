@@ -382,3 +382,9 @@
         background-color: var(--surface);
     }
 }
+
+/* Give the data editor room even for saved layouts from its former placeholder. */
+.floating[data-panel='dataView'] {
+    width: min(720px, calc(100vw - var(--application-bar-space)));
+    max-width: calc(100vw - var(--application-bar-space));
+}

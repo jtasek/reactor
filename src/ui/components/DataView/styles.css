@@ -1,8 +1,82 @@
 .dataView {
-    background-color: var(--panel-content-background);
-    border-radius: var(--radius-md);
+    background: var(--panel-content-background);
     color: var(--text-color);
-    margin: var(--panel-gap);
-    padding: 6px 10px;
-    user-select: none;
+    padding: 16px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    font-size: 13px;
+}
+.dataView form,
+.field {
+    display: flex;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: var(--panel-gap);
+    margin: 10px 0;
+}
+.dataView label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.dataView input,
+.dataView select,
+.dataView button {
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-sm);
+    background: var(--control-background);
+    color: var(--text-color);
+    font: inherit;
+    padding: 6px;
+}
+.dataView input:focus-visible,
+.dataView select:focus-visible,
+.dataView button:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+}
+.dataView button:disabled {
+    opacity: 0.5;
+}
+.field {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--hairline-color);
+}
+.records {
+    overflow: auto;
+    margin-top: 12px;
+}
+.records table {
+    border-collapse: collapse;
+    width: 100%;
+}
+.records th,
+.records td {
+    text-align: left;
+    padding: 8px;
+    border: 1px solid var(--hairline-color);
+    vertical-align: top;
+}
+.valueEditor input,
+.valueEditor select {
+    min-width: 100px;
+    max-width: 100%;
+}
+.valueEditor small {
+    flex-basis: 100%;
+}
+.confirmation {
+    flex-basis: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--panel-gap);
+    margin: 8px 0;
+    padding: 8px 10px;
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-sm);
+}
+.confirmation p {
+    flex-basis: 100%;
+    margin: 0;
 }

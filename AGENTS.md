@@ -185,8 +185,8 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   (not suppressed). `pnpm lint:baseline` fails on any finding in a file changed relative to
   `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
   recorded counts: fix a touched file's existing findings rather than adding exceptions.
-- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 494 KiB or
-  any file 248 KiB (the budget in `webpack.config.mjs`, entry measured at 493.4 KiB); raise
+- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 496 KiB or
+  any file 248 KiB (the budget in `webpack.config.mjs`, entry measured at 495 KiB with schema v24 data readers); raise
   it only for code every page needs as it opens, after checking what grew. Commands and
   tools load with the editor page, which registers them (`src/pages/registerEditor.ts`),
   not at startup: the store keeps only the tools namespace's state and actions
@@ -1258,3 +1258,19 @@ XML escaping; embed assets rather than exporting editor URLs. Shared projection 
 selections retain rotated artwork bounds with stroke padding. Fonts remain SVG text with the
 canvas fallback. Keep the implementation out of startup and editor-entry bundles. Tests live in
 `tests/screenExport.test.ts` and `tests/browser/screenExport.spec.ts`.
+
+
+## Data entities and sample records
+
+Schema v24 adds `dataEntities`, `dataFields` and `dataRecords` to the generic document
+collections. Field and entity IDs are stable; record values use field IDs. Older documents
+load empty collections. Readers reject malformed primitive values but preserve semantic
+mismatches and missing references for `dataProblems` diagnostics, never destructive repair.
+`editData` delegates to the editor-loaded `dataEdits.ts`, validates before writing, guards
+read-only/locked/stale document edits, and commits one collaboration batch per edit.
+Renames and type changes preserve values; explicit field/entity deletion cascades and is
+undoable. Concurrent record cells use the existing nested-map merge. Records keep an `order`
+(added order; ties fall back to ID). Concurrent deletes can leave fields/records without an
+entity or values without a field; `dataLeftovers` finds them and `removeLeftovers` (Data View's
+"Remove leftovers") deletes them as one undoable edit. Data View loads its UI
+on demand and owns only drafts/selection locally. List/form/runtime bindings are not yet built.

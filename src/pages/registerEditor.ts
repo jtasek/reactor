@@ -1,3 +1,4 @@
+import * as data from 'src/app/dataEdits';
 import { ExportSvgCommand } from 'src/commands/export';
 import { OpenPrototypeCommand } from 'src/commands/prototype';
 import { OpenFlowCommand } from 'src/commands/flow';
@@ -157,6 +158,7 @@ export function registerEditor() {
     registerCommands();
     registerTools();
     provideEditorHelpers({
+        data,
         componentProperties,
         layout,
         roles,

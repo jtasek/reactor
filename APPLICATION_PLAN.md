@@ -1062,6 +1062,13 @@ The user shows a list of customers, opens one, edits it with validation, and exp
 prototype.
 
 1. Entities, sample records and their editor, with schema diagnostics.
+   R5.1 implementation: Data View now edits named entities, stable-ID Text/Number/Boolean
+   fields (optionally required), and sample records. Field renames retain values; type/required
+   changes keep incompatible data and report diagnostics. Each explicit Save/add/delete is
+   one undo transaction, with concurrent field and cell edits shared through existing document
+   collaboration. Schema v24 reads older documents with empty data collections. The editor is
+   lazy-loaded; runtime list/form bindings and expression validation remain steps 2–3.
+   Verification: `tests/data.test.ts` and `tests/browser/dataForms.spec.ts`.
 2. A list bound to an entity through an item template, and a details screen that receives the
    record.
 3. A form with validation written as expressions, updating local records. The preview resets

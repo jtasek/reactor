@@ -1,6 +1,10 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
+    confirmation: string;
     dataView: string;
+    field: string;
+    records: string;
+    valueEditor: string;
   }
 }
 

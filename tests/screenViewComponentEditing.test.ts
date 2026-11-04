@@ -228,7 +228,10 @@ it('does not start a gesture outside the placed focus and safely exits after its
             links: {},
             guides: {},
             variables: {},
-            dimensions: {}
+            dimensions: {},
+            dataEntities: {},
+            dataFields: {},
+            dataRecords: {}
         }
     });
     store.actions.leaveComponentSource();

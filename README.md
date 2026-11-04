@@ -983,3 +983,15 @@ to try the buttons and text fields; open **Flow** to change navigation.
 The starters include clear empty states with a next action. They are sample prototypes:
 forms do not submit data, sign-in does not authenticate or send email, and settings do not
 change an account. Dimensions and modes are not added automatically.
+
+### Entities and sample records
+
+Open **More panels → Data View** on the canvas. Add an entity (for example, Customers),
+then Text, Number or Boolean fields and sample records. Fields may be required. Save each
+edited name or cell explicitly; invalid values remain in the editor until corrected.
+Field IDs survive renames. Changing a field's type preserves existing record values and
+reports any incompatibilities; Save a corrected value to resolve them. Additions, edits
+and deletions use document undo and collaboration, and persist across reloads.
+
+Data is local sample content stored with the document. List/detail bindings, form expressions,
+external connectors and runtime submission are subsequent R5 increments.

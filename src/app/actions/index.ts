@@ -23,3 +23,5 @@ export * from './ai';
 export * from './variableModes';
 
 export * from './preview';
+
+export * from './data';

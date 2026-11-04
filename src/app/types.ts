@@ -1,3 +1,4 @@
+import type { DataEntity, DataField, DataRecord } from './dataTypes';
 import type { FrameLayout } from './frameLayout';
 import type { FrameState } from './frameState';
 import type { DocumentAccess } from './documentAccess';
@@ -398,6 +399,9 @@ export interface Frame {
 }
 
 export interface Document {
+    dataEntities: HashTable<DataEntity>;
+    dataFields: HashTable<DataField>;
+    dataRecords: HashTable<DataRecord>;
     frames: HashTable<Frame>;
     framesIds: string[];
     /** Local projection; never saved or shared. */
