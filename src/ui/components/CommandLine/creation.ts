@@ -31,6 +31,13 @@ export const parameterKey = (spelling: string) =>
 /** Whether the input names a shape to create, before any parameters. */
 export const CREATION_PATTERN = /^(?:create\s+)?(rectangle|circle|text)(?=\s|$)/i;
 
+/** The parameters each created shape accepts, shared by validation and completion. */
+export const CREATION_PARAMETERS: Record<string, string[]> = {
+    rectangle: ['width', 'height', 'fill', 'x', 'y', 'name'],
+    circle: ['radius', 'fill', 'x', 'y', 'name'],
+    text: ['value', 'fontSize', 'fill', 'x', 'y', 'name']
+};
+
 export const PROPERTY_ALIAS_HELP =
     'Aliases: w=width, h=height, r=radius, fs/font-size=fontSize, text=value.';
 
@@ -50,17 +57,7 @@ export function creationOperation(
     const rest = input.trim().slice(match[0].length);
     const values = readParameters(rest);
 
-    const allowed = [
-        'x',
-        'y',
-        'fill',
-        'name',
-        ...(type === 'rectangle'
-            ? ['width', 'height']
-            : type === 'circle'
-              ? ['radius']
-              : ['value', 'fontSize'])
-    ];
+    const allowed = CREATION_PARAMETERS[type];
     const unknown = Object.keys(values).find((key) => !allowed.includes(key));
 
     if (unknown) {

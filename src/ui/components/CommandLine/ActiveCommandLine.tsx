@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, useMemo } from 'react';
 import {
     RectangleHorizontal,
     Circle,
@@ -28,6 +28,10 @@ import { screenToWorld } from 'src/app/camera';
 import { SHAPE_PROPERTIES, canEdit as canEditProperty } from 'src/app/properties';
 import { SHAPE_BINDING_KEYS } from './bindings';
 import { FRAME_NUMBER_KEYS, acceptsFrameNumber, frameNumber } from 'src/app/frameVariables';
+import type { FrameNumberKey } from 'src/app/frameVariables';
+import { accepts, canBind } from 'src/app/variables';
+import { resolveVariable, variableProblems } from 'src/app/variableResolver';
+import type { Document, Frame, Shape } from 'src/app/types';
 import { EDIT_ACTIONS, parameterLabel } from './parameters';
 import { CommandLine } from './CommandLine';
 import {
@@ -202,6 +206,30 @@ const ActiveCommandLine: FC = () => {
                           canEditProperty(property, shape, document)
                   )
           ).map(({ key, label, kind }) => ({ key, label, kind }));
+    const boundProperties = bindingProperties.map((property) => ({
+        ...property,
+        bound: frame
+            ? Boolean(
+                  (['gap', 'padding'].includes(property.key) ? layout : frame)?.bindings?.[
+                      property.key
+                  ]
+              )
+            : selectedShapes.some((shape) => Boolean(shape.bindings?.[property.key]))
+    }));
+    const propertyKeys = bindingProperties.map(({ key }) => key).join(' ');
+    const variables = useMemo(
+        () => bindableVariables(document, frame, layout, selectedShapes, propertyKeys.split(' ')),
+        // Selected shapes come from these document fields.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [
+            document.variables,
+            document.shapes,
+            document.selectedShapesIds,
+            frame,
+            layout,
+            propertyKeys
+        ]
+    );
     const colorProperties = SHAPE_PROPERTIES.filter(({ key }) => ['fill', 'stroke'].includes(key));
     // Text color lives in Edit text, so offer colors only where fill or stroke applies.
     const colorable = selectedShapes.every((shape) =>
@@ -244,12 +272,19 @@ const ActiveCommandLine: FC = () => {
     return (
         <CommandLine
             historyKey={document.id}
-            bindingProperties={bindingProperties}
-            variables={Object.values(document.variables).map(({ id, name, type }) => ({
-                id,
-                name,
-                type
-            }))}
+            literalProperties={
+                frame
+                    ? ['width', 'height', ...(layout?.stack ? ['gap', 'padding'] : [])]
+                    : [
+                          ...bindingProperties.map(({ key }) => key),
+                          ...(selectedShapes.length > 0 &&
+                          selectedShapes.every((shape) => shape.type === 'circle')
+                              ? ['radius']
+                              : [])
+                      ]
+            }
+            bindingProperties={boundProperties}
+            variables={variables}
             onSubmit={submit}
             onClose={() => actions.ui.toggleControlVisibility('commandLine')}
             context={`${selection}${frame && !editable ? ' · Selection is locked or hidden' : ''}`}
@@ -306,5 +341,45 @@ const ActiveCommandLine: FC = () => {
         />
     );
 };
+
+/** Variables with the selection properties each can follow, as Bind would accept them. */
+function bindableVariables(
+    document: Document,
+    frame: Frame | undefined,
+    layout: Frame | undefined,
+    shapes: Shape[],
+    keys: string[]
+) {
+    return Object.values(document.variables).map((variable) => {
+        const { id, name, type } = variable;
+        if (variableProblems(variable, document.variables).length) {
+            return { id, name, type, bindsTo: [] };
+        }
+        const value = resolveVariable(variable, document.variables);
+        const bindsTo = keys.filter((key) => {
+            if (frame) {
+                const target = ['gap', 'padding'].includes(key) ? layout : frame;
+
+                return (
+                    type === 'number' &&
+                    typeof value === 'number' &&
+                    Boolean(target) &&
+                    acceptsFrameNumber(target!, key as FrameNumberKey, value)
+                );
+            }
+            const property = SHAPE_PROPERTIES.find((item) => item.key === key);
+
+            return (
+                Boolean(property) &&
+                shapes.every(
+                    (shape) =>
+                        canBind(property!, shape, document, variable) && accepts(property!, value)
+                )
+            );
+        });
+
+        return { id, name, type, bindsTo };
+    });
+}
 
 export default ActiveCommandLine;

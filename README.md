@@ -167,6 +167,11 @@ template rules: `text="Hi ${Person}"` follows the variable; `\${` in the Text fi
 literal. Edit colors appears for shapes with a fill or stroke; text color is in Edit text.
 Literal edits detach only affected bindings. Each command applies to the
 entire editable selection as one undo step, or changes nothing if a target is incompatible.
+While typing, the palette suggests property names and compatible variable references at the
+end of the command. Tab inserts the highlighted suggestion; arrow keys followed by Enter
+also insert it. Completion never applies an edit. Enter otherwise keeps its existing apply
+behavior. Escape dismisses suggestions without clearing the command. Variable suggestions
+insert stable IDs and preserve preceding arguments, including quoted text.
 Blank selection fields stay unchanged. Typed aliases and guided fields use the same
 validated commands. Escape returns from parameters to search, then closes the palette;
 Choosing a guided action focuses its first field; Tab moves between fields. Results use action icons
