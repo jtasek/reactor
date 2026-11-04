@@ -556,8 +556,20 @@ test('palette results show action icons and distinguish tool shortcuts from crea
     await expect(result.locator('svg').first()).toHaveClass(/lucide-rectangle-horizontal/);
     await expect(result.locator('kbd')).toHaveText('R');
     await expect(result.locator('kbd')).toHaveAttribute('title', 'Canvas shortcut');
+    await expect(result).toHaveAttribute('aria-keyshortcuts', 'R');
+    // Tool metadata colors icons for the toolbar; palette rows draw them in their own ink.
+    await input.fill('tool');
+    await expect(result).toBeVisible();
+    const strokes = await page
+        .getByRole('option')
+        .evaluateAll((items) =>
+            items.map((item) => item.querySelector('svg')?.getAttribute('stroke'))
+        );
+    expect(strokes.length).toBeGreaterThan(1);
+    expect(strokes.every((stroke) => stroke === 'currentColor')).toBe(true);
     await input.fill('undo');
     await expect(result.locator('kbd')).toHaveText(/⌘Z|Ctrl\+Z/);
+    await expect(result).toHaveAttribute('aria-keyshortcuts', /^(Meta|Control)\+Z$/);
     await expect(result.locator('svg').first()).toHaveAttribute('aria-hidden', 'true');
     await page.screenshot({ path: testInfo.outputPath('palette-shortcuts.png') });
     await page.setViewportSize({ width: 390, height: 800 });

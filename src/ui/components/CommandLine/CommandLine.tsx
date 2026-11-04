@@ -1,7 +1,7 @@
 import React, { FC, SubmitEvent, useEffect, useId, useRef, useState } from 'react';
 import { ArrowLeft, ChevronRight, Command, Search, Sparkles, X } from 'lucide-react';
 import { Icon } from '../Icon';
-import { shortcutLabel, usesCommandKey } from '../CommandBar/shortcutLabel';
+import { shortcutKeys, shortcutLabel, usesCommandKey } from '../CommandBar/shortcutLabel';
 import { SELECTION_HELP, SELECTION_PATTERN } from './selection';
 import styles from './styles.css';
 import { CREATION_PATTERN, PROPERTY_ALIAS_HELP } from './creation';
@@ -53,6 +53,7 @@ export const CommandLine: FC<Props> = ({
     const priorContext = useRef(targetKey);
     const focusParameters = useRef(false);
     const query = value.trim().toLowerCase();
+    const mac = usesCommandKey();
     const { matches, waiting, resolve } = useCommandSearch(
         suggestions,
         query,
@@ -362,6 +363,9 @@ export const CommandLine: FC<Props> = ({
                                     role="option"
                                     aria-selected={index === chosenIndex}
                                     aria-disabled={!item.enabled}
+                                    aria-keyshortcuts={
+                                        item.shortcut ? shortcutKeys(item.shortcut, mac) : undefined
+                                    }
                                     onMouseDown={(event) => event.preventDefault()}
                                     onClick={() => choose(item)}
                                     onKeyDown={(event) => {
@@ -370,12 +374,12 @@ export const CommandLine: FC<Props> = ({
                                         }
                                     }}
                                 >
+                                    {/* Tool metadata may color an icon; rows use the palette's ink. */}
                                     <Icon
-                                        icon={
-                                            item.icon
-                                                ? { ...item.icon, size: 18 }
-                                                : { component: Command, size: 18 }
-                                        }
+                                        icon={{
+                                            component: item.icon?.component ?? Command,
+                                            size: 18
+                                        }}
                                     />
                                     <div>
                                         <strong>{item.name}</strong>
@@ -387,11 +391,9 @@ export const CommandLine: FC<Props> = ({
                                         </span>
                                     </div>
                                     {item.shortcut && (
-                                        <kbd
-                                            title="Canvas shortcut"
-                                            aria-label={`Canvas shortcut: ${shortcutLabel(item.shortcut, usesCommandKey())}`}
-                                        >
-                                            {shortcutLabel(item.shortcut, usesCommandKey())}
+                                        // Announced through the option's aria-keyshortcuts.
+                                        <kbd title="Canvas shortcut" aria-hidden="true">
+                                            {shortcutLabel(item.shortcut, mac)}
                                         </kbd>
                                     )}
                                     <Icon icon={{ component: ChevronRight, size: 14 }} />
