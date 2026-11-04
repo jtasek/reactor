@@ -158,6 +158,13 @@ Explicit numeric edits detach only the edited inputs from their variables.
 The Command Line opens as a searchable command palette. Exact matches rank first;
 the target stays visible above the results or parameter editor. Choose Resize selection,
 Move selection, Set radius or Edit stack spacing to edit without remembering syntax.
+Choose Edit colors or Edit text for literal values, or Bind variable / Remove variable binding
+for a property and a compatible variable. Typed examples: `fill=#3366ff stroke=#112233`,
+`text="Continue" fs=18 fc=#ffffff`, `bind property=fill variable="brand/primary"`,
+`unbind property=fill`. Variable references accept a unique exact name or an ID. Bindings
+keep mode inheritance; removing one keeps its stored base value. Literal text replaces any
+text template. Literal edits detach only affected bindings. Each command applies to the
+entire editable selection as one undo step, or changes nothing if a target is incompatible.
 Blank selection fields stay unchanged. Typed aliases and guided fields use the same
 validated commands. Escape returns from parameters to search, then closes the palette;
 Choosing a guided action focuses its first field; Tab moves between fields. Results use action icons

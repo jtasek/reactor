@@ -6,6 +6,9 @@ import {
     Scaling,
     Radius,
     Move,
+    Palette,
+    Link,
+    Unlink,
     BetweenHorizontalStart
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -22,6 +25,9 @@ import { screenViewName } from 'src/app/screenViews';
 import { isFrameLocked, isFrameVisible } from 'src/app/frameState';
 import { getTools } from 'src/app/actions/startup';
 import { screenToWorld } from 'src/app/camera';
+import { SHAPE_PROPERTIES, canEdit as canEditProperty } from 'src/app/properties';
+import { SHAPE_BINDING_KEYS } from './bindings';
+import { FRAME_NUMBER_KEYS, acceptsFrameNumber, frameNumber } from 'src/app/frameVariables';
 import { EDIT_ACTIONS } from './parameters';
 import { CommandLine } from './CommandLine';
 import {
@@ -41,7 +47,11 @@ const GUIDED_ICONS: Record<string, LucideIcon> = {
     'edit size': Scaling,
     'edit radius': Radius,
     'edit position': Move,
-    'edit stack': BetweenHorizontalStart
+    'edit stack': BetweenHorizontalStart,
+    'edit colors': Palette,
+    'edit text': Type,
+    'bind variable': Link,
+    'unbind variable': Unlink
 };
 
 const ActiveCommandLine: FC = () => {
@@ -173,15 +183,39 @@ const ActiveCommandLine: FC = () => {
         ...document.selectedShapesIds
     ].join(':');
 
+    const selectedShapes = document.selectedShapesIds.map((id) => document.shapes[id]);
+    const bindingProperties = frame
+        ? FRAME_NUMBER_KEYS.filter((key) => {
+              const target = ['gap', 'padding'].includes(key) ? layout : frame;
+
+              const value = target ? frameNumber(target, key) : undefined;
+
+              return target && value !== undefined && acceptsFrameNumber(target, key, value);
+          }).map((key) => ({ key, label: key, kind: 'number' }))
+        : SHAPE_PROPERTIES.filter(
+              (property) =>
+                  SHAPE_BINDING_KEYS.includes(property.key) &&
+                  selectedShapes.length > 0 &&
+                  selectedShapes.every(
+                      (shape) =>
+                          property.read(shape, document) !== undefined &&
+                          canEditProperty(property, shape, document)
+                  )
+          ).map(({ key, label, kind }) => ({ key, label, kind }));
     const edits = EDIT_ACTIONS.filter((item) =>
-        frame ? item.id !== 'edit radius' : item.id !== 'edit stack'
+        frame
+            ? !['edit radius', 'edit colors', 'edit text'].includes(item.id)
+            : item.id !== 'edit stack'
     ).map((item) => ({
         ...item,
         icon: { component: GUIDED_ICONS[item.id], size: 18 },
         enabled:
             canEdit &&
             Boolean(frame || document.selectedShapesIds.length) &&
-            (item.id !== 'edit stack' || Boolean(layout?.stack)),
+            (item.id !== 'edit stack' || Boolean(layout?.stack)) &&
+            (item.id !== 'edit text' || selectedShapes.every((shape) => shape.type === 'text')) &&
+            (!['bind variable', 'unbind variable'].includes(item.id) ||
+                bindingProperties.length > 0),
         unavailable:
             item.id === 'edit stack' && frame && !layout?.stack
                 ? frame.kind === 'view'
@@ -197,6 +231,12 @@ const ActiveCommandLine: FC = () => {
     return (
         <CommandLine
             historyKey={document.id}
+            bindingProperties={bindingProperties}
+            variables={Object.values(document.variables).map(({ id, name, type }) => ({
+                id,
+                name,
+                type
+            }))}
             onSubmit={submit}
             onClose={() => actions.ui.toggleControlVisibility('commandLine')}
             context={`${selection}${frame && !editable ? ' · Selection is locked or hidden' : ''}`}

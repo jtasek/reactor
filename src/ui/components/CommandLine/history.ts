@@ -36,17 +36,38 @@ export function recentSuggestion(input: string, suggestions: Suggestion[]): Sugg
     );
     const creation = CREATION_PATTERN.exec(input);
     const editor = editorForInput(input);
-    const actionId = creation
-        ? `create ${creation[1].toLowerCase()}`
-        : editor?.prefix === 'move'
-          ? 'edit position'
-          : editor && ('gap' in editor.values || 'padding' in editor.values)
-            ? 'edit stack'
-            : editor && 'radius' in editor.values && Object.keys(editor.values).length === 1
-              ? 'edit radius'
-              : editor
-                ? 'edit size'
-                : undefined;
+    const actionId = recentAction();
+    function recentAction() {
+        if (creation) {
+            return `create ${creation[1].toLowerCase()}`;
+        }
+        if (!editor) {
+            return undefined;
+        }
+        if (editor.prefix === 'bind') {
+            return 'bind variable';
+        }
+        if (editor.prefix === 'unbind') {
+            return 'unbind variable';
+        }
+        if (editor.prefix === 'move') {
+            return 'edit position';
+        }
+        if (['value', 'fontSize', 'fontColor'].some((key) => key in editor.values)) {
+            return 'edit text';
+        }
+        if (['fill', 'stroke'].some((key) => key in editor.values)) {
+            return 'edit colors';
+        }
+        if (['gap', 'padding'].some((key) => key in editor.values)) {
+            return 'edit stack';
+        }
+        if ('radius' in editor.values && Object.keys(editor.values).length === 1) {
+            return 'edit radius';
+        }
+
+        return 'edit size';
+    }
     const action = exact ?? suggestions.find((item) => item.id === actionId);
 
     return {

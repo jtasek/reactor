@@ -12,6 +12,10 @@ export const CREATIONS = [
 ];
 
 const PROPERTY_ALIASES = new Map([
+    ['fc', 'fontColor'],
+    ['fontcolor', 'fontColor'],
+    ['font-color', 'fontColor'],
+    ['text-color', 'fontColor'],
     ['w', 'width'],
     ['h', 'height'],
     ['r', 'radius'],
@@ -21,8 +25,11 @@ const PROPERTY_ALIASES = new Map([
     ['text', 'value']
 ]);
 
+export const parameterKey = (spelling: string) =>
+    PROPERTY_ALIASES.get(spelling.toLowerCase()) ?? spelling.toLowerCase();
+
 /** Whether the input names a shape to create, before any parameters. */
-export const CREATION_PATTERN = /^(?:create\s+)?(rectangle|circle|text)\b/i;
+export const CREATION_PATTERN = /^(?:create\s+)?(rectangle|circle|text)(?=\s|$)/i;
 
 export const PROPERTY_ALIAS_HELP =
     'Aliases: w=width, h=height, r=radius, fs/font-size=fontSize, text=value.';
@@ -141,7 +148,7 @@ export function readParameters(rest: string): Record<string, string> {
         }
 
         const [, spelling, raw] = found;
-        const key = PROPERTY_ALIASES.get(spelling.toLowerCase()) ?? spelling.toLowerCase();
+        const key = parameterKey(spelling);
 
         if (Object.hasOwn(values, key)) {
             throw new Error(`Parameter ${key} is repeated.`);
