@@ -158,6 +158,11 @@ Explicit numeric edits detach only the edited inputs from their variables.
 The Command Line opens as a searchable command palette. Exact matches rank first;
 the target stays visible above the results or parameter editor. Choose Resize selection,
 Move selection, Set radius or Edit stack spacing to edit without remembering syntax.
+The guided Bind variable picker searches compatible variables by name or ID and shows values
+resolved for the current Screen view, including inherited and responsive modes. Selecting a
+variable only updates the draft. Its mode and source appear beneath the results; selections
+with different effective values show “Mixed values”. Apply remains a single undo step.
+
 Choose Edit colors or Edit text for literal values, or Bind variable / Remove variable binding
 for a property and a compatible variable. Typed examples: `fill=#3366ff stroke=#112233`,
 `text="Continue" fs=18 fc=#ffffff`, `bind property=fill variable="brand/primary"`,

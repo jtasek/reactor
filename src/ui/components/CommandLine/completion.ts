@@ -14,6 +14,8 @@ export interface CompletionVariable {
     type: string;
     /** Property keys this variable can bind to on the current selection, when known. */
     bindsTo?: string[];
+    resolvedValue?: string;
+    provenance?: string;
 }
 
 /** Whether a variable can follow this property; without `bindsTo`, only the type is known. */
@@ -59,7 +61,14 @@ export function completeParameters(
                 .map((variable) => ({
                     value: JSON.stringify(variable.id),
                     name: variable.name,
-                    description: `${variable.type} · ${variable.id}`,
+                    description: [
+                        variable.type,
+                        variable.resolvedValue,
+                        variable.provenance,
+                        variable.id
+                    ]
+                        .filter(Boolean)
+                        .join(' · '),
                     search: [variable.name, variable.id]
                 }));
         }

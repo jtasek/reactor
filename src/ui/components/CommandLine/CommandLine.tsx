@@ -1,3 +1,4 @@
+import { VariablePicker } from './VariablePicker';
 import React, { FC, SubmitEvent, useEffect, useId, useRef, useState } from 'react';
 import { ArrowLeft, ChevronRight, Command, Search, Sparkles, X, Repeat2 } from 'lucide-react';
 import { Icon } from '../Icon';
@@ -428,75 +429,72 @@ export const CommandLine: FC<Props> = ({
                             {editor.title}
                         </legend>
                         <div className={styles.fields}>
-                            {Object.entries(editor.values).map(([key, fieldValue]) => (
-                                <label key={key}>
-                                    {editor.creation && ['x', 'y'].includes(key)
-                                        ? key.toUpperCase()
-                                        : parameterLabel(key)}
-                                    <span aria-hidden="true">
-                                        {[
-                                            'width',
-                                            'height',
-                                            'radius',
-                                            'x',
-                                            'y',
-                                            'gap',
-                                            'padding',
-                                            'fontSize'
-                                        ].includes(key)
-                                            ? ' · px'
-                                            : ''}
-                                    </span>
-                                    {guided && ['property', 'variable'].includes(key) ? (
-                                        <select
-                                            value={fieldValue}
-                                            disabled={pending}
-                                            onChange={(event) =>
-                                                changeParameter(key, event.target.value)
-                                            }
-                                        >
-                                            <option value="">Choose {key}</option>
-                                            {key === 'property'
-                                                ? bindingProperties.map((property) => (
-                                                      <option
-                                                          key={property.key}
-                                                          value={property.key}
-                                                      >
-                                                          {property.label}
-                                                      </option>
-                                                  ))
-                                                : variables
-                                                      .filter((variable) =>
-                                                          canSuggestBinding(
-                                                              variable,
-                                                              bindingProperties.find(
-                                                                  (property) =>
-                                                                      property.key ===
-                                                                      editor.values.property
-                                                              )
-                                                          )
-                                                      )
-                                                      .map((variable) => (
-                                                          <option
-                                                              key={variable.id}
-                                                              value={variable.id}
-                                                          >
-                                                              {variable.name} · {variable.type}
-                                                          </option>
-                                                      ))}
-                                        </select>
-                                    ) : (
-                                        <input
-                                            value={fieldValue}
-                                            disabled={pending}
-                                            placeholder={editor.creation ? undefined : 'Unchanged'}
-                                            onChange={(event) =>
-                                                changeParameter(key, event.target.value)
-                                            }
-                                        />
-                                    )}
-                                </label>
-                            ))}
+                            {Object.entries(editor.values).map(([key, fieldValue]) =>
+                                guided && key === 'variable' ? (
+                                    <VariablePicker
+                                        key={editor.values.property}
+                                        value={fieldValue}
+                                        disabled={pending}
+                                        variables={variables.filter((variable) =>
+                                            canSuggestBinding(
+                                                variable,
+                                                bindingProperties.find(
+                                                    (property) =>
+                                                        property.key === editor.values.property
+                                                )
+                                            )
+                                        )}
+                                        onChange={(value) => changeParameter(key, value)}
+                                    />
+                                ) : (
+                                    <label key={key}>
+                                        {editor.creation && ['x', 'y'].includes(key)
+                                            ? key.toUpperCase()
+                                            : parameterLabel(key)}
+                                        <span aria-hidden="true">
+                                            {[
+                                                'width',
+                                                'height',
+                                                'radius',
+                                                'x',
+                                                'y',
+                                                'gap',
+                                                'padding',
+                                                'fontSize'
+                                            ].includes(key)
+                                                ? ' · px'
+                                                : ''}
+                                        </span>
+                                        {guided && key === 'property' ? (
+                                            <select
+                                                value={fieldValue}
+                                                disabled={pending}
+                                                onChange={(event) =>
+                                                    changeParameter(key, event.target.value)
+                                                }
+                                            >
+                                                <option value="">Choose {key}</option>
+                                                {bindingProperties.map((property) => (
+                                                    <option key={property.key} value={property.key}>
+                                                        {property.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <input
+                                                value={fieldValue}
+                                                disabled={pending}
+                                                placeholder={
+                                                    editor.creation ? undefined : 'Unchanged'
+                                                }
+                                                onChange={(event) =>
+                                                    changeParameter(key, event.target.value)
+                                                }
+                                            />
+                                        )}
+                                    </label>
+                                )
+                            )}
                         </div>
                         <small>
                             {editor.creation

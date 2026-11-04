@@ -271,3 +271,18 @@
     margin: 6px 0;
     white-space: pre-wrap;
 }
+
+.variablePicker {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: var(--panel-gap);
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.variablePicker select {
+    width: 100%;
+}
+.variablePicker p {
+    margin: 0;
+    font-size: 12px;
+}

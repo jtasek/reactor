@@ -10,6 +10,7 @@ declare namespace StylesCssNamespace {
     message: string;
     primary: string;
     search: string;
+    variablePicker: string;
   }
 }
 
