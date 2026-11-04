@@ -484,6 +484,9 @@ export const cloneShapes: ActionWithParam<string[]> = (context, shapeIds) => {
             ...shapeGeometry(original),
             ...(original.type === 'instance'
                 ? {
+                      dataList: original.dataList
+                          ? structuredClone(json(original.dataList))
+                          : undefined,
                       bounds: original.bounds,
                       interactions: original.interactions
                           ? structuredClone(json(original.interactions))

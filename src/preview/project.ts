@@ -1,3 +1,4 @@
+import { projectDataList } from './dataLists';
 import { effectiveActivation } from 'src/app/screenInteractions';
 import { screenOwners } from '../app/screenViews';
 import {
@@ -249,7 +250,8 @@ export function createArtworkProjector(
         path: string,
         ancestors: ReadonlySet<string>,
         inherited: VariableContext,
-        screenId: string
+        screenId: string,
+        recordScope?: string
     ): PreviewNode => {
         const context =
             shape.type === 'instance'
@@ -260,6 +262,48 @@ export function createArtworkProjector(
             throw new Error(`${subject} exceeds 5000 drawing nodes.`);
         }
         const key = `${path}/${shape.id}`;
+        if (screenIds && shape.type === 'instance' && shape.dataList) {
+            const reported = new Set<string>();
+            // Unfinished data warns and falls back to the template; it never stops Preview.
+            const report = (problem: string) => {
+                const message = `${shape.name}: ${problem}`;
+                if (!reported.has(message)) {
+                    reported.add(message);
+                    warnings.push(message);
+                    diagnostics.push({ kind: 'shape', id: shape.id, message });
+                }
+            };
+            if (!document.dataEntities[shape.dataList.entityId]) {
+                report('The list entity is unavailable, so the template is shown once.');
+
+                return draw(
+                    { ...shape, dataList: undefined },
+                    path,
+                    ancestors,
+                    inherited,
+                    screenId,
+                    recordScope
+                );
+            }
+
+            return projectDataList(
+                document,
+                shape,
+                key,
+                inherited,
+                ancestors,
+                (item, path, recordId) =>
+                    draw(
+                        item,
+                        path,
+                        ancestors,
+                        inherited,
+                        screenId,
+                        JSON.stringify([recordScope, key, recordId])
+                    ),
+                report
+            );
+        }
         const bounds = getShapeBounds(shape);
         const center = boxCenter(bounds);
         const attrs: PreviewNode['attrs'] = { opacity: shape.opacity ?? 1 };
@@ -388,7 +432,9 @@ export function createArtworkProjector(
                               context
                           );
 
-                    return resolved.visible ? [draw(resolved, key, next, context, screenId)] : [];
+                    return resolved.visible
+                        ? [draw(resolved, key, next, context, screenId, recordScope)]
+                        : [];
                 });
                 if (!screenIds) {
                     break;
@@ -430,6 +476,7 @@ export function createArtworkProjector(
                             ? {
                                   stateKey: JSON.stringify([
                                       screenId,
+                                      ...(recordScope ? [recordScope] : []),
                                       shape.interaction?.controlId && settings.props.value
                                           ? ['shared', shape.interaction.controlId]
                                           : ['node', key],
@@ -446,7 +493,11 @@ export function createArtworkProjector(
                     };
                 }
                 if (role.role === 'input' && shape.interaction?.controlId) {
-                    const identity = JSON.stringify([screenId, shape.interaction.controlId]);
+                    const identity = JSON.stringify([
+                        screenId,
+                        recordScope,
+                        shape.interaction.controlId
+                    ]);
                     identities.set(identity, [...(identities.get(identity) ?? []), group]);
                     if (!settings.props.value) {
                         warnings.push(

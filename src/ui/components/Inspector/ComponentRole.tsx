@@ -1,3 +1,4 @@
+import { DataList } from './DataList';
 import React, { useEffect, useState, type FC } from 'react';
 import type { ComponentRole as ComponentRoleName, RoleSettings } from 'src/app/types';
 import { roleLinks } from 'src/app/componentRoles';
@@ -62,6 +63,7 @@ export const ComponentRole: FC<{ componentId?: string; instanceId?: string }> = 
 
     return (
         <>
+            {instanceId && <DataList key={instanceId} instanceId={instanceId} />}
             <section aria-label="Semantic role">
                 <table>
                     <PropertyGroup name="Role">

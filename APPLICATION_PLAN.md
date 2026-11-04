@@ -1071,6 +1071,16 @@ prototype.
    Verification: `tests/data.test.ts` and `tests/browser/dataForms.spec.ts`.
 2. A list bound to an entity through an item template, and a details screen that receives the
    record.
+   R5.2a implementation: a selected component instance can repeat over an entity's sample
+   records in Prototype. Inspector maps stable field IDs to compatible exposed property IDs
+   and sets the vertical item gap; the component is the item template. Repeated items retain
+   modes, responsive/explicit variants and independent input state keyed by record identity.
+   Empty lists have an empty state; invalid bindings produce diagnostics without rewriting data.
+   Bindings persist and support undo, collaboration, copy and clone. Library snapshots omit
+   document-local bindings. Canvas and SVG export still show the authored template; repeated
+   rows do not reflow surrounding stack siblings or scroll inside a list viewport in this increment.
+   R5.2b next: record-aware detail navigation. Scrolling/list layout and form mutations remain
+   subsequent increments. Verification: `tests/dataLists.test.ts`, `tests/browser/dataLists.spec.ts`.
 3. A form with validation written as expressions, updating local records. The preview resets
    them on request.
 4. Export as a standalone web package.

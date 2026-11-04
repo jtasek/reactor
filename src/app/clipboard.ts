@@ -255,6 +255,7 @@ export function writeClipboard(
             ...shapeGeometry(shape),
             ...(shape.type === 'instance'
                 ? {
+                      dataList: shape.dataList,
                       overrides: copiedOverrides(shape, variables),
                       interaction: shape.interaction,
                       interactions: shape.interactions

@@ -38,7 +38,13 @@ function nodeElement(node: PreviewNode, decorative = false): SVGElement {
     }
     const control = decorative ? undefined : node.control;
     const isControl = control?.role === 'input' || control?.role === 'button';
-    node.children?.forEach((child) => element.append(nodeElement(child, decorative || isControl)));
+    node.children?.forEach((child) => {
+        const item = nodeElement(child, decorative || isControl);
+        if (control?.role === 'list' && child.tag === 'g') {
+            item.setAttribute('role', 'listitem');
+        }
+        element.append(item);
+    });
     if (!control) {
         return element;
     }
