@@ -34,6 +34,7 @@ import { resolveVariable, variableProblems } from 'src/app/variableResolver';
 import type { Document, Frame, Shape } from 'src/app/types';
 import { EDIT_ACTIONS, parameterLabel } from './parameters';
 import { LiveEditPreview } from './LiveEditPreview';
+import { variableValues } from './variableValues';
 import { CommandLine } from './CommandLine';
 import {
     SELECTION_HELP,
@@ -286,7 +287,7 @@ const ActiveCommandLine: FC = () => {
                       ]
             }
             bindingProperties={boundProperties}
-            variables={variables}
+            variables={variableValues(state, variables)}
             onSubmit={submit}
             onClose={() => actions.ui.toggleControlVisibility('commandLine')}
             context={`${selection}${frame && !editable ? ' · Selection is locked or hidden' : ''}`}

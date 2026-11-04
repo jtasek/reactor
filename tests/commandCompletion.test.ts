@@ -97,3 +97,26 @@ it('suggests only variables the selection can bind and only bound properties to 
     ]);
     expect(completeParameters('bind property=', bound, [])).toHaveLength(3);
 });
+
+it('keeps duplicate variable names distinguishable while showing resolved values', () => {
+    const options = completeParameters('bind property=fill variable=', properties, [
+        {
+            id: 'first',
+            name: 'Ink',
+            type: 'color',
+            resolvedValue: '#112233',
+            provenance: 'Theme: Dark'
+        },
+        {
+            id: 'second',
+            name: 'Ink',
+            type: 'color',
+            resolvedValue: '#112233',
+            provenance: 'Theme: Dark'
+        }
+    ]);
+    expect(options[0].description).toContain('#112233');
+    expect(options[0].description).toContain('Theme: Dark');
+    expect(options[0].description).toContain('first');
+    expect(options[1].description).toContain('second');
+});

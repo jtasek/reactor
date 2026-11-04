@@ -12,6 +12,18 @@ test('guided bindings, literal colors and text remain undoable', async ({ page }
                 name: 'brand/primary',
                 type: 'color',
                 values: { default: '#3366ff' }
+            },
+            twin: {
+                id: 'twin',
+                name: 'brand/primary',
+                type: 'color',
+                values: { default: '#3366ff' }
+            },
+            spacing: {
+                id: 'spacing',
+                name: 'brand/primary spacing',
+                type: 'number',
+                values: { default: 16 }
             }
         },
         shapes: {
@@ -49,7 +61,28 @@ test('guided bindings, literal colors and text remain undoable', async ({ page }
     const property = page.getByRole('combobox', { name: 'Property', exact: true });
     await expect(property).toBeFocused();
     await property.selectOption('fill');
-    await page.getByRole('combobox', { name: 'Variable', exact: true }).selectOption('brand');
+    const picker = page.getByRole('listbox', { name: 'Variable', exact: true });
+    const search = page.getByRole('searchbox', { name: 'Search variables' });
+    await search.fill('missing');
+    await expect(page.getByText('No compatible variables match.')).toBeVisible();
+    await search.fill('primary');
+    await search.dispatchEvent('keydown', { key: 'Enter', isComposing: true });
+    await expect(search).toBeFocused();
+    await expect(picker.getByRole('option', { name: /brand\/primary.* · brand$/ })).toContainText(
+        '#3366ff'
+    );
+    await expect(picker.getByRole('option', { name: /brand\/primary.* · twin$/ })).toBeAttached();
+    await expect(picker.getByRole('option', { name: /spacing/ })).toHaveCount(0);
+    await search.press('Enter');
+    await expect(picker).toBeFocused();
+    await picker.press('ArrowDown');
+    await expect(picker).toHaveValue('brand');
+    // Escape clears the search first and keeps the draft.
+    await search.press('Escape');
+    await expect(search).toHaveValue('');
+    await expect(property).toHaveValue('fill');
+    await expect(picker).toHaveValue('brand');
+    await expect(shapes(page).locator('rect[data-cy="Card"]')).toHaveCSS('fill', 'rgb(17, 34, 51)');
     await page.screenshot({ path: testInfo.outputPath('binding.png') });
     await page.setViewportSize({ width: 390, height: 800 });
     await expect(property).toBeInViewport();
