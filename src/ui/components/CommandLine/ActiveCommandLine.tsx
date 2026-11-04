@@ -196,6 +196,7 @@ const ActiveCommandLine: FC = () => {
 
     return (
         <CommandLine
+            historyKey={document.id}
             onSubmit={submit}
             onClose={() => actions.ui.toggleControlVisibility('commandLine')}
             context={`${selection}${frame && !editable ? ' · Selection is locked or hidden' : ''}`}
