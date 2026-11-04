@@ -75,7 +75,7 @@ test('repeat uses current selection, remains one undo step and rechecks locks', 
     await expect(shapes(page).locator('rect[data-cy="First"]')).toHaveAttribute('x', '20');
     await bar.getByRole('button', { name: 'Lock', exact: true }).click();
     await repeat(page).click();
-    await expect(page.getByRole('status')).toContainText('editable');
+    await expect(page.getByRole('status', { name: 'Command result' })).toContainText('editable');
     await expect(shapes(page).locator('rect[data-cy="Second"]')).toHaveAttribute('x', '100');
 });
 

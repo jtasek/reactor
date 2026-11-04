@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, useMemo } from 'react';
 import {
     RectangleHorizontal,
     Circle,
@@ -6,6 +6,9 @@ import {
     Scaling,
     Radius,
     Move,
+    Palette,
+    Link,
+    Unlink,
     BetweenHorizontalStart
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -22,7 +25,16 @@ import { screenViewName } from 'src/app/screenViews';
 import { isFrameLocked, isFrameVisible } from 'src/app/frameState';
 import { getTools } from 'src/app/actions/startup';
 import { screenToWorld } from 'src/app/camera';
-import { EDIT_ACTIONS } from './parameters';
+import { SHAPE_PROPERTIES, canEdit as canEditProperty } from 'src/app/properties';
+import { SHAPE_BINDING_KEYS } from './bindings';
+import { FRAME_NUMBER_KEYS, acceptsFrameNumber, frameNumber } from 'src/app/frameVariables';
+import type { FrameNumberKey } from 'src/app/frameVariables';
+import { accepts, canBind } from 'src/app/variables';
+import { resolveVariable, variableProblems } from 'src/app/variableResolver';
+import type { Document, Frame, Shape } from 'src/app/types';
+import { EDIT_ACTIONS, parameterLabel } from './parameters';
+import { LiveEditPreview } from './LiveEditPreview';
+import { variableValues } from './variableValues';
 import { CommandLine } from './CommandLine';
 import {
     SELECTION_HELP,
@@ -41,7 +53,11 @@ const GUIDED_ICONS: Record<string, LucideIcon> = {
     'edit size': Scaling,
     'edit radius': Radius,
     'edit position': Move,
-    'edit stack': BetweenHorizontalStart
+    'edit stack': BetweenHorizontalStart,
+    'edit colors': Palette,
+    'edit text': Type,
+    'bind variable': Link,
+    'unbind variable': Unlink
 };
 
 const ActiveCommandLine: FC = () => {
@@ -173,21 +189,82 @@ const ActiveCommandLine: FC = () => {
         ...document.selectedShapesIds
     ].join(':');
 
+    const selectedShapes = document.selectedShapesIds.map((id) => document.shapes[id]);
+    const bindingProperties = frame
+        ? FRAME_NUMBER_KEYS.filter((key) => {
+              const target = ['gap', 'padding'].includes(key) ? layout : frame;
+
+              const value = target ? frameNumber(target, key) : undefined;
+
+              return target && value !== undefined && acceptsFrameNumber(target, key, value);
+          }).map((key) => ({ key, label: parameterLabel(key), kind: 'number' }))
+        : SHAPE_PROPERTIES.filter(
+              (property) =>
+                  SHAPE_BINDING_KEYS.includes(property.key) &&
+                  selectedShapes.length > 0 &&
+                  selectedShapes.every(
+                      (shape) =>
+                          property.read(shape, document) !== undefined &&
+                          canEditProperty(property, shape, document)
+                  )
+          ).map(({ key, label, kind }) => ({ key, label, kind }));
+    const boundProperties = bindingProperties.map((property) => ({
+        ...property,
+        bound: frame
+            ? Boolean(
+                  (['gap', 'padding'].includes(property.key) ? layout : frame)?.bindings?.[
+                      property.key
+                  ]
+              )
+            : selectedShapes.some((shape) => Boolean(shape.bindings?.[property.key]))
+    }));
+    const propertyKeys = bindingProperties.map(({ key }) => key).join(' ');
+    const variables = useMemo(
+        () => bindableVariables(document, frame, layout, selectedShapes, propertyKeys.split(' ')),
+        // Selected shapes come from these document fields.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [
+            document.variables,
+            document.shapes,
+            document.selectedShapesIds,
+            frame,
+            layout,
+            propertyKeys
+        ]
+    );
+    const colorProperties = SHAPE_PROPERTIES.filter(({ key }) => ['fill', 'stroke'].includes(key));
+    // Text color lives in Edit text, so offer colors only where fill or stroke applies.
+    const colorable = selectedShapes.every((shape) =>
+        colorProperties.some(
+            (property) =>
+                shape &&
+                property.read(shape, document) !== undefined &&
+                canEditProperty(property, shape, document)
+        )
+    );
     const edits = EDIT_ACTIONS.filter((item) =>
-        frame ? item.id !== 'edit radius' : item.id !== 'edit stack'
+        frame
+            ? !['edit radius', 'edit colors', 'edit text'].includes(item.id)
+            : item.id !== 'edit stack'
     ).map((item) => ({
         ...item,
         icon: { component: GUIDED_ICONS[item.id], size: 18 },
         enabled:
             canEdit &&
             Boolean(frame || document.selectedShapesIds.length) &&
-            (item.id !== 'edit stack' || Boolean(layout?.stack)),
+            (item.id !== 'edit stack' || Boolean(layout?.stack)) &&
+            (item.id !== 'edit text' || selectedShapes.every((shape) => shape.type === 'text')) &&
+            (item.id !== 'edit colors' || colorable) &&
+            (!['bind variable', 'unbind variable'].includes(item.id) ||
+                bindingProperties.length > 0),
         unavailable:
             item.id === 'edit stack' && frame && !layout?.stack
                 ? frame.kind === 'view'
                     ? 'Its active layout has no stack. Choose Row or Column in the Inspector first.'
                     : 'This frame has no stack. Choose Row or Column in the Inspector first.'
-                : undefined,
+                : item.id === 'edit colors' && !frame && selectedShapes.length && !colorable
+                  ? 'Some selected shapes have no fill or stroke. Text color is in Edit text.'
+                  : undefined,
         description:
             item.id === 'edit stack' && frame?.kind === 'view'
                 ? 'Edit the active shared layout; resize the view separately'
@@ -197,6 +274,20 @@ const ActiveCommandLine: FC = () => {
     return (
         <CommandLine
             historyKey={document.id}
+            renderEditPreview={(input) => <LiveEditPreview input={input} />}
+            literalProperties={
+                frame
+                    ? ['width', 'height', ...(layout?.stack ? ['gap', 'padding'] : [])]
+                    : [
+                          ...bindingProperties.map(({ key }) => key),
+                          ...(selectedShapes.length > 0 &&
+                          selectedShapes.every((shape) => shape.type === 'circle')
+                              ? ['radius']
+                              : [])
+                      ]
+            }
+            bindingProperties={boundProperties}
+            variables={variableValues(state, variables)}
             onSubmit={submit}
             onClose={() => actions.ui.toggleControlVisibility('commandLine')}
             context={`${selection}${frame && !editable ? ' · Selection is locked or hidden' : ''}`}
@@ -253,5 +344,45 @@ const ActiveCommandLine: FC = () => {
         />
     );
 };
+
+/** Variables with the selection properties each can follow, as Bind would accept them. */
+function bindableVariables(
+    document: Document,
+    frame: Frame | undefined,
+    layout: Frame | undefined,
+    shapes: Shape[],
+    keys: string[]
+) {
+    return Object.values(document.variables).map((variable) => {
+        const { id, name, type } = variable;
+        if (variableProblems(variable, document.variables).length) {
+            return { id, name, type, bindsTo: [] };
+        }
+        const value = resolveVariable(variable, document.variables);
+        const bindsTo = keys.filter((key) => {
+            if (frame) {
+                const target = ['gap', 'padding'].includes(key) ? layout : frame;
+
+                return (
+                    type === 'number' &&
+                    typeof value === 'number' &&
+                    Boolean(target) &&
+                    acceptsFrameNumber(target!, key as FrameNumberKey, value)
+                );
+            }
+            const property = SHAPE_PROPERTIES.find((item) => item.key === key);
+
+            return (
+                Boolean(property) &&
+                shapes.every(
+                    (shape) =>
+                        canBind(property!, shape, document, variable) && accepts(property!, value)
+                )
+            );
+        });
+
+        return { id, name, type, bindsTo };
+    });
+}
 
 export default ActiveCommandLine;

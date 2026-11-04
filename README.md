@@ -158,6 +158,30 @@ Explicit numeric edits detach only the edited inputs from their variables.
 The Command Line opens as a searchable command palette. Exact matches rank first;
 the target stays visible above the results or parameter editor. Choose Resize selection,
 Move selection, Set radius or Edit stack spacing to edit without remembering syntax.
+The guided Bind variable picker searches compatible variables by name or ID and shows values
+resolved for the current Screen view, including inherited and responsive modes. Selecting a
+variable only updates the draft. Its mode and source appear beneath the results; selections
+with different effective values show “Mixed values”. Apply remains a single undo step.
+
+Choose Edit colors or Edit text for literal values, or Bind variable / Remove variable binding
+for a property and a compatible variable. Typed examples: `fill=#3366ff stroke=#112233`,
+`text="Continue" fs=18 fc=#ffffff`, `bind property=fill variable="brand/primary"`,
+`unbind property=fill`. Variable references accept a unique exact name or an ID. Bindings
+keep mode inheritance; removing one keeps its stored base value. Text follows the Inspector's
+template rules: `text="Hi ${Person}"` follows the variable; `\${` in the Text field stays
+literal. Edit colors appears for shapes with a fill or stroke; text color is in Edit text.
+Literal edits detach only affected bindings. Each command applies to the
+entire editable selection as one undo step, or changes nothing if a target is incompatible.
+While typing, the palette suggests property names and compatible variable references at the
+end of the command. Tab inserts the highlighted suggestion; arrow keys followed by Enter
+also insert it. Completion never applies an edit. Enter otherwise keeps its existing apply
+behavior. Escape dismisses suggestions without clearing the command. Variable suggestions
+insert stable IDs and preserve preceding arguments, including quoted text.
+Typed and guided selection edits show a live, read-only summary before Apply: affected
+objects, stored before/after values, binding changes and validation errors. Typing validation
+waits 120 ms; selection and value changes refresh the summary. Nothing is applied until Apply
+(or Enter), which revalidates the current selection and creates one undo step. The existing
+selection-change confirmation still applies. Summaries show up to eight affected objects.
 Blank selection fields stay unchanged. Typed aliases and guided fields use the same
 validated commands. Escape returns from parameters to search, then closes the palette;
 Choosing a guided action focuses its first field; Tab moves between fields. Results use action icons

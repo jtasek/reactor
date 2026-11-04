@@ -93,3 +93,26 @@ it('distinguishes drawing tools, creation and selection-edit parameters', () => 
     expect(recentSuggestion('w=100 h=20', actions).name).toBe('edit size');
     expect(recentSuggestion('rectangle w=100', actions).shortcut).toBeUndefined();
 });
+
+it('replays property edits and bindings through their current actions', () => {
+    const actions = ['edit text', 'edit colors', 'bind variable', 'unbind variable'].map((id) => ({
+        id,
+        name: id,
+        description: '',
+        enabled: true
+    }));
+    expect(recentSuggestion('text="Continue" fs=18', actions).name).toBe('edit text');
+    expect(recentSuggestion('fill=#3366ff', actions).name).toBe('edit colors');
+    expect(recentSuggestion('bind property=fill variable="brand/primary"', actions).name).toBe(
+        'bind variable'
+    );
+    expect(recentSuggestion('unbind property=fill', actions).name).toBe('unbind variable');
+});
+
+it('recent bind commands show the variable name but replay its ID', () => {
+    const input = 'bind property=fill variable="var-1"';
+    const recent = recentSuggestion(input, [], [{ id: 'var-1', name: 'brand/primary' }]);
+    expect(recent.description).toBe('bind property=fill variable="brand/primary"');
+    expect(recent.input).toBe(input);
+    expect(recentSuggestion(input, []).description).toBe(input);
+});

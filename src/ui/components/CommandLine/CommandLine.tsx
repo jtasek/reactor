@@ -1,6 +1,7 @@
 import React, { FC, SubmitEvent, useEffect, useId, useRef, useState } from 'react';
 import { ArrowLeft, ChevronRight, Command, Search, Sparkles, X, Repeat2 } from 'lucide-react';
 import { Icon } from '../Icon';
+import { VariablePicker } from './VariablePicker';
 import { shortcutKeys, shortcutLabel, usesCommandKey } from '../CommandBar/shortcutLabel';
 import { SELECTION_HELP, SELECTION_PATTERN } from './selection';
 import styles from './styles.css';
@@ -8,14 +9,23 @@ import { CREATION_PATTERN, PROPERTY_ALIAS_HELP } from './creation';
 import { editorForAction, editorForInput, editorInput, parameterLabel } from './parameters';
 import type { ParameterEditor } from './parameters';
 
+import { canSuggestBinding, completeParameters } from './completion';
+import type { CompletionProperty, CompletionVariable } from './completion';
 import { submitCandidate } from './search';
 import type { Suggestion } from './search';
 import { useCommandSearch } from './useCommandSearch';
 import { recentCommands, rememberCommand, clearRecentCommands, recentSuggestion } from './history';
 
+/** Property suggestions listed above command matches for a bare word. */
+const BARE_COMPLETIONS = 3;
+const isCompletion = (item?: Suggestion) => Boolean(item?.id.startsWith('complete:'));
 const STALE_TARGET = 'Selection changed. Check the target above, then apply again.';
 
 export interface Props {
+    renderEditPreview?: (input: string) => React.ReactNode;
+    literalProperties?: string[];
+    bindingProperties?: CompletionProperty[];
+    variables?: CompletionVariable[];
     historyKey: string;
     onSubmit: (command: string) => string | undefined;
     suggestions?: Suggestion[];
@@ -29,6 +39,10 @@ export interface Props {
 }
 
 export const CommandLine: FC<Props> = ({
+    renderEditPreview,
+    literalProperties,
+    bindingProperties = [],
+    variables = [],
     historyKey,
     onSubmit,
     suggestions = [],
@@ -51,6 +65,8 @@ export const CommandLine: FC<Props> = ({
     const [message, setMessage] = useState<string>();
     const [open, setOpen] = useState(true);
     const [active, setActive] = useState(-1);
+    const [commandFocused, setCommandFocused] = useState(true);
+    const [caretAtEnd, setCaretAtEnd] = useState(true);
     const [editor, setEditor] = useState<ParameterEditor>();
     const [pending, setPending] = useState(false);
     /** The selection changed under a typed command; the next submit only confirms it. */
@@ -67,12 +83,28 @@ export const CommandLine: FC<Props> = ({
     const query = value.trim().toLowerCase();
     const mac = usesCommandKey();
     const showingRecent = !query && recent.length > 0;
-    const recentItems = recent.map((input) => recentSuggestion(input, suggestions));
+    const recentItems = recent.map((input) => recentSuggestion(input, suggestions, variables));
     const search = useCommandSearch(suggestions, query, open && !editor && !value.includes('='));
-    // Recent commands lead the empty palette; suggested actions stay below them.
+    const completions =
+        open &&
+        commandFocused &&
+        caretAtEnd &&
+        !suggestions.some(
+            (item) => item.id.toLowerCase() === query || item.name.toLowerCase() === query
+        )
+            ? completeParameters(value, bindingProperties, variables, literalProperties)
+            : [];
+    const completing = completions.length > 0;
+    const completingBareQuery = completing && !/[\s=]/.test(value.trim());
+    // A bare word can name a property or a command, so keep both in reach.
     const shownRecent = showingRecent ? recentItems : [];
-    const matches = [...shownRecent, ...search.matches];
-    const waiting = search.waiting;
+    const actionMatches = completing
+        ? completingBareQuery
+            ? [...completions.slice(0, BARE_COMPLETIONS), ...search.matches]
+            : completions
+        : search.matches;
+    const matches = [...shownRecent, ...actionMatches];
+    const waiting = !completing && search.waiting;
     const resolve = () => [...shownRecent, ...search.resolve()];
     const lastCommand = !query && !editor ? recentItems[0] : undefined;
     const repeatReason =
@@ -80,7 +112,8 @@ export const CommandLine: FC<Props> = ({
             ? (lastCommand.unavailable ??
               `${lastCommand.name} is not available for the current selection.`)
             : undefined;
-    const listShown = open && !editor && matches.length > 0;
+    const listShown = open && (completing || !editor) && matches.length > 0;
+
     const directInput =
         (CREATION_PATTERN.test(value.trim()) && !/^create\s/i.test(value.trim())) ||
         suggestions.some(
@@ -88,11 +121,14 @@ export const CommandLine: FC<Props> = ({
                 (item.id.toLowerCase() === query || item.name.toLowerCase() === query) &&
                 !editorForAction(item.id)
         );
-    const choosing = listShown && (active >= 0 || !directInput);
+    const choosing = !completing && listShown && (active >= 0 || !directInput);
     const chosenIndex = Math.max(0, Math.min(active, matches.length - 1));
     const creating = editor?.creation || CREATION_PATTERN.test(value.trim());
     const displayContext =
-        editor && ('gap' in editor.values || 'padding' in editor.values)
+        editor &&
+        ('gap' in editor.values ||
+            'padding' in editor.values ||
+            ['gap', 'padding'].includes(editor.values.property))
             ? (stackContext ?? context)
             : context;
     const commandName = suggestions.find(
@@ -136,11 +172,39 @@ export const CommandLine: FC<Props> = ({
         }
 
         focusParameters.current = false;
-        const field = formRef.current?.querySelector<HTMLInputElement>('fieldset input');
+        const field = formRef.current?.querySelector<HTMLInputElement | HTMLSelectElement>(
+            'fieldset input, fieldset select'
+        );
         field?.focus();
-        field?.select();
+        if (field instanceof HTMLInputElement) {
+            field.select();
+        }
     }, [editor]);
 
+    const changeParameter = (key: string, value: string) => {
+        if (!editor) {
+            return;
+        }
+        const next = { ...editor, values: { ...editor.values, [key]: value } };
+        if (key === 'property' && 'variable' in next.values) {
+            next.values.variable = '';
+        }
+        setEditor(next);
+        setValue(editorInput(next));
+        setMessage(undefined);
+    };
+    const acceptCompletion = (item: Suggestion) => {
+        if (pending || item.input === undefined) {
+            return;
+        }
+        setValue(item.input);
+        setEditor(editorForInput(item.input));
+        setGuided(false);
+        setMessage(undefined);
+        setOpen(false);
+        setActive(-1);
+        inputRef.current?.focus();
+    };
     const back = () => {
         setEditor(undefined);
         setGuided(false);
@@ -167,7 +231,7 @@ export const CommandLine: FC<Props> = ({
             item.input !== undefined ? editorForInput(item.input) : editorForAction(item.id);
         focusParameters.current = Boolean(next);
         setEditor(next);
-        setGuided(Boolean(next));
+        setGuided(Boolean(next) && item.input === undefined);
         setStaleTarget(false);
         setValue(item.input ?? (next ? editorInput(next) : item.id));
         setMessage(undefined);
@@ -179,14 +243,17 @@ export const CommandLine: FC<Props> = ({
         if (pending) {
             return;
         }
-        const candidate = submitCandidate({
-            waiting,
-            directInput,
-            choosing,
-            matches,
-            chosenIndex,
-            resolve
-        });
+        const commandMatch = completingBareQuery ? search.resolve()[0] : undefined;
+        const candidate =
+            commandMatch ??
+            submitCandidate({
+                waiting,
+                directInput,
+                choosing,
+                matches,
+                chosenIndex,
+                resolve
+            });
         if (candidate) {
             choose(candidate);
 
@@ -234,9 +301,14 @@ export const CommandLine: FC<Props> = ({
             aria-disabled={!item.enabled}
             aria-keyshortcuts={item.shortcut ? shortcutKeys(item.shortcut, mac) : undefined}
             onMouseDown={(event) => event.preventDefault()}
-            onClick={() => choose(item)}
+            onClick={() => (isCompletion(item) ? acceptCompletion(item) : choose(item))}
             onKeyDown={(event) => {
                 if (event.key === 'Enter') {
+                    if (isCompletion(item)) {
+                        acceptCompletion(item);
+
+                        return;
+                    }
                     choose(item);
                 }
             }}
@@ -280,6 +352,22 @@ export const CommandLine: FC<Props> = ({
 
                     return;
                 }
+                if (event.key === 'Escape' && completing) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setOpen(false);
+
+                    return;
+                }
+                // A search field with text clears itself first; the next Escape goes back.
+                if (
+                    event.key === 'Escape' &&
+                    event.target instanceof HTMLInputElement &&
+                    event.target.type === 'search' &&
+                    event.target.value
+                ) {
+                    return;
+                }
                 if (event.key === 'Escape') {
                     event.preventDefault();
                     event.stopPropagation();
@@ -304,7 +392,7 @@ export const CommandLine: FC<Props> = ({
                         listShown
                             ? [
                                   shownRecent.length ? recentListId : '',
-                                  search.matches.length ? listId : ''
+                                  actionMatches.length ? listId : ''
                               ]
                                   .filter(Boolean)
                                   .join(' ')
@@ -317,7 +405,16 @@ export const CommandLine: FC<Props> = ({
                     placeholder="What would you like to do?"
                     value={value}
                     readOnly={pending}
+                    onFocus={() => setCommandFocused(true)}
+                    onBlur={() => setCommandFocused(false)}
+                    onSelect={(event) =>
+                        setCaretAtEnd(
+                            event.currentTarget.selectionStart === value.length &&
+                                event.currentTarget.selectionEnd === value.length
+                        )
+                    }
                     onChange={(event) => {
+                        setCaretAtEnd(event.target.selectionStart === event.target.value.length);
                         setValue(event.target.value);
                         setEditor(editorForInput(event.target.value));
                         setGuided(false);
@@ -336,7 +433,28 @@ export const CommandLine: FC<Props> = ({
 
                             return;
                         }
-                        if (pending || editor || !['ArrowDown', 'ArrowUp'].includes(event.key)) {
+                        if (
+                            !pending &&
+                            completing &&
+                            ((event.key === 'Tab' && !event.shiftKey) ||
+                                (event.key === 'Enter' && active >= 0))
+                        ) {
+                            event.preventDefault();
+                            const item = matches[chosenIndex];
+                            if (event.key === 'Enter' && !isCompletion(item)) {
+                                choose(item);
+                            } else {
+                                // Tab on a highlighted command inserts the first suggestion.
+                                acceptCompletion(isCompletion(item) ? item : completions[0]);
+                            }
+
+                            return;
+                        }
+                        if (
+                            pending ||
+                            (editor && !completing) ||
+                            !['ArrowDown', 'ArrowUp'].includes(event.key)
+                        ) {
                             return;
                         }
 
@@ -366,7 +484,7 @@ export const CommandLine: FC<Props> = ({
             <div className={styles.content} aria-busy={waiting}>
                 {/* Not a live region: it would be announced on every keystroke; aria-busy covers it. */}
                 {waiting && <small>Searching commands…</small>}
-                {editor && (
+                {editor && !completing && (
                     <fieldset>
                         <legend>
                             <button
@@ -380,55 +498,87 @@ export const CommandLine: FC<Props> = ({
                             {editor.title}
                         </legend>
                         <div className={styles.fields}>
-                            {Object.entries(editor.values).map(([key, fieldValue]) => (
-                                <label key={key}>
-                                    {editor.creation && ['x', 'y'].includes(key)
-                                        ? key.toUpperCase()
-                                        : parameterLabel(key)}
-                                    <span aria-hidden="true">
-                                        {[
-                                            'width',
-                                            'height',
-                                            'radius',
-                                            'x',
-                                            'y',
-                                            'gap',
-                                            'padding',
-                                            'fontSize'
-                                        ].includes(key)
-                                            ? ' · px'
-                                            : ''}
-                                    </span>
-                                    <input
+                            {Object.entries(editor.values).map(([key, fieldValue]) =>
+                                guided && key === 'variable' ? (
+                                    <VariablePicker
+                                        key={editor.values.property}
                                         value={fieldValue}
                                         disabled={pending}
-                                        placeholder={editor.creation ? undefined : 'Unchanged'}
-                                        onChange={(event) => {
-                                            const next = {
-                                                ...editor,
-                                                values: {
-                                                    ...editor.values,
-                                                    [key]: event.target.value
-                                                }
-                                            };
-                                            setEditor(next);
-                                            setValue(editorInput(next));
-                                            setMessage(undefined);
-                                        }}
+                                        variables={variables.filter((variable) =>
+                                            canSuggestBinding(
+                                                variable,
+                                                bindingProperties.find(
+                                                    (property) =>
+                                                        property.key === editor.values.property
+                                                )
+                                            )
+                                        )}
+                                        onChange={(value) => changeParameter(key, value)}
                                     />
-                                </label>
-                            ))}
+                                ) : (
+                                    <label key={key}>
+                                        {editor.creation && ['x', 'y'].includes(key)
+                                            ? key.toUpperCase()
+                                            : parameterLabel(key)}
+                                        <span aria-hidden="true">
+                                            {[
+                                                'width',
+                                                'height',
+                                                'radius',
+                                                'x',
+                                                'y',
+                                                'gap',
+                                                'padding',
+                                                'fontSize'
+                                            ].includes(key)
+                                                ? ' · px'
+                                                : ''}
+                                        </span>
+                                        {guided && key === 'property' ? (
+                                            <select
+                                                value={fieldValue}
+                                                disabled={pending}
+                                                onChange={(event) =>
+                                                    changeParameter(key, event.target.value)
+                                                }
+                                            >
+                                                <option value="">Choose {key}</option>
+                                                {bindingProperties.map((property) => (
+                                                    <option key={property.key} value={property.key}>
+                                                        {property.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <input
+                                                value={fieldValue}
+                                                disabled={pending}
+                                                placeholder={
+                                                    editor.creation ? undefined : 'Unchanged'
+                                                }
+                                                onChange={(event) =>
+                                                    changeParameter(key, event.target.value)
+                                                }
+                                            />
+                                        )}
+                                    </label>
+                                )
+                            )}
                         </div>
                         <small>
                             {editor.creation
                                 ? placement
-                                : 'Only entered values change. Blank fields and their bindings stay unchanged.'}
+                                : editor.prefix === 'bind'
+                                  ? 'Choose a property and a compatible variable. Its modes are inherited automatically.'
+                                  : editor.prefix === 'unbind'
+                                    ? 'The stored base value stays; this property stops following its variable.'
+                                    : 'Only entered values change. Blank fields and their bindings stay unchanged.'}
                         </small>
                     </fieldset>
                 )}
                 {lastCommand && (
                     <small id={repeatHintId}>
-                        Repeat runs <code>{recent[0]}</code>
+                        Repeat runs <code>{lastCommand.description}</code>
                         {repeatReason ? ` · ${repeatReason}` : '.'}
                     </small>
                 )}
@@ -453,13 +603,31 @@ export const CommandLine: FC<Props> = ({
                         </ul>
                     </>
                 )}
-                {listShown && search.matches.length > 0 && (
+                {listShown && actionMatches.length > 0 && (
                     <>
                         <div className={styles.heading}>
-                            <span>{query ? 'Matching actions' : 'Suggested actions'}</span>
+                            <span>
+                                {completing
+                                    ? completingBareQuery
+                                        ? 'Properties and actions · Tab inserts a property'
+                                        : 'Suggestions · Tab to insert'
+                                    : query
+                                      ? 'Matching actions'
+                                      : 'Suggested actions'}
+                            </span>
                         </div>
-                        <ul id={listId} role="listbox" aria-label="Commands">
-                            {search.matches.map((item, index) =>
+                        <ul
+                            id={listId}
+                            role="listbox"
+                            aria-label={
+                                completingBareQuery
+                                    ? 'Parameter suggestions and commands'
+                                    : completing
+                                      ? 'Parameter suggestions'
+                                      : 'Commands'
+                            }
+                        >
+                            {actionMatches.map((item, index) =>
                                 option(item, shownRecent.length + index)
                             )}
                         </ul>
@@ -479,6 +647,7 @@ export const CommandLine: FC<Props> = ({
                                 : 'Try a command name or an edit such as w=240.'}
                         </small>
                     )}
+                {!completing && renderEditPreview?.(value)}
                 {creating && <small>{PROPERTY_ALIAS_HELP}</small>}
                 {!creating &&
                     !guided &&
@@ -487,7 +656,7 @@ export const CommandLine: FC<Props> = ({
                     )}
             </div>
             {(staleTarget || message) && (
-                <div role="status" className={styles.message}>
+                <div role="status" aria-label="Command result" className={styles.message}>
                     {staleTarget ? STALE_TARGET : message}
                 </div>
             )}

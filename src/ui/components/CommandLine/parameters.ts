@@ -28,6 +28,30 @@ export const EDIT_ACTIONS = [
         keys: ['x', 'y']
     },
     {
+        id: 'edit colors',
+        name: 'Edit colors',
+        description: 'Set fill and stroke colors',
+        keys: ['fill', 'stroke']
+    },
+    {
+        id: 'edit text',
+        name: 'Edit text',
+        description: 'Set text, font size and font color',
+        keys: ['value', 'fontSize', 'fontColor']
+    },
+    {
+        id: 'bind variable',
+        name: 'Bind variable',
+        description: 'Make a property follow a variable',
+        keys: ['property', 'variable']
+    },
+    {
+        id: 'unbind variable',
+        name: 'Remove variable binding',
+        description: 'Keep the stored value and stop following its variable',
+        keys: ['property']
+    },
+    {
         id: 'edit stack',
         name: 'Edit stack spacing',
         description: 'Set gap and padding on an existing stack',
@@ -47,6 +71,10 @@ export const parameterLabel = (key: string) =>
         value: 'Text',
         fontSize: 'Font size',
         fill: 'Fill',
+        stroke: 'Stroke',
+        fontColor: 'Font color',
+        property: 'Property',
+        variable: 'Variable',
         name: 'Name'
     })[key] ?? key;
 
@@ -70,7 +98,14 @@ export function editorForAction(id: string): ParameterEditor | undefined {
     return action
         ? {
               title: action.name,
-              prefix: id === 'edit position' ? 'move' : '',
+              prefix:
+                  id === 'edit position'
+                      ? 'move'
+                      : id === 'bind variable'
+                        ? 'bind'
+                        : id === 'unbind variable'
+                          ? 'unbind'
+                          : '',
               creation: false,
               values: Object.fromEntries(action.keys.map((key) => [key, '']))
           }
@@ -87,14 +122,20 @@ export function editorForInput(input: string): ParameterEditor | undefined {
         return undefined;
     }
     try {
-        const prefix = creation ? creation[0] : /^move\s/i.test(input.trim()) ? 'move' : '';
+        const prefix = creation
+            ? creation[0]
+            : (/^(move|bind|unbind)\s/i.exec(input.trim())?.[1].toLowerCase() ?? '');
         const values = readParameters(` ${input.trim().slice(prefix.length).trim()}`);
 
         return {
             title: creation
                 ? `Create ${creation[1].toLowerCase()}`
                 : prefix
-                  ? 'Move selection'
+                  ? prefix === 'bind'
+                      ? 'Bind variable'
+                      : prefix === 'unbind'
+                        ? 'Remove variable binding'
+                        : 'Move selection'
                   : 'Edit selection',
             prefix,
             values,
@@ -110,7 +151,7 @@ export function editorInput(editor: ParameterEditor): string {
         .filter(([, value]) => editor.creation || value !== '')
         .map(
             ([key, value]) =>
-                `${key}=${['value', 'name'].includes(key) ? JSON.stringify(value) : value}`
+                `${key}=${['value', 'name', 'variable'].includes(key) ? JSON.stringify(value) : value}`
         );
 
     return [editor.prefix, ...values].filter(Boolean).join(' ');

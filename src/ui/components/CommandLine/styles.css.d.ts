@@ -3,12 +3,14 @@ declare namespace StylesCssNamespace {
     commandLine: string;
     content: string;
     context: string;
+    editPreview: string;
     fields: string;
     footer: string;
     heading: string;
     message: string;
     primary: string;
     search: string;
+    variablePicker: string;
   }
 }
 
