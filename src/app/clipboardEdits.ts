@@ -356,6 +356,8 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
         });
     }
 
+    // States the destination lacks join it in the same undo step as the shapes.
+    const states = clipboardFormat().pasteStates(copied, untracked(state.currentDocument));
     const operations = pasteOperations(
         copied,
         untracked(state.currentDocument),
@@ -395,7 +397,7 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
 
     // Membership and the operation batch must be shared and undone together. A held
     // key has already paused sharing, which then holds this paste with the others.
-    const hold = Boolean(component) && !state.events.keyboard.repeating;
+    const hold = (Boolean(component) || states.length > 0) && !state.events.keyboard.repeating;
 
     if (hold) {
         effects.collaboration.startBatch(state.currentDocumentId, { kind: 'person' });
@@ -403,6 +405,10 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
     }
 
     try {
+        const document = state.currentDocument;
+        states.forEach((item) => {
+            document.prototypeBooleans[item.id] = item;
+        });
         const result = actions.applyOperations({
             documentId: state.currentDocumentId,
             by: { kind: 'person' },
@@ -411,6 +417,8 @@ export const pasteShapes: ActionWithParamAndResult<string, PasteResult> = (conte
         });
 
         if (!result.applied) {
+            states.forEach((item) => delete document.prototypeBooleans[item.id]);
+
             return { problem: result.problem };
         }
 

@@ -17,23 +17,22 @@ test('authors shared boolean state, binds two instances, renames it and reloads'
             .getByRole('button', { name, exact: true })
             .first()
             .click();
+    const visibility = page.getByRole('combobox', { name: 'Prototype visibility', exact: true });
+    const openStates = () =>
+        page
+            .locator('summary', { hasText: 'Prototype states' })
+            .evaluate((summary) => ((summary.parentElement as HTMLDetailsElement).open = true));
     await select('Inspector help');
+    await openStates();
     await page.getByRole('textbox', { name: 'New state name', exact: true }).fill('showHelp');
     await page.getByRole('button', { name: 'Add state', exact: true }).click();
-    await page
-        .getByRole('combobox', { name: 'Visibility state', exact: true })
-        .selectOption({ label: 'showHelp' });
+    await visibility.selectOption({ label: 'Follow showHelp' });
     await select('Inspector comparison');
-    await page
-        .getByRole('combobox', { name: 'Visibility state', exact: true })
-        .selectOption({ label: 'showHelp' });
+    await visibility.selectOption({ label: 'Follow showHelp' });
+    await openStates();
     await page.getByRole('textbox', { name: 'Name of showHelp', exact: true }).fill('showDetails');
     await page.getByRole('textbox', { name: 'Name of showHelp', exact: true }).press('Tab');
-    await expect(
-        page
-            .getByRole('combobox', { name: 'Visibility state', exact: true })
-            .locator('option:checked')
-    ).toHaveText('showDetails');
+    await expect(visibility.locator('option:checked')).toHaveText('Follow showDetails');
     await select('About these styles');
     await page
         .getByLabel(/^On (activation|Enter): action$/)

@@ -56,7 +56,7 @@ it('diagnoses deleted state without dropping bindings or breaking Preview', () =
     const warnings: string[] = [];
     const drawing = readPreview(projectPreview(document, {}, warnings));
     expect(warnings.join(' ')).toContain('visibility state is missing');
-    expect(warnings.join(' ')).toContain('prototype state is unavailable');
+    expect(warnings.join(' ')).toContain('prototype state is missing');
     expect(drawing.screens[0].nodes.some((node) => node.control?.toggleState)).toBe(false);
     expect(help.prototypeVisibilityStateId).toBe('flag');
 });
@@ -203,4 +203,177 @@ it('carries revealed named state across screens when computing Flow reachability
     expect([...reachableScreens(graph, 'first')]).toEqual(['first', 'second', 'third']);
     graph[0].controls[0].hidden = true;
     expect([...reachableScreens(graph, 'first')]).toEqual(['first', 'second']);
+});
+
+it('refuses state bindings and actions that would make a control hide itself', () => {
+    const { store } = createTestStore();
+    const { document, help, button } = fixture();
+    document.id = store.state.currentDocumentId;
+    store.actions.addDocument(document);
+    const actions = store.actions;
+    // The button toggles `flag`, so it cannot follow `flag`.
+    expect(
+        actions.editInteractions({
+            target: 'state',
+            kind: 'bind',
+            instanceId: button.id,
+            stateId: 'flag'
+        })
+    ).toContain('hide itself');
+    expect(store.state.currentDocument.shapes[button.id]).not.toHaveProperty(
+        'prototypeVisibilityStateId'
+    );
+    // A control following `flag` cannot be given an action toggling `flag`, directly or through
+    // a target that follows it.
+    actions.editInteractions({ target: 'state', kind: 'bind', instanceId: help.id, stateId: null });
+    actions.editInteractions({
+        target: 'instance',
+        id: button.id,
+        settings: { activate: { type: 'toggleVisibility', instanceId: help.id } }
+    });
+    actions.editInteractions({
+        target: 'state',
+        kind: 'add',
+        name: 'other',
+        initial: true
+    });
+    expect(
+        actions.editInteractions({
+            target: 'state',
+            kind: 'bind',
+            instanceId: help.id,
+            stateId: 'flag'
+        })
+    ).toBeUndefined();
+    const other = Object.values(store.state.currentDocument.prototypeBooleans).find(
+        (item) => item.name === 'other'
+    )!;
+    actions.editInteractions({
+        target: 'instance',
+        id: button.id,
+        settings: { activate: null }
+    });
+    expect(
+        actions.editInteractions({
+            target: 'state',
+            kind: 'bind',
+            instanceId: button.id,
+            stateId: 'flag'
+        })
+    ).toBeUndefined();
+    actions.editInteractions({
+        target: 'instance',
+        id: button.id,
+        settings: { activate: { type: 'toggleVisibility', instanceId: help.id } }
+    });
+    actions.editInteractions({
+        target: 'instance',
+        id: button.id,
+        settings: { activate: { type: 'toggleState', stateId: 'flag' } }
+    });
+    expect(store.state.currentDocument.shapes[button.id]).toMatchObject({
+        interactions: { activate: null }
+    });
+    actions.editInteractions({
+        target: 'instance',
+        id: button.id,
+        settings: { activate: { type: 'toggleState', stateId: other.id } }
+    });
+    expect(store.state.currentDocument.shapes[button.id]).toMatchObject({
+        interactions: { activate: { type: 'toggleState', stateId: other.id } }
+    });
+});
+
+it('switches between a state and a fixed start in one undo step', async () => {
+    let helpId = '';
+    const [copy] = await createCopies(1, (store) => {
+        const { document, help } = fixture();
+        document.id = DOCUMENT_ID;
+        helpId = help.id;
+        store.actions.addDocument(document);
+    });
+    edit(copy, (actions) =>
+        actions.editInteractions({
+            target: 'state',
+            kind: 'bind',
+            instanceId: helpId,
+            stateId: null,
+            visible: true
+        })
+    );
+    const shape = () => shownDocument(copy).shapes[helpId];
+    expect(shape()).not.toHaveProperty('prototypeVisibilityStateId');
+    expect(shape()).not.toHaveProperty('prototypeVisible');
+    copy.collaboration.undo(DOCUMENT_ID);
+    expect(shape()).toMatchObject({ prototypeVisibilityStateId: 'flag', prototypeVisible: false });
+    copy.collaboration.dispose();
+});
+
+it('pastes named states into another document, reusing one of the same name', async () => {
+    let text = '';
+    const [copy] = await createCopies(1, (store) => {
+        const { document, help, button } = fixture();
+        document.id = 'source';
+        store.actions.addDocument(document);
+        store.actions.openDocument('source');
+        store.actions.unselectShapes();
+        store.actions.selectShape(help.id);
+        store.actions.selectShape(button.id);
+        text = store.actions.copySelection()!;
+        store.actions.addDocument(createDocument({ id: DOCUMENT_ID }));
+        store.actions.openDocument(DOCUMENT_ID);
+    });
+    const { store } = copy;
+    expect(store.state.currentDocumentId).toBe(DOCUMENT_ID);
+    const references = () =>
+        store.state.currentDocument.selectedShapesIds.map((id) => {
+            const shape = store.state.currentDocument.shapes[id];
+
+            return shape.type === 'instance'
+                ? (shape.prototypeVisibilityStateId ??
+                      (shape.interactions?.activate?.type === 'toggleState'
+                          ? shape.interactions.activate.stateId
+                          : undefined))
+                : undefined;
+        });
+    edit(copy, (actions) => expect(actions.pasteShapes(text)).toBe('pasted'));
+    expect(Object.values(shownDocument(copy).prototypeBooleans)).toEqual([
+        { id: 'flag', name: 'showHelp', initial: false }
+    ]);
+    expect(references()).toEqual(['flag', 'flag']);
+    copy.collaboration.undo(DOCUMENT_ID);
+    expect(shownDocument(copy).prototypeBooleans).toEqual({});
+    expect(shownDocument(copy).shapesIds).toEqual([]);
+    edit(copy, (actions) =>
+        actions.editInteractions({ target: 'state', kind: 'add', name: 'showHelp', initial: true })
+    );
+    const existing = Object.values(shownDocument(copy).prototypeBooleans)[0];
+    edit(copy, (actions) => expect(actions.pasteShapes(text)).toBe('pasted'));
+    expect(Object.keys(shownDocument(copy).prototypeBooleans)).toEqual([existing.id]);
+    expect(references()).toEqual([existing.id, existing.id]);
+    copy.collaboration.dispose();
+});
+
+it('keeps disclosure semantics and Inspect diagnostics for named state', () => {
+    const { document, help, button } = fixture();
+    button.interactions = { activate: { type: 'toggleVisibility', instanceId: help.id } };
+    const drawing = readPreview(projectPreview(document, {}));
+    const control = drawing.screens[0].nodes
+        .flatMap(function all(node): (typeof drawing.screens)[0]['nodes'] {
+            return [node, ...(node.children ?? []).flatMap(all)];
+        })
+        .find((node) => node.control?.toggleState)!.control!;
+    expect(control.toggleState).toBe('state:flag');
+    expect(control.toggleVisibility).toBeDefined();
+    delete document.prototypeBooleans.flag;
+    button.interactions = { activate: { type: 'toggleState', stateId: 'flag' } };
+    const warnings: string[] = [];
+    const diagnostics: { message: string }[] = [];
+    projectPreview(document, {}, warnings, undefined, {}, diagnostics as never);
+    expect(diagnostics.map((item) => item.message).join(' ')).toContain(
+        'visibility state is missing'
+    );
+    expect(diagnostics.map((item) => item.message).join(' ')).toContain(
+        'prototype state is missing'
+    );
 });

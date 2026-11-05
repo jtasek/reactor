@@ -112,7 +112,12 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
             )
         );
     }
-    if (control.toggleState !== undefined && control.role === 'button') {
+    // A disclosure whose target follows a state stays a disclosure; plain state toggles are pressed.
+    if (
+        control.toggleState !== undefined &&
+        control.toggleVisibility === undefined &&
+        control.role === 'button'
+    ) {
         field.setAttribute(
             'aria-pressed',
             String(
@@ -121,16 +126,15 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
                     false
             )
         );
+    }
+    if (control.toggleState !== undefined && control.role === 'button') {
         field.dataset.toggleState = control.toggleState;
     }
     if (control.toggleVisibility !== undefined && control.role === 'button') {
+        const key = control.toggleState ?? control.toggleVisibility;
         field.setAttribute(
             'aria-expanded',
-            String(
-                visibility.get(control.toggleVisibility) ??
-                    initialVisibility.get(control.toggleVisibility) ??
-                    true
-            )
+            String(visibility.get(key) ?? initialVisibility.get(key) ?? true)
         );
         field.setAttribute('aria-controls', visibilityId(control.toggleVisibility));
     }
@@ -178,7 +182,7 @@ function activate(control: NonNullable<PreviewNode['control']>) {
     ) {
         return;
     }
-    toggled = control.toggleVisibility ?? control.toggleState;
+    toggled = control.toggleState ?? control.toggleVisibility;
     if (toggled !== undefined) {
         const key = toggled;
         visibility.set(key, !(visibility.get(key) ?? initialVisibility.get(key) ?? true));

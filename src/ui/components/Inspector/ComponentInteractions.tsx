@@ -2,7 +2,7 @@ import React, { type FC } from 'react';
 import { useActions } from 'src/app/hooks';
 import { useRoleEditor } from 'src/app/roleHooks';
 import type { InteractionSettings } from 'src/app/types';
-import { PrototypeState } from './PrototypeState';
+import { PrototypeState, PrototypeVisibility } from './PrototypeState';
 import { PropertyGroup } from './PropertyGroup';
 import styles from './styles.css';
 
@@ -110,21 +110,31 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                                                 Missing state
                                             </option>
                                         )}
-                                    {instanceId && data.prototypeBooleans.length > 0 && (
-                                        <optgroup label="Toggle state">
-                                            {data.prototypeBooleans.map((value) => (
-                                                <option
-                                                    key={value.id}
-                                                    value={JSON.stringify({
-                                                        type: 'toggleState',
-                                                        stateId: value.id
-                                                    })}
-                                                >
-                                                    Toggle state: {value.name}
-                                                </option>
-                                            ))}
-                                        </optgroup>
-                                    )}
+                                    {instanceId &&
+                                        data.prototypeBooleans.some(
+                                            (value) => value.id !== data.prototypeVisibilityStateId
+                                        ) && (
+                                            <optgroup label="Toggle state">
+                                                {data.prototypeBooleans
+                                                    // Toggling the state it follows would hide this control.
+                                                    .filter(
+                                                        (value) =>
+                                                            value.id !==
+                                                            data.prototypeVisibilityStateId
+                                                    )
+                                                    .map((value) => (
+                                                        <option
+                                                            key={value.id}
+                                                            value={JSON.stringify({
+                                                                type: 'toggleState',
+                                                                stateId: value.id
+                                                            })}
+                                                        >
+                                                            Toggle state: {value.name}
+                                                        </option>
+                                                    ))}
+                                            </optgroup>
+                                        )}
                                     {variantAction &&
                                         !data.variantTargets.some(
                                             (item) =>
@@ -193,34 +203,20 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                             </div>
                         </td>
                     </tr>
-                    {instanceId &&
-                        data.prototypeVisible !== undefined &&
-                        (!data.prototypeVisibilityStateId ||
-                            !data.prototypeBooleans.some(
-                                (value) => value.id === data.prototypeVisibilityStateId
-                            )) && (
-                            <tr>
-                                <td colSpan={2}>
-                                    <label className={styles.prototypeVisibility}>
-                                        <input
-                                            type="checkbox"
-                                            checked={data.prototypeVisible}
-                                            disabled={data.disabled}
-                                            onChange={(event) =>
-                                                editInteractions({
-                                                    target: 'visibility',
-                                                    instanceId,
-                                                    visible: event.target.checked
-                                                })
-                                            }
-                                        />{' '}
-                                        {data.prototypeVisibilityStateId
-                                            ? 'Show if state is missing'
-                                            : 'Show initially in prototype'}
-                                    </label>
-                                </td>
-                            </tr>
-                        )}
+                    {instanceId && data.prototypeVisible !== undefined && (
+                        <tr>
+                            <td colSpan={2}>
+                                <PrototypeVisibility
+                                    instanceId={instanceId}
+                                    visible={data.prototypeVisible}
+                                    stateId={data.prototypeVisibilityStateId}
+                                    values={data.prototypeBooleans}
+                                    blocked={data.blockedStateIds}
+                                    disabled={data.disabled}
+                                />
+                            </td>
+                        </tr>
+                    )}
                     {(data.actionFamily !== undefined || unavailable) && (
                         <tr>
                             <td colSpan={2}>
@@ -236,12 +232,7 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                 </PropertyGroup>
             </table>
             {instanceId && data.prototypeVisible !== undefined && (
-                <PrototypeState
-                    instanceId={instanceId}
-                    stateId={data.prototypeVisibilityStateId}
-                    values={data.prototypeBooleans}
-                    disabled={data.disabled}
-                />
+                <PrototypeState values={data.prototypeBooleans} disabled={data.disabled} />
             )}
         </section>
     );

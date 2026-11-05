@@ -5,7 +5,12 @@ import { isReadOnly } from './documentAccess';
 import { isShapeLocked } from './utils';
 import { orUndefined, readInteractions, readEntity } from './services/documentStorage';
 import { screenFrames } from './screens';
-import { validVariantAction, prototypeTargets } from './interactiveVariants';
+import {
+    validVariantAction,
+    prototypeTargets,
+    toggledState,
+    bindingHidesControl
+} from './interactiveVariants';
 import { effectiveActivation } from './screenInteractions';
 
 export interface InteractionEdit {
@@ -24,7 +29,14 @@ export type PrototypeStateEdit =
     | { target: 'state'; kind: 'add'; name: string; initial: boolean }
     | { target: 'state'; kind: 'update'; id: string; name: string; initial: boolean }
     | { target: 'state'; kind: 'delete'; id: string }
-    | { target: 'state'; kind: 'bind'; instanceId: string; stateId: string | null };
+    | {
+          target: 'state';
+          kind: 'bind';
+          instanceId: string;
+          stateId: string | null;
+          /** With no state, how the instance starts; leaves it unchanged when omitted. */
+          visible?: boolean;
+      };
 
 export function editInteractions(
     context: Context,
@@ -100,6 +112,15 @@ export function editInteractions(
     ) {
         return;
     }
+    // A control bound to the state it toggles would hide itself until Reset.
+    if (
+        instance?.type === 'instance' &&
+        instance.prototypeVisibilityStateId &&
+        settings.activate &&
+        toggledState(document, instance, settings.activate) === instance.prototypeVisibilityStateId
+    ) {
+        return;
+    }
     const destination = settings.activate?.screenId;
     if (
         destination &&
@@ -164,9 +185,17 @@ function editPrototypeState(
         ) {
             return 'Choose an unlocked instance and an available state.';
         }
+        if (edit.stateId !== null && bindingHidesControl(document, shape, edit.stateId)) {
+            return 'A control that toggles this state would hide itself. Choose another state.';
+        }
         effects.collaboration.startBatch(document.id, { kind: 'person' });
         if (edit.stateId === null) {
             delete shape.prototypeVisibilityStateId;
+            if (edit.visible === true) {
+                delete shape.prototypeVisible;
+            } else if (edit.visible === false) {
+                shape.prototypeVisible = false;
+            }
         } else {
             shape.prototypeVisibilityStateId = edit.stateId;
         }

@@ -1025,22 +1025,24 @@
     font-size: 0.75rem;
 }
 
-.prototypeVisibility {
-    align-items: center;
-    display: flex;
-    gap: var(--column-gap);
-}
-
 .prototypeState {
     display: grid;
     gap: 8px;
     padding: var(--card-padding);
 }
 
-.prototypeState h3 {
+.prototypeState summary {
+    cursor: pointer;
     font-size: 0.875rem;
     font-weight: 500;
-    margin: 8px 0 0;
+}
+
+.prototypeState summary:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+}
+
+.prototypeState [role='alert'] {
+    margin: 0;
 }
 
 .prototypeStateRow {

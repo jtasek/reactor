@@ -1,5 +1,5 @@
 import { screenOwners } from './screenViews';
-import { variantTargets, prototypeTargets } from './interactiveVariants';
+import { variantTargets, prototypeTargets, bindingHidesControl } from './interactiveVariants';
 import { useAppState } from './hooks';
 import {
     effectiveRoleSettings,
@@ -46,9 +46,21 @@ export const useRoleEditor = (componentId?: string, instanceId?: string) =>
                 ...value
             })),
             prototypeVisibilityStateId: instance?.prototypeVisibilityStateId,
+            // States this instance cannot follow without hiding a control that toggles them.
+            blockedStateIds: instance
+                ? Object.keys(document.prototypeBooleans).filter((id) =>
+                      bindingHidesControl(document, instance, id)
+                  )
+                : [],
             // A control that hid itself could only come back on Reset.
             visibilityTargets: visibilityTargets
-                .filter((target) => target.id !== instanceId)
+                .filter(
+                    (target) =>
+                        target.id !== instanceId &&
+                        (!instance?.prototypeVisibilityStateId ||
+                            target.prototypeVisibilityStateId !==
+                                instance.prototypeVisibilityStateId)
+                )
                 .map(({ id, name }) => ({ id, name })),
             prototypeVisible:
                 instance && visibilityTargets.some((target) => target.id === instance.id)

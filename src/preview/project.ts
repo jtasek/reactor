@@ -572,9 +572,11 @@ export function createArtworkProjector(
                         shape.prototypeVisibilityStateId &&
                         !document.prototypeBooleans[shape.prototypeVisibilityStateId]
                     ) {
-                        warnings.push(
-                            `${shape.name}: visibility state is missing; using its initial visibility.`
-                        );
+                        const message = `${shape.name}: visibility state is missing; using its initial visibility.`;
+                        if (!warnings.includes(message)) {
+                            warnings.push(message);
+                            diagnostics.push({ kind: 'shape', id: shape.id, message });
+                        }
                     }
                     group.visibility = {
                         key: JSON.stringify([screenId, shape.id, component.id]),
@@ -599,9 +601,15 @@ export function createArtworkProjector(
                         ? `state:${stateId}`
                         : undefined;
                 if (activation?.type === 'toggleState' && !toggleState) {
-                    warnings.push(
-                        `${shape.name}: prototype state is unavailable. Choose a state in Interactions.`
-                    );
+                    const message = !document.prototypeBooleans[activation.stateId]
+                        ? `${shape.name}: prototype state is missing. Choose a state in Interactions.`
+                        : recordScope
+                          ? `${shape.name}: controls in repeated records cannot toggle prototype state yet.`
+                          : `${shape.name}: this control cannot toggle prototype state here. Use a control placed on the screen.`;
+                    if (!warnings.includes(message)) {
+                        warnings.push(message);
+                        diagnostics.push({ kind: 'shape', id: shape.id, message });
+                    }
                 }
                 const target = activation?.screenId;
                 const navigateTo = target && screenIds.has(target) ? target : undefined;
@@ -629,11 +637,9 @@ export function createArtworkProjector(
                         disabled: role.props.disabled === true,
                         navigateTo,
                         ...(changeVariant ? { changeVariant } : {}),
-                        ...(toggleState
-                            ? { toggleState }
-                            : toggleVisibility
-                              ? { toggleVisibility }
-                              : {}),
+                        // A bound target's disclosure keeps aria-controls; the state is what toggles.
+                        ...(toggleState ? { toggleState } : {}),
+                        ...(toggleVisibility ? { toggleVisibility } : {}),
                         ...(controlKey ? { stateKey: controlKey } : {}),
                         ...(role.role === 'input'
                             ? {

@@ -5,6 +5,7 @@ import type {
     Group,
     InstanceShape,
     Point,
+    PrototypeBoolean,
     Shape,
     ShapeInput,
     Variable,
@@ -68,6 +69,62 @@ export interface Copied {
     variables: Variable[];
     dimensions?: Document['dimensions'];
     components?: Component[];
+    /** Named prototype states the copied instances follow or toggle. */
+    prototypeBooleans?: PrototypeBoolean[];
+}
+
+/** The named state IDs a copied shape refers to. */
+const stateReferences = (shape: ShapeInput | Shape): string[] =>
+    shape.type !== 'instance'
+        ? []
+        : [
+              ...(shape.prototypeVisibilityStateId ? [shape.prototypeVisibilityStateId] : []),
+              ...(shape.interactions?.activate?.type === 'toggleState'
+                  ? [shape.interactions.activate.stateId]
+                  : [])
+          ];
+
+/**
+ * The states `copied` refers to as `document` gets them: the same ID or name is
+ * reused, anything else is added. Answers the states to add; copied shapes are
+ * changed in place to refer to the destination's states.
+ */
+export function pasteStates(copied: Copied, document: Document): PrototypeBoolean[] {
+    const added: PrototypeBoolean[] = [];
+    const targets = new Map<string, string>();
+    (copied.prototypeBooleans ?? []).forEach((state) => {
+        if (document.prototypeBooleans[state.id]) {
+            return;
+        }
+        const same = Object.values(document.prototypeBooleans).find(
+            (existing) => existing.name === state.name
+        );
+        if (same) {
+            targets.set(state.id, same.id);
+        } else {
+            added.push(structuredClone(state));
+        }
+    });
+    copied.shapes.forEach((shape) => {
+        if (shape.type !== 'instance') {
+            return;
+        }
+        const bound = targets.get(shape.prototypeVisibilityStateId ?? '');
+        if (bound) {
+            shape.prototypeVisibilityStateId = bound;
+        }
+        const activate = shape.interactions?.activate;
+        const toggled =
+            activate?.type === 'toggleState' ? targets.get(activate.stateId) : undefined;
+        if (toggled) {
+            shape.interactions = {
+                ...shape.interactions,
+                activate: { type: 'toggleState', stateId: toggled }
+            };
+        }
+    });
+
+    return added;
 }
 
 /** Marks clipboard text as shapes copied from the editor. */
@@ -249,8 +306,13 @@ export function writeClipboard(
         });
     });
 
+    const states = [...new Set(shapes.flatMap((shape) => stateReferences(shape)))].flatMap((id) =>
+        document?.prototypeBooleans[id] ? [document.prototypeBooleans[id]] : []
+    );
+
     return JSON.stringify({
         format: CLIPBOARD_FORMAT,
+        ...(states.length > 0 ? { prototypeBooleans: states } : {}),
         ...(components.size > 0 ? { components: [...components.values()] } : {}),
         shapes: shapes.map((shape, index) => ({
             ...shapeGeometry(shape),
@@ -350,9 +412,16 @@ export function readClipboard(text: string): Copied {
             return nothing;
         }
 
+        const statesData = 'prototypeBooleans' in data ? data.prototypeBooleans : [];
+
+        if (!Array.isArray(statesData)) {
+            return nothing;
+        }
+        const prototypeBooleans = statesData.map((state) => readEntity('prototypeBooleans', state));
         const taken = new Set<number>();
 
         return {
+            ...(prototypeBooleans.length > 0 ? { prototypeBooleans } : {}),
             dimensions:
                 'dimensions' in data
                     ? Object.fromEntries(

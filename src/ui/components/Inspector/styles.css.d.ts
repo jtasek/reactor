@@ -43,7 +43,6 @@ declare namespace StylesCssNamespace {
     propertyMapping: string;
     prototypeState: string;
     prototypeStateRow: string;
-    prototypeVisibility: string;
     responsiveField: string;
     responsiveRule: string;
     responsiveRules: string;
