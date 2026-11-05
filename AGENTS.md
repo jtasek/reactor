@@ -89,6 +89,9 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
 
 - **Dev server**: `pnpm start` — `node server.ts` (Express + webpack-dev-middleware + HMR /
   React Fast Refresh) on http://localhost:4000.
+- **Local editor + Prototype**: `pnpm start:local` builds the preview runtime and starts both
+  servers at localhost:4000 and localhost:4001. Ctrl+C stops both. Optional `PORT` and
+  `PREVIEW_PORT` select distinct ports; production preview configuration stays explicit.
 - **Type-check**: `pnpm typecheck` checks the app (`pnpm tsc`, which excludes tests), the
   tests (`tsconfig.test.json`) and the server (`tsconfig.server.json`).
 - **Lint**: `pnpm lint` is read-only (`--max-warnings 0`, covers `src`, `tests`, root configs
