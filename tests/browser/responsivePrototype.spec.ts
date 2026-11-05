@@ -45,6 +45,11 @@ test('launches from a view, carries viewport and modes across navigation and pre
     await expect(runtime.locator('svg')).toHaveAttribute('viewBox', '1000 0 800 480');
     await expect(input).toHaveValue('Ada');
     await expect(runtime.getByLabel('Preview width')).toHaveCount(0);
+    await expect(runtime.getByLabel('Preview screen')).toHaveCount(0);
+    await expect(runtime.getByLabel('Preview layout')).toHaveCount(0);
+    const bounds = await runtime.locator('svg').boundingBox();
+    const stage = await page.locator('iframe').boundingBox();
+    expect(Math.abs(bounds!.x + bounds!.width / 2 - stage!.x - stage!.width / 2)).toBeLessThan(2);
     await expect(runtime.getByRole('button', { name: 'Reset preview' })).toHaveCount(0);
     await width(page, '0');
     await expect(page.getByLabel('Prototype width', { exact: true })).toHaveValue('800');
@@ -225,4 +230,38 @@ test('keeps setup out of the player, restores settings focus and preserves input
     await page.getByRole('button', { name: 'Deselect control' }).click();
     await expect(page.locator('[data-flow-control="next"]')).toBeFocused();
     await expect(page.getByRole('complementary', { name: 'Selected control' })).toHaveCount(0);
+});
+
+test('keeps navigation in an older runtime without sending unsupported player commands', async ({
+    page
+}) => {
+    await seed(page);
+    await page.route('http://127.0.0.1:4194/?player=prototype', (route) =>
+        route.fulfill({
+            contentType: 'text/html',
+            body: `<html><body><label>Screen <select aria-label="Preview screen"><option>Home</option></select></label><p></p><script>
+                window.addEventListener('message', (event) => {
+                    const port = event.ports[0];
+                    port.onmessage = (message) => {
+                        if (message.data.type) {
+                            document.body.textContent = 'Unsupported command';
+                            return;
+                        }
+                        document.querySelector('p').textContent = 'Drawing received';
+                    };
+                    setTimeout(() => port.postMessage({type: 'ready', version: 3}), 1500);
+                });
+            </script></body></html>`
+        })
+    );
+    await page.goto('/prototype');
+    // Until the runtime answers, the picker holds its place so the toolbar doesn't shift.
+    await expect(page.getByLabel('Preview screen')).toBeDisabled();
+    await expect(player(page).getByText('Drawing received')).toBeVisible();
+    await expect(player(page).getByLabel('Preview screen')).toBeVisible();
+    await expect(page.getByLabel('Preview screen')).toHaveCount(0);
+    await expect(player(page).getByText('Unsupported command')).toHaveCount(0);
+    await expect(
+        page.getByRole('button', { name: 'Prototype settings', exact: true })
+    ).toBeVisible();
 });

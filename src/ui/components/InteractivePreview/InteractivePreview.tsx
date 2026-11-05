@@ -32,6 +32,7 @@ export default function InteractivePreview({
     const diagnosticId = useId();
     const prepare = useMemo(() => createPreviewResources(assets), [assets]);
     const [currentScreen, setCurrentScreen] = useState<string>();
+    const [hostControls, setHostControls] = useState(false);
     const [inspection, setInspection] = useState<PreviewInspection>({});
     useEffect(() => onInspection?.(inspection), [inspection, onInspection]);
     const live = usePreviewProjection(inspection, session);
@@ -160,6 +161,8 @@ export default function InteractivePreview({
         const channel = new MessageChannel();
         channelPort.current = channel.port1;
         connection.current = null;
+        setHostControls(false);
+        setCurrentScreen(undefined);
         channel.port1.onmessage = (event) => {
             if (event.data?.type === 'current-screen') {
                 if (latest.current?.screens.some((screen) => screen.id === event.data.screenId)) {
@@ -227,8 +230,10 @@ export default function InteractivePreview({
             }
             connection.current = channel.port1;
             setAvailability('');
-            if (session) {
-                // Older preview servers ignore this and keep their own picker and Layout.
+            const supportsHostControls = event.data.playerControls === true;
+            setHostControls(supportsHostControls);
+            if (session && supportsHostControls) {
+                // Older runtimes own their navigation and must receive only drawing payloads.
                 channel.port1.postMessage({ type: 'player-controls' });
             }
             if (latest.current) {
@@ -283,32 +288,39 @@ export default function InteractivePreview({
         >
             {session && (
                 <div className={styles.toolbar} aria-label="Prototype controls">
-                    <select
-                        aria-label="Preview screen"
-                        disabled={!ready || !currentScreen}
-                        value={shown?.id ?? ''}
-                        onChange={(event) => {
-                            connection.current?.postMessage({
-                                type: 'select-screen',
-                                screenId: event.target.value
-                            });
-                        }}
-                    >
-                        {latest.current?.screens.map((screen) => (
-                            <option key={screen.id} value={screen.id}>
-                                {screen.name}
-                            </option>
-                        ))}
-                    </select>
+                    {/* Kept (disabled) until the runtime answers so the toolbar doesn't shift on load. */}
+                    {(hostControls || !ready) && (
+                        <select
+                            aria-label="Preview screen"
+                            disabled={!ready || !currentScreen}
+                            value={shown?.id ?? ''}
+                            onChange={(event) => {
+                                connection.current?.postMessage({
+                                    type: 'select-screen',
+                                    screenId: event.target.value
+                                });
+                            }}
+                        >
+                            {latest.current?.screens.map((screen) => (
+                                <option key={screen.id} value={screen.id}>
+                                    {screen.name}
+                                </option>
+                            ))}
+                        </select>
+                    )}
                     {toolbar}
                 </div>
             )}
-            {session && currentScreen && settingsTarget && createPortal(layout, settingsTarget)}
+            {session &&
+                hostControls &&
+                currentScreen &&
+                settingsTarget &&
+                createPortal(layout, settingsTarget)}
             {availability && <p role="status">{availability}</p>}
             {preparing && <p role="status">Preparing preview images…</p>}
             {problem && (
                 <div role="status">
-                    <strong>Preview needs attention</strong>
+                    {!session && <strong>Preview needs attention</strong>}
                     <p>{problem}</p>
                     {latest.current && <p>Showing the last valid preview.</p>}
                     {runtimeProblem && !projection.problem && (
