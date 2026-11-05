@@ -23,12 +23,15 @@ const Field: FC<{
     prefix?: string;
     onCommit: (value: string) => void;
 }> = ({ label, value, disabled, minimum, prefix = 'Frame', onCommit }) => {
-    const [draft, setDraft] = useState(String(value));
+    // Unsaved text, or null to show the stored value. Never resetting to a copy of
+    // `value` means a commit can't briefly write the pre-commit value back.
+    const [edit, setEdit] = useState<string | null>(null);
+    const draft = edit ?? String(value);
     const id = `frame-${label.replaceAll(' ', '-').toLowerCase()}`;
 
-    // Sync the committed value before another edit can select/replace the field.
-    // A passive effect can otherwise reset the selection between select-all and typing.
-    useLayoutEffect(() => setDraft(String(value)), [value]);
+    // A stored change replaces unsaved text before paint, so it never lands after the
+    // next focus and select-all.
+    useLayoutEffect(() => setEdit(null), [value]);
 
     return (
         <tr>
@@ -44,7 +47,7 @@ const Field: FC<{
                     min={minimum}
                     disabled={disabled}
                     value={draft}
-                    onChange={(event) => setDraft(event.target.value)}
+                    onChange={(event) => setEdit(event.target.value)}
                     onBlur={() => {
                         const number = Number(draft);
                         if (
@@ -53,13 +56,13 @@ const Field: FC<{
                                 (!Number.isFinite(number) ||
                                     (minimum !== undefined && number < minimum)))
                         ) {
-                            setDraft(String(value));
+                            setEdit(null);
 
                             return;
                         }
 
                         onCommit(draft);
-                        setDraft(String(value));
+                        setEdit(null);
                     }}
                     onKeyDown={(event) => {
                         if (event.key === 'Enter') {
