@@ -107,6 +107,8 @@ function PrototypeWorkspace() {
     const [customPreset, setCustomPreset] = useState(false);
     const [restart, setRestart] = useState(0);
     const reset = () => setRestart((value) => value + 1);
+    // Restart remounts the preview and its header controls, so focus moves to the new button.
+    const refocusRestart = useRef(false);
     const resize = (axis: 'width' | 'height', value: number) =>
         setSession((previous) => ({
             ...previous,
@@ -293,9 +295,18 @@ function PrototypeWorkspace() {
                                     </select>
                                 </label>
                                 <button
+                                    ref={(button) => {
+                                        if (button && refocusRestart.current) {
+                                            refocusRestart.current = false;
+                                            button.focus();
+                                        }
+                                    }}
                                     aria-label="Restart prototype"
                                     title="Restart prototype"
-                                    onClick={reset}
+                                    onClick={() => {
+                                        refocusRestart.current = true;
+                                        reset();
+                                    }}
                                 >
                                     <Icon icon={{ component: RotateCcw, size: 18 }} />
                                     Restart

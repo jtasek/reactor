@@ -110,9 +110,6 @@
     align-self: end;
     padding-inline: 12px;
 }
-.toolbar :is(select, button):hover {
-    background: var(--control-background-active);
-}
 @media (max-width: 600px) {
     .toolbar {
         justify-content: flex-start;

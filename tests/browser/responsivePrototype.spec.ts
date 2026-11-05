@@ -209,6 +209,17 @@ test('keeps setup out of the player, restores settings focus and preserves input
     await expect(
         header.getByRole('button', { name: 'Prototype settings', exact: true })
     ).toBeVisible();
+    // Header buttons share a bottom edge with the labelled selects.
+    const bottom = async (name: string) => {
+        const box = await header.getByRole('button', { name, exact: true }).boundingBox();
+
+        return Math.round(box!.y + box!.height);
+    };
+    expect(await bottom('Share prototype')).toBe(await bottom('Restart prototype'));
+    const restart = header.getByRole('button', { name: 'Restart prototype' });
+    await restart.focus();
+    await page.keyboard.press('Enter');
+    await expect(restart).toBeFocused();
     const input = runtime.getByRole('textbox', { name: 'Your name', exact: true });
     await input.fill('Ada');
     await page.screenshot({ path: 'test-results/prototype-header-wide.png' });
@@ -239,6 +250,8 @@ test('keeps setup out of the player, restores settings focus and preserves input
     expect(await header.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
         true
     );
+    // The wrapped phone header scrolls away instead of covering the player.
+    await expect(header).toHaveCSS('position', 'relative');
     await page.screenshot({ path: 'test-results/prototype-phone.png' });
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.getByRole('link', { name: 'Flow', exact: true }).click();

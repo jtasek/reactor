@@ -90,8 +90,13 @@
     box-sizing: border-box;
     background: var(--control-background);
 }
+/* Bottom edges line up with the labelled selects when everything shares one row. */
+.header > a,
+.headerActions {
+    align-self: end;
+}
 .prototype button:hover,
-.header a:hover {
+.header :is(a, button, select):hover {
     background: var(--field-background);
 }
 .prototype :is(button, input, select, a):focus-visible {
@@ -149,6 +154,8 @@
     .header {
         padding: 8px;
         gap: 6px;
+        /* The wrapped controls are too tall to keep over the player on phones. */
+        position: relative;
     }
     .documentName {
         display: none;
