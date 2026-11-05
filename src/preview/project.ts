@@ -583,12 +583,15 @@ export function createArtworkProjector(
                         initial: shape.prototypeVisible ?? true,
                         ...(shape.prototypeVisibilityStateId &&
                         document.prototypeBooleans[shape.prototypeVisibilityStateId]
-                            ? { stateKey: `state:${shape.prototypeVisibilityStateId}` }
+                            ? {
+                                  stateKey: `state:${shape.prototypeVisibilityStateId}`,
+                                  when: shape.prototypeVisibilityWhen ?? true
+                              }
                             : {})
                     };
                 }
                 const stateId =
-                    activation?.type === 'toggleState'
+                    activation?.type === 'toggleState' || activation?.type === 'setState'
                         ? activation.stateId
                         : toggleVisibility && visibilityTarget?.type === 'instance'
                           ? visibilityTarget.prototypeVisibilityStateId
@@ -600,12 +603,15 @@ export function createArtworkProjector(
                     (path === screenId || controlKey !== undefined)
                         ? `state:${stateId}`
                         : undefined;
-                if (activation?.type === 'toggleState' && !toggleState) {
+                if (
+                    (activation?.type === 'toggleState' || activation?.type === 'setState') &&
+                    !toggleState
+                ) {
                     const message = !document.prototypeBooleans[activation.stateId]
                         ? `${shape.name}: prototype state is missing. Choose a state in Interactions.`
                         : recordScope
-                          ? `${shape.name}: controls in repeated records cannot toggle prototype state yet.`
-                          : `${shape.name}: this control cannot toggle prototype state here. Use a control placed on the screen.`;
+                          ? `${shape.name}: controls in repeated records cannot change prototype state yet.`
+                          : `${shape.name}: this control cannot change prototype state here. Use a control placed on the screen.`;
                     if (!warnings.includes(message)) {
                         warnings.push(message);
                         diagnostics.push({ kind: 'shape', id: shape.id, message });
@@ -637,8 +643,11 @@ export function createArtworkProjector(
                         disabled: role.props.disabled === true,
                         navigateTo,
                         ...(changeVariant ? { changeVariant } : {}),
-                        // A bound target's disclosure keeps aria-controls; the state is what toggles.
-                        ...(toggleState ? { toggleState } : {}),
+                        ...(toggleState
+                            ? activation?.type === 'setState'
+                                ? { setState: { key: toggleState, value: activation.value } }
+                                : { toggleState }
+                            : {}),
                         ...(toggleVisibility ? { toggleVisibility } : {}),
                         ...(controlKey ? { stateKey: controlKey } : {}),
                         ...(role.role === 'input'

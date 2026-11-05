@@ -25,6 +25,7 @@ const variants = new Map<string, string>();
 const initialVariants = new Map<string, string>();
 const visibility = new Map<string, boolean>();
 const initialVisibility = new Map<string, boolean>();
+const visibilityConditions = new Map<string, boolean>();
 const visibilityId = (key: string) => `visibility-${encodeURIComponent(key)}`;
 /** The visibility the last activation toggled: focus returns to its opener if the control hid. */
 let toggled: string | undefined;
@@ -40,13 +41,11 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
     const element = document.createElementNS(SVG, node.tag);
     if (authored.visibility) {
         element.id = visibilityId(authored.visibility.key);
-        if (
-            !(
-                visibility.get(authored.visibility.stateKey ?? authored.visibility.key) ??
-                initialVisibility.get(authored.visibility.stateKey ?? authored.visibility.key) ??
-                authored.visibility.initial
-            )
-        ) {
+        const key = authored.visibility.stateKey ?? authored.visibility.key;
+        const value =
+            visibility.get(key) ?? initialVisibility.get(key) ?? authored.visibility.initial;
+        const expected = authored.visibility.stateKey ? (authored.visibility.when ?? true) : true;
+        if (value !== expected) {
             element.setAttribute('display', 'none');
 
             return element;
@@ -112,6 +111,11 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
             )
         );
     }
+    // A Set control is a plain button: pressing it again does not undo it, so no aria-pressed.
+    // The data attribute lets focus return to it when its own action hides another control.
+    if (control.setState !== undefined) {
+        field.dataset.toggleState = control.setState.key;
+    }
     // A disclosure whose target follows a state stays a disclosure; plain state toggles are pressed.
     if (
         control.toggleState !== undefined &&
@@ -134,7 +138,10 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
         const key = control.toggleState ?? control.toggleVisibility;
         field.setAttribute(
             'aria-expanded',
-            String(visibility.get(key) ?? initialVisibility.get(key) ?? true)
+            String(
+                (visibility.get(key) ?? initialVisibility.get(key) ?? true) ===
+                    (visibilityConditions.get(control.toggleVisibility) ?? true)
+            )
         );
         field.setAttribute('aria-controls', visibilityId(control.toggleVisibility));
     }
@@ -153,7 +160,8 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
                 (!control.navigateTo &&
                     !control.changeVariant &&
                     control.toggleVisibility === undefined &&
-                    control.toggleState === undefined)
+                    control.toggleState === undefined &&
+                    control.setState === undefined)
             ) {
                 return;
             }
@@ -178,14 +186,20 @@ function activate(control: NonNullable<PreviewNode['control']>) {
         !control.changeVariant &&
         !control.navigateTo &&
         control.toggleVisibility === undefined &&
-        control.toggleState === undefined
+        control.toggleState === undefined &&
+        control.setState === undefined
     ) {
         return;
     }
-    toggled = control.toggleState ?? control.toggleVisibility;
+    toggled = control.toggleState ?? control.toggleVisibility ?? control.setState?.key;
     if (toggled !== undefined) {
         const key = toggled;
-        visibility.set(key, !(visibility.get(key) ?? initialVisibility.get(key) ?? true));
+        visibility.set(
+            key,
+            control.setState
+                ? control.setState.value
+                : !(visibility.get(key) ?? initialVisibility.get(key) ?? true)
+        );
     }
     if (control.changeVariant) {
         variants.set(control.changeVariant.key, control.changeVariant.variantId);
@@ -329,12 +343,17 @@ function receive(value: unknown) {
         const keys = new Set<string>();
         initialVariants.clear();
         initialVisibility.clear();
+        visibilityConditions.clear();
         Object.entries(next.booleans ?? {}).forEach(([key, initial]) =>
             initialVisibility.set(key, initial)
         );
         const collect = (node: PreviewNode) => {
             if (node.visibility) {
                 initialVisibility.set(node.visibility.key, node.visibility.initial);
+                visibilityConditions.set(
+                    node.visibility.key,
+                    node.visibility.stateKey ? (node.visibility.when ?? true) : true
+                );
             }
             if (node.control?.role === 'input') {
                 keys.add(node.control.stateKey ?? node.key);

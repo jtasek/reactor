@@ -79,7 +79,8 @@ const stateReferences = (shape: ShapeInput | Shape): string[] =>
         ? []
         : [
               ...(shape.prototypeVisibilityStateId ? [shape.prototypeVisibilityStateId] : []),
-              ...(shape.interactions?.activate?.type === 'toggleState'
+              ...(shape.interactions?.activate?.type === 'toggleState' ||
+              shape.interactions?.activate?.type === 'setState'
                   ? [shape.interactions.activate.stateId]
                   : [])
           ];
@@ -115,11 +116,13 @@ export function pasteStates(copied: Copied, document: Document): PrototypeBoolea
         }
         const activate = shape.interactions?.activate;
         const toggled =
-            activate?.type === 'toggleState' ? targets.get(activate.stateId) : undefined;
-        if (toggled) {
+            activate?.type === 'toggleState' || activate?.type === 'setState'
+                ? targets.get(activate.stateId)
+                : undefined;
+        if (toggled && (activate?.type === 'toggleState' || activate?.type === 'setState')) {
             shape.interactions = {
                 ...shape.interactions,
-                activate: { type: 'toggleState', stateId: toggled }
+                activate: { ...activate, stateId: toggled }
             };
         }
     });

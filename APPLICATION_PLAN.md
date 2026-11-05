@@ -1098,6 +1098,13 @@ team can then send a working prototype link to others.
    until explicitly rebound; state definitions are not part of component-library packages.
    Tests: prototypeState unit/browser.
 
+   **Explicit boolean actions and conditions (implemented).** Set true/false actions are
+   idempotent; Toggle remains available. A visibility binding can show its instance when the
+   state is true or false, allowing complementary views. Missing state keeps the existing
+   instance fallback without inversion. Readers, Inspector, Flow, copies, undo and collaboration
+   retain authored conditions. Runtime Reset and session isolation remain unchanged.
+   Verification: prototypeState unit tests and prototypeBooleanActions browser tests.
+
    **Remaining typed state and bindings (planned).** Add named local text/number values,
    set/toggle/reset actions and compatible control/property bindings. Keep runtime values separate
    from design-system variables and document mutations. Recreate the variable-editor comparison

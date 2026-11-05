@@ -7,7 +7,7 @@ export interface PreviewNode {
     /** SHA-256 key into the application's verified raster image table. */
     image?: string;
     children?: PreviewNode[];
-    visibility?: { key: string; initial: boolean; stateKey?: string };
+    visibility?: { key: string; initial: boolean; stateKey?: string; when?: boolean };
     variantKey?: string;
     initialVariant?: string;
     variants?: Record<string, PreviewNode>;
@@ -21,6 +21,7 @@ export interface PreviewNode {
         changeVariant?: { key: string; variantId: string };
         toggleVisibility?: string;
         toggleState?: string;
+        setState?: { key: string; value: boolean };
         stateKey?: string;
         x: number;
         y: number;
@@ -226,12 +227,14 @@ export function readPreview(
             if (
                 !string(visibility.key) ||
                 typeof visibility.initial !== 'boolean' ||
-                (visibility.stateKey !== undefined && !string(visibility.stateKey))
+                (visibility.stateKey !== undefined && !string(visibility.stateKey)) ||
+                (visibility.when !== undefined && typeof visibility.when !== 'boolean')
             ) {
                 throw new Error('Invalid prototype visibility.');
             }
             result.visibility = {
                 key: visibility.key,
+                ...(visibility.when === undefined ? {} : { when: visibility.when as boolean }),
                 initial: visibility.initial,
                 ...(visibility.stateKey === undefined
                     ? {}
@@ -280,6 +283,12 @@ export function readPreview(
             ) {
                 throw new Error('Invalid preview control.');
             }
+            if (
+                c.setState !== undefined &&
+                (c.toggleState !== undefined || c.toggleVisibility !== undefined)
+            ) {
+                throw new Error('Conflicting boolean actions.');
+            }
             const changeVariant =
                 c.changeVariant === undefined ? undefined : object(c.changeVariant);
             if (changeVariant && (!string(changeVariant.key) || !string(changeVariant.variantId))) {
@@ -292,6 +301,7 @@ export function readPreview(
                 placeholder: c.placeholder,
                 disabled: c.disabled,
                 navigateTo: c.navigateTo,
+                ...(c.setState === undefined ? {} : { setState: readSetState(c.setState) }),
                 ...(c.toggleState === undefined ? {} : { toggleState: c.toggleState as string }),
                 ...(c.toggleVisibility === undefined
                     ? {}
@@ -388,7 +398,9 @@ export function readPreview(
                 (node.visibility?.stateKey !== undefined &&
                     !Object.hasOwn(booleans, node.visibility.stateKey)) ||
                 (node.control?.toggleState !== undefined &&
-                    !Object.hasOwn(booleans, node.control.toggleState))
+                    !Object.hasOwn(booleans, node.control.toggleState)) ||
+                (node.control?.setState !== undefined &&
+                    !Object.hasOwn(booleans, node.control.setState.key))
         )
     ) {
         throw new Error('Unavailable prototype state.');
@@ -433,4 +445,13 @@ export function readPreview(
         images,
         ...(app.booleans === undefined ? {} : { booleans: booleans as Record<string, boolean> })
     };
+}
+
+function readSetState(value: unknown): { key: string; value: boolean } {
+    const action = object(value);
+    if (!string(action.key) || typeof action.value !== 'boolean') {
+        throw new Error('Invalid set-state action.');
+    }
+
+    return { key: action.key, value: action.value };
 }

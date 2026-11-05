@@ -26,7 +26,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 28;
+export const SCHEMA_VERSION = 29;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -452,6 +452,12 @@ export function readShapeGeometry(value: unknown) {
                     s.prototypeVisibilityStateId === undefined
                         ? undefined
                         : id(s.prototypeVisibilityStateId),
+                // A condition means nothing without its state; a stray one would invert the next binding.
+                prototypeVisibilityWhen:
+                    s.prototypeVisibilityWhen === undefined ||
+                    s.prototypeVisibilityStateId === undefined
+                        ? undefined
+                        : bool(s.prototypeVisibilityWhen),
                 prototypeVisible:
                     s.prototypeVisible === undefined ? undefined : bool(s.prototypeVisible),
                 modeOverrides: readBindings(s.modeOverrides ?? {}),
@@ -581,17 +587,27 @@ function readRoleAndInteractions(value: Record<string, unknown>) {
 
 export function readInteractions(value: unknown): import('../types').InteractionSettings {
     const { activate, ...rest } = record(value);
-    const { type, screenId, instanceId, variantId, stateId } = record(activate ?? {});
+    const {
+        type,
+        screenId,
+        instanceId,
+        variantId,
+        stateId,
+        value: stateValue
+    } = record(activate ?? {});
     if (
         Object.keys(rest).length ||
         (activate != null &&
-            !['navigate', 'changeVariant', 'toggleVisibility', 'toggleState'].includes(
+            !['navigate', 'changeVariant', 'toggleVisibility', 'toggleState', 'setState'].includes(
                 type as string
             ))
     ) {
         throw new Error('Invalid interactions');
     }
 
+    if (type === 'setState') {
+        return { activate: { type, stateId: id(stateId), value: bool(stateValue) } };
+    }
     if (type === 'toggleState') {
         return { activate: { type, stateId: id(stateId) } };
     }

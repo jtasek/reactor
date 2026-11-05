@@ -36,6 +36,7 @@ export type PrototypeStateEdit =
           stateId: string | null;
           /** With no state, how the instance starts; leaves it unchanged when omitted. */
           visible?: boolean;
+          when?: boolean;
       };
 
 export function editInteractions(
@@ -107,7 +108,7 @@ export function editInteractions(
         return;
     }
     if (
-        settings.activate?.type === 'toggleState' &&
+        (settings.activate?.type === 'toggleState' || settings.activate?.type === 'setState') &&
         (!owner || !document.prototypeBooleans[settings.activate.stateId])
     ) {
         return;
@@ -177,6 +178,9 @@ function editPrototypeState(
         return 'Prototype state cannot be edited right now.';
     }
     if (edit.kind === 'bind') {
+        if (edit.when !== undefined && typeof edit.when !== 'boolean') {
+            return 'Choose true or false for the visibility condition.';
+        }
         const shape = prototypeTargets(document).find((item) => item.id === edit.instanceId);
         if (
             !shape ||
@@ -191,6 +195,7 @@ function editPrototypeState(
         effects.collaboration.startBatch(document.id, { kind: 'person' });
         if (edit.stateId === null) {
             delete shape.prototypeVisibilityStateId;
+            delete shape.prototypeVisibilityWhen;
             if (edit.visible === true) {
                 delete shape.prototypeVisible;
             } else if (edit.visible === false) {
@@ -198,6 +203,7 @@ function editPrototypeState(
             }
         } else {
             shape.prototypeVisibilityStateId = edit.stateId;
+            shape.prototypeVisibilityWhen = edit.when ?? true;
         }
         effects.collaboration.flush();
 
