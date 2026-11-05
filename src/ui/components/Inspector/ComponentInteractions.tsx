@@ -22,7 +22,10 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
             id: instanceId ?? componentId!,
             settings
         });
-    const stateAction = data.activation?.type === 'toggleState' ? data.activation : undefined;
+    const stateAction =
+        data.activation?.type === 'toggleState' || data.activation?.type === 'setState'
+            ? data.activation
+            : undefined;
     const visibilityAction =
         data.activation?.type === 'toggleVisibility' ? data.activation : undefined;
     const variantAction = data.activation?.type === 'changeVariant' ? data.activation : undefined;
@@ -47,10 +50,7 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                                         data.actionInherited
                                             ? 'inherit'
                                             : stateAction
-                                              ? JSON.stringify({
-                                                    type: 'toggleState',
-                                                    stateId: stateAction.stateId
-                                                })
+                                              ? stateChoice(stateAction)
                                               : visibilityAction
                                                 ? visibilityChoice(visibilityAction.instanceId)
                                                 : variantAction
@@ -101,12 +101,7 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                                         !data.prototypeBooleans.some(
                                             (value) => value.id === stateAction.stateId
                                         ) && (
-                                            <option
-                                                value={JSON.stringify({
-                                                    type: 'toggleState',
-                                                    stateId: stateAction.stateId
-                                                })}
-                                            >
+                                            <option value={stateChoice(stateAction)}>
                                                 Missing state
                                             </option>
                                         )}
@@ -135,6 +130,23 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                                                     ))}
                                             </optgroup>
                                         )}
+                                    {instanceId &&
+                                        data.prototypeBooleans.map((state) => (
+                                            <optgroup key={state.id} label={`Set ${state.name}`}>
+                                                {[true, false].map((value) => (
+                                                    <option
+                                                        key={String(value)}
+                                                        value={stateChoice({
+                                                            type: 'setState',
+                                                            stateId: state.id,
+                                                            value
+                                                        })}
+                                                    >
+                                                        Set {state.name} to {String(value)}
+                                                    </option>
+                                                ))}
+                                            </optgroup>
+                                        ))}
                                     {variantAction &&
                                         !data.variantTargets.some(
                                             (item) =>
@@ -207,6 +219,7 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                         <tr>
                             <td colSpan={2}>
                                 <PrototypeVisibility
+                                    when={data.prototypeVisibilityWhen}
                                     instanceId={instanceId}
                                     visible={data.prototypeVisible}
                                     stateId={data.prototypeVisibilityStateId}
@@ -245,4 +258,16 @@ function variantChoice(instanceId: string, variantId: string) {
 
 function visibilityChoice(instanceId: string) {
     return JSON.stringify({ type: 'toggleVisibility', instanceId });
+}
+
+function stateChoice(
+    action:
+        | { type: 'toggleState'; stateId: string }
+        | { type: 'setState'; stateId: string; value: boolean }
+) {
+    return JSON.stringify({
+        type: action.type,
+        stateId: action.stateId,
+        ...(action.type === 'setState' ? { value: action.value } : {})
+    });
 }

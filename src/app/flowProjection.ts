@@ -28,6 +28,7 @@ export function projectFlow(document: Document) {
         toggles?: string;
         toggleTarget?: string;
         toggleStateId?: string;
+        sets?: { id: string; name: string; value: boolean };
         /** The screen instance holding it starts hidden in the prototype. */
         startsHidden?: string;
         editable: boolean;
@@ -65,6 +66,17 @@ export function projectFlow(document: Document) {
             shared: path !== instance.id,
             ...state,
             target: activation?.screenId,
+            ...(activation?.type === 'setState'
+                ? {
+                      sets: {
+                          id: activation.stateId,
+                          name:
+                              document.prototypeBooleans[activation.stateId]?.name ??
+                              'Missing state',
+                          value: activation.value
+                      }
+                  }
+                : {}),
             ...(activation?.type === 'toggleState'
                 ? {
                       toggles:
@@ -114,18 +126,16 @@ export function projectFlow(document: Document) {
     for (const shape of Object.values(document.shapes)) {
         const owner = owners.get(shape.parentFrameId ?? '');
         if (shape.type === 'instance' && owner && !sourceIds.has(shape.id)) {
+            const boundState = document.prototypeBooleans[shape.prototypeVisibilityStateId ?? ''];
+            const when = shape.prototypeVisibilityWhen ?? true;
+            const startsHidden = boundState
+                ? boundState.initial !== when
+                : shape.prototypeVisible === false;
             visit(shape, owner, shape.id, new Set(), {
                 hidden: !shown.has(shape.id),
                 unusedVariant: false,
-                ...((document.prototypeBooleans[shape.prototypeVisibilityStateId ?? '']?.initial ??
-                    shape.prototypeVisible) === false && isTarget(shape.id, owner)
-                    ? {
-                          startsHidden: document.prototypeBooleans[
-                              shape.prototypeVisibilityStateId ?? ''
-                          ]
-                              ? `state:${shape.prototypeVisibilityStateId}`
-                              : shape.id
-                      }
+                ...(startsHidden && isTarget(shape.id, owner)
+                    ? { startsHidden: boundState ? `state:${boundState.id}:${when}` : shape.id }
                     : {})
             });
         }
@@ -141,6 +151,7 @@ export function projectFlow(document: Document) {
                 ...control,
                 missing: Boolean(
                     (control.target && !available.has(control.target)) ||
+                    (control.sets !== undefined && !document.prototypeBooleans[control.sets.id]) ||
                     (control.toggleStateId !== undefined &&
                         !document.prototypeBooleans[control.toggleStateId]) ||
                     (control.toggleTarget !== undefined &&
@@ -191,8 +202,12 @@ export function reachableScreens(graph: ReturnType<typeof projectFlow>, start?: 
                 if (control.toggleTarget) {
                     revealed.add(control.toggleTarget);
                 }
+                if (control.sets) {
+                    revealed.add(`state:${control.sets.id}:${control.sets.value}`);
+                }
                 if (control.toggleStateId) {
-                    revealed.add(`state:${control.toggleStateId}`);
+                    revealed.add(`state:${control.toggleStateId}:true`);
+                    revealed.add(`state:${control.toggleStateId}:false`);
                 }
             }
         }

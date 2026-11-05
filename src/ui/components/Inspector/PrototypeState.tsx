@@ -12,10 +12,11 @@ export const PrototypeVisibility: FC<{
     instanceId: string;
     visible: boolean;
     stateId?: string;
+    when: boolean;
     values: PrototypeBoolean[];
     blocked: string[];
     disabled: boolean;
-}> = ({ instanceId, visible, stateId, values, blocked, disabled }) => {
+}> = ({ instanceId, visible, stateId, when, values, blocked, disabled }) => {
     const { editInteractions } = useActions();
     const [problem, setProblem] = useState<string>();
     const missing = stateId !== undefined && !values.some((value) => value.id === stateId);
@@ -38,7 +39,7 @@ export const PrototypeVisibility: FC<{
                             instanceId,
                             ...(choice === SHOWN || choice === HIDDEN
                                 ? { stateId: null, visible: choice === SHOWN }
-                                : { stateId: choice })
+                                : { stateId: choice, when })
                         })
                     );
                 }}
@@ -51,7 +52,7 @@ export const PrototypeVisibility: FC<{
                     </option>
                 )}
                 {choices.length > 0 && (
-                    <optgroup label="Shown while state is true">
+                    <optgroup label="Follow state">
                         {choices.map((value) => (
                             <option key={value.id} value={value.id}>
                                 Follow {value.name}
@@ -60,6 +61,30 @@ export const PrototypeVisibility: FC<{
                     </optgroup>
                 )}
             </select>
+            {stateId && (
+                <label className={styles.interactionField}>
+                    Show when
+                    <select
+                        aria-label="Show when"
+                        value={String(when)}
+                        disabled={disabled}
+                        onChange={(event) =>
+                            setProblem(
+                                editInteractions({
+                                    target: 'state',
+                                    kind: 'bind',
+                                    instanceId,
+                                    stateId,
+                                    when: event.target.value === 'true'
+                                })
+                            )
+                        }
+                    >
+                        <option value="true">True</option>
+                        <option value="false">False</option>
+                    </select>
+                </label>
+            )}
             {problem && <p role="alert">{problem}</p>}
         </div>
     );

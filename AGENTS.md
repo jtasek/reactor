@@ -1328,5 +1328,12 @@ durable and diagnostic; visibility falls back to the instance's launch default. 
 snapshots omit document-local state bindings. The sandbox projects only boolean defaults and
 stable keys, shares one runtime value across bound instances/screens, and clears it on Reset
 or document change. Existing per-instance toggles still work, including on bound targets.
-No stack reflow, inverse conditions, expressions or general text/number state is implemented.
+No stack reflow, expressions or general text/number state is implemented.
 Tests: prototypeState unit/browser.
+
+Schema v29 adds `setState` actions with a boolean value and optional instance
+`prototypeVisibilityWhen` (true when omitted). Only a valid named-state binding applies this
+condition; missing state still uses `prototypeVisible` without inversion. Unbinding removes
+the condition. The sandbox validates and executes explicit assignments without toggling;
+Flow labels assignments and distinguishes the boolean value that can reveal a hidden control.
+Tests: prototypeState unit and prototypeBooleanActions browser coverage.
