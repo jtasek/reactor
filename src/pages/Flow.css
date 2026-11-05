@@ -54,7 +54,7 @@
     padding: 0;
 }
 .flow li {
-    margin-top: 12px;
+    margin-top: 4px;
 }
 @media (max-width: 700px) {
     .workspace {
@@ -206,11 +206,17 @@
 .flow li > button {
     width: 100%;
     text-align: left;
+    display: grid;
+    gap: 4px;
+    border: 0;
+    background: transparent;
 }
-.flow li > div {
-    color: var(--text-secondary-color);
+.flow li > button small {
     font-size: 12px;
-    padding: 6px 0;
+}
+.flow li > button[aria-pressed='true'] {
+    background: var(--tag-blue-background);
+    color: var(--selection-color);
 }
 .flow button:hover {
     background: var(--field-background);

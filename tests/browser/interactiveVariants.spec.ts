@@ -29,7 +29,7 @@ test('typography switches locally, supports keyboard activation and resets witho
         'font-weight',
         '400'
     );
-    await page.getByRole('button', { name: 'Reset prototype', exact: true }).click();
+    await page.getByRole('button', { name: 'Restart prototype', exact: true }).click();
     await expect(player.getByText('Properties', { exact: true })).toHaveAttribute(
         'font-weight',
         '500'

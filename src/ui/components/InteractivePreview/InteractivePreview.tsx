@@ -290,23 +290,26 @@ export default function InteractivePreview({
                 <div className={styles.toolbar} aria-label="Prototype controls">
                     {/* Kept (disabled) until the runtime answers so the toolbar doesn't shift on load. */}
                     {(hostControls || !ready) && (
-                        <select
-                            aria-label="Preview screen"
-                            disabled={!ready || !currentScreen}
-                            value={shown?.id ?? ''}
-                            onChange={(event) => {
-                                connection.current?.postMessage({
-                                    type: 'select-screen',
-                                    screenId: event.target.value
-                                });
-                            }}
-                        >
-                            {latest.current?.screens.map((screen) => (
-                                <option key={screen.id} value={screen.id}>
-                                    {screen.name}
-                                </option>
-                            ))}
-                        </select>
+                        <label>
+                            <span>Screen</span>
+                            <select
+                                aria-label="Preview screen"
+                                disabled={!ready || !currentScreen}
+                                value={shown?.id ?? ''}
+                                onChange={(event) => {
+                                    connection.current?.postMessage({
+                                        type: 'select-screen',
+                                        screenId: event.target.value
+                                    });
+                                }}
+                            >
+                                {latest.current?.screens.map((screen) => (
+                                    <option key={screen.id} value={screen.id}>
+                                        {screen.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
                     )}
                     {toolbar}
                 </div>

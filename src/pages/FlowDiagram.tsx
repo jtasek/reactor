@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useId, useLayoutEffect, useRef, useState } from 'react';
 import type { projectFlow } from 'src/app/flowProjection';
 import { useAppState, useEffects } from 'src/app/hooks';
 import { readFlowPositions } from './flowPositions';
@@ -26,6 +26,7 @@ export function FlowDiagram({
     reachable: Set<string>;
 }) {
     const board = useRef<HTMLDivElement>(null);
+    const descriptionId = useId();
     const effects = useEffects();
     const key = useAppState((state) => `reactor:flow:${state.currentDocumentId}`);
     const [offsets, setOffsets] = useState<Record<string, Point>>(() => {
@@ -144,7 +145,7 @@ export function FlowDiagram({
                         />
                     ))}
                 </svg>
-                {graph.map((screen) => (
+                {graph.map((screen, screenIndex) => (
                     <section
                         key={screen.id}
                         className={styles.screen}
@@ -242,28 +243,30 @@ export function FlowDiagram({
                             </button>
                         )}
                         <ul>
-                            {screen.controls.map((control) => (
+                            {screen.controls.map((control, controlIndex) => (
                                 <li key={control.key}>
                                     <button
                                         data-flow-control={control.key}
+                                        aria-label={control.name}
+                                        aria-describedby={`${descriptionId}-${screenIndex}-${controlIndex}`}
                                         aria-pressed={selected === control.key}
                                         onClick={() => onSelect(control.key)}
                                     >
-                                        {control.name}
+                                        <span>{control.name}</span>
+                                        <small
+                                            id={`${descriptionId}-${screenIndex}-${controlIndex}`}
+                                        >
+                                            {control.target
+                                                ? `Go to ${graph.find((target) => target.id === control.target)?.name ?? 'Missing screen'}`
+                                                : control.sets
+                                                  ? `Sets ${control.sets.name} to ${control.sets.value}`
+                                                  : control.changes
+                                                    ? `Changes ${control.changes.instance} to ${control.changes.variant}`
+                                                    : control.toggles
+                                                      ? `Toggles ${control.toggles}`
+                                                      : 'No action'}
+                                        </small>
                                     </button>
-                                    <div>
-                                        →{' '}
-                                        {control.target
-                                            ? (graph.find((target) => target.id === control.target)
-                                                  ?.name ?? 'Missing screen')
-                                            : control.sets
-                                              ? `Sets ${control.sets.name} to ${control.sets.value}`
-                                              : control.changes
-                                                ? `Changes ${control.changes.instance} to ${control.changes.variant}`
-                                                : control.toggles
-                                                  ? `Toggles ${control.toggles}`
-                                                  : 'No action'}
-                                    </div>
                                     {control.missing && <strong>Unavailable target</strong>}
                                     {control.hidden && <small>Hidden, not in Preview</small>}
                                     {!control.hidden && control.startsHidden && (

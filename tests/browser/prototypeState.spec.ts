@@ -58,7 +58,7 @@ test('authors shared boolean state, binds two instances, renames it and reloads'
     await expect(
         player.getByText('Sentence case is easier to scan.', { exact: true })
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Reset prototype', exact: true }).click();
+    await page.getByRole('button', { name: 'Restart prototype', exact: true }).click();
     await expect(toggle).toHaveAttribute('aria-pressed', 'false');
     await expect(player.getByText('Properties', { exact: true })).toHaveCount(0);
 });

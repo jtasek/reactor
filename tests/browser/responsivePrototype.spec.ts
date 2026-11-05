@@ -82,7 +82,7 @@ test('launches from a view, carries viewport and modes across navigation and pre
     await expect(page.getByLabel('Prototype width', { exact: true })).toBeVisible();
     await page.screenshot({ path: 'test-results/prototype-narrow.png' });
     await page.getByRole('button', { name: 'Done', exact: true }).click();
-    await page.getByRole('button', { name: 'Reset prototype', exact: true }).click();
+    await page.getByRole('button', { name: 'Restart prototype', exact: true }).click();
     await expect(page.getByLabel('Preview screen')).toHaveValue('home');
     await expect(input).toHaveValue('Your name');
     await expect(runtime.locator('svg')).toHaveAttribute('viewBox', '1000 0 800 900');
@@ -187,7 +187,7 @@ test('opens the screen chosen in Flow only after an explicit player launch', asy
     await page.getByRole('link', { name: 'Play prototype', exact: true }).click();
     await expect(page.getByLabel('Start screen')).toHaveValue('details');
     await expect(page.getByLabel('Preview screen')).toHaveValue('details');
-    await page.getByRole('button', { name: 'Reset prototype', exact: true }).click();
+    await page.getByRole('button', { name: 'Restart prototype', exact: true }).click();
     await expect(page.getByLabel('Preview screen')).toHaveValue('details');
 });
 
@@ -219,6 +219,15 @@ test('keeps setup out of the player, restores settings focus and preserves input
     await page.getByLabel('Viewport preset').selectOption('mobile');
     await expect(page.getByLabel('Viewport preset')).toHaveValue('mobile');
     await expect(page.getByRole('region', { name: 'Prototype settings' })).toHaveCount(0);
+    await page.setViewportSize({ width: 320, height: 740 });
+    await expect(page.getByRole('button', { name: 'Restart prototype', exact: true })).toHaveText(
+        'Restart'
+    );
+    await expect(page.getByLabel('Preview screen')).toBeInViewport({ ratio: 1 });
+    await expect(page.getByLabel('Viewport preset')).toBeInViewport({ ratio: 1 });
+    await expect(settings).toBeInViewport({ ratio: 1 });
+    await page.screenshot({ path: 'test-results/prototype-phone.png' });
+    await page.setViewportSize({ width: 1440, height: 1000 });
     await page.getByRole('link', { name: 'Flow', exact: true }).click();
     await expect(page.getByRole('complementary', { name: 'Selected control' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Connect to Home', exact: true })).toHaveCount(0);
