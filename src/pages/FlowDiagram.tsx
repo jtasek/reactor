@@ -118,10 +118,6 @@ export function FlowDiagram({
 
     return (
         <div className={styles.diagram} aria-label="Screen flow">
-            <p>
-                Drag a screen heading to arrange this diagram, or focus it and use arrow keys.
-                Arrangement is saved on this device. Canvas positions stay unchanged.
-            </p>
             {saveFailed && <p role="status">Arrangement could not be saved on this device.</p>}
             <div className={styles.board} ref={board}>
                 <svg className={styles.connections} aria-hidden="true">
@@ -162,6 +158,7 @@ export function FlowDiagram({
                             <button
                                 className={styles.handle}
                                 aria-label={`Arrange ${screen.name}`}
+                                title="Drag to arrange, or use arrow keys. Canvas positions stay unchanged."
                                 onKeyDown={(event) => {
                                     const steps: Record<string, Point> = {
                                         ArrowLeft: { x: -20, y: 0 },
@@ -227,6 +224,7 @@ export function FlowDiagram({
                                 }}
                             >
                                 {screen.name}
+                                {start === screen.id && <span className={styles.badge}>Start</span>}
                             </button>
                         </h2>
                         {!screen.available && (
@@ -235,12 +233,14 @@ export function FlowDiagram({
                         {start && !reachable.has(screen.id) && (
                             <p>Not reachable from the chosen screen.</p>
                         )}
-                        <button
-                            disabled={!canConnect || !screen.available}
-                            onClick={() => onConnect(screen.id)}
-                        >
-                            Connect to {screen.name}
-                        </button>
+                        {selected && (
+                            <button
+                                disabled={!canConnect || !screen.available}
+                                onClick={() => onConnect(screen.id)}
+                            >
+                                Connect to {screen.name}
+                            </button>
+                        )}
                         <ul>
                             {screen.controls.map((control) => (
                                 <li key={control.key}>

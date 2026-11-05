@@ -1,4 +1,5 @@
-import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useEffects } from 'src/app/hooks';
 import { usePreviewProjection, type PreviewProjection } from 'src/preview/hooks';
 import {
@@ -15,9 +16,13 @@ export default function InteractivePreview({
     onWidth,
     onReset,
     onInspection,
-    onLocate
+    onLocate,
+    toolbar,
+    settingsTarget
 }: {
     session?: PreviewSession;
+    toolbar?: ReactNode;
+    settingsTarget?: HTMLElement | null;
     onWidth?: (width: number) => void;
     onReset?: () => void;
     onInspection?: (inspection: PreviewInspection) => void;
@@ -26,6 +31,7 @@ export default function InteractivePreview({
     const { assets } = useEffects();
     const diagnosticId = useId();
     const prepare = useMemo(() => createPreviewResources(assets), [assets]);
+    const [currentScreen, setCurrentScreen] = useState<string>();
     const [inspection, setInspection] = useState<PreviewInspection>({});
     useEffect(() => onInspection?.(inspection), [inspection, onInspection]);
     const live = usePreviewProjection(inspection, session);
@@ -155,6 +161,13 @@ export default function InteractivePreview({
         channelPort.current = channel.port1;
         connection.current = null;
         channel.port1.onmessage = (event) => {
+            if (event.data?.type === 'current-screen') {
+                if (latest.current?.screens.some((screen) => screen.id === event.data.screenId)) {
+                    setCurrentScreen(event.data.screenId);
+                }
+
+                return;
+            }
             if (event.data?.type === 'error') {
                 // The runtime may not have kept this update's images; send them all next time.
                 sentImages.current = new Set();
@@ -225,8 +238,68 @@ export default function InteractivePreview({
         ]);
     };
 
+    const shown =
+        latest.current?.screens.find((screen) => screen.id === currentScreen) ??
+        latest.current?.screens[0];
+    const layout = shown?.layouts && (
+        <label>
+            Layout
+            <select
+                aria-label="Preview layout"
+                value={JSON.stringify(shown.layoutChoice ?? null)}
+                onChange={(event) => {
+                    const layoutId = JSON.parse(event.target.value) as string | null;
+                    setInspection((previous) => ({
+                        ...previous,
+                        layouts: { ...previous.layouts, [shown.id]: layoutId }
+                    }));
+                }}
+            >
+                <option value="null">Automatic · Width</option>
+                {shown.layoutChoice &&
+                    !shown.layouts.some((item) => item.id === shown.layoutChoice) && (
+                        <option value={JSON.stringify(shown.layoutChoice)}>
+                            Missing layout — showing default
+                        </option>
+                    )}
+                {shown.layouts.map((item) => (
+                    <option key={item.id} value={JSON.stringify(item.id)}>
+                        {item.name}
+                    </option>
+                ))}
+            </select>
+        </label>
+    );
+
     return (
-        <section className={styles.preview} aria-label="Interactive preview">
+        <section
+            className={styles.preview}
+            data-player={Boolean(session)}
+            aria-label="Interactive preview"
+        >
+            {session && (
+                <div className={styles.toolbar} aria-label="Prototype controls">
+                    <select
+                        aria-label="Preview screen"
+                        disabled={!ready}
+                        value={shown?.id ?? ''}
+                        onChange={(event) => {
+                            connection.current?.postMessage({
+                                type: 'select-screen',
+                                screenId: event.target.value
+                            });
+                        }}
+                    >
+                        {latest.current?.screens.map((screen) => (
+                            <option key={screen.id} value={screen.id}>
+                                {screen.name}
+                            </option>
+                        ))}
+                    </select>
+                    {toolbar}
+                </div>
+            )}
+            {session && settingsTarget && createPortal(layout, settingsTarget)}
             {availability && <p role="status">{availability}</p>}
             {preparing && <p role="status">Preparing preview images…</p>}
             {problem && (

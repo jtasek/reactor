@@ -1,5 +1,7 @@
+import { ArrowLeft, Play, Undo2, Redo2, X } from 'lucide-react';
+import { Icon } from 'src/ui/components/Icon';
 import { registerEditor } from './registerEditor';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useActions, useAppState, useEffects } from 'src/app/hooks';
 import { projectFlow, reachableScreens } from 'src/app/flowProjection';
 import { ComponentInteractions } from 'src/ui/components/Inspector/ComponentInteractions';
@@ -17,7 +19,9 @@ export function FlowPage() {
 }
 
 function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
+    const workspace = useRef<HTMLElement>(null);
     const [selected, setSelected] = useState<string>();
+    const [advanced, setAdvanced] = useState(false);
     const [start, setStart] = useState<string>();
     const { editInteractions } = useActions();
     const effects = useEffects();
@@ -61,36 +65,42 @@ function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
     }, [canUndo, canRedo, effects, document.id]);
 
     return (
-        <main className={styles.flow}>
+        <main ref={workspace} className={styles.flow}>
             <header>
-                <a href="/">Back to canvas</a>
+                <a href="/" aria-label="Back to canvas">
+                    <Icon icon={{ component: ArrowLeft, size: 18 }} />
+                    Canvas
+                </a>
                 <h1>Flow</h1>
-                <a href={`/prototype${start ? `?screen=${encodeURIComponent(start)}` : ''}`}>
-                    Open prototype
+                <span className={styles.documentName}>{document.name}</span>
+                <a
+                    aria-label="Play prototype"
+                    href={`/prototype${start ? `?screen=${encodeURIComponent(start)}` : ''}`}
+                >
+                    <Icon icon={{ component: Play, size: 18 }} />
+                    Play
                 </a>
                 <button
                     disabled={!canUndo}
+                    aria-label="Undo"
                     title="Undo (Ctrl/⌘ Z)"
                     onClick={() => effects.collaboration.undo(document.id)}
                 >
-                    Undo
+                    <Icon icon={{ component: Undo2, size: 18 }} />
                 </button>
                 <button
                     disabled={!canRedo}
+                    aria-label="Redo"
                     title="Redo (Ctrl/⌘ Shift Z)"
                     onClick={() => effects.collaboration.redo(document.id)}
                 >
-                    Redo
+                    <Icon icon={{ component: Redo2, size: 18 }} />
                 </button>
             </header>
-            <p>
-                Select a control, then connect it to a screen. Actions run only in Preview.
-                Connections include all authored layouts and variants. Reachability skips hidden
-                controls and variants an instance never draws.
-            </p>
-            <label>
-                Check reachability from{' '}
+            <label className={styles.start}>
+                Start screen{' '}
                 <select
+                    aria-label="Start screen for reachability"
                     value={start ?? ''}
                     onChange={(event) => setStart(event.target.value || undefined)}
                 >
@@ -111,7 +121,10 @@ function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
                 <FlowDiagram
                     graph={graph}
                     selected={selected}
-                    onSelect={setSelected}
+                    onSelect={(key) => {
+                        setSelected(key);
+                        setAdvanced(false);
+                    }}
                     start={start}
                     reachable={reachable}
                     canConnect={!disabled && Boolean(control?.editable)}
@@ -126,22 +139,60 @@ function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
                         });
                     }}
                 />
-                <aside aria-label="Selected control">
-                    <h2>{control?.name ?? 'Select a control'}</h2>
-                    {control?.shared && (
-                        <p>
-                            Shared source control. Changes apply everywhere this component is used.
-                        </p>
-                    )}
-                    {control?.editable && <ComponentInteractions instanceId={control.instanceId} />}
-                    {control && !control.editable && (
-                        <p>
-                            This control is locked or belongs to an imported component. Edit its
-                            source to change the action.
-                        </p>
-                    )}
-                </aside>
+                {control && (
+                    <aside aria-label="Selected control">
+                        <div className={styles.selectionHeader}>
+                            <h2>{control.name}</h2>
+                            <button
+                                aria-label="Deselect control"
+                                onClick={() => {
+                                    workspace.current
+                                        ?.querySelector<HTMLButtonElement>(
+                                            `[data-flow-control="${CSS.escape(control.key)}"]`
+                                        )
+                                        ?.focus();
+                                    setSelected(undefined);
+                                }}
+                            >
+                                <Icon icon={{ component: X, size: 18 }} />
+                            </button>
+                        </div>
+                        {control?.shared && (
+                            <p>
+                                Shared source control. Changes apply everywhere this component is
+                                used.
+                            </p>
+                        )}
+                        {control.editable && (
+                            <>
+                                <ComponentInteractions
+                                    instanceId={control.instanceId}
+                                    actionOnly={!advanced}
+                                />
+                                <button
+                                    aria-expanded={advanced}
+                                    onClick={() => setAdvanced(!advanced)}
+                                >
+                                    {advanced
+                                        ? 'Hide visibility and state'
+                                        : 'Visibility and state…'}
+                                </button>
+                            </>
+                        )}
+                        {control && !control.editable && (
+                            <p>
+                                This control is locked or belongs to an imported component. Edit its
+                                source to change the action.
+                            </p>
+                        )}
+                    </aside>
+                )}
             </div>
+            <p className={styles.hint}>
+                {control
+                    ? 'Choose a destination on the canvas or change the action above.'
+                    : 'Select a control to connect it to a screen.'}
+            </p>
         </main>
     );
 }

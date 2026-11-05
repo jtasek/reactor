@@ -1,3 +1,4 @@
+import { setPrototypeSetting } from './support/prototypeControls';
 import { expect, test, type Page } from '@playwright/test';
 import { Collaboration } from 'src/app/services/collaboration';
 import { prototypeDocument } from '../support/prototype';
@@ -132,14 +133,12 @@ test('shares the chosen context as an independent snapshot, plays without cookie
         });
     });
     await openAuthor(page);
-    await page.getByLabel('Start screen', { exact: true }).selectOption('details');
-    await page.getByLabel('Prototype width', { exact: true }).fill('640');
-    await page.getByLabel('Prototype width', { exact: true }).press('Tab');
-    await page.getByLabel('Prototype Theme', { exact: true }).selectOption('dark');
-    const runtime = page.frameLocator('iframe[title="Application preview"]');
-    await runtime.getByLabel('Preview screen').selectOption('home');
-    await runtime.getByLabel('Preview layout').selectOption(JSON.stringify('home'));
-    await expect(runtime.getByLabel('Preview layout')).toHaveValue(JSON.stringify('home'));
+    await setPrototypeSetting(page, 'Start screen', 'details');
+    await setPrototypeSetting(page, 'Prototype width', '640');
+    await setPrototypeSetting(page, 'Prototype Theme', 'dark');
+    await page.getByLabel('Preview screen').selectOption('home');
+    await setPrototypeSetting(page, 'Preview layout', JSON.stringify('home'));
+    await expect(page.getByLabel('Preview layout')).toHaveValue(JSON.stringify('home'));
     await page.getByRole('button', { name: 'Share prototype', exact: true }).click();
     const sharing = page.getByRole('dialog', { name: 'Share prototype' });
     await sharing.getByRole('button', { name: 'Create snapshot link' }).click();
@@ -154,8 +153,7 @@ test('shares the chosen context as an independent snapshot, plays without cookie
     await expect(sharing.getByRole('button', { name: 'Copy link' })).toBeVisible();
     await page.screenshot({ path: 'test-results/prototype-sharing-narrow.png' });
     await sharing.getByRole('button', { name: 'Close sharing' }).click();
-    await page.getByLabel('Prototype width', { exact: true }).fill('320');
-    await page.getByLabel('Prototype width', { exact: true }).press('Tab');
+    await setPrototypeSetting(page, 'Prototype width', '320');
 
     await context.addCookies([
         { name: 'private', value: 'editor-session', url: 'http://127.0.0.1:4173' }

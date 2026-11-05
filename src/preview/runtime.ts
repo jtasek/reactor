@@ -310,7 +310,11 @@ function render() {
     svg.setAttribute('height', String(screen.height));
     svg.setAttribute('aria-label', screen.name);
     screen.nodes.forEach((node) => svg.append(nodeElement(node)));
-    root.replaceChildren(navigation, svg);
+    root.replaceChildren(...(externalControls ? [svg] : [navigation, svg]));
+    if (externalControls) {
+        document.documentElement.dataset.player = 'true';
+        port?.postMessage({ type: 'current-screen', screenId: screen.id });
+    }
     if (key) {
         const input = Array.from(
             root.querySelectorAll<HTMLInputElement | HTMLButtonElement>('input, button')
@@ -321,7 +325,11 @@ function render() {
                 : root.querySelector<HTMLElement>(
                       `[aria-controls="${CSS.escape(visibilityId(toggled))}"], [data-toggle-state="${CSS.escape(toggled)}"]`
                   );
-        (input ?? opener ?? select).focus();
+        const focusTarget = input ?? opener ?? (externalControls ? svg : select);
+        if (focusTarget === svg) {
+            svg.setAttribute('tabindex', '-1');
+        }
+        focusTarget.focus();
         if (input instanceof HTMLInputElement && selection) {
             input.setSelectionRange(selection[0], selection[1]);
         }
@@ -411,7 +419,20 @@ window.addEventListener('message', (event) => {
         return;
     }
     port = event.ports[0];
-    port.onmessage = (event) => receive(event.data);
+    port.onmessage = (event) => {
+        if (event.data?.type === 'select-screen') {
+            if (
+                externalControls &&
+                application?.screens.some((screen) => screen.id === event.data.screenId)
+            ) {
+                currentScreen = event.data.screenId;
+                render();
+            }
+
+            return;
+        }
+        receive(event.data);
+    };
     port.postMessage({ type: 'ready', version: PREVIEW_PROTOCOL_VERSION });
 });
 window.addEventListener('pagehide', () => port?.close());

@@ -72,3 +72,19 @@ button[aria-pressed='true'] {
     outline: 2px solid var(--focus-ring-color);
     outline-offset: -2px;
 }
+
+html[data-player='true'],
+html[data-player='true'] body {
+    background: var(--documents-background);
+}
+html[data-player='true'] #preview {
+    padding: 16px;
+}
+html[data-player='true'] #preview > svg {
+    margin: 0 auto;
+    max-height: calc(100vh - 32px);
+    width: auto;
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--box-shadow);
+}

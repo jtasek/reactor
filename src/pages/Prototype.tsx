@@ -1,6 +1,8 @@
+import { ArrowLeft, RotateCcw, SlidersHorizontal, Workflow } from 'lucide-react';
+import { Icon } from 'src/ui/components/Icon';
 import { SharePrototype } from './SharePrototype';
 import { registerEditor } from './registerEditor';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useActions, useAppState, useEffects } from 'src/app/hooks';
 import { screenFrames } from 'src/app/screens';
 import { prototypeModes } from 'src/app/modeEdits';
@@ -10,6 +12,19 @@ import InteractivePreview from 'src/ui/components/InteractivePreview/Interactive
 import styles from './Prototype.css';
 
 registerEditor();
+
+const VIEWPORT_PRESETS = {
+    mobile: { width: 390, height: 844 },
+    desktop: { width: 1280, height: 800 }
+};
+
+function viewportPreset(viewport: PreviewSession['viewport']) {
+    return (
+        Object.entries(VIEWPORT_PRESETS).find(
+            ([, size]) => size.width === viewport?.width && size.height === viewport.height
+        )?.[0] ?? 'custom'
+    );
+}
 
 export function PrototypePage() {
     const id = useAppState((state) => state.currentDocumentId);
@@ -86,6 +101,8 @@ function PrototypeWorkspace() {
         };
     });
     const [inspection, setInspection] = useState<PreviewInspection>({});
+    const settings = useRef<HTMLDialogElement>(null);
+    const [settingsTarget, setSettingsTarget] = useState<HTMLDivElement | null>(null);
     const [restart, setRestart] = useState(0);
     const reset = () => setRestart((value) => value + 1);
     const resize = (axis: 'width' | 'height', value: number) =>
@@ -122,94 +139,108 @@ function PrototypeWorkspace() {
 
     return (
         <main className={styles.prototype}>
-            <header>
-                <a href="/">Close prototype</a>
+            <header className={styles.header}>
+                <a href="/">
+                    <Icon icon={{ component: ArrowLeft, size: 18 }} />
+                    Canvas
+                </a>
                 <h1>Prototype</h1>
-                <button onClick={reset} disabled={!screens.length}>
-                    Reset prototype
-                </button>
+                <span className={styles.documentName}>{document.name}</span>
+                <a href="/flow">
+                    <Icon icon={{ component: Workflow, size: 18 }} />
+                    Flow
+                </a>
+                <SharePrototype session={session} inspection={inspection} />
             </header>
-            <p>
-                Viewport and modes apply to this session across navigation. Canvas settings stay
-                unchanged.
-            </p>
-            <section className={styles.controls} aria-label="Prototype settings">
-                <label>
-                    Start screen
-                    <select
-                        aria-label="Start screen"
-                        value={session.screenId ?? ''}
-                        onChange={(event) =>
-                            setSession((previous) => ({
-                                ...previous,
-                                screenId: event.target.value,
-                                layoutId: undefined,
-                                layoutMode: 'auto'
-                            }))
-                        }
-                    >
-                        {!screens.some((screen) => screen.id === session.screenId) && (
-                            <option value={session.screenId ?? ''}>
-                                Choose an available screen
-                            </option>
-                        )}
-                        {screens.map((screen) => (
-                            <option key={screen.id} value={screen.id}>
-                                {screen.name}
-                            </option>
-                        ))}
-                    </select>
-                </label>
-                <ViewportField
-                    label="Width"
-                    value={session.viewport!.width}
-                    change={(value) => resize('width', value)}
-                />
-                <ViewportField
-                    label="Height"
-                    value={session.viewport!.height}
-                    change={(value) => resize('height', value)}
-                />
-                {ordered(document.dimensions).map((dimension) => (
-                    <label key={dimension.id}>
-                        {dimension.name}
+            <dialog ref={settings} className={styles.settings} aria-label="Prototype settings">
+                <header>
+                    <h2>Prototype settings</h2>
+                    <button onClick={() => settings.current?.close()}>Done</button>
+                </header>
+                <section className={styles.controls} aria-label="Prototype settings">
+                    <label>
+                        Start screen
                         <select
-                            aria-label={`Prototype ${dimension.name}`}
-                            value={session.modes[dimension.id] ?? ''}
+                            aria-label="Start screen"
+                            value={session.screenId ?? ''}
                             onChange={(event) =>
-                                setSession((previous) => {
-                                    const modes = { ...previous.modes };
-                                    if (event.target.value) {
-                                        modes[dimension.id] = event.target.value;
-                                    } else {
-                                        delete modes[dimension.id];
-                                    }
-
-                                    return { ...previous, modes };
-                                })
+                                setSession((previous) => ({
+                                    ...previous,
+                                    screenId: event.target.value,
+                                    layoutId: undefined,
+                                    layoutMode: 'auto'
+                                }))
                             }
                         >
-                            <option value="">
-                                {dimension.selection === 'width'
-                                    ? 'Auto · Viewport width'
-                                    : 'Inherit from screen'}
-                            </option>
-                            {session.modes[dimension.id] &&
-                                !dimension.modes[session.modes[dimension.id]] && (
-                                    <option value={session.modes[dimension.id]}>
-                                        Unavailable mode
-                                    </option>
-                                )}
-                            {ordered(dimension.modes).map((mode) => (
-                                <option key={mode.id} value={mode.id}>
-                                    {mode.name}
+                            {!screens.some((screen) => screen.id === session.screenId) && (
+                                <option value={session.screenId ?? ''}>
+                                    Choose an available screen
+                                </option>
+                            )}
+                            {screens.map((screen) => (
+                                <option key={screen.id} value={screen.id}>
+                                    {screen.name}
                                 </option>
                             ))}
                         </select>
                     </label>
-                ))}
-            </section>
-            <SharePrototype session={session} inspection={inspection} />
+                    <div className={styles.dimensions}>
+                        <ViewportField
+                            label="Width"
+                            value={session.viewport!.width}
+                            change={(value) => resize('width', value)}
+                        />
+                        <ViewportField
+                            label="Height"
+                            value={session.viewport!.height}
+                            change={(value) => resize('height', value)}
+                        />
+                    </div>
+                    <div ref={setSettingsTarget} />
+                    {ordered(document.dimensions).map((dimension) => (
+                        <label key={dimension.id}>
+                            {dimension.name}
+                            <select
+                                aria-label={`Prototype ${dimension.name}`}
+                                value={session.modes[dimension.id] ?? ''}
+                                onChange={(event) =>
+                                    setSession((previous) => {
+                                        const modes = { ...previous.modes };
+                                        if (event.target.value) {
+                                            modes[dimension.id] = event.target.value;
+                                        } else {
+                                            delete modes[dimension.id];
+                                        }
+
+                                        return { ...previous, modes };
+                                    })
+                                }
+                            >
+                                <option value="">
+                                    {dimension.selection === 'width'
+                                        ? 'Auto · Viewport width'
+                                        : 'Inherit from screen'}
+                                </option>
+                                {session.modes[dimension.id] &&
+                                    !dimension.modes[session.modes[dimension.id]] && (
+                                        <option value={session.modes[dimension.id]}>
+                                            Unavailable mode
+                                        </option>
+                                    )}
+                                {ordered(dimension.modes).map((mode) => (
+                                    <option key={mode.id} value={mode.id}>
+                                        {mode.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                    ))}
+                    <p>
+                        Changes apply only to this session. Restart returns to the start screen and
+                        resets input and state.
+                    </p>
+                </section>
+            </dialog>
             {session.screenId && !screens.some((screen) => screen.id === session.screenId) && (
                 <p role="status">The start screen is unavailable. Choose another start screen.</p>
             )}
@@ -220,11 +251,53 @@ function PrototypeWorkspace() {
                     <InteractivePreview
                         key={`${session.screenId}:${restart}`}
                         session={session}
+                        settingsTarget={settingsTarget}
+                        toolbar={
+                            <>
+                                <select
+                                    aria-label="Viewport preset"
+                                    value={viewportPreset(session.viewport)}
+                                    onChange={(event) => {
+                                        if (event.target.value === 'custom') {
+                                            settings.current?.showModal();
+
+                                            return;
+                                        }
+                                        const viewport =
+                                            event.target.value === 'mobile'
+                                                ? VIEWPORT_PRESETS.mobile
+                                                : VIEWPORT_PRESETS.desktop;
+                                        setSession((previous) => ({ ...previous, viewport }));
+                                    }}
+                                >
+                                    <option value="mobile">Mobile</option>
+                                    <option value="desktop">Desktop</option>
+                                    <option value="custom">Custom</option>
+                                </select>
+                                <button
+                                    aria-label="Reset prototype"
+                                    title="Restart prototype"
+                                    onClick={reset}
+                                >
+                                    <Icon icon={{ component: RotateCcw, size: 18 }} />
+                                </button>
+                                <button
+                                    onClick={() => settings.current?.showModal()}
+                                    aria-label="Prototype settings"
+                                >
+                                    <Icon icon={{ component: SlidersHorizontal, size: 18 }} />
+                                    Settings
+                                </button>
+                            </>
+                        }
                         onWidth={(value) => resize('width', value)}
                         onReset={reset}
                         onInspection={setInspection}
                         onLocate={locate}
                     />
+                    <p className={styles.viewportSummary}>
+                        {session.viewport?.width} × {session.viewport?.height} · Fit
+                    </p>
                 </div>
             )}
         </main>
