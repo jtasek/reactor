@@ -119,7 +119,7 @@ test('keeps compatible input and navigation through thresholds and local inspect
     );
     await expect(input).toHaveValue('Ada');
     await page.screenshot({ path: 'test-results/automatic-layout-preview.png' });
-    await runtime.getByRole('button', { name: 'Reset preview' }).click();
+    await runtime.getByRole('button', { name: 'Restart preview' }).click();
     await expect(input).toHaveValue('Your name');
     await page.getByRole('button', { name: 'Preview', exact: true }).click();
     await expect(
@@ -191,7 +191,7 @@ test('width inspection keeps another destination’s height constraint', async (
     await expect(runtime.locator('svg')).toHaveAttribute('width', '800');
     await expect(runtime.locator('svg')).toHaveAttribute('height', '700');
     // Reset returns to the launch view's screen, width and layout.
-    await runtime.getByRole('button', { name: 'Reset preview' }).click();
+    await runtime.getByRole('button', { name: 'Restart preview' }).click();
     await expect(runtime.locator('svg')).toHaveAttribute('width', '320');
     await expect(runtime.getByLabel('Preview width')).toHaveValue('320');
 });

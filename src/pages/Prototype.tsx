@@ -238,7 +238,7 @@ function PrototypeWorkspace() {
                         </label>
                     ))}
                     <p>
-                        Changes apply only to this session. Reset returns to the start screen and
+                        Changes apply only to this session. Restart returns to the start screen and
                         resets input and state.
                     </p>
                 </div>
@@ -258,35 +258,41 @@ function PrototypeWorkspace() {
                         settingsTarget={settingsTarget}
                         toolbar={
                             <>
-                                <select
-                                    aria-label="Viewport preset"
-                                    value={
-                                        customPreset ? 'custom' : viewportPreset(session.viewport)
-                                    }
-                                    onChange={(event) => {
-                                        setCustomPreset(event.target.value === 'custom');
-                                        if (event.target.value === 'custom') {
-                                            settings.current?.showModal();
-
-                                            return;
+                                <label>
+                                    <span>Viewport</span>
+                                    <select
+                                        aria-label="Viewport preset"
+                                        value={
+                                            customPreset
+                                                ? 'custom'
+                                                : viewportPreset(session.viewport)
                                         }
-                                        const viewport =
-                                            event.target.value === 'mobile'
-                                                ? VIEWPORT_PRESETS.mobile
-                                                : VIEWPORT_PRESETS.desktop;
-                                        setSession((previous) => ({ ...previous, viewport }));
-                                    }}
-                                >
-                                    <option value="mobile">Mobile</option>
-                                    <option value="desktop">Desktop</option>
-                                    <option value="custom">Custom</option>
-                                </select>
+                                        onChange={(event) => {
+                                            setCustomPreset(event.target.value === 'custom');
+                                            if (event.target.value === 'custom') {
+                                                settings.current?.showModal();
+
+                                                return;
+                                            }
+                                            const viewport =
+                                                event.target.value === 'mobile'
+                                                    ? VIEWPORT_PRESETS.mobile
+                                                    : VIEWPORT_PRESETS.desktop;
+                                            setSession((previous) => ({ ...previous, viewport }));
+                                        }}
+                                    >
+                                        <option value="mobile">Mobile</option>
+                                        <option value="desktop">Desktop</option>
+                                        <option value="custom">Custom</option>
+                                    </select>
+                                </label>
                                 <button
-                                    aria-label="Reset prototype"
-                                    title="Reset prototype"
+                                    aria-label="Restart prototype"
+                                    title="Restart prototype"
                                     onClick={reset}
                                 >
                                     <Icon icon={{ component: RotateCcw, size: 18 }} />
+                                    Restart
                                 </button>
                                 <button
                                     onClick={() => settings.current?.showModal()}

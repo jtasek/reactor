@@ -42,7 +42,10 @@ test('connects and removes actions in Flow, reflects them in Inspector, and arra
     expect(
         afterResources.filter((url) => url.endsWith('.js') && !beforeResources.includes(url)).length
     ).toBeGreaterThan(0);
-    await page.locator('[data-flow-control="next"]').click();
+    const next = page.locator('[data-flow-control="next"]');
+    await expect(next).toHaveAccessibleName('Continue button');
+    await expect(next).toHaveAccessibleDescription('Go to Details');
+    await next.getByText('Go to Details', { exact: true }).click();
     await page.getByRole('button', { name: 'Connect to Home', exact: true }).click();
     await expect(page.getByLabel(/^On (activation|Enter): action$/)).toHaveValue('"home"');
     await page.getByRole('button', { name: 'Undo', exact: true }).click();
@@ -102,6 +105,9 @@ test('shows unavailable destinations and prevents edits to locked controls on di
     await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
     await page.goto('/flow');
     await expect(page.getByText('Unavailable target').first()).toBeVisible();
+    await expect(page.locator('[data-flow-control="next"]')).toHaveAccessibleDescription(
+        'Go to Missing screen Unavailable target'
+    );
     await page.locator('[data-flow-control="next"]').click();
     await expect(page.getByRole('button', { name: 'Connect to Home', exact: true })).toBeDisabled();
     await expect(
@@ -147,6 +153,9 @@ test('marks hidden controls and leaves them out of reachability', async ({ page 
     await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
     await page.goto('/flow');
     await expect(page.getByText('Hidden, not in Preview')).toHaveCount(2);
+    await expect(page.locator('[data-flow-control="next"]')).toHaveAccessibleDescription(
+        'Go to Details Hidden, not in Preview'
+    );
     await page.getByLabel('Start screen for reachability').selectOption('home');
     await expect(
         page
@@ -254,3 +263,22 @@ for (const [width, beside] of [
         expect(aside.y > card.y + card.height).toBe(!beside);
     });
 }
+
+test('describes controls whose imported IDs contain spaces', async ({ page }) => {
+    const document = automaticLayoutsPrototype();
+    document.shapes['next control'] = { ...document.shapes.next, id: 'next control' };
+    delete document.shapes.next;
+    document.shapesIds = document.shapesIds.map((id) => (id === 'next' ? 'next control' : id));
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await page.goto('/flow');
+    const control = page.locator('[data-flow-control="next control"]');
+    await expect(control).toHaveAccessibleName('Continue button');
+    await expect(control).toHaveAccessibleDescription('Go to Details');
+    await control.press('Enter');
+    await expect(control).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('complementary', { name: 'Selected control' })).toBeVisible();
+});

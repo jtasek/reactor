@@ -58,7 +58,7 @@ test('authors shared boolean state, binds two instances, renames it and reloads'
     await expect(
         player.getByText('Sentence case is easier to scan.', { exact: true })
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Reset prototype', exact: true }).click();
+    await page.getByRole('button', { name: 'Restart prototype', exact: true }).click();
     await expect(toggle).toHaveAttribute('aria-pressed', 'false');
     await expect(player.getByText('Properties', { exact: true })).toHaveCount(0);
 });
@@ -122,7 +122,7 @@ test('shared sessions isolate named state and preserve hidden input values until
     await expect(notes).toHaveValue('Retain my note');
     await expect(other.getByRole('textbox', { name: 'Notes', exact: true })).toHaveCount(0);
     await page.screenshot({ path: 'test-results/named-state-narrow.png', fullPage: true });
-    await page.getByRole('button', { name: 'Reset prototype', exact: true }).click();
+    await page.getByRole('button', { name: 'Restart prototype', exact: true }).click();
     await toggle.click();
     await expect(notes).toHaveValue('');
     await other.close();

@@ -94,7 +94,7 @@ test('previews native inputs and navigation in an opaque sandbox, retains valid 
     await page.getByLabel('Role label', { exact: true }).selectOption('label');
     await expect(page.getByText('Showing the last valid preview.')).toHaveCount(0);
     await expect(iframe.getByLabel('Your name')).toHaveValue('Ada');
-    await iframe.getByRole('button', { name: 'Reset preview' }).click();
+    await iframe.getByRole('button', { name: 'Restart preview' }).click();
     await expect(iframe.getByLabel('Your name')).toHaveValue('');
     await page.getByRole('button', { name: 'Inspector', exact: true }).click();
     await page.getByRole('button', { name: 'More panels', exact: true }).click();
@@ -161,7 +161,7 @@ test('clips screens to their frame and keeps previewing a button whose screen is
     await iframe.getByLabel('Your name').fill('Ada');
     await iframe.getByRole('button', { name: 'Continue', exact: true }).click();
     await expect(iframe.getByLabel('Preview screen')).toHaveValue('home');
-    await iframe.getByRole('button', { name: 'Reset preview' }).click({ timeout: 5000 });
+    await iframe.getByRole('button', { name: 'Restart preview' }).click({ timeout: 5000 });
     await expect(iframe.getByLabel('Your name')).toHaveValue('');
 });
 

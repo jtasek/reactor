@@ -249,7 +249,7 @@ function render() {
     label.append(select);
     const reset = document.createElement('button');
     reset.type = 'button';
-    reset.textContent = shared ? 'Reset prototype' : 'Reset preview';
+    reset.textContent = shared ? 'Restart prototype' : 'Restart preview';
     reset.addEventListener('click', () => {
         values.clear();
         variants.clear();

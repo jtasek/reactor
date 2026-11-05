@@ -171,7 +171,7 @@ test('shares the chosen context as an independent snapshot, plays without cookie
     await recipient.getByRole('textbox', { name: 'Your name' }).fill('Recipient only');
     await recipient.getByRole('button', { name: 'Continue', exact: true }).click();
     await expect(recipient.getByLabel('Preview screen')).toHaveValue('details');
-    await recipient.getByRole('button', { name: 'Reset prototype' }).click();
+    await recipient.getByRole('button', { name: 'Restart prototype' }).click();
     await recipient.getByLabel('Preview screen').selectOption('home');
     await expect(recipient.getByRole('textbox', { name: 'Your name' })).toHaveValue('Your name');
     await page.getByRole('button', { name: 'Share prototype', exact: true }).click();

@@ -71,7 +71,7 @@ test('authors explicit Open/Close actions and complementary visibility, preservi
     await expect(help).toHaveCount(0);
     await expect(close).not.toHaveAttribute('aria-pressed');
     await open.click();
-    await page.getByRole('button', { name: 'Reset prototype', exact: true }).click();
+    await page.getByRole('button', { name: 'Restart prototype', exact: true }).click();
     await expect(comparison).toBeVisible();
     await expect(help).toHaveCount(0);
 });

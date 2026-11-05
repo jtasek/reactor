@@ -27,7 +27,7 @@ test('toggles help by keyboard, retains the variant choice and restores defaults
         '600'
     );
     await page.screenshot({ path: 'test-results/prototype-visibility.png', fullPage: true });
-    await page.getByRole('button', { name: 'Reset prototype', exact: true }).click();
+    await page.getByRole('button', { name: 'Restart prototype', exact: true }).click();
     await expect(help).toHaveCount(0);
     await expect(player.getByText('Properties', { exact: true })).toHaveAttribute(
         'font-weight',
@@ -79,7 +79,7 @@ test('shared sessions isolate visibility and retain hidden input values until Re
     await toggle.press('Space');
     await expect(input).toHaveValue('Keep this note');
     await page.screenshot({ path: 'test-results/prototype-visibility-narrow.png', fullPage: true });
-    await page.getByRole('button', { name: 'Reset prototype', exact: true }).click();
+    await page.getByRole('button', { name: 'Restart prototype', exact: true }).click();
     await expect(input).toHaveCount(0);
     await toggle.click();
     await expect(input).toHaveValue('');

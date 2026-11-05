@@ -29,7 +29,7 @@ test('typography switches locally, supports keyboard activation and resets witho
         'font-weight',
         '400'
     );
-    await page.getByRole('button', { name: 'Reset prototype', exact: true }).click();
+    await page.getByRole('button', { name: 'Restart prototype', exact: true }).click();
     await expect(player.getByText('Properties', { exact: true })).toHaveAttribute(
         'font-weight',
         '500'
@@ -76,7 +76,7 @@ test('shared typography snapshots switch variants independently and reset at nar
         path: 'test-results/inspector-typography-shared-narrow.png',
         fullPage: true
     });
-    await page.getByRole('button', { name: 'Reset prototype', exact: true }).click();
+    await page.getByRole('button', { name: 'Restart prototype', exact: true }).click();
     await expect(page.getByText('Properties', { exact: true })).toHaveAttribute(
         'font-weight',
         '500'
