@@ -249,12 +249,14 @@ test('keeps navigation in an older runtime without sending unsupported player co
                         }
                         document.querySelector('p').textContent = 'Drawing received';
                     };
-                    port.postMessage({type: 'ready', version: 3});
+                    setTimeout(() => port.postMessage({type: 'ready', version: 3}), 1500);
                 });
             </script></body></html>`
         })
     );
     await page.goto('/prototype');
+    // Until the runtime answers, the picker holds its place so the toolbar doesn't shift.
+    await expect(page.getByLabel('Preview screen')).toBeDisabled();
     await expect(player(page).getByText('Drawing received')).toBeVisible();
     await expect(player(page).getByLabel('Preview screen')).toBeVisible();
     await expect(page.getByLabel('Preview screen')).toHaveCount(0);

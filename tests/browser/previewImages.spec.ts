@@ -191,6 +191,8 @@ test('keeps the last valid preview when an image is lost, then recovers on retry
     await home.hover();
     await menu.getByRole('button', { name: 'Show', exact: true }).click();
     await expect(page.getByText('Showing the last valid preview.')).toBeVisible();
+    // The editor pane keeps its heading; only the Prototype player's notice is compact.
+    await expect(page.getByText('Preview needs attention')).toBeVisible();
     await expect(page.getByText('An image is not available yet.', { exact: false })).toBeVisible();
     await expect(iframe.locator('svg')).toContainText('Hello from details');
     await expect(iframe.locator('svg image')).toHaveCount(0);

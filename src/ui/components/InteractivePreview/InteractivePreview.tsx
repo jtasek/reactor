@@ -288,7 +288,8 @@ export default function InteractivePreview({
         >
             {session && (
                 <div className={styles.toolbar} aria-label="Prototype controls">
-                    {hostControls && (
+                    {/* Kept (disabled) until the runtime answers so the toolbar doesn't shift on load. */}
+                    {(hostControls || !ready) && (
                         <select
                             aria-label="Preview screen"
                             disabled={!ready || !currentScreen}
@@ -319,6 +320,7 @@ export default function InteractivePreview({
             {preparing && <p role="status">Preparing preview images…</p>}
             {problem && (
                 <div role="status">
+                    {!session && <strong>Preview needs attention</strong>}
                     <p>{problem}</p>
                     {latest.current && <p>Showing the last valid preview.</p>}
                     {runtimeProblem && !projection.problem && (

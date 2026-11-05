@@ -243,7 +243,8 @@
     width: 100%;
 }
 
-@media (min-width: 1000px) {
+/* Below this the default two-column board would be clipped beside the editor. */
+@media (min-width: 1100px) {
     .workspace:has(aside) {
         grid-template-columns: minmax(0, 1fr) 320px;
         gap: 16px;

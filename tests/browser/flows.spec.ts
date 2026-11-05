@@ -217,3 +217,40 @@ test('keeps arranged screen positions when opening and closing the side editor',
     await page.getByRole('button', { name: 'Deselect control' }).click();
     expect(await position()).toEqual(before);
 });
+
+for (const [width, beside] of [
+    [1100, true],
+    [1099, false]
+] as const) {
+    test(`shows the whole default board ${beside ? 'beside' : 'above'} the editor at ${width}px`, async ({
+        page
+    }) => {
+        const document = automaticLayoutsPrototype();
+        const saved = serializePersistedState({
+            currentDocumentId: document.id,
+            documents: { [document.id]: document }
+        });
+        await page.addInitScript(
+            (raw) => localStorage.setItem('reactor', raw),
+            JSON.stringify(saved)
+        );
+        await page.setViewportSize({ width, height: 800 });
+        await page.goto('/flow');
+        await page.locator('[data-flow-control="next"]').click();
+        const editor = page.getByRole('complementary', { name: 'Selected control' });
+        await expect(editor).toBeVisible();
+        const details = page.locator('[data-flow-screen="details"]');
+        // The diagram is the board's scrolling ancestor; the card must fit inside it.
+        const clipped = await details.evaluate((element) => {
+            let diagram = element.parentElement;
+            while (diagram && getComputedStyle(diagram).overflowX !== 'auto') {
+                diagram = diagram.parentElement;
+            }
+            return element.getBoundingClientRect().right > diagram!.getBoundingClientRect().right;
+        });
+        expect(clipped).toBe(false);
+        const card = (await details.boundingBox())!;
+        const aside = (await editor.boundingBox())!;
+        expect(aside.y > card.y + card.height).toBe(!beside);
+    });
+}
