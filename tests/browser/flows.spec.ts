@@ -190,3 +190,30 @@ test('scrolls the control editor into view on a short window', async ({ page }) 
     await expect(page.getByLabel(/^On (activation|Enter): action$/)).toBeInViewport({ ratio: 1 });
     await expect(page.locator('[data-flow-control="next"]')).toBeFocused();
 });
+
+test('keeps arranged screen positions when opening and closing the side editor', async ({
+    page
+}) => {
+    const document = automaticLayoutsPrototype();
+    document.frames.third = { ...document.frames.details, id: 'third', name: 'Third' };
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto('/flow');
+    const screen = page.locator('[data-flow-screen="third"]');
+    await expect(screen).toBeVisible();
+    const position = () =>
+        screen.evaluate((element) => ({
+            x: (element as HTMLElement).offsetLeft,
+            y: (element as HTMLElement).offsetTop
+        }));
+    const before = await position();
+    await page.locator('[data-flow-control="next"]').click();
+    await expect(page.getByRole('complementary', { name: 'Selected control' })).toBeVisible();
+    expect(await position()).toEqual(before);
+    await page.getByRole('button', { name: 'Deselect control' }).click();
+    expect(await position()).toEqual(before);
+});

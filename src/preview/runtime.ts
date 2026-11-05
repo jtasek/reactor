@@ -441,7 +441,7 @@ window.addEventListener('message', (event) => {
         }
         receive(event.data);
     };
-    port.postMessage({ type: 'ready', version: PREVIEW_PROTOCOL_VERSION });
+    port.postMessage({ type: 'ready', version: PREVIEW_PROTOCOL_VERSION, playerControls: true });
 });
 window.addEventListener('pagehide', () => port?.close());
 
