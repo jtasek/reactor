@@ -509,3 +509,46 @@ it('shares an inverse visibility binding and restores it with one-step undo', as
     expect(shownDocument(b).shapes[target.id]).toHaveProperty('prototypeVisibilityStateId', 'flag');
     copies.forEach((copy) => copy.collaboration.dispose());
 });
+
+it('drops a visibility condition left without its state so the next binding starts at True', async () => {
+    const copies = await createCopies(2, (store) => {
+        const { document } = fixture();
+        document.id = DOCUMENT_ID;
+        store.actions.addDocument(document);
+    });
+    const [a, b] = copies;
+    const help = Object.values(shownDocument(a).shapes).find(
+        (shape) => shape.type === 'instance' && shape.name === 'Inspector help'
+    )!;
+    // One person picks Shown while another picks Show when: False.
+    edit(a, (actions) =>
+        actions.editInteractions({
+            target: 'state',
+            kind: 'bind',
+            instanceId: help.id,
+            stateId: null,
+            visible: true
+        })
+    );
+    edit(b, (actions) =>
+        actions.editInteractions({
+            target: 'state',
+            kind: 'bind',
+            instanceId: help.id,
+            stateId: 'flag',
+            when: false
+        })
+    );
+    settle(copies);
+    for (const copy of copies) {
+        const shape = shownDocument(copy).shapes[help.id];
+        expect(shape).not.toHaveProperty('prototypeVisibilityStateId');
+        expect(shape.type === 'instance' && shape.prototypeVisibilityWhen).toBeFalsy();
+    }
+    const stray = readEntity('shapes', {
+        ...shownDocument(a).shapes[help.id],
+        prototypeVisibilityWhen: false
+    });
+    expect(stray.type === 'instance' && stray.prototypeVisibilityWhen).toBeUndefined();
+    copies.forEach((copy) => copy.collaboration.dispose());
+});

@@ -52,7 +52,10 @@ export const useRoleEditor = (componentId?: string, instanceId?: string) =>
                       bindingHidesControl(document, instance, id)
                   )
                 : [],
-            prototypeVisibilityWhen: instance?.prototypeVisibilityWhen ?? true,
+            // Only a bound instance has a condition; a new binding starts at True.
+            prototypeVisibilityWhen: instance?.prototypeVisibilityStateId
+                ? (instance.prototypeVisibilityWhen ?? true)
+                : true,
             // A control that hid itself could only come back on Reset.
             visibilityTargets: visibilityTargets
                 .filter(

@@ -64,12 +64,12 @@ test('authors explicit Open/Close actions and complementary visibility, preservi
     await open.press('Enter');
     await expect(help).toBeVisible();
     await expect(comparison).toHaveCount(0);
-    await expect(open).toHaveAttribute('aria-pressed', 'true');
+    await expect(open).not.toHaveAttribute('aria-pressed');
     await close.click();
     await close.press('Space');
     await expect(comparison).toBeVisible();
     await expect(help).toHaveCount(0);
-    await expect(close).toHaveAttribute('aria-pressed', 'true');
+    await expect(close).not.toHaveAttribute('aria-pressed');
     await open.click();
     await page.getByRole('button', { name: 'Reset prototype', exact: true }).click();
     await expect(comparison).toBeVisible();

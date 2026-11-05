@@ -452,8 +452,10 @@ export function readShapeGeometry(value: unknown) {
                     s.prototypeVisibilityStateId === undefined
                         ? undefined
                         : id(s.prototypeVisibilityStateId),
+                // A condition means nothing without its state; a stray one would invert the next binding.
                 prototypeVisibilityWhen:
-                    s.prototypeVisibilityWhen === undefined
+                    s.prototypeVisibilityWhen === undefined ||
+                    s.prototypeVisibilityStateId === undefined
                         ? undefined
                         : bool(s.prototypeVisibilityWhen),
                 prototypeVisible:

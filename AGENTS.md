@@ -1334,6 +1334,7 @@ Tests: prototypeState unit/browser.
 Schema v29 adds `setState` actions with a boolean value and optional instance
 `prototypeVisibilityWhen` (true when omitted). Only a valid named-state binding applies this
 condition; missing state still uses `prototypeVisible` without inversion. Unbinding removes
-the condition. The sandbox validates and executes explicit assignments without toggling;
+the condition, and readers drop a condition left without a state (e.g. after concurrent edits).
+Set controls are plain buttons without `aria-pressed`, since pressing one again changes nothing. The sandbox validates and executes explicit assignments without toggling;
 Flow labels assignments and distinguishes the boolean value that can reveal a hidden control.
 Tests: prototypeState unit and prototypeBooleanActions browser coverage.

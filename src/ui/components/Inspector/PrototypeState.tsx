@@ -61,7 +61,7 @@ export const PrototypeVisibility: FC<{
                     </optgroup>
                 )}
             </select>
-            {stateId && (
+            {stateId && !missing && (
                 <label className={styles.interactionField}>
                     Show when
                     <select

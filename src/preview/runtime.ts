@@ -111,15 +111,10 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
             )
         );
     }
-    if (control.setState !== undefined && control.role === 'button') {
-        const action = control.setState;
-        field.setAttribute(
-            'aria-pressed',
-            String(
-                (visibility.get(action.key) ?? initialVisibility.get(action.key)) === action.value
-            )
-        );
-        field.dataset.toggleState = action.key;
+    // A Set control is a plain button: pressing it again does not undo it, so no aria-pressed.
+    // The data attribute lets focus return to it when its own action hides another control.
+    if (control.setState !== undefined) {
+        field.dataset.toggleState = control.setState.key;
     }
     // A disclosure whose target follows a state stays a disclosure; plain state toggles are pressed.
     if (
