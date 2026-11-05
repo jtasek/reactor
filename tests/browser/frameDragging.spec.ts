@@ -72,14 +72,35 @@ for (const target of ['ordinary', 'view0']) {
             localStorage.setItem('reactor', raw);
             localStorage.setItem('reactor:notices', '["first","many"]');
         }, JSON.stringify(saved));
+        await page.addInitScript(() => {
+            const measurements = { child: 0 };
+            Object.assign(window, { frameDragMeasurements: measurements });
+            const getBBox = SVGGraphicsElement.prototype.getBBox;
+            SVGGraphicsElement.prototype.getBBox = function (...args) {
+                if (this.querySelector('[data-cy="shape100"]')) {
+                    measurements.child++;
+                }
+
+                return getBBox.apply(this, args);
+            };
+        });
         await openEditor(page, ['Inspector', 'Explorer']);
         await page.getByRole('button', { name: 'More panels' }).click();
         await expect(page.locator('#frames > [data-frame="view0"]')).toBeVisible();
         const cdp = await page.context().newCDPSession(page);
+        await cdp.send('Performance.enable');
+
         if (process.env.PROFILE_FRAME_DRAG) {
             await cdp.send('Profiler.enable');
             await cdp.send('Profiler.setSamplingInterval', { interval: 100 });
         }
+        const measuredChild = () =>
+            page.evaluate(
+                () =>
+                    (window as unknown as { frameDragMeasurements: { child: number } })
+                        .frameDragMeasurements.child
+            );
+        const initialMeasurements = await measuredChild();
         const x = target === 'ordinary' ? 100 : 550;
         await pointer(page, 'pointerdown', {
             x,
@@ -90,6 +111,7 @@ for (const target of ['ordinary', 'view0']) {
         if (process.env.PROFILE_FRAME_DRAG) {
             await cdp.send('Profiler.start');
         }
+        const beforeMetrics = await cdp.send('Performance.getMetrics');
         const measurement = await page.evaluate(
             async ({ x }) => {
                 const surface = document.querySelector('svg#surface')!;
@@ -139,11 +161,31 @@ for (const target of ['ordinary', 'view0']) {
                 contentType: 'application/json'
             });
         }
+        const afterMetrics = await cdp.send('Performance.getMetrics');
+        const metrics = Object.fromEntries(
+            afterMetrics.metrics
+                .filter(({ name }) =>
+                    [
+                        'ScriptDuration',
+                        'LayoutDuration',
+                        'RecalcStyleDuration',
+                        'TaskDuration'
+                    ].includes(name)
+                )
+                .map(({ name, value }) => [
+                    name,
+                    (value -
+                        (beforeMetrics.metrics.find((metric) => metric.name === name)?.value ??
+                            0)) *
+                        1000
+                ])
+        );
         await testInfo.attach('drag-measurements', {
-            body: JSON.stringify(measurement),
+            body: JSON.stringify({ ...measurement, metrics }),
             contentType: 'application/json'
         });
         expect(measurement.artworkMutations).toBe(0);
+        expect(await measuredChild()).toBe(initialMeasurements);
         if (process.env.PROFILE_FRAME_DRAG && target === 'view0') {
             await page.screenshot({ path: testInfo.outputPath('dragging-screen-view.png') });
         }
@@ -165,6 +207,9 @@ for (const target of ['ordinary', 'view0']) {
         await pointer(page, 'pointermove', { x: x + 20, y: 120 });
         await pointer(page, 'pointerup', { x: x + 30, y: 130 });
         await expect(edge).toHaveAttribute('x', String(x + 30));
+        if (target === 'ordinary') {
+            await expect.poll(measuredChild).toBeGreaterThan(initialMeasurements);
+        }
         await expectPlacedCoordinate(child, 'x', target === 'ordinary' ? 150 : 600);
         await expect(page.locator('#status-save')).toHaveText('Saved');
         await page.reload();

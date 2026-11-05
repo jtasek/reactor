@@ -28,6 +28,11 @@ const useRootState = createStateHook<Context>();
  * What `select` reads from the state. overmind-react runs a selector before
  * it starts tracking the component, which subscribes whichever component rendered
  * before to what the selector reads; selecting here, after it, subscribes this one.
+ *
+ * Each call starts its own tracking tree and subscription. A component rendered
+ * many times per frame, such as each Shape while a frame is dragged, reads
+ * `useAppState((state) => state)` once and passes that state to pure readers
+ * instead of calling several hooks; tests/shapeSubscriptions.test.ts holds Shape to it.
  */
 export const useAppState = <T>(select: (state: Context['state']) => T): T => {
     return select(useRootState());
