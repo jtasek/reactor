@@ -195,3 +195,26 @@ test('width inspection keeps another destination’s height constraint', async (
     await expect(runtime.locator('svg')).toHaveAttribute('width', '320');
     await expect(runtime.getByLabel('Preview width')).toHaveValue('320');
 });
+
+test('replaces a just-committed view width without appending the previous value', async ({
+    page
+}) => {
+    await openPrototype(page);
+    const inspector = page.locator('[data-panel="inspector"]');
+    const width = inspector.getByLabel('View width', { exact: true });
+    const artwork = page.locator('#screen-views > [data-screen-view="view"]');
+
+    // Each replacement follows the canvas update immediately, while the field's previous
+    // commit may still have pending React effects. Exercise both responsive layouts.
+    const replacements = 12;
+    for (let iteration = 0; iteration < replacements; iteration += 1) {
+        for (const [value, shape] of [
+            ['640', 'wide-name'],
+            ['320', 'name']
+        ]) {
+            await width.fill(value);
+            await width.press('Tab');
+            await expect(artwork.locator(`[data-shape-id="${shape}"]`)).toHaveCount(1);
+        }
+    }
+});
