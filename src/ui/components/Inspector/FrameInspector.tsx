@@ -1,7 +1,7 @@
 import type { Gesture } from 'src/events/types';
 import { frameParents } from 'src/app/frameMembership';
 import { renderedFrame, frameLayout } from 'src/app/frameLayout';
-import React, { type FC, memo, useEffect, useState } from 'react';
+import React, { type FC, memo, useLayoutEffect, useState } from 'react';
 import { useActions, useAppState } from 'src/app/hooks';
 import { useFrameMoveProblem, useFrameLocked } from 'src/app/frameHooks';
 import { ScreenLayouts } from './ScreenLayouts';
@@ -26,7 +26,9 @@ const Field: FC<{
     const [draft, setDraft] = useState(String(value));
     const id = `frame-${label.replaceAll(' ', '-').toLowerCase()}`;
 
-    useEffect(() => setDraft(String(value)), [value]);
+    // Sync the committed value before another edit can select/replace the field.
+    // A passive effect can otherwise reset the selection between select-all and typing.
+    useLayoutEffect(() => setDraft(String(value)), [value]);
 
     return (
         <tr>
