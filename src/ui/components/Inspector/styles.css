@@ -1030,3 +1030,57 @@
     display: flex;
     gap: var(--column-gap);
 }
+
+.prototypeState {
+    display: grid;
+    gap: 8px;
+    padding: var(--card-padding);
+}
+
+.prototypeState h3 {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin: 8px 0 0;
+}
+
+.prototypeStateRow {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    min-width: 0;
+}
+
+.prototypeStateRow > input {
+    flex: 1;
+    min-width: 0;
+}
+
+.prototypeStateRow label {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.prototypeState button,
+.prototypeState select {
+    background: var(--field-background);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--field-radius);
+    color: var(--text-color);
+    font: inherit;
+    min-height: 28px;
+    padding: 4px 8px;
+}
+
+.prototypeState button:disabled {
+    opacity: 0.5;
+}
+
+.prototypeState input[type='text'] {
+    min-height: 28px;
+}
+
+.prototypeState select:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+}

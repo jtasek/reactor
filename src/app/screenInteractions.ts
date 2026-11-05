@@ -9,7 +9,9 @@ import type {
 
 /** The action of an instance that changes another instance (variant or visibility). */
 export const instanceAction = (shape?: Shape) =>
-    shape?.type === 'instance' && shape.interactions?.activate?.type !== 'navigate'
+    shape?.type === 'instance' &&
+    (shape.interactions?.activate?.type === 'changeVariant' ||
+        shape.interactions?.activate?.type === 'toggleVisibility')
         ? (shape.interactions?.activate ?? undefined)
         : undefined;
 

@@ -2,6 +2,7 @@ import React, { type FC } from 'react';
 import { useActions } from 'src/app/hooks';
 import { useRoleEditor } from 'src/app/roleHooks';
 import type { InteractionSettings } from 'src/app/types';
+import { PrototypeState } from './PrototypeState';
 import { PropertyGroup } from './PropertyGroup';
 import styles from './styles.css';
 
@@ -21,6 +22,7 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
             id: instanceId ?? componentId!,
             settings
         });
+    const stateAction = data.activation?.type === 'toggleState' ? data.activation : undefined;
     const visibilityAction =
         data.activation?.type === 'toggleVisibility' ? data.activation : undefined;
     const variantAction = data.activation?.type === 'changeVariant' ? data.activation : undefined;
@@ -44,16 +46,21 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                                     value={
                                         data.actionInherited
                                             ? 'inherit'
-                                            : visibilityAction
-                                              ? visibilityChoice(visibilityAction.instanceId)
-                                              : variantAction
-                                                ? variantChoice(
-                                                      variantAction.instanceId,
-                                                      variantAction.variantId
-                                                  )
-                                                : target
-                                                  ? JSON.stringify(target)
-                                                  : 'none'
+                                            : stateAction
+                                              ? JSON.stringify({
+                                                    type: 'toggleState',
+                                                    stateId: stateAction.stateId
+                                                })
+                                              : visibilityAction
+                                                ? visibilityChoice(visibilityAction.instanceId)
+                                                : variantAction
+                                                  ? variantChoice(
+                                                        variantAction.instanceId,
+                                                        variantAction.variantId
+                                                    )
+                                                  : target
+                                                    ? JSON.stringify(target)
+                                                    : 'none'
                                     }
                                     onChange={(event) => {
                                         const choice = event.target.value;
@@ -90,6 +97,34 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                                         </option>
                                     )}
                                     <option value="none">No action</option>
+                                    {stateAction &&
+                                        !data.prototypeBooleans.some(
+                                            (value) => value.id === stateAction.stateId
+                                        ) && (
+                                            <option
+                                                value={JSON.stringify({
+                                                    type: 'toggleState',
+                                                    stateId: stateAction.stateId
+                                                })}
+                                            >
+                                                Missing state
+                                            </option>
+                                        )}
+                                    {instanceId && data.prototypeBooleans.length > 0 && (
+                                        <optgroup label="Toggle state">
+                                            {data.prototypeBooleans.map((value) => (
+                                                <option
+                                                    key={value.id}
+                                                    value={JSON.stringify({
+                                                        type: 'toggleState',
+                                                        stateId: value.id
+                                                    })}
+                                                >
+                                                    Toggle state: {value.name}
+                                                </option>
+                                            ))}
+                                        </optgroup>
+                                    )}
                                     {variantAction &&
                                         !data.variantTargets.some(
                                             (item) =>
@@ -158,27 +193,34 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                             </div>
                         </td>
                     </tr>
-                    {instanceId && data.prototypeVisible !== undefined && (
-                        <tr>
-                            <td colSpan={2}>
-                                <label className={styles.prototypeVisibility}>
-                                    <input
-                                        type="checkbox"
-                                        checked={data.prototypeVisible}
-                                        disabled={data.disabled}
-                                        onChange={(event) =>
-                                            editInteractions({
-                                                target: 'visibility',
-                                                instanceId,
-                                                visible: event.target.checked
-                                            })
-                                        }
-                                    />{' '}
-                                    Show initially in prototype
-                                </label>
-                            </td>
-                        </tr>
-                    )}
+                    {instanceId &&
+                        data.prototypeVisible !== undefined &&
+                        (!data.prototypeVisibilityStateId ||
+                            !data.prototypeBooleans.some(
+                                (value) => value.id === data.prototypeVisibilityStateId
+                            )) && (
+                            <tr>
+                                <td colSpan={2}>
+                                    <label className={styles.prototypeVisibility}>
+                                        <input
+                                            type="checkbox"
+                                            checked={data.prototypeVisible}
+                                            disabled={data.disabled}
+                                            onChange={(event) =>
+                                                editInteractions({
+                                                    target: 'visibility',
+                                                    instanceId,
+                                                    visible: event.target.checked
+                                                })
+                                            }
+                                        />{' '}
+                                        {data.prototypeVisibilityStateId
+                                            ? 'Show if state is missing'
+                                            : 'Show initially in prototype'}
+                                    </label>
+                                </td>
+                            </tr>
+                        )}
                     {(data.actionFamily !== undefined || unavailable) && (
                         <tr>
                             <td colSpan={2}>
@@ -193,6 +235,14 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                     )}
                 </PropertyGroup>
             </table>
+            {instanceId && data.prototypeVisible !== undefined && (
+                <PrototypeState
+                    instanceId={instanceId}
+                    stateId={data.prototypeVisibilityStateId}
+                    values={data.prototypeBooleans}
+                    disabled={data.disabled}
+                />
+            )}
         </section>
     );
 };

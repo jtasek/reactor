@@ -75,6 +75,7 @@ const CHANGEABLE_FIELDS = new Set([
     'interaction',
     'interactions',
     'prototypeVisible',
+    'prototypeVisibilityStateId',
     'modeOverrides',
     'description',
     'rotation',
@@ -804,7 +805,10 @@ function stage(
         if ('interactions' in changes && current.type !== 'instance') {
             throw new Error('Only an instance can declare interactions.');
         }
-        if ('prototypeVisible' in changes && current.type !== 'instance') {
+        if (
+            ('prototypeVisible' in changes || 'prototypeVisibilityStateId' in changes) &&
+            current.type !== 'instance'
+        ) {
             throw new Error('Only an instance can declare prototype visibility.');
         }
         if ('modeOverrides' in changes && current.type !== 'instance') {

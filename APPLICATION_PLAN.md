@@ -1088,7 +1088,17 @@ team can then send a working prototype link to others.
    collaboration, keyboard activation and session isolation are covered by prototypeVisibility
    unit/browser tests.
 
-   **Remaining typed state and bindings (planned).** Add named local text/number/boolean values,
+   **Named boolean state (implemented).** A document can define stable-ID named boolean
+   values with authored initial values. Inspector creates, renames and deletes values, binds
+   ordinary instances' visibility, and assigns toggle actions. Multiple instances and screens
+   share a value within one player session; Reset restores defaults. Renames preserve bindings;
+   missing state falls back to the instance default and reports a diagnostic. Existing local
+   visibility toggles remain supported. Authored values use persistence, undo and collaboration;
+   runtime values never write to the graph. Cross-document pasted references remain diagnostic
+   until explicitly rebound; state definitions are not part of component-library packages.
+   Tests: prototypeState unit/browser.
+
+   **Remaining typed state and bindings (planned).** Add named local text/number values,
    set/toggle/reset actions and compatible control/property bindings. Keep runtime values separate
    from design-system variables and document mutations. Recreate the variable-editor comparison
    with selection and optional details before adding a general expression language.

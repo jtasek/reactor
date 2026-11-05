@@ -7,7 +7,7 @@ export interface PreviewNode {
     /** SHA-256 key into the application's verified raster image table. */
     image?: string;
     children?: PreviewNode[];
-    visibility?: { key: string; initial: boolean };
+    visibility?: { key: string; initial: boolean; stateKey?: string };
     variantKey?: string;
     initialVariant?: string;
     variants?: Record<string, PreviewNode>;
@@ -20,6 +20,7 @@ export interface PreviewNode {
         navigateTo?: string;
         changeVariant?: { key: string; variantId: string };
         toggleVisibility?: string;
+        toggleState?: string;
         stateKey?: string;
         x: number;
         y: number;
@@ -30,6 +31,7 @@ export interface PreviewNode {
 
 /** Drawing projected from the graph, before image bytes have been prepared. */
 export interface PreviewDrawing {
+    booleans?: Record<string, boolean>;
     documentId: string;
     screens: {
         id: string;
@@ -221,10 +223,20 @@ export function readPreview(
         }
         if (node.visibility !== undefined) {
             const visibility = object(node.visibility);
-            if (!string(visibility.key) || typeof visibility.initial !== 'boolean') {
+            if (
+                !string(visibility.key) ||
+                typeof visibility.initial !== 'boolean' ||
+                (visibility.stateKey !== undefined && !string(visibility.stateKey))
+            ) {
                 throw new Error('Invalid prototype visibility.');
             }
-            result.visibility = { key: visibility.key, initial: visibility.initial };
+            result.visibility = {
+                key: visibility.key,
+                initial: visibility.initial,
+                ...(visibility.stateKey === undefined
+                    ? {}
+                    : { stateKey: visibility.stateKey as string })
+            };
         }
         if (node.variants !== undefined) {
             if (!string(node.variantKey)) {
@@ -256,9 +268,14 @@ export function readPreview(
                 !['x', 'y', 'width', 'height'].every((key) => finite(c[key])) ||
                 (c.width as number) < 0 ||
                 (c.height as number) < 0 ||
-                ['value', 'placeholder', 'navigateTo', 'stateKey', 'toggleVisibility'].some(
-                    (key) => c[key] !== undefined && !string(c[key])
-                ) ||
+                [
+                    'value',
+                    'placeholder',
+                    'navigateTo',
+                    'stateKey',
+                    'toggleVisibility',
+                    'toggleState'
+                ].some((key) => c[key] !== undefined && !string(c[key])) ||
                 (c.disabled !== undefined && typeof c.disabled !== 'boolean')
             ) {
                 throw new Error('Invalid preview control.');
@@ -275,6 +292,7 @@ export function readPreview(
                 placeholder: c.placeholder,
                 disabled: c.disabled,
                 navigateTo: c.navigateTo,
+                ...(c.toggleState === undefined ? {} : { toggleState: c.toggleState as string }),
                 ...(c.toggleVisibility === undefined
                     ? {}
                     : { toggleVisibility: c.toggleVisibility as string }),
@@ -360,6 +378,21 @@ export function readPreview(
         throw new Error('Preview images exceed the 8 MiB limit. Remove or reduce some images.');
     }
 
+    const booleans = app.booleans === undefined ? {} : object(app.booleans);
+    if (Object.values(booleans).some((value) => typeof value !== 'boolean')) {
+        throw new Error('Invalid prototype boolean state.');
+    }
+    if (
+        nodes.some(
+            (node) =>
+                (node.visibility?.stateKey !== undefined &&
+                    !Object.hasOwn(booleans, node.visibility.stateKey)) ||
+                (node.control?.toggleState !== undefined &&
+                    !Object.hasOwn(booleans, node.control.toggleState))
+        )
+    ) {
+        throw new Error('Unavailable prototype state.');
+    }
     const visibilityKeys = new Set<string>();
     for (const node of nodes) {
         if (node.visibility) {
@@ -394,5 +427,10 @@ export function readPreview(
         }
     }
 
-    return { documentId: app.documentId, screens, images };
+    return {
+        documentId: app.documentId,
+        screens,
+        images,
+        ...(app.booleans === undefined ? {} : { booleans: booleans as Record<string, boolean> })
+    };
 }

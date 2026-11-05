@@ -366,6 +366,7 @@ it('anchors two-phase text in source space even when its rotated view is removed
             guides: {},
             variables: {},
             dimensions: {},
+            prototypeBooleans: {},
             dataEntities: {},
             dataFields: {},
             dataRecords: {}
@@ -416,6 +417,7 @@ it.each(['rotation', 'stack', 'view', 'lock', 'delete'] as const)(
                     guides: {},
                     variables: {},
                     dimensions: {},
+                    prototypeBooleans: {},
                     dataEntities: {},
                     dataFields: {},
                     dataRecords: {}
@@ -443,6 +445,7 @@ it.each(['rotation', 'stack', 'view', 'lock', 'delete'] as const)(
                     guides: {},
                     variables: {},
                     dimensions: {},
+                    prototypeBooleans: {},
                     dataEntities: {},
                     dataFields: {},
                     dataRecords: {}

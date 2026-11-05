@@ -237,6 +237,7 @@ export interface InstanceShape extends ShapeBase {
     interactions?: InteractionSettings;
     /** Local prototype visibility starts here; canvas visibility remains independent. */
     prototypeVisible?: boolean;
+    prototypeVisibilityStateId?: string;
     type: 'instance';
     componentId: string;
     position: Point;
@@ -261,7 +262,23 @@ export interface ToggleVisibilityAction {
     screenId?: never;
 }
 
-export type ActivationAction = NavigateAction | ChangeVariantAction | ToggleVisibilityAction;
+export interface ToggleStateAction {
+    type: 'toggleState';
+    stateId: string;
+    screenId?: never;
+}
+
+export interface PrototypeBoolean {
+    id: string;
+    name: string;
+    initial: boolean;
+}
+
+export type ActivationAction =
+    | NavigateAction
+    | ChangeVariantAction
+    | ToggleVisibilityAction
+    | ToggleStateAction;
 
 export interface InteractionSettings {
     activate?: ActivationAction | null;
@@ -419,6 +436,7 @@ export interface Frame {
 }
 
 export interface Document {
+    prototypeBooleans: HashTable<PrototypeBoolean>;
     dataEntities: HashTable<DataEntity>;
     dataFields: HashTable<DataField>;
     dataRecords: HashTable<DataRecord>;

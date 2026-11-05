@@ -229,6 +229,7 @@ it('does not start a gesture outside the placed focus and safely exits after its
             guides: {},
             variables: {},
             dimensions: {},
+            prototypeBooleans: {},
             dataEntities: {},
             dataFields: {},
             dataRecords: {}

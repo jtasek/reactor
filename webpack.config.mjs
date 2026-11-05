@@ -111,11 +111,12 @@ export const config = {
     // Documents controls and icons load with their page; commands and tools load with
     // the editor page (`registerEditor`). The individual-file limit stays at 248 KiB.
     // Schema v24 adds required entity/field/record readers (~1.6 KiB); the data UI loads on demand.
+    // Schema v28 adds named boolean records and binding readers; its authoring UI stays lazy.
     performance: isDev
         ? false
         : {
               hints: 'error',
-              maxEntrypointSize: 496 * 1024,
+              maxEntrypointSize: 497 * 1024,
               maxAssetSize: 248 * 1024
           },
     optimization: {

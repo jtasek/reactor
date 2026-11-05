@@ -903,6 +903,18 @@ as image file sizes; the drawing has its own 8 MiB limit. Each image is sent to 
 connector links are not rendered. List roles are labeled containers; record repetition and
 validation come later.
 
+To share a boolean between prototype controls, select an ordinary component instance on a
+Screen and use **Inspector → Prototype state → Add state** (for example, `showHelp`).
+Its **True** checkbox sets the initial value. Choose that value in **Visibility** on every
+instance it should show/hide, then choose **Toggle state: showHelp** under **On activation**
+on a button. Rename the state in place without changing its bindings.
+
+State is shared across screens within one player session. Reset restores initial values;
+other players and the authored canvas remain unchanged. Hidden inputs retain typed values
+until Reset. Deleting state retains its references for Undo: missing bindings use the instance
+visibility default and Preview reports the missing state. This increment supports booleans
+and ordinary instances, without inverse conditions or stack reflow.
+
 The runtime is a separate static server. It must be on a **different registrable domain** from
 the editor, on an app subdomain, without the editor's cookies. Configure the same
 `PREVIEW_ORIGIN` and `EDITOR_ORIGIN` on both processes, and run `pnpm serve:preview` on that

@@ -5,6 +5,7 @@ import { readPackageIdentity } from '../packageIdentity';
 import { readDimension, legacyTheme } from '../variableModes';
 import type {
     Application,
+    PrototypeBoolean,
     Camera,
     Document,
     Shape,
@@ -25,7 +26,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 27;
+export const SCHEMA_VERSION = 28;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -56,6 +57,7 @@ export const COLLECTIONS = [
     'guides',
     'variables',
     'dimensions',
+    'prototypeBooleans',
     'dataEntities',
     'dataFields',
     'dataRecords'
@@ -102,6 +104,7 @@ export type DocumentFields = Pick<
 
 /** The durable form of each kind of entity a document holds. */
 export interface SavedEntities {
+    prototypeBooleans: PrototypeBoolean;
     dataEntities: DataEntity;
     dataFields: DataField;
     dataRecords: DataRecord;
@@ -445,6 +448,10 @@ export function readShapeGeometry(value: unknown) {
                 type: s.type,
                 ...(s.variantMode === 'auto' ? { variantMode: 'auto' as const } : {}),
                 ...(s.variantId === undefined ? {} : { variantId: id(s.variantId) }),
+                prototypeVisibilityStateId:
+                    s.prototypeVisibilityStateId === undefined
+                        ? undefined
+                        : id(s.prototypeVisibilityStateId),
                 prototypeVisible:
                     s.prototypeVisible === undefined ? undefined : bool(s.prototypeVisible),
                 modeOverrides: readBindings(s.modeOverrides ?? {}),
@@ -574,13 +581,19 @@ function readRoleAndInteractions(value: Record<string, unknown>) {
 
 export function readInteractions(value: unknown): import('../types').InteractionSettings {
     const { activate, ...rest } = record(value);
-    const { type, screenId, instanceId, variantId } = record(activate ?? {});
+    const { type, screenId, instanceId, variantId, stateId } = record(activate ?? {});
     if (
         Object.keys(rest).length ||
         (activate != null &&
-            !['navigate', 'changeVariant', 'toggleVisibility'].includes(type as string))
+            !['navigate', 'changeVariant', 'toggleVisibility', 'toggleState'].includes(
+                type as string
+            ))
     ) {
         throw new Error('Invalid interactions');
+    }
+
+    if (type === 'toggleState') {
+        return { activate: { type, stateId: id(stateId) } };
     }
 
     return activate === undefined
@@ -813,6 +826,16 @@ function readDataRecord(value: unknown): DataRecord {
     };
 }
 
+function readPrototypeBoolean(value: unknown): PrototypeBoolean {
+    const item = record(value);
+    const name = text(item.name).trim();
+    if (!name || name.length > 100) {
+        throw new Error('State name must contain 1–100 characters.');
+    }
+
+    return { id: id(item.id), name, initial: bool(item.initial) };
+}
+
 const entityReaders: { [C in Collection]: (value: unknown) => SavedEntities[C] } = {
     frames: readFrame,
     shapes: readOrderedShape,
@@ -821,6 +844,7 @@ const entityReaders: { [C in Collection]: (value: unknown) => SavedEntities[C] }
     components: readComponent,
     links: readLink,
     guides: readGuide,
+    prototypeBooleans: readPrototypeBoolean,
     dataEntities: readDataEntity,
     dataFields: readDataField,
     dataRecords: readDataRecord,
@@ -853,6 +877,7 @@ const withoutMissingFrame = <T extends { parentFrameId?: string }>(item: T, exis
 const referenceRepairs: {
     [C in Collection]: (entity: SavedEntities[C], exists: Exists) => SavedEntities[C] | null;
 } = {
+    prototypeBooleans: (state) => state,
     dataEntities: (entity) => entity,
     dataFields: (field) => field,
     dataRecords: (record) => record,
@@ -1102,6 +1127,10 @@ function readDocument(value: unknown, onRepair = () => {}, legacyScreens = false
         components: repair('components', components),
         links: repair('links', table(d.links, readLink)),
         guides: table(d.guides, readGuide),
+        prototypeBooleans:
+            d.prototypeBooleans === undefined
+                ? {}
+                : table(d.prototypeBooleans, readPrototypeBoolean),
         dataEntities: d.dataEntities === undefined ? {} : table(d.dataEntities, readDataEntity),
         dataFields: d.dataFields === undefined ? {} : table(d.dataFields, readDataField),
         dataRecords: d.dataRecords === undefined ? {} : table(d.dataRecords, readDataRecord),
@@ -1227,6 +1256,7 @@ const hydrateVariable = (variable: Variable): Variable => structuredClone(variab
 const entityHydrators: {
     [C in Collection]: (entity: SavedEntities[C]) => Document[C][string];
 } = {
+    prototypeBooleans: (state) => structuredClone(state),
     dataEntities: (entity) => structuredClone(entity),
     dataFields: (field) => structuredClone(field),
     dataRecords: (dataRecord) => structuredClone(dataRecord),

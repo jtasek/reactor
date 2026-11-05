@@ -283,6 +283,7 @@ export function shapeGeometry(shape: Shape): ShapeInput {
                 componentId: shape.componentId,
                 variantId: shape.variantId,
                 prototypeVisible: shape.prototypeVisible,
+                prototypeVisibilityStateId: shape.prototypeVisibilityStateId,
                 ...(shape.variantMode ? { variantMode: shape.variantMode } : {}),
                 ...(shape.modeOverrides ? { modeOverrides: { ...shape.modeOverrides } } : {}),
                 position: { ...shape.position },
@@ -355,6 +356,7 @@ export function shapeGeometryKey(shape: Shape): string {
     if (geometry.type === 'instance') {
         delete geometry.modeOverrides;
         delete geometry.prototypeVisible;
+        delete geometry.prototypeVisibilityStateId;
     }
 
     return JSON.stringify(geometry);
