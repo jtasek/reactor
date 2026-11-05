@@ -137,7 +137,7 @@ test('shares the chosen context as an independent snapshot, plays without cookie
     await setPrototypeSetting(page, 'Prototype width', '640');
     await setPrototypeSetting(page, 'Prototype Theme', 'dark');
     await page.getByLabel('Preview screen').selectOption('home');
-    await setPrototypeSetting(page, 'Preview layout', JSON.stringify('home'));
+    await page.getByLabel('Preview layout').selectOption(JSON.stringify('home'));
     await expect(page.getByLabel('Preview layout')).toHaveValue(JSON.stringify('home'));
     await page.getByRole('button', { name: 'Share prototype', exact: true }).click();
     const sharing = page.getByRole('dialog', { name: 'Share prototype' });

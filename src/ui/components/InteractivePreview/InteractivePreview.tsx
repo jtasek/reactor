@@ -18,11 +18,11 @@ export default function InteractivePreview({
     onInspection,
     onLocate,
     toolbar,
-    settingsTarget
+    toolbarTarget
 }: {
     session?: PreviewSession;
     toolbar?: ReactNode;
-    settingsTarget?: HTMLElement | null;
+    toolbarTarget?: HTMLElement | null;
     onWidth?: (width: number) => void;
     onReset?: () => void;
     onInspection?: (inspection: PreviewInspection) => void;
@@ -252,9 +252,10 @@ export default function InteractivePreview({
         latest.current?.screens[0];
     const layout = shown?.layouts && (
         <label>
-            Layout
+            <span>Layout</span>
             <select
                 aria-label="Preview layout"
+                title="Automatic layout follows viewport width"
                 value={JSON.stringify(shown.layoutChoice ?? null)}
                 onChange={(event) => {
                     const layoutId = JSON.parse(event.target.value) as string | null;
@@ -264,7 +265,7 @@ export default function InteractivePreview({
                     }));
                 }}
             >
-                <option value="null">Automatic · Width</option>
+                <option value="null">Auto</option>
                 {shown.layoutChoice &&
                     !shown.layouts.some((item) => item.id === shown.layoutChoice) && (
                         <option value={JSON.stringify(shown.layoutChoice)}>
@@ -286,39 +287,38 @@ export default function InteractivePreview({
             data-player={Boolean(session)}
             aria-label="Interactive preview"
         >
-            {session && (
-                <div className={styles.toolbar} aria-label="Prototype controls">
-                    {/* Kept (disabled) until the runtime answers so the toolbar doesn't shift on load. */}
-                    {(hostControls || !ready) && (
-                        <label>
-                            <span>Screen</span>
-                            <select
-                                aria-label="Preview screen"
-                                disabled={!ready || !currentScreen}
-                                value={shown?.id ?? ''}
-                                onChange={(event) => {
-                                    connection.current?.postMessage({
-                                        type: 'select-screen',
-                                        screenId: event.target.value
-                                    });
-                                }}
-                            >
-                                {latest.current?.screens.map((screen) => (
-                                    <option key={screen.id} value={screen.id}>
-                                        {screen.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-                    )}
-                    {toolbar}
-                </div>
-            )}
             {session &&
-                hostControls &&
-                currentScreen &&
-                settingsTarget &&
-                createPortal(layout, settingsTarget)}
+                toolbarTarget &&
+                createPortal(
+                    <div className={styles.toolbar} role="group" aria-label="Prototype controls">
+                        {/* Kept (disabled) until the runtime answers so the toolbar doesn't shift on load. */}
+                        {(hostControls || !ready) && (
+                            <label>
+                                <span>Screen</span>
+                                <select
+                                    aria-label="Preview screen"
+                                    disabled={!ready || !currentScreen}
+                                    value={shown?.id ?? ''}
+                                    onChange={(event) => {
+                                        connection.current?.postMessage({
+                                            type: 'select-screen',
+                                            screenId: event.target.value
+                                        });
+                                    }}
+                                >
+                                    {latest.current?.screens.map((screen) => (
+                                        <option key={screen.id} value={screen.id}>
+                                            {screen.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        )}
+                        {hostControls && currentScreen && layout}
+                        {toolbar}
+                    </div>,
+                    toolbarTarget
+                )}
             {availability && <p role="status">{availability}</p>}
             {preparing && <p role="status">Preparing preview images…</p>}
             {problem && (

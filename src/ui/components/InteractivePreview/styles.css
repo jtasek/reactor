@@ -45,21 +45,16 @@
     background: var(--control-background-disabled);
 }
 
-.preview .toolbar {
+.toolbar {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
     gap: 4px;
-    align-self: center;
-    padding: 4px;
-    border-radius: 24px;
-    box-shadow: var(--box-shadow);
-    backdrop-filter: var(--backdrop-filter);
+    min-width: 0;
 }
 .toolbar select,
 .toolbar button {
-    border: 0;
     display: inline-flex;
     align-items: center;
     gap: 7px;
@@ -92,15 +87,55 @@
     display: grid;
     gap: 2px;
     min-width: 0;
-    padding: 4px 8px;
+    flex: 1 1 100px;
+    max-width: 180px;
 }
 .toolbar label > span {
     color: var(--text-secondary-color);
     font-size: 11px;
-    /* Matches the select's own left padding so the label lines up with its value. */
     padding-left: 12px;
 }
 .toolbar select {
     max-width: 200px;
     width: 100%;
+}
+
+.toolbar :is(select, button) {
+    border: 1px solid var(--hairline-color);
+    border-radius: calc(var(--radius-md) * 3);
+    background: var(--control-background);
+    min-height: 36px;
+}
+.toolbar button {
+    align-self: end;
+    padding-inline: 12px;
+}
+.toolbar :is(select, button):hover {
+    background: var(--control-background-active);
+}
+@media (max-width: 600px) {
+    .toolbar {
+        justify-content: flex-start;
+        gap: 6px;
+    }
+    .toolbar label {
+        max-width: none;
+        flex-basis: calc(33% - 6px);
+    }
+    .toolbar button {
+        flex: 1;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 440px) {
+    .toolbar label {
+        flex-basis: calc(50% - 6px);
+    }
+    .toolbar label:first-child {
+        flex-basis: 100%;
+    }
+    .toolbar select {
+        max-width: none;
+    }
 }

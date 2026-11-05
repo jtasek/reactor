@@ -868,12 +868,12 @@ See [the supported subset](design/design-token-interchange.md) for details and i
 Choose **Open prototype** on the application bar, run the **Open prototype** command, or open
 `/prototype`. Flow also offers a **Play** link for its chosen starting screen.
 Selecting a canvas Screen view first seeds its viewport, modes and explicit layout choice.
-The player opens with a current-screen picker, Mobile/Desktop viewport presets, **Restart prototype** and
-**Settings**. Settings contains **Start screen**, custom **Width** and **Height**, layout and
-dimension overrides; they affect only that session. Width-selected dimensions offer **Auto · Viewport width**; other dimensions
+The player keeps its screen and layout pickers, Mobile/Desktop viewport presets, **Restart prototype**,
+**Settings**, **Flow** and **Share** in one header, which wraps on narrow screens. Settings contains
+**Start screen**, custom **Width** and **Height**, and dimension overrides; they affect only that session. Width-selected dimensions offer **Auto · Viewport width**; other dimensions
 can inherit from each screen or use an explicit mode. Descendant frame and instance overrides
 continue to apply. Navigation retains the session viewport and modes, and compatible input
-values survive responsive layout and component-variant changes. The **Layout** control in Settings
+values survive responsive layout and component-variant changes. The **Layout** control in the header
 can inspect Auto or an explicit layout without editing the document.
 
 **Restart prototype** clears typed values and temporary layout inspection, returning to the chosen
