@@ -147,3 +147,34 @@ test('rapid pinch events anchor correctly on an offset and scaled SVG', async ({
     expect(world.x).toBeCloseTo(120, 4);
     expect(world.y).toBeCloseTo(80, 4);
 });
+
+test('mixed pan and zoom bursts compose against the latest camera at each pointer anchor', async ({
+    page
+}) => {
+    await page.goto('/');
+    const surface = page.locator('svg#surface');
+    await expect(surface).toBeVisible();
+    await surface.evaluate((element) => {
+        const events = [
+            { deltaX: 40, deltaY: 80 },
+            { clientX: 120, clientY: 80, ctrlKey: true, deltaY: -100 },
+            { deltaX: 10, deltaY: -20 },
+            { clientX: 200, clientY: 100, ctrlKey: true, deltaY: 100 }
+        ];
+        for (const event of events) {
+            element.dispatchEvent(
+                new WheelEvent('wheel', { ...event, bubbles: true, cancelable: true })
+            );
+        }
+    });
+    const matrix = () =>
+        surface.locator('#camera').evaluate((element) => {
+            const matrix = (element as SVGGElement).transform.baseVal.consolidate()!.matrix;
+
+            return { scale: matrix.a, x: matrix.e, y: matrix.f };
+        });
+    await expect.poll(async () => (await matrix()).x).toBeCloseTo(40 - 90 / Math.E, 4);
+    const result = await matrix();
+    expect(result.scale).toBeCloseTo(1, 6);
+    expect(result.y).toBeCloseTo(-60, 4);
+});
