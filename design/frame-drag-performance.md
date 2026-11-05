@@ -78,7 +78,9 @@ open: 100 children in an ordinary frame and four Screen views sharing 100 rectan
 Each scenario ran three times, with 30 measured moves per run. Tests still assert unchanged
 Screen view artwork, cancellation, release coordinates and saved positions after reload.
 
-`PROFILE_RENDERING=1` adds two **test-only** CSS experiments alongside the baseline:
+Two **test-only** CSS experiments ran alongside the baseline. They were removed from
+`tests/browser/frameDragging.spec.ts` once they showed no benefit; the PR #427 commit
+(828752a) still has them behind `PROFILE_RENDERING=1`:
 
 - `surface-layer`: request compositing of the root SVG with `will-change: transform`.
 - `no-glass`: disable backdrop filtering to test its contribution to dragging cost.
@@ -126,6 +128,8 @@ Keep production rendering unchanged. The browser already uses hardware accelerat
 in the visible session. Before changing ordinary-frame dragging, profile its JavaScript
 work separately; compositor hints cannot eliminate those document/React updates.
 
+To rerun the experiments, check out 828752a and run:
+
 ```sh
 PROFILE_RENDERING=1 pnpm exec playwright test tests/browser/frameDragging.spec.ts \
   --headed --workers=1 --repeat-each=3 --trace=off --reporter=json \
@@ -133,10 +137,10 @@ PROFILE_RENDERING=1 pnpm exec playwright test tests/browser/frameDragging.spec.t
 ```
 
 Omit `--headed` for the software-rendered cross-check, and verify the browser's GPU
-status rather than assuming it from the launch mode. `drag-measurements` attachments
-contain the experiment name, per-move timings, artwork mutation count and CDP deltas
-for ScriptDuration, LayoutDuration, RecalcStyleDuration and TaskDuration (milliseconds).
-Without `PROFILE_RENDERING`, only the ordinary-frame and Screen view baseline tests run.
+status rather than assuming it from the launch mode. On the current spec,
+`drag-measurements` attachments contain per-move timings, the artwork mutation count
+and CDP deltas for ScriptDuration, LayoutDuration, RecalcStyleDuration and TaskDuration
+(milliseconds).
 
 ## Ordinary-frame JavaScript follow-up — 2026-11-05
 
@@ -170,6 +174,8 @@ work about 19%. These are local observations, not device-independent guarantees;
 benchmark includes frame scheduling. The after-run also instruments the moved child's
 `getBBox` calls: no measurement occurs during the drag, and it resumes after release.
 Existing checks still cover cancellation, persisted geometry and unchanged Screen view artwork.
+`tests/shapeSubscriptions.test.ts` checks that rendering one unselected Shape starts a
+single Overmind tracking tree (master before this change started ten).
 
 ```sh
 pnpm exec playwright test tests/browser/frameDragging.spec.ts \

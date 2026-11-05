@@ -3,16 +3,8 @@ import { createDocument, createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
 import { expectPlacedCoordinate, openEditor, pointer } from './support/editor';
 
-const rendering = process.env.PROFILE_RENDERING
-    ? ['baseline', 'surface-layer', 'no-glass']
-    : ['baseline'];
-
-const scenarios = rendering.flatMap((experiment) =>
-    ['ordinary', 'view0'].map((target) => ({ experiment, target }))
-);
-
-for (const { experiment, target } of scenarios) {
-    test(`${experiment} ${target}: dragging keeps screen artwork stable and cancellation restores geometry`, async ({
+for (const target of ['ordinary', 'view0']) {
+    test(`${target}: dragging keeps screen artwork stable and cancellation restores geometry`, async ({
         page
     }, testInfo) => {
         const box = {
@@ -96,12 +88,6 @@ for (const { experiment, target } of scenarios) {
         await page.getByRole('button', { name: 'More panels' }).click();
         await expect(page.locator('#frames > [data-frame="view0"]')).toBeVisible();
         const cdp = await page.context().newCDPSession(page);
-        if (experiment === 'surface-layer') {
-            await page.addStyleTag({ content: '#surface { will-change: transform; }' });
-        }
-        if (experiment === 'no-glass') {
-            await page.addStyleTag({ content: '* { backdrop-filter: none !important; }' });
-        }
         await cdp.send('Performance.enable');
 
         if (process.env.PROFILE_FRAME_DRAG) {
@@ -195,7 +181,7 @@ for (const { experiment, target } of scenarios) {
                 ])
         );
         await testInfo.attach('drag-measurements', {
-            body: JSON.stringify({ ...measurement, experiment, metrics }),
+            body: JSON.stringify({ ...measurement, metrics }),
             contentType: 'application/json'
         });
         expect(measurement.artworkMutations).toBe(0);

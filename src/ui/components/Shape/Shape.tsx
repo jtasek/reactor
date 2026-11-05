@@ -91,8 +91,9 @@ export const Shape = memo((props: Props) => {
         shape.type === 'text'
             ? Boolean(shape.textLayout)
             : shape.type === 'instance' && Boolean(shape.projectedSource);
-    // A gesture that maintains bounds suspends measurement. Avoid serializing and
-    // subscribing to all geometry fields until measurement resumes on release.
+    // A gesture that maintains bounds suspends measurement. Skip serializing the
+    // geometry key until measurement resumes on release. The render still reads
+    // these fields, so this saves the work of building the key, not subscriptions.
     const geometryKey =
         visible && measuring && !contextual
             ? `${shapeGeometryKey(authored)}:${source?.key ?? ''}:${variableKey}`
