@@ -20,6 +20,7 @@ export function FlowPage() {
 
 function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
     const workspace = useRef<HTMLElement>(null);
+    const editor = useRef<HTMLElement>(null);
     const [selected, setSelected] = useState<string>();
     const [advanced, setAdvanced] = useState(false);
     const [start, setStart] = useState<string>();
@@ -38,6 +39,12 @@ function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
     const reachable = reachableScreens(graph, start);
     const canUndo = !disabled && document.history.canUndo;
     const canRedo = !disabled && document.history.canRedo;
+    useEffect(() => {
+        // The editor sits under the diagram; bring it into view without moving focus.
+        if (selected) {
+            editor.current?.scrollIntoView?.({ block: 'nearest' });
+        }
+    }, [selected]);
     useEffect(() => {
         // The designer's shortcuts run only on the canvas page.
         const onKeyDown = (event: KeyboardEvent) => {
@@ -140,7 +147,7 @@ function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
                     }}
                 />
                 {control && (
-                    <aside aria-label="Selected control">
+                    <aside ref={editor} aria-label="Selected control">
                         <div className={styles.selectionHeader}>
                             <h2>{control.name}</h2>
                             <button
@@ -190,7 +197,7 @@ function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
             </div>
             <p className={styles.hint}>
                 {control
-                    ? 'Choose a destination on the canvas or change the action above.'
+                    ? 'Use Connect to on a screen, or change the action in the editor.'
                     : 'Select a control to connect it to a screen.'}
             </p>
         </main>

@@ -227,6 +227,10 @@ export default function InteractivePreview({
             }
             connection.current = channel.port1;
             setAvailability('');
+            if (session) {
+                // Older preview servers ignore this and keep their own picker and Layout.
+                channel.port1.postMessage({ type: 'player-controls' });
+            }
             if (latest.current) {
                 send(channel.port1, latest.current);
             }
@@ -281,7 +285,7 @@ export default function InteractivePreview({
                 <div className={styles.toolbar} aria-label="Prototype controls">
                     <select
                         aria-label="Preview screen"
-                        disabled={!ready}
+                        disabled={!ready || !currentScreen}
                         value={shown?.id ?? ''}
                         onChange={(event) => {
                             connection.current?.postMessage({
@@ -299,7 +303,7 @@ export default function InteractivePreview({
                     {toolbar}
                 </div>
             )}
-            {session && settingsTarget && createPortal(layout, settingsTarget)}
+            {session && currentScreen && settingsTarget && createPortal(layout, settingsTarget)}
             {availability && <p role="status">{availability}</p>}
             {preparing && <p role="status">Preparing preview images…</p>}
             {problem && (

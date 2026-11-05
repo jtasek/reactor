@@ -207,6 +207,13 @@ test('keeps setup out of the player, restores settings focus and preserves input
     await expect(input).toHaveValue('Ada');
     await page.getByLabel('Viewport preset').selectOption('mobile');
     await expect(input).toHaveValue('Ada');
+    // Custom stays chosen, so the menu matches what the person picked.
+    await page.getByLabel('Viewport preset').selectOption('custom');
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+    await expect(page.getByLabel('Viewport preset')).toHaveValue('custom');
+    await page.getByLabel('Viewport preset').selectOption('mobile');
+    await expect(page.getByLabel('Viewport preset')).toHaveValue('mobile');
+    await expect(page.getByRole('region', { name: 'Prototype settings' })).toHaveCount(0);
     await page.getByRole('link', { name: 'Flow', exact: true }).click();
     await expect(page.getByRole('complementary', { name: 'Selected control' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Connect to Home', exact: true })).toHaveCount(0);

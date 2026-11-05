@@ -176,3 +176,17 @@ test('treats a link that starts hidden in prototype as unreachable until somethi
             .getByText('Not reachable from the chosen screen.')
     ).toBeVisible();
 });
+
+test('scrolls the control editor into view on a short window', async ({ page }) => {
+    const document = automaticLayoutsPrototype();
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto('/flow');
+    await page.locator('[data-flow-control="next"]').click();
+    await expect(page.getByLabel(/^On (activation|Enter): action$/)).toBeInViewport({ ratio: 1 });
+    await expect(page.locator('[data-flow-control="next"]')).toBeFocused();
+});

@@ -103,6 +103,8 @@ function PrototypeWorkspace() {
     const [inspection, setInspection] = useState<PreviewInspection>({});
     const settings = useRef<HTMLDialogElement>(null);
     const [settingsTarget, setSettingsTarget] = useState<HTMLDivElement | null>(null);
+    // Custom stays chosen while its size still matches a preset.
+    const [customPreset, setCustomPreset] = useState(false);
     const [restart, setRestart] = useState(0);
     const reset = () => setRestart((value) => value + 1);
     const resize = (axis: 'width' | 'height', value: number) =>
@@ -157,7 +159,7 @@ function PrototypeWorkspace() {
                     <h2>Prototype settings</h2>
                     <button onClick={() => settings.current?.close()}>Done</button>
                 </header>
-                <section className={styles.controls} aria-label="Prototype settings">
+                <div className={styles.controls}>
                     <label>
                         Start screen
                         <select
@@ -236,13 +238,15 @@ function PrototypeWorkspace() {
                         </label>
                     ))}
                     <p>
-                        Changes apply only to this session. Restart returns to the start screen and
+                        Changes apply only to this session. Reset returns to the start screen and
                         resets input and state.
                     </p>
-                </section>
+                </div>
             </dialog>
             {session.screenId && !screens.some((screen) => screen.id === session.screenId) && (
-                <p role="status">The start screen is unavailable. Choose another start screen.</p>
+                <p role="status">
+                    The start screen is unavailable. Open Settings to choose another start screen.
+                </p>
             )}
             {!screens.length ? (
                 <p>Create a screen on the canvas to start a prototype.</p>
@@ -256,8 +260,11 @@ function PrototypeWorkspace() {
                             <>
                                 <select
                                     aria-label="Viewport preset"
-                                    value={viewportPreset(session.viewport)}
+                                    value={
+                                        customPreset ? 'custom' : viewportPreset(session.viewport)
+                                    }
                                     onChange={(event) => {
+                                        setCustomPreset(event.target.value === 'custom');
                                         if (event.target.value === 'custom') {
                                             settings.current?.showModal();
 
@@ -276,7 +283,7 @@ function PrototypeWorkspace() {
                                 </select>
                                 <button
                                     aria-label="Reset prototype"
-                                    title="Restart prototype"
+                                    title="Reset prototype"
                                     onClick={reset}
                                 >
                                     <Icon icon={{ component: RotateCcw, size: 18 }} />

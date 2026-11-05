@@ -33,6 +33,8 @@ let application: PreviewApplication | undefined;
 /** Images received so far. The editor sends each image once and later updates only refer to it. */
 let images: Record<string, string> = {};
 let currentScreen: string | undefined;
+/** The editor draws the screen picker and Layout itself. Older editors never say so. */
+let hostControls = false;
 let port: MessagePort | undefined;
 
 function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
@@ -310,8 +312,8 @@ function render() {
     svg.setAttribute('height', String(screen.height));
     svg.setAttribute('aria-label', screen.name);
     screen.nodes.forEach((node) => svg.append(nodeElement(node)));
-    root.replaceChildren(...(externalControls ? [svg] : [navigation, svg]));
-    if (externalControls) {
+    root.replaceChildren(...(hostControls ? [svg] : [navigation, svg]));
+    if (hostControls) {
         document.documentElement.dataset.player = 'true';
         port?.postMessage({ type: 'current-screen', screenId: screen.id });
     }
@@ -325,7 +327,7 @@ function render() {
                 : root.querySelector<HTMLElement>(
                       `[aria-controls="${CSS.escape(visibilityId(toggled))}"], [data-toggle-state="${CSS.escape(toggled)}"]`
                   );
-        const focusTarget = input ?? opener ?? (externalControls ? svg : select);
+        const focusTarget = input ?? opener ?? (hostControls ? svg : select);
         if (focusTarget === svg) {
             svg.setAttribute('tabindex', '-1');
         }
@@ -420,9 +422,15 @@ window.addEventListener('message', (event) => {
     }
     port = event.ports[0];
     port.onmessage = (event) => {
+        if (event.data?.type === 'player-controls') {
+            hostControls = externalControls;
+            render();
+
+            return;
+        }
         if (event.data?.type === 'select-screen') {
             if (
-                externalControls &&
+                hostControls &&
                 application?.screens.some((screen) => screen.id === event.data.screenId)
             ) {
                 currentScreen = event.data.screenId;
