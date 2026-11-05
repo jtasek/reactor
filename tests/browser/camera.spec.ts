@@ -148,7 +148,9 @@ test('rapid pinch events anchor correctly on an offset and scaled SVG', async ({
     expect(world.y).toBeCloseTo(80, 4);
 });
 
-test('mixed pan and zoom bursts preserve event order and each pointer anchor', async ({ page }) => {
+test('mixed pan and zoom bursts compose against the latest camera at each pointer anchor', async ({
+    page
+}) => {
     await page.goto('/');
     const surface = page.locator('svg#surface');
     await expect(surface).toBeVisible();

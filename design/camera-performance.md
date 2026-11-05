@@ -43,10 +43,13 @@ The benchmark verifies cumulative pan, reversible anchored zoom and unchanged ar
 Existing camera/gesture checks cover transformed SVG coordinates, pan batching, slider
 position preservation, scale limits, invalid input, zoom rejection during dragging,
 touch pinch and ruler/grid alignment. An added mixed-burst check alternates queued pan
-with zoom at two anchors in the same task, verifying each update uses the latest camera.
+with zoom at two anchors in the same task, verifying the final camera composes every
+update against the latest camera (pan is applied on the next frame, zoom immediately).
+
+The benchmark is skipped in normal test runs; set `CAMERA_BENCHMARK=1` to run it.
 
 ```sh
-pnpm exec playwright test tests/browser/cameraPerformance.spec.ts \
+CAMERA_BENCHMARK=1 pnpm exec playwright test tests/browser/cameraPerformance.spec.ts \
   --headed --workers=1 --repeat-each=3 --trace=off --reporter=json \
   > /tmp/reactor-camera-profile.json
 ```

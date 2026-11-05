@@ -7,6 +7,12 @@ const SHAPES = 1000;
 const FRAMES = 40;
 const EVENTS_PER_FRAME = 8;
 
+// About 7 s of 1,000-shape setup; camera.spec.ts covers the same camera math on every run.
+test.skip(
+    !process.env.CAMERA_BENCHMARK && !process.env.PROFILE_CAMERA,
+    'Set CAMERA_BENCHMARK=1 to run the camera benchmark.'
+);
+
 for (const gesture of ['pan', 'zoom'] as const) {
     test(`${gesture}: large canvas preserves artwork during wheel bursts`, async ({
         page
