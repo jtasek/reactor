@@ -1,4 +1,4 @@
-import { hasLayoutOffset } from 'src/app/frameLayout';
+import { hasLayoutOffset, renderedShape } from 'src/app/frameLayout';
 import React, { CSSProperties, FC, createElement, memo, useLayoutEffect, useRef } from 'react';
 import { Active } from '../Active/Active';
 import { Label } from '../Label';
@@ -7,29 +7,23 @@ import { Selectable } from '../Selectable/Selectable';
 import { getComponentByType } from 'src/tools/components';
 import { TextEditor } from 'src/tools/components/Text';
 import { SHAPE_PROPERTIES } from 'src/app/properties';
-import { instanceComponentId } from 'src/app/componentSource';
+import { componentSource, instanceComponentId } from 'src/app/componentSource';
 import { Instance } from './Instance';
-import { useMeasuringShape } from './measuring';
+import { isMeasuringShape } from './measuring';
 import type { Shape as ShapeType } from 'src/app/types';
-import { useCurrentDocument } from 'src/app/hooks';
-import { useArtworkModes } from 'src/app/modeHooks';
+import { artworkModes } from 'src/app/modeHooks';
 import { themeColors } from 'src/app/themeColors';
 import { resolveVariable } from 'src/app/variableResolver';
 import {
+    isShapeVisible,
+    isShapeLocked,
     DEFAULT_TEXT_FONT_SIZE,
     rectToBox,
     shapeGeometryKey,
     getShapeBounds,
     boxCenter
 } from 'src/app/utils';
-import {
-    useActions,
-    useAppState,
-    useComponentSource,
-    useShape,
-    useShapeLocked,
-    useShapeVisible
-} from 'src/app/hooks';
+import { useActions, useAppState } from 'src/app/hooks';
 
 interface Props {
     shapeId: string;
@@ -49,55 +43,60 @@ export const Shape = memo((props: Props) => {
         minimap = false,
         measurementOnly = false
     } = props;
-    const shape = useShape(shapeId);
-    const document = useCurrentDocument();
-    const theme = useArtworkModes(shape);
+    // One tracked tree owns this shape's reads; separate state hooks duplicate
+    // subscription setup and teardown for every child on each drag frame.
+    const state = useAppState((state) => state);
+    const document = state.currentDocument;
+    const shape = renderedShape(document, shapeId);
+    const theme = artworkModes(state, shape).modes;
     const painted = themeColors(shape, document, theme);
-    const visible = useShapeVisible(shapeId);
-    const locked = useShapeLocked(shapeId);
+    const visible = isShapeVisible(document, shapeId);
+    const locked = isShapeLocked(document, shapeId);
     const { setShapeBounds, activateShape, deactivateShape } = useActions();
-    const measuring = useMeasuringShape(shapeId, visible);
+    const measuring = isMeasuringShape(state, shapeId, visible);
     const measuredGeometry = useRef<string | null>(null);
     const groupRef = useRef<SVGGElement>(null);
     // The component of this shape's type, which takes this shape's fields. A hidden
     // instance draws nothing, so it does not read its source, and does not render
     // again as the source changes, as it does while the source is being edited.
-    const baseSource = useComponentSource(
-        shape.type === 'instance' && visible ? instanceComponentId(document, shape) : null
-    );
+    const baseSource =
+        shape.type === 'instance' && visible
+            ? componentSource(document, instanceComponentId(document, shape))
+            : null;
     const source = shape.type === 'instance' ? (shape.projectedSource ?? baseSource) : baseSource;
-    const variableKey = useAppState((state) => {
-        if (shape.type !== 'instance') {
-            return '';
-        }
-        const values = Object.values(shape.overrides).flatMap((override) => {
-            if (typeof override !== 'object') {
-                return [];
-            }
-            const variable = state.currentDocument.variables[override.variableId];
+    const variableKey =
+        shape.type === 'instance' && visible && measuring && !shape.projectedSource
+            ? JSON.stringify(
+                  Object.values(shape.overrides).flatMap((override) => {
+                      if (typeof override !== 'object') {
+                          return [];
+                      }
+                      const variable = document.variables[override.variableId];
 
-            return variable ? [resolveVariable(variable, state.currentDocument.variables)] : [];
-        });
-
-        return JSON.stringify(values);
-    });
+                      return variable ? [resolveVariable(variable, document.variables)] : [];
+                  })
+              )
+            : '';
     const Component =
         shape.type === 'instance'
             ? null
             : (getComponentByType(shape.type) as FC<Omit<ShapeType, 'key'>>);
-    const authored = useAppState((state) => state.currentDocument.shapes[shapeId]);
-    const editingText = useAppState(
-        (state) =>
-            state.editingText?.documentId === state.currentDocumentId &&
-            state.editingText.shapeId === shapeId
-    );
+    const authored = document.shapes[shapeId];
+    const editingText =
+        state.editingText?.documentId === state.currentDocumentId &&
+        state.editingText.shapeId === shapeId;
     const inLayout = hasLayoutOffset(document, [shapeId]);
     // Measured in context; the DOM box would mix contexts and must not be stored.
     const contextual =
         shape.type === 'text'
             ? Boolean(shape.textLayout)
             : shape.type === 'instance' && Boolean(shape.projectedSource);
-    const geometryKey = `${shapeGeometryKey(authored)}:${source?.key ?? ''}:${variableKey}`;
+    // A gesture that maintains bounds suspends measurement. Avoid serializing and
+    // subscribing to all geometry fields until measurement resumes on release.
+    const geometryKey =
+        visible && measuring && !contextual
+            ? `${shapeGeometryKey(authored)}:${source?.key ?? ''}:${variableKey}`
+            : '';
 
     // Measure the actual rendered geometry so the selection box, handles and
     // label match exactly. getBBox returns local (canvas) coordinates, so it is

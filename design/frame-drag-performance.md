@@ -70,3 +70,109 @@ placement but do update after resizing a stacked screen. A separate gesture test
 checks repeated line/pen translations and cancellation snapshots. Existing browser
 checks continue to verify placed canvas coordinates, including each view's translation,
 instead of assuming each SVG child's raw coordinates are absolute.
+
+## Hardware-acceleration experiment — 2026-11-05
+
+Repeated the existing fixture against the production build, with Inspector and Explorer
+open: 100 children in an ordinary frame and four Screen views sharing 100 rectangles.
+Each scenario ran three times, with 30 measured moves per run. Tests still assert unchanged
+Screen view artwork, cancellation, release coordinates and saved positions after reload.
+
+`PROFILE_RENDERING=1` adds two **test-only** CSS experiments alongside the baseline:
+
+- `surface-layer`: request compositing of the root SVG with `will-change: transform`.
+- `no-glass`: disable backdrop filtering to test its contribution to dragging cost.
+
+Neither experiment changes application CSS. A layer hint is a request to the browser,
+not proof that a particular SVG subtree received a separate composited layer.
+
+### Hardware-backed Chromium results
+
+A visible Chromium session reported Apple M1 Pro through ANGLE/Metal, with GPU
+compositing and rasterization enabled. Median and p95 below pool 90 move samples per
+scenario. Script and task columns are mean totals across each run's 30 moves, in ms.
+
+| Scenario          | Target         | Median |   p95 | Script | Main-thread task |
+| ----------------- | -------------- | -----: | ----: | -----: | ---------------: |
+| Baseline          | Ordinary frame |  20.15 | 22.90 | 543.03 |           627.10 |
+| Canvas layer hint | Ordinary frame |  19.70 | 23.20 | 536.50 |           618.51 |
+| No glass blur     | Ordinary frame |  20.45 | 25.80 | 542.45 |           645.60 |
+| Baseline          | Screen view    |   8.30 |  9.10 |  58.30 |           122.81 |
+| Canvas layer hint | Screen view    |   8.30 |  9.10 |  56.28 |           118.83 |
+| No glass blur     | Screen view    |   8.30 |  9.40 |  60.94 |           144.41 |
+
+Baseline ordinary-frame layout and style recalculation totals were 11.02 ms and
+14.45 ms respectively. JavaScript accounted for most measured main-thread work;
+these counters do not measure GPU time or identify a specific JavaScript function.
+The layer hint's small median change did not improve p95, and does not justify a
+production change. Disabling blur did not help this fixture either.
+
+### Software-rendered cross-check and limits
+
+Headless Chromium reported SwiftShader and software compositing/rasterization. Its
+baseline medians were 19.00 ms for the ordinary frame and 16.60 ms for the Screen view.
+The layer hint measured 19.05/16.60 ms; disabling blur measured 19.90/16.70 ms.
+All 36 cases across both browser modes passed.
+
+Do not interpret the 8.3 vs 16.6 ms Screen view timings as a GPU speedup: the sessions
+have different frame scheduling. These measurements include animation-frame waits,
+not just rendering duration. Runs were sequential in a fixed scenario order on one
+machine; small differences may be noise. No general claim is made about pan/zoom,
+Prototype resizing, larger documents or other browsers/devices.
+
+### Decision and reproduction
+
+Keep production rendering unchanged. The browser already uses hardware acceleration
+in the visible session. Before changing ordinary-frame dragging, profile its JavaScript
+work separately; compositor hints cannot eliminate those document/React updates.
+
+```sh
+PROFILE_RENDERING=1 pnpm exec playwright test tests/browser/frameDragging.spec.ts \
+  --headed --workers=1 --repeat-each=3 --trace=off --reporter=json \
+  > /tmp/reactor-rendering-gpu.json
+```
+
+Omit `--headed` for the software-rendered cross-check, and verify the browser's GPU
+status rather than assuming it from the launch mode. `drag-measurements` attachments
+contain the experiment name, per-move timings, artwork mutation count and CDP deltas
+for ScriptDuration, LayoutDuration, RecalcStyleDuration and TaskDuration (milliseconds).
+Without `PROFILE_RENDERING`, only the ordinary-frame and Screen view baseline tests run.
+
+## Ordinary-frame JavaScript follow-up — 2026-11-05
+
+An unminified production CPU profile identified repeated React/Overmind bookkeeping in
+ordinary-frame children. Across 30 moves, sampled inclusive `renderWithHooks` time was
+248.3 ms, `subscribe` 53.0 ms and `shapeGeometryKey` 21.0 ms. These inclusive samples
+overlap and cannot be summed. Each Shape called several state hooks, creating separate
+tracking trees/subscriptions for the same component render. Geometry measurement keys
+were also serialized even while a gesture suspended DOM measurement.
+
+The Shape renderer now uses one tracked state hook and the same pure readers for shape,
+visibility, locking, inherited modes, component source and measurement eligibility.
+Reads still go through Overmind's tracked proxy: there is no untracked snapshot or cache.
+The measurement eligibility helper receives that tracked state instead of starting another
+subscription. Geometry/variable measurement keys are computed only when measuring a visible,
+non-contextual shape. Releasing the gesture resumes measurement with its current geometry.
+No document data, pointer scheduling, snapping, undo or collaboration code changed.
+
+Skipping measurement keys alone had a small effect (19.4 ms median; 23.1 ms p95), so it
+was not treated as the primary improvement. Consolidating the subscriptions gave the
+following result with the minified production build in hardware-backed Chromium, three
+runs of 30 moves each, using the same baseline as the hardware experiment above:
+
+| Target                       | Before median | After median | Before p95 | After p95 | Before script / 30 moves | After script / 30 moves |
+| ---------------------------- | ------------: | -----------: | ---------: | --------: | -----------------------: | ----------------------: |
+| Ordinary frame, 100 children |      20.15 ms |     16.60 ms |   22.90 ms |  18.60 ms |                543.03 ms |               437.68 ms |
+| Screen view                  |       8.30 ms |      8.30 ms |    9.10 ms |   8.60 ms |                 58.30 ms |                57.08 ms |
+
+The ordinary-frame median improved about 18%, p95 about 19%, and measured JavaScript
+work about 19%. These are local observations, not device-independent guarantees; the
+benchmark includes frame scheduling. The after-run also instruments the moved child's
+`getBBox` calls: no measurement occurs during the drag, and it resumes after release.
+Existing checks still cover cancellation, persisted geometry and unchanged Screen view artwork.
+
+```sh
+pnpm exec playwright test tests/browser/frameDragging.spec.ts \
+  --headed --workers=1 --repeat-each=3 --trace=off --reporter=json \
+  > /tmp/reactor-frame-subscription-after.json
+```

@@ -1,4 +1,4 @@
-import { useAppState } from 'src/app/hooks';
+import type { Context } from 'src/app';
 import { instanceComponentId } from 'src/app/componentSource';
 import type { Document } from 'src/app/types';
 import { KEEPS_SHAPE_BOUNDS } from 'src/events/gestures';
@@ -50,37 +50,36 @@ const sourceSelected = (
  * itself. Gestures change selected shapes only, so a shape not selected never
  * reads the gesture, and does not render again as gestures begin and end.
  */
-export const useMeasuringShape = (id: string, visible: boolean) =>
-    useAppState((state) => {
-        const shape = state.currentDocument.shapes[id];
+export const isMeasuringShape = (state: Context['state'], id: string, visible: boolean) => {
+    const shape = state.currentDocument.shapes[id];
 
-        // A frame drag moves its descendants, and only a selected frame is dragged, so
-        // only the selected frame's descendants read the gesture besides selected shapes.
-        if (inSelectedFrame(state.currentDocument, shape?.parentFrameId)) {
-            const gesture = state.events.pointer.gesture;
+    // A frame drag moves its descendants, and only a selected frame is dragged, so
+    // only the selected frame's descendants read the gesture besides selected shapes.
+    if (inSelectedFrame(state.currentDocument, shape?.parentFrameId)) {
+        const gesture = state.events.pointer.gesture;
 
-            if (gesture.kind === 'editingFrame' && gesture.shapes[id]) {
-                return false;
-            }
+        if (gesture.kind === 'editingFrame' && gesture.shapes[id]) {
+            return false;
+        }
+    }
+
+    // Editing a component's source changes its instances though they are not
+    // selected, so then they wait for the gesture to end too. Other instances,
+    // and hidden ones, which are not measured, do not read the gesture, so they
+    // do not render again as drags begin and end.
+    if (shape?.type === 'instance' && !shape.selected) {
+        const document = state.currentDocument;
+
+        if (!visible) {
+            return true;
         }
 
-        // Editing a component's source changes its instances though they are not
-        // selected, so then they wait for the gesture to end too. Other instances,
-        // and hidden ones, which are not measured, do not read the gesture, so they
-        // do not render again as drags begin and end.
-        if (shape?.type === 'instance' && !shape.selected) {
-            const document = state.currentDocument;
+        const sourceEdited =
+            state.enteredComponentId !== null ||
+            sourceSelected(document, instanceComponentId(document, shape));
 
-            if (!visible) {
-                return true;
-            }
+        return !sourceEdited || !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind];
+    }
 
-            const sourceEdited =
-                state.enteredComponentId !== null ||
-                sourceSelected(document, instanceComponentId(document, shape));
-
-            return !sourceEdited || !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind];
-        }
-
-        return !shape?.selected || !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind];
-    });
+    return !shape?.selected || !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind];
+};
