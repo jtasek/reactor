@@ -113,6 +113,7 @@
     "rebuild": "pnpm run build:webpack",
     "serve": "cross-env NODE_ENV=production node server.prod.ts",
     "start": "node server.ts",
+    "start:local": "node scripts/start-local.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "tsc": "tsc --noEmit",

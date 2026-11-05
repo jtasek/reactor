@@ -917,7 +917,21 @@ external assets; its sandbox disallows same-origin access, forms, popups and top
 The editor sends a validated projection over a dedicated channel; changes cannot travel back
 into the document. Without configuration, Preview explains that hosting is unavailable.
 
-Local testing uses distinct loopback origins with an explicit opt-in. In one terminal:
+For local development, one command builds the runtime and starts both servers:
+
+```sh
+pnpm start:local
+```
+
+Open `http://localhost:4000`. Ctrl+C stops both servers; if either fails, the other stops
+too. Stop any existing server on those ports first. Optional `PORT` and `PREVIEW_PORT`
+select distinct local ports (defaults 4000 and 4001). This local-only command sets matching
+loopback origins and retains other environment settings, including accounts and AI.
+Restart it after changing the preview runtime to rebuild it. `pnpm start` remains editor-only;
+production hosting still requires the separate-site configuration above.
+
+To run the processes manually, local testing uses distinct loopback origins with an explicit
+opt-in. In one terminal:
 
 ```sh
 PREVIEW_ORIGIN=http://127.0.0.1:4001 EDITOR_ORIGIN=http://127.0.0.1:4000 PREVIEW_ALLOW_LOCALHOST=true pnpm start
