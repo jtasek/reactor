@@ -1,5 +1,5 @@
 import { Context } from '../app';
-import { Point } from 'src/app/types';
+import type { Camera, Point } from 'src/app/types';
 import { getToolById } from './components';
 import {
     DEFAULT_SCALE,
@@ -14,6 +14,13 @@ import { DEFAULT_TOOL_ID } from './state';
 import type { ImageToPlace } from '../app/services/assets';
 
 type ZoomOptions = { scale: number; point?: Point };
+
+/** Read each live value once; camera math validates and reuses these values repeatedly. */
+function cameraValue(camera: Camera): Camera {
+    const { scale, position } = camera;
+
+    return { scale, position: { x: position.x, y: position.y } };
+}
 
 export const activateTool = (context: Context, toolId: string) => {
     const { state, actions } = context;
@@ -91,15 +98,16 @@ export const zoom = ({ state: { currentDocument, events } }: Context, options: Z
         return;
     }
 
-    const next = zoomAt(currentDocument.camera, options.scale, options.point);
+    const camera = currentDocument.camera;
+    const next = zoomAt(cameraValue(camera), options.scale, options.point);
 
     if (!next) {
         return;
     }
 
-    currentDocument.camera.scale = next.scale;
-    currentDocument.camera.position.x = next.position.x;
-    currentDocument.camera.position.y = next.position.y;
+    camera.scale = next.scale;
+    camera.position.x = next.position.x;
+    camera.position.y = next.position.y;
 };
 
 /**
@@ -110,20 +118,16 @@ export const zoomToAnchor = (
     { state: { currentDocument } }: Context,
     options: { scale: number; anchor: Point; point: Point }
 ) => {
-    const next = placeWorldPoint(
-        currentDocument.camera,
-        options.scale,
-        options.anchor,
-        options.point
-    );
+    const camera = currentDocument.camera;
+    const next = placeWorldPoint(cameraValue(camera), options.scale, options.anchor, options.point);
 
     if (!next) {
         return;
     }
 
-    currentDocument.camera.scale = next.scale;
-    currentDocument.camera.position.x = next.position.x;
-    currentDocument.camera.position.y = next.position.y;
+    camera.scale = next.scale;
+    camera.position.x = next.position.x;
+    camera.position.y = next.position.y;
 };
 
 /**
@@ -156,14 +160,15 @@ export const panCamera = (
     { state: { currentDocument } }: Context,
     delta: { dx: number; dy: number }
 ) => {
-    const next = panBy(currentDocument.camera, { x: delta.dx, y: delta.dy });
+    const camera = currentDocument.camera;
+    const next = panBy(cameraValue(camera), { x: delta.dx, y: delta.dy });
 
     if (!next) {
         return;
     }
 
-    currentDocument.camera.position.x = next.position.x;
-    currentDocument.camera.position.y = next.position.y;
+    camera.position.x = next.position.x;
+    camera.position.y = next.position.y;
 };
 
 export const executeToolCommands = (context: Context) => {
