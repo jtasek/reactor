@@ -70,7 +70,7 @@ test('launches from a view, carries viewport and modes across navigation and pre
     await expect(runtime.locator('text')).toHaveAttribute('fill', '#112233');
     await page.getByLabel('Preview screen').selectOption('home');
     await expect(input).toHaveValue('Ada');
-    await setPrototypeSetting(page, 'Preview layout', '"home"');
+    await page.getByLabel('Preview layout').selectOption('"home"');
     await expect(runtime.locator('svg')).toHaveAttribute('viewBox', '0 0 800 900');
     await width(page, '700');
     await expect(runtime.locator('svg')).toHaveAttribute('viewBox', '0 0 700 900');
@@ -201,8 +201,28 @@ test('keeps setup out of the player, restores settings focus and preserves input
     await expect(page.getByRole('dialog', { name: 'Prototype settings' })).not.toBeVisible();
     await expect(runtime.getByRole('navigation', { name: 'Preview controls' })).toHaveCount(0);
     await expect(page.getByLabel('Preview screen')).toHaveValue('home');
+    const header = page.locator('main > header');
+    await expect(header.getByLabel('Preview screen')).toBeVisible();
+    await expect(header.getByLabel('Preview layout')).toBeVisible();
+    await expect(header.getByLabel('Viewport preset')).toBeVisible();
+    await expect(header.getByRole('button', { name: 'Restart prototype' })).toBeVisible();
+    await expect(
+        header.getByRole('button', { name: 'Prototype settings', exact: true })
+    ).toBeVisible();
+    // Header buttons share a bottom edge with the labelled selects.
+    const bottom = async (name: string) => {
+        const box = await header.getByRole('button', { name, exact: true }).boundingBox();
+
+        return Math.round(box!.y + box!.height);
+    };
+    expect(await bottom('Share prototype')).toBe(await bottom('Restart prototype'));
+    const restart = header.getByRole('button', { name: 'Restart prototype' });
+    await restart.focus();
+    await page.keyboard.press('Enter');
+    await expect(restart).toBeFocused();
     const input = runtime.getByRole('textbox', { name: 'Your name', exact: true });
     await input.fill('Ada');
+    await page.screenshot({ path: 'test-results/prototype-header-wide.png' });
     await settings.click();
     await page.getByLabel('Prototype width', { exact: true }).focus();
     await page.keyboard.press('Escape');
@@ -226,6 +246,12 @@ test('keeps setup out of the player, restores settings focus and preserves input
     await expect(page.getByLabel('Preview screen')).toBeInViewport({ ratio: 1 });
     await expect(page.getByLabel('Viewport preset')).toBeInViewport({ ratio: 1 });
     await expect(settings).toBeInViewport({ ratio: 1 });
+    await expect(header.getByLabel('Preview layout')).toBeInViewport({ ratio: 1 });
+    expect(await header.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+        true
+    );
+    // The wrapped phone header scrolls away instead of covering the player.
+    await expect(header).toHaveCSS('position', 'relative');
     await page.screenshot({ path: 'test-results/prototype-phone.png' });
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.getByRole('link', { name: 'Flow', exact: true }).click();

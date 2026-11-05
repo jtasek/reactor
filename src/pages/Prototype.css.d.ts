@@ -4,11 +4,14 @@ declare namespace PrototypeCssNamespace {
     dimensions: string;
     documentName: string;
     header: string;
+    headerActions: string;
+    identity: string;
     player: string;
     prototype: string;
     settings: string;
     sharedLink: string;
     sharing: string;
+    toolbarSlot: string;
     viewportSummary: string;
   }
 }

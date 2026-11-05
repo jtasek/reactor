@@ -102,11 +102,13 @@ function PrototypeWorkspace() {
     });
     const [inspection, setInspection] = useState<PreviewInspection>({});
     const settings = useRef<HTMLDialogElement>(null);
-    const [settingsTarget, setSettingsTarget] = useState<HTMLDivElement | null>(null);
+    const [toolbarTarget, setToolbarTarget] = useState<HTMLDivElement | null>(null);
     // Custom stays chosen while its size still matches a preset.
     const [customPreset, setCustomPreset] = useState(false);
     const [restart, setRestart] = useState(0);
     const reset = () => setRestart((value) => value + 1);
+    // Restart remounts the preview and its header controls, so focus moves to the new button.
+    const refocusRestart = useRef(false);
     const resize = (axis: 'width' | 'height', value: number) =>
         setSession((previous) => ({
             ...previous,
@@ -146,13 +148,20 @@ function PrototypeWorkspace() {
                     <Icon icon={{ component: ArrowLeft, size: 18 }} />
                     Canvas
                 </a>
-                <h1>Prototype</h1>
-                <span className={styles.documentName}>{document.name}</span>
-                <a href="/flow">
-                    <Icon icon={{ component: Workflow, size: 18 }} />
-                    Flow
-                </a>
-                <SharePrototype session={session} inspection={inspection} />
+                <div className={styles.identity}>
+                    <h1>Prototype</h1>
+                    <span className={styles.documentName} title={document.name}>
+                        {document.name}
+                    </span>
+                </div>
+                <div ref={setToolbarTarget} className={styles.toolbarSlot} />
+                <div className={styles.headerActions}>
+                    <a href="/flow">
+                        <Icon icon={{ component: Workflow, size: 18 }} />
+                        Flow
+                    </a>
+                    <SharePrototype session={session} inspection={inspection} />
+                </div>
             </header>
             <dialog ref={settings} className={styles.settings} aria-label="Prototype settings">
                 <header>
@@ -198,7 +207,6 @@ function PrototypeWorkspace() {
                             change={(value) => resize('height', value)}
                         />
                     </div>
-                    <div ref={setSettingsTarget} />
                     {ordered(document.dimensions).map((dimension) => (
                         <label key={dimension.id}>
                             {dimension.name}
@@ -255,7 +263,7 @@ function PrototypeWorkspace() {
                     <InteractivePreview
                         key={`${session.screenId}:${restart}`}
                         session={session}
-                        settingsTarget={settingsTarget}
+                        toolbarTarget={toolbarTarget}
                         toolbar={
                             <>
                                 <label>
@@ -287,9 +295,18 @@ function PrototypeWorkspace() {
                                     </select>
                                 </label>
                                 <button
+                                    ref={(button) => {
+                                        if (button && refocusRestart.current) {
+                                            refocusRestart.current = false;
+                                            button.focus();
+                                        }
+                                    }}
                                     aria-label="Restart prototype"
                                     title="Restart prototype"
-                                    onClick={reset}
+                                    onClick={() => {
+                                        refocusRestart.current = true;
+                                        reset();
+                                    }}
                                 >
                                     <Icon icon={{ component: RotateCcw, size: 18 }} />
                                     Restart
