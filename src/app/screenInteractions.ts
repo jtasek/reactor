@@ -3,8 +3,15 @@ import type {
     InstanceShape,
     ActivationAction,
     NavigateAction,
-    RoleSettings
+    RoleSettings,
+    Shape
 } from './types';
+
+/** The action of an instance that changes another instance (variant or visibility). */
+export const instanceAction = (shape?: Shape) =>
+    shape?.type === 'instance' && shape.interactions?.activate?.type !== 'navigate'
+        ? (shape.interactions?.activate ?? undefined)
+        : undefined;
 
 /** Old documents retain Button navigation and whole-role instance overrides. */
 export function legacyActivation(settings?: RoleSettings): NavigateAction | null {

@@ -1,4 +1,4 @@
-import { legacyActivation, separateInteractions } from './screenInteractions';
+import { instanceAction, legacyActivation, separateInteractions } from './screenInteractions';
 import { isScreenLayout } from './screenLayouts';
 import { initialScreenView } from './screenViewMigration';
 import {
@@ -1114,15 +1114,9 @@ function stage(
 
     // An instance action may name a shape the batch adds, before or after it (pasted pairs).
     staged.shapes.forEach((shape) => {
-        const action = shape.type === 'instance' ? shape.interactions?.activate : undefined;
-        const key = action && action.type !== 'navigate' ? action.instanceId : undefined;
-        if (
-            action &&
-            action.type !== 'navigate' &&
-            key &&
-            declared.get(key)?.collection === 'shapes'
-        ) {
-            action.instanceId = ids.get(key) ?? key;
+        const action = instanceAction(shape);
+        if (action && declared.get(action.instanceId)?.collection === 'shapes') {
+            action.instanceId = ids.get(action.instanceId) ?? action.instanceId;
         }
     });
 

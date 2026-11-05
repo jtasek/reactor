@@ -574,29 +574,28 @@ function readRoleAndInteractions(value: Record<string, unknown>) {
 
 export function readInteractions(value: unknown): import('../types').InteractionSettings {
     const { activate, ...rest } = record(value);
-    if (Object.keys(rest).length) {
+    const { type, screenId, instanceId, variantId } = record(activate ?? {});
+    if (
+        Object.keys(rest).length ||
+        (activate != null &&
+            !['navigate', 'changeVariant', 'toggleVisibility'].includes(type as string))
+    ) {
         throw new Error('Invalid interactions');
     }
-    if (activate == null) {
-        return activate === undefined ? {} : { activate: null };
-    }
-    const action = record(activate);
-    const type = action.type;
-    if (type === 'navigate') {
-        return { activate: { type, screenId: id(action.screenId) } };
-    }
-    if (type === 'toggleVisibility' || type === 'changeVariant') {
-        const instanceId = id(action.instanceId);
 
-        return {
-            activate:
-                type === 'toggleVisibility'
-                    ? { type, instanceId }
-                    : { type, instanceId, variantId: id(action.variantId) }
-        };
-    }
-
-    throw new Error('Invalid interactions');
+    return activate === undefined
+        ? {}
+        : {
+              activate:
+                  activate &&
+                  (type === 'navigate'
+                      ? { type, screenId: id(screenId) }
+                      : ({
+                            type,
+                            instanceId: id(instanceId),
+                            ...(type === 'changeVariant' ? { variantId: id(variantId) } : {})
+                        } as import('../types').ActivationAction))
+          };
 }
 
 export function readRoleSettings(value: unknown): import('../types').RoleSettings {

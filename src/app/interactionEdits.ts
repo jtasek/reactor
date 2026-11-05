@@ -75,6 +75,7 @@ export function editInteractions(context: Context, edit: InteractionEdit | Visib
     if (
         visibilityTarget !== undefined &&
         (!owner ||
+            visibilityTarget === instance?.id ||
             !prototypeTargets(document, owner, instance?.parentFrameId).some(
                 (shape) => shape.id === visibilityTarget
             ))

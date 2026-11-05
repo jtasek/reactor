@@ -10,6 +10,7 @@ import {
 } from 'src/app/services/documentStorage';
 import { projectPreview, createArtworkProjector } from 'src/preview/project';
 import { readPreview } from 'src/preview/protocol';
+import { projectFlow } from 'src/app/flowProjection';
 import { createCopies, edit, settle, shownDocument, DOCUMENT_ID } from './support/collaboration';
 import { createTestStore } from './support/store';
 import type { Document, InstanceShape } from 'src/app/types';
@@ -145,4 +146,47 @@ it('pairs cloned and pasted toggle actions with their own targets and retains th
     const warnings: string[] = [];
     expect(() => readPreview(projectPreview(doc, {}, warnings))).not.toThrow();
     expect(warnings).toEqual([]);
+});
+
+it('refuses a control as its own visibility target', () => {
+    const { store } = createTestStore();
+    const document = createDocument(buildInspectorTypography(newId));
+    document.id = store.state.currentDocumentId;
+    store.actions.addDocument(document);
+    const doc = store.state.currentDocument;
+    const button = Object.values(doc.shapes).find(
+        (shape): shape is InstanceShape =>
+            shape.type === 'instance' && shape.interactions?.activate?.type === 'toggleVisibility'
+    )!;
+    const before = button.interactions;
+    store.actions.editInteractions({
+        target: 'instance',
+        id: button.id,
+        settings: { activate: { type: 'toggleVisibility', instanceId: button.id } }
+    });
+    expect((store.state.currentDocument.shapes[button.id] as InstanceShape).interactions).toEqual(
+        before
+    );
+});
+
+it('shows in Flow what starts hidden and which toggles lost their target', () => {
+    const { store } = createTestStore();
+    const created = createDocument(buildInspectorTypography(newId));
+    created.id = store.state.currentDocumentId;
+    store.actions.addDocument(created);
+    const document = JSON.parse(JSON.stringify(store.state.currentDocument)) as Document;
+    const target = help(document);
+    const controls = projectFlow(document)[0].controls;
+    const toggle = controls.find((control) => control.toggleTarget === target.id)!;
+    expect(toggle.missing).toBe(false);
+    expect(controls.find((control) => control.instanceId === target.id)?.startsHidden).toBe(
+        target.id
+    );
+    expect(toggle.startsHidden).toBeUndefined();
+    delete document.shapes[target.id];
+    document.shapesIds = document.shapesIds.filter((id) => id !== target.id);
+    expect(
+        projectFlow(document)[0].controls.find((control) => control.toggleTarget === target.id)
+            ?.missing
+    ).toBe(true);
 });

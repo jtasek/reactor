@@ -264,6 +264,9 @@ export function FlowDiagram({
                                     </div>
                                     {control.missing && <strong>Unavailable target</strong>}
                                     {control.hidden && <small>Hidden, not in Preview</small>}
+                                    {!control.hidden && control.startsHidden && (
+                                        <small>Starts hidden in prototype</small>
+                                    )}
                                     {!control.hidden && control.unusedVariant && (
                                         <small>Not drawn: this instance uses another variant</small>
                                     )}

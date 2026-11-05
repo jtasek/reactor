@@ -26,6 +26,8 @@ const initialVariants = new Map<string, string>();
 const visibility = new Map<string, boolean>();
 const initialVisibility = new Map<string, boolean>();
 const visibilityId = (key: string) => `visibility-${encodeURIComponent(key)}`;
+/** The visibility the last activation toggled: focus returns to its opener if the control hid. */
+let toggled: string | undefined;
 let application: PreviewApplication | undefined;
 /** Images received so far. The editor sends each image once and later updates only refer to it. */
 let images: Record<string, string> = {};
@@ -153,6 +155,7 @@ function activate(control: NonNullable<PreviewNode['control']>) {
     if (!control.changeVariant && !control.navigateTo && control.toggleVisibility === undefined) {
         return;
     }
+    toggled = control.toggleVisibility;
     if (control.toggleVisibility !== undefined) {
         const key = control.toggleVisibility;
         visibility.set(key, !(visibility.get(key) ?? initialVisibility.get(key) ?? true));
@@ -271,7 +274,13 @@ function render() {
         const input = Array.from(
             root.querySelectorAll<HTMLInputElement | HTMLButtonElement>('input, button')
         ).find((input) => input.dataset.key === key);
-        (input ?? select).focus();
+        const opener =
+            toggled === undefined
+                ? null
+                : root.querySelector<HTMLElement>(
+                      `[aria-controls="${CSS.escape(visibilityId(toggled))}"]`
+                  );
+        (input ?? opener ?? select).focus();
         if (input instanceof HTMLInputElement && selection) {
             input.setSelectionRange(selection[0], selection[1]);
         }

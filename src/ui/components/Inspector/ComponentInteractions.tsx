@@ -45,7 +45,7 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                                         data.actionInherited
                                             ? 'inherit'
                                             : visibilityAction
-                                              ? JSON.stringify(visibilityAction)
+                                              ? visibilityChoice(visibilityAction.instanceId)
                                               : variantAction
                                                 ? variantChoice(
                                                       variantAction.instanceId,
@@ -112,7 +112,11 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                                         !data.visibilityTargets.some(
                                             (item) => item.id === visibilityAction.instanceId
                                         ) && (
-                                            <option value={JSON.stringify(visibilityAction)}>
+                                            <option
+                                                value={visibilityChoice(
+                                                    visibilityAction.instanceId
+                                                )}
+                                            >
                                                 Unavailable visibility target
                                             </option>
                                         )}
@@ -121,10 +125,7 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                                             {data.visibilityTargets.map((item) => (
                                                 <option
                                                     key={item.id}
-                                                    value={JSON.stringify({
-                                                        type: 'toggleVisibility',
-                                                        instanceId: item.id
-                                                    })}
+                                                    value={visibilityChoice(item.id)}
                                                 >
                                                     Toggle {item.name}
                                                 </option>
@@ -199,4 +200,8 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
 /** One spelling per action, whatever order a stored action's keys are in. */
 function variantChoice(instanceId: string, variantId: string) {
     return JSON.stringify({ type: 'changeVariant', instanceId, variantId });
+}
+
+function visibilityChoice(instanceId: string) {
+    return JSON.stringify({ type: 'toggleVisibility', instanceId });
 }

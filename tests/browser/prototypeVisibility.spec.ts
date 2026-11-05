@@ -120,3 +120,47 @@ test('authors and persists initial visibility in Inspector', async ({ page }) =>
         player.getByText('Sentence case is easier to scan.', { exact: true })
     ).toBeVisible();
 });
+
+test('closing a card from inside returns focus to the control that opened it', async ({
+    page,
+    context
+}) => {
+    const { buildInspectorTypography } = await import('src/templates/inspectorTypography');
+    const { createDocument } = await import('src/app/factories');
+    const { projectPreview } = await import('src/preview/project');
+    const { PREVIEW_PROTOCOL_VERSION } = await import('src/preview/protocol');
+    let sequence = 0;
+    const drawing = projectPreview(
+        createDocument(buildInspectorTypography(() => `sample-${++sequence}`)),
+        {}
+    );
+    const help = drawing.screens[0].nodes.find((node) => node.visibility?.initial === false)!;
+    help.children!.push({
+        key: `${help.key}/close`,
+        tag: 'g',
+        attrs: {},
+        children: [],
+        control: {
+            role: 'button',
+            label: 'Close help',
+            toggleVisibility: help.visibility!.key,
+            x: 280,
+            y: 0,
+            width: 40,
+            height: 24
+        }
+    });
+    await context.route('**/api/prototype-links/open', (route) =>
+        route.fulfill({ json: { version: PREVIEW_PROTOCOL_VERSION, application: drawing } })
+    );
+    await page.goto(`http://127.0.0.1:4194/share#${'a'.repeat(43)}`);
+    const about = page.getByRole('button', { name: 'About these styles', exact: true });
+    await about.focus();
+    await about.press('Enter');
+    const close = page.getByRole('button', { name: 'Close help', exact: true });
+    await close.focus();
+    await close.press('Enter');
+    await expect(close).toHaveCount(0);
+    await expect(about).toBeFocused();
+    await expect(about).toHaveAttribute('aria-expanded', 'false');
+});

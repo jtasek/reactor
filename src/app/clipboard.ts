@@ -4,7 +4,6 @@ import type {
     Document,
     Group,
     InstanceShape,
-    InteractionSettings,
     Point,
     Shape,
     ShapeInput,
@@ -17,6 +16,7 @@ import { librarySnapshot } from './componentLibrary';
 import { componentSource, instanceSource, instanceBox } from './componentSource';
 import { copyName, createShape, instanceName, numberedName, shapeNamer } from './factories';
 import { CLONE_OFFSET, translateShape } from './geometry';
+import { instanceAction } from './screenInteractions';
 import { applyProperty } from './properties';
 import { hydrateComponent, readEntity } from './services/documentStorage';
 import {
@@ -259,7 +259,7 @@ export function writeClipboard(
                       dataList: shape.dataList,
                       overrides: copiedOverrides(shape, variables),
                       interaction: shape.interaction,
-                      interactions: copiedInteractions(shape.interactions, shapes)
+                      interactions: copiedInteractions(shape, shapes)
                   }
                 : {}),
             ...shapeStyle(shape),
@@ -745,15 +745,11 @@ export function pasteOperations(
  * An instance action aimed at another copied shape names that shape's paste key, so the
  * pasted control changes the pasted target; other targets keep their IDs.
  */
-function copiedInteractions(
-    interactions: InteractionSettings | undefined,
-    shapes: readonly Shape[]
-): InteractionSettings | undefined {
-    const action = interactions?.activate;
-    if (!action || action.type === 'navigate') {
-        return interactions;
-    }
-    const index = shapes.findIndex((shape) => shape.id === action.instanceId);
+function copiedInteractions(shape: InstanceShape, shapes: readonly Shape[]) {
+    const action = instanceAction(shape);
+    const index = action ? shapes.findIndex((item) => item.id === action.instanceId) : -1;
 
-    return index < 0 ? interactions : { activate: { ...action, instanceId: `shape:${index}` } };
+    return index < 0
+        ? shape.interactions
+        : { activate: { ...action!, instanceId: `shape:${index}` } };
 }

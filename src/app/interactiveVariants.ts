@@ -1,6 +1,7 @@
 import { layoutTreeRoot } from './screenLayouts';
 import type { Document, ChangeVariantAction, InstanceShape, Shape } from './types';
 import { screenOwners } from './screenViews';
+import { instanceAction } from './screenInteractions';
 
 /** First increment: ordinary screen instances; repeated and nested source instances are excluded. */
 export function prototypeTargets(document: Document, screenId?: string, fromFrameId?: string) {
@@ -99,10 +100,9 @@ export function validVariantAction(
  */
 export function remapVariantTargets(shapes: Shape[], ids: ReadonlyMap<string, string>) {
     for (const shape of shapes) {
-        const action = shape.type === 'instance' ? shape.interactions?.activate : undefined;
-        const copy = action && action.type !== 'navigate' ? ids.get(action.instanceId) : undefined;
-        if (action && action.type !== 'navigate' && copy) {
-            action.instanceId = copy;
+        const action = instanceAction(shape);
+        if (action) {
+            action.instanceId = ids.get(action.instanceId) ?? action.instanceId;
         }
     }
 }

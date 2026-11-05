@@ -42,10 +42,10 @@ export const useRoleEditor = (componentId?: string, instanceId?: string) =>
             : [];
 
         return {
-            visibilityTargets: visibilityTargets.map((target) => ({
-                id: target.id,
-                name: target.name
-            })),
+            // A control that hid itself could only come back on Reset.
+            visibilityTargets: visibilityTargets
+                .filter((target) => target.id !== instanceId)
+                .map(({ id, name }) => ({ id, name })),
             prototypeVisible:
                 instance && visibilityTargets.some((target) => target.id === instance.id)
                     ? (instance.prototypeVisible ?? true)
