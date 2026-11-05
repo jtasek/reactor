@@ -49,7 +49,7 @@ test('connects and removes actions in Flow, reflects them in Inspector, and arra
     await expect(page.getByLabel(/^On (activation|Enter): action$/)).toHaveValue('inherit');
     await page.getByRole('button', { name: 'Redo', exact: true }).click();
     await expect(page.getByLabel(/^On (activation|Enter): action$/)).toHaveValue('"home"');
-    await page.getByLabel('Check reachability from').selectOption('details');
+    await page.getByLabel('Start screen for reachability').selectOption('details');
     await expect(page.getByText('Not reachable from the chosen screen.')).toBeVisible();
     const node = page.locator('[data-flow-screen="home"]');
     const before = await node.boundingBox();
@@ -147,7 +147,7 @@ test('marks hidden controls and leaves them out of reachability', async ({ page 
     await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
     await page.goto('/flow');
     await expect(page.getByText('Hidden, not in Preview')).toHaveCount(2);
-    await page.getByLabel('Check reachability from').selectOption('home');
+    await page.getByLabel('Start screen for reachability').selectOption('home');
     await expect(
         page
             .locator('[data-flow-screen="details"]')
@@ -169,10 +169,24 @@ test('treats a link that starts hidden in prototype as unreachable until somethi
     await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
     await page.goto('/flow');
     await expect(page.getByText('Starts hidden in prototype')).toHaveCount(2);
-    await page.getByLabel('Check reachability from').selectOption('home');
+    await page.getByLabel('Start screen for reachability').selectOption('home');
     await expect(
         page
             .locator('[data-flow-screen="details"]')
             .getByText('Not reachable from the chosen screen.')
     ).toBeVisible();
+});
+
+test('scrolls the control editor into view on a short window', async ({ page }) => {
+    const document = automaticLayoutsPrototype();
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto('/flow');
+    await page.locator('[data-flow-control="next"]').click();
+    await expect(page.getByLabel(/^On (activation|Enter): action$/)).toBeInViewport({ ratio: 1 });
+    await expect(page.locator('[data-flow-control="next"]')).toBeFocused();
 });

@@ -1,3 +1,5 @@
+import { Share } from 'lucide-react';
+import { Icon } from 'src/ui/components/Icon';
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppState, useEffects } from 'src/app/hooks';
 import { projectPreview, type PreviewSession, type PreviewInspection } from 'src/preview/project';
@@ -129,8 +131,9 @@ export function SharePrototype({
 
     return (
         <>
-            <button ref={launcher} onClick={() => setOpened(true)}>
-                Share prototype
+            <button ref={launcher} aria-label="Share prototype" onClick={() => setOpened(true)}>
+                <Icon icon={{ component: Share, size: 18 }} />
+                Share
             </button>
             {opened && (
                 <dialog

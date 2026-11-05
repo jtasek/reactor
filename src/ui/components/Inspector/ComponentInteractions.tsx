@@ -7,10 +7,11 @@ import { PropertyGroup } from './PropertyGroup';
 import styles from './styles.css';
 
 /** Actions belong to the component or instance, independently of its semantic role. */
-export const ComponentInteractions: FC<{ componentId?: string; instanceId?: string }> = ({
-    componentId,
-    instanceId
-}) => {
+export const ComponentInteractions: FC<{
+    componentId?: string;
+    instanceId?: string;
+    actionOnly?: boolean;
+}> = ({ componentId, instanceId, actionOnly = false }) => {
     const data = useRoleEditor(componentId, instanceId);
     const { editInteractions } = useActions();
     if (!data) {
@@ -35,7 +36,11 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
     const trigger = data.settings.role === 'input' ? 'On Enter' : 'On activation';
 
     return (
-        <section aria-label="Interactions" className={styles.interactions}>
+        <section
+            aria-label="Interactions"
+            className={styles.interactions}
+            data-action-only={actionOnly}
+        >
             <table>
                 <PropertyGroup name="Interactions">
                     <tr>
@@ -215,7 +220,7 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                             </div>
                         </td>
                     </tr>
-                    {instanceId && data.prototypeVisible !== undefined && (
+                    {!actionOnly && instanceId && data.prototypeVisible !== undefined && (
                         <tr>
                             <td colSpan={2}>
                                 <PrototypeVisibility
@@ -244,7 +249,7 @@ export const ComponentInteractions: FC<{ componentId?: string; instanceId?: stri
                     )}
                 </PropertyGroup>
             </table>
-            {instanceId && data.prototypeVisible !== undefined && (
+            {!actionOnly && instanceId && data.prototypeVisible !== undefined && (
                 <PrototypeState values={data.prototypeBooleans} disabled={data.disabled} />
             )}
         </section>
