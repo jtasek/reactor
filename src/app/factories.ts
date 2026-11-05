@@ -266,6 +266,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
         shapes: {},
         tags: [],
         tagTones: {},
+        prototypeBooleans: {},
         dataEntities: {},
         dataFields: {},
         dataRecords: {},

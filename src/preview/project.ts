@@ -194,6 +194,12 @@ export function projectPreview(
 
     const drawing: PreviewDrawing = {
         documentId: document.id,
+        booleans: Object.fromEntries(
+            Object.values(document.prototypeBooleans).map((value) => [
+                `state:${value.id}`,
+                value.initial
+            ])
+        ),
         screens: roots.map((frame) => ({
             id: frame.id,
             name: frame.name,
@@ -562,10 +568,48 @@ export function createArtworkProjector(
                     activeInstances?.has(shape.id) &&
                     checkVisibilityTarget(shape.id, screenId)
                 ) {
+                    if (
+                        shape.prototypeVisibilityStateId &&
+                        !document.prototypeBooleans[shape.prototypeVisibilityStateId]
+                    ) {
+                        const message = `${shape.name}: visibility state is missing; using its initial visibility.`;
+                        if (!warnings.includes(message)) {
+                            warnings.push(message);
+                            diagnostics.push({ kind: 'shape', id: shape.id, message });
+                        }
+                    }
                     group.visibility = {
                         key: JSON.stringify([screenId, shape.id, component.id]),
-                        initial: shape.prototypeVisible ?? true
+                        initial: shape.prototypeVisible ?? true,
+                        ...(shape.prototypeVisibilityStateId &&
+                        document.prototypeBooleans[shape.prototypeVisibilityStateId]
+                            ? { stateKey: `state:${shape.prototypeVisibilityStateId}` }
+                            : {})
                     };
+                }
+                const stateId =
+                    activation?.type === 'toggleState'
+                        ? activation.stateId
+                        : toggleVisibility && visibilityTarget?.type === 'instance'
+                          ? visibilityTarget.prototypeVisibilityStateId
+                          : undefined;
+                const toggleState =
+                    stateId &&
+                    document.prototypeBooleans[stateId] &&
+                    !recordScope &&
+                    (path === screenId || controlKey !== undefined)
+                        ? `state:${stateId}`
+                        : undefined;
+                if (activation?.type === 'toggleState' && !toggleState) {
+                    const message = !document.prototypeBooleans[activation.stateId]
+                        ? `${shape.name}: prototype state is missing. Choose a state in Interactions.`
+                        : recordScope
+                          ? `${shape.name}: controls in repeated records cannot toggle prototype state yet.`
+                          : `${shape.name}: this control cannot toggle prototype state here. Use a control placed on the screen.`;
+                    if (!warnings.includes(message)) {
+                        warnings.push(message);
+                        diagnostics.push({ kind: 'shape', id: shape.id, message });
+                    }
                 }
                 const target = activation?.screenId;
                 const navigateTo = target && screenIds.has(target) ? target : undefined;
@@ -593,6 +637,8 @@ export function createArtworkProjector(
                         disabled: role.props.disabled === true,
                         navigateTo,
                         ...(changeVariant ? { changeVariant } : {}),
+                        // A bound target's disclosure keeps aria-controls; the state is what toggles.
+                        ...(toggleState ? { toggleState } : {}),
                         ...(toggleVisibility ? { toggleVisibility } : {}),
                         ...(controlKey ? { stateKey: controlKey } : {}),
                         ...(role.role === 'input'

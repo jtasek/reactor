@@ -27,6 +27,7 @@ export function projectFlow(document: Document) {
         /** A toggle-visibility action: the target's name and ID. */
         toggles?: string;
         toggleTarget?: string;
+        toggleStateId?: string;
         /** The screen instance holding it starts hidden in the prototype. */
         startsHidden?: string;
         editable: boolean;
@@ -48,6 +49,14 @@ export function projectFlow(document: Document) {
             return;
         }
         const activation = effectiveActivation(component, instance);
+        const visibilityTarget =
+            activation?.type === 'toggleVisibility'
+                ? document.shapes[activation.instanceId]
+                : undefined;
+        const visibilityState =
+            visibilityTarget?.type === 'instance'
+                ? document.prototypeBooleans[visibilityTarget.prototypeVisibilityStateId ?? '']
+                : undefined;
         controls.push({
             key: path,
             screenId,
@@ -56,10 +65,18 @@ export function projectFlow(document: Document) {
             shared: path !== instance.id,
             ...state,
             target: activation?.screenId,
+            ...(activation?.type === 'toggleState'
+                ? {
+                      toggles:
+                          document.prototypeBooleans[activation.stateId]?.name ?? 'Missing state',
+                      toggleStateId: activation.stateId
+                  }
+                : {}),
             ...(activation?.type === 'toggleVisibility'
                 ? {
                       toggles: document.shapes[activation.instanceId]?.name ?? 'Missing instance',
-                      toggleTarget: activation.instanceId
+                      toggleTarget: activation.instanceId,
+                      toggleStateId: visibilityState?.id
                   }
                 : {}),
             ...(activation?.type === 'changeVariant'
@@ -100,8 +117,15 @@ export function projectFlow(document: Document) {
             visit(shape, owner, shape.id, new Set(), {
                 hidden: !shown.has(shape.id),
                 unusedVariant: false,
-                ...(shape.prototypeVisible === false && isTarget(shape.id, owner)
-                    ? { startsHidden: shape.id }
+                ...((document.prototypeBooleans[shape.prototypeVisibilityStateId ?? '']?.initial ??
+                    shape.prototypeVisible) === false && isTarget(shape.id, owner)
+                    ? {
+                          startsHidden: document.prototypeBooleans[
+                              shape.prototypeVisibilityStateId ?? ''
+                          ]
+                              ? `state:${shape.prototypeVisibilityStateId}`
+                              : shape.id
+                      }
                     : {})
             });
         }
@@ -117,6 +141,8 @@ export function projectFlow(document: Document) {
                 ...control,
                 missing: Boolean(
                     (control.target && !available.has(control.target)) ||
+                    (control.toggleStateId !== undefined &&
+                        !document.prototypeBooleans[control.toggleStateId]) ||
                     (control.toggleTarget !== undefined &&
                         !isTarget(control.toggleTarget, control.screenId))
                 )
@@ -138,4 +164,40 @@ function drawnSources(document: Document, component: Component, instance: Instan
             .map((rule) => rule.variantId)
             .filter((id) => valid(id))
     ]);
+}
+
+/** Possible navigation after visible controls reveal local instances or shared state. */
+export function reachableScreens(graph: ReturnType<typeof projectFlow>, start?: string) {
+    const reachable = new Set(start ? [start] : []);
+    const revealed = new Set<string>();
+    for (;;) {
+        const size = reachable.size + revealed.size;
+        for (const screen of graph) {
+            if (!reachable.has(screen.id)) {
+                continue;
+            }
+            for (const control of screen.controls) {
+                if (
+                    control.missing ||
+                    control.hidden ||
+                    control.unusedVariant ||
+                    (control.startsHidden && !revealed.has(control.startsHidden))
+                ) {
+                    continue;
+                }
+                if (control.target) {
+                    reachable.add(control.target);
+                }
+                if (control.toggleTarget) {
+                    revealed.add(control.toggleTarget);
+                }
+                if (control.toggleStateId) {
+                    revealed.add(`state:${control.toggleStateId}`);
+                }
+            }
+        }
+        if (reachable.size + revealed.size === size) {
+            return reachable;
+        }
+    }
 }

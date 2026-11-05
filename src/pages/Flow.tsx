@@ -1,7 +1,7 @@
 import { registerEditor } from './registerEditor';
 import React, { useEffect, useState } from 'react';
 import { useActions, useAppState, useEffects } from 'src/app/hooks';
-import { projectFlow } from 'src/app/flowProjection';
+import { projectFlow, reachableScreens } from 'src/app/flowProjection';
 import { ComponentInteractions } from 'src/ui/components/Inspector/ComponentInteractions';
 import { isReadOnly } from 'src/app/documentAccess';
 import { FlowDiagram } from './FlowDiagram';
@@ -31,35 +31,7 @@ function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
     const control = graph
         .flatMap((screen) => screen.controls)
         .find((item) => item.key === selected);
-    const reachable = new Set<string>();
-    const visit = (id: string) => {
-        if (reachable.has(id)) {
-            return;
-        }
-        reachable.add(id);
-        const controls = graph.find((screen) => screen.id === id)?.controls ?? [];
-        // Preview cannot activate what it never draws.
-        const drawn = (item: (typeof controls)[number]) => !item.hidden && !item.unusedVariant;
-        // Something that starts hidden counts only when a shown control can reveal it.
-        const shown = (item: (typeof controls)[number]) =>
-            drawn(item) &&
-            (!item.startsHidden ||
-                controls.some(
-                    (other) =>
-                        other.toggleTarget === item.startsHidden &&
-                        !other.missing &&
-                        !other.startsHidden &&
-                        drawn(other)
-                ));
-        controls.forEach((item) => {
-            if (item.target && !item.missing && shown(item)) {
-                visit(item.target);
-            }
-        });
-    };
-    if (start) {
-        visit(start);
-    }
+    const reachable = reachableScreens(graph, start);
     const canUndo = !disabled && document.history.canUndo;
     const canRedo = !disabled && document.history.canRedo;
     useEffect(() => {

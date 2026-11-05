@@ -188,8 +188,8 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   (not suppressed). `pnpm lint:baseline` fails on any finding in a file changed relative to
   `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
   recorded counts: fix a touched file's existing findings rather than adding exceptions.
-- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 496 KiB or
-  any file 248 KiB (the budget in `webpack.config.mjs`, entry measured at 495 KiB with schema v24 data readers); raise
+- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 497 KiB or
+  any file 248 KiB (the budget in `webpack.config.mjs`, entry measured at 496.6 KiB with schema v28 prototype-state readers); raise
   it only for code every page needs as it opens, after checking what grew. Commands and
   tools load with the editor page, which registers them (`src/pages/registerEditor.ts`),
   not at startup: the store keeps only the tools namespace's state and actions
@@ -1319,3 +1319,14 @@ omits hidden controls from the DOM and retains their input values until Reset. V
 not change canvas/export visibility or reflow stacks. Snapshot visibility keys include screen,
 instance and component identity; optional protocol fields preserve v3 compatibility.
 Tests: prototypeVisibility unit/browser; the typography starter includes toggled help.
+
+
+Schema v28 adds `prototypeBooleans` records (stable id, name, boolean initial), instance
+`prototypeVisibilityStateId` and `toggleState` actions. Inspector authors records and
+bindings through guarded interaction edits, each as an undo batch. Missing references stay
+durable and diagnostic; visibility falls back to the instance's launch default. Library
+snapshots omit document-local state bindings. The sandbox projects only boolean defaults and
+stable keys, shares one runtime value across bound instances/screens, and clears it on Reset
+or document change. Existing per-instance toggles still work, including on bound targets.
+No stack reflow, inverse conditions, expressions or general text/number state is implemented.
+Tests: prototypeState unit/browser.

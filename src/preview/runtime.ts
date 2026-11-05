@@ -40,7 +40,13 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
     const element = document.createElementNS(SVG, node.tag);
     if (authored.visibility) {
         element.id = visibilityId(authored.visibility.key);
-        if (!(visibility.get(authored.visibility.key) ?? authored.visibility.initial)) {
+        if (
+            !(
+                visibility.get(authored.visibility.stateKey ?? authored.visibility.key) ??
+                initialVisibility.get(authored.visibility.stateKey ?? authored.visibility.key) ??
+                authored.visibility.initial
+            )
+        ) {
             element.setAttribute('display', 'none');
 
             return element;
@@ -106,14 +112,29 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
             )
         );
     }
+    // A disclosure whose target follows a state stays a disclosure; plain state toggles are pressed.
+    if (
+        control.toggleState !== undefined &&
+        control.toggleVisibility === undefined &&
+        control.role === 'button'
+    ) {
+        field.setAttribute(
+            'aria-pressed',
+            String(
+                visibility.get(control.toggleState) ??
+                    initialVisibility.get(control.toggleState) ??
+                    false
+            )
+        );
+    }
+    if (control.toggleState !== undefined && control.role === 'button') {
+        field.dataset.toggleState = control.toggleState;
+    }
     if (control.toggleVisibility !== undefined && control.role === 'button') {
+        const key = control.toggleState ?? control.toggleVisibility;
         field.setAttribute(
             'aria-expanded',
-            String(
-                visibility.get(control.toggleVisibility) ??
-                    initialVisibility.get(control.toggleVisibility) ??
-                    true
-            )
+            String(visibility.get(key) ?? initialVisibility.get(key) ?? true)
         );
         field.setAttribute('aria-controls', visibilityId(control.toggleVisibility));
     }
@@ -131,7 +152,8 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
                 event.isComposing ||
                 (!control.navigateTo &&
                     !control.changeVariant &&
-                    control.toggleVisibility === undefined)
+                    control.toggleVisibility === undefined &&
+                    control.toggleState === undefined)
             ) {
                 return;
             }
@@ -152,12 +174,17 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
 }
 
 function activate(control: NonNullable<PreviewNode['control']>) {
-    if (!control.changeVariant && !control.navigateTo && control.toggleVisibility === undefined) {
+    if (
+        !control.changeVariant &&
+        !control.navigateTo &&
+        control.toggleVisibility === undefined &&
+        control.toggleState === undefined
+    ) {
         return;
     }
-    toggled = control.toggleVisibility;
-    if (control.toggleVisibility !== undefined) {
-        const key = control.toggleVisibility;
+    toggled = control.toggleState ?? control.toggleVisibility;
+    if (toggled !== undefined) {
+        const key = toggled;
         visibility.set(key, !(visibility.get(key) ?? initialVisibility.get(key) ?? true));
     }
     if (control.changeVariant) {
@@ -278,7 +305,7 @@ function render() {
             toggled === undefined
                 ? null
                 : root.querySelector<HTMLElement>(
-                      `[aria-controls="${CSS.escape(visibilityId(toggled))}"]`
+                      `[aria-controls="${CSS.escape(visibilityId(toggled))}"], [data-toggle-state="${CSS.escape(toggled)}"]`
                   );
         (input ?? opener ?? select).focus();
         if (input instanceof HTMLInputElement && selection) {
@@ -302,6 +329,9 @@ function receive(value: unknown) {
         const keys = new Set<string>();
         initialVariants.clear();
         initialVisibility.clear();
+        Object.entries(next.booleans ?? {}).forEach(([key, initial]) =>
+            initialVisibility.set(key, initial)
+        );
         const collect = (node: PreviewNode) => {
             if (node.visibility) {
                 initialVisibility.set(node.visibility.key, node.visibility.initial);

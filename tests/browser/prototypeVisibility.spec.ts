@@ -102,16 +102,13 @@ test('authors and persists initial visibility in Inspector', async ({ page }) =>
             .first()
             .click();
     await selectHelp();
-    const visible = page.getByRole('checkbox', {
-        name: 'Show initially in prototype',
-        exact: true
-    });
-    await expect(visible).not.toBeChecked();
-    await visible.check();
+    const visible = page.getByRole('combobox', { name: 'Prototype visibility', exact: true });
+    await expect(visible.locator('option:checked')).toHaveText('Hidden at start');
+    await visible.selectOption({ label: 'Shown at start' });
     await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.reload();
     await selectHelp();
-    await expect(visible).toBeChecked();
+    await expect(visible.locator('option:checked')).toHaveText('Shown at start');
     await visible.scrollIntoViewIfNeeded();
     await page.screenshot({ path: 'test-results/prototype-visibility-inspector.png' });
     await page.getByRole('link', { name: 'Open prototype' }).click();

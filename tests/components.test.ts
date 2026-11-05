@@ -631,6 +631,7 @@ it.each([false, true])('detaches at the original stacking position (tied order: 
                 guides: {},
                 variables: {},
                 dimensions: {},
+                prototypeBooleans: {},
                 dataEntities: {},
                 dataFields: {},
                 dataRecords: {}
