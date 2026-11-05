@@ -3,11 +3,24 @@ import { fileURLToPath } from 'node:url';
 import { parsePort } from '../server/pages.ts';
 
 const cwd = fileURLToPath(new URL('..', import.meta.url));
-const editorPort = parsePort(process.env.PORT ?? '4000');
-const previewPort = parsePort(process.env.PREVIEW_PORT ?? '4001');
+function fail(message: string): never {
+    console.error(message);
+    process.exit(1);
+}
+
+function readPort(name: 'PORT' | 'PREVIEW_PORT', fallback: string) {
+    try {
+        return parsePort(process.env[name] ?? fallback);
+    } catch {
+        return fail(`Invalid ${name}: ${process.env[name]}`);
+    }
+}
+
+const editorPort = readPort('PORT', '4000');
+const previewPort = readPort('PREVIEW_PORT', '4001');
 
 if (editorPort === previewPort) {
-    throw new Error('PORT and PREVIEW_PORT must be different.');
+    fail('PORT and PREVIEW_PORT must be different.');
 }
 
 const env = {
@@ -18,6 +31,22 @@ const env = {
     PREVIEW_ORIGIN: `http://localhost:${previewPort}`,
     PREVIEW_ALLOW_LOCALHOST: 'true'
 };
+
+// Better Auth only trusts its own origin, so sign-in from a different editor address fails.
+if (process.env.BETTER_AUTH_URL) {
+    let authOrigin: string | undefined;
+    try {
+        authOrigin = new URL(process.env.BETTER_AUTH_URL).origin;
+    } catch {
+        authOrigin = undefined;
+    }
+    if (authOrigin !== env.EDITOR_ORIGIN) {
+        console.warn(
+            `Warning: BETTER_AUTH_URL is ${process.env.BETTER_AUTH_URL}, but the editor runs at ${env.EDITOR_ORIGIN}. Sign-in will be rejected until BETTER_AUTH_URL is set to ${env.EDITOR_ORIGIN}.`
+        );
+    }
+}
+
 const children = new Set<ChildProcess>();
 let stopping = false;
 let shutdownTimer: NodeJS.Timeout | undefined;
