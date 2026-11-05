@@ -238,7 +238,7 @@ function PrototypeWorkspace() {
                         </label>
                     ))}
                     <p>
-                        Changes apply only to this session. Reset returns to the start screen and
+                        Changes apply only to this session. Restart returns to the start screen and
                         resets input and state.
                     </p>
                 </div>

@@ -243,40 +243,64 @@ export function FlowDiagram({
                             </button>
                         )}
                         <ul>
-                            {screen.controls.map((control, controlIndex) => (
-                                <li key={control.key}>
-                                    <button
-                                        data-flow-control={control.key}
-                                        aria-label={control.name}
-                                        aria-describedby={`${descriptionId}-${screenIndex}-${controlIndex}`}
-                                        aria-pressed={selected === control.key}
-                                        onClick={() => onSelect(control.key)}
-                                    >
-                                        <span>{control.name}</span>
-                                        <small
-                                            id={`${descriptionId}-${screenIndex}-${controlIndex}`}
+                            {screen.controls.map((control, controlIndex) => {
+                                const id = `${descriptionId}-${screenIndex}-${controlIndex}`;
+                                // Status notes sit beside the row; describe them too so a screen
+                                // reader on the row hears them.
+                                const notes = [
+                                    control.missing && 'Unavailable target',
+                                    control.hidden && 'Hidden, not in Preview',
+                                    !control.hidden &&
+                                        control.startsHidden &&
+                                        'Starts hidden in prototype',
+                                    !control.hidden &&
+                                        control.unusedVariant &&
+                                        'Not drawn: this instance uses another variant'
+                                ]
+                                    .map((text, index) => ({ text, id: `${id}-note-${index}` }))
+                                    .filter((note): note is { text: string; id: string } =>
+                                        Boolean(note.text)
+                                    );
+
+                                return (
+                                    <li key={control.key}>
+                                        <button
+                                            data-flow-control={control.key}
+                                            aria-label={control.name}
+                                            aria-describedby={[
+                                                id,
+                                                ...notes.map((note) => note.id)
+                                            ].join(' ')}
+                                            aria-pressed={selected === control.key}
+                                            onClick={() => onSelect(control.key)}
                                         >
-                                            {control.target
-                                                ? `Go to ${graph.find((target) => target.id === control.target)?.name ?? 'Missing screen'}`
-                                                : control.sets
-                                                  ? `Sets ${control.sets.name} to ${control.sets.value}`
-                                                  : control.changes
-                                                    ? `Changes ${control.changes.instance} to ${control.changes.variant}`
-                                                    : control.toggles
-                                                      ? `Toggles ${control.toggles}`
-                                                      : 'No action'}
-                                        </small>
-                                    </button>
-                                    {control.missing && <strong>Unavailable target</strong>}
-                                    {control.hidden && <small>Hidden, not in Preview</small>}
-                                    {!control.hidden && control.startsHidden && (
-                                        <small>Starts hidden in prototype</small>
-                                    )}
-                                    {!control.hidden && control.unusedVariant && (
-                                        <small>Not drawn: this instance uses another variant</small>
-                                    )}
-                                </li>
-                            ))}
+                                            <span>{control.name}</span>
+                                            <small id={id}>
+                                                {control.target
+                                                    ? `Go to ${graph.find((target) => target.id === control.target)?.name ?? 'Missing screen'}`
+                                                    : control.sets
+                                                      ? `Sets ${control.sets.name} to ${control.sets.value}`
+                                                      : control.changes
+                                                        ? `Changes ${control.changes.instance} to ${control.changes.variant}`
+                                                        : control.toggles
+                                                          ? `Toggles ${control.toggles}`
+                                                          : 'No action'}
+                                            </small>
+                                        </button>
+                                        {notes.map((note) =>
+                                            note.text === 'Unavailable target' ? (
+                                                <strong key={note.id} id={note.id}>
+                                                    {note.text}
+                                                </strong>
+                                            ) : (
+                                                <small key={note.id} id={note.id}>
+                                                    {note.text}
+                                                </small>
+                                            )
+                                        )}
+                                    </li>
+                                );
+                            })}
                         </ul>
                         {!screen.controls.length && <p>No component controls in this screen.</p>}
                     </section>

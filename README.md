@@ -313,7 +313,7 @@ same **Role → Input identity**. They must use the same component family and ex
 property ID (text). Labels never establish identity. The identity must be unique within the
 active layout; duplicates warn and do not share values. Inputs without matching identities,
 with different value properties/components, or absent from the newly selected layout reset
-to their authored value. Reset preview clears all typed values. Button actions come from the
+to their authored value. Restart preview clears all typed values. Button actions come from the
 active instance/source configuration and keep their logical screen destinations.
 A missing layout falls back to Default with a diagnostic. Deleting a layout boundary releases
 its artwork to Canvas and retains the screen and its views. Undo restores it.
@@ -868,7 +868,7 @@ See [the supported subset](design/design-token-interchange.md) for details and i
 Choose **Open prototype** on the application bar, run the **Open prototype** command, or open
 `/prototype`. Flow also offers a **Play** link for its chosen starting screen.
 Selecting a canvas Screen view first seeds its viewport, modes and explicit layout choice.
-The player opens with a current-screen picker, Mobile/Desktop viewport presets, **Reset prototype** and
+The player opens with a current-screen picker, Mobile/Desktop viewport presets, **Restart prototype** and
 **Settings**. Settings contains **Start screen**, custom **Width** and **Height**, layout and
 dimension overrides; they affect only that session. Width-selected dimensions offer **Auto · Viewport width**; other dimensions
 can inherit from each screen or use an explicit mode. Descendant frame and instance overrides
@@ -876,7 +876,7 @@ continue to apply. Navigation retains the session viewport and modes, and compat
 values survive responsive layout and component-variant changes. The **Layout** control in Settings
 can inspect Auto or an explicit layout without editing the document.
 
-**Reset prototype** clears typed values and temporary layout inspection, returning to the chosen
+**Restart prototype** clears typed values and temporary layout inspection, returning to the chosen
 start screen with the current viewport/modes. Changing the start screen starts a fresh runtime.
 **Canvas** ends the session. Other open players remain independent. Invalid live edits
 retain the last valid output; diagnostic **Inspect** buttons return to the affected authored
@@ -891,7 +891,7 @@ Nested screens keep their identity but must be moved to Canvas to become destina
 documents retain their existing screen destinations automatically. Give a
 component or instance an Input or Button role in Inspector and link its exposed properties.
 For a button, **Navigate to** chooses a target screen. Inputs and navigation are local to the
-preview, never saved or synchronized. **Reset preview** clears input edits and returns to the
+preview, never saved or synchronized. **Restart preview** clears input edits and returns to the
 first screen. Closing the panel clears its runtime state. Broken role links, hidden/missing
 navigation targets and layout problems retain the last valid preview with a diagnostic.
 Preview supports shape/component SVG artwork, stored raster images and native inputs/button

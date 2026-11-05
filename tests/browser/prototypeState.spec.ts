@@ -122,7 +122,7 @@ test('shared sessions isolate named state and preserve hidden input values until
     await expect(notes).toHaveValue('Retain my note');
     await expect(other.getByRole('textbox', { name: 'Notes', exact: true })).toHaveCount(0);
     await page.screenshot({ path: 'test-results/named-state-narrow.png', fullPage: true });
-    await page.getByRole('button', { name: 'Reset prototype', exact: true }).click();
+    await page.getByRole('button', { name: 'Restart prototype', exact: true }).click();
     await toggle.click();
     await expect(notes).toHaveValue('');
     await other.close();

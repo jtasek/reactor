@@ -105,6 +105,9 @@ test('shows unavailable destinations and prevents edits to locked controls on di
     await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
     await page.goto('/flow');
     await expect(page.getByText('Unavailable target').first()).toBeVisible();
+    await expect(page.locator('[data-flow-control="next"]')).toHaveAccessibleDescription(
+        'Go to Missing screen Unavailable target'
+    );
     await page.locator('[data-flow-control="next"]').click();
     await expect(page.getByRole('button', { name: 'Connect to Home', exact: true })).toBeDisabled();
     await expect(
@@ -150,6 +153,9 @@ test('marks hidden controls and leaves them out of reachability', async ({ page 
     await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
     await page.goto('/flow');
     await expect(page.getByText('Hidden, not in Preview')).toHaveCount(2);
+    await expect(page.locator('[data-flow-control="next"]')).toHaveAccessibleDescription(
+        'Go to Details Hidden, not in Preview'
+    );
     await page.getByLabel('Start screen for reachability').selectOption('home');
     await expect(
         page

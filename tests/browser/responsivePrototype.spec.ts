@@ -50,7 +50,7 @@ test('launches from a view, carries viewport and modes across navigation and pre
     const bounds = await runtime.locator('svg').boundingBox();
     const stage = await page.locator('iframe').boundingBox();
     expect(Math.abs(bounds!.x + bounds!.width / 2 - stage!.x - stage!.width / 2)).toBeLessThan(2);
-    await expect(runtime.getByRole('button', { name: 'Reset preview' })).toHaveCount(0);
+    await expect(runtime.getByRole('button', { name: 'Restart preview' })).toHaveCount(0);
     await width(page, '0');
     await expect(page.getByLabel('Prototype width', { exact: true })).toHaveValue('800');
     await setPrototypeSetting(page, 'Prototype height', '900');

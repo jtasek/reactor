@@ -208,7 +208,6 @@
     text-align: left;
     display: grid;
     gap: 4px;
-    border: 0;
     background: transparent;
 }
 .flow li > button small {

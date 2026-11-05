@@ -97,7 +97,8 @@
 .toolbar label > span {
     color: var(--text-secondary-color);
     font-size: 11px;
-    padding-left: 8px;
+    /* Matches the select's own left padding so the label lines up with its value. */
+    padding-left: 12px;
 }
 .toolbar select {
     max-width: 200px;
