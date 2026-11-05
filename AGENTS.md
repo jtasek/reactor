@@ -1306,3 +1306,13 @@ Optional protocol fields preserve existing v3 shared snapshots. The Inspector ty
 is editable graph data and exercises the same player, not a custom HTML runtime. Text fontWeight
 is optional (100–900, regular by default), participates in geometry/cache keys and renders in
 canvas, thumbnails, text editing, preview and SVG export. Tests: interactiveVariants unit/browser.
+
+
+Schema v27 adds optional instance `prototypeVisible` (default true) and `toggleVisibility`
+activation actions. Targets use the same ordinary, same-layout screen instance scope; no nested
+or repeated targets. Inspector edits authored defaults through guarded actions, undo and sync.
+The player keeps boolean visibility independently per session, resets to authored defaults,
+omits hidden controls from the DOM and retains their input values until Reset. Visibility does
+not change canvas/export visibility or reflow stacks. Snapshot visibility keys include screen,
+instance and component identity; optional protocol fields preserve v3 compatibility.
+Tests: prototypeVisibility unit/browser; the typography starter includes toggled help.

@@ -113,7 +113,7 @@ export function buildInspectorTypography(newId: () => string): StarterDocument {
     });
     const family = components[variants[0]];
     family.variantIds = variants.slice(1);
-    rect(0, 0, 420, 760, '#ffffff', screenId);
+    rect(0, 0, 420, 860, '#ffffff', screenId);
     text('Inspector typography', 24, 42, 24, 600, screenId);
     text('Choose a style to compare the headings.', 24, 72, 16, 400, screenId);
     const targetId = add({
@@ -152,7 +152,48 @@ export function buildInspectorTypography(newId: () => string): StarterDocument {
             }
         });
     });
-    text('Reset prototype restores the original style.', 24, 724, 14, 400, screenId);
+    const helpComponentId = newId();
+    components[helpComponentId] = createComponent({
+        id: helpComponentId,
+        name: 'Inspector help',
+        sourceOnly: true,
+        shapesIds: [
+            rect(0, 0, 320, 88, '#eef2fc'),
+            text('Use quieter headings to emphasize values.', 14, 28, 13),
+            text('Sentence case is easier to scan.', 14, 52, 13),
+            text('Try each style, then reset to compare again.', 14, 74, 13)
+        ]
+    });
+    const helpId = add({
+        type: 'instance',
+        name: 'Inspector help',
+        componentId: helpComponentId,
+        position: { x: 50, y: 710 },
+        overrides: {},
+        parentFrameId: screenId,
+        prototypeVisible: false
+    });
+    const helpBackground = rect(0, 0, 180, 32, '#eef2fc');
+    const helpLabel = text('About these styles', 10, 23, 13, 500);
+    const helpButton = newId();
+    components[helpButton] = createComponent({
+        id: helpButton,
+        name: 'Help toggle',
+        sourceOnly: true,
+        shapesIds: [helpBackground, helpLabel],
+        props: [{ id: 'label', label: 'Label', shapeId: helpLabel, key: 'text' }],
+        interaction: { role: 'button', props: { label: 'label' } }
+    });
+    add({
+        type: 'instance',
+        name: 'About these styles',
+        componentId: helpButton,
+        position: { x: 24, y: 222 },
+        overrides: {},
+        parentFrameId: screenId,
+        interactions: { activate: { type: 'toggleVisibility', instanceId: helpId } }
+    });
+    text('Reset restores the original style and hides help.', 24, 834, 14, 400, screenId);
 
     return {
         name: 'Inspector typography',
@@ -166,7 +207,7 @@ export function buildInspectorTypography(newId: () => string): StarterDocument {
                 kind: 'screen',
                 definitionOnly: true,
                 position: { x: 0, y: 0 },
-                size: { width: 420, height: 760 },
+                size: { width: 420, height: 860 },
                 visible: true,
                 locked: false
             },
@@ -176,7 +217,7 @@ export function buildInspectorTypography(newId: () => string): StarterDocument {
                 kind: 'view',
                 screenId,
                 position: { x: 0, y: 0 },
-                size: { width: 420, height: 760 },
+                size: { width: 420, height: 860 },
                 visible: true,
                 locked: false
             }

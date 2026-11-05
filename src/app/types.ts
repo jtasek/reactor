@@ -235,6 +235,8 @@ export interface InstanceShape extends ShapeBase {
     interaction?: RoleSettings;
     /** Independent actions. Empty instance settings inherit; null Activate explicitly does nothing. */
     interactions?: InteractionSettings;
+    /** Local prototype visibility starts here; canvas visibility remains independent. */
+    prototypeVisible?: boolean;
     type: 'instance';
     componentId: string;
     position: Point;
@@ -253,7 +255,13 @@ export interface ChangeVariantAction {
     screenId?: never;
 }
 
-export type ActivationAction = NavigateAction | ChangeVariantAction;
+export interface ToggleVisibilityAction {
+    type: 'toggleVisibility';
+    instanceId: string;
+    screenId?: never;
+}
+
+export type ActivationAction = NavigateAction | ChangeVariantAction | ToggleVisibilityAction;
 
 export interface InteractionSettings {
     activate?: ActivationAction | null;

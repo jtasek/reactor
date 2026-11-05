@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { serializePersistedState } from 'src/app/services/documentStorage';
 import { automaticLayoutsPrototype } from '../support/automaticScreenLayouts';
 import { openEditor } from './support/editor';
+import type { InstanceShape } from 'src/app/types';
 
 test('connects and removes actions in Flow, reflects them in Inspector, and arranges only the diagram', async ({
     page
@@ -146,6 +147,28 @@ test('marks hidden controls and leaves them out of reachability', async ({ page 
     await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
     await page.goto('/flow');
     await expect(page.getByText('Hidden, not in Preview')).toHaveCount(2);
+    await page.getByLabel('Check reachability from').selectOption('home');
+    await expect(
+        page
+            .locator('[data-flow-screen="details"]')
+            .getByText('Not reachable from the chosen screen.')
+    ).toBeVisible();
+});
+
+test('treats a link that starts hidden in prototype as unreachable until something reveals it', async ({
+    page
+}) => {
+    const document = automaticLayoutsPrototype();
+    for (const id of ['next', 'wide-next']) {
+        (document.shapes[id] as InstanceShape).prototypeVisible = false;
+    }
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await page.goto('/flow');
+    await expect(page.getByText('Starts hidden in prototype')).toHaveCount(2);
     await page.getByLabel('Check reachability from').selectOption('home');
     await expect(
         page

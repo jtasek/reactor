@@ -258,10 +258,15 @@ export function FlowDiagram({
                                                   ?.name ?? 'Missing screen')
                                             : control.changes
                                               ? `Changes ${control.changes.instance} to ${control.changes.variant}`
-                                              : 'No action'}
+                                              : control.toggles
+                                                ? `Toggles ${control.toggles}`
+                                                : 'No action'}
                                     </div>
                                     {control.missing && <strong>Unavailable target</strong>}
                                     {control.hidden && <small>Hidden, not in Preview</small>}
+                                    {!control.hidden && control.startsHidden && (
+                                        <small>Starts hidden in prototype</small>
+                                    )}
                                     {!control.hidden && control.unusedVariant && (
                                         <small>Not drawn: this instance uses another variant</small>
                                     )}

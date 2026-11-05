@@ -1,4 +1,4 @@
-import { legacyActivation, separateInteractions } from './screenInteractions';
+import { instanceAction, legacyActivation, separateInteractions } from './screenInteractions';
 import { isScreenLayout } from './screenLayouts';
 import { initialScreenView } from './screenViewMigration';
 import {
@@ -74,6 +74,7 @@ const CHANGEABLE_FIELDS = new Set([
     'sizing',
     'interaction',
     'interactions',
+    'prototypeVisible',
     'modeOverrides',
     'description',
     'rotation',
@@ -803,6 +804,9 @@ function stage(
         if ('interactions' in changes && current.type !== 'instance') {
             throw new Error('Only an instance can declare interactions.');
         }
+        if ('prototypeVisible' in changes && current.type !== 'instance') {
+            throw new Error('Only an instance can declare prototype visibility.');
+        }
         if ('modeOverrides' in changes && current.type !== 'instance') {
             throw new Error('Only an instance can override color modes.');
         }
@@ -1108,12 +1112,11 @@ function stage(
         }
     });
 
-    // A variant action may name a shape the batch adds, before or after it (pasted pairs).
+    // An instance action may name a shape the batch adds, before or after it (pasted pairs).
     staged.shapes.forEach((shape) => {
-        const action = shape.type === 'instance' ? shape.interactions?.activate : undefined;
-        const key = action?.type === 'changeVariant' ? action.instanceId : undefined;
-        if (action?.type === 'changeVariant' && key && declared.get(key)?.collection === 'shapes') {
-            action.instanceId = ids.get(key) ?? key;
+        const action = instanceAction(shape);
+        if (action && declared.get(action.instanceId)?.collection === 'shapes') {
+            action.instanceId = ids.get(action.instanceId) ?? action.instanceId;
         }
     });
 

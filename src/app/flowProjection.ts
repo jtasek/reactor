@@ -4,6 +4,7 @@ import { screenOwners } from './screenViews';
 import { screenFrames } from './screens';
 import { isShapeLocked } from './utils';
 import { effectiveActivation } from './screenInteractions';
+import { prototypeTargetCheck } from './interactiveVariants';
 
 /** Definitions and authored layout controls, independent of canvas placements and geometry. */
 export function projectFlow(document: Document) {
@@ -23,6 +24,11 @@ export function projectFlow(document: Document) {
         target?: string;
         /** A change-variant action: the instance it changes and the variant it shows. */
         changes?: { instance: string; variant: string };
+        /** A toggle-visibility action: the target's name and ID. */
+        toggles?: string;
+        toggleTarget?: string;
+        /** The screen instance holding it starts hidden in the prototype. */
+        startsHidden?: string;
         editable: boolean;
         shared: boolean;
         /** Preview never draws it: hidden here or in a hidden container. */
@@ -35,7 +41,7 @@ export function projectFlow(document: Document) {
         screenId: string,
         path: string,
         ancestors: Set<string>,
-        state: { hidden: boolean; unusedVariant: boolean }
+        state: { hidden: boolean; unusedVariant: boolean; startsHidden?: string }
     ) => {
         const component = document.components[instance.componentId];
         if (!component || ancestors.has(component.id)) {
@@ -50,6 +56,12 @@ export function projectFlow(document: Document) {
             shared: path !== instance.id,
             ...state,
             target: activation?.screenId,
+            ...(activation?.type === 'toggleVisibility'
+                ? {
+                      toggles: document.shapes[activation.instanceId]?.name ?? 'Missing instance',
+                      toggleTarget: activation.instanceId
+                  }
+                : {}),
             ...(activation?.type === 'changeVariant'
                 ? {
                       changes: {
@@ -71,6 +83,7 @@ export function projectFlow(document: Document) {
                 const child = source.sourceShapes?.[id] ?? document.shapes[id];
                 if (child?.type === 'instance') {
                     visit(child, screenId, `${path}/${sourceId}/${id}`, next, {
+                        ...state,
                         hidden: state.hidden || !child.visible,
                         unusedVariant: state.unusedVariant || !drawn.has(sourceId)
                     });
@@ -80,12 +93,16 @@ export function projectFlow(document: Document) {
     };
     // Preview's own visibility rule, without the editor's one-layer focus.
     const shown = shownShapesIds({ ...document, shownLayerId: undefined }, null);
+    const isTarget = prototypeTargetCheck(document);
     for (const shape of Object.values(document.shapes)) {
         const owner = owners.get(shape.parentFrameId ?? '');
         if (shape.type === 'instance' && owner && !sourceIds.has(shape.id)) {
             visit(shape, owner, shape.id, new Set(), {
                 hidden: !shown.has(shape.id),
-                unusedVariant: false
+                unusedVariant: false,
+                ...(shape.prototypeVisible === false && isTarget(shape.id, owner)
+                    ? { startsHidden: shape.id }
+                    : {})
             });
         }
     }
@@ -98,7 +115,11 @@ export function projectFlow(document: Document) {
             .filter((control) => control.screenId === screen.id)
             .map((control) => ({
                 ...control,
-                missing: Boolean(control.target && !available.has(control.target))
+                missing: Boolean(
+                    (control.target && !available.has(control.target)) ||
+                    (control.toggleTarget !== undefined &&
+                        !isTarget(control.toggleTarget, control.screenId))
+                )
             }))
     }));
 }

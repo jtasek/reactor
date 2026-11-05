@@ -25,7 +25,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 26;
+export const SCHEMA_VERSION = 27;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -445,6 +445,8 @@ export function readShapeGeometry(value: unknown) {
                 type: s.type,
                 ...(s.variantMode === 'auto' ? { variantMode: 'auto' as const } : {}),
                 ...(s.variantId === undefined ? {} : { variantId: id(s.variantId) }),
+                prototypeVisible:
+                    s.prototypeVisible === undefined ? undefined : bool(s.prototypeVisible),
                 modeOverrides: readBindings(s.modeOverrides ?? {}),
                 ...readRoleAndInteractions(s),
                 ...(s.dataList === undefined ? {} : { dataList: readDataList(s.dataList) }),
@@ -572,27 +574,28 @@ function readRoleAndInteractions(value: Record<string, unknown>) {
 
 export function readInteractions(value: unknown): import('../types').InteractionSettings {
     const { activate, ...rest } = record(value);
-    const action = activate == null ? {} : record(activate);
+    const { type, screenId, instanceId, variantId } = record(activate ?? {});
     if (
         Object.keys(rest).length ||
-        (activate != null && !['navigate', 'changeVariant'].includes(String(action.type)))
+        (activate != null &&
+            !['navigate', 'changeVariant', 'toggleVisibility'].includes(type as string))
     ) {
         throw new Error('Invalid interactions');
     }
 
-    if (action.type === 'changeVariant') {
-        return {
-            activate: {
-                type: 'changeVariant',
-                instanceId: id(action.instanceId),
-                variantId: id(action.variantId)
-            }
-        };
-    }
-
     return activate === undefined
         ? {}
-        : { activate: activate && { type: 'navigate', screenId: id(action.screenId) } };
+        : {
+              activate:
+                  activate &&
+                  (type === 'navigate'
+                      ? { type, screenId: id(screenId) }
+                      : ({
+                            type,
+                            instanceId: id(instanceId),
+                            ...(type === 'changeVariant' ? { variantId: id(variantId) } : {})
+                        } as import('../types').ActivationAction))
+          };
 }
 
 export function readRoleSettings(value: unknown): import('../types').RoleSettings {

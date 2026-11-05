@@ -1,9 +1,10 @@
 import { layoutTreeRoot } from './screenLayouts';
 import type { Document, ChangeVariantAction, InstanceShape, Shape } from './types';
 import { screenOwners } from './screenViews';
+import { instanceAction } from './screenInteractions';
 
 /** First increment: ordinary screen instances; repeated and nested source instances are excluded. */
-export function variantTargets(document: Document, screenId?: string, fromFrameId?: string) {
+export function prototypeTargets(document: Document, screenId?: string, fromFrameId?: string) {
     const owners = screenOwners(document.frames);
     const sourceMembers = new Set(
         Object.values(document.components).flatMap((component) => component.shapesIds)
@@ -26,9 +27,26 @@ export function variantTargets(document: Document, screenId?: string, fromFrameI
             (!fromFrameId ||
                 layoutTreeRoot(document, shape.parentFrameId) ===
                     layoutTreeRoot(document, fromFrameId)) &&
-            document.components[shape.componentId]?.variantIds?.length
+            document.components[shape.componentId]
         );
     });
+}
+
+export function variantTargets(document: Document, screenId?: string, fromFrameId?: string) {
+    return prototypeTargets(document, screenId, fromFrameId).filter(
+        (shape) => document.components[shape.componentId].variantIds?.length
+    );
+}
+
+export function prototypeTargetCheck(document: Document) {
+    const targets = new Map(prototypeTargets(document).map((shape) => [shape.id, shape]));
+    const owners = screenOwners(document.frames);
+
+    return (instanceId: string, screenId: string) => {
+        const target = targets.get(instanceId);
+
+        return Boolean(target && owners.get(target.parentFrameId!) === screenId);
+    };
 }
 
 /**
@@ -77,15 +95,14 @@ export function validVariantAction(
 }
 
 /**
- * Points copied variant actions at the copies of their targets. A target left out of the
+ * Points copied instance actions at the copies of their targets. A target left out of the
  * copy keeps its original ID, so the copied control still changes the original instance.
  */
 export function remapVariantTargets(shapes: Shape[], ids: ReadonlyMap<string, string>) {
     for (const shape of shapes) {
-        const action = shape.type === 'instance' ? shape.interactions?.activate : undefined;
-        const copy = action?.type === 'changeVariant' ? ids.get(action.instanceId) : undefined;
-        if (action?.type === 'changeVariant' && copy) {
-            action.instanceId = copy;
+        const action = instanceAction(shape);
+        if (action) {
+            action.instanceId = ids.get(action.instanceId) ?? action.instanceId;
         }
     }
 }

@@ -1079,7 +1079,16 @@ team can then send a working prototype link to others.
    remains the authored design. Existing shared snapshots remain readable.
    Verification: `tests/interactiveVariants.test.ts`, `tests/browser/interactiveVariants.spec.ts`
    cover persistence, invalid references, overrides, keyboard switching, session isolation and reset.
-2. **Typed prototype state and bindings (next, planned).** Add local text/number/boolean values,
+2. **Local boolean visibility (implemented first increment).** Ordinary instances have a
+   “Show initially in prototype” checkbox; Interactions can toggle another instance in the same
+   screen layout. Preview, Prototype and shared links keep independent session values. Reset
+   restores authored defaults. Hidden controls leave keyboard navigation; their input values
+   survive hiding and showing. Canvas and SVG export remain unchanged, and stacks do not reflow.
+   The Inspector typography starter includes optional help. Persistence, copied targets, undo,
+   collaboration, keyboard activation and session isolation are covered by prototypeVisibility
+   unit/browser tests.
+
+   **Remaining typed state and bindings (planned).** Add named local text/number/boolean values,
    set/toggle/reset actions and compatible control/property bindings. Keep runtime values separate
    from design-system variables and document mutations. Recreate the variable-editor comparison
    with selection and optional details before adding a general expression language.

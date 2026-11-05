@@ -37,14 +37,25 @@ function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
             return;
         }
         reachable.add(id);
-        graph
-            .find((screen) => screen.id === id)
-            ?.controls.forEach((item) => {
-                // Preview cannot activate what it never draws.
-                if (item.target && !item.missing && !item.hidden && !item.unusedVariant) {
-                    visit(item.target);
-                }
-            });
+        const controls = graph.find((screen) => screen.id === id)?.controls ?? [];
+        // Preview cannot activate what it never draws.
+        const drawn = (item: (typeof controls)[number]) => !item.hidden && !item.unusedVariant;
+        // Something that starts hidden counts only when a shown control can reveal it.
+        const shown = (item: (typeof controls)[number]) =>
+            drawn(item) &&
+            (!item.startsHidden ||
+                controls.some(
+                    (other) =>
+                        other.toggleTarget === item.startsHidden &&
+                        !other.missing &&
+                        !other.startsHidden &&
+                        drawn(other)
+                ));
+        controls.forEach((item) => {
+            if (item.target && !item.missing && shown(item)) {
+                visit(item.target);
+            }
+        });
     };
     if (start) {
         visit(start);

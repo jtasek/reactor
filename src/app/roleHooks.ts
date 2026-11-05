@@ -1,5 +1,5 @@
 import { screenOwners } from './screenViews';
-import { variantTargets } from './interactiveVariants';
+import { variantTargets, prototypeTargets } from './interactiveVariants';
 import { useAppState } from './hooks';
 import {
     effectiveRoleSettings,
@@ -37,7 +37,19 @@ export const useRoleEditor = (componentId?: string, instanceId?: string) =>
             ? screenOwners(document.frames).get(instance.parentFrameId)
             : undefined;
 
+        const visibilityTargets = owner
+            ? prototypeTargets(document, owner, instance?.parentFrameId)
+            : [];
+
         return {
+            // A control that hid itself could only come back on Reset.
+            visibilityTargets: visibilityTargets
+                .filter((target) => target.id !== instanceId)
+                .map(({ id, name }) => ({ id, name })),
+            prototypeVisible:
+                instance && visibilityTargets.some((target) => target.id === instance.id)
+                    ? (instance.prototypeVisible ?? true)
+                    : undefined,
             settings: { ...settings, props: { ...settings.props } },
             activation: effectiveActivation(family ?? component, instance),
             sourceActivation: effectiveActivation(family ?? component),

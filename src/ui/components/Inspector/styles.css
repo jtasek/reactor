@@ -1024,3 +1024,9 @@
     color: var(--text-secondary-color);
     font-size: 0.75rem;
 }
+
+.prototypeVisibility {
+    align-items: center;
+    display: flex;
+    gap: var(--column-gap);
+}
