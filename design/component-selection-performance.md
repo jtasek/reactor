@@ -205,3 +205,28 @@ key. An unrelated component edit no longer recalculates any view. With 12 screen
 texts, 24 views and 3,000 off-screen rectangles, median resolve times (ms, before → after) were:
 local edit 114 → 77, off-screen shape edit 70 → 39, unrelated component rename 577 → 39. A
 randomized comparison of cached and fresh geometry over 200 sequences of 40 edits matched.
+
+### Reusing geometry snapshots
+
+Geometry snapshots now retain unchanged immutable branches and cache their content fingerprints.
+Every evaluation still reads authored fields through Overmind, including key additions/removals;
+selection and hover remain excluded. Fingerprints compare content rather than mutable object
+identity, so replacing a record with equivalent content does not invalidate geometry. Cache
+entries use weak references to source objects and keep only the latest snapshot per copy profile.
+The original compact hash algorithm is unchanged. Nothing is written into saved documents, but the
+latest copy of each authored record stays in memory while its source object lives (strings are shared,
+so text and image data are not duplicated). Copies are frozen outside production builds: a write into
+one would leave its fingerprint stale and could make views draw old artwork.
+
+Three alternating before/after runs against `899b5c8d` used the existing 24-edit, eight-screen
+fixture. Combined median action-plus-geometry time was **6.86 ms before → 5.94 ms after** (13%
+lower). Individual run medians were 6.06/7.09/7.35 ms before and 5.92/6.54/5.48 ms after.
+These local Vitest measurements exclude browser painting and are not an interaction-latency claim.
+The change avoids repeated deep copying and serialization of unchanged records, but still scans
+the authored graph and creates temporary traversal arrays to maintain reactive subscriptions.
+
+Independent performance review found no actionable issues. Verification passed: 32 focused tests,
+47 browser tests, application/test/server type checks, changed-file lint, lint baseline and
+production build within the existing budgets. The full suite passed 2,151 tests with 30 skipped
+and one five-second timeout in randomized collaboration seed 2; rerunning that entire suite
+passed all 70 tests. No timeout limits were changed.

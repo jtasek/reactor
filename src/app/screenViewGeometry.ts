@@ -5,9 +5,11 @@ import {
     screenLayoutInputs
 } from './screenGeometryInputs';
 import { hasNumericLayout } from './contextualLayout';
+import { snapshot, artwork, geometryKey, signature } from './geometrySnapshot';
 import { untracked } from './untracked';
 import type { Document, VariableContext } from './types';
 
+const EMPTY_BINDINGS = {};
 const ORIGIN = { x: 0, y: 0 };
 const projections = new WeakMap<
     Document,
@@ -17,53 +19,6 @@ const projections = new WeakMap<
         screens: Map<string, { key: string; projection: ScreenProjection | null }>;
     }
 >();
-
-/**
- * A compact signature of the authored inputs (53-bit cyrb53 plus length), so each
- * document keeps a few bytes rather than a JSON copy of its artwork.
- */
-function signature(text: string) {
-    let h1 = 0xdeadbeef;
-    let h2 = 0x41c6ce57;
-    for (let i = 0; i < text.length; i++) {
-        const code = text.charCodeAt(i);
-        h1 = Math.imul(h1 ^ code, 2654435761);
-        h2 = Math.imul(h2 ^ code, 1597334677);
-    }
-    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-
-    return `${text.length}:${(4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36)}`;
-}
-
-/** Read nested fields through the tracking proxy; Overmind json() deliberately bypasses it. */
-function snapshot<T>(value: T): T {
-    if (value instanceof Date) {
-        return new Date(value.getTime()) as T;
-    }
-    if (Array.isArray(value)) {
-        return value.map(snapshot) as T;
-    }
-    if (value && typeof value === 'object') {
-        return Object.fromEntries(
-            Object.keys(value)
-                .sort()
-                .map((key) => [key, snapshot(value[key as keyof T])])
-        ) as T;
-    }
-
-    return value;
-}
-
-/** Copy authored fields without subscribing geometry to selection or hover. */
-function artwork<T extends object>(record: T, omit: string[] = []): T {
-    return Object.fromEntries(
-        Object.keys(record)
-            .sort()
-            .filter((key) => key !== 'selected' && key !== 'active' && !omit.includes(key))
-            .map((key) => [key, snapshot(record[key as keyof T])])
-    ) as T;
-}
 
 function records<T extends object>(items: Record<string, T>): Record<string, T> {
     return Object.fromEntries(Object.entries(items).map(([id, item]) => [id, artwork(item)]));
@@ -87,7 +42,7 @@ export function resolveScreenViewGeometry(document: Document, simulation?: Varia
             frame.kind === 'view'
                 ? {
                       ...artwork(frame, ['position', 'bindings']),
-                      bindings: snapshot(frame.bindings ?? {}),
+                      bindings: snapshot(frame.bindings ?? EMPTY_BINDINGS),
                       position: ORIGIN
                   }
                 : artwork(frame)
@@ -125,7 +80,7 @@ export function resolveScreenViewGeometry(document: Document, simulation?: Varia
     // Adding/removing a local document field invalidates Overmind's parent path.
     // Compare authored inputs only on those derived misses, never on every render.
     const modes = snapshot(simulation);
-    const key = signature(JSON.stringify([inputs, modes]));
+    const key = signature(geometryKey([inputs, modes]));
     const owner = untracked(document);
     const cached = projections.get(owner);
 
@@ -135,7 +90,7 @@ export function resolveScreenViewGeometry(document: Document, simulation?: Varia
 
     const source = { id: owner.id, ...inputs } as unknown as Document;
     const shared = signature(
-        JSON.stringify([
+        geometryKey([
             inputs.groups,
             inputs.layers,
             inputs.variables,
@@ -167,12 +122,12 @@ export function resolveScreenViewGeometry(document: Document, simulation?: Varia
             if (layoutInputs === undefined) {
                 index ??= screenGeometryIndex(document);
                 layoutInputs = signature(
-                    JSON.stringify(screenLayoutInputs(document, screenId, layoutId, index))
+                    geometryKey(screenLayoutInputs(document, screenId, layoutId, index))
                 );
                 layouts.set(layoutKey, layoutInputs);
             }
             const viewKey = `${shared}:${layoutInputs}:${signature(
-                JSON.stringify([viewport, document.frames[viewport.id ?? '']])
+                geometryKey([viewport, document.frames[viewport.id ?? '']])
             )}`;
             const previous = cached?.screens.get(id);
             const result =
