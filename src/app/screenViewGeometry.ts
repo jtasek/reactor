@@ -1,11 +1,17 @@
-import { projectScreenViews } from './screenProjection';
+import { projectScreen, projectScreenViews, type ScreenProjection } from './screenProjection';
+import { screenGeometryInputs } from './screenGeometryInputs';
+import { hasNumericLayout } from './contextualLayout';
 import { untracked } from './untracked';
 import type { Document, VariableContext } from './types';
 
 const ORIGIN = { x: 0, y: 0 };
 const projections = new WeakMap<
     Document,
-    { key: string; views: ReturnType<typeof projectScreenViews> }
+    {
+        key: string;
+        views: ReturnType<typeof projectScreenViews>;
+        screens: Map<string, { key: string; projection: ScreenProjection | null }>;
+    }
 >();
 
 /**
@@ -123,12 +129,47 @@ export function resolveScreenViewGeometry(document: Document, simulation?: Varia
         return cached.views;
     }
 
-    const views = projectScreenViews(
-        { id: owner.id, ...inputs } as unknown as Document,
-        modes,
-        ORIGIN
+    const source = { id: owner.id, ...inputs } as unknown as Document;
+    const shared = signature(
+        JSON.stringify([
+            inputs.groups,
+            inputs.layers,
+            inputs.components,
+            inputs.variables,
+            inputs.dimensions,
+            inputs.shownLayerId,
+            modes,
+            hasNumericLayout(source),
+            Object.values(frames).map((frame) => [
+                frame.id,
+                frame.kind,
+                frame.parentFrameId,
+                frame.screenLayout
+            ])
+        ])
     );
-    projections.set(owner, { key, views });
+    const screens = new Map<string, { key: string; projection: ScreenProjection | null }>();
+    const views = projectScreenViews(
+        source,
+        modes,
+        ORIGIN,
+        (document, screenId, viewport, simulation) => {
+            const id = viewport.id!;
+            const viewKey = `${shared}:${signature(JSON.stringify(screenGeometryInputs(document, screenId, viewport)))}`;
+            const previous = cached?.screens.get(id);
+            const result =
+                previous?.key === viewKey
+                    ? previous
+                    : {
+                          key: viewKey,
+                          projection: projectScreen(document, screenId, viewport, simulation)
+                      };
+            screens.set(id, result);
+
+            return result.projection;
+        }
+    );
+    projections.set(owner, { key, views, screens });
 
     return views;
 }

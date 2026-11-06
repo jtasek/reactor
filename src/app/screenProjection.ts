@@ -125,11 +125,13 @@ export function projectScreen(
 /**
  * Bound all placed views together. An explicit origin projects content independently
  * of canvas placement, so moving a view need not resolve its artwork again.
+ * The editor may reuse individual projections; the aggregate limit still runs here.
  */
 export function projectScreenViews(
     document: Document,
     simulation: VariableContext = {},
-    position?: Point
+    position?: Point,
+    resolveScreen: typeof projectScreen = projectScreen
 ) {
     let nodes = 0;
 
@@ -146,7 +148,7 @@ export function projectScreenViews(
             }
 
             const projection = view.screenId
-                ? projectScreen(
+                ? resolveScreen(
                       document,
                       view.screenId,
                       position
