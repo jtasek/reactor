@@ -267,3 +267,31 @@ Independent performance review found no actionable issues. All 2,156 unit/server
 All 67 selected browser tests passed, including templates, Screen view editing, inherited modes,
 responsive variants and hug/fill sizing. Their production editor and preview builds passed within
 the existing bundle budgets.
+
+### Resolving Screen view frame visibility once
+
+For plain projection snapshots, each `isFrameVisible` call rebuilt all inherited frame states.
+A screen with N child frames therefore repeated the full frame traversal N times, followed by
+another traversal for its shapes. `projectScreen` now resolves the frame-state map once and uses
+it for both child-frame visibility and `shownShapesIds`. Other callers retain the existing default
+resolution, including the focused-component early return. The map is local to the projection;
+subsequent visibility, parent or lock edits are read again. No persistent cache is introduced.
+
+The new fixture contains one screen, 400 child frames and one rectangle per child. After one
+warm-up it measures 20 complete `projectScreen` calls. Three alternating baseline/current runs
+against `94cedc47` measured **99.02 ms before → 2.93 ms after** combined median (97% lower).
+Individual medians were 99.30/98.35/99.26 ms before and 2.79/2.97/2.95 ms after. This isolates
+full geometry projection for a frame-heavy screen; it excludes browser painting and does not
+claim the same improvement for ordinary screens or already-cached projections.
+
+Run with `pnpm exec cross-env PROFILE_FRAME_VISIBILITY=1 vitest run tests/screenFrameStatePerformance.test.ts -t 'projects a screen'`.
+A separate regression checks one visibility lookup per projection (plus the layout document's
+shallow copy), nested hidden-frame/shape exclusion, restored visibility, and visible locked
+frames. It fails on the baseline with 102 frame-state reads instead of two for 100 children.
+Independent performance review found no actionable issues.
+
+Verification: all 2,159 unit/server tests passed (30 skipped), along with application/test/server
+type checks, changed-file lint, the lint baseline (two existing findings), and production editor
+and preview builds within the existing bundle budgets.
+All 67 selected browser tests passed, covering template selection, Screen view editing, inherited
+modes, responsive variants and stack sizing.
