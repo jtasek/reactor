@@ -121,6 +121,9 @@ function navigationRecord(node: PreviewNode, entityId: string, id: string): Prev
     if (node.control?.navigateTo && !node.control.record) {
         node.control.record = { entityId, id };
     }
+    if (node.control?.role === 'input' && !node.control.inputRecord) {
+        node.control.inputRecord = { entityId, id };
+    }
     node.children?.forEach((child) => navigationRecord(child, entityId, id));
     Object.values(node.variants ?? {}).forEach((child) => navigationRecord(child, entityId, id));
 

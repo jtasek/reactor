@@ -1309,6 +1309,22 @@ binding readers, copy/clone, undo, collaboration and library stripping cover bot
 Tests: `tests/recordDetails.test.ts` and `tests/browser/recordDetails.spec.ts`.
 
 
+## Prototype record forms
+
+`preview/recordForms.ts` holds the local record-session overlay, typed form parsing and atomic
+validation against the authored entity schema. `InteractivePreview` owns that session in React
+state, separate from Overmind/document persistence and collaboration. The runtime reports its
+selected record on the existing channel; `shownRecord` accepts it only for a matching detail
+alternative in the latest drawing. Edit record opens the shared Dialog with generated fields.
+Save prepares a candidate drawing before committing local state; changes while editing or
+preparing refuse the stale draft. `usePreviewProjection` overlays compatible session values and
+uses the regular resolver. Saved-record input identities let the runtime clear only that record’s
+old input drafts. Restart clears the overlay; remount/reload creates a fresh session. The form
+editor is available only with the editor host; shared snapshots remain read-only. No schema
+migration or form action is introduced in this increment.
+Tests: `tests/recordForms.test.ts`, `tests/browser/recordForms.spec.ts`.
+
+
 ## Interactive variants
 
 Schema v26 adds `changeVariant` activation actions targeting an ordinary screen instance and a
