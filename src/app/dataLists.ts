@@ -36,7 +36,7 @@ export function dataListProblems(
     list: DataList
 ): string[] {
     if (!document.dataEntities[list.entityId]) {
-        return ['The list entity is unavailable. Choose an entity or remove the binding.'];
+        return ['The bound entity is unavailable. Choose an entity or remove the binding.'];
     }
 
     return Object.entries(list.fields).flatMap(([propId, fieldId]) => {
@@ -45,7 +45,7 @@ export function dataListProblems(
         return field?.entityId === list.entityId &&
             compatibleListField(document, instance, propId, field)
             ? []
-            : [`List mapping ${propId} refers to a missing or incompatible field or property.`];
+            : [`Data mapping ${propId} refers to a missing or incompatible field or property.`];
     });
 }
 
@@ -87,7 +87,7 @@ export function recordOverrides(
             )
         ) {
             problems.push(
-                `List mapping ${propId} refers to a missing or incompatible field or property; items show the template value.`
+                `Data mapping ${propId} refers to a missing or incompatible field or property; bound properties show the component value.`
             );
             continue;
         }

@@ -21,7 +21,7 @@ test('binds an item template in Inspector, previews records independently and pr
         .getByRole('region', { name: 'Explorer' })
         .getByRole('button', { name: 'Name field', exact: true })
         .click();
-    const list = page.getByRole('region', { name: 'Data list', exact: true });
+    const list = page.getByRole('region', { name: 'Data binding', exact: true });
     await list.getByLabel('Entity', { exact: true }).selectOption('customers');
     await list.getByLabel('Data field for Label', { exact: true }).selectOption('name');
     await list.getByLabel('Item gap', { exact: true }).fill('12');
@@ -78,6 +78,6 @@ test('keeps Preview running while a new record is blank and warns before deletin
     await page.getByRole('button', { name: 'Preview', exact: true }).click();
     await panel.getByRole('button', { name: 'Delete Name…', exact: true }).click();
     await expect(panel.getByRole('alert')).toContainText(
-        'A repeated list uses this field. Its items will show the template value instead.'
+        'A data binding uses this field. Bound properties will show component values instead.'
     );
 });

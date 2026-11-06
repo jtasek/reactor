@@ -1297,6 +1297,18 @@ and clone retain bindings; library snapshots strip these document-local referenc
 Tests: `tests/dataLists.test.ts` and `tests/browser/dataLists.spec.ts`.
 
 
+Schema v30 extends the existing binding with optional `mode: 'record'`; omission retains
+repeated-list behavior. Inspector's Data binding chooses Repeated list or Selected record.
+List navigation carries entity/record IDs through validated `control.record`; detail bindings
+carry bounded `records` artwork alternatives and `recordEntity`, with authored placeholder
+children. Runtime selects matching entity/record alternatives in session memory, isolates input identities
+per record, and clears selections on Restart/document change or removal. Resources, validation
+and input collection traverse record alternatives. Modes, responsive variants and text
+measurement resolve before projection; no editable record table enters the sandbox. Existing
+binding readers, copy/clone, undo, collaboration and library stripping cover both modes.
+Tests: `tests/recordDetails.test.ts` and `tests/browser/recordDetails.spec.ts`.
+
+
 ## Interactive variants
 
 Schema v26 adds `changeVariant` activation actions targeting an ordinary screen instance and a

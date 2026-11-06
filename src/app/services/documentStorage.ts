@@ -26,7 +26,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 29;
+export const SCHEMA_VERSION = 30;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -785,11 +785,16 @@ function readLayoutRules(value: unknown): Record<string, import('../types').Resp
 
 export function readDataList(value: unknown): DataList {
     const data = record(value);
+    const mode = data.mode;
+    if (mode !== undefined && mode !== 'record') {
+        throw new Error('Invalid data binding mode');
+    }
 
     return {
         entityId: id(data.entityId),
         fields: readBindings(data.fields),
-        gap: number(data.gap, 0)
+        gap: number(data.gap, 0),
+        ...(mode && { mode })
     };
 }
 

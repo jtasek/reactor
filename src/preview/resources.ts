@@ -92,6 +92,7 @@ export function createPreviewResources(
             }
             node.children?.forEach(collect);
             Object.values(node.variants ?? {}).forEach(collect);
+            Object.values(node.records ?? {}).forEach(collect);
         };
         drawing.screens.forEach((screen) => screen.nodes.forEach(collect));
         cache.forEach((_value, hash) => {

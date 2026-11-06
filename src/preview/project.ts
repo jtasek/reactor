@@ -1,6 +1,6 @@
 import { variantActionCheck, prototypeTargetCheck } from 'src/app/interactiveVariants';
 import { projectGeometry } from 'src/app/contextualGeometry';
-import { projectDataList } from './dataLists';
+import { projectDataList, TOO_MANY_RECORDS } from './dataLists';
 import { effectiveActivation } from 'src/app/screenInteractions';
 import { screenOwners } from '../app/screenViews';
 import {
@@ -23,7 +23,7 @@ import { effectiveRoleSettings, resolveComponentRole } from '../app/componentRol
 import { themeColors } from '../app/themeColors';
 import { instanceModes, resolveModes } from '../app/inheritedModes';
 import { assertNever, boxCenter, getShapeBounds, DEFAULT_TEXT_FONT_SIZE } from '../app/utils';
-import type { PreviewDrawing, PreviewNode } from './protocol';
+import { MAX_PREVIEW_NODES, type PreviewDrawing, type PreviewNode } from './protocol';
 
 export interface PreviewInspection {
     width?: number;
@@ -263,10 +263,53 @@ export function projectPreview(
         }
         node.children?.forEach(clearDuplicateInputs);
         Object.values(node.variants ?? {}).forEach(clearDuplicateInputs);
+        Object.values(node.records ?? {}).forEach(clearDuplicateInputs);
     };
     drawing.screens.forEach((screen) => screen.nodes.forEach(clearDuplicateInputs));
+    fitRecordAlternatives(drawing, warnings);
 
     return drawing;
+}
+
+const subtreeSize = (node: PreviewNode): number =>
+    1 +
+    [
+        ...(node.children ?? []),
+        ...Object.values(node.variants ?? {}),
+        ...Object.values(node.records ?? {})
+    ].reduce((total, child) => total + subtreeSize(child), 0);
+
+/** Selected record alternatives fill whatever the node limit leaves, earliest records first
+ * across all bindings; the rest show the component values instead of stopping Preview. */
+function fitRecordAlternatives(drawing: PreviewDrawing, warnings: string[]) {
+    const nodes = drawing.screens.flatMap((screen) => screen.nodes);
+    let total = nodes.reduce((sum, node) => sum + subtreeSize(node), 0);
+    if (total <= MAX_PREVIEW_NODES) {
+        return;
+    }
+    const bindings: { node: PreviewNode; ids: string[] }[] = [];
+    const collect = (node: PreviewNode) => {
+        if (node.records) {
+            bindings.push({ node, ids: Object.keys(node.records) });
+        }
+        node.children?.forEach(collect);
+        Object.values(node.variants ?? {}).forEach(collect);
+    };
+    nodes.forEach(collect);
+    while (total > MAX_PREVIEW_NODES) {
+        const binding = bindings.reduce<(typeof bindings)[number] | undefined>(
+            (longest, binding) =>
+                binding.ids.length > (longest?.ids.length ?? 0) ? binding : longest,
+            undefined
+        );
+        if (!binding) {
+            return;
+        }
+        const id = binding.ids.pop()!;
+        total -= subtreeSize(binding.node.records![id]);
+        delete binding.node.records![id];
+    }
+    warnings.push(TOO_MANY_RECORDS);
 }
 
 /** Canvas artwork projection shared by Preview and SVG export. Without screen IDs it omits
@@ -336,7 +379,7 @@ export function createArtworkProjector(
                 }
             };
             if (!document.dataEntities[shape.dataList.entityId]) {
-                report('The list entity is unavailable, so the template is shown once.');
+                report('The bound entity is unavailable, so the component values are shown.');
 
                 return draw(
                     { ...shape, dataList: undefined },
@@ -348,21 +391,53 @@ export function createArtworkProjector(
                 );
             }
 
+            let alternativeNodes = 0;
+
             return projectDataList(
                 document,
                 shape,
                 key,
                 inherited,
                 ancestors,
-                (item, path, recordId) =>
-                    draw(
+                (item, path, recordId) => {
+                    // Selected record alternatives don't count toward the drawing limit here;
+                    // fitRecordAlternatives trims them to fit afterwards. One binding's
+                    // alternatives past the limit could never be sent, so drawing stops there.
+                    const alternative = shape.dataList!.mode === 'record' && recordId !== '';
+                    if (alternative && alternativeNodes >= MAX_PREVIEW_NODES) {
+                        return undefined;
+                    }
+                    const before = nodes.count;
+                    if (alternative) {
+                        nodes.count = 0;
+                    }
+                    const node = draw(
                         item,
                         path,
                         ancestors,
                         inherited,
                         screenId,
-                        JSON.stringify([recordScope, key, recordId])
-                    ),
+                        JSON.stringify([
+                            recordScope,
+                            shape.dataList!.mode === 'record'
+                                ? [
+                                      shape.dataList!.entityId,
+                                      Object.entries(shape.dataList!.fields).sort(([a], [b]) =>
+                                          a.localeCompare(b)
+                                      )
+                                  ]
+                                : key,
+                            recordId
+                        ])
+                    );
+                    if (!alternative) {
+                        return node;
+                    }
+                    alternativeNodes += nodes.count;
+                    nodes.count = before;
+
+                    return alternativeNodes > MAX_PREVIEW_NODES ? undefined : node;
+                },
                 report
             );
         }
