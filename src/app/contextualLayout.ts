@@ -69,12 +69,16 @@ export function hasNumericLayout(
 }
 
 /** One shared geometry projection for view drawing, interaction, thumbnails and Preview. */
-export function projectContextualLayout(document: Document, address: ModeAddress = {}) {
+export function projectContextualLayout(
+    document: Document,
+    address: ModeAddress = {},
+    shapeIds?: ReadonlySet<string>
+) {
     const modeProblems: Record<string, string> = {};
-    const initial = contextualDocument(document, address, modeProblems);
+    const initial = contextualDocument(document, address, modeProblems, {}, shapeIds);
     const firstLayout = projectFrameLayout(initial);
     const inputs = Object.keys(firstLayout.frameSizes).length
-        ? contextualDocument(document, address, modeProblems, firstLayout.frameSizes)
+        ? contextualDocument(document, address, modeProblems, firstLayout.frameSizes, shapeIds)
         : initial;
     const layout = inputs === initial ? firstLayout : projectFrameLayout(inputs);
     const frameSizes = Object.fromEntries(
@@ -192,7 +196,8 @@ export function contextualDocument(
     document: Document,
     address: ModeAddress = {},
     problems: Record<string, string> = {},
-    availableSizes: Record<string, Size> = {}
+    availableSizes: Record<string, Size> = {},
+    shapeIds?: ReadonlySet<string>
 ): Pick<
     Document,
     'frames' | 'shapes' | 'groups' | 'layers' | 'components' | 'variables' | 'shapesIds'
@@ -243,6 +248,11 @@ export function contextualDocument(
     );
     const shapes = Object.fromEntries(
         Object.values(document.shapes).map((source) => {
+            // A Screen view needs only its own artwork projected. Keep other records
+            // available to recursive component resolution, without measuring them here.
+            if (shapeIds && !shapeIds.has(source.id)) {
+                return [source.id, source];
+            }
             const modes = resolveModes(document, {
                 ...address,
                 frameId: source.parentFrameId

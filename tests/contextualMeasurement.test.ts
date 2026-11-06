@@ -508,3 +508,25 @@ it('keeps spaces between wrapped lines and wraps inside the frame from where the
     expect(text.textLayout!.lines.join('')).toBe('The quick brown fox jumps over the lazy dog');
     expect(text.bounds!.bottomRight.x).toBeLessThanOrEqual(1120);
 });
+
+it('scopes view geometry without losing nested sources or resolving unrelated canvas text', () => {
+    const { store, document, ids, large } = setup();
+    store.actions.addShape({
+        type: 'text',
+        value: 'Unrelated canvas text',
+        position: { x: 900, y: 900 },
+        fontSize: 20,
+        wrapWidth: 80,
+        bindings: { fontSize: ids.size }
+    });
+    const unrelatedId = document.shapesIds.at(-1)!;
+    const address = { viewId: large, screenId: ids.screen };
+    const full = projectContextualLayout(document, address);
+    const scoped = projectContextualLayout(document, address, new Set([ids.instance]));
+
+    expect(renderedShape(document, ids.instance, scoped)).toEqual(
+        renderedShape(document, ids.instance, full)
+    );
+    expect(scoped.resolvedShapes![unrelatedId]).toBe(document.shapes[unrelatedId]);
+    expect(full.resolvedShapes![unrelatedId]).not.toBe(document.shapes[unrelatedId]);
+});
