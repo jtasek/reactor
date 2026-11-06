@@ -13,9 +13,10 @@ component-source geometry reads and Overmind subscription work.
 `ProjectedShape` now uses one tracked state tree and memoizes rendering against
 all projected shape fields and placement/selection-control props. Projection
 shapes are plain snapshots, so comparing their serialized values avoids treating
-new, unchanged objects as artwork changes. There is no persistent geometry cache
-or identity-only comparison of mutable store records. Component-source and mode
-reads remain tracked: changes to those dependencies still render the artwork.
+new, unchanged objects as artwork changes. This first change added no persistent
+geometry cache; the shared cache described below (2026-11-06) came later.
+Component-source and mode reads remain tracked: changes to those dependencies
+still render the artwork.
 
 ## Local measurements
 
@@ -99,7 +100,12 @@ variables, dimensions and simulation modes. It excludes selection, hover and vie
 Overmind replays dependencies when another consumer reads the cached value. A single last-input
 signature/result per document handles structural local changes (such as deleting
 `selectedFrameId`) that invalidate Overmind's parent dependency despite unchanged artwork.
-This signature is checked only on derived misses. React `useMemo` retains frame outlines using
+This signature is checked only on derived misses and is stored as a short hash of the
+serialized inputs, not a copy of them.
+
+The projection receives only that snapshot, never the raw document. A field it reads must
+be one of the resolver's `inputs` (or a derived field it can compute from them), so a new
+dependency reads `undefined` and fails tests instead of drawing stale artwork. React `useMemo` retains frame outlines using
 immutable projection arrays; it is not keyed by mutable document identity.
 
 This is a bounded first increment: authored edits still rebuild the graph snapshot and affected
@@ -110,7 +116,7 @@ existing 497 KiB entry budget.
 
 ### Matching production-browser comparison
 
-Clean HEAD (`62193779`) was exported to a temporary directory for the baseline. Both runs used
+A clean export of the code before this change, in a temporary directory, was the baseline. Both runs used
 minified production builds, Chromium, one worker, no CPU profiler, and the same 16 real selections
 per template with Inspector and Explorer open. All 80 selections passed in each run.
 
