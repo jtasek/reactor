@@ -1,13 +1,4 @@
-import type {
-    Box,
-    Corner,
-    Point,
-    Rectangle,
-    ResizeHandlerType,
-    Shape,
-    ShapeInput,
-    Size
-} from './types';
+import type { Box, Corner, Point, ResizeHandlerType, Shape, ShapeInput, Size } from './types';
 import {
     DEFAULT_TEXT_FONT_SIZE,
     assertNever,
@@ -423,28 +414,6 @@ export const CORNER_INWARD: Record<Corner, Point> = {
 export const CORNERS: Corner[] = ['topLeft', 'topRight', 'bottomRight', 'bottomLeft'];
 
 export const isCorner = (value: string): value is Corner => Object.hasOwn(CORNER_INWARD, value);
-
-/**
- * A rectangle's corner radius after the radius handle of `corner` is dragged from
- * `from` to `to`: the radius it is drawn with, grown by how far the drag goes in
- * along that corner's diagonal, in its turned frame.
- */
-export function cornerRadiusAfterDrag(
-    rectangle: Rectangle,
-    corner: Corner,
-    from: Point,
-    to: Point
-): number {
-    const move = rotatePoint(
-        { x: to.x - from.x, y: to.y - from.y },
-        { x: 0, y: 0 },
-        -(rectangle.rotation ?? 0)
-    );
-    const drawn = limitCornerRadius(rectangle.size, rectangle.cornerRadius ?? 0);
-    const inward = CORNER_INWARD[corner];
-
-    return limitCornerRadius(rectangle.size, drawn + (move.x * inward.x + move.y * inward.y) / 2);
-}
 
 /**
  * Whether `point` hits `shape` where it is drawn: within `tolerance` of its

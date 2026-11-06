@@ -1,3 +1,4 @@
+import * as screenViews from 'src/app/screenViewGeometry';
 import * as data from 'src/app/dataEdits';
 import * as componentProperties from 'src/app/componentPropertyEdits';
 import * as layout from 'src/app/contextualLayout';
@@ -89,6 +90,7 @@ export function createTestStore(
                   data,
                   componentProperties,
                   layout,
+                  screenViews,
                   roles,
                   pointer,
                   clipboardEdits,

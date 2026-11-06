@@ -20,6 +20,7 @@ import { hasNumericLayout } from './contextualLayout';
 import { projectGeometry } from './contextualGeometry';
 import { untracked } from './untracked';
 import { json } from 'overmind';
+import { translateShape } from './geometry';
 import { componentSource, instanceBox, instanceSource } from './componentSource';
 import { transformComponentShape } from './componentViewTransform';
 import type { ScreenProjection } from './screenProjection';
@@ -39,7 +40,7 @@ export function componentScreenViews(state: Context['state'], position?: Point) 
         instance?.type !== 'instance' ||
         instance.componentId !== focus.componentId
     ) {
-        return projectScreenViews(document, state.previewModes[document.id], position);
+        return placedScreenViews(document, position);
     }
 
     return projectScreenViews(
@@ -57,6 +58,43 @@ export function componentScreenViews(state: Context['state'], position?: Point) 
         state.previewModes[document.id],
         position
     );
+}
+
+/** Reuse local geometry for drawing and hit testing; selection is read separately. */
+function placedScreenViews(document: Document, position?: Point) {
+    return document.screenViewGeometry.map((item) => {
+        const view = document.frames[item.view.id];
+        const offset = position ?? view.position;
+        const projection = item.projection;
+
+        if (!projection || (position && offset.x === 0 && offset.y === 0)) {
+            return { ...item, view };
+        }
+
+        return {
+            ...item,
+            view,
+            projection: {
+                ...projection,
+                screen: { ...projection.screen, position: offset },
+                frames: projection.frames.map((frame) => ({
+                    ...frame,
+                    position: {
+                        x: frame.position.x + offset.x,
+                        y: frame.position.y + offset.y
+                    }
+                })),
+                shapes: projection.shapes.map((source) => {
+                    const shape = json(source);
+                    translateShape(shape, offset);
+                    shape.selected = document.shapes[shape.id]?.selected ?? false;
+                    shape.active = document.shapes[shape.id]?.active ?? false;
+
+                    return shape;
+                })
+            }
+        };
+    });
 }
 
 function screenViewSource(state: Context['state'], address: ScreenViewAddress | null) {

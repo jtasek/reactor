@@ -1,4 +1,5 @@
-import { cornerRadiusAfterDrag, limitCornerRadius, placeShapeFrom } from 'src/app/geometry';
+import { limitCornerRadius, placeShapeFrom } from 'src/app/geometry';
+import { cornerRadiusAfterDrag } from 'src/app/shapeEdits';
 import { createShape } from 'src/app/factories';
 import { SHAPE_PROPERTIES, applyProperty } from 'src/app/properties';
 import { readShapeGeometry } from 'src/app/services/documentStorage';

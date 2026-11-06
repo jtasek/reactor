@@ -16,6 +16,7 @@ import {
     Corner,
     Group,
     Point,
+    Rectangle,
     ResizeHandlerType,
     Shape,
     ShapeInput
@@ -44,7 +45,8 @@ import type { PasteResult } from './clipboard';
 import { editorHelpers } from './editorHelpers';
 import { takesEditorInput } from 'src/events/input';
 import {
-    cornerRadiusAfterDrag,
+    CORNER_INWARD,
+    limitCornerRadius,
     hitTestShape,
     hitTolerance,
     keepsAspectRatio,
@@ -53,6 +55,7 @@ import {
     translateShape
 } from './geometry';
 import {
+    rotatePoint,
     boxesEqual,
     getShapeBounds,
     isShapeLocked,
@@ -1056,6 +1059,28 @@ function unbindResizedAxes(shape: Shape, handle: ResizeHandlerType, original: Sh
     if (both || top || centersY) {
         unbind(shape, 'y');
     }
+}
+
+/**
+ * A rectangle's corner radius after the radius handle of `corner` is dragged from
+ * `from` to `to`: the radius it is drawn with, grown by how far the drag goes in
+ * along that corner's diagonal, in its turned frame.
+ */
+export function cornerRadiusAfterDrag(
+    rectangle: Rectangle,
+    corner: Corner,
+    from: Point,
+    to: Point
+): number {
+    const move = rotatePoint(
+        { x: to.x - from.x, y: to.y - from.y },
+        { x: 0, y: 0 },
+        -(rectangle.rotation ?? 0)
+    );
+    const drawn = limitCornerRadius(rectangle.size, rectangle.cornerRadius ?? 0);
+    const inward = CORNER_INWARD[corner];
+
+    return limitCornerRadius(rectangle.size, drawn + (move.x * inward.x + move.y * inward.y) / 2);
 }
 
 /**
