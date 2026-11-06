@@ -230,3 +230,30 @@ Independent performance review found no actionable issues. Verification passed: 
 production build within the existing budgets. The full suite passed 2,151 tests with 30 skipped
 and one five-second timeout in randomized collaboration seed 2; rerunning that entire suite
 passed all 70 tests. No timeout limits were changed.
+
+### Reusing parent context within a layout pass
+
+`contextualDocument` now resolves inherited modes once per parent frame in each pass. Component
+instances in the same parent also share the responsive width context; non-instance shapes no
+longer calculate unused variant widths. These caches live only for that invocation, so the
+second sizing pass and later edits always recompute from current frame sizes, modes and ancestry.
+Instance overrides remain independent because entering an instance copies its inherited modes.
+
+The regression fixtures reduce 100 sibling labels from 100 mode resolutions to two (one for
+each parent), and 40 sibling instances from 40 width calculations to one. Both tests fail against
+baseline `6da46418` with those original counts. They also verify mode changes between passes,
+changed available parent width, resolved variant selection and distinct instance values/modes.
+
+Three alternating before/after runs of the existing 24-edit, eight-screen benchmark measured a
+combined median of **5.47 ms before → 5.08 ms after** (7% lower). Run medians were
+5.67/5.66/5.22 ms before and 5.10/4.87/5.32 ms after. These are local JavaScript action-plus-geometry
+timings, excluding browser painting; individual runs vary. Full-graph snapshot reads and layout
+traversal remain. This increment removes repeated parent-context calculations without adding a
+persistent cache or changing document data.
+
+Independent performance review found no actionable issues. All 2,156 unit/server tests passed
+(30 skipped), as did application/test/server type checks, changed-file lint and the lint baseline
+(two existing findings). The full suite used four workers without changing test timeouts.
+All 67 selected browser tests passed, including templates, Screen view editing, inherited modes,
+responsive variants and hug/fill sizing. Their production editor and preview builds passed within
+the existing bundle budgets.

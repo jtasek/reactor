@@ -206,8 +206,20 @@ export function contextualDocument(
         return document;
     }
 
-    const contextFor = (frameId?: string) =>
-        variableContext(document, resolveModes(document, { ...address, frameId }).modes);
+    // Siblings inherit the same context during this pass. Keep the cache local:
+    // the next layout pass may have different modes, frame sizes or ancestry.
+    const inherited = new Map<string | undefined, VariableContext>();
+    const modesFor = (frameId?: string) => {
+        const cached = inherited.get(frameId);
+        if (cached) {
+            return cached;
+        }
+        const modes = resolveModes(document, { ...address, frameId }).modes;
+        inherited.set(frameId, modes);
+
+        return modes;
+    };
+    const contextFor = (frameId?: string) => variableContext(document, modesFor(frameId));
     const valueFor = (id: string, context: VariableContext) => {
         const variable = document.variables[id];
 
@@ -246,6 +258,17 @@ export function contextualDocument(
             return [frame.id, frame];
         })
     );
+    const widths = new Map<string | undefined, ReturnType<typeof variantWidths>>();
+    const widthsFor = (frameId?: string) => {
+        const cached = widths.get(frameId);
+        if (cached) {
+            return cached;
+        }
+        const resolved = variantWidths({ frames }, frameId, address, availableSizes);
+        widths.set(frameId, resolved);
+
+        return resolved;
+    };
     const shapes = Object.fromEntries(
         Object.values(document.shapes).map((source) => {
             // A Screen view needs only its own artwork projected. Keep other records
@@ -253,10 +276,7 @@ export function contextualDocument(
             if (shapeIds && !shapeIds.has(source.id)) {
                 return [source.id, source];
             }
-            const modes = resolveModes(document, {
-                ...address,
-                frameId: source.parentFrameId
-            }).modes;
+            const modes = modesFor(source.parentFrameId);
             const parent = frames[source.parentFrameId ?? ''];
             const availableWidth = availableWidthIn(
                 parent,
@@ -273,7 +293,7 @@ export function contextualDocument(
                     availableWidth,
                     undefined,
                     problems,
-                    variantWidths({ frames }, source.parentFrameId, address, availableSizes)
+                    source.type === 'instance' ? widthsFor(source.parentFrameId) : undefined
                 )
             ];
         })
