@@ -148,3 +148,38 @@ it('shares binding mode changes and undoes them as one step', async () => {
     expect(shownDocument(b).shapes.detail).toHaveProperty('dataList.mode', 'record');
     copies.forEach((copy) => copy.collaboration.dispose());
 });
+
+it('keeps Preview running when detail bindings cover more records than the budget', () => {
+    const { document, detail } = recordDetailFixture();
+    for (let index = 0; index < 1000; index += 1) {
+        document.dataRecords[`r${index}`] = {
+            id: `r${index}`,
+            entityId: 'customers',
+            order: index + 2,
+            values: { name: `Customer ${index}` }
+        };
+    }
+    for (let copy = 1; copy < 8; copy += 1) {
+        document.shapes[`detail${copy}`] = {
+            ...structuredClone(detail),
+            id: `detail${copy}`,
+            order: `a5${copy}`,
+            interaction: { ...detail.interaction!, controlId: `customer-detail-${copy}` }
+        };
+        document.shapesIds.push(`detail${copy}`);
+    }
+    const warnings: string[] = [];
+    const drawing = projectPreview(document, {}, warnings);
+    const bindings = drawing.screens
+        .find((screen) => screen.id === 'details')!
+        .nodes.filter((node) => node.records);
+    expect(bindings).toHaveLength(8);
+    const drawn = bindings.map((node) => Object.keys(node.records!).length);
+    // Earliest records first across every binding, within the sandbox node limit.
+    expect(Math.max(...drawn) - Math.min(...drawn)).toBeLessThanOrEqual(1);
+    expect(Math.max(...drawn)).toBeLessThan(1002);
+    expect(bindings.every((node) => node.records!.ada && node.records!.grace)).toBe(true);
+    expect(bindings.every((node) => node.children![0].control?.value === 'Your name')).toBe(true);
+    expect(warnings.some((warning) => warning.includes('Too many records to preview'))).toBe(true);
+    expect(() => readPreview({ ...drawing, images: {} })).not.toThrow();
+});

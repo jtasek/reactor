@@ -785,7 +785,8 @@ function readLayoutRules(value: unknown): Record<string, import('../types').Resp
 
 export function readDataList(value: unknown): DataList {
     const data = record(value);
-    if (data.mode !== undefined && data.mode !== 'record') {
+    const mode = data.mode;
+    if (mode !== undefined && mode !== 'record') {
         throw new Error('Invalid data binding mode');
     }
 
@@ -793,7 +794,7 @@ export function readDataList(value: unknown): DataList {
         entityId: id(data.entityId),
         fields: readBindings(data.fields),
         gap: number(data.gap, 0),
-        ...(data.mode === 'record' ? { mode: 'record' as const } : {})
+        ...(mode && { mode })
     };
 }
 

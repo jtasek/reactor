@@ -6,6 +6,9 @@ import { projectGeometry } from '../app/contextualGeometry';
 import { DEFAULT_TEXT_FONT_SIZE } from '../app/utils';
 import { drawnBox } from '../app/membership';
 
+export const TOO_MANY_RECORDS =
+    'Too many records to preview for Selected record bindings; later records show the component values.';
+
 /** Only rendered values cross the sandbox boundary; records stay in the editor. */
 export function projectDataList(
     document: Document,
@@ -13,14 +16,27 @@ export function projectDataList(
     key: string,
     modes: VariableContext,
     ancestors: ReadonlySet<string>,
-    draw: (shape: Shape, path: string, recordId: string) => PreviewNode,
+    draw: (shape: Shape, path: string, recordId: string) => PreviewNode | undefined,
     report: (problem: string) => void
 ): PreviewNode {
     const binding = instance.dataList!;
     const records = dataRecords(document, binding.entityId);
     const context = instance.projectedSource?.context;
     if (binding.mode === 'record') {
-        const fallback = draw({ ...instance, dataList: undefined }, `${key}/unselected`, '');
+        const fallback = draw({ ...instance, dataList: undefined }, `${key}/unselected`, '')!;
+        const alternatives: Record<string, PreviewNode> = {};
+        for (const [index, record] of records.entries()) {
+            const node = draw(
+                projectRecord(record, index),
+                `${key}/record:${encodeURIComponent(record.id)}`,
+                record.id
+            );
+            if (!node) {
+                report(TOO_MANY_RECORDS);
+                break;
+            }
+            alternatives[record.id] = navigationRecord(node, binding.entityId, record.id);
+        }
 
         return {
             key,
@@ -28,20 +44,7 @@ export function projectDataList(
             attrs: {},
             children: [fallback],
             recordEntity: binding.entityId,
-            records: Object.fromEntries(
-                records.map((record, index) => [
-                    record.id,
-                    navigationRecord(
-                        draw(
-                            projectRecord(record, index),
-                            `${key}/record:${encodeURIComponent(record.id)}`,
-                            record.id
-                        ),
-                        binding.entityId,
-                        record.id
-                    )
-                ])
-            )
+            records: alternatives
         };
     }
     function projectRecord(record: (typeof records)[number], index: number) {
@@ -74,7 +77,7 @@ export function projectDataList(
                 tag: 'g',
                 attrs: { transform: `translate(0 ${result.height})` },
                 children: [
-                    navigationRecord(draw(item, path, record.id), binding.entityId, record.id)
+                    navigationRecord(draw(item, path, record.id)!, binding.entityId, record.id)
                 ]
             });
             result.height += drawnBox(item).height + binding.gap;
