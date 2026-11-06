@@ -21,6 +21,7 @@ export interface PreviewNode {
         disabled?: boolean;
         navigateTo?: string;
         record?: { entityId: string; id: string };
+        inputRecord?: { entityId: string; id: string };
         changeVariant?: { key: string; variantId: string };
         toggleVisibility?: string;
         toggleState?: string;
@@ -321,6 +322,9 @@ export function readPreview(
                 placeholder: c.placeholder,
                 disabled: c.disabled,
                 navigateTo: c.navigateTo,
+                ...(c.inputRecord === undefined
+                    ? {}
+                    : { inputRecord: readInputRecord(c.inputRecord, c.role) }),
                 ...(c.record === undefined
                     ? {}
                     : { record: readNavigationRecord(c.record, c.navigateTo) }),
@@ -493,4 +497,12 @@ function readNavigationRecord(value: unknown, target: unknown): { entityId: stri
     }
 
     return { entityId: record.entityId, id: record.id };
+}
+
+function readInputRecord(value: unknown, role: unknown): { entityId: string; id: string } {
+    if (role !== 'input') {
+        throw new Error('Only inputs may have record input identity.');
+    }
+
+    return readNavigationRecord(value, 'input');
 }

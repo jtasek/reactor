@@ -1,4 +1,5 @@
 import { useAppState } from '../app/hooks';
+import { sessionDocument, type RecordSession } from './recordForms';
 import {
     projectPreview,
     type PreviewSession,
@@ -21,13 +22,16 @@ export interface PreviewProjection {
  * drag only the gesture kind is read, so pointer moves don't rebuild the preview. */
 export const usePreviewProjection = (
     inspection: PreviewInspection = {},
-    session?: PreviewSession
+    session?: PreviewSession,
+    records?: RecordSession
 ) =>
     useAppState((state): PreviewProjection => {
         if (state.events.pointer.gesture.kind !== 'idle') {
             return { serialized: null, problem: null, warnings: [], diagnostics: [], paused: true };
         }
-        const document = state.currentDocument;
+        const document = records
+            ? sessionDocument(state.currentDocument, records)
+            : state.currentDocument;
         const warnings: string[] = [];
         const diagnostics: PreviewDiagnostic[] = [];
         // One entry per record and message, even when a source child is drawn by many instances.

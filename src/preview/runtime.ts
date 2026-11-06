@@ -328,9 +328,9 @@ function render() {
     svg.setAttribute('aria-label', screen.name);
     screen.nodes.forEach((node) => svg.append(nodeElement(node)));
     root.replaceChildren(...(hostControls ? [svg] : [navigation, svg]));
+    port?.postMessage({ type: 'current-screen', screenId: screen.id, record: selectedRecord });
     if (hostControls) {
         document.documentElement.dataset.player = 'true';
-        port?.postMessage({ type: 'current-screen', screenId: screen.id });
     }
     if (key) {
         const input = Array.from(
@@ -355,7 +355,13 @@ function render() {
 
 function receive(value: unknown) {
     try {
-        const update = value && typeof value === 'object' ? (value as { images?: unknown }) : {};
+        const update =
+            value && typeof value === 'object'
+                ? (value as {
+                      images?: unknown;
+                      savedRecord?: { id?: unknown; entityId?: unknown };
+                  })
+                : {};
         // Keep new images even if this drawing is refused: the editor counts them as sent.
         images = { ...images, ...readPreviewImages(update.images) };
         const next = readPreview({ ...update, images: undefined }, images);
@@ -398,6 +404,13 @@ function receive(value: unknown) {
             }
             if (node.control?.role === 'input') {
                 keys.add(node.control.stateKey ?? node.key);
+                if (
+                    node.control.inputRecord &&
+                    node.control.inputRecord.id === update.savedRecord?.id &&
+                    node.control.inputRecord.entityId === update.savedRecord?.entityId
+                ) {
+                    values.delete(node.control.stateKey ?? node.key);
+                }
             }
             node.children?.forEach(collect);
             Object.values(node.variants ?? {}).forEach(collect);

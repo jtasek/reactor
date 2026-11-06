@@ -1,6 +1,16 @@
 import React, { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { useEffects } from 'src/app/hooks';
+import { useEffects, useCurrentDocument, useAppState } from 'src/app/hooks';
+import { dataFields } from 'src/app/data';
+import { projectPreview } from 'src/preview/project';
+import {
+    hasRecordDetails,
+    sessionDocument,
+    saveRecord,
+    shownRecord,
+    type RecordSession
+} from 'src/preview/recordForms';
+import { RecordForm } from './RecordForm';
 import { usePreviewProjection, type PreviewProjection } from 'src/preview/hooks';
 import {
     PREVIEW_PROTOCOL_VERSION,
@@ -29,13 +39,28 @@ export default function InteractivePreview({
     onLocate?: (diagnostic: PreviewDiagnostic) => void;
 } = {}) {
     const { assets } = useEffects();
+    const document = useCurrentDocument();
+    const previewContext = useAppState((state) => state.previewModeContext);
+    const documentRef = useRef(document);
+    documentRef.current = document;
+    const [records, setRecords] = useState<RecordSession>(() => ({
+        documentId: document.id,
+        records: {}
+    }));
+    const [activeRecord, setActiveRecord] = useState<{ id: string; entityId: string }>();
+    const [editing, setEditing] = useState(false);
+    useEffect(() => {
+        setRecords({ documentId: document.id, records: {} });
+        setActiveRecord(undefined);
+        setEditing(false);
+    }, [document.id]);
     const diagnosticId = useId();
     const prepare = useMemo(() => createPreviewResources(assets), [assets]);
     const [currentScreen, setCurrentScreen] = useState<string>();
     const [hostControls, setHostControls] = useState(false);
     const [inspection, setInspection] = useState<PreviewInspection>({});
     useEffect(() => onInspection?.(inspection), [inspection, onInspection]);
-    const live = usePreviewProjection(inspection, session);
+    const live = usePreviewProjection(inspection, session, records);
     // Keep showing the last result while a drag pauses updates.
     const settled = useRef<PreviewProjection>(live);
     if (!live.paused) {
@@ -55,6 +80,8 @@ export default function InteractivePreview({
     const [availability, setAvailability] = useState('Loading preview…');
     const [runtimeProblem, setProblem] = useState<string | null>(null);
     const [preparing, setPreparing] = useState(false);
+    /** Edit record shows only for drawings with a selected-record binding. */
+    const [recordDetails, setRecordDetails] = useState(false);
     const [attempt, setAttempt] = useState(0);
     const problem = projection.problem ?? runtimeProblem;
 
@@ -112,6 +139,7 @@ export default function InteractivePreview({
                     return;
                 }
                 latest.current = application;
+                setRecordDetails(hasRecordDetails(application));
                 if (connection.current) {
                     send(connection.current, application);
                 }
@@ -148,11 +176,15 @@ export default function InteractivePreview({
         return () => window.clearTimeout(timeout);
     }, [origin, ready]);
     /** Posts the drawing with only the images this channel has not received yet. */
-    const send = (port: MessagePort, application: PreviewApplication) => {
+    const send = (
+        port: MessagePort,
+        application: PreviewApplication,
+        savedRecord?: { id: string; entityId: string }
+    ) => {
         const images = Object.fromEntries(
             Object.entries(application.images).filter(([hash]) => !sentImages.current.has(hash))
         );
-        port.postMessage({ ...application, images });
+        port.postMessage({ ...application, images, ...(savedRecord ? { savedRecord } : {}) });
         sentImages.current = new Set(Object.keys(application.images));
     };
     const connect = () => {
@@ -163,8 +195,16 @@ export default function InteractivePreview({
         connection.current = null;
         setHostControls(false);
         setCurrentScreen(undefined);
+        setActiveRecord(undefined);
+        setEditing(false);
         channel.port1.onmessage = (event) => {
             if (event.data?.type === 'current-screen') {
+                const record = shownRecord(latest.current, event.data.screenId, event.data.record);
+                setActiveRecord((previous) =>
+                    previous?.id === record?.id && previous?.entityId === record?.entityId
+                        ? previous
+                        : record
+                );
                 if (latest.current?.screens.some((screen) => screen.id === event.data.screenId)) {
                     setCurrentScreen(event.data.screenId);
                 }
@@ -196,6 +236,8 @@ export default function InteractivePreview({
                 return;
             }
             if (event.data?.type === 'inspect-reset') {
+                setRecords({ documentId: documentRef.current.id, records: {} });
+                setEditing(false);
                 setInspection({});
                 callbacks.current.onReset?.();
 
@@ -246,6 +288,36 @@ export default function InteractivePreview({
             channel.port2
         ]);
     };
+
+    const local = sessionDocument(document, records);
+    const record =
+        activeRecord && latest.current?.documentId === document.id
+            ? local.dataRecords[activeRecord.id]
+            : undefined;
+    const entity =
+        record && record.entityId === activeRecord?.entityId
+            ? document.dataEntities[record.entityId]
+            : undefined;
+    const editBlocked = !record
+        ? 'Open a list item to edit its record'
+        : !entity
+          ? 'This record is no longer available'
+          : preparing
+            ? 'Wait for the preview to finish preparing'
+            : problem
+              ? 'Fix the preview problem first'
+              : undefined;
+    const editRecord = recordDetails && (
+        <button
+            type="button"
+            aria-haspopup="dialog"
+            disabled={Boolean(editBlocked)}
+            title={editBlocked}
+            onClick={() => setEditing(true)}
+        >
+            Edit record
+        </button>
+    );
 
     const shown =
         latest.current?.screens.find((screen) => screen.id === currentScreen) ??
@@ -315,10 +387,65 @@ export default function InteractivePreview({
                             </label>
                         )}
                         {hostControls && currentScreen && layout}
+                        {editRecord}
                         {toolbar}
                     </div>,
                     toolbarTarget
                 )}
+            {(!session || !toolbarTarget) && editRecord && (
+                <div className={styles.toolbar}>{editRecord}</div>
+            )}
+            {editing && record && entity && (
+                <RecordForm
+                    key={`${document.id}:${record.id}`}
+                    record={record}
+                    fields={dataFields(document, record.entityId)}
+                    entityName={entity.name}
+                    close={() => setEditing(false)}
+                    save={async (draft, signal) => {
+                        const result = saveRecord(document, records, record.id, draft);
+                        if (Object.keys(result.problems).length) {
+                            return result.problems;
+                        }
+                        const before = JSON.stringify([
+                            document.dataRecords[record.id],
+                            dataFields(document, record.entityId)
+                        ]);
+                        const candidate = projectPreview(
+                            sessionDocument(document, result.session),
+                            {},
+                            [],
+                            session ?? previewContext,
+                            inspection
+                        );
+                        const application = await prepare(candidate, signal);
+                        signal.throwIfAborted();
+                        const current = documentRef.current;
+                        if (
+                            current.id !== document.id ||
+                            before !==
+                                JSON.stringify([
+                                    current.dataRecords[record.id],
+                                    dataFields(current, record.entityId)
+                                ])
+                        ) {
+                            return {
+                                record: 'This record or its fields changed. Cancel and reopen the form.'
+                            };
+                        }
+                        latest.current = application;
+                        if (connection.current) {
+                            send(connection.current, application, {
+                                id: record.id,
+                                entityId: record.entityId
+                            });
+                        }
+                        setRecords(result.session);
+
+                        return {};
+                    }}
+                />
+            )}
             {availability && <p role="status">{availability}</p>}
             {preparing && <p role="status">Preparing preview images…</p>}
             {problem && (

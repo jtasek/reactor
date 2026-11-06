@@ -1150,6 +1150,17 @@ prototype.
    `tests/browser/dataLists.spec.ts`, `tests/browser/recordDetails.spec.ts`.
 3. A form with validation written as expressions, updating local records. The preview resets
    them on request.
+   R5.3a implementation: editor-connected Preview and Prototype offer Edit record after
+   list-to-detail navigation. A generated form edits the entity’s Text/Number/Boolean fields,
+   validates required values and types atomically, and provides Save/Cancel. Saved records live
+   only in the mounted player; the existing resolver reprojects list/detail artwork with modes,
+   layouts, component variants and text measurement. Cancel/Escape discard drafts; Restart,
+   closing the player and reloading restore authored samples. Saves prepare and validate the
+   candidate preview before updating the session; record/schema changes while editing require
+   reopening the form. No document edit, undo entry, collaboration message or persistent save
+   is produced. Public links remain read-only snapshots without the host-side form editor.
+   Authored form controls/actions, expression rules and editable standalone/shared forms remain
+   later increments. Verification: `tests/recordForms.test.ts`, `tests/browser/recordForms.spec.ts`.
 4. Export as a standalone web package.
 5. AI: an entity and 20 records from a description or pasted CSV or JSON, with a list bound to
    them. Done when:
