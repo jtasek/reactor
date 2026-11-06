@@ -153,3 +153,22 @@ test('refuses a stale form after the record changes in another editor', async ({
     await expect(form.getByLabel('Name', { exact: false })).toHaveValue('Remote update');
     await other.close();
 });
+
+test('hides Edit record in a preview with no selected-record binding', async ({ page }) => {
+    const { document, detail } = recordDetailFixture();
+    delete detail.dataList;
+    await page.addInitScript(
+        (saved) => localStorage.setItem('reactor', saved),
+        JSON.stringify(
+            serializePersistedState({
+                currentDocumentId: document.id,
+                documents: { [document.id]: document }
+            })
+        )
+    );
+    await openEditor(page);
+    await page.getByRole('button', { name: 'Preview', exact: true }).click();
+    const preview = page.frameLocator('iframe[title="Application preview"]');
+    await expect(preview.getByRole('button', { name: 'Ada', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Edit record', exact: true })).toHaveCount(0);
+});

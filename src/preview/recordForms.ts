@@ -47,13 +47,39 @@ export function shownRecord(drawing: PreviewDrawing | null, screenId: unknown, v
     if (typeof id !== 'string' || typeof entityId !== 'string') {
         return undefined;
     }
-    const contains = (node: PreviewNode): boolean =>
-        (node.recordEntity === entityId && Object.hasOwn(node.records ?? {}, id)) ||
-        (node.children?.some(contains) ?? false);
     const screen = drawing?.screens.find((screen) => screen.id === screenId);
 
-    return screen?.nodes.some(contains) ? { id, entityId } : undefined;
+    return screen?.nodes.some((node) =>
+        someNode(
+            node,
+            (item) => item.recordEntity === entityId && Object.hasOwn(item.records ?? {}, id)
+        )
+    )
+        ? { id, entityId }
+        : undefined;
 }
+
+/** Whether any screen draws a selected-record binding, so Edit record can ever apply. */
+export function hasRecordDetails(drawing: PreviewDrawing | null) {
+    return (
+        drawing?.screens.some((screen) =>
+            screen.nodes.some((node) => someNode(node, (item) => Boolean(item.recordEntity)))
+        ) ?? false
+    );
+}
+
+/** Walks a node like the runtime does: children, component variants and record alternatives. */
+function someNode(node: PreviewNode, test: (node: PreviewNode) => boolean): boolean {
+    return (
+        test(node) ||
+        (node.children?.some((child) => someNode(child, test)) ?? false) ||
+        Object.values(node.variants ?? {}).some((child) => someNode(child, test)) ||
+        Object.values(node.records ?? {}).some((child) => someNode(child, test))
+    );
+}
+
+const unset = (value: DataValue | undefined) =>
+    value === null || value === undefined || value === '';
 
 export function formValue(field: DataField, draft: string): DataValue {
     if (field.type === 'text') {
@@ -81,7 +107,11 @@ export function formFieldProblem(field: DataField, draft: string) {
     }
 }
 
-/** Validate the whole record first, then return a new local session in one step. */
+/**
+ * Validate the whole record first, then return a new local session in one step. The session
+ * keeps only values that differ from the authored record, so later Data View edits to other
+ * fields still reach the preview.
+ */
 export function saveRecord(
     document: Document,
     session: RecordSession,
@@ -106,14 +136,25 @@ export function saveRecord(
     if (Object.keys(problems).length) {
         return { session, problems };
     }
+    const authored = document.dataRecords[recordId].values;
+    const changed = Object.fromEntries(
+        Object.entries(values).filter(
+            ([fieldId, value]) =>
+                value !== authored[fieldId] && !(unset(value) && unset(authored[fieldId]))
+        )
+    );
+    const others = Object.fromEntries(
+        Object.entries(session.documentId === document.id ? session.records : {}).filter(
+            ([id]) => id !== recordId
+        )
+    );
 
     return {
         session: {
             documentId: document.id,
-            records: {
-                ...(session.documentId === document.id ? session.records : {}),
-                [recordId]: { ...current, values }
-            }
+            records: Object.keys(changed).length
+                ? { ...others, [recordId]: { ...current, values: changed } }
+                : others
         },
         problems
     };

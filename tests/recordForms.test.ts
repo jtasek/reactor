@@ -1,6 +1,7 @@
 import { recordDetailFixture } from './support/dataList';
 import { projectPreview } from 'src/preview/project';
 import {
+    hasRecordDetails,
     saveRecord,
     sessionDocument,
     shownRecord,
@@ -102,7 +103,7 @@ it('accepts optional unset numeric and boolean fields without coercing invalid b
     document.dataFields.active.required = false;
     const result = saveRecord(document, session, 'ada', { name: 'Ada', age: '', active: '' });
     expect(result.problems).toEqual({});
-    expect(result.session.records.ada.values).toEqual({ name: 'Ada', age: null, active: null });
+    expect(result.session.records.ada.values).toEqual({ age: null, active: null });
     expect(
         saveRecord(document, session, 'ada', { name: 'Ada', age: '', active: 'yes' }).problems
             .active
@@ -125,4 +126,62 @@ it('accepts runtime record context only when the current screen contains that en
         expect(shownRecord(drawing, 'details', value)).toBeUndefined();
     }
     expect(shownRecord(drawing, 'home', { id: 'ada', entityId: 'customers' })).toBeUndefined();
+});
+
+it('keeps only changed fields, so later authored edits to other fields still show', () => {
+    const { document, session } = fixture();
+    document.dataFields.note = {
+        id: 'note',
+        name: 'Note',
+        entityId: 'customers',
+        type: 'text',
+        required: false
+    };
+    const saved = saveRecord(document, session, 'ada', {
+        name: 'Countess',
+        age: '36',
+        active: 'true',
+        note: ''
+    }).session;
+    expect(saved.records.ada.values).toEqual({ name: 'Countess' });
+    document.dataRecords.ada.values.age = 37;
+    expect(sessionDocument(document, saved).dataRecords.ada.values).toEqual({
+        name: 'Countess',
+        age: 37,
+        active: true
+    });
+    const reverted = saveRecord(document, saved, 'ada', {
+        name: 'Ada',
+        age: '37',
+        active: 'true',
+        note: ''
+    });
+    expect(reverted.problems).toEqual({});
+    expect(reverted.session.records).toEqual({});
+});
+
+it('finds selected-record bindings anywhere a screen can draw them', () => {
+    const { document } = fixture();
+    const drawing = projectPreview(document, {});
+    expect(hasRecordDetails(drawing)).toBe(true);
+    const details = drawing.screens.find((screen) => screen.id === 'details')!;
+    // The same binding reachable only through a component variant still counts.
+    details.nodes = [
+        {
+            key: 'wrapper',
+            tag: 'g',
+            attrs: {},
+            variants: { other: { key: 'inner', tag: 'g', attrs: {}, children: details.nodes } }
+        }
+    ];
+    expect(shownRecord(drawing, 'details', { id: 'ada', entityId: 'customers' })).toEqual({
+        id: 'ada',
+        entityId: 'customers'
+    });
+    const detail = document.shapes.detail;
+    if (detail.type === 'instance') {
+        delete detail.dataList;
+    }
+    expect(hasRecordDetails(projectPreview(document, {}))).toBe(false);
+    expect(hasRecordDetails(null)).toBe(false);
 });

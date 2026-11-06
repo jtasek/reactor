@@ -4,6 +4,7 @@ import { useEffects, useCurrentDocument, useAppState } from 'src/app/hooks';
 import { dataFields } from 'src/app/data';
 import { projectPreview } from 'src/preview/project';
 import {
+    hasRecordDetails,
     sessionDocument,
     saveRecord,
     shownRecord,
@@ -79,6 +80,8 @@ export default function InteractivePreview({
     const [availability, setAvailability] = useState('Loading preview…');
     const [runtimeProblem, setProblem] = useState<string | null>(null);
     const [preparing, setPreparing] = useState(false);
+    /** Edit record shows only for drawings with a selected-record binding. */
+    const [recordDetails, setRecordDetails] = useState(false);
     const [attempt, setAttempt] = useState(0);
     const problem = projection.problem ?? runtimeProblem;
 
@@ -136,6 +139,7 @@ export default function InteractivePreview({
                     return;
                 }
                 latest.current = application;
+                setRecordDetails(hasRecordDetails(application));
                 if (connection.current) {
                     send(connection.current, application);
                 }
@@ -294,12 +298,21 @@ export default function InteractivePreview({
         record && record.entityId === activeRecord?.entityId
             ? document.dataEntities[record.entityId]
             : undefined;
-    const editRecord = (
+    const editBlocked = !record
+        ? 'Open a list item to edit its record'
+        : !entity
+          ? 'This record is no longer available'
+          : preparing
+            ? 'Wait for the preview to finish preparing'
+            : problem
+              ? 'Fix the preview problem first'
+              : undefined;
+    const editRecord = recordDetails && (
         <button
             type="button"
             aria-haspopup="dialog"
-            disabled={!record || !entity || preparing || Boolean(problem)}
-            title={!record ? 'Open a list item to edit its record' : undefined}
+            disabled={Boolean(editBlocked)}
+            title={editBlocked}
             onClick={() => setEditing(true)}
         >
             Edit record
@@ -379,7 +392,9 @@ export default function InteractivePreview({
                     </div>,
                     toolbarTarget
                 )}
-            {(!session || !toolbarTarget) && <div className={styles.toolbar}>{editRecord}</div>}
+            {(!session || !toolbarTarget) && editRecord && (
+                <div className={styles.toolbar}>{editRecord}</div>
+            )}
             {editing && record && entity && (
                 <RecordForm
                     key={`${document.id}:${record.id}`}
