@@ -263,6 +263,7 @@ export function projectPreview(
         }
         node.children?.forEach(clearDuplicateInputs);
         Object.values(node.variants ?? {}).forEach(clearDuplicateInputs);
+        Object.values(node.records ?? {}).forEach(clearDuplicateInputs);
     };
     drawing.screens.forEach((screen) => screen.nodes.forEach(clearDuplicateInputs));
 
@@ -336,7 +337,7 @@ export function createArtworkProjector(
                 }
             };
             if (!document.dataEntities[shape.dataList.entityId]) {
-                report('The list entity is unavailable, so the template is shown once.');
+                report('The bound entity is unavailable, so the component values are shown.');
 
                 return draw(
                     { ...shape, dataList: undefined },
@@ -361,7 +362,18 @@ export function createArtworkProjector(
                         ancestors,
                         inherited,
                         screenId,
-                        JSON.stringify([recordScope, key, recordId])
+                        JSON.stringify([
+                            recordScope,
+                            shape.dataList!.mode === 'record'
+                                ? [
+                                      shape.dataList!.entityId,
+                                      Object.entries(shape.dataList!.fields).sort(([a], [b]) =>
+                                          a.localeCompare(b)
+                                      )
+                                  ]
+                                : key,
+                            recordId
+                        ])
                     ),
                 report
             );

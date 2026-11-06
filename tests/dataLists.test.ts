@@ -13,7 +13,10 @@ import { librarySnapshot } from 'src/app/componentLibrary';
 import { createComponent, createShape } from 'src/app/factories';
 
 const nodes = (items: PreviewNode[]): PreviewNode[] =>
-    items.flatMap((item) => [item, ...nodes(item.children ?? [])]);
+    items.flatMap((item) => [
+        item,
+        ...nodes([...(item.children ?? []), ...Object.values(item.records ?? {})])
+    ]);
 
 it('renders ordered records with literal text and independent stable input identities without changing the document', () => {
     const { document } = dataListFixture();
@@ -171,44 +174,49 @@ it('strips document-local data bindings from portable library snapshots', () => 
     expect(card.sourceShapes!.name).not.toHaveProperty('dataList');
 });
 
-it('keeps responsive and explicit variants and inherited modes for repeated item artwork', () => {
-    const document = responsiveVariantsDocument();
-    const data = dataListFixture().document;
-    document.dataEntities = data.dataEntities;
-    document.dataFields = data.dataFields;
-    document.dataRecords = data.dataRecords;
-    const instance = document.shapes.button as InstanceShape;
-    instance.dataList = { entityId: 'customers', fields: { label: 'name' }, gap: 8 };
-    document.shapes['base-text'].fontColor = '#112233';
-    document.shapes['wide-text'].fontColor = '#112233';
-    document.shapes['base-text'].bindings = { fontColor: 'ink' };
-    document.shapes['wide-text'].bindings = { fontColor: 'ink' };
-    for (const [width, font] of [
-        [360, 16],
-        [800, 32]
-    ]) {
-        const output = projectPreview(document, { theme: 'dark' }, [], {
-            modes: { theme: 'dark' },
+it.each([undefined, 'record'] as const)(
+    'keeps responsive and explicit variants and inherited modes for data artwork (%s)',
+    (mode) => {
+        const document = responsiveVariantsDocument();
+        const data = dataListFixture().document;
+        document.dataEntities = data.dataEntities;
+        document.dataFields = data.dataFields;
+        document.dataRecords = data.dataRecords;
+        const instance = document.shapes.button as InstanceShape;
+        instance.dataList = { entityId: 'customers', fields: { label: 'name' }, gap: 8, mode };
+        document.shapes['base-text'].fontColor = '#112233';
+        document.shapes['wide-text'].fontColor = '#112233';
+        document.shapes['base-text'].bindings = { fontColor: 'ink' };
+        document.shapes['wide-text'].bindings = { fontColor: 'ink' };
+        for (const [width, font] of [
+            [360, 16],
+            [800, 32]
+        ]) {
+            const output = projectPreview(document, { theme: 'dark' }, [], {
+                modes: { theme: 'dark' },
+                screenId: 'screen',
+                viewport: { width, height: 480 }
+            });
+            const text = nodes(output.screens[0].nodes).filter(
+                (node) => node.tag === 'text' && !node.key.includes('/unselected/')
+            );
+            expect(text.map((node) => node.text)).toEqual(['Ada', 'Grace']);
+            expect(text.map((node) => node.attrs['font-size'])).toEqual([font, font]);
+            expect(text.map((node) => node.attrs.fill)).toEqual(['#ddeeff', '#ddeeff']);
+        }
+        instance.variantId = 'wide';
+        const output = projectPreview(document, {}, [], {
+            modes: {},
             screenId: 'screen',
-            viewport: { width, height: 480 }
+            viewport: { width: 360, height: 480 }
         });
-        const text = nodes(output.screens[0].nodes).filter((node) => node.tag === 'text');
-        expect(text.map((node) => node.text)).toEqual(['Ada', 'Grace']);
-        expect(text.map((node) => node.attrs['font-size'])).toEqual([font, font]);
-        expect(text.map((node) => node.attrs.fill)).toEqual(['#ddeeff', '#ddeeff']);
+        expect(
+            nodes(output.screens[0].nodes)
+                .filter((node) => node.tag === 'text' && !node.key.includes('/unselected/'))
+                .map((node) => node.attrs['font-size'])
+        ).toEqual([32, 32]);
     }
-    instance.variantId = 'wide';
-    const output = projectPreview(document, {}, [], {
-        modes: {},
-        screenId: 'screen',
-        viewport: { width: 360, height: 480 }
-    });
-    expect(
-        nodes(output.screens[0].nodes)
-            .filter((node) => node.tag === 'text')
-            .map((node) => node.attrs['font-size'])
-    ).toEqual([32, 32]);
-});
+);
 
 it('warns about a mapped property missing from the selected variant', () => {
     const document = responsiveVariantsDocument();

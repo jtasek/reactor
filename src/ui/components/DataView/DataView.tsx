@@ -123,10 +123,10 @@ function DeleteConfirmation({
             </p>
             {lists > 0 && (
                 <p>
-                    {lists === 1 ? 'A repeated list uses' : `${lists} repeated lists use`} this{' '}
+                    {lists === 1 ? 'A data binding uses' : `${lists} data bindings use`} this{' '}
                     {deletion.kind === 'deleteEntity'
-                        ? 'entity. Prototype will show its item template once instead.'
-                        : 'field. Its items will show the template value instead.'}
+                        ? 'entity. Prototype will show component values instead.'
+                        : 'field. Bound properties will show component values instead.'}
                 </p>
             )}
             <button ref={cancelButton} type="button" onClick={cancel}>

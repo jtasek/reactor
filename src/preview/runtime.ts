@@ -21,6 +21,7 @@ const shared = window.location.pathname.replace(/\/$/, '') === '/share';
 const externalControls =
     !shared && new URLSearchParams(window.location.search).get('player') === 'prototype';
 const values = new Map<string, string>();
+let selectedRecord: { entityId: string; id: string } | undefined;
 const variants = new Map<string, string>();
 const initialVariants = new Map<string, string>();
 const visibility = new Map<string, boolean>();
@@ -38,6 +39,11 @@ let hostControls = false;
 let port: MessagePort | undefined;
 
 function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
+    const recordId =
+        authored.recordEntity === selectedRecord?.entityId ? selectedRecord?.id : undefined;
+    if (recordId && Object.hasOwn(authored.records ?? {}, recordId)) {
+        return nodeElement(authored.records![recordId], decorative);
+    }
     const choice = authored.variantKey ? variants.get(authored.variantKey) : undefined;
     const node = choice && authored.variants?.[choice] ? authored.variants[choice] : authored;
     const element = document.createElementNS(SVG, node.tag);
@@ -207,6 +213,7 @@ function activate(control: NonNullable<PreviewNode['control']>) {
         variants.set(control.changeVariant.key, control.changeVariant.variantId);
     }
     if (control.navigateTo) {
+        selectedRecord = control.record ?? selectedRecord;
         currentScreen = control.navigateTo;
     }
     render();
@@ -252,6 +259,7 @@ function render() {
     reset.textContent = shared ? 'Restart prototype' : 'Restart preview';
     reset.addEventListener('click', () => {
         values.clear();
+        selectedRecord = undefined;
         variants.clear();
         visibility.clear();
         currentScreen = undefined;
@@ -346,11 +354,13 @@ function receive(value: unknown) {
         const next = readPreview({ ...update, images: undefined }, images);
         if (application?.documentId !== next.documentId) {
             values.clear();
+            selectedRecord = undefined;
             variants.clear();
             visibility.clear();
             currentScreen = undefined;
         }
         const keys = new Set<string>();
+        const records = new Set<string>();
         initialVariants.clear();
         initialVisibility.clear();
         visibilityConditions.clear();
@@ -358,6 +368,14 @@ function receive(value: unknown) {
             initialVisibility.set(key, initial)
         );
         const collect = (node: PreviewNode) => {
+            if (node.control?.record) {
+                records.add(JSON.stringify([node.control.record.entityId, node.control.record.id]));
+            }
+            if (node.recordEntity) {
+                Object.keys(node.records ?? {}).forEach((id) =>
+                    records.add(JSON.stringify([node.recordEntity, id]))
+                );
+            }
             if (node.visibility) {
                 initialVisibility.set(node.visibility.key, node.visibility.initial);
                 visibilityConditions.set(
@@ -370,6 +388,7 @@ function receive(value: unknown) {
             }
             node.children?.forEach(collect);
             Object.values(node.variants ?? {}).forEach(collect);
+            Object.values(node.records ?? {}).forEach(collect);
             if (node.variantKey && node.initialVariant) {
                 initialVariants.set(node.variantKey, node.initialVariant);
             }
@@ -381,6 +400,12 @@ function receive(value: unknown) {
             }
         };
         next.screens.forEach((screen) => screen.nodes.forEach(collect));
+        if (
+            selectedRecord &&
+            !records.has(JSON.stringify([selectedRecord.entityId, selectedRecord.id]))
+        ) {
+            selectedRecord = undefined;
+        }
         values.forEach((_value, key) => {
             if (!keys.has(key)) {
                 values.delete(key);

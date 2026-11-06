@@ -220,7 +220,7 @@ export interface Text extends ShapeBase {
 
 /** A live reference to a component's source shapes. */
 export interface InstanceShape extends ShapeBase {
-    /** Repeats this item template over sample records in Prototype, not the canvas. */
+    /** Binds sample records or the selected navigation record in Prototype, not the canvas. */
     dataList?: import('./dataTypes').DataList;
     /** Explicit alternate source within the component family. */
     variantId?: string;

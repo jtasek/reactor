@@ -11,6 +11,8 @@ export interface PreviewNode {
     variantKey?: string;
     initialVariant?: string;
     variants?: Record<string, PreviewNode>;
+    recordEntity?: string;
+    records?: Record<string, PreviewNode>;
     control?: {
         role: 'text' | 'input' | 'button' | 'list' | 'image';
         label: string;
@@ -18,6 +20,7 @@ export interface PreviewNode {
         placeholder?: string;
         disabled?: boolean;
         navigateTo?: string;
+        record?: { entityId: string; id: string };
         changeVariant?: { key: string; variantId: string };
         toggleVisibility?: string;
         toggleState?: string;
@@ -263,6 +266,23 @@ export function readPreview(
                 })
             );
         }
+        if (node.records !== undefined) {
+            if (!string(node.recordEntity) || !node.recordEntity) {
+                throw new Error('Invalid record binding entity.');
+            }
+            result.recordEntity = node.recordEntity;
+            result.records = Object.fromEntries(
+                Object.entries(object(node.records)).map(([id, record]) => {
+                    if (!id) {
+                        throw new Error('Invalid record identity.');
+                    }
+
+                    return [id, readNode(record, depth + 1)];
+                })
+            );
+        } else if (node.recordEntity !== undefined) {
+            throw new Error('Missing record artwork.');
+        }
         if (node.control !== undefined) {
             const c = object(node.control);
             if (
@@ -301,6 +321,9 @@ export function readPreview(
                 placeholder: c.placeholder,
                 disabled: c.disabled,
                 navigateTo: c.navigateTo,
+                ...(c.record === undefined
+                    ? {}
+                    : { record: readNavigationRecord(c.record, c.navigateTo) }),
                 ...(c.setState === undefined ? {} : { setState: readSetState(c.setState) }),
                 ...(c.toggleState === undefined ? {} : { toggleState: c.toggleState as string }),
                 ...(c.toggleVisibility === undefined
@@ -454,4 +477,20 @@ function readSetState(value: unknown): { key: string; value: boolean } {
     }
 
     return { key: action.key, value: action.value };
+}
+
+function readNavigationRecord(value: unknown, target: unknown): { entityId: string; id: string } {
+    const record = object(value);
+    if (
+        !string(target) ||
+        !target ||
+        !string(record.entityId) ||
+        !record.entityId ||
+        !string(record.id) ||
+        !record.id
+    ) {
+        throw new Error('Invalid navigation record.');
+    }
+
+    return { entityId: record.entityId, id: record.id };
 }

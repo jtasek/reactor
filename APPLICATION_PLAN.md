@@ -1136,8 +1136,18 @@ prototype.
    Bindings persist and support undo, collaboration, copy and clone. Library snapshots omit
    document-local bindings. Canvas and SVG export still show the authored template; repeated
    rows do not reflow surrounding stack siblings or scroll inside a list viewport in this increment.
-   R5.2b next: record-aware detail navigation. Scrolling/list layout and form mutations remain
-   subsequent increments. Verification: `tests/dataLists.test.ts`, `tests/browser/dataLists.spec.ts`.
+   R5.2b implementation: Inspector’s Data binding can show a repeated list or the selected
+   record. A repeated item’s existing navigation action carries stable entity/record identity;
+   destination component instances map compatible fields from that entity. Without a selected
+   record, authored component values remain visible. Runtime record selections and input edits
+   stay in the player session, survive ordinary navigation and compatible layout changes, and
+   clear on Restart or a new session. Record values are projected with modes and responsive
+   variants before entering the sandbox; shared links include bounded rendered alternatives,
+   never editable record tables. Deleted/stale fields retain the existing diagnostic fallback.
+   Canvas/SVG remain authored, and surrounding stacks do not reflow per record. Scrolling/list
+   layout and form mutations remain subsequent increments.
+   Verification: `tests/dataLists.test.ts`, `tests/recordDetails.test.ts`,
+   `tests/browser/dataLists.spec.ts`, `tests/browser/recordDetails.spec.ts`.
 3. A form with validation written as expressions, updating local records. The preview resets
    them on request.
 4. Export as a standalone web package.

@@ -19,37 +19,63 @@ export function projectDataList(
     const binding = instance.dataList!;
     const records = dataRecords(document, binding.entityId);
     const context = instance.projectedSource?.context;
+    if (binding.mode === 'record') {
+        const fallback = draw({ ...instance, dataList: undefined }, `${key}/unselected`, '');
+
+        return {
+            key,
+            tag: 'g',
+            attrs: {},
+            children: [fallback],
+            recordEntity: binding.entityId,
+            records: Object.fromEntries(
+                records.map((record, index) => [
+                    record.id,
+                    navigationRecord(
+                        draw(
+                            projectRecord(record, index),
+                            `${key}/record:${encodeURIComponent(record.id)}`,
+                            record.id
+                        ),
+                        binding.entityId,
+                        record.id
+                    )
+                ])
+            )
+        };
+    }
+    function projectRecord(record: (typeof records)[number], index: number) {
+        const localProblems: Record<string, string> = {};
+        const { overrides, problems } = recordOverrides(document, instance, record, index + 1);
+        problems.forEach(report);
+        const item = projectGeometry(
+            { ...instance, dataList: undefined, projectedSource: undefined, overrides },
+            document,
+            modes,
+            context?.availableWidth,
+            ancestors,
+            localProblems,
+            context?.widths
+        );
+        if (Object.keys(localProblems).length) {
+            const message = Object.values(localProblems).join(' ');
+            report(message);
+            throw new Error(`${instance.name}: ${message}`);
+        }
+
+        return item;
+    }
     const result = records.reduce<{ children: PreviewNode[]; height: number }>(
         (result, record, index) => {
-            const localProblems: Record<string, string> = {};
-            const { overrides, problems } = recordOverrides(document, instance, record, index + 1);
-            problems.forEach(report);
-            const item = projectGeometry(
-                {
-                    ...instance,
-                    dataList: undefined,
-                    projectedSource: undefined,
-                    overrides
-                },
-                document,
-                modes,
-                context?.availableWidth,
-                ancestors,
-                localProblems,
-                context?.widths
-            );
-            // The item template's own problems stop Preview, as they do for any instance.
-            if (Object.keys(localProblems).length) {
-                const message = Object.values(localProblems).join(' ');
-                report(message);
-                throw new Error(`${instance.name}: ${message}`);
-            }
+            const item = projectRecord(record, index);
             const path = `${key}/record:${encodeURIComponent(record.id)}`;
             result.children.push({
                 key: path,
                 tag: 'g',
                 attrs: { transform: `translate(0 ${result.height})` },
-                children: [draw(item, path, record.id)]
+                children: [
+                    navigationRecord(draw(item, path, record.id), binding.entityId, record.id)
+                ]
             });
             result.height += drawnBox(item).height + binding.gap;
 
@@ -85,4 +111,15 @@ export function projectDataList(
             height: result.height
         }
     };
+}
+
+/** A navigation carries only stable identity, never editable record data. */
+function navigationRecord(node: PreviewNode, entityId: string, id: string): PreviewNode {
+    if (node.control?.navigateTo && !node.control.record) {
+        node.control.record = { entityId, id };
+    }
+    node.children?.forEach((child) => navigationRecord(child, entityId, id));
+    Object.values(node.variants ?? {}).forEach((child) => navigationRecord(child, entityId, id));
+
+    return node;
 }

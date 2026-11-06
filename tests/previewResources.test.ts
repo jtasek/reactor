@@ -281,3 +281,38 @@ it('names SVG export, not Preview, in export errors', async () => {
         )
     ).rejects.toThrow('then export again');
 });
+
+it('loads images in record alternatives and bounds their nodes before reading image bytes', async () => {
+    const asset = await previewImageAsset();
+    const drawing = projectPreview(previewFixture(), {});
+    drawing.screens[0].nodes = [
+        {
+            key: 'detail',
+            tag: 'g',
+            attrs: {},
+            recordEntity: 'people',
+            records: {
+                ada: { key: 'portrait', tag: 'image', attrs: {}, image: asset.hash }
+            }
+        }
+    ];
+    const read = vi.fn().mockResolvedValue(asset);
+    const prepare = createPreviewResources({ read });
+    expect((await prepare(drawing, signal())).images[asset.hash]).toBe(
+        `data:image/png;base64,${PREVIEW_PNG}`
+    );
+    read.mockClear();
+    drawing.screens[0].nodes[0].records = Object.fromEntries(
+        Array.from({ length: MAX_PREVIEW_NODES }, (_, index) => [
+            String(index),
+            {
+                key: `record-${index}`,
+                tag: 'rect' as const,
+                attrs: {}
+            }
+        ])
+    );
+    await expect(prepare(drawing, signal())).rejects.toThrow('excessively complex');
+    expect(() => readPreview(drawing)).toThrow('excessively complex');
+    expect(read).not.toHaveBeenCalled();
+});

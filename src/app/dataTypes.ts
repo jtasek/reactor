@@ -7,6 +7,8 @@ export interface DataList {
     /** Exposed component property ID → entity field ID. */
     fields: Record<string, string>;
     gap: number;
+    /** Omitted repeats all records; record shows the record selected during navigation. */
+    mode?: 'record';
 }
 export interface DataEntity {
     id: string;

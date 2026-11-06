@@ -60,9 +60,9 @@ export function DataList({ instanceId }: { instanceId: string }) {
     };
 
     return (
-        <section aria-label="Data list">
+        <section aria-label="Data binding">
             <table>
-                <PropertyGroup name="Repeat with data">
+                <PropertyGroup name="Data binding">
                     <tr>
                         <th scope="row">
                             <label htmlFor="list-entity">Entity</label>
@@ -76,6 +76,7 @@ export function DataList({ instanceId }: { instanceId: string }) {
                                     update(
                                         event.target.value
                                             ? {
+                                                  mode: data.list?.mode,
                                                   entityId: event.target.value,
                                                   fields: {},
                                                   gap: data.list?.gap ?? DEFAULT_LIST_GAP
@@ -84,7 +85,7 @@ export function DataList({ instanceId }: { instanceId: string }) {
                                     )
                                 }
                             >
-                                <option value="">Do not repeat</option>
+                                <option value="">No data binding</option>
                                 {data.list &&
                                     !data.entities.some(
                                         (entity) => entity.id === data.list!.entityId
@@ -104,47 +105,73 @@ export function DataList({ instanceId }: { instanceId: string }) {
                     {data.list && (
                         <>
                             <tr>
-                                <th scope="row">Item template</th>
-                                <td>{data.template}</td>
-                            </tr>
-                            <tr>
                                 <th scope="row">
-                                    <label htmlFor="list-gap">Item gap</label>
+                                    <label htmlFor="list-mode">Show</label>
                                 </th>
                                 <td>
-                                    <input
-                                        id="list-gap"
-                                        key={data.list.gap}
-                                        type="number"
-                                        min="0"
-                                        defaultValue={data.list.gap}
+                                    <select
+                                        id="list-mode"
+                                        value={data.list.mode ?? 'list'}
                                         disabled={data.disabled}
-                                        onBlur={(event) => {
-                                            const gap = Number(event.target.value);
-                                            if (
-                                                !event.target.value.trim() ||
-                                                !Number.isFinite(gap) ||
-                                                gap < 0
-                                            ) {
-                                                event.target.value = String(data.list!.gap);
-                                                setProblem(
-                                                    'Item gap must be a non-negative number.'
-                                                );
-
-                                                return;
-                                            }
-                                            if (gap !== data.list!.gap) {
-                                                update({ ...data.list!, gap });
-                                            }
-                                        }}
-                                        onKeyDown={(event) => {
-                                            if (event.key === 'Enter') {
-                                                event.currentTarget.blur();
-                                            }
-                                        }}
-                                    />
+                                        onChange={(event) =>
+                                            update({
+                                                ...data.list!,
+                                                mode:
+                                                    event.target.value === 'record'
+                                                        ? 'record'
+                                                        : undefined
+                                            })
+                                        }
+                                    >
+                                        <option value="list">Repeated list</option>
+                                        <option value="record">Selected record</option>
+                                    </select>
                                 </td>
                             </tr>
+                            <tr>
+                                <th scope="row">Component</th>
+                                <td>{data.template}</td>
+                            </tr>
+                            {data.list.mode !== 'record' && (
+                                <tr>
+                                    <th scope="row">
+                                        <label htmlFor="list-gap">Item gap</label>
+                                    </th>
+                                    <td>
+                                        <input
+                                            id="list-gap"
+                                            key={data.list.gap}
+                                            type="number"
+                                            min="0"
+                                            defaultValue={data.list.gap}
+                                            disabled={data.disabled}
+                                            onBlur={(event) => {
+                                                const gap = Number(event.target.value);
+                                                if (
+                                                    !event.target.value.trim() ||
+                                                    !Number.isFinite(gap) ||
+                                                    gap < 0
+                                                ) {
+                                                    event.target.value = String(data.list!.gap);
+                                                    setProblem(
+                                                        'Item gap must be a non-negative number.'
+                                                    );
+
+                                                    return;
+                                                }
+                                                if (gap !== data.list!.gap) {
+                                                    update({ ...data.list!, gap });
+                                                }
+                                            }}
+                                            onKeyDown={(event) => {
+                                                if (event.key === 'Enter') {
+                                                    event.currentTarget.blur();
+                                                }
+                                            }}
+                                        />
+                                    </td>
+                                </tr>
+                            )}
                             {data.properties.map((prop) => {
                                 const value = data.list!.fields[prop.id] ?? '';
 
@@ -195,8 +222,9 @@ export function DataList({ instanceId }: { instanceId: string }) {
             {!data.entities.length && <p>Add an entity and sample records in Data View first.</p>}
             {data.list && (
                 <p>
-                    {data.count} items in Prototype. The canvas shows the item template. Unset
-                    optional values use the template value.
+                    {data.list.mode === 'record'
+                        ? 'Shows the record opened from a list in Prototype. Without a selected record, shows the component values.'
+                        : `${data.count} items in Prototype. Set an Activate action to open a detail screen with the clicked record.`}
                 </p>
             )}
             {data.list && !data.properties.length && (

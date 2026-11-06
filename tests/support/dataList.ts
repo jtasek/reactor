@@ -39,3 +39,32 @@ export function dataListFixture() {
 
     return { document, instance };
 }
+
+/** A bound list opens a detail input for the clicked customer. */
+export function recordDetailFixture() {
+    const { document, instance } = dataListFixture();
+    instance.interaction = {
+        role: 'button',
+        props: { label: 'label' },
+        navigateTo: 'details'
+    };
+    instance.interactions = { activate: { type: 'navigate', screenId: 'details' } };
+    document.shapes.detail = {
+        ...structuredClone(instance),
+        id: 'detail',
+        name: 'Customer details',
+        interactions: { activate: null },
+        order: 'a5',
+        parentFrameId: 'details',
+        position: { x: 424, y: 100 },
+        dataList: { ...instance.dataList!, mode: 'record' },
+        interaction: {
+            role: 'input',
+            props: { label: 'label', value: 'label' },
+            controlId: 'customer-detail'
+        }
+    };
+    document.shapesIds.push('detail');
+
+    return { document, instance, detail: document.shapes.detail };
+}
