@@ -1,3 +1,4 @@
+import type { projectScreenViews } from './screenProjection';
 import type { DataEntity, DataField, DataRecord } from './dataTypes';
 import type { FrameLayout } from './frameLayout';
 import type { FrameState } from './frameState';
@@ -454,6 +455,8 @@ export interface Document {
     /** Local projection; never saved or shared. */
     frameStates: Record<string, FrameState>;
     frameLayout: FrameLayout;
+    /** Cached editor artwork, independent of selection and view placement. */
+    screenViewGeometry: ReturnType<typeof projectScreenViews>;
     /** Local: whether modes or wrapping need contextual geometry on the Canvas. */
     contextualGeometry: boolean;
     /** Local selection; never saved or shared. */

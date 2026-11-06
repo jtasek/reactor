@@ -13,9 +13,10 @@ component-source geometry reads and Overmind subscription work.
 `ProjectedShape` now uses one tracked state tree and memoizes rendering against
 all projected shape fields and placement/selection-control props. Projection
 shapes are plain snapshots, so comparing their serialized values avoids treating
-new, unchanged objects as artwork changes. There is no persistent geometry cache
-or identity-only comparison of mutable store records. Component-source and mode
-reads remain tracked: changes to those dependencies still render the artwork.
+new, unchanged objects as artwork changes. This first change added no persistent
+geometry cache; the shared cache described below (2026-11-06) came later.
+Component-source and mode reads remain tracked: changes to those dependencies
+still render the artwork.
 
 ## Local measurements
 
@@ -84,3 +85,63 @@ latency or rule out every intermittent freeze in another environment.
 `tests/browser/templateSelection.spec.ts` keeps this everyday workflow covered.
 A contextual-measurement regression compares scoped and full nested-instance
 geometry and checks that unrelated canvas text remains unprojected.
+
+## Shared geometry cache (2026-11-06)
+
+Ordinary Screen views now keep a selection-independent, local-coordinate projection in
+`document.screenViewGeometry`, an Overmind derived value provided by the lazy editor.
+Rendering, editing/hit testing and Inspector diagnostics reuse that projection. Selected
+artwork reads live selection itself; hit-test copies restore live selection and hover.
+View placement translates copies or the existing SVG wrapper, never the cached geometry.
+Focused source-only component editing retains its existing projection path.
+
+The resolver snapshots tracked authored graph fields, including nested component sources,
+variables, dimensions and simulation modes. It excludes selection, hover and view placement.
+Overmind replays dependencies when another consumer reads the cached value. A single last-input
+signature/result per document handles structural local changes (such as deleting
+`selectedFrameId`) that invalidate Overmind's parent dependency despite unchanged artwork.
+This signature is checked only on derived misses and is stored as a short hash of the
+serialized inputs, not a copy of them.
+
+The projection receives only that snapshot, never the raw document. A field it reads must
+be one of the resolver's `inputs` (or a derived field it can compute from them), so a new
+dependency reads `undefined` and fails tests instead of drawing stale artwork. React `useMemo` retains frame outlines using
+immutable projection arrays; it is not keyed by mutable document identity.
+
+This is a bounded first increment: authored edits still rebuild the graph snapshot and affected
+view projections together. It does not yet provide per-entity dependency invalidation or a new
+pointer scheduler. No renderer, store or document schema was replaced. The unchanged corner-radius
+drag calculation moved from the eager geometry module into its editor-only consumer to keep the
+existing 497 KiB entry budget.
+
+### Matching production-browser comparison
+
+A clean export of the code before this change, in a temporary directory, was the baseline. Both runs used
+minified production builds, Chromium, one worker, no CPU profiler, and the same 16 real selections
+per template with Inspector and Explorer open. All 80 selections passed in each run.
+
+| Template             | Median click/assertion before (ms) | After (ms) | Script time before (ms) | After (ms) |
+| -------------------- | ---------------------------------: | ---------: | ----------------------: | ---------: |
+| Inspector typography |                                 46 |       42.5 |                   624.6 |      568.4 |
+| List / detail        |                                 52 |       27.5 |                   750.7 |      369.2 |
+| Forms                |                               61.5 |       28.5 |                   902.9 |      364.8 |
+| Sign-in              |                                 59 |         30 |                   829.1 |      378.5 |
+| Settings             |                               62.5 |         32 |                   900.0 |      403.9 |
+
+Script time covers the entire 16-selection sequence. These are single sequential runs on one
+machine, include browser-test overhead and are not input-to-paint measurements. They show reduced
+work, not a guarantee that every editing gesture or intermittent freeze is fixed.
+
+`tests/screenViewGeometry.test.ts` checks cache identity across selection/hover/placement,
+dependency replay to successive readers, nested size invalidation and persistence exclusion.
+Contextual measurement tests cover modes, nested component sources, remote changes and undo.
+
+Verification: 2,137 unit/server tests passed (30 skipped), plus 42 targeted editing browser tests
+and the five post-change template benchmarks. Application/test/server type checks and the lint
+baseline gate passed (two existing findings). The independent performance review found no blocking
+issues. Production entry assets total 508,851 bytes versus 508,905 in the baseline; summed gzip
+sizes are 146,148 versus 146,187 bytes. Both the 497 KiB entry and 248 KiB file budgets pass.
+
+After isolating this change from the open record-forms PR and rebasing onto master `22d50359`,
+verification passed again: 2,132 unit/server tests (30 skipped), all 47 browser tests, type checks,
+lint baseline and production build. The final entry remains 508,851 bytes (146,141 summed gzip).

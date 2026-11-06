@@ -1,3 +1,4 @@
+import * as screenViews from 'src/app/screenViewGeometry';
 import * as data from 'src/app/dataEdits';
 import { ExportSvgCommand } from 'src/commands/export';
 import { OpenPrototypeCommand } from 'src/commands/prototype';
@@ -161,6 +162,7 @@ export function registerEditor() {
         data,
         componentProperties,
         layout,
+        screenViews,
         roles,
         pointer,
         clipboardEdits,

@@ -33,6 +33,7 @@ export const RUNTIME_FIELDS = new Set([
     'frameStates',
     'frameLayout',
     'contextualGeometry',
+    'screenViewGeometry',
     'active',
     'bounds',
     'projectedSource',

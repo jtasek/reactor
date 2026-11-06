@@ -3,7 +3,7 @@ import {
     useScreenShapeTransformable,
     useScreenViewContainers
 } from 'src/app/frameHooks';
-import React, { createElement, memo, type CSSProperties, type FC } from 'react';
+import React, { createElement, memo, useMemo, type CSSProperties, type FC } from 'react';
 import { instanceSource, instanceBox } from 'src/app/componentSource';
 import { projectScreenViews } from 'src/app/screenProjection';
 import { themeColors } from 'src/app/themeColors';
@@ -61,7 +61,7 @@ const ProjectedSelectionControls: FC<{ shape: Shape; viewId: string; placedOffse
                     resizeHandles={shape.type !== 'instance'}
                 />
             )}
-            <Label shape={shape} />
+            <Label shape={{ ...shape, selected: true }} />
         </>
     );
 };
@@ -84,6 +84,7 @@ const ProjectedShape = memo(
     }: ProjectedShapeProps) {
         const state = useAppState((state) => state);
         const document = state.currentDocument;
+        const selected = document.shapes[shape.id]?.selected ?? false;
         const context = artworkModes(state, shape, viewId).modes;
         const painted = themeColors(shape, document, context);
         const source = painted.type === 'instance' ? instanceSource(document, painted) : null;
@@ -130,7 +131,7 @@ const ProjectedShape = memo(
                         Primitive && createElement(Primitive, { ...props, key, selected: false })
                     )}
                 </g>
-                {interactive && shape.selected && !inSelectedContainer && (
+                {interactive && selected && !inSelectedContainer && (
                     <rect
                         x={bounds.topLeft.x}
                         y={bounds.topLeft.y}
@@ -143,7 +144,7 @@ const ProjectedShape = memo(
                         pointerEvents="none"
                     />
                 )}
-                {interactive && shape.selected && !inSelectedContainer && (
+                {interactive && selected && !inSelectedContainer && (
                     <ProjectedSelectionControls
                         shape={shape}
                         viewId={viewId}
@@ -158,9 +159,9 @@ const ProjectedShape = memo(
         previous.interactive === next.interactive &&
         previous.placedOffset === next.placedOffset &&
         previous.inSelectedContainer === next.inSelectedContainer &&
-        // Projections are plain snapshots, recreated when any selection changes. Compare
-        // all fields so unchanged siblings keep their artwork and tracked source reads.
-        JSON.stringify(previous.shape) === JSON.stringify(next.shape)
+        // Ordinary views reuse immutable geometry; focused editing still creates snapshots.
+        (previous.shape === next.shape ||
+            JSON.stringify(previous.shape) === JSON.stringify(next.shape))
 );
 
 /** Matches `.hit`'s stroke width in styles.css: a frame's edge grip, half of it inside. */
@@ -197,6 +198,25 @@ const ScreenView: FC<{
     const selections = useScreenViewContainers(view.id, projection, editable);
     const contained = new Set(selections.flatMap((selection) => selection.shapeIds));
 
+    const frameOutlines = useMemo(
+        () =>
+            projection?.frames.map((frame) => (
+                <g key={frame.id} pointerEvents="none">
+                    <rect
+                        className={styles.edge}
+                        x={frame.position.x}
+                        y={frame.position.y}
+                        width={frame.size.width}
+                        height={frame.size.height}
+                    />
+                    <text className={styles.label} x={frame.position.x} y={frame.position.y - 8}>
+                        {frame.name}
+                    </text>
+                </g>
+            )),
+        [projection?.frames]
+    );
+
     if (!projection) {
         // Nothing here can be edited, so presses reach the canvas underneath.
         return problem ? (
@@ -213,7 +233,7 @@ const ScreenView: FC<{
         ) : null;
     }
 
-    const { frames, shapes, layoutOffsets } = projection;
+    const { shapes, layoutOffsets } = projection;
 
     return (
         <ScreenViewPlacement id={view.id} relative={relative} name={name} editable={editable}>
@@ -242,20 +262,7 @@ const ScreenView: FC<{
                     {problem}
                 </text>
             )}
-            {frames.map((frame) => (
-                <g key={frame.id} pointerEvents="none">
-                    <rect
-                        className={styles.edge}
-                        x={frame.position.x}
-                        y={frame.position.y}
-                        width={frame.size.width}
-                        height={frame.size.height}
-                    />
-                    <text className={styles.label} x={frame.position.x} y={frame.position.y - 8}>
-                        {frame.name}
-                    </text>
-                </g>
-            ))}
+            {frameOutlines}
             {shapes.map((shape) => (
                 <ProjectedShape
                     key={shape.id}

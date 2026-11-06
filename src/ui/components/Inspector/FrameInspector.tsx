@@ -13,7 +13,6 @@ import { ModeFields } from './ModeFields';
 import { FrameVariables } from './FrameVariables';
 import styles from './styles.css';
 import { MIN_FRAME_SIZE } from 'src/app/services/documentStorage';
-import { projectScreenViews } from 'src/app/screenProjection';
 
 const Field: FC<{
     label: string;
@@ -87,10 +86,7 @@ const ScreenViewStatus = memo(function ScreenViewStatus({ id }: { id: string }) 
         const document = state.currentDocument;
         const frame = document.frames[id];
         const source = document.frames[frame?.screenId ?? ''];
-        const problem = projectScreenViews(document, state.previewModes[document.id], {
-            x: 0,
-            y: 0
-        }).find((item) => item.view.id === id)?.problem;
+        const problem = document.screenViewGeometry.find((item) => item.view.id === id)?.problem;
 
         return (
             problem ??

@@ -32,6 +32,16 @@ export const frameLayout = derived((document: Document, state: Application) =>
         : projectFrameLayout(document)
 );
 
+/** Selection and hover do not invalidate the editor's local-coordinate artwork. */
+export const screenViewGeometry = derived((document: Document, state: Application) =>
+    state.editorReady && editorLoaded()
+        ? editorHelpers().screenViews.resolveScreenViewGeometry(
+              document,
+              state.previewModes[document.id]
+          )
+        : []
+);
+
 export const frameStates = derived((document: Document) => projectFrameStates(document.frames));
 
 export const framesIds = derived((document: Document) => Object.keys(document.frames).sort());

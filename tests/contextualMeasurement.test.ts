@@ -530,3 +530,57 @@ it('scopes view geometry without losing nested sources or resolving unrelated ca
     expect(scoped.resolvedShapes![unrelatedId]).toBe(document.shapes[unrelatedId]);
     expect(full.resolvedShapes![unrelatedId]).not.toBe(document.shapes[unrelatedId]);
 });
+
+it('invalidates cached Screen view geometry for inherited modes and nested component source edits', () => {
+    const { store, document, ids, small } = setup();
+    const before = document.screenViewGeometry;
+    const textIn = () =>
+        JSON.stringify(
+            document.screenViewGeometry.find((item) => item.view.id === small)?.projection
+        );
+    store.actions.setPreviewMode({ dimensionId: 'density', modeId: 'large' });
+    expect(document.screenViewGeometry).not.toBe(before);
+    expect(textIn()).toContain('A much longer label');
+    store.actions.setVariableModeValue({
+        variableId: ids.copy,
+        modeId: 'large',
+        value: 'Updated label'
+    });
+    expect(textIn()).toContain('Updated label');
+    const changed = document.screenViewGeometry;
+    store.actions.updateShape({ id: ids.rect, size: { width: 95, height: 55 } });
+    expect(document.screenViewGeometry).not.toBe(changed);
+    expect(
+        document.screenViewGeometry.find((item) => item.view.id === small)?.projection?.shapes[0]
+            .bounds
+    ).toEqual(
+        projectScreenViews(document, store.state.previewModes[document.id], { x: 0, y: 0 }).find(
+            (item) => item.view.id === small
+        )?.projection?.shapes[0].bounds
+    );
+});
+
+it('invalidates cached geometry on collaboration and undo without persisting the cache', async () => {
+    const copies = await createCopies(2, (store) => setup(store));
+    const [a, b] = copies;
+    const first = a.store.state.documents[DOCUMENT_ID];
+    const second = b.store.state.documents[DOCUMENT_ID];
+    const before = second.screenViewGeometry;
+    const variable = Object.values(first.variables).find((item) => item.name === 'Copy')!;
+    edit(a, (actions) =>
+        actions.setVariableModeValue({
+            variableId: variable.id,
+            modeId: 'large',
+            value: 'Remote label'
+        })
+    );
+    settle(copies);
+    expect(second.screenViewGeometry).not.toBe(before);
+    expect(JSON.stringify(second.screenViewGeometry)).toContain('Remote label');
+    a.collaboration.undo(DOCUMENT_ID);
+    settle(copies);
+    expect(JSON.stringify(second.screenViewGeometry)).not.toContain('Remote label');
+    expect(JSON.stringify(serializePersistedState(b.store.state))).not.toContain(
+        'screenViewGeometry'
+    );
+});
