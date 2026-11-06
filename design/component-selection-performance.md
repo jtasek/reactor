@@ -145,3 +145,63 @@ sizes are 146,148 versus 146,187 bytes. Both the 497 KiB entry and 248 KiB file 
 After isolating this change from the open record-forms PR and rebasing onto master `22d50359`,
 verification passed again: 2,132 unit/server tests (30 skipped), all 47 browser tests, type checks,
 lint baseline and production build. The final entry remains 508,851 bytes (146,141 summed gzip).
+
+## Incremental Screen view geometry (2026-11-06)
+
+The editor now retains a projection per visible Screen view, while the existing derived value
+still tracks and snapshots authored inputs. A shape/text edit invalidates views whose active
+layout contains that shape, or whose component source graph uses it. Dependency collection includes
+nested component sources, all family variants and group members. View width/height edits invalidate
+that view independently. Unchanged views retain the same projection and shape objects.
+
+Component records are keyed per layout: the components its instances reach (including
+variants and missing IDs) and those listing its shapes, since a hidden or source-only component
+hides them. Groups/layers, variables, dimensions, simulation modes and frame
+topology remain conservative shared invalidations. The global `hasNumericLayout` decision is also
+part of the shared key: unrelated wrapping can switch contextual resolution on or off. Nested
+screens retain the full frame/shape input because parent stacks, siblings and hug sizing can affect
+them. This does not yet eliminate full-graph snapshotting or provide per-shape layout updates
+inside an affected screen.
+
+The projection loop still enforces the aggregate node budget on cached and new results alike.
+Only entries visited by the latest projection pass are retained. Group dependency indexing keeps
+references to member arrays and visits each group once, rather than copying/traversing the full
+member list for each member. Runtime snapshots remain outside durable data, undo and collaboration.
+
+### Resolver benchmark
+
+`tests/screenViewGeometryPerformance.test.ts` creates eight independent screens, two views per
+screen and 20 wrapped text shapes per screen. It performs 24 successive text edits and measures
+the editor action plus the subsequent derived geometry read. Baseline is clean master `647e3678`,
+exported to a temporary directory with the same benchmark; each run uses one test process.
+
+| Measurement                             |    Before |     After |
+| --------------------------------------- | --------: | --------: |
+| Median edit + resolution                |  16.14 ms |   6.94 ms |
+| Total for 24 edits                      | 421.40 ms | 173.05 ms |
+| Screen projections after one local edit |        16 |         2 |
+
+This is approximately 57% lower median resolver time in this fixture. These are single local
+Vitest runs measuring JavaScript state/geometry work, not browser rendering or input-to-paint.
+Run with `pnpm exec cross-env PROFILE_SCREEN_EDITS=1 vitest run tests/screenViewGeometryPerformance.test.ts -t 'resolves successive'`.
+
+Regression coverage checks projection identity and computation counts, view resizing, shared
+nested sources, alternate layouts, responsive variants, node-budget blocking/unblocking,
+unrelated contextual-layout switches and linear traversal of a 1,000-member group. Existing
+mode/collaboration/undo and Screen view interaction suites remain applicable.
+
+Independent review found and verified fixes for the global contextual-layout dependency and
+quadratic group traversal. Final verification: seven new regression/benchmark tests, 47 browser
+tests, application/test/server type checks, lint baseline (two existing findings) and production
+build passed. The full unit/server run passed 2,145 tests with 30 skipped and one save-status
+timeout in the unchanged server-sync suite; rerunning all 16 tests in that file passed. Production
+entry assets total 508,851 bytes (146,154 summed gzip), within the existing budgets.
+
+### Review follow-up: shared layout inputs
+
+Dependency indexes (group and component memberships, shapes by parent frame, drawing order) are
+built once per resolve, and views of the same screen and active layout share one layout input
+key. An unrelated component edit no longer recalculates any view. With 12 screens of 100 wrapped
+texts, 24 views and 3,000 off-screen rectangles, median resolve times (ms, before → after) were:
+local edit 114 → 77, off-screen shape edit 70 → 39, unrelated component rename 577 → 39. A
+randomized comparison of cached and fresh geometry over 200 sequences of 40 edits matched.

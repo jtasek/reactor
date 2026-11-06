@@ -1,11 +1,21 @@
-import { projectScreenViews } from './screenProjection';
+import { projectScreen, projectScreenViews, type ScreenProjection } from './screenProjection';
+import {
+    screenGeometryIndex,
+    screenGeometryLayout,
+    screenLayoutInputs
+} from './screenGeometryInputs';
+import { hasNumericLayout } from './contextualLayout';
 import { untracked } from './untracked';
 import type { Document, VariableContext } from './types';
 
 const ORIGIN = { x: 0, y: 0 };
 const projections = new WeakMap<
     Document,
-    { key: string; views: ReturnType<typeof projectScreenViews> }
+    {
+        key: string;
+        views: ReturnType<typeof projectScreenViews>;
+        screens: Map<string, { key: string; projection: ScreenProjection | null }>;
+    }
 >();
 
 /**
@@ -123,12 +133,61 @@ export function resolveScreenViewGeometry(document: Document, simulation?: Varia
         return cached.views;
     }
 
-    const views = projectScreenViews(
-        { id: owner.id, ...inputs } as unknown as Document,
-        modes,
-        ORIGIN
+    const source = { id: owner.id, ...inputs } as unknown as Document;
+    const shared = signature(
+        JSON.stringify([
+            inputs.groups,
+            inputs.layers,
+            inputs.variables,
+            inputs.dimensions,
+            inputs.shownLayerId,
+            modes,
+            hasNumericLayout(source),
+            Object.values(frames).map((frame) => [
+                frame.id,
+                frame.kind,
+                frame.parentFrameId,
+                frame.screenLayout
+            ])
+        ])
     );
-    projections.set(owner, { key, views });
+    const screens = new Map<string, { key: string; projection: ScreenProjection | null }>();
+    const layouts = new Map<string, string>();
+    let index: ReturnType<typeof screenGeometryIndex> | undefined;
+    const views = projectScreenViews(
+        source,
+        modes,
+        ORIGIN,
+        (document, screenId, viewport, simulation) => {
+            const id = viewport.id!;
+            // Views of the same layout share its inputs; only the viewport is per view.
+            const layoutId = screenGeometryLayout(document, screenId, viewport);
+            const layoutKey = JSON.stringify([screenId, layoutId ?? null]);
+            let layoutInputs = layouts.get(layoutKey);
+            if (layoutInputs === undefined) {
+                index ??= screenGeometryIndex(document);
+                layoutInputs = signature(
+                    JSON.stringify(screenLayoutInputs(document, screenId, layoutId, index))
+                );
+                layouts.set(layoutKey, layoutInputs);
+            }
+            const viewKey = `${shared}:${layoutInputs}:${signature(
+                JSON.stringify([viewport, document.frames[viewport.id ?? '']])
+            )}`;
+            const previous = cached?.screens.get(id);
+            const result =
+                previous?.key === viewKey
+                    ? previous
+                    : {
+                          key: viewKey,
+                          projection: projectScreen(document, screenId, viewport, simulation)
+                      };
+            screens.set(id, result);
+
+            return result.projection;
+        }
+    );
+    projections.set(owner, { key, views, screens });
 
     return views;
 }
