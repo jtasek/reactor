@@ -71,7 +71,11 @@ export function projectScreen(
     }
 
     const resized = screenLayoutDocument(document, screenId, layoutId, viewport.size);
-    const layout = projectContextualLayout(resized, { viewId: viewport.id, screenId, simulation });
+    const layout = projectContextualLayout(
+        resized,
+        { viewId: viewport.id, screenId, simulation },
+        new Set(memberIds)
+    );
     const involved = new Set([source.id, ...frameIds, ...shapeIds]);
     const offset = {
         x: viewport.position.x - source.position.x,

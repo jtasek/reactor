@@ -3,18 +3,17 @@ import {
     useScreenShapeTransformable,
     useScreenViewContainers
 } from 'src/app/frameHooks';
-import React, { createElement, type CSSProperties, type FC } from 'react';
+import React, { createElement, memo, type CSSProperties, type FC } from 'react';
 import { instanceSource, instanceBox } from 'src/app/componentSource';
 import { projectScreenViews } from 'src/app/screenProjection';
 import { themeColors } from 'src/app/themeColors';
-import { useArtworkModes } from 'src/app/modeHooks';
+import { artworkModes } from 'src/app/modeHooks';
 import { boxCenter, getShapeBounds } from 'src/app/utils';
 import {
     useAppState,
     useGesture,
     useShapesInSelectedGroupsIds,
-    useCameraScale,
-    useCurrentDocument
+    useCameraScale
 } from 'src/app/hooks';
 import {
     canEditThroughView,
@@ -67,83 +66,102 @@ const ProjectedSelectionControls: FC<{ shape: Shape; viewId: string; placedOffse
     );
 };
 
-const ProjectedShape: FC<{
+interface ProjectedShapeProps {
     shape: Shape;
     viewId: string;
     interactive: boolean;
     placedOffset: boolean;
     inSelectedContainer: boolean;
-}> = ({ shape, viewId, interactive, placedOffset, inSelectedContainer }) => {
-    const document = useCurrentDocument();
-    const context = useArtworkModes(shape, viewId);
-    const painted = themeColors(shape, document, context);
-    const source = painted.type === 'instance' ? instanceSource(document, painted) : null;
-    const bounds =
-        painted.type === 'instance' && source
-            ? instanceBox(painted, source)
-            : getShapeBounds(shape);
-    const center = boxCenter(bounds);
-    const transform = shape.rotation
-        ? `rotate(${shape.rotation} ${center.x} ${center.y})`
-        : undefined;
-    const Primitive =
-        painted.type === 'instance'
-            ? null
-            : (getComponentByType(painted.type) as FC<Omit<Shape, 'key'>>);
-    const { key, ...props } = painted;
+}
 
-    return (
-        <g
-            data-screen-view={viewId}
-            data-shape-id={shape.id}
-            transform={transform}
-            style={
-                {
-                    '--shape-fill': painted.fill,
-                    '--shape-stroke': painted.stroke
-                } as CSSProperties
-            }
-        >
-            <g opacity={painted.opacity} data-guide-outline="">
-                {painted.type === 'instance' ? (
-                    <>
-                        <Instance instance={painted} source={source} context={context} />
-                        <rect
-                            data-view-instance-hit
-                            x={bounds.topLeft.x}
-                            y={bounds.topLeft.y}
-                            width={bounds.width}
-                            height={bounds.height}
-                            fill="transparent"
-                        />
-                    </>
-                ) : (
-                    Primitive && createElement(Primitive, { ...props, key, selected: false })
+const ProjectedShape = memo(
+    function ProjectedShape({
+        shape,
+        viewId,
+        interactive,
+        placedOffset,
+        inSelectedContainer
+    }: ProjectedShapeProps) {
+        const state = useAppState((state) => state);
+        const document = state.currentDocument;
+        const context = artworkModes(state, shape, viewId).modes;
+        const painted = themeColors(shape, document, context);
+        const source = painted.type === 'instance' ? instanceSource(document, painted) : null;
+        const bounds =
+            painted.type === 'instance' && source
+                ? instanceBox(painted, source)
+                : getShapeBounds(shape);
+        const center = boxCenter(bounds);
+        const transform = shape.rotation
+            ? `rotate(${shape.rotation} ${center.x} ${center.y})`
+            : undefined;
+        const Primitive =
+            painted.type === 'instance'
+                ? null
+                : (getComponentByType(painted.type) as FC<Omit<Shape, 'key'>>);
+        const { key, ...props } = painted;
+
+        return (
+            <g
+                data-screen-view={viewId}
+                data-shape-id={shape.id}
+                transform={transform}
+                style={
+                    {
+                        '--shape-fill': painted.fill,
+                        '--shape-stroke': painted.stroke
+                    } as CSSProperties
+                }
+            >
+                <g opacity={painted.opacity} data-guide-outline="">
+                    {painted.type === 'instance' ? (
+                        <>
+                            <Instance instance={painted} source={source} context={context} />
+                            <rect
+                                data-view-instance-hit
+                                x={bounds.topLeft.x}
+                                y={bounds.topLeft.y}
+                                width={bounds.width}
+                                height={bounds.height}
+                                fill="transparent"
+                            />
+                        </>
+                    ) : (
+                        Primitive && createElement(Primitive, { ...props, key, selected: false })
+                    )}
+                </g>
+                {interactive && shape.selected && !inSelectedContainer && (
+                    <rect
+                        x={bounds.topLeft.x}
+                        y={bounds.topLeft.y}
+                        width={bounds.width}
+                        height={bounds.height}
+                        fill="none"
+                        stroke="var(--selection-color)"
+                        strokeWidth={2}
+                        vectorEffect="non-scaling-stroke"
+                        pointerEvents="none"
+                    />
+                )}
+                {interactive && shape.selected && !inSelectedContainer && (
+                    <ProjectedSelectionControls
+                        shape={shape}
+                        viewId={viewId}
+                        placedOffset={placedOffset}
+                    />
                 )}
             </g>
-            {interactive && shape.selected && !inSelectedContainer && (
-                <rect
-                    x={bounds.topLeft.x}
-                    y={bounds.topLeft.y}
-                    width={bounds.width}
-                    height={bounds.height}
-                    fill="none"
-                    stroke="var(--selection-color)"
-                    strokeWidth={2}
-                    vectorEffect="non-scaling-stroke"
-                    pointerEvents="none"
-                />
-            )}
-            {interactive && shape.selected && !inSelectedContainer && (
-                <ProjectedSelectionControls
-                    shape={shape}
-                    viewId={viewId}
-                    placedOffset={placedOffset}
-                />
-            )}
-        </g>
-    );
-};
+        );
+    },
+    (previous, next) =>
+        previous.viewId === next.viewId &&
+        previous.interactive === next.interactive &&
+        previous.placedOffset === next.placedOffset &&
+        previous.inSelectedContainer === next.inSelectedContainer &&
+        // Projections are plain snapshots, recreated when any selection changes. Compare
+        // all fields so unchanged siblings keep their artwork and tracked source reads.
+        JSON.stringify(previous.shape) === JSON.stringify(next.shape)
+);
 
 /** Matches `.hit`'s stroke width in styles.css: a frame's edge grip, half of it inside. */
 const FRAME_GRIP_WIDTH_PX = 12;
