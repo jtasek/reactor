@@ -3,13 +3,16 @@ import { untracked } from './untracked';
 const snapshots = new WeakMap<object, Map<string, object>>();
 const dates = new WeakMap<Date, Date>();
 const fingerprints = new WeakMap<object, string>();
+const omissions = new Map<string, ReadonlySet<string>>();
+/** Copies are shared between evaluations, so a write would leave a stale fingerprint. */
+const FREEZE = process.env.NODE_ENV !== 'production';
 
 /** Read every nested field through Overmind, but retain unchanged immutable branches. */
 export function snapshot<T>(value: T): T {
     if (value instanceof Date) {
         const owner = untracked(value);
         const previous = dates.get(owner);
-        if (previous?.getTime() === value.getTime()) {
+        if (previous && Object.is(previous.getTime(), value.getTime())) {
             return previous as T;
         }
         const result = new Date(value.getTime());
@@ -33,10 +36,10 @@ function copy(value: object, profile: string): object {
     const owner = untracked(value);
     const cached = snapshots.get(owner) ?? new Map<string, object>();
     const previous = cached.get(profile) as Record<string, unknown> | undefined;
-    const omitted = profile ? profile.split(',') : [];
+    const omitted = omissions.get(profile) ?? omissionsFor(profile);
     const keys = Object.keys(value)
         .sort()
-        .filter((key) => !omitted.includes(key));
+        .filter((key) => !omitted.has(key));
     const source = value as Record<string, unknown>;
     // Read even on cache hits: a new derived evaluation needs all its subscriptions.
     const entries = keys.map((key) => [key, snapshot(source[key])] as const);
@@ -56,10 +59,20 @@ function copy(value: object, profile: string): object {
         ? Object.assign(new Array(value.length), Object.fromEntries(entries))
         : Object.fromEntries(entries);
     fingerprints.set(result, signature(geometryKey(result)));
+    if (FREEZE) {
+        Object.freeze(result);
+    }
     cached.set(profile, result);
     snapshots.set(owner, cached);
 
     return result;
+}
+
+function omissionsFor(profile: string) {
+    const omitted = new Set(profile ? profile.split(',') : []);
+    omissions.set(profile, omitted);
+
+    return omitted;
 }
 
 /** Snapshot fingerprints replace repeated serialization of their immutable contents. */

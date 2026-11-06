@@ -45,3 +45,18 @@ it('keeps plain and artwork snapshots separate for the same source', () => {
     expect(artwork(source, ['position'])).not.toHaveProperty('position');
     expect(artwork(source)).toHaveProperty('position', { x: 1, y: 2 });
 });
+
+it('freezes shared copies so a stray write cannot leave a stale fingerprint', () => {
+    const copy = snapshot({ position: { x: 1, y: 2 }, points: [{ x: 3 }] });
+    expect(Object.isFrozen(copy)).toBe(true);
+    expect(Object.isFrozen(copy.position)).toBe(true);
+    expect(Object.isFrozen(copy.points)).toBe(true);
+    expect(() => {
+        (copy.position as { x: number }).x = 5;
+    }).toThrow(TypeError);
+});
+
+it('reuses the copy of an unchanged invalid date', () => {
+    const source = { date: new Date(Number.NaN) };
+    expect(snapshot(source)).toBe(snapshot(source));
+});

@@ -213,7 +213,10 @@ Every evaluation still reads authored fields through Overmind, including key add
 selection and hover remain excluded. Fingerprints compare content rather than mutable object
 identity, so replacing a record with equivalent content does not invalidate geometry. Cache
 entries use weak references to source objects and keep only the latest snapshot per copy profile.
-The original compact hash algorithm is unchanged; this does not introduce persistent cache data.
+The original compact hash algorithm is unchanged. Nothing is written into saved documents, but the
+latest copy of each authored record stays in memory while its source object lives (strings are shared,
+so text and image data are not duplicated). Copies are frozen outside production builds: a write into
+one would leave its fingerprint stale and could make views draw old artwork.
 
 Three alternating before/after runs against `899b5c8d` used the existing 24-edit, eight-screen
 fixture. Combined median action-plus-geometry time was **6.86 ms before → 5.94 ms after** (13%
