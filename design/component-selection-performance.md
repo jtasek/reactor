@@ -154,7 +154,9 @@ layout contains that shape, or whose component source graph uses it. Dependency 
 nested component sources, all family variants and group members. View width/height edits invalidate
 that view independently. Unchanged views retain the same projection and shape objects.
 
-Shared component definitions, groups/layers, variables, dimensions, simulation modes and frame
+Component records are keyed per layout: the components its instances reach (including
+variants and missing IDs) and those listing its shapes, since a hidden or source-only component
+hides them. Groups/layers, variables, dimensions, simulation modes and frame
 topology remain conservative shared invalidations. The global `hasNumericLayout` decision is also
 part of the shared key: unrelated wrapping can switch contextual resolution on or off. Nested
 screens retain the full frame/shape input because parent stacks, siblings and hug sizing can affect
@@ -194,3 +196,12 @@ tests, application/test/server type checks, lint baseline (two existing findings
 build passed. The full unit/server run passed 2,145 tests with 30 skipped and one save-status
 timeout in the unchanged server-sync suite; rerunning all 16 tests in that file passed. Production
 entry assets total 508,851 bytes (146,154 summed gzip), within the existing budgets.
+
+### Review follow-up: shared layout inputs
+
+Dependency indexes (group and component memberships, shapes by parent frame, drawing order) are
+built once per resolve, and views of the same screen and active layout share one layout input
+key. An unrelated component edit no longer recalculates any view. With 12 screens of 100 wrapped
+texts, 24 views and 3,000 off-screen rectangles, median resolve times (ms, before → after) were:
+local edit 114 → 77, off-screen shape edit 70 → 39, unrelated component rename 577 → 39. A
+randomized comparison of cached and fresh geometry over 200 sequences of 40 edits matched.

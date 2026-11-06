@@ -1,3 +1,4 @@
+import * as inputs from 'src/app/screenGeometryInputs';
 import { screenGeometryInputs } from 'src/app/screenGeometryInputs';
 import { resolveScreenViewGeometry } from 'src/app/screenViewGeometry';
 import { screenLayoutsDocument } from './support/screenLayouts';
@@ -282,4 +283,51 @@ it('visits a large group only once when collecting dependencies', () => {
     // One pass builds reverse memberships, one follows the group's members.
     expect(visit).toHaveBeenCalledTimes(2);
     visit.mockRestore();
+});
+
+it('leaves views cached when an unrelated component changes, but not one listing their shapes', () => {
+    const { store, shapeId } = editingFixture();
+    const document = store.state.currentDocument;
+    store.actions.addShape({
+        type: 'rectangle',
+        position: { x: 0, y: -400 },
+        size: { width: 40, height: 30 }
+    });
+    store.actions.addComponent({
+        id: 'unrelated',
+        name: 'Unrelated',
+        shapesIds: [document.shapesIds.at(-1)!]
+    });
+    const before = document.screenViewGeometry;
+    const resolve = vi.spyOn(projection, 'projectScreen');
+    store.actions.updateComponent({ id: 'unrelated', name: 'Renamed' });
+    const after = document.screenViewGeometry;
+    expect(resolve).not.toHaveBeenCalled();
+    after.forEach((item, index) => expect(item.projection).toBe(before[index].projection));
+
+    // A source-only component hides the screen shapes it lists.
+    store.actions.addComponent({
+        id: 'listing',
+        name: 'Listing',
+        sourceOnly: true,
+        shapesIds: [shapeId]
+    });
+    const hidden = document.screenViewGeometry;
+    expect(resolve).toHaveBeenCalledTimes(2);
+    resolve.mockRestore();
+    expect(hidden.find((item) => item.view.id === 'screen-0-320')!.projection!.shapes).toHaveLength(
+        19
+    );
+});
+
+it('collects one layout dependency set for all views of that layout', () => {
+    const { store, shapeId } = editingFixture();
+    const document = store.state.currentDocument;
+    void document.screenViewGeometry;
+    const collect = vi.spyOn(inputs, 'screenLayoutInputs');
+    store.actions.updateShape({ id: shapeId, value: 'Changed once' });
+    void document.screenViewGeometry;
+    // Eight screens with two views each, both views drawing the screen itself.
+    expect(collect).toHaveBeenCalledTimes(8);
+    collect.mockRestore();
 });

@@ -1,5 +1,9 @@
 import { projectScreen, projectScreenViews, type ScreenProjection } from './screenProjection';
-import { screenGeometryInputs } from './screenGeometryInputs';
+import {
+    screenGeometryIndex,
+    screenGeometryLayout,
+    screenLayoutInputs
+} from './screenGeometryInputs';
 import { hasNumericLayout } from './contextualLayout';
 import { untracked } from './untracked';
 import type { Document, VariableContext } from './types';
@@ -134,7 +138,6 @@ export function resolveScreenViewGeometry(document: Document, simulation?: Varia
         JSON.stringify([
             inputs.groups,
             inputs.layers,
-            inputs.components,
             inputs.variables,
             inputs.dimensions,
             inputs.shownLayerId,
@@ -149,13 +152,28 @@ export function resolveScreenViewGeometry(document: Document, simulation?: Varia
         ])
     );
     const screens = new Map<string, { key: string; projection: ScreenProjection | null }>();
+    const layouts = new Map<string, string>();
+    let index: ReturnType<typeof screenGeometryIndex> | undefined;
     const views = projectScreenViews(
         source,
         modes,
         ORIGIN,
         (document, screenId, viewport, simulation) => {
             const id = viewport.id!;
-            const viewKey = `${shared}:${signature(JSON.stringify(screenGeometryInputs(document, screenId, viewport)))}`;
+            // Views of the same layout share its inputs; only the viewport is per view.
+            const layoutId = screenGeometryLayout(document, screenId, viewport);
+            const layoutKey = JSON.stringify([screenId, layoutId ?? null]);
+            let layoutInputs = layouts.get(layoutKey);
+            if (layoutInputs === undefined) {
+                index ??= screenGeometryIndex(document);
+                layoutInputs = signature(
+                    JSON.stringify(screenLayoutInputs(document, screenId, layoutId, index))
+                );
+                layouts.set(layoutKey, layoutInputs);
+            }
+            const viewKey = `${shared}:${layoutInputs}:${signature(
+                JSON.stringify([viewport, document.frames[viewport.id ?? '']])
+            )}`;
             const previous = cached?.screens.get(id);
             const result =
                 previous?.key === viewKey
