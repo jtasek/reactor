@@ -1,4 +1,4 @@
-import { contextualDocument } from 'src/app/contextualLayout';
+import { canvasLayout, canvasShape, contextualDocument } from 'src/app/contextualLayout';
 import * as inheritedModes from 'src/app/inheritedModes';
 import * as responsiveVariants from 'src/app/responsiveVariants';
 import type { InstanceShape, Text } from 'src/app/types';
@@ -90,5 +90,21 @@ it('shares sibling variant widths only within a pass and preserves instance valu
     } finally {
         widths.mockRestore();
         modes.mockRestore();
+    }
+});
+
+it('measures variant widths on the plain Canvas path only for instances', () => {
+    const labels = responsiveDocument();
+    const instances = responsiveVariantsDocument();
+    const widths = vi.spyOn(responsiveVariants, 'variantWidths');
+    try {
+        const label = canvasShape(labels, labels.shapes.label, canvasLayout(labels));
+        expect(widths).not.toHaveBeenCalled();
+        expect((label as Text).fontSize).toBe(20);
+
+        canvasShape(instances, instances.shapes.button, canvasLayout(instances));
+        expect(widths).toHaveBeenCalledTimes(1);
+    } finally {
+        widths.mockRestore();
     }
 });

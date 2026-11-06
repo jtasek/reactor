@@ -187,7 +187,10 @@ export function canvasShape(document: Document, source: Shape, layout: FrameLayo
         availableWidthIn(parent, source, parent && layout.frameSizes[parent.id]?.width),
         undefined,
         undefined,
-        variantWidths(document, source.parentFrameId, {}, layout.frameSizes)
+        // Only instances choose a variant by width.
+        source.type === 'instance'
+            ? variantWidths(document, source.parentFrameId, {}, layout.frameSizes)
+            : undefined
     );
 }
 

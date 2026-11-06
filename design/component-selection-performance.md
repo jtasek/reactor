@@ -245,9 +245,19 @@ baseline `6da46418` with those original counts. They also verify mode changes be
 changed available parent width, resolved variant selection and distinct instance values/modes.
 
 Three alternating before/after runs of the existing 24-edit, eight-screen benchmark measured a
-combined median of **5.47 ms before → 5.08 ms after** (7% lower). Run medians were
-5.67/5.66/5.22 ms before and 5.10/4.87/5.32 ms after. These are local JavaScript action-plus-geometry
-timings, excluding browser painting; individual runs vary. Full-graph snapshot reads and layout
+combined median of 5.47 ms before and 5.08 ms after. Run medians were 5.67/5.66/5.22 ms before
+and 5.10/4.87/5.32 ms after; the ranges overlap, so that benchmark shows no clear end-to-end gain.
+These are local JavaScript action-plus-geometry timings, excluding browser painting.
+
+The gain shows on documents with many shapes per frame. An informal timing of one
+`contextualDocument` pass (median of 60 runs, three alternating runs each) measured 400 text
+labels across four nested frames at 2.1–2.3 ms before and 0.67–0.75 ms after, and 200 responsive
+instances in one parent at 2.1–2.9 ms before and 1.7–1.8 ms after. Instances gain less because
+projecting each instance's source artwork still dominates.
+
+The plain Canvas path (`canvasShape`, used when no frame stacks, sizes or binds numbers) tracks
+each shape separately, so it cannot share parent context. It does skip variant widths for
+non-instance shapes. Full-graph snapshot reads and layout
 traversal remain. This increment removes repeated parent-context calculations without adding a
 persistent cache or changing document data.
 
