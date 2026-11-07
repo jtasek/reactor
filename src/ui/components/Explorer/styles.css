@@ -30,7 +30,7 @@
 .views button[aria-pressed='true'] {
     background: var(--panel-content-background);
     color: var(--text-color);
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 
 .views button:focus-visible {
@@ -39,7 +39,7 @@
 
 .hint {
     color: var(--text-secondary-color);
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     line-height: 1.4;
     margin: var(--panel-gap) 4px;
 }
@@ -50,7 +50,7 @@
     border-radius: var(--radius-sm);
     color: var(--text-secondary-color);
     flex: 0 0 auto;
-    font-size: 0.6875rem;
+    font-size: var(--font-size-caption);
     line-height: 16px;
     padding: 0 4px;
 }
@@ -104,10 +104,8 @@
 
 .root > .row {
     color: var(--text-secondary-color);
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    font-size: var(--font-size-caption);
+    font-weight: var(--font-weight-semibold);
 }
 
 /* The canvas row can be pressed, and its name keeps the heading's look, selected too. */
@@ -129,7 +127,7 @@
 
 .empty {
     color: var(--text-secondary-color);
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     margin: var(--panel-gap) 10px 0;
 }
 
@@ -140,7 +138,7 @@
 .row {
     align-items: center;
     border-radius: var(--radius-sm);
-    min-height: 28px;
+    min-height: var(--list-row-height, 28px);
     display: flex;
     flex-direction: row;
     gap: 6px;
@@ -202,7 +200,7 @@
 
 .itemText small {
     color: var(--text-secondary-color);
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     font-weight: 400;
     line-height: 16px;
 }
@@ -251,7 +249,7 @@
 
 .layer > .row > .name,
 .layer > .row > .label {
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 
 .selected > .row {
@@ -260,7 +258,7 @@
 
 .selected > .row > .name {
     color: var(--selection-color);
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 
 .active > .row > .name {
@@ -273,7 +271,7 @@
 
 .component > .row > .name {
     color: var(--component-color);
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
 }
 
 .component > .row > .name svg {
@@ -289,7 +287,7 @@
 }
 
 .component.selected > .row > .name {
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 
 .component > ul {
@@ -297,9 +295,10 @@
     margin-left: 20px;
 }
 
+/* Hidden rows read as muted but stay above 4.5:1. */
 .hidden > .row > .name {
+    color: var(--label-tertiary);
     font-style: italic;
-    opacity: 0.5;
 }
 
 .showAll {

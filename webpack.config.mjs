@@ -112,11 +112,12 @@ export const config = {
     // the editor page (`registerEditor`). The individual-file limit stays at 248 KiB.
     // Schema v24 adds required entity/field/record readers (~1.6 KiB); the data UI loads on demand.
     // Schema v28 adds named boolean records and binding readers; its authoring UI stays lazy.
+    // 2026-11-07: +1 KiB so startup waits for the self-hosted Roboto before measuring text (~70 bytes).
     performance: isDev
         ? false
         : {
               hints: 'error',
-              maxEntrypointSize: 497 * 1024,
+              maxEntrypointSize: 498 * 1024,
               maxAssetSize: 248 * 1024
           },
     optimization: {

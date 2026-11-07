@@ -13,7 +13,7 @@
   align-items: center;
   display: flex;
   justify-content: space-between;
-  min-height: 26px;
+  min-height: var(--list-row-height, 26px);
 }
 
 .controlPanel > li + li {

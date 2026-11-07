@@ -21,6 +21,21 @@
     margin: 0.75rem 0;
 }
 
+.header h2 {
+    font-size: var(--font-size-title-2);
+    letter-spacing: var(--tracking-title);
+    line-height: var(--line-height-title-2);
+}
+
+.card strong {
+    font-size: var(--font-size-title-3);
+    line-height: var(--line-height-title-3);
+}
+
+.card span {
+    color: var(--text-secondary-color);
+}
+
 .header {
     display: flex;
     align-items: center;
@@ -65,6 +80,7 @@
 
 .card small {
     color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
     margin-top: auto;
 }
 

@@ -5,8 +5,9 @@
   bottom: 0;
   box-shadow: var(--shadow-status-bar);
   box-sizing: border-box;
-  color: var(--text-color);
+  color: var(--text-secondary-color);
   display: flex;
+  font-size: var(--font-size-callout);
   flex-direction: row;
   height: 25px;
   justify-content: space-between;

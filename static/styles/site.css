@@ -16,10 +16,49 @@ body,
 }
 
 :root {
+  /* Type: one UI family, one scale. Sizes follow the macOS text styles. */
+  --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI Variable Text',
+    'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-content: 'Roboto', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --font-size-display: 1.75rem;
+  --line-height-display: 2.125rem;
+  --font-size-title: 1.25rem;
+  --line-height-title: 1.5625rem;
+  --font-size-title-2: 1.0625rem;
+  --line-height-title-2: 1.375rem;
+  --font-size-title-3: 0.9375rem;
+  --line-height-title-3: 1.25rem;
+  --font-size-body: 0.8125rem;
+  --line-height-body: 1.125rem;
+  --font-size-callout: 0.75rem;
+  --line-height-callout: 1rem;
+  --font-size-caption: 0.6875rem;
+  --line-height-caption: 0.875rem;
+  --font-size-micro: 0.625rem;
+  --font-size-touch-input: 16px;
+  --control-height: 22px;
+  --list-row-height: 28px;
+  --panel-title-height: 28px;
+  --space-section: 12px;
+  --space-card: 10px;
+  --space-row: 3px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --tracking-display: -0.02em;
+  --tracking-title: -0.01em;
+  --tracking-caps: 0.06em;
+  /* Labels: opaque, so they keep their contrast on glass. */
+  --label-primary: #1f1f22;
+  --label-strong: #000;
+  --label-secondary: #55585f;
+  --label-tertiary: #686b73;
   --documents-background: #f3f4f6;
   --document-thumbnail-border: #e7e8ed;
-  --document-title-color: #25262b;
-  --document-secondary-color: #696d77;
+  --document-title-color: var(--label-primary);
+  --document-secondary-color: var(--label-secondary);
   --glass-highlight: rgba(255, 255, 255, 0.85);
   --tag-red-background: #ffebe9;
   --tag-red-color: #a52a23;
@@ -35,7 +74,7 @@ body,
   --tag-purple-color: #77389b;
   --tag-gray-background: #ededf0;
   --tag-gray-color: #57575c;
-  --primary-action-color: rgb(234, 2, 130);
+  --primary-action-color: #d1006e;
   --selection-color: #1a5ddb;
   --shape-stroke-color: #474a51;
   --component-color: #6a47a8;
@@ -44,14 +83,15 @@ body,
   --warning-color: #8a6100;
   --error-background: #f6dcdc;
   --error-color: #b3312f;
-  --text-size: 14px;
-  --canvas-label-size: 13px;
+  --text-size: var(--font-size-body);
+  --canvas-label-size: var(--font-size-caption);
   --canvas-label-halo-width: 3px;
-  --text-color: rgba(0, 0, 0, .7);
-  --text-color-hover: rgba(0, 0, 0, 1);
-  --text-secondary-color: #59616d;
-  --backdrop-filter: blur(5px);
+  --text-color: var(--label-primary);
+  --text-color-hover: var(--label-strong);
+  --text-secondary-color: var(--label-secondary);
+  --backdrop-filter: blur(24px) saturate(180%);
   --border-color: rgba(0, 0, 0, .3);
+  --control-track-color: rgba(0, 0, 0, .42);
   --border-radius: 10px;
   --radius-sm: 5px;
   --radius-md: 8px;
@@ -59,7 +99,7 @@ body,
   --box-shadow: 0 1px 2px rgba(0, 0, 0, .1);
   --box-shadow-hover: 0 4px 5px 0 rgba(0, 0, 0, .14), 0 1px 10px 0 rgba(0, 0, 0, .12),
     0 2px 4px -1px rgba(0, 0, 0, .2);
-  --control-background: rgba(255, 255, 255, .7);
+  --control-background: rgba(255, 255, 255, .82);
   --panel-content-background: #fff;
   --control-background-active: rgba(255, 255, 255, 1);
   --control-background-disabled: rgba(255, 255, 255, .3);
@@ -71,7 +111,7 @@ body,
   --canvas: #e9e9e9;
   --canvas-dark: #2d2d2d;
   --surface: #fff;
-  --ink-strong: #1f1f1f;
+  --ink-strong: var(--label-primary);
   --backdrop: rgb(0 0 0 / 35%);
   --handle-active: #f08080;
   --menu-icon: #444;
@@ -79,13 +119,13 @@ body,
   --menu-pressed: #dcdcdc;
   --action-border: rgb(0 0 0 / 15%);
   --info-background: #e4dff3;
-  --info-color: #6a55c2;
+  --info-color: #5b46b5;
   --success-background: #dcefe2;
-  --success-color: #2c7a4b;
+  --success-color: #236b40;
   --switch-track: rgba(0, 0, 0, .26);
-  --switch-track-on: rgba(63, 81, 181, .5);
+  --switch-track-on: color-mix(in srgb, var(--selection-color) 50%, transparent);
   --switch-thumb: #fafafa;
-  --switch-on: #3f51b5;
+  --switch-on: var(--selection-color);
   --shadow-thumb: 0 2px 2px 0 rgba(0, 0, 0, .14), 0 3px 1px -2px rgba(0, 0, 0, .2),
     0 1px 5px 0 rgba(0, 0, 0, .12);
   --shadow-thumb-on: 0 3px 4px 0 rgba(0, 0, 0, .14), 0 3px 3px -2px rgba(0, 0, 0, .2),

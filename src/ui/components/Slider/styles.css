@@ -96,6 +96,6 @@
 }
 
 .upper {
-    background: var(--border-color);
+    background: var(--control-track-color);
     transition: left .18s cubic-bezier(.4, 0, .2, 1);
 }

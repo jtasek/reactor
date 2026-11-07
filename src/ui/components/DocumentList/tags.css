@@ -17,7 +17,7 @@
     color: var(--tag-color);
     display: inline-flex;
     font: inherit;
-    font-size: 12px;
+    font-size: var(--font-size-callout);
     gap: 4px;
     line-height: 16px;
     max-width: 100%;
@@ -90,7 +90,7 @@
     display: inline-flex;
     flex: none;
     font: inherit;
-    font-size: 12px;
+    font-size: var(--font-size-callout);
     justify-content: center;
     min-height: 24px;
     min-width: 24px;
@@ -110,7 +110,7 @@
 }
 
 .editor {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--font-ui);
     padding: 10px;
 }
 
@@ -119,7 +119,7 @@
 }
 
 .editor .heading {
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
     min-height: 26px;
     padding: 0 2px;
     margin-bottom: 6px;
@@ -140,7 +140,7 @@
     box-sizing: border-box;
     color: var(--ink-strong);
     font: inherit;
-    font-size: 13px;
+    font-size: var(--font-size-body);
     line-height: 20px;
     min-height: 32px;
     min-width: 0;

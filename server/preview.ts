@@ -77,6 +77,7 @@ export function previewServer(
                     scriptSrc: ["'self'"],
                     styleSrc: ["'self'", "'unsafe-inline'"],
                     imgSrc: ['data:'],
+                    fontSrc: ["'self'"],
                     connectSrc: [
                         (req) =>
                             req.url?.split('?')[0].replace(/\/$/, '') === '/share'
@@ -113,6 +114,10 @@ export function previewServer(
     app.use(
         express.static(directory, {
             setHeaders(res, file) {
+                // The sandboxed runtime has an opaque origin, so its font requests use CORS.
+                if (file.endsWith('.woff2')) {
+                    res.setHeader('Access-Control-Allow-Origin', '*');
+                }
                 res.setHeader(
                     'Cache-Control',
                     /\.[a-f0-9]+\.(js|css)$/.test(file)

@@ -8,12 +8,12 @@
 }
 
 .heading {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
+    color: var(--label-secondary);
+    font-size: var(--font-size-caption);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: normal;
     margin: 0;
     padding: 4px 10px 0;
-    text-transform: uppercase;
 }
 
 .list {
@@ -44,13 +44,13 @@
 
 .label strong {
     color: var(--text-color-hover);
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
 }
 
 .label small,
 .empty {
     color: var(--text-secondary-color);
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
 }
 
 .empty {

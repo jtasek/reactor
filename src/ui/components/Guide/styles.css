@@ -13,7 +13,7 @@
 .position {
     fill: var(--primary-action-color);
     font-size: var(--canvas-label-size);
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
     paint-order: stroke;
     pointer-events: none;
     stroke: var(--surface);

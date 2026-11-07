@@ -1,12 +1,12 @@
 /* The panel draws the glass; each section is a lighter card on it, under its heading. */
 .inspector {
     --inspector-inset: var(--panel-gap);
-    --section-gap: 12px;
+    --section-gap: var(--space-section, 12px);
     --card-radius: var(--radius-md);
-    --card-padding: 10px;
-    --field-height: 22px;
+    --card-padding: var(--space-card, 10px);
+    --field-height: var(--control-height, 22px);
     --field-radius: var(--radius-sm);
-    --row-padding: 3px;
+    --row-padding: var(--space-row, 3px);
     --column-gap: 8px;
     --checkbox-size: 14px;
     --color-swatch-width: 44px;
@@ -54,7 +54,7 @@
 
 .headerIdentity strong {
     color: var(--ink-strong);
-    font-size: 0.9rem;
+    font-size: var(--font-size-body);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -68,8 +68,8 @@
 .inspector .inspectorHeader .headerName input {
     background: transparent;
     color: var(--ink-strong);
-    font-size: 0.9rem;
-    font-weight: 600;
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-semibold);
     height: 28px;
     padding: 0 3px;
 }
@@ -158,7 +158,7 @@
 
 .headerBinding {
     display: grid;
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     gap: 4px;
     padding: 6px;
 }
@@ -178,10 +178,11 @@
 /* A section's heading sits on the glass, above its card. */
 .inspector th,
 .heading {
-    font-size: 0.75rem;
-    font-weight: 500;
+    color: var(--section-label-color, var(--label-primary));
+    font-size: var(--font-size-section, var(--font-size-body));
+    font-weight: var(--font-weight-semibold);
     letter-spacing: normal;
-    line-height: 16px;
+    line-height: var(--line-height-body);
     padding: 0 var(--card-padding) 6px;
     text-align: left;
     text-transform: none;
@@ -189,6 +190,14 @@
 
 .inspector th {
     padding-top: var(--section-gap);
+}
+
+.inspector th[scope='row'] {
+    color: var(--label-secondary);
+    font-size: var(--font-size-callout);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-callout);
+    padding-top: 0;
 }
 
 .inspector tbody:first-of-type th {
@@ -249,7 +258,7 @@
     display: block;
     font: inherit;
     font-variant-numeric: tabular-nums;
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
     height: var(--field-height);
     min-width: 0;
     padding: 0 8px;
@@ -328,7 +337,7 @@
     color: var(--text-color-hover);
     cursor: pointer;
     font: inherit;
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     height: var(--field-height);
     margin-left: 8px;
     padding: 0 10px;
@@ -423,7 +432,7 @@
 .bound {
     color: var(--selection-color);
     display: inline-block;
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
     line-height: var(--field-height);
     max-width: calc(100% - var(--field-height) - 4px);
     overflow: hidden;
@@ -454,7 +463,7 @@
 .frameHint {
     color: var(--text-secondary-color);
     display: block;
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     line-height: 1.4;
     overflow-wrap: anywhere;
     white-space: normal;
@@ -464,7 +473,7 @@
 .note {
     color: var(--warning-color);
     display: block;
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     line-height: 16px;
     padding: 2px 8px 0;
 }
@@ -493,7 +502,7 @@
 .instanceProps p,
 .componentHint {
     color: var(--text-secondary-color);
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     line-height: 1.4;
     margin: 0;
 }
@@ -522,7 +531,7 @@
 }
 
 .componentProps li span {
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     min-width: 0;
     overflow-wrap: anywhere;
 }
@@ -614,7 +623,7 @@
 .exposureStatus {
     color: var(--component-color);
     display: block;
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     line-height: 1.4;
     margin-top: 4px;
 }
@@ -684,7 +693,7 @@
 .instanceSectionHeading span {
     white-space: nowrap;
     color: var(--component-color);
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
 }
 
 .instanceChild {
@@ -693,8 +702,8 @@
 
 .instanceChild h4 {
     color: var(--text-secondary-color);
-    font-size: 0.75rem;
-    font-weight: 500;
+    font-size: var(--font-size-callout);
+    font-weight: var(--font-weight-medium);
     margin: 0 0 5px;
 }
 
@@ -771,7 +780,7 @@
 .instanceInspector > table > tbody > tr > td:first-child {
     color: var(--text-secondary-color);
     flex: 0 0 42px;
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     line-height: var(--field-height);
     overflow: visible;
     white-space: nowrap;
@@ -827,7 +836,7 @@
 .instanceValue label {
     grid-column: 1 / -1;
     color: var(--text-secondary-color);
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     min-width: 0;
     overflow-wrap: anywhere;
 }
@@ -860,7 +869,7 @@
 }
 
 .instanceColor span {
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -870,7 +879,7 @@
     border: 0;
     color: var(--text-secondary-color);
     cursor: pointer;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     margin-left: auto;
     padding: 0;
 }
@@ -883,6 +892,7 @@
     border-radius: var(--radius-sm);
     color: var(--text-secondary-color);
     cursor: pointer;
+    /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- sizes the "…" glyph, not text */
     font-size: 1.2rem;
     height: 22px;
     line-height: 16px;
@@ -915,7 +925,7 @@
     align-items: center;
     color: var(--component-color);
     display: flex;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     justify-content: flex-end;
     margin-top: 4px;
 }
@@ -927,7 +937,7 @@
     color: var(--component-color);
     cursor: pointer;
     display: inline-flex;
-    font-size: 0.7rem;
+    font-size: var(--font-size-caption);
     gap: 3px;
     padding: 0;
 }
@@ -941,7 +951,7 @@
 }
 
 .propertyMapping label {
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     overflow-wrap: anywhere;
 }
 
@@ -964,7 +974,7 @@
 
 .responsiveRules h4 {
     color: var(--text-secondary-color);
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     margin: 0;
 }
 
@@ -975,7 +985,7 @@
 
 .responsiveField label {
     color: var(--text-secondary-color);
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
 }
 
 .responsiveField input:focus-visible,
@@ -993,7 +1003,7 @@
 
 .inspectorHelp {
     color: var(--text-secondary-color);
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     line-height: 1.4;
     margin: var(--panel-gap) 0 var(--section-gap);
     overflow-wrap: anywhere;
@@ -1022,7 +1032,7 @@
 
 .interactionField label {
     color: var(--text-secondary-color);
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
 }
 
 .prototypeState {
@@ -1033,8 +1043,8 @@
 
 .prototypeState summary {
     cursor: pointer;
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-medium);
 }
 
 .prototypeState summary:focus-visible {

@@ -13,10 +13,8 @@ test.skip(
     'Set CAMERA_BENCHMARK=1 to run the camera benchmark.'
 );
 
-for (const gesture of ['pan', 'zoom'] as const) {
-    test(`${gesture}: large canvas preserves artwork during wheel bursts`, async ({
-        page
-    }, info) => {
+for (const gesture of ['pan', 'zoom', 'drag'] as const) {
+    test(`${gesture}: large canvas handles input bursts`, async ({ page }, info) => {
         const shapes = Object.fromEntries(
             Array.from({ length: SHAPES }, (_, index) => {
                 const id = `shape${index}`;
@@ -53,12 +51,29 @@ for (const gesture of ['pan', 'zoom'] as const) {
         await openEditor(page, ['Inspector', 'Explorer']);
         await page.getByRole('button', { name: 'More panels' }).click();
         await expect(page.locator('#shapes [data-cy]')).toHaveCount(SHAPES);
+        if (process.env.GLASS_BLUR) {
+            const blur = Number(process.env.GLASS_BLUR);
+            expect([5, 24]).toContain(blur);
+            await page.evaluate((radius) => {
+                document.documentElement.style.setProperty(
+                    '--backdrop-filter',
+                    `blur(${radius}px) saturate(180%)`
+                );
+            }, blur);
+        }
         const cdp = await page.context().newCDPSession(page);
         await cdp.send('Performance.enable');
         if (process.env.PROFILE_CAMERA) {
             await cdp.send('Profiler.enable');
             await cdp.send('Profiler.start');
         }
+        const system = await page.context().browser()!.newBrowserCDPSession();
+        const gpu = await system.send('SystemInfo.getInfo');
+        await info.attach('graphics', {
+            body: JSON.stringify(gpu.gpu),
+            contentType: 'application/json'
+        });
+        await system.detach();
         const before = await cdp.send('Performance.getMetrics');
         const measurement = await page.evaluate(
             async ({ gesture, frames, events }) => {
@@ -71,6 +86,23 @@ for (const gesture of ['pan', 'zoom'] as const) {
                     .forEach((node) =>
                         observer.observe(node, { attributes: true, childList: true, subtree: true })
                     );
+                const bounds = surface.getBoundingClientRect();
+                const pointer = (type: string, x: number) =>
+                    surface.dispatchEvent(
+                        new PointerEvent(type, {
+                            bubbles: true,
+                            pointerId: 1,
+                            pointerType: 'mouse',
+                            button: 0,
+                            buttons: type === 'pointerup' ? 0 : 1,
+                            ctrlKey: true,
+                            clientX: bounds.x + x,
+                            clientY: bounds.y + 50
+                        })
+                    );
+                if (gesture === 'drag') {
+                    pointer('pointerdown', 50);
+                }
                 const original = surface.getScreenCTM;
                 let matrixReads = 0;
                 surface.getScreenCTM = () => {
@@ -82,6 +114,10 @@ for (const gesture of ['pan', 'zoom'] as const) {
                     for (let frame = 0; frame < frames; frame++) {
                         const start = performance.now();
                         for (let event = 0; event < events; event++) {
+                            if (gesture === 'drag') {
+                                pointer('pointermove', 50 + frame + (event + 1) / events);
+                                continue;
+                            }
                             surface.dispatchEvent(
                                 new WheelEvent('wheel', {
                                     bubbles: true,
@@ -101,6 +137,9 @@ for (const gesture of ['pan', 'zoom'] as const) {
                         timings.push(performance.now() - start);
                     }
                 } finally {
+                    if (gesture === 'drag') {
+                        pointer('pointerup', 50 + frames);
+                    }
                     surface.getScreenCTM = original;
                     changes.push(...observer.takeRecords());
                     observer.disconnect();
@@ -137,7 +176,14 @@ for (const gesture of ['pan', 'zoom'] as const) {
                 contentType: 'application/json'
             });
         }
-        expect(measurement.artworkMutations).toBe(0);
+        if (gesture === 'drag') {
+            await expect(page.locator('#shapes rect[data-cy="shape0"]')).toHaveAttribute(
+                'x',
+                String(40 + FRAMES)
+            );
+        } else {
+            expect(measurement.artworkMutations).toBe(0);
+        }
         const matrix = await page.locator('#camera').evaluate((node) => {
             const matrix = (node as SVGGElement).transform.baseVal.consolidate()!.matrix;
 

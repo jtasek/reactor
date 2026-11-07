@@ -89,7 +89,7 @@
         background:purple;
         bottom: 0;
         color:white;
-        font-family: sans-serif;   
+        font-family: var(--font-ui);   
         height: 22px;
         position: fixed;
         width: 100%;

@@ -38,13 +38,14 @@
 }
 
 .pageTitle h1 {
-    font-size: 1.25rem;
+    font-size: var(--font-size-title);
+    letter-spacing: var(--tracking-title);
     margin: 0 0 4px;
 }
 
 .pageTitle span {
     color: var(--text-secondary-color);
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
 }
 
 .searchBar {
@@ -171,7 +172,7 @@
 .variables .toolbar button[aria-selected='true'] {
     border-bottom-color: var(--selection-color);
     color: var(--selection-color);
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 
 .workspace {
@@ -258,7 +259,7 @@
 
 .variables h3 {
     color: var(--text-color-hover);
-    font-size: 1rem;
+    font-size: var(--font-size-title-3);
     margin-bottom: 6px;
 }
 
@@ -290,14 +291,14 @@
 }
 
 .rowHeader input {
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 
 .metadata,
 .resolution,
 .listHeading {
     color: var(--text-secondary-color);
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     line-height: 1.5;
     overflow-wrap: anywhere;
 }
@@ -321,7 +322,7 @@
 .fieldLabel {
     color: var(--text-secondary-color);
     flex: 0 0 64px;
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     overflow-wrap: anywhere;
 }
 
@@ -380,7 +381,7 @@
     flex-wrap: wrap;
     gap: 8px;
     grid-column: 1 / -1;
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
     overflow-wrap: anywhere;
 }
 
@@ -404,7 +405,7 @@
 .variables .primary {
     background-color: var(--selection-color);
     color: var(--panel-content-background);
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 
 .variables .back {
@@ -452,7 +453,7 @@
 .problem,
 .note {
     color: var(--error-color);
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     overflow-wrap: anywhere;
 }
 
@@ -483,7 +484,7 @@
 .defaultChoice {
     align-items: center;
     display: flex;
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     gap: 5px;
     min-height: var(--field-height);
 }
@@ -603,7 +604,7 @@
     .item small {
         color: var(--text-secondary-color);
         display: block;
-        font-size: 0.75rem;
+        font-size: var(--font-size-callout);
     }
 
     .variables .item[aria-pressed='true'] {
@@ -623,6 +624,6 @@
 
     .variables input,
     .variables select {
-        font-size: 16px;
+        font-size: var(--font-size-touch-input);
     }
 }

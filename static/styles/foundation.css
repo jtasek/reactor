@@ -1,9 +1,28 @@
+/* The drawing font for canvas text, self-hosted so text measures and draws the same on
+   every computer (SIL Open Font License, static/fonts/roboto.LICENSE.txt). */
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-display: block;
+  font-weight: 100 900;
+  src: url('/fonts/roboto-latin-wght-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-display: block;
+  font-weight: 100 900;
+  src: url('/fonts/roboto-latin-ext-wght-normal.woff2') format('woff2');
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+
 *,
 *:after,
 *:before {
   border: 0;
   box-sizing: border-box;
-  font-family: 'Roboto', sans-serif;
   margin: 0;
   padding: 0;
 }
@@ -16,9 +35,45 @@ html {
 }
 
 body {
-  font-size: 14px;
-  line-height: 20px;
+  font-family: var(--font-ui);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
   margin: 0;
+}
+
+/* Form controls take the UI font instead of the browser's own. */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+/* Numbers in fields keep their width while they change. */
+input {
+  font-variant-numeric: tabular-nums;
+}
+
+::placeholder {
+  color: var(--label-tertiary);
+  opacity: 1;
+}
+
+/* Canvas content keeps the drawing font that text measurement and export assume.
+   geometricPrecision keeps glyph advances unhinted, so drawn text has the measured
+   width at every zoom level and in scaled-down thumbnails. */
+#surface {
+  font-family: var(--font-content);
+  text-rendering: geometricPrecision;
+}
+
+/* At least 16px on touch screens, so focusing a field does not zoom the page. */
+@media (pointer: coarse) {
+  /* This accessibility floor must win over component font shorthands.
+     Text editors inside artwork retain the authored font size. */
+  :is(input, select, textarea):not(#surface *) {
+    font-size: max(var(--font-size-touch-input), 1em) !important;
+  }
 }
 
 h1,
@@ -43,6 +98,7 @@ h2,
 h3,
 h4 {
   font-size: inherit;
+  font-weight: var(--font-weight-semibold);
 }
 
 a {
