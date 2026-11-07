@@ -211,9 +211,7 @@ export function editableScreenView(state: Context['state'], address: ScreenViewA
         return null;
     }
 
-    const projection = componentScreenViews(state, undefined, source.view.id).find(
-        (item) => item.view.id === source.view.id
-    )?.projection;
+    const projection = componentScreenViews(state, undefined, source.view.id)[0]?.projection;
 
     if (!projection) {
         return null;
