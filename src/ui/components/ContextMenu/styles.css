@@ -162,6 +162,7 @@
     color: inherit;
     cursor: pointer;
     font: inherit;
+    /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- sizes the back arrow glyph, not text */
     font-size: 21px;
     line-height: 1;
     padding: 2px 4px;

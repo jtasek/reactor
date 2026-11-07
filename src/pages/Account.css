@@ -20,6 +20,7 @@
 .brand {
   align-self: center;
   color: var(--ink-strong);
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- the wordmark, not a text style */
   font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.5px;

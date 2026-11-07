@@ -23,7 +23,7 @@
     flex: 0 0 auto;
     border-radius: 5px;
     color: var(--text-color);
-    font-size: 1.2rem;
+    font-size: var(--font-size-title-3);
     font-weight: var(--font-weight-medium);
     padding: 5px 10px;
     white-space: nowrap;

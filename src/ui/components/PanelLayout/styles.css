@@ -366,6 +366,7 @@
 
 .dragPreview span {
     display: block;
+    /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- relative to the dragged panel's title */
     font-size: 0.8em;
     margin-top: 4px;
 }

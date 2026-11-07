@@ -892,6 +892,7 @@
     border-radius: var(--radius-sm);
     color: var(--text-secondary-color);
     cursor: pointer;
+    /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- sizes the "…" glyph, not text */
     font-size: 1.2rem;
     height: 22px;
     line-height: 16px;

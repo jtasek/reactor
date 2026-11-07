@@ -3,6 +3,7 @@
   /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- no design token yet */
   color: rgba(0, 0, 0, 0.5);
   cursor: text;
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- drawn text, not interface text */
   font-size: 1.5rem;
   line-height: 1.5rem;
 }
@@ -12,6 +13,7 @@
   /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- no design token yet */
   color: rgba(0, 0, 255, 0.5);
   cursor: text;
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- drawn text, not interface text */
   font-size: 1.5rem;
   line-height: 1.5rem;
 }

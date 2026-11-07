@@ -139,7 +139,7 @@ test('a guide stands out from the grid and shows its position while dragged', as
                 .first()
                 .evaluate((line) => getComputedStyle(line).stroke)
         )
-        .toBe('rgb(234, 2, 130)');
+        .toBe('rgb(209, 0, 110)');
 });
 
 test('moves a guide, removes it dropped on its ruler, and Escape cancels a drag', async ({
