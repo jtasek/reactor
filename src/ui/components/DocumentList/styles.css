@@ -601,7 +601,7 @@
 
     .documentList input,
     .documentList select {
-        font-size: var(--font-size-body);
+        font-size: var(--font-size-touch-field);
     }
 
     .cardFooter {

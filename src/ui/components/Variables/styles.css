@@ -624,6 +624,6 @@
 
     .variables input,
     .variables select {
-        font-size: var(--font-size-body);
+        font-size: var(--font-size-touch-field);
     }
 }
