@@ -259,7 +259,11 @@ export function drawnExtent(document: Document, shapeIds: string[]): Box | null 
  * The shapes shown, in drawing order, taken in one pass over the containers: as
  * `isShapeVisible` says of each, without searching the containers for each shape.
  */
-export function shownShapesIds(document: Document, editingComponentId: string | null): Set<string> {
+export function shownShapesIds(
+    document: Document,
+    editingComponentId: string | null,
+    resolvedFrameStates?: ReturnType<typeof frameStatesOf>
+): Set<string> {
     if (editingComponentId) {
         const members = new Set(document.components[editingComponentId]?.shapesIds ?? []);
 
@@ -268,7 +272,7 @@ export function shownShapesIds(document: Document, editingComponentId: string | 
         );
     }
 
-    const frameStates = frameStatesOf(document);
+    const frameStates = resolvedFrameStates ?? frameStatesOf(document);
     const shownLayer = document.shownLayerId ? document.layers[document.shownLayerId] : undefined;
     const onShownLayer = new Set(shownLayer?.shapesIds ?? []);
     const onLayers = new Set(Object.values(document.layers).flatMap((layer) => layer.shapesIds));
