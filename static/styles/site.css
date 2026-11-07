@@ -91,6 +91,7 @@ body,
   --text-secondary-color: var(--label-secondary);
   --backdrop-filter: blur(24px) saturate(180%);
   --border-color: rgba(0, 0, 0, .3);
+  --control-track-color: rgba(0, 0, 0, .42);
   --border-radius: 10px;
   --radius-sm: 5px;
   --radius-md: 8px;

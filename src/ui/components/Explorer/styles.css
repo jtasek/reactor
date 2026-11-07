@@ -295,9 +295,10 @@
     margin-left: 20px;
 }
 
+/* Hidden rows read as muted but stay above 4.5:1. */
 .hidden > .row > .name {
+    color: var(--label-tertiary);
     font-style: italic;
-    opacity: 0.5;
 }
 
 .showAll {
