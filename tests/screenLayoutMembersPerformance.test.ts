@@ -109,3 +109,20 @@ it('preserves document order, layout boundaries and normalized invalid parents',
         'invalidLayout'
     ]);
 });
+
+it('builds the parent map once per call', () => {
+    const spy = vi.spyOn(frameState, 'frameParents');
+    try {
+        const document = nestedFrames(3);
+        document.frames.alternative = {
+            ...frame('alternative', 'screen'),
+            screenLayout: true
+        };
+        expect([...screenLayoutMembers(document, 'screen', 'alternative')]).toEqual([
+            'alternative'
+        ]);
+        expect(spy).toHaveBeenCalledTimes(1);
+    } finally {
+        spy.mockRestore();
+    }
+});

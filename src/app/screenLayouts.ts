@@ -22,9 +22,11 @@ export function isScreenLayout(
     );
 }
 
-export function screenLayouts(document: Pick<Document, 'frames'>, screenId: string) {
-    const parents = frameParents(document.frames);
-
+export function screenLayouts(
+    document: Pick<Document, 'frames'>,
+    screenId: string,
+    parents = frameParents(document.frames)
+) {
     return Object.values(document.frames).filter(
         (frame) =>
             frame.parentFrameId === screenId && isScreenLayout(document.frames, frame.id, parents)
@@ -34,11 +36,12 @@ export function screenLayouts(document: Pick<Document, 'frames'>, screenId: stri
 export function screenLayoutRoot(
     document: Pick<Document, 'frames'>,
     screenId: string,
-    layoutId?: string
+    layoutId?: string,
+    parents?: ReturnType<typeof frameParents>
 ) {
     const layout = document.frames[layoutId ?? ''];
 
-    if (layout?.parentFrameId === screenId && isScreenLayout(document.frames, layout.id)) {
+    if (layout?.parentFrameId === screenId && isScreenLayout(document.frames, layout.id, parents)) {
         return layout;
     }
 
@@ -117,9 +120,9 @@ export function screenLayoutMembers(
     screenId: string,
     layoutId?: string
 ) {
-    const root = screenLayoutRoot(document, screenId, layoutId);
     const parents = frameParents(document.frames);
-    const layouts = new Set(screenLayouts(document, screenId).map((frame) => frame.id));
+    const root = screenLayoutRoot(document, screenId, layoutId, parents);
+    const layouts = new Set(screenLayouts(document, screenId, parents).map((frame) => frame.id));
     const children = new Map<string, string[]>();
     const ids = Object.keys(document.frames);
     for (const id of ids) {
@@ -143,7 +146,7 @@ export function screenLayoutMembers(
         }
     }
 
-    // Traversal order differs from document order, which callers already observe.
+    // Return members in document order; callers depend on it.
     return new Set(ids.filter((id) => members.has(id)));
 }
 
