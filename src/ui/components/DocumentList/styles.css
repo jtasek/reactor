@@ -372,6 +372,7 @@
 
 .thumbnailSvg {
     font-family: var(--font-content);
+    text-rendering: geometricPrecision;
     display: block;
     height: 100%;
     width: 100%;

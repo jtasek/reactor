@@ -62,6 +62,8 @@ svg {
 svg text {
     /* The canvas drawing font, loaded from this runtime's own origin. */
     font-family: Roboto, sans-serif;
+    /* Unhinted advances, so text keeps the canvas width at any scale. */
+    text-rendering: geometricPrecision;
 }
 foreignObject {
     overflow: visible;

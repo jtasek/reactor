@@ -196,5 +196,5 @@ export function serializeSvg(input: PreviewApplication, strokeColor = '#474a51')
         );
     };
 
-    return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${screen.width}" height="${screen.height}" viewBox="${screen.x} ${screen.y} ${screen.width} ${screen.height}" overflow="hidden" color="#000000" font-family="Roboto, sans-serif"><title>${escape(screen.name)}</title>${screen.nodes.map(element).join('')}</svg>\n`;
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${screen.width}" height="${screen.height}" viewBox="${screen.x} ${screen.y} ${screen.width} ${screen.height}" overflow="hidden" color="#000000" font-family="Roboto, sans-serif" text-rendering="geometricPrecision"><title>${escape(screen.name)}</title>${screen.nodes.map(element).join('')}</svg>\n`;
 }

@@ -1,6 +1,7 @@
 .shape {
   background-color: transparent;
   font-family: var(--font-content);
+  text-rendering: geometricPrecision;
   /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- no design token yet */
   color: rgba(0, 0, 0, 0.5);
   cursor: text;

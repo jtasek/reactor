@@ -59,9 +59,12 @@ input {
   opacity: 1;
 }
 
-/* Canvas content keeps the drawing font that text measurement and export assume. */
+/* Canvas content keeps the drawing font that text measurement and export assume.
+   geometricPrecision keeps glyph advances unhinted, so drawn text has the measured
+   width at every zoom level and in scaled-down thumbnails. */
 #surface {
   font-family: var(--font-content);
+  text-rendering: geometricPrecision;
 }
 
 /* At least 16px on touch screens, so focusing a field does not zoom the page. */
