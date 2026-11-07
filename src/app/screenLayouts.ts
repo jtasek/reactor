@@ -120,22 +120,31 @@ export function screenLayoutMembers(
     const root = screenLayoutRoot(document, screenId, layoutId);
     const parents = frameParents(document.frames);
     const layouts = new Set(screenLayouts(document, screenId).map((frame) => frame.id));
+    const children = new Map<string, string[]>();
+    const ids = Object.keys(document.frames);
+    for (const id of ids) {
+        const parent = parents.get(id);
+        if (parent === undefined) {
+            continue;
+        }
+        const siblings = children.get(parent) ?? [];
+        siblings.push(id);
+        children.set(parent, siblings);
+    }
     const members = new Set<string>();
-
-    for (const id of Object.keys(document.frames)) {
-        for (let current: string | undefined = id; current; current = parents.get(current)) {
-            if (current === root?.id) {
-                members.add(id);
-                break;
-            }
-
-            if (layouts.has(current)) {
-                break;
+    const pending = root ? [root.id] : [];
+    while (pending.length) {
+        const id = pending.pop()!;
+        members.add(id);
+        for (const child of children.get(id) ?? []) {
+            if (!layouts.has(child)) {
+                pending.push(child);
             }
         }
     }
 
-    return members;
+    // Traversal order differs from document order, which callers already observe.
+    return new Set(ids.filter((id) => members.has(id)));
 }
 
 /** Fit only the inspected tree. Authored geometry, modes and layout choices stay intact. */
