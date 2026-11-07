@@ -324,3 +324,53 @@ type checks, changed-file lint, lint baseline (two existing findings), and produ
 builds within the existing bundle budgets.
 All 76 selected browser tests passed, including automatic/explicit screen layouts, template
 selection, Screen view editing, inherited modes, responsive variants and stack sizing.
+
+### Placing only the requested editing view
+
+A fresh Chromium CPU profile with Inspector and Explorer open found `editableScreenView`
+calling `componentScreenViews`, translating/copying every view, and then retaining just one.
+In the 60-instance/three-view fixture, that resolver accounted for 68.3 ms of sampled CPU over
+four selections. The geometry itself was already cached; this was repeated placement work.
+
+Editing now requests its view before ordinary projections are copied and translated. Drawing
+all views retains the existing path. The aggregate geometry node budget is enforced before
+filtering; focused component editing still projects the full set before selecting its result.
+Selection/hover values are read live, and translated shapes remain isolated copies. No new
+persistent cache or document fields are introduced.
+
+The regression fixture now translates 20 shapes for one requested view instead of 320 across
+16 views; it fails against baseline `f6ef1618` with the original count. It also verifies live
+selection, cache/copy isolation and rejection of a view blocked by the shared node budget.
+Independent performance review found no actionable issues.
+
+For diagnosis, a temporary unminified production build was used with the existing
+`PROFILE_COMPONENT_SELECTION` browser tests. Sampled resolver time fell from 68.3 to 32.8 ms,
+and the component fixture's median dispatch/assertion duration fell from 74.5 to 58.5 ms in
+one before/after run. These numbers include profiling and browser automation overhead; they
+are not input-to-paint latency. Temporary profiling configuration and profiles stay outside
+the repository; normal production builds retain minification and bundle budgets.
+
+Normal minified production builds were then tested three times each (baseline runs followed by
+optimized runs), one browser worker, without CPU profiling. All 36 runs passed. Combined median
+interaction durations and median per-run script time were:
+
+| Fixture                   | Interaction before → after | Script before → after |
+| ------------------------- | -------------------------: | --------------------: |
+| 60 instances, three views |                 64 → 57 ms |    283.09 → 256.20 ms |
+| Inspector typography      |                 42 → 41 ms |    533.88 → 531.79 ms |
+| List / detail             |                 28 → 27 ms |    362.47 → 335.54 ms |
+| Forms                     |                 27 → 26 ms |    347.59 → 332.44 ms |
+| Sign-in                   |                 29 → 27 ms |    386.83 → 348.55 ms |
+| Settings                  |                 33 → 30 ms |    397.80 → 371.89 ms |
+
+The component fixture performs four selections per run; each template performs 16. Script totals
+therefore must not be compared across those fixture types. Results describe these local runs,
+including automation/assertions, not guaranteed latency. Rendering, component-source resolution
+and subscription bookkeeping remain visible in the profiles and are separate future work.
+
+Verification: all 2,165 unit/server tests passed (30 skipped), as did application/test/server type
+checks, changed-file lint and the lint baseline (two existing findings). Normal production editor
+and preview builds passed within the existing bundle budgets. All six profiling scenarios passed
+on each diagnostic build; all 18 benchmark runs passed on each normal production build.
+All 76 broader browser regression tests passed, including dragging, shape/container handles,
+focused component editing, selection menus, automatic/explicit layouts and inherited modes.

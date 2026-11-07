@@ -28,8 +28,11 @@ import type { HandleOwner, ScreenViewAddress, ScreenViewGesture } from 'src/even
 
 export type ScreenViewContainer = Exclude<HandleOwner, { shapeId: string }>;
 
-/** Keep the focused instance's layout footprint stable while its master bounds change. */
-export function componentScreenViews(state: Context['state'], position?: Point) {
+/**
+ * Keep the focused instance's footprint stable while its master bounds change.
+ * An editing action may request one view; focus still resolves the full node budget.
+ */
+export function componentScreenViews(state: Context['state'], position?: Point, viewId?: string) {
     const document = state.currentDocument;
     const focus = state.componentEditingReturn?.componentOrigin;
     const instance = focus ? document.shapes[focus.instanceId] : undefined;
@@ -40,10 +43,10 @@ export function componentScreenViews(state: Context['state'], position?: Point) 
         instance?.type !== 'instance' ||
         instance.componentId !== focus.componentId
     ) {
-        return placedScreenViews(document, position);
+        return placedScreenViews(document, position, viewId);
     }
 
-    return projectScreenViews(
+    const views = projectScreenViews(
         {
             ...document,
             shapes: {
@@ -58,11 +61,19 @@ export function componentScreenViews(state: Context['state'], position?: Point) 
         state.previewModes[document.id],
         position
     );
+
+    return viewId === undefined ? views : views.filter((item) => item.view.id === viewId);
 }
 
 /** Reuse local geometry for drawing and hit testing; selection is read separately. */
-function placedScreenViews(document: Document, position?: Point) {
-    return document.screenViewGeometry.map((item) => {
+function placedScreenViews(document: Document, position?: Point, viewId?: string) {
+    // Geometry has already enforced the shared node budget. Place only the view an
+    // editing action needs, avoiding copies and selection reads for every sibling.
+    const geometry = document.screenViewGeometry;
+    const views =
+        viewId === undefined ? geometry : geometry.filter((item) => item.view.id === viewId);
+
+    return views.map((item) => {
         const view = document.frames[item.view.id];
         const offset = position ?? view.position;
         const projection = item.projection;
@@ -200,9 +211,7 @@ export function editableScreenView(state: Context['state'], address: ScreenViewA
         return null;
     }
 
-    const projection = componentScreenViews(state).find(
-        (item) => item.view.id === source.view.id
-    )?.projection;
+    const projection = componentScreenViews(state, undefined, source.view.id)[0]?.projection;
 
     if (!projection) {
         return null;
