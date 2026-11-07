@@ -345,15 +345,20 @@ export const useScreenViewContainers = (
         }
 
         const document = state.currentDocument;
+        const owners: ScreenViewContainer[] = [
+            ...document.selectedGroupsIds.map((groupId) => ({ groupId })),
+            ...document.selectedComponentsIds.map((componentId) => ({ componentId }))
+        ];
+
+        if (owners.length === 0) {
+            return [];
+        }
+
         const placed = placedScreenDocument(
             document,
             projection.shapes,
             projection.componentRotation
         );
-        const owners: ScreenViewContainer[] = [
-            ...document.selectedGroupsIds.map((groupId) => ({ groupId })),
-            ...document.selectedComponentsIds.map((componentId) => ({ componentId }))
-        ];
 
         return owners.flatMap((owner) => {
             const container =

@@ -374,3 +374,43 @@ and preview builds passed within the existing bundle budgets. All six profiling 
 on each diagnostic build; all 18 benchmark runs passed on each normal production build.
 All 76 broader browser regression tests passed, including dragging, shape/container handles,
 focused component editing, selection menus, automatic/explicit layouts and inherited modes.
+
+### Separating selection controls from artwork (2026-11-07)
+
+Screen view selection outlines now subscribe to selection independently of the projected
+artwork. Selecting a shape no longer directly invalidates its artwork's mode, color and
+component-source resolution. Existing memoization still compares immutable geometry and
+placement props; artwork dependencies remain tracked, including variable and source edits.
+Each interactive shape gains a small selection subscription. No durable fields or new
+persistent caches are introduced.
+
+Container selection now returns before placing a view's artwork when there is no selected
+group or component. The regression in `shapeSubscriptions.test.ts` verifies that ordinary
+shape selection does not even read projection members for that unused work; it fails before
+the early return. Existing container-handle tests exercise the nonempty path.
+
+Baseline: merged master `1a2bb90c`. Both versions used normal minified production builds,
+Chromium, one worker, three runs per fixture and no CPU profiler. Baseline runs preceded
+optimized runs on the same machine. All 18 runs passed on each version.
+
+| Fixture | Median interaction before → after | Median script total before → after |
+| --- | ---: | ---: |
+| 60 instances, three views | 55 → 49 ms | 257.44 → 241.00 ms |
+| Inspector typography | 42 → 41.5 ms | 531.55 → 541.07 ms |
+| List / detail | 28 → 28 ms | 347.37 → 338.89 ms |
+| Forms | 26 → 26.5 ms | 334.65 → 329.88 ms |
+| Sign-in | 28 → 28.5 ms | 354.61 → 362.31 ms |
+| Settings | 31 → 32.5 ms | 374.34 → 355.20 ms |
+
+The instance-heavy fixture shows about 11% lower interaction time and 6% less script work.
+Template results are mixed and small; they do not establish a general speedup. Interaction
+durations include automation/assertions, not input-to-paint latency. Script totals cover four
+selections in the component fixture and 16 in each template, so totals are not comparable
+across fixture types. These changes remove specific unnecessary work rather than replace
+SVG or Overmind; subscription bookkeeping and source resolution remain future profiling targets.
+
+Verification: 2,166 unit/server tests passed (30 skipped), including 26 focused subscription
+and container-handle checks. All 52 broader browser tests passed, covering repainting,
+inherited modes, responsive variants, view dragging, shape/container handles, focused editing,
+alignment, overlays and stack sizing. Application/test/server type checks, lint baseline
+(two existing findings), and production editor/preview builds passed with unchanged budgets.

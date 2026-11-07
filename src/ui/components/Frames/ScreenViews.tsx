@@ -21,7 +21,8 @@ import {
     componentScreenView,
     projectComponentView
 } from 'src/app/screenViewEditing';
-import type { Frame, Point, Shape } from 'src/app/types';
+import type { Box, Frame, Point, Shape } from 'src/app/types';
+import { useShapeSelected } from 'src/app/selectionHooks';
 import { getComponentByType } from 'src/tools/components';
 import { Label } from '../Label';
 import { Handles } from '../Selectable/Resizable';
@@ -74,6 +75,36 @@ interface ProjectedShapeProps {
     inSelectedContainer: boolean;
 }
 
+const ProjectedSelection: FC<{
+    shape: Shape;
+    bounds: Box;
+    viewId: string;
+    placedOffset: boolean;
+}> = ({ shape, bounds, viewId, placedOffset }) => {
+    const selected = useShapeSelected(shape.id);
+
+    if (!selected) {
+        return null;
+    }
+
+    return (
+        <>
+            <rect
+                x={bounds.topLeft.x}
+                y={bounds.topLeft.y}
+                width={bounds.width}
+                height={bounds.height}
+                fill="none"
+                stroke="var(--selection-color)"
+                strokeWidth={2}
+                vectorEffect="non-scaling-stroke"
+                pointerEvents="none"
+            />
+            <ProjectedSelectionControls shape={shape} viewId={viewId} placedOffset={placedOffset} />
+        </>
+    );
+};
+
 const ProjectedShape = memo(
     function ProjectedShape({
         shape,
@@ -84,7 +115,6 @@ const ProjectedShape = memo(
     }: ProjectedShapeProps) {
         const state = useAppState((state) => state);
         const document = state.currentDocument;
-        const selected = document.shapes[shape.id]?.selected ?? false;
         const context = artworkModes(state, shape, viewId).modes;
         const painted = themeColors(shape, document, context);
         const source = painted.type === 'instance' ? instanceSource(document, painted) : null;
@@ -131,22 +161,10 @@ const ProjectedShape = memo(
                         Primitive && createElement(Primitive, { ...props, key, selected: false })
                     )}
                 </g>
-                {interactive && selected && !inSelectedContainer && (
-                    <rect
-                        x={bounds.topLeft.x}
-                        y={bounds.topLeft.y}
-                        width={bounds.width}
-                        height={bounds.height}
-                        fill="none"
-                        stroke="var(--selection-color)"
-                        strokeWidth={2}
-                        vectorEffect="non-scaling-stroke"
-                        pointerEvents="none"
-                    />
-                )}
-                {interactive && selected && !inSelectedContainer && (
-                    <ProjectedSelectionControls
+                {interactive && !inSelectedContainer && (
+                    <ProjectedSelection
                         shape={shape}
+                        bounds={bounds}
                         viewId={viewId}
                         placedOffset={placedOffset}
                     />
