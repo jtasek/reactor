@@ -247,8 +247,9 @@
     padding: 4px 6px 6px;
 }
 
+/* The ring takes the darker chip text color: a bright swatch alone is too faint on white. */
 .picker .toneSwatch[aria-checked='true'] {
-    outline: var(--focus-ring-width) solid var(--tag-swatch);
+    outline: var(--focus-ring-width) solid var(--tag-color);
     outline-offset: 2px;
 }
 
