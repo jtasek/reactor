@@ -1,6 +1,7 @@
 import { performance } from 'node:perf_hooks';
 import { createDocument, createShape } from 'src/app/factories';
 import { projectScreen } from 'src/app/screenProjection';
+import { screenFrames } from 'src/app/screens';
 import type { Frame } from 'src/app/types';
 
 function fixture(count: number) {
@@ -93,4 +94,17 @@ it('shares one frame-state lookup and refreshes inherited visibility on the next
     expect(states).toHaveBeenCalledTimes(6);
     expect(restored.frames).toHaveLength(100);
     expect(restored.shapes).toHaveLength(100);
+});
+
+it('lists screens with one frame-state lookup and skips hidden ones', () => {
+    const { document } = fixture(100);
+    const other = { ...document.frames.screen, id: 'other', visible: false };
+    const hiddenParent = { ...document.frames.screen, id: 'parent', kind: 'frame' as const };
+    const nested = { ...other, id: 'nested', visible: true, parentFrameId: 'parent' };
+    document.frames = { ...document.frames, other, parent: hiddenParent, nested };
+    const states = vi.fn(() => undefined);
+    Object.defineProperty(document, 'frameStates', { get: states });
+
+    expect(screenFrames(document).map((frame) => frame.id)).toEqual(['screen']);
+    expect(states).toHaveBeenCalledTimes(1);
 });

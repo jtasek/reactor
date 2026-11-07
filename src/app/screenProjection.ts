@@ -1,6 +1,6 @@
 import { renderedFrame, renderedShape } from './frameLayout';
 import { projectContextualLayout } from './contextualLayout';
-import { frameStatesOf } from './frameState';
+import { frameStatesOf, frameVisibility } from './frameState';
 import { translateShape } from './geometry';
 import { shownShapesIds } from './membership';
 import type { Document, Frame, Point, Shape, Size, VariableContext } from './types';
@@ -54,12 +54,8 @@ export function projectScreen(
     const belongsToScreen = (id: string | undefined) => members.has(id ?? '');
     // Plain projection snapshots have no derived state: resolve it once, not per child.
     const frameStates = frameStatesOf(document);
-    const frameIds = [...members].filter(
-        (id) =>
-            id !== source.id &&
-            Object.hasOwn(document.frames, id) &&
-            frameStates[id]?.hiddenBy === undefined
-    );
+    const visible = frameVisibility({ frames: document.frames, frameStates });
+    const frameIds = [...members].filter((id) => id !== source.id && visible(id));
     const shown = shownShapesIds(document, null, frameStates);
     const memberIds = document.shapesIds.filter((id) =>
         belongsToScreen(document.shapes[id]?.parentFrameId)

@@ -91,8 +91,18 @@ export function frameState(
     return Object.hasOwn(states, id) ? states[id] : undefined;
 }
 
-export const isFrameVisible = (document: Document, id: string) =>
-    Object.hasOwn(document.frames, id) && frameState(document, id)?.hiddenBy === undefined;
+/**
+ * Whether frames are shown, with inherited states resolved once for every id asked about.
+ * On a plain snapshot, with no derived states, each lookup would walk every frame again.
+ */
+export function frameVisibility(document: Pick<Document, 'frames' | 'frameStates'>) {
+    const states = frameStatesOf(document);
+
+    // States have exactly the frames' keys: an id with no state is not a frame.
+    return (id: string) => Object.hasOwn(states, id) && states[id].hiddenBy === undefined;
+}
+
+export const isFrameVisible = (document: Document, id: string) => frameVisibility(document)(id);
 
 export const isFrameLocked = (document: Document, id: string) =>
     document.locked || frameState(document, id)?.lockedBy !== undefined;

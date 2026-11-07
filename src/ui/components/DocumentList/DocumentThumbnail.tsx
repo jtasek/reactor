@@ -4,7 +4,7 @@ import { projectContextualLayout } from 'src/app/contextualLayout';
 import { projectScreenViews } from 'src/app/screenProjection';
 import React, { FC, ReactNode, useEffect, useLayoutEffect, useRef } from 'react';
 import { useVariableContext } from 'src/app/hooks';
-import { isFrameVisible } from 'src/app/frameState';
+import { frameVisibility } from 'src/app/frameState';
 import { themeColors } from 'src/app/themeColors';
 import { SquareDashed } from 'lucide-react';
 import type { Box, Document, Image, InstanceShape, Shape, VariableContext } from 'src/app/types';
@@ -388,8 +388,9 @@ export const DocumentThumbnail: FC<{
     });
 
     const owners = screenOwners(document.frames);
+    const visible = frameVisibility(document);
     const frames = Object.values(document.frames).filter(
-        (frame) => !owners.get(frame.id) && isFrameVisible(document, frame.id)
+        (frame) => !owners.get(frame.id) && visible(frame.id)
     );
     const views = projectScreenViews(sourceDocument, simulation).flatMap(({ view, projection }) =>
         projection ? [{ ...projection, viewId: view.id }] : []
