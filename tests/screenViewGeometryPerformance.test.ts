@@ -403,3 +403,38 @@ it('keeps screen geometry cached while an unrelated canvas shape is resized or r
         document.screenViewGeometry[0].projection?.shapes.find((shape) => shape.id === id)
     ).toMatchObject({ cornerRadius: 30 });
 });
+
+it.each([
+    { type: 'rectangle', position: { x: 9000, y: 0 }, size: { width: 100, height: 100 } },
+    { type: 'image', position: { x: 9000, y: 0 }, size: { width: 100, height: 100 }, source: '' },
+    { type: 'circle', position: { x: 9050, y: 50 }, radius: 50 },
+    { type: 'ellipse', position: { x: 9050, y: 50 }, radius: { x: 50, y: 30 } },
+    { type: 'line', start: { x: 9000, y: 0 }, end: { x: 9100, y: 100 } },
+    {
+        type: 'pen',
+        points: [
+            { x: 9000, y: 0 },
+            { x: 9050, y: 80 },
+            { x: 9100, y: 100 }
+        ]
+    },
+    { type: 'text', position: { x: 9000, y: 20 }, value: 'Free label', fontSize: 16 }
+] as const)('keeps screen geometry cached while a free $type is moved or resized', (input) => {
+    const { store } = editingFixture();
+    const document = store.state.currentDocument;
+    store.actions.addShape(input as Parameters<typeof store.actions.addShape>[0]);
+    const id = document.shapesIds.at(-1)!;
+    const original = JSON.parse(JSON.stringify(document.shapes[id]));
+    const before = document.screenViewGeometry;
+
+    for (let step = 1; step <= 5; step++) {
+        store.actions.resizeShape({
+            shapeId: id,
+            handlerType: 'bottomRight',
+            position: { x: 9100 + step * 10, y: 100 + step * 10 },
+            original
+        });
+        store.actions.moveShapesBy({ shapeIds: [id], delta: { x: 1, y: 1 } });
+        expect(document.screenViewGeometry).toBe(before);
+    }
+});
