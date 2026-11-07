@@ -418,7 +418,8 @@ export const isCorner = (value: string): value is Corner => Object.hasOwn(CORNER
 /**
  * Whether `point` hits `shape` where it is drawn: within `tolerance` of its
  * outline, or anywhere inside a closed shape (rectangle, image, text, circle,
- * ellipse). Lines and pens are open, so only their stroke hits. Shapes are drawn
+ * ellipse). Open shapes hit along their stroke; a selected pen also hits its
+ * selection box so it can be dragged from inside the box. Shapes are drawn
  * rotated about their box center, so the point is tested in the unrotated frame.
  */
 export function hitTestShape(shape: Shape, point: Point, tolerance: number): boolean {
@@ -443,7 +444,10 @@ export function hitTestShape(shape: Shape, point: Point, tolerance: number): boo
         case 'line':
             return distanceToSegment(local, shape.start, shape.end) <= tolerance;
         case 'pen':
-            return distanceToPolyline(local, shape.points) <= tolerance;
+            return (
+                (shape.selected && distanceToBox(local, bounds) <= tolerance) ||
+                distanceToPolyline(local, shape.points) <= tolerance
+            );
         default:
             return assertNever(shape);
     }
