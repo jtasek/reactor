@@ -525,7 +525,7 @@ test('a tag keeps the color picked for it on every document and after reloading'
     await color.click();
     await picker
         .getByRole('radiogroup', { name: 'Colors for Client project' })
-        .getByRole('radio', { name: 'purple' })
+        .getByRole('radio', { name: 'Lilac' })
         .click();
     await expect(color).toBeFocused();
     await expect(color).toHaveAttribute('data-tone', 'purple');
