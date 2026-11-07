@@ -140,6 +140,7 @@ test('keeps simultaneous sessions independent and retains valid output through l
         'Ada'
     );
     await editor.getByLabel('Role label', { exact: true }).selectOption('');
+    await expect(page.getByText('Showing the last valid preview.')).toBeVisible();
     await page.getByRole('button', { name: 'Inspect Wide continue', exact: true }).click();
     await expect(page).toHaveURL(/\/$/);
     await expect(

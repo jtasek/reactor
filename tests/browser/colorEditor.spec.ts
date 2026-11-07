@@ -41,6 +41,7 @@ test('a color field opens the color editor, which edits by hex, RGB and keys', a
     await editor.getByLabel('Lightness (%)').press('Enter');
     await expect(fill).toHaveValue('#ff00ff');
     await editor.getByRole('button', { name: 'Close' }).click();
+    await expect(editor).toHaveCount(0);
     await fill.click();
     await expect(editor.getByLabel('Hue (degrees)')).toHaveValue('300');
     await editor.getByRole('button', { name: 'HSB' }).click();
@@ -62,7 +63,9 @@ test('a color field opens the color editor, which edits by hex, RGB and keys', a
 
     // Escape closes the editor and gives the field its focus back, keeping the shape.
     await page.keyboard.press('Escape');
-    await expect(editor).toBeHidden();
+    // Native popovers hide before their queued toggle event updates React's open state.
+    // Wait for that close to finish before sending another activation key.
+    await expect(editor).toHaveCount(0);
     await expect(fill).toBeFocused();
     await expect(shapes(page)).toHaveCount(1);
 
@@ -70,14 +73,14 @@ test('a color field opens the color editor, which edits by hex, RGB and keys', a
     await page.keyboard.press('Enter');
     await expect(editor).toBeVisible();
     await editor.getByRole('button', { name: 'Close' }).click();
-    await expect(editor).toBeHidden();
+    await expect(editor).toHaveCount(0);
     await expect(fill).toBeFocused();
 
     // A press elsewhere closes it without taking the focus back to the field.
     await fill.click();
     await expect(editor).toBeVisible();
     await page.getByRole('columnheader', { name: 'Appearance', exact: true }).click();
-    await expect(editor).toBeHidden();
+    await expect(editor).toHaveCount(0);
     await expect(fill).not.toBeFocused();
 });
 
