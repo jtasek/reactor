@@ -233,7 +233,6 @@ function geometry(
                 <text
                     x={shape.position.x}
                     y={shape.position.y}
-                    fontFamily="var(--font-content)"
                     fontSize={shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE}
                     fontWeight={shape.fontWeight}
                     fill={shape.fontColor ?? 'var(--text-color)'}

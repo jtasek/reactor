@@ -185,7 +185,7 @@
 }
 .commandLine label input,
 .commandLine label select {
-    font-size: var(--font-size-touch-field);
+    font-size: var(--font-size-touch-input);
 }
 .message {
     background: var(--panel-content-background);
@@ -237,7 +237,7 @@
         padding: 10px;
     }
     .search input {
-        font-size: var(--font-size-touch-field);
+        font-size: var(--font-size-touch-input);
     }
     .footer {
         flex-wrap: wrap;

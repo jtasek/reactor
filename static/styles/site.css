@@ -36,8 +36,13 @@ body,
   --font-size-caption: 11px;
   --line-height-caption: 14px;
   --font-size-micro: 10px;
-  /* Fields that must not make a phone zoom the page when focused. */
-  --font-size-touch-field: 16px;
+  --font-size-touch-input: 16px;
+  --control-height: 22px;
+  --list-row-height: 28px;
+  --panel-title-height: 28px;
+  --space-section: 12px;
+  --space-card: 10px;
+  --space-row: 3px;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
