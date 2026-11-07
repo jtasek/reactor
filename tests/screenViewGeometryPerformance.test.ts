@@ -1,3 +1,5 @@
+import { editableScreenView } from 'src/app/screenViewEditing';
+import * as geometry from 'src/app/geometry';
 import * as inputs from 'src/app/screenGeometryInputs';
 import { screenGeometryInputs } from 'src/app/screenGeometryInputs';
 import { resolveScreenViewGeometry } from 'src/app/screenViewGeometry';
@@ -6,7 +8,7 @@ import { responsiveVariantsDocument } from './support/responsiveVariants';
 import * as projection from 'src/app/screenProjection';
 import { performance } from 'node:perf_hooks';
 import { createDocument, createShape, createGroup } from 'src/app/factories';
-import type { Frame } from 'src/app/types';
+import type { Frame, Text } from 'src/app/types';
 import { createTestStore } from './support/store';
 
 /** Several screens on one canvas; edits affect only the first screen's two views. */
@@ -226,6 +228,14 @@ it('rechecks the shared node budget when a cached later view becomes blocked and
     const blocked = resolveScreenViewGeometry(document);
     expect(blocked[1].projection).toBeNull();
     expect(blocked[1].problem).toContain('5000 projected nodes');
+    const { store } = createTestStore();
+    store.actions.addDocument({ ...document, id: store.state.currentDocumentId });
+    expect(
+        editableScreenView(store.state, {
+            documentId: store.state.currentDocumentId,
+            viewId: blocked[1].view.id
+        })
+    ).toBeNull();
     for (let index = 0; index < 3; index++) {
         delete document.shapes[`extra-${index}`];
     }
@@ -330,4 +340,37 @@ it('collects one layout dependency set for all views of that layout', () => {
     // Eight screens with two views each, both views drawing the screen itself.
     expect(collect).toHaveBeenCalledTimes(8);
     collect.mockRestore();
+});
+
+it('places only the requested editing view, with live selection and isolated shape copies', () => {
+    const { store, shapeId } = editingFixture();
+    const document = store.state.currentDocument;
+    const cached = document.screenViewGeometry;
+    const local = cached.find((item) => item.view.id === 'screen-0-320')!.projection!;
+    const localText = local.shapes[0] as Text;
+    const translate = vi.spyOn(geometry, 'translateShape');
+    try {
+        const address = { documentId: document.id, viewId: 'screen-0-320' };
+        const first = editableScreenView(store.state, address)!;
+        const firstText = first.projection.shapes[0] as Text;
+        expect(translate).toHaveBeenCalledTimes(20);
+        expect(first.projection.shapes).toHaveLength(20);
+        expect(firstText.position.x).toBe(
+            localText.position.x + document.frames[address.viewId].position.x
+        );
+        expect(first.projection.shapes[0].selected).toBe(false);
+
+        store.actions.selectShape(shapeId);
+        const second = editableScreenView(store.state, address)!;
+        const secondText = second.projection.shapes[0] as Text;
+        expect(translate).toHaveBeenCalledTimes(40);
+        expect(second.projection.shapes[0].selected).toBe(true);
+        expect(first.projection.shapes[0].selected).toBe(false);
+        expect(document.screenViewGeometry).toBe(cached);
+        secondText.position.x += 100;
+        expect(firstText.position.x).not.toBe(secondText.position.x);
+        expect(localText.position.x).toBe(16);
+    } finally {
+        translate.mockRestore();
+    }
 });
