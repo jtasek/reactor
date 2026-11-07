@@ -374,3 +374,42 @@ and preview builds passed within the existing bundle budgets. All six profiling 
 on each diagnostic build; all 18 benchmark runs passed on each normal production build.
 All 76 broader browser regression tests passed, including dragging, shape/container handles,
 focused component editing, selection menus, automatic/explicit layouts and inherited modes.
+
+### Isolating Screen view selection controls
+
+Selection was read by `ProjectedShape`, so selecting or clearing an instance rendered its
+artwork again, including component-source resolution and all its primitives. `ProjectedSelection`
+now owns that live subscription and renders the existing outline, label and handles. The artwork
+keeps its own tracked mode, variable, source and geometry reads. There is no new geometry cache,
+no mutable-document memoization and no change to pointer handling or selection semantics.
+
+Against baseline `e6e8a3ab`, three normal minified production runs per build measured:
+
+| Fixture                   | Interaction before → after | Script before → after |
+| ------------------------- | -------------------------: | --------------------: |
+| 60 instances, three views |               61 → 54.5 ms |    280.76 → 255.92 ms |
+| Inspector typography      |               42.5 → 41 ms |    551.99 → 541.64 ms |
+| List / detail             |               28 → 29.5 ms |    348.57 → 337.74 ms |
+| Forms                     |                 26 → 26 ms |    341.75 → 329.77 ms |
+| Sign-in                   |                 29 → 31 ms |    369.67 → 358.02 ms |
+| Settings                  |               32.5 → 31 ms |    391.66 → 391.75 ms |
+
+These are combined median dispatch/assertion durations and median per-run script totals from
+`componentSelectionPerformance.spec.ts` and `templateSelection.spec.ts`, with one browser worker
+and traces disabled. The populated component fixture improved by about 11%; template interaction
+results are mixed and do not establish a general latency improvement. Individual component-run
+medians were 55.5/61/64 ms before and 54/61.5/54.5 ms after. Baseline runs preceded optimized runs.
+A first optimized timing series overlapped the unit suite and was excluded; the reported series
+ran without concurrent verification. This is browser automation timing, not input-to-paint latency.
+
+Diagnostic CPU profiles of all six scenarios also passed before and after. In the populated
+fixture, sampled `ProjectedShape` time was 44.49 → 40.06 ms; source resolution and subscription
+work remain significant. Splitting selection does not eliminate artwork renders triggered by
+other dependencies. Independent performance review found no actionable issues.
+
+Verification: all 2,165 unit/server tests passed (30 skipped), plus 83 browser regressions covering
+canvas dragging, view selection, shape/container handles, focused component editing, alignment,
+live variable repaint, inherited modes and responsive variants. All 18 benchmark scenarios passed
+on each reported production build. Type checks, changed-file lint, the lint baseline (two existing
+findings), and production editor/preview builds passed within unchanged budgets. The prior
+canvas-drag report's real-mouse regression is retained; no drag-logic change was needed.

@@ -9,6 +9,33 @@ import {
     shapes
 } from './support/editor';
 
+test('a newly drawn canvas shape can be dragged with the mouse while selected', async ({
+    page
+}) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await openEditor(page);
+    await page.getByRole('button', { name: 'More panels' }).click();
+    await selectTool(page, 'Draws a rectangle or square');
+    const surface = (await page.locator('svg#surface').boundingBox())!;
+    await page.mouse.move(surface.x + 300, surface.y + 300);
+    await page.mouse.down();
+    await page.mouse.move(surface.x + 400, surface.y + 380, { steps: 3 });
+    await page.mouse.up();
+    const rect = firstShape(page).locator('rect[data-cy]');
+    await expect(rect).toHaveAttribute('x', '300');
+    await expect(handles(page).first()).toBeVisible();
+
+    await page.mouse.move(surface.x + 350, surface.y + 340);
+    await page.mouse.down();
+    await page.mouse.move(surface.x + 410, surface.y + 390, { steps: 3 });
+    await page.mouse.up();
+
+    expect(errors).toEqual([]);
+    await expect(rect).toHaveAttribute('x', '360');
+    await expect(rect).toHaveAttribute('y', '350');
+});
+
 for (const pointerType of ['mouse', 'pen'] as const) {
     test(`a ${pointerType} drawing commits once, at the release position`, async ({ page }) => {
         await openEditor(page);
