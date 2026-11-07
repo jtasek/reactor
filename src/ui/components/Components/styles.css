@@ -44,7 +44,7 @@
 
 .label strong {
     color: var(--text-color-hover);
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
 }
 
 .label small,

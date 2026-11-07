@@ -119,7 +119,7 @@
 }
 
 .editor .heading {
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
     min-height: 26px;
     padding: 0 2px;
     margin-bottom: 6px;

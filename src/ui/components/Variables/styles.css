@@ -172,7 +172,7 @@
 .variables .toolbar button[aria-selected='true'] {
     border-bottom-color: var(--selection-color);
     color: var(--selection-color);
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 
 .workspace {
@@ -291,7 +291,7 @@
 }
 
 .rowHeader input {
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 
 .metadata,
@@ -381,7 +381,7 @@
     flex-wrap: wrap;
     gap: 8px;
     grid-column: 1 / -1;
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
     overflow-wrap: anywhere;
 }
 
@@ -405,7 +405,7 @@
 .variables .primary {
     background-color: var(--selection-color);
     color: var(--panel-content-background);
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 
 .variables .back {

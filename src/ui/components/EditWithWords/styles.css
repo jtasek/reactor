@@ -35,7 +35,7 @@
 .speaker {
     display: block;
     font-size: var(--font-size-callout);
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 
 .userMessage {
@@ -130,7 +130,7 @@
 .chat button[data-variant='primary'] {
     border-color: var(--primary-action-color);
     color: var(--primary-action-color);
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 
 .chat button[data-variant='primary']:disabled {

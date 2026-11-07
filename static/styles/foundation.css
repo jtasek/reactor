@@ -29,6 +29,11 @@ textarea {
   font-family: inherit;
 }
 
+/* Numbers in fields keep their width while they change. */
+input {
+  font-variant-numeric: tabular-nums;
+}
+
 ::placeholder {
   color: var(--label-tertiary);
   opacity: 1;

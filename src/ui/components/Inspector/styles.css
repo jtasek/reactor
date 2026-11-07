@@ -1,12 +1,12 @@
 /* The panel draws the glass; each section is a lighter card on it, under its heading. */
 .inspector {
     --inspector-inset: var(--panel-gap);
-    --section-gap: 12px;
+    --section-gap: var(--space-section, 12px);
     --card-radius: var(--radius-md);
-    --card-padding: 10px;
-    --field-height: 22px;
+    --card-padding: var(--space-card, 10px);
+    --field-height: var(--control-height, 22px);
     --field-radius: var(--radius-sm);
-    --row-padding: 3px;
+    --row-padding: var(--space-row, 3px);
     --column-gap: 8px;
     --checkbox-size: 14px;
     --color-swatch-width: 44px;
@@ -69,7 +69,7 @@
     background: transparent;
     color: var(--ink-strong);
     font-size: var(--font-size-body);
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
     height: 28px;
     padding: 0 3px;
 }
@@ -178,8 +178,8 @@
 /* A section's heading sits on the glass, above its card. */
 .inspector th,
 .heading {
-    color: var(--label-primary);
-    font-size: var(--font-size-body);
+    color: var(--section-label-color, var(--label-primary));
+    font-size: var(--font-size-section, var(--font-size-body));
     font-weight: var(--font-weight-semibold);
     letter-spacing: normal;
     line-height: var(--line-height-body);
@@ -258,7 +258,7 @@
     display: block;
     font: inherit;
     font-variant-numeric: tabular-nums;
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
     height: var(--field-height);
     min-width: 0;
     padding: 0 8px;
@@ -432,7 +432,7 @@
 .bound {
     color: var(--selection-color);
     display: inline-block;
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
     line-height: var(--field-height);
     max-width: calc(100% - var(--field-height) - 4px);
     overflow: hidden;
@@ -703,7 +703,7 @@
 .instanceChild h4 {
     color: var(--text-secondary-color);
     font-size: var(--font-size-callout);
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
     margin: 0 0 5px;
 }
 
@@ -1043,7 +1043,7 @@
 .prototypeState summary {
     cursor: pointer;
     font-size: var(--font-size-body);
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
 }
 
 .prototypeState summary:focus-visible {

@@ -1,5 +1,5 @@
 .panelLayer {
-    --panel-header-height: 28px;
+    --panel-header-height: var(--panel-title-height, 28px);
     --panel-max-height: min(70vh, 700px);
     --panel-max-width: min(90vw, 420px);
     --panel-grip-size: 14px;
@@ -117,7 +117,7 @@
     display: flex;
     flex: 0 0 var(--panel-header-height);
     font: inherit;
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
     justify-content: center;
     min-width: 28px;
     min-height: var(--panel-header-height);

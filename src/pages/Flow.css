@@ -107,7 +107,7 @@
     cursor: grab;
     touch-action: none;
     width: 100%;
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 .flow button:disabled {
     opacity: 0.5;

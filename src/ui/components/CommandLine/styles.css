@@ -125,7 +125,7 @@
 }
 .commandLine li strong {
     font-size: var(--font-size-body);
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 .commandLine li span {
     display: block;
@@ -168,7 +168,7 @@
 .commandLine legend {
     padding: 0;
     font-size: var(--font-size-body);
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 .fields {
     display: grid;

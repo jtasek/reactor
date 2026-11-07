@@ -30,7 +30,7 @@
 .views button[aria-pressed='true'] {
     background: var(--panel-content-background);
     color: var(--text-color);
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 
 .views button:focus-visible {
@@ -138,7 +138,7 @@
 .row {
     align-items: center;
     border-radius: var(--radius-sm);
-    min-height: 28px;
+    min-height: var(--list-row-height, 28px);
     display: flex;
     flex-direction: row;
     gap: 6px;
@@ -249,7 +249,7 @@
 
 .layer > .row > .name,
 .layer > .row > .label {
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 
 .selected > .row {
@@ -258,7 +258,7 @@
 
 .selected > .row > .name {
     color: var(--selection-color);
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 
 .active > .row > .name {
@@ -271,7 +271,7 @@
 
 .component > .row > .name {
     color: var(--component-color);
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
 }
 
 .component > .row > .name svg {
@@ -287,7 +287,7 @@
 }
 
 .component.selected > .row > .name {
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 
 .component > ul {
