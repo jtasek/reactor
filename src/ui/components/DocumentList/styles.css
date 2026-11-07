@@ -371,6 +371,7 @@
 }
 
 .thumbnailSvg {
+    font-family: var(--font-content);
     display: block;
     height: 100%;
     width: 100%;
