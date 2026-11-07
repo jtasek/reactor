@@ -22,9 +22,11 @@ export function isScreenLayout(
     );
 }
 
-export function screenLayouts(document: Pick<Document, 'frames'>, screenId: string) {
-    const parents = frameParents(document.frames);
-
+export function screenLayouts(
+    document: Pick<Document, 'frames'>,
+    screenId: string,
+    parents = frameParents(document.frames)
+) {
     return Object.values(document.frames).filter(
         (frame) =>
             frame.parentFrameId === screenId && isScreenLayout(document.frames, frame.id, parents)
@@ -34,11 +36,12 @@ export function screenLayouts(document: Pick<Document, 'frames'>, screenId: stri
 export function screenLayoutRoot(
     document: Pick<Document, 'frames'>,
     screenId: string,
-    layoutId?: string
+    layoutId?: string,
+    parents?: ReturnType<typeof frameParents>
 ) {
     const layout = document.frames[layoutId ?? ''];
 
-    if (layout?.parentFrameId === screenId && isScreenLayout(document.frames, layout.id)) {
+    if (layout?.parentFrameId === screenId && isScreenLayout(document.frames, layout.id, parents)) {
         return layout;
     }
 
@@ -117,25 +120,34 @@ export function screenLayoutMembers(
     screenId: string,
     layoutId?: string
 ) {
-    const root = screenLayoutRoot(document, screenId, layoutId);
     const parents = frameParents(document.frames);
-    const layouts = new Set(screenLayouts(document, screenId).map((frame) => frame.id));
+    const root = screenLayoutRoot(document, screenId, layoutId, parents);
+    const layouts = new Set(screenLayouts(document, screenId, parents).map((frame) => frame.id));
+    const children = new Map<string, string[]>();
+    const ids = Object.keys(document.frames);
+    for (const id of ids) {
+        const parent = parents.get(id);
+        if (parent === undefined) {
+            continue;
+        }
+        const siblings = children.get(parent) ?? [];
+        siblings.push(id);
+        children.set(parent, siblings);
+    }
     const members = new Set<string>();
-
-    for (const id of Object.keys(document.frames)) {
-        for (let current: string | undefined = id; current; current = parents.get(current)) {
-            if (current === root?.id) {
-                members.add(id);
-                break;
-            }
-
-            if (layouts.has(current)) {
-                break;
+    const pending = root ? [root.id] : [];
+    while (pending.length) {
+        const id = pending.pop()!;
+        members.add(id);
+        for (const child of children.get(id) ?? []) {
+            if (!layouts.has(child)) {
+                pending.push(child);
             }
         }
     }
 
-    return members;
+    // Return members in document order; callers depend on it.
+    return new Set(ids.filter((id) => members.has(id)));
 }
 
 /** Fit only the inspected tree. Authored geometry, modes and layout choices stay intact. */

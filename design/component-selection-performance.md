@@ -295,3 +295,32 @@ type checks, changed-file lint, the lint baseline (two existing findings), and p
 and preview builds within the existing bundle budgets.
 All 67 selected browser tests passed, covering template selection, Screen view editing, inherited
 modes, responsive variants and stack sizing.
+
+### Linear Screen layout membership
+
+`screenLayoutMembers` previously walked each frame's ancestor chain separately. A deeply nested
+screen repeated those shared chains, producing quadratic work. It now builds child lists from
+the existing normalized parent map, traverses the active layout once, and returns members in
+original document-key order. Other valid alternate layouts remain excluded; missing parents,
+cycles and view parents retain the existing normalization. Every call rebuilds the traversal,
+so reparenting and layout changes need no persistent cache invalidation.
+
+Three alternating runs against `d15fe9c4` measured 20 membership resolutions after warm-up for
+1,000 nested frames. Combined median time was **10.86 ms before → 0.74 ms after** (93% lower).
+Run medians were 11.17/10.67/10.78 ms before and 0.75/0.74/0.72 ms after. The bounded-work test
+fails on the baseline with 320,401 parent lookups for 800 nested frames; the new traversal stays
+below its linear 8,010-lookup guard.
+
+Shallow fixtures had small increases: full projection of 400 sibling frames was 2.81 → 2.85 ms,
+and the existing eight-screen edit benchmark was 5.05 → 5.18 ms, with overlapping run ranges.
+The gain is specific to nested membership traversal, not a claim of faster browser painting or
+all edits. Run with `pnpm exec cross-env PROFILE_LAYOUT_MEMBERS=1 vitest run tests/screenLayoutMembersPerformance.test.ts -t 'finds members'`.
+
+Tests cover document order, default/alternate boundaries, missing layout choices, normalized
+invalid parents/cycles/view parents and reparenting. Independent review found no actionable issues.
+
+Verification: all 2,163 unit/server tests passed (30 skipped), together with application/test/server
+type checks, changed-file lint, lint baseline (two existing findings), and production editor/preview
+builds within the existing bundle budgets.
+All 76 selected browser tests passed, including automatic/explicit screen layouts, template
+selection, Screen view editing, inherited modes, responsive variants and stack sizing.
