@@ -55,9 +55,26 @@ export function resolveScreenViewGeometry(document: Document, simulation?: Varia
         return [];
     }
 
+    // Free canvas geometry cannot affect a screen unless a component or group
+    // uses it. Keep context inputs (such as text wrapping) but do not subscribe
+    // to its drag geometry, so resizing or rounding it leaves views cached.
+    const dependencies = new Set([
+        ...Object.values(document.components).flatMap((component) => component.shapesIds),
+        ...Object.values(document.groups).flatMap((group) => group.shapesIds)
+    ]);
     const inputs = {
         frames,
-        shapes: records(document.shapes),
+        shapes: Object.fromEntries(
+            Object.entries(document.shapes).map(([id, shape]) => [
+                id,
+                artwork(
+                    shape,
+                    shape.parentFrameId !== undefined || dependencies.has(id)
+                        ? []
+                        : ['position', 'size', 'radius', 'cornerRadius', 'bounds']
+                )
+            ])
+        ),
         shapesIds: [...document.shapesIds],
         groups: records(document.groups),
         layers: records(document.layers),

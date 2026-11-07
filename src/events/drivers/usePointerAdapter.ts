@@ -24,6 +24,24 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
     const camera = useCamera();
     const pendingPan = useRef({ dx: 0, dy: 0 });
     const panFrame = useRef<number | null>(null);
+    const handlePointer = useRef<number | null>(null);
+    const moveFrame = useRef<number | null>(null);
+    const pendingMove = useRef<(() => void) | null>(null);
+
+    const clearMove = useCallback(() => {
+        if (moveFrame.current !== null) {
+            cancelAnimationFrame(moveFrame.current);
+        }
+
+        moveFrame.current = null;
+        pendingMove.current = null;
+    }, []);
+
+    const flushMove = useCallback(() => {
+        const move = pendingMove.current;
+        clearMove();
+        move?.();
+    }, [clearMove]);
 
     const getSvgElement = useCallback(
         (event: SyntheticEvent<SVGSVGElement>) =>
@@ -85,12 +103,14 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
 
     // Abandons the active gesture (if any) and releases its pointer capture.
     const cancelGesture = useCallback(() => {
+        clearMove();
+        handlePointer.current = null;
         const owner = actions.events.cancelGesture();
 
         if (owner !== null) {
             tryReleasePointerCapture(svgRef?.current, owner);
         }
-    }, [actions, svgRef]);
+    }, [actions, svgRef, clearMove]);
 
     useEffect(() => {
         window.addEventListener('blur', cancelGesture);
@@ -131,16 +151,21 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
             return;
         }
 
+        const handle = getHandleTarget(event.target);
         const started = actions.events.beginGesture({
             pointerId: event.pointerId,
             position,
-            handle: getHandleTarget(event.target),
+            handle,
             screenViewId: screenViewTarget(event.target),
             free: event.ctrlKey || event.metaKey,
             touch: event.pointerType === 'touch'
         });
 
         if (started) {
+            handlePointer.current =
+                handle && handle.type !== 'move' && handle.type !== 'rotate'
+                    ? event.pointerId
+                    : null;
             trySetPointerCapture(svgEl, event.pointerId);
         }
     };
@@ -162,21 +187,38 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
             return;
         }
 
-        const position = toCanvas(event, svgEl);
+        const { pointerId, clientX, clientY } = event;
+        const screenViewId = screenViewTarget(event.target);
+        const free = event.ctrlKey || event.metaKey;
+        const move = () => {
+            const position = screenToCanvas({ clientX, clientY }, svgEl, camera);
 
-        if (!position) {
+            if (position) {
+                actions.events.movePointer({ pointerId, position, screenViewId, free });
+            }
+        };
+
+        if (handlePointer.current !== null) {
+            if (handlePointer.current !== pointerId) {
+                return;
+            }
+
+            // Read layout and update the shape only once per painted frame.
+            pendingMove.current = move;
+            moveFrame.current ??= requestAnimationFrame(flushMove);
+
             return;
         }
 
-        actions.events.movePointer({
-            pointerId: event.pointerId,
-            position,
-            screenViewId: screenViewTarget(event.target),
-            free: event.ctrlKey || event.metaKey
-        });
+        move();
     };
 
     const handlePointerUp: PointerEventHandler<SVGSVGElement> = (event) => {
+        if (handlePointer.current === event.pointerId) {
+            clearMove();
+            handlePointer.current = null;
+        }
+
         log('handlePointerUp', {
             button: event.button,
             buttons: event.buttons,
@@ -204,6 +246,11 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
     // The browser took the pointer away (pointercancel) or capture was lost:
     // abandon that pointer's gesture rather than committing it.
     const handlePointerInterrupted: PointerEventHandler<SVGSVGElement> = (event) => {
+        if (handlePointer.current === event.pointerId) {
+            clearMove();
+            handlePointer.current = null;
+        }
+
         actions.events.cancelGesture(event.pointerId);
         tryReleasePointerCapture(svgRef?.current, event.pointerId);
     };
@@ -225,6 +272,7 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
             return;
         }
 
+        flushMove();
         actions.events.beginPinch(toContacts(event));
     };
 

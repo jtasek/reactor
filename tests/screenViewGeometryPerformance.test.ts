@@ -374,3 +374,32 @@ it('places only the requested editing view, with live selection and isolated sha
         translate.mockRestore();
     }
 });
+
+it('keeps screen geometry cached while an unrelated canvas shape is resized or rounded', () => {
+    const { store } = editingFixture();
+    const document = store.state.currentDocument;
+    store.actions.addShape({
+        type: 'rectangle',
+        position: { x: 9000, y: 0 },
+        size: { width: 100, height: 100 }
+    });
+    const id = document.shapesIds.at(-1)!;
+    const before = document.screenViewGeometry;
+    for (let step = 1; step <= 10; step++) {
+        store.actions.updateShape({
+            id,
+            size: { width: 100 + step, height: 100 + step },
+            cornerRadius: step
+        });
+        expect(document.screenViewGeometry).toBe(before);
+    }
+
+    // Once that artwork belongs to a screen, geometry edits must reach its views.
+    store.actions.updateShape({ id, parentFrameId: 'screen-0' });
+    const included = document.screenViewGeometry;
+    expect(included).not.toBe(before);
+    store.actions.updateShape({ id, cornerRadius: 30 });
+    expect(
+        document.screenViewGeometry[0].projection?.shapes.find((shape) => shape.id === id)
+    ).toMatchObject({ cornerRadius: 30 });
+});
