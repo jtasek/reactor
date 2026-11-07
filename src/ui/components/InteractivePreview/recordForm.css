@@ -17,7 +17,7 @@
     gap: 8px;
 }
 .field label span {
-    font-size: 12px;
+    font-size: var(--font-size-callout);
     color: var(--text-secondary-color);
 }
 .field :is(input, select) {
@@ -41,5 +41,5 @@
 }
 .form [role='alert'] {
     color: var(--error-color);
-    font-size: 12px;
+    font-size: var(--font-size-callout);
 }

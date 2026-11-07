@@ -3,7 +3,6 @@
 *:before {
   border: 0;
   box-sizing: border-box;
-  font-family: 'Roboto', sans-serif;
   margin: 0;
   padding: 0;
 }
@@ -16,9 +15,37 @@ html {
 }
 
 body {
-  font-size: 14px;
-  line-height: 20px;
+  font-family: var(--font-ui);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
   margin: 0;
+}
+
+/* Form controls take the UI font instead of the browser's own. */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+::placeholder {
+  color: var(--label-tertiary);
+  opacity: 1;
+}
+
+/* Canvas content keeps the drawing font that text measurement and export assume. */
+#surface {
+  font-family: var(--font-content);
+}
+
+/* At least 16px on touch screens, so focusing a field does not zoom the page. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
 }
 
 h1,
@@ -43,6 +70,7 @@ h2,
 h3,
 h4 {
   font-size: inherit;
+  font-weight: var(--font-weight-semibold);
 }
 
 a {

@@ -6,7 +6,7 @@
     background: var(--documents-background);
     box-sizing: border-box;
     color: var(--document-title-color);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--font-ui);
     height: 100%;
     overflow: auto;
     padding: var(--documents-top) 32px 40px;
@@ -25,7 +25,7 @@
     align-items: center;
     color: var(--document-secondary-color);
     display: flex;
-    font-size: 13px;
+    font-size: var(--font-size-body);
     gap: 16px;
     margin: -24px 0 12px;
     min-height: 32px;
@@ -81,16 +81,16 @@
 }
 
 .header h1 {
-    font-size: 32px;
-    font-weight: 500;
-    letter-spacing: -1px;
-    line-height: 40px;
+    font-size: var(--font-size-display);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: var(--tracking-display);
+    line-height: var(--line-height-display);
     margin: 0;
 }
 
 .subtitle {
     color: var(--document-secondary-color);
-    font-size: 13px;
+    font-size: var(--font-size-body);
     margin: 4px 0 0;
 }
 
@@ -187,7 +187,7 @@
     border-radius: 18px;
     color: var(--document-secondary-color);
     font: inherit;
-    font-size: 13px;
+    font-size: var(--font-size-body);
     font-weight: 400;
     line-height: 20px;
     min-height: 32px;
@@ -222,14 +222,14 @@
     color: var(--document-secondary-color);
     display: flex;
     flex-wrap: wrap;
-    font-size: 12px;
+    font-size: var(--font-size-callout);
     gap: 6px;
     margin: 10px 0 24px;
     min-height: 24px;
 }
 
 .documentList .clearFilters {
-    font-size: 12px;
+    font-size: var(--font-size-callout);
 }
 
 .resultCount {
@@ -273,7 +273,7 @@
 .documentList .nameButton {
     background: transparent;
     color: var(--document-title-color);
-    font-size: 15px;
+    font-size: var(--font-size-title-3);
     font-weight: 500;
     letter-spacing: -0.15px;
     line-height: 20px;
@@ -294,7 +294,7 @@
 
 .deletedName {
     color: var(--document-secondary-color);
-    font-size: 15px;
+    font-size: var(--font-size-title-3);
     font-weight: 500;
     line-height: 20px;
     overflow: hidden;
@@ -321,7 +321,7 @@
     gap: 8px;
     color: var(--document-secondary-color);
     flex: none;
-    font-size: 12px;
+    font-size: var(--font-size-callout);
     line-height: 18px;
     white-space: nowrap;
 }
@@ -388,7 +388,7 @@
     color: var(--document-secondary-color);
     display: flex;
     flex-direction: column;
-    font-size: 12px;
+    font-size: var(--font-size-callout);
     gap: 4px;
 }
 
@@ -398,7 +398,7 @@
     box-shadow: var(--box-shadow);
     color: var(--selection-color);
     flex: none;
-    font-size: 11px;
+    font-size: var(--font-size-caption);
     line-height: 16px;
     padding: 1px 8px;
 }
@@ -457,8 +457,9 @@
 }
 
 .empty h2 {
-    font-size: 20px;
-    font-weight: 500;
+    font-size: var(--font-size-title);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--tracking-title);
     margin-bottom: 12px;
 }
 
@@ -480,7 +481,7 @@
     border-radius: 22px;
     box-shadow: var(--box-shadow-hover);
     display: flex;
-    font-size: 13px;
+    font-size: var(--font-size-body);
     gap: 12px;
     max-width: 100%;
     padding: 6px 6px 6px 16px;
@@ -600,7 +601,7 @@
 
     .documentList input,
     .documentList select {
-        font-size: 16px;
+        font-size: var(--font-size-body);
     }
 
     .cardFooter {

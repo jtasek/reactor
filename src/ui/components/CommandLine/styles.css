@@ -51,7 +51,7 @@
     background: transparent;
     border-color: transparent;
     flex: 1;
-    font-size: 18px;
+    font-size: var(--font-size-title-2);
     padding: 6px;
 }
 
@@ -71,7 +71,7 @@
     border-block: 1px solid var(--hairline-color);
     flex-shrink: 0;
     padding: 10px 18px;
-    font-size: 12px;
+    font-size: var(--font-size-callout);
     overflow-wrap: anywhere;
 }
 
@@ -90,12 +90,12 @@
     flex-wrap: wrap;
     gap: var(--panel-gap);
     color: var(--text-secondary-color);
-    font-size: 12px;
+    font-size: var(--font-size-callout);
     padding: 8px 10px;
 }
 .commandLine small {
     color: var(--text-secondary-color);
-    font-size: 12px;
+    font-size: var(--font-size-callout);
     line-height: 1.5;
 }
 .content > small {
@@ -124,13 +124,13 @@
     min-width: 0;
 }
 .commandLine li strong {
-    font-size: 14px;
+    font-size: var(--font-size-body);
     font-weight: 600;
 }
 .commandLine li span {
     display: block;
     color: var(--text-secondary-color);
-    font-size: 12px;
+    font-size: var(--font-size-callout);
     overflow-wrap: anywhere;
 }
 .commandLine li:hover,
@@ -167,7 +167,7 @@
 }
 .commandLine legend {
     padding: 0;
-    font-size: 14px;
+    font-size: var(--font-size-body);
     font-weight: 600;
 }
 .fields {
@@ -180,19 +180,19 @@
     display: grid;
     gap: 6px;
     min-width: 0;
-    font-size: 12px;
+    font-size: var(--font-size-callout);
     color: var(--text-secondary-color);
 }
 .commandLine label input,
 .commandLine label select {
-    font-size: 16px;
+    font-size: var(--font-size-body);
 }
 .message {
     background: var(--panel-content-background);
     border-top: 1px solid var(--hairline-color);
     flex-shrink: 0;
     padding: 12px 18px;
-    font-size: 13px;
+    font-size: var(--font-size-body);
     overflow-wrap: anywhere;
 }
 .footer {
@@ -215,7 +215,7 @@
     border: 1px solid var(--hairline-color);
     border-radius: var(--radius-sm);
     padding: 1px 3px;
-    font-size: 11px;
+    font-size: var(--font-size-caption);
 }
 .commandLine .primary {
     background: var(--ink-strong);
@@ -237,7 +237,7 @@
         padding: 10px;
     }
     .search input {
-        font-size: 16px;
+        font-size: var(--font-size-body);
     }
     .footer {
         flex-wrap: wrap;
@@ -261,7 +261,7 @@
 .editPreview {
     border-top: 1px solid var(--hairline-color);
     padding: 12px 10px;
-    font-size: 12px;
+    font-size: var(--font-size-callout);
     overflow-wrap: anywhere;
 }
 .editPreview > div {
@@ -284,5 +284,5 @@
 }
 .variablePicker p {
     margin: 0;
-    font-size: 12px;
+    font-size: var(--font-size-callout);
 }

@@ -39,13 +39,15 @@
 .card h1,
 .form h1 {
   color: var(--ink-strong);
-  font-size: 28px;
-  line-height: 1.25;
+  font-size: var(--font-size-display);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-display);
+  line-height: var(--line-height-display);
 }
 
 .form h2,
 .signOut h2 {
-  font-size: 18px;
+  font-size: var(--font-size-title-2);
   line-height: 1.4;
 }
 
@@ -86,7 +88,7 @@
   border: 1px solid var(--hairline-color);
   border-radius: var(--radius-sm);
   color: var(--text-color);
-  font-size: 16px;
+  font-size: var(--font-size-title-3);
   min-height: 44px;
   padding: 10px 12px;
   width: 100%;
@@ -107,7 +109,7 @@
   background: var(--primary-action-color);
   border-color: var(--primary-action-color);
   color: var(--panel-content-background);
-  font-weight: 700;
+  font-weight: var(--font-weight-semibold);
 }
 
 .form button:disabled,
@@ -138,7 +140,7 @@
 
 .social span {
   color: var(--text-secondary-color);
-  font-size: 0.75rem;
+  font-size: var(--font-size-callout);
   text-align: center;
 }
 

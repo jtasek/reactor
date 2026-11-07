@@ -51,7 +51,7 @@
 
 .badge {
   fill: var(--selection-color);
-  font-family: sans-serif;
+  font-family: var(--font-ui);
   font-size: var(--canvas-label-size);
   font-weight: 600;
   text-anchor: middle;

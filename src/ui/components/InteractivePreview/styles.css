@@ -71,7 +71,7 @@
     align-items: center;
     gap: 8px;
     padding: 8px 12px;
-    font-size: 12px;
+    font-size: var(--font-size-callout);
 }
 .preview[data-player='true'] > div[role='status'] p {
     padding: 0;
@@ -92,7 +92,7 @@
 }
 .toolbar label > span {
     color: var(--text-secondary-color);
-    font-size: 11px;
+    font-size: var(--font-size-caption);
     padding-left: 12px;
 }
 .toolbar select {

@@ -1,7 +1,7 @@
 /* The panel draws the glass; each section is a lighter card on it, under its heading. */
 .stats {
     color: var(--text-color);
-    font-size: 0.75rem;
+    font-size: var(--font-size-callout);
     padding: var(--panel-gap);
     user-select: none;
 }
@@ -32,13 +32,13 @@
 }
 
 .heading {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
+    color: var(--label-secondary);
+    font-size: var(--font-size-caption);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: normal;
     line-height: 16px;
     margin: 0;
     padding: 0 10px 6px;
-    text-transform: uppercase;
 }
 
 .card {

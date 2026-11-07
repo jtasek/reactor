@@ -30,7 +30,10 @@
 }
 
 .dialog h2 {
+    font-size: var(--font-size-title-2);
     font-weight: var(--dialog-emphasis-weight);
+    letter-spacing: var(--tracking-title);
+    line-height: var(--line-height-title-2);
     margin-bottom: var(--dialog-heading-gap);
 }
 
