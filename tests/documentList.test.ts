@@ -214,6 +214,23 @@ describe('documentTagTone', () => {
             expect(['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'gray']).toContain(tone);
         }
     });
+
+    it('gives a tag the same automatic tone as before the teal and pink swatches', () => {
+        expect(
+            ['Client project', 'UI kit', 'Prototype', 'Research', 'Mobile', 'Draft'].map((name) =>
+                documentTagTone(name)
+            )
+        ).toMatchInlineSnapshot(`
+          [
+            "green",
+            "orange",
+            "red",
+            "red",
+            "red",
+            "gray",
+          ]
+        `);
+    });
 });
 
 describe('chosen tag tones', () => {

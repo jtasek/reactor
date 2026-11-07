@@ -32,6 +32,7 @@
 .toneSwatch[data-tone='red'] {
     --tag-background: var(--tag-red-background);
     --tag-color: var(--tag-red-color);
+    --tag-swatch: var(--tag-red-swatch);
 }
 
 .pill[data-tone='orange'],
@@ -39,6 +40,7 @@
 .toneSwatch[data-tone='orange'] {
     --tag-background: var(--tag-orange-background);
     --tag-color: var(--tag-orange-color);
+    --tag-swatch: var(--tag-orange-swatch);
 }
 
 .pill[data-tone='yellow'],
@@ -46,6 +48,7 @@
 .toneSwatch[data-tone='yellow'] {
     --tag-background: var(--tag-yellow-background);
     --tag-color: var(--tag-yellow-color);
+    --tag-swatch: var(--tag-yellow-swatch);
 }
 
 .pill[data-tone='green'],
@@ -53,6 +56,15 @@
 .toneSwatch[data-tone='green'] {
     --tag-background: var(--tag-green-background);
     --tag-color: var(--tag-green-color);
+    --tag-swatch: var(--tag-green-swatch);
+}
+
+.pill[data-tone='teal'],
+.toneButton[data-tone='teal'],
+.toneSwatch[data-tone='teal'] {
+    --tag-background: var(--tag-teal-background);
+    --tag-color: var(--tag-teal-color);
+    --tag-swatch: var(--tag-teal-swatch);
 }
 
 .pill[data-tone='blue'],
@@ -60,6 +72,7 @@
 .toneSwatch[data-tone='blue'] {
     --tag-background: var(--tag-blue-background);
     --tag-color: var(--tag-blue-color);
+    --tag-swatch: var(--tag-blue-swatch);
 }
 
 .pill[data-tone='purple'],
@@ -67,6 +80,15 @@
 .toneSwatch[data-tone='purple'] {
     --tag-background: var(--tag-purple-background);
     --tag-color: var(--tag-purple-color);
+    --tag-swatch: var(--tag-purple-swatch);
+}
+
+.pill[data-tone='pink'],
+.toneButton[data-tone='pink'],
+.toneSwatch[data-tone='pink'] {
+    --tag-background: var(--tag-pink-background);
+    --tag-color: var(--tag-pink-color);
+    --tag-swatch: var(--tag-pink-swatch);
 }
 
 .pill[data-tone='gray'],
@@ -74,6 +96,7 @@
 .toneSwatch[data-tone='gray'] {
     --tag-background: var(--tag-gray-background);
     --tag-color: var(--tag-gray-color);
+    --tag-swatch: var(--tag-gray-swatch);
 }
 
 .tags button {
@@ -193,7 +216,8 @@
 }
 
 .picker .toneButton::before {
-    background: var(--tag-color);
+    background: var(--tag-swatch);
+    box-shadow: var(--tag-swatch-edge);
     border-radius: 50%;
     content: '';
     height: 10px;
@@ -205,7 +229,8 @@
 }
 
 .picker .toneSwatch {
-    background: var(--tag-color);
+    background: var(--tag-swatch);
+    box-shadow: var(--tag-swatch-edge);
     border: 0;
     border-radius: 50%;
     cursor: pointer;
@@ -222,6 +247,7 @@
     padding: 4px 6px 6px;
 }
 
+/* The ring takes the darker chip text color: a bright swatch alone is too faint on white. */
 .picker .toneSwatch[aria-checked='true'] {
     outline: var(--focus-ring-width) solid var(--tag-color);
     outline-offset: 2px;

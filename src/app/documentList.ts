@@ -1,5 +1,5 @@
 import type { Document, DocumentsLayout } from './types';
-import { isTagTone, TAG_TONES, tagKey, type TagTone } from './tagTones';
+import { AUTOMATIC_TAG_TONES, isTagTone, tagKey, type TagTone } from './tagTones';
 
 export type DocumentDateFilter = 'all' | 'today' | 'week' | 'month';
 
@@ -125,7 +125,7 @@ export function documentTagTone(
         hash = (hash * 31 + (character.codePointAt(0) ?? 0)) >>> 0;
     }
 
-    return TAG_TONES[hash % TAG_TONES.length];
+    return AUTOMATIC_TAG_TONES[hash % AUTOMATIC_TAG_TONES.length];
 }
 
 /** The tone chosen for each tag across documents, the latest edited document's winning. */

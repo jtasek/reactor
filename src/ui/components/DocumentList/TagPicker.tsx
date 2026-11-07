@@ -1,6 +1,6 @@
 import React, { ChangeEvent, FC, FormEvent, MouseEvent, useRef, useState } from 'react';
 import { documentTagTone, normalizeTags } from 'src/app/documentList';
-import { TAG_TONES, type TagTone } from 'src/app/tagTones';
+import { TAG_TONE_LABELS, TAG_TONES, type TagTone } from 'src/app/tagTones';
 import { createPortal } from 'react-dom';
 import { Check, Plus } from 'lucide-react';
 import menuStyles from '../ContextMenu/styles.css';
@@ -144,8 +144,8 @@ export const TagPicker: FC<Props> = ({
                                                 className={styles.toneSwatch}
                                                 data-tone={option}
                                                 aria-checked={option === tone}
-                                                aria-label={option}
-                                                title={option}
+                                                aria-label={TAG_TONE_LABELS[option]}
+                                                title={TAG_TONE_LABELS[option]}
                                                 onClick={(event) => chooseTone(event, tag, option)}
                                             />
                                         ))}
