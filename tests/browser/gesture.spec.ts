@@ -459,3 +459,62 @@ for (const lifted of ['first', 'second'] as const) {
         await expect(shapes(page)).toHaveCount(1);
     });
 }
+
+for (const type of ['bottomRight', 'radius']) {
+    test(`${type} handle batches movement until the next frame`, async ({ page }) => {
+        await openEditor(page);
+        await drawRect(page, { x: 100, y: 100 }, { x: 220, y: 200 });
+
+        const reads = await page.evaluate(async (handleType) => {
+            const surface = document.querySelector<SVGSVGElement>('svg#surface')!;
+            const handle = surface.querySelector<SVGElement>(`[data-type="${handleType}"]`)!;
+            const box = handle.getBoundingClientRect();
+            const x = box.x + box.width / 2;
+            const y = box.y + box.height / 2;
+            const dispatch = (target: Element, type: string, offset: number) =>
+                target.dispatchEvent(
+                    new PointerEvent(type, {
+                        bubbles: true,
+                        pointerId: 1,
+                        button: 0,
+                        buttons: 1,
+                        clientX: x + offset,
+                        clientY: y + offset
+                    })
+                );
+
+            dispatch(handle, 'pointerdown', 0);
+            const original = surface.getScreenCTM;
+            let count = 0;
+            surface.getScreenCTM = function () {
+                count++;
+
+                return original.call(this);
+            };
+
+            try {
+                for (let offset = 1; offset <= 30; offset++) {
+                    dispatch(surface, 'pointermove', offset);
+                }
+                const beforeFrame = count;
+                await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+                const afterFrame = count;
+
+                // A pending move must never replay after cancellation.
+                dispatch(surface, 'pointermove', 50);
+                dispatch(surface, 'pointercancel', 50);
+                await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+                return { beforeFrame, afterFrame, afterCancel: count };
+            } finally {
+                surface.getScreenCTM = original;
+            }
+        }, type);
+
+        expect(reads).toEqual({ beforeFrame: 0, afterFrame: 1, afterCancel: 1 });
+        const rect = shapes(page).locator('rect[data-cy]').first();
+        await expect(rect).toHaveAttribute('width', '120');
+        await expect(rect).toHaveAttribute('height', '100');
+        await expect(rect).toHaveAttribute('rx', '0');
+    });
+}

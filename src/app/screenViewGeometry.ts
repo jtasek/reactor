@@ -11,6 +11,23 @@ import type { Document, VariableContext } from './types';
 
 const EMPTY_BINDINGS = {};
 const ORIGIN = { x: 0, y: 0 };
+/**
+ * Fields a move or resize writes on each shape type (see `translateShape` and
+ * `resizeShapeFromHandle`). A free shape's views skip them; keep this in step with
+ * new geometry fields, which the per-type cache test checks.
+ */
+const FREE_SHAPE_GEOMETRY = [
+    'position',
+    'size',
+    'radius',
+    'cornerRadius',
+    'bounds',
+    'start',
+    'end',
+    'points',
+    'fontSize',
+    'textLayout'
+];
 const projections = new WeakMap<
     Document,
     {
@@ -55,9 +72,26 @@ export function resolveScreenViewGeometry(document: Document, simulation?: Varia
         return [];
     }
 
+    // Free canvas geometry cannot affect a screen unless a component or group
+    // uses it. Keep context inputs (such as text wrapping) but do not subscribe
+    // to its drag geometry, so resizing or rounding it leaves views cached.
+    const dependencies = new Set([
+        ...Object.values(document.components).flatMap((component) => component.shapesIds),
+        ...Object.values(document.groups).flatMap((group) => group.shapesIds)
+    ]);
     const inputs = {
         frames,
-        shapes: records(document.shapes),
+        shapes: Object.fromEntries(
+            Object.entries(document.shapes).map(([id, shape]) => [
+                id,
+                artwork(
+                    shape,
+                    shape.parentFrameId !== undefined || dependencies.has(id)
+                        ? []
+                        : FREE_SHAPE_GEOMETRY
+                )
+            ])
+        ),
         shapesIds: [...document.shapesIds],
         groups: records(document.groups),
         layers: records(document.layers),
