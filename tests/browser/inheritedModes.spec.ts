@@ -227,6 +227,7 @@ test('persists authored view choices with undo, redo and usable narrow controls'
     await expect(desktop.locator('[data-cy="Body"]')).toHaveCSS('fill', 'rgb(221, 238, 255)');
     await page.keyboard.press('ControlOrMeta+Shift+z');
     await expect(desktop.locator('[data-cy="Body"]')).toHaveCSS('fill', 'rgb(17, 34, 51)');
+    await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.reload();
     await selectView(page, 'desktop');
     await expect(inspector.getByLabel('Palette mode', { exact: true })).toHaveValue('day');
