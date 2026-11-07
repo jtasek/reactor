@@ -8,6 +8,10 @@ import {
     type SelectionOverlay
 } from './selectionOverlays';
 
+/** Selection changes need not repaint the selected shape's artwork. */
+export const useShapeSelected = (shapeId: string) =>
+    useAppState((state) => state.currentDocument.shapes[shapeId]?.selected ?? false);
+
 /** Resolve geometry outside components that subscribe to every pointer move. */
 export const useSelectionOverlay = () =>
     useAppState((state) => (state.events.pointer.dragging ? null : selectionOverlay(state)));

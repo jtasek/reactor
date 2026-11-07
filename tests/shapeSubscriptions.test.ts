@@ -5,6 +5,8 @@ import { vi } from 'vitest';
 import { registerEditor } from 'src/pages/registerEditor';
 import { Shape } from 'src/ui/components/Shape/Shape';
 import { createTestStore } from './support/store';
+import { useScreenViewContainers } from 'src/app/frameHooks';
+import { projectScreenViews } from 'src/app/screenProjection';
 
 /** How many Overmind tracking trees rendering one shape starts. */
 const trackingTrees = () => {
@@ -40,5 +42,39 @@ describe('a shape on the canvas', () => {
     // tree and subscription, so a shape reads all its state through one.
     it('reads its state through one tracking tree', () => {
         expect(trackingTrees()).toBe(1);
+    });
+
+    it('does not place Screen view artwork for absent container selections', () => {
+        registerEditor();
+        const { store } = createTestStore();
+        const screenId = store.actions.editFrame({
+            kind: 'add',
+            position: { x: 100, y: 80 },
+            size: { width: 300, height: 200 }
+        })!;
+        store.actions.editFrame({ kind: 'update', id: screenId, changes: { kind: 'screen' } });
+        store.actions.addShape({
+            type: 'rectangle',
+            parentFrameId: screenId,
+            position: { x: 120, y: 100 },
+            size: { width: 40, height: 30 },
+            selected: true
+        });
+        const { view, projection } = projectScreenViews(store.state.currentDocument)[0];
+        const shapes = vi.fn(() => projection!.shapes);
+        const input = {
+            ...projection!,
+            get shapes() {
+                return shapes();
+            }
+        };
+        const Containers = () => {
+            expect(useScreenViewContainers(view.id, input, true)).toEqual([]);
+
+            return null;
+        };
+
+        renderToStaticMarkup(createElement(Provider, { value: store }, createElement(Containers)));
+        expect(shapes).not.toHaveBeenCalled();
     });
 });
