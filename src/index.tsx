@@ -17,4 +17,5 @@ const App: FC = () => (
 
 const container = document.getElementById('app');
 const root = createRoot(container!);
-root.render(<App />);
+// Canvas text is measured in the drawing font, so start once it is ready (or failed).
+void document.fonts.load('1em Roboto').finally(() => root.render(<App />));
