@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { createDocument, createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
 import { openEditor } from './support/editor';
@@ -68,20 +68,32 @@ test.describe('touch typography', () => {
     });
 });
 
+async function textMetrics(text: Locator) {
+    return text.evaluate(async (node) => {
+        await document.fonts.ready;
+        // Compare font metrics, not Linux glyph hinting at different SVG scales.
+        const element = node as SVGTextElement;
+        const previous = element.style.textRendering;
+        element.style.textRendering = 'geometricPrecision';
+        const metrics = {
+            family: getComputedStyle(element).fontFamily,
+            width: element.getComputedTextLength()
+        };
+        element.style.textRendering = previous;
+
+        return metrics;
+    });
+}
+
 test('shared artwork renderer preserves canvas font and text width', async ({ page }) => {
     await seed(page);
     await openEditor(page);
     const canvasText = page.locator('#shapes text[data-cy="Sample"]');
-    const original = await canvasText.evaluate((node) => ({
-        family: getComputedStyle(node).fontFamily,
-        width: (node as SVGTextElement).getComputedTextLength()
-    }));
+    const original = await textMetrics(canvasText);
     await page.goto('/documents');
     const thumbnail = page.getByRole('img', { name: 'Preview of Typography', exact: true });
     const text = thumbnail.locator('text');
     await expect(text).toHaveCSS('font-family', original.family);
-    expect(
-        await text.evaluate((node) => (node as SVGTextElement).getComputedTextLength())
-    ).toBeCloseTo(original.width, 1);
+    expect((await textMetrics(text)).width).toBeCloseTo(original.width, 1);
     await page.screenshot({ path: 'test-results/typography-documents.png' });
 });
