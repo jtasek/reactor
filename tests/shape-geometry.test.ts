@@ -1,5 +1,5 @@
 import { json } from 'overmind';
-import { hitTestShape, resizeCursor } from 'src/app/geometry';
+import { hitTestShape, hitsSelectedBox, resizeCursor } from 'src/app/geometry';
 import type { Box, Point, Shape } from 'src/app/types';
 import { boxCenter, getBoundingBox, getShapeBounds, rotatePoint } from 'src/app/utils';
 import { createTestStore } from './support/store';
@@ -307,9 +307,11 @@ it('lets a selected pencil shape move from its box without enlarging unselected 
     const inside = { x: 50, y: 25 };
     expect(hitTestShape(shape, inside, 5)).toBe(false);
     expect(hitTestShape(shape, { x: 25, y: 50 }, 5)).toBe(true);
-    expect(hitTestShape({ ...shape, selected: true }, inside, 5)).toBe(true);
-    expect(hitTestShape({ ...shape, selected: true }, { x: -10, y: 25 }, 5)).toBe(false);
-    expect(hitTestShape({ ...shape, selected: true, rotation: 90 }, { x: 75, y: 50 }, 5)).toBe(
+    expect(hitsSelectedBox(shape, inside, 5)).toBe(false);
+    expect(hitTestShape({ ...shape, selected: true }, inside, 5)).toBe(false);
+    expect(hitsSelectedBox({ ...shape, selected: true }, inside, 5)).toBe(true);
+    expect(hitsSelectedBox({ ...shape, selected: true }, { x: -10, y: 25 }, 5)).toBe(false);
+    expect(hitsSelectedBox({ ...shape, selected: true, rotation: 90 }, { x: 75, y: 50 }, 5)).toBe(
         true
     );
 });
@@ -326,5 +328,6 @@ it('moves a selected line from its selection box while an unselected line only h
         store.state.currentDocument.shapes[store.state.currentDocument.shapesIds[0]]
     );
     expect(hitTestShape(shape, { x: 50, y: 25 }, 5)).toBe(false);
-    expect(hitTestShape({ ...shape, selected: true }, { x: 50, y: 25 }, 5)).toBe(true);
+    expect(hitsSelectedBox(shape, { x: 50, y: 25 }, 5)).toBe(false);
+    expect(hitsSelectedBox({ ...shape, selected: true }, { x: 50, y: 25 }, 5)).toBe(true);
 });

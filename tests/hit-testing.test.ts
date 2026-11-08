@@ -56,10 +56,12 @@ describe('pressing shapes where they are drawn', () => {
         expect(ellipse.pressAt(15, 10)).toBe(false);
     });
 
-    it('hits unselected lines and pens only near their stroke', () => {
+    it('hits unselected lines and pens only near their stroke, then selected ones in their box', () => {
+        // (90, 10) and (50, 50) miss the strokes but lie inside their boxes.
         const line = setup({ type: 'line', start: { x: 0, y: 0 }, end: { x: 100, y: 100 } });
 
         expect(line.pressAt(90, 10)).toBe(false);
+        // The stroke press selects the line, so its box now hits too.
         expect(line.pressAt(50, 53)).toBe(true);
         expect(line.pressAt(90, 10)).toBe(true);
 
@@ -75,6 +77,26 @@ describe('pressing shapes where they are drawn', () => {
         expect(pen.pressAt(50, 50)).toBe(false);
         expect(pen.pressAt(98, 60)).toBe(true);
         expect(pen.pressAt(50, 50)).toBe(true);
+    });
+
+    it('presses a shape drawn inside a selected line’s box, even under the line', () => {
+        const { store, pressAt } = setup({
+            type: 'rectangle',
+            position: { x: 60, y: 10 },
+            size: { width: 20, height: 20 }
+        });
+        store.actions.addShape({
+            type: 'line',
+            start: { x: 0, y: 0 },
+            end: { x: 100, y: 100 },
+            selected: false
+        });
+        const [rectId, lineId] = store.state.currentDocument.shapesIds;
+        store.actions.selectShape(lineId);
+
+        expect(pressAt(70, 20)).toBe(true);
+        expect(store.state.currentDocument.shapes[rectId].selected).toBe(true);
+        expect(store.state.currentDocument.shapes[lineId].selected).toBe(false);
     });
 
     it('keeps the stroke tolerance constant on screen as the camera zooms', () => {

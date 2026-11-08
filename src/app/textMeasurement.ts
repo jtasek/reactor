@@ -15,6 +15,11 @@ function metrics(value: string, fontSize: number, fontWeight: number) {
             typeof document === 'undefined'
                 ? null
                 : document.createElement('canvas').getContext('2d');
+        if (canvas) {
+            // Drawn text uses `text-rendering: geometricPrecision`, which rounds ascent
+            // and descent differently at fractional sizes; measure it the same way.
+            canvas.textRendering = 'geometricPrecision';
+        }
     }
 
     if (!canvas) {

@@ -584,3 +584,35 @@ it('invalidates cached geometry on collaboration and undo without persisting the
         'screenViewGeometry'
     );
 });
+
+it('resizes wrapped text in a narrow frame to the box it draws', () => {
+    const { store, document } = setup();
+    const frameId = store.actions.editFrame({
+        kind: 'add',
+        position: { x: 1000, y: 0 },
+        size: { width: 120, height: 200 }
+    })!;
+    store.actions.addShape({
+        type: 'text',
+        position: { x: 1060, y: 30 },
+        value: 'The quick brown fox jumps over the lazy dog',
+        fontSize: 10,
+        wrapWidth: 400,
+        parentFrameId: frameId
+    });
+    const id = document.shapesIds.at(-1)!;
+    const original = json(document.shapes[id]);
+    const before = renderedShape(document, id).bounds!;
+    store.actions.resizeShape({
+        shapeId: id,
+        handlerType: 'bottomRight',
+        position: { x: before.bottomRight.x + 10, y: before.bottomRight.y + 10 },
+        original
+    });
+    const drawn = renderedShape(document, id).bounds!;
+    const stored = document.shapes[id].bounds!;
+    expect(stored.width).toBeCloseTo(drawn.width, 5);
+    expect(stored.topLeft.x).toBeCloseTo(drawn.topLeft.x, 5);
+    expect(stored.topLeft.x).toBeCloseTo(before.topLeft.x, 5);
+    expect(stored.topLeft.y).toBeCloseTo(before.topLeft.y, 5);
+});

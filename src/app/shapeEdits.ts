@@ -50,6 +50,7 @@ import {
     limitCornerRadius,
     hitTestShape,
     hitTolerance,
+    hitsSelectedBox,
     keepsAspectRatio,
     resizeShapeFromHandle,
     shapeIntersectsBox,
@@ -437,6 +438,20 @@ const shapeAtPointer = (
         if (
             shape &&
             hitTestShape(renderedShape(document, shape.id, layout), current, tolerance) &&
+            canPress(id)
+        ) {
+            return id;
+        }
+    }
+
+    // Nothing drawn there: a selected line or pen can still be dragged from its box.
+    for (let index = shapesIds.length - 1; index >= 0; index--) {
+        const id = shapesIds[index];
+        const shape = shapes[id];
+
+        if (
+            shape?.selected &&
+            hitsSelectedBox(renderedShape(document, shape.id, layout), current, tolerance) &&
             canPress(id)
         ) {
             return id;
@@ -1038,21 +1053,27 @@ export const resizeShape = (
     unbindResizedAxes(shape, handlerType, original ?? shape);
     unbindEditedProperties(shape, ['fontSize']);
     let source = original ?? shape;
-    if (source.type === 'text') {
-        const layout = frameLayout(state.currentDocument);
-        if (layout.contextual) {
-            source = editorHelpers().layout.canvasShape(state.currentDocument, source, layout);
-        }
+    const layout = frameLayout(state.currentDocument);
+    if (source.type === 'text' && layout.contextual) {
+        source = editorHelpers().layout.canvasShape(state.currentDocument, source, layout);
     }
     resizeShapeFromHandle(shape, handlerType, position, source);
     if (shape.type === 'text' && source.type === 'text') {
         // Font metrics round independently of font size. Keep the fixed handle
         // in its drawn position when the actual text replaces the scaled box.
-        const measured = measureContextualText({
+        const resized = {
             ...source,
+            bindings: shape.bindings,
             fontSize: shape.fontSize,
-            position: shape.position
-        }).bounds;
+            position: shape.position,
+            bounds: shape.bounds
+        };
+        // Measure as the canvas draws it, wrapped to the width its frame leaves.
+        const measured = getShapeBounds(
+            layout.contextual
+                ? editorHelpers().layout.canvasShape(state.currentDocument, resized, layout)
+                : measureContextualText(resized)
+        );
         const edges = movedEdges(handlerType);
         const anchor = (box: Box) =>
             rotatePoint(

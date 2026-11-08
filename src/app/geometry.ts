@@ -418,8 +418,8 @@ export const isCorner = (value: string): value is Corner => Object.hasOwn(CORNER
 /**
  * Whether `point` hits `shape` where it is drawn: within `tolerance` of its
  * outline, or anywhere inside a closed shape (rectangle, image, text, circle,
- * ellipse). Open shapes hit along their stroke; a selected line or pen also hits its
- * selection box so it can be dragged from inside the box. Shapes are drawn
+ * ellipse). Lines and pens are open, so only their stroke hits (see
+ * `hitsSelectedBox` for dragging a selected one from inside its box). Shapes are drawn
  * rotated about their box center, so the point is tested in the unrotated frame.
  */
 export function hitTestShape(shape: Shape, point: Point, tolerance: number): boolean {
@@ -442,20 +442,30 @@ export function hitTestShape(shape: Shape, point: Point, tolerance: number): boo
             return dx * dx + dy * dy <= 1;
         }
         case 'line':
-            return (
-                (shape.selected && distanceToBox(local, bounds) <= tolerance) ||
-                distanceToSegment(local, shape.start, shape.end) <= tolerance
-            );
+            return distanceToSegment(local, shape.start, shape.end) <= tolerance;
         case 'pen':
-            return (
-                (shape.selected &&
-                    shape.points.length > 0 &&
-                    distanceToBox(local, bounds) <= tolerance) ||
-                distanceToPolyline(local, shape.points) <= tolerance
-            );
+            return distanceToPolyline(local, shape.points) <= tolerance;
         default:
             return assertNever(shape);
     }
+}
+
+/**
+ * Whether `point` falls in the box of a selected line or pen, so it can be dragged
+ * from inside its selection box. Presses try `hitTestShape` on every shape first, so
+ * shapes drawn inside that box can still be pressed.
+ */
+export function hitsSelectedBox(shape: Shape, point: Point, tolerance: number): boolean {
+    if (!shape.selected || (shape.type !== 'line' && shape.type !== 'pen')) {
+        return false;
+    }
+    if (shape.type === 'pen' && shape.points.length === 0) {
+        return false;
+    }
+    const bounds = getShapeBounds(shape);
+    const local = shape.rotation ? rotatePoint(point, boxCenter(bounds), -shape.rotation) : point;
+
+    return distanceToBox(local, bounds) <= tolerance;
 }
 
 function boxCorners(box: Pick<Box, 'topLeft' | 'bottomRight'>): Point[] {
