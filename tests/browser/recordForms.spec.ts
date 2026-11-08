@@ -32,6 +32,10 @@ async function openFormEditor(page: import('@playwright/test').Page) {
     );
     await openEditor(page);
     await page.getByRole('button', { name: 'Preview', exact: true }).click();
+    await expect(page.locator('iframe[title="Application preview"]')).toBeVisible();
+    // The host's loading message moves the iframe when the runtime acknowledges its drawing.
+    await expect(page.getByText('Loading preview…', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Preparing preview images…', { exact: true })).toHaveCount(0);
 
     return page.frameLocator('iframe[title="Application preview"]');
 }
@@ -66,6 +70,14 @@ test('validates a record form, saves into list and detail, cancels drafts and re
     await expect(form.getByLabel('Active', { exact: false })).toHaveValue('false');
     await form.getByLabel('Name', { exact: false }).fill('Discard me');
     await form.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(form).toHaveCount(0);
+    // Let Chromium restore the cross-origin frame's hit-test surface after the modal closes.
+    await page.evaluate(
+        () =>
+            new Promise<void>((resolve) =>
+                requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+            )
+    );
     await expect(preview.getByRole('textbox', { name: 'Countess', exact: true })).toHaveValue(
         'Countess'
     );
