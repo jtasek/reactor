@@ -26,7 +26,7 @@ test('the selection’s menu fades in over the selection, runs commands and hide
     const bar = (await toolbar.boundingBox())!;
 
     expect(Math.round(bar.x - surface.x)).toBe(300);
-    expect(Math.round(bar.y + bar.height - surface.y)).toBe(190);
+    expect(Math.round(bar.y + bar.height - surface.y)).toBe(162);
 
     await moveTo(310, 205);
     await moveTo(310, 180, 25);

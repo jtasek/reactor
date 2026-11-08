@@ -1,5 +1,5 @@
 import { json } from 'overmind';
-import { resizeCursor } from 'src/app/geometry';
+import { hitTestShape, hitsSelectedBox, resizeCursor } from 'src/app/geometry';
 import type { Box, Point, Shape } from 'src/app/types';
 import { boxCenter, getBoundingBox, getShapeBounds, rotatePoint } from 'src/app/utils';
 import { createTestStore } from './support/store';
@@ -288,4 +288,46 @@ it('points each resize cursor the way its handle points on screen', () => {
     expect(resizeCursor('topLeft', 90)).toBe('nesw-resize');
     expect(resizeCursor('middleRight', 45)).toBe('nwse-resize');
     expect(resizeCursor('middleRight', -45)).toBe('nesw-resize');
+});
+
+it('lets a selected pencil shape move from its box without enlarging unselected stroke hits', () => {
+    const { store } = createTestStore();
+    store.actions.addShape({
+        type: 'pen',
+        points: [
+            { x: 0, y: 0 },
+            { x: 50, y: 100 },
+            { x: 100, y: 0 }
+        ],
+        selected: false
+    });
+    const shape = json(
+        store.state.currentDocument.shapes[store.state.currentDocument.shapesIds[0]]
+    );
+    const inside = { x: 50, y: 25 };
+    expect(hitTestShape(shape, inside, 5)).toBe(false);
+    expect(hitTestShape(shape, { x: 25, y: 50 }, 5)).toBe(true);
+    expect(hitsSelectedBox(shape, inside, 5)).toBe(false);
+    expect(hitTestShape({ ...shape, selected: true }, inside, 5)).toBe(false);
+    expect(hitsSelectedBox({ ...shape, selected: true }, inside, 5)).toBe(true);
+    expect(hitsSelectedBox({ ...shape, selected: true }, { x: -10, y: 25 }, 5)).toBe(false);
+    expect(hitsSelectedBox({ ...shape, selected: true, rotation: 90 }, { x: 75, y: 50 }, 5)).toBe(
+        true
+    );
+});
+
+it('moves a selected line from its selection box while an unselected line only hits its stroke', () => {
+    const { store } = createTestStore();
+    store.actions.addShape({
+        type: 'line',
+        start: { x: 0, y: 0 },
+        end: { x: 100, y: 100 },
+        selected: false
+    });
+    const shape = json(
+        store.state.currentDocument.shapes[store.state.currentDocument.shapesIds[0]]
+    );
+    expect(hitTestShape(shape, { x: 50, y: 25 }, 5)).toBe(false);
+    expect(hitsSelectedBox(shape, { x: 50, y: 25 }, 5)).toBe(false);
+    expect(hitsSelectedBox({ ...shape, selected: true }, { x: 50, y: 25 }, 5)).toBe(true);
 });

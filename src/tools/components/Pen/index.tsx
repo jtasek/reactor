@@ -1,3 +1,4 @@
+import { Label } from 'src/ui/components/Label';
 import { PenTool as PenIcon } from 'lucide-react';
 import React, { FC } from 'react';
 
@@ -47,9 +48,14 @@ export const DesignPen: FC = () => {
         return null;
     }
 
-    const { name, points, selected, type } = createPenProps(pointer, true);
+    const props = createPenProps(pointer, true);
 
-    return <Pen name={name} points={points} selected={selected} type={type} />;
+    return (
+        <>
+            <Pen {...props} />
+            <Label shape={props} />
+        </>
+    );
 };
 
 export const PenCommand: Command = {

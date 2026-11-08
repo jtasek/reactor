@@ -398,10 +398,10 @@ it('keeps screen geometry cached while an unrelated canvas shape is resized or r
     store.actions.updateShape({ id, parentFrameId: 'screen-0' });
     const included = document.screenViewGeometry;
     expect(included).not.toBe(before);
-    store.actions.updateShape({ id, cornerRadius: 30 });
+    store.actions.updateShape({ id, cornerRadius: 30, rotation: 45 });
     expect(
         document.screenViewGeometry[0].projection?.shapes.find((shape) => shape.id === id)
-    ).toMatchObject({ cornerRadius: 30 });
+    ).toMatchObject({ cornerRadius: 30, rotation: 45 });
 });
 
 it.each([
@@ -419,22 +419,26 @@ it.each([
         ]
     },
     { type: 'text', position: { x: 9000, y: 20 }, value: 'Free label', fontSize: 16 }
-] as const)('keeps screen geometry cached while a free $type is moved or resized', (input) => {
-    const { store } = editingFixture();
-    const document = store.state.currentDocument;
-    store.actions.addShape(input as Parameters<typeof store.actions.addShape>[0]);
-    const id = document.shapesIds.at(-1)!;
-    const original = JSON.parse(JSON.stringify(document.shapes[id]));
-    const before = document.screenViewGeometry;
+] as const)(
+    'keeps screen geometry cached while a free $type is moved, resized or rotated',
+    (input) => {
+        const { store } = editingFixture();
+        const document = store.state.currentDocument;
+        store.actions.addShape(input as Parameters<typeof store.actions.addShape>[0]);
+        const id = document.shapesIds.at(-1)!;
+        const original = JSON.parse(JSON.stringify(document.shapes[id]));
+        const before = document.screenViewGeometry;
 
-    for (let step = 1; step <= 5; step++) {
-        store.actions.resizeShape({
-            shapeId: id,
-            handlerType: 'bottomRight',
-            position: { x: 9100 + step * 10, y: 100 + step * 10 },
-            original
-        });
-        store.actions.moveShapesBy({ shapeIds: [id], delta: { x: 1, y: 1 } });
-        expect(document.screenViewGeometry).toBe(before);
+        for (let step = 1; step <= 5; step++) {
+            store.actions.resizeShape({
+                shapeId: id,
+                handlerType: 'bottomRight',
+                position: { x: 9100 + step * 10, y: 100 + step * 10 },
+                original
+            });
+            store.actions.moveShapesBy({ shapeIds: [id], delta: { x: 1, y: 1 } });
+            store.actions.rotateShape({ shapeId: id, position: { x: 9200, y: 50 + step } });
+            expect(document.screenViewGeometry).toBe(before);
+        }
     }
-});
+);

@@ -12,12 +12,13 @@ import type { Document, VariableContext } from './types';
 const EMPTY_BINDINGS = {};
 const ORIGIN = { x: 0, y: 0 };
 /**
- * Fields a move or resize writes on each shape type (see `translateShape` and
+ * Fields a move, resize or rotation writes on each shape type (see `translateShape` and
  * `resizeShapeFromHandle`). A free shape's views skip them; keep this in step with
  * new geometry fields, which the per-type cache test checks.
  */
 const FREE_SHAPE_GEOMETRY = [
     'position',
+    'rotation',
     'size',
     'radius',
     'cornerRadius',

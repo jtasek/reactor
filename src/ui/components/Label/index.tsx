@@ -1,13 +1,13 @@
 import React, { FC } from 'react';
 
 import styles from './styles.css';
-import { Shape } from 'src/app/types';
+import { ShapeInput } from 'src/app/types';
 import { getShapeBounds } from 'src/app/utils';
 
 const LABEL_OFFSET = 20;
 
 interface Props {
-    shape: Shape;
+    shape: ShapeInput;
 }
 export const Label: FC<Props> = ({ shape }) => {
     if (!shape.selected) {
@@ -24,7 +24,13 @@ export const Label: FC<Props> = ({ shape }) => {
     const height = Math.round(box.height);
 
     return (
-        <text className={styles.label} x={middleBottom.x} y={middleBottom.y} textAnchor="middle">
+        <text
+            data-size-label
+            className={styles.label}
+            x={middleBottom.x}
+            y={middleBottom.y}
+            textAnchor="middle"
+        >
             {`${width} x ${height}`}
         </text>
     );

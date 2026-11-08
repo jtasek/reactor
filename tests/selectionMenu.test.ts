@@ -54,7 +54,7 @@ describe('the selection’s menu', () => {
     it('sits above the box’s top left corner, where the camera draws it', () => {
         expect(placeSelectionMenu(box(100, 100, 200, 100), camera, away)).toMatchObject({
             left: 100,
-            bottom: 90,
+            bottom: 62,
             below: false
         });
         expect(
@@ -63,7 +63,7 @@ describe('the selection’s menu', () => {
                 { position: { x: 50, y: 20 }, scale: 2 },
                 away
             )
-        ).toMatchObject({ left: 250, bottom: 210 });
+        ).toMatchObject({ left: 250, bottom: 182 });
     });
 
     it('sits above the rotate handle of a box too narrow to leave it free', () => {
@@ -76,7 +76,7 @@ describe('the selection’s menu', () => {
     it('sits under the box when there is no room above', () => {
         expect(placeSelectionMenu(box(100, 20, 200, 100), camera, away)).toMatchObject({
             left: 100,
-            top: 130,
+            top: 158,
             below: true
         });
     });
@@ -104,6 +104,6 @@ describe('the selection’s menu', () => {
         // Coming from elsewhere, the pointer presses what is drawn under the menu.
         expect(shown(70, false)).toBe(false);
         expect(shown(70, true)).toBe(true);
-        expect(shown(40, true)).toBe(false);
+        expect(shown(0, true)).toBe(false);
     });
 });

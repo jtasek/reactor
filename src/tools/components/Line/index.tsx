@@ -1,3 +1,4 @@
+import { Label } from 'src/ui/components/Label';
 import { Slash } from 'lucide-react';
 import React, { FC } from 'react';
 
@@ -53,9 +54,14 @@ export const DesignLine: FC = () => {
         return null;
     }
 
-    const { name, start, end, selected, type } = createLineProps(pointer, true);
+    const props = createLineProps(pointer, true);
 
-    return <Line name={name} start={start} end={end} selected={selected} type={type} />;
+    return (
+        <>
+            <Line {...props} />
+            <Label shape={props} />
+        </>
+    );
 };
 
 export const LineCommand: Command = {

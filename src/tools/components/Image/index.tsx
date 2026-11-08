@@ -1,3 +1,4 @@
+import { Label } from 'src/ui/components/Label';
 import { Image as ImageIcon } from 'lucide-react';
 import React, { FC } from 'react';
 
@@ -110,7 +111,12 @@ export const DesignImage: FC = () => {
 
     const props = createImageProps(pointer, image, true);
 
-    return <Image {...props} />;
+    return (
+        <>
+            <Image {...props} />
+            <Label shape={props} />
+        </>
+    );
 };
 
 export const ImageCommand: Command = {
