@@ -1,3 +1,4 @@
+import { Label } from 'src/ui/components/Label';
 import { Circle as CircleIcon } from 'lucide-react';
 import React, { FC, useRef } from 'react';
 
@@ -66,7 +67,12 @@ export const DesignCircle: FC = () => {
 
     const props = createCircleProps(pointer, true);
 
-    return <Circle {...props} />;
+    return (
+        <>
+            <Circle {...props} />
+            <Label shape={props} />
+        </>
+    );
 };
 
 export const CircleCommand: Command = {

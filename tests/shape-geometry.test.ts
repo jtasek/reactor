@@ -313,3 +313,18 @@ it('lets a selected pencil shape move from its box without enlarging unselected 
         true
     );
 });
+
+it('moves a selected line from its selection box while an unselected line only hits its stroke', () => {
+    const { store } = createTestStore();
+    store.actions.addShape({
+        type: 'line',
+        start: { x: 0, y: 0 },
+        end: { x: 100, y: 100 },
+        selected: false
+    });
+    const shape = json(
+        store.state.currentDocument.shapes[store.state.currentDocument.shapesIds[0]]
+    );
+    expect(hitTestShape(shape, { x: 50, y: 25 }, 5)).toBe(false);
+    expect(hitTestShape({ ...shape, selected: true }, { x: 50, y: 25 }, 5)).toBe(true);
+});

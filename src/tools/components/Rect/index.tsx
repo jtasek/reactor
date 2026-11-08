@@ -1,3 +1,4 @@
+import { Label } from 'src/ui/components/Label';
 import { RectangleHorizontal } from 'lucide-react';
 import React, { FC, useRef } from 'react';
 
@@ -70,9 +71,14 @@ export const DesignRect: FC = () => {
         return null;
     }
 
-    const { name, position, selected, size, type } = createRectProps(pointer, true);
+    const props = createRectProps(pointer, true);
 
-    return <Rect name={name} position={position} size={size} selected={selected} type={type} />;
+    return (
+        <>
+            <Rect {...props} />
+            <Label shape={props} />
+        </>
+    );
 };
 
 export const RectCommand: Command = {

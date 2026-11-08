@@ -2,6 +2,7 @@ import { json } from 'overmind';
 import { drawingScreen, pointerDocument } from './screenViewEditing';
 import { transformComponentShape } from './componentViewTransform';
 import { initializeStackOrder } from './stackEdits';
+import { measureContextualText } from './textMeasurement';
 import { frameLayout, renderedShape, hasLayoutOffset } from './frameLayout';
 import { frameState, lockedFrameForShapes } from './frameState';
 import { deleteIfPresent, untracked } from './untracked';
@@ -1036,7 +1037,37 @@ export const resizeShape = (
 
     unbindResizedAxes(shape, handlerType, original ?? shape);
     unbindEditedProperties(shape, ['fontSize']);
-    resizeShapeFromHandle(shape, handlerType, position, original ?? shape);
+    let source = original ?? shape;
+    if (source.type === 'text') {
+        const layout = frameLayout(state.currentDocument);
+        if (layout.contextual) {
+            source = editorHelpers().layout.canvasShape(state.currentDocument, source, layout);
+        }
+    }
+    resizeShapeFromHandle(shape, handlerType, position, source);
+    if (shape.type === 'text' && source.type === 'text') {
+        // Font metrics round independently of font size. Keep the fixed handle
+        // in its drawn position when the actual text replaces the scaled box.
+        const measured = measureContextualText({
+            ...source,
+            fontSize: shape.fontSize,
+            position: shape.position
+        }).bounds;
+        const edges = movedEdges(handlerType);
+        const anchor = (box: Box) =>
+            rotatePoint(
+                {
+                    x: box.topLeft.x + box.width * (edges.left ? 1 : edges.right ? 0 : 0.5),
+                    y: box.topLeft.y + box.height * (edges.top ? 1 : edges.bottom ? 0 : 0.5)
+                },
+                boxCenter(box),
+                shape.rotation ?? 0
+            );
+        const expected = anchor(getShapeBounds(shape));
+        const actual = anchor(measured);
+        shape.bounds = measured;
+        translateShape(shape, { x: expected.x - actual.x, y: expected.y - actual.y });
+    }
 };
 
 /**
@@ -1131,7 +1162,7 @@ export const rotateShape = (
         return;
     }
 
-    const center = boxCenter(getShapeBounds(shape));
+    const center = boxCenter(getShapeBounds(renderedShape(state.currentDocument, shapeId)));
 
     // The rotate handle sits directly above the shape, so a pointer straight up
     // from the center maps to 0°. atan2 measures from the +x axis, hence +90.

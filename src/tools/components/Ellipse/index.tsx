@@ -1,3 +1,4 @@
+import { Label } from 'src/ui/components/Label';
 import { Ellipse as EllipseIcon } from 'lucide-react';
 import React, { FC } from 'react';
 
@@ -47,7 +48,12 @@ export const DesignEllipse: FC = () => {
 
     const props = createEllipseProps(pointer, true);
 
-    return <Ellipse {...props} />;
+    return (
+        <>
+            <Ellipse {...props} />
+            <Label shape={props} />
+        </>
+    );
 };
 
 export const Ellipse: FC<Props> = ({ name, position, radius, selected }) => {
