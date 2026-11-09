@@ -203,15 +203,39 @@ export function canEditThroughView(state: Context['state'], viewId: string) {
     return screenViewSource(state, { documentId: state.currentDocument.id, viewId }) !== null;
 }
 
+/** Resolve a local editing address without putting projection data into the document. */
+export function editableScreenView(state: Context['state'], address: ScreenViewAddress | null) {
+    return resolveScreenView(state, address, false);
+}
+
 /**
- * Resolve an editing address without putting projection data into the document.
- * Gesture validation can inspect local geometry without placing every member. Focused
- * component editing always keeps canvas placement for its coordinate transform.
+ * What starting a gesture needs from a view: its address, member IDs and focused
+ * component transform. Member geometry is left out, so shapes are not placed on the
+ * canvas and callers cannot read view-local positions or change cached geometry.
  */
-export function editableScreenView(
+export function screenViewGestureTarget(
+    state: Context['state'],
+    address: ScreenViewAddress | null
+) {
+    const resolved = resolveScreenView(state, address, true);
+
+    if (!resolved) {
+        return null;
+    }
+
+    const { projection, ...target } = resolved;
+
+    return {
+        ...target,
+        memberIds: new Set(projection.shapes.map((shape) => shape.id)) as ReadonlySet<string>
+    };
+}
+
+/** Focused component editing always keeps canvas placement for its coordinate transform. */
+function resolveScreenView(
     state: Context['state'],
     address: ScreenViewAddress | null,
-    options?: { localGeometry?: boolean }
+    localGeometry: boolean
 ) {
     const source = screenViewSource(state, address);
 
@@ -220,9 +244,7 @@ export function editableScreenView(
     }
 
     const position =
-        options?.localGeometry && !state.currentDocument.editingComponentId
-            ? { x: 0, y: 0 }
-            : undefined;
+        localGeometry && !state.currentDocument.editingComponentId ? { x: 0, y: 0 } : undefined;
     const projection = componentScreenViews(state, position, source.view.id)[0]?.projection;
 
     if (!projection) {
