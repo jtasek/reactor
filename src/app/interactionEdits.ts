@@ -7,7 +7,7 @@ import { orUndefined, readInteractions, readEntity } from './services/documentSt
 import { screenFrames } from './screens';
 import {
     validVariantAction,
-    prototypeTargets,
+    prototypeTarget,
     toggledState,
     bindingHidesControl
 } from './interactiveVariants';
@@ -101,9 +101,7 @@ export function editInteractions(
         visibilityTarget !== undefined &&
         (!owner ||
             visibilityTarget === instance?.id ||
-            !prototypeTargets(document, owner, instance?.parentFrameId).some(
-                (shape) => shape.id === visibilityTarget
-            ))
+            !prototypeTarget(document, visibilityTarget, owner, instance?.parentFrameId))
     ) {
         return;
     }
@@ -151,7 +149,7 @@ function editPrototypeVisibility(
     ) {
         return;
     }
-    const target = prototypeTargets(document).find((shape) => shape.id === edit.instanceId);
+    const target = prototypeTarget(document, edit.instanceId);
     if (!target) {
         return;
     }
@@ -181,7 +179,7 @@ function editPrototypeState(
         if (edit.when !== undefined && typeof edit.when !== 'boolean') {
             return 'Choose true or false for the visibility condition.';
         }
-        const shape = prototypeTargets(document).find((item) => item.id === edit.instanceId);
+        const shape = prototypeTarget(document, edit.instanceId);
         if (
             !shape ||
             isShapeLocked(document, shape.id) ||

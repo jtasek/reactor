@@ -291,3 +291,65 @@ describe('copied variant actions', () => {
         });
     });
 });
+
+describe('prototype targets', () => {
+    it('observes reparenting into another layout and that layout being deleted', async () => {
+        const { prototypeTargets } = await import('src/app/interactiveVariants');
+        const document = createDocument(buildInspectorTypography(newId));
+        const target = Object.values(document.shapes).find(
+            (shape) => shape.type === 'instance' && shape.name === 'Inspector comparison'
+        )!;
+        const screenId = target.parentFrameId!;
+
+        expect(prototypeTargets(document, screenId, screenId)).toContain(target);
+        document.frames.alternate = {
+            ...document.frames[screenId],
+            id: 'alternate',
+            kind: 'frame',
+            definitionOnly: undefined,
+            parentFrameId: screenId,
+            screenLayout: true
+        };
+        target.parentFrameId = 'alternate';
+
+        expect(prototypeTargets(document, screenId, screenId)).not.toContain(target);
+        expect(prototypeTargets(document, screenId, 'alternate')).toContain(target);
+        delete document.frames.alternate;
+        expect(prototypeTargets(document, screenId, 'alternate')).not.toContain(target);
+    });
+
+    it('finds one target exactly as the full list does', async () => {
+        const { prototypeTarget, prototypeTargets } = await import('src/app/interactiveVariants');
+        const document = createDocument(buildInspectorTypography(newId));
+        const target = Object.values(document.shapes).find(
+            (shape) => shape.type === 'instance' && shape.name === 'Inspector comparison'
+        )!;
+        const screenId = target.parentFrameId!;
+        document.frames.alternate = {
+            ...document.frames[screenId],
+            id: 'alternate',
+            kind: 'frame',
+            definitionOnly: undefined,
+            parentFrameId: screenId,
+            screenLayout: true
+        };
+        target.parentFrameId = 'alternate';
+        const ids = [...Object.keys(document.shapes), 'missing', 'constructor', '__proto__'];
+
+        for (const [screen, from] of [
+            [undefined, undefined],
+            [screenId, undefined],
+            [screenId, screenId],
+            [screenId, 'alternate'],
+            ['missing', undefined]
+        ]) {
+            const all = new Set(prototypeTargets(document, screen, from));
+
+            for (const id of ids) {
+                const one = prototypeTarget(document, id, screen, from);
+                expect(one ? all.has(one) : false).toBe([...all].some((shape) => shape.id === id));
+            }
+        }
+        expect(prototypeTarget(document, 5 as unknown as string)).toBeUndefined();
+    });
+});

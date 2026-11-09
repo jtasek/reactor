@@ -448,3 +448,33 @@ Verification: all 2,196 unit/server tests passed (30 skipped), plus 43 browser t
 selection, source editing, inherited modes, responsive variants, repainting and shape/container
 handles. Application/test/server type checks, changed-file lint, the lint baseline (two existing
 findings), and production editor/preview builds passed with unchanged budgets.
+
+### Reusing interaction-target ancestry within a lookup (2026-11-09)
+
+A fresh diagnostic profile showed `prototypeTargets`, used by Inspector interaction controls,
+spending 11.4 ms of sampled inclusive CPU across four selections. It resolved the source
+layout again for every candidate and repeatedly walked parents shared by many instances.
+
+Each target lookup now resolves the source layout once and memoizes candidate roots by frame
+ID in a local Map. Nothing survives the call: reparenting, layout changes, remote changes and
+missing frames use fresh document state on the next lookup. Target eligibility is unchanged.
+The typography regression reduces ancestry calls from 14 to 1, fails on the original code,
+and checks subsequent reparenting and layout deletion.
+
+Baseline `b36ce890` and the optimized code used normal minified production builds, Chromium,
+one worker, three runs each, baseline first, with no other verification jobs running. All six
+benchmark runs passed:
+
+| Fixture | Median interaction before → after | Median script total before → after |
+| --- | ---: | ---: |
+| 60 instances, three views | 113.5 → 112 ms | 206.44 → 199.51 ms |
+
+The local sample shows about 3% less script work, with nearly unchanged interaction timing.
+These small sequential samples include automation/assertions and do not measure input-to-paint
+latency or establish a general speedup.
+
+Verification: 39 focused unit tests and 23 interaction/Flow browser tests passed. The full
+unit/server run passed 2,201 tests with 30 skipped and one five-second randomized collaboration
+timeout while browser builds and lint were also running. Rerunning the complete collaboration
+suite alone passed all 70 tests without changes. Application/test/server type checks, changed-file
+lint, lint baseline (two existing findings), and production editor/preview builds passed.
