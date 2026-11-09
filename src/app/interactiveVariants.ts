@@ -3,14 +3,16 @@ import type { Document, ChangeVariantAction, InstanceShape, Shape } from './type
 import { screenOwners } from './screenViews';
 import { instanceAction, effectiveActivation } from './screenInteractions';
 
-/** First increment: ordinary screen instances; repeated and nested source instances are excluded. */
-export function prototypeTargets(document: Document, screenId?: string, fromFrameId?: string) {
+/**
+ * Returns the check behind `prototypeTargets`, for testing single instances without
+ * walking every shape. Ancestry results are kept only for this check's lifetime.
+ */
+function prototypeTargetFilter(document: Document, screenId?: string, fromFrameId?: string) {
     const owners = screenOwners(document.frames);
     const sourceMembers = new Set(
         Object.values(document.components).flatMap((component) => component.shapesIds)
     );
-    // Many controls share a parent. Keep ancestry results only for this lookup,
-    // so later edits and collaboration updates always resolve fresh frame data.
+    // Many controls share a parent, so each frame's layout root is resolved once.
     const roots = new Map<string, string | undefined>();
     const rootFor = (frameId: string) => {
         if (!roots.has(frameId)) {
@@ -21,9 +23,9 @@ export function prototypeTargets(document: Document, screenId?: string, fromFram
     };
     const fromRoot = fromFrameId ? rootFor(fromFrameId) : undefined;
 
-    return Object.values(document.shapes).filter((shape): shape is InstanceShape => {
+    return (shape: Shape | undefined): shape is InstanceShape => {
         if (
-            shape.type !== 'instance' ||
+            shape?.type !== 'instance' ||
             shape.dataList ||
             !shape.parentFrameId ||
             sourceMembers.has(shape.id)
@@ -38,7 +40,32 @@ export function prototypeTargets(document: Document, screenId?: string, fromFram
             (!fromFrameId || rootFor(shape.parentFrameId) === fromRoot) &&
             document.components[shape.componentId]
         );
-    });
+    };
+}
+
+/** First increment: ordinary screen instances; repeated and nested source instances are excluded. */
+export function prototypeTargets(document: Document, screenId?: string, fromFrameId?: string) {
+    return Object.values(document.shapes).filter(
+        prototypeTargetFilter(document, screenId, fromFrameId)
+    );
+}
+
+/** The one instance `prototypeTargets` would return for this id, without scanning every shape. */
+export function prototypeTarget(
+    document: Document,
+    instanceId: string,
+    screenId?: string,
+    fromFrameId?: string
+) {
+    // Ids can come from unvalidated edits, so only an own record with that exact id counts.
+    const shape =
+        typeof instanceId === 'string' && Object.hasOwn(document.shapes, instanceId)
+            ? document.shapes[instanceId]
+            : undefined;
+
+    return shape?.id === instanceId && prototypeTargetFilter(document, screenId, fromFrameId)(shape)
+        ? shape
+        : undefined;
 }
 
 export function variantTargets(document: Document, screenId?: string, fromFrameId?: string) {
