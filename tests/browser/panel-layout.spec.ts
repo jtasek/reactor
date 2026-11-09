@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { openEditor } from './support/editor';
+import { serializePersistedState } from 'src/app/services/documentStorage';
+import { previewFixture } from '../support/preview';
 
 test('the application rail switches left sections and the tool picker stays at the bottom', async ({
     page
@@ -596,3 +598,185 @@ test('the corner dock stays a target while a side panel reaches its band', async
 
     await expect(page.locator('[data-dock="top-left"] [data-panel="inspector"]')).toBeVisible();
 });
+
+test('opens Preview above overlapping panels and tools and raises the panel being used', async ({
+    page
+}, testInfo) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.addInitScript(() => {
+        localStorage.setItem(
+            'reactor:panel-layout',
+            JSON.stringify({
+                preview: {
+                    dock: null,
+                    position: { x: 380, y: 500 },
+                    size: { width: 440, height: 400 }
+                },
+                inspector: {
+                    dock: null,
+                    position: { x: 700, y: 420 },
+                    size: { width: 320, height: 300 }
+                }
+            })
+        );
+    });
+    await page.route('**/api/preview-config', (route) => route.fulfill({ json: { origin: null } }));
+    await openEditor(page, ['Inspector']);
+    await page.getByRole('button', { name: 'More panels' }).click();
+    const preview = page.locator('[data-panel="preview"]');
+    const inspector = page.locator('[data-panel="inspector"]');
+    const frontPanel = (other: string) =>
+        preview.evaluate((element, selector) => {
+            const a = element.getBoundingClientRect();
+            const b = document.querySelector(selector)!.getBoundingClientRect();
+            const left = Math.max(a.left, b.left);
+            const right = Math.min(a.right, b.right);
+            const top = Math.max(a.top, b.top);
+            const bottom = Math.min(a.bottom, b.bottom);
+
+            if (left >= right || top >= bottom) {
+                return 'no overlap';
+            }
+
+            return document
+                .elementFromPoint((left + right) / 2, (top + bottom) / 2)
+                ?.closest<HTMLElement>('[data-panel]')?.dataset.panel;
+        }, other);
+
+    await page.getByRole('button', { name: 'Preview', exact: true }).click();
+    await expect(preview).toBeVisible();
+    await expect.poll(() => frontPanel('[data-panel="inspector"]')).toBe('preview');
+    await expect.poll(() => frontPanel('[aria-label="Tools"]')).toBe('preview');
+    await inspector
+        .locator(':scope > button')
+        .first()
+        .click({ position: { x: 250, y: 14 } });
+    await expect.poll(() => frontPanel('[data-panel="inspector"]')).toBe('inspector');
+    await preview
+        .locator(':scope > button')
+        .first()
+        .click({ position: { x: 20, y: 14 } });
+    await expect.poll(() => frontPanel('[data-panel="inspector"]')).toBe('preview');
+    await inspector.locator(':scope > button').first().focus();
+    await expect.poll(() => frontPanel('[data-panel="inspector"]')).toBe('inspector');
+    await page.getByRole('button', { name: 'Close Preview', exact: true }).click();
+    await expect(preview).toHaveCount(0);
+    await page.getByRole('button', { name: 'Preview', exact: true }).click();
+    await expect.poll(() => frontPanel('[data-panel="inspector"]')).toBe('preview');
+    await page.screenshot({ path: testInfo.outputPath('preview-front-desktop.png') });
+    await page.setViewportSize({ width: 600, height: 800 });
+    await expect.poll(() => frontPanel('[data-panel="inspector"]')).toBe('preview');
+    await page.screenshot({ path: testInfo.outputPath('preview-front-narrow.png') });
+});
+
+test('clicking inside the Preview content raises Preview', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const document = previewFixture();
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript(
+        ([saved, layout]) => {
+            localStorage.setItem('reactor', saved);
+            localStorage.setItem('reactor:panel-layout', layout);
+        },
+        [
+            JSON.stringify(saved),
+            JSON.stringify({
+                preview: {
+                    dock: null,
+                    position: { x: 380, y: 300 },
+                    size: { width: 440, height: 400 }
+                },
+                inspector: {
+                    dock: null,
+                    position: { x: 700, y: 220 },
+                    size: { width: 320, height: 300 }
+                }
+            })
+        ]
+    );
+    await openEditor(page, ['Inspector']);
+    await page.getByRole('button', { name: 'Preview', exact: true }).click();
+    const iframe = page.frameLocator('iframe[title="Application preview"]');
+    await expect(iframe.getByLabel('Your name')).toBeVisible();
+    const inspector = (await page.locator('[data-panel="inspector"]').boundingBox())!;
+    const pressInspectorBody = () =>
+        page.mouse.click(inspector.x + inspector.width - 10, inspector.y + inspector.height - 10);
+
+    await pressInspectorBody();
+    await expect.poll(() => frontPanel(page, 'preview', 'inspector')).toBe('inspector');
+    await iframe.getByLabel('Your name').click();
+    await expect.poll(() => frontPanel(page, 'preview', 'inspector')).toBe('preview');
+    // A press on a part of Inspector that takes no focus, then back into the content.
+    await pressInspectorBody();
+    await expect.poll(() => frontPanel(page, 'preview', 'inspector')).toBe('inspector');
+    await iframe.getByLabel('Your name').click();
+    await expect.poll(() => frontPanel(page, 'preview', 'inspector')).toBe('preview');
+    await expect(iframe.getByLabel('Your name')).toBeFocused();
+});
+
+test('overlapping floating panels stack by last use', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.addInitScript(() => {
+        localStorage.setItem(
+            'reactor:panel-layout',
+            JSON.stringify({
+                preview: {
+                    dock: null,
+                    position: { x: 380, y: 300 },
+                    size: { width: 440, height: 400 }
+                },
+                explorer: {
+                    dock: null,
+                    position: { x: 560, y: 260 },
+                    size: { width: 320, height: 300 }
+                },
+                inspector: {
+                    dock: null,
+                    position: { x: 700, y: 220 },
+                    size: { width: 320, height: 300 }
+                }
+            })
+        );
+    });
+    await page.route('**/api/preview-config', (route) => route.fulfill({ json: { origin: null } }));
+    await openEditor(page, ['Inspector', 'Explorer']);
+    await page.getByRole('button', { name: 'Preview', exact: true }).click();
+    const use = (id: string) =>
+        page
+            .locator(`[data-panel="${id}"] > button`)
+            .first()
+            .click({ position: { x: 20, y: 14 } });
+
+    await use('explorer');
+    await use('preview');
+    await use('inspector');
+    await expect.poll(() => frontPanel(page, 'preview', 'explorer')).toBe('preview');
+    await expect.poll(() => frontPanel(page, 'explorer', 'inspector')).toBe('inspector');
+    await use('explorer');
+    await expect.poll(() => frontPanel(page, 'preview', 'explorer')).toBe('explorer');
+    await expect.poll(() => frontPanel(page, 'explorer', 'inspector')).toBe('explorer');
+});
+
+const frontPanel = (page: Page, first: string, second: string) =>
+    page.evaluate(
+        ([first, second]) => {
+            const a = document.querySelector(`[data-panel="${first}"]`)!.getBoundingClientRect();
+            const b = document.querySelector(`[data-panel="${second}"]`)!.getBoundingClientRect();
+            const left = Math.max(a.left, b.left);
+            const right = Math.min(a.right, b.right);
+            const top = Math.max(a.top, b.top);
+            const bottom = Math.min(a.bottom, b.bottom);
+
+            if (left >= right || top >= bottom) {
+                return 'no overlap';
+            }
+
+            return document
+                .elementFromPoint((left + right) / 2, (top + bottom) / 2)
+                ?.closest<HTMLElement>('[data-panel]')?.dataset.panel;
+        },
+        [first, second]
+    );

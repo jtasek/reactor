@@ -15,6 +15,7 @@ declare namespace StylesCssNamespace {
     dropMarker: string;
     explorerPanel: string;
     floating: string;
+    floatingLayer: string;
     grip: string;
     gripLeft: string;
     gripRight: string;
