@@ -809,9 +809,10 @@ the current pan position. Touchscreen pinch zooms the same way; see Input above.
 
 - Images on other devices when signed out: an image is kept in this browser only
 - Moving documents made signed out into an account
-- Organizations, teams and sharing documents with others
-- Seeing other people's pointers and selections
-- Exporting a drawing, and running a prototype
+- Inviting someone to a single document (sharing is per workspace)
+- Seeing other people's pointers and selections, and comments
+- Document version history
+- Exporting a prototype as a standalone web package
 
 [APPLICATION_PLAN.md](./APPLICATION_PLAN.md) describes the work ahead and its order;
 [REFACTOR_PLAN.md](./REFACTOR_PLAN.md) keeps the earlier audit and its phases.

@@ -10,7 +10,8 @@ designer keeps changing it as a design. Each milestone below says what this user
 it.
 
 Planning date: 2026-10-14; variable foundation updated 2026-10-17; screen/view and responsive
-model updated 2026-10-23. Work is planned unless
+model updated 2026-10-23; current state, budgets and the S1 milestone added 2026-11-09 after a
+roadmap and architecture review. Work is planned unless
 its implementation status explicitly says otherwise.
 [REFACTOR_PLAN.md](REFACTOR_PLAN.md) keeps the earlier audit, its dated findings and its phases.
 
@@ -20,15 +21,15 @@ its implementation status explicitly says otherwise.
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Drawing and editing        | Implemented and browser-tested: shapes, groups, layers, guides, snapping, inspector.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | Components                 | Implemented: instances, overrides, nested sources, and copies from other documents updated on request ([componentLibrary.ts](src/app/componentLibrary.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Variables and templates | Implemented: central resolver, explicit bindings, typed aliases, opt-in user-defined dimensions with inherited color modes per Screen view, native design-system packages and a bounded DTCG adapter. Local simulation stays separate from authored frame/view/instance overrides. Contextual numeric/text measurement and responsive variants remain planned (V1–V5 and R4 below). |
+| Variables and templates | Implemented: central resolver, explicit bindings, typed aliases, opt-in user-defined dimensions inherited per Screen view, contextual numeric/text modes for supported consumers (R4.4), native design-system packages and a bounded DTCG adapter. Local simulation stays separate from authored frame/view/instance overrides. |
 | Saving and collaboration   | Implemented: IndexedDB, tab sync, Yjs merges, server sync when signed in.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | Images                     | Implemented: content-addressed, shared with the server when signed in ([assetSync.ts](src/app/services/assetSync.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Accounts                   | Implemented: workspaces, document roles and workspace invitations with sharing/acceptance UI and a read-only viewer preview. Presence is off ([serverSync.ts](src/app/services/serverSync.ts) passes no awareness).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Accounts | Implemented: email, Google and GitHub sign-in, password reset, workspaces, member management, workspace invitations with sharing/acceptance UI, and a read-only viewer preview. Not built: document-level invitations, presence ([serverSync.ts](src/app/services/serverSync.ts) passes no awareness), comments, account deletion, moving signed-out documents into an account, and a per-workspace AI switch. |
 | Undo and redo              | Implemented: each person undoes and redoes their own changes to a document's records, also while others edit ([collaboration.ts](src/app/services/collaboration.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Operations                 | Implemented: paste goes through `applyOperations`, applied whole as one undo step that records its author ([#177](https://github.com/jtasek/reactor/pull/177)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | AI                         | Gateway implemented: `/api/ai` streams operations from Claude Haiku 5.5 or any OpenAI-compatible provider, checked and repaired once, with daily limits, and recorded eval cases replayed in CI ([#178](https://github.com/jtasek/reactor/pull/178)). Edit with words has a movable, dockable chat with local conversation history; it proposes added, changed and deleted shapes, variables and groups, applied as one undo step once accepted ([#179](https://github.com/jtasek/reactor/pull/179)). Requests use the selection with its group, variable and component dependencies, or the document when nothing is selected, bounded to 32 KiB of UTF-8 JSON and 300 records ([context.ts](src/ai/context.ts)). |
-| Screens, data and behavior | Implemented: frame membership, inherited Hide/Lock, fixed stacks, initial hug/fill sizing, explicit component roles and navigation targets. Screens have stable logical identity and shared artwork; equal Screen views place them on Canvas with independent names, viewports and inherited color modes. Drawing, transforms, overlays, contextual alignment, and focused component editing through rotated/stack-positioned instances are implemented. Any or every view can be deleted and placed again from the Screens list. Responsive variants and a Flow feature remain planned. Data/list repetition is still absent. |
-| Export and runtime | Implemented: explicitly invoked, sandboxed Preview with navigation, native inputs and image artwork. Runtime state is separate from document state. Read-only links, SVG export and a standalone web package remain planned. |
+| Screens, data and behavior | Implemented: frames and stacks with hug/fill sizing, explicit screens with equal Screen views, alternate and automatic screen layouts, component variants (manual and responsive by width), roles, Activate → Navigate interactions, Flow (`/flow`), interactive variants, visibility and named boolean state. Data: entities with Text/Number/Boolean fields, sample records, repeated lists, list-to-detail records and session-only record forms (R5.1–R5.3a). Not built: references, enums, dates, expressions and the per-entity record limit. |
+| Export and runtime | Implemented: sandboxed Preview, the Prototype player (`/prototype`), read-only prototype links on the separate preview domain, SVG export and starter templates. Not built: the standalone web package (R5.4). |
 
 The editor surface depends on SVG: input converts through `getScreenCTM`
 ([helpers.ts](src/events/drivers/helpers.ts)) and shapes are measured with `getBBox`. That
@@ -47,8 +48,8 @@ stays; nothing below replaces the editor surface.
   the merge repair in the same change: references to missing records are dropped, as deleting
   them would. A two-copy test covers a concurrent delete and reference.
 - Actions stay synchronous and async work stays in services. Gestures commit synchronously.
-- A new feature loads with its page or control. The entry bundle budget stays at 492 KiB, and
-  248 KiB per file.
+- A new feature loads with its page or control. The entry bundle budget stays at 498 KiB (set in
+  `webpack.config.mjs`), and 248 KiB per file. S1 aims to bring it back under 492 KiB.
 - A failed import, build or generation leaves working content and the last valid preview, and
   a result that arrives after a newer edit is dropped. Diagnostics name the record that caused
   them, and drafts are never deleted to make a build pass.
@@ -285,14 +286,35 @@ chain, final value, uses and any unresolved reference.
   App users and their permissions are separate from editor roles. Business records live in
   runtime storage, never in documents. A release keeps its images even when the draft changes.
 
+### Operations
+
+The server runs as one Node process that holds open documents in memory
+([sync.ts](server/sync.ts)) and keeps each document's latest Yjs state in `document_states`.
+That suits the beta on one machine. Before R7:
+
+- **History.** The server keeps snapshots of each document (hourly for a day, daily for a
+  month) and offers Restore, which applies as a new change everyone sees. Shared undo stays
+  per person and per session.
+- **Backups.** A documented PostgreSQL backup and a restore drill, run before the beta and
+  then on a schedule.
+- **Signals.** Server metrics for sync connections, save failures, AI latency and errors and
+  preview builds, and a browser error report. The budgets above are checked against them.
+- **Version check.** The shared document records the lowest reader version that can edit it.
+  A copy of the editor that is older goes read-only and offers Reload; the server also refuses
+  builds older than the deployed one at connect time.
+- **Shared server code.** Code the server imports from the client lives in one folder that the
+  Docker image copies whole, and lint keeps server imports inside it.
+- **Scale-out, when needed.** Route each document to one process (sticky by document ID) or
+  share updates between processes; a restart during an edit is part of the Docker smoke test.
+
 ## Budgets
 
 | What                           | Budget                                                                  |
 | ------------------------------ | ----------------------------------------------------------------------- |
 | Projecting a slice             | 4 ms for 300 controls, 16 ms for 2,000 records; only on committed edits |
 | Preview after a committed edit | 250 ms at p95                                                           |
-| Shared document                | A warning at 5 MB of Yjs state                                          |
-| Entry bundle                   | Unchanged: 492 KiB, 248 KiB per file                                    |
+| Shared document                | A warning at 3 MiB of Yjs state; the server accepts at most 4 MiB on first sync (S1, not built yet) |
+| Entry bundle                   | 498 KiB (S1 target: under 492 KiB), 248 KiB per file                     |
 | Preview and runtime chunk      | 150 KiB                                                                 |
 | AI chunk in the editor         | 40 KiB                                                                  |
 | Exported runtime               | 60 KiB gzipped                                                          |
@@ -306,14 +328,15 @@ flowchart LR
     R0 --> R1 --> R2
     R0 --> R3
     R1 --> V1 --> V2 --> V3 --> V4 --> V5
-    V1 --> R4 --> R5 --> R8 --> R9 --> R10
+    V1 --> R4 --> S1 --> R5 --> R8 --> R9 --> R10
+    R3 --> S1
+    S1 --> R7
     V3 --> R4
     V3 --> R6
     V5 --> R6
     R4 --> R6
     R2 --> R7
     R3 --> R7
-    R4 --> R7
     R7 -. demand .-> R8
     R7 -. demand .-> R10
 ```
@@ -509,7 +532,7 @@ The user shares a document and sees who else is in it.
    and `tests/browser/sharing.spec.ts` cover these paths. Admin promotion/ownership transfer
    and invitation email delivery remain later work.
 2. Document invitations and read-only viewer links.
-3. Presence: names, colors, pointers and selections.
+3. Presence: names, colors, pointers and selections. Scheduled as S1 step 3.
 4. Comments on the canvas, in a change of their own.
 
 Done when `tests/server/sharing.test.ts` (invited roles, read-only viewer links) and
@@ -1113,10 +1136,62 @@ team can then send a working prototype link to others.
    artwork and assets used by Preview and shared links. Verify interactions and Reset work offline;
    add a small embedding/event bridge only when a concrete host needs it.
 
+### S1 Ship to designers (M)
+
+Five to ten designers outside the team build a prototype from a starter template, share a link
+and get feedback on it, and the team can see what they did. This milestone comes from a
+roadmap and architecture review on 2026-11-09: R4 is built, but nobody outside the team has used it, and a beta would hit the
+gaps below on its first day. R5 continues after S1, in the order outside users' problems
+suggest. Do these in order; each is a separate change.
+
+1. **Version check on sync (S–M).** As in Operations: the shared document records the lowest
+   reader version that can edit it; an older copy goes read-only and offers Reload.
+   Acceptance: a two-copy test where the older copy cannot write, and
+   `tests/browser/versionCheck.spec.ts` for the Reload prompt.
+2. **Document history and backups (M).** Server snapshots with Restore, a backup routine and
+   one restore drill recorded in the README. Acceptance: `tests/server/history.test.ts`
+   (snapshot schedule, restore as a new change, deleted documents, permissions).
+3. **Presence (M).** R3 step 3: names, colors, pointers and selections, through the existing
+   sync connection. Acceptance: `tests/browser/presence.spec.ts`.
+4. **Workspace AI switch (S).** Admins turn AI off for a workspace; the gateway refuses and the
+   editor hides AI entries. The product says what is sent to the provider and what is kept.
+   Acceptance: `tests/server/ai.test.ts` and an AI browser spec.
+5. **Move signed-out documents into an account (M).** On first sign-in, offer to move this
+   browser's signed-out documents into the account, with their images. Acceptance: a browser
+   spec covering move, skip and a document over the size limit.
+6. **Size warning (S).** The editor warns at 3 MiB of Yjs state and explains a refused first
+   upload. Acceptance: a unit test on the measure and a browser spec on the message.
+7. **Measures and signals (S).** Count prototype links created, distinct players per link and
+   screens per shared prototype on the server, with no third-party tracker; add the server
+   metrics and browser error report from Operations. Acceptance: `tests/server/metrics.test.ts`.
+8. **Projection parity suite (M).** Pulled forward from R6: one fixture set (modes, layouts,
+   variants, data records, interactive state) projected by Canvas, Preview and SVG export and
+   compared as normalized output, run on every change to projection code. Acceptance:
+   `tests/projectionParity.test.ts`.
+9. **First-run path (S–M).** Template, edit, Prototype, share link, with none of the advanced
+   concepts required; measure time to the first shared link.
+10. **Housekeeping (S).** Move code the server shares into one folder copied whole by the
+    Dockerfile; load the readers for old schema versions only when an old document opens, to
+    bring the entry bundle back under 492 KiB; add a nightly WebKit and PostgreSQL run; give each
+    known flaky browser test an owner and a fix date; move "Implementation status" paragraphs
+    from this plan into a dated delivery log so the plan stays short.
+
+Done when the steps' acceptance specs pass and the outside-user gate has run: at least five
+outside designers have shared a prototype link that someone else opened, and their problems
+are written down and ordered. This also closes the R2 and R4 gates' "people outside the team"
+conditions, with accept/undo rates recorded for Edit with words.
+
 ### R5 Data and forms (L)
 
 The user shows a list of customers, opens one, edits it with validation, and exports the
 prototype.
+
+Scope reset (2026-11-09): the code has Text, Number and Boolean fields and a required flag.
+Before list/detail is called done, add references between entities and enums, enforce the
+1,000-record limit, and decide how interactive state (Set/Toggle actions and conditions), form
+state and R9 workflow conditions share one action and expression vocabulary, so that the next
+typed-state step does not create a third one. Dates and the full expression grammar can follow
+outside users' needs.
 
 1. Entities, sample records and their editor, with schema diagnostics.
    R5.1 implementation: Data View now edits named entities, stable-ID Text/Number/Boolean
@@ -1180,8 +1255,8 @@ the user.
 The user exports the same contextual design they tested and checks its accessibility. Basic
 mode inheritance and responsive behavior are R4 requirements, not postponed to this milestone.
 
-1. Verify the R4 resolver and responsive rules have identical meaning in R5's standalone web
-   package; exported apps do not depend on editor-only context or canvas view placement.
+1. Extend S1's projection parity suite to R5's standalone web package: the R4 resolver and
+   responsive rules have identical meaning there; exported apps do not depend on editor-only context or canvas view placement.
 2. Expose V4/V5 package and supported DTCG interchange in the design-system workflow. Preserve
    unsupported-mode diagnostics rather than claiming the DTCG subset can exchange all contexts.
 3. Audit contrast, labels and focus order across selected modes, widths, variants and layouts,
@@ -1193,7 +1268,7 @@ then reports accessible names, focus order and contrast for those contexts.
 
 ### R7 Public beta (S)
 
-Anyone can sign up. Compatibility rules begin here: saved documents migrate, and published
+Anyone can sign up, after S1. Compatibility rules begin here: saved documents migrate, and published
 apps' contracts stay compatible. Track two measures:
 
 - how many new people share a preview with at least two screens within a day;
