@@ -8,7 +8,7 @@ import {
     canTransformScreenViewShape,
     canTransformScreenViewContainer,
     screenViewContainerTarget,
-    editableScreenView,
+    screenViewGestureTarget,
     componentScreenView,
     pointerDocument,
     screenViewGestureBlocked
@@ -122,7 +122,7 @@ export const setScreenView = ({ state }: Context, viewId: string | null) => {
     }
 
     const address = viewId ? { documentId: state.currentDocumentId, viewId } : null;
-    pointer.screenView = address && editableScreenView(state, address) ? address : null;
+    pointer.screenView = address && screenViewGestureTarget(state, address) ? address : null;
 };
 
 export const setStartPosition: ActionWithParam<Point> = ({ state }, position) => {
@@ -180,7 +180,9 @@ export const beginGesture = (
     const address = screenViewId
         ? { documentId: state.currentDocumentId, viewId: screenViewId }
         : null;
-    const projected = address ? editableScreenView(state, address) : null;
+    // Only membership and permissions are needed here; hit testing resolves canvas
+    // coordinates separately. Avoid copying every shape before that second lookup.
+    const projected = address ? screenViewGestureTarget(state, address) : null;
 
     if ((address && !projected) || (!address && componentScreenView(state))) {
         return false;
@@ -196,7 +198,7 @@ export const beginGesture = (
                       state.currentDocument,
                       projected.view.id,
                       handle.shapeId
-                  ) || !projected.projection.shapes.some((shape) => shape.id === handle.shapeId)
+                  ) || !projected.memberIds.has(handle.shapeId)
                 : !canTransformScreenViewContainer(
                       state.currentDocument,
                       projected.view.id,

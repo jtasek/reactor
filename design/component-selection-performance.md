@@ -514,3 +514,36 @@ The full unit/server run passed 2,205 tests with 30 skipped and one server-sync 
 for offline status. Its complete file passed all 16 tests when rerun alone, without changes.
 Application/test/server type checks, changed-file lint, lint baseline (two existing findings),
 and production editor/preview builds passed with unchanged budgets.
+
+### Validating gestures without placing Screen view artwork (2026-11-09)
+
+A fresh diagnostic profile attributed 24.9 ms of sampled inclusive CPU to
+`editableScreenView` called by `beginGesture`. Ordinary gesture validation needs member IDs
+and permission checks, but copied and translated every projected shape into canvas coordinates.
+Selection hit-testing then resolves canvas geometry separately.
+
+Gesture validation now reuses the existing view-local geometry. Other callers retain canvas
+coordinates, and focused component editing always retains placement for its transform. View
+origins, source positions, visibility/locking checks and the shared projection budget are
+unchanged. There is no new persistent cache or document state.
+
+The new regression fails on the original code, verifies that starting a drawing gesture does
+not translate existing artwork, and checks the committed rectangle's source coordinates.
+
+Baseline `f6d447ae` and the optimized code used minified production builds, Chromium, one
+worker and three runs each, baseline first. No concurrent verification jobs ran during the
+measurements. All six benchmark runs passed:
+
+| Fixture | Median interaction before → after | Median script total before → after |
+| --- | ---: | ---: |
+| 60 instances, three views | 115 → 114.5 ms | 207.66 → 197.02 ms |
+
+The sample shows about 5% less script work with essentially unchanged interaction timing.
+These measurements include automation/assertions, are not input-to-paint latency, and do not
+establish a general or noticeable speedup.
+
+Verification: 80 focused tests, all 2,207 unit/server tests (30 skipped), and 50 browser
+regressions passed. Browser coverage includes drawing/dragging, cancellation and reload,
+rotated focused editing, group/component handles, alignment, overlays, inherited modes and
+responsive variants. Application/test/server type checks, changed-file lint, lint baseline
+(two existing findings), and production editor/preview builds passed with unchanged budgets.

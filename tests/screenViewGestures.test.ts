@@ -1,11 +1,12 @@
 import { json } from 'overmind';
+import * as geometry from 'src/app/geometry';
 import { registerTool } from 'src/app/actions/startup';
 import { RectTool } from 'src/tools/components/Rect';
 import { LineTool } from 'src/tools/components/Line';
 import { TextTool } from 'src/tools/components/Text';
 import { FrameTool } from 'src/tools/components/Frame';
 import { projectScreenViews } from 'src/app/screenProjection';
-import { pointerDocument } from 'src/app/screenViewEditing';
+import { pointerDocument, screenViewGestureTarget } from 'src/app/screenViewEditing';
 import { createTestStore } from './support/store';
 import { createCopies, edit, settle, shownDocument, DOCUMENT_ID } from './support/collaboration';
 
@@ -456,4 +457,88 @@ it('projects a marquee inside a view once, and drops the view address of a refus
         })
     ).toBe(false);
     expect(store.state.events.pointer.screenView).toBeNull();
+});
+
+it('validates a drawing gesture without placing existing Screen view artwork', () => {
+    const { store, screenId, viewId } = setup();
+    store.actions.addShape({
+        type: 'rectangle',
+        parentFrameId: screenId,
+        position: { x: 110, y: 90 },
+        size: { width: 20, height: 20 }
+    });
+    store.actions.tools.activateTool('rectangle');
+    void store.state.currentDocument.screenViewGeometry;
+    const translate = vi.spyOn(geometry, 'translateShape');
+
+    try {
+        expect(
+            store.actions.events.beginGesture({
+                pointerId: 1,
+                position: { x: 520, y: 330 },
+                screenViewId: viewId
+            })
+        ).toBe(true);
+        expect(translate).not.toHaveBeenCalled();
+        expect(store.state.events.pointer.gesture).toMatchObject({
+            kind: 'drawing',
+            screenView: {
+                screenId,
+                position: { x: 500, y: 300 },
+                sourcePosition: { x: 100, y: 80 }
+            }
+        });
+        store.actions.events.endGesture({ pointerId: 1, position: { x: 560, y: 360 } });
+        const document = store.state.currentDocument;
+        expect(document.shapes[document.shapesIds.at(-1)!]).toMatchObject({
+            parentFrameId: screenId,
+            position: { x: 120, y: 110 },
+            size: { width: 40, height: 30 }
+        });
+    } finally {
+        translate.mockRestore();
+    }
+});
+
+it('gives gesture validation member IDs only, and still refuses handles of non-members', () => {
+    const { store, screenId, viewId } = setup();
+    store.actions.addShape({
+        type: 'rectangle',
+        parentFrameId: screenId,
+        position: { x: 110, y: 90 },
+        size: { width: 20, height: 20 }
+    });
+    const memberId = store.state.currentDocument.shapesIds.at(-1)!;
+    store.actions.addShape({
+        type: 'rectangle',
+        position: { x: 1200, y: 900 },
+        size: { width: 20, height: 20 }
+    });
+    const outsideId = store.state.currentDocument.shapesIds.at(-1)!;
+    const target = screenViewGestureTarget(store.state, {
+        documentId: DOCUMENT_ID,
+        viewId
+    });
+
+    expect(target).not.toHaveProperty('projection');
+    expect([...target!.memberIds]).toEqual([memberId]);
+
+    store.actions.tools.activateTool('select');
+    expect(
+        store.actions.events.beginGesture({
+            pointerId: 1,
+            position: { x: 520, y: 330 },
+            handle: { shapeId: outsideId, type: 'bottomRight' },
+            screenViewId: viewId
+        })
+    ).toBe(false);
+    expect(
+        store.actions.events.beginGesture({
+            pointerId: 1,
+            position: { x: 530, y: 330 },
+            handle: { shapeId: memberId, type: 'bottomRight' },
+            screenViewId: viewId
+        })
+    ).toBe(true);
+    store.actions.events.endGesture({ pointerId: 1, position: { x: 530, y: 330 } });
 });
