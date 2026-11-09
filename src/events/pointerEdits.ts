@@ -180,7 +180,9 @@ export const beginGesture = (
     const address = screenViewId
         ? { documentId: state.currentDocumentId, viewId: screenViewId }
         : null;
-    const projected = address ? editableScreenView(state, address) : null;
+    // Only membership and permissions are needed here; hit testing resolves canvas
+    // coordinates separately. Avoid copying every shape before that second lookup.
+    const projected = address ? editableScreenView(state, address, { localGeometry: true }) : null;
 
     if ((address && !projected) || (!address && componentScreenView(state))) {
         return false;

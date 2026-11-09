@@ -203,15 +203,27 @@ export function canEditThroughView(state: Context['state'], viewId: string) {
     return screenViewSource(state, { documentId: state.currentDocument.id, viewId }) !== null;
 }
 
-/** Resolve a local editing address without putting projection data into the document. */
-export function editableScreenView(state: Context['state'], address: ScreenViewAddress | null) {
+/**
+ * Resolve an editing address without putting projection data into the document.
+ * Gesture validation can inspect local geometry without placing every member. Focused
+ * component editing always keeps canvas placement for its coordinate transform.
+ */
+export function editableScreenView(
+    state: Context['state'],
+    address: ScreenViewAddress | null,
+    options?: { localGeometry?: boolean }
+) {
     const source = screenViewSource(state, address);
 
     if (!source) {
         return null;
     }
 
-    const projection = componentScreenViews(state, undefined, source.view.id)[0]?.projection;
+    const position =
+        options?.localGeometry && !state.currentDocument.editingComponentId
+            ? { x: 0, y: 0 }
+            : undefined;
+    const projection = componentScreenViews(state, position, source.view.id)[0]?.projection;
 
     if (!projection) {
         return null;
