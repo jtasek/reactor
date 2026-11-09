@@ -1,6 +1,5 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
-    activePanel: string;
     activeZone: string;
     centerColumn: string;
     closable: string;
@@ -16,6 +15,7 @@ declare namespace StylesCssNamespace {
     dropMarker: string;
     explorerPanel: string;
     floating: string;
+    floatingLayer: string;
     grip: string;
     gripLeft: string;
     gripRight: string;

@@ -4,6 +4,7 @@ import React, {
     PointerEvent,
     ReactElement,
     ReactNode,
+    useCallback,
     useEffect,
     useLayoutEffect,
     useRef,
@@ -171,7 +172,8 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
     const panelLayout = usePanelLayout();
     const controls = useControls();
     const { setPanelPlacement } = useActions();
-    const [activePanel, setActivePanel] = useState<string>();
+    // Floating panels by last use, the most recent last; it sets their stacking order.
+    const [floatOrder, setFloatOrder] = useState<string[]>([]);
     const previousFloats = useRef<string[]>([]);
     const [drag, setDrag] = useState<Drag>();
     const [resize, setResize] = useState<Resize>();
@@ -279,6 +281,14 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
         .map((panel) => `${panel.props.id}:${panelDock(panel) ?? 'floating'}`)
         .join('|');
 
+    const raisePanel = useCallback(
+        (id: string) =>
+            setFloatOrder((order) =>
+                order.at(-1) === id ? order : [...order.filter((item) => item !== id), id]
+            ),
+        []
+    );
+
     const floatingIds = visiblePanels
         .filter((panel) => panelDock(panel) === null)
         .map((panel) => panel.props.id)
@@ -291,9 +301,35 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
         previousFloats.current = ids;
 
         if (opened) {
-            setActivePanel(opened);
+            raisePanel(opened);
         }
-    }, [floatingIds]);
+    }, [floatingIds, raisePanel]);
+
+    useEffect(() => {
+        // Presses and focus inside an iframe (Preview's content) never reach this page,
+        // so a panel holding a focused iframe is raised when the window loses focus to it.
+        const raiseFocusedFrame = () => {
+            const frame = document.activeElement;
+            if (!(frame instanceof HTMLIFrameElement)) return;
+            const panel = frame.closest<HTMLElement>('[data-floating-panel]')?.dataset.panel;
+            if (panel) raisePanel(panel);
+        };
+        // Pressing a part of this page that takes no focus leaves focus in the iframe, so
+        // the next press inside it would not blur the window again. Release it first.
+        const releaseFrame = (event: globalThis.PointerEvent) => {
+            const frame = document.activeElement;
+            if (frame instanceof HTMLIFrameElement && event.target !== frame) {
+                frame.blur();
+            }
+        };
+
+        window.addEventListener('blur', raiseFocusedFrame);
+        window.addEventListener('pointerdown', releaseFrame, true);
+        return () => {
+            window.removeEventListener('blur', raiseFocusedFrame);
+            window.removeEventListener('pointerdown', releaseFrame, true);
+        };
+    }, [raisePanel]);
 
     useLayoutEffect(() => {
         if (!pendingFocus.current) return;
@@ -653,14 +689,21 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                 key={id}
                 className={`${styles.panel} ${onClose ? styles.closable : ''} ${floating ? styles.floating : styles.docked} ${
                     isDragging && drag.moved ? styles.dragSource : ''
-                } ${floating && activePanel === id ? styles.activePanel : ''}`}
+                }`}
                 data-panel={id}
-                onPointerDownCapture={floating ? () => setActivePanel(id) : undefined}
-                onFocusCapture={floating ? () => setActivePanel(id) : undefined}
+                data-floating-panel={floating ? '' : undefined}
+                onPointerDownCapture={floating ? () => raisePanel(id) : undefined}
+                onFocusCapture={floating ? () => raisePanel(id) : undefined}
                 aria-label={onClose ? title : undefined}
                 data-orientation={orientation}
                 style={{
-                    ...(floating ? { left: shownPosition.x, top: shownPosition.y } : {}),
+                    ...(floating
+                        ? {
+                              left: shownPosition.x,
+                              top: shownPosition.y,
+                              zIndex: floatOrder.indexOf(id) + 1
+                          }
+                        : {}),
                     // A size chosen on a larger window shrinks to fit this one.
                     ...(chosenSize?.width !== undefined && resizesWidth
                         ? {
@@ -840,7 +883,7 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                 <div className={styles.toolbar}>{toolbar}</div>
                 {docked('bottom')}
             </div>
-            {floats}
+            <div className={styles.floatingLayer}>{floats}</div>
             {drag?.moved && (
                 <div
                     className={styles.dragPreview}
