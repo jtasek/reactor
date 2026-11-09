@@ -9,6 +9,17 @@ export function prototypeTargets(document: Document, screenId?: string, fromFram
     const sourceMembers = new Set(
         Object.values(document.components).flatMap((component) => component.shapesIds)
     );
+    // Many controls share a parent. Keep ancestry results only for this lookup,
+    // so later edits and collaboration updates always resolve fresh frame data.
+    const roots = new Map<string, string | undefined>();
+    const rootFor = (frameId: string) => {
+        if (!roots.has(frameId)) {
+            roots.set(frameId, layoutTreeRoot(document, frameId));
+        }
+
+        return roots.get(frameId);
+    };
+    const fromRoot = fromFrameId ? rootFor(fromFrameId) : undefined;
 
     return Object.values(document.shapes).filter((shape): shape is InstanceShape => {
         if (
@@ -24,9 +35,7 @@ export function prototypeTargets(document: Document, screenId?: string, fromFram
         return Boolean(
             owner &&
             (!screenId || owner === screenId) &&
-            (!fromFrameId ||
-                layoutTreeRoot(document, shape.parentFrameId) ===
-                    layoutTreeRoot(document, fromFrameId)) &&
+            (!fromFrameId || rootFor(shape.parentFrameId) === fromRoot) &&
             document.components[shape.componentId]
         );
     });

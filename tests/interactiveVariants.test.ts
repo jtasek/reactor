@@ -291,3 +291,37 @@ describe('copied variant actions', () => {
         });
     });
 });
+
+it('resolves each target layout once per lookup and observes subsequent reparenting', async () => {
+    const layouts = await import('src/app/screenLayouts');
+    const { prototypeTargets } = await import('src/app/interactiveVariants');
+    const document = createDocument(buildInspectorTypography(newId));
+    const target = Object.values(document.shapes).find(
+        (shape) => shape.type === 'instance' && shape.name === 'Inspector comparison'
+    )!;
+    const screenId = target.parentFrameId!;
+    const resolve = vi.spyOn(layouts, 'layoutTreeRoot');
+
+    try {
+        expect(prototypeTargets(document, screenId, screenId)).toContain(target);
+        expect(resolve).toHaveBeenCalledTimes(1);
+        document.frames.alternate = {
+            ...document.frames[screenId],
+            id: 'alternate',
+            kind: 'frame',
+            definitionOnly: undefined,
+            parentFrameId: screenId,
+            screenLayout: true
+        };
+        target.parentFrameId = 'alternate';
+        resolve.mockClear();
+
+        expect(prototypeTargets(document, screenId, screenId)).not.toContain(target);
+        expect(resolve).toHaveBeenCalledTimes(2);
+        expect(prototypeTargets(document, screenId, 'alternate')).toContain(target);
+        delete document.frames.alternate;
+        expect(prototypeTargets(document, screenId, 'alternate')).not.toContain(target);
+    } finally {
+        resolve.mockRestore();
+    }
+});
