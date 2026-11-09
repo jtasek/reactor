@@ -800,3 +800,40 @@ it('measures source members without reading their selection or hover flags', () 
     expect(selected).not.toHaveBeenCalled();
     expect(hovered).not.toHaveBeenCalled();
 });
+
+it.each([false, true])('orders only component members (library snapshot: %s)', (library) => {
+    const first = createShape({
+        name: 'First',
+        order: 'a0',
+        type: 'rectangle',
+        position: { x: 0, y: 0 },
+        size: { width: 20, height: 20 }
+    });
+    first.id = 'first';
+    const second = { ...first, id: 'second', order: 'a1' };
+    const unrelated = { ...first, id: 'unrelated', order: 'a2' };
+    const shapes = { first, second, unrelated };
+    const component = createComponent({
+        id: 'card',
+        shapesIds: ['second', 'missing', 'first', 'first'],
+        ...(library ? { sourceShapes: shapes } : {})
+    });
+    const document = createDocument({ shapes, components: { card: component } });
+    const globalOrder = vi.fn(() => ['first', 'second', 'unrelated']);
+    Object.defineProperty(document, 'shapesIds', { get: globalOrder });
+
+    expect(componentSource(document, 'card')!.shapes.map(({ id }) => id)).toEqual([
+        'first',
+        'second'
+    ]);
+    first.order = 'a3';
+    globalOrder.mockReturnValue(['second', 'unrelated', 'first']);
+    expect(componentSource(document, 'card')!.shapes.map(({ id }) => id)).toEqual([
+        'second',
+        'first'
+    ]);
+    delete (shapes as Partial<typeof shapes>).second;
+    globalOrder.mockReturnValue(['unrelated', 'first']);
+    expect(componentSource(document, 'card')!.shapes.map(({ id }) => id)).toEqual(['first']);
+    expect(globalOrder).not.toHaveBeenCalled();
+});

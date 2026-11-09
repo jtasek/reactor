@@ -2,8 +2,7 @@ import type { Box, Document, InstanceShape, Shape } from './types';
 import { rotatedBounds } from './membership';
 import { getShapeBounds, rectToBox, shapeGeometryKey } from './utils';
 import { resolveVariable } from './variableResolver';
-import { inDrawingOrder } from './drawOrder';
-import { untracked } from './untracked';
+import { byDrawingOrder } from './drawOrder';
 
 export interface ComponentSource {
     /** Local responsive decision, never persisted with an instance. */
@@ -66,17 +65,13 @@ export function componentSource(
     }
 
     const next = new Set(ancestors).add(componentId);
-    const members = new Set(component.shapesIds);
-    // The draw order is read as one list rather than id by id: an instance drawing
-    // its source then tracks the list, not each of the document's shapes.
-    const ordered = (
-        component.sourceShapes
-            ? inDrawingOrder(component.sourceShapes)
-            : untracked(document.shapesIds)
-    ).filter((id) => members.has(id));
-    const shapes = ordered
-        .map((id) => component.sourceShapes?.[id] ?? document.shapes[id])
-        .filter((shape) => Boolean(shape));
+    // Only source members affect its drawing order. Reading the document-wide list
+    // would invalidate every instance when an unrelated shape moves in front.
+    const sourceShapes = component.sourceShapes ?? document.shapes;
+    const shapes = [...new Set(component.shapesIds)]
+        .map((id) => sourceShapes[id])
+        .filter((shape) => Boolean(shape))
+        .sort(byDrawingOrder);
     const boxes: Box[] = [];
     const keys: string[] = [];
 
