@@ -9,6 +9,24 @@ import { useCurrentDocument } from 'src/app/hooks';
 import { instanceModes } from 'src/app/inheritedModes';
 import { getComponentByType } from 'src/tools/components';
 
+/**
+ * A source member's own fields, without the flags that say whether it is selected or
+ * hovered in its source. Instances never draw those, and copying with a spread would
+ * subscribe every instance to them, so pointing at or selecting a source member would
+ * redraw each of its instances.
+ */
+function drawnMember(member: Shape): Shape {
+    const fields: Record<string, unknown> = { selected: false, active: false };
+
+    for (const key of Object.keys(member)) {
+        if (key !== 'selected' && key !== 'active') {
+            fields[key] = member[key as keyof Shape];
+        }
+    }
+
+    return fields as unknown as Shape;
+}
+
 interface Props {
     instance: InstanceShape;
     source: ComponentSource | null;
@@ -47,7 +65,7 @@ export const Instance: FC<Props> = ({
     return (
         <g transform={`translate(${offsetX} ${offsetY})`}>
             {source.shapes.map((member: Shape) => {
-                const painted = themeColors(member, document, theme);
+                const painted = themeColors(drawnMember(member), document, theme);
                 const shape =
                     component && !instance.projectedSource
                         ? applyInstanceOverrides(painted, instance, component, document, theme)
@@ -88,7 +106,7 @@ export const Instance: FC<Props> = ({
                             } as CSSProperties
                         }
                     >
-                        <Primitive {...shape} selected={false} />
+                        <Primitive {...shape} />
                     </g>
                 );
             })}
