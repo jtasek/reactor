@@ -1,9 +1,8 @@
-import type { Box, Document, InstanceShape, Shape } from './types';
+import type { Box, Component, Document, InstanceShape, Shape } from './types';
 import { rotatedBounds } from './membership';
 import { getShapeBounds, rectToBox, shapeGeometryKey } from './utils';
 import { resolveVariable } from './variableResolver';
-import { inDrawingOrder } from './drawOrder';
-import { untracked } from './untracked';
+import { byDrawingOrder } from './drawOrder';
 
 export interface ComponentSource {
     /** Local responsive decision, never persisted with an instance. */
@@ -24,7 +23,7 @@ export interface ComponentSource {
 }
 
 export const instanceSource = (
-    document: Pick<Document, 'components' | 'shapes' | 'shapesIds' | 'variables'>,
+    document: Pick<Document, 'components' | 'shapes' | 'variables'>,
     instance: InstanceShape,
     ancestors?: ReadonlySet<string>
 ) =>
@@ -51,11 +50,28 @@ export const instanceComponent = (
     instance: InstanceShape
 ) => document.components[instanceComponentId(document, instance)];
 
+/**
+ * A component's existing members in drawing order, from its library snapshot or the
+ * document. Only members affect the order: reading the document-wide list would make
+ * every instance depend on unrelated shapes moving in front or behind.
+ */
+export const sourceMembers = (
+    component: Pick<Component, 'shapesIds' | 'sourceShapes'>,
+    shapes: Record<string, Shape>
+): Shape[] => {
+    const sourceShapes = component.sourceShapes ?? shapes;
+
+    return [...new Set(component.shapesIds)]
+        .map((id) => sourceShapes[id])
+        .filter((shape) => Boolean(shape))
+        .sort(byDrawingOrder);
+};
+
 const MAX_COMPONENT_DEPTH = 16;
 
 /** Reads a source independently of its own visibility, layer and group. */
 export function componentSource(
-    document: Pick<Document, 'components' | 'shapes' | 'shapesIds' | 'variables'>,
+    document: Pick<Document, 'components' | 'shapes' | 'variables'>,
     componentId: string,
     ancestors: ReadonlySet<string> = new Set()
 ): ComponentSource | null {
@@ -66,17 +82,7 @@ export function componentSource(
     }
 
     const next = new Set(ancestors).add(componentId);
-    const members = new Set(component.shapesIds);
-    // The draw order is read as one list rather than id by id: an instance drawing
-    // its source then tracks the list, not each of the document's shapes.
-    const ordered = (
-        component.sourceShapes
-            ? inDrawingOrder(component.sourceShapes)
-            : untracked(document.shapesIds)
-    ).filter((id) => members.has(id));
-    const shapes = ordered
-        .map((id) => component.sourceShapes?.[id] ?? document.shapes[id])
-        .filter((shape) => Boolean(shape));
+    const shapes = sourceMembers(component, document.shapes);
     const boxes: Box[] = [];
     const keys: string[] = [];
 

@@ -478,3 +478,39 @@ unit/server run passed 2,201 tests with 30 skipped and one five-second randomize
 timeout while browser builds and lint were also running. Rerunning the complete collaboration
 suite alone passed all 70 tests without changes. Application/test/server type checks, changed-file
 lint, lint baseline (two existing findings), and production editor/preview builds passed.
+
+### Tracking only component members' drawing order (2026-11-09)
+
+The latest diagnostic profile still attributed 19.7 ms of sampled inclusive CPU to
+`componentSource` during projected artwork rendering. The reader filtered the document-wide
+shape-order list for every local component source; this also subscribed instance rendering to
+that list, so unrelated canvas ordering could invalidate it.
+
+Source lookup now reads the component's unique member IDs, omits missing shapes, and sorts
+those members by the existing drawing-order comparator. Library snapshots use their own member
+records. It no longer scans or subscribes to the canvas-wide order list. Actual source-member
+ordering remains tracked; no persistent cache, document field or renderer is added.
+
+Regression tests check local and library source order, duplicate/missing members, member
+reordering/deletion, and the actual Overmind subscription paths. The dependency and global-list
+read regressions fail on the original code and pass with the change.
+
+Baseline `e70b8444` and the optimized code used normal minified production builds, Chromium,
+one worker, three runs each, baseline first, without concurrent verification jobs. All six
+benchmark runs passed:
+
+| Fixture | Median interaction before → after | Median script total before → after |
+| --- | ---: | ---: |
+| 60 instances, three views | 111 → 108 ms | 194.19 → 190.65 ms |
+
+This sample shows about 2% less script work; the interaction difference is small and does not
+establish a noticeable or general speedup. Measurements include automation/assertions and are
+not input-to-paint latency. The structural gain is removing document-wide work and dependencies
+from a lookup that needs only one component's members.
+
+Verification: 47 focused unit tests and 44 browser tests passed, including live component
+rendering, library updates, inherited modes, responsive variants, focused editing and handles.
+The full unit/server run passed 2,205 tests with 30 skipped and one server-sync failure waiting
+for offline status. Its complete file passed all 16 tests when rerun alone, without changes.
+Application/test/server type checks, changed-file lint, lint baseline (two existing findings),
+and production editor/preview builds passed with unchanged budgets.

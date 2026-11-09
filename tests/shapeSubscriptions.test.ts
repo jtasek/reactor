@@ -4,6 +4,7 @@ import { Provider } from 'overmind-react';
 import { vi } from 'vitest';
 import { registerEditor } from 'src/pages/registerEditor';
 import { Shape } from 'src/ui/components/Shape/Shape';
+import { useComponentSource } from 'src/app/hooks';
 import { createTestStore } from './support/store';
 import { useScreenViewContainers } from 'src/app/frameHooks';
 import { projectScreenViews } from 'src/app/screenProjection';
@@ -162,4 +163,40 @@ describe('a shape on the canvas', () => {
         expect(paths).not.toContain(`${member}.selected`);
         expect(paths).not.toContain(`${member}.active`);
     });
+});
+
+it('subscribes to source member order instead of the whole canvas order', () => {
+    const { store } = createTestStore();
+    store.actions.addShape({
+        type: 'rectangle',
+        position: { x: 0, y: 0 },
+        size: { width: 20, height: 20 }
+    });
+    store.actions.addShape({
+        type: 'rectangle',
+        position: { x: 30, y: 0 },
+        size: { width: 20, height: 20 }
+    });
+    const ids = [...store.state.currentDocument.shapesIds];
+    store.actions.addComponent({ id: 'card', shapesIds: ids });
+    const { proxyStateTreeInstance } = store as unknown as {
+        proxyStateTreeInstance: { getTrackStateTree: () => unknown };
+    };
+    const trees = vi.spyOn(proxyStateTreeInstance, 'getTrackStateTree');
+    const Source = () => {
+        expect(useComponentSource('card')?.shapes.map(({ id }) => id)).toEqual(ids);
+
+        return null;
+    };
+
+    renderToStaticMarkup(createElement(Provider, { value: store }, createElement(Source)));
+    const paths = trees.mock.results.flatMap(({ value }) => [
+        ...(value as { pathDependencies: Set<string> }).pathDependencies
+    ]);
+    const document = `documents.${store.state.currentDocumentId}`;
+
+    expect(paths).not.toContain(`${document}.shapesIds`);
+    for (const id of ids) {
+        expect(paths).toContain(`${document}.shapes.${id}.order`);
+    }
 });
