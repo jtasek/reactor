@@ -1,5 +1,6 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
+    activePanel: string;
     activeZone: string;
     centerColumn: string;
     closable: string;

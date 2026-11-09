@@ -171,6 +171,8 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
     const panelLayout = usePanelLayout();
     const controls = useControls();
     const { setPanelPlacement } = useActions();
+    const [activePanel, setActivePanel] = useState<string>();
+    const previousFloats = useRef<string[]>([]);
     const [drag, setDrag] = useState<Drag>();
     const [resize, setResize] = useState<Resize>();
     const [viewport, setViewport] = useState({
@@ -276,6 +278,22 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
     const visiblePanelLocations = visiblePanels
         .map((panel) => `${panel.props.id}:${panelDock(panel) ?? 'floating'}`)
         .join('|');
+
+    const floatingIds = visiblePanels
+        .filter((panel) => panelDock(panel) === null)
+        .map((panel) => panel.props.id)
+        .join('|');
+
+    useLayoutEffect(() => {
+        const ids = floatingIds ? floatingIds.split('|') : [];
+        const opened = ids.filter((id) => !previousFloats.current.includes(id)).at(-1);
+
+        previousFloats.current = ids;
+
+        if (opened) {
+            setActivePanel(opened);
+        }
+    }, [floatingIds]);
 
     useLayoutEffect(() => {
         if (!pendingFocus.current) return;
@@ -635,8 +653,10 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                 key={id}
                 className={`${styles.panel} ${onClose ? styles.closable : ''} ${floating ? styles.floating : styles.docked} ${
                     isDragging && drag.moved ? styles.dragSource : ''
-                }`}
+                } ${floating && activePanel === id ? styles.activePanel : ''}`}
                 data-panel={id}
+                onPointerDownCapture={floating ? () => setActivePanel(id) : undefined}
+                onFocusCapture={floating ? () => setActivePanel(id) : undefined}
                 aria-label={onClose ? title : undefined}
                 data-orientation={orientation}
                 style={{

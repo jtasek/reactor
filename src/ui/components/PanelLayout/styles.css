@@ -94,8 +94,14 @@
     width: var(--control-width);
 }
 
+/* Floating windows sit above the docked controls and toolbar. */
 .floating {
     position: absolute;
+    z-index: 2;
+}
+
+.activePanel {
+    z-index: 3;
 }
 
 .docked {
@@ -260,7 +266,7 @@
     inset: 0;
     pointer-events: none;
     position: absolute;
-    z-index: 2;
+    z-index: 4;
 }
 
 .zone {
@@ -361,7 +367,7 @@
     position: absolute;
     top: 0;
     /* Keep the dragged panel label above the dock-zone overlay. */
-    z-index: 3;
+    z-index: 5;
 }
 
 .dragPreview span {
