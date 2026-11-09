@@ -370,4 +370,37 @@ describe('AI document context', () => {
         });
         expect(context.variables.name).toMatchObject({ value: 'Ada' });
     });
+    it('lists component source members in drawing order without unrelated shapes', () => {
+        const shape = (id: string, order: string) => ({
+            ...createShape({ type: 'text', position: { x: 0, y: 0 }, value: id, name: id, order }),
+            id
+        });
+        const shapes = {
+            top: shape('top', 'a2'),
+            bottom: shape('bottom', 'a0'),
+            other: shape('other', 'a1')
+        };
+        const document = createDocument({ shapes });
+        document.components.card = createComponent({
+            id: 'card',
+            name: 'Card',
+            shapesIds: ['top', 'missing', 'bottom', 'top']
+        });
+        document.shapes.instance = {
+            ...createShape({
+                type: 'instance',
+                position: { x: 0, y: 0 },
+                componentId: 'card',
+                overrides: {},
+                name: 'Card',
+                order: 'a3'
+            }),
+            id: 'instance'
+        } as typeof document.shapes.instance;
+        document.shapesIds.push('instance');
+
+        const { components } = documentContext({ ...document, selectedShapesIds: [] });
+
+        expect(Object.keys(components.card.shapes)).toEqual(['bottom', 'top']);
+    });
 });

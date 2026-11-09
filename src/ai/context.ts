@@ -1,12 +1,11 @@
 import type { Document, Shape, Frame } from 'src/app/types';
 import { readEntity } from 'src/app/services/documentStorage';
-import { inDrawingOrder } from 'src/app/drawOrder';
 import { TEMPLATE_PART, templateVariable } from 'src/app/variableResolver';
 import { describeComponentProp } from 'src/app/componentProps';
 import { effectiveRoleSettings, resolveComponentRole } from 'src/app/componentRoles';
 import { resolveModes } from 'src/app/inheritedModes';
 import { describeVariable } from 'src/app/variableDescription';
-import { componentSource } from 'src/app/componentSource';
+import { componentSource, sourceMembers } from 'src/app/componentSource';
 
 /** A transport-size budget, not a provider-specific token count. */
 export const MAX_CONTEXT_BYTES = 32 * 1024;
@@ -214,27 +213,15 @@ export function documentContext(document: Document) {
                 : {}),
             shapes: {}
         };
-        const members = new Set(component.shapesIds);
-        const ordered = component.sourceShapes
-            ? inDrawingOrder(component.sourceShapes)
-            : document.shapesIds;
-
         components.set(id, source);
         component.variantIds?.forEach(addComponent);
         source.shapes = Object.fromEntries(
-            ordered
-                .filter((shapeId) => members.has(shapeId))
-                .flatMap((shapeId) => {
-                    const shape = component.sourceShapes?.[shapeId] ?? document.shapes[shapeId];
+            sourceMembers(component, document.shapes).map((shape) => {
+                reserve();
+                followShape(shape);
 
-                    if (!shape) {
-                        return [];
-                    }
-                    reserve();
-                    followShape(shape);
-
-                    return [[shapeId, shapeContext(shape)]];
-                })
+                return [shape.id, shapeContext(shape)];
+            })
         );
     };
 
