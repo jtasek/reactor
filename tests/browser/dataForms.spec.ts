@@ -40,6 +40,7 @@ test('authors typed data, preserves values when fields change, reloads and undoe
     await expect(
         panel.getByRole('textbox', { name: 'Full name, record 1', exact: true })
     ).toHaveValue('Ada');
+    await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.reload();
     await openEditor(page, ['Data View']);
     await expect(
@@ -60,6 +61,7 @@ test('authors typed data, preserves values when fields change, reloads and undoe
     await expect(panel.getByRole('region', { name: 'Data diagnostics' })).toHaveCount(0);
     await panel.getByRole('textbox', { name: 'New entity', exact: true }).fill('Zed');
     await panel.getByRole('button', { name: 'Add entity', exact: true }).click();
+    await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.reload();
     await openEditor(page, ['Data View']);
     await panel.getByRole('textbox', { name: 'Entity name', exact: true }).fill('ZZZ Customers');

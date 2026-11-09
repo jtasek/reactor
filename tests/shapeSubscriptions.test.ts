@@ -117,4 +117,49 @@ describe('a shape on the canvas', () => {
             readers[0].filter((path) => !shape.startsWith(path) && path !== 'currentDocumentId')
         ).toEqual([`${shape}.selected`]);
     });
+
+    it('draws an instance without reading its source members’ selection or hover', () => {
+        registerEditor();
+        const { store } = createTestStore();
+        store.actions.addShape({
+            type: 'rectangle',
+            position: { x: 10, y: 20 },
+            size: { width: 30, height: 40 },
+            selected: false
+        });
+        const [memberId] = store.state.currentDocument.shapesIds;
+        store.actions.addComponent({ shapesIds: [memberId] });
+        const [componentId] = store.state.currentDocument.componentsIds;
+        store.actions.insertComponentAt({ componentId, position: { x: 100, y: 100 } });
+        const instanceId = store.state.currentDocument.shapesIds.find(
+            (id) => store.state.currentDocument.shapes[id].type === 'instance'
+        )!;
+        const { proxyStateTreeInstance } = store as unknown as {
+            proxyStateTreeInstance: { getTrackStateTree: () => unknown };
+        };
+        const trees = vi.spyOn(proxyStateTreeInstance, 'getTrackStateTree');
+
+        const markup = renderToStaticMarkup(
+            createElement(
+                Provider,
+                { value: store },
+                createElement(Shape, {
+                    shapeId: instanceId,
+                    inSelectedGroup: false,
+                    inClosedGroup: false
+                })
+            )
+        );
+        expect(markup).toContain('<rect');
+
+        const member = `documents.${store.state.currentDocumentId}.shapes.${memberId}`;
+        const paths = trees.mock.results.flatMap(({ value }) => [
+            ...(value as { pathDependencies: Set<string> }).pathDependencies
+        ]);
+
+        // The member's fill is read, so the check would see its flags if they were.
+        expect(paths).toContain(`${member}.fill`);
+        expect(paths).not.toContain(`${member}.selected`);
+        expect(paths).not.toContain(`${member}.active`);
+    });
 });
