@@ -1,5 +1,5 @@
 import type { Box, Document, InstanceShape, Shape } from './types';
-import { drawnBox } from './membership';
+import { rotatedBounds } from './membership';
 import { getShapeBounds, rectToBox, shapeGeometryKey } from './utils';
 import { resolveVariable } from './variableResolver';
 import { inDrawingOrder } from './drawOrder';
@@ -82,7 +82,8 @@ export function componentSource(
 
     for (const shape of shapes) {
         // Keep hidden members in the frame: an instance may expose them through an override.
-        const geometryKey = `${shape.id}:${shapeGeometryKey(shape)}:${JSON.stringify(getShapeBounds(shape))}:${shape.visible}`;
+        const bounds = getShapeBounds(shape);
+        const geometryKey = `${shape.id}:${shapeGeometryKey(shape)}:${JSON.stringify(bounds)}:${shape.visible}`;
         if (shape.type === 'instance') {
             const nested = componentSource(document, instanceComponentId(document, shape), next);
 
@@ -95,7 +96,7 @@ export function componentSource(
                 width: nested.box.width,
                 height: nested.box.height
             });
-            boxes.push(drawnBox({ ...shape, bounds: box }));
+            boxes.push(rotatedBounds(box, shape.rotation ?? 0));
             const variables = Object.values(shape.overrides).flatMap((override) => {
                 if (typeof override !== 'object') {
                     return [];
@@ -109,7 +110,7 @@ export function componentSource(
             continue;
         }
 
-        boxes.push(drawnBox({ ...shape, bounds: getShapeBounds(shape) }));
+        boxes.push(rotatedBounds(bounds, shape.rotation ?? 0));
         keys.push(
             `${geometryKey}:${shape.rotation}:${shape.opacity}:${shape.fill}:${shape.stroke}:${shape.fontColor}`
         );

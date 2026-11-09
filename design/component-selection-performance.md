@@ -414,3 +414,37 @@ and container-handle checks. All 52 broader browser tests passed, covering repai
 inherited modes, responsive variants, view dragging, shape/container handles, focused editing,
 alignment, overlays and stack sizing. Application/test/server type checks, lint baseline
 (two existing findings), and production editor/preview builds passed with unchanged budgets.
+
+### Reusing component-source bounds (2026-11-09)
+
+A fresh unminified production CPU profile attributed 50.3 ms of sampled inclusive CPU
+across four selections to `componentSource`. It repeatedly measured member bounds and
+spread entire source shapes just to pass bounds to `drawnBox`. Those spreads also read
+selection and hover metadata through Overmind, although neither affects source geometry.
+
+Source measurement now reads each member's bounds once and passes them, with its rotation,
+to the extracted `rotatedBounds` calculation. `drawnBox` retains its original one-argument
+contract for all existing callers. Nested sources retain their resolved dimensions, and
+geometry/appearance keys and live source reads remain unchanged. No cache is added.
+
+The regression checks a rotated member's extent, one bounds read, and no reads of selection
+or hover flags. It fails against baseline `9fbb978c` and passes with the change. Existing
+nested-source, variable, undo and collaboration coverage remains intact.
+
+Normal minified production builds were compared in Chromium with one worker and three runs
+per build, without profiling or concurrent test suites. The final optimized runs preceded
+the baseline runs on the same machine. All six benchmark runs passed:
+
+| Fixture | Median interaction before → after | Median script total before → after |
+| --- | ---: | ---: |
+| 60 instances, three views | 110 → 109 ms | 228.38 → 206.23 ms |
+
+This is about 10% less JavaScript work in this fixture, not a demonstrated improvement in
+input-to-paint latency. Interaction durations include browser automation and assertions;
+script totals cover four selections. The small sample and sequential runs do not establish
+a general speedup. These timings are not directly comparable to earlier machines/runs.
+
+Verification: all 2,196 unit/server tests passed (30 skipped), plus 43 browser tests covering
+selection, source editing, inherited modes, responsive variants, repainting and shape/container
+handles. Application/test/server type checks, changed-file lint, the lint baseline (two existing
+findings), and production editor/preview builds passed with unchanged budgets.

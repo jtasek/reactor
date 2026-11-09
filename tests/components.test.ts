@@ -1,9 +1,10 @@
+import { createComponent, createDocument, createShape } from 'src/app/factories';
 import { componentSource } from 'src/app/componentSource';
 import { readClipboard } from 'src/app/clipboard';
 import { componentPropValue, applyInstanceOverrides } from 'src/app/componentProps';
 import { componentFingerprint } from 'src/app/componentLibrary';
 import { instanceProperties } from 'src/app/computed/componentPanels';
-import { isShapeVisible } from 'src/app/utils';
+import { isShapeVisible, rectToBox } from 'src/app/utils';
 import {
     readEntity,
     restoreDocuments,
@@ -767,4 +768,35 @@ it('pastes a same-document instance without replacing its live source', () => {
     const document = store.state.currentDocument;
     expect(document.components[componentId].sourceShapes).toBeUndefined();
     expect(componentSource(document, componentId)?.shapes[0].fill).toBe('#00ff00');
+});
+
+it('measures source members without reading their selection or hover flags', () => {
+    const selected = vi.fn(() => false);
+    const hovered = vi.fn(() => false);
+    const bounds = vi.fn(() => rectToBox({ x: 10, y: 20, width: 30, height: 40 }));
+    const shape = createShape({
+        type: 'rectangle',
+        name: 'Source member',
+        order: 'a0',
+        position: { x: 10, y: 20 },
+        size: { width: 30, height: 40 },
+        rotation: 90
+    });
+    Object.defineProperties(shape, {
+        bounds: { enumerable: true, get: bounds },
+        selected: { enumerable: true, get: selected },
+        hovered: { enumerable: true, get: hovered }
+    });
+    const document = createDocument({
+        shapes: { [shape.id]: shape },
+        components: { card: createComponent({ id: 'card', shapesIds: [shape.id] }) }
+    });
+
+    const source = componentSource(document, 'card')!;
+
+    expect(source.box.width).toBeCloseTo(40);
+    expect(source.box.height).toBeCloseTo(30);
+    expect(bounds).toHaveBeenCalledTimes(1);
+    expect(selected).not.toHaveBeenCalled();
+    expect(hovered).not.toHaveBeenCalled();
 });

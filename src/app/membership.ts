@@ -209,9 +209,11 @@ export function selectionLayerId(document: Document): string | undefined {
 
 /** The upright box around a shape as drawn, turned by its rotation. */
 export function drawnBox(shape: Shape): Box {
-    const bounds = getShapeBounds(shape);
-    const rotation = shape.rotation ?? 0;
+    return rotatedBounds(getShapeBounds(shape), shape.rotation ?? 0);
+}
 
+/** The upright extent of already measured bounds after rotation around their center. */
+export function rotatedBounds(bounds: Box, rotation: number): Box {
     if (rotation === 0) {
         return bounds;
     }
