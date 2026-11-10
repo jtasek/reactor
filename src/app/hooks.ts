@@ -36,6 +36,8 @@ const useRootState = createStateHook<Context>();
  * many times per frame, such as each Shape while a frame is dragged, reads
  * `useAppState((state) => state)` once and passes that state to pure readers
  * instead of calling several hooks; tests/shapeSubscriptions.test.ts holds Shape to it.
+ * Shape reads it through `useShapeState` (`shapeState.ts`), which also skips
+ * renders when only other shapes are added or removed.
  */
 export const useAppState = <T>(select: (state: Context['state']) => T): T => {
     return select(useRootState());
