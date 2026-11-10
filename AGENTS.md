@@ -215,6 +215,9 @@ re-renders.** Components never mutate state directly.
 - **Computed/derived** (`src/app/computed/`, `src/events/computed/`): Overmind `derived(...)`.
   `*Ids` (except `shapesIds`) and `selected*` fields are wired to these — keep derivations
   here, not in components.
+  Selecting shapes: change it only through `src/app/shapeSelection.ts`, which keeps each
+  shape's `selected` flag and the document's runtime `shapeSelection` list in step, so
+  selection readers depend on the selected shapes, not on every shape.
   The pointer drag model lives in `src/events/computed/pointer.ts` (`topLeft`, `size`,
   `bottomRight`, `center`, `radius`, `offset`).
 - **Actions** (`src/app/actions/`): one file per domain (`shape.ts`, `link.ts`, …),

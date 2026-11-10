@@ -104,6 +104,25 @@ describe('the list of selected shapes', () => {
         expect(store.state.currentDocument.selectedShapesIds).toEqual([]);
     });
 
+    it('unselects shapes being hidden in one write of the list', () => {
+        const store = storeWith(30);
+        const ids = store.state.currentDocument.shapesIds;
+
+        ids.forEach((id) => store.actions.selectShape(id));
+        let listWrites = 0;
+        const stop = store.addMutationListener(({ path }) => {
+            if (path.endsWith('.shapeSelection')) {
+                listWrites++;
+            }
+        });
+
+        store.actions.hideSelection();
+        stop();
+
+        expectInStep(store.state.currentDocument);
+        expect(listWrites).toBe(1);
+    });
+
     it('is not saved or shared', () => {
         const store = storeWith(1);
 

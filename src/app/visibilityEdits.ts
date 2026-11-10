@@ -28,8 +28,11 @@ export const hideSelection: Action = ({ state }) => {
     shapes.forEach((shape) => {
         unbind(shape, 'visible');
         shape.visible = false;
-        setShapesSelected(currentDocument, [shape.id], false);
     });
+    unselect(
+        currentDocument,
+        shapes.map((shape) => shape.id)
+    );
 };
 
 /** Show all leaves what a locked frame holds as it is; a frame's own lock does not stop it. */
