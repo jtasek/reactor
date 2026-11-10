@@ -171,4 +171,43 @@ describe('a shape drawn on the canvas', () => {
             )
         ).toBe(1);
     });
+
+    it('renders on every change when it cannot see which derived values were read', () => {
+        const store = documentOf(3);
+        const [first, , last] = store.state.currentDocument.shapesIds;
+        const root = storeOf(store.reaction) as unknown as {
+            options: { onGetFunction?: unknown };
+        };
+        // Without derived values to check, skipping could miss a change.
+        const evaluate = root.options.onGetFunction;
+        root.options.onGetFunction = undefined;
+        const tracked = trackShapeReads(root as unknown as IProxyStateTree<object, unknown>);
+        root.options.onGetFunction = evaluate;
+        let renders = 0;
+
+        void tracked.state.documents[tracked.state.currentDocumentId].shapes[last].visible;
+        const stop = tracked.subscribe(() => renders++);
+        store.actions.removeShapes([first]);
+        stop();
+
+        expect(renders).toBe(1);
+    });
+
+    it('starts watching without adding its reads to a render still being tracked', () => {
+        const store = documentOf(3);
+        const [, , last] = store.state.currentDocument.shapesIds;
+        const root = storeOf(store.reaction) as IProxyStateTree<object, unknown>;
+        const shape = trackShapeReads(root);
+
+        readLikeShape(shape.state, last);
+        // The next component's render, tracked until its own layout effect
+        // subscribes; this shape's layout effect runs first.
+        const other = root.getTrackStateTree();
+        other.track();
+        const stop = shape.subscribe(() => {});
+        root.unsetTrackStateTree(other);
+        stop();
+
+        expect([...other.pathDependencies]).toEqual([]);
+    });
 });
