@@ -1,5 +1,5 @@
 import { setShapesSelected } from './shapeSelection';
-import type { Action, Application, Document } from './types';
+import type { Action, Application, Document, Group, Shape } from './types';
 import { selectedItems } from './membership';
 import { frameState, lockedFrameForShapes } from './frameState';
 import { unbind } from './variables';
@@ -12,6 +12,29 @@ export function flagEditableItems(document: Document) {
         groups: groups.filter((group) => !lockedFrameForShapes(document, group.shapesIds)),
         shapes: shapes.filter((shape) => !lockedFrameForShapes(document, [shape.id]))
     };
+}
+
+/**
+ * Whether a selected item flag commands may change passes `test`, as
+ * `flagEditableItems` lists them. It stops at the first one, and runs `test` before
+ * the frame check, so with thousands selected a guard reads little.
+ */
+export function someFlagEditableItem(
+    document: Document,
+    test: (item: Group | Shape) => boolean = () => true
+) {
+    const groups = document.selectedGroupsIds.map((id) => document.groups[id]);
+    const grouped = new Set(groups.flatMap((group) => group.shapesIds));
+
+    return (
+        groups.some((group) => test(group) && !lockedFrameForShapes(document, group.shapesIds)) ||
+        document.selectedShapesIds.some(
+            (id) =>
+                !grouped.has(id) &&
+                test(document.shapes[id]) &&
+                !lockedFrameForShapes(document, [id])
+        )
+    );
 }
 
 const unselect = (document: Document, shapeIds: string[]) =>
