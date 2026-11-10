@@ -500,6 +500,12 @@ export interface Document {
     selected: boolean;
     selectedShapes: Shape[];
     selectedShapesIds: string[];
+    /**
+     * Runtime: the selected shapes, as their `selected` flags say, listed so that
+     * reading the selection does not read every shape. Written only through
+     * `shapeSelection.ts`; read `selectedShapesIds`.
+     */
+    shapeSelection: string[];
     selectionExtent: Box | null;
     movableSelectedItems: string[][];
     editableSelectedShapesIds: string[];

@@ -1,3 +1,4 @@
+import { forgetMissingShapes } from '../shapeSelection';
 import { isFrameVisible, unselectHiddenFrameShapes } from '../frameState';
 import { editorHelpers } from '../editorHelpers';
 import type { Action, ActionWithParam, Box, Document, Shape } from '../types';
@@ -223,6 +224,7 @@ export const applyRemoteChanges: ActionWithParam<RemoteChanges> = ({ state }, ch
 
         if (reordered && collection === 'shapes') {
             document.shapesIds = inDrawingOrder(document.shapes);
+            forgetMissingShapes(document);
         }
     }
 

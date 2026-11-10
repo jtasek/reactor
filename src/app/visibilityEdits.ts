@@ -1,3 +1,4 @@
+import { setShapesSelected } from './shapeSelection';
 import type { Action, Application, Document } from './types';
 import { selectedItems } from './membership';
 import { frameState, lockedFrameForShapes } from './frameState';
@@ -13,13 +14,8 @@ export function flagEditableItems(document: Document) {
     };
 }
 
-const unselect = ({ shapes }: Document, shapeIds: string[]) => {
-    shapeIds.forEach((id) => {
-        if (shapes[id]?.selected) {
-            shapes[id].selected = false;
-        }
-    });
-};
+const unselect = (document: Document, shapeIds: string[]) =>
+    setShapesSelected(document, shapeIds, false);
 
 export const hideSelection: Action = ({ state }) => {
     const { currentDocument } = state;
@@ -32,7 +28,7 @@ export const hideSelection: Action = ({ state }) => {
     shapes.forEach((shape) => {
         unbind(shape, 'visible');
         shape.visible = false;
-        shape.selected = false;
+        setShapesSelected(currentDocument, [shape.id], false);
     });
 };
 

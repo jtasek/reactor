@@ -298,7 +298,10 @@ export function createDocument(options: Partial<Document> = {}): Document {
         editableSelectedShapesIds,
         selectedShapes,
         variablesIds,
-        shapesIds: inDrawingOrder(options.shapes ?? {})
+        shapesIds: inDrawingOrder(options.shapes ?? {}),
+        shapeSelection: Object.values(options.shapes ?? {})
+            .filter((shape) => shape.selected)
+            .map((shape) => shape.id)
     };
 }
 

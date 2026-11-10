@@ -5,7 +5,8 @@ import { editorHelpers } from '../editorHelpers';
 import { translateShape } from '../geometry';
 import { getCommand } from './startup';
 import { shapeGroup } from '../membership';
-import { deleteIfPresent } from '../untracked';
+import { deleteIfPresent, untracked } from '../untracked';
+import { selectOnlyShapes } from '../shapeSelection';
 
 /** Aligning, which the editor provides as it loads. */
 const alignment = () => editorHelpers().alignment;
@@ -40,32 +41,23 @@ export const runCommandOn: ActionWithParam<{ shapeIds: string[]; commandId: stri
         return;
     }
 
-    const { shapes } = state.currentDocument;
-    const chosen = new Set(shapeIds);
     const before = {
         guides: Object.values(state.currentDocument.guides).filter((guide) => guide.selected),
-        selected: Object.values(shapes)
-            .filter((shape) => shape.selected)
-            .map((shape) => shape.id),
+        selected: [...untracked(state.currentDocument).shapeSelection],
         enteredGroupId: state.enteredGroupId,
         selectedFrameId: state.currentDocument.selectedFrameId
     };
-    const select = (ids: Set<string>) =>
-        Object.values(shapes).forEach((shape) => {
-            if (shape.selected !== ids.has(shape.id)) {
-                shape.selected = ids.has(shape.id);
-            }
-        });
+    const select = (ids: string[]) => selectOnlyShapes(state.currentDocument, ids);
 
     actions.unselectGuides();
     deleteIfPresent(state.currentDocument, 'selectedFrameId');
-    select(chosen);
+    select(shapeIds);
     // One shape of a group is selected alone, as inside its group.
     state.enteredGroupId =
         shapeIds.length === 1 ? (shapeGroup(state.currentDocument, shapeIds[0])?.id ?? null) : null;
 
     if (!actions.runCommand(command)) {
-        select(new Set(before.selected));
+        select(before.selected);
         before.guides.forEach((guide) => {
             guide.selected = true;
         });

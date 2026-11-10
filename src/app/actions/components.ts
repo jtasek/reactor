@@ -1,3 +1,4 @@
+import { setShapesSelected } from '../shapeSelection';
 import type * as ComponentLibrary from '../componentLibrary';
 import type * as ComponentPropertyEdits from '../componentPropertyEdits';
 import { editorHelpers } from '../editorHelpers';
@@ -305,11 +306,7 @@ export const selectComponentSource: ActionWithParam<string> = ({ state, actions 
     actions.unselectShapes();
     state.enteredGroupId = null;
     state.enteredComponentId = null;
-    component.shapesIds.forEach((id) => {
-        if (state.currentDocument.shapes[id]) {
-            state.currentDocument.shapes[id].selected = true;
-        }
-    });
+    setShapesSelected(state.currentDocument, component.shapesIds, true);
     state.selectedComponent = {
         documentId: state.currentDocumentId,
         componentId

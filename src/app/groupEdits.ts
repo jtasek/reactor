@@ -1,3 +1,4 @@
+import { setShapesSelected } from './shapeSelection';
 import { materializeGroupPlacement } from './stackEdits';
 export { materializeGroupPlacement } from './stackEdits';
 import { hasLayoutOffset } from './frameLayout';
@@ -152,11 +153,11 @@ export const toggleGroupSelected: ActionWithParam<string> = ({ state, actions },
         state.enteredGroupId = null;
     }
 
-    group.shapesIds
-        .filter((id) => isShapeVisible(currentDocument, id))
-        .forEach((id) => {
-            currentDocument.shapes[id].selected = selected;
-        });
+    setShapesSelected(
+        currentDocument,
+        group.shapesIds.filter((id) => isShapeVisible(currentDocument, id)),
+        selected
+    );
 
     if (!selected) {
         return;

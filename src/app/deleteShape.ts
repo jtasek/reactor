@@ -26,6 +26,10 @@ export function deleteShapes(currentDocument: Document, shapeIds: readonly strin
         }
     }
 
+    if (plain.shapeSelection.some((id) => removed.has(id))) {
+        currentDocument.shapeSelection = plain.shapeSelection.filter((id) => !removed.has(id));
+    }
+
     for (const table of ['groups', 'layers', 'components'] as const) {
         for (const member of Object.values(plain[table])) {
             if (member.shapesIds.some((id) => removed.has(id))) {
