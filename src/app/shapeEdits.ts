@@ -26,7 +26,7 @@ import { unbind, unbindEditedProperties, unbindMovedProperties, writeText } from
 import { Context } from 'src/app';
 import { instanceName, createGroup, createShape, nextShapeName } from './factories';
 import { containersHolding, groupAtPoint, shapeGroup, shownGroupShapesIds } from './membership';
-import { deleteShape } from './deleteShape';
+import { deleteShape, deleteShapes } from './deleteShape';
 import {
     componentAtPoint,
     selectionMembers,
@@ -221,13 +221,14 @@ export const removeShapes: ActionWithParam<string[]> = ({ state, actions }, shap
     const requested = shapeIds.filter(
         (id) => currentDocument.shapes[id] && !isShapeLocked(currentDocument, id)
     );
+    const requestedIds = new Set(requested);
     const blocked = new Set<string>();
 
     for (const component of Object.values(currentDocument.components)) {
         if (!hasComponentInstances(currentDocument, component.id)) {
             continue;
         }
-        if (component.shapesIds.every((id) => requested.includes(id))) {
+        if (component.shapesIds.every((id) => requestedIds.has(id))) {
             component.shapesIds.forEach((id) => blocked.add(id));
         }
     }
@@ -237,7 +238,7 @@ export const removeShapes: ActionWithParam<string[]> = ({ state, actions }, shap
     const removed = requested.filter((id) => !blocked.has(id));
     const groups = containersHolding(currentDocument.groups, removed);
 
-    removed.forEach((id) => deleteShape(state.currentDocument, id));
+    deleteShapes(state.currentDocument, removed);
     groups
         .filter((group) => group.shapesIds.length === 0)
         .forEach((group) => delete currentDocument.groups[group.id]);

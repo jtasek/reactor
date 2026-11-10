@@ -41,7 +41,7 @@ import type {
 import { createGroup, createShape, instanceName, shapeNamer } from './factories';
 import { orderAbove } from './drawOrder';
 import { containersHolding, shapeLayer } from './membership';
-import { deleteShape } from './deleteShape';
+import { deleteShapes } from './deleteShape';
 import { applyProperty } from './properties';
 import {
     accepts,
@@ -1583,7 +1583,7 @@ export function writeBatch(document: Document, staged: Staged) {
     const emptied = containersHolding(document.groups, staged.deletedShapes);
 
     staged.deletedFrames.forEach((id) => deleteFrame(document, id));
-    staged.deletedShapes.forEach((id) => deleteShape(document, id));
+    deleteShapes(document, [...staged.deletedShapes]);
     emptied
         .filter((group) => group.shapesIds.length === 0)
         .forEach((group) => delete document.groups[group.id]);

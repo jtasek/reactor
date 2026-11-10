@@ -1,58 +1,90 @@
 import type { Document } from './types';
+import { untracked } from './untracked';
 
 /**
- * Removes a shape from its document with what refers to it: its place in groups,
- * layers and components, the props it backs, its links, and its children's parent.
+ * Removes shapes from their document with what refers to them: their places in
+ * groups, layers and components, the props they back, their links, and their
+ * children's parents. One pass over the document however many shapes go, and
+ * only what holds a removed shape is written, so each write is a real change.
  */
-export function deleteShape(currentDocument: Document, shapeId: string) {
-    const index = currentDocument.shapesIds.indexOf(shapeId);
-
-    if (index >= 0) {
-        currentDocument.shapesIds.splice(index, 1);
+export function deleteShapes(currentDocument: Document, shapeIds: readonly string[]) {
+    if (shapeIds.length === 0) {
+        return;
     }
 
-    delete currentDocument.shapes[shapeId];
+    const removed = new Set(shapeIds);
+    // Read without tracking; every write below goes through the store.
+    const plain = untracked(currentDocument);
 
-    for (const table of [
-        currentDocument.groups,
-        currentDocument.layers,
-        currentDocument.components
-    ]) {
-        for (const member of Object.values(table)) {
-            member.shapesIds = member.shapesIds.filter((id) => id !== shapeId);
+    if (plain.shapesIds.some((id) => removed.has(id))) {
+        currentDocument.shapesIds = plain.shapesIds.filter((id) => !removed.has(id));
+    }
+
+    for (const id of removed) {
+        if (Object.hasOwn(plain.shapes, id)) {
+            delete currentDocument.shapes[id];
         }
     }
 
-    for (const component of Object.values(currentDocument.components)) {
-        const removedProps = component.props?.filter((prop) => prop.shapeId === shapeId) ?? [];
+    for (const table of ['groups', 'layers', 'components'] as const) {
+        for (const member of Object.values(plain[table])) {
+            if (member.shapesIds.some((id) => removed.has(id))) {
+                currentDocument[table][member.id].shapesIds = member.shapesIds.filter(
+                    (id) => !removed.has(id)
+                );
+            }
+        }
+    }
+
+    for (const component of Object.values(plain.components)) {
+        const removedProps = component.props?.filter((prop) => removed.has(prop.shapeId)) ?? [];
 
         if (removedProps.length === 0) {
             continue;
         }
-        component.props = component.props?.filter((prop) => prop.shapeId !== shapeId);
-        Object.values(currentDocument.shapes).forEach((shape) => {
+        currentDocument.components[component.id].props = component.props?.filter(
+            (prop) => !removed.has(prop.shapeId)
+        );
+        for (const shape of Object.values(plain.shapes)) {
             if (shape.type !== 'instance' || shape.componentId !== component.id) {
-                return;
+                continue;
+            }
+            const instance = currentDocument.shapes[shape.id];
+
+            if (instance.type !== 'instance') {
+                continue;
             }
             removedProps.forEach((prop) => {
-                delete shape.overrides[prop.id];
+                if (Object.hasOwn(shape.overrides, prop.id)) {
+                    delete instance.overrides[prop.id];
+                }
             });
-        });
+        }
     }
 
-    for (const link of Object.values(currentDocument.links)) {
-        if (link.source === shapeId || link.target === shapeId) {
+    for (const link of Object.values(plain.links)) {
+        if (
+            (link.source !== undefined && removed.has(link.source)) ||
+            (link.target !== undefined && removed.has(link.target))
+        ) {
             delete currentDocument.links[link.id];
         }
     }
 
-    for (const shape of Object.values(currentDocument.shapes)) {
-        if (shape.parentShapeId === shapeId) {
-            delete shape.parentShapeId;
+    for (const shape of Object.values(plain.shapes)) {
+        if (shape.parentShapeId !== undefined && removed.has(shape.parentShapeId)) {
+            delete currentDocument.shapes[shape.id].parentShapeId;
         }
 
-        if (shape.children) {
-            shape.children = shape.children.filter((child) => child.id !== shapeId);
+        if (shape.children?.some((child) => removed.has(child.id))) {
+            currentDocument.shapes[shape.id].children = shape.children.filter(
+                (child) => !removed.has(child.id)
+            );
         }
     }
+}
+
+/** Removes one shape: see `deleteShapes`. */
+export function deleteShape(currentDocument: Document, shapeId: string) {
+    deleteShapes(currentDocument, [shapeId]);
 }
