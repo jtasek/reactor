@@ -26,15 +26,19 @@ const trackingTrees = () => {
     const { proxyStateTreeInstance } = store as unknown as {
         proxyStateTreeInstance: { getTrackStateTree: () => unknown };
     };
+    const render = () =>
+        renderToStaticMarkup(
+            createElement(
+                Provider,
+                { value: store },
+                createElement(Shape, { shapeId, inSelectedGroup: false, inClosedGroup: false })
+            )
+        );
+    // The first render also looks up the store behind the hooks, once per store.
+    render();
     const trees = vi.spyOn(proxyStateTreeInstance, 'getTrackStateTree');
 
-    renderToStaticMarkup(
-        createElement(
-            Provider,
-            { value: store },
-            createElement(Shape, { shapeId, inSelectedGroup: false, inClosedGroup: false })
-        )
-    );
+    render();
 
     return trees.mock.calls.length;
 };

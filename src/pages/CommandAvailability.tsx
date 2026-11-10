@@ -1,9 +1,9 @@
 import { FC, useLayoutEffect } from 'react';
-import { PROXY_TREE, type IProxyStateTree } from 'proxy-state-tree';
 import { getCommands } from 'src/app/actions/startup';
 import { publishCommandAvailability } from 'src/app/commandAvailability';
 import { useReaction } from 'src/app/hooks';
 import type { Context } from 'src/app';
+import { storeOf } from 'src/app/storeOf';
 
 type State = Context['state'];
 
@@ -27,27 +27,6 @@ function readAvailability(state: State) {
             }
         })
     );
-}
-
-/**
- * The store behind `reaction`'s state. This and `watchCommandAvailability` use
- * proxy-state-tree's tracking trees directly (as `untracked.ts` uses its
- * markers); `tests/commandAvailability.test.ts` checks them after an upgrade.
- */
-function storeOf(reaction: Context['reaction']) {
-    let store: IProxyStateTree<object, unknown> | undefined;
-
-    // Reading the tree marker tracks nothing, so this reaction never fires.
-    reaction(
-        (state) => {
-            store = (state as unknown as { [PROXY_TREE]: { root: typeof store } })[PROXY_TREE].root;
-
-            return null;
-        },
-        () => {}
-    )();
-
-    return store!;
 }
 
 /**

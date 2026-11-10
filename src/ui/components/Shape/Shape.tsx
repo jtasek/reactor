@@ -23,7 +23,8 @@ import {
     getShapeBounds,
     boxCenter
 } from 'src/app/utils';
-import { useActions, useAppState } from 'src/app/hooks';
+import { useActions } from 'src/app/hooks';
+import { useShapeState } from 'src/app/shapeState';
 
 interface Props {
     shapeId: string;
@@ -44,8 +45,9 @@ export const Shape = memo((props: Props) => {
         measurementOnly = false
     } = props;
     // One tracked tree owns this shape's reads; separate state hooks duplicate
-    // subscription setup and teardown for every child on each drag frame.
-    const state = useAppState((state) => state);
+    // subscription setup and teardown for every child on each drag frame. It does
+    // not render again when other shapes are added or removed.
+    const state = useShapeState();
     const document = state.currentDocument;
     const shape = renderedShape(document, shapeId);
     const theme = artworkModes(state, shape).modes;
