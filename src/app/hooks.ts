@@ -11,7 +11,7 @@ import { commandsFor, commandsIn, getCommand, getCommands } from './actions';
 import { Context } from '.';
 import { useCallback, useLayoutEffect, useReducer, useRef, useSyncExternalStore } from 'react';
 import { isShapeLocked, isShapeVisible } from './utils';
-import type { Command, CommandPlace, CommandScope } from './types';
+import type { CommandPlace, CommandScope } from './types';
 import { takesEditorInput } from '../events/input';
 import { editorHelpers, editorLoaded, subscribeToEditorHelpers } from './editorHelpers';
 import { PropertyRow, sharedProperties } from './properties';
