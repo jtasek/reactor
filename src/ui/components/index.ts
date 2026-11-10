@@ -16,12 +16,12 @@ export { Explorer } from './Explorer';
 export { DockablePanel, PanelLayout } from './PanelLayout';
 
 export { Canvas } from './Surface';
-export { Layout } from './Layout';
+export { EditWithWords } from './EditWithWords';
 export { InspectorContainer as Inspector } from './Inspector';
+export { Layout } from './Layout';
 export { Stack } from './Stack/Stack';
-export { Stats } from './Stats/Stats';
+export { Stats } from './Stats';
 export { StatusBarContainer as StatusBar } from './StatusBar';
 export { Switch } from './Switch';
 export { ToolBarContainer as ToolBar } from './ToolBar';
 export { Variables } from './Variables';
-export { EditWithWords } from './EditWithWords';
