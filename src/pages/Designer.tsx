@@ -20,7 +20,6 @@ import {
     MenuBar,
     Minimap,
     Inspector,
-    Stack,
     StatusBar,
     Stats,
     Canvas,
@@ -60,7 +59,6 @@ export const Designer: FC = () => {
             <CommandBar />
             <CommandLine />
             <MenuBar />
-            <Stack />
             <Canvas />
             <ContextMenu />
             <PanelLayout toolbar={<ToolBar />}>
