@@ -1,4 +1,6 @@
 import { queueMeasuredBounds } from 'src/ui/components/Shape/measuring';
+import { getShapeBounds, rectToBox } from 'src/app/utils';
+import { createTestStore } from './support/store';
 
 const box = (x: number) => ({
     topLeft: { x, y: 0 },
@@ -47,5 +49,56 @@ describe('storing measured boxes', () => {
         await Promise.resolve();
 
         expect(store).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('setShapesBounds', () => {
+    const added = () => {
+        const { store } = createTestStore();
+
+        store.actions.addShape({
+            type: 'rectangle',
+            position: { x: 10, y: 20 },
+            size: { width: 30, height: 40 }
+        });
+        const id = store.state.currentDocument.shapesIds[0];
+        let mutations = 0;
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (store as any).addMutationListener(() => mutations++);
+
+        return { store, id, mutations: () => mutations };
+    };
+
+    it('stores nothing when the box matches what the shape says, so it is not drawn again', () => {
+        const { store, id, mutations } = added();
+
+        store.actions.setShapesBounds([
+            { id, bounds: rectToBox({ x: 10, y: 20, width: 30, height: 40 }) }
+        ]);
+
+        expect(store.state.currentDocument.shapes[id].bounds).toBeUndefined();
+        expect(mutations()).toBe(0);
+    });
+
+    it('stores a box that differs from what the shape says', () => {
+        const { store, id } = added();
+        const drawn = rectToBox({ x: 9, y: 19, width: 32, height: 42 });
+
+        store.actions.setShapesBounds([{ id, bounds: drawn }]);
+
+        expect(getShapeBounds(store.state.currentDocument.shapes[id])).toEqual(drawn);
+    });
+
+    it('replaces a stored box once the shape is drawn as its fields say', () => {
+        const { store, id } = added();
+        const fields = rectToBox({ x: 10, y: 20, width: 30, height: 40 });
+
+        store.actions.setShapesBounds([
+            { id, bounds: rectToBox({ x: 9, y: 19, width: 32, height: 42 }) }
+        ]);
+        store.actions.setShapesBounds([{ id, bounds: fields }]);
+
+        expect(getShapeBounds(store.state.currentDocument.shapes[id])).toEqual(fields);
     });
 });

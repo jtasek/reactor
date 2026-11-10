@@ -844,8 +844,15 @@ export const setShapesBounds: ActionWithParam<{ id: string; bounds: Box }[]> = (
             : bounds;
 
         // Idempotent: skip the write when the measured box is unchanged so the
-        // measurement effect cannot trigger a render loop.
-        if (shape.bounds && boxesEqual(shape.bounds, measured)) {
+        // measurement effect cannot trigger a render loop. A shape with no stored
+        // box is drawn from the box its fields give, so a measurement matching that
+        // changes nothing either. Storing it would draw every new rectangle, ellipse
+        // and line twice, and each selected one with all its handles.
+        if (
+            shape.bounds
+                ? boxesEqual(shape.bounds, measured)
+                : boxesEqual(getShapeBounds(shape), measured)
+        ) {
             continue;
         }
 

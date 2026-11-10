@@ -606,9 +606,11 @@ describe('changing and deleting with operations', () => {
         const { store, document, apply, first } = setupDocument();
 
         store.actions.addComponent({ id: 'card', shapesIds: [first], sourceOnly: true });
+        // Drawn a little larger than its fields say, as a measured box can be:
+        // one that matches them is not stored.
         store.actions.setShapeBounds({
             id: first,
-            bounds: rectToBox({ x: 0, y: 0, width: 20, height: 10 })
+            bounds: rectToBox({ x: -1, y: -1, width: 22, height: 12 })
         });
         expect(
             apply([{ op: 'updateShape', shape: first, changes: { opacity: 0.5 } }])
