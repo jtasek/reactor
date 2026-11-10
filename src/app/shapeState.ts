@@ -26,6 +26,8 @@ interface Reads {
 
 const reading = new WeakMap<object, Reads>();
 const watched = new WeakSet<Store>();
+/** Stores whose derived reads can be seen. Without that, nothing is skipped. */
+const seeing = new WeakSet<Store>();
 
 /**
  * Has Overmind's derived values say which ones a tracked render reads, and what
@@ -40,9 +42,10 @@ function watchDerivedReads(store: Store) {
     const options = (store as unknown as { options: { onGetFunction?: GetFunction } }).options;
     const evaluate = options.onGetFunction;
 
-    if (!evaluate) {
+    if (typeof evaluate !== 'function') {
         return;
     }
+    seeing.add(store);
     options.onGetFunction = (tree, path, target, prop) => {
         const reads = reading.get(tree);
 
@@ -71,13 +74,26 @@ type GetFunction = (
     prop: string
 ) => unknown;
 
-const at = (store: Store, path: string) =>
-    path
-        .split('.')
-        .reduce<unknown>(
-            (parent, key) => (parent as Record<string, unknown> | undefined)?.[key],
-            store.state
-        );
+/**
+ * The value at `path`, read for no component: while a component's render is
+ * tracked, until its subscription starts, the store adds every read to it.
+ */
+function at(store: Store, path: string) {
+    const root = store as unknown as { currentTree: unknown };
+    const current = root.currentTree;
+
+    root.currentTree = null;
+    try {
+        return path
+            .split('.')
+            .reduce<unknown>(
+                (parent, key) => (parent as Record<string, unknown> | undefined)?.[key],
+                store.state
+            );
+    } finally {
+        root.currentTree = current;
+    }
+}
 
 /**
  * Whether a change that only added or removed shapes leaves what `reads` read as
@@ -232,7 +248,7 @@ export function trackShapeReads(store: Store) {
                     return values.get(path);
                 };
 
-                if (!onlyOtherShapesChanged(reads, hits, now)) {
+                if (!seeing.has(store) || !onlyOtherShapesChanged(reads, hits, now)) {
                     onChange();
                 }
             });
