@@ -109,16 +109,18 @@ export const config = {
     // Readers and history tracking run on every page; rule resolution and authoring stay lazy.
     // Raise it only for code every page needs as it opens, after checking what grew.
     // Documents controls and icons load with their page; commands and tools load with
-    // the editor page (`registerEditor`). The individual-file limit stays at 248 KiB.
+    // the editor page (`registerEditor`). The individual-file limit is 250 KiB.
     // Schema v24 adds required entity/field/record readers (~1.6 KiB); the data UI loads on demand.
     // Schema v28 adds named boolean records and binding readers; its authoring UI stays lazy.
     // 2026-11-07: +1 KiB so startup waits for the self-hosted Roboto before measuring text (~70 bytes).
+    // 2026-11-10: +3 KiB entry, +2 KiB per file for the list of selected shapes (`shapeSelection.ts`)
+    // that every selection write keeps, so selection readers stop depending on every shape.
     performance: isDev
         ? false
         : {
               hints: 'error',
-              maxEntrypointSize: 498 * 1024,
-              maxAssetSize: 248 * 1024
+              maxEntrypointSize: 501 * 1024,
+              maxAssetSize: 250 * 1024
           },
     optimization: {
         // Readable module names on HMR in dev; stable hashes for caching in prod.
