@@ -167,7 +167,6 @@ export function createTestStore(
             autoSave: options.autoSave ?? false,
             debugMode: false,
             documentsLayout: 'cards',
-            explorerView: 'objects',
             panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT),
             version: '1.0'
         }

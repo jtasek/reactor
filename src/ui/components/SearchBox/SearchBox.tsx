@@ -21,6 +21,14 @@ export const SearchBox: FC<Props> = ({ filter, label = 'Search shapes', onSearch
                 e.preventDefault();
                 onSearch(e.target.value);
             }}
+            onKeyDown={(e) => {
+                // Escape clears a search, and leaves the field to the editor when empty.
+                if (e.key === 'Escape' && filter) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onSearch('');
+                }
+            }}
         />
     </div>
 );

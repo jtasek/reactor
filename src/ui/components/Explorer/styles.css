@@ -1,61 +1,27 @@
-/* The panel draws the glass; the tree is a lighter card on it, under the search field. */
+/*
+ * The outline sits straight on the panel's glass, as a macOS sidebar: section titles,
+ * rows of name and icon, and nothing else until a row is hovered or focused.
+ */
 .explorer {
     color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
     overflow: auto;
-    padding: var(--panel-gap);
+    padding: var(--panel-gap) 6px;
+    position: relative;
     user-select: none;
     width: 100%;
 }
 
-.views {
-    background: var(--field-background);
-    border-radius: var(--radius-md);
+.header {
+    align-items: center;
     display: flex;
-    gap: 2px;
-    margin-bottom: var(--panel-gap);
-    padding: 3px;
+    gap: 4px;
+    padding: 0 2px 4px;
 }
 
-.views button {
-    background: transparent;
-    border: 0;
-    border-radius: var(--radius-sm);
-    color: var(--text-secondary-color);
-    cursor: pointer;
-    flex: 1;
-    font: inherit;
-    min-height: 28px;
-}
-
-.views button[aria-pressed='true'] {
-    background: var(--panel-content-background);
-    color: var(--text-color);
-    font-weight: var(--font-weight-semibold);
-}
-
-.views button:focus-visible {
-    outline: var(--focus-ring-width) solid var(--focus-ring-color);
-}
-
-.hint {
-    color: var(--text-secondary-color);
-    font-size: var(--font-size-callout);
-    line-height: 1.4;
-    margin: var(--panel-gap) 4px;
-}
-
-.badge {
-    background: var(--field-background);
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-sm);
-    color: var(--text-secondary-color);
-    flex: 0 0 auto;
-    font-size: var(--font-size-caption);
-    line-height: 16px;
-    padding: 0 4px;
-}
-
-.rootAction {
+.filterButton {
     align-items: center;
     background: transparent;
     border: 0;
@@ -63,26 +29,81 @@
     color: var(--text-secondary-color);
     cursor: pointer;
     display: inline-flex;
-    height: 24px;
+    flex: 0 0 26px;
+    height: 26px;
     justify-content: center;
     padding: 0;
-    width: 24px;
 }
 
-.rootAction[data-scope='components'] {
-    color: var(--component-color);
+.filterButton:hover {
+    background: var(--field-background);
 }
 
-.rootAction:hover:not(:disabled) {
-    background: var(--control-background-active);
+.filterButton[data-active='true'],
+.filterButton[aria-expanded='true'] {
+    background: color-mix(in srgb, var(--selection-color) 12%, transparent);
+    color: var(--selection-color);
 }
 
-.rootAction:disabled {
-    opacity: 0.35;
-}
-
-.rootAction:focus-visible {
+.filterButton:focus-visible,
+.filterPill button:focus-visible,
+.chip:focus-visible {
     outline: var(--focus-ring-width) solid var(--focus-ring-color);
+}
+
+.filterPill {
+    align-items: center;
+    background: color-mix(in srgb, var(--selection-color) 12%, transparent);
+    border-radius: var(--radius-md);
+    color: var(--selection-color);
+    display: flex;
+    font-size: var(--font-size-callout);
+    font-weight: var(--font-weight-medium);
+    gap: 6px;
+    margin: 2px 2px 4px;
+    padding: 3px 4px 3px 8px;
+}
+
+.filterPill span {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.filterPill button {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    height: 18px;
+    justify-content: center;
+    padding: 0;
+    width: 18px;
+}
+
+.outline {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+
+.section + .section {
+    margin-top: 4px;
+}
+
+.sectionTitle {
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-caption);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-caption);
+    margin: 0;
+    padding: 10px 8px 4px;
 }
 
 .explorer ul {
@@ -91,60 +112,32 @@
     padding: 0;
 }
 
-.explorer > ul {
-    background-color: var(--panel-content-background);
-    border-radius: var(--radius-md);
-    margin-top: var(--panel-gap);
-    padding: 4px 6px;
-}
-
-.explorer > ul > li + li {
-    border-top: 1px solid var(--hairline-color);
-}
-
-.root > .row {
-    color: var(--text-secondary-color);
-    font-size: var(--font-size-caption);
-    font-weight: var(--font-weight-semibold);
-}
-
-/* The canvas row can be pressed, and its name keeps the heading's look, selected too. */
-.root > .row > .name,
-.root.selected > .row > .name {
-    font-weight: inherit;
-    letter-spacing: inherit;
-    text-transform: inherit;
-}
-
-/* Only a heading that can be pressed, as the canvas's, lights up under the pointer. */
-.root > .row:hover:not(:has(> .name)) {
-    background: none;
-}
-
-.root > ul {
-    padding-left: 0;
-}
-
 .empty {
     color: var(--text-secondary-color);
     font-size: var(--font-size-callout);
-    margin: var(--panel-gap) 10px 0;
+    margin: 12px 8px 0;
 }
 
-.explorer li li {
-    padding-left: 10px;
+/* The space under the outline: a press there selects the canvas. */
+.rest {
+    flex: 1;
+    min-height: 24px;
 }
 
 .row {
     align-items: center;
-    border-radius: var(--radius-sm);
-    min-height: var(--list-row-height, 28px);
+    border-radius: var(--radius-md);
     display: flex;
-    flex-direction: row;
-    gap: 6px;
-    justify-content: space-between;
-    padding: 4px;
+    gap: 4px;
+    min-height: var(--list-row-height, 28px);
+    padding: 0 4px 0 calc(4px + var(--level, 0) * 16px);
     position: relative;
+}
+
+@media (pointer: coarse) {
+    .row {
+        min-height: 44px;
+    }
 }
 
 .row:hover {
@@ -152,204 +145,331 @@
 }
 
 .row[draggable='true'] {
-    cursor: grab;
+    cursor: default;
 }
 
 .dropTarget {
-    outline: 1px dashed var(--selection-color);
-}
-
-.name,
-.icon {
-    background: none;
-    border: 0;
-    cursor: pointer;
-    font: inherit;
-    padding: 0;
-}
-
-.name {
-    align-items: center;
-    color: inherit;
-    display: flex;
-    flex: 1;
-    gap: 6px;
-    min-width: 0;
-    overflow: hidden;
-    line-height: 18px;
-    text-align: left;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.name svg {
-    flex: 0 0 auto;
-}
-
-.itemText {
-    flex: 1;
-    min-width: 0;
-}
-
-.itemName,
-.itemText small {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.itemText small {
-    color: var(--text-secondary-color);
-    font-size: var(--font-size-callout);
-    font-weight: 400;
-    line-height: 16px;
-}
-
-/* A compact action bar shares the hovered row with its name. */
-.inlineMenu {
-    display: flex;
-    justify-content: flex-end;
-    position: absolute;
-    right: 4px;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-.inlineMenu[data-open='false'] {
-    pointer-events: none;
-    visibility: hidden;
-}
-
-.inlineMenu > [role='toolbar'] {
-    background: var(--panel-content-background);
-    box-shadow: none;
-    flex-wrap: nowrap;
-    gap: 2px;
-    padding: 0;
-}
-
-.inlineMenu button {
-    background: transparent;
-    height: 20px;
-    width: 20px;
-}
-
-.label {
-    align-items: center;
-    color: var(--text-secondary-color);
-    display: flex;
-    flex: 1;
-    gap: 6px;
-    min-width: 0;
-}
-
-.label svg {
-    flex: 0 0 auto;
-}
-
-.layer > .row > .name,
-.layer > .row > .label {
-    font-weight: var(--font-weight-semibold);
-}
-
-.selected > .row {
-    background: color-mix(in srgb, var(--selection-color) 10%, transparent);
-}
-
-.selected > .row > .name {
-    color: var(--selection-color);
-    font-weight: var(--font-weight-semibold);
-}
-
-.active > .row > .name {
-    color: var(--selection-color);
-}
-
-.shown > .row > .name {
-    color: var(--selection-color);
-}
-
-.component > .row > .name {
-    color: var(--component-color);
-    font-weight: var(--font-weight-medium);
-}
-
-.component > .row > .name svg {
-    color: var(--accent);
-}
-
-.component.selected > .row {
-    background: color-mix(in srgb, var(--accent) 16%, transparent);
-}
-
-.component.active > .row {
-    background: color-mix(in srgb, var(--accent) 8%, transparent);
-}
-
-.component.selected > .row > .name {
-    font-weight: var(--font-weight-semibold);
-}
-
-.component > ul {
-    border-left: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-    margin-left: 20px;
-}
-
-/* Hidden rows read as muted but stay above 4.5:1. */
-.hidden > .row > .name {
-    color: var(--label-tertiary);
-    font-style: italic;
-}
-
-.showAll {
-    background: none;
-    border: 0;
-    color: var(--selection-color);
-    cursor: pointer;
-    font: inherit;
-    padding: 0 0 4px 10px;
+    outline: var(--focus-ring-width) solid var(--selection-color);
+    outline-offset: calc(var(--focus-ring-width) * -1);
 }
 
 .toggle {
+    align-items: center;
     background: none;
     border: 0;
-    color: var(--text-color);
+    border-radius: var(--radius-sm);
+    color: var(--label-tertiary);
     cursor: pointer;
-    flex: 0 0 16px;
-    font: inherit;
+    display: inline-flex;
+    flex: 0 0 14px;
+    height: 20px;
+    justify-content: center;
     padding: 0;
-    width: 16px;
+}
+
+.toggle svg {
+    transition: transform 150ms ease;
+}
+
+.toggle[data-open='true'] svg {
+    transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toggle svg {
+        transition: none;
+    }
 }
 
 .toggleSpacer {
-    flex: 0 0 16px;
-    width: 16px;
+    flex: 0 0 14px;
 }
 
-.row[draggable='true'] > .toggleSpacer {
-    display: none;
+.name,
+.label {
+    align-items: center;
+    background: none;
+    border: 0;
+    color: inherit;
+    display: flex;
+    flex: 1;
+    font: inherit;
+    font-size: var(--font-size-body);
+    gap: 6px;
+    line-height: var(--line-height-body);
+    min-height: 24px;
+    min-width: 0;
+    padding: 0;
+    text-align: left;
+}
+
+.name {
+    cursor: default;
+}
+
+.name svg,
+.label svg {
+    color: var(--text-secondary-color);
+    flex: 0 0 auto;
+}
+
+.itemName {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .name:focus-visible,
 .toggle:focus-visible {
     border-radius: var(--radius-sm);
     outline: var(--focus-ring-width) solid var(--focus-ring-color);
-    outline-offset: -2px;
+    outline-offset: -1px;
 }
 
-.grip {
-    cursor: grab;
+.rename {
+    background: var(--control-background-active);
+    border: 1px solid var(--focus-ring-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-color);
+    flex: 1;
+    font: inherit;
+    font-size: var(--font-size-body);
+    min-width: 0;
+    padding: 2px 4px;
+}
+
+.chips {
+    display: flex;
+    flex: 0 1 auto;
+    gap: 3px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.chip {
+    align-items: center;
+    background: var(--field-background);
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary-color);
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 1 auto;
+    font: inherit;
+    font-size: var(--font-size-caption);
+    gap: 2px;
+    line-height: var(--line-height-caption);
+    max-width: 84px;
+    min-width: 0;
+    overflow: hidden;
+    padding: 2px 6px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chip.current {
+    background: color-mix(in srgb, var(--selection-color) 14%, transparent);
+    color: var(--selection-color);
+}
+
+.chip.chipSelected {
+    background: var(--selection-color);
+    color: var(--on-selection-color);
+}
+
+.chip.muted {
+    color: var(--label-tertiary);
+    cursor: default;
+    font-style: normal;
+}
+
+/* Hide and lock: shown on hover or focus, and kept while they are on. */
+.statusButtons {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 1px;
+}
+
+.status {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary-color);
+    cursor: pointer;
+    display: inline-flex;
+    height: 22px;
+    justify-content: center;
+    padding: 0;
+    visibility: hidden;
+    width: 20px;
+}
+
+.row:hover .status,
+.row:focus-within .status,
+.status[aria-pressed='true'] {
+    visibility: visible;
+}
+
+.status:hover:not(:disabled) {
+    background: var(--field-background);
+}
+
+.status:disabled {
+    cursor: default;
+}
+
+/* The selection: filled while the outline has the focus, gray while it hasn't, as in Finder. */
+.selected > .row {
+    background: color-mix(in srgb, var(--text-color) 10%, transparent);
+}
+
+.outline:focus-within .selected > .row {
+    background: var(--selection-color);
+    color: var(--on-selection-color);
+}
+
+.outline:focus-within .selected > .row .name svg,
+.outline:focus-within .selected > .row .toggle,
+.outline:focus-within .selected > .row .status {
+    color: color-mix(in srgb, var(--on-selection-color) 90%, transparent);
+}
+
+.outline:focus-within .selected > .row .chip {
+    background: color-mix(in srgb, var(--on-selection-color) 22%, transparent);
+    color: var(--on-selection-color);
+}
+
+.active > .row {
+    background: color-mix(in srgb, var(--selection-color) 8%, transparent);
+}
+
+.component > .row > .name svg,
+.component > .row > .label svg {
+    color: var(--component-color);
+}
+
+/* Hidden rows recede but stay above 4.5:1. */
+.hidden > .row > .name,
+.hidden > .row > .label {
+    color: var(--label-tertiary);
+}
+
+.menuIconSpace {
     flex: 0 0 16px;
-    opacity: 0;
-    text-align: center;
-    transition: opacity 150ms;
 }
 
-.row:hover > .grip,
-.row:focus-within > .grip {
+/* Manage layers: a small glass sheet over the outline. */
+.layerManager {
+    background: var(--control-background);
+    backdrop-filter: var(--backdrop-filter);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow-hover);
+    left: 6px;
+    padding: 8px;
+    position: absolute;
+    right: 6px;
+    top: 40px;
+    z-index: 2;
+}
+
+.layerManagerTitle {
+    align-items: center;
+    display: flex;
+    font-weight: var(--font-weight-semibold);
+    justify-content: space-between;
+    padding: 0 2px 4px;
+}
+
+.done {
+    background: var(--selection-color);
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--on-selection-color);
+    cursor: pointer;
+    font: inherit;
+    font-size: var(--font-size-callout);
+    font-weight: var(--font-weight-semibold);
+    padding: 3px 10px;
+}
+
+.layerHint {
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+    margin: 0 2px 6px;
+}
+
+.layerRow {
+    align-items: center;
+    display: flex;
+    gap: 2px;
+    min-height: 28px;
+}
+
+.layerName {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text-color);
+    flex: 1;
+    font: inherit;
+    font-size: var(--font-size-body);
+    min-width: 0;
+    padding: 3px 4px;
+}
+
+.layerName:hover {
+    background: var(--field-background);
+}
+
+.layerName:focus {
+    background: var(--control-background-active);
+    border-color: var(--focus-ring-color);
+    outline: none;
+}
+
+.layerButton,
+.newLayer {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary-color);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    justify-content: center;
+}
+
+.layerButton {
+    flex: 0 0 24px;
+    height: 24px;
+}
+
+.layerButton:hover:not(:disabled),
+.newLayer:hover:not(:disabled) {
+    background: var(--field-background);
+}
+
+.layerButton:disabled,
+.newLayer:disabled {
+    cursor: default;
     opacity: 0.4;
 }
 
-.grip:hover {
-    opacity: 1;
+.newLayer {
+    color: var(--selection-color);
+    font-size: var(--font-size-callout);
+    gap: 6px;
+    margin-top: 4px;
+    padding: 4px 6px;
+}
+
+.layerButton:focus-visible,
+.newLayer:focus-visible,
+.done:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
 }

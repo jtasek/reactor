@@ -1,30 +1,42 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
     active: string;
-    badge: string;
+    chip: string;
+    chipSelected: string;
+    chips: string;
     component: string;
+    current: string;
+    done: string;
     dropTarget: string;
     empty: string;
     explorer: string;
-    grip: string;
+    filterButton: string;
+    filterPill: string;
+    header: string;
     hidden: string;
-    hint: string;
-    icon: string;
-    inlineMenu: string;
     itemName: string;
-    itemText: string;
     label: string;
-    layer: string;
+    layerButton: string;
+    layerHint: string;
+    layerManager: string;
+    layerManagerTitle: string;
+    layerName: string;
+    layerRow: string;
+    menuIconSpace: string;
+    muted: string;
     name: string;
-    root: string;
-    rootAction: string;
+    newLayer: string;
+    outline: string;
+    rename: string;
+    rest: string;
     row: string;
+    section: string;
+    sectionTitle: string;
     selected: string;
-    showAll: string;
-    shown: string;
+    status: string;
+    statusButtons: string;
     toggle: string;
     toggleSpacer: string;
-    views: string;
   }
 }
 

@@ -6,6 +6,7 @@ import { canAddShapesToComponent } from 'src/app/actions/components';
 import { ObjectTypeSymbol } from '../ObjectTypeSymbol';
 import { hideAction, lockAction } from '../ItemMenu';
 import { ExplorerItem } from './ExplorerItem';
+import { explorerKey } from 'src/app/explorerTree';
 
 interface Props {
     componentId: string;
@@ -40,12 +41,14 @@ export const SourceItem: FC<Props> = ({ componentId, shapesIds, children }) => {
             kind="component"
             name={component.name}
             icon={<ObjectTypeSymbol type="component" />}
-            collapseId={shapesIds.length > 0 ? `component:${componentId}` : undefined}
+            collapseId={shapesIds.length > 0 ? explorerKey('component', componentId) : undefined}
+            defaultOpen={false}
             selected={selected}
             active={editing}
             visible={component.visible}
             onClick={() => selectComponentSource(componentId)}
             onDoubleClick={() => editComponentSource(componentId)}
+            onRename={readOnly ? undefined : (name) => updateComponent({ id: componentId, name })}
             menuActions={[
                 {
                     id: 'insert',

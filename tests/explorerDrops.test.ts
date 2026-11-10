@@ -1,4 +1,4 @@
-import { explorerLayers, explorerTree } from 'src/app/explorerTree';
+import { explorerTree } from 'src/app/explorerTree';
 import { createCopies, DOCUMENT_ID, settle, shownDocument } from './support/collaboration';
 import type { Copy } from './support/collaboration';
 
@@ -75,9 +75,7 @@ describe('dropping on a layer row in the explorer', () => {
         expect(
             explorerTree(document, '').frames.find((frame) => frame.id === home)?.contents.shapesIds
         ).toEqual(expect.arrayContaining([title, loose]));
-        expect(
-            explorerLayers(document, '').find((layer) => layer.layerId === 'other')?.shapesIds
-        ).toContain(loose);
+        expect(document.layers.other.shapesIds).toContain(loose);
 
         first.collaboration.undo(DOCUMENT_ID);
         settle(copies);

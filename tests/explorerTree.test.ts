@@ -1,5 +1,5 @@
 import { sceneLayers } from 'src/app/componentTree';
-import { explorerLayers, explorerTree } from 'src/app/explorerTree';
+import { explorerKeep, explorerKey, explorerRevealKeys, explorerTree } from 'src/app/explorerTree';
 import { outline } from 'src/app/membership';
 import { serializePersistedState } from 'src/app/services/documentStorage';
 import { isShapeVisible } from 'src/app/utils';
@@ -66,19 +66,55 @@ describe('frame hierarchy in Explorer', () => {
         expect(serializePersistedState(store.state)).toEqual(before);
     });
 
-    it('keeps global layers whole across frames, with layer-name search only in Layers', () => {
-        const { document, title, loose } = framedScene();
+    it('narrows to a layer while keeping each shape under its frames', () => {
+        const { document, outer, title, loose } = framedScene();
+        const tree = explorerTree(document, '', explorerKeep(document, 'shared', 'all'));
 
-        expect(explorerLayers(document, '').filter((layer) => layer.layerId === 'shared')).toEqual([
-            { layerId: 'shared', groups: [], shapesIds: [title, loose] }
-        ]);
-        expect(explorerLayers(document, 'Shared layer')).toEqual([
-            { layerId: 'shared', groups: [], shapesIds: [title, loose] }
-        ]);
+        expect(tree.canvas).toEqual({ groups: [], shapesIds: [loose] });
+        expect(tree.frames.map((frame) => frame.id)).toEqual([outer]);
+        expect(tree.frames[0].contents).toEqual({ groups: [], shapesIds: [title] });
         expect(explorerTree(document, 'Shared layer')).toEqual({
             canvas: { groups: [], shapesIds: [] },
             frames: []
         });
+    });
+
+    it('narrows to hidden and locked items, with the frames holding them', () => {
+        const { store, document, outer, inner, other, artwork, loose } = framedScene();
+
+        store.actions.toggleShapeVisible(artwork);
+        store.actions.editFrame({ kind: 'toggle', id: other, flag: 'locked' });
+        const tree = explorerTree(
+            document,
+            '',
+            explorerKeep(document, undefined, 'hiddenOrLocked')
+        );
+
+        expect(tree.canvas).toEqual({ groups: [], shapesIds: [] });
+        expect(tree.frames.map((frame) => frame.id).sort()).toEqual([outer, inner, other].sort());
+        expect(tree.frames.find((frame) => frame.id === inner)?.contents).toEqual({
+            groups: [{ groupId: 'card-art', shapesIds: [artwork] }],
+            shapesIds: []
+        });
+        expect(tree.frames.find((frame) => frame.id === other)?.contents).toEqual({
+            groups: [],
+            shapesIds: []
+        });
+        expect(loose).toBeDefined();
+    });
+
+    it('opens the frames and group holding the selection, and nothing else', () => {
+        const { store, document, outer, inner, artwork } = framedScene();
+
+        store.actions.selectShape(artwork);
+
+        expect(explorerRevealKeys(document).sort()).toEqual(
+            [
+                explorerKey('group', 'card-art'),
+                explorerKey('frame', inner),
+                explorerKey('frame', outer)
+            ].sort()
+        );
     });
 
     it('reveals matching artwork with its group and complete frame ancestry', () => {
@@ -188,7 +224,6 @@ it('lists each source only under Components and scene objects under their layer 
         groups: [{ groupId: 'scene-group', shapesIds: [sceneId] }],
         shapesIds: [instanceId]
     });
-    expect(explorerLayers(document, '')).toEqual(sceneLayers(outline(document), document));
     store.actions.editComponentSource(componentId);
     expect(isShapeVisible(document, sourceId)).toBe(true);
     expect(isShapeVisible(document, sceneId)).toBe(false);

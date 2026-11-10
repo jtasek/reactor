@@ -7,7 +7,6 @@ import { listenToMutations } from '../services/mutations';
 import { documentOwner, readAccount } from '../services/accounts';
 import { PANEL_LAYOUT_KEY, readPanelLayout } from '../panelLayout';
 import { DOCUMENTS_LAYOUT_KEY, readDocumentsLayout } from '../documentList';
-import { EXPLORER_VIEW_KEY, readExplorerView } from '../explorerView';
 
 export const setEditorReady = ({ state }: Context) => {
     state.editorReady = editorLoaded();
@@ -111,11 +110,6 @@ export const onInitializeOvermind = async (
         state.config.documentsLayout = readDocumentsLayout(effects.loadState(DOCUMENTS_LAYOUT_KEY));
     } catch {
         // Cards, as by default, when local storage cannot be read.
-    }
-    try {
-        state.config.explorerView = readExplorerView(effects.loadState(EXPLORER_VIEW_KEY));
-    } catch {
-        // Objects, as by default, when local storage cannot be read.
     }
 
     // The documents opened last open while the account is read; the first time, and
