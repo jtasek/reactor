@@ -1,39 +1,56 @@
 import { FC, useLayoutEffect } from 'react';
 import { getCommands } from 'src/app/actions/startup';
 import { publishCommandAvailability } from 'src/app/commandAvailability';
-import { useAppState } from 'src/app/hooks';
+import { useReaction } from 'src/app/hooks';
 
 /**
  * Works out whether each command can run, for every button and menu at once.
- * Draws nothing. It is the one subscriber to what the guards read; while a
- * gesture is changing shapes it waits, as no command is taken mid-gesture and
- * guards that read geometry would otherwise run on every pointer move.
+ * Draws nothing. It is the one subscriber to what the guards read, and answers
+ * as the store changes, so buttons render with the change that enabled them: a
+ * dialog closing hands the focus back to a button that is already enabled.
+ * While a gesture is changing shapes it waits, as no command is taken
+ * mid-gesture and guards that read geometry would run on every pointer move.
  */
 export const CommandAvailability: FC = () => {
-    const state = useAppState((state) => state);
-    const { kind } = state.events.pointer.gesture;
-    const waiting =
-        kind !== 'idle' && kind !== 'marquee' && kind !== 'drawing' && kind !== 'pinching';
+    const reaction = useReaction();
 
-    const available = waiting
-        ? null
-        : Object.fromEntries(
-              getCommands().map((command) => {
-                  try {
-                      return [command.id, command.canExecute({ state })];
-                  } catch (error) {
-                      console.error(error);
-                      // A guard that cannot read a document mid-switch offers nothing.
-                      return [command.id, false];
-                  }
-              })
-          );
+    useLayoutEffect(
+        () =>
+            reaction(
+                (state) => {
+                    const { kind } = state.events.pointer.gesture;
 
-    useLayoutEffect(() => {
-        if (available) {
-            publishCommandAvailability(available);
-        }
-    });
+                    if (
+                        kind !== 'idle' &&
+                        kind !== 'marquee' &&
+                        kind !== 'drawing' &&
+                        kind !== 'pinching'
+                    ) {
+                        return null;
+                    }
+
+                    return Object.fromEntries(
+                        getCommands().map((command) => {
+                            try {
+                                return [command.id, command.canExecute({ state })];
+                            } catch (error) {
+                                // A guard that cannot read a document mid-switch offers nothing.
+                                console.error(error);
+
+                                return [command.id, false];
+                            }
+                        })
+                    );
+                },
+                (available) => {
+                    if (available) {
+                        publishCommandAvailability(available);
+                    }
+                },
+                { immediate: true }
+            ),
+        [reaction]
+    );
 
     return null;
 };
