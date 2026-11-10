@@ -74,41 +74,47 @@ describe('watching the store for command availability', () => {
     });
 
     it('lets go of shapes it no longer reads', () => {
-        const { store } = createTestStore();
+        const { store, stop } = watchedStore();
+        const [first] = store.state.currentDocument.shapesIds;
 
-        for (let index = 0; index < 30; index++) {
-            store.actions.addShape({
-                type: 'rectangle',
-                position: { x: index * 10, y: 0 },
-                size: { width: 6, height: 6 },
-                selected: false
-            });
-        }
+        store.actions.addShape({
+            type: 'rectangle',
+            position: { x: 200, y: 100 },
+            size: { width: 10, height: 10 },
+            selected: false
+        });
 
-        const ids = store.state.currentDocument.shapesIds;
-        const root = (
-            store as unknown as {
-                proxyStateTreeInstance: { addPathDependency: (...args: unknown[]) => void };
-            }
-        ).proxyStateTreeInstance;
-        const addPath = vi.spyOn(root, 'addPathDependency');
-        const stop = watchCommandAvailability(store.reaction);
-        const subscribedForClick = (id: string) => {
-            addPath.mockClear();
-            store.actions.unselectShapes();
-            store.actions.selectShape(id);
+        // Read the first shape while it is selected, then select only the second.
+        store.actions.selectShape(first);
+        store.actions.unselectShapes();
+        store.actions.selectShape(store.state.currentDocument.shapesIds[1]);
 
-            return addPath.mock.calls.length;
-        };
-        subscribedForClick(ids[1]);
-        const before = subscribedForClick(ids[0]);
+        const guard = vi.spyOn(DeleteCommand, 'canExecute');
 
-        ids.forEach((id) => store.actions.selectShape(id));
-        subscribedForClick(ids[1]);
+        // The first shape is no longer selected, so locking it asks no guard.
+        store.actions.toggleShapeLocked(first);
+        expect(guard).not.toHaveBeenCalled();
+        guard.mockRestore();
+        stop();
+    });
 
-        // Having read every shape once, a click costs what it did before.
-        expect(subscribedForClick(ids[0])).toBe(before);
-        addPath.mockRestore();
+    it('keeps answering after an answer fails', () => {
+        const { store, stop } = watchedStore();
+        const [id] = store.state.currentDocument.shapesIds;
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        // Collecting the answers fails once, after the gesture was read.
+        const collect = vi.spyOn(Object, 'fromEntries').mockImplementationOnce(() => {
+            throw new Error('unreadable');
+        });
+
+        store.actions.selectShape(id);
+        collect.mockRestore();
+        expect(commandAvailable(DeleteCommand.id)).toBe(false);
+
+        store.actions.unselectShapes();
+        store.actions.selectShape(id);
+        expect(commandAvailable(DeleteCommand.id)).toBe(true);
+        error.mockRestore();
         stop();
     });
 

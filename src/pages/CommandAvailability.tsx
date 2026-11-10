@@ -29,7 +29,11 @@ function readAvailability(state: State) {
     );
 }
 
-/** The store behind `reaction`'s state. */
+/**
+ * The store behind `reaction`'s state. This and `watchCommandAvailability` use
+ * proxy-state-tree's tracking trees directly (as `untracked.ts` uses its
+ * markers); `tests/commandAvailability.test.ts` checks them after an upgrade.
+ */
 function storeOf(reaction: Context['reaction']) {
     let store: IProxyStateTree<object, unknown> | undefined;
 
@@ -70,8 +74,15 @@ export function watchCommandAvailability(reaction: Context['reaction']) {
         const tree = store.getTrackStateTree();
         let available: ReturnType<typeof readAvailability> = null;
 
+        // A throw here would leave the tree tracking every later read and end
+        // the watching, so a failed answer offers nothing and waits for a change.
         tree.trackScope(() => {
-            available = readAvailability(tree.state as State);
+            try {
+                available = readAvailability(tree.state as State);
+            } catch (error) {
+                console.error(error);
+                available = {};
+            }
         });
         stopListening = tree.subscribe(() => {
             if (!stopped) {
