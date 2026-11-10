@@ -334,10 +334,11 @@ export function sharedProperties(shapes: Shape[], document: Document): PropertyR
         return [];
     }
 
+    // Laid out once per shape, not once per shape and property.
+    const drawn = shapes.map((shape) => renderedShape(document, shape.id));
+
     return SHAPE_PROPERTIES.flatMap((property) => {
-        const values = shapes.map((shape) =>
-            shown(property.read(renderedShape(document, shape.id), document))
-        );
+        const values = drawn.map((shape) => shown(property.read(shape, document)));
 
         if (values.some((value) => value === undefined)) {
             return [];
