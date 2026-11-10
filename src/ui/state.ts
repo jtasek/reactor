@@ -89,6 +89,11 @@ export const state: UI = {
         name: 'Surface',
         visible: true
     },
+    stats: {
+        id: 'stats',
+        name: 'Stats',
+        visible: false
+    },
     statusBar: {
         id: 'statusBar',
         name: 'Status Bar',
