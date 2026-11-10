@@ -1,7 +1,6 @@
 import React, { FC } from 'react';
 import { Provider } from 'overmind-react';
 import { Shell } from './app/components/Shell';
-import { CommandAvailability } from './app/components/CommandAvailability';
 import { config } from './app';
 import { createOvermind } from 'overmind';
 import { createRoot } from 'react-dom/client';
@@ -12,7 +11,6 @@ const overmind = createOvermind(config, {
 
 const App: FC = () => (
     <Provider value={overmind}>
-        <CommandAvailability />
         <Shell />
     </Provider>
 );

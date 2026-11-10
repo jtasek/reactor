@@ -17,20 +17,6 @@ const commands: Record<string, Command> = {};
 const tools: Record<string, Tool> = {};
 
 const scoped = new Map<CommandScope, Command[]>();
-const registryListeners = new Set<() => void>();
-let registryVersion = 0;
-
-/** Hears of each command registered, as the editor's code loads after the first page. */
-export const subscribeToCommands = (listener: () => void) => {
-    registryListeners.add(listener);
-
-    return () => {
-        registryListeners.delete(listener);
-    };
-};
-
-/** Changes whenever a command is registered. */
-export const commandsVersion = () => registryVersion;
 
 /**
  * Registers a command, in place of one registered under its id before, as a hot
@@ -40,8 +26,6 @@ export function registerCommand(command: Command) {
     if (commands[command.id] !== command) {
         commands[command.id] = command;
         scoped.clear();
-        registryVersion++;
-        registryListeners.forEach((listener) => listener());
     }
 }
 

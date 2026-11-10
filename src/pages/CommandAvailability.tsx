@@ -1,7 +1,7 @@
-import { FC, useLayoutEffect, useSyncExternalStore } from 'react';
-import { commandsVersion, getCommands, subscribeToCommands } from '../actions/startup';
-import { publishCommandAvailability } from '../commandAvailability';
-import { useAppState } from '../hooks';
+import { FC, useLayoutEffect } from 'react';
+import { getCommands } from 'src/app/actions/startup';
+import { publishCommandAvailability } from 'src/app/commandAvailability';
+import { useAppState } from 'src/app/hooks';
 
 /**
  * Works out whether each command can run, for every button and menu at once.
@@ -14,8 +14,6 @@ export const CommandAvailability: FC = () => {
     const { kind } = state.events.pointer.gesture;
     const waiting =
         kind !== 'idle' && kind !== 'marquee' && kind !== 'drawing' && kind !== 'pinching';
-
-    useSyncExternalStore(subscribeToCommands, commandsVersion);
 
     const available = waiting
         ? null
