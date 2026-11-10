@@ -84,7 +84,11 @@ export const DetachInstanceCommand: Command = {
     category: 'groups',
     description: 'Replace the selected instance with independent shapes',
     icon: { component: Unlink, size: 24 },
+    // Looks for a selected instance first: the editable list reads every selected shape.
     canExecute: ({ state }) =>
+        state.currentDocument.selectedShapesIds.some(
+            (id) => state.currentDocument.shapes[id]?.type === 'instance'
+        ) &&
         state.currentDocument.editableSelectedShapesIds.some(
             (id) => state.currentDocument.shapes[id]?.type === 'instance'
         ),

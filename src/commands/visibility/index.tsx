@@ -1,15 +1,12 @@
 import { EyeOff, Eye, Lock, LockOpen } from 'lucide-react';
 import { Command, CommandGuard } from 'src/app/types';
 import { hasHidden } from 'src/app/membership';
-import { flagEditableItems } from 'src/app/visibilityEdits';
+import { someFlagEditableItem } from 'src/app/visibilityEdits';
 
 const selects =
     (locked: boolean): CommandGuard =>
-    ({ state }) => {
-        const { groups, shapes } = flagEditableItems(state.currentDocument);
-
-        return [...groups, ...shapes].some((item) => item.locked === locked);
-    };
+    ({ state }) =>
+        someFlagEditableItem(state.currentDocument, (item) => item.locked === locked);
 
 export const HideCommand: Command = {
     id: 'hide',
@@ -21,8 +18,7 @@ export const HideCommand: Command = {
         size: 24
     },
     shortcut: 'shift+h',
-    canExecute: ({ state }) =>
-        Object.values(flagEditableItems(state.currentDocument)).some((items) => items.length > 0),
+    canExecute: ({ state }) => someFlagEditableItem(state.currentDocument),
     execute: ({ actions }) => actions.hideSelection()
 };
 
