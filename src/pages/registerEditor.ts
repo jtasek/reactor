@@ -155,8 +155,6 @@ function registerTools() {
  * editor page, not at startup, so the other pages open without them; registering
  * again changes nothing.
  */
-export { CommandAvailability } from './CommandAvailability';
-
 export function registerEditor() {
     registerCommands();
     registerTools();

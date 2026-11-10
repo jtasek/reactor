@@ -3,8 +3,9 @@ import type { Command } from './types';
 
 /**
  * Whether each registered command can run now, worked out in one place
- * (`CommandAvailability`) and read here by every button and menu that shows a
- * command. A guard read inside a button subscribes that button to everything
+ * (`CommandAvailability`, which the editor page renders) and read here by every
+ * button and menu that shows a command. A page that shows command buttons
+ * renders `CommandAvailability`; without it every command reads as unavailable. A guard read inside a button subscribes that button to everything
  * the guard reads, which for most guards is the whole selection and so every
  * shape; one reader for all guards subscribes once.
  */

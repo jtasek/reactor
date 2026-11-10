@@ -10,10 +10,6 @@ import { Notification } from './Notification';
 const loadDesigner = () => import('../../pages/Designer');
 
 const Designer = lazy(() => loadDesigner().then((module) => ({ default: module.Designer })));
-// With the editor's code, which registers the commands whose guards it runs.
-const CommandAvailability = lazy(() =>
-    import('src/pages/registerEditor').then((module) => ({ default: module.CommandAvailability }))
-);
 const Account = lazy(() =>
     import('../../pages/Account').then((module) => ({ default: module.Account }))
 );
@@ -79,7 +75,6 @@ export const Shell: FC = () => {
                     )}
                     {currentPage === 'sharing' && <Sharing />}
                     {currentPage === 'invitation' && <Invitation />}
-                    {ready && <CommandAvailability />}
                 </Suspense>
             )}
         </>

@@ -87,7 +87,9 @@ const ShapeItem = memo<{
     sourceId?: string;
     viewId?: string;
     rowRef?: Ref<HTMLLIElement>;
-}>(function ShapeItem({ shapeId, sourceId, viewId, rowRef }) {
+    position?: number;
+    setSize?: number;
+}>(function ShapeItem({ shapeId, sourceId, viewId, rowRef, position, setSize }) {
     const shape = useShape(shapeId);
     const inherited = useShapesFrameState([shapeId]);
     const sourceSelected = useSourceSelected(sourceId ?? null);
@@ -139,6 +141,7 @@ const ShapeItem = memo<{
             visible={shape.visible && !inherited.hidden}
             onClick={handleSelect}
             rowRef={rowRef}
+            place={position && setSize ? [position, setSize] : undefined}
             menuActions={[
                 {
                     ...hideAction(!shape.visible, () => toggleShapeVisible(shapeId)),
@@ -209,8 +212,14 @@ function watchRow(row: Element, report: (near: boolean) => void) {
  * A shape's row in a long list: an empty row of the same height until it comes
  * near the view. A row out of view then reads nothing from the store, so a
  * document of thousands of shapes costs the Explorer only the rows it shows.
+ * A drawn row says where it is in the whole list, for a reader that counts rows.
  */
-const LazyShapeItem = memo<{ shapeId: string; viewId?: string }>(function LazyShapeItem(props) {
+const LazyShapeItem = memo<{
+    shapeId: string;
+    viewId?: string;
+    position: number;
+    setSize: number;
+}>(function LazyShapeItem(props) {
     const [near, setNear] = useState(false);
     const stop = useRef<() => void>(undefined);
     const rowRef = useCallback((row: HTMLLIElement | null) => {
@@ -330,7 +339,7 @@ const ObjectContents: FC<
 
     return (
         <>
-            {items.map((item) =>
+            {items.map((item, index) =>
                 item.kind === 'group' ? (
                     <GroupItem
                         key={item.id}
@@ -340,7 +349,13 @@ const ObjectContents: FC<
                         viewId={viewId}
                     />
                 ) : lazy ? (
-                    <LazyShapeItem key={item.id} shapeId={item.id} viewId={viewId} />
+                    <LazyShapeItem
+                        key={item.id}
+                        shapeId={item.id}
+                        viewId={viewId}
+                        position={index + 1}
+                        setSize={items.length}
+                    />
                 ) : (
                     <ShapeItem key={item.id} shapeId={item.id} viewId={viewId} />
                 )
