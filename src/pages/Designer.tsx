@@ -34,6 +34,7 @@ import { InteractivePreview } from 'src/ui/components/InteractivePreview';
 import { useAiEdit } from 'src/app/aiHooks';
 import { ResetDocumentDialog } from 'src/ui/components/ResetDocumentDialog';
 import { registerEditor } from './registerEditor';
+import { CommandAvailability } from './CommandAvailability';
 import { Viewer } from './Viewer';
 
 registerEditor();
@@ -54,6 +55,7 @@ export const Designer: FC = () => {
 
     return (
         <Layout>
+            <CommandAvailability />
             <ApplicationBar />
             <CommandBar />
             <CommandLine />

@@ -1,6 +1,6 @@
 import { isScreenLayout, viewLayoutRoot } from 'src/app/screenLayouts';
 import { screenOwners } from 'src/app/screenViews';
-import React, { FC, MouseEvent, memo, useMemo, useState } from 'react';
+import React, { FC, MouseEvent, Ref, memo, useCallback, useMemo, useRef, useState } from 'react';
 import { AppWindow, Frame as FrameIcon, CircleHelp, Star, Trash2 } from 'lucide-react';
 import styles from './styles.css';
 import { CollapsedItems, Dragged, ExplorerItem } from './ExplorerItem';
@@ -82,11 +82,14 @@ const RootItem: FC<{
 };
 
 /** A shape's row; memoized so a list rendering again does not render every row. */
-const ShapeItem = memo<{ shapeId: string; sourceId?: string; viewId?: string }>(function ShapeItem({
-    shapeId,
-    sourceId,
-    viewId
-}) {
+const ShapeItem = memo<{
+    shapeId: string;
+    sourceId?: string;
+    viewId?: string;
+    rowRef?: Ref<HTMLLIElement>;
+    position?: number;
+    setSize?: number;
+}>(function ShapeItem({ shapeId, sourceId, viewId, rowRef, position, setSize }) {
     const shape = useShape(shapeId);
     const inherited = useShapesFrameState([shapeId]);
     const sourceSelected = useSourceSelected(sourceId ?? null);
@@ -137,6 +140,8 @@ const ShapeItem = memo<{ shapeId: string; sourceId?: string; viewId?: string }>(
             active={shape.active}
             visible={shape.visible && !inherited.hidden}
             onClick={handleSelect}
+            rowRef={rowRef}
+            place={position && setSize ? [position, setSize] : undefined}
             menuActions={[
                 {
                     ...hideAction(!shape.visible, () => toggleShapeVisible(shapeId)),
@@ -149,6 +154,90 @@ const ShapeItem = memo<{ shapeId: string; sourceId?: string; viewId?: string }>(
                 ...commands(useScopedCommands('shape'))
             ]}
         />
+    );
+});
+
+/** A list this long draws only the rows in or near view; shorter lists draw every row. */
+const LAZY_ROWS_FROM = 100;
+/** How far outside the Explorer a row is already drawn, so scrolling shows no gaps. */
+const LAZY_ROW_MARGIN = '600px 0px';
+
+type RowWatcher = { observer: IntersectionObserver; rows: Map<Element, (near: boolean) => void> };
+const rowWatchers = new WeakMap<Element, RowWatcher>();
+
+/** Tells `report` as `row` comes near the view of the Explorer it is in, or leaves it. */
+function watchRow(row: Element, report: (near: boolean) => void) {
+    const page = row.ownerDocument.documentElement;
+    let root: Element = page;
+
+    // The panel that scrolls the list, which is not always the Explorer itself.
+    for (let parent = row.parentElement; parent && parent !== page; parent = parent.parentElement) {
+        const { overflowY } = getComputedStyle(parent);
+
+        if (
+            (overflowY === 'auto' || overflowY === 'scroll') &&
+            parent.scrollHeight > parent.clientHeight
+        ) {
+            root = parent;
+            break;
+        }
+    }
+
+    let watcher = rowWatchers.get(root);
+
+    if (!watcher) {
+        const rows: RowWatcher['rows'] = new Map();
+
+        watcher = {
+            rows,
+            observer: new IntersectionObserver(
+                (entries) =>
+                    entries.forEach((entry) => rows.get(entry.target)?.(entry.isIntersecting)),
+                { root: root === page ? null : root, rootMargin: LAZY_ROW_MARGIN }
+            )
+        };
+        rowWatchers.set(root, watcher);
+    }
+
+    watcher.rows.set(row, report);
+    watcher.observer.observe(row);
+
+    return () => {
+        watcher.rows.delete(row);
+        watcher.observer.unobserve(row);
+    };
+}
+
+/**
+ * A shape's row in a long list: an empty row of the same height until it comes
+ * near the view. A row out of view then reads nothing from the store, so a
+ * document of thousands of shapes costs the Explorer only the rows it shows.
+ * A drawn row says where it is in the whole list, for a reader that counts rows.
+ */
+const LazyShapeItem = memo<{
+    shapeId: string;
+    viewId?: string;
+    position: number;
+    setSize: number;
+}>(function LazyShapeItem(props) {
+    const [near, setNear] = useState(false);
+    const stop = useRef<() => void>(undefined);
+    const rowRef = useCallback((row: HTMLLIElement | null) => {
+        stop.current?.();
+        stop.current = row
+            ? watchRow(row, (isNear) =>
+                  // The row holding the keyboard focus stays, so focus is not lost on scroll.
+                  setNear(isNear || row.contains(row.ownerDocument.activeElement))
+              )
+            : undefined;
+    }, []);
+
+    return near ? (
+        <ShapeItem {...props} rowRef={rowRef} />
+    ) : (
+        <li ref={rowRef} aria-hidden="true">
+            <div className={styles.row} />
+        </li>
     );
 });
 
@@ -246,10 +335,11 @@ const ObjectContents: FC<
             rank: drawOrder.get(id) ?? -1
         }))
     ].sort((a, b) => b.rank - a.rank);
+    const lazy = items.length >= LAZY_ROWS_FROM && typeof IntersectionObserver !== 'undefined';
 
     return (
         <>
-            {items.map((item) =>
+            {items.map((item, index) =>
                 item.kind === 'group' ? (
                     <GroupItem
                         key={item.id}
@@ -257,6 +347,14 @@ const ObjectContents: FC<
                         shapesIds={item.shapesIds}
                         contextId={contextId}
                         viewId={viewId}
+                    />
+                ) : lazy ? (
+                    <LazyShapeItem
+                        key={item.id}
+                        shapeId={item.id}
+                        viewId={viewId}
+                        position={index + 1}
+                        setSize={items.length}
                     />
                 ) : (
                     <ShapeItem key={item.id} shapeId={item.id} viewId={viewId} />

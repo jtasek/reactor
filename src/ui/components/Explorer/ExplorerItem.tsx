@@ -4,6 +4,7 @@ import React, {
     MouseEventHandler,
     PointerEventHandler,
     ReactNode,
+    Ref,
     createContext,
     useContext,
     useId,
@@ -66,6 +67,10 @@ interface Props {
     rootButtons?: ReactNode;
     /** Takes a shape or group dropped on the item. */
     onDrop?: (dragged: Dragged) => void;
+    /** The row's list item, for a list that draws only the rows in view. */
+    rowRef?: Ref<HTMLLIElement>;
+    /** The row's place in a list that draws only some rows, as `[position, size]` from 1. */
+    place?: readonly [number, number];
     children?: ReactNode;
 }
 
@@ -87,6 +92,8 @@ export const ExplorerItem: FC<Props> = ({
     menuActions,
     rootButtons,
     onDrop,
+    rowRef,
+    place,
     children
 }) => {
     const badgeId = useId();
@@ -126,7 +133,7 @@ export const ExplorerItem: FC<Props> = ({
     };
 
     return (
-        <li className={className}>
+        <li className={className} ref={rowRef} aria-posinset={place?.[0]} aria-setsize={place?.[1]}>
             <div
                 className={[styles.row, dropTarget && styles.dropTarget].filter(Boolean).join(' ')}
                 data-menu-host

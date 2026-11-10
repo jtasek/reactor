@@ -26,7 +26,7 @@ import { unbind, unbindEditedProperties, unbindMovedProperties, writeText } from
 import { Context } from 'src/app';
 import { instanceName, createGroup, createShape, nextShapeName } from './factories';
 import { containersHolding, groupAtPoint, shapeGroup, shownGroupShapesIds } from './membership';
-import { deleteShape } from './deleteShape';
+import { deleteShape, deleteShapes } from './deleteShape';
 import {
     componentAtPoint,
     selectionMembers,
@@ -221,13 +221,14 @@ export const removeShapes: ActionWithParam<string[]> = ({ state, actions }, shap
     const requested = shapeIds.filter(
         (id) => currentDocument.shapes[id] && !isShapeLocked(currentDocument, id)
     );
+    const requestedIds = new Set(requested);
     const blocked = new Set<string>();
 
     for (const component of Object.values(currentDocument.components)) {
         if (!hasComponentInstances(currentDocument, component.id)) {
             continue;
         }
-        if (component.shapesIds.every((id) => requested.includes(id))) {
+        if (component.shapesIds.every((id) => requestedIds.has(id))) {
             component.shapesIds.forEach((id) => blocked.add(id));
         }
     }
@@ -237,7 +238,7 @@ export const removeShapes: ActionWithParam<string[]> = ({ state, actions }, shap
     const removed = requested.filter((id) => !blocked.has(id));
     const groups = containersHolding(currentDocument.groups, removed);
 
-    removed.forEach((id) => deleteShape(state.currentDocument, id));
+    deleteShapes(state.currentDocument, removed);
     groups
         .filter((group) => group.shapesIds.length === 0)
         .forEach((group) => delete currentDocument.groups[group.id]);
@@ -802,45 +803,59 @@ export const selectShapes: Action = ({ state }) => {
     });
 };
 
-export const setShapeBounds: ActionWithParam<{ id: string; bounds: Box }> = (
+/** Stores the box each shape was measured at, all in one store flush. */
+export const setShapesBounds: ActionWithParam<{ id: string; bounds: Box }[]> = (
     { state },
-    { id, bounds }
+    measurements
 ) => {
-    const shape = state.currentDocument.shapes[id];
-
-    if (!shape) {
+    if (measurements.length === 0) {
         return;
     }
 
-    const layout = frameLayout(state.currentDocument);
-    const size = layout.shapeSizes[id];
-    if (
-        shape.type === 'rectangle' &&
-        size &&
-        (size.width !== shape.size.width || size.height !== shape.size.height)
-    ) {
-        return;
-    }
-    const offset = layout.shapes[id];
-    const measured = offset
-        ? {
-              ...bounds,
-              topLeft: { x: bounds.topLeft.x - offset.x, y: bounds.topLeft.y - offset.y },
-              bottomRight: {
-                  x: bounds.bottomRight.x - offset.x,
-                  y: bounds.bottomRight.y - offset.y
+    for (const { id, bounds } of measurements) {
+        const shape = state.currentDocument.shapes[id];
+
+        if (!shape) {
+            continue;
+        }
+
+        // Read per shape: a box stored just before can change the layout.
+        const layout = frameLayout(state.currentDocument);
+
+        const size = layout.shapeSizes[id];
+        if (
+            shape.type === 'rectangle' &&
+            size &&
+            (size.width !== shape.size.width || size.height !== shape.size.height)
+        ) {
+            continue;
+        }
+        const offset = layout.shapes[id];
+        const measured = offset
+            ? {
+                  ...bounds,
+                  topLeft: { x: bounds.topLeft.x - offset.x, y: bounds.topLeft.y - offset.y },
+                  bottomRight: {
+                      x: bounds.bottomRight.x - offset.x,
+                      y: bounds.bottomRight.y - offset.y
+                  }
               }
-          }
-        : bounds;
+            : bounds;
 
-    // Idempotent: skip the write when the measured box is unchanged so the
-    // measurement effect cannot trigger a render loop.
-    if (shape.bounds && boxesEqual(shape.bounds, measured)) {
-        return;
+        // Idempotent: skip the write when the measured box is unchanged so the
+        // measurement effect cannot trigger a render loop.
+        if (shape.bounds && boxesEqual(shape.bounds, measured)) {
+            continue;
+        }
+
+        shape.bounds = measured;
     }
-
-    shape.bounds = measured;
 };
+
+export const setShapeBounds: ActionWithParam<{ id: string; bounds: Box }> = (
+    { actions },
+    measurement
+) => actions.setShapesBounds([measurement]);
 
 export const unselectShapes: Action = ({ state, actions }) => {
     state.selectedComponent = null;

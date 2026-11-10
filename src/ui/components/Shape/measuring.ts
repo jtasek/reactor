@@ -1,6 +1,6 @@
 import type { Context } from 'src/app';
 import { instanceComponentId } from 'src/app/componentSource';
-import type { Document } from 'src/app/types';
+import type { Box, Document } from 'src/app/types';
 import { KEEPS_SHAPE_BOUNDS } from 'src/events/gestures';
 
 /** Whether a frame, or a frame it is in, is the selected frame. */
@@ -83,3 +83,30 @@ export const isMeasuringShape = (state: Context['state'], id: string, visible: b
 
     return !shape?.selected || !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind];
 };
+
+type Measurement = { id: string; bounds: Box };
+
+let pending: Measurement[] = [];
+
+/**
+ * Stores a measured box with the others measured in the same commit, in one
+ * store flush before the frame is painted. One action per shape flushed the
+ * store, and woke everything that reads it, once per shape drawn.
+ */
+export function queueMeasuredBounds(
+    store: (measurements: Measurement[]) => void,
+    measurement: Measurement
+) {
+    pending.push(measurement);
+
+    if (pending.length > 1) {
+        return;
+    }
+
+    queueMicrotask(() => {
+        const measurements = pending;
+
+        pending = [];
+        store(measurements);
+    });
+}

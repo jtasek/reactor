@@ -11,13 +11,16 @@ import { commandsFor, commandsIn, getCommand, getCommands } from './actions';
 import { Context } from '.';
 import { useCallback, useLayoutEffect, useReducer, useRef, useSyncExternalStore } from 'react';
 import { isShapeLocked, isShapeVisible } from './utils';
-import type { Command, CommandPlace, CommandScope } from './types';
+import type { CommandPlace, CommandScope } from './types';
 import { takesEditorInput } from '../events/input';
 import { editorHelpers, editorLoaded, subscribeToEditorHelpers } from './editorHelpers';
 import { PropertyRow, sharedProperties } from './properties';
 import { componentSource } from './componentSource';
 import { localComponents } from './componentSelection';
 import { groupFrame, hoveredGroupsIds, selectionScope } from './membership';
+import { useCommandEnabled, useCommandsEnabled } from './commandAvailability';
+
+export { useCommandEnabled, useCommandsEnabled };
 
 export const useActions = createActionsHook<Context>();
 export const useEffects = createEffectsHook<Context>();
@@ -75,25 +78,14 @@ export const useSelectionScope = () =>
 /** The commands the selection takes, those that can run now, in menu order. */
 export const useSelectionCommands = () => {
     const commands = useScopedCommands(useSelectionScope());
-    const enabled = useAppState((state) =>
-        commands.map((command) => command.canExecute({ state }))
-    );
+    const enabled = useCommandsEnabled(commands);
 
     return commands.filter((_, index) => enabled[index]);
 };
 
-/** Whether each of `commands` can run now, in their order. */
-export const useCommandsEnabled = (commands: Command[]) =>
-    useAppState((state) => commands.map((command) => command.canExecute({ state })));
-
 /** How many items Align and Space may move in the active editing context. */
 export const useMovableSelectedItemsCount = () =>
     useAppState((state) => state.alignmentItems.length);
-
-/** Whether `command` can run now; re-renders when the state its guard reads changes. */
-export const useCommandEnabled = (command: Command) => {
-    return useAppState((state) => command.canExecute({ state }));
-};
 
 export const useComponents = () => {
     return useCurrentDocument()?.components;

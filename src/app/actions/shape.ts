@@ -85,6 +85,9 @@ export const selectShapes: typeof ShapeEdits.selectShapes = (context) =>
 export const setShapeBounds: typeof ShapeEdits.setShapeBounds = (context, input) =>
     editorHelpers().shapes.setShapeBounds(context, input);
 
+export const setShapesBounds: typeof ShapeEdits.setShapesBounds = (context, input) =>
+    editorHelpers().shapes.setShapesBounds(context, input);
+
 export const unselectShapes: typeof ShapeEdits.unselectShapes = (context) =>
     editorHelpers().shapes.unselectShapes(context);
 
