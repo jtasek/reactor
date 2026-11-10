@@ -73,6 +73,45 @@ describe('watching the store for command availability', () => {
         stop();
     });
 
+    it('lets go of shapes it no longer reads', () => {
+        const { store } = createTestStore();
+
+        for (let index = 0; index < 30; index++) {
+            store.actions.addShape({
+                type: 'rectangle',
+                position: { x: index * 10, y: 0 },
+                size: { width: 6, height: 6 },
+                selected: false
+            });
+        }
+
+        const ids = store.state.currentDocument.shapesIds;
+        const root = (
+            store as unknown as {
+                proxyStateTreeInstance: { addPathDependency: (...args: unknown[]) => void };
+            }
+        ).proxyStateTreeInstance;
+        const addPath = vi.spyOn(root, 'addPathDependency');
+        const stop = watchCommandAvailability(store.reaction);
+        const subscribedForClick = (id: string) => {
+            addPath.mockClear();
+            store.actions.unselectShapes();
+            store.actions.selectShape(id);
+
+            return addPath.mock.calls.length;
+        };
+        subscribedForClick(ids[1]);
+        const before = subscribedForClick(ids[0]);
+
+        ids.forEach((id) => store.actions.selectShape(id));
+        subscribedForClick(ids[1]);
+
+        // Having read every shape once, a click costs what it did before.
+        expect(subscribedForClick(ids[0])).toBe(before);
+        addPath.mockRestore();
+        stop();
+    });
+
     it('stops answering once stopped', () => {
         const { store, stop } = watchedStore();
         const [id] = store.state.currentDocument.shapesIds;

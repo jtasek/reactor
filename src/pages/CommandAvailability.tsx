@@ -1,8 +1,50 @@
 import { FC, useLayoutEffect } from 'react';
+import { PROXY_TREE, type IProxyStateTree } from 'proxy-state-tree';
 import { getCommands } from 'src/app/actions/startup';
 import { publishCommandAvailability } from 'src/app/commandAvailability';
 import { useReaction } from 'src/app/hooks';
 import type { Context } from 'src/app';
+
+type State = Context['state'];
+
+/** Whether each command can run, or null while a gesture is changing shapes. */
+function readAvailability(state: State) {
+    const { kind } = state.events.pointer.gesture;
+
+    if (kind !== 'idle' && kind !== 'marquee' && kind !== 'drawing' && kind !== 'pinching') {
+        return null;
+    }
+
+    return Object.fromEntries(
+        getCommands().map((command) => {
+            try {
+                return [command.id, command.canExecute({ state })];
+            } catch (error) {
+                // A guard that cannot read a document mid-switch offers nothing.
+                console.error(error);
+
+                return [command.id, false];
+            }
+        })
+    );
+}
+
+/** The store behind `reaction`'s state. */
+function storeOf(reaction: Context['reaction']) {
+    let store: IProxyStateTree<object, unknown> | undefined;
+
+    // Reading the tree marker tracks nothing, so this reaction never fires.
+    reaction(
+        (state) => {
+            store = (state as unknown as { [PROXY_TREE]: { root: typeof store } })[PROXY_TREE].root;
+
+            return null;
+        },
+        () => {}
+    )();
+
+    return store!;
+}
 
 /**
  * Works out whether each command can run, for every button and menu at once,
@@ -12,41 +54,43 @@ import type { Context } from 'src/app';
  * While a gesture is changing shapes it waits, as no command is taken
  * mid-gesture and guards that read geometry would run on every pointer move.
  * Returns how to stop.
+ *
+ * Each answer is tracked afresh. An Overmind reaction keeps every path it has
+ * ever read, so once each shape had been selected (after a paste, say) it stayed
+ * subscribed to all of them and every click re-subscribed thousands of paths.
  */
-export const watchCommandAvailability = (reaction: Context['reaction']) =>
-    reaction(
-        (state) => {
-            const { kind } = state.events.pointer.gesture;
+export function watchCommandAvailability(reaction: Context['reaction']) {
+    const store = storeOf(reaction);
+    let stopListening: (() => void) | undefined;
+    let stopped = false;
 
-            if (
-                kind !== 'idle' &&
-                kind !== 'marquee' &&
-                kind !== 'drawing' &&
-                kind !== 'pinching'
-            ) {
-                return null;
+    const answer = () => {
+        stopListening?.();
+
+        const tree = store.getTrackStateTree();
+        let available: ReturnType<typeof readAvailability> = null;
+
+        tree.trackScope(() => {
+            available = readAvailability(tree.state as State);
+        });
+        stopListening = tree.subscribe(() => {
+            if (!stopped) {
+                answer();
             }
+        });
 
-            return Object.fromEntries(
-                getCommands().map((command) => {
-                    try {
-                        return [command.id, command.canExecute({ state })];
-                    } catch (error) {
-                        // A guard that cannot read a document mid-switch offers nothing.
-                        console.error(error);
+        if (available) {
+            publishCommandAvailability(available);
+        }
+    };
 
-                        return [command.id, false];
-                    }
-                })
-            );
-        },
-        (available) => {
-            if (available) {
-                publishCommandAvailability(available);
-            }
-        },
-        { immediate: true }
-    );
+    answer();
+
+    return () => {
+        stopped = true;
+        stopListening?.();
+    };
+}
 
 /** Answers for the app's store while mounted. Draws nothing. */
 export const CommandAvailability: FC = () => {
