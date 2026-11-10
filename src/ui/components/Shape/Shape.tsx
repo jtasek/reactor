@@ -9,7 +9,7 @@ import { TextEditor } from 'src/tools/components/Text';
 import { SHAPE_PROPERTIES } from 'src/app/properties';
 import { componentSource, instanceComponentId } from 'src/app/componentSource';
 import { Instance } from './Instance';
-import { isMeasuringShape } from './measuring';
+import { isMeasuringShape, queueMeasuredBounds } from './measuring';
 import type { Shape as ShapeType } from 'src/app/types';
 import { artworkModes } from 'src/app/modeHooks';
 import { themeColors } from 'src/app/themeColors';
@@ -52,7 +52,7 @@ export const Shape = memo((props: Props) => {
     const painted = themeColors(shape, document, theme);
     const visible = isShapeVisible(document, shapeId);
     const locked = isShapeLocked(document, shapeId);
-    const { setShapeBounds, activateShape, deactivateShape } = useActions();
+    const { setShapesBounds, activateShape, deactivateShape } = useActions();
     const measuring = isMeasuringShape(state, shapeId, visible);
     const measuredGeometry = useRef<string | null>(null);
     const groupRef = useRef<SVGGElement>(null);
@@ -126,12 +126,12 @@ export const Shape = memo((props: Props) => {
 
         try {
             const bounds = rectToBox(node.getBBox());
-            setShapeBounds({ id: shapeId, bounds });
+            queueMeasuredBounds(setShapesBounds, { id: shapeId, bounds });
             measuredGeometry.current = geometryKey;
         } catch {
             // getBBox throws for elements that are not yet renderable; ignore.
         }
-    }, [contextual, geometryKey, shapeId, setShapeBounds, measuring, visible]);
+    }, [contextual, geometryKey, shapeId, setShapesBounds, measuring, visible]);
 
     if (!Component && shape.type !== 'instance') {
         console.error(`Component ${shape.type} not found`);

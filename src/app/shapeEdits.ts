@@ -803,45 +803,59 @@ export const selectShapes: Action = ({ state }) => {
     });
 };
 
-export const setShapeBounds: ActionWithParam<{ id: string; bounds: Box }> = (
+/** Stores the box each shape was measured at, all in one store flush. */
+export const setShapesBounds: ActionWithParam<{ id: string; bounds: Box }[]> = (
     { state },
-    { id, bounds }
+    measurements
 ) => {
-    const shape = state.currentDocument.shapes[id];
-
-    if (!shape) {
+    if (measurements.length === 0) {
         return;
     }
 
-    const layout = frameLayout(state.currentDocument);
-    const size = layout.shapeSizes[id];
-    if (
-        shape.type === 'rectangle' &&
-        size &&
-        (size.width !== shape.size.width || size.height !== shape.size.height)
-    ) {
-        return;
-    }
-    const offset = layout.shapes[id];
-    const measured = offset
-        ? {
-              ...bounds,
-              topLeft: { x: bounds.topLeft.x - offset.x, y: bounds.topLeft.y - offset.y },
-              bottomRight: {
-                  x: bounds.bottomRight.x - offset.x,
-                  y: bounds.bottomRight.y - offset.y
+    for (const { id, bounds } of measurements) {
+        const shape = state.currentDocument.shapes[id];
+
+        if (!shape) {
+            continue;
+        }
+
+        // Read per shape: a box stored just before can change the layout.
+        const layout = frameLayout(state.currentDocument);
+
+        const size = layout.shapeSizes[id];
+        if (
+            shape.type === 'rectangle' &&
+            size &&
+            (size.width !== shape.size.width || size.height !== shape.size.height)
+        ) {
+            continue;
+        }
+        const offset = layout.shapes[id];
+        const measured = offset
+            ? {
+                  ...bounds,
+                  topLeft: { x: bounds.topLeft.x - offset.x, y: bounds.topLeft.y - offset.y },
+                  bottomRight: {
+                      x: bounds.bottomRight.x - offset.x,
+                      y: bounds.bottomRight.y - offset.y
+                  }
               }
-          }
-        : bounds;
+            : bounds;
 
-    // Idempotent: skip the write when the measured box is unchanged so the
-    // measurement effect cannot trigger a render loop.
-    if (shape.bounds && boxesEqual(shape.bounds, measured)) {
-        return;
+        // Idempotent: skip the write when the measured box is unchanged so the
+        // measurement effect cannot trigger a render loop.
+        if (shape.bounds && boxesEqual(shape.bounds, measured)) {
+            continue;
+        }
+
+        shape.bounds = measured;
     }
-
-    shape.bounds = measured;
 };
+
+export const setShapeBounds: ActionWithParam<{ id: string; bounds: Box }> = (
+    { actions },
+    measurement
+) => actions.setShapesBounds([measurement]);
 
 export const unselectShapes: Action = ({ state, actions }) => {
     state.selectedComponent = null;
