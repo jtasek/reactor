@@ -188,8 +188,8 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   (not suppressed). `pnpm lint:baseline` fails on any finding in a file changed relative to
   `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
   recorded counts: fix a touched file's existing findings rather than adding exceptions.
-- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 497 KiB or
-  any file 248 KiB (the budget in `webpack.config.mjs`, entry measured at 496.6 KiB with schema v28 prototype-state readers); raise
+- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 501 KiB or
+  any file 250 KiB (the budget in `webpack.config.mjs`, entry measured at 500.8 KiB with the list of selected shapes); raise
   it only for code every page needs as it opens, after checking what grew. Commands and
   tools load with the editor page, which registers them (`src/pages/registerEditor.ts`),
   not at startup: the store keeps only the tools namespace's state and actions
@@ -215,6 +215,9 @@ re-renders.** Components never mutate state directly.
 - **Computed/derived** (`src/app/computed/`, `src/events/computed/`): Overmind `derived(...)`.
   `*Ids` (except `shapesIds`) and `selected*` fields are wired to these — keep derivations
   here, not in components.
+  Selecting shapes: change it only through `src/app/shapeSelection.ts`, which keeps each
+  shape's `selected` flag and the document's runtime `shapeSelection` list in step, so
+  selection readers depend on the selected shapes, not on every shape.
   The pointer drag model lives in `src/events/computed/pointer.ts` (`topLeft`, `size`,
   `bottomRight`, `center`, `radius`, `offset`).
 - **Actions** (`src/app/actions/`): one file per domain (`shape.ts`, `link.ts`, …),

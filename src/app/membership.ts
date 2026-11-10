@@ -2,6 +2,7 @@ import { renderedShape, hasLayoutOffset } from './frameLayout';
 import { frameStatesOf } from './frameState';
 import type { Box, CommandScope, Document, Group, Layer, Point, Shape } from './types';
 import { boxCenter, getShapeBounds, isShapeLocked, isShapeVisible, rotatePoint } from './utils';
+import { untracked } from './untracked';
 
 /** A group has two shapes at least; one left alone is no longer grouped. */
 export const GROUP_MINIMUM = 2;
@@ -125,11 +126,33 @@ export function groupFrame(document: Document, group: Group): GroupFrame | null 
 }
 
 /**
+ * The containers holding a selected shape: only these can be selected as one.
+ * Each container's members are read as a whole, not one by one, so the result
+ * depends on the selected shapes and the membership lists only.
+ */
+export function holdingSelectedShapes<T extends { shapesIds: string[] }>(
+    document: Document,
+    containers: T[]
+): T[] {
+    if (containers.length === 0) {
+        return [];
+    }
+
+    const selected = new Set(document.selectedShapesIds);
+
+    return selected.size === 0
+        ? []
+        : containers.filter((container) =>
+              untracked(container.shapesIds).some((id) => selected.has(id))
+          );
+}
+
+/**
  * The groups selected as one: every shown shape of theirs is selected, and they
  * are not the group double-clicked into.
  */
 export function selectedGroupsIdsOf(document: Document, enteredGroupId: string | null): string[] {
-    return Object.values(document.groups)
+    return holdingSelectedShapes(document, Object.values(document.groups))
         .filter((group) => {
             const shown = shownGroupShapesIds(document, group);
 
@@ -308,9 +331,18 @@ export const selectionExtent = (document: Document): Box | null =>
 
 /** The selected shapes the commands may change, in drawing order. */
 export function editableSelectedShapesIds(document: Document): string[] {
-    const selected = new Set(document.selectedShapesIds);
+    const editable = document.selectedShapesIds.filter((id) => !isShapeLocked(document, id));
 
-    return document.shapesIds.filter((id) => selected.has(id) && !isShapeLocked(document, id));
+    if (editable.length < 2) {
+        return editable;
+    }
+
+    // Depends on the drawing order as a whole, which every reorder replaces or
+    // changes in place, not on each of its thousands of entries.
+    const drawn = untracked(document.shapesIds);
+    const position = new Map(drawn.map((id, index) => [id, index]));
+
+    return editable.sort((a, b) => (position.get(a) ?? 0) - (position.get(b) ?? 0));
 }
 
 /**

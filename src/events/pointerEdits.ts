@@ -4,6 +4,7 @@ export {
     selectedViewProperties,
     componentEditingOrigin
 } from 'src/app/screenViewEditing';
+import { setShapesSelected } from 'src/app/shapeSelection';
 import {
     canTransformScreenViewShape,
     canTransformScreenViewContainer,
@@ -401,8 +402,8 @@ export const beginGesture = (
     const selection = snapshotSelection(untracked(state.currentDocument.shapes));
 
     if (actions.selectShapeAtPointer()) {
-        const selected = Object.values(state.currentDocument.shapes).filter(
-            (shape) => shape.selected
+        const selected = untracked(state.currentDocument).shapeSelection.map(
+            (id) => state.currentDocument.shapes[id]
         );
 
         actions.tools.activateTool('move');
@@ -833,13 +834,18 @@ export const cancelGesture = (
 
     if ('selection' in gesture) {
         state.selectedComponent = null;
-        Object.entries(gesture.selection).forEach(([id, selected]) => {
-            const shape = state.currentDocument.shapes[id];
+        const entries = Object.entries(gesture.selection);
 
-            if (shape && shape.selected !== selected) {
-                shape.selected = selected;
-            }
-        });
+        setShapesSelected(
+            state.currentDocument,
+            entries.filter(([, selected]) => !selected).map(([id]) => id),
+            false
+        );
+        setShapesSelected(
+            state.currentDocument,
+            entries.filter(([, selected]) => selected).map(([id]) => id),
+            true
+        );
     }
 
     deleteIfPresent(state.currentDocument, 'selectedFrameId');

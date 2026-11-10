@@ -791,6 +791,8 @@ it('measures source members without reading their selection or hover flags', () 
         shapes: { [shape.id]: shape },
         components: { card: createComponent({ id: 'card', shapesIds: [shape.id] }) }
     });
+    // Making the document lists its selected shapes; measuring must not look again.
+    selected.mockClear();
 
     const source = componentSource(document, 'card')!;
 

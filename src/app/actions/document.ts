@@ -140,6 +140,7 @@ export const resetDocument: Action = ({ state }) => {
     delete document.selectedFrameId;
     document.shapes = {};
     document.shapesIds = [];
+    document.shapeSelection = [];
     document.layers = {};
     document.groups = {};
     document.links = {};

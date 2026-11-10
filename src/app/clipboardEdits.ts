@@ -22,6 +22,7 @@ import { shownGroupShapesIds, containersHolding } from './membership';
 import { isShapeLocked, isShapeVisible, shapeGeometry } from './utils';
 import { screenToWorld } from './camera';
 import { untracked } from './untracked';
+import { putShape, setShapesSelected } from './shapeSelection';
 import { editorHelpers } from './editorHelpers';
 import { frameContents } from './frameMembership';
 import { takesEditorInput } from 'src/events/input';
@@ -90,9 +91,7 @@ function selectTransfer(
     actions.unselectShapes();
     state.enteredGroupId = null;
     state.enteredComponentId = component?.id ?? null;
-    ids.forEach((id) => {
-        state.currentDocument.shapes[id].selected = true;
-    });
+    setShapesSelected(state.currentDocument, ids, true);
 
     if (component && ids.length > 0) {
         state.selectedComponent = {
@@ -518,7 +517,7 @@ export const cloneShapes: ActionWithParam<string[]> = (context, shapeIds) => {
 
         translateShape(clone, offset);
         guardIdentity(clone);
-        shapes[clone.id] = clone;
+        putShape(currentDocument, clone);
         shapesIds.push(clone.id);
         clonesIds.set(id, clone.id);
     }

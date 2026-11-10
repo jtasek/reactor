@@ -1,3 +1,4 @@
+import { putShape, selectOnlyShapes, setShapeSelected, setShapesSelected } from './shapeSelection';
 import { json } from 'overmind';
 import { drawingScreen, pointerDocument } from './screenViewEditing';
 import { transformComponentShape } from './componentViewTransform';
@@ -84,7 +85,7 @@ const getShape = ({ currentDocument }: Application, shapeId: string) => {
 
 /** Adds a new shape whose order is above every other shape's. */
 const putOnTop = ({ currentDocument }: Application, shape: Shape) => {
-    currentDocument.shapes[shape.id] = shape;
+    putShape(currentDocument, shape);
     currentDocument.shapesIds.push(shape.id);
 };
 
@@ -297,7 +298,7 @@ export const detachInstances: ActionWithParam<string[]> = ({ state }, instanceId
             if (parentOffset) {
                 translateShape(copy, { x: -parentOffset.x, y: -parentOffset.y });
             }
-            document.shapes[copy.id] = copy;
+            putShape(document, copy);
             copyIds.push(copy.id);
         }
 
@@ -387,7 +388,7 @@ export const toggleShapeSelected: ActionWithParam<string> = ({ state, actions },
     state.selectedComponent = null;
     const shape = getShape(state, shapeId);
 
-    shape.selected = !shape.selected;
+    setShapeSelected(state.currentDocument, shapeId, !shape.selected);
     if (!shape.selected) {
         return;
     }
@@ -397,9 +398,9 @@ export const toggleShapeSelected: ActionWithParam<string> = ({ state, actions },
 
 export const selectShape: ActionWithParam<string> = ({ state, actions }, shapeId) => {
     state.selectedComponent = null;
-    const shape = getShape(state, shapeId);
+    getShape(state, shapeId);
 
-    shape.selected = true;
+    setShapeSelected(state.currentDocument, shapeId, true);
     deleteIfPresent(state.currentDocument, 'selectedFrameId');
     actions.unselectGuides();
 };
@@ -409,14 +410,20 @@ export const selectShapeByPoint: Action = ({ state }) => {
     const tolerance = hitTolerance(state.currentDocument.camera.scale);
 
     const shapes = Object.values(state.currentDocument.shapes);
-    shapes.forEach((shape) => {
-        if (
-            hitTestShape(renderedShape(state.currentDocument, shape.id), current, tolerance) &&
-            isInteractive(state, shape.id)
-        ) {
-            shape.selected = true;
-        }
-    });
+    setShapesSelected(
+        state.currentDocument,
+        shapes
+            .filter(
+                (shape) =>
+                    hitTestShape(
+                        renderedShape(state.currentDocument, shape.id),
+                        current,
+                        tolerance
+                    ) && isInteractive(state, shape.id)
+            )
+            .map((shape) => shape.id),
+        true
+    );
 };
 
 /** The topmost shape drawn under the pointer that it can press, by `canPress`, if any. */
@@ -525,7 +532,7 @@ const enterGroupUnderPointer = (
 
     state.enteredGroupId = group.id;
     actions.unselectShapes();
-    state.currentDocument.shapes[hitId].selected = true;
+    setShapeSelected(state.currentDocument, hitId, true);
 
     return true;
 };
@@ -599,7 +606,7 @@ const selectPressed = (
     pressed: string[],
     canSelect: (id: string) => boolean
 ) => {
-    const { shapesIds, shapes } = state.currentDocument;
+    const { shapes } = state.currentDocument;
 
     leaveGroupWithout(state, pressed);
 
@@ -614,16 +621,10 @@ const selectPressed = (
         state.enteredGroupId,
         state.enteredComponentId
     );
-    const plain = untracked(state.currentDocument).shapes;
-
-    shapesIds.forEach((id: string) => {
-        const selected = hit.has(id) && canSelect(id);
-
-        // Read untracked; written through the store only where it changes.
-        if (plain[id] && plain[id].selected !== selected) {
-            shapes[id].selected = selected;
-        }
-    });
+    selectOnlyShapes(
+        state.currentDocument,
+        [...hit].filter((id) => Object.hasOwn(untracked(shapes), id) && canSelect(id))
+    );
 };
 
 const boxMembersAtPointer = (state: Context['state']) => {
@@ -791,16 +792,16 @@ export const selectShapes: Action = ({ state }) => {
 
     const hit = new Set(hits);
 
-    Object.values(document.shapes).forEach((shape) => {
-        const selected =
-            boxed.has(shape.id) && (hit.has(shape.id) || isInteractive(state, shape.id));
-
-        // Only write when the value actually changes so shapes that stay
-        // outside (or inside) the marquee don't re-render every pointer move.
-        if (shape.selected !== selected) {
-            document.shapes[shape.id].selected = selected;
-        }
-    });
+    // Written only where a shape's flag changes, so shapes that stay outside (or
+    // inside) the marquee don't re-render every pointer move.
+    selectOnlyShapes(
+        document,
+        [...boxed].filter(
+            (id) =>
+                Object.hasOwn(untracked(document).shapes, id) &&
+                (hit.has(id) || isInteractive(state, id))
+        )
+    );
 };
 
 /** Stores the box each shape was measured at, all in one store flush. */
@@ -866,20 +867,12 @@ export const unselectShapes: Action = ({ state, actions }) => {
     Object.values(state.currentDocument.layers).forEach((layer) => {
         layer.selected = false;
     });
-    const shapes = Object.values(state.currentDocument.shapes);
-    shapes.forEach((shape) => {
-        // Only write when it actually changes, so a background click with nothing
-        // selected doesn't needlessly re-render every shape.
-        if (shape.selected) {
-            shape.selected = false;
-        }
-    });
+    selectOnlyShapes(state.currentDocument, []);
 };
 
 export const unselectShape: ActionWithParam<string> = ({ state }, shapeId) => {
-    const shape = getShape(state, shapeId);
-
-    shape.selected = false;
+    getShape(state, shapeId);
+    setShapeSelected(state.currentDocument, shapeId, false);
 };
 
 export const activateShape: ActionWithParam<string> = ({ state }, shapeId) => {

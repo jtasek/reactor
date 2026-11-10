@@ -3,6 +3,7 @@ import { projectFrameStates } from '../frameState';
 import { derived } from 'overmind';
 import { Application, Document } from '../types';
 import { isShapeVisible } from '../utils';
+import { listedSelectedShapesIds } from '../shapeSelection';
 import { localComponents, selectedComponentsIdsOf } from '../componentSelection';
 import { editorHelpers, editorLoaded } from '../editorHelpers';
 import type { Context } from '../index';
@@ -142,11 +143,9 @@ export const guidesIds = derived((currentDocument: Document) => {
 
 // The selection commands act on: a hidden shape keeps its `selected` flag but is
 // left out until it is shown again.
-export const selectedShapes = derived((currentDocument: Document) => {
-    return Object.values(currentDocument.shapes).filter(
-        (shape) => shape.selected && isShapeVisible(currentDocument, shape.id)
-    );
-});
+export const selectedShapes = derived((currentDocument: Document) =>
+    currentDocument.selectedShapesIds.map((id) => currentDocument.shapes[id])
+);
 
 /** The box around the selected shapes, kept until they change: see `selectionExtent`. */
 export const selectionExtent = derived((currentDocument: Document) =>
@@ -170,8 +169,7 @@ export const editableSelectedShapesIds = derived((currentDocument: Document) =>
     findEditableSelectedShapesIds(currentDocument)
 );
 
-export const selectedShapesIds = derived((currentDocument: Document) => {
-    return Object.values(currentDocument.shapes)
-        .filter((shape) => shape.selected && isShapeVisible(currentDocument, shape.id))
-        .map((shape) => shape.id);
-});
+// Read from the document's list, so it depends on the selected shapes only.
+export const selectedShapesIds = derived((currentDocument: Document) =>
+    listedSelectedShapesIds(currentDocument).filter((id) => isShapeVisible(currentDocument, id))
+);

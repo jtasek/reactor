@@ -1,3 +1,4 @@
+import { putShape } from './shapeSelection';
 import { json } from 'overmind';
 import { createComponent, createGroup, createShape, instanceName } from './factories';
 import { readCopiedShape } from './services/clipboardStorage';
@@ -347,9 +348,7 @@ export const createComponentVariant: ActionWithParamAndResult<string, string | u
         );
 
     effects.collaboration.startBatch(document.id, { kind: 'person' });
-    copies.forEach((shape) => {
-        document.shapes[shape.id] = shape;
-    });
+    copies.forEach((shape) => putShape(document, shape));
     document.shapesIds.push(...variant.shapesIds);
     groups.forEach((group) => {
         document.groups[group.id] = group;
@@ -564,7 +563,7 @@ export const createComponentFromSelection: Action = ({ state, actions }) => {
             height: source.box.height
         }
     });
-    document.shapes[instance.id] = instance;
+    putShape(document, instance);
     document.shapesIds.splice(index + 1, 0, instance.id);
     putShapesOnLayer(document, [instance.id], layerId);
     putShapesOnLayer(document, ids, null);

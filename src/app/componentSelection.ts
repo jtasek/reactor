@@ -1,6 +1,6 @@
 import type { Application, Component, Document, Point } from './types';
 import { boxCenter, isShapeVisible, rotatePoint } from './utils';
-import { withTheirGroups } from './membership';
+import { holdingSelectedShapes, withTheirGroups } from './membership';
 
 /** Local sources are selectable containers; imported sources have no canvas members. */
 export const localComponents = (document: Document) =>
@@ -30,7 +30,7 @@ export const shownComponentShapesIds = (document: Document, component: Component
     component.shapesIds.filter((id) => isShapeVisible(document, id));
 
 export function selectedComponentsIdsOf(document: Document, enteredComponentId: string | null) {
-    return localComponents(document)
+    return holdingSelectedShapes(document, localComponents(document))
         .filter((component) => {
             const shown = shownComponentShapesIds(document, component);
 

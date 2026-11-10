@@ -1,3 +1,4 @@
+import { putShape } from './shapeSelection';
 import { instanceAction, legacyActivation, separateInteractions } from './screenInteractions';
 import { isScreenLayout } from './screenLayouts';
 import { initialScreenView } from './screenViewMigration';
@@ -1570,7 +1571,7 @@ export function writeBatch(document: Document, staged: Staged) {
         }
     });
     staged.shapes.forEach((shape) => {
-        document.shapes[shape.id] = shape;
+        putShape(document, shape);
         document.shapesIds.push(shape.id);
     });
     staged.groups.forEach((group) => {

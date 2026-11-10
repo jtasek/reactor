@@ -1,3 +1,4 @@
+import { setShapesSelected } from './shapeSelection';
 import type { Document, Frame } from './types';
 import { untracked } from './untracked';
 
@@ -123,11 +124,12 @@ export function unselectHiddenFrameShapes(document: Document) {
         return;
     }
 
-    Object.values(untracked(document).shapes)
-        .filter(
-            (shape) => shape.selected && states[shape.parentFrameId ?? '']?.hiddenBy !== undefined
-        )
-        .forEach((shape) => {
-            document.shapes[shape.id].selected = false;
-        });
+    setShapesSelected(
+        document,
+        untracked(document).shapeSelection.filter(
+            (id) =>
+                states[untracked(document).shapes[id]?.parentFrameId ?? '']?.hiddenBy !== undefined
+        ),
+        false
+    );
 }
