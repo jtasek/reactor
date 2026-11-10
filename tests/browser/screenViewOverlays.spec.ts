@@ -146,6 +146,8 @@ test('keeps instance badges and Explorer selections in the chosen view and remov
     const row = explorer
         .getByRole('button', { name: 'Home · Desktop', exact: true })
         .locator('xpath=ancestor::li[1]');
+    // The Desktop chip picks the view that the screen's rows select in.
+    await row.getByRole('button', { name: 'Home · Desktop', exact: true }).click();
     await row.getByRole('button', { name: 'Body', exact: true }).click();
     const menu = page.getByRole('toolbar', { name: 'Selection menu' });
     await desktop.locator('[data-cy="Body"]').hover();

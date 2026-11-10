@@ -307,8 +307,9 @@
     width: 20px;
 }
 
+/* Keyboard focus shows them; a click does not leave them showing after the pointer goes. */
 .row:hover .status,
-.row:focus-within .status,
+.row:has(:focus-visible) .status,
 .status[aria-pressed='true'] {
     visibility: visible;
 }

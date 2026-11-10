@@ -14,7 +14,7 @@ test('the Inspector header renames a component source without a duplicate Name f
     await openEditor(page, ['Explorer', 'Inspector']);
     await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
     const explorer = page.getByRole('region', { name: 'Explorer' });
-    await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
+    await page.keyboard.press('ControlOrMeta+Alt+c');
 
     const panel = page.locator('[data-panel="inspector"]');
     const name = panel.getByRole('textbox', { name: 'Name', exact: true });
@@ -31,10 +31,9 @@ test('a long component breadcrumb stays within the Inspector', async ({ page }) 
     await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
 
     const explorer = page.getByRole('region', { name: 'Explorer' });
-    await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
+    await page.keyboard.press('ControlOrMeta+Alt+c');
     await explorer
-        .getByText('Components', { exact: true })
-        .locator('xpath=ancestor::li[1]')
+        .getByRole('region', { name: 'Components' })
         .getByRole('button', { name: 'component-1', exact: true })
         .click();
 
@@ -62,10 +61,8 @@ test('places and reloads a live component instance', async ({ page }) => {
     await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
 
     const explorer = page.getByRole('region', { name: 'Explorer' });
-    await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
-    const sources = explorer
-        .getByText('Components', { exact: true })
-        .locator('xpath=ancestor::li[1]');
+    await page.keyboard.press('ControlOrMeta+Alt+c');
+    const sources = explorer.getByRole('region', { name: 'Components' });
     await expect(sources.getByRole('button', { name: /^component-\d+$/ })).toBeVisible();
     await sources.getByRole('button', { name: 'Collapse component-1' }).click();
     await expect(explorer.getByRole('button', { name: 'rectangle-1' })).toHaveCount(0);
@@ -209,7 +206,7 @@ test('component navigation works with Explorer closed and Escape leaves text edi
     await openEditor(page, ['Explorer', 'Inspector']);
     await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
     const explorer = page.getByRole('region', { name: 'Explorer' });
-    await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
+    await page.keyboard.press('ControlOrMeta+Alt+c');
     await editComponent(page.locator('[data-panel="inspector"]'));
     await page
         .getByRole('region', { name: 'Component source' })
@@ -251,7 +248,7 @@ test('an exposed fill changes one instance without changing its source', async (
     await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
     const explorer = page.getByRole('region', { name: 'Explorer' });
 
-    await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
+    await page.keyboard.press('ControlOrMeta+Alt+c');
     await explorer.getByRole('button', { name: 'rectangle-1' }).click();
     const exposeFill = page.getByRole('button', { name: 'Expose Fill to instances' });
     const fillIcon = exposeFill.locator('svg');
@@ -315,7 +312,7 @@ for (const visible of [true, false]) {
         await openEditor(page, ['Explorer', 'Inspector']);
         await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
         const explorer = page.getByRole('region', { name: 'Explorer' });
-        await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
+        await page.keyboard.press('ControlOrMeta+Alt+c');
         await explorer.getByRole('button', { name: 'rectangle-1' }).click();
         await page.locator('[data-panel="inspector"]').getByLabel('More inspector actions').click();
         await page.getByRole('button', { name: 'Expose Visible to instances' }).click();
@@ -325,9 +322,7 @@ for (const visible of [true, false]) {
                 .getByRole('button', { name: 'Hide', exact: true })
                 .click();
         }
-        const sources = explorer
-            .getByText('Components', { exact: true })
-            .locator('xpath=ancestor::li[1]');
+        const sources = explorer.getByRole('region', { name: 'Components' });
         await sources.getByRole('button', { name: /^component-\d+$/ }).click();
         await page
             .getByRole('region', { name: 'Component source' })

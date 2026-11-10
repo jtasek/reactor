@@ -538,8 +538,15 @@ export const Explorer: FC = () => {
     const frames = useFrameRows();
     const selectedFrameId = useSelectedFrameId();
     const actions = useActions();
-    const { editFrame, events, selectExplorerLayer, showOnlyLayer, showAllLayers, runCommand } =
-        actions;
+    const {
+        editFrame,
+        events,
+        selectExplorerLayer,
+        showOnlyLayer,
+        showAllLayers,
+        unselectLayer,
+        runCommand
+    } = actions;
     const tree = useExplorerTree(status);
     const document = useCurrentDocument();
     const components = useComponents() ?? {};
@@ -559,6 +566,26 @@ export const Explorer: FC = () => {
         // Only a new selection reveals its rows; closing one afterwards keeps it closed.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [revealKeys]);
+
+    // A component someone just made opens, so its parts show where they went.
+    const componentIds = Object.keys(components).join(' ');
+    const knownComponents = useRef({ documentId: document.id, ids: componentIds });
+
+    useEffect(() => {
+        const known = knownComponents.current;
+        const added =
+            known.documentId === document.id
+                ? componentIds.split(' ').filter((id) => id && !known.ids.split(' ').includes(id))
+                : [];
+
+        knownComponents.current = { documentId: document.id, ids: componentIds };
+        if (added.length > 0) {
+            openRows.setOpen(
+                Object.fromEntries(added.map((id) => [explorerKey('component', id), true]))
+            );
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [componentIds, document.id]);
 
     useEffect(() => {
         const frame = requestAnimationFrame(() =>
@@ -729,6 +756,7 @@ export const Explorer: FC = () => {
                                 <ViewChip
                                     key={view.id}
                                     view={view}
+                                    screenName={screen.name}
                                     label={document.frames[view.id]?.name ?? view.name}
                                     current={screenViews.length > 1 && view.id === shownView?.id}
                                     selected={selectedFrameId === view.id}
@@ -808,6 +836,13 @@ export const Explorer: FC = () => {
         return [{ component, shapesIds: !filter || componentNamed ? kept : matching }];
     });
     const layers = document.layersIds.map((id) => document.layers[id]).filter(Boolean);
+    const clearFilter = () => {
+        if (shownLayerId) {
+            showAllLayers();
+            unselectLayer(shownLayerId);
+        }
+        setStatus('all');
+    };
     const filterLabel =
         shownLayerId && document.layers[shownLayerId]
             ? `Layer: ${document.layers[shownLayerId].name}`
@@ -836,7 +871,15 @@ export const Explorer: FC = () => {
                       id: `layer:${layer.id}`,
                       label: layer.name,
                       checked: shownLayerId === layer.id,
-                      onRun: () => showOnlyLayer(layer.id)
+                      onRun: () => {
+                          // The layer shown alone is also the one new shapes go onto.
+                          if (shownLayerId === layer.id) {
+                              clearFilter();
+                              return;
+                          }
+                          showOnlyLayer(layer.id);
+                          selectExplorerLayer(layer.id);
+                      }
                   }))
               ]
             : []),
@@ -875,15 +918,20 @@ export const Explorer: FC = () => {
                 </div>
                 {filterLabel && (
                     <div className={styles.filterPill}>
-                        <span>{filterLabel}</span>
+                        <span
+                            title={
+                                shownLayerId
+                                    ? 'Only this layer shows, and new shapes go onto it'
+                                    : undefined
+                            }
+                        >
+                            {filterLabel}
+                        </span>
                         <button
                             type="button"
                             aria-label="Clear filter"
                             title="Clear filter"
-                            onClick={() => {
-                                showAllLayers();
-                                setStatus('all');
-                            }}
+                            onClick={clearFilter}
                         >
                             <Icon icon={{ component: X, size: 12 }} />
                         </button>
@@ -982,13 +1030,21 @@ export const Explorer: FC = () => {
 
 /** One of a screen's views, as a chip after its name: pressing it edits the screen there. */
 const ViewChip: FC<{
-    view: { id: string; name: string; visible: boolean; locked: boolean; shown: boolean };
+    view: {
+        id: string;
+        name: string;
+        size: { width: number; height: number };
+        visible: boolean;
+        locked: boolean;
+        shown: boolean;
+    };
+    screenName: string;
     label: string;
     current: boolean;
     selected: boolean;
     actions: ItemMenuAction[];
     onChoose: () => void;
-}> = ({ view, label, current, selected, actions, onChoose }) => {
+}> = ({ view, screenName, label, current, selected, actions, onChoose }) => {
     const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
 
     return (
@@ -1006,7 +1062,9 @@ const ViewChip: FC<{
                     .join(' ')}
                 aria-label={view.name}
                 aria-pressed={selected}
-                title={`${view.name}${view.locked ? ' · locked' : ''}`}
+                title={`${screenName} · ${view.size.width} × ${view.size.height} Screen view${
+                    view.locked ? ' · locked' : ''
+                }`}
                 onClick={(event) => {
                     event.stopPropagation();
                     onChoose();

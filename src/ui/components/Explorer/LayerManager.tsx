@@ -62,7 +62,20 @@ const LayerRow: FC<{ layerId: string }> = ({ layerId }) => {
                 title={`Delete ${layer.name}`}
                 aria-label={`Delete ${layer.name}`}
                 disabled={layer.locked || documentLocked}
-                onClick={() => removeLayer(layerId)}
+                onClick={(event) => {
+                    // The focus moves to the next layer, or New layer, before this row goes.
+                    const row = event.currentTarget.closest('li');
+                    const next =
+                        (row?.nextElementSibling ?? row?.previousElementSibling)?.querySelector(
+                            'input'
+                        ) ??
+                        event.currentTarget
+                            .closest('[role="dialog"]')
+                            ?.querySelector<HTMLElement>('[data-new-layer]');
+
+                    next?.focus();
+                    removeLayer(layerId);
+                }}
             >
                 <Icon icon={{ component: Trash2, size: 14 }} />
             </button>
@@ -117,6 +130,7 @@ export const LayerManager: FC<{ onClose: () => void }> = ({ onClose }) => {
             <button
                 type="button"
                 className={styles.newLayer}
+                data-new-layer
                 disabled={documentLocked}
                 onClick={() => addLayer({})}
             >

@@ -90,12 +90,8 @@ test('Create component in the selection menu replaces the selected shape with an
     await expect(menu.getByRole('button', { name: 'Create component' })).toBeVisible();
     await menu.getByRole('button', { name: 'Create component' }).click();
 
-    const layers = explorer
-        .getByRole('button', { name: 'Canvas', exact: true })
-        .locator('xpath=ancestor::li[1]');
-    const components = explorer
-        .getByText('Components', { exact: true })
-        .locator('xpath=ancestor::li[1]');
+    const layers = explorer.getByRole('region', { name: 'Canvas' });
+    const components = explorer.getByRole('region', { name: 'Components' });
 
     await expect(layers.getByRole('button', { name: 'component-1' })).toBeVisible();
     await expect(components.getByRole('button', { name: 'Artwork' })).toBeVisible();

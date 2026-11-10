@@ -34,8 +34,37 @@ export async function pointer(
     });
 }
 
-/** Opens the editor with the drawing tools, plus any other `controls`, shown. */
-export async function openEditor(page: Page, controls: string[] = []) {
+/**
+ * Opens every closed row of the Explorer, and the rows inside them: screens and
+ * component sources start closed.
+ */
+export async function expandExplorer(page: Page) {
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    const closed = explorer.locator('button[data-open="false"]');
+
+    // The outline draws its rows, or says it is empty, before anything is opened.
+    await expect(
+        explorer
+            .locator('[data-explorer-row]')
+            .or(explorer.getByText('Draw a shape or add a screen to start.'))
+            .first()
+    ).toBeAttached();
+
+    for (let count = await closed.count(); count > 0; count = await closed.count()) {
+        await closed.first().click({ modifiers: ['Alt'] });
+        await expect(closed).not.toHaveCount(count);
+    }
+}
+
+/**
+ * Opens the editor with the drawing tools, plus any other `controls`, shown. With the
+ * Explorer, its rows all start open, unless `closedExplorer`.
+ */
+export async function openEditor(
+    page: Page,
+    controls: string[] = [],
+    { closedExplorer = false } = {}
+) {
     await page.goto('/');
     await expect(page.locator('svg#surface')).toBeVisible();
     await page.getByRole('button', { name: 'More panels' }).click();
@@ -48,6 +77,9 @@ export async function openEditor(page: Page, controls: string[] = []) {
     }
     for (const control of ['Tool Bar', ...controls]) {
         await page.getByRole('checkbox', { name: control, exact: true }).check();
+    }
+    if (controls.includes('Explorer') && !closedExplorer) {
+        await expandExplorer(page);
     }
 }
 

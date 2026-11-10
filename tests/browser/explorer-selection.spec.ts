@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { createComponent, createDocument, createGroup, createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
-import { shapes } from './support/editor';
+import { expandExplorer, shapes } from './support/editor';
 
 test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
 
@@ -44,6 +44,7 @@ test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'More panels' }).click();
     await page.getByRole('checkbox', { name: 'Explorer', exact: true }).check();
+    await expandExplorer(page);
 });
 
 test('a normal Explorer click replaces selection and Shift-click toggles shapes and instances', async ({
@@ -86,8 +87,7 @@ test('object symbols identify selections, with canvas name labels only for compo
         { name: 'Rectangle 1', type: 'rectangle' },
         { name: 'Pair', type: 'group' },
         { name: 'Card', type: 'component' },
-        { name: 'Card copy', type: 'instance' },
-        { name: 'Canvas', type: 'surface' }
+        { name: 'Card copy', type: 'instance' }
     ];
 
     for (const { name, type } of selections) {
@@ -106,24 +106,17 @@ test('object symbols identify selections, with canvas name labels only for compo
         await expect(badge).toContainText(name);
     }
 
-    await explorer.getByRole('button', { name: 'Layers', exact: true }).click();
-    await explorer.getByRole('button', { name: 'New layer' }).click();
-    const layer = explorer.getByRole('button', { name: /^layer-\d+$/ }).first();
+    // The space under the outline selects the canvas.
+    const outline = explorer.locator('[data-explorer-outline] > div').last();
 
-    await expect(layer.locator('svg[data-object-type="layer"]')).toHaveCount(1);
-    await layer.click();
-    await expect(inspector.locator('header svg[data-object-type="layer"]')).toHaveCount(1);
-    await expect(badge).toHaveCount(0);
+    await outline.click();
+    await expect(inspector.locator('header svg[data-object-type="surface"]')).toHaveCount(1);
 });
 
 test('component children support the same selection and Shift-click behavior', async ({ page }) => {
     const explorer = page.getByRole('region', { name: 'Explorer' });
-    const components = explorer
-        .getByText('Components', { exact: true })
-        .locator('xpath=ancestor::li[1]');
-    const layers = explorer
-        .getByRole('button', { name: 'Canvas', exact: true })
-        .locator('xpath=ancestor::li[1]');
+    const components = explorer.getByRole('region', { name: 'Components' });
+    const layers = explorer.getByRole('region', { name: 'Canvas' });
     const source = components.getByRole('button', { name: 'Card', exact: true });
     const first = components.getByRole('button', { name: 'Background', exact: true });
     const second = components.getByRole('button', { name: 'Border', exact: true });
@@ -228,9 +221,7 @@ test('a source has one bounding box with shared resize and rotate handles', asyn
 
 test('entering a source replaces its shared handles with child handles', async ({ page }) => {
     const explorer = page.getByRole('region', { name: 'Explorer' });
-    const components = explorer
-        .getByText('Components', { exact: true })
-        .locator('xpath=ancestor::li[1]');
+    const components = explorer.getByRole('region', { name: 'Components' });
     await components.getByRole('button', { name: 'Card', exact: true }).click();
     await expect(page.locator('[data-handle][data-component-id]')).toHaveCount(9);
     await components.getByRole('button', { name: 'Background', exact: true }).click();
@@ -242,12 +233,8 @@ test('the tree separates scene layers from component sources and focuses source 
     page
 }) => {
     const explorer = page.getByRole('region', { name: 'Explorer' });
-    const layers = explorer
-        .getByRole('button', { name: 'Canvas', exact: true })
-        .locator('xpath=ancestor::li[1]');
-    const components = explorer
-        .getByText('Components', { exact: true })
-        .locator('xpath=ancestor::li[1]');
+    const layers = explorer.getByRole('region', { name: 'Canvas' });
+    const components = explorer.getByRole('region', { name: 'Components' });
 
     await expect(layers.getByRole('button', { name: 'Card copy', exact: true })).toBeVisible();
     await expect(layers.getByRole('button', { name: 'Card', exact: true })).toHaveCount(0);

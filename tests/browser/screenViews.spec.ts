@@ -356,10 +356,10 @@ test('moves a view from just inside its edge, and lets presses through a locked 
 
     const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
     expect((await pressed(center)).view).toBe(true);
-    const viewRow = explorer
+    // A view is locked from its chip's menu, on its screen's Explorer row.
+    await explorer
         .getByRole('button', { name: 'Home · 300 px 2', exact: true })
-        .locator('..');
-    await viewRow.hover();
-    await viewRow.getByRole('button', { name: 'Lock', exact: true }).click();
+        .click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Lock', exact: true }).click();
     await expect.poll(async () => (await pressed(center)).view).toBe(false);
 });

@@ -37,12 +37,8 @@ test('creating a component leaves an instance in Layers and opens its source in 
     await explorer.getByRole('button', { name: 'Artwork', exact: true }).click();
     await page.keyboard.press('ControlOrMeta+Alt+c');
 
-    const layers = explorer
-        .getByRole('button', { name: 'Canvas', exact: true })
-        .locator('xpath=ancestor::li[1]');
-    const components = explorer
-        .getByText('Components', { exact: true })
-        .locator('xpath=ancestor::li[1]');
+    const layers = explorer.getByRole('region', { name: 'Canvas' });
+    const components = explorer.getByRole('region', { name: 'Components' });
     await expect(layers.getByRole('button', { name: 'Artwork', exact: true })).toHaveCount(0);
     await expect(layers.getByRole('button', { name: 'component-1', exact: true })).toBeVisible();
     await expect(components.getByRole('button', { name: 'Artwork', exact: true })).toBeVisible();

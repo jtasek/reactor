@@ -19,7 +19,11 @@ test('creates an ordinary frame and explicitly makes it a screen on the shared c
     await expect(page.getByLabel('Frame type', { exact: true })).toHaveValue('frame');
     await expect(row(page, 'Frame')).not.toHaveAttribute('aria-describedby');
     await page.getByLabel('Frame type', { exact: true }).selectOption('screen');
-    await expect(row(page, 'Frame')).toHaveAccessibleDescription('1 Screen view Screen');
+    await expect(
+        explorer(page)
+            .getByRole('region', { name: 'Screens' })
+            .getByRole('button', { name: 'Frame', exact: true })
+    ).toBeVisible();
     await expect(page.getByLabel('View width', { exact: true })).toHaveValue('300');
     await expect(page.getByLabel('View height', { exact: true })).toHaveValue('200');
 });
@@ -42,8 +46,16 @@ test('keeps multiple screens and ordinary frames visible, persists conversion, a
     await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
     await openEditor(page, ['Inspector', 'Explorer']);
     await expect(page.locator('svg#surface #frames > [data-frame]')).toHaveCount(3);
-    await expect(row(page, 'Home')).toHaveAccessibleDescription('1 Screen view Screen');
-    await expect(row(page, 'Details')).toHaveAccessibleDescription('1 Screen view Screen');
+    await expect(
+        explorer(page)
+            .getByRole('region', { name: 'Screens' })
+            .getByRole('button', { name: 'Home', exact: true })
+    ).toBeVisible();
+    await expect(
+        explorer(page)
+            .getByRole('region', { name: 'Screens' })
+            .getByRole('button', { name: 'Details', exact: true })
+    ).toBeVisible();
     await expect(row(page, 'Artwork frame')).not.toHaveAttribute('aria-describedby');
     await row(page, 'Details').click();
     await page.getByLabel('Frame name', { exact: true }).fill('Checkout');
