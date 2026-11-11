@@ -5,7 +5,12 @@ import {
     componentScreenView,
     type ScreenViewContainer
 } from './screenViewEditing';
-import { screenOwners, screenSourceShapes, screenViewName } from './screenViews';
+import {
+    isScreenSourceShape,
+    screenOwners,
+    screenSourceShapes,
+    screenViewName
+} from './screenViews';
 import { groupFrame, withTheirGroups } from './membership';
 import type { ScreenProjection } from './screenProjection';
 import { hasSizingRules } from './stackSizing';
@@ -297,9 +302,16 @@ export const useScreenSourceShapes = () =>
 export const useScreenSourceGroup = (groupId: string) =>
     useAppState((state) => {
         const document = state.currentDocument;
-        const ids = screenSourceShapes(document);
+        const group = document.groups[groupId];
 
-        return document.groups[groupId]?.shapesIds.some((id) => ids.has(id));
+        if (!group) {
+            return undefined;
+        }
+        // Only the group's own shapes: going through every shape made each
+        // selected or hovered group cost as much as the whole document.
+        const owners = screenOwners(document.frames);
+
+        return group.shapesIds.some((id) => isScreenSourceShape(document, owners, id));
     });
 
 /**
@@ -315,8 +327,10 @@ export function canvasComponentFrame(document: Document, componentId: string) {
         return { frame: null, split: false };
     }
 
-    const source = screenSourceShapes(document);
-    const canvasIds = component.shapesIds.filter((id) => !source.has(id));
+    const owners = screenOwners(document.frames);
+    const canvasIds = component.shapesIds.filter(
+        (id) => !isScreenSourceShape(document, owners, id)
+    );
 
     if (canvasIds.length === component.shapesIds.length) {
         return { frame, split: false };
