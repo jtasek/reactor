@@ -170,7 +170,7 @@ test('keeps the last valid preview when an image is lost, then recovers on retry
     await expect(iframe.locator('svg image')).toHaveCount(2);
     const explorer = page.getByRole('region', { name: 'Explorer', exact: true });
     const home = explorer.getByRole('button', { name: 'Home', exact: true });
-    const menu = explorer.getByRole('toolbar', { name: 'Home menu', exact: true });
+    const menu = explorer.getByRole('button', { name: 'Home', exact: true }).locator('..');
     await home.hover();
     await menu.getByRole('button', { name: 'Hide', exact: true }).click();
     await expect(iframe.getByLabel('Preview screen')).toHaveValue('details');
@@ -263,7 +263,7 @@ test('sends each image to the preview once, not with every update', async ({ pag
     expect(await counts()).toEqual([1]);
     const explorer = page.getByRole('region', { name: 'Explorer', exact: true });
     const details = explorer.getByRole('button', { name: 'Details', exact: true });
-    const menu = explorer.getByRole('toolbar', { name: 'Details menu', exact: true });
+    const menu = explorer.getByRole('button', { name: 'Details', exact: true }).locator('..');
     await details.hover();
     await menu.getByRole('button', { name: 'Hide', exact: true }).click();
     await expect.poll(counts).toEqual([1, 0]);

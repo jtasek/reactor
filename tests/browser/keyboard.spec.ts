@@ -16,13 +16,13 @@ test('tools, list items and their toggles are buttons that work from the keyboar
     await drawRect(page, { x: 400, y: 300 }, { x: 480, y: 360 });
     await expect(shapes(page)).toHaveCount(1);
 
-    const menu = page.getByRole('toolbar', { name: 'rectangle-1 menu' });
     const shape = page.getByRole('button', { name: 'rectangle-1', exact: true });
+    const item = shape.locator('xpath=ancestor::li[1]');
 
+    // Space on an Explorer row hides it; its Show button then stays in the row.
     await shape.focus();
-    await menu.getByRole('button', { name: 'Hide', exact: true }).focus();
     await page.keyboard.press('Space');
-    await expect(menu.getByRole('button', { name: 'Show', exact: true })).toBeVisible();
+    await expect(item.getByRole('button', { name: 'Show', exact: true })).toBeVisible();
 
     await shape.focus();
     await expect(shape).toBeFocused();

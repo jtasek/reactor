@@ -173,19 +173,20 @@ test('moving a group also moves its hidden member', async ({ page }) => {
     await menu.getByRole('menuitem', { name: 'Target' }).click();
 
     const explorer = page.getByRole('region', { name: 'Explorer' });
-    await explorer.getByRole('button', { name: 'Layers', exact: true }).click();
-    const targetLayer = explorer
-        .getByRole('button', { name: 'Target', exact: true })
-        .locator('xpath=ancestor::li[1]');
-    await expect(targetLayer.getByRole('button', { name: 'Pair', exact: true })).toBeVisible();
-    await expect(targetLayer.getByRole('button', { name: 'Hidden', exact: true })).toBeVisible();
+    await explorer.getByRole('button', { name: 'Filter', exact: true }).click();
+    await page.getByRole('menuitemradio', { name: 'Target' }).click();
+    const pair = explorer.getByRole('button', { name: 'Pair', exact: true });
+    await expect(pair).toBeVisible();
+    await expect(
+        pair.locator('xpath=ancestor::li[1]').getByRole('button', { name: 'Hidden', exact: true })
+    ).toBeVisible();
 });
 
 test('a component instance can be renamed from its context menu header', async ({ page }) => {
     await openEditor(page, ['Explorer']);
     await drawRect(page, { x: 600, y: 100 }, { x: 640, y: 140 });
     const explorer = page.getByRole('region', { name: 'Explorer' });
-    await explorer.getByRole('button', { name: 'Create component', exact: true }).click();
+    await page.keyboard.press('ControlOrMeta+Alt+c');
 
     const surface = (await page.locator('svg#surface').boundingBox())!;
     const menu = page.locator('[data-cy="context-menu"]');

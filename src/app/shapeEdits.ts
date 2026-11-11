@@ -157,7 +157,12 @@ export const drawShape: ActionWithParam<ShapeInput> = ({ state, actions }, optio
 
     const componentId = state.enteredComponentId;
     const component = componentId && document.components[componentId];
-    const layerId = document.selectedLayersIds[0];
+    // A layer shown alone takes what is drawn, as anything off it would not show.
+    const layerId =
+        document.selectedLayersIds[0] ??
+        (document.shownLayerId && document.layers[document.shownLayerId]
+            ? document.shownLayerId
+            : undefined);
     const layer = !component && layerId ? document.layers[layerId] : undefined;
 
     if (frameState(document, options.parentFrameId)?.lockedBy !== undefined) {

@@ -42,8 +42,9 @@ test('chooses separate artwork, previews the same destination and retains choice
     await expect(mobile.locator('[data-cy="Default body"]')).toHaveAttribute('width', '220');
     await expect(mobile.locator('[data-cy="Compact body"]')).toHaveCount(0);
     const explorer = page.getByRole('region', { name: 'Explorer' });
+    // Each screen is listed once, with the layout of its shown view.
     await expect(explorer.getByRole('button', { name: 'Default body', exact: true })).toHaveCount(
-        2
+        1
     );
     await expect(explorer.getByRole('button', { name: 'Compact body', exact: true })).toHaveCount(
         0

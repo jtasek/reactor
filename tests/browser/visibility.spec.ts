@@ -2,7 +2,12 @@ import { expect, test, type Page } from '@playwright/test';
 import { SCHEMA_VERSION, type PersistedState } from 'src/app/services/documentStorage';
 import { drawRect, handles, openEditor, pointer, shapes } from './support/editor';
 
-const itemMenu = (page: Page, name: string) => page.getByRole('toolbar', { name: `${name} menu` });
+/** An Explorer row, whose hide and lock buttons show on hover. */
+const itemMenu = (page: Page, name: string) =>
+    page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name, exact: true })
+        .locator('..');
 
 /** A saved document with one rectangle at (100, 100) inside a visible layer. */
 function layeredDocument(): PersistedState {
@@ -71,19 +76,17 @@ test('hiding a layer hides its shapes on the canvas and from presses', async ({ 
         JSON.stringify(layeredDocument())
     );
     await openEditor(page, ['Explorer']);
-    await page
-        .getByRole('region', { name: 'Explorer' })
-        .getByRole('button', { name: 'Layers', exact: true })
-        .click();
     await expect(shapes(page)).toHaveCount(1);
 
-    const layer = itemMenu(page, 'Layer');
-
+    // Layers are hidden and shown in Manage layers, from the Explorer's filter menu.
     await page
         .getByRole('region', { name: 'Explorer' })
-        .getByRole('button', { name: 'Layer', exact: true })
-        .hover();
-    await layer.getByRole('button', { name: 'Hide', exact: true }).click();
+        .getByRole('button', { name: 'Filter', exact: true })
+        .click();
+    await page.getByRole('menuitem', { name: 'Manage layers…' }).click();
+    const layer = page.getByRole('dialog', { name: 'Layers' });
+
+    await layer.getByRole('button', { name: 'Hide Layer', exact: true }).click();
 
     await expect(shapes(page)).toHaveCount(0);
 
@@ -92,11 +95,7 @@ test('hiding a layer hides its shapes on the canvas and from presses', async ({ 
     await pointer(page, 'pointermove', { x: 160, y: 160 });
     await pointer(page, 'pointerup', { x: 160, y: 160 });
 
-    await page
-        .getByRole('region', { name: 'Explorer' })
-        .getByRole('button', { name: 'Layer', exact: true })
-        .hover();
-    await layer.getByRole('button', { name: 'Show', exact: true }).click();
+    await layer.getByRole('button', { name: 'Show Layer', exact: true }).click();
 
     await expect(shapes(page)).toHaveCount(1);
     await expect(shapes(page).locator('rect[data-cy]')).toHaveAttribute('x', '100');

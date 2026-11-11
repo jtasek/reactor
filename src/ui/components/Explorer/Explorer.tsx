@@ -1,36 +1,53 @@
 import { isScreenLayout, viewLayoutRoot } from 'src/app/screenLayouts';
 import { screenOwners } from 'src/app/screenViews';
-import React, { FC, MouseEvent, Ref, memo, useCallback, useMemo, useRef, useState } from 'react';
-import { AppWindow, Frame as FrameIcon, CircleHelp, Star, Trash2 } from 'lucide-react';
+import React, {
+    FC,
+    KeyboardEvent,
+    MouseEvent,
+    Ref,
+    memo,
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState
+} from 'react';
+import { AppWindow, Frame as FrameIcon, ListFilter, Lock, X } from 'lucide-react';
 import styles from './styles.css';
-import { CollapsedItems, Dragged, ExplorerItem } from './ExplorerItem';
+import { OpenItems, Dragged, ExplorerItem, acceptsDragged, readDragged } from './ExplorerItem';
+import { ExplorerMenu, type ExplorerMenuItem } from './ExplorerMenu';
+import { LayerManager } from './LayerManager';
 import { SearchBoxContainer } from '../SearchBox';
-import { hideAction, lockAction, toggleAction, useItemCommandActions } from '../ItemMenu';
+import { hideAction, lockAction, useItemCommandActions, type ItemMenuAction } from '../ItemMenu';
 import { Icon } from '../Icon';
 import { ObjectTypeSymbol } from '../ObjectTypeSymbol';
 import { SourceItem } from './SourceItem';
 import { byDrawingOrder } from 'src/app/drawOrder';
-import type { CommandScope } from 'src/app/types';
-import type { explorerTree } from 'src/app/explorerTree';
+import {
+    explorerKeep,
+    explorerKey,
+    explorerRevealKeys,
+    type ExplorerStatusFilter
+} from 'src/app/explorerTree';
 import { isShapeLocked } from 'src/app/utils';
+import { NewLayerCommand } from 'src/commands';
 import {
     useExplorerTree,
-    useExplorerLayers,
-    useExplorerView,
     useFrameRows,
     useSelectedFrameId,
     useShapesFrameState
 } from 'src/app/frameHooks';
 import {
     useActions,
+    useAppState,
+    useCommandEnabled,
     useComponents,
-    useCommandsEnabled,
     useControls,
     useCurrentDocument,
     useDocumentFilter,
     useGroup,
     useGroupSelected,
-    useLayer,
     useShape,
     useShapeLocked,
     useShapesIds,
@@ -39,46 +56,35 @@ import {
 } from 'src/app/hooks';
 import { useSourceSelected, useEditingComponentForShape } from 'src/app/componentHooks';
 
-const RootItem: FC<{
-    scope?: Extract<CommandScope, 'layers' | 'components'>;
-    name: string;
-    icon?: React.ReactNode;
-    selected?: boolean;
-    onClick?: () => void;
-    onDrop?: (dragged: Dragged) => void;
-    children: React.ReactNode;
-}> = ({ scope, name, icon, selected, onClick, onDrop, children }) => {
-    const commands = useScopedCommands(scope ?? null);
-    const enabled = useCommandsEnabled(commands);
-    const { runCommand } = useActions();
-
-    return (
-        <ExplorerItem
-            kind="root"
-            name={name}
-            icon={icon}
-            selected={selected}
-            onClick={onClick}
-            onDrop={onDrop}
-            collapseId={`root:${name}`}
-            rootButtons={commands.map((command, index) => (
-                <button
-                    key={command.id}
-                    type="button"
-                    className={styles.rootAction}
-                    data-scope={scope}
-                    title={command.description ?? command.name}
-                    aria-label={command.name}
-                    disabled={!enabled[index]}
-                    onClick={() => runCommand(command)}
-                >
-                    <Icon icon={{ component: CircleHelp, ...command.icon, size: 16 }} />
-                </button>
-            ))}
-        >
-            {children}
-        </ExplorerItem>
+/** "Move to layer" choices for a row's context menu, while the document has layers. */
+const useMoveToLayerItems = (shapeIds: string[], disabled: boolean): ExplorerMenuItem[] => {
+    const layers = useAppState((state) =>
+        state.currentDocument.layersIds.map((id) => ({
+            id,
+            name: state.currentDocument.layers[id]?.name ?? id
+        }))
     );
+    const { moveShapesToLayer } = useActions();
+
+    if (layers.length === 0) {
+        return [];
+    }
+
+    return [
+        { heading: 'Move to layer' },
+        ...layers.map((layer) => ({
+            id: `layer:${layer.id}`,
+            label: layer.name,
+            disabled,
+            onRun: () => moveShapesToLayer({ shapeIds, layerId: layer.id })
+        })),
+        {
+            id: 'layer:none',
+            label: 'No layer',
+            disabled,
+            onRun: () => moveShapesToLayer({ shapeIds, layerId: null })
+        }
+    ];
 };
 
 /** A shape's row; memoized so a list rendering again does not render every row. */
@@ -94,6 +100,7 @@ const ShapeItem = memo<{
     const inherited = useShapesFrameState([shapeId]);
     const sourceSelected = useSourceSelected(sourceId ?? null);
     const focusedId = useEditingComponentForShape(shapeId);
+    const documentLocked = useAppState((state) => state.currentDocument.locked);
     const {
         selectShape,
         unselectShapes,
@@ -101,12 +108,12 @@ const ShapeItem = memo<{
         toggleShapeLocked,
         toggleShapeVisible,
         selectComponentChild,
+        setShapesProperty,
         events
     } = useActions();
-    const commands = useItemCommandActions(
-        [shapeId],
-        useShapeLocked(shapeId) || !shape.visible || inherited.hidden
-    );
+    const locked = useShapeLocked(shapeId);
+    const commands = useItemCommandActions([shapeId], locked || !shape.visible || inherited.hidden);
+    const layerItems = useMoveToLayerItems([shapeId], locked);
 
     const handleSelect = ({ shiftKey }: MouseEvent<HTMLButtonElement>) => {
         // A child of the component being edited keeps the view it is being edited in.
@@ -140,6 +147,11 @@ const ShapeItem = memo<{
             active={shape.active}
             visible={shape.visible && !inherited.hidden}
             onClick={handleSelect}
+            onRename={
+                documentLocked || inherited.locked
+                    ? undefined
+                    : (name) => setShapesProperty({ shapeIds: [shapeId], key: 'name', value: name })
+            }
             rowRef={rowRef}
             place={position && setSize ? [position, setSize] : undefined}
             menuActions={[
@@ -153,6 +165,7 @@ const ShapeItem = memo<{
                 },
                 ...commands(useScopedCommands('shape'))
             ]}
+            menuItems={sourceId ? undefined : layerItems}
         />
     );
 });
@@ -244,24 +257,26 @@ const LazyShapeItem = memo<{
 const GroupItem: FC<{
     groupId: string;
     shapesIds: string[];
-    contextId: string;
     viewId?: string;
-}> = ({ groupId, shapesIds, contextId, viewId }) => {
+}> = ({ groupId, shapesIds, viewId }) => {
     const group = useGroup(groupId);
     const inherited = useShapesFrameState(group.shapesIds);
     const selected = useGroupSelected(groupId);
+    const documentLocked = useAppState((state) => state.currentDocument.locked);
     const {
         addShapesToGroup,
         unselectShapes,
         toggleGroupSelected,
         toggleGroupLocked,
         toggleGroupVisible,
+        updateGroup,
         events
     } = useActions();
     const commands = useItemCommandActions(
         group.shapesIds,
         group.locked || inherited.locked || inherited.hidden
     );
+    const layerItems = useMoveToLayerItems(group.shapesIds, group.locked || inherited.locked);
 
     const handleSelect = ({ shiftKey }: MouseEvent<HTMLButtonElement>) => {
         events.setScreenView(viewId ?? null);
@@ -278,10 +293,15 @@ const GroupItem: FC<{
             name={group.name}
             icon={<ObjectTypeSymbol type="group" />}
             dragged={{ kind: 'group', id: groupId }}
-            collapseId={`${contextId}:group:${groupId}`}
+            collapseId={explorerKey('group', groupId)}
             selected={selected}
             visible={group.visible && !inherited.hidden}
             onClick={handleSelect}
+            onRename={
+                group.locked || inherited.locked || documentLocked
+                    ? undefined
+                    : (name) => updateGroup({ id: groupId, name })
+            }
             menuActions={[
                 {
                     ...hideAction(!group.visible, () => toggleGroupVisible(groupId)),
@@ -293,6 +313,7 @@ const GroupItem: FC<{
                 },
                 ...commands(useScopedCommands('group'))
             ]}
+            menuItems={layerItems}
             onDrop={({ kind, id }) => {
                 // Only shapes join a group; a group dropped on a group stays as it is.
                 if (kind === 'shape') {
@@ -307,18 +328,12 @@ const GroupItem: FC<{
     );
 };
 
-interface LayerProps {
-    layerId: string | null;
+interface Contents {
     groups: { groupId: string; shapesIds: string[] }[];
     shapesIds: string[];
-    contextId: string;
-    /** The shapes a dragged shape or group stands for. */
-    shapesOf: (dragged: Dragged) => string[];
 }
 
-const ObjectContents: FC<
-    Pick<LayerProps, 'groups' | 'shapesIds' | 'contextId'> & { viewId?: string }
-> = ({ groups, shapesIds, contextId, viewId }) => {
+const ObjectContents: FC<Contents & { viewId?: string }> = ({ groups, shapesIds, viewId }) => {
     const drawOrder = new Map(useShapesIds().map((id, index) => [id, index]));
     const items = [
         ...groups.map((group) => ({
@@ -345,7 +360,6 @@ const ObjectContents: FC<
                         key={item.id}
                         groupId={item.id}
                         shapesIds={item.shapesIds}
-                        contextId={contextId}
                         viewId={viewId}
                     />
                 ) : lazy ? (
@@ -364,81 +378,244 @@ const ObjectContents: FC<
     );
 };
 
-const LayerItem: FC<LayerProps & { layerId: string }> = ({
-    layerId,
-    groups,
-    shapesIds,
-    contextId,
-    shapesOf
-}) => {
-    const layer = useLayer(layerId);
-    const documentLocked = useCurrentDocument().locked;
-    const shown = useShownLayerId() === layerId;
-    const {
-        moveShapesToLayer,
-        removeLayer,
-        showOnlyLayer,
-        selectExplorerLayer,
-        toggleLayerLocked,
-        toggleLayerVisible
-    } = useActions();
-    const commands = useItemCommandActions(layer.shapesIds, layer.locked);
+const noContents: Contents = { groups: [], shapesIds: [] };
+const hasContents = (contents: Contents | undefined) =>
+    contents !== undefined && contents.groups.length + contents.shapesIds.length > 0;
+
+const OPEN_KEY = 'reactor:explorer-open:';
+
+/** Which rows someone opened or closed, kept per document on this device. */
+function useOpenRows(documentId: string) {
+    const read = (id: string): Record<string, boolean> => {
+        try {
+            const value = JSON.parse(localStorage.getItem(OPEN_KEY + id) ?? '{}');
+
+            return value && typeof value === 'object' ? value : {};
+        } catch {
+            return {};
+        }
+    };
+    const [rows, setRows] = useState(() => ({ documentId, open: read(documentId) }));
+    const current = rows.documentId === documentId ? rows.open : read(documentId);
+
+    if (rows.documentId !== documentId) {
+        setRows({ documentId, open: current });
+    }
+
+    return useMemo(
+        () => ({
+            isOpen: (key: string, fallback: boolean) => current[key] ?? fallback,
+            setOpen: (entries: Record<string, boolean>) => {
+                const changed = Object.entries(entries).some(
+                    ([key, open]) => current[key] !== open
+                );
+
+                if (!changed) {
+                    return;
+                }
+                const open = { ...current, ...entries };
+
+                setRows({ documentId, open });
+                try {
+                    localStorage.setItem(OPEN_KEY + documentId, JSON.stringify(open));
+                } catch {
+                    // The rows still open and close; they just start as they were next time.
+                }
+            }
+        }),
+        [current, documentId]
+    );
+}
+
+/** Moves the keyboard through the outline's rows, across its sections, as in a Finder sidebar. */
+function handleOutlineKeys(event: KeyboardEvent<HTMLElement>) {
+    const target = event.target as HTMLElement;
+    const outline = event.currentTarget.closest('[data-explorer-outline]');
+
+    if (!target.matches('[data-explorer-row]') || !outline) {
+        return;
+    }
+
+    const rows = [...outline.querySelectorAll<HTMLElement>('[data-explorer-row]')];
+    const at = rows.indexOf(target);
+    const item = target.closest<HTMLElement>('[role="treeitem"]');
+    const go = (row: HTMLElement | null | undefined) => {
+        if (row) {
+            event.preventDefault();
+            row.focus();
+            row.scrollIntoView?.({ block: 'nearest' });
+            // Moving the focus selects, as in Finder.
+            row.click();
+        }
+    };
+    const toggle = () =>
+        item?.querySelector<HTMLButtonElement>(':scope > div > button[data-open]')?.click();
+
+    switch (event.key) {
+        case 'ArrowDown':
+            go(rows[at + 1]);
+            break;
+        case 'ArrowUp':
+            go(rows[at - 1]);
+            break;
+        case 'Home':
+            go(rows[0]);
+            break;
+        case 'End':
+            go(rows.at(-1));
+            break;
+        case 'ArrowRight':
+            if (item?.getAttribute('aria-expanded') === 'false') {
+                event.preventDefault();
+                toggle();
+            } else if (item?.getAttribute('aria-expanded') === 'true') {
+                go(item.querySelector<HTMLElement>(':scope > ul [data-explorer-row]'));
+            }
+            break;
+        case 'ArrowLeft':
+            if (item?.getAttribute('aria-expanded') === 'true') {
+                event.preventDefault();
+                toggle();
+            } else {
+                go(
+                    item?.parentElement
+                        ?.closest<HTMLElement>('[role="treeitem"]')
+                        ?.querySelector<HTMLElement>(':scope > div [data-explorer-row]')
+                );
+            }
+            break;
+    }
+}
+
+/** A titled part of the outline: Screens, Canvas or Components. */
+const Section: FC<{
+    title: string;
+    onDrop?: (dragged: Dragged) => void;
+    children: React.ReactNode;
+}> = ({ title, onDrop, children }) => {
+    const [dropTarget, setDropTarget] = useState(false);
+    const id = `explorer-section-${title.toLowerCase()}`;
 
     return (
-        <ExplorerItem
-            kind="layer"
-            name={layer.name}
-            icon={<ObjectTypeSymbol type="layer" />}
-            collapseId={
-                groups.length + shapesIds.length > 0 ? `${contextId}:layer:${layerId}` : undefined
-            }
-            shown={shown}
-            selected={layer.selected}
-            visible={layer.visible}
-            onClick={() => selectExplorerLayer(layerId)}
-            menuActions={[
-                toggleAction(
-                    'highlight',
-                    shown,
-                    {
-                        on: { label: 'Show all layers', component: Star, fill: 'currentColor' },
-                        off: { label: 'Highlight layer', component: Star }
-                    },
-                    () => showOnlyLayer(layerId)
-                ),
-                hideAction(!layer.visible, () => toggleLayerVisible(layerId)),
-                lockAction(layer.locked, () => toggleLayerLocked(layerId)),
-                {
-                    id: 'delete-layer',
-                    label: 'Delete layer',
-                    icon: { component: Trash2, size: 16 },
-                    disabled: layer.locked || documentLocked,
-                    onRun: () => removeLayer(layerId)
-                },
-                ...commands(useScopedCommands('layer'))
-            ]}
-            onDrop={(dragged) => moveShapesToLayer({ shapeIds: shapesOf(dragged), layerId })}
-        >
-            <ObjectContents groups={groups} shapesIds={shapesIds} contextId={contextId} />
-        </ExplorerItem>
+        <section className={styles.section} aria-labelledby={id}>
+            <h3
+                id={id}
+                className={[styles.sectionTitle, dropTarget && styles.dropTarget]
+                    .filter(Boolean)
+                    .join(' ')}
+                onDragOver={(event) => {
+                    if (onDrop && acceptsDragged(event)) {
+                        event.preventDefault();
+                        setDropTarget(true);
+                    }
+                }}
+                onDragLeave={() => setDropTarget(false)}
+                onDrop={(event) => {
+                    const dropped = onDrop && acceptsDragged(event) ? readDragged(event) : null;
+
+                    setDropTarget(false);
+                    if (dropped) {
+                        event.preventDefault();
+                        onDrop?.(dropped);
+                    }
+                }}
+            >
+                {title}
+            </h3>
+            <ul role="tree" aria-labelledby={id} onKeyDown={handleOutlineKeys}>
+                {children}
+            </ul>
+        </section>
     );
 };
 
-const noObjects: ReturnType<typeof explorerTree> = {
-    canvas: { groups: [], shapesIds: [] },
-    frames: []
-};
-
 export const Explorer: FC = () => {
+    const [status, setStatus] = useState<ExplorerStatusFilter>('all');
+    const [filterMenu, setFilterMenu] = useState<{ x: number; y: number } | null>(null);
+    const [managingLayers, setManagingLayers] = useState(false);
+    const [chosenViews, setChosenViews] = useState<Record<string, string>>({});
+    const outline = useRef<HTMLDivElement>(null);
     const frames = useFrameRows();
     const selectedFrameId = useSelectedFrameId();
-    const { editFrame, setExplorerView } = useActions();
-    const view = useExplorerView();
-    const tree = useExplorerTree(view === 'objects') ?? noObjects;
-    const layers = useExplorerLayers(view === 'layers') ?? [];
+    const actions = useActions();
+    const { editFrame, events, selectExplorerLayer, showOnlyLayer, showAllLayers, runCommand } =
+        actions;
+    const tree = useExplorerTree(status);
     const document = useCurrentDocument();
     const components = useComponents() ?? {};
     const filter = useDocumentFilter().trim().toLowerCase();
+    const shownLayerId = useShownLayerId();
+    const canAddLayer = useCommandEnabled(NewLayerCommand);
+    const editedViewId = useAppState((state) => state.events.pointer.screenView?.viewId);
+    const revealKeys = useAppState((state) => explorerRevealKeys(state.currentDocument).join(' '));
+    const selection = useAppState(({ currentDocument }) =>
+        [
+            currentDocument.selectedFrameId ?? '',
+            ...currentDocument.selectedGroupsIds,
+            ...currentDocument.selectedShapesIds
+        ].join(' ')
+    );
+    const filterButton = useRef<HTMLButtonElement>(null);
+    const openRows = useOpenRows(document.id);
+    const { explorer } = useControls();
+    const drawOrder = new Map(useShapesIds().map((id, index) => [id, index]));
+
+    useEffect(() => {
+        if (revealKeys) {
+            openRows.setOpen(Object.fromEntries(revealKeys.split(' ').map((key) => [key, true])));
+        }
+        // Each new selection reveals its rows; closing one afterwards keeps it closed.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [revealKeys, selection]);
+
+    // A component someone just made opens, so its parts show where they went.
+    const componentIds = Object.keys(components).join(' ');
+    const knownComponents = useRef({ documentId: document.id, ids: componentIds });
+
+    useEffect(() => {
+        const known = knownComponents.current;
+        const added =
+            known.documentId === document.id
+                ? componentIds.split(' ').filter((id) => id && !known.ids.split(' ').includes(id))
+                : [];
+
+        knownComponents.current = { documentId: document.id, ids: componentIds };
+        if (added.length > 0) {
+            openRows.setOpen(
+                Object.fromEntries(added.map((id) => [explorerKey('component', id), true]))
+            );
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [componentIds, document.id]);
+
+    useEffect(() => {
+        const frame = requestAnimationFrame(() =>
+            outline.current
+                ?.querySelector('[aria-selected="true"]')
+                ?.scrollIntoView?.({ block: 'nearest' })
+        );
+
+        return () => cancelAnimationFrame(frame);
+    }, [revealKeys, selection]);
+
+    // One tab stop for the outline: the row with the focus, or else the selected or first one.
+    useLayoutEffect(() => {
+        const rows = [
+            ...(outline.current?.querySelectorAll<HTMLElement>('[data-explorer-row]') ?? [])
+        ];
+        const focused = rows.find((row) => row === window.document.activeElement);
+        const target =
+            focused ?? rows.find((row) => row.getAttribute('aria-pressed') === 'true') ?? rows[0];
+
+        rows.forEach((row) => (row.tabIndex = row === target ? 0 : -1));
+    });
+
+    if (!explorer.visible) {
+        return null;
+    }
+
+    const keep = explorerKeep(document, shownLayerId, status);
+    const narrowed = filter !== '' || Boolean(keep.shape || keep.frame);
     const frameContents = new Map(tree.frames.map((frame) => [frame.id, frame]));
     const shownFrames = frames.flatMap((frame) => {
         const contents = frameContents.get(frame.id);
@@ -446,154 +623,10 @@ export const Explorer: FC = () => {
         return contents ? [{ ...frame, ...contents }] : [];
     });
     const owners = screenOwners(document.frames);
-    // Only root screens are definitions; nested screens stay in their parent's branch.
-    const screens = frames
-        .filter((frame) => owners.get(frame.id) === frame.id)
-        .map((screen) => ({
-            ...screen,
-            viewCount: frames.filter((view) => view.kind === 'view' && view.screenId === screen.id)
-                .length
-        }));
-    const contentRoot = (frame: (typeof shownFrames)[number]) =>
-        frame.kind === 'view' ? viewLayoutRoot(document, document.frames[frame.id])?.id : frame.id;
-    const frameItem = (frame: (typeof shownFrames)[number], branchId?: string): React.ReactNode => (
-        <ExplorerItem
-            key={`frame:${frame.id}`}
-            kind="frame"
-            name={frame.name}
-            badge={
-                frame.kind === 'view'
-                    ? 'Screen view'
-                    : frame.kind === 'screen'
-                      ? 'Screen'
-                      : undefined
-            }
-            secondary={
-                frame.kind === 'view'
-                    ? `${document.frames[frame.screenId ?? '']?.name ?? 'Missing screen'} · ${frame.size.width} × ${frame.size.height}`
-                    : undefined
-            }
-            icon={
-                <Icon
-                    icon={{
-                        component:
-                            frame.kind === 'screen' || frame.kind === 'view'
-                                ? AppWindow
-                                : FrameIcon,
-                        size: 16
-                    }}
-                />
-            }
-            selected={selectedFrameId === frame.id}
-            visible={frame.shown}
-            collapseId={`frame:${branchId ?? frame.id}:${frame.id}`}
-            onClick={() => editFrame({ kind: 'select', id: frame.id })}
-            onDrop={
-                frame.locked || frame.inheritedLock
-                    ? undefined
-                    : (dragged) =>
-                          moveIntoFrame(
-                              dragged,
-                              frame.kind === 'view' ? (contentRoot(frame) ?? frame.id) : frame.id
-                          )
-            }
-            menuActions={[
-                {
-                    ...hideAction(!frame.visible, () =>
-                        editFrame({ kind: 'toggle', id: frame.id, flag: 'visible' })
-                    ),
-                    disabled: frame.inheritedLock
-                },
-                {
-                    ...lockAction(frame.locked, () =>
-                        editFrame({ kind: 'toggle', id: frame.id, flag: 'locked' })
-                    ),
-                    disabled: frame.inheritedLock
-                }
-            ]}
-        >
-            {shownFrames
-                .filter(
-                    (child) =>
-                        owners.get(child.id) !== child.id &&
-                        child.parentFrameId === contentRoot(frame) &&
-                        (frame.kind !== 'view' || !isScreenLayout(document.frames, child.id))
-                )
-                .map((child) => frameItem(child, branchId ?? frame.id))}
-            <ObjectContents
-                {...(frame.kind === 'view'
-                    ? (frameContents.get(contentRoot(frame) ?? '')?.contents ?? {
-                          groups: [],
-                          shapesIds: []
-                      })
-                    : frame.contents)}
-                contextId={`frame:${branchId ?? frame.id}:${frame.id}`}
-                viewId={
-                    frame.kind === 'view'
-                        ? frame.id
-                        : document.frames[branchId ?? '']?.kind === 'view'
-                          ? branchId
-                          : undefined
-                }
-            />
-        </ExplorerItem>
+    const views = frames.filter(
+        (frame) => frame.kind === 'view' && frame.screenId && document.frames[frame.screenId]
     );
-    const drawOrder = new Map(useShapesIds().map((id, index) => [id, index]));
-    const scene = tree.canvas;
-    const hasCanvasObjects = scene.groups.length + scene.shapesIds.length > 0;
-    const sources = Object.values(components).flatMap((component) => {
-        const member = (id: string) => component.sourceShapes?.[id] ?? document.shapes[id];
-        const members = component.shapesIds.filter((id) => member(id));
-
-        members.sort((a, b) => {
-            if (!component.library) {
-                return (drawOrder.get(b) ?? -1) - (drawOrder.get(a) ?? -1);
-            }
-            const first = member(a);
-            const second = member(b);
-
-            return first && second ? byDrawingOrder(second, first) : 0;
-        });
-        const matching = members.filter((id) => member(id)?.name.toLowerCase().includes(filter));
-
-        if (filter && !component.name.toLowerCase().includes(filter) && matching.length === 0) {
-            return [];
-        }
-
-        return [
-            {
-                component,
-                shapesIds:
-                    !filter || component.name.toLowerCase().includes(filter) ? members : matching
-            }
-        ];
-    });
-    const shownLayerId = useShownLayerId();
-    const { explorer } = useControls();
-    const { moveShapesToLayer, selectExplorerLayer, showAllLayers } = useActions();
-    const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
-    // Kept while nothing is collapsed or expanded, so every row does not render
-    // again whenever the explorer does.
-    const collapsedItems = useMemo(
-        () => ({
-            collapsed,
-            toggle: (collapseId: string) => {
-                const next = new Set(collapsed);
-
-                if (!next.delete(collapseId)) {
-                    next.add(collapseId);
-                }
-                setCollapsed(next);
-            }
-        }),
-        [collapsed]
-    );
-    const handleCanvasSelect = () => selectExplorerLayer(null);
-
-    if (!explorer.visible) {
-        return null;
-    }
-
+    const screens = frames.filter((frame) => owners.get(frame.id) === frame.id);
     const shapesOf = ({ kind, id }: Dragged) =>
         kind === 'shape' ? [id] : (document.groups[id]?.shapesIds ?? []);
     // Same as the Parent picker: a group moves whole, positions stay where they are.
@@ -608,216 +641,456 @@ export const Explorer: FC = () => {
             editFrame({ kind: 'reparentShapes', ids, parentFrameId });
         }
     };
+    const frameActions = (frame: (typeof frames)[number]) => [
+        {
+            ...hideAction(!frame.visible, () =>
+                editFrame({ kind: 'toggle', id: frame.id, flag: 'visible' })
+            ),
+            disabled: frame.inheritedLock
+        },
+        {
+            ...lockAction(frame.locked, () =>
+                editFrame({ kind: 'toggle', id: frame.id, flag: 'locked' })
+            ),
+            disabled: frame.inheritedLock
+        }
+    ];
+    const renameFrame = (frame: (typeof frames)[number]) =>
+        document.locked || frame.locked || frame.inheritedLock
+            ? undefined
+            : (name: string) => editFrame({ kind: 'update', id: frame.id, changes: { name } });
+    /** Frames drawn inside `rootId`, apart from root screens and other screen layouts. */
+    const childFrames = (rootId: string) =>
+        shownFrames.filter(
+            (child) =>
+                owners.get(child.id) !== child.id &&
+                child.parentFrameId === rootId &&
+                !isScreenLayout(document.frames, child.id)
+        );
+    const frameItem = (frame: (typeof shownFrames)[number], viewId?: string): React.ReactNode => {
+        // A view whose screen is gone shows as a frame, with the artwork it holds.
+        const rootId =
+            frame.kind === 'view'
+                ? (viewLayoutRoot(document, document.frames[frame.id])?.id ?? frame.id)
+                : frame.id;
+
+        const nested = childFrames(rootId);
+        const contents = frameContents.get(rootId)?.contents ?? noContents;
+
+        return (
+            <ExplorerItem
+                key={`frame:${frame.id}`}
+                kind="frame"
+                name={frame.name}
+                icon={
+                    <Icon
+                        icon={{
+                            component:
+                                frame.kind === 'frame' || !frame.kind ? FrameIcon : AppWindow,
+                            size: 16
+                        }}
+                    />
+                }
+                selected={selectedFrameId === frame.id}
+                visible={frame.shown}
+                collapseId={
+                    nested.length > 0 || hasContents(contents)
+                        ? explorerKey('frame', frame.id)
+                        : undefined
+                }
+                onClick={() => editFrame({ kind: 'select', id: frame.id })}
+                onRename={renameFrame(frame)}
+                onDrop={
+                    frame.locked || frame.inheritedLock
+                        ? undefined
+                        : (dragged) => moveIntoFrame(dragged, rootId)
+                }
+                menuActions={frameActions(frame)}
+            >
+                {nested.map((child) => frameItem(child, viewId))}
+                <ObjectContents {...contents} viewId={viewId} />
+            </ExplorerItem>
+        );
+    };
+
+    const screenItem = (screen: (typeof frames)[number]) => {
+        const screenViews = views.filter((view) => view.screenId === screen.id);
+        const shownView =
+            screenViews.find((view) => view.id === editedViewId) ??
+            screenViews.find((view) => view.id === chosenViews[screen.id]) ??
+            screenViews[0];
+        const rootId = shownView
+            ? (viewLayoutRoot(document, document.frames[shownView.id])?.id ?? screen.id)
+            : screen.id;
+        const contents = frameContents.get(rootId)?.contents;
+        const nested = childFrames(rootId);
+        const named = filter !== '' && screen.name.toLowerCase().includes(filter);
+
+        if (
+            narrowed &&
+            !named &&
+            !hasContents(contents) &&
+            nested.length === 0 &&
+            !(keep.frame?.(screen.id) ?? false)
+        ) {
+            return null;
+        }
+
+        const chooseView = (viewId: string) => {
+            setChosenViews({ ...chosenViews, [screen.id]: viewId });
+            events.setScreenView(viewId);
+            editFrame({ kind: 'select', id: viewId });
+        };
+
+        return (
+            <ExplorerItem
+                key={screen.id}
+                kind="screen"
+                name={screen.name}
+                icon={<Icon icon={{ component: AppWindow, size: 16 }} />}
+                chips={
+                    <span className={styles.chips}>
+                        {screenViews.length === 0 ? (
+                            <span className={`${styles.chip} ${styles.muted}`}>Not placed</span>
+                        ) : (
+                            screenViews.map((view) => (
+                                <ViewChip
+                                    key={view.id}
+                                    view={view}
+                                    screenName={screen.name}
+                                    label={document.frames[view.id]?.name ?? view.name}
+                                    current={screenViews.length > 1 && view.id === shownView?.id}
+                                    selected={selectedFrameId === view.id}
+                                    actions={frameActions(view)}
+                                    onChoose={() => chooseView(view.id)}
+                                />
+                            ))
+                        )}
+                    </span>
+                }
+                selected={selectedFrameId === screen.id}
+                visible={screen.shown}
+                collapseId={
+                    nested.length > 0 || hasContents(contents)
+                        ? explorerKey('screen', screen.id)
+                        : undefined
+                }
+                defaultOpen={narrowed || screenViews.some((view) => view.id === editedViewId)}
+                onClick={() => editFrame({ kind: 'select', id: screen.id })}
+                onRename={renameFrame(screen)}
+                onDrop={
+                    screen.locked || screen.inheritedLock
+                        ? undefined
+                        : (dragged) => moveIntoFrame(dragged, rootId)
+                }
+                menuActions={frameActions(screen)}
+                menuItems={
+                    screenViews.length > 0
+                        ? [
+                              { heading: 'Edit in view' },
+                              ...screenViews.map((view) => ({
+                                  id: `view:${view.id}`,
+                                  label: view.name,
+                                  checked: view.id === shownView?.id,
+                                  onRun: () => chooseView(view.id)
+                              }))
+                          ]
+                        : undefined
+                }
+            >
+                {nested.map((child) => frameItem(child, shownView?.id))}
+                <ObjectContents {...(contents ?? noContents)} viewId={shownView?.id} />
+            </ExplorerItem>
+        );
+    };
+
+    const screenRows = screens.map(screenItem).filter(Boolean);
+    const canvasFrames = shownFrames.filter(
+        (frame) =>
+            frame.parentFrameId === undefined &&
+            !owners.get(frame.id) &&
+            !(frame.kind === 'view' && frame.screenId && document.frames[frame.screenId])
+    );
+    const scene = tree.canvas;
+    const hasCanvasRows = canvasFrames.length > 0 || hasContents(scene);
+    const sources = Object.values(components).flatMap((component) => {
+        const member = (id: string) => component.sourceShapes?.[id] ?? document.shapes[id];
+        const members = component.shapesIds.filter((id) => member(id));
+
+        members.sort((a, b) => {
+            if (!component.library) {
+                return (drawOrder.get(b) ?? -1) - (drawOrder.get(a) ?? -1);
+            }
+            const first = member(a);
+            const second = member(b);
+
+            return first && second ? byDrawingOrder(second, first) : 0;
+        });
+        const kept = keep.shape ? members.filter(keep.shape) : members;
+        const componentNamed = component.name.toLowerCase().includes(filter);
+        const matching = kept.filter((id) => member(id)?.name.toLowerCase().includes(filter));
+
+        if ((keep.shape && kept.length === 0) || (filter && !componentNamed && !matching.length)) {
+            return [];
+        }
+
+        return [{ component, shapesIds: !filter || componentNamed ? kept : matching }];
+    });
+    const layers = document.layersIds.map((id) => document.layers[id]).filter(Boolean);
+    const clearFilter = () => {
+        showAllLayers();
+        setStatus('all');
+    };
+    const filterLabel =
+        [
+            shownLayerId && document.layers[shownLayerId]
+                ? `Layer: ${document.layers[shownLayerId].name}`
+                : null,
+            status === 'hiddenOrLocked' ? 'Hidden and locked' : null
+        ]
+            .filter(Boolean)
+            .join(' · ') || null;
+    const filterItems: ExplorerMenuItem[] = [
+        { heading: 'Show' },
+        {
+            id: 'status:all',
+            label: 'Everything',
+            checked: status === 'all',
+            onRun: () => setStatus('all')
+        },
+        {
+            id: 'status:flagged',
+            label: 'Hidden and locked only',
+            checked: status === 'hiddenOrLocked',
+            onRun: () => setStatus('hiddenOrLocked')
+        },
+        ...(layers.length > 0
+            ? [
+                  'separator' as const,
+                  { heading: 'Layer' },
+                  ...layers.map((layer) => ({
+                      id: `layer:${layer.id}`,
+                      label: layer.name,
+                      checked: shownLayerId === layer.id,
+                      // Shown alone, the layer also takes what is drawn; choosing it again shows all.
+                      onRun: () => showOnlyLayer(layer.id)
+                  }))
+              ]
+            : []),
+        'separator',
+        {
+            id: 'new-layer',
+            label: 'New layer',
+            disabled: !canAddLayer,
+            onRun: () => runCommand(NewLayerCommand)
+        },
+        { id: 'manage-layers', label: 'Manage layers…', onRun: () => setManagingLayers(true) }
+    ];
+    const empty = screenRows.length === 0 && !hasCanvasRows && sources.length === 0;
 
     return (
-        <CollapsedItems.Provider value={collapsedItems}>
+        <OpenItems.Provider value={openRows}>
             <section className={styles.explorer} aria-label="Explorer">
-                <div className={styles.views} role="group" aria-label="Explorer view">
+                <div className={styles.header}>
+                    <SearchBoxContainer label="Search" />
                     <button
+                        ref={filterButton}
                         type="button"
-                        aria-pressed={view === 'objects'}
-                        onClick={() => setExplorerView('objects')}
+                        className={styles.filterButton}
+                        aria-label="Filter"
+                        title="Filter"
+                        aria-haspopup="menu"
+                        aria-expanded={filterMenu !== null}
+                        data-active={filterLabel !== null}
+                        onClick={(event) => {
+                            const box = event.currentTarget.getBoundingClientRect();
+
+                            setFilterMenu(filterMenu ? null : { x: box.left, y: box.bottom + 4 });
+                        }}
                     >
-                        Objects
-                    </button>
-                    <button
-                        type="button"
-                        aria-pressed={view === 'layers'}
-                        onClick={() => setExplorerView('layers')}
-                    >
-                        Layers
+                        <Icon icon={{ component: ListFilter, size: 16 }} />
                     </button>
                 </div>
-                <SearchBoxContainer
-                    label={view === 'objects' ? 'Search objects' : 'Search layers and objects'}
-                />
-                {shownLayerId && (
-                    <button
-                        type="button"
-                        className={styles.showAll}
-                        onClick={() => showAllLayers()}
-                    >
-                        Show all layers
-                    </button>
+                {filterLabel && (
+                    <div className={styles.filterPill}>
+                        <span
+                            title={
+                                shownLayerId
+                                    ? 'Only this layer shows, and new shapes go onto it'
+                                    : undefined
+                            }
+                        >
+                            {filterLabel}
+                        </span>
+                        <button
+                            type="button"
+                            aria-label="Clear filter"
+                            title="Clear filter"
+                            onClick={clearFilter}
+                        >
+                            <Icon icon={{ component: X, size: 12 }} />
+                        </button>
+                    </div>
                 )}
-                {view === 'layers' ? (
-                    <>
-                        <p className={styles.hint}>
-                            Global layers organize objects across all screens.
+                {filterMenu && (
+                    <ExplorerMenu
+                        label="Filter"
+                        position={filterMenu}
+                        items={filterItems}
+                        anchor={filterButton.current}
+                        onClose={() => setFilterMenu(null)}
+                    />
+                )}
+                {managingLayers && <LayerManager onClose={() => setManagingLayers(false)} />}
+                <div ref={outline} className={styles.outline} data-explorer-outline>
+                    {empty && (
+                        <p className={styles.empty}>
+                            {narrowed ? 'No matches' : 'Draw a shape or add a screen to start.'}
                         </p>
-                        {filter && layers.length === 0 ? (
-                            <p className={styles.empty}>No layers or objects match</p>
-                        ) : (
-                            <ul>
-                                <RootItem
-                                    scope="layers"
-                                    name="Global layers"
-                                    icon={<ObjectTypeSymbol type="layer" />}
+                    )}
+                    {screenRows.length > 0 && <Section title="Screens">{screenRows}</Section>}
+                    {hasCanvasRows && (
+                        <Section title="Canvas" onDrop={(dragged) => moveIntoFrame(dragged, null)}>
+                            {canvasFrames.map((frame) => frameItem(frame))}
+                            <ObjectContents {...scene} />
+                        </Section>
+                    )}
+                    {sources.length > 0 && (
+                        <Section title="Components">
+                            {sources.map(({ component, shapesIds }) => (
+                                <SourceItem
+                                    key={component.id}
+                                    componentId={component.id}
+                                    shapesIds={shapesIds}
                                 >
-                                    {layers
-                                        .filter((layer) => layer.layerId !== null)
-                                        .map((layer) => (
-                                            <LayerItem
-                                                key={layer.layerId}
-                                                {...layer}
-                                                layerId={layer.layerId!}
-                                                contextId="layers"
-                                                shapesOf={shapesOf}
-                                            />
-                                        ))}
-                                </RootItem>
-                                {(!filter || layers.some((layer) => layer.layerId === null)) && (
-                                    <RootItem
-                                        name="No layer"
-                                        selected={document.surfaceSelected ?? false}
-                                        onClick={handleCanvasSelect}
-                                        onDrop={(dragged) =>
-                                            moveShapesToLayer({
-                                                shapeIds: shapesOf(dragged),
-                                                layerId: null
-                                            })
-                                        }
-                                    >
-                                        {layers
-                                            .filter((layer) => layer.layerId === null)
-                                            .map((layer) => (
-                                                <ObjectContents
-                                                    key="unlayered"
-                                                    {...layer}
-                                                    contextId="layers"
-                                                />
-                                            ))}
-                                    </RootItem>
-                                )}
-                            </ul>
-                        )}
-                    </>
-                ) : filter &&
-                  !hasCanvasObjects &&
-                  sources.length === 0 &&
-                  shownFrames.length === 0 ? (
-                    <p className={styles.empty}>No objects match</p>
-                ) : (
-                    <ul>
-                        {(!filter || hasCanvasObjects || shownFrames.length > 0) && (
-                            <RootItem
-                                name="Canvas"
-                                icon={<ObjectTypeSymbol type="surface" />}
-                                selected={document.surfaceSelected ?? false}
-                                onClick={handleCanvasSelect}
-                                onDrop={(dragged) => moveIntoFrame(dragged, null)}
-                            >
-                                {shownFrames
-                                    .filter(
-                                        (frame) =>
-                                            frame.parentFrameId === undefined &&
-                                            !owners.get(frame.id)
-                                    )
-                                    .map((frame) => frameItem(frame))}
-                                <ObjectContents {...scene} contextId="canvas" />
-                            </RootItem>
-                        )}
-                        {screens.length > 0 && (
-                            <RootItem name="Screens">
-                                {screens
-                                    .filter(
-                                        (screen) =>
-                                            !filter || screen.name.toLowerCase().includes(filter)
-                                    )
-                                    .map((screen) => (
-                                        <ExplorerItem
-                                            key={screen.id}
-                                            kind="frame"
-                                            name={screen.name}
-                                            badge="Screen"
-                                            icon={
-                                                <Icon icon={{ component: AppWindow, size: 16 }} />
-                                            }
-                                            secondary={`${screen.viewCount} Screen ${screen.viewCount === 1 ? 'view' : 'views'}`}
-                                            selected={selectedFrameId === screen.id}
-                                            visible={screen.shown}
-                                            onDrop={
-                                                screen.locked || screen.inheritedLock
-                                                    ? undefined
-                                                    : (dragged) => moveIntoFrame(dragged, screen.id)
-                                            }
-                                            menuActions={[
-                                                {
-                                                    ...hideAction(!screen.visible, () =>
-                                                        editFrame({
-                                                            kind: 'toggle',
-                                                            id: screen.id,
-                                                            flag: 'visible'
-                                                        })
-                                                    ),
-                                                    disabled: screen.inheritedLock
-                                                },
-                                                {
-                                                    ...lockAction(screen.locked, () =>
-                                                        editFrame({
-                                                            kind: 'toggle',
-                                                            id: screen.id,
-                                                            flag: 'locked'
-                                                        })
-                                                    ),
-                                                    disabled: screen.inheritedLock
+                                    {shapesIds.map((shapeId) =>
+                                        component.library ? (
+                                            <ExplorerItem
+                                                key={shapeId}
+                                                kind={
+                                                    component.sourceShapes?.[shapeId]?.type ===
+                                                    'instance'
+                                                        ? 'instance'
+                                                        : 'shape'
                                                 }
-                                            ]}
-                                            onClick={() =>
-                                                editFrame({ kind: 'select', id: screen.id })
-                                            }
-                                        />
-                                    ))}
-                            </RootItem>
-                        )}
-                        {(!filter || sources.length > 0) && (
-                            <RootItem scope="components" name="Components">
-                                {sources.map(({ component, shapesIds }) => (
-                                    <SourceItem
-                                        key={component.id}
-                                        componentId={component.id}
-                                        shapesIds={shapesIds}
-                                    >
-                                        {shapesIds.map((shapeId) =>
-                                            component.library ? (
-                                                <ExplorerItem
-                                                    key={shapeId}
-                                                    kind={
-                                                        component.sourceShapes?.[shapeId]?.type ===
-                                                        'instance'
-                                                            ? 'instance'
-                                                            : 'shape'
-                                                    }
-                                                    name={
-                                                        component.sourceShapes?.[shapeId]?.name ??
-                                                        shapeId
-                                                    }
-                                                    icon={
-                                                        component.sourceShapes?.[shapeId] && (
-                                                            <ObjectTypeSymbol
-                                                                type={
-                                                                    component.sourceShapes[shapeId]
-                                                                        .type
-                                                                }
-                                                            />
-                                                        )
-                                                    }
-                                                />
-                                            ) : (
-                                                <ShapeItem
-                                                    key={shapeId}
-                                                    shapeId={shapeId}
-                                                    sourceId={component.id}
-                                                />
-                                            )
-                                        )}
-                                    </SourceItem>
-                                ))}
-                            </RootItem>
-                        )}
-                    </ul>
-                )}
+                                                name={
+                                                    component.sourceShapes?.[shapeId]?.name ??
+                                                    shapeId
+                                                }
+                                                icon={
+                                                    component.sourceShapes?.[shapeId] && (
+                                                        <ObjectTypeSymbol
+                                                            type={
+                                                                component.sourceShapes[shapeId].type
+                                                            }
+                                                        />
+                                                    )
+                                                }
+                                            />
+                                        ) : (
+                                            <ShapeItem
+                                                key={shapeId}
+                                                shapeId={shapeId}
+                                                sourceId={component.id}
+                                            />
+                                        )
+                                    )}
+                                </SourceItem>
+                            ))}
+                        </Section>
+                    )}
+                    {/* Pressing the space under the outline selects the canvas. */}
+                    <div
+                        className={styles.rest}
+                        aria-hidden="true"
+                        onClick={() => selectExplorerLayer(null)}
+                        onDragOver={(event) => {
+                            if (acceptsDragged(event)) {
+                                event.preventDefault();
+                            }
+                        }}
+                        onDrop={(event) => {
+                            const dropped = readDragged(event);
+
+                            if (dropped) {
+                                event.preventDefault();
+                                moveIntoFrame(dropped, null);
+                            }
+                        }}
+                    />
+                </div>
             </section>
-        </CollapsedItems.Provider>
+        </OpenItems.Provider>
+    );
+};
+
+/** One of a screen's views, as a chip after its name: pressing it edits the screen there. */
+const ViewChip: FC<{
+    view: {
+        id: string;
+        name: string;
+        size: { width: number; height: number };
+        visible: boolean;
+        locked: boolean;
+        shown: boolean;
+    };
+    screenName: string;
+    label: string;
+    current: boolean;
+    selected: boolean;
+    actions: ItemMenuAction[];
+    onChoose: () => void;
+}> = ({ view, screenName, label, current, selected, actions, onChoose }) => {
+    const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+
+    return (
+        <>
+            <button
+                type="button"
+                tabIndex={-1}
+                className={[
+                    styles.chip,
+                    current && styles.current,
+                    selected && styles.chipSelected,
+                    !view.shown && styles.muted
+                ]
+                    .filter(Boolean)
+                    .join(' ')}
+                aria-label={view.name}
+                aria-pressed={selected}
+                title={`${screenName} · ${view.size.width} × ${view.size.height} Screen view${
+                    view.locked ? ' · locked' : ''
+                }`}
+                onClick={(event) => {
+                    event.stopPropagation();
+                    onChoose();
+                }}
+                onContextMenu={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setMenu({ x: event.clientX, y: event.clientY });
+                }}
+            >
+                {label}
+                {view.locked && <Icon icon={{ component: Lock, size: 10 }} />}
+            </button>
+            {menu && (
+                <ExplorerMenu
+                    label={`${view.name} actions`}
+                    position={menu}
+                    items={[
+                        { id: 'select', label: `Select ${view.name}`, onRun: onChoose },
+                        ...actions.map((action) => ({
+                            id: action.id,
+                            label: action.label,
+                            icon: action.icon,
+                            disabled: action.disabled,
+                            onRun: action.onRun
+                        }))
+                    ]}
+                    onClose={() => setMenu(null)}
+                />
+            )}
+        </>
     );
 };

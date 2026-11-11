@@ -1,4 +1,5 @@
-import { screenViewName } from './screenViews';
+import { isScreenDefinition, screenViewName } from './screenViews';
+import { isScreenLayout } from './screenLayouts';
 import { sceneLayers } from './componentTree';
 import { frameParents } from './frameState';
 import { filterOutline, outline } from './membership';
@@ -7,11 +8,60 @@ import type { Document } from './types';
 
 export type ExplorerContents = Pick<OutlineLayer, 'groups' | 'shapesIds'>;
 
+/** What the Explorer's filter menu narrows the outline to, besides the search text. */
+export type ExplorerStatusFilter = 'all' | 'hiddenOrLocked';
+
+/** Which shapes and frames stay in the outline; everything while both are absent. */
+export interface ExplorerKeep {
+    shape?: (id: string) => boolean;
+    frame?: (id: string) => boolean;
+}
+
 const emptyContents = (): ExplorerContents => ({ groups: [], shapesIds: [] });
 
-/** Each global layer appears once, independent of frame containment. */
-export function explorerLayers(document: Document, text: string) {
-    return filterOutline(sceneLayers(outline(document), document), document, text);
+/**
+ * What the filter menu keeps: the shapes on the shown layer, or the hidden and locked
+ * items with what holds them. Nothing is narrowed when neither applies.
+ */
+export function explorerKeep(
+    document: Document,
+    layerId: string | undefined,
+    status: ExplorerStatusFilter
+): ExplorerKeep {
+    // One set for the whole outline, rather than a search of every layer for each shape.
+    const layerShapes = layerId ? new Set(document.layers[layerId]?.shapesIds) : undefined;
+    const onLayer = layerShapes ? (id: string) => layerShapes.has(id) : () => true;
+
+    if (status === 'all') {
+        return layerId ? { shape: onLayer } : {};
+    }
+
+    const flagged = (item: { visible: boolean; locked: boolean } | undefined) =>
+        item !== undefined && (!item.visible || item.locked);
+
+    const inFlaggedGroup = new Set(
+        Object.values(document.groups)
+            .filter(flagged)
+            .flatMap((group) => group.shapesIds)
+    );
+
+    return {
+        shape: (id) => onLayer(id) && (flagged(document.shapes[id]) || inFlaggedGroup.has(id)),
+        frame: (id) => !layerId && flagged(document.frames[id])
+    };
+}
+
+function keptContents(contents: ExplorerContents, keep: ExplorerKeep['shape']) {
+    if (!keep) {
+        return contents;
+    }
+
+    return {
+        groups: contents.groups
+            .map((group) => ({ ...group, shapesIds: group.shapesIds.filter(keep) }))
+            .filter((group) => group.shapesIds.length > 0),
+        shapesIds: contents.shapesIds.filter(keep)
+    };
 }
 
 /** Partition objects by actual containment, without global layer wrappers. */
@@ -65,8 +115,11 @@ function matchingObjects(contents: ExplorerContents, document: Document, text: s
     return matching ? { groups: matching.groups, shapesIds: matching.shapesIds } : emptyContents();
 }
 
-/** Search keeps frame ancestors; a named frame includes its complete subtree. */
-export function explorerTree(document: Document, text: string) {
+/**
+ * Search keeps frame ancestors; a named frame includes its complete subtree. `keep`
+ * narrows that further, keeping a frame it names, or one holding what it keeps.
+ */
+export function explorerTree(document: Document, text: string, keep: ExplorerKeep = {}) {
     const wanted = text.trim().toLowerCase();
     const parents = frameParents(document.frames);
     const contents = objectsByFrame(document);
@@ -92,9 +145,12 @@ export function explorerTree(document: Document, text: string) {
             {
                 id,
                 parentFrameId,
-                contents: includesAll(id)
-                    ? (contents.get(id) ?? emptyContents())
-                    : matchingObjects(contents.get(id) ?? emptyContents(), document, wanted)
+                contents: keptContents(
+                    includesAll(id)
+                        ? (contents.get(id) ?? emptyContents())
+                        : matchingObjects(contents.get(id) ?? emptyContents(), document, wanted),
+                    keep.shape
+                )
             }
         ])
     );
@@ -102,7 +158,9 @@ export function explorerTree(document: Document, text: string) {
         [...frames.values()]
             .filter(
                 (frame) =>
-                    includesAll(frame.id) ||
+                    (keep.shape || keep.frame
+                        ? (keep.frame?.(frame.id) ?? false) && includesAll(frame.id)
+                        : includesAll(frame.id)) ||
                     frame.contents.groups.length + frame.contents.shapesIds.length > 0
             )
             .map((frame) => frame.id)
@@ -124,7 +182,59 @@ export function explorerTree(document: Document, text: string) {
     }
 
     return {
-        canvas: matchingObjects(contents.get(undefined) ?? emptyContents(), document, wanted),
+        canvas: keptContents(
+            matchingObjects(contents.get(undefined) ?? emptyContents(), document, wanted),
+            keep.shape
+        ),
         frames: [...frames.values()].filter((frame) => shown.has(frame.id))
     };
+}
+
+/** The key an Explorer row is opened and closed by; each item is listed once. */
+export const explorerKey = (kind: 'screen' | 'frame' | 'group' | 'component', id: string) =>
+    `${kind}:${id}`;
+
+/** The rows to open so every selected item is listed: its screen, frames, group and component. */
+export function explorerRevealKeys(document: Document): string[] {
+    const keys = new Set<string>();
+    const parents = frameParents(document.frames);
+    const openFrames = (id: string | undefined) => {
+        for (
+            let current = id;
+            current !== undefined && document.frames[current];
+            current = parents.get(current)
+        ) {
+            const frame = document.frames[current];
+
+            if (frame.kind === 'view' && frame.screenId) {
+                keys.add(explorerKey('screen', frame.screenId));
+            } else if (isScreenDefinition(document.frames, current, parents)) {
+                keys.add(explorerKey('screen', current));
+            } else if (!isScreenLayout(document.frames, current, parents)) {
+                keys.add(explorerKey('frame', current));
+            }
+        }
+    };
+    const selected = new Set(document.selectedShapesIds);
+
+    // Each group and component is read once, however many shapes are selected.
+    if (selected.size > 0) {
+        Object.values(document.groups)
+            .filter((group) => group.shapesIds.some((id) => selected.has(id)))
+            .forEach((group) => keys.add(explorerKey('group', group.id)));
+        Object.values(document.components)
+            .filter((component) => component.shapesIds.some((id) => selected.has(id)))
+            .forEach((component) => keys.add(explorerKey('component', component.id)));
+    }
+    selected.forEach((id) => openFrames(document.shapes[id]?.parentFrameId));
+    document.selectedGroupsIds.forEach((id) =>
+        document.groups[id]?.shapesIds.forEach((shapeId) =>
+            openFrames(document.shapes[shapeId]?.parentFrameId)
+        )
+    );
+    if (document.selectedFrameId) {
+        openFrames(parents.get(document.selectedFrameId));
+    }
+
+    return [...keys];
 }

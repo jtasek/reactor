@@ -207,8 +207,12 @@ test('inherits Hide and Lock, explains restrictions, and recovers through Explor
     await openEditor(page, ['Inspector', 'Explorer']);
     const outerRow = explorer(page).getByRole('button', { name: 'Outer', exact: true });
     const innerRow = explorer(page).getByRole('button', { name: 'Inner', exact: true });
-    const outerMenu = explorer(page).getByRole('toolbar', { name: 'Outer menu', exact: true });
-    const innerMenu = explorer(page).getByRole('toolbar', { name: 'Inner menu', exact: true });
+    const outerMenu = explorer(page)
+        .getByRole('button', { name: 'Outer', exact: true })
+        .locator('..');
+    const innerMenu = explorer(page)
+        .getByRole('button', { name: 'Inner', exact: true })
+        .locator('..');
     await expect(artwork(page)).toBeVisible();
     await outerRow.hover();
     await outerMenu.getByRole('button', { name: 'Hide', exact: true }).click();
@@ -243,9 +247,10 @@ test('inherits Hide and Lock, explains restrictions, and recovers through Explor
     await expect(
         page.getByRole('status').filter({ hasText: 'Locked by frame Outer' })
     ).toBeVisible();
+    // An inherited lock shows no Hide or Lock of its own: the frame above holds it.
     await innerRow.hover();
-    await expect(innerMenu.getByRole('button', { name: 'Lock', exact: true })).toBeDisabled();
-    await expect(innerMenu.getByRole('button', { name: 'Hide', exact: true })).toBeDisabled();
+    await expect(innerMenu.getByRole('button', { name: 'Lock', exact: true })).toHaveCount(0);
+    await expect(innerMenu.getByRole('button', { name: 'Hide', exact: true })).toHaveCount(0);
     await page.screenshot({ path: '/tmp/reactor-frame-state-normal.png' });
     await page.setViewportSize({ width: 600, height: 850 });
     await expect(

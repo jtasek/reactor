@@ -487,8 +487,8 @@ export function outline(document: Document): OutlineLayer[] {
 
 /**
  * The outline with only what has a name containing `text`, in any case: a layer or a
- * group with all it holds, a shape with the group and layer holding it. All of it while
- * `text` is blank.
+ * group with all it holds, a shape with the group and layer holding it, and an instance
+ * by its component's name too. All of it while `text` is blank.
  */
 export function filterOutline(
     layers: OutlineLayer[],
@@ -508,8 +508,15 @@ export function filterOutline(
             component.shapesIds.map((id): [string, string] => [id, component.name])
         )
     );
+    const instanceOf = (id: string) => {
+        const shape = document.shapes[id];
+
+        return shape?.type === 'instance' ? document.components[shape.componentId] : undefined;
+    };
     const shapeMatches = (id: string) =>
-        named(document.shapes[id]) || (sourceOf.get(id)?.toLowerCase().includes(wanted) ?? false);
+        named(document.shapes[id]) ||
+        named(instanceOf(id)) ||
+        (sourceOf.get(id)?.toLowerCase().includes(wanted) ?? false);
 
     return layers
         .map((layer) =>
