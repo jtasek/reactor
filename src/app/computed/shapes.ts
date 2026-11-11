@@ -10,6 +10,7 @@ import { editorHelpers, editorLoaded } from '../editorHelpers';
 import type { Context } from '../index';
 import {
     editableSelectedShapesIds as findEditableSelectedShapesIds,
+    anyHidden,
     groupFrame,
     listMovableSelectedItems,
     selectedGroupsIdsOf,
@@ -126,6 +127,12 @@ export const groupFrames = derived((currentDocument: Document) =>
         ])
     )
 );
+
+/**
+ * Whether anything is hidden: see `hasHidden`. Kept until a visibility changes,
+ * as Show all asks it whenever the selection changes and it reads every shape.
+ */
+export const hasHiddenItems = derived((currentDocument: Document) => anyHidden(currentDocument));
 
 export const layersIds = derived((currentDocument: Document) => {
     return Object.keys(currentDocument.layers);
