@@ -119,21 +119,25 @@ test('component children support the same selection and Shift-click behavior', a
     const layers = explorer.getByRole('region', { name: 'Canvas' });
     const source = components.getByRole('button', { name: 'Card', exact: true });
     const first = components.getByRole('button', { name: 'Background', exact: true });
-    const second = components.getByRole('button', { name: 'Border', exact: true });
     const outside = layers.getByRole('button', { name: 'Rectangle 1', exact: true });
 
     await source.click();
     await expect(source).toHaveAttribute('aria-pressed', 'true');
+    // Picking a child edits the component, and the Explorer narrows to its layers.
     await first.click();
-    await expect(source).toHaveAttribute('aria-pressed', 'false');
-    await expect(first).toHaveAttribute('aria-pressed', 'true');
-    await expect(second).toHaveAttribute('aria-pressed', 'false');
+    const edited = explorer.getByRole('region', { name: 'Layers in Card' });
+    const editedFirst = edited.getByRole('button', { name: 'Background', exact: true });
+    const editedSecond = edited.getByRole('button', { name: 'Border', exact: true });
+    await expect(source).toHaveCount(0);
+    await expect(editedFirst).toHaveAttribute('aria-pressed', 'true');
+    await expect(editedSecond).toHaveAttribute('aria-pressed', 'false');
 
-    await second.click({ modifiers: ['Shift'] });
-    await expect(first).toHaveAttribute('aria-pressed', 'true');
-    await expect(second).toHaveAttribute('aria-pressed', 'true');
-    await first.click();
-    await expect(second).toHaveAttribute('aria-pressed', 'false');
+    await editedSecond.click({ modifiers: ['Shift'] });
+    await expect(editedFirst).toHaveAttribute('aria-pressed', 'true');
+    await expect(editedSecond).toHaveAttribute('aria-pressed', 'true');
+    await editedFirst.click();
+    await expect(editedSecond).toHaveAttribute('aria-pressed', 'false');
+    await explorer.getByRole('button', { name: 'Done', exact: true }).click();
     await outside.click();
     await expect(first).toHaveAttribute('aria-pressed', 'false');
 

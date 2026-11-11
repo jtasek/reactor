@@ -185,10 +185,9 @@ test('Explorer child selection retains view focus and Escape returns to the orig
     const { desktop, mobile } = await openComponent(page, true);
     const navigation = await focusDesktop(page);
     const explorer = page.getByRole('region', { name: 'Explorer' });
-    const row = explorer
-        .getByRole('button', { name: 'Home · Desktop', exact: true })
-        .locator('xpath=ancestor::li[1]');
-    await row.getByRole('button', { name: 'Part 2', exact: true }).click();
+    // The Explorer narrows to the component being edited.
+    const layers = explorer.getByRole('region', { name: 'Layers in Card' });
+    await layers.getByRole('button', { name: 'Part 2', exact: true }).click();
     await expect(navigation).toBeVisible();
     await expectPlacedCoordinate(desktop.locator('[data-type="bottomRight"]'), 'cx', '620');
     await page.setViewportSize({ width: 600, height: 850 });

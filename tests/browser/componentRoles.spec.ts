@@ -47,6 +47,8 @@ test('edits explicit source roles, instance customization and inheritance, and p
     await expect(page.getByRole('status').filter({ hasText: 'Link label' })).toBeVisible();
     await page.getByLabel('Role label', { exact: true }).selectOption('caption');
     await expect(page.getByRole('status').filter({ hasText: 'Link label' })).toHaveCount(0);
+    // Editing the source narrows the Explorer to it; Done shows the instance again.
+    await explorer.getByRole('button', { name: 'Done', exact: true }).click();
     await explorer.getByRole('button', { name: 'Action instance', exact: true }).click();
     await expect(role).toHaveValue('inherit');
     await expect(page.getByLabel('Role label', { exact: true })).toHaveValue('caption');

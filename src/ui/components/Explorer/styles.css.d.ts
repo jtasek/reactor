@@ -5,6 +5,7 @@ declare namespace StylesCssNamespace {
     chipSelected: string;
     chips: string;
     component: string;
+    count: string;
     current: string;
     done: string;
     dropTarget: string;
@@ -12,6 +13,9 @@ declare namespace StylesCssNamespace {
     explorer: string;
     filterButton: string;
     filterPill: string;
+    focus: string;
+    focusBar: string;
+    focusName: string;
     header: string;
     hidden: string;
     itemName: string;

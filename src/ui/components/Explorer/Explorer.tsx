@@ -2,7 +2,6 @@ import { isScreenLayout, viewLayoutRoot } from 'src/app/screenLayouts';
 import { screenOwners } from 'src/app/screenViews';
 import React, {
     FC,
-    KeyboardEvent,
     MouseEvent,
     Ref,
     memo,
@@ -23,6 +22,8 @@ import { hideAction, lockAction, useItemCommandActions, type ItemMenuAction } fr
 import { Icon } from '../Icon';
 import { ObjectTypeSymbol } from '../ObjectTypeSymbol';
 import { SourceItem } from './SourceItem';
+import { Section } from './Section';
+import { ComponentFocus, type Press } from './ComponentFocus';
 import { byDrawingOrder } from 'src/app/drawOrder';
 import {
     explorerKeep,
@@ -109,11 +110,27 @@ const ShapeItem = memo<{
         toggleShapeVisible,
         selectComponentChild,
         setShapesProperty,
+        editComponentSource,
         events
     } = useActions();
     const locked = useShapeLocked(shapeId);
     const commands = useItemCommandActions([shapeId], locked || !shape.visible || inherited.hidden);
     const layerItems = useMoveToLayerItems([shapeId], locked);
+    // Double-clicking an instance edits its component; the variant it shows, if it has one.
+    const editedId = useAppState((state) => {
+        const instance = state.currentDocument.shapes[shapeId];
+
+        if (instance?.type !== 'instance') {
+            return null;
+        }
+        const { components } = state.currentDocument;
+        const id =
+            instance.variantId && components[instance.variantId]
+                ? instance.variantId
+                : instance.componentId;
+
+        return components[id] && !components[id].library ? id : null;
+    });
 
     const handleSelect = ({ shiftKey }: MouseEvent<HTMLButtonElement>) => {
         // A child of the component being edited keeps the view it is being edited in.
@@ -147,6 +164,7 @@ const ShapeItem = memo<{
             active={shape.active}
             visible={shape.visible && !inherited.hidden}
             onClick={handleSelect}
+            onDoubleClick={editedId ? () => editComponentSource(editedId) : undefined}
             onRename={
                 documentLocked || inherited.locked
                     ? undefined
@@ -427,114 +445,13 @@ function useOpenRows(documentId: string) {
     );
 }
 
-/** Moves the keyboard through the outline's rows, across its sections, as in a Finder sidebar. */
-function handleOutlineKeys(event: KeyboardEvent<HTMLElement>) {
-    const target = event.target as HTMLElement;
-    const outline = event.currentTarget.closest('[data-explorer-outline]');
-
-    if (!target.matches('[data-explorer-row]') || !outline) {
-        return;
-    }
-
-    const rows = [...outline.querySelectorAll<HTMLElement>('[data-explorer-row]')];
-    const at = rows.indexOf(target);
-    const item = target.closest<HTMLElement>('[role="treeitem"]');
-    const go = (row: HTMLElement | null | undefined) => {
-        if (row) {
-            event.preventDefault();
-            row.focus();
-            row.scrollIntoView?.({ block: 'nearest' });
-            // Moving the focus selects, as in Finder.
-            row.click();
-        }
-    };
-    const toggle = () =>
-        item?.querySelector<HTMLButtonElement>(':scope > div > button[data-open]')?.click();
-
-    switch (event.key) {
-        case 'ArrowDown':
-            go(rows[at + 1]);
-            break;
-        case 'ArrowUp':
-            go(rows[at - 1]);
-            break;
-        case 'Home':
-            go(rows[0]);
-            break;
-        case 'End':
-            go(rows.at(-1));
-            break;
-        case 'ArrowRight':
-            if (item?.getAttribute('aria-expanded') === 'false') {
-                event.preventDefault();
-                toggle();
-            } else if (item?.getAttribute('aria-expanded') === 'true') {
-                go(item.querySelector<HTMLElement>(':scope > ul [data-explorer-row]'));
-            }
-            break;
-        case 'ArrowLeft':
-            if (item?.getAttribute('aria-expanded') === 'true') {
-                event.preventDefault();
-                toggle();
-            } else {
-                go(
-                    item?.parentElement
-                        ?.closest<HTMLElement>('[role="treeitem"]')
-                        ?.querySelector<HTMLElement>(':scope > div [data-explorer-row]')
-                );
-            }
-            break;
-    }
-}
-
-/** A titled part of the outline: Screens, Canvas or Components. */
-const Section: FC<{
-    title: string;
-    onDrop?: (dragged: Dragged) => void;
-    children: React.ReactNode;
-}> = ({ title, onDrop, children }) => {
-    const [dropTarget, setDropTarget] = useState(false);
-    const id = `explorer-section-${title.toLowerCase()}`;
-
-    return (
-        <section className={styles.section} aria-labelledby={id}>
-            <h3
-                id={id}
-                className={[styles.sectionTitle, dropTarget && styles.dropTarget]
-                    .filter(Boolean)
-                    .join(' ')}
-                onDragOver={(event) => {
-                    if (onDrop && acceptsDragged(event)) {
-                        event.preventDefault();
-                        setDropTarget(true);
-                    }
-                }}
-                onDragLeave={() => setDropTarget(false)}
-                onDrop={(event) => {
-                    const dropped = onDrop && acceptsDragged(event) ? readDragged(event) : null;
-
-                    setDropTarget(false);
-                    if (dropped) {
-                        event.preventDefault();
-                        onDrop?.(dropped);
-                    }
-                }}
-            >
-                {title}
-            </h3>
-            <ul role="tree" aria-labelledby={id} onKeyDown={handleOutlineKeys}>
-                {children}
-            </ul>
-        </section>
-    );
-};
-
 export const Explorer: FC = () => {
     const [status, setStatus] = useState<ExplorerStatusFilter>('all');
     const [filterMenu, setFilterMenu] = useState<{ x: number; y: number } | null>(null);
     const [managingLayers, setManagingLayers] = useState(false);
     const [chosenViews, setChosenViews] = useState<Record<string, string>>({});
     const outline = useRef<HTMLDivElement>(null);
+    const panel = useRef<HTMLElement>(null);
     const frames = useFrameRows();
     const selectedFrameId = useSelectedFrameId();
     const actions = useActions();
@@ -559,14 +476,47 @@ export const Explorer: FC = () => {
     const openRows = useOpenRows(document.id);
     const { explorer } = useControls();
     const drawOrder = new Map(useShapesIds().map((id, index) => [id, index]));
+    const focusedId = useAppState((state) =>
+        state.enteredComponentId && state.currentDocument.components[state.enteredComponentId]
+            ? state.enteredComponentId
+            : null
+    );
+    const outlineScroll = useRef(0);
+    const lastPress = useRef<Press | null>(null);
+    const wasFocused = useRef(focusedId);
+
+    // The whole outline's scroll, kept while a component is edited and put back after.
+    useEffect(() => {
+        if (focusedId) {
+            return;
+        }
+        const keep = () => {
+            outlineScroll.current = scrollParent(panel.current)?.scrollTop ?? 0;
+        };
+
+        keep();
+        window.document.addEventListener('scroll', keep, { capture: true, passive: true });
+
+        return () => window.document.removeEventListener('scroll', keep, { capture: true });
+    }, [focusedId]);
+
+    useLayoutEffect(() => {
+        const scroller = scrollParent(panel.current);
+
+        if (wasFocused.current && !focusedId && scroller) {
+            scroller.scrollTop = outlineScroll.current;
+        }
+        wasFocused.current = focusedId;
+    }, [focusedId]);
 
     useEffect(() => {
-        if (revealKeys) {
+        // The whole outline opens nothing for selections made while a component is edited.
+        if (revealKeys && !focusedId) {
             openRows.setOpen(Object.fromEntries(revealKeys.split(' ').map((key) => [key, true])));
         }
         // Each new selection reveals its rows; closing one afterwards keeps it closed.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [revealKeys, selection]);
+    }, [revealKeys, selection, focusedId]);
 
     // A component someone just made opens, so its parts show where they went.
     const componentIds = Object.keys(components).join(' ');
@@ -612,6 +562,25 @@ export const Explorer: FC = () => {
 
     if (!explorer.visible) {
         return null;
+    }
+
+    if (focusedId) {
+        const component = components[focusedId];
+        const members = component.shapesIds
+            .filter((id) => document.shapes[id])
+            .sort((a, b) => (drawOrder.get(b) ?? -1) - (drawOrder.get(a) ?? -1));
+
+        return (
+            <OpenItems.Provider value={openRows}>
+                <section ref={panel} className={styles.explorer} aria-label="Explorer">
+                    <ComponentFocus componentId={focusedId} lastPress={lastPress}>
+                        {members.map((shapeId) => (
+                            <ShapeItem key={shapeId} shapeId={shapeId} sourceId={focusedId} />
+                        ))}
+                    </ComponentFocus>
+                </section>
+            </OpenItems.Provider>
+        );
     }
 
     const keep = explorerKeep(document, shownLayerId, status);
@@ -890,7 +859,18 @@ export const Explorer: FC = () => {
 
     return (
         <OpenItems.Provider value={openRows}>
-            <section className={styles.explorer} aria-label="Explorer">
+            <section
+                ref={panel}
+                className={styles.explorer}
+                aria-label="Explorer"
+                onPointerDownCapture={(event) => {
+                    lastPress.current = {
+                        x: event.clientX,
+                        y: event.clientY,
+                        time: performance.now()
+                    };
+                }}
+            >
                 <div className={styles.header}>
                     <SearchBoxContainer label="Search" />
                     <button
@@ -1023,6 +1003,22 @@ export const Explorer: FC = () => {
         </OpenItems.Provider>
     );
 };
+
+/** The element that scrolls the Explorer: the panel itself, or one holding it. */
+function scrollParent(element: HTMLElement | null) {
+    for (let current = element; current; current = current.parentElement) {
+        const { overflowY } = getComputedStyle(current);
+
+        if (
+            (overflowY === 'auto' || overflowY === 'scroll') &&
+            current.scrollHeight > current.clientHeight
+        ) {
+            return current;
+        }
+    }
+
+    return null;
+}
 
 /** One of a screen's views, as a chip after its name: pressing it edits the screen there. */
 const ViewChip: FC<{
