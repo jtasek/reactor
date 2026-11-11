@@ -23,6 +23,8 @@ interface Props {
     label: string;
     position: Point;
     items: ExplorerMenuItem[];
+    /** The button that opens and closes the menu: a press on it is left to the button. */
+    anchor?: Element | null;
     onClose: () => void;
 }
 
@@ -33,7 +35,7 @@ const MARGIN = 8;
  * filter button. It goes on the page itself, as the panel's glass would clip it.
  * Escape and Tab close it and give focus back to what opened it.
  */
-export const ExplorerMenu: FC<Props> = ({ label, position, items, onClose }) => {
+export const ExplorerMenu: FC<Props> = ({ label, position, items, anchor, onClose }) => {
     const menu = useRef<HTMLDivElement>(null);
     const opener = useRef(document.activeElement);
     const [placement, setPlacement] = useState(position);
@@ -46,12 +48,18 @@ export const ExplorerMenu: FC<Props> = ({ label, position, items, onClose }) => 
             x: Math.max(MARGIN, Math.min(position.x, window.innerWidth - width - MARGIN)),
             y: Math.max(MARGIN, Math.min(position.y, window.innerHeight - height - MARGIN))
         });
-        menu.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+        // The menu itself takes the focus when nothing in it can run, so Escape still closes it.
+        (
+            menu.current?.querySelector<HTMLButtonElement>('button:not(:disabled)') ?? menu.current
+        )?.focus();
     }, [position]);
 
     useEffect(() => {
         const handlePointerDown = (event: PointerEvent) => {
-            if (event.target instanceof Node && menu.current?.contains(event.target)) {
+            if (
+                event.target instanceof Node &&
+                (menu.current?.contains(event.target) || anchor?.contains(event.target))
+            ) {
                 return;
             }
             onClose();
@@ -60,7 +68,7 @@ export const ExplorerMenu: FC<Props> = ({ label, position, items, onClose }) => 
         document.addEventListener('pointerdown', handlePointerDown, true);
 
         return () => document.removeEventListener('pointerdown', handlePointerDown, true);
-    }, [onClose]);
+    }, [anchor, onClose]);
 
     const close = () => {
         onClose();

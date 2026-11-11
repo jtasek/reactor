@@ -61,7 +61,7 @@ export const readDragged = (event: DragEvent): Dragged | null => {
 export const acceptsDragged = (event: DragEvent) => event.dataTransfer.types.includes(DRAG_TYPE);
 
 interface Props {
-    kind: 'layer' | 'group' | 'shape' | 'component' | 'instance' | 'frame' | 'screen';
+    kind: 'group' | 'shape' | 'component' | 'instance' | 'frame' | 'screen';
     name: string;
     icon?: ReactNode;
     /** Small controls after the name, as a screen's views. */
@@ -223,7 +223,8 @@ export const ExplorerItem: FC<Props> = ({
             startRename();
         } else if (event.key === ' ') {
             event.preventDefault();
-            if (hide && !hide.disabled) {
+            // A held key hides once, rather than hiding and showing as it repeats.
+            if (hide && !hide.disabled && !event.repeat) {
                 hide.onRun();
             }
         } else if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {

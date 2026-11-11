@@ -69,10 +69,35 @@ test('a layer filter narrows the outline in place, and new shapes go onto that l
     await drawRect(page, { x: 500, y: 100 }, { x: 540, y: 140 });
     await expect(rows).toHaveText(['rectangle-3', 'rectangle-1']);
 
+    // Also after a row was pressed, which selects that shape and no layer.
+    await row(page, 'rectangle-1').click();
+    await drawRect(page, { x: 600, y: 100 }, { x: 640, y: 140 });
+    await expect(rows).toHaveText(['rectangle-4', 'rectangle-3', 'rectangle-1']);
+
+    // The pill names every filter that is on.
+    await (await openFilter(page))
+        .getByRole('menuitemradio', { name: /Hidden and locked/ })
+        .click();
+    await expect(explorer(page).getByText('Layer: layer-1 · Hidden and locked')).toBeVisible();
+    await expect(rows).toHaveCount(0);
+
     await explorer(page).getByRole('button', { name: 'Clear filter' }).click();
     await expect(explorer(page).getByText('Layer: layer-1')).toHaveCount(0);
-    await expect(rows).toHaveCount(3);
-    await expect(shapes(page)).toHaveCount(3);
+    await expect(rows).toHaveCount(4);
+    await expect(shapes(page)).toHaveCount(4);
+});
+
+test('the Filter button opens its menu and closes it again', async ({ page }) => {
+    await openEditor(page, ['Explorer']);
+    const button = explorer(page).getByRole('button', { name: 'Filter', exact: true });
+    const menu = page.getByRole('menu', { name: 'Filter' });
+
+    await button.click();
+    await expect(menu).toBeVisible();
+    await expect(button).toHaveAttribute('aria-expanded', 'true');
+    await button.click();
+    await expect(menu).toHaveCount(0);
+    await expect(button).toHaveAttribute('aria-expanded', 'false');
 });
 
 test('Hidden and locked only keeps flagged items and what holds them', async ({ page }) => {
@@ -280,8 +305,11 @@ test('the outline is a tree with one tab stop, arrow keys, rename and a menu key
     await page.keyboard.press('Enter');
     await expect(row(page, 'Door')).toBeFocused();
 
-    // Space hides; Shift+F10 opens the row's menu, and Escape comes back to the row.
-    await page.keyboard.press(' ');
+    // Space hides, once however long it is held; Shift+F10 opens the row's menu, and
+    // Escape comes back to the row.
+    await page.keyboard.down(' ');
+    await page.keyboard.down(' ');
+    await page.keyboard.up(' ');
     await expect(rowItem(page, 'Door').getByRole('button', { name: 'Show' })).toBeVisible();
     await page.keyboard.press('Shift+F10');
     await expect(page.getByRole('menu', { name: 'Door actions' })).toBeVisible();

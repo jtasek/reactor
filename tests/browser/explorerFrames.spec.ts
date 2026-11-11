@@ -123,20 +123,49 @@ test('selecting on the canvas opens the rows that hold the selection', async ({ 
     // Artwork sits in Art group, in Card, inside Home: pressing it opens those rows.
     // The Explorer floats over the view, so the press goes to the shape itself.
     const surface = (await page.locator('svg#surface').boundingBox())!;
-    const target = '#screen-views [data-cy="Artwork"]';
-    const artwork = (await page.locator(`svg#surface ${target}`).first().boundingBox())!;
-    const at = {
-        target,
-        x: artwork.x - surface.x + artwork.width / 2,
-        y: artwork.y - surface.y + artwork.height / 2
+    const press = async (shape: string) => {
+        const target = `#screen-views [data-cy="${shape}"]`;
+        const box = (await page.locator(`svg#surface ${target}`).first().boundingBox())!;
+        const at = {
+            target,
+            x: box.x - surface.x + box.width / 2,
+            y: box.y - surface.y + box.height / 2
+        };
+
+        await pointer(page, 'pointerdown', at);
+        await pointer(page, 'pointerup', at);
     };
 
-    await pointer(page, 'pointerdown', at);
-    await pointer(page, 'pointerup', at);
-
+    await press('Artwork');
     await expect(name(page, 'Art group')).toHaveAttribute('aria-pressed', 'true');
     await expect(name(page, 'Artwork')).toBeVisible();
     await expect(name(page, 'Title')).toBeVisible();
+
+    // A row closed by hand opens again for the next selection inside it.
+    await explorer(page).getByRole('button', { name: 'Collapse Home', exact: true }).click();
+    await expect(name(page, 'Title')).toHaveCount(0);
+    await press('Title');
+    await expect(name(page, 'Title')).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('Rename is offered only where the name can change', async ({ page }) => {
+    await expand(page, 'Home');
+    await name(page, 'Title').focus();
+    await page.keyboard.press('F2');
+    await expect(explorer(page).getByRole('textbox', { name: 'Rename Title' })).toBeVisible();
+    await page.keyboard.press('Escape');
+
+    await row(page, 'Home').hover();
+    await row(page, 'Home').getByRole('button', { name: 'Lock', exact: true }).click();
+    for (const text of ['Home', 'Card', 'Art group', 'Title']) {
+        await name(page, text).focus();
+        await page.keyboard.press('F2');
+        await expect(explorer(page).getByRole('textbox')).toHaveCount(0);
+        await name(page, text).click({ button: 'right' });
+        await expect(page.getByRole('menu', { name: `${text} actions` })).toBeVisible();
+        await expect(page.getByRole('menuitem', { name: 'Rename', exact: true })).toHaveCount(0);
+        await page.keyboard.press('Escape');
+    }
 });
 
 test('search reveals frame ancestry and matching frame contents without forgetting closed rows', async ({

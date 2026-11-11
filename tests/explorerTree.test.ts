@@ -251,6 +251,29 @@ it('selecting a layer leaves layer isolation to its separate control', () => {
     expect(document.layers.walls.selected).toBe(false);
 });
 
+it('a layer shown alone takes what is drawn, also with no layer selected', () => {
+    const { store } = createTestStore();
+    const square = (x: number) => ({
+        type: 'rectangle' as const,
+        position: { x, y: 20 },
+        size: { width: 30, height: 40 }
+    });
+    store.actions.addShape(square(10));
+    const document = store.state.currentDocument;
+    store.actions.addLayer({ id: 'walls', name: 'Walls', shapesIds: [...document.shapesIds] });
+    store.actions.unselectShapes();
+
+    store.actions.showOnlyLayer('walls');
+    store.actions.drawShape(square(100));
+    expect([...document.layers.walls.shapesIds].sort()).toEqual([...document.shapesIds].sort());
+    expect(document.shapesIds).toHaveLength(2);
+
+    store.actions.unselectShapes();
+    store.actions.showAllLayers();
+    store.actions.drawShape(square(200));
+    expect(document.layers.walls.shapesIds).toHaveLength(2);
+});
+
 it('selects Surface without creating or saving a layer', () => {
     const { store } = createTestStore();
     const document = store.state.currentDocument;

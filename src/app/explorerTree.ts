@@ -2,7 +2,7 @@ import { isScreenDefinition, screenViewName } from './screenViews';
 import { isScreenLayout } from './screenLayouts';
 import { sceneLayers } from './componentTree';
 import { frameParents } from './frameState';
-import { filterOutline, outline, shapeGroup, shapeLayer } from './membership';
+import { filterOutline, outline } from './membership';
 import type { OutlineLayer } from './membership';
 import type { Document } from './types';
 
@@ -28,7 +28,9 @@ export function explorerKeep(
     layerId: string | undefined,
     status: ExplorerStatusFilter
 ): ExplorerKeep {
-    const onLayer = layerId ? (id: string) => shapeLayer(document, id)?.id === layerId : () => true;
+    // One set for the whole outline, rather than a search of every layer for each shape.
+    const layerShapes = layerId ? new Set(document.layers[layerId]?.shapesIds) : undefined;
+    const onLayer = layerShapes ? (id: string) => layerShapes.has(id) : () => true;
 
     if (status === 'all') {
         return layerId ? { shape: onLayer } : {};
@@ -37,9 +39,14 @@ export function explorerKeep(
     const flagged = (item: { visible: boolean; locked: boolean } | undefined) =>
         item !== undefined && (!item.visible || item.locked);
 
+    const inFlaggedGroup = new Set(
+        Object.values(document.groups)
+            .filter(flagged)
+            .flatMap((group) => group.shapesIds)
+    );
+
     return {
-        shape: (id) =>
-            onLayer(id) && (flagged(document.shapes[id]) || flagged(shapeGroup(document, id))),
+        shape: (id) => onLayer(id) && (flagged(document.shapes[id]) || inFlaggedGroup.has(id)),
         frame: (id) => !layerId && flagged(document.frames[id])
     };
 }
@@ -208,19 +215,18 @@ export function explorerRevealKeys(document: Document): string[] {
             }
         }
     };
-    const openShape = (id: string) => {
-        const group = shapeGroup(document, id);
+    const selected = new Set(document.selectedShapesIds);
 
-        if (group) {
-            keys.add(explorerKey('group', group.id));
-        }
-        openFrames(document.shapes[id]?.parentFrameId);
+    // Each group and component is read once, however many shapes are selected.
+    if (selected.size > 0) {
+        Object.values(document.groups)
+            .filter((group) => group.shapesIds.some((id) => selected.has(id)))
+            .forEach((group) => keys.add(explorerKey('group', group.id)));
         Object.values(document.components)
-            .filter((component) => component.shapesIds.includes(id))
+            .filter((component) => component.shapesIds.some((id) => selected.has(id)))
             .forEach((component) => keys.add(explorerKey('component', component.id)));
-    };
-
-    document.selectedShapesIds.forEach(openShape);
+    }
+    selected.forEach((id) => openFrames(document.shapes[id]?.parentFrameId));
     document.selectedGroupsIds.forEach((id) =>
         document.groups[id]?.shapesIds.forEach((shapeId) =>
             openFrames(document.shapes[shapeId]?.parentFrameId)

@@ -148,7 +148,7 @@ const ShapeItem = memo<{
             visible={shape.visible && !inherited.hidden}
             onClick={handleSelect}
             onRename={
-                documentLocked
+                documentLocked || inherited.locked
                     ? undefined
                     : (name) => setShapesProperty({ shapeIds: [shapeId], key: 'name', value: name })
             }
@@ -298,7 +298,7 @@ const GroupItem: FC<{
             visible={group.visible && !inherited.hidden}
             onClick={handleSelect}
             onRename={
-                group.locked || documentLocked
+                group.locked || inherited.locked || documentLocked
                     ? undefined
                     : (name) => updateGroup({ id: groupId, name })
             }
@@ -538,15 +538,8 @@ export const Explorer: FC = () => {
     const frames = useFrameRows();
     const selectedFrameId = useSelectedFrameId();
     const actions = useActions();
-    const {
-        editFrame,
-        events,
-        selectExplorerLayer,
-        showOnlyLayer,
-        showAllLayers,
-        unselectLayer,
-        runCommand
-    } = actions;
+    const { editFrame, events, selectExplorerLayer, showOnlyLayer, showAllLayers, runCommand } =
+        actions;
     const tree = useExplorerTree(status);
     const document = useCurrentDocument();
     const components = useComponents() ?? {};
@@ -555,6 +548,14 @@ export const Explorer: FC = () => {
     const canAddLayer = useCommandEnabled(NewLayerCommand);
     const editedViewId = useAppState((state) => state.events.pointer.screenView?.viewId);
     const revealKeys = useAppState((state) => explorerRevealKeys(state.currentDocument).join(' '));
+    const selection = useAppState(({ currentDocument }) =>
+        [
+            currentDocument.selectedFrameId ?? '',
+            ...currentDocument.selectedGroupsIds,
+            ...currentDocument.selectedShapesIds
+        ].join(' ')
+    );
+    const filterButton = useRef<HTMLButtonElement>(null);
     const openRows = useOpenRows(document.id);
     const { explorer } = useControls();
     const drawOrder = new Map(useShapesIds().map((id, index) => [id, index]));
@@ -563,9 +564,9 @@ export const Explorer: FC = () => {
         if (revealKeys) {
             openRows.setOpen(Object.fromEntries(revealKeys.split(' ').map((key) => [key, true])));
         }
-        // Only a new selection reveals its rows; closing one afterwards keeps it closed.
+        // Each new selection reveals its rows; closing one afterwards keeps it closed.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [revealKeys]);
+    }, [revealKeys, selection]);
 
     // A component someone just made opens, so its parts show where they went.
     const componentIds = Object.keys(components).join(' ');
@@ -595,7 +596,7 @@ export const Explorer: FC = () => {
         );
 
         return () => cancelAnimationFrame(frame);
-    }, [revealKeys, document.selectedShapesIds, selectedFrameId]);
+    }, [revealKeys, selection]);
 
     // One tab stop for the outline: the row with the focus, or else the selected or first one.
     useLayoutEffect(() => {
@@ -654,10 +655,10 @@ export const Explorer: FC = () => {
             disabled: frame.inheritedLock
         }
     ];
-    const renameFrame = (id: string) =>
-        document.locked
+    const renameFrame = (frame: (typeof frames)[number]) =>
+        document.locked || frame.locked || frame.inheritedLock
             ? undefined
-            : (name: string) => editFrame({ kind: 'update', id, changes: { name } });
+            : (name: string) => editFrame({ kind: 'update', id: frame.id, changes: { name } });
     /** Frames drawn inside `rootId`, apart from root screens and other screen layouts. */
     const childFrames = (rootId: string) =>
         shownFrames.filter(
@@ -698,7 +699,7 @@ export const Explorer: FC = () => {
                         : undefined
                 }
                 onClick={() => editFrame({ kind: 'select', id: frame.id })}
-                onRename={renameFrame(frame.id)}
+                onRename={renameFrame(frame)}
                 onDrop={
                     frame.locked || frame.inheritedLock
                         ? undefined
@@ -776,7 +777,7 @@ export const Explorer: FC = () => {
                 }
                 defaultOpen={narrowed || screenViews.some((view) => view.id === editedViewId)}
                 onClick={() => editFrame({ kind: 'select', id: screen.id })}
-                onRename={renameFrame(screen.id)}
+                onRename={renameFrame(screen)}
                 onDrop={
                     screen.locked || screen.inheritedLock
                         ? undefined
@@ -837,18 +838,18 @@ export const Explorer: FC = () => {
     });
     const layers = document.layersIds.map((id) => document.layers[id]).filter(Boolean);
     const clearFilter = () => {
-        if (shownLayerId) {
-            showAllLayers();
-            unselectLayer(shownLayerId);
-        }
+        showAllLayers();
         setStatus('all');
     };
     const filterLabel =
-        shownLayerId && document.layers[shownLayerId]
-            ? `Layer: ${document.layers[shownLayerId].name}`
-            : status === 'hiddenOrLocked'
-              ? 'Hidden and locked'
-              : null;
+        [
+            shownLayerId && document.layers[shownLayerId]
+                ? `Layer: ${document.layers[shownLayerId].name}`
+                : null,
+            status === 'hiddenOrLocked' ? 'Hidden and locked' : null
+        ]
+            .filter(Boolean)
+            .join(' · ') || null;
     const filterItems: ExplorerMenuItem[] = [
         { heading: 'Show' },
         {
@@ -871,15 +872,8 @@ export const Explorer: FC = () => {
                       id: `layer:${layer.id}`,
                       label: layer.name,
                       checked: shownLayerId === layer.id,
-                      onRun: () => {
-                          // The layer shown alone is also the one new shapes go onto.
-                          if (shownLayerId === layer.id) {
-                              clearFilter();
-                              return;
-                          }
-                          showOnlyLayer(layer.id);
-                          selectExplorerLayer(layer.id);
-                      }
+                      // Shown alone, the layer also takes what is drawn; choosing it again shows all.
+                      onRun: () => showOnlyLayer(layer.id)
                   }))
               ]
             : []),
@@ -900,6 +894,7 @@ export const Explorer: FC = () => {
                 <div className={styles.header}>
                     <SearchBoxContainer label="Search" />
                     <button
+                        ref={filterButton}
                         type="button"
                         className={styles.filterButton}
                         aria-label="Filter"
@@ -942,6 +937,7 @@ export const Explorer: FC = () => {
                         label="Filter"
                         position={filterMenu}
                         items={filterItems}
+                        anchor={filterButton.current}
                         onClose={() => setFilterMenu(null)}
                     />
                 )}
