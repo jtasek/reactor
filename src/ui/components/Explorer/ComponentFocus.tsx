@@ -28,6 +28,8 @@ interface Props {
     componentId: string;
     /** The Explorer's last press. */
     lastPress: RefObject<Press | null>;
+    /** The list of rows, for the Explorer's one tab stop. */
+    outlineRef: RefObject<HTMLDivElement | null>;
     /** The rows of the component's own layers. */
     children: ReactNode;
 }
@@ -36,7 +38,7 @@ interface Props {
  * The Explorer while a component is edited: its name with Done, its variants, its
  * layers and where it is used. Done or Escape goes back to the whole outline.
  */
-export const ComponentFocus: FC<Props> = ({ componentId, lastPress, children }) => {
+export const ComponentFocus: FC<Props> = ({ componentId, lastPress, outlineRef, children }) => {
     const name = useAppState((state) => state.currentDocument.components[componentId]?.name);
     const focus = useAppState((state) => componentFocus(state.currentDocument, componentId));
     // The view each screen is shown in: the one editing started from, or else its first.
@@ -107,7 +109,6 @@ export const ComponentFocus: FC<Props> = ({ componentId, lastPress, children }) 
 
     return (
         // Only ignores a double-click's second press; the rows take the keyboard as usual.
-
         <div
             className={styles.focus}
             onPointerDownCapture={ignore}
@@ -130,7 +131,7 @@ export const ComponentFocus: FC<Props> = ({ componentId, lastPress, children }) 
                     Done
                 </button>
             </div>
-            <div className={styles.outline} data-explorer-outline>
+            <div ref={outlineRef} className={styles.outline} data-explorer-outline>
                 {focus.variants.length > 0 && (
                     <Section title="Variants">
                         {focus.variants.map((variant) => {
@@ -143,6 +144,7 @@ export const ComponentFocus: FC<Props> = ({ componentId, lastPress, children }) 
                                     name={variant.name}
                                     icon={<ObjectTypeSymbol type="component" />}
                                     active={editing}
+                                    action
                                     chips={
                                         editing ? (
                                             <span className={`${styles.chip} ${styles.current}`}>
@@ -191,6 +193,7 @@ export const ComponentFocus: FC<Props> = ({ componentId, lastPress, children }) 
                                         {use.instanceIds.length}
                                     </span>
                                 }
+                                action
                                 onClick={() => showUse(use)}
                             />
                         ))}

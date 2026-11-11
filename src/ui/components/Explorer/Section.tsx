@@ -19,8 +19,10 @@ export function handleOutlineKeys(event: KeyboardEvent<HTMLElement>) {
             event.preventDefault();
             row.focus();
             row.scrollIntoView?.({ block: 'nearest' });
-            // Moving the focus selects, as in Finder.
-            row.click();
+            // Moving the focus selects, as in Finder; a row that acts waits for Return.
+            if (!row.hasAttribute('data-explorer-action')) {
+                row.click();
+            }
         }
     };
     const toggle = () =>

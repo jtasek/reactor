@@ -484,6 +484,8 @@ export const Explorer: FC = () => {
     const outlineScroll = useRef(0);
     const lastPress = useRef<Press | null>(null);
     const wasFocused = useRef(focusedId);
+    // Whether the keyboard focus was in the component's view, to bring it back to the outline.
+    const focusInside = useRef(false);
 
     // The whole outline's scroll, kept while a component is edited and put back after.
     useEffect(() => {
@@ -506,7 +508,24 @@ export const Explorer: FC = () => {
         if (wasFocused.current && !focusedId && scroller) {
             scroller.scrollTop = outlineScroll.current;
         }
+        let frame = 0;
+
+        // The row that had the focus is gone; the selected row takes it, after its rows open.
+        if (wasFocused.current && !focusedId && focusInside.current) {
+            const lost = window.document.activeElement;
+
+            if (!lost || lost === window.document.body) {
+                frame = requestAnimationFrame(() =>
+                    outline.current
+                        ?.querySelector<HTMLElement>('[data-explorer-row][aria-pressed="true"]')
+                        ?.focus({ preventScroll: true })
+                );
+            }
+        }
+        focusInside.current = false;
         wasFocused.current = focusedId;
+
+        return () => cancelAnimationFrame(frame);
     }, [focusedId]);
 
     useEffect(() => {
@@ -572,8 +591,24 @@ export const Explorer: FC = () => {
 
         return (
             <OpenItems.Provider value={openRows}>
-                <section ref={panel} className={styles.explorer} aria-label="Explorer">
-                    <ComponentFocus componentId={focusedId} lastPress={lastPress}>
+                <section
+                    ref={panel}
+                    className={styles.explorer}
+                    aria-label="Explorer"
+                    onFocus={() => (focusInside.current = true)}
+                    onBlur={(event) => {
+                        const next = event.relatedTarget;
+
+                        if (next && !event.currentTarget.contains(next)) {
+                            focusInside.current = false;
+                        }
+                    }}
+                >
+                    <ComponentFocus
+                        componentId={focusedId}
+                        lastPress={lastPress}
+                        outlineRef={outline}
+                    >
                         {members.map((shapeId) => (
                             <ShapeItem key={shapeId} shapeId={shapeId} sourceId={focusedId} />
                         ))}

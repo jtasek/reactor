@@ -66,3 +66,36 @@ test('Done and a "Used in" row go back to the whole outline', async ({ page }) =
             .getByRole('button', { name: /^component-1/ })
     ).toHaveAttribute('aria-pressed', 'true');
 });
+
+test('the keyboard moves through the focus view and Return goes to a "Used in" place', async ({
+    page
+}) => {
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    const instance = explorer
+        .getByRole('region', { name: 'Canvas' })
+        .getByRole('button', { name: /^component-1/ });
+    const navigation = page.getByRole('navigation', { name: 'Component editing' });
+
+    await instance.dblclick();
+    const layer = explorer
+        .getByRole('region', { name: 'Layers in component-1' })
+        .getByRole('button', { name: 'rectangle-1' });
+    const canvas = explorer
+        .getByRole('region', { name: 'Used in' })
+        .getByRole('button', { name: 'Canvas' });
+
+    await layer.click();
+    // One tab stop for the whole list, as in the whole outline.
+    await expect(explorer.locator('[data-explorer-row][tabindex="0"]')).toHaveCount(1);
+    await expect(layer).toHaveAttribute('tabindex', '0');
+
+    // Moving onto a "Used in" row doesn't press it.
+    await layer.press('ArrowDown');
+    await expect(canvas).toBeFocused();
+    await expect(navigation).toBeVisible();
+
+    await canvas.press('Enter');
+    await expect(navigation).toHaveCount(0);
+    await expect(instance).toHaveAttribute('aria-pressed', 'true');
+    await expect(instance).toBeFocused();
+});

@@ -77,6 +77,11 @@ interface Props {
     defaultOpen?: boolean;
     /** What pressing the name does; the name is plain text without it. */
     onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
+    /**
+     * Whether pressing the row does something rather than select it: the arrow keys then
+     * only move onto the row, and Return or Space presses it.
+     */
+    action?: boolean;
     onDoubleClick?: MouseEventHandler<HTMLButtonElement>;
     /**
      * The row's actions, in its context menu. The ones named `hide` and `lock` also
@@ -109,6 +114,7 @@ export const ExplorerItem: FC<Props> = ({
     collapseId,
     defaultOpen = true,
     onClick,
+    action = false,
     onDoubleClick,
     menuActions = [],
     menuItems = [],
@@ -218,7 +224,12 @@ export const ExplorerItem: FC<Props> = ({
         requestAnimationFrame(() => nameButton.current?.focus({ preventScroll: true }));
     };
     const handleNameKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
-        if (event.key === 'Enter' || event.key === 'F2') {
+        if (action && (event.key === 'Enter' || event.key === ' ')) {
+            event.preventDefault();
+            if (!event.repeat) {
+                onClick?.(event as unknown as MouseEvent<HTMLButtonElement>);
+            }
+        } else if (event.key === 'Enter' || event.key === 'F2') {
             event.preventDefault();
             startRename();
         } else if (event.key === ' ') {
@@ -372,6 +383,7 @@ export const ExplorerItem: FC<Props> = ({
                         type="button"
                         className={styles.name}
                         data-explorer-row
+                        data-explorer-action={action || undefined}
                         aria-pressed={selected}
                         onPointerDown={handleNamePointerDown}
                         onClick={handleNameClick}
