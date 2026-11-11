@@ -1,4 +1,4 @@
-import { isScreenDefinition, screenViewName } from './screenViews';
+import { isScreenDefinition, screenOwners, screenViewName } from './screenViews';
 import { isScreenLayout } from './screenLayouts';
 import { sceneLayers } from './componentTree';
 import { frameParents } from './frameState';
@@ -237,4 +237,97 @@ export function explorerRevealKeys(document: Document): string[] {
     }
 
     return [...keys];
+}
+
+/** Where a component's instances are placed, as one "Used in" row of the focus view. */
+export interface ComponentUse {
+    kind: 'screen' | 'component' | 'canvas';
+    /** The screen or component holding the instances; absent for the Canvas. */
+    id?: string;
+    name: string;
+    instanceIds: string[];
+}
+
+/**
+ * What the Explorer lists while a component is being edited: the variants of its
+ * family, and where instances of that family are placed. Screens come first by name,
+ * then other components' sources, then the Canvas.
+ */
+export function componentFocus(document: Document, componentId: string) {
+    const component = document.components[componentId];
+
+    if (!component) {
+        return null;
+    }
+
+    const familyId = component.variantIds?.length
+        ? componentId
+        : (Object.values(document.components).find((item) => item.variantIds?.includes(componentId))
+              ?.id ?? componentId);
+    const family = [familyId, ...(document.components[familyId]?.variantIds ?? [])];
+    const members = new Set(family);
+    const owners = screenOwners(document.frames);
+    const holders = new Map<string, string>();
+
+    for (const other of Object.values(document.components)) {
+        if (!members.has(other.id)) {
+            other.shapesIds.forEach((id) => holders.set(id, other.id));
+        }
+    }
+
+    const uses = new Map<string, ComponentUse>();
+    const placeFor = (key: string, make: () => Omit<ComponentUse, 'instanceIds'>) => {
+        const existing = uses.get(key) ?? { ...make(), instanceIds: [] };
+
+        uses.set(key, existing);
+
+        return existing;
+    };
+
+    for (const id of document.shapesIds) {
+        const shape = document.shapes[id];
+
+        if (shape?.type !== 'instance' || !members.has(shape.componentId)) {
+            continue;
+        }
+
+        const holder = holders.get(id);
+        const screenId = owners.get(shape.parentFrameId ?? '');
+        const place = holder
+            ? placeFor(`component:${holder}`, () => ({
+                  kind: 'component',
+                  id: holder,
+                  name: document.components[holder].name
+              }))
+            : screenId
+              ? placeFor(`screen:${screenId}`, () => ({
+                    kind: 'screen',
+                    id: screenId,
+                    name: document.frames[screenId]?.name ?? screenId
+                }))
+              : placeFor('canvas', () => ({ kind: 'canvas', name: 'Canvas' }));
+
+        place.instanceIds.push(id);
+    }
+
+    const rank = { screen: 0, component: 1, canvas: 2 };
+
+    return {
+        variants:
+            family.length > 1
+                ? family.flatMap((id) => {
+                      const variant = document.components[id];
+
+                      return variant
+                          ? [{ id, name: variant.name, editable: !variant.library }]
+                          : [];
+                  })
+                : [],
+        usedIn: [...uses.values()].sort(
+            (a, b) =>
+                rank[a.kind] - rank[b.kind] ||
+                a.name.localeCompare(b.name) ||
+                (a.id ?? '').localeCompare(b.id ?? '')
+        )
+    };
 }

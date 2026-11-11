@@ -56,6 +56,11 @@ test('switches an instance between two component sources and keeps the choice af
         .getByRole('button', { name: 'Card', exact: true })
         .click();
     await page.getByRole('combobox', { name: 'Add component variant' }).selectOption('wide');
+    // Editing the source narrows the Explorer to it; Done shows the instance again.
+    await page
+        .getByRole('region', { name: 'Explorer' })
+        .getByRole('button', { name: 'Done', exact: true })
+        .click();
     await page
         .getByRole('region', { name: 'Explorer' })
         .getByRole('button', { name: 'Card instance', exact: true })
@@ -147,6 +152,7 @@ test('creates and edits a variant without changing the default or losing instanc
     expect(createBox.x + createBox.width).toBeLessThanOrEqual(panelBox.x + panelBox.width);
     await page.screenshot({ path: 'test-results/create-component-variant-narrow.png' });
     await page.setViewportSize({ width: 1280, height: 720 });
+    await explorer.getByRole('button', { name: 'Done', exact: true }).click();
     await explorer.getByRole('button', { name: 'Card instance', exact: true }).click();
     await expect(width).toHaveValue('40');
     const variant = inspector.getByRole('combobox', { name: 'Component variant' });
@@ -179,6 +185,7 @@ test('creates and edits a variant without changing the default or losing instanc
     );
     await page.screenshot({ path: 'test-results/variant-diagnostics-narrow.png' });
     await page.setViewportSize({ width: 1280, height: 720 });
+    await explorer.getByRole('button', { name: 'Done', exact: true }).click();
     await explorer.getByRole('button', { name: 'Card instance', exact: true }).click();
     await expect(inspector.getByRole('status')).toContainText('Missing property “Opacity”');
     await variant.selectOption('family');
@@ -342,6 +349,7 @@ test('repairs a variant mapping, renders the retained value and keeps it through
     expect(field.x + field.width).toBeLessThanOrEqual(panel.x + panel.width);
     await page.screenshot({ path: 'test-results/variant-mapping-narrow.png' });
     await page.setViewportSize({ width: 1280, height: 720 });
+    await explorer.getByRole('button', { name: 'Done', exact: true }).click();
     await explorer.getByRole('button', { name: 'Button instance', exact: true }).click();
     const drawn = page.locator('svg#surface text').filter({ hasText: /^Continue$/ });
     await expect(drawn).toHaveCount(1);

@@ -226,10 +226,9 @@ test('component navigation works with Explorer closed and Escape leaves text edi
     const navigationBox = (await navigation.boundingBox())!;
     const commandsBox = (await page.getByRole('list', { name: 'Commands' }).boundingBox())!;
     expect(navigationBox.y + navigationBox.height).toBeLessThan(commandsBox.y);
-    await expect(explorer.getByRole('button', { name: 'Done', exact: true })).toHaveCount(0);
-    const search = explorer.getByRole('searchbox');
-    await search.focus();
-    await search.press('Escape');
+    // The Explorer narrows to the component while it is edited.
+    await expect(explorer.getByRole('button', { name: 'Done', exact: true })).toBeVisible();
+    await expect(explorer.getByRole('searchbox')).toHaveCount(0);
     await expect(navigation).toBeVisible();
 
     await page.getByRole('checkbox', { name: 'Explorer', exact: true }).uncheck();
@@ -322,6 +321,8 @@ for (const visible of [true, false]) {
                 .getByRole('button', { name: 'Hide', exact: true })
                 .click();
         }
+        // Editing the source narrows the Explorer to it; Done shows the whole outline again.
+        await explorer.getByRole('button', { name: 'Done', exact: true }).click();
         const sources = explorer.getByRole('region', { name: 'Components' });
         await sources.getByRole('button', { name: /^component-\d+$/ }).click();
         await page

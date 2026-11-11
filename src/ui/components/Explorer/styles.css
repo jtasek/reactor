@@ -474,3 +474,53 @@
 .done:focus-visible {
     outline: var(--focus-ring-width) solid var(--focus-ring-color);
 }
+
+.done:disabled {
+    cursor: default;
+    opacity: 0.5;
+}
+
+/* Editing a component: its name and the way back, above its own outline. */
+.focusBar {
+    align-items: center;
+    background: color-mix(in srgb, var(--component-color) 12%, transparent);
+    border-radius: var(--radius-md);
+    display: flex;
+    gap: 6px;
+    margin: 0 2px 4px;
+    min-height: 32px;
+    padding: 3px 4px 3px 8px;
+}
+
+.focusBar > svg {
+    color: var(--component-color);
+    flex: 0 0 auto;
+}
+
+.focusName {
+    flex: 1;
+    font-weight: var(--font-weight-semibold);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* How many instances a "Used in" row stands for. */
+.count {
+    color: var(--text-secondary-color);
+    flex: 0 0 auto;
+    font-size: var(--font-size-callout);
+    font-variant-numeric: tabular-nums;
+    padding: 0 4px;
+}
+
+.outline:focus-within .selected > .row .count {
+    color: var(--on-selection-color);
+}
+
+.focus {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
