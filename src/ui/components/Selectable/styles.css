@@ -5,3 +5,12 @@
     stroke-width: 2;
     vector-effect: non-scaling-stroke;
 }
+/* One box around a selection of many shapes, which show only their outlines. */
+.extent {
+    fill: none;
+    stroke: var(--selection-color);
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
+}
