@@ -160,6 +160,16 @@ function sameContent(next: object, previous: object) {
             next.every((item, index) => sameValue(item, previous[index]))
         );
     }
+    if (next instanceof Map || previous instanceof Map) {
+        return (
+            next instanceof Map &&
+            previous instanceof Map &&
+            next.size === previous.size &&
+            [...next].every(
+                ([key, item]) => previous.has(key) && sameValue(item, previous.get(key))
+            )
+        );
+    }
     if (next instanceof Set || previous instanceof Set) {
         return (
             next instanceof Set &&

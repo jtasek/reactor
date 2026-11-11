@@ -115,12 +115,14 @@ export const config = {
     // 2026-11-07: +1 KiB so startup waits for the self-hosted Roboto before measuring text (~70 bytes).
     // 2026-11-10: +3 KiB entry, +2 KiB per file for the list of selected shapes (`shapeSelection.ts`)
     // that every selection write keeps, so selection readers stop depending on every shape.
+    // 2026-11-11: +3 KiB entry and per file for the container index (`containerState.ts`)
+    // that lets visibility and lock checks skip scanning every group, layer and component.
     performance: isDev
         ? false
         : {
               hints: 'error',
-              maxEntrypointSize: 501 * 1024,
-              maxAssetSize: 250 * 1024
+              maxEntrypointSize: 504 * 1024,
+              maxAssetSize: 253 * 1024
           },
     optimization: {
         // Readable module names on HMR in dev; stable hashes for caching in prod.

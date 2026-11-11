@@ -1,3 +1,4 @@
+import type { ContainerStates } from './containerState';
 import type { projectScreenViews } from './screenProjection';
 import type { DataEntity, DataField, DataRecord } from './dataTypes';
 import type { FrameLayout } from './frameLayout';
@@ -478,6 +479,8 @@ export interface Document {
     componentFrames: Record<string, GroupFrame | undefined>;
     /** The shapes of the document's own components. */
     componentMembersIds: ReadonlySet<string>;
+    /** Local projection of which shapes their containers hide or lock; never saved or shared. */
+    containerStates: ContainerStates;
     /** Runtime source editing context; other scene shapes are hidden while it is open. */
     editingComponentId: string | null;
     groupsIds: string[];

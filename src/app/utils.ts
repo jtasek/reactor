@@ -1,3 +1,4 @@
+import { containerStatesOf } from './containerState';
 import { frameState } from './frameState';
 import {
     Box,
@@ -589,7 +590,8 @@ export function isShapeLockedExternally(document: Document | undefined, shapeId:
     return (
         document.locked ||
         frameState(document, document.shapes[shapeId].parentFrameId)?.lockedBy !== undefined ||
-        inContainer(document, shapeId, (container) => container.locked)
+        (containerStatesOf(document)?.locked.has(shapeId) ??
+            inContainer(document, shapeId, (container) => container.locked))
     );
 }
 
@@ -603,8 +605,18 @@ export function isShapeLockedExternally(document: Document | undefined, shapeId:
 function hiddenByShownLayer(document: Document, shapeId: string): boolean {
     const shown = document.shownLayerId ? document.layers[document.shownLayerId] : undefined;
 
+    if (shown === undefined) {
+        return false;
+    }
+    const states = containerStatesOf(document);
+
+    if (states) {
+        const on = states.layers.get(shapeId);
+
+        return on !== undefined && !on.includes(shown.id);
+    }
+
     return (
-        shown !== undefined &&
         !shown.shapesIds.includes(shapeId) &&
         Object.values(document.layers).some((layer) => layer.shapesIds.includes(shapeId))
     );
@@ -636,6 +648,16 @@ export function isShapeVisible(document: Document | undefined, shapeId: string):
 
     // The one layer this screen shows is shown even when hidden by its own setting.
     const shownLayer = document.shownLayerId ? document.layers[document.shownLayerId] : undefined;
+    const states = containerStatesOf(document);
+
+    if (states) {
+        return (
+            !states.hidden.has(shapeId) &&
+            !(states.layers.get(shapeId) ?? []).some(
+                (id) => id !== shownLayer?.id && document.layers[id] && !document.layers[id].visible
+            )
+        );
+    }
 
     return !inContainer(
         document,

@@ -48,7 +48,6 @@ import {
     useCurrentDocument,
     useDocumentFilter,
     useGroup,
-    useGroupSelected,
     useShape,
     useShapeLocked,
     useShapesIds,
@@ -272,79 +271,94 @@ const LazyShapeItem = memo<{
     );
 });
 
-const GroupItem: FC<{
+interface GroupItemProps {
     groupId: string;
     shapesIds: string[];
+    /** Read once for the whole list: each row asking would read every group. */
+    selected: boolean;
     viewId?: string;
-}> = ({ groupId, shapesIds, viewId }) => {
-    const group = useGroup(groupId);
-    const inherited = useShapesFrameState(group.shapesIds);
-    const selected = useGroupSelected(groupId);
-    const documentLocked = useAppState((state) => state.currentDocument.locked);
-    const {
-        addShapesToGroup,
-        unselectShapes,
-        toggleGroupSelected,
-        toggleGroupLocked,
-        toggleGroupVisible,
-        updateGroup,
-        events
-    } = useActions();
-    const commands = useItemCommandActions(
-        group.shapesIds,
-        group.locked || inherited.locked || inherited.hidden
-    );
-    const layerItems = useMoveToLayerItems(group.shapesIds, group.locked || inherited.locked);
+}
 
-    const handleSelect = ({ shiftKey }: MouseEvent<HTMLButtonElement>) => {
-        events.setScreenView(viewId ?? null);
+/**
+ * A group's row; memoized, as its list renders again whenever a row opens or the
+ * selection changes, and its shapes come sorted in a new list each time.
+ */
+const GroupItem = memo<GroupItemProps>(
+    function GroupItem({ groupId, shapesIds, selected, viewId }) {
+        const group = useGroup(groupId);
+        const inherited = useShapesFrameState(group.shapesIds);
+        const documentLocked = useAppState((state) => state.currentDocument.locked);
+        const {
+            addShapesToGroup,
+            unselectShapes,
+            toggleGroupSelected,
+            toggleGroupLocked,
+            toggleGroupVisible,
+            updateGroup,
+            events
+        } = useActions();
+        const commands = useItemCommandActions(
+            group.shapesIds,
+            group.locked || inherited.locked || inherited.hidden
+        );
+        const layerItems = useMoveToLayerItems(group.shapesIds, group.locked || inherited.locked);
 
-        if (!shiftKey) {
-            unselectShapes();
-        }
-        toggleGroupSelected(groupId);
-    };
+        const handleSelect = ({ shiftKey }: MouseEvent<HTMLButtonElement>) => {
+            events.setScreenView(viewId ?? null);
 
-    return (
-        <ExplorerItem
-            kind="group"
-            name={group.name}
-            icon={<ObjectTypeSymbol type="group" />}
-            dragged={{ kind: 'group', id: groupId }}
-            collapseId={explorerKey('group', groupId)}
-            selected={selected}
-            visible={group.visible && !inherited.hidden}
-            onClick={handleSelect}
-            onRename={
-                group.locked || inherited.locked || documentLocked
-                    ? undefined
-                    : (name) => updateGroup({ id: groupId, name })
+            if (!shiftKey) {
+                unselectShapes();
             }
-            menuActions={[
-                {
-                    ...hideAction(!group.visible, () => toggleGroupVisible(groupId)),
-                    disabled: inherited.locked
-                },
-                {
-                    ...lockAction(group.locked, () => toggleGroupLocked(groupId)),
-                    disabled: inherited.locked
-                },
-                ...commands(useScopedCommands('group'))
-            ]}
-            menuItems={layerItems}
-            onDrop={({ kind, id }) => {
-                // Only shapes join a group; a group dropped on a group stays as it is.
-                if (kind === 'shape') {
-                    addShapesToGroup({ shapeIds: [id], groupId });
+            toggleGroupSelected(groupId);
+        };
+
+        return (
+            <ExplorerItem
+                kind="group"
+                name={group.name}
+                icon={<ObjectTypeSymbol type="group" />}
+                dragged={{ kind: 'group', id: groupId }}
+                collapseId={explorerKey('group', groupId)}
+                selected={selected}
+                visible={group.visible && !inherited.hidden}
+                onClick={handleSelect}
+                onRename={
+                    group.locked || inherited.locked || documentLocked
+                        ? undefined
+                        : (name) => updateGroup({ id: groupId, name })
                 }
-            }}
-        >
-            {shapesIds.map((shapeId) => (
-                <ShapeItem key={shapeId} shapeId={shapeId} viewId={viewId} />
-            ))}
-        </ExplorerItem>
-    );
-};
+                menuActions={[
+                    {
+                        ...hideAction(!group.visible, () => toggleGroupVisible(groupId)),
+                        disabled: inherited.locked
+                    },
+                    {
+                        ...lockAction(group.locked, () => toggleGroupLocked(groupId)),
+                        disabled: inherited.locked
+                    },
+                    ...commands(useScopedCommands('group'))
+                ]}
+                menuItems={layerItems}
+                onDrop={({ kind, id }) => {
+                    // Only shapes join a group; a group dropped on a group stays as it is.
+                    if (kind === 'shape') {
+                        addShapesToGroup({ shapeIds: [id], groupId });
+                    }
+                }}
+            >
+                {shapesIds.map((shapeId) => (
+                    <ShapeItem key={shapeId} shapeId={shapeId} viewId={viewId} />
+                ))}
+            </ExplorerItem>
+        );
+    },
+    (before, after) =>
+        before.groupId === after.groupId &&
+        before.selected === after.selected &&
+        before.viewId === after.viewId &&
+        before.shapesIds.length === after.shapesIds.length &&
+        before.shapesIds.every((id, index) => after.shapesIds[index] === id)
+);
 
 interface Contents {
     groups: { groupId: string; shapesIds: string[] }[];
@@ -353,6 +367,10 @@ interface Contents {
 
 const ObjectContents: FC<Contents & { viewId?: string }> = ({ groups, shapesIds, viewId }) => {
     const drawOrder = new Map(useShapesIds().map((id, index) => [id, index]));
+    // A list without groups never reads which are selected, so selecting leaves it be.
+    const selectedGroups = useAppState((state) =>
+        groups.length > 0 ? state.currentDocument.selectedGroupsIds : []
+    );
     const items = [
         ...groups.map((group) => ({
             kind: 'group' as const,
@@ -378,6 +396,7 @@ const ObjectContents: FC<Contents & { viewId?: string }> = ({ groups, shapesIds,
                         key={item.id}
                         groupId={item.id}
                         shapesIds={item.shapesIds}
+                        selected={selectedGroups.includes(item.id)}
                         viewId={viewId}
                     />
                 ) : lazy ? (
@@ -445,7 +464,62 @@ function useOpenRows(documentId: string) {
     );
 }
 
-export const Explorer: FC = () => {
+/** One tab stop for the outline: the row with the focus, or else the selected or first one. */
+function placeTabStop(outline: HTMLElement | null) {
+    const rows = [...(outline?.querySelectorAll<HTMLElement>('[data-explorer-row]') ?? [])];
+    const focused = rows.find((row) => row === window.document.activeElement);
+    const target =
+        focused ?? rows.find((row) => row.getAttribute('aria-pressed') === 'true') ?? rows[0];
+
+    rows.forEach((row) => (row.tabIndex = row === target ? 0 : -1));
+}
+
+/**
+ * Opens and scrolls to the rows of what is selected. It reads the selection on its
+ * own, so selecting something renders only this and the rows whose state changed,
+ * not the whole outline, which reads every shape of the document.
+ */
+const RevealSelection: FC<{
+    openRows: ReturnType<typeof useOpenRows>;
+    outline: React.RefObject<HTMLDivElement | null>;
+    focused: boolean;
+}> = ({ openRows, outline, focused }) => {
+    const revealKeys = useAppState((state) => explorerRevealKeys(state.currentDocument).join(' '));
+    const selection = useAppState(({ currentDocument }) =>
+        [
+            currentDocument.selectedFrameId ?? '',
+            ...currentDocument.selectedGroupsIds,
+            ...currentDocument.selectedShapesIds
+        ].join(' ')
+    );
+
+    useEffect(() => {
+        // The whole outline opens nothing for selections made while a component is edited.
+        if (revealKeys && !focused) {
+            openRows.setOpen(Object.fromEntries(revealKeys.split(' ').map((key) => [key, true])));
+        }
+        // Each new selection reveals its rows; closing one afterwards keeps it closed.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [revealKeys, selection, focused]);
+
+    useEffect(() => {
+        const frame = requestAnimationFrame(() =>
+            outline.current
+                ?.querySelector('[aria-selected="true"]')
+                ?.scrollIntoView?.({ block: 'nearest' })
+        );
+
+        return () => cancelAnimationFrame(frame);
+    }, [outline, revealKeys, selection]);
+
+    // The selected row may have changed without the outline rendering again.
+    useLayoutEffect(() => placeTabStop(outline.current), [outline, selection]);
+
+    return null;
+};
+
+/** Memoized: it has no props, and reads every shape, so a panel around it rendering costs it nothing. */
+export const Explorer = memo(function Explorer() {
     const [status, setStatus] = useState<ExplorerStatusFilter>('all');
     const [filterMenu, setFilterMenu] = useState<{ x: number; y: number } | null>(null);
     const [managingLayers, setManagingLayers] = useState(false);
@@ -464,14 +538,6 @@ export const Explorer: FC = () => {
     const shownLayerId = useShownLayerId();
     const canAddLayer = useCommandEnabled(NewLayerCommand);
     const editedViewId = useAppState((state) => state.events.pointer.screenView?.viewId);
-    const revealKeys = useAppState((state) => explorerRevealKeys(state.currentDocument).join(' '));
-    const selection = useAppState(({ currentDocument }) =>
-        [
-            currentDocument.selectedFrameId ?? '',
-            ...currentDocument.selectedGroupsIds,
-            ...currentDocument.selectedShapesIds
-        ].join(' ')
-    );
     const filterButton = useRef<HTMLButtonElement>(null);
     const openRows = useOpenRows(document.id);
     const { explorer } = useControls();
@@ -528,15 +594,6 @@ export const Explorer: FC = () => {
         return () => cancelAnimationFrame(frame);
     }, [focusedId]);
 
-    useEffect(() => {
-        // The whole outline opens nothing for selections made while a component is edited.
-        if (revealKeys && !focusedId) {
-            openRows.setOpen(Object.fromEntries(revealKeys.split(' ').map((key) => [key, true])));
-        }
-        // Each new selection reveals its rows; closing one afterwards keeps it closed.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [revealKeys, selection, focusedId]);
-
     // A component someone just made opens, so its parts show where they went.
     const componentIds = Object.keys(components).join(' ');
     const knownComponents = useRef({ documentId: document.id, ids: componentIds });
@@ -557,27 +614,7 @@ export const Explorer: FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [componentIds, document.id]);
 
-    useEffect(() => {
-        const frame = requestAnimationFrame(() =>
-            outline.current
-                ?.querySelector('[aria-selected="true"]')
-                ?.scrollIntoView?.({ block: 'nearest' })
-        );
-
-        return () => cancelAnimationFrame(frame);
-    }, [revealKeys, selection]);
-
-    // One tab stop for the outline: the row with the focus, or else the selected or first one.
-    useLayoutEffect(() => {
-        const rows = [
-            ...(outline.current?.querySelectorAll<HTMLElement>('[data-explorer-row]') ?? [])
-        ];
-        const focused = rows.find((row) => row === window.document.activeElement);
-        const target =
-            focused ?? rows.find((row) => row.getAttribute('aria-pressed') === 'true') ?? rows[0];
-
-        rows.forEach((row) => (row.tabIndex = row === target ? 0 : -1));
-    });
+    useLayoutEffect(() => placeTabStop(outline.current));
 
     if (!explorer.visible) {
         return null;
@@ -591,6 +628,7 @@ export const Explorer: FC = () => {
 
         return (
             <OpenItems.Provider value={openRows}>
+                <RevealSelection openRows={openRows} outline={outline} focused />
                 <section
                     ref={panel}
                     className={styles.explorer}
@@ -894,6 +932,7 @@ export const Explorer: FC = () => {
 
     return (
         <OpenItems.Provider value={openRows}>
+            <RevealSelection openRows={openRows} outline={outline} focused={false} />
             <section
                 ref={panel}
                 className={styles.explorer}
@@ -1037,7 +1076,7 @@ export const Explorer: FC = () => {
             </section>
         </OpenItems.Provider>
     );
-};
+});
 
 /** The element that scrolls the Explorer: the panel itself, or one holding it. */
 function scrollParent(element: HTMLElement | null) {
