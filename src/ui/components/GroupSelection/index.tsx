@@ -89,19 +89,26 @@ const GroupHighlight: FC<Props> = ({ groupId }) => {
     );
 };
 
-/** The boxes and handles of the selected groups, and the boxes of those under the pointer. */
-export const GroupSelections: FC = () => {
-    const groupsIds = useSelectedGroupsIds();
+/**
+ * The boxes of the groups under the pointer. On its own, so a pointer move
+ * renders only this, not the selected groups too.
+ */
+const GroupHighlights: FC = () => {
     const hoveredIds = useHoveredGroupsIds();
 
-    return (
-        <g id="group-selections">
-            {hoveredIds.map((groupId) => (
-                <GroupHighlight key={groupId} groupId={groupId} />
-            ))}
-            {groupsIds.map((groupId) => (
-                <GroupSelection key={groupId} groupId={groupId} />
-            ))}
-        </g>
-    );
+    return hoveredIds.map((groupId) => <GroupHighlight key={groupId} groupId={groupId} />);
 };
+
+const SelectedGroups: FC = () => {
+    const groupsIds = useSelectedGroupsIds();
+
+    return groupsIds.map((groupId) => <GroupSelection key={groupId} groupId={groupId} />);
+};
+
+/** The boxes and handles of the selected groups, and the boxes of those under the pointer. */
+export const GroupSelections: FC = () => (
+    <g id="group-selections">
+        <GroupHighlights />
+        <SelectedGroups />
+    </g>
+);

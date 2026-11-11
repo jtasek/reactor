@@ -40,6 +40,20 @@ export function screenOwners(frames: Record<string, Frame>) {
     return owners;
 }
 
+/**
+ * Whether a shape is screen source geometry, given `screenOwners` of the
+ * document's frames: the one-shape form of `screenSourceShapes`.
+ */
+export function isScreenSourceShape(
+    document: Pick<Document, 'shapes'>,
+    owners: Map<string, string | undefined>,
+    id: string
+) {
+    const parent = document.shapes[id]?.parentFrameId;
+
+    return parent !== undefined && owners.get(parent) !== undefined;
+}
+
 export function screenSourceShapes(document: Pick<Document, 'frames' | 'shapes'>) {
     const owners = screenOwners(document.frames);
 

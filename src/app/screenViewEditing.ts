@@ -513,6 +513,9 @@ export function pointerDocument(state: Context['state']): Document {
             shapesIds: document.shapesIds.filter((id) => !source.has(id))
         };
 
+        const frames = document.groupFrames;
+        const componentFrames = document.componentFrames;
+
         return {
             ...canvas,
             groupFrames: Object.fromEntries(
@@ -520,7 +523,7 @@ export function pointerDocument(state: Context['state']): Document {
                     group.id,
                     group.shapesIds.some((id) => source.has(id))
                         ? (groupFrame(canvas, group) ?? undefined)
-                        : document.groupFrames[group.id]
+                        : frames[group.id]
                 ])
             ),
             componentFrames: Object.fromEntries(
@@ -528,7 +531,7 @@ export function pointerDocument(state: Context['state']): Document {
                     component.id,
                     component.shapesIds.some((id) => source.has(id))
                         ? (groupFrame(canvas, component) ?? undefined)
-                        : document.componentFrames[component.id]
+                        : componentFrames[component.id]
                 ])
             )
         };

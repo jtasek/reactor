@@ -174,8 +174,12 @@ export function groupAtPoint(
     point: Point,
     enteredGroupId: string | null
 ): Group | undefined {
+    // Read the derived table once: each read in a tracked render adds every path
+    // it depends on again, which made a hover cost groups × shapes.
+    const frames = document.groupFrames;
+
     return Object.values(document.groups).findLast((group) => {
-        const frame = group.id === enteredGroupId ? undefined : document.groupFrames[group.id];
+        const frame = group.id === enteredGroupId ? undefined : frames[group.id];
 
         if (!frame) {
             return false;
