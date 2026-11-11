@@ -481,6 +481,8 @@ export interface Document {
     componentMembersIds: ReadonlySet<string>;
     /** Local projection of which shapes their containers hide or lock; never saved or shared. */
     containerStates: ContainerStates;
+    /** Whether anything is hidden; see `hasHidden`. */
+    hasHiddenItems: boolean;
     /** Runtime source editing context; other scene shapes are hidden while it is open. */
     editingComponentId: string | null;
     groupsIds: string[];
