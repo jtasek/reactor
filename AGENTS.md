@@ -188,8 +188,8 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   (not suppressed). `pnpm lint:baseline` fails on any finding in a file changed relative to
   `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
   recorded counts: fix a touched file's existing findings rather than adding exceptions.
-- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 501 KiB or
-  any file 250 KiB (the budget in `webpack.config.mjs`, entry measured at 500.8 KiB with the list of selected shapes); raise
+- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 504 KiB or
+  any file 253 KiB (the budget in `webpack.config.mjs`, entry measured at 503.1 KiB with the container index); raise
   it only for code every page needs as it opens, after checking what grew. Commands and
   tools load with the editor page, which registers them (`src/pages/registerEditor.ts`),
   not at startup: the store keeps only the tools namespace's state and actions

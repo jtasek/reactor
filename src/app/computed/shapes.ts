@@ -1,5 +1,6 @@
 import { projectFrameLayout } from '../frameLayout';
 import { projectFrameStates } from '../frameState';
+import { projectContainerStates } from '../containerState';
 import { derived } from 'overmind';
 import { Application, Document } from '../types';
 import { isShapeVisible } from '../utils';
@@ -44,6 +45,9 @@ export const screenViewGeometry = derived((document: Document, state: Applicatio
 );
 
 export const frameStates = derived((document: Document) => projectFrameStates(document.frames));
+
+/** Which shapes their groups, layers and components hide or lock: see `projectContainerStates`. */
+export const containerStates = derived((document: Document) => projectContainerStates(document));
 
 export const framesIds = derived((document: Document) => Object.keys(document.frames).sort());
 
