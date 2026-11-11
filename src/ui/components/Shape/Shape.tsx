@@ -2,6 +2,7 @@ import { hasLayoutOffset, renderedShape } from 'src/app/frameLayout';
 import React, { CSSProperties, FC, createElement, memo, useLayoutEffect, useRef } from 'react';
 import { Active } from '../Active/Active';
 import { Label } from '../Label';
+import { useLargeSelection } from '../Selectable/LargeSelection';
 import { Resizable } from '../Selectable/Resizable';
 import { Selectable } from '../Selectable/Selectable';
 import { getComponentByType } from 'src/tools/components';
@@ -235,7 +236,7 @@ export const Shape = memo((props: Props) => {
                     {!locked && !inLayout && (
                         <Resizable key={`resizable-${shape.type}-${shape.id}`} shape={shape} />
                     )}
-                    <Label key={`label-${shape.type}-${shape.id}`} shape={shape} />
+                    <SizeLabel key={`label-${shape.type}-${shape.id}`} shape={shape} />
                 </>
             )}
         </g>
@@ -243,3 +244,7 @@ export const Shape = memo((props: Props) => {
 });
 
 Shape.displayName = 'Shape';
+
+/** A selected shape's size; a large selection shows one for all: see `LARGE_SELECTION`. */
+const SizeLabel: FC<{ shape: ShapeType }> = ({ shape }) =>
+    useLargeSelection() ? null : <Label shape={shape} />;

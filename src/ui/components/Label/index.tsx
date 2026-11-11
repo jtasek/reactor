@@ -4,7 +4,8 @@ import styles from './styles.css';
 import { ShapeInput } from 'src/app/types';
 import { getShapeBounds } from 'src/app/utils';
 
-const LABEL_OFFSET = 20;
+/** How far below a box its size label sits. */
+export const LABEL_OFFSET = 20;
 
 interface Props {
     shape: ShapeInput;

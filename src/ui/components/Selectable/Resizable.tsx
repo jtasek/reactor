@@ -2,6 +2,7 @@ import React, { FC } from 'react';
 import type { Box, ResizeHandlerType } from 'src/app/types';
 import { Handle } from '../Handle';
 import { RadiusHandles } from '../Handle/RadiusHandles';
+import { useLargeSelection } from './LargeSelection';
 import { RotateHandle } from '../Handle/RotateHandle';
 import handleStyles from '../Handle/styles.css';
 import { Props } from './Selectable';
@@ -123,6 +124,13 @@ export const Handles: FC<HandlesProps> = ({
 };
 
 export const Resizable: FC<Props> = ({ shape }) => {
+    const large = useLargeSelection();
+
+    // In a large selection only its one box is drawn: see `LARGE_SELECTION`.
+    return large ? null : <ShapeHandles shape={shape} />;
+};
+
+const ShapeHandles: FC<Props> = ({ shape }) => {
     const gesture = useGesture();
     const activeHandle =
         gesture.kind === 'resizing' && gesture.shapeId === shape.id ? gesture.handle : undefined;

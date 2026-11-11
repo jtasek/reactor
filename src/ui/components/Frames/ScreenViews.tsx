@@ -29,6 +29,7 @@ import { Handles } from '../Selectable/Resizable';
 import { Instance } from '../Shape/Instance';
 import { ScreenViewContainerSelection } from './ScreenViewContainerSelection';
 import styles from './styles.css';
+import { useLargeSelection } from '../Selectable/LargeSelection';
 
 const ProjectedSelectionControls: FC<{ shape: Shape; viewId: string; placedOffset: boolean }> = ({
     shape,
@@ -39,8 +40,10 @@ const ProjectedSelectionControls: FC<{ shape: Shape; viewId: string; placedOffse
     const grouped = useShapesInSelectedGroupsIds();
     const gesture = useGesture();
     const ownsGesture = 'screenView' in gesture && gesture.screenView?.address.viewId === viewId;
+    const large = useLargeSelection();
 
-    if (grouped.includes(shape.id)) {
+    // In a large selection only its one box is drawn: see `LARGE_SELECTION`.
+    if (large || grouped.includes(shape.id)) {
         return null;
     }
 

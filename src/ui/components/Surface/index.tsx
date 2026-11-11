@@ -13,6 +13,7 @@ import { Shapes } from './Shapes';
 import { SnapLines } from '../SnapLines';
 import { Measures } from '../SnapLines/Measures';
 import { Stack } from 'src/tools/components/Stack';
+import { LargeSelectionBox, LargeSelectionProvider } from '../Selectable/LargeSelection';
 import { Surface } from './Surface';
 
 export const Canvas: FC = () => {
@@ -24,15 +25,20 @@ export const Canvas: FC = () => {
                 <Grid />
                 <GuideGrips />
                 <Camera>
-                    <ErrorBoundary fallback={<h1>Something went wrong while rendering shapes</h1>}>
-                        <FrameGrips />
-                        <Shapes />
-                        <ScreenViews />
-                        <Frames />
-                        <SnapLines />
-                        <Measures overlay={overlay} />
-                        <Stack />
-                    </ErrorBoundary>
+                    <LargeSelectionProvider>
+                        <ErrorBoundary
+                            fallback={<h1>Something went wrong while rendering shapes</h1>}
+                        >
+                            <FrameGrips />
+                            <Shapes />
+                            <ScreenViews />
+                            <Frames />
+                            <SnapLines />
+                            <Measures overlay={overlay} />
+                            <LargeSelectionBox overlay={overlay} />
+                            <Stack />
+                        </ErrorBoundary>
+                    </LargeSelectionProvider>
                 </Camera>
                 <Guides />
                 <Rulers />
