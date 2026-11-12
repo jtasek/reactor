@@ -26,7 +26,7 @@ import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
 
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 30;
+export const SCHEMA_VERSION = 31;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',
@@ -747,6 +747,7 @@ function readFrame(value: unknown): Frame {
         ...(f.kind === 'screen' && f.definitionOnly === true
             ? { definitionOnly: true as const }
             : {}),
+        ...(f.kind === 'screen' && f.start === true ? { start: true as const } : {}),
         ...(f.screenId === undefined ? {} : { screenId: id(f.screenId) }),
         ...(f.screenLayout === true ? { screenLayout: true as const } : {}),
         ...(f.layoutId === undefined ? {} : { layoutId: id(f.layoutId) }),

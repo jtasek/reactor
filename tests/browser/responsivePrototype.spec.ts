@@ -184,7 +184,7 @@ test('opens the screen chosen in Flow only after an explicit player launch', asy
     await page.goto('/flow');
     await expect(page.getByRole('heading', { name: 'Flow', exact: true })).toBeVisible();
     await expect(page.locator('iframe')).toHaveCount(0);
-    await page.getByLabel('Start screen for reachability').selectOption('details');
+    await page.getByLabel('Start screen', { exact: true }).selectOption('details');
     await page.getByRole('link', { name: 'Play prototype', exact: true }).click();
     await expect(page.getByLabel('Start screen')).toHaveValue('details');
     await expect(page.getByLabel('Preview screen')).toHaveValue('details');

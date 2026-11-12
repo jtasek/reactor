@@ -232,7 +232,7 @@ export function FlowDiagram({
                             <p>Unavailable destination: hidden or nested screen.</p>
                         )}
                         {start && !reachable.has(screen.id) && (
-                            <p>Not reachable from the chosen screen.</p>
+                            <p>Not reachable from the start screen.</p>
                         )}
                         {selected && (
                             <button
