@@ -181,11 +181,17 @@ describe('layoutFlow', () => {
         );
     });
 
-    it('puts screens nothing leads to in a last column', () => {
-        const document = fixture();
-        document.shapes.next.visible = false;
-        document.shapes['wide-next'].visible = false;
-        expect(layoutFlow(flowMachine(document)).cards.map((card) => card.column)).toEqual([0, 1]);
+    it('puts screens nothing leads to in a last column, counting only links Preview draws', () => {
+        const document = template('list-detail');
+        expect(layoutFlow(flowMachine(document)).cards.map((card) => card.column)).toEqual([
+            0, 1, 1
+        ]);
+        // Only a hidden control leads to Empty projects now, so it joins the last column.
+        Object.values(document.shapes).find((shape) => shape.name === 'See empty state')!.visible =
+            false;
+        const machine = flowMachine(document);
+        expect(machine.states.map((state) => state.reachable)).toEqual([true, true, false]);
+        expect(layoutFlow(machine).cards.map((card) => card.column)).toEqual([0, 1, 2]);
     });
 
     it('moves no screen that did not need to move when a link is added', () => {

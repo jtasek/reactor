@@ -47,33 +47,44 @@ export const rowAnchor = (card: FlowCard, row: number): Point => ({
  */
 export function layoutFlow(machine: Machine, previous?: FlowLayout): FlowLayout {
     const byId = new Map(machine.states.map((state) => [state.id, state]));
-    const distance = new Map<string, number>();
-    const parents = new Map<string, string[]>();
-    let frontier = machine.initial && byId.has(machine.initial) ? [machine.initial] : [];
-    frontier.forEach((id) => distance.set(id, 0));
-    while (frontier.length > 0) {
-        const next: string[] = [];
-        for (const id of frontier) {
-            for (const transition of byId.get(id)!.transitions) {
-                const to = transition.effect.kind === 'go' ? transition.effect.to : undefined;
-                if (!to || !byId.has(to)) {
-                    continue;
-                }
-                if (!distance.has(to)) {
-                    distance.set(to, distance.get(id)! + 1);
-                    next.push(to);
-                }
-                if (distance.get(to) === distance.get(id)! + 1) {
-                    parents.set(to, [...(parents.get(to) ?? []), id]);
+    /** Steps from the start, through links Preview draws or through every link. */
+    const walk = (drawnOnly: boolean) => {
+        const distance = new Map<string, number>();
+        const parents = new Map<string, string[]>();
+        let frontier = machine.initial && byId.has(machine.initial) ? [machine.initial] : [];
+        frontier.forEach((id) => distance.set(id, 0));
+        while (frontier.length > 0) {
+            const next: string[] = [];
+            for (const id of frontier) {
+                for (const transition of byId.get(id)!.transitions) {
+                    const to = transition.effect.kind === 'go' ? transition.effect.to : undefined;
+                    if (!to || !byId.has(to) || (drawnOnly && transition.inactive)) {
+                        continue;
+                    }
+                    if (!distance.has(to)) {
+                        distance.set(to, distance.get(id)! + 1);
+                        next.push(to);
+                    }
+                    if (distance.get(to) === distance.get(id)! + 1) {
+                        parents.set(to, [...(parents.get(to) ?? []), id]);
+                    }
                 }
             }
+            frontier = next;
         }
-        frontier = next;
-    }
-    const last = Math.max(-1, ...distance.values()) + 1;
+
+        return { distance, parents };
+    };
+    const drawn = walk(true);
+    const every = walk(false);
+    const parents = drawn.parents;
+    // What nothing leads to, as Preview plays it, goes last; the rest by how far it is.
+    const steps = (id: string) =>
+        byId.get(id)!.reachable ? (drawn.distance.get(id) ?? every.distance.get(id)) : undefined;
+    const last = Math.max(-1, ...machine.states.flatMap((state) => steps(state.id) ?? [])) + 1;
     const columns: string[][] = [];
     machine.states.forEach((state) => {
-        const column = distance.get(state.id) ?? last;
+        const column = steps(state.id) ?? last;
         (columns[column] ??= []).push(state.id);
     });
     const before = new Map(previous?.cards.map((card) => [card.id, card]));

@@ -22,7 +22,7 @@ export function FlowLinkMenu({
 }: {
     instanceId: string;
     name: string;
-    /** Inside another component: an edit changes it everywhere that component is used. */
+    /** Inside another component: it can be changed only at that component's source. */
     shared: boolean;
     position: Point;
     onClose: () => void;
@@ -48,7 +48,8 @@ export function FlowLinkMenu({
         return null;
     }
 
-    const off = data.disabled;
+    // A control inside another component changes only at its source, on the canvas.
+    const off = data.disabled || shared;
     const action = data.activation;
     const explicit = data.actionInherited ? undefined : action;
     const update = (settings: InteractionSettings) =>
@@ -89,12 +90,12 @@ export function FlowLinkMenu({
         data.variantTargets.length > 0 || data.visibilityTargets.length > 0 || !off;
     const pages: Record<Exclude<Page, 'newState'>, ExplorerMenuItem[]> = {
         link: [
-            ...(off || shared
+            ...(off
                 ? [
                       {
-                          heading: off
+                          heading: data.disabled
                               ? 'Locked or view only'
-                              : 'Applies wherever its component is used'
+                              : 'Part of another component: edit it on the canvas'
                       }
                   ]
                 : []),
@@ -299,19 +300,9 @@ export function FlowLinkMenu({
         return (
             <NewState
                 position={position}
-                onCancel={onClose}
-                onAdd={(stateName) => {
-                    const problem = editInteractions({
-                        target: 'state',
-                        kind: 'add',
-                        name: stateName,
-                        initial: false
-                    });
-
-                    return typeof problem === 'string' ? problem : undefined;
-                }}
-                onAdded={onClose}
                 instanceId={instanceId}
+                onCancel={onClose}
+                onDone={onClose}
             />
         );
     }
@@ -328,31 +319,24 @@ export function FlowLinkMenu({
     );
 }
 
-/** Names a new on/off state and makes the control switch it. */
+/** Names a new on/off state and makes the control switch it, as one undo step. */
 function NewState({
     position,
     instanceId,
-    onAdd,
-    onAdded,
+    onDone,
     onCancel
 }: {
     position: Point;
     instanceId: string;
-    onAdd: (name: string) => string | undefined;
-    onAdded: () => void;
+    onDone: () => void;
     onCancel: () => void;
 }) {
     const form = useRef<HTMLFormElement>(null);
     const [name, setName] = useState('');
     const [problem, setProblem] = useState<string>();
     const { editInteractions } = useActions();
-    const added = useAppState((state) =>
-        Object.values(state.currentDocument.prototypeBooleans).find(
-            (value) => value.name === name.trim()
-        )
-    );
-    const pending = useRef(false);
 
+    useEffect(() => form.current?.querySelector('input')?.focus(), []);
     useEffect(() => {
         const close = (event: PointerEvent) => {
             if (event.target instanceof Node && !form.current?.contains(event.target)) {
@@ -373,19 +357,6 @@ function NewState({
             document.removeEventListener('keydown', escape, true);
         };
     }, [onCancel]);
-    useEffect(() => form.current?.querySelector('input')?.focus(), []);
-    useEffect(() => {
-        // The state exists once the store has it; then the control can switch it.
-        if (pending.current && added) {
-            pending.current = false;
-            editInteractions({
-                target: 'instance',
-                id: instanceId,
-                settings: { activate: { type: 'toggleState', stateId: added.id } }
-            });
-            onAdded();
-        }
-    }, [added, editInteractions, instanceId, onAdded]);
 
     return createPortal(
         <form
@@ -401,16 +372,17 @@ function NewState({
                 if (!name.trim()) {
                     return;
                 }
-                if (added) {
-                    setProblem('A state with this name already exists.');
-
-                    return;
-                }
-                pending.current = true;
-                const error = onAdd(name.trim());
-                if (error) {
-                    pending.current = false;
+                const error = editInteractions({
+                    target: 'state',
+                    kind: 'add',
+                    name: name.trim(),
+                    initial: false,
+                    switchedBy: instanceId
+                });
+                if (typeof error === 'string') {
                     setProblem(error);
+                } else {
+                    onDone();
                 }
             }}
         >

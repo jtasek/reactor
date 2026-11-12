@@ -169,6 +169,8 @@ test('marks a link to a missing screen and prevents edits to locked controls on 
     await expect(choice(open, 'Home')).toBeEnabled();
     await open.getByRole('menuitem', { name: 'Remove link', exact: true }).click();
     await expect(row(page, 'wide-next')).toHaveCount(0);
+    // The row is gone, so focus stays on its card.
+    await expect(page.getByRole('button', { name: 'Add link on Home', exact: true })).toBeFocused();
     await expect(page.getByText('Flow · 2 screens · 1 link', { exact: true })).toBeVisible();
     await expect(page.locator('iframe')).toHaveCount(0);
 });
@@ -309,6 +311,13 @@ for (const width of [1100, 720]) {
         };
         await expect(page.locator('[data-flow-screen]')).toHaveCount(3);
         expect(await inside()).toBe(true);
+        // Fitting keeps the map clear of the toolbar floating over the board.
+        const bar = (await page.locator('main > header').boundingBox())!;
+        for (const card of await page.locator('[data-flow-screen]').all()) {
+            expect((await card.boundingBox())!.y).toBeGreaterThanOrEqual(bar.y + bar.height);
+        }
+        // Cards are labelled groups, not landmarks.
+        expect(await page.locator('main').ariaSnapshot()).not.toContain('region');
         await expect(fit).toHaveCount(0);
         const fittedZoom = await board.getAttribute('data-zoom');
         await page.mouse.move(width / 2, 400);
@@ -463,6 +472,12 @@ test('adds a named state from the menu and makes the control switch it', async (
     await form.getByRole('button', { name: 'Add', exact: true }).click();
     await expect(form).toHaveCount(0);
     await expect(next).toHaveAccessibleDescription('Continue button switches Help is open');
+    // The new state and the switch are one step: one Undo takes back both.
+    await page.getByRole('button', { name: 'Undo', exact: true }).click();
+    await expect(next).toHaveAccessibleDescription('Continue button goes to Details');
+    await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeDisabled();
+    await page.getByRole('button', { name: 'Redo', exact: true }).click();
+    await expect(next).toHaveAccessibleDescription('Continue button switches Help is open');
     // The other control can now be shown only while that state is on.
     await row(page, 'wide-next').click();
     const other = linkMenu(page, 'Wide continue');
@@ -527,3 +542,52 @@ for (const name of ['List / detail', 'Forms', 'Sign-in', 'Settings', 'Inspector 
         await page.screenshot({ path: `test-results/flow-${slug}.png` });
     });
 }
+
+test('zooms with two fingers on a touch screen, starting on a card or on empty board', async ({
+    page
+}) => {
+    await seed(page, automaticLayoutsPrototype());
+    await page.setViewportSize({ width: 1000, height: 800 });
+    await page.goto('/flow');
+    const board = page.locator('[data-flow-board]');
+    await expect(screen(page, 'home')).toBeVisible();
+    const before = Number(await board.getAttribute('data-zoom'));
+    const thumb = (await page.getByRole('button', { name: 'Select Home' }).boundingBox())!;
+    // One finger on a card's picture, one on empty board, spreading apart.
+    await page.evaluate(
+        ({ from }) => {
+            const send = (type: string, id: number, x: number, y: number) => {
+                const target =
+                    (type === 'pointerdown' ? document.elementFromPoint(x, y) : null) ??
+                    document.querySelector('[data-flow-board]')!;
+                target.dispatchEvent(
+                    new PointerEvent(type, {
+                        pointerId: id,
+                        pointerType: 'touch',
+                        isPrimary: id === 1,
+                        clientX: x,
+                        clientY: y,
+                        bubbles: true
+                    })
+                );
+            };
+            send('pointerdown', 1, from.x, from.y);
+            send('pointerdown', 2, from.x + 100, from.y);
+            for (let step = 1; step <= 10; step++) {
+                send('pointermove', 1, from.x - step * 10, from.y);
+                send('pointermove', 2, from.x + 100 + step * 10, from.y);
+            }
+            send('pointerup', 1, from.x - 100, from.y);
+            send('pointerup', 2, from.x + 200, from.y);
+        },
+        { from: { x: thumb.x + 40, y: thumb.y + 40 } }
+    );
+    // 100 px apart became 300 px apart.
+    await expect
+        .poll(async () => Number(await board.getAttribute('data-zoom')))
+        .toBeGreaterThanOrEqual(Math.min(200, before * 3) - 1);
+    expect(Number(await board.getAttribute('data-zoom'))).toBeLessThanOrEqual(
+        Math.min(200, before * 3) + 1
+    );
+    await expect(page.getByRole('button', { name: 'Fit', exact: true })).toBeVisible();
+});

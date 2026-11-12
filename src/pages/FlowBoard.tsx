@@ -23,6 +23,8 @@ export type FlowSelection = { kind: 'link'; key: string } | { kind: 'screen'; id
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 2;
 const ARROW_STEP = 20;
+/** The floating toolbar's band at the top of the board, which fitting keeps clear. */
+const TOOLBAR_BAND = 68;
 /** A press that moves less than this selects the screen; more drags its card. */
 const DRAG_SLIP = 3;
 
@@ -203,15 +205,13 @@ export function FlowBoard({
             return;
         }
         const { width, height } = size.current;
-        const zoom = Math.max(
-            MIN_ZOOM,
-            Math.min(1, element.clientWidth / width, element.clientHeight / height)
-        );
+        const room = Math.max(1, element.clientHeight - TOOLBAR_BAND);
+        const zoom = Math.max(MIN_ZOOM, Math.min(1, element.clientWidth / width, room / height));
         apply(
             {
                 zoom,
                 x: Math.max(0, (element.clientWidth - width * zoom) / 2),
-                y: Math.max(0, (element.clientHeight - height * zoom) / 2)
+                y: TOOLBAR_BAND + Math.max(0, (room - height * zoom) / 2)
             },
             true
         );
@@ -292,6 +292,26 @@ export function FlowBoard({
     const pan = useRef<{ pointer: number; origin: Point; x: number; y: number } | undefined>(
         undefined
     );
+    // Fingers on a touch screen, so two of them pinch to zoom wherever they land.
+    const touches = useRef(new Map<number, Point>());
+    const pinch = useRef<
+        | { distance: number; middle: Point; view: { x: number; y: number; zoom: number } }
+        | undefined
+    >(undefined);
+    const pinchPoints = () => {
+        const [a, b] = [...touches.current.values()];
+        const origin = board.current!.getBoundingClientRect();
+
+        return {
+            distance: Math.max(1, Math.hypot(b.x - a.x, b.y - a.y)),
+            middle: { x: (a.x + b.x) / 2 - origin.left, y: (a.y + b.y) / 2 - origin.top }
+        };
+    };
+    const touchUp = (event: React.PointerEvent) => {
+        if (touches.current.delete(event.pointerId) && touches.current.size < 2) {
+            pinch.current = undefined;
+        }
+    };
     const drag = useRef<{ id: string; pointer: number; origin: Point; moved: boolean } | undefined>(
         undefined
     );
@@ -322,6 +342,47 @@ export function FlowBoard({
             className={styles.board}
             aria-label="Screen flow"
             data-flow-board=""
+            onPointerDownCapture={(event) => {
+                if (event.pointerType !== 'touch') {
+                    return;
+                }
+                touches.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+                if (touches.current.size === 2) {
+                    // Two fingers: whatever the first one started gives way to the pinch.
+                    pan.current = undefined;
+                    if (drag.current) {
+                        if (drag.current.moved) {
+                            onMove(drag.current.id, { x: 0, y: 0 }, true);
+                        }
+                        drag.current = undefined;
+                        setDragging(undefined);
+                    }
+                    pinch.current = { ...pinchPoints(), view: view.current };
+                }
+            }}
+            onPointerMoveCapture={(event) => {
+                if (!touches.current.has(event.pointerId)) {
+                    return;
+                }
+                touches.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+                const start = pinch.current;
+                if (!start || touches.current.size !== 2) {
+                    return;
+                }
+                const { distance, middle } = pinchPoints();
+                const zoom = Math.max(
+                    MIN_ZOOM,
+                    Math.min(MAX_ZOOM, (start.view.zoom * distance) / start.distance)
+                );
+                // The point first under the fingers stays under them.
+                apply({
+                    zoom,
+                    x: middle.x - ((start.middle.x - start.view.x) / start.view.zoom) * zoom,
+                    y: middle.y - ((start.middle.y - start.view.y) / start.view.zoom) * zoom
+                });
+            }}
+            onPointerUpCapture={touchUp}
+            onPointerCancelCapture={touchUp}
             onPointerDown={(event) => {
                 if (event.button !== 0 || event.target !== event.currentTarget) {
                     return;
@@ -452,6 +513,7 @@ export function FlowBoard({
                                 transform: `translate(${card.x}px, ${card.y}px)`,
                                 width: card.width
                             }}
+                            role="group"
                             aria-label={`Screen ${state.name}`}
                         >
                             {/* A pointer shortcut; the name below is the keyboard's way in. */}

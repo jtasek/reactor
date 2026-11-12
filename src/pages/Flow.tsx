@@ -36,6 +36,17 @@ type Menu =
     | { kind: 'add'; screenId: string; at: Point }
     | { kind: 'screen'; screenId: string; at: Point };
 
+/** A row on a card, to give focus back to. */
+type Place = { key: string; screenId: string };
+
+/** Focuses a row, or its card's Add link once the row is gone. */
+function focusPlace(root: HTMLElement | null, place: Place) {
+    (
+        root?.querySelector<HTMLElement>(`[data-flow-control="${CSS.escape(place.key)}"]`) ??
+        root?.querySelector<HTMLElement>(`[data-flow-add="${CSS.escape(place.screenId)}"]`)
+    )?.focus({ preventScroll: true });
+}
+
 export function FlowPage() {
     const documentId = useAppState((state) => state.currentDocumentId);
 
@@ -125,8 +136,9 @@ function FlowWorkspace() {
     const shape = JSON.stringify(
         machine.states.map((state) => [
             state.id,
+            state.reachable,
             state.transitions.map((transition) =>
-                transition.effect.kind === 'go' ? transition.effect.to : ''
+                transition.effect.kind === 'go' && !transition.inactive ? transition.effect.to : ''
             )
         ])
     );
@@ -140,7 +152,7 @@ function FlowWorkspace() {
 
     const revision = useRevision(document.id, DRAWN_FROM);
     const pictures = useMemo(() => {
-        // A plain copy: drawing reads every shape, and tracked reads cost several times more.
+        // Untracked: drawing reads every shape, and tracked reads cost several times more.
         const plain = json(document);
         const drawn = drawingDocument(plain, simulation);
         const drawings = new Map<string, ScreenDrawing>();
@@ -176,9 +188,10 @@ function FlowWorkspace() {
                 effects.collaboration.undo(document.id);
             }
         };
-        window.addEventListener('keydown', onKeyDown);
+        // Capturing, so undo works while a link menu, which keeps its keys to itself, is open.
+        window.addEventListener('keydown', onKeyDown, true);
 
-        return () => window.removeEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown, true);
     }, [canUndo, canRedo, effects, document.id]);
 
     // Idle controls are never shared ones: those gain an action only at their source.
@@ -187,10 +200,17 @@ function FlowWorkspace() {
         ...state.idle.map((control) => ({ ...control, screenId: state.id, shared: false }))
     ]);
     const control = (key: string) => controls.find((item) => item.key === key);
-    const focusRow = (key: string) =>
-        workspace.current
-            ?.querySelector<HTMLElement>(`[data-flow-control="${CSS.escape(key)}"]`)
-            ?.focus({ preventScroll: true });
+    // Where focus goes back to when a menu closes: its row, or, once the row is gone, its card.
+    const returnTo = useRef<Place | undefined>(undefined);
+    const focusRow = (place: Place) => focusPlace(workspace.current, place);
+    useEffect(() => {
+        const place = returnTo.current;
+        returnTo.current = undefined;
+        const active = window.document.activeElement;
+        if (place && (!active || active === window.document.body)) {
+            focusPlace(workspace.current, place);
+        }
+    }, [machine]);
     // Play opens on the start screen, or on the Screen that is selected.
     const playFrom = selection?.kind === 'screen' ? selection.id : undefined;
     const linkCount = machine.states.reduce((sum, state) => sum + state.transitions.length, 0);
@@ -300,6 +320,7 @@ function FlowWorkspace() {
                     onSelect={setSelection}
                     onMove={move}
                     onLinkMenu={(key, at) => {
+                        returnTo.current = undefined;
                         setSelection({ kind: 'link', key });
                         setMenu({ kind: 'link', key, at });
                     }}
@@ -318,8 +339,11 @@ function FlowWorkspace() {
                     shared={menuControl.shared}
                     position={menu.at}
                     onClose={() => {
+                        const place = { key: menu.key, screenId: menuControl.screenId };
                         setMenu(undefined);
-                        focusRow(menu.key);
+                        focusRow(place);
+                        // A choice may remove the row: focus follows once the map has changed.
+                        returnTo.current = place;
                     }}
                 />
             )}
