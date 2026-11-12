@@ -1,8 +1,8 @@
 import { screenOwners, screenSourceShapes, screenViewName } from 'src/app/screenViews';
 import { layoutDocument } from 'src/app/frameLayout';
 import { projectContextualLayout } from 'src/app/contextualLayout';
-import { projectScreenViews } from 'src/app/screenProjection';
-import React, { FC, ReactNode, useEffect, useLayoutEffect, useRef } from 'react';
+import { projectScreen, projectScreenViews } from 'src/app/screenProjection';
+import React, { FC, ReactNode, memo, useEffect, useLayoutEffect, useRef } from 'react';
 import { useVariableContext } from 'src/app/hooks';
 import { frameVisibility } from 'src/app/frameState';
 import { themeColors } from 'src/app/themeColors';
@@ -504,3 +504,104 @@ export const DocumentThumbnail: FC<{
         </svg>
     );
 };
+
+/** One Screen's artwork as a viewport draws it, and where each of its shapes lies. */
+export interface ScreenDrawing {
+    viewId?: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    shapes: Shape[];
+    boxes: Record<string, Box>;
+}
+
+/** Lays the document out once for any number of Screen drawings. */
+export const drawingDocument = (document: Document, simulation: VariableContext = {}) =>
+    layoutDocument(document, projectContextualLayout(document, { simulation }));
+
+/** A Screen as its first placed view shows it, or at its own size when it has none. */
+export function drawScreen(
+    source: Document,
+    laidOut: Document,
+    screenId: string,
+    simulation: VariableContext = {}
+): ScreenDrawing | undefined {
+    const screen = source.frames[screenId];
+    const view = Object.values(source.frames)
+        .filter((frame) => frame.kind === 'view' && frame.screenId === screenId && frame.visible)
+        .sort((a, b) => a.id.localeCompare(b.id))[0];
+    const viewport = view ?? (screen && { position: screen.position, size: screen.size });
+    const projection = viewport && projectScreen(source, screenId, viewport, simulation);
+
+    if (!projection || projection.exceedsNodeLimit) {
+        return undefined;
+    }
+
+    return {
+        viewId: view?.id,
+        ...viewport.position,
+        ...viewport.size,
+        shapes: projection.shapes,
+        boxes: Object.fromEntries(
+            projection.shapes.map((shape) => [shape.id, previewBox(laidOut, shape)])
+        )
+    };
+}
+
+/** A Screen's artwork, letterboxed into whatever box holds it. */
+export const ScreenThumbnail = memo(function ScreenThumbnail({
+    document,
+    drawing,
+    label,
+    outlined
+}: {
+    document: Document;
+    drawing: ScreenDrawing;
+    label: string;
+    /** A shape to outline, as the control a selected link belongs to. */
+    outlined?: string;
+}) {
+    const outline = outlined === undefined ? undefined : drawing.boxes[outlined];
+
+    return (
+        <svg
+            className={styles.thumbnailSvg}
+            role="img"
+            aria-label={label}
+            viewBox={`${drawing.x} ${drawing.y} ${drawing.width} ${drawing.height}`}
+            preserveAspectRatio="xMidYMid meet"
+        >
+            <rect
+                x={drawing.x}
+                y={drawing.y}
+                width={drawing.width}
+                height={drawing.height}
+                fill="var(--surface)"
+            />
+            {drawing.shapes.map((shape) => (
+                <PreviewShape
+                    key={shape.id}
+                    document={document}
+                    shape={shape}
+                    ancestors={new Set()}
+                    viewId={drawing.viewId}
+                />
+            ))}
+            {outline && (
+                <rect
+                    data-thumbnail-outline=""
+                    x={outline.topLeft.x}
+                    y={outline.topLeft.y}
+                    width={outline.width}
+                    height={outline.height}
+                    fill="color-mix(in srgb, var(--selection-color) 12%, transparent)"
+                    stroke="var(--selection-color)"
+                    strokeWidth={2}
+                    vectorEffect="non-scaling-stroke"
+                    rx={4}
+                />
+            )}
+        </svg>
+    );
+});

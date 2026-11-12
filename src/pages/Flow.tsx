@@ -1,51 +1,172 @@
-import { ArrowLeft, Play, Undo2, Redo2, X } from 'lucide-react';
+import { ArrowLeft, Play, Undo2, Redo2 } from 'lucide-react';
+import { json } from 'overmind';
 import { Icon } from 'src/ui/components/Icon';
 import { registerEditor } from './registerEditor';
-import React, { useEffect, useRef, useState } from 'react';
-import { useActions, useAppState, useEffects } from 'src/app/hooks';
-import { projectFlow, reachableScreens } from 'src/app/flowProjection';
-import { startScreen } from 'src/app/screens';
-import { ComponentInteractions } from 'src/ui/components/Inspector/ComponentInteractions';
+import React, { useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import {
+    useActions,
+    useAppState,
+    useEffects,
+    useReaction,
+    useVariableContext
+} from 'src/app/hooks';
+import { flowMachine } from 'src/app/flowMachine';
+import { layoutFlow, offsetLayout, routeLinks, type FlowLayout } from 'src/app/flowLayout';
 import { isReadOnly } from 'src/app/documentAccess';
-import { FlowDiagram } from './FlowDiagram';
+import type { Document, Point } from 'src/app/types';
+import {
+    drawingDocument,
+    drawScreen,
+    type ScreenDrawing
+} from 'src/ui/components/DocumentList/DocumentThumbnail';
+import { ExplorerMenu, type ExplorerMenuItem } from 'src/ui/components/Explorer/ExplorerMenu';
+import { FlowBoard, type FlowSelection } from './FlowBoard';
+import { FlowLinkMenu } from './FlowLinkMenu';
+import { readFlowPositions } from './flowPositions';
 import styles from './Flow.css';
 
 registerEditor();
 
-export function FlowPage() {
-    const graph = useAppState((state) => projectFlow(state.currentDocument));
-    const documentId = useAppState((state) => state.currentDocumentId);
+/** How long edits pause before the pictures are drawn again. */
+const REDRAW_AFTER_MS = 150;
+const DRAWN_FROM = ['shapes', 'frames', 'components', 'variables', 'dimensions'] as const;
 
-    return <FlowWorkspace key={documentId} graph={graph} />;
+type Menu =
+    | { kind: 'link'; key: string; at: Point }
+    | { kind: 'add'; screenId: string; at: Point }
+    | { kind: 'screen'; screenId: string; at: Point };
+
+/** A row on a card, to give focus back to. */
+type Place = { key: string; screenId: string };
+
+/** Focuses a row, or its card's Add link once the row is gone. */
+function focusPlace(root: HTMLElement | null, place: Place) {
+    (
+        root?.querySelector<HTMLElement>(`[data-flow-control="${CSS.escape(place.key)}"]`) ??
+        root?.querySelector<HTMLElement>(`[data-flow-add="${CSS.escape(place.screenId)}"]`)
+    )?.focus({ preventScroll: true });
 }
 
-function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
+export function FlowPage() {
+    const documentId = useAppState((state) => state.currentDocumentId);
+
+    return <FlowWorkspace key={documentId} />;
+}
+
+/**
+ * A number that changes when the document does: at once for all of it, or, given `parts`,
+ * once edits to those have paused.
+ */
+function useRevision(documentId: string, parts?: readonly (keyof Document)[]) {
+    const reaction = useReaction();
+    const [revision, next] = useReducer((count: number) => count + 1, 0);
+
+    useEffect(() => {
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const schedule = () => {
+            clearTimeout(timer);
+            timer = setTimeout(next, REDRAW_AFTER_MS);
+        };
+        const stops = parts
+            ? parts.map((key) =>
+                  reaction((state) => state.documents[documentId]?.[key], schedule, {
+                      nested: true
+                  })
+              )
+            : [reaction((state) => state.documents[documentId], next, { nested: true })];
+
+        return () => {
+            clearTimeout(timer);
+            stops.forEach((stop) => stop());
+        };
+    }, [reaction, documentId, parts]);
+
+    return revision;
+}
+
+function FlowWorkspace() {
     const workspace = useRef<HTMLElement>(null);
-    const editor = useRef<HTMLElement>(null);
-    const [selected, setSelected] = useState<string>();
-    const [advanced, setAdvanced] = useState(false);
-    const { editInteractions, editFrame } = useActions();
+    const [selection, setSelection] = useState<FlowSelection>();
+    const [menu, setMenu] = useState<Menu>();
+    const { editFrame } = useActions();
     const effects = useEffects();
     const document = useAppState((state) => state.currentDocument);
-    const start = useAppState((state) => startScreen(state.currentDocument)?.id);
+    // Read once per edit, not once per render: a drag renders every frame.
+    const edited = useRevision(document.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `edited` stands for the document.
+    const machine = useMemo(() => flowMachine(document), [edited, document.id]);
+    const simulation = useVariableContext(document.id);
     const disabled = useAppState(
         (state) =>
             isReadOnly(state) ||
             state.currentDocument.locked ||
             state.events.pointer.gesture.kind !== 'idle'
     );
-    const control = graph
-        .flatMap((screen) => screen.controls)
-        .find((item) => item.key === selected);
-    const reachable = reachableScreens(graph, start);
     const canUndo = !disabled && document.history.canUndo;
     const canRedo = !disabled && document.history.canRedo;
-    useEffect(() => {
-        // The editor sits under the diagram; bring it into view without moving focus.
-        if (selected) {
-            editor.current?.scrollIntoView?.({ block: 'nearest' });
+
+    // Device-local arrangement, apart from the shared document and canvas positions.
+    const storageKey = `reactor:flow:${document.id}`;
+    const [offsets, setOffsets] = useState<Record<string, Point>>(() => {
+        try {
+            return readFlowPositions(effects.loadState(storageKey));
+        } catch {
+            return {};
         }
-    }, [selected]);
+    });
+    const [saveFailed, setSaveFailed] = useState(false);
+    const dragStart = useRef<Point | undefined>(undefined);
+    const move = (id: string, by: Point, done: boolean) => {
+        const origin = (dragStart.current ??= offsets[id] ?? { x: 0, y: 0 });
+        const next = { ...offsets, [id]: { x: origin.x + by.x, y: origin.y + by.y } };
+        setOffsets(next);
+        if (done) {
+            dragStart.current = undefined;
+            try {
+                effects.saveState(storageKey, next);
+                setSaveFailed(false);
+            } catch {
+                setSaveFailed(true);
+            }
+        }
+    };
+
+    // The last automatic layout, so a new link moves only the Screens it has to.
+    const base = useRef<FlowLayout | undefined>(undefined);
+    const shape = JSON.stringify(
+        machine.states.map((state) => [
+            state.id,
+            state.reachable,
+            state.transitions.map((transition) =>
+                transition.effect.kind === 'go' && !transition.inactive ? transition.effect.to : ''
+            )
+        ])
+    );
+    const laidOut = useMemo(
+        () => (base.current = layoutFlow(machine, base.current)),
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- `shape` is the machine's outline.
+        [shape, machine.initial]
+    );
+    const layout = useMemo(() => offsetLayout(laidOut, offsets), [laidOut, offsets]);
+    const links = routeLinks(machine, layout);
+
+    const revision = useRevision(document.id, DRAWN_FROM);
+    const pictures = useMemo(() => {
+        // Untracked: drawing reads every shape, and tracked reads cost several times more.
+        const plain = json(document);
+        const drawn = drawingDocument(plain, simulation);
+        const drawings = new Map<string, ScreenDrawing>();
+        for (const state of machine.states) {
+            const drawing = drawScreen(plain, drawn, state.id, simulation);
+            if (drawing) {
+                drawings.set(state.id, drawing);
+            }
+        }
+
+        return { document: drawn, drawings };
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- drawn again when edits settle.
+    }, [revision, document.id, simulation]);
+
     useEffect(() => {
         // The designer's shortcuts run only on the canvas page.
         const onKeyDown = (event: KeyboardEvent) => {
@@ -67,141 +188,177 @@ function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
                 effects.collaboration.undo(document.id);
             }
         };
-        window.addEventListener('keydown', onKeyDown);
+        // Capturing, so undo works while a link menu, which keeps its keys to itself, is open.
+        window.addEventListener('keydown', onKeyDown, true);
 
-        return () => window.removeEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown, true);
     }, [canUndo, canRedo, effects, document.id]);
+
+    // Idle controls are never shared ones: those gain an action only at their source.
+    const controls = machine.states.flatMap((state) => [
+        ...state.transitions.map((control) => ({ ...control, screenId: state.id })),
+        ...state.idle.map((control) => ({ ...control, screenId: state.id, shared: false }))
+    ]);
+    const control = (key: string) => controls.find((item) => item.key === key);
+    // Where focus goes back to when a menu closes: its row, or, once the row is gone, its card.
+    const returnTo = useRef<Place | undefined>(undefined);
+    const focusRow = (place: Place) => focusPlace(workspace.current, place);
+    useEffect(() => {
+        const place = returnTo.current;
+        returnTo.current = undefined;
+        const active = window.document.activeElement;
+        if (place && (!active || active === window.document.body)) {
+            focusPlace(workspace.current, place);
+        }
+    }, [machine]);
+    // Play opens on the start screen, or on the Screen that is selected.
+    const playFrom = selection?.kind === 'screen' ? selection.id : undefined;
+    const linkCount = machine.states.reduce((sum, state) => sum + state.transitions.length, 0);
+    const count = (value: number, noun: string) => `${value} ${noun}${value === 1 ? '' : 's'}`;
+    const menuScreen = machine.states.find(
+        (state) => menu && menu.kind !== 'link' && state.id === menu.screenId
+    );
+    const menuControl = menu?.kind === 'link' ? control(menu.key) : undefined;
+    const screenItems = (): ExplorerMenuItem[] =>
+        menuScreen
+            ? [
+                  {
+                      id: 'start',
+                      label: 'Start here',
+                      checked: machine.initial === menuScreen.id,
+                      disabled:
+                          disabled || !menuScreen.available || machine.initial === menuScreen.id,
+                      onRun: () => editFrame({ kind: 'start', id: menuScreen.id })
+                  },
+                  {
+                      id: 'play',
+                      label: 'Play from here',
+                      disabled: !menuScreen.available,
+                      onRun: () =>
+                          effects.navigate(`/prototype?screen=${encodeURIComponent(menuScreen.id)}`)
+                  }
+              ]
+            : [];
+    const addItems = (): ExplorerMenuItem[] =>
+        menuScreen && menu
+            ? menuScreen.idle.length > 0
+                ? [
+                      { heading: 'Add a link from' },
+                      ...menuScreen.idle.map(
+                          (item): ExplorerMenuItem => ({
+                              id: item.key,
+                              label: item.control,
+                              disabled: disabled || !item.editable,
+                              keepOpen: true,
+                              onRun: () => setMenu({ kind: 'link', key: item.key, at: menu.at })
+                          })
+                      )
+                  ]
+                : [{ heading: 'Every control here has a link' }]
+            : [];
 
     return (
         <main ref={workspace} className={styles.flow}>
-            <header>
+            <header className={styles.toolbar}>
                 <a href="/" aria-label="Back to canvas">
                     <Icon icon={{ component: ArrowLeft, size: 18 }} />
-                    Canvas
+                    <span className={styles.canvasLabel}>Canvas</span>
                 </a>
-                <h1>Flow</h1>
-                <span className={styles.documentName}>{document.name}</span>
+                <div className={styles.title}>
+                    <span className={styles.documentName}>{document.name}</span>
+                    <span className={styles.summary}>
+                        <h1>Flow</h1>
+                        {machine.states.length > 0 &&
+                            ` · ${count(machine.states.length, 'screen')} · ${count(linkCount, 'link')}`}
+                    </span>
+                </div>
+                <div className={styles.history}>
+                    <button
+                        disabled={!canUndo}
+                        aria-label="Undo"
+                        title="Undo (Ctrl/⌘ Z)"
+                        onClick={() => effects.collaboration.undo(document.id)}
+                    >
+                        <Icon icon={{ component: Undo2, size: 18 }} />
+                    </button>
+                    <button
+                        disabled={!canRedo}
+                        aria-label="Redo"
+                        title="Redo (Ctrl/⌘ Shift Z)"
+                        onClick={() => effects.collaboration.redo(document.id)}
+                    >
+                        <Icon icon={{ component: Redo2, size: 18 }} />
+                    </button>
+                </div>
                 <a
+                    className={styles.play}
                     aria-label="Play prototype"
-                    href={`/prototype${start ? `?screen=${encodeURIComponent(start)}` : ''}`}
+                    href={`/prototype${playFrom ? `?screen=${encodeURIComponent(playFrom)}` : ''}`}
                 >
-                    <Icon icon={{ component: Play, size: 18 }} />
+                    <Icon icon={{ component: Play, size: 16 }} />
                     Play
                 </a>
-                <button
-                    disabled={!canUndo}
-                    aria-label="Undo"
-                    title="Undo (Ctrl/⌘ Z)"
-                    onClick={() => effects.collaboration.undo(document.id)}
-                >
-                    <Icon icon={{ component: Undo2, size: 18 }} />
-                </button>
-                <button
-                    disabled={!canRedo}
-                    aria-label="Redo"
-                    title="Redo (Ctrl/⌘ Shift Z)"
-                    onClick={() => effects.collaboration.redo(document.id)}
-                >
-                    <Icon icon={{ component: Redo2, size: 18 }} />
-                </button>
             </header>
-            <label className={styles.start}>
-                Start screen{' '}
-                <select
-                    aria-label="Start screen"
-                    value={start ?? ''}
-                    disabled={disabled || !start}
-                    onChange={(event) => editFrame({ kind: 'start', id: event.target.value })}
-                >
-                    {!start && <option value="">No screens yet</option>}
-                    {graph
-                        .filter((screen) => screen.available)
-                        .map((screen) => (
-                            <option key={screen.id} value={screen.id}>
-                                {screen.name}
-                            </option>
-                        ))}
-                </select>
-            </label>
-            {!graph.length && (
-                <p>Create a Screen on the canvas to begin connecting your application.</p>
+            {saveFailed && (
+                <p role="status" className={styles.notice}>
+                    Arrangement could not be saved on this device.
+                </p>
             )}
-            <div className={styles.workspace}>
-                <FlowDiagram
-                    graph={graph}
-                    selected={selected}
-                    onSelect={(key) => {
-                        setSelected(key);
-                        setAdvanced(false);
+            {machine.states.length === 0 ? (
+                <p className={styles.empty}>
+                    Create a Screen on the canvas to begin connecting your application.
+                </p>
+            ) : (
+                <FlowBoard
+                    machine={machine}
+                    layout={layout}
+                    links={links}
+                    document={pictures.document}
+                    drawings={pictures.drawings}
+                    selection={selection}
+                    canArrange
+                    onSelect={setSelection}
+                    onMove={move}
+                    onLinkMenu={(key, at) => {
+                        returnTo.current = undefined;
+                        setSelection({ kind: 'link', key });
+                        setMenu({ kind: 'link', key, at });
                     }}
-                    start={start}
-                    reachable={reachable}
-                    canConnect={!disabled && Boolean(control?.editable)}
-                    onConnect={(screenId) => {
-                        if (!control) {
-                            return;
-                        }
-                        editInteractions({
-                            target: 'instance',
-                            id: control.instanceId,
-                            settings: { activate: { type: 'navigate', screenId } }
-                        });
+                    onAddMenu={(screenId, at) => setMenu({ kind: 'add', screenId, at })}
+                    onScreenMenu={(screenId, at) => {
+                        setSelection({ kind: 'screen', id: screenId });
+                        setMenu({ kind: 'screen', screenId, at });
                     }}
                 />
-                {control && (
-                    <aside ref={editor} aria-label="Selected control">
-                        <div className={styles.selectionHeader}>
-                            <h2>{control.name}</h2>
-                            <button
-                                aria-label="Deselect control"
-                                onClick={() => {
-                                    workspace.current
-                                        ?.querySelector<HTMLButtonElement>(
-                                            `[data-flow-control="${CSS.escape(control.key)}"]`
-                                        )
-                                        ?.focus();
-                                    setSelected(undefined);
-                                }}
-                            >
-                                <Icon icon={{ component: X, size: 18 }} />
-                            </button>
-                        </div>
-                        {control?.shared && (
-                            <p>
-                                Shared source control. Changes apply everywhere this component is
-                                used.
-                            </p>
-                        )}
-                        {control.editable && (
-                            <>
-                                <ComponentInteractions
-                                    instanceId={control.instanceId}
-                                    actionOnly={!advanced}
-                                />
-                                <button
-                                    aria-expanded={advanced}
-                                    onClick={() => setAdvanced(!advanced)}
-                                >
-                                    {advanced
-                                        ? 'Hide visibility and state'
-                                        : 'Visibility and state…'}
-                                </button>
-                            </>
-                        )}
-                        {control && !control.editable && (
-                            <p>
-                                This control is locked or belongs to an imported component. Edit its
-                                source to change the action.
-                            </p>
-                        )}
-                    </aside>
-                )}
-            </div>
-            <p className={styles.hint}>
-                {control
-                    ? 'Use Connect to on a screen, or change the action in the editor.'
-                    : 'Select a control to connect it to a screen.'}
-            </p>
+            )}
+            {menu?.kind === 'link' && menuControl && (
+                <FlowLinkMenu
+                    key={menu.key}
+                    instanceId={menuControl.instanceId}
+                    name={menuControl.control}
+                    shared={menuControl.shared}
+                    position={menu.at}
+                    onClose={() => {
+                        const place = { key: menu.key, screenId: menuControl.screenId };
+                        setMenu(undefined);
+                        focusRow(place);
+                        // A choice may remove the row: focus follows once the map has changed.
+                        returnTo.current = place;
+                    }}
+                />
+            )}
+            {menu && menu.kind !== 'link' && menuScreen && (
+                <ExplorerMenu
+                    label={
+                        menu.kind === 'add'
+                            ? `Add link on ${menuScreen.name}`
+                            : `Screen ${menuScreen.name}`
+                    }
+                    position={menu.at}
+                    items={menu.kind === 'add' ? addItems() : screenItems()}
+                    onClose={() => setMenu(undefined)}
+                />
+            )}
         </main>
     );
 }

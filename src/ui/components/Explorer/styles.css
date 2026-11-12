@@ -362,6 +362,18 @@
     flex: 0 0 16px;
 }
 
+.menuDetail {
+    color: var(--text-secondary-color);
+    flex: 0 10 auto;
+    font-size: var(--font-size-callout);
+    margin-left: auto;
+    min-width: 24px;
+    overflow: hidden;
+    padding-left: 8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* Manage layers: a small glass sheet over the outline. */
 .layerManager {
     background: var(--control-background);

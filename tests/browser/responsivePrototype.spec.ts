@@ -184,7 +184,8 @@ test('opens the screen chosen in Flow only after an explicit player launch', asy
     await page.goto('/flow');
     await expect(page.getByRole('heading', { name: 'Flow', exact: true })).toBeVisible();
     await expect(page.locator('iframe')).toHaveCount(0);
-    await page.getByLabel('Start screen', { exact: true }).selectOption('details');
+    await page.getByRole('button', { name: 'More for Details', exact: true }).click();
+    await page.getByRole('menuitemradio', { name: 'Start here', exact: true }).click();
     await page.getByRole('link', { name: 'Play prototype', exact: true }).click();
     await expect(page.getByLabel('Start screen')).toHaveValue('details');
     await expect(page.getByLabel('Preview screen')).toHaveValue('details');
@@ -256,16 +257,21 @@ test('keeps setup out of the player, restores settings focus and preserves input
     await page.screenshot({ path: 'test-results/prototype-phone.png' });
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.getByRole('link', { name: 'Flow', exact: true }).click();
-    await expect(page.getByRole('complementary', { name: 'Selected control' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Connect to Home', exact: true })).toHaveCount(0);
+    // Flow has no side editor: one menu, opened from the row, holds every choice.
+    await expect(page.getByRole('complementary')).toHaveCount(0);
+    await expect(page.getByRole('menu')).toHaveCount(0);
     await page.locator('[data-flow-control="next"]').click();
-    await expect(page.getByRole('complementary', { name: 'Selected control' })).toBeVisible();
-    await expect(page.getByLabel('Prototype visibility')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Visibility and state…' }).click();
-    await expect(page.getByLabel('Prototype visibility')).toBeVisible();
-    await page.getByRole('button', { name: 'Deselect control' }).click();
+    const menu = page.getByRole('menu', { name: 'Link from Continue button', exact: true });
+    await expect(menu.getByRole('menuitemradio', { name: 'Home', exact: true })).toBeVisible();
+    await expect(menu.getByRole('menuitemradio', { name: 'Always', exact: true })).toHaveCount(0);
+    await menu.getByRole('menuitem', { name: /^Shown/ }).click();
+    await expect(menu.getByRole('menuitemradio', { name: 'Always', exact: true })).toHaveAttribute(
+        'aria-checked',
+        'true'
+    );
+    await page.keyboard.press('Escape');
     await expect(page.locator('[data-flow-control="next"]')).toBeFocused();
-    await expect(page.getByRole('complementary', { name: 'Selected control' })).toHaveCount(0);
+    await expect(page.getByRole('menu')).toHaveCount(0);
 });
 
 test('keeps navigation in an older runtime without sending unsupported player commands', async ({
