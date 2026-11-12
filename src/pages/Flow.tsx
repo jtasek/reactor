@@ -4,6 +4,7 @@ import { registerEditor } from './registerEditor';
 import React, { useEffect, useRef, useState } from 'react';
 import { useActions, useAppState, useEffects } from 'src/app/hooks';
 import { projectFlow, reachableScreens } from 'src/app/flowProjection';
+import { startScreen } from 'src/app/screens';
 import { ComponentInteractions } from 'src/ui/components/Inspector/ComponentInteractions';
 import { isReadOnly } from 'src/app/documentAccess';
 import { FlowDiagram } from './FlowDiagram';
@@ -23,10 +24,10 @@ function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
     const editor = useRef<HTMLElement>(null);
     const [selected, setSelected] = useState<string>();
     const [advanced, setAdvanced] = useState(false);
-    const [start, setStart] = useState<string>();
-    const { editInteractions } = useActions();
+    const { editInteractions, editFrame } = useActions();
     const effects = useEffects();
     const document = useAppState((state) => state.currentDocument);
+    const start = useAppState((state) => startScreen(state.currentDocument)?.id);
     const disabled = useAppState(
         (state) =>
             isReadOnly(state) ||
@@ -107,11 +108,12 @@ function FlowWorkspace({ graph }: { graph: ReturnType<typeof projectFlow> }) {
             <label className={styles.start}>
                 Start screen{' '}
                 <select
-                    aria-label="Start screen for reachability"
+                    aria-label="Start screen"
                     value={start ?? ''}
-                    onChange={(event) => setStart(event.target.value || undefined)}
+                    disabled={disabled || !start}
+                    onChange={(event) => editFrame({ kind: 'start', id: event.target.value })}
                 >
-                    <option value="">Choose a screen</option>
+                    {!start && <option value="">No screens yet</option>}
                     {graph
                         .filter((screen) => screen.available)
                         .map((screen) => (

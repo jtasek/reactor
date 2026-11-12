@@ -1375,3 +1375,13 @@ the condition, and readers drop a condition left without a state (e.g. after con
 Set controls are plain buttons without `aria-pressed`, since pressing one again changes nothing. The sandbox validates and executes explicit assignments without toggling;
 Flow labels assignments and distinguishes the boolean value that can reveal a hidden control.
 Tests: prototypeState unit and prototypeBooleanActions browser coverage.
+
+Schema v31 adds the prototype's start screen as optional `start: true` on a Screen frame, so it
+syncs and undoes with the frames table (document fields are outside undo). Always read it through
+`startScreen(document)` in `src/app/screens.ts`: the marked available Screen, the lowest ID when
+copies marked two at once, otherwise the first Screen. Set it with
+`editFrame({ kind: 'start', id })`, which clears the previous mark in the same batch. New frames
+added by operations never carry the mark, and a Screen turned into a plain frame drops it. Flow's
+Start screen picker writes it; the Prototype player opens on `?screen=`, then the view Play was
+pressed on, then the start screen, and its own picker stays session-only.
+Tests: `tests/startScreen.test.ts` and `tests/browser/flows.spec.ts`.

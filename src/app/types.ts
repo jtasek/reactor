@@ -424,6 +424,8 @@ export interface Frame {
     kind?: 'frame' | 'screen' | 'view';
     /** Screens are source definitions; every canvas placement is a separate view. */
     definitionOnly?: true;
+    /** The Screen a prototype starts on. Read through `startScreen`, which settles ties. */
+    start?: true;
     /** A separate artwork tree owned by its parent screen, never a destination. */
     screenLayout?: true;
     /** Screen rules by rule ID, so people adding rules at once keep both; a rule's

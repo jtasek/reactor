@@ -11,6 +11,17 @@ export function screenFrames(document: Document) {
     );
 }
 
+/** Where a prototype starts: the Screen marked as the start, or the first one. When copies
+ * marked different Screens at once, the lowest ID wins everywhere. */
+export function startScreen(document: Document): Frame | undefined {
+    const screens = screenFrames(document);
+
+    return (
+        screens.filter((screen) => screen.start).sort((a, b) => (a.id < b.id ? -1 : 1))[0] ??
+        screens[0]
+    );
+}
+
 /** SVG export takes a Screen view, or a root Screen as authored. Alternate layouts and Screens
  * nested in other frames are drawn as part of something else, so they are not artboards. */
 export function exportableFrame(

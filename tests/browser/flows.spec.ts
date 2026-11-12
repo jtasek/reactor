@@ -52,8 +52,8 @@ test('connects and removes actions in Flow, reflects them in Inspector, and arra
     await expect(page.getByLabel(/^On (activation|Enter): action$/)).toHaveValue('inherit');
     await page.getByRole('button', { name: 'Redo', exact: true }).click();
     await expect(page.getByLabel(/^On (activation|Enter): action$/)).toHaveValue('"home"');
-    await page.getByLabel('Start screen for reachability').selectOption('details');
-    await expect(page.getByText('Not reachable from the chosen screen.')).toBeVisible();
+    await page.getByLabel('Start screen', { exact: true }).selectOption('details');
+    await expect(page.getByText('Not reachable from the start screen.')).toBeVisible();
     const node = page.locator('[data-flow-screen="home"]');
     const before = await node.boundingBox();
     await page.getByRole('button', { name: 'Arrange Home' }).press('ArrowDown');
@@ -156,11 +156,11 @@ test('marks hidden controls and leaves them out of reachability', async ({ page 
     await expect(page.locator('[data-flow-control="next"]')).toHaveAccessibleDescription(
         'Go to Details Hidden, not in Preview'
     );
-    await page.getByLabel('Start screen for reachability').selectOption('home');
+    await page.getByLabel('Start screen', { exact: true }).selectOption('home');
     await expect(
         page
             .locator('[data-flow-screen="details"]')
-            .getByText('Not reachable from the chosen screen.')
+            .getByText('Not reachable from the start screen.')
     ).toBeVisible();
 });
 
@@ -178,11 +178,11 @@ test('treats a link that starts hidden in prototype as unreachable until somethi
     await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
     await page.goto('/flow');
     await expect(page.getByText('Starts hidden in prototype')).toHaveCount(2);
-    await page.getByLabel('Start screen for reachability').selectOption('home');
+    await page.getByLabel('Start screen', { exact: true }).selectOption('home');
     await expect(
         page
             .locator('[data-flow-screen="details"]')
-            .getByText('Not reachable from the chosen screen.')
+            .getByText('Not reachable from the start screen.')
     ).toBeVisible();
 });
 
@@ -281,4 +281,26 @@ test('describes controls whose imported IDs contain spaces', async ({ page }) =>
     await control.press('Enter');
     await expect(control).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByRole('complementary', { name: 'Selected control' })).toBeVisible();
+});
+
+test('keeps the start screen with the document, for Flow and the player alike', async ({
+    page
+}) => {
+    const document = automaticLayoutsPrototype();
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.goto('/flow');
+    await page.evaluate((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
+    await page.reload();
+    const start = page.getByLabel('Start screen', { exact: true });
+    await expect(start).toHaveValue('home');
+    await expect(page.locator('[data-flow-screen="home"]').getByText('Start')).toBeVisible();
+    await start.selectOption('details');
+    await expect(page.locator('[data-flow-screen="details"]').getByText('Start')).toBeVisible();
+    await page.reload();
+    await expect(start).toHaveValue('details');
+    await page.goto('/prototype');
+    await expect(page.getByLabel('Preview screen')).toHaveValue('details');
 });
