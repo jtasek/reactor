@@ -1,17 +1,34 @@
 declare namespace FlowCssNamespace {
   export interface IFlowCss {
+    add: string;
     badge: string;
     board: string;
+    canvasLabel: string;
     connections: string;
-    diagram: string;
+    control: string;
     documentName: string;
+    dot: string;
+    effect: string;
+    empty: string;
+    fit: string;
     flow: string;
     handle: string;
-    hint: string;
+    hidden: string;
+    history: string;
+    more: string;
+    name: string;
+    newState: string;
+    notice: string;
+    play: string;
+    problem: string;
     screen: string;
-    selectionHeader: string;
-    start: string;
-    workspace: string;
+    screenName: string;
+    startMark: string;
+    summary: string;
+    thumb: string;
+    title: string;
+    toolbar: string;
+    world: string;
   }
 }
 

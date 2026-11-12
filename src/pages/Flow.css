@@ -1,259 +1,450 @@
 .flow {
     box-sizing: border-box;
     height: 100%;
-    overflow: auto;
+    overflow: hidden;
+    position: relative;
     font-family: var(--font-ui);
-    padding: 0;
+    font-size: var(--font-size-body);
     color: var(--text-color);
     background: var(--documents-background);
 }
-.flow header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-}
 .flow button,
-.flow select {
+.flow a {
     font: inherit;
-    color: var(--text-color);
-    background: var(--control-background);
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-sm);
-    padding: 8px;
-    max-width: 100%;
+    color: inherit;
 }
 .flow button:focus-visible,
-.flow select:focus-visible,
 .flow a:focus-visible {
     outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 1px;
 }
-.flow button[aria-pressed='true'] {
-    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+.flow button:disabled {
+    opacity: 0.45;
+    cursor: default;
 }
-.workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 24px;
-    margin-top: 16px;
-}
-.screen,
-.workspace aside {
+
+/* One floating bar; everything else is the map. */
+.toolbar {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 0 8px;
+    box-sizing: border-box;
     border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-md);
-    padding: 16px;
-    background: var(--panel-content-background);
-    overflow-wrap: anywhere;
+    border-radius: var(--border-radius);
+    background: var(--control-background);
+    backdrop-filter: var(--backdrop-filter);
+    box-shadow: var(--box-shadow);
 }
-.flow ul {
-    list-style: none;
-    padding: 0;
+.toolbar a,
+.toolbar button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    text-decoration: none;
+    cursor: pointer;
 }
-.flow li {
-    margin-top: 4px;
+.toolbar a:hover,
+.toolbar button:hover:not(:disabled) {
+    background: var(--menu-hover);
 }
-@media (max-width: 700px) {
-    .workspace {
-        grid-template-columns: 1fr;
-    }
+.title {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: var(--line-height-callout);
 }
-.diagram {
-    overflow: auto;
-    min-height: 400px;
-    max-height: 65vh;
+.documentName {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: var(--font-weight-semibold);
 }
+.summary {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+}
+.summary h1 {
+    display: inline;
+    margin: 0;
+    font: inherit;
+}
+.history {
+    display: flex;
+    border-radius: var(--radius-sm);
+    background: var(--field-background);
+}
+.history button {
+    padding: 0 8px;
+}
+.toolbar .play {
+    padding: 0 14px;
+    color: var(--on-selection-color);
+    background: var(--selection-color);
+    font-weight: var(--font-weight-semibold);
+}
+.toolbar .play:hover {
+    background: color-mix(in srgb, var(--selection-color) 88%, #000);
+}
+.notice,
+.empty {
+    position: absolute;
+    top: 76px;
+    left: 0;
+    right: 0;
+    z-index: 1;
+    margin: 0;
+    text-align: center;
+    color: var(--text-secondary-color);
+}
+.empty {
+    top: 45%;
+}
+
 .board {
-    display: grid;
-    position: relative;
-    grid-template-columns: repeat(2, 280px);
-    align-items: start;
-    gap: 80px;
-    padding: 32px;
-    width: max-content;
-    min-height: 400px;
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    touch-action: none;
+    cursor: grab;
+    background-image: radial-gradient(var(--hairline-color) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+.board:active {
+    cursor: grabbing;
+}
+.world {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform-origin: 0 0;
+    pointer-events: none;
 }
 .connections {
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    left: 0;
+    top: 0;
     overflow: visible;
     pointer-events: none;
 }
 .connections > path {
     fill: none;
-    stroke: var(--text-color);
-    stroke-width: 2;
+    stroke: var(--label-tertiary);
+    stroke-width: 1.5;
 }
-.connections > path[data-selected='true'] {
-    stroke: var(--focus-ring-color);
-    stroke-width: 3;
+.connections > path[data-guarded='true'] {
+    stroke-dasharray: 5 4;
 }
 .connections > path[data-inactive='true'] {
-    stroke-dasharray: 6 4;
-    opacity: 0.6;
+    opacity: 0.4;
 }
-.flow li small {
-    display: block;
+.connections > path[data-selected='true'] {
+    stroke: var(--selection-color);
+    stroke-width: 2.5;
+}
+.startMark circle {
+    fill: var(--success-color);
+}
+.startMark path {
+    fill: none;
+    stroke: var(--success-color);
+    stroke-width: 2;
+}
+
+.screen {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: auto;
+    cursor: default;
+    transition: transform 200ms ease;
+}
+.screen[data-dragging='true'] {
+    transition: none;
+    z-index: 1;
+}
+/* Nothing leads here: the picture fades, the name stays readable. */
+.screen[data-dim='true'] .thumb {
+    opacity: 0.5;
+}
+.screen[data-dim='true'] .screenName {
+    color: var(--text-secondary-color);
+    font-weight: var(--font-weight-regular);
+}
+.flow .thumb {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    cursor: pointer;
+    box-sizing: border-box;
+    height: var(--flow-thumb);
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--field-background) 50%, var(--surface));
+    outline: 1px solid var(--hairline-color);
+    box-shadow: var(--box-shadow);
     color: var(--text-secondary-color);
 }
-.connections marker {
-    fill: var(--text-color);
+.screen[data-selected='true'] .thumb {
+    outline: 2px solid var(--selection-color);
 }
-.screen {
-    position: relative;
+.name {
+    display: flex;
+    align-items: center;
+    height: var(--flow-name);
+    margin: 0;
+    font: inherit;
 }
 .flow .handle {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 4px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    font-weight: var(--font-weight-semibold);
+    text-align: left;
     cursor: grab;
     touch-action: none;
-    width: 100%;
-    font-weight: var(--font-weight-semibold);
 }
-.flow button:disabled {
-    opacity: 0.5;
-    cursor: default;
-}
-.workspace aside {
-    align-self: start;
-}
-
-.flow h1 {
-    font-size: var(--font-size-body);
-}
-.flow h2 {
-    font-size: var(--font-size-title-2);
-    margin: 0 0 16px;
-}
-.flow p {
-    line-height: 1.5;
-}
-.flow a {
-    color: var(--text-color);
-}
-
-.flow header {
-    padding: 12px 20px;
-    border-bottom: 1px solid var(--hairline-color);
-    background: var(--control-background);
-    backdrop-filter: var(--backdrop-filter);
-    gap: 12px;
-}
-.flow header a,
-.flow header button {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 8px;
-    border: 0;
-    text-decoration: none;
-}
-.documentName {
-    flex: 1;
-    color: var(--text-secondary-color);
-    overflow-wrap: anywhere;
-}
-.flow h1 {
-    margin: 0;
-}
-.start {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    justify-content: center;
-    margin: 16px;
-}
-.workspace aside {
-    width: min(520px, calc(100% - 32px));
-    box-sizing: border-box;
-    justify-self: center;
-}
-.selectionHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-}
-.selectionHeader h2 {
-    margin: 0;
-    font-size: var(--font-size-body);
-}
-.hint {
-    text-align: center;
-    padding: 0 16px 16px;
-    color: var(--text-secondary-color);
-    font-size: var(--font-size-callout);
+.screenName {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .badge {
-    display: inline-block;
-    margin-left: 8px;
-    padding: 3px 6px;
-    font-size: var(--font-size-caption);
+    flex: none;
+    padding: 1px 6px;
     border-radius: var(--radius-sm);
-    color: var(--selection-color);
-    background: var(--tag-blue-background);
+    font-size: var(--font-size-caption);
+    color: var(--success-color);
+    background: var(--success-background);
 }
-.flow .handle {
+.flow .more {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary-color);
+    cursor: pointer;
+    opacity: 0;
+}
+.screen:hover .more,
+.screen[data-selected='true'] .more,
+.flow .more:focus-visible {
+    opacity: 1;
+}
+.flow .more:hover,
+.flow .handle:hover {
+    background: var(--menu-hover);
+}
+.hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.screen ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.screen li {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    height: var(--flow-row);
+}
+.screen li > button {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 12px 0 6px;
     border: 0;
-    background: var(--surface);
-}
-.flow li > button {
-    width: 100%;
-    text-align: left;
-    display: grid;
-    gap: 4px;
+    border-radius: var(--radius-sm);
     background: transparent;
+    text-align: left;
+    cursor: pointer;
 }
-.flow li > button small {
+.screen li > button:hover {
+    background: var(--menu-hover);
+}
+.screen li > button svg {
+    flex: none;
+    color: var(--text-secondary-color);
+}
+.control {
+    flex: 0 1 auto;
+    min-width: 40px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.effect {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+    color: var(--text-secondary-color);
     font-size: var(--font-size-callout);
 }
-.flow li > button[aria-pressed='true'] {
-    background: var(--tag-blue-background);
-    color: var(--selection-color);
+.screen li > button[data-inactive='true']:not([aria-pressed='true']) .control {
+    color: var(--text-secondary-color);
 }
-.flow button:hover {
+.screen li > button[aria-pressed='true'] {
+    color: var(--on-selection-color);
+    background: var(--selection-color);
+}
+.screen li > button[aria-pressed='true'] .effect,
+.screen li > button[aria-pressed='true'] svg {
+    color: color-mix(in srgb, var(--on-selection-color) 88%, transparent);
+}
+.problem {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--warning-color);
+}
+.dot {
+    position: absolute;
+    right: -5px;
+    top: 50%;
+    width: 9px;
+    height: 9px;
+    box-sizing: border-box;
+    margin-top: -4.5px;
+    border: 1.5px solid var(--label-tertiary);
+    border-radius: 50%;
+    background: var(--surface);
+    pointer-events: none;
+}
+.screen li:has(> button[aria-pressed='true']) .dot {
+    border-color: var(--selection-color);
+}
+.screen li > .add {
+    flex: none;
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+}
+
+.flow .fit {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    z-index: 2;
+    min-height: 32px;
+    padding: 0 12px;
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-sm);
+    background: var(--control-background);
+    backdrop-filter: var(--backdrop-filter);
+    box-shadow: var(--box-shadow);
+    cursor: pointer;
+}
+
+.newState {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    font-family: var(--font-ui);
+    font-size: var(--font-size-body);
+}
+.newState label {
+    display: grid;
+    gap: 6px;
+    color: var(--text-secondary-color);
+}
+.newState input {
+    min-height: 28px;
+    padding: 0 8px;
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-sm);
     background: var(--field-background);
+    color: var(--text-color);
+    font: inherit;
 }
-@media (min-width: 1200px) {
-    .board {
-        grid-template-columns: repeat(3, 280px);
+.newState p {
+    margin: 0;
+    color: var(--error-color);
+}
+.newState div {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.newState button {
+    min-height: 28px;
+    padding: 0 12px;
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-sm);
+    background: var(--control-background);
+    color: var(--text-color);
+    font: inherit;
+    cursor: pointer;
+}
+
+@media (hover: none) {
+    .flow .more {
+        opacity: 1;
+    }
+}
+@media (pointer: coarse) {
+    .toolbar a,
+    .toolbar button,
+    .flow .fit {
+        min-height: 44px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .screen {
+        transition: none;
     }
 }
 @media (max-width: 600px) {
-    .flow header {
-        padding: 8px;
-        gap: 6px;
+    .toolbar {
+        gap: 2px;
+        padding: 0 4px;
     }
-    .documentName {
+    .documentName,
+    .canvasLabel {
         display: none;
-    }
-    .flow h1 {
-        margin-right: auto;
-    }
-}
-
-.workspace aside [data-action-only='true'] th {
-    display: none;
-}
-.workspace aside table {
-    width: 100%;
-}
-.workspace aside select {
-    width: 100%;
-}
-
-/* Below this the default two-column board would be clipped beside the editor. */
-@media (min-width: 1100px) {
-    .workspace:has(aside) {
-        grid-template-columns: minmax(0, 1fr) 320px;
-        gap: 16px;
-        padding-right: 16px;
-    }
-    .workspace aside {
-        width: 100%;
-        max-height: 65vh;
-        overflow: auto;
     }
 }

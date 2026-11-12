@@ -1212,7 +1212,21 @@ navigation destinations and reachability from a chosen root are diagnostics, nev
 Nested source controls are labeled as shared. Diagram offsets are device-local
 `reactor:flow:<documentId>` storage, validated by `pages/flowPositions.ts`, not document data,
 canvas geometry or prototype session state. Opening Flow does not instantiate Preview.
-Tests: `tests/flowProjection.test.ts` and `tests/browser/flows.spec.ts`.
+Flow is drawn as a map over a state machine that never shows as a word in the interface
+(people see screens and links). `flowMachine.ts` turns the projection into states (Screens),
+transitions (controls with an action; only `go` leaves the Screen), idle controls (offered by
+Add link), counted `problems` and uncounted `notes`, with `sentence()` as each row's
+description. `flowLayout.ts` is pure too: `layoutFlow(machine, previous)` puts Screens in
+columns by distance from the start and, given the previous layout, moves only Screens whose
+column changed; `routeLinks` draws right-angled paths through the gaps, never across a card.
+Card and row sizes come from its `FLOW` constants, which `Flow.css` reads as variables; change
+them there only. `pages/FlowBoard.tsx` pans and zooms by writing one transform (no render),
+`pages/FlowLinkMenu.tsx` is the only editor (one `ExplorerMenu`, pages for "On this screen"
+and "Shown", every choice one `editInteractions` call). The machine is recomputed once per
+edit and thumbnails are drawn from a plain `json()` copy once edits pause: tracked reads per
+render cost a drag its frame rate.
+Tests: `tests/flowProjection.test.ts`, `tests/flowMachine.test.ts` and
+`tests/browser/flows.spec.ts`.
 
 
 

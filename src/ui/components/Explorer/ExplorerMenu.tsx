@@ -14,6 +14,10 @@ export type ExplorerMenuItem =
           checked?: boolean;
           disabled?: boolean;
           danger?: boolean;
+          /** Quiet text at the trailing edge, such as the current choice. */
+          detail?: string;
+          /** Leads to more of the same menu, so running it leaves the menu open. */
+          keepOpen?: boolean;
           onRun: () => void;
       }
     | { heading: string }
@@ -130,7 +134,9 @@ export const ExplorerMenu: FC<Props> = ({ label, position, items, anchor, onClos
                         className={`${styles.row}${item.danger ? ` ${styles.danger}` : ''}`}
                         disabled={item.disabled}
                         onClick={() => {
-                            close();
+                            if (!item.keepOpen) {
+                                close();
+                            }
                             item.onRun();
                         }}
                     >
@@ -140,6 +146,9 @@ export const ExplorerMenu: FC<Props> = ({ label, position, items, anchor, onClos
                             <span className={explorerStyles.menuIconSpace} aria-hidden="true" />
                         )}
                         <span className={styles.rowLabel}>{item.label}</span>
+                        {item.detail && (
+                            <span className={explorerStyles.menuDetail}>{item.detail}</span>
+                        )}
                         {item.checked && (
                             <span className={styles.trailing} aria-hidden="true">
                                 ✓
