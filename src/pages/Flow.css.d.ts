@@ -15,6 +15,7 @@ declare namespace FlowCssNamespace {
     handle: string;
     hidden: string;
     history: string;
+    live: string;
     more: string;
     name: string;
     newState: string;

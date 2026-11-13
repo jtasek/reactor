@@ -554,13 +554,16 @@ export const ScreenThumbnail = memo(function ScreenThumbnail({
     document,
     drawing,
     label,
-    outlined
+    outlined,
+    controls
 }: {
     document: Document;
     drawing: ScreenDrawing;
     label: string;
     /** A shape to outline, as the control a selected link belongs to. */
     outlined?: string;
+    /** Shapes to lay a pointer target over, for whoever holds the picture to style and use. */
+    controls?: readonly string[];
 }) {
     const outline = outlined === undefined ? undefined : drawing.boxes[outlined];
 
@@ -588,9 +591,29 @@ export const ScreenThumbnail = memo(function ScreenThumbnail({
                     viewId={drawing.viewId}
                 />
             ))}
+            {controls?.map((id) => {
+                const box = drawing.boxes[id];
+
+                return (
+                    box && (
+                        <rect
+                            key={id}
+                            data-thumbnail-control={id}
+                            x={box.topLeft.x}
+                            y={box.topLeft.y}
+                            width={box.width}
+                            height={box.height}
+                            fill="transparent"
+                            vectorEffect="non-scaling-stroke"
+                            rx={4}
+                        />
+                    )
+                );
+            })}
             {outline && (
                 <rect
                     data-thumbnail-outline=""
+                    pointerEvents="none"
                     x={outline.topLeft.x}
                     y={outline.topLeft.y}
                     width={outline.width}

@@ -1,4 +1,12 @@
-import React, { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, {
+    memo,
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState
+} from 'react';
 import { Eye, MoreHorizontal, Plus, Replace, ToggleRight } from 'lucide-react';
 import { Icon } from 'src/ui/components/Icon';
 import {
@@ -57,6 +65,13 @@ const inactiveNote = (transition: Transition) =>
           ? 'In a variant this instance never draws'
           : undefined;
 
+/** The line that follows the pointer while a link is drawn. */
+function liveLine(from: Point, to: Point) {
+    const reach = Math.max(40, Math.abs(to.x - from.x) / 2);
+
+    return `M ${from.x} ${from.y} C ${from.x + reach} ${from.y} ${to.x - reach} ${to.y} ${to.x} ${to.y}`;
+}
+
 /** Just under an element, where its menu opens. */
 function below(element: Element): Point {
     const box = element.getBoundingClientRect();
@@ -68,14 +83,19 @@ function below(element: Element): Point {
 const Rows = memo(function Rows({
     state,
     selectedLink,
+    canConnect,
     onLinkMenu,
-    onAddMenu
+    onAddMenu,
+    onLinkStart
 }: {
     state: FlowState;
     /** The selected link, when it is one of this card's. */
     selectedLink?: string;
     onLinkMenu: (key: string, at: Point) => void;
     onAddMenu: (screenId: string, at: Point) => void;
+    canConnect: boolean;
+    /** A press on a row's dot, to drag its link to another Screen. */
+    onLinkStart: (event: React.PointerEvent, instanceId: string) => void;
 }) {
     return (
         <ul>
@@ -121,7 +141,19 @@ const Rows = memo(function Rows({
                             {notes && `. ${notes}`}
                         </span>
                         {transition.effect.kind === 'go' && (
-                            <span className={styles.dot} aria-hidden="true" />
+                            <span
+                                className={styles.dot}
+                                aria-hidden="true"
+                                data-flow-dot={transition.key}
+                                data-draggable={
+                                    canConnect && transition.editable && !transition.shared
+                                }
+                                onPointerDown={
+                                    canConnect && transition.editable && !transition.shared
+                                        ? (event) => onLinkStart(event, transition.instanceId)
+                                        : undefined
+                                }
+                            />
                         )}
                     </li>
                 );
@@ -155,7 +187,11 @@ export function FlowBoard({
     drawings,
     selection,
     canArrange,
+    canConnect,
+    canTidy,
     onSelect,
+    onConnect,
+    onBoardMenu,
     onLinkMenu,
     onAddMenu,
     onScreenMenu,
@@ -169,6 +205,13 @@ export function FlowBoard({
     drawings: Map<string, ScreenDrawing>;
     selection?: FlowSelection;
     canArrange: boolean;
+    /** Whether links can be drawn by dragging: not while read-only, locked or mid-gesture. */
+    canConnect: boolean;
+    /** Whether the board's own menu has anything to offer. */
+    canTidy: boolean;
+    /** A control dropped on a Screen: it now goes there. */
+    onConnect: (instanceId: string, screenId: string) => void;
+    onBoardMenu: (at: Point) => void;
     onSelect: (selection?: FlowSelection) => void;
     onLinkMenu: (key: string, at: Point) => void;
     onAddMenu: (screenId: string, at: Point) => void;
@@ -326,6 +369,183 @@ export function FlowBoard({
         (screenId: string, at: Point) => menus.current.onAddMenu(screenId, at),
         []
     );
+    // A link being drawn: from a control on a picture or from a row's dot, to the pointer.
+    const [connecting, setConnecting] = useState<{ from: Point; to: Point; over?: string }>();
+    const cancelLink = useRef<(() => void) | undefined>(undefined);
+    // A drag ends in a click on what it started on; that click must not select anything.
+    const afterDrag = useRef(false);
+    const swallowClick = () => {
+        afterDrag.current = true;
+        setTimeout(() => (afterDrag.current = false));
+    };
+    const latest = useRef({ onConnect, machine });
+    latest.current = { onConnect, machine };
+    const startLink = useCallback((event: React.PointerEvent, instanceId: string, at?: Element) => {
+        const element = board.current;
+        if (event.button !== 0 || !element || cancelLink.current) {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        const toWorld = (x: number, y: number): Point => {
+            const origin = element.getBoundingClientRect();
+
+            return {
+                x: (x - origin.left - view.current.x) / view.current.zoom,
+                y: (y - origin.top - view.current.y) / view.current.zoom
+            };
+        };
+        const source = (at ?? event.currentTarget).getBoundingClientRect();
+        const from = toWorld(source.left + source.width / 2, source.top + source.height / 2);
+        const pointer = event.pointerId;
+        const origin = { x: event.clientX, y: event.clientY };
+        let moved = false;
+        // The available Screen under the pointer, if any.
+        const under = (x: number, y: number) => {
+            const id = window.document
+                .elementFromPoint(x, y)
+                ?.closest<HTMLElement>('[data-flow-screen]')?.dataset.flowScreen;
+
+            return latest.current.machine.states.some((state) => state.id === id && state.available)
+                ? id
+                : undefined;
+        };
+        const stop = () => {
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', up);
+            window.removeEventListener('pointercancel', stop);
+            window.removeEventListener('keydown', key, true);
+            cancelLink.current = undefined;
+            setConnecting(undefined);
+        };
+        const move = (next: PointerEvent) => {
+            if (next.pointerId !== pointer) {
+                return;
+            }
+            if (
+                !moved &&
+                Math.abs(next.clientX - origin.x) < DRAG_SLIP &&
+                Math.abs(next.clientY - origin.y) < DRAG_SLIP
+            ) {
+                return;
+            }
+            moved = true;
+            setConnecting({
+                from,
+                to: toWorld(next.clientX, next.clientY),
+                over: under(next.clientX, next.clientY)
+            });
+        };
+        const up = (next: PointerEvent) => {
+            if (next.pointerId !== pointer) {
+                return;
+            }
+            const over = moved ? under(next.clientX, next.clientY) : undefined;
+            stop();
+            if (moved) {
+                swallowClick();
+            }
+            if (over) {
+                latest.current.onConnect(instanceId, over);
+            }
+        };
+        const key = (pressed: KeyboardEvent) => {
+            if (pressed.key === 'Escape') {
+                pressed.preventDefault();
+                pressed.stopPropagation();
+                stop();
+                // The button is still down: its release must not count as a click either.
+                window.addEventListener('pointerup', swallowClick, { once: true });
+            }
+        };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+        window.addEventListener('pointercancel', stop);
+        window.addEventListener('keydown', key, true);
+        cancelLink.current = stop;
+    }, []);
+    useEffect(() => () => cancelLink.current?.(), []);
+    // The controls on each picture that can be dragged onto a Screen.
+    const connectable = useMemo(
+        () =>
+            new Map(
+                machine.states.map((state) => [
+                    state.id,
+                    canConnect
+                        ? [...state.transitions, ...state.idle]
+                              .filter(
+                                  (control) =>
+                                      control.editable && !('shared' in control && control.shared)
+                              )
+                              .map((control) => control.instanceId)
+                        : []
+                ])
+            ),
+        [machine, canConnect]
+    );
+    const select = (id: string) => {
+        if (!afterDrag.current) {
+            onSelect({ kind: 'screen', id });
+        }
+    };
+    // A press on a card's picture or name: on a control it draws a link, elsewhere it moves the card.
+    const grip = (event: React.PointerEvent<HTMLElement>, id: string) => {
+        if (event.button !== 0 || drag.current || cancelLink.current) {
+            return;
+        }
+        const control = (event.target as Element).closest<SVGElement>('[data-thumbnail-control]');
+        if (control) {
+            startLink(event, control.dataset.thumbnailControl!, control);
+
+            return;
+        }
+        event.currentTarget.setPointerCapture(event.pointerId);
+        drag.current = {
+            id,
+            pointer: event.pointerId,
+            origin: { x: event.clientX, y: event.clientY },
+            moved: false
+        };
+    };
+    const gripMove = (event: React.PointerEvent) => {
+        const active = drag.current;
+        if (!active || active.pointer !== event.pointerId || !canArrange) {
+            return;
+        }
+        const by = { x: event.clientX - active.origin.x, y: event.clientY - active.origin.y };
+        if (!active.moved && Math.abs(by.x) < DRAG_SLIP && Math.abs(by.y) < DRAG_SLIP) {
+            return;
+        }
+        active.moved = true;
+        setDragging(active.id);
+        onMove(active.id, { x: by.x / view.current.zoom, y: by.y / view.current.zoom }, false);
+    };
+    const gripUp = (event: React.PointerEvent) => {
+        const active = drag.current;
+        if (active?.pointer !== event.pointerId) {
+            return;
+        }
+        drag.current = undefined;
+        setDragging(undefined);
+        if (active.moved) {
+            swallowClick();
+            onMove(
+                active.id,
+                {
+                    x: (event.clientX - active.origin.x) / view.current.zoom,
+                    y: (event.clientY - active.origin.y) / view.current.zoom
+                },
+                true
+            );
+        }
+    };
+    const gripCancel = () => {
+        if (drag.current?.moved) {
+            onMove(drag.current.id, { x: 0, y: 0 }, true);
+        }
+        drag.current = undefined;
+        setDragging(undefined);
+    };
     const selectedScreen = selection?.kind === 'screen' ? selection.id : undefined;
     const selectedLink = selection?.kind === 'link' ? selection.key : undefined;
     const cards = new Map(layout.cards.map((card) => [card.id, card]));
@@ -342,6 +562,12 @@ export function FlowBoard({
             className={styles.board}
             aria-label="Screen flow"
             data-flow-board=""
+            onContextMenu={(event) => {
+                if (event.target === event.currentTarget && canTidy) {
+                    event.preventDefault();
+                    onBoardMenu({ x: event.clientX, y: event.clientY });
+                }
+            }}
             onPointerDownCapture={(event) => {
                 if (event.pointerType !== 'touch') {
                     return;
@@ -349,6 +575,7 @@ export function FlowBoard({
                 touches.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
                 if (touches.current.size === 2) {
                     // Two fingers: whatever the first one started gives way to the pinch.
+                    cancelLink.current?.();
                     pan.current = undefined;
                     if (drag.current) {
                         if (drag.current.moved) {
@@ -509,6 +736,15 @@ export function FlowBoard({
                             data-selected={selectedScreen === state.id}
                             data-dim={!state.available || !state.reachable}
                             data-dragging={dragging === state.id}
+                            data-drop={
+                                connecting
+                                    ? connecting.over === state.id
+                                        ? 'over'
+                                        : state.available
+                                          ? 'can'
+                                          : undefined
+                                    : undefined
+                            }
                             style={{
                                 transform: `translate(${card.x}px, ${card.y}px)`,
                                 width: card.width
@@ -525,7 +761,11 @@ export function FlowBoard({
                                     event.preventDefault();
                                     onScreenMenu(state.id, { x: event.clientX, y: event.clientY });
                                 }}
-                                onClick={() => onSelect({ kind: 'screen', id: state.id })}
+                                onClick={() => select(state.id)}
+                                onPointerDown={(event) => grip(event, state.id)}
+                                onPointerMove={gripMove}
+                                onPointerUp={gripUp}
+                                onPointerCancel={gripCancel}
                             >
                                 {drawing ? (
                                     <ScreenThumbnail
@@ -533,6 +773,7 @@ export function FlowBoard({
                                         drawing={drawing}
                                         label={`Picture of ${state.name}`}
                                         outlined={outlined}
+                                        controls={connectable.get(state.id)}
                                     />
                                 ) : (
                                     <span>No picture</span>
@@ -550,7 +791,7 @@ export function FlowBoard({
                                         });
                                     }}
                                     aria-describedby={note ? `flow-note-${state.id}` : undefined}
-                                    title="Drag to arrange, or use arrow keys. Canvas positions stay unchanged."
+                                    title="Drag to arrange, or hold Alt/⌥ and press the arrow keys. Canvas positions stay unchanged."
                                     onKeyDown={(event) => {
                                         const steps: Record<string, Point> = {
                                             ArrowLeft: { x: -ARROW_STEP, y: 0 },
@@ -559,85 +800,16 @@ export function FlowBoard({
                                             ArrowDown: { x: 0, y: ARROW_STEP }
                                         };
                                         const step = steps[event.key];
-                                        if (step && canArrange) {
+                                        if (step && event.altKey && canArrange) {
                                             event.preventDefault();
                                             onMove(state.id, step, true);
                                         }
                                     }}
-                                    onPointerDown={(event) => {
-                                        if (event.button !== 0 || drag.current) {
-                                            return;
-                                        }
-                                        event.currentTarget.setPointerCapture(event.pointerId);
-                                        drag.current = {
-                                            id: state.id,
-                                            pointer: event.pointerId,
-                                            origin: { x: event.clientX, y: event.clientY },
-                                            moved: false
-                                        };
-                                    }}
-                                    onPointerMove={(event) => {
-                                        const active = drag.current;
-                                        if (
-                                            !active ||
-                                            active.pointer !== event.pointerId ||
-                                            !canArrange
-                                        ) {
-                                            return;
-                                        }
-                                        const by = {
-                                            x: event.clientX - active.origin.x,
-                                            y: event.clientY - active.origin.y
-                                        };
-                                        if (
-                                            !active.moved &&
-                                            Math.abs(by.x) < DRAG_SLIP &&
-                                            Math.abs(by.y) < DRAG_SLIP
-                                        ) {
-                                            return;
-                                        }
-                                        active.moved = true;
-                                        setDragging(active.id);
-                                        onMove(
-                                            active.id,
-                                            {
-                                                x: by.x / view.current.zoom,
-                                                y: by.y / view.current.zoom
-                                            },
-                                            false
-                                        );
-                                    }}
-                                    onPointerUp={(event) => {
-                                        const active = drag.current;
-                                        if (active?.pointer !== event.pointerId) {
-                                            return;
-                                        }
-                                        drag.current = undefined;
-                                        setDragging(undefined);
-                                        if (active.moved) {
-                                            onMove(
-                                                active.id,
-                                                {
-                                                    x:
-                                                        (event.clientX - active.origin.x) /
-                                                        view.current.zoom,
-                                                    y:
-                                                        (event.clientY - active.origin.y) /
-                                                        view.current.zoom
-                                                },
-                                                true
-                                            );
-                                        } else {
-                                            onSelect({ kind: 'screen', id: state.id });
-                                        }
-                                    }}
-                                    onPointerCancel={() => {
-                                        if (drag.current?.moved) {
-                                            onMove(drag.current.id, { x: 0, y: 0 }, true);
-                                        }
-                                        drag.current = undefined;
-                                        setDragging(undefined);
-                                    }}
+                                    onClick={() => select(state.id)}
+                                    onPointerDown={(event) => grip(event, state.id)}
+                                    onPointerMove={gripMove}
+                                    onPointerUp={gripUp}
+                                    onPointerCancel={gripCancel}
                                 >
                                     {isStart && <span className={styles.badge}>Start</span>}
                                     <span className={styles.screenName}>{state.name}</span>
@@ -669,10 +841,28 @@ export function FlowBoard({
                                 }
                                 onLinkMenu={openLinkMenu}
                                 onAddMenu={openAddMenu}
+                                canConnect={canConnect}
+                                onLinkStart={startLink}
                             />
                         </section>
                     );
                 })}
+                {connecting && (
+                    // Over the cards, so the line stays whole all the way to the pointer.
+                    <svg
+                        className={styles.connections}
+                        width={layout.width}
+                        height={layout.height}
+                        aria-hidden="true"
+                    >
+                        <path
+                            className={styles.live}
+                            data-flow-live=""
+                            d={liveLine(connecting.from, connecting.to)}
+                            markerEnd="url(#flow-arrow)"
+                        />
+                    </svg>
+                )}
             </div>
             {!fitted && (
                 <button className={styles.fit} onClick={fit}>

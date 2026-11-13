@@ -97,7 +97,10 @@ test('re-aims and removes links in Flow, reflects them in the Inspector, and arr
     // Arranging moves the card on the board and nothing on the canvas.
     const home = screen(page, 'home');
     const before = await settled(home);
+    // Plain arrows are for moving between rows; Alt/⌥ with an arrow moves the card.
     await page.getByRole('button', { name: 'Arrange Home' }).press('ArrowDown');
+    expect(await settled(home)).toEqual(before);
+    await page.getByRole('button', { name: 'Arrange Home' }).press('Alt+ArrowDown');
     expect(await settled(home)).toEqual({ x: before.x, y: before.y + 20 });
     const details = screen(page, 'details');
     const origin = await settled(details);
@@ -590,4 +593,160 @@ test('zooms with two fingers on a touch screen, starting on a card or on empty b
         Math.min(200, before * 3) + 1
     );
     await expect(page.getByRole('button', { name: 'Fit', exact: true })).toBeVisible();
+});
+
+/** The middle of an element, for the mouse. */
+async function middle(target: Locator) {
+    const box = (await target.boundingBox())!;
+
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+function threeScreens() {
+    const document = automaticLayoutsPrototype();
+    document.frames.third = { ...document.frames.details, id: 'third', name: 'Third' };
+
+    return document;
+}
+
+test('links a control by dragging it from the picture onto a screen, and Esc cancels', async ({
+    page
+}) => {
+    await seed(page, threeScreens());
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto('/flow');
+    const next = row(page, 'next');
+    await expect(next).toHaveAccessibleDescription('Continue button goes to Details');
+    const control = screen(page, 'home').locator('[data-thumbnail-control="next"]');
+    const from = await middle(control);
+    const third = await middle(page.getByRole('button', { name: 'Select Third', exact: true }));
+    // Under the pointer the control is outlined, as something to pick up.
+    await page.mouse.move(from.x, from.y);
+    await expect(control).toHaveCSS('stroke', 'rgb(26, 93, 219)');
+    await page.mouse.down();
+    await page.mouse.move(from.x + 30, from.y + 10, { steps: 2 });
+    await expect(page.locator('[data-flow-live]')).toHaveCount(1);
+    // Every screen offers itself; the one under the pointer, still Home, more strongly.
+    await expect(page.locator('[data-flow-screen][data-drop="can"]')).toHaveCount(2);
+    await expect(screen(page, 'home')).toHaveAttribute('data-drop', 'over');
+    await page.mouse.move(third.x, third.y, { steps: 4 });
+    await expect(screen(page, 'third')).toHaveAttribute('data-drop', 'over');
+    await page.mouse.up();
+    await expect(page.locator('[data-flow-live]')).toHaveCount(0);
+    await expect(page.locator('[data-flow-screen][data-drop]')).toHaveCount(0);
+    await expect(next).toHaveAccessibleDescription('Continue button goes to Third');
+    await expect(next).toHaveAttribute('aria-pressed', 'true');
+    // The drop is one undo step, and does not count as a click on either screen.
+    await expect(page.locator('[data-flow-screen][data-selected="true"]')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Undo', exact: true }).click();
+    await expect(next).toHaveAccessibleDescription('Continue button goes to Details');
+    await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeDisabled();
+
+    // Esc while dragging, or letting go over empty board, changes nothing.
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(third.x, third.y, { steps: 4 });
+    await expect(page.locator('[data-flow-live]')).toHaveCount(1);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-flow-live]')).toHaveCount(0);
+    await page.mouse.up();
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(from.x - 200, from.y + 500, { steps: 4 });
+    await expect(page.locator('[data-flow-live]')).toHaveCount(1);
+    await page.mouse.up();
+    await expect(page.locator('[data-flow-live]')).toHaveCount(0);
+    await expect(next).toHaveAccessibleDescription('Continue button goes to Details');
+    await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeDisabled();
+
+    // A control with no action yet gains its first link the same way.
+    const field = await middle(screen(page, 'home').locator('[data-thumbnail-control="name"]'));
+    await page.mouse.move(field.x, field.y);
+    await page.mouse.down();
+    await page.mouse.move(third.x, third.y, { steps: 4 });
+    await page.mouse.up();
+    await expect(row(page, 'name')).toHaveAccessibleDescription(
+        'Enter in Name field goes to Third'
+    );
+});
+
+test('re-aims a link by dragging its dot onto another screen', async ({ page }) => {
+    await seed(page, threeScreens());
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto('/flow');
+    const dot = page.locator('[data-flow-dot="wide-next"]');
+    await expect(dot).toHaveAttribute('data-draggable', 'true');
+    const from = await middle(dot);
+    const third = await middle(page.getByRole('button', { name: 'Arrange Third' }));
+    // A press a few pixels off the 9 px dot still takes hold of it.
+    await page.mouse.move(from.x + 8, from.y - 8);
+    await page.mouse.down();
+    await page.mouse.move(third.x, third.y, { steps: 4 });
+    await expect(screen(page, 'third')).toHaveAttribute('data-drop', 'over');
+    await page.mouse.up();
+    await expect(row(page, 'wide-next')).toHaveAccessibleDescription('Wide continue goes to Third');
+    await expect(page.locator('[data-flow-link="wide-next"]')).toHaveAttribute(
+        'data-selected',
+        'true'
+    );
+});
+
+test('offers no dragging to link in a locked document', async ({ page }) => {
+    const document = threeScreens();
+    document.locked = true;
+    await seed(page, document);
+    await page.goto('/flow');
+    await expect(row(page, 'next')).toBeVisible();
+    await expect(page.locator('[data-thumbnail-control]')).toHaveCount(0);
+    await expect(page.locator('[data-flow-dot="next"]')).toHaveAttribute('data-draggable', 'false');
+});
+
+test('keeps a dragged screen where it was put when links change, until Tidy up', async ({
+    page
+}) => {
+    await seed(page, threeScreens());
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto('/flow');
+    const third = screen(page, 'third');
+    const automatic = await settled(third);
+    const board = page.locator('[data-flow-board]');
+    const empty = { x: 60, y: 900 };
+    // Nothing was moved, so the board's own menu has nothing to offer.
+    await page.mouse.click(empty.x, empty.y, { button: 'right' });
+    await expect(page.getByRole('menu', { name: 'Board', exact: true })).toHaveCount(0);
+    // Dragging by the picture, away from any control, moves the card.
+    const picture = (await page
+        .getByRole('button', { name: 'Select Third', exact: true })
+        .boundingBox())!;
+    const zoom = Number(await board.getAttribute('data-zoom')) / 100;
+    await page.mouse.move(picture.x + 6, picture.y + 6);
+    await page.mouse.down();
+    await page.mouse.move(picture.x + 66, picture.y - 34, { steps: 3 });
+    await page.mouse.up();
+    const put = await settled(third);
+    expect(put.x).toBeCloseTo(automatic.x + 60 / zoom, 0);
+    expect(put.y).toBeCloseTo(automatic.y - 40 / zoom, 0);
+    await expect(third).toHaveAttribute('data-selected', 'false');
+    // A link to it changes its column underneath; the card does not move.
+    await row(page, 'wide-next').click();
+    await choice(linkMenu(page, 'Wide continue'), 'Third').click();
+    await expect(third).toHaveAttribute('data-dim', 'false');
+    const after = await settled(third);
+    expect(after.x).toBeCloseTo(put.x, 0);
+    expect(after.y).toBeCloseTo(put.y, 0);
+    await page.goto('/flow');
+    const reloaded = await settled(third);
+    expect(reloaded.x).toBeCloseTo(put.x, 0);
+    expect(reloaded.y).toBeCloseTo(put.y, 0);
+    // Tidy up puts every screen back in the automatic layout, and then has nothing left to do.
+    await page.mouse.click(empty.x, empty.y, { button: 'right' });
+    await page
+        .getByRole('menu', { name: 'Board', exact: true })
+        .getByRole('menuitem', { name: 'Tidy up', exact: true })
+        .click();
+    const tidied = await settled(third);
+    expect(tidied.x).toBe((await settled(screen(page, 'details'))).x);
+    expect(tidied.y).toBeGreaterThan((await place(screen(page, 'details'))).y);
+    await page.mouse.click(empty.x, empty.y, { button: 'right' });
+    await expect(page.getByRole('menu', { name: 'Board', exact: true })).toHaveCount(0);
 });
