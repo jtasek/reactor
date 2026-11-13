@@ -5,6 +5,7 @@ import type { Duplex } from 'node:stream';
 import { WebSocketServer } from 'ws';
 import * as Y from 'yjs';
 import type { Auth } from './auth.ts';
+import { dropNewerVersions } from './documentVersions.ts';
 import type { Db, Log } from './schema.ts';
 import { allows, documentRole } from './workspaces.ts';
 
@@ -77,13 +78,16 @@ export function createSync({
     auth,
     origin,
     log,
-    sessionCheck = SESSION_CHECK
+    sessionCheck = SESSION_CHECK,
+    editorVersion
 }: {
     db: Db;
     auth: Auth;
     origin: string;
     log: Pick<Log, 'warn' | 'error'>;
     sessionCheck?: number;
+    /** The document format of the editor served here; the build's own unless a test sets it. */
+    editorVersion?: number;
 }) {
     const sockets = new Map<string, number>();
     const hocuspocus = new Hocuspocus<{ userId: string }>({
@@ -106,7 +110,15 @@ export function createSync({
             }
             connection.readOnly = !allows(role, 'editor');
         },
-        onLoadDocument: ({ documentName, document }) => loadState(db, documentName, document),
+        async onLoadDocument({ documentName, document }) {
+            await loadState(db, documentName, document);
+            // A rolled-back release's marks would otherwise keep the document view only.
+            dropNewerVersions(document, editorVersion);
+        },
+        // Every client's change is checked, and the removal is shared like any change.
+        async onChange({ document }) {
+            dropNewerVersions(document, editorVersion);
+        },
         async onStoreDocument({ documentName, document }) {
             try {
                 await saveState(db, documentName, document);

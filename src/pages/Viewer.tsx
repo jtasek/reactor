@@ -8,6 +8,9 @@ import styles from './Sharing.css';
 export const Viewer: FC<{ checking: boolean }> = ({ checking }) => {
     const document = useCurrentDocument();
     const outdated = useAppState((state) => isOutdated(state, state.currentDocumentId));
+    const interrupted = useAppState(
+        (state) => state.interruptedDocumentId === state.currentDocumentId
+    );
     const [zoom, setZoom] = useState(1);
     return (
         <main className={styles.page}>
@@ -18,6 +21,9 @@ export const Viewer: FC<{ checking: boolean }> = ({ checking }) => {
             {outdated ? (
                 <div role="alert">
                     <p>A newer version of Reactor changed this document. Reload to keep editing.</p>
+                    {interrupted && (
+                        <p>Your drag was stopped part way; Reload shows where it ended up.</p>
+                    )}
                     <button
                         type="button"
                         className={styles.primary}

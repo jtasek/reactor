@@ -192,12 +192,24 @@ export const setDocumentHistory: ActionWithParam<{ documentId: string; history: 
 
 /**
  * Shows a document a newer editor changed as read-only, until this copy reloads:
- * `editableFrom` is the lowest document format that may edit it.
+ * `editableFrom` is the lowest document format that may edit it. Without it, the
+ * document may be edited again. A gesture held on it stops, as when access drops.
  */
-export const markDocumentOutdated: ActionWithParam<{ documentId: string; editableFrom: number }> = (
-    { state },
-    { documentId, editableFrom }
-) => {
+export const markDocumentOutdated: ActionWithParam<{
+    documentId: string;
+    editableFrom?: number;
+}> = ({ state, actions }, { documentId, editableFrom }) => {
+    if (editableFrom === undefined) {
+        delete state.outdatedDocuments[documentId];
+        delete state.interruptedDocumentId;
+        return;
+    }
+
+    if (documentId === state.currentDocumentId && state.events.pointer.gesture.kind !== 'idle') {
+        actions.events.cancelGesture();
+        state.interruptedDocumentId = documentId;
+    }
+
     state.outdatedDocuments[documentId] = editableFrom;
 };
 

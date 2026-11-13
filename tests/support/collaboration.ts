@@ -42,7 +42,7 @@ export async function createCopies(
             historyChanged: (documentId, history) =>
                 store.actions.setDocumentHistory({ documentId, history }),
             version: versions[index],
-            outdated: (documentId, editableFrom) =>
+            outdated: (documentId, editableFrom?: number) =>
                 store.actions.markDocumentOutdated({ documentId, editableFrom }),
             sendUpdate: (_, update) =>
                 copies.filter((other) => other !== copy).forEach(({ inbox }) => inbox.push(update))

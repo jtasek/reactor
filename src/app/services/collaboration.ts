@@ -67,9 +67,10 @@ export interface CollaborationOptions {
     version?: number;
     /**
      * Reports that a newer editor changed a document, which this copy may only read
-     * from now on: `editableFrom` is the lowest version that may edit it.
+     * from now on: `editableFrom` is the lowest version that may edit it. Without it,
+     * the newer marks are gone and this copy may edit again.
      */
-    outdated?(documentId: string, editableFrom: number): void;
+    outdated?(documentId: string, editableFrom?: number): void;
 }
 
 type YEntity = Yjs.Map<unknown>;
@@ -325,21 +326,21 @@ export class Collaboration {
 
     /**
      * Whether a newer editor changed the document, so this copy, which may drop or
-     * misread what it wrote, must not write to it again. Reported with each update.
+     * misread what it wrote, must not write to it. Reported when that changes: the
+     * server drops marks newer than the release it serves, as after a rollback.
      */
     private outdated(documentId: string, binding: Binding): boolean {
-        const editableFrom = Math.max(...[...binding.versions.keys()].map((key) => +key || 0));
+        const newest = Math.max(...[...binding.versions.keys()].map((key) => +key || 0));
+        const outdated = newest > this.version ? newest : undefined;
 
-        if (!(editableFrom > this.version)) {
-            return false;
+        if (outdated !== binding.outdated) {
+            binding.outdated = outdated;
+            // Nothing this copy did may be undone over the newer copy's changes.
+            binding.history?.clear();
+            this.options?.outdated?.(documentId, outdated);
         }
 
-        binding.outdated = editableFrom;
-        // Nothing this copy did may be undone over the newer copy's changes.
-        binding.history?.clear();
-        this.options?.outdated?.(documentId, editableFrom);
-
-        return true;
+        return !!outdated;
     }
 
     /** Migrations load with Yjs, before any document is opened. */

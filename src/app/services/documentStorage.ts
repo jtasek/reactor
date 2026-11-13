@@ -24,9 +24,10 @@ import { orderAbove, resolveDrawOrderTies, validDrawOrder } from '../drawOrder';
 import { isClosedShape, isHexColor, isStrokedShape } from '../utils';
 import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
+import { SCHEMA_VERSION } from './schemaVersion';
 
+export { SCHEMA_VERSION };
 export const PERSISTENCE_KEY = 'reactor';
-export const SCHEMA_VERSION = 31;
 export const MIN_FRAME_SIZE = 1;
 export const RUNTIME_FIELDS = new Set([
     'selectedFrameId',

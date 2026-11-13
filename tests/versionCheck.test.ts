@@ -119,4 +119,46 @@ describe('version check on sync', () => {
         expect(newer.store.state.outdatedDocuments).toEqual({});
         expect(names(older)).toEqual(['first', 'still editing']);
     });
+
+    it('lets an older copy edit again once the newer marks are dropped, as after a rollback', async () => {
+        const [older, newer] = await olderAndNewer();
+
+        edit(newer, (actions) => actions.addShape({ ...rectangle(40), name: 'newer edit' }));
+        deliver(older);
+        expect(isReadOnly(older.store.state, DOCUMENT_ID)).toBe(true);
+
+        // The server removes the mark of the release it no longer serves.
+        const server = new Y.Doc();
+        Y.applyUpdate(server, older.collaboration.state(DOCUMENT_ID));
+        const before = Y.encodeStateVector(server);
+        server.getMap('versions').delete(`${SCHEMA_VERSION}`);
+        older.collaboration.receive(DOCUMENT_ID, Y.encodeStateAsUpdate(server, before));
+
+        expect(older.store.state.outdatedDocuments).toEqual({});
+        edit(older, (actions) => actions.addShape({ ...rectangle(120), name: 'older again' }));
+        expect(older.inbox).toEqual([]);
+        expect(newer.inbox.length).toBeGreaterThan(0);
+    });
+
+    it('stops a drag held when the newer change arrives, and says so', async () => {
+        const [older, newer] = await olderAndNewer();
+        const position = () => {
+            const [shape] = Object.values(shownDocument(older).shapes);
+
+            return 'position' in shape ? shape.position : undefined;
+        };
+        const { events } = older.store.actions;
+
+        events.beginGesture({ pointerId: 1, position: { x: 10, y: 5 } });
+        events.movePointer({ pointerId: 1, position: { x: 60, y: 5 } });
+        expect(older.store.state.events.pointer.gesture.kind).not.toBe('idle');
+        expect(position()).not.toEqual({ x: 0, y: 0 });
+
+        edit(newer, (actions) => actions.addShape({ ...rectangle(40), name: 'newer edit' }));
+        deliver(older);
+
+        expect(older.store.state.events.pointer.gesture.kind).toBe('idle');
+        expect(position()).toEqual({ x: 0, y: 0 });
+        expect(older.store.state.interruptedDocumentId).toBe(DOCUMENT_ID);
+    });
 });

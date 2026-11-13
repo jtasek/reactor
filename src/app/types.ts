@@ -687,6 +687,8 @@ export type Application = {
      * edit them: this copy only shows them until it reloads. Never saved.
      */
     outdatedDocuments: Record<string, number>;
+    /** The outdated document whose gesture stopped part way, to say so. Never saved. */
+    interruptedDocumentId?: string;
     ai: AiAvailability;
     commands: HashTable<Command>;
     commandsIds: string[];

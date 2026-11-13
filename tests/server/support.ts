@@ -148,6 +148,8 @@ export interface ServeOptions {
     socialProviders?: Parameters<typeof createAuth>[0]['socialProviders'];
     databasePlugins?: KyselyPlugin[];
     sessionCheck?: number;
+    /** The document format of the editor the sync server serves. */
+    editorVersion?: number;
     assetQuota?: number;
     /** Where AI requests go, and their limits; without it, AI is off. */
     ai?: { provider: AiProvider; limits?: AiLimits };
@@ -170,6 +172,7 @@ export async function startServer({
     socialProviders,
     previewOrigin,
     sessionCheck,
+    editorVersion,
     assetQuota,
     ai,
     databasePlugins
@@ -182,7 +185,8 @@ export async function startServer({
         auth: accounts.auth,
         origin: ORIGIN,
         log,
-        sessionCheck
+        sessionCheck,
+        editorVersion
     });
 
     app.all('/api/auth/*splat', authHandler(accounts.auth));

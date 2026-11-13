@@ -117,11 +117,13 @@ export const config = {
     // that every selection write keeps, so selection readers stop depending on every shape.
     // 2026-11-11: +3 KiB entry and per file for the container index (`containerState.ts`)
     // that lets visibility and lock checks skip scanning every group, layer and component.
+    // 2026-11-13: +1 KiB entry for the version check (S1 step 1): a document a newer editor
+    // changed goes view only, stops a held drag and becomes editable again after a rollback.
     performance: isDev
         ? false
         : {
               hints: 'error',
-              maxEntrypointSize: 504 * 1024,
+              maxEntrypointSize: 505 * 1024,
               maxAssetSize: 253 * 1024
           },
     optimization: {

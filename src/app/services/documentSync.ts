@@ -684,7 +684,7 @@ export async function startDocumentSync(
             documentChanged: instance.actions.markDocumentModified,
             historyChanged: (documentId, history) =>
                 instance.actions.setDocumentHistory({ documentId, history }),
-            outdated: (documentId, editableFrom) =>
+            outdated: (documentId, editableFrom?: number) =>
                 instance.actions.markDocumentOutdated({ documentId, editableFrom }),
             sendUpdate: (documentId, update) => {
                 if (owner && isReadOnly(instance.state, documentId)) return;
