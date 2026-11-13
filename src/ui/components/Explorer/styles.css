@@ -374,6 +374,21 @@
     white-space: nowrap;
 }
 
+/* On narrow windows a menu is a sheet along the bottom edge, with rows a finger can hit. */
+div.menuSheet {
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    bottom: 0;
+    left: 0;
+    max-height: 70vh;
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+    right: 0;
+    width: auto;
+}
+
+div.menuSheet button {
+    min-height: 44px;
+}
+
 /* Manage layers: a small glass sheet over the outline. */
 .layerManager {
     background: var(--control-background);

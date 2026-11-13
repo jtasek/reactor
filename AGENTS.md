@@ -1232,7 +1232,16 @@ one `editInteractions` call; Esc or a drop elsewhere changes nothing. A press an
 the picture or name drags the card. Dragged cards are stored as offsets from the automatic
 layout; when that layout moves under a dragged card, `Flow.tsx` corrects the offset so the
 card stays put. Tidy up (the board's right-click menu, shown only when it would change
-something) clears the offsets and starts the layout over.
+something, and each Screen's ⋯ menu for the keyboard) clears the offsets and starts the layout
+over.
+Check (`FlowCheck.tsx`, in the toolbar) counts `machine.problems` and lists `machine.notes`
+uncounted; a remark selects what it is about, pans to it (`handle` on `FlowBoard`) and, where
+one fix is obvious, opens that link's menu or the Screen's Add link menu. Below 700 px
+`Flow.tsx` renders `FlowList` instead of the board (no pictures are drawn) and menus open as
+bottom sheets (`sheet` on `ExplorerMenu`). Both views share the keyboard model: one Tab stop
+per Screen (its name), ↑/↓ over `[data-flow-stop]` elements (`walkScreen`), Return opens a
+row's menu, ⌫ removes its link, Esc deselects. Link changes are announced in a polite live
+region (`[data-flow-announce]`) by comparing each link's `sentence()` before and after.
 Tests: `tests/flowProjection.test.ts`, `tests/flowMachine.test.ts` and
 `tests/browser/flows.spec.ts`.
 

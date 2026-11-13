@@ -43,27 +43,54 @@ const EFFECT_ICONS: Partial<Record<Effect['kind'], typeof Eye>> = {
     toggleState: ToggleRight
 };
 
-/** ↑ and ↓ walk a card's rows, as in a list. */
-function walkRows(event: React.KeyboardEvent<HTMLButtonElement>) {
-    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
+/**
+ * ↑ and ↓ walk a Screen's name, its menu button and its rows, as in a list. Tab stops once
+ * per Screen, on its name, so it steps from Screen to Screen.
+ */
+export function walkScreen(event: React.KeyboardEvent<HTMLElement>, scroll = false) {
+    if ((event.key !== 'ArrowDown' && event.key !== 'ArrowUp') || event.altKey) {
         return;
     }
-    const rows = [
-        ...(event.currentTarget.closest('ul')?.querySelectorAll<HTMLElement>('li > button') ?? [])
+    const stops = [
+        ...(event.currentTarget
+            .closest('[data-flow-screen]')
+            ?.querySelectorAll<HTMLElement>('[data-flow-stop]') ?? [])
     ];
-    const next = rows[rows.indexOf(event.currentTarget) + (event.key === 'ArrowDown' ? 1 : -1)];
+    const next = stops[stops.indexOf(event.currentTarget) + (event.key === 'ArrowDown' ? 1 : -1)];
     if (next) {
         event.preventDefault();
-        next.focus({ preventScroll: true });
+        next.focus({ preventScroll: !scroll });
     }
 }
 
-const inactiveNote = (transition: Transition) =>
+/** A row's keys: ↑ and ↓ walk, ⌫ removes its link. */
+export function rowKeys(
+    event: React.KeyboardEvent<HTMLElement>,
+    remove?: () => void,
+    scroll = false
+) {
+    if ((event.key === 'Backspace' || event.key === 'Delete') && remove) {
+        event.preventDefault();
+        remove();
+
+        return;
+    }
+    walkScreen(event, scroll);
+}
+
+export const inactiveNote = (transition: Transition) =>
     transition.inactive === 'hidden'
         ? 'Hidden, so never drawn in Preview'
         : transition.inactive === 'unusedVariant'
           ? 'In a variant this instance never draws'
           : undefined;
+
+/** What a screen reader hears after a row's name: the link in words, then what is wrong. */
+export function describeRow(transition: Transition) {
+    const notes = [transition.broken, inactiveNote(transition)].filter(Boolean).join('. ');
+
+    return `${sentence(transition)}${notes && `. ${notes}`}`;
+}
 
 /** The line that follows the pointer while a link is drawn. */
 function liveLine(from: Point, to: Point) {
@@ -86,6 +113,7 @@ const Rows = memo(function Rows({
     canConnect,
     onLinkMenu,
     onAddMenu,
+    onRemove,
     onLinkStart
 }: {
     state: FlowState;
@@ -93,6 +121,7 @@ const Rows = memo(function Rows({
     selectedLink?: string;
     onLinkMenu: (key: string, at: Point) => void;
     onAddMenu: (screenId: string, at: Point) => void;
+    onRemove: (key: string) => void;
     canConnect: boolean;
     /** A press on a row's dot, to drag its link to another Screen. */
     onLinkStart: (event: React.PointerEvent, instanceId: string) => void;
@@ -103,9 +132,7 @@ const Rows = memo(function Rows({
                 const EffectIcon = EFFECT_ICONS[transition.effect.kind];
                 const guard = guardText(transition.guard);
                 const id = `flow-row-${state.id}-${transition.key}`.replace(/[^\w-]/g, '_');
-                const notes = [transition.broken, inactiveNote(transition)]
-                    .filter(Boolean)
-                    .join('. ');
+                const editable = canConnect && transition.editable && !transition.shared;
 
                 return (
                     <li key={transition.key}>
@@ -117,7 +144,14 @@ const Rows = memo(function Rows({
                             aria-pressed={selectedLink === transition.key}
                             aria-haspopup="menu"
                             title={sentence(transition)}
-                            onKeyDown={walkRows}
+                            tabIndex={-1}
+                            data-flow-stop=""
+                            onKeyDown={(event) =>
+                                rowKeys(
+                                    event,
+                                    editable ? () => onRemove(transition.key) : undefined
+                                )
+                            }
                             onClick={(event) => {
                                 const box = event.currentTarget.getBoundingClientRect();
                                 onLinkMenu(transition.key, {
@@ -137,19 +171,16 @@ const Rows = memo(function Rows({
                             )}
                         </button>
                         <span id={id} className={styles.hidden}>
-                            {sentence(transition)}
-                            {notes && `. ${notes}`}
+                            {describeRow(transition)}
                         </span>
                         {transition.effect.kind === 'go' && (
                             <span
                                 className={styles.dot}
                                 aria-hidden="true"
                                 data-flow-dot={transition.key}
-                                data-draggable={
-                                    canConnect && transition.editable && !transition.shared
-                                }
+                                data-draggable={editable}
                                 onPointerDown={
-                                    canConnect && transition.editable && !transition.shared
+                                    editable
                                         ? (event) => onLinkStart(event, transition.instanceId)
                                         : undefined
                                 }
@@ -164,7 +195,9 @@ const Rows = memo(function Rows({
                     aria-haspopup="menu"
                     aria-label={`Add link on ${state.name}`}
                     data-flow-add={state.id}
-                    onKeyDown={walkRows}
+                    tabIndex={-1}
+                    data-flow-stop=""
+                    onKeyDown={walkScreen}
                     onClick={(event) => onAddMenu(state.id, below(event.currentTarget))}
                 >
                     <Icon icon={{ component: Plus, size: 14 }} />
@@ -195,7 +228,9 @@ export function FlowBoard({
     onLinkMenu,
     onAddMenu,
     onScreenMenu,
-    onMove
+    onRemove,
+    onMove,
+    handle
 }: {
     machine: Machine;
     layout: FlowLayout;
@@ -218,6 +253,10 @@ export function FlowBoard({
     onScreenMenu: (screenId: string, at: Point) => void;
     /** A card dragged or nudged by this much, in the drawing's own units. */
     onMove: (screenId: string, by: Point, done: boolean) => void;
+    /** ⌫ on a row: its link goes. */
+    onRemove: (key: string) => void;
+    /** Filled in with a way to bring a Screen into view. */
+    handle: React.MutableRefObject<((screenId: string) => void) | undefined>;
 }) {
     const board = useRef<HTMLDivElement>(null);
     const world = useRef<HTMLDivElement>(null);
@@ -275,6 +314,31 @@ export function FlowBoard({
             x: point.x - ((point.x - x) / zoom) * next,
             y: point.y - ((point.y - y) / zoom) * next
         });
+    };
+    // Pans just far enough that a Screen's card is whole and clear of the toolbar.
+    handle.current = (screenId) => {
+        const element = board.current;
+        const card = layout.cards.find((item) => item.id === screenId);
+        if (!element || !card) {
+            return;
+        }
+        const { x, y, zoom } = view.current;
+        const edge = 24;
+        const box = {
+            left: x + card.x * zoom,
+            top: y + card.y * zoom,
+            right: x + (card.x + card.width) * zoom,
+            bottom: y + (card.y + card.height) * zoom
+        };
+        const shift = (low: number, high: number, from: number, to: number) =>
+            high - low > to - from || low < from ? from - low : high > to ? to - high : 0;
+        const by = {
+            x: shift(box.left, box.right, edge, element.clientWidth - edge),
+            y: shift(box.top, box.bottom, TOOLBAR_BAND + edge, element.clientHeight - edge)
+        };
+        if (by.x || by.y) {
+            apply({ zoom, x: x + by.x, y: y + by.y });
+        }
     };
     const fitRef = useRef(fit);
     fitRef.current = fit;
@@ -359,8 +423,9 @@ export function FlowBoard({
         undefined
     );
     // The same functions on every render, so a card's rows are not drawn again for nothing.
-    const menus = useRef({ onLinkMenu, onAddMenu });
-    menus.current = { onLinkMenu, onAddMenu };
+    const menus = useRef({ onLinkMenu, onAddMenu, onRemove });
+    menus.current = { onLinkMenu, onAddMenu, onRemove };
+    const removeLink = useCallback((key: string) => menus.current.onRemove(key), []);
     const openLinkMenu = useCallback(
         (key: string, at: Point) => menus.current.onLinkMenu(key, at),
         []
@@ -792,7 +857,9 @@ export function FlowBoard({
                                     }}
                                     aria-describedby={note ? `flow-note-${state.id}` : undefined}
                                     title="Drag to arrange, or hold Alt/⌥ and press the arrow keys. Canvas positions stay unchanged."
+                                    data-flow-stop=""
                                     onKeyDown={(event) => {
+                                        walkScreen(event);
                                         const steps: Record<string, Point> = {
                                             ArrowLeft: { x: -ARROW_STEP, y: 0 },
                                             ArrowRight: { x: ARROW_STEP, y: 0 },
@@ -818,6 +885,9 @@ export function FlowBoard({
                                     className={styles.more}
                                     aria-label={`More for ${state.name}`}
                                     aria-haspopup="menu"
+                                    tabIndex={-1}
+                                    data-flow-stop=""
+                                    onKeyDown={walkScreen}
                                     onClick={(event) =>
                                         onScreenMenu(state.id, below(event.currentTarget))
                                     }
@@ -841,6 +911,7 @@ export function FlowBoard({
                                 }
                                 onLinkMenu={openLinkMenu}
                                 onAddMenu={openAddMenu}
+                                onRemove={removeLink}
                                 canConnect={canConnect}
                                 onLinkStart={startLink}
                             />
