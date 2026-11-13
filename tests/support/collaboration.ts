@@ -24,7 +24,9 @@ export interface Copy {
 export async function createCopies(
     count: number,
     setup: (store: TestStore) => void = () => {},
-    undoMergeMs = 0
+    undoMergeMs = 0,
+    /** Each copy's document format, to stand in for older or newer editors. */
+    versions: Array<number | undefined> = []
 ) {
     const copies: Copy[] = [];
 
@@ -39,6 +41,9 @@ export async function createCopies(
             addMutationListener: store.addMutationListener,
             historyChanged: (documentId, history) =>
                 store.actions.setDocumentHistory({ documentId, history }),
+            version: versions[index],
+            outdated: (documentId, editableFrom) =>
+                store.actions.markDocumentOutdated({ documentId, editableFrom }),
             sendUpdate: (_, update) =>
                 copies.filter((other) => other !== copy).forEach(({ inbox }) => inbox.push(update))
         });

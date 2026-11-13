@@ -682,6 +682,11 @@ export type Application = {
     id: string;
     account: Account;
     documentAccess: Record<string, DocumentAccess>;
+    /**
+     * Documents a newer editor changed, by id, with the lowest document format that may
+     * edit them: this copy only shows them until it reloads. Never saved.
+     */
+    outdatedDocuments: Record<string, number>;
     ai: AiAvailability;
     commands: HashTable<Command>;
     commandsIds: string[];

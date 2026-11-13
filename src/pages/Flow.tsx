@@ -12,7 +12,7 @@ import {
 } from 'src/app/hooks';
 import { flowMachine, sentence, type FlowRef } from 'src/app/flowMachine';
 import { layoutFlow, offsetLayout, routeLinks, type FlowLayout } from 'src/app/flowLayout';
-import { isReadOnly } from 'src/app/documentAccess';
+import { isOutdated, isReadOnly } from 'src/app/documentAccess';
 import type { Document, Point } from 'src/app/types';
 import {
     drawingDocument,
@@ -26,6 +26,7 @@ import { FlowLinkMenu } from './FlowLinkMenu';
 import { FlowList } from './FlowList';
 import { readFlowPositions } from './flowPositions';
 import styles from './Flow.css';
+import { Viewer } from './Viewer';
 
 registerEditor();
 
@@ -70,6 +71,11 @@ function focusPlace(root: HTMLElement | null, place: Place) {
 
 export function FlowPage() {
     const documentId = useAppState((state) => state.currentDocumentId);
+    const outdated = useAppState((state) => isOutdated(state, state.currentDocumentId));
+
+    if (outdated) {
+        return <Viewer checking={false} />;
+    }
 
     return <FlowWorkspace key={documentId} />;
 }

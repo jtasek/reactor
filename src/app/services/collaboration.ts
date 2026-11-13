@@ -8,6 +8,7 @@ import {
     readDocumentFields,
     orUndefined,
     readEntity,
+    SCHEMA_VERSION,
     withoutDanglingReferences,
     type Collection,
     type DocumentFields,
@@ -59,6 +60,16 @@ export interface CollaborationOptions {
     sendUpdate?(documentId: string, update: Uint8Array): void;
     /** Reports what this copy can undo and redo of a document, whenever that changes. */
     historyChanged?(documentId: string, history: UndoHistory): void;
+    /**
+     * The document format this copy reads and writes; `SCHEMA_VERSION` unless a test
+     * stands in for an older or newer editor.
+     */
+    version?: number;
+    /**
+     * Reports that a newer editor changed a document, which this copy may only read
+     * from now on: `editableFrom` is the lowest version that may edit it.
+     */
+    outdated?(documentId: string, editableFrom: number): void;
 }
 
 type YEntity = Yjs.Map<unknown>;
@@ -78,6 +89,10 @@ interface Changes {
 interface Binding {
     doc: Yjs.Doc;
     fields: Yjs.Map<unknown>;
+    /** The document formats of the editors that wrote to it, as keys; outside undo. */
+    versions: Yjs.Map<unknown>;
+    /** The lowest version that may edit the document, once it is above this copy's. */
+    outdated?: number;
     tables: Record<Collection, Yjs.Map<unknown>>;
     /** Store changes not yet written to the shared document. */
     local: Changes;
@@ -109,6 +124,12 @@ const PERSON: Provenance = { kind: 'person' };
 /** This copy's changes this close together, as typing into a field, undo as one. */
 const UNDO_MERGE_MS = 500;
 const MEMBERS = 'shapesIds';
+/**
+ * The shared map whose keys are the document formats of the editors that wrote to the
+ * document. The newest is the lowest that may edit it; an older copy only reads. Each
+ * format has a key of its own, so an older copy writing at the same time never hides it.
+ */
+const VERSIONS = 'versions';
 const isLocalOnly = (field: string) =>
     RUNTIME_FIELDS.has(field) || field === 'camera' || field === 'shapesIds';
 /** Document fields whose changes are shared and saved but do not date the document. */
@@ -203,6 +224,8 @@ export class Collaboration {
     private applyingRemote = false;
     private flushQueued = false;
     private paused = false;
+    /** The document format this copy writes. */
+    private version = SCHEMA_VERSION;
     /** Who made each undo step that holds a batch; the person made the others. */
     private readonly authors = new WeakMap<object, Provenance>();
 
@@ -217,6 +240,7 @@ export class Collaboration {
         this.yjs = yjs;
         this.migrateDocument = migration.migrateDocument;
         this.options = options;
+        this.version = options.version ?? SCHEMA_VERSION;
         this.stopListening = options.addMutationListener((mutation) => this.record(mutation));
     }
 
@@ -245,6 +269,7 @@ export class Collaboration {
         const binding: Binding = {
             doc,
             fields: doc.getMap('document'),
+            versions: doc.getMap(VERSIONS),
             tables: perCollection((collection) => doc.getMap(collection)),
             local: noChanges(),
             remote: noChanges(),
@@ -258,7 +283,7 @@ export class Collaboration {
         if (update) {
             yjs.applyUpdate(doc, update);
             const beforeMigration = yjs.encodeStateVector(doc);
-            const migrated = this.migrate(binding);
+            const migrated = !this.outdated(documentId, binding) && this.migrate(binding);
             this.observe(documentId, binding);
             this.everything(documentId, binding, binding.remote);
             this.applyRemote(documentId, binding);
@@ -295,7 +320,26 @@ export class Collaboration {
         this.ready().yjs.applyUpdate(binding.doc, update);
         binding.unwritten = undefined;
         // A copy from before dimensions, or the server, can still send Light/Dark colors.
-        this.migrate(binding);
+        void (this.outdated(documentId, binding) || this.migrate(binding));
+    }
+
+    /**
+     * Whether a newer editor changed the document, so this copy, which may drop or
+     * misread what it wrote, must not write to it again. Reported with each update.
+     */
+    private outdated(documentId: string, binding: Binding): boolean {
+        const editableFrom = Math.max(...[...binding.versions.keys()].map((key) => +key || 0));
+
+        if (!(editableFrom > this.version)) {
+            return false;
+        }
+
+        binding.outdated = editableFrom;
+        // Nothing this copy did may be undone over the newer copy's changes.
+        binding.history?.clear();
+        this.options?.outdated?.(documentId, editableFrom);
+
+        return true;
     }
 
     /** Migrations load with Yjs, before any document is opened. */
@@ -605,6 +649,11 @@ export class Collaboration {
 
         binding.local = noChanges();
 
+        // What an older copy writes over a newer one's is never shared; reloading shows the newer.
+        if (binding.outdated) {
+            return;
+        }
+
         const { options } = this.ready();
         const document = options.getDocument(documentId);
 
@@ -655,6 +704,12 @@ export class Collaboration {
 
             if (dateEdit && !this.paused) {
                 binding.deferred = [];
+            }
+
+            const version = `${this.version}`;
+
+            if (!binding.versions.has(version)) {
+                binding.versions.set(version, true);
             }
         }, LOCAL);
 

@@ -65,3 +65,5 @@
 @media (max-width: 600px) {
   .memberActions { flex-basis: 100%; }
 }
+
+.page button.primary { background: var(--primary-action-color); color: var(--panel-content-background); font-weight: var(--font-weight-semibold); margin-bottom: 12px; }

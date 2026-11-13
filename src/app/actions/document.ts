@@ -190,6 +190,17 @@ export const setDocumentHistory: ActionWithParam<{ documentId: string; history: 
     document.history = history;
 };
 
+/**
+ * Shows a document a newer editor changed as read-only, until this copy reloads:
+ * `editableFrom` is the lowest document format that may edit it.
+ */
+export const markDocumentOutdated: ActionWithParam<{ documentId: string; editableFrom: number }> = (
+    { state },
+    { documentId, editableFrom }
+) => {
+    state.outdatedDocuments[documentId] = editableFrom;
+};
+
 /** Removes a document added only to hold saved or shared content that could not be read. */
 export const discardDocument: ActionWithParam<string> = ({ state }, documentId) => {
     deleteDocument(state, documentId);
