@@ -18,6 +18,7 @@ export function FlowLinkMenu({
     name,
     shared,
     position,
+    sheet,
     onClose
 }: {
     instanceId: string;
@@ -25,6 +26,8 @@ export function FlowLinkMenu({
     /** Inside another component: it can be changed only at that component's source. */
     shared: boolean;
     position: Point;
+    /** On narrow windows the menu is a sheet along the bottom edge. */
+    sheet?: boolean;
     onClose: () => void;
 }) {
     const [page, setPage] = useState<Page>('link');
@@ -299,7 +302,7 @@ export function FlowLinkMenu({
     if (page === 'newState') {
         return (
             <NewState
-                position={position}
+                position={sheet ? undefined : position}
                 instanceId={instanceId}
                 onCancel={onClose}
                 onDone={onClose}
@@ -313,6 +316,7 @@ export function FlowLinkMenu({
             key={page}
             label={`Link from ${name}`}
             position={position}
+            sheet={sheet}
             items={pages[page]}
             onClose={onClose}
         />
@@ -326,7 +330,8 @@ function NewState({
     onDone,
     onCancel
 }: {
-    position: Point;
+    /** Where the menu was; without it the form sits under the toolbar, clear of a keyboard. */
+    position?: Point;
     instanceId: string;
     onDone: () => void;
     onCancel: () => void;
@@ -362,10 +367,14 @@ function NewState({
         <form
             ref={form}
             className={`${menuStyles.contextMenu} ${styles.newState}`}
-            style={{
-                left: Math.max(8, Math.min(position.x, window.innerWidth - 260)),
-                top: Math.max(8, Math.min(position.y, window.innerHeight - 140))
-            }}
+            style={
+                position
+                    ? {
+                          left: Math.max(8, Math.min(position.x, window.innerWidth - 260)),
+                          top: Math.max(8, Math.min(position.y, window.innerHeight - 140))
+                      }
+                    : { left: 8, top: 76, width: 'calc(100vw - 16px)' }
+            }
             aria-label="New state"
             onSubmit={(event) => {
                 event.preventDefault();

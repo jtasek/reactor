@@ -10,7 +10,7 @@ import {
     useReaction,
     useVariableContext
 } from 'src/app/hooks';
-import { flowMachine } from 'src/app/flowMachine';
+import { flowMachine, sentence, type FlowRef } from 'src/app/flowMachine';
 import { layoutFlow, offsetLayout, routeLinks, type FlowLayout } from 'src/app/flowLayout';
 import { isReadOnly } from 'src/app/documentAccess';
 import type { Document, Point } from 'src/app/types';
@@ -21,7 +21,9 @@ import {
 } from 'src/ui/components/DocumentList/DocumentThumbnail';
 import { ExplorerMenu, type ExplorerMenuItem } from 'src/ui/components/Explorer/ExplorerMenu';
 import { FlowBoard, type FlowSelection } from './FlowBoard';
+import { FlowCheck } from './FlowCheck';
 import { FlowLinkMenu } from './FlowLinkMenu';
+import { FlowList } from './FlowList';
 import { readFlowPositions } from './flowPositions';
 import styles from './Flow.css';
 
@@ -36,6 +38,24 @@ type Menu =
     | { kind: 'add'; screenId: string; at: Point }
     | { kind: 'screen'; screenId: string; at: Point }
     | { kind: 'board'; at: Point };
+
+/** Below this the map gives way to a list. */
+const NARROW = '(max-width: 699px)';
+
+function useNarrow() {
+    const [narrow, setNarrow] = useState(() => window.matchMedia(NARROW).matches);
+
+    useEffect(() => {
+        const media = window.matchMedia(NARROW);
+        const update = () => setNarrow(media.matches);
+        update();
+        media.addEventListener('change', update);
+
+        return () => media.removeEventListener('change', update);
+    }, []);
+
+    return narrow;
+}
 
 /** A row on a card, to give focus back to. */
 type Place = { key: string; screenId: string };
@@ -89,6 +109,9 @@ function FlowWorkspace() {
     const workspace = useRef<HTMLElement>(null);
     const [selection, setSelection] = useState<FlowSelection>();
     const [menu, setMenu] = useState<Menu>();
+    const narrow = useNarrow();
+    // Set by the map: brings a Screen's card into view.
+    const reveal = useRef<((screenId: string) => void) | undefined>(undefined);
     const { editFrame, editInteractions } = useActions();
     const effects = useEffects();
     const document = useAppState((state) => state.currentDocument);
@@ -195,6 +218,10 @@ function FlowWorkspace() {
 
     const revision = useRevision(document.id, DRAWN_FROM);
     const pictures = useMemo(() => {
+        if (narrow) {
+            // The list shows no pictures.
+            return { document, drawings: new Map<string, ScreenDrawing>() };
+        }
         // Untracked: drawing reads every shape, and tracked reads cost several times more.
         const plain = json(document);
         const drawn = drawingDocument(plain, simulation);
@@ -208,7 +235,7 @@ function FlowWorkspace() {
 
         return { document: drawn, drawings };
         // eslint-disable-next-line react-hooks/exhaustive-deps -- drawn again when edits settle.
-    }, [revision, document.id, simulation]);
+    }, [revision, document.id, simulation, narrow]);
 
     useEffect(() => {
         // The designer's shortcuts run only on the canvas page.
@@ -237,6 +264,22 @@ function FlowWorkspace() {
         return () => window.removeEventListener('keydown', onKeyDown, true);
     }, [canUndo, canRedo, effects, document.id]);
 
+    const selected = selection !== undefined;
+    useEffect(() => {
+        if (!selected) {
+            return;
+        }
+        // Menus and popovers keep their Escape to themselves, so one that gets here deselects.
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && !event.defaultPrevented) {
+                setSelection(undefined);
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [selected]);
+
     // Idle controls are never shared ones: those gain an action only at their source.
     const controls = machine.states.flatMap((state) => [
         ...state.transitions.map((control) => ({ ...control, screenId: state.id })),
@@ -254,6 +297,74 @@ function FlowWorkspace() {
             focusPlace(workspace.current, place);
         }
     }, [machine]);
+    // ⌫ on a row removes its link; focus moves to the card's Add link once the row is gone.
+    const remove = (key: string) => {
+        const link = control(key);
+        if (!link || disabled || !link.editable || link.shared) {
+            return;
+        }
+        returnTo.current = { key, screenId: link.screenId };
+        editInteractions({
+            target: 'instance',
+            id: link.instanceId,
+            settings: { activate: null }
+        });
+    };
+    // Selects what a remark is about, brings it into view and puts the keyboard on it.
+    const show = (ref: FlowRef) => {
+        setSelection(
+            ref.key ? { kind: 'link', key: ref.key } : { kind: 'screen', id: ref.screenId }
+        );
+        reveal.current?.(ref.screenId);
+        const screen = workspace.current?.querySelector<HTMLElement>(
+            `[data-flow-screen="${CSS.escape(ref.screenId)}"]`
+        );
+        (
+            (ref.key
+                ? screen?.querySelector<HTMLElement>(`[data-flow-control="${CSS.escape(ref.key)}"]`)
+                : undefined) ?? screen?.querySelector<HTMLElement>('[data-flow-stop]')
+        )?.focus({ preventScroll: !narrow });
+    };
+    // What changed, said aloud: a link added, changed or removed, by anyone.
+    const [announcement, setAnnouncement] = useState('');
+    const said = useRef<Map<string, string> | undefined>(undefined);
+    useEffect(() => {
+        const now = new Map(
+            machine.states.flatMap((state) =>
+                state.transitions.map((link) => [link.key, sentence(link)] as const)
+            )
+        );
+        const before = said.current;
+        said.current = now;
+        if (!before) {
+            return;
+        }
+        const lines: string[] = [];
+        for (const [key, text] of now) {
+            if (before.get(key) !== text) {
+                lines.push(`${before.has(key) ? 'Link changed' : 'Link added'}: ${text}`);
+            }
+        }
+        for (const [key, text] of before) {
+            if (!now.has(key)) {
+                lines.push(`Link removed: ${text}`);
+            }
+        }
+        if (lines.length > 0) {
+            // A renamed Screen changes many sentences at once; a few say enough.
+            setAnnouncement(lines.slice(0, 3).join('. '));
+        }
+    }, [machine]);
+    // Screens as the map lays them out: by column, then down each column.
+    const order = useMemo(
+        () => [...laidOut.cards].sort((a, b) => a.x - b.x || a.y - b.y).map((card) => card.id),
+        [laidOut]
+    );
+    const tidyUp = () => {
+        base.current = undefined;
+        keep({});
+        tidy();
+    };
     // Play opens on the start screen, or on the Screen that is selected.
     const playFrom = selection?.kind === 'screen' ? selection.id : undefined;
     const linkCount = machine.states.reduce((sum, state) => sum + state.transitions.length, 0);
@@ -279,7 +390,11 @@ function FlowWorkspace() {
                       disabled: !menuScreen.available,
                       onRun: () =>
                           effects.navigate(`/prototype?screen=${encodeURIComponent(menuScreen.id)}`)
-                  }
+                  },
+                  // The board's right-click menu has it too; this one the keyboard reaches.
+                  ...(canTidy && !narrow
+                      ? ['separator' as const, { id: 'tidy', label: 'Tidy up', onRun: tidyUp }]
+                      : [])
               ]
             : [];
     const addItems = (): ExplorerMenuItem[] =>
@@ -333,6 +448,22 @@ function FlowWorkspace() {
                         <Icon icon={{ component: Redo2, size: 18 }} />
                     </button>
                 </div>
+                {machine.states.length > 0 && (
+                    <FlowCheck
+                        machine={machine}
+                        disabled={disabled}
+                        onStart={(id) => editFrame({ kind: 'start', id })}
+                        onShow={show}
+                        onFix={(ref, at) => {
+                            show(ref);
+                            setMenu(
+                                ref.key
+                                    ? { kind: 'link', key: ref.key, at }
+                                    : { kind: 'add', screenId: ref.screenId, at }
+                            );
+                        }}
+                    />
+                )}
                 <a
                     className={styles.play}
                     aria-label="Play prototype"
@@ -342,6 +473,9 @@ function FlowWorkspace() {
                     Play
                 </a>
             </header>
+            <p role="status" aria-live="polite" className={styles.hidden} data-flow-announce="">
+                {announcement}
+            </p>
             {saveFailed && (
                 <p role="status" className={styles.notice}>
                     Arrangement could not be saved on this device.
@@ -351,8 +485,29 @@ function FlowWorkspace() {
                 <p className={styles.empty}>
                     Create a Screen on the canvas to begin connecting your application.
                 </p>
+            ) : narrow ? (
+                <FlowList
+                    machine={machine}
+                    order={order}
+                    selection={selection}
+                    canEdit={!disabled}
+                    onSelect={setSelection}
+                    onRemove={remove}
+                    onLinkMenu={(key, at) => {
+                        returnTo.current = undefined;
+                        setSelection({ kind: 'link', key });
+                        setMenu({ kind: 'link', key, at });
+                    }}
+                    onAddMenu={(screenId, at) => setMenu({ kind: 'add', screenId, at })}
+                    onScreenMenu={(screenId, at) => {
+                        setSelection({ kind: 'screen', id: screenId });
+                        setMenu({ kind: 'screen', screenId, at });
+                    }}
+                />
             ) : (
                 <FlowBoard
+                    handle={reveal}
+                    onRemove={remove}
                     machine={machine}
                     layout={layout}
                     links={links}
@@ -395,6 +550,7 @@ function FlowWorkspace() {
                     name={menuControl.control}
                     shared={menuControl.shared}
                     position={menu.at}
+                    sheet={narrow}
                     onClose={() => {
                         const place = { key: menu.key, screenId: menuControl.screenId };
                         setMenu(undefined);
@@ -412,11 +568,7 @@ function FlowWorkspace() {
                         {
                             id: 'tidy',
                             label: 'Tidy up',
-                            onRun: () => {
-                                base.current = undefined;
-                                keep({});
-                                tidy();
-                            }
+                            onRun: tidyUp
                         }
                     ]}
                     onClose={() => setMenu(undefined)}
@@ -430,6 +582,7 @@ function FlowWorkspace() {
                             : `Screen ${menuScreen.name}`
                     }
                     position={menu.at}
+                    sheet={narrow}
                     items={menu.kind === 'add' ? addItems() : screenItems()}
                     onClose={() => setMenu(undefined)}
                 />

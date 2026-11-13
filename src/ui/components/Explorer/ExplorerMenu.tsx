@@ -29,6 +29,8 @@ interface Props {
     items: ExplorerMenuItem[];
     /** The button that opens and closes the menu: a press on it is left to the button. */
     anchor?: Element | null;
+    /** On narrow windows: a sheet along the bottom edge instead of a menu at a point. */
+    sheet?: boolean;
     onClose: () => void;
 }
 
@@ -39,7 +41,7 @@ const MARGIN = 8;
  * filter button. It goes on the page itself, as the panel's glass would clip it.
  * Escape and Tab close it and give focus back to what opened it.
  */
-export const ExplorerMenu: FC<Props> = ({ label, position, items, anchor, onClose }) => {
+export const ExplorerMenu: FC<Props> = ({ label, position, items, anchor, sheet, onClose }) => {
     const menu = useRef<HTMLDivElement>(null);
     const opener = useRef(document.activeElement);
     const [placement, setPlacement] = useState(position);
@@ -108,8 +110,8 @@ export const ExplorerMenu: FC<Props> = ({ label, position, items, anchor, onClos
             role="menu"
             aria-label={label}
             tabIndex={-1}
-            className={styles.contextMenu}
-            style={{ left: placement.x, top: placement.y }}
+            className={`${styles.contextMenu}${sheet ? ` ${explorerStyles.menuSheet}` : ''}`}
+            style={sheet ? undefined : { left: placement.x, top: placement.y }}
             onKeyDown={handleKeyDown}
             onContextMenu={(event) => event.preventDefault()}
         >
