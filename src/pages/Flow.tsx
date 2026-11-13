@@ -2,7 +2,7 @@ import { ArrowLeft, Play, Undo2, Redo2 } from 'lucide-react';
 import { json } from 'overmind';
 import { Icon } from 'src/ui/components/Icon';
 import { registerEditor } from './registerEditor';
-import React, { useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
     useActions,
     useAppState,
@@ -34,7 +34,8 @@ const DRAWN_FROM = ['shapes', 'frames', 'components', 'variables', 'dimensions']
 type Menu =
     | { kind: 'link'; key: string; at: Point }
     | { kind: 'add'; screenId: string; at: Point }
-    | { kind: 'screen'; screenId: string; at: Point };
+    | { kind: 'screen'; screenId: string; at: Point }
+    | { kind: 'board'; at: Point };
 
 /** A row on a card, to give focus back to. */
 type Place = { key: string; screenId: string };
@@ -88,7 +89,7 @@ function FlowWorkspace() {
     const workspace = useRef<HTMLElement>(null);
     const [selection, setSelection] = useState<FlowSelection>();
     const [menu, setMenu] = useState<Menu>();
-    const { editFrame } = useActions();
+    const { editFrame, editInteractions } = useActions();
     const effects = useEffects();
     const document = useAppState((state) => state.currentDocument);
     // Read once per edit, not once per render: a drag renders every frame.
@@ -116,18 +117,23 @@ function FlowWorkspace() {
     });
     const [saveFailed, setSaveFailed] = useState(false);
     const dragStart = useRef<Point | undefined>(undefined);
+    const keep = (next: Record<string, Point>) => {
+        setOffsets(next);
+        try {
+            effects.saveState(storageKey, next);
+            setSaveFailed(false);
+        } catch {
+            setSaveFailed(true);
+        }
+    };
     const move = (id: string, by: Point, done: boolean) => {
         const origin = (dragStart.current ??= offsets[id] ?? { x: 0, y: 0 });
         const next = { ...offsets, [id]: { x: origin.x + by.x, y: origin.y + by.y } };
-        setOffsets(next);
         if (done) {
             dragStart.current = undefined;
-            try {
-                effects.saveState(storageKey, next);
-                setSaveFailed(false);
-            } catch {
-                setSaveFailed(true);
-            }
+            keep(next);
+        } else {
+            setOffsets(next);
         }
     };
 
@@ -142,11 +148,48 @@ function FlowWorkspace() {
             )
         ])
     );
+    // Counts each Tidy up, which starts the layout over.
+    const [tidied, tidy] = useReducer((count: number) => count + 1, 0);
     const laidOut = useMemo(
         () => (base.current = layoutFlow(machine, base.current)),
         // eslint-disable-next-line react-hooks/exhaustive-deps -- `shape` is the machine's outline.
-        [shape, machine.initial]
+        [shape, machine.initial, tidied]
     );
+    // A Screen someone moved stays where they put it, whatever the layout under it does.
+    const under = useRef(laidOut);
+    useLayoutEffect(() => {
+        const before = new Map(under.current.cards.map((card) => [card.id, card]));
+        under.current = laidOut;
+        let next: Record<string, Point> | undefined;
+        for (const card of laidOut.cards) {
+            const was = before.get(card.id);
+            const offset = offsets[card.id];
+            if (was && offset && (was.x !== card.x || was.y !== card.y)) {
+                next = {
+                    ...(next ?? offsets),
+                    [card.id]: { x: offset.x + was.x - card.x, y: offset.y + was.y - card.y }
+                };
+            }
+        }
+        if (next) {
+            keep(next);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the layout changes.
+    }, [laidOut]);
+    // Tidy up has something to do: a Screen was moved, or the layout kept gaps to stay still.
+    const canTidy = useMemo(() => {
+        const fresh = new Map(layoutFlow(machine).cards.map((card) => [card.id, card]));
+
+        return (
+            Object.keys(offsets).some((id) => fresh.has(id)) ||
+            laidOut.cards.some((card) => {
+                const clean = fresh.get(card.id);
+
+                return clean?.x !== card.x || clean.y !== card.y;
+            })
+        );
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- `laidOut` follows the machine.
+    }, [laidOut, offsets]);
     const layout = useMemo(() => offsetLayout(laidOut, offsets), [laidOut, offsets]);
     const links = routeLinks(machine, layout);
 
@@ -216,7 +259,7 @@ function FlowWorkspace() {
     const linkCount = machine.states.reduce((sum, state) => sum + state.transitions.length, 0);
     const count = (value: number, noun: string) => `${value} ${noun}${value === 1 ? '' : 's'}`;
     const menuScreen = machine.states.find(
-        (state) => menu && menu.kind !== 'link' && state.id === menu.screenId
+        (state) => menu && 'screenId' in menu && state.id === menu.screenId
     );
     const menuControl = menu?.kind === 'link' ? control(menu.key) : undefined;
     const screenItems = (): ExplorerMenuItem[] =>
@@ -317,6 +360,20 @@ function FlowWorkspace() {
                     drawings={pictures.drawings}
                     selection={selection}
                     canArrange
+                    canConnect={!disabled}
+                    canTidy={canTidy}
+                    onConnect={(instanceId, screenId) => {
+                        editInteractions({
+                            target: 'instance',
+                            id: instanceId,
+                            settings: { activate: { type: 'navigate', screenId } }
+                        });
+                        const linked = controls.find((item) => item.instanceId === instanceId);
+                        if (linked) {
+                            setSelection({ kind: 'link', key: linked.key });
+                        }
+                    }}
+                    onBoardMenu={(at) => setMenu({ kind: 'board', at })}
                     onSelect={setSelection}
                     onMove={move}
                     onLinkMenu={(key, at) => {
@@ -347,7 +404,25 @@ function FlowWorkspace() {
                     }}
                 />
             )}
-            {menu && menu.kind !== 'link' && menuScreen && (
+            {menu?.kind === 'board' && (
+                <ExplorerMenu
+                    label="Board"
+                    position={menu.at}
+                    items={[
+                        {
+                            id: 'tidy',
+                            label: 'Tidy up',
+                            onRun: () => {
+                                base.current = undefined;
+                                keep({});
+                                tidy();
+                            }
+                        }
+                    ]}
+                    onClose={() => setMenu(undefined)}
+                />
+            )}
+            {menu && (menu.kind === 'add' || menu.kind === 'screen') && menuScreen && (
                 <ExplorerMenu
                     label={
                         menu.kind === 'add'

@@ -160,6 +160,11 @@
     stroke: var(--selection-color);
     stroke-width: 2.5;
 }
+.connections > .live {
+    stroke: var(--selection-color);
+    stroke-width: 2.5;
+    stroke-dasharray: 6 5;
+}
 .startMark circle {
     fill: var(--success-color);
 }
@@ -207,6 +212,29 @@
 }
 .screen[data-selected='true'] .thumb {
     outline: 2px solid var(--selection-color);
+}
+/* While a link is drawn: every Screen it may go to, and the one under the pointer. */
+.screen[data-drop='can'] .thumb {
+    outline: 2px solid color-mix(in srgb, var(--selection-color) 45%, transparent);
+}
+.screen[data-drop='over'] .thumb {
+    outline: 3px solid var(--selection-color);
+}
+.thumb [data-thumbnail-control] {
+    pointer-events: none;
+    stroke: transparent;
+    stroke-width: 2;
+}
+@media (hover: hover) and (pointer: fine) {
+    /* The controls on a picture light up under the pointer: drag one onto a Screen. */
+    .thumb [data-thumbnail-control] {
+        pointer-events: all;
+        cursor: crosshair;
+    }
+    .thumb [data-thumbnail-control]:hover {
+        stroke: var(--selection-color);
+        fill: color-mix(in srgb, var(--selection-color) 12%, transparent);
+    }
 }
 .name {
     display: flex;
@@ -355,6 +383,21 @@
     border-radius: 50%;
     background: var(--surface);
     pointer-events: none;
+}
+.dot[data-draggable='true'] {
+    pointer-events: auto;
+    cursor: crosshair;
+    touch-action: none;
+}
+/* A 24 px target around the 9 px dot. */
+.dot[data-draggable='true']::before {
+    content: '';
+    position: absolute;
+    inset: -9px;
+}
+.dot[data-draggable='true']:hover {
+    border-color: var(--selection-color);
+    background: var(--selection-color);
 }
 .screen li:has(> button[aria-pressed='true']) .dot {
     border-color: var(--selection-color);

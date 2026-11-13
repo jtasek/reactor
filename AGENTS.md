@@ -1225,6 +1225,14 @@ them there only. `pages/FlowBoard.tsx` pans and zooms by writing one transform (
 and "Shown", every choice one `editInteractions` call). The machine is recomputed once per
 edit and thumbnails are drawn from a plain `json()` copy once edits pause: tracked reads per
 render cost a drag its frame rate.
+Links are also drawn by hand: a press on a control in a card's picture (`ScreenThumbnail`'s
+`controls` targets, fine pointers only) or on a row's dot starts `startLink` in `FlowBoard`,
+which follows the pointer with window listeners and, on a drop over an available Screen, makes
+one `editInteractions` call; Esc or a drop elsewhere changes nothing. A press anywhere else on
+the picture or name drags the card. Dragged cards are stored as offsets from the automatic
+layout; when that layout moves under a dragged card, `Flow.tsx` corrects the offset so the
+card stays put. Tidy up (the board's right-click menu, shown only when it would change
+something) clears the offsets and starts the layout over.
 Tests: `tests/flowProjection.test.ts`, `tests/flowMachine.test.ts` and
 `tests/browser/flows.spec.ts`.
 
