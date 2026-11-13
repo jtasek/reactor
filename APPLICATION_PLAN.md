@@ -1155,8 +1155,11 @@ suggest. Do these in order; each is a separate change.
    `tests/versionCheck.test.ts` and `tests/browser/versionCheck.spec.ts`. The sync server removes keys
    above the format it serves (and keys that are no format) on load and on every change, so a
    rolled-back release or a bad client cannot lock documents; an outdated copy edits again
-   once the newer keys are gone. Builds from before this change ignore the marker; the server
-   refusing older builds at connect time is still to do.
+   once the newer keys are gone. The editor names its format in the sync
+   socket's `editor` parameter; the server closes sockets from older editors (and builds
+   without the parameter) with code 4426 and the format it needs, and the editor stops
+   syncing and shows every document view only with Reload. Covered by
+   `tests/server/sync.test.ts` and `tests/server/editorSync.test.ts`. Step 1 is complete.
 2. **Document history and backups (M).** Server snapshots with Restore, a backup routine and
    one restore drill recorded in the README. Acceptance: `tests/server/history.test.ts`
    (snapshot schedule, restore as a new change, deleted documents, permissions).

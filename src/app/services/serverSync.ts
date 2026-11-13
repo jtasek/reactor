@@ -5,6 +5,10 @@ import type { Api, ServerRecord, SyncStatus, Transport } from './api';
 import type { Document } from '../types';
 import type { Collaboration } from './collaboration';
 import { createAssetSync, type AssetSync, type AssetSyncSource } from './assetSync';
+import { SCHEMA_VERSION } from './schemaVersion';
+
+/** The close code and query parameter of the server's check of the editor's format. */
+const EDITOR_OUTDATED = 4426;
 
 export interface ServerEvents {
     /** The documents this copy holds. */
@@ -21,6 +25,11 @@ export interface ServerEvents {
     changed(): void;
     /** Current workspace permissions, before opening or refreshing documents. */
     access?(documents: Record<string, DocumentAccess>): void;
+    /**
+     * The server serves a newer editor, whose format is `version`, and refuses this
+     * copy: it stops syncing until reloaded.
+     */
+    outdated?(version: number): void;
 }
 
 export interface ServerSyncOptions {
@@ -497,9 +506,19 @@ export class ServerSync {
 
     /** The socket documents share, opened with the first. */
     private connect(): Hocuspocus.HocuspocusProviderWebsocket {
+        const url = new URL(this.options.transport.url);
+
+        url.searchParams.set('editor', `${SCHEMA_VERSION}`);
         this.socket ??= new Hocuspocus.HocuspocusProviderWebsocket({
             ...this.options.transport,
+            url: url.href,
             onStatus: () => this.options.events.changed(),
+            onClose: ({ event }) => {
+                if (event.code === EDITOR_OUTDATED && !this.stopped) {
+                    this.stop();
+                    this.options.events.outdated?.(Number(event.reason) || SCHEMA_VERSION + 1);
+                }
+            },
             onConnect: () => {
                 // Once connected again, what changed meanwhile is picked up.
                 if (this.connected) {
