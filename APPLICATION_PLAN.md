@@ -1148,6 +1148,15 @@ suggest. Do these in order; each is a separate change.
    reader version that can edit it; an older copy goes read-only and offers Reload.
    Acceptance: a two-copy test where the older copy cannot write, and
    `tests/browser/versionCheck.spec.ts` for the Reload prompt.
+   Implementation status (2026-11-13): each copy that writes adds its `SCHEMA_VERSION` as a
+   key of the shared document's `versions` map (one key per version, so concurrent writes
+   never hide the newest). A copy that opens or receives a document with a higher key stops writing to it (edits, undo and migrations), shows the
+   read-only viewer with Reload, and keeps following others' changes. Covered by
+   `tests/versionCheck.test.ts` and `tests/browser/versionCheck.spec.ts`. The sync server removes keys
+   above the format it serves (and keys that are no format) on load and on every change, so a
+   rolled-back release or a bad client cannot lock documents; an outdated copy edits again
+   once the newer keys are gone. Builds from before this change ignore the marker; the server
+   refusing older builds at connect time is still to do.
 2. **Document history and backups (M).** Server snapshots with Restore, a backup routine and
    one restore drill recorded in the README. Acceptance: `tests/server/history.test.ts`
    (snapshot schedule, restore as a new change, deleted documents, permissions).

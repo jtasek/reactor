@@ -8,6 +8,7 @@ declare namespace SharingCssNamespace {
     page: string;
     person: string;
     preview: string;
+    primary: string;
     result: string;
     secondary: string;
   }

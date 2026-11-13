@@ -50,6 +50,9 @@ COPY --chown=node:node server ./server
 # Password reset and browser sign-in share the allowed return destinations.
 COPY --chown=node:node src/app/authenticationDestination.ts ./src/app/authenticationDestination.ts
 
+# Sync drops version marks newer than the editor this image serves.
+COPY --chown=node:node src/app/services/schemaVersion.ts ./src/app/services/schemaVersion.ts
+
 # Public snapshots use the same strict render-protocol validation as the browser.
 COPY --chown=node:node src/preview/protocol.ts ./src/preview/protocol.ts
 

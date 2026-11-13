@@ -379,6 +379,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         saveStatus: { kind: 'notSaving', reason: 'Documents are loading.' },
         account: { kind: 'loading' },
         documentAccess: {},
+        outdatedDocuments: {},
         ai: 'unavailable',
         ...options
     };

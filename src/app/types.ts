@@ -682,6 +682,13 @@ export type Application = {
     id: string;
     account: Account;
     documentAccess: Record<string, DocumentAccess>;
+    /**
+     * Documents a newer editor changed, by id, with the lowest document format that may
+     * edit them: this copy only shows them until it reloads. Never saved.
+     */
+    outdatedDocuments: Record<string, number>;
+    /** The outdated document whose gesture stopped part way, to say so. Never saved. */
+    interruptedDocumentId?: string;
     ai: AiAvailability;
     commands: HashTable<Command>;
     commandsIds: string[];

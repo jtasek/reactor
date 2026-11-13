@@ -1,4 +1,4 @@
-import { isReadOnly, canDeleteDocument } from 'src/app/documentAccess';
+import { isOutdated, isReadOnly, canDeleteDocument } from 'src/app/documentAccess';
 import { useAppState } from 'src/app/hooks';
 import React, {
     ChangeEvent,
@@ -46,6 +46,7 @@ export const DocumentCard: FC<Props> = ({
 }) => {
     const document = useDocument(documentId);
     const readOnly = useAppState((state) => isReadOnly(state, documentId));
+    const outdated = useAppState((state) => isOutdated(state, documentId));
     const canDelete = useAppState((state) => canDeleteDocument(state, documentId));
     const {
         editDocument,
@@ -193,7 +194,16 @@ export const DocumentCard: FC<Props> = ({
                         </button>
                     )}
                     {current && <span className={styles.current}>Current</span>}
-                    {readOnly && <span className={styles.current}>View only</span>}
+                    {outdated ? (
+                        <span
+                            className={styles.current}
+                            title="A newer version of Reactor changed it. Reload to edit."
+                        >
+                            Reload to edit
+                        </span>
+                    ) : (
+                        readOnly && <span className={styles.current}>View only</span>
+                    )}
                 </div>
                 <span className={styles.meta}>
                     <Avatars people={documentPeople(document).map((name) => ({ name }))} />
