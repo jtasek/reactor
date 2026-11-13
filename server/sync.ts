@@ -94,10 +94,15 @@ export function createSync({
     origin: string;
     log: Pick<Log, 'warn' | 'error'>;
     sessionCheck?: number;
-    /** The document format of the editor served here; the build's own unless a test sets it. */
-    editorVersion?: number;
+    /**
+     * The document format of the editor served here, read on each connection; the
+     * build's own unless a test sets it, as to deploy a newer release.
+     */
+    editorVersion?: number | (() => number);
 }) {
     const sockets = new Map<string, number>();
+    const served = () =>
+        typeof editorVersion === 'function' ? editorVersion() : (editorVersion ?? SCHEMA_VERSION);
     const hocuspocus = new Hocuspocus<{ userId: string }>({
         quiet: true,
         async onConnect({ context, documentName, connectionConfig }) {
@@ -121,11 +126,11 @@ export function createSync({
         async onLoadDocument({ documentName, document }) {
             await loadState(db, documentName, document);
             // A rolled-back release's marks would otherwise keep the document view only.
-            dropNewerVersions(document, editorVersion);
+            dropNewerVersions(document, served());
         },
         // Every client's change is checked, and the removal is shared like any change.
         async onChange({ document }) {
-            dropNewerVersions(document, editorVersion);
+            dropNewerVersions(document, served());
         },
         async onStoreDocument({ documentName, document }) {
             try {
@@ -174,12 +179,12 @@ export function createSync({
 
         const userId = session.user.id;
         const editor = Number(url.searchParams.get('editor'));
-        const served = editorVersion ?? SCHEMA_VERSION;
+        const version = served();
 
         // Builds from before the parameter send none, and are older than any that check.
-        if (!(editor >= served)) {
+        if (!(editor >= version)) {
             server.handleUpgrade(req, socket, head, (websocket) =>
-                websocket.close(EDITOR_OUTDATED, `${served}`)
+                websocket.close(EDITOR_OUTDATED, `${version}`)
             );
 
             return;

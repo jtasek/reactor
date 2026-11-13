@@ -98,6 +98,11 @@ export class ServerSync {
     private retryTimer?: ReturnType<typeof setTimeout>;
     private retryDelay = RETRY_FIRST;
     private stopped = false;
+    /**
+     * The server serves a newer editor and refused this copy: nothing is sent, but
+     * documents made or deleted here are still recorded, for the build that reloads.
+     */
+    private outdated = false;
 
     private readonly images?: AssetSync;
 
@@ -180,28 +185,34 @@ export class ServerSync {
 
     /** Creates a document this copy made on the server, then syncs it. */
     created(documentId: string): void {
-        if (this.stopped) {
+        if (this.stopped && !this.outdated) {
             return;
         }
 
         this.change(({ unsent, deleting }) => ({ unsent: union(unsent, [documentId]), deleting }));
-        void this.create(documentId);
+
+        if (!this.outdated) {
+            void this.create(documentId);
+        }
     }
 
     /** Deletes a document this copy deleted from the server, which may have it. */
     deleted(documentId: string): void {
         this.unlink(documentId);
 
-        if (this.stopped) {
+        if (this.stopped && !this.outdated) {
             return;
         }
 
-        this.deletions.add(documentId);
         this.change(({ unsent, deleting }) => ({
             unsent: unsent.filter((id) => id !== documentId),
             deleting: union(deleting, [documentId])
         }));
-        void this.sendDeletion(documentId);
+
+        if (!this.outdated) {
+            this.deletions.add(documentId);
+            void this.sendDeletion(documentId);
+        }
     }
 
     /** Stops syncing a document another copy on this device deleted. */
@@ -515,6 +526,7 @@ export class ServerSync {
             onStatus: () => this.options.events.changed(),
             onClose: ({ event }) => {
                 if (event.code === EDITOR_OUTDATED && !this.stopped) {
+                    this.outdated = true;
                     this.stop();
                     this.options.events.outdated?.(Number(event.reason) || SCHEMA_VERSION + 1);
                 }

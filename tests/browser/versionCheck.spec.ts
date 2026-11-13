@@ -56,7 +56,7 @@ test('a copy older than the document goes view only and offers Reload', async ({
     await editInNewerTab(page, 1_000_000);
 
     const notice = page.getByRole('alert');
-    await expect(notice).toContainText('A newer version of Reactor changed this document');
+    await expect(notice).toContainText('A newer version of Reactor is available');
     // The editor gives way to the read-only viewer, so nothing can be drawn over the newer copy.
     await expect(page.locator('svg#surface')).toHaveCount(0);
 

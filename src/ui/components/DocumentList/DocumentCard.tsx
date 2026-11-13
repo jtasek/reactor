@@ -197,7 +197,7 @@ export const DocumentCard: FC<Props> = ({
                     {outdated ? (
                         <span
                             className={styles.current}
-                            title="A newer version of Reactor changed it. Reload to edit."
+                            title="A newer version of Reactor is available. Reload to edit."
                         >
                             Reload to edit
                         </span>

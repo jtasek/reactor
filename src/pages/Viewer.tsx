@@ -20,7 +20,7 @@ export const Viewer: FC<{ checking: boolean }> = ({ checking }) => {
             <h1>{document.name}</h1>
             {outdated ? (
                 <div role="alert">
-                    <p>A newer version of Reactor changed this document. Reload to keep editing.</p>
+                    <p>A newer version of Reactor is available. Reload to keep editing.</p>
                     {interrupted && (
                         <p>Your drag was stopped part way; Reload shows where it ended up.</p>
                     )}
