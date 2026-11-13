@@ -3,7 +3,7 @@ import { MoreHorizontal, Plus } from 'lucide-react';
 import { Icon } from 'src/ui/components/Icon';
 import { sentence, type Machine } from 'src/app/flowMachine';
 import type { Point } from 'src/app/types';
-import { describeRow, rowKeys, walkScreen, type FlowSelection } from './FlowBoard';
+import { describeRow, keysHint, rowKeys, walkScreen, type FlowSelection } from './FlowBoard';
 import styles from './Flow.css';
 
 const NOWHERE: Point = { x: 0, y: 0 };
@@ -62,21 +62,38 @@ export function FlowList({
                             <button
                                 className={styles.groupName}
                                 aria-pressed={selection?.kind === 'screen' && selection.id === id}
-                                aria-describedby={note ? `flow-note-${id}` : undefined}
+                                aria-describedby={[note && `flow-note-${id}`, `flow-keys-${id}`]
+                                    .filter(Boolean)
+                                    .join(' ')}
                                 data-flow-stop=""
                                 onKeyDown={(event) => walkScreen(event, true)}
-                                onClick={() => onSelect({ kind: 'screen', id })}
+                                onClick={() =>
+                                    // A second tap lets go: a list has no empty board to tap.
+                                    onSelect(
+                                        selection?.kind === 'screen' && selection.id === id
+                                            ? undefined
+                                            : { kind: 'screen', id }
+                                    )
+                                }
                             >
                                 {machine.initial === id && (
                                     <span className={styles.badge}>Start</span>
                                 )}
                                 <span className={styles.screenName}>{state.name}</span>
                                 {note && (
-                                    <span id={`flow-note-${id}`} className={styles.groupNote}>
+                                    <span
+                                        id={`flow-note-${id}`}
+                                        className={styles.groupNote}
+                                        // Said once, as the description.
+                                        aria-hidden="true"
+                                    >
                                         {note}
                                     </span>
                                 )}
                             </button>
+                            <span id={`flow-keys-${id}`} className={styles.hidden}>
+                                {keysHint(state.transitions.length)}
+                            </span>
                             <button
                                 className={styles.groupMore}
                                 aria-label={`More for ${state.name}`}

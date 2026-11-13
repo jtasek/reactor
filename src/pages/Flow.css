@@ -129,8 +129,8 @@
     padding: 12px;
     border: 1px solid var(--hairline-color);
     border-radius: var(--border-radius);
-    background: var(--control-background);
-    backdrop-filter: var(--backdrop-filter);
+    /* Opaque: inside the toolbar's glass a second blur has nothing to blur. */
+    background: var(--surface);
     box-shadow: var(--box-shadow-hover);
 }
 .checkPanel label {
@@ -649,6 +649,14 @@
     .toolbar a,
     .toolbar button,
     .flow .fit {
+        min-height: 44px;
+    }
+    .toolbar .check {
+        min-width: 44px;
+        justify-content: center;
+    }
+    .checkPanel select,
+    .checkPanel li button {
         min-height: 44px;
     }
 }

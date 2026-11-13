@@ -63,6 +63,11 @@ export function walkScreen(event: React.KeyboardEvent<HTMLElement>, scroll = fal
     }
 }
 
+/** How a screen's name tells the keyboard where its links are: Tab stops only on the name. */
+export function keysHint(links: number) {
+    return `${links === 0 ? 'No links' : links === 1 ? '1 link' : `${links} links`}. Down arrow moves to the screen's menu and links.`;
+}
+
 /** A row's keys: ↑ and ↓ walk, ⌫ removes its link. */
 export function rowKeys(
     event: React.KeyboardEvent<HTMLElement>,
@@ -855,8 +860,13 @@ export function FlowBoard({
                                             y: event.clientY
                                         });
                                     }}
-                                    aria-describedby={note ? `flow-note-${state.id}` : undefined}
-                                    title="Drag to arrange, or hold Alt/⌥ and press the arrow keys. Canvas positions stay unchanged."
+                                    aria-describedby={[
+                                        note && `flow-note-${state.id}`,
+                                        `flow-keys-${state.id}`
+                                    ]
+                                        .filter(Boolean)
+                                        .join(' ')}
+                                    title="Drag to arrange, or hold Alt/⌥ and press the arrow keys. Down arrow moves to the links. Canvas positions stay unchanged."
                                     data-flow-stop=""
                                     onKeyDown={(event) => {
                                         walkScreen(event);
@@ -895,6 +905,9 @@ export function FlowBoard({
                                     <Icon icon={{ component: MoreHorizontal, size: 16 }} />
                                 </button>
                             </h2>
+                            <span id={`flow-keys-${state.id}`} className={styles.hidden}>
+                                {keysHint(state.transitions.length)}
+                            </span>
                             {note && (
                                 <span id={`flow-note-${state.id}`} className={styles.hidden}>
                                     {note}

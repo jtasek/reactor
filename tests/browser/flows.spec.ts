@@ -207,7 +207,7 @@ test('marks hidden controls and leaves them out of reachability', async ({ page 
     await expect(page.locator('[data-flow-link="next"]')).toHaveAttribute('data-inactive', 'true');
     await expect(screen(page, 'details')).toHaveAttribute('data-dim', 'true');
     await expect(page.getByRole('button', { name: 'Arrange Details' })).toHaveAccessibleDescription(
-        'Nothing leads here'
+        "Nothing leads here No links. Down arrow moves to the screen's menu and links."
     );
 });
 
@@ -858,11 +858,21 @@ test('shows the flow as a list below 700px, with menus as bottom sheets', async 
         .getByRole('dialog', { name: 'Check', exact: true })
         .getByRole('button', { name: 'Details ends the flow.', exact: true })
         .click();
-    await expect(
-        screen(page, 'details')
-            .getByRole('button', { name: /^Details/ })
-            .first()
-    ).toBeFocused();
+    const detailsName = screen(page, 'details')
+        .getByRole('button', { name: /^Details/ })
+        .first();
+    await expect(detailsName).toBeFocused();
+    // The name says how to reach the links.
+    await expect(detailsName).toHaveAccessibleDescription(
+        "No links. Down arrow moves to the screen's menu and links."
+    );
+    // With no empty board to tap, a second tap on a selected screen lets go of it.
+    const play = page.getByRole('link', { name: 'Play prototype', exact: true });
+    await expect(detailsName).toHaveAttribute('aria-pressed', 'true');
+    await expect(play).toHaveAttribute('href', '/prototype?screen=details');
+    await detailsName.click();
+    await expect(detailsName).toHaveAttribute('aria-pressed', 'false');
+    await expect(play).toHaveAttribute('href', '/prototype');
     await expect(page.locator('iframe')).toHaveCount(0);
     // A wider window gets the map back; there is no switch.
     await page.setViewportSize({ width: 900, height: 844 });
@@ -878,6 +888,9 @@ test('moves by keyboard: Tab between screens, arrows along a card, ⌫ removes, 
     await page.goto('/flow');
     const home = page.getByRole('button', { name: 'Arrange Home', exact: true });
     const details = page.getByRole('button', { name: 'Arrange Details', exact: true });
+    await expect(home).toHaveAccessibleDescription(
+        "2 links. Down arrow moves to the screen's menu and links."
+    );
     await home.focus();
     // One Tab stop per screen.
     await page.keyboard.press('Tab');
@@ -936,4 +949,31 @@ test('leaves a locked link alone when ⌫ is pressed on its row', async ({ page 
     await row(page, 'next').focus();
     await page.keyboard.press('Backspace');
     await expect(row(page, 'next')).toHaveAccessibleDescription('Continue button goes to Details');
+});
+
+test('keeps Check readable and large enough to tap on a touch screen', async ({ browser }) => {
+    const context = await browser.newContext({
+        hasTouch: true,
+        isMobile: true,
+        viewport: { width: 390, height: 844 }
+    });
+    const page = await context.newPage();
+    const document = automaticLayoutsPrototype();
+    (document.shapes.next as InstanceShape).interactions = {
+        activate: { type: 'navigate', screenId: 'deleted-screen' }
+    };
+    await seed(page, document);
+    await page.goto('/flow');
+    const button = check(page);
+    const box = (await button.boundingBox())!;
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    await button.tap();
+    const panel = page.getByRole('dialog', { name: 'Check', exact: true });
+    // Opaque, so the list underneath never shows through the remarks.
+    await expect(panel).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    for (const target of await panel.locator('button, select').all()) {
+        expect((await target.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    }
+    await context.close();
 });
